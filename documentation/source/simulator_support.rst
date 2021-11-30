@@ -25,6 +25,9 @@ In order to use this simulator, set :make:var:`SIM` to ``icarus``:
 
     make SIM=icarus
 
+.. note::
+    This section requires `installation <https://iverilog.fandom.com/wiki/Installation_Guide>`_ of `Icarus Verilog <http://iverilog.icarus.com/>`_.
+
 .. _sim-icarus-accessing-bits:
 
 Accessing bits in a vector
@@ -93,6 +96,10 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 .. code-block:: bash
 
     make SIM=verilator
+
+.. note::
+    This section requires `installation <https://verilator.org/guide/latest/install.html>`_ of `Verilator <https://www.veripool.org/verilator/>`_.
+
 
 One major limitation compared to standard Verilog simulators is that it does not support delayed assignments when accessed from cocotb.
 
@@ -345,6 +352,10 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 .. code-block:: bash
 
     make SIM=ghdl
+
+.. note::
+    This section requires `installation <http://ghdl.free.fr/site/pmwiki.php?n=Main.Installation>`_ of `GHDL <https://www.veripool.org/verilator/>`_.
+
 
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the :term:`VPI` interface.
 
