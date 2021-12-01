@@ -26,7 +26,7 @@ In order to use this simulator, set :make:var:`SIM` to ``icarus``:
     make SIM=icarus
 
 .. note::
-    This section requires `installation <https://iverilog.fandom.com/wiki/Installation_Guide>`_ of `Icarus Verilog <http://iverilog.icarus.com/>`_.
+    A working installation of `Icarus Verilog <http://iverilog.icarus.com/>`_ is required. You can find installation instructions `here <https://iverilog.fandom.com/wiki/Installation_Guide>`_.
 
 .. _sim-icarus-accessing-bits:
 
@@ -98,7 +98,7 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
     make SIM=verilator
 
 .. note::
-    This section requires `installation <https://verilator.org/guide/latest/install.html>`_ of `Verilator <https://www.veripool.org/verilator/>`_.
+    A working installation of `Verilator <https://www.veripool.org/verilator/>`_ is required. You can find installation instructions can  `here <https://verilator.org/guide/latest/install.html>`_.
 
 
 One major limitation compared to standard Verilog simulators is that it does not support delayed assignments when accessed from cocotb.
@@ -354,7 +354,7 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
     make SIM=ghdl
 
 .. note::
-    This section requires `installation <http://ghdl.free.fr/site/pmwiki.php?n=Main.Installation>`_ of `GHDL <https://www.veripool.org/verilator/>`_.
+    A working installation of `GHDL <http://ghdl.free.fr/>`_ is required. You can find installation intructions `here <http://ghdl.free.fr/site/pmwiki.php?n=Main.Installation>`_.
 
 
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the :term:`VPI` interface.
