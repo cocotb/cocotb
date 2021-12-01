@@ -7,6 +7,15 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
+cocotb 1.6.1 (2021-12-01)
+=========================
+
+Bugfixes
+--------
+
+- Fix regression in :class:`~cocotb.regression.TestFactory` wrt unique test names. (:issue:`2781`)
+
+
 cocotb 1.6.0 (2021-10-20)
 =========================
 
