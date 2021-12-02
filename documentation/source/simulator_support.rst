@@ -98,7 +98,8 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
     make SIM=verilator
 
 .. note::
-    A working installation of `Verilator <https://www.veripool.org/verilator/>`_ is required. You can find installation instructions can  `here <https://verilator.org/guide/latest/install.html>`_.
+    A working installation of `Verilator <https://www.veripool.org/verilator/>`_ is required.
+    You can find installation instructions `here <https://verilator.org/guide/latest/install.html>`_.
 
 
 One major limitation compared to standard Verilog simulators is that it does not support delayed assignments when accessed from cocotb.
