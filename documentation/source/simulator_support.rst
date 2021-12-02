@@ -355,7 +355,7 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
     make SIM=ghdl
 
 .. note::
-    A working installation of `GHDL <http://ghdl.free.fr/>`_ is required. You can find installation intructions `here <http://ghdl.free.fr/site/pmwiki.php?n=Main.Installation>`_.
+    A working installation of `GHDL <https://ghdl.github.io/>`_ is required. You can find installation instructions `here <https://ghdl.github.io/ghdl/getting.html>`_.
 
 
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the :term:`VPI` interface.
