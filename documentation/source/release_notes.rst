@@ -7,7 +7,7 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
-cocotb 1.6.1 (2021-12-01)
+cocotb 1.6.1 (2021-12-07)
 =========================
 
 Bugfixes
