@@ -331,6 +331,23 @@ async def test_last_scheduled_write_wins_array(dut):
     assert dut.array_7_downto_4.value == [10, 2, 3, 4]
 
 
+# Most simulators do not support setting the value of a single bit of a packed array
+@cocotb.test(
+    skip=not cocotb.SIM_NAME.lower().startswith(("modelsim", "riviera"))
+    or cocotb.LANGUAGE != "vhdl"
+)
+async def test_last_scheduled_write_wins_array_handle_alias(dut):
+    """
+    Tests case where handles in the scheduled writes cache in the scheduler alias
+    """
+    dut.array_7_downto_4.value = [0, 0, 0, 0]
+    dut.array_7_downto_4[7][0].value = 1
+
+    await ReadOnly()
+
+    assert dut.array_7_downto_4.value == [1, 0, 0, 0]
+
+
 @cocotb.test()
 async def test_task_repr(dut):
     """Test RunningTask.__repr__."""
