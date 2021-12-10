@@ -5,7 +5,8 @@
 ifeq ($(SIM),ghdl)
 
 all:
-	@echo "Skipping test because GHDL does not handle long identifiers well"
+	@echo Skipping test because GHDL does not support identifiers longer than 1023 characters.
+	@echo See also https://github.com/ghdl/ghdl/issues/1930
 
 else
 
