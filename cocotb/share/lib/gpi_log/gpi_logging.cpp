@@ -141,8 +141,8 @@ extern "C" void gpi_native_logger_vlog(const char *name, int level,
             // LCOV_EXCL_START
             fprintf(stderr,
                     "Log message construction failed: (error code) %d\n", n);
-            // LCOV_EXCL_STOP
             return;
+            // LCOV_EXCL_STOP
         }
     }
 

@@ -48,7 +48,8 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     int n = vsnprintf(log_buff.data(), log_buff.capacity(), msg, argp);
     if (n < 0) {
         // LCOV_EXCL_START
-        fprintf(stderr, "Log message construction failed\n");
+        fprintf(stderr, "Log message construction failed: (error code) %d\n",
+                n);
         return;
         // LCOV_EXCL_STOP
     } else if ((unsigned)n >= log_buff.capacity()) {
