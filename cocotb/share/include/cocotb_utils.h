@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#ifndef COCOTB_UTILS_HPP_
-#define COCOTB_UTILS_HPP_
+#ifndef COCOTB_UTILS_H_
+#define COCOTB_UTILS_H_
 
 #include <exports.h>
 #ifdef COCOTBUTILS_EXPORTS
@@ -92,4 +92,4 @@ constexpr Deferable<F> make_deferable(F f) {
 #define DEFER(statement) \
     auto DEFER0(_defer, __COUNTER__) = make_deferable([&]() { statement; });
 
-#endif /* COCOTB_UTILS_HPP_ */
+#endif /* COCOTB_UTILS_H_ */
