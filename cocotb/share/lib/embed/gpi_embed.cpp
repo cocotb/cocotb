@@ -30,10 +30,10 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
-#include <cocotb_utils.h>
-#include <exports.h>
-#include <gpi.h>          // gpi_event_t
-#include <gpi_logging.h>  // LOG_* macros
+#include <cocotb_utils.h>  // DEFER
+#include <exports.h>       // COCOTB_EXPORT
+#include <gpi.h>           // gpi_event_t
+#include <gpi_logging.h>   // LOG_* macros
 #include <py_gpi_logging.h>  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
 
 #include <cassert>
@@ -187,30 +187,6 @@ extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void) {
         to_simulator();
     }
 }
-
-namespace {
-
-template <typename F>
-class Deferable {
-  public:
-    constexpr Deferable(F f) : f_(f){};
-    ~Deferable() { f_(); }
-
-  private:
-    F f_;
-};
-
-template <typename F>
-constexpr Deferable<F> make_deferable(F f) {
-    return Deferable<F>(f);
-}
-
-}  // namespace
-
-#define DEFER1(a, b) a##b
-#define DEFER0(a, b) DEFER1(a, b)
-#define DEFER(statement) \
-    auto DEFER0(_defer, __COUNTER__) = make_deferable([&]() { statement; });
 
 extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
                                              char const *const *argv) {
