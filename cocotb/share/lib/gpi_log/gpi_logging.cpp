@@ -136,7 +136,7 @@ extern "C" void gpi_native_logger_vlog(const char *name, int level,
         // LCOV_EXCL_STOP
     } else if ((unsigned)n >= log_buff.capacity()) {
         log_buff.reserve((unsigned)n + 1);
-        vsnprintf(log_buff.data(), (unsigned)n + 1, msg, argp_copy);
+        n = vsnprintf(log_buff.data(), (unsigned)n + 1, msg, argp_copy);
         if (n < 0) {
             // LCOV_EXCL_START
             fprintf(stderr,
