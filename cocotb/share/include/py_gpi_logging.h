@@ -12,8 +12,6 @@
 #define PYGPILOG_EXPORT COCOTB_IMPORT
 #endif
 
-#define PY_GPI_LOG_SIZE 1024
-
 #ifdef __cplusplus
 extern "C" {
 #endif

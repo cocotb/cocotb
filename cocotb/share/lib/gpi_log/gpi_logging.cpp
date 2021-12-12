@@ -27,11 +27,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <gpi_logging.h>
+#include <cocotb_utils.h>  // DEFER
+#include <gpi_logging.h>   // this library
 
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <vector>
 
 static gpi_log_handler_type *current_handler = nullptr;
 static void *current_userdata = nullptr;
@@ -110,13 +112,6 @@ const char *log_level(long level) {
     return str;
 }
 
-// We keep this module global to avoid reallocation
-// we do not need to worry about locking here as
-// are single threaded and can not have multiple calls
-// into gpi_log at once.
-#define LOG_SIZE 512
-static char log_buff[LOG_SIZE];
-
 extern "C" void gpi_native_logger_vlog(const char *name, int level,
                                        const char *pathname,
                                        const char *funcname, long lineno,
@@ -125,10 +120,30 @@ extern "C" void gpi_native_logger_vlog(const char *name, int level,
         return;
     }
 
-    int n = vsnprintf(log_buff, LOG_SIZE, msg, argp);
+    va_list argp_copy;
+    va_copy(argp_copy, argp);
+    DEFER(va_end(argp_copy));
 
-    if (n < 0 || n >= LOG_SIZE) {
-        fprintf(stderr, "Log message construction failed\n");
+    static std::vector<char> log_buff(512);
+
+    log_buff.clear();
+    int n = vsnprintf(log_buff.data(), log_buff.capacity(), msg, argp);
+    if (n < 0) {
+        // LCOV_EXCL_START
+        fprintf(stderr, "Log message construction failed: (error code) %d\n",
+                n);
+        return;
+        // LCOV_EXCL_STOP
+    } else if ((unsigned)n >= log_buff.capacity()) {
+        log_buff.reserve((unsigned)n + 1);
+        n = vsnprintf(log_buff.data(), (unsigned)n + 1, msg, argp_copy);
+        if (n < 0) {
+            // LCOV_EXCL_START
+            fprintf(stderr,
+                    "Log message construction failed: (error code) %d\n", n);
+            return;
+            // LCOV_EXCL_STOP
+        }
     }
 
     fprintf(stdout, "     -.--ns ");
@@ -144,7 +159,7 @@ extern "C" void gpi_native_logger_vlog(const char *name, int level,
 
     fprintf(stdout, "%-4ld", lineno);
     fprintf(stdout, " in %-31s ", funcname);
-    fprintf(stdout, "%s", log_buff);
+    fprintf(stdout, "%s", log_buff.data());
     fprintf(stdout, "\n");
     fflush(stdout);
 }

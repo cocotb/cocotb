@@ -39,18 +39,13 @@
 
 #include <gpi_logging.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define xstr(a) str(a)
 #define str(a) #a
 
-extern COCOTBUTILS_EXPORT void* utils_dyn_open(const char* lib_name);
-extern COCOTBUTILS_EXPORT void* utils_dyn_sym(void* handle,
-                                              const char* sym_name);
-
-extern COCOTBUTILS_EXPORT int is_python_context;
+extern "C" COCOTBUTILS_EXPORT void* utils_dyn_open(const char* lib_name);
+extern "C" COCOTBUTILS_EXPORT void* utils_dyn_sym(void* handle,
+                                                  const char* sym_name);
+extern "C" COCOTBUTILS_EXPORT int is_python_context;
 
 // to_python and to_simulator are implemented as macros instead of functions so
 // that the logs reference the user's lineno and filename
@@ -77,8 +72,24 @@ extern COCOTBUTILS_EXPORT int is_python_context;
 
 #define COCOTB_UNUSED(x) ((void)x)
 
-#ifdef __cplusplus
+template <typename F>
+class Deferable {
+  public:
+    constexpr Deferable(F f) : f_(f){};
+    ~Deferable() { f_(); }
+
+  private:
+    F f_;
+};
+
+template <typename F>
+constexpr Deferable<F> make_deferable(F f) {
+    return Deferable<F>(f);
 }
-#endif
+
+#define DEFER1(a, b) a##b
+#define DEFER0(a, b) DEFER1(a, b)
+#define DEFER(statement) \
+    auto DEFER0(_defer, __COUNTER__) = make_deferable([&]() { statement; });
 
 #endif /* COCOTB_UTILS_H_ */
