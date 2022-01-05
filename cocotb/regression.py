@@ -38,6 +38,7 @@ from typing import Any, Optional, Tuple, Iterable
 from functools import wraps
 import random
 import hashlib
+import math
 
 import cocotb
 import cocotb.ANSI as ANSI
@@ -472,19 +473,20 @@ class RegressionManager:
                 return self._start_test()
 
     def _start_test(self) -> None:
+        # Want this to stand out a little bit
         start = ''
         end = ''
         if want_color_output():
             start = ANSI.COLOR_TEST
             end = ANSI.COLOR_DEFAULT
-        # Want this to stand out a little bit
         self.log.info(
-            "{start}running{end} {name} ({i}/{total})".format(
+            "{start}running{end} {name} ({i}/{total}){description}".format(
                 start=start,
                 i=self.count,
                 total=self.ntests,
                 end=end,
                 name=self._test.__qualname__,
+                description=_trim(self._test.__doc__),
             )
         )
 
@@ -796,3 +798,35 @@ class TestFactory:
                                "name_postfix" % (name, mod))
             setattr(mod, name, _create_test(self.test_function, name, doc, mod,
                                             *self.args, **kwargs))
+
+
+def _trim(docstring: Optional[str]) -> str:
+    """Normalizes test docstrings
+
+    Based on https://www.python.org/dev/peps/pep-0257/#handling-docstring-indentation.
+    """
+    if docstring is None:
+        return ""
+    # Convert tabs to spaces (following the normal Python rules)
+    # and split into a list of lines:
+    lines = docstring.expandtabs().splitlines()
+    # Determine minimum indentation (first line doesn't count):
+    indent = math.inf
+    for line in lines[1:]:
+        stripped = line.lstrip()
+        if stripped:
+            indent = min(indent, len(line) - len(stripped))
+    # Remove indentation (first line is special):
+    trimmed = [lines[0].strip()]
+    if indent < math.inf:
+        for line in lines[1:]:
+            trimmed.append(line[indent:].rstrip())
+    # Strip off trailing and leading blank lines:
+    while trimmed and not trimmed[-1]:
+        trimmed.pop()
+    while trimmed and not trimmed[0]:
+        trimmed.pop(0)
+    # Add one newline back
+    trimmed.insert(0, "")
+    # Return a single string:
+    return "\n  ".join(trimmed)
