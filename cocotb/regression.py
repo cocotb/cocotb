@@ -479,12 +479,6 @@ class RegressionManager:
         if want_color_output():
             start = ANSI.COLOR_TEST
             end = ANSI.COLOR_DEFAULT
-
-        if self._test.__doc__ is not None:
-            description = _trim(self._test.__doc__)
-        else:
-            description = ""
-
         self.log.info(
             "{start}running{end} {name} ({i}/{total}){description}".format(
                 start=start,
@@ -492,7 +486,7 @@ class RegressionManager:
                 total=self.ntests,
                 end=end,
                 name=self._test.__qualname__,
-                description=description,
+                description=_trim(self._test.__doc__),
             )
         )
 
@@ -801,12 +795,12 @@ class TestFactory:
                                             *self.args, **kwargs))
 
 
-def _trim(docstring: str) -> str:
+def _trim(docstring: Optional[str]) -> str:
     """Normalizes test docstrings
 
     Based on https://www.python.org/dev/peps/pep-0257/#handling-docstring-indentation.
     """
-    if not docstring:
+    if docstring is None:
         return ""
     # Convert tabs to spaces (following the normal Python rules)
     # and split into a list of lines:
