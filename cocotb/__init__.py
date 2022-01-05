@@ -325,8 +325,8 @@ def _initialise_testbench_(argv_):
     try:
         import pytest
     except ImportError:
-        log.warning(
-            "Install pytest to enable better AssertionError messages")
+        log.info(
+            "pytest not found, install it to enable better AssertionError messages")
     else:
         try:
             # Install the assertion rewriting hook, which must be done before we
