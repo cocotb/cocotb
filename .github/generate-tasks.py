@@ -47,7 +47,7 @@ tasks = [
         'lang': 'verilog',
         'sim': 'verilator', 'sim-version': 'master',
         'os': 'ubuntu-20.04', 'python-version': '3.8',
-        'may_fail': 'true'
+        'may_fail': 'True'
     },
     # Test other OSes
     {
@@ -69,7 +69,7 @@ tasks = [
     {
         'lang': 'verilog',
         'sim': 'icarus', 'sim-version': 'v11_0',    # use clang instead of gcc
-        'os': 'ubuntu-20.04', 'python-version': '3.8"',
+        'os': 'ubuntu-20.04', 'python-version': '3.8',
         'cxx': 'clang++', 'cc': 'clang', 'extra_name': 'clang | '
     }
 ]
