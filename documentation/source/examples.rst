@@ -49,7 +49,7 @@ and finally compares the module output to the expected for correctness.
 The main test coroutine stimulates the matrix multiplier DUT with the test data.
 Once all the test inputs have been applied it decides when the test is done.
 
-The testbench makes use of :class:`.TestFactory` and random data generators to test many sets of matrices.
+The testbench makes use of random data generators to test many sets of matrices.
 
 The number of data bits for each entry in the matrices,
 as well as the row and column counts for each matrix,
