@@ -174,12 +174,12 @@ class Simulator(abc.ABC):
             self.env["RANDOM_SEED"] = str(seed)
 
         if waves is None:
-            self.waves = bool(int(os.getenv("WAVES", 0)))
+            self.waves = bool(int(os.getenv("COCOTB_WAVES", 0)))
         else:
             self.waves = bool(waves)
 
         if gui is None:
-            self.gui = bool(int(os.getenv("GUI", 0)))
+            self.gui = bool(int(os.getenv("COCOTB_GUI", 0)))
         else:
             self.gui = bool(gui)
 
