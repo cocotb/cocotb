@@ -75,11 +75,13 @@ class Simulator(abc.ABC):
 
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
         for path in self.python_search:
-            self.env["PYTHONPATH"] += os.pathsep + path
+            self.env["PYTHONPATH"] += os.pathsep + str(path)
 
-        self.env["PYTHONHOME"] = sysconfig.get_config_var("prefix")
+        prefix = sysconfig.get_config_var("prefix")
+        if prefix is not None:
+            self.env["PYTHONHOME"] = prefix
 
-        self.env["TOPLEVEL"] = self.hdl_topmodule
+        self.env["TOPLEVEL"] = self.sim_toplevel
         self.env["MODULE"] = self.module
 
         if not os.path.exists(self.build_dir):
@@ -102,7 +104,7 @@ class Simulator(abc.ABC):
         defines: Sequence[str] = [],
         parameters: Mapping[str, object] = {},
         extra_args: Sequence[str] = [],
-        hdl_topmodule: Optional[str] = None,
+        toplevel: Optional[str] = None,
         always: bool = False,
         build_dir: PathLike = "sim_build",
         work_dir: Optional[PathLike] = None,
@@ -122,7 +124,7 @@ class Simulator(abc.ABC):
         self.parameters = dict(parameters)
         self.compile_args = list(extra_args)
         self.always = always
-        self.hdl_topmodule = hdl_topmodule
+        self.hdl_toplevel = toplevel
 
         for e in os.environ:
             self.env[e] = os.environ[e]
@@ -133,8 +135,8 @@ class Simulator(abc.ABC):
     def test(
         self,
         py_module: Union[str, Sequence[str]],
-        hdl_topmodule: str,
-        toplevel_lang: str = "verilog",
+        toplevel: str,
+        toplevel_lang: Optional[str] = None,
         testcase: Optional[str] = None,
         seed: Optional[Union[str, int]] = None,
         python_search: Sequence[PathLike] = [],
@@ -159,7 +161,7 @@ class Simulator(abc.ABC):
         # a better docstring than using `None` as a default in the parameters
         # list.
         self.python_search = list(python_search)
-        self.hdl_topmodule = hdl_topmodule
+        self.sim_toplevel = toplevel
         self.toplevel_lang = toplevel_lang
         self.sim_args = list(extra_args)
         self.plus_args = list(plus_args)
@@ -303,8 +305,9 @@ class Icarus(Simulator):
         return ["-D" + define for define in defines]
 
     def get_parameter_commands(self, parameters: Mapping[str, object]) -> List[str]:
+        assert self.hdl_toplevel is not None
         return [
-            "-P" + self.hdl_topmodule + "." + name + "=" + str(value)
+            "-P" + self.hdl_toplevel + "." + name + "=" + str(value)
             for name, value in parameters.items()
         ]
 
@@ -421,7 +424,7 @@ class Questa(Simulator):
                     as_tcl_value(v)
                     for v in self.get_parameter_commands(self.parameters)
                 ]
-                + [as_tcl_value(self.hdl_topmodule)]
+                + [as_tcl_value(self.sim_toplevel)]
                 + ["-do", do_script]
             )
 
@@ -442,7 +445,7 @@ class Questa(Simulator):
                     as_tcl_value(v)
                     for v in self.get_parameter_commands(self.parameters)
                 ]
-                + [as_tcl_value(self.hdl_topmodule)]
+                + [as_tcl_value(self.sim_toplevel)]
                 + [as_tcl_value(v) for v in self.plus_args]
                 + ["-do", do_script]
             )
@@ -493,14 +496,14 @@ class Ghdl(Simulator):
             ["ghdl", "-m"]
             + ["--work=%s" % self.library_name]
             + self.compile_args
-            + [self.hdl_topmodule]
+            + [self.sim_toplevel]
         )
 
         cmd = [cmd_elaborate]
         cmd_run = (
             ["ghdl", "-r"]
             + self.compile_args
-            + [self.hdl_topmodule]
+            + [self.sim_toplevel]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
             + self.sim_args
             + self.get_parameter_commands(self.parameters)
@@ -579,7 +582,7 @@ class Riviera(Simulator):
 
         if self.toplevel_lang == "vhdl":
             do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} \n".format(
-                TOPLEVEL=as_tcl_value(self.hdl_topmodule),
+                TOPLEVEL=as_tcl_value(self.sim_toplevel),
                 EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "riviera")),
                 EXTRA_ARGS=" ".join(
                     as_tcl_value(v)
@@ -595,7 +598,7 @@ class Riviera(Simulator):
                 )
         else:
             do_script += "asim +access +w -interceptcoutput -O2 -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUS_ARGS} \n".format(
-                TOPLEVEL=as_tcl_value(self.hdl_topmodule),
+                TOPLEVEL=as_tcl_value(self.sim_toplevel),
                 EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "riviera")),
                 EXTRA_ARGS=" ".join(
                     as_tcl_value(v)
@@ -624,10 +627,11 @@ class Riviera(Simulator):
 
 
 class Verilator(Simulator):
-    @staticmethod
-    def check_simulator() -> None:
-        if shutil.which("verilator") is None:
+    def check_simulator(self) -> None:
+        executable = shutil.which("verilator")
+        if executable is None:
             raise SystemExit("ERROR: verilator exacutable not found!")
+        self.executable = executable
 
     @staticmethod
     def get_include_commands(includes: Sequence[str]) -> List[str]:
@@ -646,9 +650,9 @@ class Verilator(Simulator):
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
 
-        if self.hdl_topmodule is None:
+        if self.hdl_toplevel is None:
             raise ValueError(
-                "This simulator requires hdl_topmodule parameter to be specified"
+                "This simulator requires hdl_toplevel parameter to be specified"
             )
 
         cmd = []
@@ -661,25 +665,23 @@ class Verilator(Simulator):
             "verilator.cpp",
         )
 
-        verilator_exec = shutil.which("verilator")
-
         cmd.append(
             [
                 "perl",
-                verilator_exec,
+                self.executable,
                 "-cc",
                 "--exe",
                 "-Mdir",
                 self.build_dir,
                 "-DCOCOTB_SIM=1",
                 "--top-module",
-                self.hdl_topmodule,
+                self.hdl_toplevel,
                 "--vpi",
                 "--public-flat-rw",
                 "--prefix",
                 "Vtop",
                 "-o",
-                self.hdl_topmodule,
+                self.hdl_toplevel,
                 "-LDFLAGS",
                 "-Wl,-rpath,{LIB_DIR} -L{LIB_DIR} -lcocotbvpi_verilator".format(
                     LIB_DIR=cocotb.config.libs_dir
@@ -698,7 +700,7 @@ class Verilator(Simulator):
         return cmd
 
     def test_command(self) -> List[Command]:
-        out_file = os.path.join(self.build_dir, self.hdl_topmodule)
+        out_file = os.path.join(self.build_dir, self.sim_toplevel)
         return [[out_file] + self.plus_args]
 
 
