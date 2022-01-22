@@ -51,6 +51,10 @@ class Simulator(abc.ABC):
     def check_simulator(self) -> None:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
+        raise NotImplementedError()
+
     def init_dir(self, build_dir, work_dir):
 
         if build_dir is not None:
@@ -162,7 +166,7 @@ class Simulator(abc.ABC):
         # list.
         self.python_search = list(python_search)
         self.sim_toplevel = toplevel
-        self.toplevel_lang = toplevel_lang
+        self.toplevel_lang = self.check_toplevel_lang(toplevel)
         self.sim_args = list(extra_args)
         self.plus_args = list(plus_args)
         self.env = dict(extra_env)
@@ -297,6 +301,15 @@ class Icarus(Simulator):
             raise SystemExit("ERROR: iverilog exacutable not found!")
 
     @staticmethod
+    def check_toplevel_lang(toplevel_lang: Optional[str]) -> str:
+        if toplevel_lang == "verilog":
+            return toplevel_lang
+        else:
+            raise ValueError(
+                f"iverilog does not support {toplevel_lang!r} as a toplevel_lang"
+            )
+
+    @staticmethod
     def get_include_commands(includes: Sequence[str]) -> List[str]:
         return ["-I" + dir for dir in includes]
 
@@ -356,6 +369,21 @@ class Questa(Simulator):
     def check_simulator() -> None:
         if shutil.which("vsim") is None:
             raise SystemExit("ERROR: vsim exacutable not found!")
+
+    def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
+        if toplevel_lang is None:
+            if self.vhdl_sources and not self.verilog_sources:
+                return "vhdl"
+            elif self.verilog_sources and not self.vhdl_sources:
+                return "verilog"
+            else:
+                raise ValueError("Must specify a toplevel_lang in a mixed design")
+        elif toplevel_lang in ("verilog", "vhdl"):
+            return toplevel_lang
+        else:
+            raise ValueError(
+                f"Riviera does not support {toplevel_lang!r} as a toplevel_lang"
+            )
 
     @staticmethod
     def get_include_commands(includes: Sequence[str]) -> List[str]:
@@ -465,6 +493,14 @@ class Ghdl(Simulator):
         if shutil.which("ghdl") is None:
             raise SystemExit("ERROR: ghdl exacutable not found!")
 
+    def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
+        if toplevel_lang == "vhdl":
+            return toplevel_lang
+        else:
+            raise ValueError(
+                f"GHDL does not support {toplevel_lang!r} as a toplevel_lang"
+            )
+
     @staticmethod
     def get_include_commands(includes: Sequence[str]) -> List[str]:
         return [f"-I{dir}" for dir in includes]
@@ -519,6 +555,23 @@ class Riviera(Simulator):
     def check_simulator() -> None:
         if shutil.which("vsimsa") is None:
             raise SystemExit("ERROR: vsimsa exacutable not found!")
+
+    def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
+        if toplevel_lang is None:
+            if self.vhdl_sources and not self.verilog_sources:
+                return "vhdl"
+            elif self.verilog_sources and not self.vhdl_sources:
+                return "verilog"
+            else:
+                raise ValueError(
+                    "Must specify a toplevel_lang in a mixed-language design"
+                )
+        elif toplevel_lang in ("verilog", "vhdl"):
+            return toplevel_lang
+        else:
+            raise ValueError(
+                f"Riviera does not support {toplevel_lang!r} as a toplevel_lang"
+            )
 
     @staticmethod
     def get_include_commands(includes: Sequence[str]) -> List[str]:
@@ -632,6 +685,15 @@ class Verilator(Simulator):
         if executable is None:
             raise SystemExit("ERROR: verilator exacutable not found!")
         self.executable = executable
+
+    @staticmethod
+    def check_toplevel_lang(toplevel_lang: Optional[str]) -> str:
+        if toplevel_lang == "verilog":
+            return toplevel_lang
+        else:
+            raise ValueError(
+                f"Verilator does not support {toplevel_lang!r} as a toplevel_lang"
+            )
 
     @staticmethod
     def get_include_commands(includes: Sequence[str]) -> List[str]:
