@@ -256,7 +256,8 @@ jobs:
     - name: Install cocotb (Windows, mingw)
       if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
       run: |
-        python -m pip install --global-option build_ext --global-option --compiler=mingw32 -v -e .[bus]
+        python ./setup.py build_ext --compiler=mingw32 develop
+        pip install cocotb-bus
       continue-on-error: ${{matrix.may_fail || false}}
     - name: Install cocotb (Windows, msvc)
       if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
