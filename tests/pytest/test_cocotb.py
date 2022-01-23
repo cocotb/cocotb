@@ -46,7 +46,7 @@ def test_cocotb():
     runner.build(
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,
-        hdl_topmodule="sample_module",
+        toplevel="sample_module",
         build_dir=sim_build)
 
     sim_args = ["-t", "ps"] if sim == "questa" else []
@@ -54,7 +54,7 @@ def test_cocotb():
     runner.test(
         toplevel_lang=toplevel_lang,
         python_search=[os.path.join(tests_dir, "test_cases", "test_cocotb")],
-        hdl_topmodule="sample_module",
+        toplevel="sample_module",
         py_module=module_name,
         extra_args=sim_args,
         build_dir=sim_build)

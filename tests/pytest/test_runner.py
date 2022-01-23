@@ -40,7 +40,7 @@ def test_runner(parameters):
     runner.build(
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,
-        hdl_topmodule="runner",
+        toplevel="runner",
         parameters=parameters,
         defines=["DEFINE=4"],
         includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
@@ -50,7 +50,7 @@ def test_runner(parameters):
     runner.test(
         toplevel_lang="verilog",
         python_search=[os.path.join(tests_dir, "pytest")],
-        hdl_topmodule="runner",
+        toplevel="runner",
         py_module="test_runner",
         extra_env=parameters,
     )

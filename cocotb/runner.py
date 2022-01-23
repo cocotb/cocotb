@@ -166,7 +166,7 @@ class Simulator(abc.ABC):
         # list.
         self.python_search = list(python_search)
         self.sim_toplevel = toplevel
-        self.toplevel_lang = self.check_toplevel_lang(toplevel)
+        self.toplevel_lang = self.check_toplevel_lang(toplevel_lang)
         self.sim_args = list(extra_args)
         self.plus_args = list(plus_args)
         self.env = dict(extra_env)
