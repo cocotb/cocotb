@@ -302,8 +302,8 @@ class Icarus(Simulator):
 
     @staticmethod
     def check_toplevel_lang(toplevel_lang: Optional[str]) -> str:
-        if toplevel_lang == "verilog":
-            return toplevel_lang
+        if toplevel_lang is None or toplevel_lang == "verilog":
+            return "verilog"
         else:
             raise ValueError(
                 f"iverilog does not support {toplevel_lang!r} as a toplevel_lang"
@@ -494,8 +494,8 @@ class Ghdl(Simulator):
             raise SystemExit("ERROR: ghdl exacutable not found!")
 
     def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
-        if toplevel_lang == "vhdl":
-            return toplevel_lang
+        if toplevel_lang is None or toplevel_lang == "vhdl":
+            return "vhdl"
         else:
             raise ValueError(
                 f"GHDL does not support {toplevel_lang!r} as a toplevel_lang"
@@ -688,8 +688,8 @@ class Verilator(Simulator):
 
     @staticmethod
     def check_toplevel_lang(toplevel_lang: Optional[str]) -> str:
-        if toplevel_lang == "verilog":
-            return toplevel_lang
+        if toplevel_lang is None or toplevel_lang == "verilog":
+            return "verilog"
         else:
             raise ValueError(
                 f"Verilator does not support {toplevel_lang!r} as a toplevel_lang"
