@@ -48,7 +48,6 @@ def test_runner(parameters):
     )
 
     runner.test(
-        toplevel_lang="verilog",
         python_search=[os.path.join(tests_dir, "pytest")],
         toplevel="runner",
         py_module="test_runner",

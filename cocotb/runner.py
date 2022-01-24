@@ -81,9 +81,7 @@ class Simulator(abc.ABC):
         for path in self.python_search:
             self.env["PYTHONPATH"] += os.pathsep + str(path)
 
-        prefix = sysconfig.get_config_var("prefix")
-        if prefix is not None:
-            self.env["PYTHONHOME"] = prefix
+        self.env["PYTHONHOME"] = sys.prefix
 
         self.env["TOPLEVEL"] = self.sim_toplevel
         self.env["MODULE"] = self.module
