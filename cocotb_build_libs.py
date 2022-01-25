@@ -633,10 +633,10 @@ def get_ext():
     )
     ext.append(modelsim_vhpi_ext)
 
-    vsim_path = find_executable("vdbg")
+    vsim_path = find_executable("vopt")
     if vsim_path is None:
         logger.warning(
-            "Modelsim/Questa executable (vdbg) executable not found. No FLI interface will be available."
+            "Modelsim/Questa installation not found: did not find the 'vopt' executable. No FLI interface will be available."
         )
     else:
         modelsim_dir = os.path.dirname(os.path.dirname(vsim_path))
@@ -663,7 +663,7 @@ def get_ext():
 
         else:
             logger.warning(
-                "Cannot build FLI interface for Modelsim/Questa - "
+                "Cannot build FLI interface for Modelsim/Questa: "
                 "the mti.h header for '{}' was not found at '{}'.".format(
                     vsim_path, mti_path
                 )
