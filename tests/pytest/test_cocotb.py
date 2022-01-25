@@ -56,8 +56,7 @@ def test_cocotb():
         python_search=[os.path.join(tests_dir, "test_cases", "test_cocotb")],
         toplevel="sample_module",
         py_module=module_name,
-        extra_args=sim_args,
-        build_dir=sim_build)
+        extra_args=sim_args)
 
 
 if __name__ == "__main__":
