@@ -88,8 +88,8 @@ ifeq ($(filter vhpi fli,$(VHDL_GPI_INTERFACE)),)
 endif
 
 ifeq ($(TOPLEVEL_LANG),vhdl)
-    CUSTOM_COMPILE_DEPS += $(FLI_LIB)
 ifeq ($(VHDL_GPI_INTERFACE),fli)
+    CUSTOM_COMPILE_DEPS += $(FLI_LIB)
     VSIM_ARGS += -foreign \"cocotb_init $(FLI_LIB)\"
 else
     VSIM_ARGS += -voptargs="-access=rw+/." -foreign \"vhpi_startup_routines_bootstrap $(call to_tcl_path,$(VHPI_LIB))\"
