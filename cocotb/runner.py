@@ -55,18 +55,6 @@ class Simulator(abc.ABC):
     def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
         raise NotImplementedError()
 
-    def init_dir(self, build_dir, work_dir):
-
-        if build_dir is not None:
-            self.build_dir = os.path.abspath(build_dir)
-
-        self.work_dir = self.build_dir
-
-        if work_dir is not None:
-            absworkdir = os.path.abspath(work_dir)
-            if os.path.isdir(absworkdir):
-                self.work_dir = absworkdir
-
     def set_env(self) -> None:
 
         for e in os.environ:
@@ -109,9 +97,8 @@ class Simulator(abc.ABC):
         toplevel: Optional[str] = None,
         always: bool = False,
         build_dir: PathLike = "sim_build",
-        work_dir: Optional[PathLike] = None,
-    ):
-        self.init_dir(build_dir, work_dir)
+    ) -> None:
+        self.build_dir = os.path.abspath(build_dir)
         os.makedirs(self.build_dir, exist_ok=True)
 
         # note: to avoid mutating argument defaults, we ensure that no value
@@ -132,7 +119,7 @@ class Simulator(abc.ABC):
             self.env[e] = os.environ[e]
 
         cmds = self.build_command()
-        self.execute(cmds)
+        self.execute(cmds, cwd=self.build_dir)
 
     def test(
         self,
@@ -147,11 +134,12 @@ class Simulator(abc.ABC):
         extra_env: Mapping[str, str] = {},
         waves: Optional[bool] = None,
         gui: Optional[bool] = None,
-        build_dir: PathLike = "sim_build",
-        work_dir: Optional[PathLike] = None,
-    ):
-
-        self.init_dir(build_dir, work_dir)
+        sim_dir: Optional[PathLike] = None,
+    ) -> PathLike:
+        if sim_dir is None:
+            self.sim_dir = self.build_dir
+        else:
+            self.sim_dir = os.path.abspath(sim_dir)
 
         if isinstance(py_module, str):
             self.module = py_module
@@ -196,7 +184,7 @@ class Simulator(abc.ABC):
 
         cmds = self.test_command()
         self.set_env()
-        self.execute(cmds)
+        self.execute(cmds, cwd=self.sim_dir)
 
         check_results_file(results_xml_file)
 
@@ -215,7 +203,7 @@ class Simulator(abc.ABC):
     def get_parameter_commands(self, parameters: Mapping[str, object]) -> List[str]:
         raise NotImplementedError()
 
-    def execute(self, cmds: Sequence[Command]) -> None:
+    def execute(self, cmds: Sequence[Command], cwd: PathLike) -> None:
 
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
@@ -224,14 +212,14 @@ class Simulator(abc.ABC):
                 "INFO: Running command: "
                 + ' "'.join(cmd)
                 + '" in directory:"'
-                + self.work_dir
+                + str(cwd)
                 + '"'
             )
 
             # TODO: create at thread to handle stderr and log as error?
             # TODO: log forwarding
 
-            process = subprocess.run(cmd, cwd=self.work_dir, env=self.env)
+            process = subprocess.run(cmd, cwd=cwd, env=self.env)
 
             if process.returncode != 0:
                 raise SystemExit(
