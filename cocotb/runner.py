@@ -8,7 +8,6 @@ import re
 import shutil
 import subprocess
 import sys
-import sysconfig
 import tempfile
 import warnings
 from typing import Dict, List, Mapping, Optional, Sequence, Type, Union
@@ -188,7 +187,7 @@ class Simulator(abc.ABC):
 
         check_results_file(results_xml_file)
 
-        print("INFO: Results file: %s" % results_xml_file)
+        print(f"INFO: Results file: {results_xml_file}")
         return results_xml_file
 
     @abc.abstractmethod
@@ -223,8 +222,7 @@ class Simulator(abc.ABC):
 
             if process.returncode != 0:
                 raise SystemExit(
-                    "Process '%s' termindated with error %d"
-                    % (process.args[0], process.returncode)
+                    f"Process {process.args[0]!r} terminated with error {process.returncode}"
                 )
 
 
@@ -247,7 +245,7 @@ def check_results_file(results_xml_file: PathLike) -> None:
                 failed += 1
 
     if failed:
-        raise SystemExit("ERROR: Failed %d tests." % failed)
+        raise SystemExit("ERROR: Failed {failed} tests.")
 
 
 def outdated(output: PathLike, dependencies: Sequence[PathLike]) -> bool:
@@ -496,7 +494,7 @@ class Ghdl(Simulator):
         return [f"-D{define}" for define in defines]
 
     @staticmethod
-    def get_parameter_commands(parameters):
+    def get_parameter_commands(parameters: Mapping[str, object]) -> List[str]:
         return ["-g" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self) -> List[Command]:
@@ -506,7 +504,7 @@ class Ghdl(Simulator):
 
         return [
             ["ghdl", "-i"]
-            + ["--work=%s" % self.library_name]
+            + [f"--work={self.library_name}"]
             + self.compile_args
             + [source_file]
             for source_file in self.vhdl_sources
@@ -516,7 +514,7 @@ class Ghdl(Simulator):
 
         cmd_elaborate = (
             ["ghdl", "-m"]
-            + ["--work=%s" % self.library_name]
+            + [f"--work{self.library_name}"]
             + self.compile_args
             + [self.sim_toplevel]
         )
