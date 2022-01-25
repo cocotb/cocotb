@@ -43,12 +43,14 @@ def test_cocotb():
     sim = os.getenv("SIM", "icarus")
     runner = get_runner(sim)()
 
+    compile_args = ["+acc"] if sim == "questa" else []
+
     runner.build(
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,
         toplevel="sample_module",
-        build_dir=sim_build)
-
+        build_dir=sim_build,
+        extra_args=compile_args)
     sim_args = ["-t", "ps"] if sim == "questa" else []
 
     runner.test(

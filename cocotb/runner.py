@@ -514,7 +514,7 @@ class Ghdl(Simulator):
 
         cmd_elaborate = (
             ["ghdl", "-m"]
-            + [f"--work{self.library_name}"]
+            + [f"--work={self.library_name}"]
             + self.compile_args
             + [self.sim_toplevel]
         )
