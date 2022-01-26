@@ -71,7 +71,7 @@ ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)
 endif
 
 # Set PYTHONHOME to properly populate sys.path in embedded python interpreter
-export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'from sysconfig import get_config_var; print(get_config_var("prefix"))')
+export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'import sys; print(sys.prefix)')
 
 ifeq ($(OS),Msys)
     to_tcl_path = $(shell cygpath -m $(1) )
