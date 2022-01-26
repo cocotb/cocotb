@@ -35,7 +35,6 @@ import os
 import traceback
 import pdb
 from typing import Any, Optional, Tuple, Iterable
-from functools import wraps
 
 import cocotb
 import cocotb.ANSI as ANSI
@@ -619,7 +618,6 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
         Decorated test function
     """
 
-    @wraps(function)
     async def _my_test(dut):
         await function(dut, *args, **kwargs)
 
