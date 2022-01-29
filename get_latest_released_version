@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Script to get the latest (i.e. highest) release tag without considering release candidates.
+
+set -o pipefail
+
+# It's best to get the remote tags as the local ones may not be synced with them.
+# from https://stackoverflow.com/a/52680984
+git -c 'versionsort.suffix=rc' ls-remote -t --exit-code --refs --sort=-version:refname 'https://github.com/cocotb/cocotb/' \
+    | sed -E 's/^[[:xdigit:]]+[[:space:]]+refs\/tags\/(.+)/\1/g' \
+    | head -1
+
+# Fall back to local tags.
+if [ ! $? -eq 0 ]; then
+    git -c 'versionsort.suffix=rc' tag -l --sort=-version:refname \
+        | head -1
+fi
+
+# If even local tags fail, return the default branch name.
+if [ ! $? -eq 0 ]; then
+    echo "master"
+fi
