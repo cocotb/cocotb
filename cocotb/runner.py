@@ -12,6 +12,7 @@ import tempfile
 import warnings
 from typing import Dict, List, Mapping, Optional, Sequence, Type, Union
 from xml.etree import cElementTree as ET
+from contextlib import suppress
 
 import cocotb.config
 
@@ -42,19 +43,24 @@ def as_tcl_value(value: str) -> str:
 class Simulator(abc.ABC):
     def __init__(self) -> None:
 
-        self.check_simulator()
+        self.simulator_in_path()
 
         self.env: Dict[str, str] = {}
 
     @abc.abstractmethod
-    def check_simulator(self) -> None:
+    def simulator_in_path(self) -> None:
+        """Check that the simulator executable exists in `PATH`."""
+
         raise NotImplementedError()
 
     @abc.abstractmethod
     def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
+        """Return *toplevel_lang* if supported by simulator, raise exception otherwise."""
+
         raise NotImplementedError()
 
     def set_env(self) -> None:
+        """Set environment variables for sub-processes."""
 
         for e in os.environ:
             self.env[e] = os.environ[e]
@@ -78,10 +84,14 @@ class Simulator(abc.ABC):
 
     @abc.abstractmethod
     def build_command(self) -> Sequence[Command]:
+        """Return command to build the HDL sources."""
+
         raise NotImplementedError()
 
     @abc.abstractmethod
     def test_command(self) -> Sequence[Command]:
+        """Return command to run a test."""
+
         raise NotImplementedError()
 
     def build(
@@ -97,6 +107,8 @@ class Simulator(abc.ABC):
         always: bool = False,
         build_dir: PathLike = "sim_build",
     ) -> None:
+        """Build the HDL sources."""
+
         self.build_dir = os.path.abspath(build_dir)
         os.makedirs(self.build_dir, exist_ok=True)
 
@@ -135,6 +147,8 @@ class Simulator(abc.ABC):
         gui: Optional[bool] = None,
         sim_dir: Optional[PathLike] = None,
     ) -> PathLike:
+        """Run a test."""
+
         if sim_dir is None:
             self.sim_dir = self.build_dir
         else:
@@ -176,10 +190,8 @@ class Simulator(abc.ABC):
             "COCOTB_RESULTS_FILE", os.path.join(self.build_dir, "results.xml")
         )
 
-        try:
+        with suppress(OSError):
             os.remove(results_xml_file)
-        except OSError:
-            pass
 
         cmds = self.test_command()
         self.set_env()
@@ -191,15 +203,21 @@ class Simulator(abc.ABC):
         return results_xml_file
 
     @abc.abstractmethod
-    def get_include_commands(self, includes: Sequence[str]) -> List[str]:
+    def get_include_options(self, includes: Sequence[str]) -> List[str]:
+        """Return simulator options setting directories searched for Verilog include files."""
+
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_define_commands(self, defines: Sequence[str]) -> List[str]:
+    def get_define_options(self, defines: Sequence[str]) -> List[str]:
+        """Return simulator options defining macros."""
+
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_parameter_commands(self, parameters: Mapping[str, object]) -> List[str]:
+    def get_parameter_options(self, parameters: Mapping[str, object]) -> List[str]:
+        """Return simulator options for module parameters/generics."""
+
         raise NotImplementedError()
 
     def execute(self, cmds: Sequence[Command], cwd: PathLike) -> None:
@@ -215,7 +233,7 @@ class Simulator(abc.ABC):
                 + '"'
             )
 
-            # TODO: create at thread to handle stderr and log as error?
+            # TODO: create a thread to handle stderr and log as error?
             # TODO: log forwarding
 
             process = subprocess.run(cmd, cwd=cwd, env=self.env)
@@ -227,6 +245,7 @@ class Simulator(abc.ABC):
 
 
 def check_results_file(results_xml_file: PathLike) -> None:
+    """Check whether cocotb result file exists and contains failed tests."""
 
     __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
@@ -245,10 +264,11 @@ def check_results_file(results_xml_file: PathLike) -> None:
                 failed += 1
 
     if failed:
-        raise SystemExit("ERROR: Failed {failed} tests.")
+        raise SystemExit(f"ERROR: Failed {failed} tests.")
 
 
 def outdated(output: PathLike, dependencies: Sequence[PathLike]) -> bool:
+    """Check if source files are newer than output."""
 
     if not os.path.isfile(output):
         return True
@@ -268,6 +288,8 @@ def outdated(output: PathLike, dependencies: Sequence[PathLike]) -> bool:
 
 
 def get_abs_paths(paths: Sequence[PathLike]) -> List[str]:
+    """Return list of *paths* in absolute form."""
+
     paths_abs: List[str] = []
     for path in paths:
         if os.path.isabs(path):
@@ -280,7 +302,7 @@ def get_abs_paths(paths: Sequence[PathLike]) -> List[str]:
 
 class Icarus(Simulator):
     @staticmethod
-    def check_simulator() -> None:
+    def simulator_in_path() -> None:
         if shutil.which("iverilog") is None:
             raise SystemExit("ERROR: iverilog exacutable not found!")
 
@@ -294,17 +316,17 @@ class Icarus(Simulator):
             )
 
     @staticmethod
-    def get_include_commands(includes: Sequence[str]) -> List[str]:
+    def get_include_options(includes: Sequence[str]) -> List[str]:
         return ["-I" + dir for dir in includes]
 
     @staticmethod
-    def get_define_commands(defines: Sequence[str]) -> List[str]:
+    def get_define_options(defines: Sequence[str]) -> List[str]:
         return ["-D" + define for define in defines]
 
-    def get_parameter_commands(self, parameters: Mapping[str, object]) -> List[str]:
+    def get_parameter_options(self, parameters: Mapping[str, object]) -> List[str]:
         assert self.hdl_toplevel is not None
         return [
-            "-P" + self.hdl_toplevel + "." + name + "=" + str(value)
+            f"-P{self.hdl_toplevel}.{name}={value}"
             for name, value in parameters.items()
         ]
 
@@ -335,9 +357,9 @@ class Icarus(Simulator):
 
             cmd = [
                 ["iverilog", "-o", self.sim_file, "-D", "COCOTB_SIM=1", "-g2012"]
-                + self.get_define_commands(self.defines)
-                + self.get_include_commands(self.includes)
-                + self.get_parameter_commands(self.parameters)
+                + self.get_define_options(self.defines)
+                + self.get_include_options(self.includes)
+                + self.get_parameter_options(self.parameters)
                 + self.compile_args
                 + self.verilog_sources
             ]
@@ -350,9 +372,9 @@ class Icarus(Simulator):
 
 class Questa(Simulator):
     @staticmethod
-    def check_simulator() -> None:
+    def simulator_in_path() -> None:
         if shutil.which("vsim") is None:
-            raise SystemExit("ERROR: vsim exacutable not found!")
+            raise SystemExit("ERROR: vsim executable not found!")
 
     def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
         if toplevel_lang is None:
@@ -370,15 +392,15 @@ class Questa(Simulator):
             )
 
     @staticmethod
-    def get_include_commands(includes: Sequence[str]) -> List[str]:
+    def get_include_options(includes: Sequence[str]) -> List[str]:
         return ["+incdir+" + as_tcl_value(dir) for dir in includes]
 
     @staticmethod
-    def get_define_commands(defines: Sequence[str]) -> List[str]:
+    def get_define_options(defines: Sequence[str]) -> List[str]:
         return ["+define+" + as_tcl_value(define) for define in defines]
 
     @staticmethod
-    def get_parameter_commands(parameters: Mapping[str, object]) -> List[str]:
+    def get_parameter_options(parameters: Mapping[str, object]) -> List[str]:
         return ["-g" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self) -> List[Command]:
@@ -402,8 +424,8 @@ class Questa(Simulator):
                 + ["-work", as_tcl_value(self.library_name)]
                 + ["+define+COCOTB_SIM"]
                 + ["-sv"]
-                + self.get_define_commands(self.defines)
-                + self.get_include_commands(self.includes)
+                + self.get_define_options(self.defines)
+                + self.get_include_options(self.includes)
                 + [as_tcl_value(v) for v in self.compile_args]
                 + [as_tcl_value(v) for v in self.verilog_sources]
             )
@@ -434,7 +456,7 @@ class Questa(Simulator):
                 + [as_tcl_value(v) for v in self.sim_args]
                 + [
                     as_tcl_value(v)
-                    for v in self.get_parameter_commands(self.parameters)
+                    for v in self.get_parameter_options(self.parameters)
                 ]
                 + [as_tcl_value(self.sim_toplevel)]
                 + ["-do", do_script]
@@ -455,7 +477,7 @@ class Questa(Simulator):
                 + [as_tcl_value(v) for v in self.sim_args]
                 + [
                     as_tcl_value(v)
-                    for v in self.get_parameter_commands(self.parameters)
+                    for v in self.get_parameter_options(self.parameters)
                 ]
                 + [as_tcl_value(self.sim_toplevel)]
                 + [as_tcl_value(v) for v in self.plus_args]
@@ -473,9 +495,9 @@ class Questa(Simulator):
 
 class Ghdl(Simulator):
     @staticmethod
-    def check_simulator() -> None:
+    def simulator_in_path() -> None:
         if shutil.which("ghdl") is None:
-            raise SystemExit("ERROR: ghdl exacutable not found!")
+            raise SystemExit("ERROR: ghdl executable not found!")
 
     def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
         if toplevel_lang is None or toplevel_lang == "vhdl":
@@ -486,15 +508,15 @@ class Ghdl(Simulator):
             )
 
     @staticmethod
-    def get_include_commands(includes: Sequence[str]) -> List[str]:
+    def get_include_options(includes: Sequence[str]) -> List[str]:
         return [f"-I{dir}" for dir in includes]
 
     @staticmethod
-    def get_define_commands(defines: Sequence[str]) -> List[str]:
+    def get_define_options(defines: Sequence[str]) -> List[str]:
         return [f"-D{define}" for define in defines]
 
     @staticmethod
-    def get_parameter_commands(parameters: Mapping[str, object]) -> List[str]:
+    def get_parameter_options(parameters: Mapping[str, object]) -> List[str]:
         return ["-g" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self) -> List[Command]:
@@ -526,7 +548,7 @@ class Ghdl(Simulator):
             + [self.sim_toplevel]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
             + self.sim_args
-            + self.get_parameter_commands(self.parameters)
+            + self.get_parameter_options(self.parameters)
         )
 
         cmd.append(cmd_run)
@@ -536,9 +558,9 @@ class Ghdl(Simulator):
 
 class Riviera(Simulator):
     @staticmethod
-    def check_simulator() -> None:
+    def simulator_in_path() -> None:
         if shutil.which("vsimsa") is None:
-            raise SystemExit("ERROR: vsimsa exacutable not found!")
+            raise SystemExit("ERROR: vsimsa executable not found!")
 
     def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
         if toplevel_lang is None:
@@ -558,15 +580,15 @@ class Riviera(Simulator):
             )
 
     @staticmethod
-    def get_include_commands(includes: Sequence[str]) -> List[str]:
+    def get_include_options(includes: Sequence[str]) -> List[str]:
         return ["+incdir+" + as_tcl_value(dir) for dir in includes]
 
     @staticmethod
-    def get_define_commands(defines: Sequence[str]) -> List[str]:
+    def get_define_options(defines: Sequence[str]) -> List[str]:
         return ["+define+" + as_tcl_value(define) for define in defines]
 
     @staticmethod
-    def get_parameter_commands(parameters: Mapping[str, object]) -> List[str]:
+    def get_parameter_options(parameters: Mapping[str, object]) -> List[str]:
         return ["-g" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self) -> List[Command]:
@@ -600,8 +622,8 @@ class Riviera(Simulator):
                     VERILOG_SOURCES=" ".join(
                         as_tcl_value(v) for v in self.verilog_sources
                     ),
-                    DEFINES=" ".join(self.get_define_commands(self.defines)),
-                    INCDIR=" ".join(self.get_include_commands(self.includes)),
+                    DEFINES=" ".join(self.get_define_options(self.defines)),
+                    INCDIR=" ".join(self.get_include_options(self.includes)),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
                 )
         else:
@@ -624,7 +646,7 @@ class Riviera(Simulator):
                 EXTRA_ARGS=" ".join(
                     as_tcl_value(v)
                     for v in (
-                        self.sim_args + self.get_parameter_commands(self.parameters)
+                        self.sim_args + self.get_parameter_options(self.parameters)
                     )
                 ),
             )
@@ -640,7 +662,7 @@ class Riviera(Simulator):
                 EXTRA_ARGS=" ".join(
                     as_tcl_value(v)
                     for v in (
-                        self.sim_args + self.get_parameter_commands(self.parameters)
+                        self.sim_args + self.get_parameter_options(self.parameters)
                     )
                 ),
                 PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
@@ -664,10 +686,10 @@ class Riviera(Simulator):
 
 
 class Verilator(Simulator):
-    def check_simulator(self) -> None:
+    def simulator_in_path(self) -> None:
         executable = shutil.which("verilator")
         if executable is None:
-            raise SystemExit("ERROR: verilator exacutable not found!")
+            raise SystemExit("ERROR: verilator executable not found!")
         self.executable = executable
 
     @staticmethod
@@ -680,15 +702,15 @@ class Verilator(Simulator):
             )
 
     @staticmethod
-    def get_include_commands(includes: Sequence[str]) -> List[str]:
+    def get_include_options(includes: Sequence[str]) -> List[str]:
         return ["-I" + dir for dir in includes]
 
     @staticmethod
-    def get_define_commands(defines: Sequence[str]) -> List[str]:
+    def get_define_options(defines: Sequence[str]) -> List[str]:
         return ["-D" + define for define in defines]
 
     @staticmethod
-    def get_parameter_commands(parameters: Mapping[str, object]) -> List[str]:
+    def get_parameter_options(parameters: Mapping[str, object]) -> List[str]:
         return ["-G" + name + "=" + str(value) for name, value in parameters.items()]
 
     def build_command(self) -> List[Command]:
@@ -734,9 +756,9 @@ class Verilator(Simulator):
                 ),
             ]
             + self.compile_args
-            + self.get_define_commands(self.defines)
-            + self.get_include_commands(self.includes)
-            + self.get_parameter_commands(self.parameters)
+            + self.get_define_options(self.defines)
+            + self.get_include_options(self.includes)
+            + self.get_parameter_options(self.parameters)
             + [verilator_cpp]
             + self.verilog_sources
         )
