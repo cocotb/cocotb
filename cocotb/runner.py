@@ -188,7 +188,7 @@ class Simulator(abc.ABC):
         else:
             self.gui = bool(gui)
 
-        # when using pytest use tets name as result file name
+        # When using pytest, use test name as result file name
         pytest_current_test = os.environ.get('PYTEST_CURRENT_TEST', '')
 
         if pytest_current_test:
