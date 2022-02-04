@@ -149,6 +149,8 @@ class Simulator(abc.ABC):
     ) -> PathLike:
         """Run a test."""
 
+        __tracebackhide__ = True  # Hide the traceback when using pytest
+
         if sim_dir is None:
             self.sim_dir = self.build_dir
         else:
@@ -186,9 +188,19 @@ class Simulator(abc.ABC):
         else:
             self.gui = bool(gui)
 
+        # When using pytest, use test name as result file name
+        pytest_current_test = os.environ.get("PYTEST_CURRENT_TEST", "")
+
+        if pytest_current_test:
+            results_xml_name = pytest_current_test.split(":")[-1].split(" ")[0] + ".results.xml"
+        else:
+            results_xml_name = "results.xml"
+
         results_xml_file = os.getenv(
-            "COCOTB_RESULTS_FILE", os.path.join(self.build_dir, "results.xml")
+            "COCOTB_RESULTS_FILE", os.path.join(self.build_dir, results_xml_name)
         )
+
+        self.env["COCOTB_RESULTS_FILE"] = results_xml_file
 
         with suppress(OSError):
             os.remove(results_xml_file)
