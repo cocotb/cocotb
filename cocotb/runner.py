@@ -47,6 +47,10 @@ class Simulator(abc.ABC):
 
         self.env: Dict[str, str] = {}
 
+        # for running test() independently of build()
+        self.build_dir = "sim_build"
+        self.parameters = {}
+
     @abc.abstractmethod
     def simulator_in_path(self) -> None:
         """Check that the simulator executable exists in `PATH`."""
@@ -78,9 +82,6 @@ class Simulator(abc.ABC):
 
         self.env["TOPLEVEL"] = self.sim_toplevel
         self.env["MODULE"] = self.module
-
-        if not os.path.exists(self.build_dir):
-            os.makedirs(self.build_dir)
 
     @abc.abstractmethod
     def build_command(self) -> Sequence[Command]:
@@ -145,11 +146,19 @@ class Simulator(abc.ABC):
         extra_env: Mapping[str, str] = {},
         waves: Optional[bool] = None,
         gui: Optional[bool] = None,
+        parameters: Mapping[str, object] = None,
+        build_dir: Optional[PathLike] = None,
         sim_dir: Optional[PathLike] = None,
     ) -> PathLike:
         """Run a test."""
 
         __tracebackhide__ = True  # Hide the traceback when using pytest
+
+        if build_dir is not None:
+            self.build_dir = build_dir
+
+        if parameters is not None:
+            self.parameters = dict(parameters)
 
         if sim_dir is None:
             self.sim_dir = self.build_dir
@@ -344,6 +353,10 @@ class Icarus(Simulator):
             for name, value in parameters.items()
         ]
 
+    @property
+    def sim_file(self) -> PathLike:
+        return os.path.join(self.build_dir, "sim.vvp")
+
     def test_command(self) -> List[Command]:
 
         return [
@@ -363,8 +376,6 @@ class Icarus(Simulator):
 
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
-
-        self.sim_file = os.path.join(self.build_dir, self.library_name + ".vvp")
 
         cmd = []
         if outdated(self.sim_file, self.verilog_sources) or self.always:
@@ -457,7 +468,17 @@ class Questa(Simulator):
         if not self.gui:
             do_script += "run -all; quit"
 
+        fli_lib_path = cocotb.config.lib_name_path("fli", "questa")
+
         if self.toplevel_lang == "vhdl":
+
+            if not os.path.isfile(fli_lib_path):
+                raise SystemExit(
+                    "ERROR: cocotb was not installed with an FLI library, as the mti.h header could not be located.\n\
+                    If you installed an FLI-capable simulator after cocotb, you will need to reinstall cocotb.\n\
+                    Please check the cocotb documentation on ModelSim support."
+                )
+
             cmd.append(
                 ["vsim"]
                 + ["-gui" if self.gui else "-c"]
@@ -473,11 +494,9 @@ class Questa(Simulator):
                 + ["-do", do_script]
             )
 
-            if self.verilog_sources:
-                self.env["GPI_EXTRA"] = (
-                    cocotb.config.lib_name_path("vpi", "questa")
-                    + ":cocotbvpi_entry_point"
-                )
+            self.env["GPI_EXTRA"] = (
+                cocotb.config.lib_name_path("vpi", "questa") + ":cocotbvpi_entry_point"
+            )
 
         else:
             cmd.append(
@@ -492,10 +511,14 @@ class Questa(Simulator):
                 + ["-do", do_script]
             )
 
-            if self.vhdl_sources:
+            if os.path.isfile(fli_lib_path):
                 self.env["GPI_EXTRA"] = (
                     cocotb.config.lib_name_path("fli", "questa")
                     + ":cocotbfli_entry_point"
+                )
+            else:
+                print(
+                    "WARNING: FLI library not found. Mixed-mode simulation will not be available."
                 )
 
         return cmd
@@ -532,7 +555,12 @@ class Ghdl(Simulator):
         if self.verilog_sources:
             raise ValueError("This simulator does not support Verilog")
 
-        return [
+        if self.hdl_toplevel is None:
+            raise ValueError(
+                "This simulator requires the hdl_toplevel parameter to be specified"
+            )
+
+        cmd = [
             ["ghdl", "-i"]
             + [f"--work={self.library_name}"]
             + self.compile_args
@@ -540,26 +568,24 @@ class Ghdl(Simulator):
             for source_file in self.vhdl_sources
         ]
 
-    def test_command(self) -> List[Command]:
-
-        cmd_elaborate = (
+        cmd += [
             ["ghdl", "-m"]
             + [f"--work={self.library_name}"]
             + self.compile_args
-            + [self.sim_toplevel]
-        )
+            + [self.hdl_toplevel]
+        ]
 
-        cmd = [cmd_elaborate]
-        cmd_run = (
+        return cmd
+
+    def test_command(self) -> List[Command]:
+
+        cmd = [
             ["ghdl", "-r"]
-            + self.compile_args
             + [self.sim_toplevel]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
             + self.sim_args
             + self.get_parameter_options(self.parameters)
-        )
-
-        cmd.append(cmd_run)
+        ]
 
         return cmd
 
@@ -658,11 +684,10 @@ class Riviera(Simulator):
                     )
                 ),
             )
-            if self.verilog_sources:
-                self.env["GPI_EXTRA"] = (
-                    cocotb.config.lib_name_path("vpi", "riviera")
-                    + "cocotbvpi_entry_point"
-                )
+
+            self.env["GPI_EXTRA"] = (
+                cocotb.config.lib_name_path("vpi", "riviera") + ":cocotbvpi_entry_point"
+            )
         else:
             do_script += "asim +access +w -interceptcoutput -O2 -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUS_ARGS} \n".format(
                 TOPLEVEL=as_tcl_value(self.sim_toplevel),
@@ -675,11 +700,11 @@ class Riviera(Simulator):
                 ),
                 PLUS_ARGS=" ".join(as_tcl_value(v) for v in self.plus_args),
             )
-            if self.vhdl_sources:
-                self.env["GPI_EXTRA"] = (
-                    cocotb.config.lib_name_path("vhpi", "riviera")
-                    + ":cocotbvhpi_entry_point"
-                )
+
+            self.env["GPI_EXTRA"] = (
+                cocotb.config.lib_name_path("vhpi", "riviera")
+                + ":cocotbvhpi_entry_point"
+            )
 
         if self.waves:
             do_script += "log -recursive /*;"
