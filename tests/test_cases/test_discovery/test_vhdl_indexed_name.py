@@ -38,6 +38,7 @@ async def index_name_iter(dut):
             dut._log.info("Found %s (%s)", thing._name, type(thing))
             count += _discover(thing)
         return count
+
     total_count = _discover(dut.isample_module1)
 
     dut._log.info("Number of objects in non local vhpiIndexedNameK is %d" % total_count)

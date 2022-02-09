@@ -26,7 +26,13 @@
 import logging
 
 import cocotb
-from cocotb.handle import HierarchyObject, ModifiableObject, IntegerObject, ConstantObject, EnumObject
+from cocotb.handle import (
+    ConstantObject,
+    EnumObject,
+    HierarchyObject,
+    IntegerObject,
+    ModifiableObject,
+)
 
 
 # GHDL discovers enum as `vpiNet` (gh-2600)
@@ -41,7 +47,9 @@ async def check_enum_object(dut):
 
 
 # GHDL unable to access signals in generate loops (gh-2594)
-@cocotb.test(expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+@cocotb.test(
+    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+)
 async def check_objects(dut):
     """
     Check the types of objects that are returned
@@ -51,8 +59,11 @@ async def check_objects(dut):
 
     def check_instance(obj, objtype):
         if not isinstance(obj, objtype):
-            tlog.error("Expected {} to be of type {} but got {}".format(
-                obj._fullname, objtype.__name__, type(obj).__name__))
+            tlog.error(
+                "Expected {} to be of type {} but got {}".format(
+                    obj._fullname, objtype.__name__, type(obj).__name__
+                )
+            )
             return 1
         tlog.info("{} is {}".format(obj._fullname, type(obj).__name__))
         return 0
@@ -60,7 +71,9 @@ async def check_objects(dut):
     # Hierarchy checks
     fails += check_instance(dut.inst_axi4s_buffer, HierarchyObject)
     fails += check_instance(dut.gen_branch_distance[0], HierarchyObject)
-    fails += check_instance(dut.gen_branch_distance[0].inst_branch_distance, HierarchyObject)
+    fails += check_instance(
+        dut.gen_branch_distance[0].inst_branch_distance, HierarchyObject
+    )
     fails += check_instance(dut.gen_acs[0].inbranch_tdata_low, ModifiableObject)
     fails += check_instance(dut.gen_acs[0].inbranch_tdata_low[0], ModifiableObject)
     fails += check_instance(dut.aclk, ModifiableObject)
@@ -70,8 +83,10 @@ async def check_objects(dut):
     fails += check_instance(dut.inst_ram_ctrl, HierarchyObject)
 
     if dut.inst_axi4s_buffer.DATA_WIDTH != 32:
-        tlog.error("Expected dut.inst_axi4s_buffer.DATA_WIDTH to be 32 but got %d",
-                   dut.inst_axi4s_buffer.DATA_WIDTH)
+        tlog.error(
+            "Expected dut.inst_axi4s_buffer.DATA_WIDTH to be 32 but got %d",
+            dut.inst_axi4s_buffer.DATA_WIDTH,
+        )
         fails += 1
 
     try:
@@ -83,7 +98,9 @@ async def check_objects(dut):
 
     try:
         dut.inst_axi4s_buffer.DATA_WIDTH <= 42
-        tlog.error("Shouldn't be allowed to set a value on constant object using __le__")
+        tlog.error(
+            "Shouldn't be allowed to set a value on constant object using __le__"
+        )
         fails += 1
     except TypeError as e:
         pass
@@ -99,12 +116,16 @@ async def port_not_hierarchy(dut):
     """
     tlog = logging.getLogger("cocotb.test")
     if not isinstance(dut.aclk, ModifiableObject):
-        tlog.error("dut.aclk should be ModifiableObject but got %s", type(dut.aclk).__name__)
+        tlog.error(
+            "dut.aclk should be ModifiableObject but got %s", type(dut.aclk).__name__
+        )
     else:
         tlog.info("dut.aclk is ModifiableObject")
     for _ in dut:
         pass
     if not isinstance(dut.aclk, ModifiableObject):
-        tlog.error("dut.aclk should be ModifiableObject but got %s", type(dut.aclk).__name__)
+        tlog.error(
+            "dut.aclk should be ModifiableObject but got %s", type(dut.aclk).__name__
+        )
     else:
         tlog.info("dut.aclk is ModifiableObject")

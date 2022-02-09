@@ -1,5 +1,5 @@
 import cocotb
-from cocotb.triggers import Timer, RisingEdge, First
+from cocotb.triggers import First, RisingEdge, Timer
 
 
 async def wait_edge(dut):
@@ -10,7 +10,7 @@ async def wait_edge(dut):
 @cocotb.test()
 async def test1(dut):
     cocotb.start_soon(wait_edge(dut))
-    await Timer(10, 'ns')
+    await Timer(10, "ns")
 
 
 test2 = test1

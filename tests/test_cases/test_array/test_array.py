@@ -3,11 +3,17 @@ A set of tests that demonstrate Array structure support
 """
 
 import logging
-import cocotb
 
+import cocotb
 from cocotb.clock import Clock
+from cocotb.handle import (
+    ConstantObject,
+    HierarchyArrayObject,
+    HierarchyObject,
+    ModifiableObject,
+    NonHierarchyIndexableObject,
+)
 from cocotb.triggers import Timer
-from cocotb.handle import HierarchyObject, HierarchyArrayObject, ModifiableObject, NonHierarchyIndexableObject, ConstantObject
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
@@ -18,27 +24,37 @@ def _check_type(tlog, hdl, expected):
 
 
 def _check_int(tlog, hdl, expected):
-    assert int(hdl) == expected, "{2!r}: Expected >{0}< but got >{1}<".format(expected, int(hdl), hdl)
+    assert int(hdl) == expected, "{2!r}: Expected >{0}< but got >{1}<".format(
+        expected, int(hdl), hdl
+    )
     tlog.info("   Found {!r} ({}) with value={}".format(hdl, hdl._type, int(hdl)))
 
 
 def _check_logic(tlog, hdl, expected):
-    assert int(hdl) == expected, "{2!r}: Expected >0x{0:X}< but got >0x{1:X}<".format(expected, int(hdl), hdl)
+    assert int(hdl) == expected, "{2!r}: Expected >0x{0:X}< but got >0x{1:X}<".format(
+        expected, int(hdl), hdl
+    )
     tlog.info("   Found {!r} ({}) with value=0x{:X}".format(hdl, hdl._type, int(hdl)))
 
 
 def _check_str(tlog, hdl, expected):
-    assert hdl.value == expected, "{2!r}: Expected >{0}< but got >{1}<".format(expected, str(hdl), hdl)
+    assert hdl.value == expected, "{2!r}: Expected >{0}< but got >{1}<".format(
+        expected, str(hdl), hdl
+    )
     tlog.info("   Found {!r} ({}) with value={}".format(hdl, hdl._type, str(hdl)))
 
 
 def _check_real(tlog, hdl, expected):
-    assert float(hdl) == expected, "{2!r}: Expected >{0}< but got >{1}<".format(expected, float(hdl), hdl)
+    assert float(hdl) == expected, "{2!r}: Expected >{0}< but got >{1}<".format(
+        expected, float(hdl), hdl
+    )
     tlog.info("   Found {!r} ({}) with value={}".format(hdl, hdl._type, float(hdl)))
 
 
 def _check_value(tlog, hdl, expected):
-    assert hdl.value == expected, f"{hdl!r}: Expected >{expected}< but got >{hdl.value}<"
+    assert (
+        hdl.value == expected
+    ), f"{hdl!r}: Expected >{expected}< but got >{hdl.value}<"
     tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
 
 
@@ -54,85 +70,85 @@ async def test_read_write(dut):
     await Timer(10, "ns")
 
     tlog.info("Checking Generics/Parameters:")
-    _check_logic(tlog, dut.param_logic    , 1)
+    _check_logic(tlog, dut.param_logic, 1)
     _check_logic(tlog, dut.param_logic_vec, 0xDA)
 
     if cocotb.LANGUAGE in ["vhdl"]:
         _check_int(tlog, dut.param_bool, 1)
-        _check_int(tlog, dut.param_int , 6)
+        _check_int(tlog, dut.param_int, 6)
         _check_real(tlog, dut.param_real, 3.14)
-        _check_int(tlog, dut.param_char, ord('p'))
-        _check_str(tlog, dut.param_str , b"ARRAYMOD")
+        _check_int(tlog, dut.param_char, ord("p"))
+        _check_str(tlog, dut.param_str, b"ARRAYMOD")
 
         if not cocotb.SIM_NAME.lower().startswith("riviera"):
-            _check_logic(tlog, dut.param_rec.a        , 0)
-            _check_logic(tlog, dut.param_rec.b[0]     , 0)
-            _check_logic(tlog, dut.param_rec.b[1]     , 0)
-            _check_logic(tlog, dut.param_rec.b[2]     , 0)
-            _check_logic(tlog, dut.param_cmplx[0].a   , 0)
+            _check_logic(tlog, dut.param_rec.a, 0)
+            _check_logic(tlog, dut.param_rec.b[0], 0)
+            _check_logic(tlog, dut.param_rec.b[1], 0)
+            _check_logic(tlog, dut.param_rec.b[2], 0)
+            _check_logic(tlog, dut.param_cmplx[0].a, 0)
             _check_logic(tlog, dut.param_cmplx[0].b[0], 0)
             _check_logic(tlog, dut.param_cmplx[0].b[1], 0)
             _check_logic(tlog, dut.param_cmplx[0].b[2], 0)
-            _check_logic(tlog, dut.param_cmplx[1].a   , 0)
+            _check_logic(tlog, dut.param_cmplx[1].a, 0)
             _check_logic(tlog, dut.param_cmplx[1].b[0], 0)
             _check_logic(tlog, dut.param_cmplx[1].b[1], 0)
             _check_logic(tlog, dut.param_cmplx[1].b[2], 0)
 
     tlog.info("Checking Constants:")
-    _check_logic(tlog, dut.const_logic    , 0)
+    _check_logic(tlog, dut.const_logic, 0)
     _check_logic(tlog, dut.const_logic_vec, 0x3D)
 
     if cocotb.LANGUAGE in ["vhdl"]:
         _check_int(tlog, dut.const_bool, 0)
-        _check_int(tlog, dut.const_int , 12)
+        _check_int(tlog, dut.const_int, 12)
         _check_real(tlog, dut.const_real, 6.28)
-        _check_int(tlog, dut.const_char, ord('c'))
-        _check_str(tlog, dut.const_str , b"MODARRAY")
+        _check_int(tlog, dut.const_char, ord("c"))
+        _check_str(tlog, dut.const_str, b"MODARRAY")
 
         if not cocotb.SIM_NAME.lower().startswith("riviera"):
-            _check_logic(tlog, dut.const_rec.a        , 1)
-            _check_logic(tlog, dut.const_rec.b[0]     , 0xFF)
-            _check_logic(tlog, dut.const_rec.b[1]     , 0xFF)
-            _check_logic(tlog, dut.const_rec.b[2]     , 0xFF)
-            _check_logic(tlog, dut.const_cmplx[1].a   , 1)
+            _check_logic(tlog, dut.const_rec.a, 1)
+            _check_logic(tlog, dut.const_rec.b[0], 0xFF)
+            _check_logic(tlog, dut.const_rec.b[1], 0xFF)
+            _check_logic(tlog, dut.const_rec.b[2], 0xFF)
+            _check_logic(tlog, dut.const_cmplx[1].a, 1)
             _check_logic(tlog, dut.const_cmplx[1].b[0], 0xFF)
             _check_logic(tlog, dut.const_cmplx[1].b[1], 0xFF)
             _check_logic(tlog, dut.const_cmplx[1].b[2], 0xFF)
-            _check_logic(tlog, dut.const_cmplx[2].a   , 1)
+            _check_logic(tlog, dut.const_cmplx[2].a, 1)
             _check_logic(tlog, dut.const_cmplx[2].b[0], 0xFF)
             _check_logic(tlog, dut.const_cmplx[2].b[1], 0xFF)
             _check_logic(tlog, dut.const_cmplx[2].b[2], 0xFF)
 
-    dut.select_in        .value = 2
+    dut.select_in.value = 2
 
     await Timer(10, "ns")
 
     tlog.info("Writing the signals!!!")
-    dut.sig_logic        .value = 1
-    dut.sig_logic_vec    .value = 0xCC
+    dut.sig_logic.value = 1
+    dut.sig_logic_vec.value = 0xCC
     dut.sig_t2.value = [0xCC, 0xDD, 0xEE, 0xFF]
     dut.sig_t4.value = [
         [0x00, 0x11, 0x22, 0x33],
         [0x44, 0x55, 0x66, 0x77],
         [0x88, 0x99, 0xAA, 0xBB],
-        [0xCC, 0xDD, 0xEE, 0xFF]
+        [0xCC, 0xDD, 0xEE, 0xFF],
     ]
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        dut.sig_bool         .value = 1
-        dut.sig_int          .value = 5000
-        dut.sig_real         .value = 22.54
-        dut.sig_char         .value = ord('Z')
-        dut.sig_str          .value = "Testing"
-        dut.sig_rec.a        .value = 1
-        dut.sig_rec.b[0]     .value = 0x01
-        dut.sig_rec.b[1]     .value = 0x23
-        dut.sig_rec.b[2]     .value = 0x45
-        dut.sig_cmplx[0].a   .value = 0
+        dut.sig_bool.value = 1
+        dut.sig_int.value = 5000
+        dut.sig_real.value = 22.54
+        dut.sig_char.value = ord("Z")
+        dut.sig_str.value = "Testing"
+        dut.sig_rec.a.value = 1
+        dut.sig_rec.b[0].value = 0x01
+        dut.sig_rec.b[1].value = 0x23
+        dut.sig_rec.b[2].value = 0x45
+        dut.sig_cmplx[0].a.value = 0
         dut.sig_cmplx[0].b[0].value = 0x67
         dut.sig_cmplx[0].b[1].value = 0x89
         dut.sig_cmplx[0].b[2].value = 0xAB
-        dut.sig_cmplx[1].a   .value = 1
+        dut.sig_cmplx[1].a.value = 1
         dut.sig_cmplx[1].b[0].value = 0xCD
         dut.sig_cmplx[1].b[1].value = 0xEF
         dut.sig_cmplx[1].b[2].value = 0x55
@@ -140,7 +156,7 @@ async def test_read_write(dut):
     await Timer(10, "ns")
 
     tlog.info("Checking writes:")
-    _check_logic(tlog, dut.port_logic_out    , 1)
+    _check_logic(tlog, dut.port_logic_out, 1)
     _check_logic(tlog, dut.port_logic_vec_out, 0xCC)
     _check_value(tlog, dut.sig_t2, [0xCC, 0xDD, 0xEE, 0xFF])
     _check_logic(tlog, dut.sig_t2[7], 0xCC)
@@ -150,51 +166,61 @@ async def test_read_write(dut):
 
     if cocotb.LANGUAGE in ["vhdl"]:
         _check_int(tlog, dut.port_bool_out, 1)
-        _check_int(tlog, dut.port_int_out , 5000)
+        _check_int(tlog, dut.port_int_out, 5000)
         _check_real(tlog, dut.port_real_out, 22.54)
-        _check_int(tlog, dut.port_char_out, ord('Z'))
-        _check_str(tlog, dut.port_str_out , b"Testing")
+        _check_int(tlog, dut.port_char_out, ord("Z"))
+        _check_str(tlog, dut.port_str_out, b"Testing")
 
-        _check_logic(tlog, dut.port_rec_out.a        , 1)
-        _check_logic(tlog, dut.port_rec_out.b[0]     , 0x01)
-        _check_logic(tlog, dut.port_rec_out.b[1]     , 0x23)
-        _check_logic(tlog, dut.port_rec_out.b[2]     , 0x45)
-        _check_logic(tlog, dut.port_cmplx_out[0].a   , 0)
+        _check_logic(tlog, dut.port_rec_out.a, 1)
+        _check_logic(tlog, dut.port_rec_out.b[0], 0x01)
+        _check_logic(tlog, dut.port_rec_out.b[1], 0x23)
+        _check_logic(tlog, dut.port_rec_out.b[2], 0x45)
+        _check_logic(tlog, dut.port_cmplx_out[0].a, 0)
         _check_logic(tlog, dut.port_cmplx_out[0].b[0], 0x67)
         _check_logic(tlog, dut.port_cmplx_out[0].b[1], 0x89)
         _check_logic(tlog, dut.port_cmplx_out[0].b[2], 0xAB)
-        _check_logic(tlog, dut.port_cmplx_out[1].a   , 1)
+        _check_logic(tlog, dut.port_cmplx_out[1].a, 1)
         _check_logic(tlog, dut.port_cmplx_out[1].b[0], 0xCD)
         _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEF)
         _check_logic(tlog, dut.port_cmplx_out[1].b[2], 0x55)
 
     tlog.info("Writing a few signal sub-indices!!!")
-    dut.sig_logic_vec[2]    .value = 0
-    if cocotb.LANGUAGE in ["vhdl"] or not (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")) or
-                                           (cocotb.SIM_NAME.lower().startswith("riviera") and
-                                            cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")))):
-        dut.sig_t6[1][3][2]     .value = 1
-        dut.sig_t6[0][2][7]     .value = 0
+    dut.sig_logic_vec[2].value = 0
+    if cocotb.LANGUAGE in ["vhdl"] or not (
+        cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim"))
+        or (
+            cocotb.SIM_NAME.lower().startswith("riviera")
+            and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
+        )
+    ):
+        dut.sig_t6[1][3][2].value = 1
+        dut.sig_t6[0][2][7].value = 0
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        dut.sig_str[2]          .value = ord('E')
-        dut.sig_rec.b[1][7]     .value = 1
+        dut.sig_str[2].value = ord("E")
+        dut.sig_rec.b[1][7].value = 1
         dut.sig_cmplx[1].b[1][0].value = 0
 
     await Timer(10, "ns")
 
     tlog.info("Checking writes (2):")
     _check_logic(tlog, dut.port_logic_vec_out, 0xC8)
-    if cocotb.LANGUAGE in ["vhdl"] or not (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")) or
-                                           (cocotb.SIM_NAME.lower().startswith("riviera") and
-                                            cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")))):
+    if cocotb.LANGUAGE in ["vhdl"] or not (
+        cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim"))
+        or (
+            cocotb.SIM_NAME.lower().startswith("riviera")
+            and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
+        )
+    ):
         _check_logic(tlog, dut.sig_t6[1][3][2], 1)
         _check_logic(tlog, dut.sig_t6[0][2][7], 0)
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        _check_str(tlog, dut.port_str_out, b"TEsting")  # the uppercase "E" from a few lines before
+        _check_str(
+            tlog, dut.port_str_out, b"TEsting"
+        )  # the uppercase "E" from a few lines before
 
-        _check_logic(tlog, dut.port_rec_out.b[1]     , 0xA3)
+        _check_logic(tlog, dut.port_rec_out.b[1], 0xA3)
         _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEE)
 
 
@@ -204,8 +230,8 @@ async def test_gen_loop(dut):
     """Test accessing Generate Loops"""
     tlog = logging.getLogger("cocotb.test")
 
-    asc_gen_20  = dut.asc_gen[20]
-    desc_gen    = dut.desc_gen
+    asc_gen_20 = dut.asc_gen[20]
+    desc_gen = dut.desc_gen
 
     assert isinstance(dut.asc_gen, HierarchyArrayObject)
     assert isinstance(desc_gen, HierarchyArrayObject)
@@ -230,75 +256,75 @@ async def test_gen_loop(dut):
 @cocotb.test()
 async def test_discover_all(dut):
     r"""Discover everything in the DUT:
-          dut
-                 TYPE    CNT  NOTES                                                  EXCEPTIONS
-             parameters: 7/2 (base types)                                            (VHDL/Verilog)
-                           6 (param_rec.a, param_rec.b[0:2])                         (VHDL only excluding Aldec)
-                          13 (param_cmplx[0:1].a, param_cmplx[0:1].b[0:2])           (VHDL only excluding Aldec)
-                  ports:   1 (clk)
-                           1 (select_in)                                             (VPI - Aldec sees as 32 bit register (i.e. cnt = 33)
-                           9 (port_desc_in)
-                           9 (port_asc_in)
-                           9 (port_ofst_in)
-                           9 (port_desc_out)
-                           9 (port_asc_out)
-                           9 (port_ofst_out)
-                           1 (port_logic_out)
-                           9 (port_logic_vec_out)
-                           1 (port_bool_out)                                         (VHDL Only)
-                           1 (port_int_out)                                          (VHDL Only)
-                           1 (port_real_out)                                         (VHDL Only)
-                           1 (port_char_out)                                         (VHDL Only)
-                           9 (port_str_out)                                          (VHDL Only)
-                          30 (port_rec_out)                                          (VPI - Aldec sees as a Module and not structure (i.e. cnt = 1))
-                          61 (port_cmplx_out)                                        (VPI - Aldec sees as a Module and not structure (i.e. cnt = 1))
-              constants:   1 (const_logic)
-                           1 (const_logic_vec)
-                           1 (const_bool)                                            (VHDL Only)
-                           1 (const_int)                                             (VHDL Only)
-                           1 (const_real)                                            (VHDL Only)
-                           1 (const_char)                                            (VHDL Only)
-                           1 (const_str)                                             (VHDL Only)
-                           6 (const_rec.a, const_rec.b[0:2])                         (VHDL only excluding Aldec)
-                          13 (const_cmplx[1:2].a, const_cmplx[1:2].b[0:2])           (VHDL only excluding Aldec)
-                signals:   9 (sig_desc)
-                           9 (sig_asc)
-                           1 (\ext_id\)                                              (VHDL only)
-                           1 (\!\)                                                   (VHDL only)
-                           5 (sig_t1)
-                          37 (sig_t2[7:4][7:0])
-                          37 (sig_t3a[1:4][7:0])
-                          37 (sig_t3b[3:0][7:0])
-                         149 (sig_t4[0:3][7:4][7:0])
-                         112 (sig_t5[0:2][0:3][7:0])
-                          57 (sig_t6[0:1][2:4][7:0])
-                         149 (sig_t7[3:0][3:0])                                      (VPI Only)
-                         149 ([3:0][3:0]sig_t8)                                      (VPI Only)
-                           1 (sig_logic)
-                           9 (sig_logic_vec)
-                           1 (sig_bool)                                              (VHDL Only)
-                           1 (sig_int)                                               (VHDL Only)
-                           1 (sig_real)                                              (VHDL Only)
-                           1 (sig_char)                                              (VHDL Only)
-                           9 (sig_str)                                               (VHDL Only)
-                          30 (sig_rec.a, sig_rec.b[0:2][7:0])                        (VPI doesn't find, added manually, except for Aldec)
-                          61 (sig_cmplx[0:1].a, sig_cmplx[0:1].b[0:2][7:0])          (VPI - Aldec older than 2017.10.67 doesn't find)
-                regions:   9 (asc_gen[16:23])
-                           8 (asc_gen: signals)                                      (VHPI - Riviera doesn't find, added manually)
-                           8 (asc_gen: constant)
-                           8 (asc_gen: variable)
-                           8 (asc_gen: process "always")                             (VPI - Aldec only)
-                           9 (desc_gen[7:0])
-                           8 (desc_gen: signals)                                     (VHPI - Riviera doesn't find, added manually)
-                           8 (desc_gen: constant)
-                           8 (desc_gen: variable)
-                           8 (desc_gen: process "always")                            (VPI - Aldec only)
-                process:   1 ("always")                                              (VPI - Aldec only)
+    dut
+           TYPE    CNT  NOTES                                                  EXCEPTIONS
+       parameters: 7/2 (base types)                                            (VHDL/Verilog)
+                     6 (param_rec.a, param_rec.b[0:2])                         (VHDL only excluding Aldec)
+                    13 (param_cmplx[0:1].a, param_cmplx[0:1].b[0:2])           (VHDL only excluding Aldec)
+            ports:   1 (clk)
+                     1 (select_in)                                             (VPI - Aldec sees as 32 bit register (i.e. cnt = 33)
+                     9 (port_desc_in)
+                     9 (port_asc_in)
+                     9 (port_ofst_in)
+                     9 (port_desc_out)
+                     9 (port_asc_out)
+                     9 (port_ofst_out)
+                     1 (port_logic_out)
+                     9 (port_logic_vec_out)
+                     1 (port_bool_out)                                         (VHDL Only)
+                     1 (port_int_out)                                          (VHDL Only)
+                     1 (port_real_out)                                         (VHDL Only)
+                     1 (port_char_out)                                         (VHDL Only)
+                     9 (port_str_out)                                          (VHDL Only)
+                    30 (port_rec_out)                                          (VPI - Aldec sees as a Module and not structure (i.e. cnt = 1))
+                    61 (port_cmplx_out)                                        (VPI - Aldec sees as a Module and not structure (i.e. cnt = 1))
+        constants:   1 (const_logic)
+                     1 (const_logic_vec)
+                     1 (const_bool)                                            (VHDL Only)
+                     1 (const_int)                                             (VHDL Only)
+                     1 (const_real)                                            (VHDL Only)
+                     1 (const_char)                                            (VHDL Only)
+                     1 (const_str)                                             (VHDL Only)
+                     6 (const_rec.a, const_rec.b[0:2])                         (VHDL only excluding Aldec)
+                    13 (const_cmplx[1:2].a, const_cmplx[1:2].b[0:2])           (VHDL only excluding Aldec)
+          signals:   9 (sig_desc)
+                     9 (sig_asc)
+                     1 (\ext_id\)                                              (VHDL only)
+                     1 (\!\)                                                   (VHDL only)
+                     5 (sig_t1)
+                    37 (sig_t2[7:4][7:0])
+                    37 (sig_t3a[1:4][7:0])
+                    37 (sig_t3b[3:0][7:0])
+                   149 (sig_t4[0:3][7:4][7:0])
+                   112 (sig_t5[0:2][0:3][7:0])
+                    57 (sig_t6[0:1][2:4][7:0])
+                   149 (sig_t7[3:0][3:0])                                      (VPI Only)
+                   149 ([3:0][3:0]sig_t8)                                      (VPI Only)
+                     1 (sig_logic)
+                     9 (sig_logic_vec)
+                     1 (sig_bool)                                              (VHDL Only)
+                     1 (sig_int)                                               (VHDL Only)
+                     1 (sig_real)                                              (VHDL Only)
+                     1 (sig_char)                                              (VHDL Only)
+                     9 (sig_str)                                               (VHDL Only)
+                    30 (sig_rec.a, sig_rec.b[0:2][7:0])                        (VPI doesn't find, added manually, except for Aldec)
+                    61 (sig_cmplx[0:1].a, sig_cmplx[0:1].b[0:2][7:0])          (VPI - Aldec older than 2017.10.67 doesn't find)
+          regions:   9 (asc_gen[16:23])
+                     8 (asc_gen: signals)                                      (VHPI - Riviera doesn't find, added manually)
+                     8 (asc_gen: constant)
+                     8 (asc_gen: variable)
+                     8 (asc_gen: process "always")                             (VPI - Aldec only)
+                     9 (desc_gen[7:0])
+                     8 (desc_gen: signals)                                     (VHPI - Riviera doesn't find, added manually)
+                     8 (desc_gen: constant)
+                     8 (desc_gen: variable)
+                     8 (desc_gen: process "always")                            (VPI - Aldec only)
+          process:   1 ("always")                                              (VPI - Aldec only)
 
-                  TOTAL:  856 (VHDL - Default)
-                          818 (VHDL - Aldec)
-                         1078 (Verilog - Default)
-                     947/1038 (Verilog - Aldec)
+            TOTAL:  856 (VHDL - Default)
+                    818 (VHDL - Aldec)
+                   1078 (Verilog - Default)
+               947/1038 (Verilog - Aldec)
     """
 
     tlog = logging.getLogger("cocotb.test")
@@ -308,8 +334,11 @@ async def test_discover_all(dut):
     # Need to clear sub_handles so won't attempt to iterate over handles like sig_rec and sig_rec_array
     #
     # DO NOT REMOVE.  Aldec cannot iterate over the complex records due to bugs in the VPI interface.
-    if (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera") and
-       cocotb.SIM_VERSION.startswith("2016.02")) :
+    if (
+        cocotb.LANGUAGE in ["verilog"]
+        and cocotb.SIM_NAME.lower().startswith("riviera")
+        and cocotb.SIM_VERSION.startswith("2016.02")
+    ):
         if len(dut._sub_handles) != 0:
             dut._sub_handles = {}
 
@@ -317,7 +346,9 @@ async def test_discover_all(dut):
     # to ensure the handle is in the dut "sub_handles" for iterating
     #
     # DO NOT ADD FOR ALDEC.  Older Versions do not iterate over properly
-    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("modelsim", "ncsim", "xmsim")):
+    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
+        ("modelsim", "ncsim", "xmsim")
+    ):
         dummy = dut.sig_rec
         dummy = dut.port_rec_out
 
@@ -334,7 +365,9 @@ async def test_discover_all(dut):
         pass_total = 56
     elif cocotb.LANGUAGE in ["vhdl"]:
         pass_total = 856
-    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
+    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
+        "riviera"
+    ):
         # Numbers for versions before 2019.10 may be outdated
         if cocotb.SIM_VERSION.startswith("2017.10.61"):
             pass_total = 803
@@ -347,14 +380,16 @@ async def test_discover_all(dut):
             pass_total = 1006
         else:
             pass_total = 1038
-    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("chronologic simulation vcs"):
+    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
+        "chronologic simulation vcs"
+    ):
         pass_total = 606
     else:
         pass_total = 1078
 
     def _discover(obj, indent):
         count = 0
-        new_indent = indent+"---"
+        new_indent = indent + "---"
         for thing in obj:
             count += 1
             tlog.info("%sFound %r (%s)", indent, thing, thing._type)
@@ -369,8 +404,11 @@ async def test_discover_all(dut):
 
 # GHDL unable to access std_logic_vector generics (gh-2593)
 @cocotb.test(
-    skip=(cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("riviera")),
-    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else ())
+    skip=(
+        cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("riviera")
+    ),
+    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else (),
+)
 async def test_direct_constant_indexing(dut):
     """Test directly accessing constant/parameter data in arrays, i.e. not iterating"""
 
@@ -410,13 +448,13 @@ async def test_direct_signal_indexing(dut):
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
     dut.port_desc_in.value = 0
-    dut.port_asc_in .value = 0
+    dut.port_asc_in.value = 0
     dut.port_ofst_in.value = 0
 
     await Timer(20, "ns")
 
     dut.port_desc_in[2].value = 1
-    dut.port_asc_in[2] .value = 1
+    dut.port_asc_in[2].value = 1
     dut.port_ofst_in[2].value = 1
 
     await Timer(20, "ns")
@@ -430,7 +468,12 @@ async def test_direct_signal_indexing(dut):
 
     tlog.info("Checking indexing of data with offset index.")
     assert int(dut.port_ofst_out) == 64
-    tlog.info("   %r = %d (%s)", dut.port_ofst_out, int(dut.port_ofst_out), dut.port_ofst_out.value.binstr)
+    tlog.info(
+        "   %r = %d (%s)",
+        dut.port_ofst_out,
+        int(dut.port_ofst_out),
+        dut.port_ofst_out.value.binstr,
+    )
 
     tlog.info("Checking Types of complex array structures in signals.")
     _check_type(tlog, dut.sig_desc[20], ModifiableObject)
@@ -445,8 +488,11 @@ async def test_direct_signal_indexing(dut):
     _check_type(tlog, dut.sig_t4, NonHierarchyIndexableObject)
     _check_type(tlog, dut.sig_t4[3], NonHierarchyIndexableObject)
     # the following version cannot index into those arrays and will error out
-    if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera") and
-            cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))):
+    if not (
+        cocotb.LANGUAGE in ["verilog"]
+        and cocotb.SIM_NAME.lower().startswith("riviera")
+        and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
+    ):
         _check_type(tlog, dut.sig_t4[3][4], ModifiableObject)
         _check_type(tlog, dut.sig_t4[3][4][1], ModifiableObject)
     _check_type(tlog, dut.sig_t5, NonHierarchyIndexableObject)
@@ -456,8 +502,11 @@ async def test_direct_signal_indexing(dut):
     _check_type(tlog, dut.sig_t6, NonHierarchyIndexableObject)
     _check_type(tlog, dut.sig_t6[1], NonHierarchyIndexableObject)
     # the following version cannot index into those arrays and will error out
-    if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera") and
-            cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))):
+    if not (
+        cocotb.LANGUAGE in ["verilog"]
+        and cocotb.SIM_NAME.lower().startswith("riviera")
+        and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
+    ):
         _check_type(tlog, dut.sig_t6[0][3], ModifiableObject)
         _check_type(tlog, dut.sig_t6[0][3][7], ModifiableObject)
     _check_type(tlog, dut.sig_cmplx, NonHierarchyIndexableObject)
@@ -470,8 +519,11 @@ async def test_direct_signal_indexing(dut):
 
     # Riviera has a bug and finds dut.sig_cmplx[1], but the type returned is a vpiBitVar
     # only true for version 2016.02
-    if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera") and
-            cocotb.SIM_VERSION.startswith("2016.02")):
+    if not (
+        cocotb.LANGUAGE in ["verilog"]
+        and cocotb.SIM_NAME.lower().startswith("riviera")
+        and cocotb.SIM_VERSION.startswith("2016.02")
+    ):
 
         _check_type(tlog, dut.sig_cmplx[1], HierarchyObject)
         _check_type(tlog, dut.sig_cmplx[1].a, ModifiableObject)
@@ -485,8 +537,11 @@ async def test_direct_signal_indexing(dut):
 
     # Riviera has a bug and finds dut.sig_rec.b[1], but the type returned is 0 which is unknown
     # only true for version 2016.02
-    if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera") and
-            cocotb.SIM_VERSION.startswith("2016.02")):
+    if not (
+        cocotb.LANGUAGE in ["verilog"]
+        and cocotb.SIM_NAME.lower().startswith("riviera")
+        and cocotb.SIM_VERSION.startswith("2016.02")
+    ):
         _check_type(tlog, dut.sig_rec.b[1], ModifiableObject)
         _check_type(tlog, dut.sig_rec.b[1][2], ModifiableObject)
 

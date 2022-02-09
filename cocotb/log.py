@@ -29,16 +29,13 @@
 Everything related to logging
 """
 
+import logging
 import os
 import sys
-import logging
 import warnings
 
-from cocotb.utils import (
-    get_sim_time, get_time_from_sim_steps, want_color_output
-)
-
 import cocotb.ANSI as ANSI
+from cocotb.utils import get_sim_time, get_time_from_sim_steps, want_color_output
 
 try:
     _suppress = int(os.environ.get("COCOTB_REDUCED_LOG_FMT", "1"))
@@ -46,10 +43,10 @@ except ValueError:
     _suppress = 1
 
 # Column alignment
-_LEVEL_CHARS    = len("CRITICAL")  # noqa
-_RECORD_CHARS   = 35  # noqa
+_LEVEL_CHARS = len("CRITICAL")  # noqa
+_RECORD_CHARS = 35  # noqa
 _FILENAME_CHARS = 20  # noqa
-_LINENO_CHARS   = 4  # noqa
+_LINENO_CHARS = 4  # noqa
 _FUNCNAME_CHARS = 31  # noqa
 
 # Custom log level
@@ -61,7 +58,7 @@ _COCOTB_LOG_LEVEL_DEFAULT = "INFO"
 
 
 def default_config():
-    """ Apply the default cocotb log formatting to the root logger.
+    """Apply the default cocotb log formatting to the root logger.
 
     This hooks up the logger to write to stdout, using either
     :class:`SimColourLogFormatter` or :class:`SimLogFormatter` depending
@@ -92,7 +89,7 @@ def default_config():
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
     # apply level settings for cocotb
-    log = logging.getLogger('cocotb')
+    log = logging.getLogger("cocotb")
 
     try:
         # All log levels are upper case, convert the user input for convenience.
@@ -103,26 +100,31 @@ def default_config():
     try:
         log.setLevel(level)
     except ValueError:
-        valid_levels = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE')
-        raise ValueError("Invalid log level %r passed through the "
-                         "COCOTB_LOG_LEVEL environment variable. Valid log "
-                         "levels: %s" % (level, ', '.join(valid_levels)))
+        valid_levels = ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE")
+        raise ValueError(
+            "Invalid log level %r passed through the "
+            "COCOTB_LOG_LEVEL environment variable. Valid log "
+            "levels: %s" % (level, ", ".join(valid_levels))
+        )
 
     # Notify GPI of log level, which it uses as an optimization to avoid
     # calling into Python.
     from cocotb import simulator
+
     simulator.log_level(log.getEffectiveLevel())
 
 
 class SimBaseLog(logging.getLoggerClass()):
-    """ This class only exists for backwards compatibility """
+    """This class only exists for backwards compatibility"""
 
     @property
     def logger(self):
         warnings.warn(
             "the .logger attribute should not be used now that `SimLog` "
             "returns a native logger instance directly.",
-            DeprecationWarning, stacklevel=2)
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self
 
     @property
@@ -130,13 +132,15 @@ class SimBaseLog(logging.getLoggerClass()):
         warnings.warn(
             "the .colour attribute may be removed in future, use the "
             "equivalent `cocotb.utils.want_color_output()` instead",
-            DeprecationWarning, stacklevel=2)
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return want_color_output()
 
 
 # this used to be a class, hence the unusual capitalization
 def SimLog(name, ident=None):
-    """ Like logging.getLogger, but append a numeric identifier to the name """
+    """Like logging.getLogger, but append a numeric identifier to the name"""
     if ident is not None:
         name = f"{name}.0x{ident:x}"
     return logging.getLogger(name)
@@ -179,35 +183,40 @@ class SimLogFormatter(logging.Formatter):
     # Removes the arguments from the base class. Docstring needed to make
     # sphinx happy.
     def __init__(self):
-        """ Takes no arguments. """
+        """Takes no arguments."""
         super().__init__()
 
     # Justify and truncate
     @staticmethod
     def ljust(string, chars):
         if len(string) > chars:
-            return ".." + string[(chars - 2) * -1:]
+            return ".." + string[(chars - 2) * -1 :]
         return string.ljust(chars)
 
     @staticmethod
     def rjust(string, chars):
         if len(string) > chars:
-            return ".." + string[(chars - 2) * -1:]
+            return ".." + string[(chars - 2) * -1 :]
         return string.rjust(chars)
 
     def _format(self, level, record, msg, coloured=False):
-        sim_time = getattr(record, 'created_sim_time', None)
+        sim_time = getattr(record, "created_sim_time", None)
         if sim_time is None:
             sim_time_str = "  -.--ns"
         else:
-            time_ns = get_time_from_sim_steps(sim_time, 'ns')
+            time_ns = get_time_from_sim_steps(sim_time, "ns")
             sim_time_str = f"{time_ns:6.2f}ns"
-        prefix = sim_time_str.rjust(11) + ' ' + level + ' '
+        prefix = sim_time_str.rjust(11) + " " + level + " "
         if not _suppress:
-            prefix += self.ljust(record.name, _RECORD_CHARS) + \
-                self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
-                ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
-                ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
+            prefix += (
+                self.ljust(record.name, _RECORD_CHARS)
+                + self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS)
+                + ":"
+                + self.ljust(str(record.lineno), _LINENO_CHARS)
+                + " in "
+                + self.ljust(str(record.funcName), _FUNCNAME_CHARS)
+                + " "
+            )
 
         # these lines are copied from the builtin logger
         if record.exc_info:
@@ -222,9 +231,9 @@ class SimLogFormatter(logging.Formatter):
 
         prefix_len = len(prefix)
         if coloured:
-            prefix_len -= (len(level) - _LEVEL_CHARS)
+            prefix_len -= len(level) - _LEVEL_CHARS
         pad = "\n" + " " * (prefix_len)
-        return prefix + pad.join(msg.split('\n'))
+        return prefix + pad.join(msg.split("\n"))
 
     def format(self, record):
         """Prettify the log output, annotate with simulation time"""
@@ -239,12 +248,12 @@ class SimColourLogFormatter(SimLogFormatter):
     """Log formatter to provide consistent log message handling."""
 
     loglevel2colour = {
-        logging.TRACE   :       "%s",
-        logging.DEBUG   :       "%s",
-        logging.INFO    :       "%s",
-        logging.WARNING :       ANSI.COLOR_WARNING + "%s" + ANSI.COLOR_DEFAULT,
-        logging.ERROR   :       ANSI.COLOR_ERROR + "%s" + ANSI.COLOR_DEFAULT,
-        logging.CRITICAL:       ANSI.COLOR_CRITICAL + "%s" + ANSI.COLOR_DEFAULT,
+        logging.TRACE: "%s",
+        logging.DEBUG: "%s",
+        logging.INFO: "%s",
+        logging.WARNING: ANSI.COLOR_WARNING + "%s" + ANSI.COLOR_DEFAULT,
+        logging.ERROR: ANSI.COLOR_ERROR + "%s" + ANSI.COLOR_DEFAULT,
+        logging.CRITICAL: ANSI.COLOR_CRITICAL + "%s" + ANSI.COLOR_DEFAULT,
     }
 
     def format(self, record):
@@ -253,9 +262,15 @@ class SimColourLogFormatter(SimLogFormatter):
         msg = record.getMessage()
 
         # Need to colour each line in case coloring is applied in the message
-        msg = '\n'.join([SimColourLogFormatter.loglevel2colour.get(record.levelno,"%s") % line for line in msg.split('\n')])
-        level = (SimColourLogFormatter.loglevel2colour.get(record.levelno, "%s") %
-                 record.levelname.ljust(_LEVEL_CHARS))
+        msg = "\n".join(
+            [
+                SimColourLogFormatter.loglevel2colour.get(record.levelno, "%s") % line
+                for line in msg.split("\n")
+            ]
+        )
+        level = SimColourLogFormatter.loglevel2colour.get(
+            record.levelno, "%s"
+        ) % record.levelname.ljust(_LEVEL_CHARS)
 
         return self._format(level, record, msg, coloured=True)
 
@@ -272,13 +287,6 @@ def _log_from_c(logger_name, level, filename, lineno, msg, function_name):
     logger = logging.getLogger(logger_name)
     if logger.isEnabledFor(level):
         record = logger.makeRecord(
-            logger.name,
-            level,
-            filename,
-            lineno,
-            msg,
-            None,
-            None,
-            function_name
+            logger.name, level, filename, lineno, msg, None, None, function_name
         )
         logger.handle(record)

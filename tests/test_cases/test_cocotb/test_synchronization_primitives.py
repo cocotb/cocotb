@@ -4,11 +4,11 @@
 """
 Tests for synchronization primitives like Lock and Event
 """
+from common import assert_raises
+
 import cocotb
 from cocotb.triggers import Lock, Timer, _InternalEvent
 from cocotb.utils import get_sim_time
-
-from common import assert_raises
 
 
 @cocotb.test()
@@ -59,26 +59,26 @@ async def test_except_lock(dut):
 @cocotb.test()
 async def test_internalevent(dut):
     """Test _InternalEvent trigger."""
-    e = _InternalEvent('test parent')
+    e = _InternalEvent("test parent")
     assert repr(e) == "'test parent'"
 
     async def set_internalevent():
-        await Timer(1, units='ns')
-        e.set('data')
+        await Timer(1, units="ns")
+        e.set("data")
 
     # Test waiting more than once
     cocotb.start_soon(set_internalevent())
-    time_ns = get_sim_time(units='ns')
+    time_ns = get_sim_time(units="ns")
     await e
     assert e.is_set()
-    assert e.data == 'data'
-    assert get_sim_time(units='ns') == time_ns + 1
+    assert e.data == "data"
+    assert get_sim_time(units="ns") == time_ns + 1
     # _InternalEvent can only be awaited once
     with assert_raises(RuntimeError):
         await e
 
     e = _InternalEvent(None)
-    assert repr(e) == 'None'
+    assert repr(e) == "None"
     ran = False
 
     async def await_internalevent():
@@ -102,8 +102,8 @@ async def test_internalevent(dut):
     e = _InternalEvent(None)
     assert not e.is_set()
     cocotb.start_soon(set_internalevent())
-    await Timer(2, units='ns')
+    await Timer(2, units="ns")
     assert e.is_set()
-    time_ns = get_sim_time(units='ns')
+    time_ns = get_sim_time(units="ns")
     await e
-    assert get_sim_time(units='ns') == time_ns
+    assert get_sim_time(units="ns") == time_ns

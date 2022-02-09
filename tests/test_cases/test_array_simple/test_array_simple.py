@@ -18,23 +18,25 @@ def _check_value(tlog, hdl, expected):
 
 
 # GHDL unable to put values on nested array types (gh-2588)
-@cocotb.test(expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+@cocotb.test(
+    expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+)
 async def test_1dim_array_handles(dut):
     """Test getting and setting array values using the handle of the full array."""
 
-    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, "ns").start())
 
     dut.array_7_downto_4.value = [0xF0, 0xE0, 0xD0, 0xC0]
     dut.array_4_to_7.value = [0xB0, 0xA0, 0x90, 0x80]
     dut.array_3_downto_0.value = [0x70, 0x60, 0x50, 0x40]
     dut.array_0_to_3.value = [0x30, 0x20, 0x10, 0x00]
 
-    await Timer(1000, 'ns')
+    await Timer(1000, "ns")
 
     _check_value(tlog, dut.array_7_downto_4, [0xF0, 0xE0, 0xD0, 0xC0])
-    _check_value(tlog, dut.array_4_to_7    , [0xB0, 0xA0, 0x90, 0x80])
+    _check_value(tlog, dut.array_4_to_7, [0xB0, 0xA0, 0x90, 0x80])
     _check_value(tlog, dut.array_3_downto_0, [0x70, 0x60, 0x50, 0x40])
-    _check_value(tlog, dut.array_0_to_3    , [0x30, 0x20, 0x10, 0x00])
+    _check_value(tlog, dut.array_0_to_3, [0x30, 0x20, 0x10, 0x00])
 
 
 # GHDL unable to put values on nested array types (gh-2588)
@@ -47,42 +49,43 @@ async def test_1dim_array_handles(dut):
 async def test_ndim_array_handles(dut):
     """Test getting and setting multi-dimensional array values using the handle of the full array."""
 
-    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, "ns").start())
 
-    dut.array_2d.value = [
-        [0xF0, 0xE0, 0xD0, 0xC0],
-        [0xB0, 0xA0, 0x90, 0x80]
-    ]
+    dut.array_2d.value = [[0xF0, 0xE0, 0xD0, 0xC0], [0xB0, 0xA0, 0x90, 0x80]]
 
-    await Timer(1000, 'ns')
+    await Timer(1000, "ns")
 
-    _check_value(tlog, dut.array_2d, [[0xF0, 0xE0, 0xD0, 0xC0], [0xB0, 0xA0, 0x90, 0x80]])
+    _check_value(
+        tlog, dut.array_2d, [[0xF0, 0xE0, 0xD0, 0xC0], [0xB0, 0xA0, 0x90, 0x80]]
+    )
 
 
 # GHDL unable to put values on nested array types (gh-2588)
-@cocotb.test(expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+@cocotb.test(
+    expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+)
 async def test_1dim_array_indexes(dut):
     """Test getting and setting values of array indexes."""
 
-    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, "ns").start())
 
     dut.array_7_downto_4.value = [0xF0, 0xE0, 0xD0, 0xC0]
     dut.array_4_to_7.value = [0xB0, 0xA0, 0x90, 0x80]
     dut.array_3_downto_0.value = [0x70, 0x60, 0x50, 0x40]
     dut.array_0_to_3.value = [0x30, 0x20, 0x10, 0x00]
 
-    await Timer(1000, 'ns')
+    await Timer(1000, "ns")
 
     # Check indices
     _check_value(tlog, dut.array_7_downto_4[7], 0xF0)
     _check_value(tlog, dut.array_7_downto_4[4], 0xC0)
-    _check_value(tlog, dut.array_4_to_7[4]    , 0xB0)
-    _check_value(tlog, dut.array_4_to_7[7]    , 0x80)
+    _check_value(tlog, dut.array_4_to_7[4], 0xB0)
+    _check_value(tlog, dut.array_4_to_7[7], 0x80)
     _check_value(tlog, dut.array_3_downto_0[3], 0x70)
     _check_value(tlog, dut.array_3_downto_0[0], 0x40)
-    _check_value(tlog, dut.array_0_to_3[0]    , 0x30)
-    _check_value(tlog, dut.array_0_to_3[3]    , 0x00)
-    _check_value(tlog, dut.array_0_to_3[1]    , 0x20)
+    _check_value(tlog, dut.array_0_to_3[0], 0x30)
+    _check_value(tlog, dut.array_0_to_3[3], 0x00)
+    _check_value(tlog, dut.array_0_to_3[1], 0x20)
 
     # Get sub-handles through NonHierarchyIndexableObject.__getitem__
     dut.array_7_downto_4[7].value = 0xDE
@@ -91,13 +94,13 @@ async def test_1dim_array_indexes(dut):
     dut.array_0_to_3[1].value = 0x7A
     dut.array_0_to_3[3].value = 0x42
 
-    await Timer(1000, 'ns')
+    await Timer(1000, "ns")
 
     _check_value(tlog, dut.array_7_downto_4[7], 0xDE)
-    _check_value(tlog, dut.array_4_to_7[4]    , 0xFC)
+    _check_value(tlog, dut.array_4_to_7[4], 0xFC)
     _check_value(tlog, dut.array_3_downto_0[0], 0xAB)
-    _check_value(tlog, dut.array_0_to_3[1]    , 0x7A)
-    _check_value(tlog, dut.array_0_to_3[3]    , 0x42)
+    _check_value(tlog, dut.array_0_to_3[1], 0x7A)
+    _check_value(tlog, dut.array_0_to_3[3], 0x42)
 
 
 # GHDL unable to put values on nested array types (gh-2588)
@@ -110,17 +113,14 @@ async def test_1dim_array_indexes(dut):
 async def test_ndim_array_indexes(dut):
     """Test getting and setting values of multi-dimensional array indexes."""
 
-    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, "ns").start())
 
-    dut.array_2d.value = [
-        [0xF0, 0xE0, 0xD0, 0xC0],
-        [0xB0, 0xA0, 0x90, 0x80]
-    ]
+    dut.array_2d.value = [[0xF0, 0xE0, 0xD0, 0xC0], [0xB0, 0xA0, 0x90, 0x80]]
 
-    await Timer(1000, 'ns')
+    await Timer(1000, "ns")
 
     # Check indices
-    _check_value(tlog, dut.array_2d[1]    , [0xB0, 0xA0, 0x90, 0x80])
+    _check_value(tlog, dut.array_2d[1], [0xB0, 0xA0, 0x90, 0x80])
     _check_value(tlog, dut.array_2d[0][31], 0xF0)
     _check_value(tlog, dut.array_2d[1][29], 0x90)
     _check_value(tlog, dut.array_2d[1][28], 0x80)
@@ -129,7 +129,7 @@ async def test_ndim_array_indexes(dut):
     dut.array_2d[1].value = [0xDE, 0xAD, 0xBE, 0xEF]
     dut.array_2d[0][31].value = 0x0F
 
-    await Timer(1000, 'ns')
+    await Timer(1000, "ns")
 
     _check_value(tlog, dut.array_2d[0][31], 0x0F)
     _check_value(tlog, dut.array_2d[0][29], 0xD0)
@@ -139,15 +139,19 @@ async def test_ndim_array_indexes(dut):
 
 # GHDL unable to access record signals (gh-2591)
 # Icarus doesn't support structs (gh-2592)
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) else ())
+@cocotb.test(
+    expect_error=AttributeError
+    if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl"))
+    else ()
+)
 async def test_struct(dut):
     """Test setting and getting values of structs."""
-    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, "ns").start())
     dut.inout_if.a_in.value = 1
-    await Timer(1000, 'ns')
+    await Timer(1000, "ns")
     _check_value(tlog, dut.inout_if.a_in, 1)
     dut.inout_if.a_in.value = 0
-    await Timer(1000, 'ns')
+    await Timer(1000, "ns")
     _check_value(tlog, dut.inout_if.a_in, 0)
 
 

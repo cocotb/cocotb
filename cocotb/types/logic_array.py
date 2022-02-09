@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
 
-from cocotb.binary import BinaryValue, BinaryRepresentation
+from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.types.array import Array
 from cocotb.types.logic import Logic, LogicConstructibleT
 from cocotb.types.range import Range
@@ -144,7 +144,9 @@ class LogicArray(Array[Logic]):
         else:
             self._range = range
         if len(self._value) != len(self._range):
-            raise ValueError(f"value of length {len(self._value)} will not fit in {self._range}")
+            raise ValueError(
+                f"value of length {len(self._value)} will not fit in {self._range}"
+            )
 
     @property
     def binstr(self) -> str:
@@ -255,7 +257,7 @@ class LogicArray(Array[Logic]):
             value=self.binstr,
             n_bits=len(self),
             bigEndian=bigEndian,
-            binaryRepresentation=binaryRepresentation
+            binaryRepresentation=binaryRepresentation,
         )
 
 

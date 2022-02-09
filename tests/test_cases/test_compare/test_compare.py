@@ -7,12 +7,11 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.handle import SimHandleBase, NonHierarchyObject
-from cocotb.triggers import RisingEdge, FallingEdge
+from cocotb.handle import NonHierarchyObject, SimHandleBase
+from cocotb.triggers import FallingEdge, RisingEdge
 
 
 class Testbench:
-
     def __init__(self, dut):
         self.dut = dut
         self.clkedge = RisingEdge(dut.clk)

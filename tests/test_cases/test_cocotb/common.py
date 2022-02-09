@@ -43,8 +43,9 @@ def assert_raises(exc_type, pattern=None):
         yield
     except exc_type as e:
         if pattern:
-            assert re.match(pattern, str(e)), \
-                "Correct exception type caught, but message did not match pattern"
+            assert re.match(
+                pattern, str(e)
+            ), "Correct exception type caught, but message did not match pattern"
         pass
     else:
         assert False, f"{exc_type.__name__} was not raised"

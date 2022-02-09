@@ -2,28 +2,33 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+import distutils
+import logging
 import os
+import subprocess
 import sys
 import sysconfig
-import logging
-import distutils
-import subprocess
 import textwrap
-
-from setuptools import Extension
-from distutils.spawn import find_executable
-from setuptools.command.build_ext import build_ext as _build_ext
-from distutils.file_util import copy_file
 from distutils.ccompiler import get_default_compiler
+from distutils.file_util import copy_file
+from distutils.spawn import find_executable
 from typing import List
 
+from setuptools import Extension
+from setuptools.command.build_ext import build_ext as _build_ext
 
 logger = logging.getLogger(__name__)
-cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "cocotb", "share"))
+cocotb_share_dir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "cocotb", "share")
+)
 
 _base_warns = ["-Wall", "-Wextra", "-Wcast-qual", "-Wwrite-strings", "-Wconversion"]
 _ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
-_extra_cxx_compile_args = ["-std=c++11", "-fvisibility=hidden", "-fvisibility-inlines-hidden"] + _ccx_warns
+_extra_cxx_compile_args = [
+    "-std=c++11",
+    "-fvisibility=hidden",
+    "-fvisibility-inlines-hidden",
+] + _ccx_warns
 if os.name != "nt":
     _extra_cxx_compile_args += ["-flto"]
 
@@ -33,7 +38,9 @@ _extra_cxx_compile_args_msvc = ["/permissive-"]
 _extra_defines = [("__STDC_FORMAT_MACROS", "")]
 
 
-def create_sxs_assembly_manifest(name: str, filename: str, libraries: List[str], dependency_only=False) -> str:
+def create_sxs_assembly_manifest(
+    name: str, filename: str, libraries: List[str], dependency_only=False
+) -> str:
     """
     Create side-by-side (sxs) assembly manifest
 
@@ -52,30 +59,50 @@ def create_sxs_assembly_manifest(name: str, filename: str, libraries: List[str],
     dependencies = []
 
     for lib in libraries:
-        dependencies.append(textwrap.dedent('''\
+        dependencies.append(
+            textwrap.dedent(
+                """\
             <dependency>
                 <dependentAssembly>
                     <assemblyIdentity name="%s" version="1.0.0.0" type="win32" processorArchitecture="%s" />
                 </dependentAssembly>
             </dependency>
-            ''') % (lib, architecture))
+            """
+            )
+            % (lib, architecture)
+        )
 
     if not dependency_only:
-        manifest_body = textwrap.dedent('''\
+        manifest_body = (
+            textwrap.dedent(
+                """\
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
             <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
                 <assemblyIdentity name="%s" version="1.0.0.0" type="win32" processorArchitecture="%s" />
                 <file name="%s" />
                 %s
             </assembly>
-            ''') % (name, architecture, filename, textwrap.indent("".join(dependencies), '    ').strip())
+            """
+            )
+            % (
+                name,
+                architecture,
+                filename,
+                textwrap.indent("".join(dependencies), "    ").strip(),
+            )
+        )
     else:
-        manifest_body = textwrap.dedent('''\
+        manifest_body = (
+            textwrap.dedent(
+                """\
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
             <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
                 %s
             </assembly>
-            ''') % (textwrap.indent("".join(dependencies), '    ').strip())
+            """
+            )
+            % (textwrap.indent("".join(dependencies), "    ").strip())
+        )
 
     return manifest_body
 
@@ -88,7 +115,8 @@ def create_sxs_appconfig(filename):
     For more details see: https://docs.microsoft.com/en-us/windows/win32/sbscs/application-configuration-files
     """
 
-    config_body = textwrap.dedent('''\
+    config_body = textwrap.dedent(
+        """\
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
         <configuration>
             <windows>
@@ -97,12 +125,13 @@ def create_sxs_appconfig(filename):
                 </assemblyBinding>
             </windows>
         </configuration>
-        ''')
+        """
+    )
 
     dirpath = os.path.dirname(filename)
     os.makedirs(dirpath, exist_ok=True)
 
-    with open(filename + ".2.config", "w", encoding='utf-8') as f:
+    with open(filename + ".2.config", "w", encoding="utf-8") as f:
         f.write(config_body)
 
 
@@ -117,9 +146,11 @@ def create_rc_file(rc_filename, name, filename, libraries, runtime_libraries):
 
     # Escape double quotes and put every line between double quotes for embedding into rc file
     manifest = manifest.replace('"', '""')
-    manifest = '\n'.join(['"%s\\r\\n"' % x for x in manifest.splitlines()])
+    manifest = "\n".join(['"%s\\r\\n"' % x for x in manifest.splitlines()])
 
-    rc_body = textwrap.dedent('''\
+    rc_body = (
+        textwrap.dedent(
+            """\
         #pragma code_page(65001) // UTF-8
         #include <Windows.h>
 
@@ -129,28 +160,38 @@ def create_rc_file(rc_filename, name, filename, libraries, runtime_libraries):
         BEGIN
         %s
         END
-        ''') % manifest
+        """
+        )
+        % manifest
+    )
 
     if runtime_libraries is not None:
-        manifest = create_sxs_assembly_manifest(name, filename, runtime_libraries, dependency_only=True)
+        manifest = create_sxs_assembly_manifest(
+            name, filename, runtime_libraries, dependency_only=True
+        )
 
         # Escape double quotes and put every line between double quotes for embedding into rc file
         manifest = manifest.replace('"', '""')
-        manifest = '\n'.join(['"%s\\r\\n"' % x for x in manifest.splitlines()])
+        manifest = "\n".join(['"%s\\r\\n"' % x for x in manifest.splitlines()])
 
-        rc_body += textwrap.dedent('''\
+        rc_body += (
+            textwrap.dedent(
+                """\
             1000 RT_MANIFEST
             BEGIN
             %s
             END
-            ''') % manifest
+            """
+            )
+            % manifest
+        )
 
-    with open(rc_filename, "w", encoding='utf-8') as f:
+    with open(rc_filename, "w", encoding="utf-8") as f:
         f.write(rc_body)
 
 
 def _get_lib_ext_name():
-    """ Get name of default library file extension on given OS. """
+    """Get name of default library file extension on given OS."""
 
     if os.name == "nt":
         ext_name = "dll"
@@ -171,7 +212,9 @@ class build_ext(_build_ext):
 
     def run(self):
         if os.name == "nt":
-            create_sxs_appconfig(self.get_ext_fullpath(os.path.join("cocotb", "simulator")))
+            create_sxs_appconfig(
+                self.get_ext_fullpath(os.path.join("cocotb", "simulator"))
+            )
 
         super().run()
 
@@ -185,9 +228,13 @@ class build_ext(_build_ext):
                 # Setuptools defaults to activate automatic manifest generation for msvc,
                 # disable it here as we manually generate it to also support mingw on windows
                 for (k, ldflags) in self.compiler._ldflags.items():
-                    self.compiler._ldflags[k] = [x for x in ldflags if not x.startswith("/MANIFEST")] + ["/MANIFEST:NO"]
+                    self.compiler._ldflags[k] = [
+                        x for x in ldflags if not x.startswith("/MANIFEST")
+                    ] + ["/MANIFEST:NO"]
 
-                self.compiler.compile_options = [x for x in self.compiler.compile_options if not x.startswith("/W")] + ["/W4"]
+                self.compiler.compile_options = [
+                    x for x in self.compiler.compile_options if not x.startswith("/W")
+                ] + ["/W4"]
 
             ext_names = {os.path.split(ext.name)[-1] for ext in self.extensions}
             for ext in self.extensions:
@@ -195,7 +242,9 @@ class build_ext(_build_ext):
                 filename = self.get_ext_filename(fullname)
                 name = os.path.split(fullname)[-1]
                 filename = os.path.split(filename)[-1]
-                libraries = {"lib" + lib for lib in ext.libraries}.intersection(ext_names)
+                libraries = {"lib" + lib for lib in ext.libraries}.intersection(
+                    ext_names
+                )
                 rc_filename = name + ".rc"
                 runtime_libraries = None
 
@@ -206,10 +255,17 @@ class build_ext(_build_ext):
                 # Strip lib prefix for msvc
                 if self._uses_msvc():
                     name = name[3:] if name.startswith("lib") else name
-                    libraries = {(lib[3:] if lib.startswith("lib") else lib) for lib in libraries}
+                    libraries = {
+                        (lib[3:] if lib.startswith("lib") else lib) for lib in libraries
+                    }
                     if runtime_libraries is not None:
-                        runtime_libraries = {(lib[3:] if lib.startswith("lib") else lib) for lib in runtime_libraries}
-                create_rc_file(rc_filename, name, filename, libraries, runtime_libraries)
+                        runtime_libraries = {
+                            (lib[3:] if lib.startswith("lib") else lib)
+                            for lib in runtime_libraries
+                        }
+                create_rc_file(
+                    rc_filename, name, filename, libraries, runtime_libraries
+                )
 
             def_dir = os.path.join(cocotb_share_dir, "def")
             self._gen_import_libs(def_dir)
@@ -246,9 +302,13 @@ class build_ext(_build_ext):
                     install_name = lib_name
 
                 if sys.platform == "darwin":
-                    rpaths = [rpath.replace("$ORIGIN", "@loader_path") for rpath in rpaths]
+                    rpaths = [
+                        rpath.replace("$ORIGIN", "@loader_path") for rpath in rpaths
+                    ]
                     if install_name is not None:
-                        ext.extra_link_args += ["-Wl,-install_name,@rpath/%s.so" % install_name]
+                        ext.extra_link_args += [
+                            "-Wl,-install_name,@rpath/%s.so" % install_name
+                        ]
 
                 ext.extra_link_args += ["-Wl,-rpath,%s" % rpath for rpath in rpaths]
 
@@ -261,7 +321,9 @@ class build_ext(_build_ext):
                 embed_lib_name = "cocotb"
             else:
                 embed_lib_name = "libcocotb"
-            ext.define_macros += [("EMBED_IMPL_LIB", embed_lib_name + "." + _get_lib_ext_name())]
+            ext.define_macros += [
+                ("EMBED_IMPL_LIB", embed_lib_name + "." + _get_lib_ext_name())
+            ]
 
         old_build_temp = self.build_temp
         self.build_temp = os.path.join(self.build_temp, ext.name)
@@ -299,14 +361,20 @@ class build_ext(_build_ext):
         filename_short = os.path.join(head, tail_split[0] + "." + _get_lib_ext_name())
 
         # icarus requires vpl extension
-        filename_short = filename_short.replace("libcocotbvpi_icarus.so", "libcocotbvpi_icarus.vpl")
-        filename_short = filename_short.replace("libcocotbvpi_icarus.dll", "libcocotbvpi_icarus.vpl")
-        filename_short = filename_short.replace("cocotbvpi_icarus.dll", "cocotbvpi_icarus.vpl")
+        filename_short = filename_short.replace(
+            "libcocotbvpi_icarus.so", "libcocotbvpi_icarus.vpl"
+        )
+        filename_short = filename_short.replace(
+            "libcocotbvpi_icarus.dll", "libcocotbvpi_icarus.vpl"
+        )
+        filename_short = filename_short.replace(
+            "cocotbvpi_icarus.dll", "cocotbvpi_icarus.vpl"
+        )
 
         return filename_short
 
     def finalize_options(self):
-        """ Like the base class method,but add extra library_dirs path. """
+        """Like the base class method,but add extra library_dirs path."""
 
         super().finalize_options()
 
@@ -314,7 +382,7 @@ class build_ext(_build_ext):
             ext.library_dirs.append(os.path.join(self.build_lib, "cocotb", "libs"))
 
     def copy_extensions_to_source(self):
-        """ Like the base class method, but copy libs into proper directory in develop. """
+        """Like the base class method, but copy libs into proper directory in develop."""
 
         build_py = self.get_finalized_command("build_py")
         for ext in self.extensions:
@@ -348,7 +416,7 @@ class build_ext(_build_ext):
                         self.compiler.lib,
                         "/def:" + os.path.join(def_dir, sim + ".def"),
                         "/out:" + os.path.join(def_dir, sim + ".lib"),
-                        "/machine:" + ("X64" if sys.maxsize > 2**32 else "X86")
+                        "/machine:" + ("X64" if sys.maxsize > 2**32 else "X86"),
                     ]
                 )
             else:
@@ -364,7 +432,7 @@ class build_ext(_build_ext):
 
 
 def _get_python_lib_link():
-    """ Get name of python library used for linking """
+    """Get name of python library used for linking"""
 
     if sys.platform == "darwin":
         ld_library = sysconfig.get_config_var("LIBRARY")
@@ -381,12 +449,14 @@ def _get_python_lib_link():
 
 
 def _get_python_lib():
-    """ Get the library for embedded the python interpreter """
+    """Get the library for embedded the python interpreter"""
 
     if os.name == "nt":
         python_lib = _get_python_lib_link() + "." + _get_lib_ext_name()
     elif sys.platform == "darwin":
-        python_lib = os.path.join(sysconfig.get_config_var("LIBDIR"), "lib" + _get_python_lib_link() + ".")
+        python_lib = os.path.join(
+            sysconfig.get_config_var("LIBDIR"), "lib" + _get_python_lib_link() + "."
+        )
         if os.path.exists(python_lib + "dylib"):
             python_lib += "dylib"
         else:
@@ -408,9 +478,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libcocotbutils
     #
-    libcocotbutils_sources = [
-        os.path.join(share_lib_dir, "utils", "cocotb_utils.cpp")
-    ]
+    libcocotbutils_sources = [os.path.join(share_lib_dir, "utils", "cocotb_utils.cpp")]
     if os.name == "nt":
         libcocotbutils_sources += ["libcocotbutils.rc"]
     libcocotbutils_libraries = ["gpilog"]
@@ -431,9 +499,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     if sys.platform == "darwin":
         python_lib_dirs = [sysconfig.get_config_var("LIBDIR")]
 
-    libgpilog_sources = [
-        os.path.join(share_lib_dir, "gpi_log", "gpi_logging.cpp")
-    ]
+    libgpilog_sources = [os.path.join(share_lib_dir, "gpi_log", "gpi_logging.cpp")]
     if os.name == "nt":
         libgpilog_sources += ["libgpilog.rc"]
     libgpilog = Extension(
@@ -462,16 +528,13 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libembed
     #
-    libembed_sources = [
-        os.path.join(share_lib_dir, "embed", "embed.cpp")
-    ]
+    libembed_sources = [os.path.join(share_lib_dir, "embed", "embed.cpp")]
     if os.name == "nt":
         libembed_sources += ["libembed.rc"]
     libembed = Extension(
         os.path.join("cocotb", "libs", "libembed"),
-        define_macros=[
-            ("COCOTB_EMBED_EXPORTS", ""),
-            ("PYTHON_LIB", _get_python_lib())] + _extra_defines,
+        define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_LIB", _get_python_lib())]
+        + _extra_defines,
         include_dirs=[include_dir],
         libraries=["gpilog", "cocotbutils"],
         sources=libembed_sources,
@@ -480,9 +543,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libcocotb
     #
-    libcocotb_sources = [
-        os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")
-    ]
+    libcocotb_sources = [os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")]
     if os.name == "nt":
         libcocotb_sources += ["libcocotb.rc"]
     libcocotb = Extension(
@@ -496,7 +557,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libgpi
     #
-    libgpi_sources=[
+    libgpi_sources = [
         os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
         os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp"),
     ]
@@ -504,7 +565,12 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libgpi_sources += ["libgpi.rc"]
     libgpi = Extension(
         os.path.join("cocotb", "libs", "libgpi"),
-        define_macros=[("GPI_EXPORTS", ""), ("LIB_EXT", _get_lib_ext_name()), ("SINGLETON_HANDLES", "")] + _extra_defines,
+        define_macros=[
+            ("GPI_EXPORTS", ""),
+            ("LIB_EXT", _get_lib_ext_name()),
+            ("SINGLETON_HANDLES", ""),
+        ]
+        + _extra_defines,
         include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "embed"],
         sources=libgpi_sources,
@@ -513,7 +579,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  simulator
     #
-    simulator_sources=[
+    simulator_sources = [
         os.path.join(share_lib_dir, "simulator", "simulatormodule.cpp"),
     ]
     if os.name == "nt":
@@ -545,7 +611,9 @@ def _get_vpi_lib_ext(
         libcocotbvpi_sources += [lib_name + ".rc"]
     libcocotbvpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
-        define_macros=[("COCOTBVPI_EXPORTS", ""), ("VPI_CHECKING", "1")] + [(sim_define, "")] + _extra_defines,
+        define_macros=[("COCOTBVPI_EXPORTS", ""), ("VPI_CHECKING", "1")]
+        + [(sim_define, "")]
+        + _extra_defines,
         include_dirs=[include_dir],
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=extra_lib_dir,
@@ -568,7 +636,9 @@ def _get_vhpi_lib_ext(
     libcocotbvhpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
         include_dirs=[include_dir],
-        define_macros=[("COCOTBVHPI_EXPORTS", ""), ("VHPI_CHECKING", 1)] + [(sim_define, "")] + _extra_defines,
+        define_macros=[("COCOTBVHPI_EXPORTS", ""), ("VHPI_CHECKING", 1)]
+        + [(sim_define, "")]
+        + _extra_defines,
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=extra_lib_dir,
         sources=libcocotbvhpi_sources,

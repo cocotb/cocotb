@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import pytest
 
-from cocotb.binary import BinaryValue, BinaryRepresentation
+from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.types import Logic, LogicArray, Range, concat
 
 
@@ -27,7 +27,7 @@ def test_logic_array_constructor():
         LogicArray(object())
 
     with pytest.raises(ValueError):
-        LogicArray("101010", Range(0, 'to', 0))
+        LogicArray("101010", Range(0, "to", 0))
 
 
 def test_logic_array_properties():

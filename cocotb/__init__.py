@@ -30,24 +30,29 @@ Cocotb is a coroutine, cosimulation framework for writing testbenches in Python.
 
 See https://docs.cocotb.org for full documentation
 """
-import os
-import sys
 import logging
-import threading
+import os
 import random
+import sys
+import threading
 import time
 import warnings
-from typing import Dict, List, Optional, Union
 from collections.abc import Coroutine
+from typing import Dict, List, Optional, Union
 
 import cocotb.handle
-from cocotb.scheduler import Scheduler
-from cocotb.regression import RegressionManager
-from cocotb.decorators import RunningTask
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test, coroutine, function, external  # noqa: F401
-from cocotb.log import _log_from_c, _filter_from_c  # noqa: F401
+from cocotb.decorators import (  # noqa: F401
+    RunningTask,
+    coroutine,
+    external,
+    function,
+    test,
+)
+from cocotb.log import _filter_from_c, _log_from_c  # noqa: F401
+from cocotb.regression import RegressionManager
+from cocotb.scheduler import Scheduler
 
 from ._version import __version__
 
@@ -58,7 +63,11 @@ def _setup_logging():
     def _reopen_stream_with_buffering(stream_name):
         try:
             if not getattr(sys, stream_name).isatty():
-                setattr(sys, stream_name, os.fdopen(getattr(sys, stream_name).fileno(), 'w', 1))
+                setattr(
+                    sys,
+                    stream_name,
+                    os.fdopen(getattr(sys, stream_name).fileno(), "w", 1),
+                )
                 return True
             return False
         except Exception as e:
@@ -68,12 +77,13 @@ def _setup_logging():
     # buffering. In that case, try to reopen them with line buffering
     # explicitly enabled. This ensures that prints such as stack traces always
     # appear. Continue silently if this fails.
-    _stdout_buffer_result = _reopen_stream_with_buffering('stdout')
-    _stderr_buffer_result = _reopen_stream_with_buffering('stderr')
+    _stdout_buffer_result = _reopen_stream_with_buffering("stdout")
+    _stderr_buffer_result = _reopen_stream_with_buffering("stderr")
 
     # Don't set the logging up until we've attempted to fix the standard IO,
     # otherwise it will end up connected to the unfixed IO.
     from cocotb.log import default_config
+
     default_config()
     log = logging.getLogger(__name__)
 
@@ -82,11 +92,19 @@ def _setup_logging():
         log.debug("Reopened stderr with line buffering")
     if _stdout_buffer_result is True:
         log.debug("Reopened stdout with line buffering")
-    if isinstance(_stdout_buffer_result, Exception) or isinstance(_stderr_buffer_result, Exception):
+    if isinstance(_stdout_buffer_result, Exception) or isinstance(
+        _stderr_buffer_result, Exception
+    ):
         if isinstance(_stdout_buffer_result, Exception):
-            log.warning("Failed to ensure that stdout is line buffered", exc_info=_stdout_buffer_result)
+            log.warning(
+                "Failed to ensure that stdout is line buffered",
+                exc_info=_stdout_buffer_result,
+            )
         if isinstance(_stderr_buffer_result, Exception):
-            log.warning("Failed to ensure that stderr is line buffered", exc_info=_stderr_buffer_result)
+            log.warning(
+                "Failed to ensure that stderr is line buffered",
+                exc_info=_stderr_buffer_result,
+            )
         log.warning("Some stack traces may not appear because of this.")
 
     del _stderr_buffer_result, _stdout_buffer_result
@@ -168,7 +186,7 @@ and in parameters to :class:`.TestFactory`\ s.
 
 
 def fork(coro: Union[RunningTask, Coroutine]) -> RunningTask:
-    """ Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on its use. """
+    """Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on its use."""
     return scheduler.add(coro)
 
 
@@ -215,6 +233,7 @@ _rlock = threading.RLock()
 
 def mem_debug(port):
     import cocotb.memdebug
+
     cocotb.memdebug.start(port)
 
 
@@ -236,7 +255,8 @@ def _initialise_testbench(argv_):  # pragma: no cover
             _library_coverage = coverage.coverage(
                 data_file=".coverage.cocotb",
                 branch=True,
-                include=["{}/*".format(os.path.dirname(__file__))])
+                include=["{}/*".format(os.path.dirname(__file__))],
+            )
             _library_coverage.start()
 
         _initialise_testbench_(argv_)
@@ -256,7 +276,7 @@ def _initialise_testbench_(argv_):
         root_name = root_name.strip()
         if root_name == "":
             root_name = None
-        elif '.' in root_name:
+        elif "." in root_name:
             # Skip any library component of the toplevel
             root_name = root_name.split(".", 1)[1]
 
@@ -281,12 +301,14 @@ def _initialise_testbench_(argv_):
 
     cocotb.log.info(f"Running on {SIM_NAME} version {SIM_VERSION}")
 
-    memcheck_port = os.getenv('MEMCHECK')
+    memcheck_port = os.getenv("MEMCHECK")
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
-    log.info("Running tests with cocotb v%s from %s" %
-             (__version__, os.path.dirname(__file__)))
+    log.info(
+        "Running tests with cocotb v%s from %s"
+        % (__version__, os.path.dirname(__file__))
+    )
 
     # Create the base handle type
 
@@ -297,13 +319,13 @@ def _initialise_testbench_(argv_):
 
     # Seed the Python random number generator to make this repeatable
     global RANDOM_SEED
-    RANDOM_SEED = os.getenv('RANDOM_SEED')
+    RANDOM_SEED = os.getenv("RANDOM_SEED")
 
     if RANDOM_SEED is None:
-        if 'ntb_random_seed' in plusargs:
-            RANDOM_SEED = eval(plusargs['ntb_random_seed'])
-        elif 'seed' in plusargs:
-            RANDOM_SEED = eval(plusargs['seed'])
+        if "ntb_random_seed" in plusargs:
+            RANDOM_SEED = eval(plusargs["ntb_random_seed"])
+        elif "seed" in plusargs:
+            RANDOM_SEED = eval(plusargs["seed"])
         else:
             RANDOM_SEED = int(time.time())
         log.info("Seeding Python random module with %d" % (RANDOM_SEED))
@@ -326,19 +348,22 @@ def _initialise_testbench_(argv_):
         import pytest
     except ImportError:
         log.info(
-            "pytest not found, install it to enable better AssertionError messages")
+            "pytest not found, install it to enable better AssertionError messages"
+        )
     else:
         try:
             # Install the assertion rewriting hook, which must be done before we
             # import the test modules.
-            from _pytest.config import Config
             from _pytest.assertion import install_importhook
-            pytest_conf = Config.fromdictargs({}, ['--capture=no'])
+            from _pytest.config import Config
+
+            pytest_conf = Config.fromdictargs({}, ["--capture=no"])
             install_importhook(pytest_conf)
         except Exception:
             log.exception(
                 "Configuring the assertion rewrite hook using pytest {} failed. "
-                "Please file a bug report!".format(pytest.__version__))
+                "Please file a bug report!".format(pytest.__version__)
+            )
 
     # start Regression Manager
     global regression_manager
@@ -355,7 +380,9 @@ def _sim_event(level, message):
 
     if level is SIM_TEST_FAIL:
         scheduler.log.error("Failing test at simulator request")
-        scheduler._finish_test(AssertionError(f"Failure from external source: {message}"))
+        scheduler._finish_test(
+            AssertionError(f"Failure from external source: {message}")
+        )
     elif level is SIM_FAIL:
         # We simply return here as the simulator will exit
         # so no cleanup is needed
@@ -373,9 +400,9 @@ def process_plusargs():
     plusargs = {}
 
     for option in cocotb.argv:
-        if option.startswith('+'):
-            if option.find('=') != -1:
-                (name, value) = option[1:].split('=', 1)
+        if option.startswith("+"):
+            if option.find("=") != -1:
+                (name, value) = option[1:].split("=", 1)
                 plusargs[name] = value
             else:
                 plusargs[option[1:]] = True

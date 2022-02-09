@@ -17,11 +17,13 @@ async def rescap_minimalist_test(tb_hdl):
         await Timer(50, units="ns")
         tb_hdl.i_analog_probe.probe_voltage_toggle.value = toggle
         tb_hdl.i_analog_probe.probe_current_toggle.value = toggle
-        await Timer(1, units="ps")  # waiting time needed for the analog values to be updated
+        await Timer(
+            1, units="ps"
+        )  # waiting time needed for the analog values to be updated
         tb_hdl._log.info(
             "tb_hdl.i_analog_probe@{}={:.4} V  {:.4} A".format(
                 tb_hdl.i_analog_probe.node_to_probe.value.decode("ascii"),
                 tb_hdl.i_analog_probe.voltage.value,
-                tb_hdl.i_analog_probe.current.value
+                tb_hdl.i_analog_probe.current.value,
             )
         )

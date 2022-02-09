@@ -25,12 +25,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from xml.etree.ElementTree import Element, SubElement
 import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element, SubElement
 
 
 class XUnitReporter:
-
     def __init__(self, filename="results.xml"):
         self.results = Element("testsuites", name="results")
         self.filename = filename
@@ -62,14 +61,14 @@ class XUnitReporter:
         SubElement(testcase, "skipped", **kwargs)
 
     def indent(self, elem, level=0):
-        i = "\n" + level*"  "
+        i = "\n" + level * "  "
         if len(elem):
             if not elem.text or not elem.text.strip():
                 elem.text = i + "  "
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
             for elem in elem:
-                self.indent(elem, level+1)
+                self.indent(elem, level + 1)
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
         else:

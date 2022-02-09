@@ -85,9 +85,12 @@ async def recursive_discovery(dut):
     assert pass_total == total, "Expected %d but found %d" % (pass_total, total)
     tlog.info("Found a total of %d things", total)
 
-    assert isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject), \
-        ("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable"
-         " but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__)
+    assert isinstance(
+        dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject
+    ), (
+        "Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable"
+        " but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__
+    )
 
 
 @cocotb.test()

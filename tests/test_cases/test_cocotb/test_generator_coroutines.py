@@ -4,14 +4,16 @@
 """
 Tests that specifically test generator-based coroutines
 """
-import cocotb
-from cocotb.triggers import Timer, NullTrigger
-from common import clock_gen, _check_traceback, assert_raises
 import textwrap
 
+from common import _check_traceback, assert_raises, clock_gen
+
+import cocotb
+from cocotb.triggers import NullTrigger, Timer
 
 # Tests relating to providing meaningful errors if we forget to use the
 # yield keyword correctly to turn a function into a coroutine
+
 
 @cocotb.test(expect_error=TypeError)
 def test_not_a_coroutine(dut):
@@ -111,7 +113,8 @@ def test_coroutine_error(dut):
 
 @cocotb.test()
 def test_coroutine_return(dut):
-    """ Test that the Python 3.3 syntax for returning from generators works """
+    """Test that the Python 3.3 syntax for returning from generators works"""
+
     @cocotb.coroutine
     def return_it(x):
         return x
@@ -128,6 +131,7 @@ def test_immediate_coro(dut):
     """
     Test that coroutines can return immediately
     """
+
     @cocotb.coroutine
     def immediate_value():
         return 42
@@ -150,11 +154,12 @@ def test_immediate_coro(dut):
 
 @cocotb.test()
 def test_exceptions_direct(dut):
-    """ Test exception propagation via a direct yield statement """
+    """Test exception propagation via a direct yield statement"""
+
     @cocotb.coroutine
     def raise_inner():
         yield Timer(10)
-        raise ValueError('It is soon now')
+        raise ValueError("It is soon now")
 
     @cocotb.coroutine
     def raise_soon():
@@ -163,7 +168,8 @@ def test_exceptions_direct(dut):
 
     # it's ok to change this value if the traceback changes - just make sure
     # that when changed, it doesn't become harder to read.
-    expected = textwrap.dedent(r"""
+    expected = textwrap.dedent(
+        r"""
     Traceback \(most recent call last\):
       File ".*common\.py", line \d+, in _check_traceback
         await running_coro
@@ -172,19 +178,21 @@ def test_exceptions_direct(dut):
       File ".*test_generator_coroutines\.py", line \d+, in raise_soon
         yield raise_inner\(\)
       File ".*test_generator_coroutines\.py", line \d+, in raise_inner
-        raise ValueError\('It is soon now'\)
-    ValueError: It is soon now""").strip()
+        raise ValueError\("It is soon now"\)
+    ValueError: It is soon now"""
+    ).strip()
 
     yield _check_traceback(raise_soon(), ValueError, expected)
 
 
 @cocotb.test()
 def test_exceptions_forked(dut):
-    """ Test exception propagation via cocotb.fork """
+    """Test exception propagation via cocotb.fork"""
+
     @cocotb.coroutine
     def raise_inner():
         yield Timer(10)
-        raise ValueError('It is soon now')
+        raise ValueError("It is soon now")
 
     @cocotb.coroutine
     def raise_soon():
@@ -194,7 +202,8 @@ def test_exceptions_forked(dut):
 
     # it's ok to change this value if the traceback changes - just make sure
     # that when changed, it doesn't become harder to read.
-    expected = textwrap.dedent(r"""
+    expected = textwrap.dedent(
+        r"""
     Traceback \(most recent call last\):
       File ".*common\.py", line \d+, in _check_traceback
         await running_coro
@@ -203,7 +212,8 @@ def test_exceptions_forked(dut):
       File ".*test_generator_coroutines\.py", line \d+, in raise_soon
         yield coro\.join\(\)
       File ".*test_generator_coroutines\.py", line \d+, in raise_inner
-        raise ValueError\('It is soon now'\)
-    ValueError: It is soon now""").strip()
+        raise ValueError\("It is soon now"\)
+    ValueError: It is soon now"""
+    ).strip()
 
     yield _check_traceback(raise_soon(), ValueError, expected)

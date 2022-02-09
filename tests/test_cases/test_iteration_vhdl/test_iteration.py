@@ -26,7 +26,7 @@
 import logging
 
 import cocotb
-from cocotb.triggers import Timer, Combine
+from cocotb.triggers import Combine, Timer
 
 
 def total_object_count():
@@ -79,13 +79,16 @@ async def recursive_discovery(dut):
             tlog.debug("Found %s.%s (%s)", parent._name, thing._name, type(thing))
             count += dump_all_the_things(thing)
         return count
+
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
     assert total == pass_total
 
 
 # GHDL unable to access signals in generate loops (gh-2594)
-@cocotb.test(expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+@cocotb.test(
+    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+)
 async def discovery_all(dut):
     """Discover everything on top-level."""
     dut._log.info("Iterating over top-level to discover objects")
@@ -100,6 +103,7 @@ async def discovery_all(dut):
 @cocotb.test()
 async def dual_iteration(dut):
     """Test iteration over top-level in two forked coroutines."""
+
     async def iteration_loop():
         for thing in dut:
             thing._log.info("Found something: %s", thing._fullname)

@@ -59,4 +59,5 @@ if sys.version_info[:2] >= (3, 7):
     insertion_ordered_dict = dict
 else:
     import collections
+
     insertion_ordered_dict = collections.OrderedDict

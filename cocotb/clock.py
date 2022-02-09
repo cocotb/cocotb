@@ -43,9 +43,7 @@ class BaseClock:
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.{}.{}".format(
-            type(self).__qualname__, self.signal._name
-        ))
+        return SimLog("cocotb.{}.{}".format(type(self).__qualname__, self.signal._name))
 
 
 class Clock(BaseClock):
@@ -121,11 +119,13 @@ class Clock(BaseClock):
         if units is None:
             warnings.warn(
                 'Using units=None is deprecated, use units="step" instead.',
-                DeprecationWarning, stacklevel=2)
-            units="step"  # don't propagate deprecated value
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            units = "step"  # don't propagate deprecated value
         self.period = get_sim_steps(period, units)
         self.half_period = get_sim_steps(period / 2.0, units)
-        self.frequency = 1.0 / get_time_from_sim_steps(self.period, units='us')
+        self.frequency = 1.0 / get_time_from_sim_steps(self.period, units="us")
         self.hdl = None
         self.signal = signal
         self.coro = None

@@ -4,8 +4,8 @@
 from typing import Optional
 
 import cocotb
-from cocotb.triggers import Timer
 from cocotb.queue import Queue
+from cocotb.triggers import Timer
 
 """
 This is a Python model of an Analog Front-End (AFE) containing
@@ -66,7 +66,7 @@ class ADC:
     ) -> None:
         self.ref_val_V = ref_val_V
         self.min_val = 0
-        self.max_val = 2 ** n_bits - 1
+        self.max_val = 2**n_bits - 1
         self.in_queue = in_queue
         self.out_queue = out_queue
 
