@@ -236,7 +236,7 @@ async def test_str_and_repr(_):
     q = Queue[int](maxsize=1)
 
     q.put_nowait(0)
-    putter = await cocotb.start(q.put(1))
+    await cocotb.start(q.put(1))
 
     s = repr(q)
     assert "maxsize" in s

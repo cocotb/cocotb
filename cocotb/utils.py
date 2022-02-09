@@ -39,6 +39,7 @@ from decimal import Decimal
 from numbers import Real
 from typing import Union
 
+import cocotb.ANSI as ANSI
 from cocotb import simulator
 
 
@@ -269,8 +270,6 @@ def unpack(ctypes_obj, string, bytes=None):
 
     ctypes.memmove(ctypes.addressof(ctypes_obj), string, bytes)
 
-
-import cocotb.ANSI as ANSI
 
 # A note on the use of latin1 in the deprecations below:
 # Latin1 is the only encoding `e` that satisfies

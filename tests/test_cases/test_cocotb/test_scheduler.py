@@ -45,7 +45,7 @@ async def test_coroutine_kill(dut):
     global test_flag
     clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
     await Timer(100, "ns")
-    clk_gen_two = cocotb.fork(clock_yield(clk_gen))
+    cocotb.fork(clock_yield(clk_gen))
     await Timer(100, "ns")
     clk_gen.kill()
     assert not test_flag
@@ -72,7 +72,7 @@ async def clock_two(dut):
 @cocotb.test()
 async def test_coroutine_close_down(dut):
     log = logging.getLogger("cocotb.test")
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
+    cocotb.fork(Clock(dut.clk, 100, "ns").start())
 
     coro_one = cocotb.fork(clock_one(dut))
     coro_two = cocotb.fork(clock_two(dut))
@@ -609,7 +609,7 @@ async def test_start(_):
 
     task4 = cocotb.start_soon(coro())
     assert not task4.has_started()
-    task5 = await cocotb.start(coro())
+    await cocotb.start(coro())
     assert task4.has_started()
     await Timer(1, "step")
     assert task4._finished

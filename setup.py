@@ -58,7 +58,7 @@ from setuptools import find_packages, setup
 # We can still import other files next to setup.py, as long as they're in MANIFEST.in
 # The below line is necessary for PEP517 support
 sys.path.append(path.dirname(__file__))
-from cocotb_build_libs import build_ext, get_ext
+from cocotb_build_libs import build_ext, get_ext  # noqa: E402
 
 
 def read_file(fname):

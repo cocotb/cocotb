@@ -21,7 +21,7 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 async def test_bad_attr(dut):
 
     with assert_raises(AttributeError):
-        fake_signal = dut.fake_signal
+        dut.fake_signal
 
     try:
         _ = dut.stream_in_data.whoops
@@ -102,7 +102,6 @@ async def test_delayed_assignment_still_errors(dut):
 
 async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
     """Test integer access to a signal."""
-    log = logging.getLogger("cocotb.test")
     values = gen_int_test_values(n_bits, limits)
     for val in values:
         signal.value = val

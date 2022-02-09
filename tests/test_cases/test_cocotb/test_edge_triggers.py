@@ -159,8 +159,8 @@ async def test_edge_count(dut):
     edges_seen = 0
     clk_period = 100
     edge_count = 10
-    clock = cocotb.start_soon(do_clock(dut, edge_count, clk_period))
-    test = cocotb.start_soon(do_edge_count(dut, dut.clk))
+    cocotb.start_soon(do_clock(dut, edge_count, clk_period))
+    cocotb.start_soon(do_edge_count(dut, dut.clk))
 
     await Timer(clk_period * (edge_count + 1), "ns")
     assert edge_count == edges_seen, "Correct edge count failed - saw %d, wanted %d" % (
@@ -206,7 +206,7 @@ async def test_clock_cycles(dut):
     Test the ClockCycles Trigger
     """
     clk = dut.clk
-    clk_gen = cocotb.start_soon(Clock(clk, 100, "ns").start())
+    cocotb.start_soon(Clock(clk, 100, "ns").start())
     await RisingEdge(clk)
     dut._log.info("After one edge")
     await ClockCycles(clk, 10)
@@ -218,7 +218,7 @@ async def test_clock_cycles_forked(dut):
     """Test that ClockCycles can be used in forked coroutines"""
     # gh-520
 
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
 
     async def wait_ten():
         await ClockCycles(dut.clk, 10)
