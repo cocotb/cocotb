@@ -108,7 +108,7 @@ async def test_time_in_function(dut):
     def wait_cycles_wrapper(dut, n):
         return wait_cycles(dut, n)
 
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
     await Timer(10, units="ns")
     for n in range(5):
         for i in range(20):
@@ -138,8 +138,8 @@ async def test_external_call_return(dut):
             await Timer(1000, units="ns")
             count += 1
 
-    mon = cocotb.start_soon(clock_monitor(dut))
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(clock_monitor(dut))
+    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
     value = await external(return_two)(dut)
     assert value == 2
 
@@ -176,7 +176,7 @@ async def test_function_from_readonly(dut):
     Test that @external functions that call @functions that await Triggers
     can be called from ReadOnly state
     """
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
     await ReadOnly()
     dut._log.info("In readonly")
@@ -196,7 +196,7 @@ async def test_function_that_awaits(dut):
     awaits Triggers and return values back through to
     the test
     """
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
     value = await external(calls_cocotb_function)(dut)
     assert value == 2
@@ -214,7 +214,7 @@ async def test_await_after_function(dut):
     from @external functions that call @functions that consume
     simulation time
     """
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
     value = await external(calls_cocotb_function)(dut)
     assert value == 2
@@ -243,7 +243,7 @@ async def test_external_from_start_soon(dut):
         value = await external(return_two)(dut)
         return value
 
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
     coro1 = cocotb.start_soon(run_function(dut))
     value = await coro1.join()
@@ -351,8 +351,6 @@ async def test_function_from_weird_thread_fails(dut):
 
     @external
     def ext():
-        result = []
-
         t = threading.Thread(target=function_caller)
         t.start()
         t.join()

@@ -22,5 +22,5 @@ async def mixed_language_test(dut):
     assert int(verilog.reset_n) == int(vhdl.reset_n), "reset_n signals were different"
 
     # Try accessing an object other than a port...
-    verilog_flush = str(verilog.flush_pipe.value)
-    vhdl_flush = str(vhdl.flush_pipe.value)
+    verilog.flush_pipe.value
+    vhdl.flush_pipe.value

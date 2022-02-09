@@ -342,22 +342,22 @@ async def test_discover_all(dut):
         if len(dut._sub_handles) != 0:
             dut._sub_handles = {}
 
-    # Modelsim/Questa VPI will not find a vpiStructVar from vpiModule so we set a dummy variable
+    # Modelsim/Questa VPI will not find a vpiStructVar from vpiModule so we access them explicitly
     # to ensure the handle is in the dut "sub_handles" for iterating
     #
     # DO NOT ADD FOR ALDEC.  Older Versions do not iterate over properly
     if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
         ("modelsim", "ncsim", "xmsim")
     ):
-        dummy = dut.sig_rec
-        dummy = dut.port_rec_out
+        dut.sig_rec
+        dut.port_rec_out
 
     # Riviera-Pro's VHPI implementation does not find signal declarations when iterating
     if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith("riviera"):
         for hdl in dut.asc_gen:
-            dummy = hdl.sig
+            hdl.sig
         for hdl in dut.desc_gen:
-            dummy = hdl.sig
+            hdl.sig
 
     if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith("riviera"):
         pass_total = 571

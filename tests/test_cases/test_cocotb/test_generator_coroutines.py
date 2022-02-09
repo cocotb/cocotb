@@ -33,7 +33,7 @@ def test_function_not_a_coroutine(dut):
     yield Timer(500)
     try:
         # failure should occur before we even try to yield or fork the coroutine
-        coro = function_not_a_coroutine()
+        function_not_a_coroutine()
     except TypeError as exc:
         assert "isn't a valid coroutine" in str(exc)
     else:
