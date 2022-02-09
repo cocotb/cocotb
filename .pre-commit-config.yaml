@@ -1,0 +1,27 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+repos:
+- repo: "https://github.com/psf/black"
+  rev: "22.1.0"
+  hooks:
+  - id: "black"
+    pass_filenames: false
+    args:
+    - "."
+
+- repo: "https://github.com/pycqa/isort"
+  rev: "5.10.1"
+  hooks:
+  - id: "isort"
+    pass_filenames: false
+    args:
+    - "--profile=black"
+    - "."
+
+- repo: "https://gitlab.com/pycqa/flake8"
+  rev: "3.9.2"
+  hooks:
+  - id: "flake8"
+    pass_filenames: false

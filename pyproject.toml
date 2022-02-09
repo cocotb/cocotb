@@ -36,3 +36,14 @@ build-backend = "setuptools.build_meta"
         directory = "change"
         name = "Changes"
         showcontent = true
+
+[tool.isort]
+profile = "black"
+extend_skip_glob = [
+    "cocotb/_vendor/*"
+]
+
+[tool.black]
+extend_exclude = '''
+_vendor
+'''
