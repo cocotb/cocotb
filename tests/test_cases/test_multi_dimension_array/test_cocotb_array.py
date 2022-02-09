@@ -44,7 +44,7 @@ async def test_in_2d_vect_packed_unpacked(dut):
 
 @cocotb.test()
 async def test_in_2d_vect_unpacked_unpacked(dut):
-    test_value = 3*[[0x1, 0x0, 0x1]]
+    test_value = 3 * [[0x1, 0x0, 0x1]]
     dut.in_2d_vect_unpacked_unpacked.value = test_value
     await Timer(1, "ns")
     assert dut.out_2d_vect_unpacked_unpacked.value == test_value
@@ -97,7 +97,7 @@ async def test_in_vect_packed_packed_unpacked(dut):
 
 @cocotb.test()
 async def test_in_vect_packed_unpacked_unpacked(dut):
-    test_value = 3 *[3 * [5] ]
+    test_value = 3 * [3 * [5]]
     dut.in_vect_packed_unpacked_unpacked.value = test_value
     await Timer(1, "ns")
     assert dut.out_vect_packed_unpacked_unpacked.value == test_value
@@ -105,7 +105,7 @@ async def test_in_vect_packed_unpacked_unpacked(dut):
 
 @cocotb.test()
 async def test_in_vect_unpacked_unpacked_unpacked(dut):
-    test_value = 3 *[3 * [[1, 0, 1]]]
+    test_value = 3 * [3 * [[1, 0, 1]]]
     dut.in_vect_unpacked_unpacked_unpacked.value = test_value
     await Timer(1, "ns")
     assert dut.out_vect_unpacked_unpacked_unpacked.value == test_value
@@ -134,7 +134,7 @@ async def test_in_arr_packed_unpacked(dut):
 
 @cocotb.test()
 async def test_in_arr_unpacked_unpacked(dut):
-    test_value = 3 *[3 * [5] ]
+    test_value = 3 * [3 * [5]]
     dut.in_arr_unpacked_unpacked.value = test_value
     await Timer(1, "ns")
     assert dut.out_arr_unpacked_unpacked.value == test_value

@@ -31,7 +31,7 @@ async def test_forking_accidental_async_generator(dut):
         assert False, "should have thrown"
 
 
-@cocotb.coroutine   # testing cocotb.coroutine decorated async generator
+@cocotb.coroutine  # testing cocotb.coroutine decorated async generator
 async def whoops_async_generator_decorated():
     yield cocotb.triggers.Timer(1)
 

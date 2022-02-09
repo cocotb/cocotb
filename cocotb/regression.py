@@ -27,29 +27,29 @@
 
 """All things relating to regression capabilities."""
 
-import time
-import inspect
-from itertools import product
-import sys
-import os
-import traceback
-import pdb
-from typing import Any, Optional, Tuple, Iterable
-import random
 import hashlib
+import inspect
 import math
+import os
+import pdb
+import random
+import sys
+import time
+import traceback
+from itertools import product
+from typing import Any, Iterable, Optional, Tuple
 
 import cocotb
 import cocotb.ANSI as ANSI
+from cocotb import simulator
+from cocotb.decorators import RunningTask
+from cocotb.decorators import test as Test
+from cocotb.handle import SimHandle
 from cocotb.log import SimLog
-from cocotb.result import TestSuccess, SimFailure
+from cocotb.outcomes import Error, Outcome
+from cocotb.result import SimFailure, TestSuccess
 from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
 from cocotb.xunit_reporter import XUnitReporter
-from cocotb.decorators import test as Test, RunningTask
-from cocotb.outcomes import Outcome, Error
-from cocotb.handle import SimHandle
-
-from cocotb import simulator
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
@@ -59,15 +59,17 @@ if "COVERAGE" in os.environ:
     try:
         import coverage
     except ImportError as e:
-        msg = ("Coverage collection requested but coverage module not available"
-               "\n"
-               "Import error was: %s\n" % repr(e))
+        msg = (
+            "Coverage collection requested but coverage module not available"
+            "\n"
+            "Import error was: %s\n" % repr(e)
+        )
         sys.stderr.write(msg)
 
 
 def _my_import(name: str) -> Any:
     mod = __import__(name)
-    components = name.split('.')
+    components = name.split(".")
     for comp in components[1:]:
         mod = getattr(mod, comp)
     return mod
@@ -103,9 +105,9 @@ class RegressionManager:
         # Setup XUnit
         ###################
 
-        results_filename = os.getenv('COCOTB_RESULTS_FILE', "results.xml")
-        suite_name = os.getenv('RESULT_TESTSUITE', "all")
-        package_name = os.getenv('RESULT_TESTPACKAGE', "all")
+        results_filename = os.getenv("COCOTB_RESULTS_FILE", "results.xml")
+        suite_name = os.getenv("RESULT_TESTSUITE", "all")
+        package_name = os.getenv("RESULT_TESTPACKAGE", "all")
 
         self.xunit = XUnitReporter(filename=results_filename)
 
@@ -156,17 +158,19 @@ class RegressionManager:
 
         See :envvar:`MODULE` and :envvar:`TESTCASE` for details on how tests are discovered.
         """
-        module_str = os.getenv('MODULE')
-        test_str = os.getenv('TESTCASE')
+        module_str = os.getenv("MODULE")
+        test_str = os.getenv("TESTCASE")
 
         if module_str is None:
-            raise ValueError("Environment variable MODULE, which defines the module(s) to execute, is not defined.")
+            raise ValueError(
+                "Environment variable MODULE, which defines the module(s) to execute, is not defined."
+            )
 
-        modules = [s.strip() for s in module_str.split(',') if s.strip()]
+        modules = [s.strip() for s in module_str.split(",") if s.strip()]
 
         tests = None
         if test_str:
-            tests = [s.strip() for s in test_str.split(',') if s.strip()]
+            tests = [s.strip() for s in test_str.split(",") if s.strip()]
 
         for module_name in modules:
             try:
@@ -175,7 +179,7 @@ class RegressionManager:
                 module = _my_import(module_name)
             except Exception as E:
                 _logger.critical("Failed to import module %s: %s", module_name, E)
-                _logger.info("MODULE variable was \"%s\"", ".".join(modules))
+                _logger.info('MODULE variable was "%s"', ".".join(modules))
                 _logger.info("Traceback: ")
                 _logger.info(traceback.format_exc())
                 raise
@@ -191,9 +195,14 @@ class RegressionManager:
                         continue
 
                     if not isinstance(test, Test):
-                        _logger.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
-                                      test_name, module_name)
-                        raise ImportError("Failed to find requested test %s" % test_name)
+                        _logger.error(
+                            "Requested %s from module %s isn't a cocotb.test decorated coroutine",
+                            test_name,
+                            module_name,
+                        )
+                        raise ImportError(
+                            "Failed to find requested test %s" % test_name
+                        )
 
                     # If we request a test manually, it should be run even if skip=True is set.
                     test.skip = False
@@ -211,7 +220,9 @@ class RegressionManager:
 
         # If any test were not found in any module, raise an error
         if tests:
-            _logger.error("Requested test(s) %s wasn't found in module(s) %s", tests, modules)
+            _logger.error(
+                "Requested test(s) %s wasn't found in module(s) %s", tests, modules
+            )
             raise AttributeError("Test(s) %s doesn't exist in %s" % (tests, modules))
 
     def tear_down(self) -> None:
@@ -227,10 +238,8 @@ class RegressionManager:
             if test is None:
                 break
             self._record_result(
-                test=test,
-                outcome=Error(SimFailure),
-                wall_time_s=0,
-                sim_time_ns=0)
+                test=test, outcome=Error(SimFailure), wall_time_s=0, sim_time_ns=0
+            )
 
         # Write out final log messages
         self._log_test_summary()
@@ -268,13 +277,14 @@ class RegressionManager:
         assert test is self._test_task
 
         real_time = time.time() - self._test_start_time
-        sim_time_ns = get_sim_time('ns') - self._test_start_sim_time
+        sim_time_ns = get_sim_time("ns") - self._test_start_sim_time
 
         self._record_result(
             test=self._test,
             outcome=self._test_task._outcome,
             wall_time_s=real_time,
-            sim_time_ns=sim_time_ns)
+            sim_time_ns=sim_time_ns,
+        )
 
         self.execute()
 
@@ -287,8 +297,8 @@ class RegressionManager:
         """
 
         if test.skip:
-            hilight_start = ANSI.COLOR_SKIPPED if want_color_output() else ''
-            hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ''
+            hilight_start = ANSI.COLOR_SKIPPED if want_color_output() else ""
+            hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ""
             # Want this to stand out a little bit
             self.log.info(
                 "{start}skipping{end} {name} ({i}/{total})".format(
@@ -296,7 +306,7 @@ class RegressionManager:
                     i=self.count,
                     total=self.ntests,
                     end=hilight_end,
-                    name=test.__qualname__
+                    name=test.__qualname__,
                 )
             )
             self._record_result(test, None, 0, 0)
@@ -305,8 +315,10 @@ class RegressionManager:
         test_init_outcome = cocotb.outcomes.capture(test, self._dut)
 
         if isinstance(test_init_outcome, cocotb.outcomes.Error):
-            self.log.error("Failed to initialize test %s" % test.__qualname__,
-                           exc_info=test_init_outcome.error)
+            self.log.error(
+                "Failed to initialize test %s" % test.__qualname__,
+                exc_info=test_init_outcome.error,
+            )
             self._record_result(test, test_init_outcome, 0, 0)
             return None
 
@@ -333,7 +345,7 @@ class RegressionManager:
         try:
             outcome.get()
         except Exception as e:
-            result = remove_traceback_frames(e, ['_score_test', 'get'])
+            result = remove_traceback_frames(e, ["_score_test", "get"])
         else:
             result = TestSuccess()
 
@@ -345,20 +357,14 @@ class RegressionManager:
             self._log_test_passed(test, None, None)
 
         elif isinstance(result, AssertionError) and test.expect_fail:
-            self._log_test_passed(
-                test, result, "failed as expected"
-            )
+            self._log_test_passed(test, result, "failed as expected")
 
         elif isinstance(result, TestSuccess) and test.expect_error:
-            self._log_test_failed(
-                test, None, "passed but we expected an error"
-            )
+            self._log_test_failed(test, None, "passed but we expected an error")
             result_pass = False
 
         elif isinstance(result, TestSuccess):
-            self._log_test_failed(
-                test, None, "passed but we expected a failure"
-            )
+            self._log_test_failed(test, None, "passed but we expected a failure")
             result_pass = False
 
         elif isinstance(result, SimFailure):
@@ -411,8 +417,7 @@ class RegressionManager:
         else:
             rest = f": {msg}"
         self.log.info(
-            f"{test} {start_hilight}failed{stop_hilight}{rest}",
-            exc_info=result
+            f"{test} {start_hilight}failed{stop_hilight}{rest}", exc_info=result
         )
 
     def _record_result(
@@ -420,7 +425,7 @@ class RegressionManager:
         test: Test,
         outcome: Optional[Outcome],
         wall_time_s: float,
-        sim_time_ns: float
+        sim_time_ns: float,
     ) -> None:
 
         ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
@@ -429,13 +434,15 @@ class RegressionManager:
         except OSError:
             lineno = 1
 
-        self.xunit.add_testcase(name=test.__qualname__,
-                                classname=test.__module__,
-                                file=inspect.getfile(test._func),
-                                lineno=repr(lineno),
-                                time=repr(wall_time_s),
-                                sim_time_ns=repr(sim_time_ns),
-                                ratio_time=repr(ratio_time))
+        self.xunit.add_testcase(
+            name=test.__qualname__,
+            classname=test.__module__,
+            file=inspect.getfile(test._func),
+            lineno=repr(lineno),
+            time=repr(wall_time_s),
+            sim_time_ns=repr(sim_time_ns),
+            ratio_time=repr(ratio_time),
+        )
 
         if outcome is None:  # skipped
             test_pass, sim_failed = None, False
@@ -450,12 +457,15 @@ class RegressionManager:
             else:
                 self.passed += 1
 
-        self.test_results.append({
-            'test': '.'.join([test.__module__, test.__qualname__]),
-            'pass': test_pass,
-            'sim': sim_time_ns,
-            'real': wall_time_s,
-            'ratio': ratio_time})
+        self.test_results.append(
+            {
+                "test": ".".join([test.__module__, test.__qualname__]),
+                "pass": test_pass,
+                "sim": sim_time_ns,
+                "real": wall_time_s,
+                "ratio": ratio_time,
+            }
+        )
 
         if sim_failed:
             self.tear_down()
@@ -473,8 +483,8 @@ class RegressionManager:
 
     def _start_test(self) -> None:
         # Want this to stand out a little bit
-        start = ''
-        end = ''
+        start = ""
+        end = ""
         if want_color_output():
             start = ANSI.COLOR_TEST
             end = ANSI.COLOR_DEFAULT
@@ -490,29 +500,29 @@ class RegressionManager:
         )
 
         self._test_start_time = time.time()
-        self._test_start_sim_time = get_sim_time('ns')
+        self._test_start_sim_time = get_sim_time("ns")
         cocotb.scheduler._add_test(self._test_task)
 
     def _log_test_summary(self) -> None:
 
         real_time = time.time() - self.start_time
-        sim_time_ns = get_sim_time('ns')
+        sim_time_ns = get_sim_time("ns")
         ratio_time = self._safe_divide(sim_time_ns, real_time)
 
         if len(self.test_results) == 0:
             return
 
-        TEST_FIELD = 'TEST'
-        RESULT_FIELD = 'STATUS'
-        SIM_FIELD = 'SIM TIME (ns)'
-        REAL_FIELD = 'REAL TIME (s)'
-        RATIO_FIELD = 'RATIO (ns/s)'
+        TEST_FIELD = "TEST"
+        RESULT_FIELD = "STATUS"
+        SIM_FIELD = "SIM TIME (ns)"
+        REAL_FIELD = "REAL TIME (s)"
+        RATIO_FIELD = "RATIO (ns/s)"
         TOTAL_NAME = f"TESTS={self.ntests} PASS={self.passed} FAIL={self.failures} SKIP={self.skipped}"
 
         TEST_FIELD_LEN = max(
             len(TEST_FIELD),
             len(TOTAL_NAME),
-            len(max([x['test'] for x in self.test_results], key=len))
+            len(max([x["test"] for x in self.test_results], key=len)),
         )
         RESULT_FIELD_LEN = len(RESULT_FIELD)
         SIM_FIELD_LEN = len(SIM_FIELD)
@@ -529,47 +539,61 @@ class RegressionManager:
             b_len=RESULT_FIELD_LEN,
             c_len=SIM_FIELD_LEN,
             d_len=REAL_FIELD_LEN,
-            e_len=RATIO_FIELD_LEN)
+            e_len=RATIO_FIELD_LEN,
+        )
 
-        LINE_LEN = 3 + TEST_FIELD_LEN + 2 + RESULT_FIELD_LEN + 2 + SIM_FIELD_LEN + 2 + \
-            REAL_FIELD_LEN + 2 + RATIO_FIELD_LEN + 3
+        LINE_LEN = (
+            3
+            + TEST_FIELD_LEN
+            + 2
+            + RESULT_FIELD_LEN
+            + 2
+            + SIM_FIELD_LEN
+            + 2
+            + REAL_FIELD_LEN
+            + 2
+            + RATIO_FIELD_LEN
+            + 3
+        )
 
         LINE_SEP = "*" * LINE_LEN + "\n"
 
         summary = ""
         summary += LINE_SEP
-        summary += "** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}}  {d:>{d_len}}  {e:>{e_len}} **\n".format(**header_dict)
+        summary += "** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}}  {d:>{d_len}}  {e:>{e_len}} **\n".format(
+            **header_dict
+        )
         summary += LINE_SEP
 
         test_line = "** {a:<{a_len}}  {start}{b:^{b_len}}{end}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}}  **\n"
         for result in self.test_results:
-            hilite = ''
-            lolite = ''
+            hilite = ""
+            lolite = ""
 
-            if result['pass'] is None:
+            if result["pass"] is None:
                 ratio = "-.--"
                 pass_fail_str = "SKIP"
                 if want_color_output():
                     hilite = ANSI.COLOR_SKIPPED
                     lolite = ANSI.COLOR_DEFAULT
-            elif result['pass']:
-                ratio = format(result['ratio'], "0.2f")
+            elif result["pass"]:
+                ratio = format(result["ratio"], "0.2f")
                 pass_fail_str = "PASS"
                 if want_color_output():
                     hilite = ANSI.COLOR_PASSED
                     lolite = ANSI.COLOR_DEFAULT
             else:
-                ratio = format(result['ratio'], "0.2f")
+                ratio = format(result["ratio"], "0.2f")
                 pass_fail_str = "FAIL"
                 if want_color_output():
                     hilite = ANSI.COLOR_FAILED
                     lolite = ANSI.COLOR_DEFAULT
 
             test_dict = dict(
-                a=result['test'],
+                a=result["test"],
                 b=pass_fail_str,
-                c=result['sim'],
-                d=result['real'],
+                c=result["sim"],
+                d=result["real"],
                 e=ratio,
                 a_len=TEST_FIELD_LEN,
                 b_len=RESULT_FIELD_LEN,
@@ -577,7 +601,8 @@ class RegressionManager:
                 d_len=REAL_FIELD_LEN - 1,
                 e_len=RATIO_FIELD_LEN - 1,
                 start=hilite,
-                end=lolite)
+                end=lolite,
+            )
 
             summary += test_line.format(**test_dict)
 
@@ -595,7 +620,8 @@ class RegressionManager:
             d_len=REAL_FIELD_LEN - 1,
             e_len=RATIO_FIELD_LEN - 1,
             start="",
-            end="")
+            end="",
+        )
 
         summary += LINE_SEP
 
@@ -607,9 +633,9 @@ class RegressionManager:
             return a / b
         except ZeroDivisionError:
             if a == 0:
-                return float('nan')
+                return float("nan")
             else:
-                return float('inf')
+                return float("inf")
 
 
 def _create_test(function, name, documentation, mod, *args, **kwargs):
@@ -728,7 +754,9 @@ class TestFactory:
             name = tuple(name)
             for opt in optionlist:
                 if len(name) != len(opt):
-                    raise ValueError("Mismatch between number of options and number of option values in group")
+                    raise ValueError(
+                        "Mismatch between number of options and number of option values in group"
+                    )
         self.kwargs[name] = optionlist
 
     def generate_tests(self, prefix="", postfix=""):
@@ -756,8 +784,7 @@ class TestFactory:
         d = self.kwargs
 
         for index, testoptions in enumerate(
-                dict(zip(d, v)) for v in
-                product(*d.values())
+            dict(zip(d, v)) for v in product(*d.values())
         ):
 
             name = "%s%s%s_%03d" % (prefix, self.name, postfix, index + 1)
@@ -779,23 +806,31 @@ class TestFactory:
                     if not optvalue.__doc__:
                         desc = "No docstring supplied"
                     else:
-                        desc = optvalue.__doc__.split('\n')[0]
-                    doc += "\t{}: {} ({})\n".format(optname, optvalue.__qualname__, desc)
+                        desc = optvalue.__doc__.split("\n")[0]
+                    doc += "\t{}: {} ({})\n".format(
+                        optname, optvalue.__qualname__, desc
+                    )
                 else:
                     doc += "\t{}: {}\n".format(optname, repr(optvalue))
 
-            self.log.debug("Adding generated test \"%s\" to module \"%s\"" %
-                           (name, mod.__name__))
+            self.log.debug(
+                'Adding generated test "%s" to module "%s"' % (name, mod.__name__)
+            )
             kwargs = {}
             kwargs.update(self.kwargs_constant)
             kwargs.update(testoptions_split)
             if hasattr(mod, name):
-                self.log.error("Overwriting %s in module %s. "
-                               "This causes a previously defined testcase "
-                               "not to be run. Consider setting/changing "
-                               "name_postfix" % (name, mod))
-            setattr(mod, name, _create_test(self.test_function, name, doc, mod,
-                                            *self.args, **kwargs))
+                self.log.error(
+                    "Overwriting %s in module %s. "
+                    "This causes a previously defined testcase "
+                    "not to be run. Consider setting/changing "
+                    "name_postfix" % (name, mod)
+                )
+            setattr(
+                mod,
+                name,
+                _create_test(self.test_function, name, doc, mod, *self.args, **kwargs),
+            )
 
 
 def _trim(docstring: Optional[str]) -> str:

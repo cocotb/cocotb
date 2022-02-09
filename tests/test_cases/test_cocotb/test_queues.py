@@ -4,15 +4,16 @@
 """
 Tests relating to cocotb.queue.Queue, cocotb.queue.LifoQueue, cocotb.queue.PriorityQueue
 """
+import pytest
+
 import cocotb
-from cocotb.queue import Queue, PriorityQueue, LifoQueue, QueueFull, QueueEmpty
+from cocotb.queue import LifoQueue, PriorityQueue, Queue, QueueEmpty, QueueFull
 from cocotb.regression import TestFactory
 from cocotb.triggers import Combine, NullTrigger
-import pytest
 
 
 async def run_queue_nonblocking_test(dut, queue_type):
-    QUEUE_SIZE=10
+    QUEUE_SIZE = 10
 
     q = queue_type(maxsize=QUEUE_SIZE)
 
@@ -31,7 +32,7 @@ async def run_queue_nonblocking_test(dut, queue_type):
 
     # fill queue
     if queue_type is PriorityQueue:
-        for k in range(QUEUE_SIZE-1, 0, -1):
+        for k in range(QUEUE_SIZE - 1, 0, -1):
             q.put_nowait(k)
     else:
         for k in range(1, QUEUE_SIZE):
@@ -47,7 +48,7 @@ async def run_queue_nonblocking_test(dut, queue_type):
 
     # check queue contents
     if queue_type is LifoQueue:
-        for k in range(QUEUE_SIZE-1, -1, -1):
+        for k in range(QUEUE_SIZE - 1, -1, -1):
             assert q.get_nowait() == k
     else:
         for k in range(QUEUE_SIZE):
@@ -69,8 +70,8 @@ factory.generate_tests()
 
 @cocotb.test()
 async def test_queue_contention(dut):
-    NUM_PUTTERS=20
-    QUEUE_SIZE=10
+    NUM_PUTTERS = 20
+    QUEUE_SIZE = 10
 
     q = Queue(maxsize=QUEUE_SIZE)
 
@@ -104,8 +105,8 @@ async def test_queue_contention(dut):
 
     await Combine(*coro_list)
 
-    assert putter_list == list(range(NUM_PUTTERS))+[101]
-    assert getter_list == list(range(NUM_PUTTERS))+[101]
+    assert putter_list == list(range(NUM_PUTTERS)) + [101]
+    assert getter_list == list(range(NUM_PUTTERS)) + [101]
 
     assert q.qsize() == 0
 
@@ -129,16 +130,16 @@ async def test_queue_contention(dut):
 
     await Combine(*coro_list)
 
-    assert putter_list == list(range(NUM_PUTTERS))+[101]
-    assert getter_list == list(range(NUM_PUTTERS))+[101]
+    assert putter_list == list(range(NUM_PUTTERS)) + [101]
+    assert getter_list == list(range(NUM_PUTTERS)) + [101]
 
     assert q.qsize() == 0
 
 
 @cocotb.test()
 async def test_fair_scheduling(dut):
-    NUM_PUTTERS=10
-    NUM_PUTS=10
+    NUM_PUTTERS = 10
+    NUM_PUTS = 10
 
     q = Queue(maxsize=1)
 
@@ -168,8 +169,8 @@ async def test_fair_scheduling(dut):
 
 
 async def run_queue_blocking_test(dut, queue_type):
-    NUM_PUTTERS=20
-    QUEUE_SIZE=10
+    NUM_PUTTERS = 20
+    QUEUE_SIZE = 10
 
     q = queue_type(maxsize=QUEUE_SIZE)
     ref_q = queue_type()

@@ -20,6 +20,7 @@ class ActivehdlVersion(LooseVersion):
     NOTE: unsupported versions exist, e.g.
     ActivehdlVersion("10.5a.12.6914") > ActivehdlVersion("10.5.216.6767")
     """
+
     pass
 
 
@@ -30,11 +31,13 @@ class CvcVersion(LooseVersion):
         >>> CvcVersion("OSS_CVC_7.00b-x86_64-rhel6x of 07/07/14 (Linux-elf)") > CvcVersion("OSS_CVC_7.00a-x86_64-rhel6x of 07/07/14 (Linux-elf)")
         True
     """
+
     pass
 
 
 class GhdlVersion(LooseVersion):
     """Version numbering class for GHDL."""
+
     pass
 
 
@@ -47,11 +50,13 @@ class IcarusVersion(LooseVersion):
         >>> IcarusVersion("10.3 (stable)") <= IcarusVersion("10.3 (stable)")
         True
     """
+
     pass
 
 
 class ModelsimVersion(LooseVersion):
     """Version numbering class for Mentor ModelSim."""
+
     pass
 
 
@@ -64,6 +69,7 @@ class QuestaVersion(LooseVersion):
         >>> QuestaVersion("2020.1 2020.01") > QuestaVersion("10.7c 2018.08")
         True
     """
+
     pass
 
 
@@ -74,6 +80,7 @@ class RivieraVersion(LooseVersion):
         >>> RivieraVersion("2019.10.138.7537") == RivieraVersion("2019.10.138.7537")
         True
     """
+
     pass
 
 
@@ -84,6 +91,7 @@ class VcsVersion(LooseVersion):
         >>> VcsVersion("Q-2020.03-1_Full64") > VcsVersion("K-2015.09_Full64")
         True
     """
+
     pass
 
 
@@ -94,6 +102,7 @@ class VerilatorVersion(LooseVersion):
         >>> VerilatorVersion("4.032 2020-04-04") > VerilatorVersion("4.031 devel")
         True
     """
+
     pass
 
 
@@ -106,6 +115,7 @@ class XceliumVersion(LooseVersion):
         >>> XceliumVersion("20.07-e501") > XceliumVersion("20.06-g183")
         True
     """
+
     pass
 
 
@@ -116,4 +126,5 @@ class IusVersion(XceliumVersion):  # inherit everything from Xcelium
         >>> IusVersion("15.20-s050") > IusVersion("15.20-s049")
         True
     """
+
     pass

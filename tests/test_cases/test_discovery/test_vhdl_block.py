@@ -30,11 +30,20 @@ import cocotb
 
 # GHDL cannot find signal in "block" statement, may be related to (gh-2594)
 @cocotb.test(
-    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+)
 async def block_iter(dut):
     """Access a VHDL block statement"""
 
-    dut._log.info("Block: {} ({})".format(dut.isample_module1.SAMPLE_BLOCK._name,
-                                          type(dut.isample_module1.SAMPLE_BLOCK)))
-    dut._log.info("Signal inside Block: {} ({})".format(dut.isample_module1.SAMPLE_BLOCK.clk_inv._name,
-                                                        type(dut.isample_module1.SAMPLE_BLOCK.clk_inv)))
+    dut._log.info(
+        "Block: {} ({})".format(
+            dut.isample_module1.SAMPLE_BLOCK._name,
+            type(dut.isample_module1.SAMPLE_BLOCK),
+        )
+    )
+    dut._log.info(
+        "Signal inside Block: {} ({})".format(
+            dut.isample_module1.SAMPLE_BLOCK.clk_inv._name,
+            type(dut.isample_module1.SAMPLE_BLOCK.clk_inv),
+        )
+    )

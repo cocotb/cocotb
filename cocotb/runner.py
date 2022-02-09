@@ -10,9 +10,9 @@ import subprocess
 import sys
 import tempfile
 import warnings
+from contextlib import suppress
 from typing import Dict, List, Mapping, Optional, Sequence, Type, Union
 from xml.etree import cElementTree as ET
-from contextlib import suppress
 
 import cocotb.config
 
@@ -192,7 +192,9 @@ class Simulator(abc.ABC):
         pytest_current_test = os.environ.get("PYTEST_CURRENT_TEST", "")
 
         if pytest_current_test:
-            results_xml_name = pytest_current_test.split(":")[-1].split(" ")[0] + ".results.xml"
+            results_xml_name = (
+                pytest_current_test.split(":")[-1].split(" ")[0] + ".results.xml"
+            )
         else:
             results_xml_name = "results.xml"
 
@@ -466,10 +468,7 @@ class Questa(Simulator):
                     + as_tcl_value(cocotb.config.lib_name_path("fli", "questa")),
                 ]
                 + [as_tcl_value(v) for v in self.sim_args]
-                + [
-                    as_tcl_value(v)
-                    for v in self.get_parameter_options(self.parameters)
-                ]
+                + [as_tcl_value(v) for v in self.get_parameter_options(self.parameters)]
                 + [as_tcl_value(self.sim_toplevel)]
                 + ["-do", do_script]
             )
@@ -487,10 +486,7 @@ class Questa(Simulator):
                 + ["-onfinish", "stop" if self.gui else "exit"]
                 + ["-pli", as_tcl_value(cocotb.config.lib_name_path("vpi", "questa"))]
                 + [as_tcl_value(v) for v in self.sim_args]
-                + [
-                    as_tcl_value(v)
-                    for v in self.get_parameter_options(self.parameters)
-                ]
+                + [as_tcl_value(v) for v in self.get_parameter_options(self.parameters)]
                 + [as_tcl_value(self.sim_toplevel)]
                 + [as_tcl_value(v) for v in self.plus_args]
                 + ["-do", do_script]

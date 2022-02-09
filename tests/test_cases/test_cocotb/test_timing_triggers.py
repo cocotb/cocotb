@@ -10,17 +10,26 @@ Tests related to timing triggers
 * NextTimeStep
 * with_timeout
 """
-import cocotb
 import warnings
-import pytest
-from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join, NextTimeStep, First, TriggerException
-from cocotb.utils import get_sim_time, get_sim_steps
-from cocotb.clock import Clock
+from decimal import Decimal
+from fractions import Fraction
 
+import pytest
 from common import assert_raises
 
-from fractions import Fraction
-from decimal import Decimal
+import cocotb
+from cocotb.clock import Clock
+from cocotb.triggers import (
+    First,
+    Join,
+    NextTimeStep,
+    ReadOnly,
+    ReadWrite,
+    RisingEdge,
+    Timer,
+    TriggerException,
+)
+from cocotb.utils import get_sim_steps, get_sim_time
 
 
 @cocotb.test()
@@ -37,51 +46,55 @@ async def test_function_reentrant_clock(dut):
 
 @cocotb.test()
 async def test_timer_with_units(dut):
-    time_fs = get_sim_time(units='fs')
+    time_fs = get_sim_time(units="fs")
 
     # Await for one simulator time step
     await Timer(1)  # NOTE: explicitly no units argument here!
-    time_step = get_sim_time(units='fs') - time_fs
+    time_step = get_sim_time(units="fs") - time_fs
 
     pattern = "Unable to accurately represent .* with the simulator precision of .*"
     with assert_raises(ValueError, pattern):
-        await Timer(2.5*time_step, units='fs')
+        await Timer(2.5 * time_step, units="fs")
     dut._log.info("As expected, unable to create a timer of 2.5 simulator time steps")
 
-    time_fs = get_sim_time(units='fs')
+    time_fs = get_sim_time(units="fs")
 
-    await Timer(3, 'ns')
+    await Timer(3, "ns")
 
-    assert get_sim_time(units='fs') == time_fs+3_000_000.0, "Expected a delay of 3 ns"
+    assert get_sim_time(units="fs") == time_fs + 3_000_000.0, "Expected a delay of 3 ns"
 
-    time_fs = get_sim_time(units='fs')
-    await Timer(1.5, 'ns')
+    time_fs = get_sim_time(units="fs")
+    await Timer(1.5, "ns")
 
-    assert get_sim_time(units='fs') == time_fs+1_500_000.0, "Expected a delay of 1.5 ns"
+    assert (
+        get_sim_time(units="fs") == time_fs + 1_500_000.0
+    ), "Expected a delay of 1.5 ns"
 
-    time_fs = get_sim_time(units='fs')
-    await Timer(10.0, 'ps')
+    time_fs = get_sim_time(units="fs")
+    await Timer(10.0, "ps")
 
-    assert get_sim_time(units='fs') == time_fs+10_000.0, "Expected a delay of 10 ps"
+    assert get_sim_time(units="fs") == time_fs + 10_000.0, "Expected a delay of 10 ps"
 
-    time_fs = get_sim_time(units='fs')
-    await Timer(1.0, 'us')
+    time_fs = get_sim_time(units="fs")
+    await Timer(1.0, "us")
 
-    assert get_sim_time(units='fs') == time_fs+1_000_000_000.0, "Expected a delay of 1 us"
+    assert (
+        get_sim_time(units="fs") == time_fs + 1_000_000_000.0
+    ), "Expected a delay of 1 us"
 
 
 @cocotb.test()
 async def test_timer_with_rational_units(dut):
-    """ Test that rounding errors are not introduced in exact values """
+    """Test that rounding errors are not introduced in exact values"""
     # now with fractions
-    time_fs = get_sim_time(units='fs')
-    await Timer(Fraction(1, int(1e9)), units='sec')
-    assert get_sim_time(units='fs') == time_fs + 1_000_000.0, "Expected a delay of 1 ns"
+    time_fs = get_sim_time(units="fs")
+    await Timer(Fraction(1, int(1e9)), units="sec")
+    assert get_sim_time(units="fs") == time_fs + 1_000_000.0, "Expected a delay of 1 ns"
 
     # now with decimals
-    time_fs = get_sim_time(units='fs')
-    await Timer(Decimal('1e-9'), units='sec')
-    assert get_sim_time(units='fs') == time_fs + 1_000_000.0, "Expected a delay of 1 ns"
+    time_fs = get_sim_time(units="fs")
+    await Timer(Decimal("1e-9"), units="sec")
+    assert get_sim_time(units="fs") == time_fs + 1_000_000.0, "Expected a delay of 1 ns"
 
 
 exited = False
@@ -118,9 +131,7 @@ async def do_test_afterdelay_in_readonly(dut, delay):
     if cocotb.LANGUAGE in ["verilog"]
     and cocotb.SIM_NAME.lower().startswith(("riviera", "modelsim"))
     else (),
-    expect_fail=cocotb.SIM_NAME.lower().startswith(
-        ("icarus", "ncsim", "xmsim")
-    ),
+    expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim")),
 )
 async def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
@@ -159,7 +170,7 @@ async def test_afterdelay_in_readonly_valid(dut):
 
 @cocotb.test()
 async def test_writes_have_taken_effect_after_readwrite(dut):
-    """ Test that ReadWrite fires first for the background write coro """
+    """Test that ReadWrite fires first for the background write coro"""
     dut.stream_in_data.setimmediatevalue(0)
 
     async def write_manually():
@@ -181,42 +192,48 @@ async def test_writes_have_taken_effect_after_readwrite(dut):
 
 @cocotb.coroutine
 async def example_coro():
-    await Timer(10, 'ns')
+    await Timer(10, "ns")
     return 1
 
 
 @cocotb.test()
 async def test_timeout_func_coro_fail(dut):
     with pytest.raises(cocotb.result.SimTimeoutError):
-        await cocotb.triggers.with_timeout(example_coro(), timeout_time=1, timeout_unit='ns')
+        await cocotb.triggers.with_timeout(
+            example_coro(), timeout_time=1, timeout_unit="ns"
+        )
 
 
 @cocotb.test()
 async def test_timeout_func_coro_pass(dut):
-    res = await cocotb.triggers.with_timeout(example_coro(), timeout_time=100, timeout_unit='ns')
+    res = await cocotb.triggers.with_timeout(
+        example_coro(), timeout_time=100, timeout_unit="ns"
+    )
     assert res == 1
 
 
 async def example():
-    await Timer(10, 'ns')
+    await Timer(10, "ns")
     return 1
 
 
 @cocotb.test()
 async def test_timeout_func_fail(dut):
     with pytest.raises(cocotb.result.SimTimeoutError):
-        await cocotb.triggers.with_timeout(example(), timeout_time=1, timeout_unit='ns')
+        await cocotb.triggers.with_timeout(example(), timeout_time=1, timeout_unit="ns")
 
 
 @cocotb.test()
 async def test_timeout_func_pass(dut):
-    res = await cocotb.triggers.with_timeout(example(), timeout_time=100, timeout_unit='ns')
+    res = await cocotb.triggers.with_timeout(
+        example(), timeout_time=100, timeout_unit="ns"
+    )
     assert res == 1
 
 
 @cocotb.test()
 async def test_readwrite(dut):
-    """ Test that ReadWrite can be waited on """
+    """Test that ReadWrite can be waited on"""
     # gh-759
     await Timer(1, "ns")
     dut.clk.value = 1
@@ -242,7 +259,10 @@ async def test_neg_timer(dut):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         Timer(0)
-        assert "Timer setup with value 0, which might exhibit undefined behavior in some simulators" in str(w[-1].message)
+        assert (
+            "Timer setup with value 0, which might exhibit undefined behavior in some simulators"
+            in str(w[-1].message)
+        )
         assert issubclass(w[-1].category, RuntimeWarning)
 
 
@@ -253,22 +273,33 @@ async def test_time_units_eq_None(dut):
         warnings.simplefilter("always")
         Timer(1, units=None)
         assert issubclass(w[-1].category, DeprecationWarning)
-        assert 'Using units=None is deprecated, use units="step" instead.' in str(w[-1].message)
+        assert 'Using units=None is deprecated, use units="step" instead.' in str(
+            w[-1].message
+        )
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         Clock(dut.clk, 2, units=None)
         assert issubclass(w[-1].category, DeprecationWarning)
-        assert 'Using units=None is deprecated, use units="step" instead.' in str(w[-1].message)
+        assert 'Using units=None is deprecated, use units="step" instead.' in str(
+            w[-1].message
+        )
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         get_sim_steps(222, units=None)
         assert issubclass(w[-1].category, DeprecationWarning)
-        assert 'Using units=None is deprecated, use units="step" instead.' in str(w[-1].message)
+        assert 'Using units=None is deprecated, use units="step" instead.' in str(
+            w[-1].message
+        )
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        await cocotb.triggers.with_timeout(example(), timeout_time=12_000_000, timeout_unit=None)
+        await cocotb.triggers.with_timeout(
+            example(), timeout_time=12_000_000, timeout_unit=None
+        )
         assert issubclass(w[-1].category, DeprecationWarning)
-        assert 'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.' in str(w[-1].message)
+        assert (
+            'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.'
+            in str(w[-1].message)
+        )
 
 
 @cocotb.test()

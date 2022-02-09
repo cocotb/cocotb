@@ -5,12 +5,13 @@
 Tests for the cocotb logger
 """
 
-import cocotb
-import cocotb.log
-
-from common import assert_raises
 import logging
 import os
+
+from common import assert_raises
+
+import cocotb
+import cocotb.log
 
 
 class StrCallCounter:
@@ -25,7 +26,9 @@ class StrCallCounter:
 @cocotb.test()
 async def test_logging_with_args(dut):
     counter = StrCallCounter()
-    dut._log.setLevel(logging.INFO)  # To avoid logging debug message, to make next line run without error
+    dut._log.setLevel(
+        logging.INFO
+    )  # To avoid logging debug message, to make next line run without error
     dut._log.debug("%s", counter)
     assert counter.str_counter == 0
 
@@ -43,7 +46,7 @@ async def test_logging_default_config(dut):
     # cocotb.log.SimBaseLog()
     from cocotb.log import default_config as log_default_config
 
-    cocotb_log = logging.getLogger('cocotb')
+    cocotb_log = logging.getLogger("cocotb")
 
     # Save pre-test configuration
     log_level_prev = cocotb_log.level
@@ -51,22 +54,22 @@ async def test_logging_default_config(dut):
 
     try:
         # Set a valid log level
-        os.environ['COCOTB_LOG_LEVEL'] = 'DEBUG'
+        os.environ["COCOTB_LOG_LEVEL"] = "DEBUG"
         log_default_config()
         assert cocotb_log.level == logging.DEBUG, cocotb_log.level
 
         # Try to set log level to an invalid log level
-        os.environ['COCOTB_LOG_LEVEL'] = 'INVALID_LOG_LEVEL'
+        os.environ["COCOTB_LOG_LEVEL"] = "INVALID_LOG_LEVEL"
         with assert_raises(ValueError):
             log_default_config()
 
         # Try to set log level to a valid log level with wrong capitalization
-        os.environ['COCOTB_LOG_LEVEL'] = 'error'
+        os.environ["COCOTB_LOG_LEVEL"] = "error"
         log_default_config()
         assert cocotb_log.level == logging.ERROR, cocotb_log.level
 
         # Set custom TRACE log level
-        os.environ['COCOTB_LOG_LEVEL'] = 'TRACE'
+        os.environ["COCOTB_LOG_LEVEL"] = "TRACE"
         log_default_config()
         assert cocotb_log.level == logging.TRACE, cocotb_log.level
 

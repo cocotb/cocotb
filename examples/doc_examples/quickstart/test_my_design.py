@@ -24,8 +24,7 @@ async def my_first_test(dut):
 # test_my_design.py (extended)
 
 import cocotb
-from cocotb.triggers import Timer
-from cocotb.triggers import FallingEdge
+from cocotb.triggers import FallingEdge, Timer
 
 
 async def generate_clock(dut):

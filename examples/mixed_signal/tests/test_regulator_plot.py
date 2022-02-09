@@ -1,10 +1,12 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
 
+import math
+
+import matplotlib.pyplot as plt
+
 import cocotb
 from cocotb.triggers import Timer
-import math
-import matplotlib.pyplot as plt
 
 
 @cocotb.test()
@@ -36,10 +38,17 @@ async def get_voltage(tb_hdl, node):
     """Measure voltage on *node*."""
     await Timer(1, units="ps")  # let trim_val take effect
     tb_hdl.i_analog_probe.node_to_probe.value = node.encode("ascii")
-    tb_hdl.i_analog_probe.probe_voltage_toggle.value = ~int(tb_hdl.i_analog_probe.probe_voltage_toggle)
-    await Timer(1, units="ps")  # waiting time needed for the analog values to be updated
-    tb_hdl._log.debug("Voltage on node {} is {:.4} V".format(
-        node, tb_hdl.i_analog_probe.voltage.value))
+    tb_hdl.i_analog_probe.probe_voltage_toggle.value = ~int(
+        tb_hdl.i_analog_probe.probe_voltage_toggle
+    )
+    await Timer(
+        1, units="ps"
+    )  # waiting time needed for the analog values to be updated
+    tb_hdl._log.debug(
+        "Voltage on node {} is {:.4} V".format(
+            node, tb_hdl.i_analog_probe.voltage.value
+        )
+    )
     return tb_hdl.i_analog_probe.voltage.value
 
 
@@ -49,17 +58,27 @@ def plot_data(tb_hdl, datasets, graphfile="cocotb_plot.png"):
     Trim and voltage value are contained in *datasets*.
     """
     trim, voltage = zip(*datasets)
-    trim_round = range(1, len(trim)+1)
+    trim_round = range(1, len(trim) + 1)
 
     fig = plt.figure()
     ax = plt.axes()
-    ax.set_title("Probed node: {}".format(tb_hdl.i_analog_probe.node_to_probe.value.decode("ascii")))
+    ax.set_title(
+        "Probed node: {}".format(
+            tb_hdl.i_analog_probe.node_to_probe.value.decode("ascii")
+        )
+    )
     ax.set_ylabel("Voltage (V)")
-    ax.set_ylim([0, math.ceil(max(voltage))+1])
+    ax.set_ylim([0, math.ceil(max(voltage)) + 1])
     ax.step(trim_round, voltage, where="mid")
-    ax.plot(trim_round, voltage, 'C0o', alpha=0.5)
+    ax.plot(trim_round, voltage, "C0o", alpha=0.5)
     for i, j, k in zip(trim_round, trim, voltage):
-        ax.annotate(f"trim={j}", xy=(i, k), xytext=(0, 5), textcoords='offset points', ha='center')
+        ax.annotate(
+            f"trim={j}",
+            xy=(i, k),
+            xytext=(0, 5),
+            textcoords="offset points",
+            ha="center",
+        )
     ax.xaxis.set_major_locator(plt.NullLocator())
     ax.xaxis.set_major_formatter(plt.NullFormatter())
     fig.tight_layout()

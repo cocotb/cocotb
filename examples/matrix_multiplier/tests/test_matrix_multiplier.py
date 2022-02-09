@@ -4,16 +4,16 @@
 import math
 import os
 from random import getrandbits
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge
-from cocotb.queue import Queue
 from cocotb.handle import SimHandleBase
+from cocotb.queue import Queue
+from cocotb.triggers import RisingEdge
 
-NUM_SAMPLES = int(os.environ.get('NUM_SAMPLES', 3000))
+NUM_SAMPLES = int(os.environ.get("NUM_SAMPLES", 3000))
 DATA_WIDTH = int(cocotb.top.DATA_WIDTH)
 A_ROWS = int(cocotb.top.A_ROWS)
 B_COLUMNS = int(cocotb.top.B_COLUMNS)
@@ -30,7 +30,9 @@ class DataValidMonitor:
         datas: named handles to be sampled when transaction occurs
     """
 
-    def __init__(self, clk: SimHandleBase, datas: Dict[str, SimHandleBase], valid: SimHandleBase):
+    def __init__(
+        self, clk: SimHandleBase, datas: Dict[str, SimHandleBase], valid: SimHandleBase
+    ):
         self.values = Queue[Dict[str, int]]()
         self._clk = clk
         self._datas = datas
@@ -53,7 +55,7 @@ class DataValidMonitor:
     async def _run(self) -> None:
         while True:
             await RisingEdge(self._clk)
-            if self._valid.value.binstr != '1':
+            if self._valid.value.binstr != "1":
                 await RisingEdge(self._valid)
                 continue
             self.values.put_nowait(self._sample())
@@ -81,14 +83,12 @@ class MatrixMultiplierTester:
         self.input_mon = DataValidMonitor(
             clk=self.dut.clk_i,
             valid=self.dut.valid_i,
-            datas=dict(
-                A=self.dut.a_i,
-                B=self.dut.b_i))
+            datas=dict(A=self.dut.a_i, B=self.dut.b_i),
+        )
 
         self.output_mon = DataValidMonitor(
-            clk=self.dut.clk_i,
-            valid=self.dut.valid_o,
-            datas=dict(C=self.dut.c_o))
+            clk=self.dut.clk_i, valid=self.dut.valid_o, datas=dict(C=self.dut.c_o)
+        )
 
         self._checker = None
 
@@ -119,12 +119,13 @@ class MatrixMultiplierTester:
             BinaryValue(
                 sum(
                     [
-                        a_matrix[(i * A_COLUMNS_B_ROWS) + n] * b_matrix[(n * B_COLUMNS) + j]
+                        a_matrix[(i * A_COLUMNS_B_ROWS) + n]
+                        * b_matrix[(n * B_COLUMNS) + j]
                         for n in range(A_COLUMNS_B_ROWS)
                     ]
                 ),
                 n_bits=(DATA_WIDTH * 2) + math.ceil(math.log2(A_COLUMNS_B_ROWS)),
-                bigEndian=False
+                bigEndian=False,
             )
             for i in range(A_ROWS)
             for j in range(B_COLUMNS)
@@ -135,9 +136,9 @@ class MatrixMultiplierTester:
             actual = await self.output_mon.values.get()
             expected_inputs = await self.input_mon.values.get()
             expected = self.model(
-                a_matrix=expected_inputs['A'],
-                b_matrix=expected_inputs['B'])
-            assert actual['C'] == expected
+                a_matrix=expected_inputs["A"], b_matrix=expected_inputs["B"]
+            )
+            assert actual["C"] == expected
 
 
 @cocotb.test(
@@ -146,7 +147,7 @@ class MatrixMultiplierTester:
 async def test_multiply(dut):
     """Test multiplication of many matrices."""
 
-    cocotb.start_soon(Clock(dut.clk_i, 10, units='ns').start())
+    cocotb.start_soon(Clock(dut.clk_i, 10, units="ns").start())
     tester = MatrixMultiplierTester(dut)
 
     dut._log.info("Initialize and reset model")

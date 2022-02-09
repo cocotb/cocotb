@@ -25,18 +25,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
+import collections.abc
 import functools
 import inspect
 import os
+import sys
 import warnings
-import collections.abc
 
 import cocotb
+from cocotb import outcomes
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
-from cocotb.utils import lazy_property, remove_traceback_frames, extract_coro_stack
-from cocotb import outcomes
+from cocotb.utils import extract_coro_stack, lazy_property, remove_traceback_frames
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
@@ -54,7 +54,7 @@ def public(f):
     * Improved via a suggestion by Dave Angel:
     http://groups.google.com/group/comp.lang.python/msg/3d400fb22d8a42e1
     """
-    all = sys.modules[f.__module__].__dict__.setdefault('__all__', [])
+    all = sys.modules[f.__module__].__dict__.setdefault("__all__", [])
     if f.__name__ not in all:  # Prevent duplicates if run from an IDE.
         all.append(f.__name__)
     return f
@@ -87,16 +87,20 @@ class RunningTask:
         elif inspect.iscoroutinefunction(inst):
             raise TypeError(
                 "Coroutine function {} should be called prior to being "
-                "scheduled."
-                .format(inst))
+                "scheduled.".format(inst)
+            )
         elif inspect.isasyncgen(inst):
             raise TypeError(
                 "{} is an async generator, not a coroutine. "
                 "You likely used the yield keyword instead of await.".format(
-                    inst.__qualname__))
+                    inst.__qualname__
+                )
+            )
         else:
             raise TypeError(
-                "%s isn't a valid coroutine! Did you forget to use the yield keyword?" % inst)
+                "%s isn't a valid coroutine! Did you forget to use the yield keyword?"
+                % inst
+            )
         self._coro = inst
         self._started = False
         self._callbacks = []
@@ -136,7 +140,7 @@ class RunningTask:
 
         # Remove Trigger.__await__() from the stack, as it's not really useful
         if self._natively_awaitable and len(coro_stack):
-            if coro_stack[-1].name == '__await__':
+            if coro_stack[-1].name == "__await__":
                 coro_stack.pop()
 
         return coro_stack
@@ -167,7 +171,7 @@ class RunningTask:
             name=self.__name__,
             coro=coro_name,
             trigger=self._trigger,
-            outcome=self._outcome
+            outcome=self._outcome,
         )
         return repr_string
 
@@ -189,7 +193,9 @@ class RunningTask:
         except StopIteration as e:
             self._outcome = outcomes.Value(e.value)
         except BaseException as e:
-            self._outcome = outcomes.Error(remove_traceback_frames(e, ['_advance', 'send']))
+            self._outcome = outcomes.Error(
+                remove_traceback_frames(e, ["_advance", "send"])
+            )
 
     def send(self, value):
         return self._coro.send(value)
@@ -221,8 +227,8 @@ class RunningTask:
 
     def __bool__(self):
         """Provide boolean testing
-            if the coroutine has finished return false
-            otherwise return true"""
+        if the coroutine has finished return false
+        otherwise return true"""
         return not self._finished
 
     def __await__(self):
@@ -285,7 +291,7 @@ class coroutine:
 
     def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
-            and standalone functions"""
+        and standalone functions"""
         return type(self)(self._func.__get__(obj, owner))
 
     def __iter__(self):
@@ -317,7 +323,7 @@ class function:
 
     def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
-            and standalone functions"""
+        and standalone functions"""
         return type(self)(self._coro._func.__get__(obj, owner))
 
 
@@ -340,7 +346,7 @@ class external:
 
     def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
-            and standalone functions"""
+        and standalone functions"""
         return type(self)(self._func.__get__(obj, owner))
 
 
@@ -359,11 +365,13 @@ class _decorator_helper(type):
 
         MyClass.__init__(this_is_passed_as_f, construction, args='go here')
     """
+
     def __call__(cls, *args, **kwargs):
         def decorator(f):
             # fall back to the normal way of constructing an object, now that
             # we have all the arguments
             return type.__call__(cls, f, *args, **kwargs)
+
         return decorator
 
 
@@ -432,15 +440,24 @@ class test(coroutine, metaclass=_decorator_helper):
 
     _id_count = 0  # used by the RegressionManager to sort tests in definition order
 
-    def __init__(self, f, timeout_time=None, timeout_unit="step",
-                 expect_fail=False, expect_error=(),
-                 skip=False, stage=None):
+    def __init__(
+        self,
+        f,
+        timeout_time=None,
+        timeout_unit="step",
+        expect_fail=False,
+        expect_error=(),
+        skip=False,
+        stage=None,
+    ):
 
         if timeout_unit is None:
             warnings.warn(
                 'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.',
-                DeprecationWarning, stacklevel=2)
-            timeout_unit="step"  # don't propagate deprecated value
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            timeout_unit = "step"  # don't propagate deprecated value
         self._id = self._id_count
         type(self)._id_count += 1
 
@@ -452,7 +469,9 @@ class test(coroutine, metaclass=_decorator_helper):
                 running_co = co(*args, **kwargs)
 
                 try:
-                    res = await cocotb.triggers.with_timeout(running_co, self.timeout_time, self.timeout_unit)
+                    res = await cocotb.triggers.with_timeout(
+                        running_co, self.timeout_time, self.timeout_unit
+                    )
                 except cocotb.result.SimTimeoutError:
                     running_co.kill()
                     raise
@@ -468,7 +487,9 @@ class test(coroutine, metaclass=_decorator_helper):
             warnings.warn(
                 "Passing bool values to `except_error` option of `cocotb.test` is deprecated. "
                 "Pass a specific Exception type instead",
-                DeprecationWarning, stacklevel=2)
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if expect_error is True:
             expect_error = (Exception,)
         elif expect_error is False:
@@ -476,7 +497,7 @@ class test(coroutine, metaclass=_decorator_helper):
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage
-        self.im_test = True    # For auto-regressions
+        self.im_test = True  # For auto-regressions
         self.name = self._func.__name__
 
     def __call__(self, *args, **kwargs):

@@ -6,12 +6,13 @@ Tests for handles
 """
 import logging
 import random
-import cocotb
-from cocotb.triggers import Timer
-from cocotb.types import LogicArray
 
 from common import assert_raises
+
+import cocotb
 from cocotb.handle import _Limits
+from cocotb.triggers import Timer
+from cocotb.types import LogicArray
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
@@ -25,7 +26,7 @@ async def test_bad_attr(dut):
     try:
         _ = dut.stream_in_data.whoops
     except AttributeError as e:
-        assert 'whoops' in str(e)
+        assert "whoops" in str(e)
     else:
         assert False, "Expected AttributeError"
 
@@ -41,7 +42,7 @@ async def test_bad_attr(dut):
 )
 async def test_string_handle_takes_bytes(dut):
     dut.stream_in_string.value = b"bytes"
-    await cocotb.triggers.Timer(10, 'ns')
+    await cocotb.triggers.Timer(10, "ns")
     val = dut.stream_in_string.value
     assert isinstance(val, bytes)
     assert val == b"bytes"
@@ -55,25 +56,27 @@ async def test_string_handle_takes_bytes(dut):
     else TypeError
     if SIM_NAME.startswith("ghdl")
     else (),
-    skip=cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
+    skip=cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
 )
 async def test_string_ansi_color(dut):
     """Check how different simulators treat ANSI-colored strings, see gh-2328"""
     teststr = "\x1b[33myellow\x1b[49m\x1b[39m"
     asciival_sum = sum(ord(char) for char in teststr)
-    await cocotb.triggers.Timer(10, 'ns')
+    await cocotb.triggers.Timer(10, "ns")
     dut.stream_in_string.value = bytes(teststr.encode("ascii"))
-    await cocotb.triggers.Timer(10, 'ns')
+    await cocotb.triggers.Timer(10, "ns")
     val = dut.stream_in_string.value
     assert isinstance(val, bytes)
     if cocotb.LANGUAGE in ["vhdl"] and SIM_NAME.startswith("riviera"):
         # Riviera-PRO doesn't return anything with VHDL:
         assert val == b""
         # ...and the value shows up differently in the HDL:
-        assert dut.stream_in_string_asciival_sum.value == sum(ord(char) for char in teststr.replace('\x1b', '\0'))
+        assert dut.stream_in_string_asciival_sum.value == sum(
+            ord(char) for char in teststr.replace("\x1b", "\0")
+        )
     elif cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith(("ncsim", "xmsim")):
         # Xcelium with VPI strips the escape char when reading:
-        assert val == bytes(teststr.replace('\x1b', '').encode("ascii"))
+        assert val == bytes(teststr.replace("\x1b", "").encode("ascii"))
         # the HDL gets the correct value though:
         assert dut.stream_in_string_asciival_sum.value == asciival_sum
     else:
@@ -82,7 +85,7 @@ async def test_string_ansi_color(dut):
 
 
 async def test_delayed_assignment_still_errors(dut):
-    """ Writing a bad value should fail even if the write is scheduled to happen later """
+    """Writing a bad value should fail even if the write is scheduled to happen later"""
 
     # note: all these fail because BinaryValue.assign rejects them
 
@@ -103,7 +106,7 @@ async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
     values = gen_int_test_values(n_bits, limits)
     for val in values:
         signal.value = val
-        await Timer(1, 'ns')
+        await Timer(1, "ns")
 
         if limits == _Limits.VECTOR_NBIT:
             if val < 0:
@@ -119,9 +122,9 @@ async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
 def gen_int_test_values(n_bits, limits=_Limits.VECTOR_NBIT):
     """Generates a list of int test values for a given number of bits."""
     unsigned_min = 0
-    unsigned_max = 2**n_bits-1
-    signed_min = -2**(n_bits-1)
-    signed_max = 2**(n_bits-1)-1
+    unsigned_max = 2**n_bits - 1
+    signed_min = -(2 ** (n_bits - 1))
+    signed_max = 2 ** (n_bits - 1) - 1
 
     if limits == _Limits.VECTOR_NBIT:
         return [1, -1, 4, -4, unsigned_min, unsigned_max, signed_min, signed_max]
@@ -145,8 +148,8 @@ async def int_overflow_test(signal, n_bits, test_mode, limits=_Limits.VECTOR_NBI
 
 
 def gen_int_ovfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
-    unsigned_max = 2**n_bits-1
-    signed_max = 2**(n_bits-1)-1
+    unsigned_max = 2**n_bits - 1
+    signed_max = 2 ** (n_bits - 1) - 1
 
     if limits == _Limits.SIGNED_NBIT:
         return signed_max + 1
@@ -158,7 +161,7 @@ def gen_int_ovfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
 
 def gen_int_unfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
     unsigned_min = 0
-    signed_min = -2**(n_bits-1)
+    signed_min = -(2 ** (n_bits - 1))
 
     if limits == _Limits.SIGNED_NBIT:
         return signed_min - 1
@@ -195,13 +198,17 @@ async def test_int_32bit(dut):
 @cocotb.test()
 async def test_int_32bit_overflow(dut):
     """Test 32-bit vector overflow."""
-    await int_overflow_test(dut.stream_in_data_dword, len(dut.stream_in_data_dword), "ovfl")
+    await int_overflow_test(
+        dut.stream_in_data_dword, len(dut.stream_in_data_dword), "ovfl"
+    )
 
 
 @cocotb.test()
 async def test_int_32bit_underflow(dut):
     """Test 32-bit vector underflow."""
-    await int_overflow_test(dut.stream_in_data_dword, len(dut.stream_in_data_dword), "unfl")
+    await int_overflow_test(
+        dut.stream_in_data_dword, len(dut.stream_in_data_dword), "unfl"
+    )
 
 
 @cocotb.test()
@@ -213,13 +220,17 @@ async def test_int_39bit(dut):
 @cocotb.test()
 async def test_int_39bit_overflow(dut):
     """Test 39-bit vector overflow."""
-    await int_overflow_test(dut.stream_in_data_39bit, len(dut.stream_in_data_39bit), "ovfl")
+    await int_overflow_test(
+        dut.stream_in_data_39bit, len(dut.stream_in_data_39bit), "ovfl"
+    )
 
 
 @cocotb.test()
 async def test_int_39bit_underflow(dut):
     """Test 39-bit vector underflow."""
-    await int_overflow_test(dut.stream_in_data_39bit, len(dut.stream_in_data_39bit), "unfl")
+    await int_overflow_test(
+        dut.stream_in_data_39bit, len(dut.stream_in_data_39bit), "unfl"
+    )
 
 
 @cocotb.test()
@@ -231,13 +242,17 @@ async def test_int_64bit(dut):
 @cocotb.test()
 async def test_int_64bit_overflow(dut):
     """Test 64-bit vector overflow."""
-    await int_overflow_test(dut.stream_in_data_wide, len(dut.stream_in_data_wide), "ovfl")
+    await int_overflow_test(
+        dut.stream_in_data_wide, len(dut.stream_in_data_wide), "ovfl"
+    )
 
 
 @cocotb.test()
 async def test_int_64bit_underflow(dut):
     """Test 64-bit vector underflow."""
-    await int_overflow_test(dut.stream_in_data_wide, len(dut.stream_in_data_wide), "unfl")
+    await int_overflow_test(
+        dut.stream_in_data_wide, len(dut.stream_in_data_wide), "unfl"
+    )
 
 
 @cocotb.test()
@@ -249,20 +264,30 @@ async def test_int_128bit(dut):
 @cocotb.test()
 async def test_int_128bit_overflow(dut):
     """Test 128-bit vector overflow."""
-    await int_overflow_test(dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "ovfl")
+    await int_overflow_test(
+        dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "ovfl"
+    )
 
 
 @cocotb.test()
 async def test_int_128bit_underflow(dut):
     """Test 128-bit vector underflow."""
-    await int_overflow_test(dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "unfl")
+    await int_overflow_test(
+        dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "unfl"
+    )
 
 
 @cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
 async def test_integer(dut):
     """Test access to integers."""
-    if cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera") or SIM_NAME.startswith("ghdl"):
-        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
+    if (
+        cocotb.LANGUAGE in ["verilog"]
+        and SIM_NAME.startswith("riviera")
+        or SIM_NAME.startswith("ghdl")
+    ):
+        limits = (
+            _Limits.VECTOR_NBIT
+        )  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -272,8 +297,14 @@ async def test_integer(dut):
 @cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
 async def test_integer_overflow(dut):
     """Test integer overflow."""
-    if cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera") or SIM_NAME.startswith("ghdl"):
-        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
+    if (
+        cocotb.LANGUAGE in ["verilog"]
+        and SIM_NAME.startswith("riviera")
+        or SIM_NAME.startswith("ghdl")
+    ):
+        limits = (
+            _Limits.VECTOR_NBIT
+        )  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -283,8 +314,14 @@ async def test_integer_overflow(dut):
 @cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
 async def test_integer_underflow(dut):
     """Test integer underflow."""
-    if cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera") or SIM_NAME.startswith("ghdl"):
-        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
+    if (
+        cocotb.LANGUAGE in ["verilog"]
+        and SIM_NAME.startswith("riviera")
+        or SIM_NAME.startswith("ghdl")
+    ):
+        limits = (
+            _Limits.VECTOR_NBIT
+        )  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -331,7 +368,7 @@ async def test_real_assign_int(dut):
     """Assign a random integer value to ensure we can write types convertible to
     int, read it back from the DUT and check it matches what we assigned.
     """
-    val = random.randint(-2**31, 2**31 - 1)
+    val = random.randint(-(2**31), 2**31 - 1)
     log = logging.getLogger("cocotb.test")
     timer_shortest = Timer(1, "step")
     await timer_shortest
@@ -354,13 +391,13 @@ async def test_access_underscore_name(dut):
 
     # indirect access works
     dut._id("_underscore_name", extended=False).value = 0
-    await Timer(1, 'ns')
+    await Timer(1, "ns")
     assert dut._id("_underscore_name", extended=False).value == 0
     dut._id("_underscore_name", extended=False).value = 1
-    await Timer(1, 'ns')
+    await Timer(1, "ns")
     assert dut._id("_underscore_name", extended=False).value == 1
     dut._id("_underscore_name", extended=False).value = 0
-    await Timer(1, 'ns')
+    await Timer(1, "ns")
     assert dut._id("_underscore_name", extended=False).value == 0
 
 

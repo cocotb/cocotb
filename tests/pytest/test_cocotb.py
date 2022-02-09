@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
+
 from cocotb.runner import get_runner
 
 tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,7 +25,7 @@ module_name = [
     "test_synchronization_primitives",
     "test_testfactory",
     "test_tests",
-    "test_timing_triggers"
+    "test_timing_triggers",
 ]
 
 
@@ -34,14 +35,16 @@ def test_cocotb():
     toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
 
     if toplevel_lang == "verilog":
-        verilog_sources=[
+        verilog_sources = [
             os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")
         ]
     else:
-        vhdl_sources=[
-            os.path.join(tests_dir, "designs", "sample_module", "sample_module_pack.vhdl"),
+        vhdl_sources = [
+            os.path.join(
+                tests_dir, "designs", "sample_module", "sample_module_pack.vhdl"
+            ),
             os.path.join(tests_dir, "designs", "sample_module", "sample_module_1.vhdl"),
-            os.path.join(tests_dir, "designs", "sample_module", "sample_module.vhdl")
+            os.path.join(tests_dir, "designs", "sample_module", "sample_module.vhdl"),
         ]
 
     sim = os.getenv("SIM", "icarus")
@@ -54,7 +57,8 @@ def test_cocotb():
         vhdl_sources=vhdl_sources,
         toplevel="sample_module",
         build_dir=sim_build,
-        extra_args=compile_args)
+        extra_args=compile_args,
+    )
     sim_args = ["-t", "ps"] if sim == "questa" else []
 
     runner.test(
@@ -62,7 +66,8 @@ def test_cocotb():
         python_search=[os.path.join(tests_dir, "test_cases", "test_cocotb")],
         toplevel="sample_module",
         py_module=module_name,
-        extra_args=sim_args)
+        extra_args=sim_args,
+    )
 
 
 if __name__ == "__main__":

@@ -12,7 +12,6 @@ import warnings
 import cocotb
 from cocotb.triggers import Timer
 
-
 warnings.simplefilter("error", category=FutureWarning)
 
 
@@ -22,10 +21,9 @@ class MyException(Exception):
 
 @cocotb.test(expect_error=MyException)
 async def test_fail(_):
-
     async def fails():
-        await Timer(10, 'ns')
+        await Timer(10, "ns")
         raise MyException
 
     cocotb.fork(fails())
-    await Timer(20, 'ns')
+    await Timer(20, "ns")

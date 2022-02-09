@@ -10,9 +10,18 @@ Tests for edge triggers
 * ClockCycles
 """
 import cocotb
-from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, ClockCycles, First, Combine, ReadOnly
 from cocotb.clock import Clock
 from cocotb.result import SimTimeoutError
+from cocotb.triggers import (
+    ClockCycles,
+    Combine,
+    Edge,
+    FallingEdge,
+    First,
+    ReadOnly,
+    RisingEdge,
+    Timer,
+)
 
 
 async def count_edges_cycles(signal, edges):
@@ -114,8 +123,14 @@ async def test_fork_and_monitor(dut, period=1000, clocks=6):
             count += 1
         else:
             break
-    assert count == expect, "Expected to monitor the task %d times but got %d" % (expect, count)
-    assert result == clocks, "Expected task to return %d but got %s" % (clocks, repr(result))
+    assert count == expect, "Expected to monitor the task %d times but got %d" % (
+        expect,
+        count,
+    )
+    assert result == clocks, "Expected task to return %d but got %s" % (
+        clocks,
+        repr(result),
+    )
 
 
 async def do_clock(dut, limit, period):
@@ -148,7 +163,10 @@ async def test_edge_count(dut):
     test = cocotb.start_soon(do_edge_count(dut, dut.clk))
 
     await Timer(clk_period * (edge_count + 1), "ns")
-    assert edge_count == edges_seen, "Correct edge count failed - saw %d, wanted %d" % (edges_seen, edge_count)
+    assert edge_count == edges_seen, "Correct edge count failed - saw %d, wanted %d" % (
+        edges_seen,
+        edge_count,
+    )
 
 
 @cocotb.test()
@@ -197,7 +215,7 @@ async def test_clock_cycles(dut):
 
 @cocotb.test()
 async def test_clock_cycles_forked(dut):
-    """ Test that ClockCycles can be used in forked coroutines """
+    """Test that ClockCycles can be used in forked coroutines"""
     # gh-520
 
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
@@ -215,9 +233,10 @@ async def test_clock_cycles_forked(dut):
     timeout_time=100,
     timeout_unit="ns",
     expect_error=(
-        SimTimeoutError if (
-            cocotb.LANGUAGE in ["verilog"] and
-            cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))  # gh-2344
+        SimTimeoutError
+        if (
+            cocotb.LANGUAGE in ["verilog"]
+            and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))  # gh-2344
         )
         else ()
     ),
@@ -231,7 +250,7 @@ async def test_both_edge_triggers(dut):
 
     rising_coro = cocotb.start_soon(wait_rising_edge())
     falling_coro = cocotb.start_soon(wait_falling_edge())
-    cocotb.start_soon(Clock(dut.clk, 10, units='ns').start())
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Combine(rising_coro, falling_coro)
 
 
@@ -256,7 +275,7 @@ async def test_edge_on_vector(dut):
     dut.stream_in_data.value = 0
     await RisingEdge(dut.clk)
 
-    for val in range(1, 2**len(dut.stream_in_data)-1):
+    for val in range(1, 2 ** len(dut.stream_in_data) - 1):
         # produce an edge by setting a value != 0:
         dut.stream_in_data.value = val
         await RisingEdge(dut.clk)
@@ -264,4 +283,4 @@ async def test_edge_on_vector(dut):
         dut.stream_in_data.value = 0
         await RisingEdge(dut.clk)
 
-    assert edge_cnt == 2 * ((2**len(dut.stream_in_data)-1)-1)
+    assert edge_cnt == 2 * ((2 ** len(dut.stream_in_data) - 1) - 1)

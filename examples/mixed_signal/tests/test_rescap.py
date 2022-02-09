@@ -1,21 +1,21 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
 
-import cocotb
-from cocotb.triggers import Timer
-from cocotb.utils import get_sim_time
-
-from collections import namedtuple, defaultdict
-
+from collections import defaultdict, namedtuple
 from itertools import cycle
 
 import matplotlib.pyplot as plt
+
+import cocotb
+from cocotb.triggers import Timer
+from cocotb.utils import get_sim_time
 
 Dataset = namedtuple("Dataset", "time, voltage, current")
 
 
 class ResCap_TB:
     """The testbench class for the rescap design."""
+
     def __init__(self, tb_hdl):
         self.tb_hdl = tb_hdl
         self.analog_probe = (
@@ -25,18 +25,22 @@ class ResCap_TB:
 
     async def _get_single_sample(self, node):
         toggle = next(self.togglestream)
-        self.tb_hdl.i_analog_probe.node_to_probe.value = node.encode('ascii')
+        self.tb_hdl.i_analog_probe.node_to_probe.value = node.encode("ascii")
         self.analog_probe.probe_voltage_toggle.value = toggle
         self.analog_probe.probe_current_toggle.value = toggle
-        await Timer(1, units="ps")  # waiting time needed for the analog values to be updated
+        await Timer(
+            1, units="ps"
+        )  # waiting time needed for the analog values to be updated
         dataset = Dataset(
             time=get_sim_time(units="ns"),
             voltage=self.analog_probe.voltage.value,
-            current=self.analog_probe.current.value * 1000.0  # in mA
+            current=self.analog_probe.current.value * 1000.0,  # in mA
         )
         self.tb_hdl._log.debug(
             "{}={:.4} V, {:.4} mA".format(
-                self.analog_probe.node_to_probe.value.decode("ascii"), dataset.voltage, dataset.current
+                self.analog_probe.node_to_probe.value.decode("ascii"),
+                dataset.voltage,
+                dataset.current,
             )
         )
         return dataset
@@ -71,8 +75,12 @@ class ResCap_TB:
         ax_volt.set_title("rescap")
         ax_volt.set_xlabel("Time (ns)")
         ax_volt.set_ylabel("Voltage (V)", color=color_volt)
-        ax_curr = ax_volt.twinx()  # instantiate a second axis that shares the same x-axis
-        ax_curr.set_ylabel("Current (mA)", color=color_curr)  # we already handled the x-label with ax_volt
+        ax_curr = (
+            ax_volt.twinx()
+        )  # instantiate a second axis that shares the same x-axis
+        ax_curr.set_ylabel(
+            "Current (mA)", color=color_curr
+        )  # we already handled the x-label with ax_volt
 
         for node in nodes:
             time, voltage, current = zip(*(datasets[node]))
@@ -80,10 +88,26 @@ class ResCap_TB:
                 alpha = 1.0
             else:
                 alpha = 0.333
-            ax_volt.plot(time, voltage, color=color_volt, alpha=alpha,
-                         marker=".", markerfacecolor="black", linewidth=1, label=f"V({node})")
-            ax_curr.plot(time, current, color=color_curr, alpha=alpha,
-                         marker=".", markerfacecolor="black", linewidth=1, label=f"I({node})")
+            ax_volt.plot(
+                time,
+                voltage,
+                color=color_volt,
+                alpha=alpha,
+                marker=".",
+                markerfacecolor="black",
+                linewidth=1,
+                label=f"V({node})",
+            )
+            ax_curr.plot(
+                time,
+                current,
+                color=color_curr,
+                alpha=alpha,
+                marker=".",
+                markerfacecolor="black",
+                linewidth=1,
+                label=f"I({node})",
+            )
 
         ax_volt.tick_params(axis="y", labelcolor=color_volt)
         ax_curr.tick_params(axis="y", labelcolor=color_curr)

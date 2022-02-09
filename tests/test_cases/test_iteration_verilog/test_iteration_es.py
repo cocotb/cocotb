@@ -34,10 +34,9 @@ async def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME.lower().startswith(("modelsim",
-                                           "ncsim",
-                                           "xmsim",
-                                           "chronologic simulation vcs")):
+    if cocotb.SIM_NAME.lower().startswith(
+        ("modelsim", "ncsim", "xmsim", "chronologic simulation vcs")
+    ):
         # vpiAlways does not show up
         pass_total = 259
     else:
@@ -52,6 +51,7 @@ async def recursive_discovery(dut):
             tlog.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
             count += dump_all_the_things(thing)
         return count
+
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
     assert total == pass_total

@@ -30,14 +30,14 @@
 # -*- coding: utf-8 -*-
 
 import ctypes
-import warnings
 import enum
+import warnings
 from functools import lru_cache
 from typing import Optional
 
 import cocotb
 from cocotb import simulator
-from cocotb.binary import BinaryValue, BinaryRepresentation
+from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.log import SimLog
 from cocotb.types import LogicArray
 
@@ -46,22 +46,22 @@ _deprecation_warned = set()
 
 
 class _Limits(enum.IntEnum):
-    SIGNED_NBIT   = 1
+    SIGNED_NBIT = 1
     UNSIGNED_NBIT = 2
-    VECTOR_NBIT   = 3
+    VECTOR_NBIT = 3
 
 
 @lru_cache(maxsize=None)
 def _value_limits(n_bits, limits):
     """Calculate min/max for given number of bits and limits class"""
     if limits == _Limits.SIGNED_NBIT:
-        min_val = -2**(n_bits-1)
-        max_val = 2**(n_bits-1) - 1
+        min_val = -(2 ** (n_bits - 1))
+        max_val = 2 ** (n_bits - 1) - 1
     elif limits == _Limits.UNSIGNED_NBIT:
         min_val = 0
         max_val = 2**n_bits - 1
     else:
-        min_val = -2**(n_bits-1)
+        min_val = -(2 ** (n_bits - 1))
         max_val = 2**n_bits - 1
 
     return min_val, max_val
@@ -78,9 +78,9 @@ class SimHandleBase:
     # simulator result takes priority, only falling back to the python member
     # if there is no colliding object in the elaborated design.
     _compat_mapping = {
-        "log"               :       "_log",
-        "fullname"          :       "_fullname",
-        "name"              :       "_name",
+        "log": "_log",
+        "fullname": "_fullname",
+        "name": "_name",
     }
 
     def __init__(self, handle, path):
@@ -176,10 +176,10 @@ class SimHandleBase:
         desc = self._path
         defname = self._def_name
         if defname:
-            desc += " with definition "+defname
+            desc += " with definition " + defname
             deffile = self._def_file
             if deffile:
-                desc += " (at "+deffile+")"
+                desc += " (at " + deffile + ")"
         return type(self).__qualname__ + "(" + desc + ")"
 
     def __str__(self):
@@ -188,8 +188,13 @@ class SimHandleBase:
     def __setattr__(self, name, value):
         if name in self._compat_mapping:
             if name not in _deprecation_warned:
-                warnings.warn("Use of attribute {!r} is deprecated, use {!r} instead".format(name, self._compat_mapping[name]),
-                              DeprecationWarning, stacklevel=3)
+                warnings.warn(
+                    "Use of attribute {!r} is deprecated, use {!r} instead".format(
+                        name, self._compat_mapping[name]
+                    ),
+                    DeprecationWarning,
+                    stacklevel=3,
+                )
                 _deprecation_warned.add(name)
             return setattr(self, self._compat_mapping[name], value)
         else:
@@ -198,8 +203,13 @@ class SimHandleBase:
     def __getattr__(self, name):
         if name in self._compat_mapping:
             if name not in _deprecation_warned:
-                warnings.warn("Use of attribute {!r} is deprecated, use {!r} instead".format(name, self._compat_mapping[name]),
-                              DeprecationWarning, stacklevel=3)
+                warnings.warn(
+                    "Use of attribute {!r} is deprecated, use {!r} instead".format(
+                        name, self._compat_mapping[name]
+                    ),
+                    DeprecationWarning,
+                    stacklevel=3,
+                )
                 _deprecation_warned.add(name)
             return getattr(self, self._compat_mapping[name])
         else:
@@ -226,12 +236,21 @@ class RegionObject(SimHandleBase):
                 self._log.debug("Found index list length %d", len(handle))
                 for subindex, subhdl in enumerate(handle):
                     if subhdl is None:
-                        self._log.warning("Index %d doesn't exist in %s.%s", subindex, self._name, name)
+                        self._log.warning(
+                            "Index %d doesn't exist in %s.%s",
+                            subindex,
+                            self._name,
+                            name,
+                        )
                         continue
-                    self._log.debug("Yielding index %d from %s (%s)", subindex, name, type(subhdl))
+                    self._log.debug(
+                        "Yielding index %d from %s (%s)", subindex, name, type(subhdl)
+                    )
                     yield subhdl
             else:
-                self._log.debug("Yielding %s of type %s (%s)", name, type(handle), handle._path)
+                self._log.debug(
+                    "Yielding %s of type %s (%s)", name, type(handle), handle._path
+                )
                 yield handle
 
     def _discover_all(self):
@@ -255,7 +274,10 @@ class RegionObject(SimHandleBase):
             try:
                 key = self._sub_handle_key(name)
             except ValueError:
-                self._log.debug("Unable to translate handle >%s< to a valid _sub_handle key", hdl._name)
+                self._log.debug(
+                    "Unable to translate handle >%s< to a valid _sub_handle key",
+                    hdl._name,
+                )
                 continue
 
             self._sub_handles[key] = hdl
@@ -319,7 +341,9 @@ class HierarchyObject(RegionObject):
             warnings.warn(
                 "Setting values on handles using the ``dut.handle = value`` syntax is deprecated. "
                 "Instead use the ``handle.value = value`` syntax",
-                DeprecationWarning, stacklevel=2)
+                DeprecationWarning,
+                stacklevel=2,
+            )
             sub.value = value
             return
 
@@ -355,7 +379,7 @@ class HierarchyObject(RegionObject):
         :meta public:
         """
         if extended:
-            name = "\\"+name+"\\"
+            name = "\\" + name + "\\"
 
         handle = self.__get_sub_handle_by_name(name)
         if handle is not None:
@@ -375,11 +399,12 @@ class HierarchyArrayObject(RegionObject):
         # VHPI(ALDEC):        _name__X where X is the index
         # VPI:                _name[X] where X is the index
         import re
-        result = re.match(fr"{self._name}__(?P<index>\d+)$", name)
+
+        result = re.match(rf"{self._name}__(?P<index>\d+)$", name)
         if not result:
-            result = re.match(fr"{self._name}\((?P<index>\d+)\)$", name)
+            result = re.match(rf"{self._name}\((?P<index>\d+)\)$", name)
         if not result:
-            result = re.match(fr"{self._name}\[(?P<index>\d+)\]$", name)
+            result = re.match(rf"{self._name}\[(?P<index>\d+)\]$", name)
 
         if result:
             return int(result.group("index"))
@@ -430,8 +455,9 @@ class _AssignmentResult:
         raise TypeError(
             "Attempted to use `{0._signal!r} <= {0._value!r}` (a cocotb "
             "delayed write) as if it were a numeric comparison. To perform "
-            "comparison, use `{0._signal!r}.value <= {0._value!r}` instead."
-            .format(self)
+            "comparison, use `{0._signal!r}.value <= {0._value!r}` instead.".format(
+                self
+            )
         )
 
 
@@ -451,20 +477,26 @@ class NonHierarchyObject(SimHandleBase):
 
             Use :meth:`setimmediatevalue` to set the value immediately.
         """
-        raise TypeError("Not permissible to get values of object {} of type {}".format(self._name, type(self)))
+        raise TypeError(
+            "Not permissible to get values of object {} of type {}".format(
+                self._name, type(self)
+            )
+        )
 
     @value.setter
     def value(self, value):
         self._set_value(value, cocotb.scheduler._schedule_write)
 
     def setimmediatevalue(self, value):
-        """ Assign a value to this simulation object immediately. """
+        """Assign a value to this simulation object immediately."""
+
         def _call_now(handle, f, *args):
             f(*args)
+
         self._set_value(value, _call_now)
 
     def _set_value(self, value, call_sim):
-        """ This should be overriden in subclasses.
+        """This should be overriden in subclasses.
 
         This is used to implement both the setter for :attr:`value`, and the
         :meth:`setimmediatevalue` method.
@@ -472,7 +504,11 @@ class NonHierarchyObject(SimHandleBase):
         ``call_sim(handle, f, *args)`` should be used to schedule simulator writes,
         rather than performing them directly as ``f(*args)``.
         """
-        raise TypeError("Not permissible to set values on object {} of type {}".format(self._name, type(self)))
+        raise TypeError(
+            "Not permissible to set values on object {} of type {}".format(
+                self._name, type(self)
+            )
+        )
 
     def __le__(self, value):
         """Overload less-than-or-equal-to operator to provide an HDL-like shortcut.
@@ -484,7 +520,8 @@ class NonHierarchyObject(SimHandleBase):
             "Setting values on handles using the ``handle <= value`` syntax is deprecated. "
             "Instead use the ``handle.value = value`` syntax",
             DeprecationWarning,
-            stacklevel=2)
+            stacklevel=2,
+        )
         self.value = value
         return _AssignmentResult(self, value)
 
@@ -554,14 +591,14 @@ class ConstantObject(NonHierarchyObject):
     def __str__(self):
         if isinstance(self.value, bytes):
             StringObject._emit_str_warning(self)
-            return self.value.decode('ascii')
+            return self.value.decode("ascii")
         else:
             ModifiableObject._emit_str_warning(self)
             return str(self.value)
 
 
 class NonHierarchyIndexableObject(NonHierarchyObject):
-    """ A non-hierarchy indexable object.
+    """A non-hierarchy indexable object.
 
     Getting and setting the current value of an array is done
     by iterating through sub-handles in left-to-right order.
@@ -594,19 +631,26 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         warnings.warn(
             "Setting values on handles using the ``dut.handle[i] = value`` syntax is deprecated. "
             "Instead use the ``handle[i].value = value`` syntax",
-            DeprecationWarning, stacklevel=2)
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self[index].value = value
 
     def __getitem__(self, index):
         if isinstance(index, slice):
             raise IndexError("Slice indexing is not supported")
         if self._range is None:
-            raise IndexError("%s is not indexable.  Unable to get object at index %d" % (self._fullname, index))
+            raise IndexError(
+                "%s is not indexable.  Unable to get object at index %d"
+                % (self._fullname, index)
+            )
         if index in self._sub_handles:
             return self._sub_handles[index]
         new_handle = self._handle.get_handle_by_index(index)
         if not new_handle:
-            raise IndexError("%s contains no object at index %d" % (self._fullname, index))
+            raise IndexError(
+                "%s contains no object at index %d" % (self._fullname, index)
+            )
         path = self._path + "[" + str(index) + "]"
         self._sub_handles[index] = SimHandle(new_handle, path)
         return self._sub_handles[index]
@@ -636,10 +680,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
     @NonHierarchyObject.value.getter
     def value(self) -> list:
         # Don't use self.__iter__, because it has an unwanted `except IndexError`
-        return [
-            self[i].value
-            for i in self._range_iter(self._range[0], self._range[1])
-        ]
+        return [self[i].value for i in self._range_iter(self._range[0], self._range[1])]
 
     def _set_value(self, value, call_sim):
         """Assign value from a list of same length to an array in left-to-right order.
@@ -648,16 +689,25 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         See the docstring for this class.
         """
         if type(value) is not list:
-            raise TypeError("Assigning non-list value to object {} of type {}".format(self._name, type(self)))
+            raise TypeError(
+                "Assigning non-list value to object {} of type {}".format(
+                    self._name, type(self)
+                )
+            )
         if len(value) != len(self):
-            raise ValueError("Assigning list of length %d to object %s of length %d" % (
-                len(value), self._name, len(self)))
-        for val_idx, self_idx in enumerate(self._range_iter(self._range[0], self._range[1])):
+            raise ValueError(
+                "Assigning list of length %d to object %s of length %d"
+                % (len(value), self._name, len(self))
+            )
+        for val_idx, self_idx in enumerate(
+            self._range_iter(self._range[0], self._range[1])
+        ):
             self[self_idx]._set_value(value[val_idx], call_sim)
 
 
 class NonConstantObject(NonHierarchyIndexableObject):
-    """ A non-constant object"""
+    """A non-constant object"""
+
     # FIXME: what is the difference to ModifiableObject? Explain in docstring.
 
     def drivers(self):
@@ -679,6 +729,7 @@ class NonConstantObject(NonHierarchyIndexableObject):
 
 class _SetAction:
     """Base class representing the type of action used while write-accessing a handle."""
+
     pass
 
 
@@ -760,33 +811,56 @@ class ModifiableObject(NonConstantObject):
                     return
 
                 if value < 0:
-                    value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
+                    value = BinaryValue(
+                        value=value,
+                        n_bits=len(self),
+                        bigEndian=False,
+                        binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT,
+                    )
                 else:
-                    value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.UNSIGNED)
+                    value = BinaryValue(
+                        value=value,
+                        n_bits=len(self),
+                        bigEndian=False,
+                        binaryRepresentation=BinaryRepresentation.UNSIGNED,
+                    )
             else:
                 raise OverflowError(
-                    "Int value ({!r}) out of range for assignment of {!r}-bit signal ({!r})"
-                    .format(value, len(self), self._name))
+                    "Int value ({!r}) out of range for assignment of {!r}-bit signal ({!r})".format(
+                        value, len(self), self._name
+                    )
+                )
 
         if isinstance(value, ctypes.Structure):
             warnings.warn(
                 "`ctypes.Structure` values are no longer accepted for value assignment. "
                 "Use `BinaryValue(value=bytes(struct_obj), n_bits=len(signal))` instead",
-                DeprecationWarning, stacklevel=3)
+                DeprecationWarning,
+                stacklevel=3,
+            )
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
         elif isinstance(value, dict):
             warnings.warn(
                 "dict values are no longer accepted for value assignment. "
                 "Use `sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))` "
                 "to convert the dict to an int before assignment.",
-                DeprecationWarning, stacklevel=3)
+                DeprecationWarning,
+                stacklevel=3,
+            )
             # We're given a dictionary with a list of values and a bit size...
             num = 0
             vallist = list(value["values"])
             vallist.reverse()
             if len(vallist) * value["bits"] != len(self):
-                raise TypeError("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
-                                (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)))
+                raise TypeError(
+                    "Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long"
+                    % (
+                        len(value["values"]),
+                        value["bits"],
+                        len(value["values"]) * value["bits"],
+                        len(self),
+                    )
+                )
 
             for val in vallist:
                 num = (num << value["bits"]) + val
@@ -797,8 +871,10 @@ class ModifiableObject(NonConstantObject):
 
         elif not isinstance(value, BinaryValue):
             raise TypeError(
-                "Unsupported type for value assignment: {} ({!r})"
-                .format(type(value), value))
+                "Unsupported type for value assignment: {} ({!r})".format(
+                    type(value), value
+                )
+            )
 
         call_sim(self, self._handle.set_signal_val_binstr, set_action, value.binstr)
 
@@ -822,9 +898,12 @@ class ModifiableObject(NonConstantObject):
     def _emit_str_warning(self):
         warnings.warn(
             "`str({t})` is deprecated, and in future will return `{t}._path`. "
-            "To get a string representation of the value, use `str({t}.value)`."
-            .format(t=type(self).__qualname__),
-            FutureWarning, stacklevel=3)
+            "To get a string representation of the value, use `str({t}.value)`.".format(
+                t=type(self).__qualname__
+            ),
+            FutureWarning,
+            stacklevel=3,
+        )
 
     def __str__(self):
         self._emit_str_warning()
@@ -853,8 +932,10 @@ class RealObject(ModifiableObject):
             value = float(value)
         except ValueError:
             raise TypeError(
-                "Unsupported type for real value assignment: {} ({!r})"
-                .format(type(value), value))
+                "Unsupported type for real value assignment: {} ({!r})".format(
+                    type(value), value
+                )
+            )
 
         call_sim(self, self._handle.set_signal_val_real, set_action, value)
 
@@ -888,16 +969,20 @@ class EnumObject(ModifiableObject):
             value = int(value)
         elif not isinstance(value, int):
             raise TypeError(
-                "Unsupported type for enum value assignment: {} ({!r})"
-                .format(type(value), value))
+                "Unsupported type for enum value assignment: {} ({!r})".format(
+                    type(value), value
+                )
+            )
 
         min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
         if min_val <= value <= max_val:
             call_sim(self, self._handle.set_signal_val_int, set_action, value)
         else:
             raise OverflowError(
-                "Int value ({!r}) out of range for assignment of enum signal ({!r})"
-                .format(value, self._name))
+                "Int value ({!r}) out of range for assignment of enum signal ({!r})".format(
+                    value, self._name
+                )
+            )
 
     @ModifiableObject.value.getter
     def value(self) -> int:
@@ -929,16 +1014,20 @@ class IntegerObject(ModifiableObject):
             value = int(value)
         elif not isinstance(value, int):
             raise TypeError(
-                "Unsupported type for integer value assignment: {} ({!r})"
-                .format(type(value), value))
+                "Unsupported type for integer value assignment: {} ({!r})".format(
+                    type(value), value
+                )
+            )
 
         min_val, max_val = _value_limits(32, _Limits.SIGNED_NBIT)
         if min_val <= value <= max_val:
             call_sim(self, self._handle.set_signal_val_int, set_action, value)
         else:
             raise OverflowError(
-                "Int value ({!r}) out of range for assignment of integer signal ({!r})"
-                .format(value, self._name))
+                "Int value ({!r}) out of range for assignment of integer signal ({!r})".format(
+                    value, self._name
+                )
+            )
 
     @ModifiableObject.value.getter
     def value(self) -> int:
@@ -973,13 +1062,18 @@ class StringObject(ModifiableObject):
             warnings.warn(
                 "Handles on string objects will soon not accept `str` objects. "
                 "Please use a bytes object by encoding the string as you see fit. "
-                "`str.encode('ascii')` is typically sufficient.", DeprecationWarning, stacklevel=2)
-            value = value.encode('ascii')  # may throw UnicodeEncodeError
+                "`str.encode('ascii')` is typically sufficient.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            value = value.encode("ascii")  # may throw UnicodeEncodeError
 
         if not isinstance(value, bytes):
             raise TypeError(
-                "Unsupported type for string value assignment: {} ({!r})"
-                .format(type(value), value))
+                "Unsupported type for string value assignment: {} ({!r})".format(
+                    type(value), value
+                )
+            )
 
         call_sim(self, self._handle.set_signal_val_str, set_action, value)
 
@@ -990,13 +1084,16 @@ class StringObject(ModifiableObject):
     def _emit_str_warning(self):
         warnings.warn(
             "`str({t})` is deprecated, and in future will return `{t}._path`. "
-            "To access the `bytes` value of this handle, use `{t}.value`."
-            .format(t=type(self).__qualname__),
-            FutureWarning, stacklevel=3)
+            "To access the `bytes` value of this handle, use `{t}.value`.".format(
+                t=type(self).__qualname__
+            ),
+            FutureWarning,
+            stacklevel=3,
+        )
 
     def __str__(self):
         self._emit_str_warning()
-        return self.value.decode('ascii')
+        return self.value.decode("ascii")
 
 
 _handle2obj = {}
@@ -1016,16 +1113,16 @@ def SimHandle(handle, path=None):
         NotImplementedError: If no matching object for GPI type could be found.
     """
     _type2cls = {
-        simulator.MODULE:      HierarchyObject,
-        simulator.STRUCTURE:   HierarchyObject,
-        simulator.REG:         ModifiableObject,
-        simulator.NET:         ModifiableObject,
-        simulator.NETARRAY:    NonHierarchyIndexableObject,
-        simulator.REAL:        RealObject,
-        simulator.INTEGER:     IntegerObject,
-        simulator.ENUM:        EnumObject,
-        simulator.STRING:      StringObject,
-        simulator.GENARRAY:    HierarchyArrayObject,
+        simulator.MODULE: HierarchyObject,
+        simulator.STRUCTURE: HierarchyObject,
+        simulator.REG: ModifiableObject,
+        simulator.NET: ModifiableObject,
+        simulator.NETARRAY: NonHierarchyIndexableObject,
+        simulator.REAL: RealObject,
+        simulator.INTEGER: IntegerObject,
+        simulator.ENUM: EnumObject,
+        simulator.STRING: StringObject,
+        simulator.GENARRAY: HierarchyArrayObject,
     }
 
     # Enforce singletons since it's possible to retrieve handles avoiding
@@ -1050,7 +1147,10 @@ def SimHandle(handle, path=None):
         return obj
 
     if t not in _type2cls:
-        raise NotImplementedError("Couldn't find a matching object for GPI type %s(%d) (path=%s)" % (handle.get_type_string(), t, path))
+        raise NotImplementedError(
+            "Couldn't find a matching object for GPI type %s(%d) (path=%s)"
+            % (handle.get_type_string(), t, path)
+        )
     obj = _type2cls[t](handle, path)
     _handle2obj[handle] = obj
     return obj

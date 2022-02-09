@@ -43,6 +43,7 @@ import argparse
 import os
 import sys
 import textwrap
+
 import cocotb
 import cocotb._vendor.find_libpython as find_libpython
 
@@ -66,7 +67,8 @@ def help_vars_text():
 
     # NOTE: make sure to keep "helpmsg" aligned with documentation/source/building.rst
     # Also keep it at 80 chars.
-    helpmsg = textwrap.dedent("""\
+    helpmsg = textwrap.dedent(
+        """\
     The following variables are environment variables:
 
     Cocotb
@@ -98,7 +100,8 @@ def help_vars_text():
     ---------
     COCOTB_SCHEDULER_DEBUG    Enable additional output of coroutine scheduler
 
-    For details, see {}""").format(doclink)
+    For details, see {}"""
+    ).format(doclink)
     return helpmsg
 
 
@@ -110,12 +113,27 @@ def lib_name(interface: str, simulator: str) -> str:
     interface_name = interface.lower()
     supported_interfaces = ["vpi", "vhpi", "fli"]
     if interface_name not in supported_interfaces:
-        raise ValueError("Wrong interface used. Supported: " + ", ".join(supported_interfaces))
+        raise ValueError(
+            "Wrong interface used. Supported: " + ", ".join(supported_interfaces)
+        )
 
     simulator_name = simulator.lower()
-    supported_sims = ["icarus", "questa", "modelsim", "ius", "xcelium", "vcs", "ghdl", "riviera", "activehdl", "cvc"]
+    supported_sims = [
+        "icarus",
+        "questa",
+        "modelsim",
+        "ius",
+        "xcelium",
+        "vcs",
+        "ghdl",
+        "riviera",
+        "activehdl",
+        "cvc",
+    ]
     if simulator not in supported_sims:
-        raise ValueError("Wrong simulator name. Supported: " + ", ".join(supported_sims))
+        raise ValueError(
+            "Wrong simulator name. Supported: " + ", ".join(supported_sims)
+        )
 
     if simulator_name in ["questa", "cvc"]:
         library_name = "modelsim"
@@ -233,23 +251,23 @@ def get_parser():
         "--lib-dir",
         help="Print the absolute path to the interface libraries location",
         action=PrintAction,
-        text=libs_dir
+        text=libs_dir,
     )
     parser.add_argument(
         "--lib-name",
-        help='Print the name of interface library for given interface (VPI/VHPI/FLI) and simulator',
+        help="Print the name of interface library for given interface (VPI/VHPI/FLI) and simulator",
         nargs=2,
-        metavar=('INTERFACE', 'SIMULATOR'),
+        metavar=("INTERFACE", "SIMULATOR"),
         action=PrintFuncAction,
-        function=lib_name
+        function=lib_name,
     )
     parser.add_argument(
         "--lib-name-path",
-        help='Print the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator',
+        help="Print the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator",
         nargs=2,
-        metavar=('INTERFACE', 'SIMULATOR'),
+        metavar=("INTERFACE", "SIMULATOR"),
         action=PrintFuncAction,
-        function=lib_name_path
+        function=lib_name_path,
     )
     parser.add_argument(
         "-v",

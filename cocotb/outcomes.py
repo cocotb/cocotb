@@ -10,22 +10,22 @@ from cocotb.utils import remove_traceback_frames
 
 
 def capture(fn, *args, **kwargs):
-    """ Obtain an `Outcome` representing the result of a function call """
+    """Obtain an `Outcome` representing the result of a function call"""
     try:
         return Value(fn(*args, **kwargs))
     except BaseException as e:
-        e = remove_traceback_frames(e, ['capture'])
+        e = remove_traceback_frames(e, ["capture"])
         return Error(e)
 
 
 class Outcome(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def send(self, gen):
-        """ Send or throw this outcome into a generator """
+        """Send or throw this outcome into a generator"""
 
     @abc.abstractmethod
     def get(self, gen):
-        """ Get the value of this outcome, or throw its exception """
+        """Get the value of this outcome, or throw its exception"""
 
 
 class Value(Outcome):

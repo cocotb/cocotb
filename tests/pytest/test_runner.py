@@ -2,8 +2,9 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-import pytest
 import os
+
+import pytest
 
 import cocotb
 from cocotb.runner import get_runner
@@ -25,7 +26,9 @@ async def cocotb_runner_test(dut):
     assert WIDTH_OUT == len(dut.data_out)
 
 
-@pytest.mark.parametrize("parameters", [{"WIDTH_IN": "8", "WIDTH_OUT": "16"}, {"WIDTH_IN": "16"}])
+@pytest.mark.parametrize(
+    "parameters", [{"WIDTH_IN": "8", "WIDTH_OUT": "16"}, {"WIDTH_IN": "16"}]
+)
 def test_runner(parameters):
 
     toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
@@ -48,7 +51,9 @@ def test_runner(parameters):
         parameters=parameters,
         defines=["DEFINE=4"],
         includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
-        build_dir=sim_build + "/test_runner/" + "_".join(("{}={}".format(*i) for i in parameters.items())),
+        build_dir=sim_build
+        + "/test_runner/"
+        + "_".join(("{}={}".format(*i) for i in parameters.items())),
     )
 
     runner.test(

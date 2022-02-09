@@ -26,18 +26,18 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """Collection of handy functions."""
-from typing import Union
-from numbers import Real
-from decimal import Decimal
 import ctypes
+import functools
 import inspect
 import math
 import os
 import sys
 import traceback
-import weakref
-import functools
 import warnings
+import weakref
+from decimal import Decimal
+from numbers import Real
+from typing import Union
 
 from cocotb import simulator
 
@@ -53,7 +53,9 @@ def _get_simulator_precision():
 def get_python_integer_types():
     warnings.warn(
         "This is an internal cocotb function, use six.integer_types instead",
-        DeprecationWarning, stacklevel=2)
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return (int,)
 
 
@@ -77,26 +79,28 @@ def get_sim_time(units: str = "step") -> int:
     """
     timeh, timel = simulator.get_sim_time()
 
-    result = (timeh << 32 | timel)
+    result = timeh << 32 | timel
 
     if units not in (None, "step"):
         result = get_time_from_sim_steps(result, units)
     if units is None:
         warnings.warn(
             'Using units=None is deprecated, use units="step" instead.',
-            DeprecationWarning, stacklevel=2)
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     return result
 
 
 def _ldexp10(frac, exp):
-    """ Like math.ldexp, but base 10 """
+    """Like math.ldexp, but base 10"""
     # using * or / separately prevents rounding errors if `frac` is a
     # high-precision type
     if exp > 0:
-        return frac * (10 ** exp)
+        return frac * (10**exp)
     else:
-        return frac / (10 ** -exp)
+        return frac / (10**-exp)
 
 
 def get_time_from_sim_steps(steps: int, units: str) -> int:
@@ -115,10 +119,7 @@ def get_time_from_sim_steps(steps: int, units: str) -> int:
 
 
 def get_sim_steps(
-    time: Union[Real, Decimal],
-    units: str = "step",
-    *,
-    round_mode: str = "error"
+    time: Union[Real, Decimal], units: str = "step", *, round_mode: str = "error"
 ) -> int:
     """Calculates the number of simulation time steps for a given amount of *time*.
 
@@ -156,8 +157,10 @@ def get_sim_steps(
     if units is None:
         warnings.warn(
             'Using units=None is deprecated, use units="step" instead.',
-            DeprecationWarning, stacklevel=2)
-        units="step"  # don't propagate deprecated value
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        units = "step"  # don't propagate deprecated value
 
     if round_mode == "error":
         result_rounded = math.floor(result)
@@ -188,19 +191,14 @@ def _get_log_time_scale(units):
     Returns:
         The ``log10()`` of the scale factor for the time unit.
     """
-    scale = {
-        'fs' :    -15,
-        'ps' :    -12,
-        'ns' :     -9,
-        'us' :     -6,
-        'ms' :     -3,
-        'sec':      0}
+    scale = {"fs": -15, "ps": -12, "ns": -9, "us": -6, "ms": -3, "sec": 0}
 
     units_lwr = units.lower()
     if units_lwr not in scale:
         raise ValueError(f"Invalid unit ({units}) provided")
     else:
         return scale[units_lwr]
+
 
 # Ctypes helper functions
 
@@ -219,9 +217,10 @@ def pack(ctypes_obj):
     """
     warnings.warn(
         "This function is deprecated and will be removed, use ``bytes(ctypes_obj)`` instead.",
-        DeprecationWarning, stacklevel=2)
-    return ctypes.string_at(ctypes.addressof(ctypes_obj),
-                            ctypes.sizeof(ctypes_obj))
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return ctypes.string_at(ctypes.addressof(ctypes_obj), ctypes.sizeof(ctypes_obj))
 
 
 def unpack(ctypes_obj, string, bytes=None):
@@ -249,22 +248,29 @@ def unpack(ctypes_obj, string, bytes=None):
     """
     warnings.warn(
         "This function is being removed, use ``memoryview(ctypes_obj).cast('B')[:bytes] = string`` instead.",
-        DeprecationWarning, stacklevel=2)
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if bytes is None:
         if len(string) != ctypes.sizeof(ctypes_obj):
-            raise ValueError("Attempt to unpack a string of size %d into a \
-                struct of size %d" % (len(string), ctypes.sizeof(ctypes_obj)))
+            raise ValueError(
+                "Attempt to unpack a string of size %d into a \
+                struct of size %d"
+                % (len(string), ctypes.sizeof(ctypes_obj))
+            )
         bytes = len(string)
 
     if bytes > ctypes.sizeof(ctypes_obj):
-        raise MemoryError("Attempt to unpack %d bytes over an object \
-                        of size %d" % (bytes, ctypes.sizeof(ctypes_obj)))
+        raise MemoryError(
+            "Attempt to unpack %d bytes over an object \
+                        of size %d"
+            % (bytes, ctypes.sizeof(ctypes_obj))
+        )
 
     ctypes.memmove(ctypes.addressof(ctypes_obj), string, bytes)
 
 
 import cocotb.ANSI as ANSI
-
 
 # A note on the use of latin1 in the deprecations below:
 # Latin1 is the only encoding `e` that satisfies
@@ -311,13 +317,17 @@ def hexdump(x: bytes) -> str:
     # adapted from scapy.utils.hexdump
     warnings.warn(
         "cocotb.utils.hexdump is deprecated. Use scapy.utils.hexdump instead.",
-        DeprecationWarning, stacklevel=2)
+        DeprecationWarning,
+        stacklevel=2,
+    )
     rs = ""
     if isinstance(x, str):
         warnings.warn(
             "Passing a string to hexdump is deprecated, pass bytes instead",
-            DeprecationWarning, stacklevel=2)
-        x = x.encode('latin1')
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        x = x.encode("latin1")
     x = b"%b" % x
     l = len(x)
     i = 0
@@ -331,7 +341,7 @@ def hexdump(x: bytes) -> str:
             if j % 16 == 7:
                 rs += ""
         rs += "  "
-        rs += _sane(x[i:i + 16]) + "\n"
+        rs += _sane(x[i : i + 16]) + "\n"
         i += 16
     return rs
 
@@ -365,7 +375,9 @@ def hexdiffs(x: bytes, y: bytes) -> str:
     # adapted from scapy.utils.hexdiff
     warnings.warn(
         "cocotb.utils.hexdiffs is deprecated. Use scapy.utils.hexdiff instead.",
-        DeprecationWarning, stacklevel=2)
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     def highlight(string: str, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT) -> str:
         """Highlight with ANSI colors if possible/requested and not running in GUI."""
@@ -380,16 +392,18 @@ def hexdiffs(x: bytes, y: bytes) -> str:
     if x_is_str or y_is_str:
         warnings.warn(
             "Passing strings to hexdiffs is deprecated, pass bytes instead",
-            DeprecationWarning, stacklevel=2)
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if x_is_str:
-        x = x.encode('latin1')
+        x = x.encode("latin1")
     if y_is_str:
-        y = y.encode('latin1')
+        y = y.encode("latin1")
 
     rs = ""
 
-    x = (b'%b' % x)[::-1]
-    y = (b'%b' % y)[::-1]
+    x = (b"%b" % x)[::-1]
+    y = (b"%b" % y)[::-1]
     SUBST = 1
     INSERT = 1
     d = {}
@@ -401,9 +415,11 @@ def hexdiffs(x: bytes, y: bytes) -> str:
 
     for j in range(len(y)):
         for i in range(len(x)):
-            d[i, j] = min((d[i-1, j-1][0] + SUBST*(x[i] != y[j]), (i-1, j-1)),
-                          (d[i - 1, j][0] + INSERT, (i - 1, j)),
-                          (d[i, j - 1][0] + INSERT, (i, j - 1)))
+            d[i, j] = min(
+                (d[i - 1, j - 1][0] + SUBST * (x[i] != y[j]), (i - 1, j - 1)),
+                (d[i - 1, j][0] + INSERT, (i - 1, j)),
+                (d[i, j - 1][0] + INSERT, (i, j - 1)),
+            )
 
     backtrackx = []
     backtracky = []
@@ -411,21 +427,19 @@ def hexdiffs(x: bytes, y: bytes) -> str:
     j = len(y) - 1
     while not (i == j == -1):
         i2, j2 = d[i, j][1]
-        backtrackx.append(x[i2+1:i+1])
-        backtracky.append(y[j2+1:j+1])
+        backtrackx.append(x[i2 + 1 : i + 1])
+        backtracky.append(y[j2 + 1 : j + 1])
         i, j = i2, j2
 
     x = y = i = 0
-    colorize = { 0: lambda x: x,  # noqa
-                -1: lambda x: x,  # noqa
-                 1: lambda x: x}  # noqa
+    colorize = {0: lambda x: x, -1: lambda x: x, 1: lambda x: x}  # noqa  # noqa  # noqa
 
     dox = 1
     doy = 0
     l = len(backtrackx)
     while i < l:
-        linex = backtrackx[i:i+16]
-        liney = backtracky[i:i+16]
+        linex = backtrackx[i : i + 16]
+        liney = backtracky[i : i + 16]
         xx = sum(len(k) for k in linex)
         yy = sum(len(k) for k in liney)
         if dox and not xx:
@@ -469,18 +483,21 @@ def hexdiffs(x: bytes, y: bytes) -> str:
         for j in range(16):
             if i + j < l:
                 if line[j]:
-                    char_j, = line[j]
+                    (char_j,) = line[j]
                     if linex[j] != liney[j]:
-                        rs += highlight("%02X" % char_j,
-                                        colour=ANSI.COLOR_HILITE_HEXDIFF_2)
+                        rs += highlight(
+                            "%02X" % char_j, colour=ANSI.COLOR_HILITE_HEXDIFF_2
+                        )
                     else:
                         rs += "%02X" % char_j
                     if linex[j] == liney[j]:
-                        cl += highlight(_sane(line[j]),
-                                        colour=ANSI.COLOR_HILITE_HEXDIFF_3)
+                        cl += highlight(
+                            _sane(line[j]), colour=ANSI.COLOR_HILITE_HEXDIFF_3
+                        )
                     else:
-                        cl += highlight(_sane(line[j]),
-                                        colour=ANSI.COLOR_HILITE_HEXDIFF_4)
+                        cl += highlight(
+                            _sane(line[j]), colour=ANSI.COLOR_HILITE_HEXDIFF_4
+                        )
                 else:
                     rs += "  "
                     cl += " "
@@ -489,7 +506,7 @@ def hexdiffs(x: bytes, y: bytes) -> str:
             if j == 7:
                 rs += " "
 
-        rs += " " + cl + '\n'
+        rs += " " + cl + "\n"
 
         if doy or not yy:
             doy = 0
@@ -563,14 +580,14 @@ def reject_remaining_kwargs(name, kwargs):
     """
     warnings.warn(
         "reject_remaining_kwargs is deprecated and will be removed, use "
-        "Python 3 keyword-only arguments directly.", DeprecationWarning,
-        stacklevel=2)
+        "Python 3 keyword-only arguments directly.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if kwargs:
         # match the error message to what Python 3 produces
         bad_arg = next(iter(kwargs))
-        raise TypeError(
-            f'{name}() got an unexpected keyword argument {bad_arg!r}'
-        )
+        raise TypeError(f"{name}() got an unexpected keyword argument {bad_arg!r}")
 
 
 class lazy_property:
@@ -607,9 +624,9 @@ def want_color_output():
     want_color = sys.stdout.isatty()  # default to color for TTYs
     if os.getenv("NO_COLOR") is not None:
         want_color = False
-    if os.getenv("COCOTB_ANSI_OUTPUT", default='0') == '1':
+    if os.getenv("COCOTB_ANSI_OUTPUT", default="0") == "1":
         want_color = True
-    if os.getenv("GUI", default='0') == '1':
+    if os.getenv("GUI", default="0") == "1":
         want_color = False
     return want_color
 
@@ -653,11 +670,11 @@ def walk_coro_stack(coro):
     """
     while coro is not None:
         try:
-            f = getattr(coro, 'cr_frame')
+            f = getattr(coro, "cr_frame")
             coro = coro.cr_await
         except AttributeError:
             try:
-                f = getattr(coro, 'gi_frame')
+                f = getattr(coro, "gi_frame")
                 coro = coro.gi_yieldfrom
             except AttributeError:
                 f = None
