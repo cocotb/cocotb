@@ -131,12 +131,17 @@ class RegressionManager:
         for test in tests:
             self.log.info(f"Found test {test.__module__}.{test.__qualname__}")
             self._queue.append(test)
-        self.ntests = len(self._queue)
 
         if not self._queue:
             self.log.warning("No tests were discovered")
+            return
 
         self._queue.sort(key=lambda test: (test.stage, test._id))
+
+    @property
+    def ntests(self) -> int:
+        """Gets the number of tests in this regression."""
+        return len(self._queue)
 
     @classmethod
     def from_discovery(cls, dut: SimHandle):
