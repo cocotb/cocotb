@@ -527,8 +527,9 @@ class test(coroutine, metaclass=_decorator_helper):
             Don't execute this test as part of the regression. Test can still be run
             manually by setting :make:var:`TESTCASE`.
 
-        stage (int, optional)
+        stage (int)
             Order tests logically into stages, where multiple tests can share a stage.
+            Defaults to 0.
     """
 
     _id_count = 0  # used by the RegressionManager to sort tests in definition order
@@ -541,7 +542,7 @@ class test(coroutine, metaclass=_decorator_helper):
         expect_fail=False,
         expect_error=(),
         skip=False,
-        stage=None,
+        stage=0,
     ):
 
         if timeout_unit is None:
