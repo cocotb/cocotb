@@ -47,3 +47,25 @@ extend_skip_glob = [
 extend_exclude = '''
 _vendor
 '''
+
+[tool.cibuildwheel]
+# Build for supported platforms only.
+# Even though we only support 64 bit operating systems, we still support 32 bit
+# userspace applications (Python and simulators) on Windows and Linux.
+#
+# - CPython on Linux i686 and x86_64 with glibc
+# - CPython on Windows i686 and x86_64
+# - CPython on macOS x86_64
+build = "cp*-manylinux_x86_64 cp*-manylinux_i686 cp*-win_amd64 cp*-win32 cp*-macosx_x86_64"
+
+# By default, build on manylinux2014 for compatibility with CentOS/RHEL 7+ (once
+# the user updates Python) and Ubuntu 20.04+ (with system Python).
+manylinux-x86_64-image = "manylinux2014"
+manylinux-i686-image = "manylinux2014"
+
+[[tool.cibuildwheel.overrides]]
+# Build CPython 3.6 wheels on manylinux1 to support Ubuntu 18.04, CentOS/RHEL 7
+# and CentOS/RHEL 8 with their default Python 3.6/pip 9 installation.
+select = "cp36-*"
+manylinux-x86_64-image = "manylinux1"
+manylinux-i686-image = "manylinux1"
