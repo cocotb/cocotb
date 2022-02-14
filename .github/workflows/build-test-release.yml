@@ -1,0 +1,52 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: Release
+
+on:
+  # Run this workflow on every push to master or to a stable branch.
+  push:
+    branches:
+      - master
+      - "stable/**"
+
+jobs:
+  build_release:
+    name: Build distribution on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # Keep going even if one matrix build fails.
+      matrix:
+        os:
+          - ubuntu-20.04
+          - windows-2022
+          - macos-10.15
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install nox
+        run: python3 -m pip install nox
+
+      # Use the cibuildwheel configuration inside nox, instead of the
+      # cibuildwheel GitHub Action, to make the process easy to reproduce
+      # locally.
+      - name: Build cocotb release
+        run: nox -s release_build
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: cocotb-dist
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+
+  test_release:
+    name: Regression Tests
+    needs: build_release
+    uses: ./.github/workflows/regression-tests.yml
+    with:
+      nox_session_test_sim: release_test_sim
+      nox_session_test_nosim: release_test_nosim
+      download_artifacts: true
+      group: ci
