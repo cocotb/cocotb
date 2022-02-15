@@ -1,3 +1,6 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
 import glob
 
 import nox
@@ -11,7 +14,24 @@ dev_deps = [
     "pre-commit",
     "nox",
     "tox",
+    "flake8",
+    "clang-format",
 ]
+
+
+@nox.session
+def tests(session: nox.Session) -> None:
+    """run cocotb regression suite"""
+    session.env["CFLAGS"] = "-Werror -Wno-deprecated-declarations -g --coverage"
+    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
+    session.env["CXXFLAGS"] = "-Werror"
+    session.env["LDFLAGS"] = "--coverage"
+    session.install(*test_deps)
+    session.install("-e", ".")
+    session.run("pytest")
+    session.run("make", "test", external=True)
+    coverage_files = glob.glob("**/.coverage.cocotb", recursive=True)
+    session.run("coverage", "combine", "--append", *coverage_files)
 
 
 @nox.session
@@ -59,22 +79,9 @@ def docs_spelling(session: nox.Session) -> None:
     )
 
 
-@nox.session
-def tests(session: nox.Session) -> None:
-    session.env["CFLAGS"] = "-Werror -Wno-deprecated-declarations -g --coverage"
-    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
-    session.env["CXXFLAGS"] = "-Werror"
-    session.env["LDFLAGS"] = "--coverage"
-    session.install(*test_deps)
-    session.install("-e", ".")
-    session.run("pytest")
-    session.run("make", "test", external=True)
-    coverage_files = glob.glob("**/.coverage.cocotb", recursive=True)
-    session.run("coverage", "combine", "--append", *coverage_files)
-
-
 @nox.session(reuse_venv=True)
 def dev(session: nox.Session) -> None:
+    """Build a development environment and optionally run a command given as extra args"""
     session.install(*test_deps)
     session.install(*dev_deps)
     session.install("-e", ".")
