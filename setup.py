@@ -90,7 +90,7 @@ setup(
     cmdclass={"build_ext": build_ext},
     version=__version__,  # noqa: F821
     description="cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.",
-    url="https://docs.cocotb.org",
+    url="https://www.cocotb.org",
     license="BSD",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",
