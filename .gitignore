@@ -27,6 +27,7 @@ develop-eggs
 .installed.cfg
 __pycache__
 .tox
+.nox
 .eggs
 
 # Vim tmp files
