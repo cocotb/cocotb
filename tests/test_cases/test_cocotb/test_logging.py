@@ -8,7 +8,7 @@ Tests for the cocotb logger
 import logging
 import os
 
-from common import assert_raises
+import pytest
 
 import cocotb
 import cocotb.log
@@ -60,7 +60,7 @@ async def test_logging_default_config(dut):
 
         # Try to set log level to an invalid log level
         os.environ["COCOTB_LOG_LEVEL"] = "INVALID_LOG_LEVEL"
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             log_default_config()
 
         # Try to set log level to a valid log level with wrong capitalization

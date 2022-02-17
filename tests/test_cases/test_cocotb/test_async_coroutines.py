@@ -4,8 +4,8 @@
 """
 Test function and substitutability of async coroutines
 """
-
-from common import assert_raises
+import pytest
+from common import MyException
 
 import cocotb
 from cocotb.outcomes import Error, Value
@@ -33,12 +33,6 @@ class produce:
         return outcome.get()
 
 
-class SomeException(Exception):
-    """Custom exception to test for that can't be thrown by internals"""
-
-    pass
-
-
 @cocotb.test()  # test yielding decorated async coroutine in legacy coroutine
 def test_annotated_async_from_coro(dut):
     """
@@ -49,8 +43,8 @@ def test_annotated_async_from_coro(dut):
     assert v == 1
 
     try:
-        yield produce.async_annotated(Error(SomeException))
-    except SomeException:
+        yield produce.async_annotated(Error(MyException))
+    except MyException:
         pass
     else:
         assert False
@@ -63,8 +57,8 @@ async def test_annotated_async_from_async(dut):
     assert v == 1
 
     try:
-        await produce.async_annotated(Error(SomeException))
-    except SomeException:
+        await produce.async_annotated(Error(MyException))
+    except MyException:
         pass
     else:
         assert False
@@ -77,8 +71,8 @@ async def test_async_from_async(dut):
     assert v == 1
 
     try:
-        await produce.async_(Error(SomeException))
-    except SomeException:
+        await produce.async_(Error(MyException))
+    except MyException:
         pass
     else:
         assert False
@@ -91,8 +85,8 @@ async def test_coro_from_async(dut):
     assert v == 1
 
     try:
-        await produce.coro(Error(SomeException))
-    except SomeException:
+        await produce.coro(Error(MyException))
+    except MyException:
         pass
     else:
         assert False
@@ -150,7 +144,7 @@ async def test_fork_coroutine_function_exception(dut):
         "Coroutine function {} should be called "
         "prior to being scheduled.".format(coro)
     )
-    with assert_raises(TypeError, pattern):
+    with pytest.raises(TypeError, match=pattern):
         cocotb.start_soon(coro)
 
 
@@ -163,5 +157,5 @@ async def test_task_coroutine_function_exception(dut):
         "Coroutine function {} should be called "
         "prior to being scheduled.".format(coro)
     )
-    with assert_raises(TypeError, pattern):
+    with pytest.raises(TypeError, match=pattern):
         cocotb.decorators.RunningTask(coro)

@@ -58,14 +58,3 @@ async def test_clock_with_units(dut):
     assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
 
     clk_gen.kill()
-
-
-@cocotb.test()
-async def test_external_clock(dut):
-    """Test awaiting on an external non-cocotb coroutine decorated function"""
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    count = 0
-    while count != 100:
-        await RisingEdge(dut.clk)
-        count += 1
-    clk_gen.kill()

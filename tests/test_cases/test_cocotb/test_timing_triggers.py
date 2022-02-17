@@ -15,7 +15,6 @@ from decimal import Decimal
 from fractions import Fraction
 
 import pytest
-from common import assert_raises
 
 import cocotb
 from cocotb.clock import Clock
@@ -53,7 +52,7 @@ async def test_timer_with_units(dut):
     time_step = get_sim_time(units="fs") - time_fs
 
     pattern = "Unable to accurately represent .* with the simulator precision of .*"
-    with assert_raises(ValueError, pattern):
+    with pytest.raises(ValueError, match=pattern):
         await Timer(2.5 * time_step, units="fs")
     dut._log.info("As expected, unable to create a timer of 2.5 simulator time steps")
 
@@ -253,7 +252,7 @@ async def test_singleton_isinstance(dut):
 @cocotb.test()
 async def test_neg_timer(dut):
     """Test negative timer values are forbidden"""
-    with assert_raises(TriggerException):
+    with pytest.raises(TriggerException):
         Timer(-42)  # no need to even `await`, constructing it is an error
     # handle 0 special case
     with warnings.catch_warnings(record=True) as w:
@@ -306,9 +305,8 @@ async def test_time_units_eq_None(dut):
 async def test_timer_round_mode(_):
 
     # test invalid round_mode specifier
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match="^Invalid round_mode specifier: notvalid"):
         Timer(1, "step", round_mode="notvalid")
-    assert "invalid" in str(e).lower()
 
     # test default, update if default changes
     with pytest.raises(ValueError):

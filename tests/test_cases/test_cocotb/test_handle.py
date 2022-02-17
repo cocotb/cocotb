@@ -7,7 +7,7 @@ Tests for handles
 import logging
 import random
 
-from common import assert_raises
+import pytest
 
 import cocotb
 from cocotb.handle import _Limits
@@ -20,7 +20,7 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 @cocotb.test()
 async def test_bad_attr(dut):
 
-    with assert_raises(AttributeError):
+    with pytest.raises(AttributeError):
         dut.fake_signal
 
     try:
@@ -89,14 +89,14 @@ async def test_delayed_assignment_still_errors(dut):
 
     # note: all these fail because BinaryValue.assign rejects them
 
-    with assert_raises(ValueError):
+    with pytest.raises(ValueError):
         dut.stream_in_int.setimmediatevalue("1010 not a real binary string")
-    with assert_raises(TypeError):
+    with pytest.raises(TypeError):
         dut.stream_in_int.setimmediatevalue([])
 
-    with assert_raises(ValueError):
+    with pytest.raises(ValueError):
         dut.stream_in_int.value = "1010 not a real binary string"
-    with assert_raises(TypeError):
+    with pytest.raises(TypeError):
         dut.stream_in_int.value = []
 
 
@@ -142,7 +142,7 @@ async def int_overflow_test(signal, n_bits, test_mode, limits=_Limits.VECTOR_NBI
     else:
         value = None
 
-    with assert_raises(OverflowError):
+    with pytest.raises(OverflowError):
         signal.value = value
 
 
@@ -385,7 +385,7 @@ async def test_real_assign_int(dut):
 async def test_access_underscore_name(dut):
     """Test accessing HDL name starting with an underscore"""
     # direct access does not work because we consider such names cocotb-internal
-    with assert_raises(AttributeError):
+    with pytest.raises(AttributeError):
         dut._underscore_name
 
     # indirect access works
