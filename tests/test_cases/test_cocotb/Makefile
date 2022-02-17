@@ -22,6 +22,7 @@ MODULE := "\
 	test_pytest,\
 	test_queues,\
 	test_utils,\
+	test_fork,\
 	"
 
 ifeq ($(SIM),questa)

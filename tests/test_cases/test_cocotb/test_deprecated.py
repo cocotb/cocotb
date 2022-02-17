@@ -197,3 +197,12 @@ async def test_lessthan_raises_error(dut):
         ret = dut.stream_in_data <= 0x12
     with pytest.raises(TypeError):
         bool(ret)
+
+
+@cocotb.test()
+async def test_fork_deprecated(_):
+    async def example_coro():
+        pass
+
+    with pytest.warns(DeprecationWarning):
+        cocotb.fork(example_coro())

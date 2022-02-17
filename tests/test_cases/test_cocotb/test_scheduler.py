@@ -10,6 +10,7 @@ Test for scheduler and coroutine behavior
 """
 import logging
 import re
+import warnings
 from typing import Coroutine
 
 import pytest
@@ -44,7 +45,7 @@ async def test_coroutine_kill(dut):
     global test_flag
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(100, "ns")
-    cocotb.fork(clock_yield(clk_gen))
+    cocotb.start_soon(clock_yield(clk_gen))
     await Timer(100, "ns")
     clk_gen.kill()
     assert not test_flag
@@ -71,10 +72,10 @@ async def clock_two(dut):
 @cocotb.test()
 async def test_coroutine_close_down(dut):
     log = logging.getLogger("cocotb.test")
-    cocotb.fork(Clock(dut.clk, 100, "ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
 
-    coro_one = cocotb.fork(clock_one(dut))
-    coro_two = cocotb.fork(clock_two(dut))
+    coro_one = cocotb.start_soon(clock_one(dut))
+    coro_two = cocotb.start_soon(clock_two(dut))
 
     await Join(coro_one)
     await Join(coro_two)
@@ -95,7 +96,7 @@ async def join_finished(dut):
         await Timer(1, "ns")
         return retval
 
-    coro = cocotb.fork(some_coro())
+    coro = cocotb.start_soon(some_coro())
 
     retval = 1
     x = await coro.join()
@@ -120,10 +121,10 @@ async def consistent_join(dut):
             await rising_edge
         return 3
 
-    cocotb.fork(Clock(dut.clk, 2000, "ps").start())
+    cocotb.start_soon(Clock(dut.clk, 2000, "ps").start())
 
-    short_wait = cocotb.fork(wait_for(dut.clk, 10))
-    long_wait = cocotb.fork(wait_for(dut.clk, 30))
+    short_wait = cocotb.start_soon(wait_for(dut.clk, 10))
+    long_wait = cocotb.start_soon(wait_for(dut.clk, 30))
 
     await wait_for(dut.clk, 20)
     a = await short_wait.join()
@@ -136,7 +137,7 @@ async def test_kill_twice(dut):
     """
     Test that killing a coroutine that has already been killed does not crash
     """
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(1, "ns")
     clk_gen.kill()
     await Timer(1, "ns")
@@ -148,7 +149,7 @@ async def test_join_identity(dut):
     """
     Test that Join() returns the same object each time
     """
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
 
     assert Join(clk_gen) is Join(clk_gen)
     await Timer(1, "ns")
@@ -219,13 +220,13 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
         nonlocal victim_resumed
         victim_resumed = True
 
-    victim_task = cocotb.fork(victim())
+    victim_task = cocotb.start_soon(victim())
 
     async def killer():
         await RisingEdge(dut.clk)
         victim_task.kill()
 
-    cocotb.fork(killer())
+    cocotb.start_soon(killer())
 
     await Timer(
         2, "step"
@@ -413,7 +414,9 @@ async def test_task_repr(dut):
         log.info(repr(this_task))
         assert re.match(r"<Task \d+ running coro=coroutine_outer\(\)>", repr(this_task))
 
-        cocotb.fork(coroutine_forked(this_task))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cocotb.fork(coroutine_forked(this_task))
         await Combine(*(coroutine_wait() for _ in range(2)))
 
         return "Combine done"

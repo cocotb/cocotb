@@ -55,7 +55,7 @@ Concurrent Execution
 
 Coroutines can be scheduled for concurrent execution with :func:`~cocotb.fork`, :func:`~cocotb.start`, and :func:`~cocotb.start_soon`.
 
-:func:`~cocotb.fork` schedules and executes the new coroutine immediately,
+:func:`~cocotb.fork` (deprecated) schedules and executes the new coroutine immediately,
 returning control to the calling task after the new coroutine finishes or yields control.
 No other pending tasks are run.
 
@@ -68,8 +68,7 @@ after the calling task yields control.
 
 .. note::
     The preferred way to schedule tasks is with :func:`~cocotb.start` and :func:`~cocotb.start_soon`.
-    :func:`~cocotb.fork` remains for historical reasons,
-    but may be removed in a future version of cocotb.
+    :func:`~cocotb.fork` is deprecated and will be removed in a future version of cocotb.
 
 .. code-block:: python3
 
@@ -149,6 +148,9 @@ forcing their completion before they would naturally end.
 
 .. versionchanged:: 1.6
     Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions.
+
+.. versionchanged:: 1.7
+    Deprecated :func:`cocotb.fork`.
 
 
 Async generators
