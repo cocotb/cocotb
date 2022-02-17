@@ -266,10 +266,6 @@ GPI_EXPORT void gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
 // callback data
 GPI_EXPORT void *gpi_get_callback_data(gpi_cb_hdl gpi_hdl);
 
-// Print out what implementations are registered. Python needs to be loaded for
-// this, Returns the number of libs
-GPI_EXPORT size_t gpi_print_registered_impl(void);
-
 #ifdef __cplusplus
 }
 #endif
