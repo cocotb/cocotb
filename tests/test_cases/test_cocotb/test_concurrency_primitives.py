@@ -4,7 +4,7 @@
 """
 Tests for concurrency primitives like First and Combine
 """
-import textwrap
+import re
 from collections import deque
 from random import randint
 
@@ -111,27 +111,9 @@ async def test_exceptions_first(dut):
         await Timer(1, "ns")
         await cocotb.triggers.First(raise_inner())
 
-    # it's ok to change this value if the traceback changes - just make sure
-    # that when changed, it doesn't become harder to read.
-    expected = textwrap.dedent(
-        r"""
-    Traceback \(most recent call last\):
-      File ".*common\.py", line \d+, in _check_traceback
-        await running_coro
-      File ".*test_concurrency_primitives\.py", line \d+, in raise_soon
-        await cocotb\.triggers\.First\(raise_inner\(\)\)
-      File ".*triggers\.py", line \d+, in _wait
-        return await first_trigger[^\n]*
-      File ".*triggers.py", line \d+, in __await__
-        return \(yield self\)
-      File ".*triggers.py", line \d+, in __await__
-        return \(yield self\)
-      File ".*test_concurrency_primitives\.py", line \d+, in raise_inner
-        raise ValueError\("It is soon now"\)
-    ValueError: It is soon now"""
-    ).strip()
-
-    await _check_traceback(raise_soon(), ValueError, expected)
+    await _check_traceback(
+        raise_soon(), ValueError, r".*in raise_soon.*in raise_inner", re.DOTALL
+    )
 
 
 @cocotb.test()

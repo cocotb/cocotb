@@ -4,7 +4,7 @@
 """
 Tests for synchronization primitives like Lock and Event
 """
-from common import assert_raises
+import pytest
 
 import cocotb
 from cocotb.triggers import Lock, Timer, _InternalEvent
@@ -74,7 +74,7 @@ async def test_internalevent(dut):
     assert e.data == "data"
     assert get_sim_time(units="ns") == time_ns + 1
     # _InternalEvent can only be awaited once
-    with assert_raises(RuntimeError):
+    with pytest.raises(RuntimeError):
         await e
 
     e = _InternalEvent(None)
@@ -91,7 +91,7 @@ async def test_internalevent(dut):
     assert not e.is_set()
     assert not ran
     # _InternalEvent can only be awaited by one coroutine
-    with assert_raises(RuntimeError):
+    with pytest.raises(RuntimeError):
         await e
     e.set()
     await Timer(1)

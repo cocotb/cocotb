@@ -10,7 +10,7 @@ Tests of cocotb.test functionality
 """
 from collections.abc import Coroutine
 
-from common import clock_gen
+from common import MyException
 
 import cocotb
 from cocotb.triggers import Timer
@@ -19,7 +19,7 @@ from cocotb.triggers import Timer
 @cocotb.test(expect_error=NameError)
 async def test_error(dut):
     """Error in the test"""
-    await clock_gen(dut.clk)
+    await Timer(100, "ns")
     fail  # noqa
 
 
@@ -46,10 +46,6 @@ async def test_immediate_test(dut):
 @cocotb.test(expect_fail=True)
 async def test_assertion_is_failure(dut):
     assert False
-
-
-class MyException(Exception):
-    pass
 
 
 @cocotb.test(expect_error=MyException)

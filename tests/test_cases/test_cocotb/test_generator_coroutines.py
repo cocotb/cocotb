@@ -4,9 +4,11 @@
 """
 Tests that specifically test generator-based coroutines
 """
-import textwrap
 
-from common import _check_traceback, assert_raises, clock_gen
+import re
+
+import pytest
+from common import _check_traceback
 
 import cocotb
 from cocotb.triggers import NullTrigger, Timer
@@ -90,8 +92,6 @@ def test_adding_a_coroutine_without_starting(dut):
 @cocotb.test(expect_fail=False)
 def test_yield_list(dut):
     """Example of yielding on a list of triggers"""
-    clock = dut.clk
-    cocotb.scheduler.add(clock_gen(clock))
     yield [Timer(1000), Timer(2000)]
 
     yield Timer(10_000)
@@ -106,8 +106,7 @@ def erroring_coro():
 @cocotb.test()
 def test_coroutine_error(dut):
     """Error in a coroutine that we yield"""
-    yield clock_gen(dut.clk)
-    with assert_raises(NameError):
+    with pytest.raises(NameError):
         yield erroring_coro()
 
 
@@ -166,23 +165,9 @@ def test_exceptions_direct(dut):
         yield Timer(1)
         yield raise_inner()
 
-    # it's ok to change this value if the traceback changes - just make sure
-    # that when changed, it doesn't become harder to read.
-    expected = textwrap.dedent(
-        r"""
-    Traceback \(most recent call last\):
-      File ".*common\.py", line \d+, in _check_traceback
-        await running_coro
-      File ".*cocotb[\\\/]decorators.py", line \d+, in __await__
-        return \(yield self\)
-      File ".*test_generator_coroutines\.py", line \d+, in raise_soon
-        yield raise_inner\(\)
-      File ".*test_generator_coroutines\.py", line \d+, in raise_inner
-        raise ValueError\("It is soon now"\)
-    ValueError: It is soon now"""
-    ).strip()
-
-    yield _check_traceback(raise_soon(), ValueError, expected)
+    yield _check_traceback(
+        raise_soon(), ValueError, r".*in raise_soon.*in raise_inner", re.DOTALL
+    )
 
 
 @cocotb.test()
@@ -200,20 +185,6 @@ def test_exceptions_forked(dut):
         coro = cocotb.start_soon(raise_inner())
         yield coro.join()
 
-    # it's ok to change this value if the traceback changes - just make sure
-    # that when changed, it doesn't become harder to read.
-    expected = textwrap.dedent(
-        r"""
-    Traceback \(most recent call last\):
-      File ".*common\.py", line \d+, in _check_traceback
-        await running_coro
-      File ".*cocotb[\\\/]decorators.py", line \d+, in __await__
-        return \(yield self\)
-      File ".*test_generator_coroutines\.py", line \d+, in raise_soon
-        yield coro\.join\(\)
-      File ".*test_generator_coroutines\.py", line \d+, in raise_inner
-        raise ValueError\("It is soon now"\)
-    ValueError: It is soon now"""
-    ).strip()
-
-    yield _check_traceback(raise_soon(), ValueError, expected)
+    yield _check_traceback(
+        raise_soon(), ValueError, r".*in raise_soon.*in raise_inner", re.DOTALL
+    )

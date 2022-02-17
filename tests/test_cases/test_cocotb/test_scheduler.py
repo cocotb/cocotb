@@ -13,7 +13,6 @@ import re
 from typing import Coroutine
 
 import pytest
-from common import clock_gen
 
 import cocotb
 from cocotb.clock import Clock
@@ -43,7 +42,7 @@ async def clock_yield(generator):
 async def test_coroutine_kill(dut):
     """Test that killing a coroutine causes pending routine continue"""
     global test_flag
-    clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(100, "ns")
     cocotb.fork(clock_yield(clk_gen))
     await Timer(100, "ns")
