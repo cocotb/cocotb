@@ -92,7 +92,7 @@ static GpiHandleStore unique_handles;
 
 #endif
 
-size_t gpi_print_registered_impl() {
+static size_t gpi_print_registered_impl() {
     vector<GpiImplInterface *>::iterator iter;
     for (iter = registered_impls.begin(); iter != registered_impls.end();
          iter++) {
