@@ -1114,7 +1114,7 @@ static void register_embed() {
 void cocotb_init() {
     LOG_INFO("cocotb_init called");
     register_embed();
-    gpi_load_extra_libs();
+    gpi_entry_point();
     register_initial_callback();
     register_final_callback();
 }
