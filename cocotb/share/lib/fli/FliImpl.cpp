@@ -1106,14 +1106,14 @@ static void register_final_callback() {
     sim_finish_cb->arm_callback();
 }
 
-static void register_embed() {
+static void register_impl() {
     fli_table = new FliImpl("FLI");
     gpi_register_impl(fli_table);
 }
 
 void cocotb_init() {
     LOG_INFO("cocotb_init called");
-    register_embed();
+    register_impl();
     gpi_entry_point();
     register_initial_callback();
     register_final_callback();
@@ -1121,4 +1121,4 @@ void cocotb_init() {
 
 }  // extern "C"
 
-GPI_ENTRY_POINT(cocotbfli, register_embed);
+GPI_ENTRY_POINT(cocotbfli, register_impl);
