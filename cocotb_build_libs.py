@@ -21,8 +21,19 @@ logger = logging.getLogger(__name__)
 cocotb_share_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "cocotb", "share")
 )
-
-_base_warns = ["-Wall", "-Wextra", "-Wcast-qual", "-Wwrite-strings", "-Wconversion"]
+_base_warns = [
+    "-Wall",
+    "-Wextra",
+    "-Wcast-qual",
+    "-Wwrite-strings",
+    "-Wconversion",
+    # -Wno-missing-field-initializers is required on GCC 4.x to prevent a
+    # spurious warning `error: missing initializer for member ...` when
+    # compiling `PyTypeObject type = {};` in `simulatormodule.cpp`.
+    # (See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=36750.) This flag can be
+    # removed once we require later GCC versions.
+    "-Wno-missing-field-initializers",
+]
 _ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
 _extra_cxx_compile_args = [
     "-std=c++11",
