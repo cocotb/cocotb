@@ -178,7 +178,7 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
     }
 }
 
-void gpi_load_extra_libs() {
+void gpi_entry_point() {
     /* Lets look at what other libs we were asked to load too */
     char *lib_env = getenv("GPI_EXTRA");
 

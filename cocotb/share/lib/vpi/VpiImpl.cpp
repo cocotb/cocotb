@@ -683,7 +683,7 @@ static void register_final_callback() {
 }
 
 COCOTBVPI_EXPORT void (*vlog_startup_routines[])() = {
-    register_embed, gpi_load_extra_libs, register_initial_callback,
+    register_embed, gpi_entry_point, register_initial_callback,
     register_final_callback, nullptr};
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines
