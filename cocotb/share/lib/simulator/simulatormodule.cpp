@@ -37,8 +37,6 @@
 static int takes = 0;
 static int releases = 0;
 
-static int sim_ending = 0;
-
 #include <Python.h>
 #include <cocotb_utils.h>    // COCOTB_UNUSED
 #include <gpi_logging.h>     // LOG_* macros
@@ -238,7 +236,6 @@ int handle_gpi_callback(void *user_data) {
             PyErr_Print();
 
             gpi_sim_end();
-            sim_ending = 1;
             ret = 0;
             goto out;
         }
@@ -261,13 +258,6 @@ out:
 
 err:
     to_simulator();
-
-    if (sim_ending) {
-        // This is the last callback of a successful run,
-        // so call the cleanup function as we'll never return
-        // to Python
-        gpi_cleanup();
-    }
     return ret;
 }
 
@@ -884,7 +874,6 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args) {
     }
 
     gpi_sim_end();
-    sim_ending = 1;
     Py_RETURN_NONE;
 }
 

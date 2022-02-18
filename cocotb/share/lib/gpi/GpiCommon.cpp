@@ -81,6 +81,7 @@ class GpiHandleStore {
 };
 
 static GpiHandleStore unique_handles;
+static bool sim_ending = false;
 
 #define CHECK_AND_STORE(_x) unique_handles.check_and_store(_x)
 #define CLEAR_STORE() unique_handles.clear()
@@ -123,10 +124,13 @@ void gpi_embed_init(int argc, char const *const *argv) {
 
 void gpi_embed_end() {
     embed_sim_event(SIM_FAIL, "Simulator shutdown prematurely");
-    gpi_cleanup();
+    sim_ending = true;
 }
 
-void gpi_sim_end() { registered_impls[0]->sim_end(); }
+void gpi_sim_end() {
+    registered_impls[0]->sim_end();
+    sim_ending = true;
+}
 
 void gpi_cleanup(void) {
     CLEAR_STORE();
@@ -590,3 +594,12 @@ void gpi_deregister_callback(gpi_cb_hdl cb_hdl) {
 const char *GpiImplInterface::get_name_c() { return m_name.c_str(); }
 
 const string &GpiImplInterface::get_name_s() { return m_name; }
+
+void gpi_to_user() { LOG_TRACE("Passing control to GPI user"); }
+
+void gpi_to_simulator() {
+    if (sim_ending) {
+        gpi_cleanup();
+    }
+    LOG_TRACE("Returning control to simulator");
+}

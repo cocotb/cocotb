@@ -284,10 +284,11 @@ class GPI_EXPORT GpiImplInterface {
 GPI_EXPORT int gpi_register_impl(GpiImplInterface *func_tbl);
 
 GPI_EXPORT void gpi_embed_init(int argc, char const *const *argv);
-GPI_EXPORT void gpi_cleanup();
 GPI_EXPORT void gpi_embed_end();
 GPI_EXPORT void gpi_embed_event(gpi_event_t level, const char *msg);
 GPI_EXPORT void gpi_load_extra_libs();
+GPI_EXPORT void gpi_to_user();
+GPI_EXPORT void gpi_to_simulator();
 
 typedef void (*layer_entry_func)();
 

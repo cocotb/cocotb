@@ -629,6 +629,8 @@ extern "C" {
 
 // Main re-entry point for callbacks from simulator
 int32_t handle_vpi_callback(p_cb_data cb_data) {
+    gpi_to_user();
+
     int rv = 0;
 
     VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
@@ -659,6 +661,8 @@ int32_t handle_vpi_callback(p_cb_data cb_data) {
             delete cb_hdl;
         }
     }
+
+    gpi_to_simulator();
 
     return rv;
 }
