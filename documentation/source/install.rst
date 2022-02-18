@@ -34,8 +34,8 @@ The installation instructions vary depending on your operating system:
 
    .. group-tab:: Windows
 
-      We recommend users who are comfortable with a Unix shell and who are running Windows 10 or 11 use Windows Subsytem for Linux (WSL).
-      See `here <https://docs.microsoft.com/en-us/windows/wsl/install>`_ for installation instructions of WSL,
+      We recommend users who are comfortable with a Unix shell and who are running Windows 10 or 11 use Windows Subsystem for Linux (WSL).
+      See `here <https://docs.microsoft.com/en-us/windows/wsl/install>`_ for instructions on installing WSL,
       then follow the Linux installation instructions for cocotb.
 
       `Conda <https://conda.io/>`_ is an open-source package and environment management system that we recommend for users who are more comfortable with Windows.
