@@ -137,10 +137,6 @@ void gpi_cleanup(void) {
     embed_sim_cleanup();
 }
 
-void gpi_embed_event(gpi_event_t level, const char *msg) {
-    embed_sim_event(level, msg);
-}
-
 static void gpi_load_libs(std::vector<std::string> to_load) {
     std::vector<std::string>::iterator iter;
 
