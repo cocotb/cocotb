@@ -25,4 +25,3 @@ begin
             data_out    => data_out
         );
 end architecture myconfig;
-

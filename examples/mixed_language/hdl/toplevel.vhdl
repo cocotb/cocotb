@@ -71,4 +71,3 @@ i_swapper_sv : entity work.endian_swapper_sv
     );
 
 end architecture;
-
