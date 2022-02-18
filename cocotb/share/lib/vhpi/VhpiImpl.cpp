@@ -1013,14 +1013,14 @@ static void register_final_callback() {
     sim_finish_cb->arm_callback();
 }
 
-static void register_embed() {
+static void register_impl() {
     vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
 }
 
 // pre-defined VHPI registration table
 COCOTBVHPI_EXPORT void (*vhpi_startup_routines[])() = {
-    register_embed, gpi_entry_point, register_initial_callback,
+    register_impl, gpi_entry_point, register_initial_callback,
     register_final_callback, nullptr};
 
 // For non-VHPI compliant applications that cannot find vhpi_startup_routines
@@ -1035,4 +1035,4 @@ COCOTBVHPI_EXPORT void vhpi_startup_routines_bootstrap() {
 }
 }
 
-GPI_ENTRY_POINT(cocotbvhpi, register_embed)
+GPI_ENTRY_POINT(cocotbvhpi, register_impl)

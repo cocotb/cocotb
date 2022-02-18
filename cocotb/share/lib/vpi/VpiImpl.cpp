@@ -667,7 +667,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data) {
     return rv;
 }
 
-static void register_embed() {
+static void register_impl() {
     vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
 }
@@ -683,7 +683,7 @@ static void register_final_callback() {
 }
 
 COCOTBVPI_EXPORT void (*vlog_startup_routines[])() = {
-    register_embed, gpi_entry_point, register_initial_callback,
+    register_impl, gpi_entry_point, register_initial_callback,
     register_final_callback, nullptr};
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines
@@ -697,4 +697,4 @@ COCOTBVPI_EXPORT void vlog_startup_routines_bootstrap() {
 }
 }
 
-GPI_ENTRY_POINT(cocotbvpi, register_embed)
+GPI_ENTRY_POINT(cocotbvpi, register_impl)
