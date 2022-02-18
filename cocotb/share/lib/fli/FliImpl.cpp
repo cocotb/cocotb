@@ -1065,6 +1065,8 @@ extern "C" {
 
 // Main re-entry point for callbacks from simulator
 void handle_fli_callback(void *data) {
+    gpi_to_user();
+
     fflush(stderr);
 
     FliProcessCbHdl *cb_hdl = (FliProcessCbHdl *)data;
@@ -1090,6 +1092,8 @@ void handle_fli_callback(void *data) {
         /* Issue #188 seems to appear via FLI as well */
         cb_hdl->cleanup_callback();
     }
+
+    gpi_to_simulator();
 };
 
 static void register_initial_callback() {

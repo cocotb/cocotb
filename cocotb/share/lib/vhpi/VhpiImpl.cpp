@@ -975,6 +975,8 @@ extern "C" {
 
 // Main entry point for callbacks from simulator
 void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
+    gpi_to_user();
+
     VhpiCbHdl *cb_hdl = (VhpiCbHdl *)cb_data->user_data;
 
     if (!cb_hdl) {
@@ -998,7 +1000,7 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
             }
     }
 
-    return;
+    gpi_to_simulator();
 };
 
 static void register_initial_callback() {
