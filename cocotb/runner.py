@@ -675,9 +675,9 @@ class Ghdl(Simulator):
         cmds = [
             ["ghdl", "-r"]
             + [f"--work={self.hdl_toplevel_library}"]
+            + self.test_args
             + [self.sim_hdl_toplevel]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
-            + self.test_args
             + self._get_parameter_options(self.parameters)
         ]
 

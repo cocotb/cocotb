@@ -1,0 +1,64 @@
+name: Performance Benchmark
+# adapted from https://github.com/benchmark-action/github-action-benchmark#charts-on-github-pages-1
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  # deployments permission to deploy GitHub pages website
+  deployments: write
+  # contents permission to update benchmark contents in gh-pages branch
+  contents: write
+
+jobs:
+
+  tests:
+
+    name: Python ${{matrix.python-version}}
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: 3.8
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{matrix.python-version}}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{matrix.python-version}}
+
+    - name: Install Icarus Verilog
+      run: |
+        sudo apt install -y --no-install-recommends iverilog
+
+    - name: Set up GHDL - nightly
+      uses: ghdl/setup-ghdl-ci@nightly
+      with:
+        backend: mcode
+
+    - name: Run benchmark
+      run: |
+        pip install pytest pytest-benchmark
+        pip install .
+        pytest -c /dev/null tests/benchmark.py --benchmark-json output.json
+
+    - name: Store benchmark result
+      # Will only run on the master branch and not on pull request
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'pytest'
+        output-file-path: output.json
+        alert-threshold: '120%'
+        fail-on-alert: true
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        gh-repository: 'github.com/cocotb/cocotb-benchmark-results'
