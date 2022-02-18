@@ -15,15 +15,6 @@ on:
 
 jobs:
 
-  lint-whitespace:
-    runs-on: ubuntu-latest
-    name: whitespace
-    steps:
-    - uses: actions/checkout@v2
-    - name: whitespace
-      run: |
-        ! git --no-pager grep --color --line-number --full-name --extended-regexp -I '\s+$'
-
   lint-pre-commit:
     runs-on: ubuntu-latest
     name: pre-commit
@@ -41,18 +32,6 @@ jobs:
       run: |
         pip install pre-commit
         pre-commit run -a
-
-  clang-format-lint:
-    runs-on: ubuntu-latest
-    name: clang-format
-    steps:
-    - uses: actions/checkout@v2
-    - uses: DoozyX/clang-format-lint-action@v0.11
-      with:
-        source: '.'
-        extensions: 'h,cpp'
-        clangFormatVersion: 10
-        exclude: './cocotb/share/include/*user*.h ./examples'
 
   tests:
 

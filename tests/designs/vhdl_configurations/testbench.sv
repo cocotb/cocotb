@@ -11,5 +11,3 @@ dut i_dut (
 );
 
 endmodule
-
-

@@ -7,7 +7,7 @@ repos:
   rev: "22.1.0"
   hooks:
   - id: "black"
-    pass_filenames: false
+    exclude: "^cocotb/_vendor"
     args:
     - "."
 
@@ -15,7 +15,7 @@ repos:
   rev: "5.10.1"
   hooks:
   - id: "isort"
-    pass_filenames: false
+    exclude: "^cocotb/_vendor"
     args:
     - "--profile=black"
     - "."
@@ -24,10 +24,20 @@ repos:
   rev: "3.9.2"
   hooks:
   - id: "flake8"
-    pass_filenames: false
+    exclude: "^cocotb/_vendor"
 
 - repo: "https://github.com/pre-commit/mirrors-clang-format"
   rev: "v13.0.0"
   hooks:
   - id: "clang-format"
     exclude: "^cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
+
+- repo: "https://github.com/pre-commit/pre-commit-hooks"
+  rev: "v4.1.0"
+  hooks:
+  - id: "trailing-whitespace"
+  - id: "mixed-line-ending"
+    args:
+    - "--fix=lf"
+  - id: "end-of-file-fixer"
+    exclude: "^documentation/source/diagrams/(svg|xml)/"

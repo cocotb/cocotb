@@ -1,4 +1,3 @@
 choose hsim spice/foo.cdl;
 partition -cell subckt1 subckt2;
 set bus_format [%d];
-
