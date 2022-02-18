@@ -34,8 +34,11 @@ The installation instructions vary depending on your operating system:
 
    .. group-tab:: Windows
 
-      `Conda <https://conda.io/>`_ is an open-source package and environment management system that we recommend for Windows.
+      We recommend users who are comfortable with a Unix shell and who are running Windows 10 or 11 use Windows Subsytem for Linux (WSL).
+      See `here <https://docs.microsoft.com/en-us/windows/wsl/install>`_ for installation instructions of WSL,
+      then follow the Linux installation instructions for cocotb.
 
+      `Conda <https://conda.io/>`_ is an open-source package and environment management system that we recommend for users who are more comfortable with Windows.
       Download and install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ from https://conda.io/.
       From an Anaconda Prompt, use the following line to install a compiler (GCC or Clang) and GNU Make:
 
