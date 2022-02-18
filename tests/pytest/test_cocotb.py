@@ -28,43 +28,44 @@ module_name = [
     "test_timing_triggers",
 ]
 
+verilog_sources = []
+vhdl_sources = []
+toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
+
+if toplevel_lang == "verilog":
+    verilog_sources = [
+        os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")
+    ]
+else:
+    vhdl_sources = [
+        os.path.join(tests_dir, "designs", "sample_module", "sample_module_pack.vhdl"),
+        os.path.join(tests_dir, "designs", "sample_module", "sample_module_1.vhdl"),
+        os.path.join(tests_dir, "designs", "sample_module", "sample_module.vhdl"),
+    ]
+
+sim = os.getenv("SIM", "icarus")
+sim_args = ["-t", "ps"] if sim == "questa" else []
+compile_args = ["+acc"] if sim == "questa" else []
+toplevel = "sample_module"
+python_search = [os.path.join(tests_dir, "test_cases", "test_cocotb")]
+
 
 def test_cocotb():
-    verilog_sources = []
-    vhdl_sources = []
-    toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
 
-    if toplevel_lang == "verilog":
-        verilog_sources = [
-            os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")
-        ]
-    else:
-        vhdl_sources = [
-            os.path.join(
-                tests_dir, "designs", "sample_module", "sample_module_pack.vhdl"
-            ),
-            os.path.join(tests_dir, "designs", "sample_module", "sample_module_1.vhdl"),
-            os.path.join(tests_dir, "designs", "sample_module", "sample_module.vhdl"),
-        ]
-
-    sim = os.getenv("SIM", "icarus")
     runner = get_runner(sim)()
-
-    compile_args = ["+acc"] if sim == "questa" else []
 
     runner.build(
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,
-        toplevel="sample_module",
+        toplevel=toplevel,
         build_dir=sim_build,
         extra_args=compile_args,
     )
-    sim_args = ["-t", "ps"] if sim == "questa" else []
 
     runner.test(
         toplevel_lang=toplevel_lang,
-        python_search=[os.path.join(tests_dir, "test_cases", "test_cocotb")],
-        toplevel="sample_module",
+        python_search=python_search,
+        toplevel=toplevel,
         py_module=module_name,
         extra_args=sim_args,
     )
