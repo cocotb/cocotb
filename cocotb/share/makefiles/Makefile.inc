@@ -93,21 +93,13 @@ COCOTB_HDL_TIMEPRECISION ?= 1ps
 
 export COCOTB_RESULTS_FILE
 
-ifeq ($(OS), Msys)
-    # Depend on all Python from the cocotb package. This triggers a
-    # recompilation of the simulation if cocotb is updated.
-    CUSTOM_SIM_DEPS += $(shell dir $(COCOTB_PY_DIR)/cocotb/*.py -b)
+# Depend on all Python from the cocotb package. This triggers a
+# recompilation of the simulation if cocotb is updated.
+CUSTOM_SIM_DEPS += $(shell $(PYTHON_BIN) -c 'import glob; print(" ".join(glob.glob("$(COCOTB_PY_DIR)/cocotb/*.py")))')
 
-    # This triggers a recompilation of the simulation if cocotb library is updated.
-    CUSTOM_SIM_DEPS += $(shell dir $(LIB_DIR)/* -b)
-else
-    # Depend on all Python from the cocotb package. This triggers a
-    # recompilation of the simulation if cocotb is updated.
-    CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
+# This triggers a recompilation of the simulation if cocotb library is updated.
+CUSTOM_SIM_DEPS += $(shell $(PYTHON_BIN) -c 'import glob; print(" ".join(glob.glob("$(LIB_DIR)/*")))')
 
-    # This triggers a recompilation of the simulation if cocotb library is updated.
-    CUSTOM_SIM_DEPS += $(shell find $(LIB_DIR)/ -name "*")
-endif
 
 $(SIM_BUILD):
 	mkdir -p $@
