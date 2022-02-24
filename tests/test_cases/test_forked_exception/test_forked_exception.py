@@ -25,5 +25,5 @@ async def test_fail(_):
         await Timer(10, "ns")
         raise MyException
 
-    cocotb.fork(fails())
+    cocotb.start_soon(fails())
     await Timer(20, "ns")
