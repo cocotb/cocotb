@@ -197,7 +197,7 @@ def fork(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     warnings.warn(
         "cocotb.fork has been deprecated in favor of cocotb.start_soon and cocotb.start.\n"
         "In most cases you can simply substitute cocotb.fork with cocotb.start_soon.\n"
-        "For more information about when you would want to use cocotb.start see the docs.\n"
+        "For more information about when you would want to use cocotb.start see the docs,\n"
         "https://docs.cocotb.org/en/latest/coroutines.html#concurrent-execution",
         DeprecationWarning,
         stacklevel=2,
