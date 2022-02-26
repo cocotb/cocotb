@@ -78,6 +78,8 @@ async def test_logging_default_config(dut):
         os.environ = os_environ_prev
         cocotb_log.level = log_level_prev
 
+        logging.getLogger("gpi").setLevel(logging.INFO)
+
 
 @cocotb.test()
 async def test_custom_logging_levels(dut):

@@ -35,6 +35,7 @@ import sys
 import warnings
 
 import cocotb.ANSI as ANSI
+from cocotb import simulator
 from cocotb.utils import get_sim_time, get_time_from_sim_steps, want_color_output
 
 try:
@@ -109,8 +110,6 @@ def default_config():
 
     # Notify GPI of log level, which it uses as an optimization to avoid
     # calling into Python.
-    from cocotb import simulator
-
     simulator.log_level(log.getEffectiveLevel())
 
 
@@ -136,6 +135,11 @@ class SimBaseLog(logging.getLoggerClass()):
             stacklevel=2,
         )
         return want_color_output()
+
+    def setLevel(self, level: int) -> None:
+        super().setLevel(level)
+        if self.name == "gpi":
+            simulator.log_level(level)
 
 
 # this used to be a class, hence the unusual capitalization
