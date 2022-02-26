@@ -40,12 +40,12 @@ import threading
 import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from typing import Any, Union
 
 import cocotb
 import cocotb.decorators
-from cocotb import _py_compat, outcomes
+from cocotb import outcomes
 from cocotb.decorators import RunningTask
 from cocotb.log import SimLog
 from cocotb.result import TestComplete
@@ -249,7 +249,7 @@ class Scheduler:
 
         # A dictionary of pending coroutines for each trigger,
         # indexed by trigger
-        self._trigger2coros = _py_compat.insertion_ordered_dict()
+        self._trigger2coros = {}
 
         # Our main state
         self._mode = Scheduler._MODE_NORMAL
@@ -308,7 +308,7 @@ class Scheduler:
                 self._timer1.unprime()
 
             self._timer1.prime(self._test_completed)
-            self._trigger2coros = _py_compat.insertion_ordered_dict()
+            self._trigger2coros = {}
             self._terminate = False
             self._write_calls = OrderedDict()
             self._writes_pending.clear()
@@ -323,7 +323,7 @@ class Scheduler:
             ps.dump_stats("test_profile.pstat")
             ctx = profiling_context()
         else:
-            ctx = _py_compat.nullcontext()
+            ctx = nullcontext()
 
         with ctx:
             self._mode = Scheduler._MODE_NORMAL
@@ -395,7 +395,7 @@ class Scheduler:
         if _profiling:
             ctx = profiling_context()
         else:
-            ctx = _py_compat.nullcontext()
+            ctx = nullcontext()
 
         with ctx:
             # When a trigger fires it is unprimed internally
