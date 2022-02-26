@@ -118,11 +118,8 @@ class MatrixMultiplierTester:
         return [
             BinaryValue(
                 sum(
-                    [
-                        a_matrix[(i * A_COLUMNS_B_ROWS) + n]
-                        * b_matrix[(n * B_COLUMNS) + j]
-                        for n in range(A_COLUMNS_B_ROWS)
-                    ]
+                    a_matrix[(i * A_COLUMNS_B_ROWS) + n] * b_matrix[(n * B_COLUMNS) + j]
+                    for n in range(A_COLUMNS_B_ROWS)
                 ),
                 n_bits=(DATA_WIDTH * 2) + math.ceil(math.log2(A_COLUMNS_B_ROWS)),
                 bigEndian=False,

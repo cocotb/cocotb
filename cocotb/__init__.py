@@ -270,7 +270,7 @@ def _initialise_testbench(argv_):  # pragma: no cover
             _library_coverage = coverage.coverage(
                 data_file=".coverage.cocotb",
                 branch=True,
-                include=["{}/*".format(os.path.dirname(__file__))],
+                include=[f"{os.path.dirname(__file__)}/*"],
             )
             _library_coverage.start()
 

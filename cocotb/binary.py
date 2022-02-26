@@ -58,9 +58,7 @@ class _ResolveTable(dict):
         if resolve_x_to == "VALUE_ERROR":
 
             def resolve_error(key):
-                raise ValueError(
-                    "Unresolvable bit in binary string: '{}'".format(chr(key))
-                )
+                raise ValueError(f"Unresolvable bit in binary string: '{chr(key)}'")
 
             self.resolve_x = resolve_error
         elif resolve_x_to == "ZEROS":

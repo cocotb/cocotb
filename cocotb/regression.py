@@ -228,7 +228,7 @@ class RegressionManager:
             _logger.error(
                 "Requested test(s) %s wasn't found in module(s) %s", tests, modules
             )
-            raise AttributeError("Test(s) %s doesn't exist in %s" % (tests, modules))
+            raise AttributeError(f"Test(s) {tests} doesn't exist in {modules}")
 
     def tear_down(self) -> None:
         # prevent re-entering the tear down procedure
@@ -527,7 +527,7 @@ class RegressionManager:
         TEST_FIELD_LEN = max(
             len(TEST_FIELD),
             len(TOTAL_NAME),
-            len(max([x["test"] for x in self.test_results], key=len)),
+            len(max((x["test"] for x in self.test_results), key=len)),
         )
         RESULT_FIELD_LEN = len(RESULT_FIELD)
         SIM_FIELD_LEN = len(SIM_FIELD)
@@ -816,11 +816,9 @@ class TestFactory:
                         optname, optvalue.__qualname__, desc
                     )
                 else:
-                    doc += "\t{}: {}\n".format(optname, repr(optvalue))
+                    doc += f"\t{optname}: {repr(optvalue)}\n"
 
-            self.log.debug(
-                'Adding generated test "%s" to module "%s"' % (name, mod.__name__)
-            )
+            self.log.debug(f'Adding generated test "{name}" to module "{mod.__name__}"')
             kwargs = {}
             kwargs.update(self.kwargs_constant)
             kwargs.update(testoptions_split)

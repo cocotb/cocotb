@@ -53,7 +53,7 @@ def test_runner(parameters):
         includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
         build_dir=sim_build
         + "/test_runner/"
-        + "_".join(("{}={}".format(*i) for i in parameters.items())),
+        + "_".join("{}={}".format(*i) for i in parameters.items()),
     )
 
     runner.test(

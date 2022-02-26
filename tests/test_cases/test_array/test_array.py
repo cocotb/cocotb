@@ -27,28 +27,28 @@ def _check_int(tlog, hdl, expected):
     assert int(hdl) == expected, "{2!r}: Expected >{0}< but got >{1}<".format(
         expected, int(hdl), hdl
     )
-    tlog.info("   Found {!r} ({}) with value={}".format(hdl, hdl._type, int(hdl)))
+    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={int(hdl)}")
 
 
 def _check_logic(tlog, hdl, expected):
     assert int(hdl) == expected, "{2!r}: Expected >0x{0:X}< but got >0x{1:X}<".format(
         expected, int(hdl), hdl
     )
-    tlog.info("   Found {!r} ({}) with value=0x{:X}".format(hdl, hdl._type, int(hdl)))
+    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value=0x{int(hdl):X}")
 
 
 def _check_str(tlog, hdl, expected):
     assert hdl.value == expected, "{2!r}: Expected >{0}< but got >{1}<".format(
         expected, str(hdl), hdl
     )
-    tlog.info("   Found {!r} ({}) with value={}".format(hdl, hdl._type, str(hdl)))
+    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={str(hdl)}")
 
 
 def _check_real(tlog, hdl, expected):
     assert float(hdl) == expected, "{2!r}: Expected >{0}< but got >{1}<".format(
         expected, float(hdl), hdl
     )
-    tlog.info("   Found {!r} ({}) with value={}".format(hdl, hdl._type, float(hdl)))
+    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={float(hdl)}")
 
 
 def _check_value(tlog, hdl, expected):

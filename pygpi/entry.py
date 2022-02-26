@@ -20,7 +20,7 @@ def load_entry() -> Tuple[ModuleType, Callable]:
         entry_func = reduce(getattr, entry_func_str.split("."), entry_module)
     except Exception as e:
         raise RuntimeError(
-            "Failure to parse PYGPI_ENTRY_POINT ('{}')".format(entry_point_str)
+            f"Failure to parse PYGPI_ENTRY_POINT ('{entry_point_str}')"
         ) from e
     else:
         return entry_module, entry_func

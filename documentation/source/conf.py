@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # cocotb documentation build configuration file
 #
@@ -71,7 +70,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "cocotb"
-copyright = "2014-{0}, cocotb contributors".format(datetime.datetime.now().year)
+copyright = f"2014-{datetime.datetime.now().year}, cocotb contributors"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -81,7 +80,7 @@ copyright = "2014-{0}, cocotb contributors".format(datetime.datetime.now().year)
 release = cocotb.__version__
 # The short X.Y version.
 v_major, v_minor = LooseVersion(release).version[:2]
-version = "{}.{}".format(v_major, v_minor)
+version = f"{v_major}.{v_minor}"
 
 autoclass_content = "both"
 

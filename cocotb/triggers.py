@@ -175,7 +175,7 @@ class Timer(GPITrigger):
         units: str = "step",
         *,
         round_mode: Optional[str] = None,
-        time_ps: Union[Real, Decimal] = None
+        time_ps: Union[Real, Decimal] = None,
     ) -> None:
         """
         Args:
@@ -317,7 +317,7 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__qualname__)
+        return f"{type(self).__qualname__}()"
 
 
 class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -340,7 +340,7 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__qualname__)
+        return f"{type(self).__qualname__}()"
 
 
 class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -363,7 +363,7 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__qualname__)
+        return f"{type(self).__qualname__}()"
 
 
 class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -396,7 +396,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         super().prime(callback)
 
     def __repr__(self):
-        return "{}({!r})".format(type(self).__qualname__, self.signal)
+        return f"{type(self).__qualname__}({self.signal!r})"
 
 
 class RisingEdge(_EdgeBase):
@@ -442,7 +442,7 @@ class _Event(PythonTrigger):
         self._callback(self)
 
     def __repr__(self):
-        return "<{!r}.wait() at {}>".format(self.parent, _pointer_str(self))
+        return f"<{self.parent!r}.wait() at {_pointer_str(self)}>"
 
 
 class Event:
@@ -482,7 +482,7 @@ class Event:
         :meth:`clear` should be called.
         """
         if self.fired:
-            return NullTrigger(name="{}.wait()".format(str(self)))
+            return NullTrigger(name=f"{str(self)}.wait()")
         return _Event(self)
 
     def clear(self):
@@ -572,7 +572,7 @@ class _Lock(PythonTrigger):
         self._callback(self)
 
     def __repr__(self):
-        return "<{!r}.acquire() at {}>".format(self.parent, _pointer_str(self))
+        return f"<{self.parent!r}.acquire() at {_pointer_str(self)}>"
 
 
 class Lock:
@@ -743,7 +743,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
             super().prime(callback)
 
     def __repr__(self):
-        return "{}({!s})".format(type(self).__qualname__, self._coroutine)
+        return f"{type(self).__qualname__}({self._coroutine!s})"
 
 
 class Waitable(Awaitable):
