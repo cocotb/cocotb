@@ -46,7 +46,7 @@ from typing import Any, Union
 import cocotb
 import cocotb.decorators
 from cocotb import _py_compat, outcomes
-from cocotb.decorators import RunningTask
+from cocotb.decorators import Task
 from cocotb.log import SimLog
 from cocotb.result import TestComplete
 from cocotb.triggers import (
@@ -694,7 +694,7 @@ class Scheduler:
             event.set()
 
         event = threading.Event()
-        self._pending_coros.append(cocotb.decorators.RunningTask(wrapper()))
+        self._pending_coros.append(cocotb.decorators.Task(wrapper()))
         # The scheduler thread blocks in `thread_wait`, and is woken when we
         # call `thread_suspend` - so we need to make sure the coroutine is
         # queued before that.
@@ -749,13 +749,13 @@ class Scheduler:
         return wrapper()
 
     @staticmethod
-    def create_task(coroutine: Any) -> RunningTask:
-        """Checks to see if the given object is a schedulable coroutine object and if so, returns it"""
+    def create_task(coroutine: Any) -> Task:
+        """Check to see if the given object is a schedulable coroutine object and if so, return it."""
 
-        if isinstance(coroutine, RunningTask):
+        if isinstance(coroutine, Task):
             return coroutine
         if isinstance(coroutine, Coroutine):
-            return RunningTask(coroutine)
+            return Task(coroutine)
         if inspect.iscoroutinefunction(coroutine):
             raise TypeError(
                 "Coroutine function {} should be called prior to being "
@@ -782,7 +782,7 @@ class Scheduler:
             )
         )
 
-    def add(self, coroutine: Union[RunningTask, Coroutine]) -> RunningTask:
+    def add(self, coroutine: Union[Task, Coroutine]) -> Task:
         """Add a new coroutine.
 
         Just a wrapper around self.schedule which provides some debug and
@@ -798,7 +798,7 @@ class Scheduler:
         self._check_termination()
         return task
 
-    def start_soon(self, coro: Union[Coroutine, RunningTask]) -> RunningTask:
+    def start_soon(self, coro: Union[Coroutine, Task]) -> Task:
         """
         Schedule a coroutine to be run concurrently, starting after the current coroutine yields control.
 
@@ -839,22 +839,18 @@ class Scheduler:
 
     # This collection of functions parses a trigger out of the object
     # that was yielded by a coroutine, converting `list` -> `Waitable`,
-    # `Waitable` -> `RunningTask`, `RunningTask` -> `Trigger`.
-    # Doing them as separate functions allows us to avoid repeating unencessary
+    # `Waitable` -> `Task`, `Task` -> `Trigger`.
+    # Doing them as separate functions allows us to avoid repeating unnecessary
     # `isinstance` checks.
 
-    def _trigger_from_started_coro(
-        self, result: cocotb.decorators.RunningTask
-    ) -> Trigger:
+    def _trigger_from_started_coro(self, result: cocotb.decorators.Task) -> Trigger:
         if _debug:
             self.log.debug(
                 "Joining to already running coroutine: %s" % result._coro.__qualname__
             )
         return result.join()
 
-    def _trigger_from_unstarted_coro(
-        self, result: cocotb.decorators.RunningTask
-    ) -> Trigger:
+    def _trigger_from_unstarted_coro(self, result: cocotb.decorators.Task) -> Trigger:
         self._queue(result)
         if _debug:
             self.log.debug(
@@ -863,9 +859,7 @@ class Scheduler:
         return result.join()
 
     def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
-        return self._trigger_from_unstarted_coro(
-            cocotb.decorators.RunningTask(result._wait())
-        )
+        return self._trigger_from_unstarted_coro(cocotb.decorators.Task(result._wait()))
 
     def _trigger_from_list(self, result: list) -> Trigger:
         return self._trigger_from_waitable(cocotb.triggers.First(*result))
@@ -877,16 +871,14 @@ class Scheduler:
         if isinstance(result, Trigger):
             return result
 
-        if isinstance(result, cocotb.decorators.RunningTask):
+        if isinstance(result, cocotb.decorators.Task):
             if not result.has_started():
                 return self._trigger_from_unstarted_coro(result)
             else:
                 return self._trigger_from_started_coro(result)
 
         if inspect.iscoroutine(result):
-            return self._trigger_from_unstarted_coro(
-                cocotb.decorators.RunningTask(result)
-            )
+            return self._trigger_from_unstarted_coro(cocotb.decorators.Task(result))
 
         if isinstance(result, list):
             return self._trigger_from_list(result)
@@ -947,7 +939,7 @@ class Scheduler:
             coroutine._trigger = None
             result = coroutine._advance(send_outcome)
 
-            if coroutine._finished:
+            if coroutine.done():
                 if _debug:
                     self.log.debug(
                         "Coroutine {} completed with {}".format(
@@ -961,7 +953,7 @@ class Scheduler:
             if self._terminate:
                 return
 
-            if not coroutine._finished:
+            if not coroutine.done():
                 if _debug:
                     self.log.debug(
                         "Coroutine %s yielded %s (mode %d)"
@@ -1045,7 +1037,7 @@ class Scheduler:
         # If there is an error during cocotb initialization, self._test may not
         # have been set yet. Don't cause another Python exception here.
 
-        if self._test:
+        if not self._test.done():
             self.log.debug("Issue sim closedown result to regression object")
             self._abort_test(exc)
             cocotb.regression_manager.handle_result(self._test)

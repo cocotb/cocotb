@@ -43,13 +43,7 @@ from typing import Dict, List, Optional, Union
 import cocotb.handle
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import (  # noqa: F401
-    RunningTask,
-    coroutine,
-    external,
-    function,
-    test,
-)
+from cocotb.decorators import Task, coroutine, external, function, test  # noqa: F401
 from cocotb.log import _filter_from_c, _log_from_c  # noqa: F401
 from cocotb.regression import RegressionManager
 from cocotb.scheduler import Scheduler
@@ -185,14 +179,14 @@ and in parameters to :class:`.TestFactory`\ s.
 """
 
 
-def fork(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+def fork(coro: Union[Task, Coroutine]) -> Task:
     """
     Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on its use.
 
     .. deprecated:: 1.7.0
         This function has been deprecated in favor of :func:`cocotb.start_soon` and :func:`cocotb.start`.
         In most cases you can simply substitute ``cocotb.fork`` with ``cocotb.start_soon``.
-        For more information on when to use ``start_soon`` vs ``start`` see :ref:`_coroutines`.
+        For more information on when to use ``start_soon`` vs ``start`` see :ref:`coroutines`.
     """
     warnings.warn(
         "cocotb.fork has been deprecated in favor of cocotb.start_soon and cocotb.start.\n"
@@ -205,7 +199,7 @@ def fork(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     return scheduler.add(coro)
 
 
-def start_soon(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+def start_soon(coro: Union[Task, Coroutine]) -> Task:
     """
     Schedule a coroutine to be run concurrently.
 
@@ -217,7 +211,7 @@ def start_soon(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     return scheduler.start_soon(coro)
 
 
-async def start(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+async def start(coro: Union[Task, Coroutine]) -> Task:
     """
     Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
 
@@ -230,9 +224,9 @@ async def start(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     return task
 
 
-def create_task(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+def create_task(coro: Union[Task, Coroutine]) -> Task:
     """
-    Constructs a coroutine into a Task without scheduling the Task.
+    Construct a coroutine into a Task without scheduling the Task.
 
     The Task can later be scheduled with :func:`cocotb.fork`, :func:`cocotb.start`, or
     :func:`cocotb.start_soon`.

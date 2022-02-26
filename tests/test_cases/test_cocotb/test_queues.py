@@ -165,7 +165,7 @@ async def test_fair_scheduling(dut):
             assert v in remaining, "Unfair scheduling occurred"
             remaining.remove(v)
 
-    assert all(not p for p in putters), "Not all putters finished?"
+    assert all(p.done() for p in putters), "Not all putters finished?"
 
 
 async def run_queue_blocking_test(dut, queue_type):

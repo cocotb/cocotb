@@ -42,7 +42,7 @@ from typing import Any, Iterable, Optional, Tuple
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb import simulator
-from cocotb.decorators import RunningTask
+from cocotb.decorators import Task
 from cocotb.decorators import test as Test
 from cocotb.handle import SimHandle
 from cocotb.log import SimLog
@@ -271,7 +271,7 @@ class RegressionManager:
         self.count += 1
         return self._queue.pop(0)
 
-    def handle_result(self, test: RunningTask) -> None:
+    def handle_result(self, test: Task) -> None:
         """Handle a test completing.
 
         Dump result to XML and schedule the next test (if any). Entered by the scheduler.
@@ -293,7 +293,7 @@ class RegressionManager:
 
         self.execute()
 
-    def _init_test(self, test: Test) -> Optional[RunningTask]:
+    def _init_test(self, test: Test) -> Optional[Task]:
         """Initialize a test.
 
         Record outcome if the initialization fails.

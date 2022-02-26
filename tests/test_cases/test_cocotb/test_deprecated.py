@@ -199,10 +199,30 @@ async def test_lessthan_raises_error(dut):
         bool(ret)
 
 
+async def example_coro():
+    return 0
+
+
 @cocotb.test()
 async def test_fork_deprecated(_):
-    async def example_coro():
-        pass
-
     with pytest.warns(DeprecationWarning):
         cocotb.fork(example_coro())
+
+
+@cocotb.test()
+async def test_task_deprecations(_):
+    task = cocotb.start_soon(example_coro())
+    with pytest.warns(DeprecationWarning):
+        assert bool(task) is True
+    with pytest.warns(DeprecationWarning):
+        assert not task._finished
+    with pytest.warns(DeprecationWarning):
+        with pytest.raises(RuntimeError):
+            task.retval
+    await task
+    with pytest.warns(DeprecationWarning):
+        assert bool(task) is False
+    with pytest.warns(DeprecationWarning):
+        assert task._finished
+    with pytest.warns(DeprecationWarning):
+        assert task.retval == 0

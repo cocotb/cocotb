@@ -11,13 +11,15 @@ Test for scheduler and coroutine behavior
 import logging
 import re
 import warnings
+from asyncio import CancelledError, InvalidStateError
 from typing import Coroutine
 
 import pytest
+from common import MyException
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.decorators import RunningTask
+from cocotb.decorators import Task
 from cocotb.triggers import (
     Combine,
     Event,
@@ -358,7 +360,7 @@ async def test_last_scheduled_write_wins_array_handle_alias(dut):
 
 @cocotb.test()
 async def test_task_repr(dut):
-    """Test RunningTask.__repr__."""
+    """Test Task.__repr__."""
     log = logging.getLogger("cocotb.test")
     gen_e = Event("generator_coro_inner")
 
@@ -494,7 +496,7 @@ async def test_start_soon_async(_):
 
 @cocotb.test()
 async def test_start_soon_decorator(_):
-    """Tests start_soon works with RunningTasks"""
+    """Tests start_soon works with Tasks"""
     a = 0
 
     @cocotb.decorators.coroutine
@@ -564,7 +566,7 @@ async def test_kill_start_soon_task(_):
 
     await NullTrigger()
     assert coro_scheduled is False
-    assert task._finished
+    assert task.done()
 
 
 start_soon_started = False
@@ -596,12 +598,12 @@ async def test_start(_):
         await Timer(1, "step")
 
     task1 = await cocotb.start(coro())
-    assert type(task1) is cocotb.decorators.RunningTask
+    assert type(task1) is cocotb.decorators.Task
     assert task1.has_started()
-    assert not task1._finished
+    assert not task1.done()
 
     await Timer(1, "step")
-    assert task1._finished
+    assert task1.done()
 
     task2 = cocotb.create_task(coro())
     task3 = await cocotb.start(task2)
@@ -614,13 +616,13 @@ async def test_start(_):
     await cocotb.start(coro())
     assert task4.has_started()
     await Timer(1, "step")
-    assert task4._finished
+    assert task4.done()
 
     async def coro_val():
         return 1
 
     task6 = await cocotb.start(coro_val())
-    assert task6._finished
+    assert task6.done()
     assert await task6 == 1
 
 
@@ -664,7 +666,7 @@ async def test_create_task(_):
     async def coro():
         pass
 
-    assert type(cocotb.create_task(coro())) == RunningTask
+    assert type(cocotb.create_task(coro())) == Task
 
     # proper construction from Coroutine objects
     class CoroType(Coroutine):
@@ -683,7 +685,7 @@ async def test_create_task(_):
         def __await__(self):
             yield from self._coro.__await__()
 
-    assert type(cocotb.create_task(CoroType())) == RunningTask
+    assert type(cocotb.create_task(CoroType())) == Task
 
     # fail if given async generators
     async def agen():
@@ -707,3 +709,70 @@ async def test_create_task(_):
     # fail if given random type
     with pytest.raises(TypeError):
         cocotb.create_task(object())
+
+
+@cocotb.test()
+async def test_task_completes(_):
+    async def coro():
+        return 123
+
+    task = cocotb.start_soon(coro())
+    assert not task.cancelled()
+    assert not task.done()
+    assert await task == 123
+    assert not task.cancelled()
+    assert task.done()
+    assert task.result() == 123
+    assert task.exception() is None
+
+
+@cocotb.test()
+async def test_task_exception(_):
+    async def coro():
+        raise MyException("msg1234")
+
+    task = cocotb.start_soon(coro())
+    assert not task.cancelled()
+    assert not task.done()
+    with pytest.raises(MyException, match="msg1234"):
+        await task
+    assert not task.cancelled()
+    assert task.done()
+    with pytest.raises(MyException, match="msg1234"):
+        task.result()
+    assert type(task.exception()) is MyException
+    assert str(task.exception()) == "msg1234"
+
+
+@cocotb.test()
+async def test_cancel_task(_):
+    async def coro():
+        return 0
+
+    task = cocotb.start_soon(coro())
+    assert not task.cancelled()
+    assert not task.done()
+    await task
+    assert not task.cancelled()
+    assert task.done()
+
+    task = cocotb.start_soon(coro())
+    with pytest.warns(FutureWarning):
+        task.cancel("msg1234")
+    assert task.cancelled()
+    with pytest.raises(CancelledError, match="msg1234"):
+        task.result()
+    with pytest.raises(CancelledError, match="msg1234"):
+        task.exception()
+
+
+@cocotb.test()
+async def test_invalid_operations_task(_):
+    async def coro():
+        return 123
+
+    task = cocotb.start_soon(coro())
+    with pytest.raises(InvalidStateError):
+        task.result()
+    with pytest.raises(InvalidStateError):
+        task.exception()
