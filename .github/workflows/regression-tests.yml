@@ -277,14 +277,14 @@ jobs:
     - name: Install Python testing dependencies (Ubuntu, MacOS)
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       run: |
-        pip install tox tox-gh-actions
+        pip install nox
     - name: Test (Ubuntu, MacOS)
       id: unixtesting
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       continue-on-error: ${{matrix.may_fail || false}}
       timeout-minutes: 15
       run: |
-        tox
+        nox -e tests
 
     # codecov
     - name: Upload to codecov

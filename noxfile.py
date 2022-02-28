@@ -13,7 +13,6 @@ dev_deps = [
     "mypy",
     "pre-commit",
     "nox",
-    "tox",
     "flake8",
     "clang-format",
 ]
