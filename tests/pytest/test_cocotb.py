@@ -44,8 +44,14 @@ else:
     ]
 
 sim = os.getenv("SIM", "icarus")
-sim_args = ["-t", "ps"] if sim == "questa" else []
-compile_args = ["+acc"] if sim == "questa" else []
+compile_args = []
+sim_args = []
+if sim == "questa":
+    compile_args = ["+acc"]
+    sim_args = ["-t", "ps"]
+elif sim == "xcelium":
+    compile_args = ["-v93"]
+
 toplevel = "sample_module"
 python_search = [os.path.join(tests_dir, "test_cases", "test_cocotb")]
 

@@ -53,7 +53,7 @@ class Simulator(abc.ABC):
 
     @abc.abstractmethod
     def simulator_in_path(self) -> None:
-        """Check that the simulator executable exists in `PATH`."""
+        """Check that the simulator executable exists in :envvar:`PATH`."""
 
         raise NotImplementedError()
 
@@ -198,13 +198,12 @@ class Simulator(abc.ABC):
             self.gui = bool(gui)
 
         # When using pytest, use test name as result file name
-        pytest_current_test = os.environ.get("PYTEST_CURRENT_TEST", "")
-
+        pytest_current_test = os.getenv("PYTEST_CURRENT_TEST", "")
         if pytest_current_test:
-            results_xml_name = (
-                pytest_current_test.split(":")[-1].split(" ")[0] + ".results.xml"
-            )
+            self.current_test_name = pytest_current_test.split(":")[-1].split(" ")[0]
+            results_xml_name = f"{self.current_test_name}.results.xml"
         else:
+            self.current_test_name = "test"
             results_xml_name = "results.xml"
 
         results_xml_file = os.getenv(
@@ -413,7 +412,7 @@ class Questa(Simulator):
             return toplevel_lang
         else:
             raise ValueError(
-                f"Riviera does not support {toplevel_lang!r} as a toplevel_lang"
+                f"Questa does not support {toplevel_lang!r} as a toplevel_lang"
             )
 
     @staticmethod
@@ -805,6 +804,112 @@ class Verilator(Simulator):
         return [[out_file] + self.plus_args]
 
 
+class Xcelium(Simulator):
+    @staticmethod
+    def simulator_in_path() -> None:
+        if shutil.which("xrun") is None:
+            raise SystemExit("ERROR: xrun executable not found!")
+
+    def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
+        if toplevel_lang is None:
+            if self.vhdl_sources and not self.verilog_sources:
+                return "vhdl"
+            elif self.verilog_sources and not self.vhdl_sources:
+                return "verilog"
+            else:
+                raise ValueError("Must specify a toplevel_lang in a mixed design")
+        elif toplevel_lang in ("verilog", "vhdl"):
+            return toplevel_lang
+        else:
+            raise ValueError(
+                f"Xcelium does not support {toplevel_lang!r} as a toplevel_lang"
+            )
+
+    @staticmethod
+    def get_include_options(includes: Sequence[str]) -> List[str]:
+        return [f"-incdir {include}" for include in includes]
+
+    @staticmethod
+    def get_define_options(defines: Sequence[str]) -> List[str]:
+        return [f"-define {define}" for define in defines]
+
+    @staticmethod
+    def get_parameter_options(parameters: Mapping[str, object]) -> List[str]:
+        return [f'-gpg "{name} => {value}"' for name, value in parameters.items()]
+
+    def build_command(self) -> List[Command]:
+
+        self.env["CDS_AUTO_64BIT"] = "all"
+        cmd = [
+            ["xrun"]
+            + ["-logfile xrun_build.log"]
+            + ["-elaborate"]
+            + [f"-xmlibdirname {self.build_dir}/xrun_snapshot"]
+            + ["-licqueue"]
+            # TODO: way to switch to these verbose messages?:
+            + ["-messages"]
+            + ["-gverbose"]  # print assigned generics/parameters
+            + ["-plinowarn"]
+            # + ["-pliverbose"]
+            # + ["-plidebug"]  # Enhance the profile output with PLI info
+            # + ["-plierr_verbose"]  # Expand handle info in PLI/VPI/VHPI messages
+            # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
+            + ["-access +rwc"]
+            + [
+                "-loadvpi "
+                + cocotb.config.lib_name_path("vpi", "xcelium")
+                + ":vlog_startup_routines_bootstrap"
+            ]
+            + [f"-work {self.library_name}"]
+            + self.compile_args
+            + ["-define COCOTB_SIM"]
+            + self.get_define_options(self.defines)
+            + self.get_include_options(self.includes)
+            + self.get_parameter_options(self.parameters)
+            + [f"-top {self.hdl_toplevel}"]
+            + self.vhdl_sources
+            + self.verilog_sources
+        ]
+
+        return cmd
+
+    def test_command(self) -> List[Command]:
+        self.env["CDS_AUTO_64BIT"] = "all"
+
+        tmpdir = f"implicit_tmpdir_{self.current_test_name}"
+        cmd = [["mkdir", "-p", tmpdir]]
+
+        cmd += [
+            ["xrun"]
+            + [f"-logfile xrun_{self.current_test_name}.log"]
+            + [
+                f"-xmlibdirname {self.build_dir}/xrun_snapshot -cds_implicit_tmpdir {tmpdir}"
+            ]
+            + ["-licqueue"]
+            # TODO: way to switch to these verbose messages?:
+            + ["-messages"]
+            + ["-plinowarn"]
+            # + ["-pliverbose"]
+            # + ["-plidebug"]  # Enhance the profile output with PLI info
+            # + ["-plierr_verbose"]  # Expand handle info in PLI/VPI/VHPI messages
+            # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
+            + ["-R"]
+            + self.sim_args
+            + self.plus_args
+            + ["-gui" if self.gui else ""]
+            + [
+                '-input "@probe -create {self.sim_toplevel} -all -depth all"'
+                if self.waves
+                else ""
+            ]
+        ]
+        self.env["GPI_EXTRA"] = (
+            cocotb.config.lib_name_path("vhpi", "xcelium") + ":cocotbvhpi_entry_point"
+        )
+
+        return cmd
+
+
 def get_runner(simulator_name: str) -> Type[Simulator]:
 
     sim_name = simulator_name.lower()
@@ -814,7 +919,9 @@ def get_runner(simulator_name: str) -> Type[Simulator]:
         "ghdl": Ghdl,
         "riviera": Riviera,
         "verilator": Verilator,
-    }  # TODO: "ius", "xcelium", "vcs"
+        "xcelium": Xcelium,
+        # TODO: "vcs": Vcs,
+    }
     try:
         return supported_sims[sim_name]
     except KeyError:
