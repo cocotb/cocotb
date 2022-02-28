@@ -17,7 +17,7 @@ sim_build = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sim_build"
 @cocotb.test()
 async def cocotb_runner_test(dut):
 
-    await Timer(1)
+    await Timer(1, "ns")
 
     WIDTH_IN = int(os.environ.get("WIDTH_IN", "8"))
     WIDTH_OUT = int(os.environ.get("WIDTH_OUT", "8"))
@@ -43,6 +43,9 @@ def test_runner(parameters):
 
     sim = os.getenv("SIM", "icarus")
     runner = get_runner(sim)()
+    compile_args = []
+    if sim == "xcelium":
+        compile_args = ["-v93"]
 
     runner.build(
         verilog_sources=verilog_sources,
@@ -51,6 +54,7 @@ def test_runner(parameters):
         parameters=parameters,
         defines=["DEFINE=4"],
         includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
+        extra_args=compile_args,
         build_dir=sim_build
         + "/test_runner/"
         + "_".join(("{}={}".format(*i) for i in parameters.items())),
