@@ -216,20 +216,35 @@ One can create pull requests with breaking changes at any time, on the condition
 
 Assuming you have used cocotb prior to reading this guide, you will already have the cocotb [installation prerequisites](https://docs.cocotb.org/en/latest/install.html) and standard development tools (editor, shell, git, etc.) installed.
 
-Additionally, you will need [doxygen](https://www.doxygen.nl/index.html), for building documentation, and [tox](https://pypi.org/project/tox/), for building documentation and running regression tests.
+First, you should [fork and clone](https://guides.github.com/activities/forking/) the cocotb repo to your machine.
+This will allow you to make changes to the cocotb source code, create pull requests, and run regressions and build documentation locally.
+
+Additionally, you will need [doxygen](https://www.doxygen.nl/index.html), for building documentation;
+[nox](https://pypi.org/project/nox/), for building documentation and running regression tests;
+and [pre-commit](https://pre-commit.com/), to check your changes before committing them.
 
 We recommend if you are using a Linux distribution to use your system package manager to install doxygen.
 Likewise, doxygen can be installed using the homebrew package manager on Mac OS.
 Windows contributors should download a binary distribution installer from the main website.
 
-`tox` is a Python project and can be installed with `pip`:
+`nox` and `pre-commit` are Python projects and can be installed with `pip`:
 
 ```command
-pip install tox
+pip install nox pre-commit
 ```
 
-Finally, you should [fork and clone](https://guides.github.com/activities/forking/) the cocotb repo.
-This will allow you to make changes to the cocotb source code, and run regressions and build documentation locally.
+To enable pre-commit run the following command at the root of the cloned project to install the git hooks.
+The first run of pre-commit will build an environment for you, so it may take a while.
+Following runs should be much quicker.
+
+```command
+pre-commit install
+```
+
+When committing, pre-commit's hook will run, checking your changes for formatting, code smells, etc.
+You will see the lists of checks printed and whether they passed, were skipped, or failed.
+If any of the checks fail, it is recommended to fix them before opening a pull request,
+otherwise the pull request checks will fail as well.
 
 Now you are ready to contribute!
 
@@ -238,38 +253,27 @@ Now you are ready to contribute!
 
 First, [set up your development environment](#setting-up-a-development-environment).
 
-Our tests are managed by `tox`, which runs both `pytest` tests and our system of makefiles.
+Our tests are managed by `nox`, which runs both `pytest` tests and our system of makefiles.
 The regression does not end on the first failure, but continues until all tests in the `/tests` and `/examples` directories have been run.
 
-To run the tests locally with `tox`, you will need to select an appropriate test environment.
-Valid test environments are formatted as `{your python version}-{your OS}`.
-Valid python version values are `py36`, `py37`, `py38`, `py39` or `py310`;
-and valid OS values are `linux`, `macos`, or `windows`.
-For example, a valid test environment is `py38-linux`.
-You can see the list of valid test environments by running the below command:
+To run the tests locally with `nox`, issue the following command.
 
 ```command
-tox -l
-```
-
-Once you know the test environment you wish to use, call `tox`.
-
-```command
-tox -e py38-linux
+nox -e tests
 ```
 
 At the end of the regression, if there were any test failures, the tests that failed will be printed.
-Otherwise, tox will print a green `:)`.
+If the tests succeed you will see the message `Session tests was successful` printed in green.
 
 ### Selecting a Language and Simulator for Regression
 
-`tox` supports the usage of the environment variables [`SIM`](https://docs.cocotb.org/en/latest/building.html#var-SIM) and [`TOPLEVEL_LANG`](https://docs.cocotb.org/en/latest/building.html#var-TOPLEVEL_LANG) to select a simulator and language to run the regression.
+`nox` supports the usage of the environment variables [`SIM`](https://docs.cocotb.org/en/latest/building.html#var-SIM) and [`TOPLEVEL_LANG`](https://docs.cocotb.org/en/latest/building.html#var-TOPLEVEL_LANG) to select a simulator and language to run the regression.
 By default the tests will attempt to run with the Icarus Verilog simulator.
 
 For example, if you wanted to run tests with GHDL on Linux with Python 3.8, you would issue the following command:
 
 ```command
-SIM=ghdl TOPLEVEL_LANG=vhdl tox -e py38-linux
+SIM=ghdl TOPLEVEL_LANG=vhdl nox -e tests
 ```
 
 ### Running Individual Tests Locally
@@ -302,7 +306,7 @@ make SIM=icarus TOPLEVEL_LANG=verilog
 
 First, [set up your development environment](#setting-up-a-development-environment).
 
-Documentation is built locally using `tox`.
+Documentation is built locally using `nox`.
 The last message in the output will contain a URL to the documentation you just built.
 Simply copy and paste the link into your browser to view it.
 The documentation will be built in the same location on your hard drive on every run, so you only have to refresh the page to see new changes.
@@ -310,7 +314,7 @@ The documentation will be built in the same location on your hard drive on every
 To build the documentation locally on Linux or Mac, issue the following command:
 
 ```command
-tox -e docs
+nox -e docs
 ```
 
 Building the documentation is not currently supported on Windows.
