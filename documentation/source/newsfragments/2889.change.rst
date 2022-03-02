@@ -1,0 +1,1 @@
+Moved :class:`cocotb.task.Task` and friends to ``cocotb.task`` module.

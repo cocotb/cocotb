@@ -43,10 +43,11 @@ from typing import Dict, List, Optional, Union
 import cocotb.handle
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import Task, coroutine, external, function, test  # noqa: F401
+from cocotb.decorators import coroutine, external, function, test  # noqa: F401
 from cocotb.log import _filter_from_c, _log_from_c  # noqa: F401
 from cocotb.regression import RegressionManager
 from cocotb.scheduler import Scheduler
+from cocotb.task import Task
 
 from ._version import __version__
 
