@@ -734,10 +734,10 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
                 forked = cocotb.start_soon(mycoro())
                 result = await Join(forked)
         """
-        return self._coroutine.retval
+        return self._coroutine.result()
 
     def prime(self, callback):
-        if self._coroutine._finished:
+        if self._coroutine.done():
             callback(self)
         else:
             super().prime(callback)
@@ -778,7 +778,7 @@ class _AggregateWaitable(Waitable):
 
         # Do some basic type-checking up front, rather than waiting until we
         # await them.
-        allowed_types = (Trigger, Waitable, cocotb.decorators.RunningTask)
+        allowed_types = (Trigger, Waitable, cocotb.decorators.Task)
         for trigger in self.triggers:
             if not isinstance(trigger, allowed_types):
                 raise TypeError(
@@ -793,9 +793,7 @@ class _AggregateWaitable(Waitable):
         return "{}({})".format(
             type(self).__qualname__,
             ", ".join(
-                repr(Join(t))
-                if isinstance(t, cocotb.decorators.RunningTask)
-                else repr(t)
+                repr(Join(t)) if isinstance(t, cocotb.decorators.Task) else repr(t)
                 for t in self.triggers
             ),
         )
@@ -975,7 +973,7 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
         await with_timeout(First(coro, event.wait()), 100, 'ns')
 
     Args:
-        trigger (:class:`~cocotb.triggers.Trigger`, :class:`~cocotb.triggers.Waitable`, :class:`~cocotb.decorators.RunningTask`, or :term:`python:coroutine`):
+        trigger (:class:`~cocotb.triggers.Trigger`, :class:`~cocotb.triggers.Waitable`, :class:`~cocotb.decorators.Task`, or :term:`python:coroutine`):
             A single object that could be right of an :keyword:`await` expression in cocotb.
         timeout_time (numbers.Real or decimal.Decimal):
             Simulation time duration before timeout occurs.

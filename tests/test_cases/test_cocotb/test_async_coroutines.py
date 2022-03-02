@@ -158,4 +158,4 @@ async def test_task_coroutine_function_exception(dut):
         "prior to being scheduled.".format(coro)
     )
     with pytest.raises(TypeError, match=pattern):
-        cocotb.decorators.RunningTask(coro)
+        cocotb.decorators.Task(coro)

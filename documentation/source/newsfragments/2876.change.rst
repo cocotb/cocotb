@@ -1,0 +1,1 @@
+Made :class:`~cocotb.decorators.Task` interface more like :py:class:`asyncio.Task`'s.

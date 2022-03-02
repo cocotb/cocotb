@@ -53,7 +53,7 @@ class Queue(Generic[T]):
     def _wakeup_next(self, waiters):
         while waiters:
             event, task = waiters.popleft()
-            if not task._finished:
+            if not task.done():
                 event.set()
                 break
 

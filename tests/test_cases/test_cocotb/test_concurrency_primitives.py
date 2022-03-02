@@ -181,8 +181,8 @@ async def test_recursive_combine_and_start_soon(_):
         sort1 = cocotb.start_soon(mergesort(part1))
         sort2 = cocotb.start_soon(mergesort(part2))
         await Combine(sort1, sort2)
-        res1 = deque(sort1.retval)
-        res2 = deque(sort2.retval)
+        res1 = deque(sort1.result())
+        res2 = deque(sort2.result())
         res = []
         while res1 and res2:
             if res1[0] < res2[0]:
