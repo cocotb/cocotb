@@ -1,0 +1,1 @@
+Moved :class:`cocotb.task.Task` and friends to ``cocotb.task`` module to alleviate internal cylic import dependency. Users should update imports of the :class:`~cocotb.task.Task` to import from the top-level ``cocotb`` namespace.

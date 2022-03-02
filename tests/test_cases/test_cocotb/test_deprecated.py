@@ -2,6 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import ctypes
+import sys
 import warnings
 from typing import List
 
@@ -226,3 +227,15 @@ async def test_task_deprecations(_):
         assert task._finished
     with pytest.warns(DeprecationWarning):
         assert task.retval == 0
+
+
+@cocotb.test(skip=sys.version_info < (3, 7))
+async def test_task_type_moved_deprecations(_):
+    with pytest.warns(DeprecationWarning):
+        from cocotb.decorators import Task  # noqa: F401
+    with pytest.warns(DeprecationWarning):
+        from cocotb.decorators import RunningTask  # noqa: F401
+    with pytest.warns(DeprecationWarning):
+        from cocotb.decorators import RunningCoroutine  # noqa: F401
+    with pytest.warns(DeprecationWarning):
+        from cocotb.decorators import RunningTest  # noqa: F401

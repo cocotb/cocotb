@@ -43,12 +43,12 @@ import cocotb
 import cocotb.ANSI as ANSI
 from cocotb import simulator
 from cocotb._deprecation import deprecated
-from cocotb.decorators import Task
 from cocotb.decorators import test as Test
 from cocotb.handle import SimHandle
 from cocotb.log import SimLog
 from cocotb.outcomes import Error, Outcome
 from cocotb.result import SimFailure, TestSuccess
+from cocotb.task import Task
 from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
 from cocotb.xunit_reporter import XUnitReporter
 
