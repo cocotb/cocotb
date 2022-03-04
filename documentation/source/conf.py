@@ -52,6 +52,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "ghdl": ("https://ghdl.readthedocs.io/en/latest", None),
     "scapy": ("https://scapy.readthedocs.io/en/latest", None),
+    "pytest": ("https://docs.pytest.org/en/latest/", None),
 }
 
 # Github repo

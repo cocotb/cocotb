@@ -117,6 +117,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    :hidden:
 
    writing_testbenches
+   runner
    coroutines
    triggers
    custom_flows
