@@ -15,6 +15,18 @@ Library Reference
    stdout
    un
 
+.. _api-runner:
+
+Python Test Runner
+==================
+
+.. warning::
+    Python runners and associated APIs are an experimental feature and subject to change.
+
+.. automodule:: cocotb.runner
+    :members:
+    :member-order: bysource
+    :synopsis: Build HDL and run cocotb tests.
 
 Test Results
 ============

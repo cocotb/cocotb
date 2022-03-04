@@ -2,6 +2,8 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""Build HDL and run cocotb tests."""
+
 import abc
 import os
 import re
@@ -11,6 +13,7 @@ import sys
 import tempfile
 import warnings
 from contextlib import suppress
+from pathlib import Path, PurePath
 from typing import Dict, List, Mapping, Optional, Sequence, Type, Union
 from xml.etree import cElementTree as ET
 
@@ -43,25 +46,53 @@ def as_tcl_value(value: str) -> str:
 class Simulator(abc.ABC):
     def __init__(self) -> None:
 
+        self.supported_languages: Sequence[str] = ()
         self.simulator_in_path()
 
         self.env: Dict[str, str] = {}
 
         # for running test() independently of build()
-        self.build_dir = "sim_build"
-        self.parameters = {}
+        self.build_dir: Path = Path("sim_build")
+        self.parameters: Mapping[str, object] = {}
 
     @abc.abstractmethod
     def simulator_in_path(self) -> None:
-        """Check that the simulator executable exists in :envvar:`PATH`."""
+        """Raise exception if the simulator executable does not exist in :envvar:`PATH`.
+
+        Raises:
+            SystemExit: Simulator executable does not exist in :envvar:`PATH`.
+        """
 
         raise NotImplementedError()
 
-    @abc.abstractmethod
     def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
-        """Return *toplevel_lang* if supported by simulator, raise exception otherwise."""
+        """Return *toplevel_lang* if supported by simulator, raise exception otherwise.
 
-        raise NotImplementedError()
+        Returns:
+            *toplevel_lang* if supported by the simulator.
+
+        Raises:
+            ValueError: *toplevel_lang* is not supported by the simulator.
+        """
+        if toplevel_lang is None:
+            if self.vhdl_sources and not self.verilog_sources:
+                res = "vhdl"
+            elif self.verilog_sources and not self.vhdl_sources:
+                res = "verilog"
+            else:
+                raise ValueError(
+                    "{type(self).__qualname__}: Must specify a toplevel_lang in a mixed-language design"
+                )
+        else:
+            res = toplevel_lang
+
+        if res in self.supported_languages:
+            return res
+        else:
+            raise ValueError(
+                f"{type(self).__qualname__}: toplevel_lang={toplevel_lang!r} is not "
+                f"in supported list: {self.supported_languages}"
+            )
 
     def set_env(self) -> None:
         """Set environment variables for sub-processes."""
@@ -98,9 +129,9 @@ class Simulator(abc.ABC):
     def build(
         self,
         library_name: str = "work",
-        verilog_sources: Sequence[PathLike] = [],
-        vhdl_sources: Sequence[PathLike] = [],
-        includes: Sequence[PathLike] = [],
+        verilog_sources: Sequence[str] = [],
+        vhdl_sources: Sequence[str] = [],
+        includes: Sequence[Path] = [],
         defines: Sequence[str] = [],
         parameters: Mapping[str, object] = {},
         extra_args: Sequence[str] = [],
@@ -108,9 +139,22 @@ class Simulator(abc.ABC):
         always: bool = False,
         build_dir: PathLike = "sim_build",
     ) -> None:
-        """Build the HDL sources."""
+        """Build the HDL sources.
 
-        self.build_dir = os.path.abspath(build_dir)
+        Args:
+            library_name: The library name to compile into.
+            verilog_sources: Verilog source files.
+            vhdl_sources: VHDL source files.
+            includes: Verilog include directories.
+            defines: Defines to set.
+            parameters: Verilog parameters or VHDL generics.
+            extra_args: Extra arguments for the simulator.
+            toplevel: The name of the HDL toplevel module.
+            always: Always run the build step if set.
+            build_dir: Directory to run the build step in.
+        """
+
+        self.build_dir = Path(build_dir).resolve()
         os.makedirs(self.build_dir, exist_ok=True)
 
         # note: to avoid mutating argument defaults, we ensure that no value
@@ -118,9 +162,9 @@ class Simulator(abc.ABC):
         # a better docstring than using `None` as a default in the parameters
         # list.
         self.library_name = library_name
-        self.verilog_sources = get_abs_paths(verilog_sources)
-        self.vhdl_sources = get_abs_paths(vhdl_sources)
-        self.includes = get_abs_paths(includes)
+        self.verilog_sources: List[str] = get_abs_paths(verilog_sources)
+        self.vhdl_sources: List[str] = get_abs_paths(vhdl_sources)
+        self.includes: List[str] = get_abs_paths(includes)
         self.defines = list(defines)
         self.parameters = dict(parameters)
         self.compile_args = list(extra_args)
@@ -150,12 +194,39 @@ class Simulator(abc.ABC):
         build_dir: Optional[PathLike] = None,
         sim_dir: Optional[PathLike] = None,
     ) -> PathLike:
-        """Run a test."""
+        """Run the tests.
+
+        Args:
+            py_module: Name(s) of the Python module(s) containing the tests to run.
+            toplevel: Name of the HDL toplevel module.
+            toplevel_lang: Language of the HDL toplevel module.
+            testcase: Name of a specific testcase to run.
+                If not set, run all testcases found in *py_module*.
+            seed: A specific random seed to use.
+            python_search: Path to search extra Python modules in.
+            extra_args: Extra arguments for the simulator.
+            plus_args: 'plusargs' to set for the simulator.
+            extra_env: Extra environment variables to set.
+            waves: Record signal traces.
+                Overrides the environment variable :envvar:`COCOTB_WAVES` if set.
+            gui: Run with simulator GUI.
+                Overrides the environment variable :envvar:`COCOTB_GUI` if set.
+            parameters: Verilog parameters or VHDL generics.
+            build_dir: Directory the build step has been run in.
+            sim_dir: Directory to run the simulation in.
+
+        Returns:
+            The absolute location of the results file which can be
+            defined by the environment variable :envvar:`COCOTB_RESULTS_FILE`.
+            The default is :file:`{build_dir}/{pytest_test_name}.results.xml`
+            when run with ``pytest``,
+            :file:`{build_dir}/results.xml` otherwise.
+        """
 
         __tracebackhide__ = True  # Hide the traceback when using pytest
 
         if build_dir is not None:
-            self.build_dir = build_dir
+            self.build_dir = Path(build_dir)
 
         if parameters is not None:
             self.parameters = dict(parameters)
@@ -163,7 +234,7 @@ class Simulator(abc.ABC):
         if sim_dir is None:
             self.sim_dir = self.build_dir
         else:
-            self.sim_dir = os.path.abspath(sim_dir)
+            self.sim_dir = Path(sim_dir).resolve()
 
         if isinstance(py_module, str):
             self.module = py_module
@@ -207,7 +278,7 @@ class Simulator(abc.ABC):
             results_xml_name = "results.xml"
 
         results_xml_file = os.getenv(
-            "COCOTB_RESULTS_FILE", os.path.join(self.build_dir, results_xml_name)
+            "COCOTB_RESULTS_FILE", str(Path(self.build_dir) / results_xml_name)
         )
 
         self.env["COCOTB_RESULTS_FILE"] = results_xml_file
@@ -226,19 +297,19 @@ class Simulator(abc.ABC):
 
     @abc.abstractmethod
     def get_include_options(self, includes: Sequence[str]) -> List[str]:
-        """Return simulator options setting directories searched for Verilog include files."""
+        """Return simulator-specific formatted option strings with *includes* directories."""
 
         raise NotImplementedError()
 
     @abc.abstractmethod
     def get_define_options(self, defines: Sequence[str]) -> List[str]:
-        """Return simulator options defining macros."""
+        """Return simulator-specific formatted option strings with *defines* macros."""
 
         raise NotImplementedError()
 
     @abc.abstractmethod
     def get_parameter_options(self, parameters: Mapping[str, object]) -> List[str]:
-        """Return simulator options for module parameters/generics."""
+        """Return simulator-specific formatted option strings with *parameters*/generics."""
 
         raise NotImplementedError()
 
@@ -247,13 +318,7 @@ class Simulator(abc.ABC):
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
         for cmd in cmds:
-            print(
-                "INFO: Running command: "
-                + ' "'.join(cmd)
-                + '" in directory:"'
-                + str(cwd)
-                + '"'
-            )
+            print(f"INFO: Running command {' '.join(cmd)} in directory {cwd}")
 
             # TODO: create a thread to handle stderr and log as error?
             # TODO: log forwarding
@@ -267,39 +332,49 @@ class Simulator(abc.ABC):
 
 
 def check_results_file(results_xml_file: PathLike) -> None:
-    """Check whether cocotb result file exists and contains failed tests."""
+    """Raise exception if *results_xml_file* does not exist or contains failed tests.
+
+    Raises:
+        SystemExit: *results_xml_file* is non-existent or contains fails.
+    """
 
     __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
-    results_file_exist = os.path.isfile(results_xml_file)
+    results_file_exist = Path(results_xml_file).is_file()
     if not results_file_exist:
         raise SystemExit(
             "ERROR: Simulation terminated abnormally. Results file not found."
         )
 
-    failed = 0
+    num_tests = 0
+    num_failed = 0
 
     tree = ET.parse(results_xml_file)
     for ts in tree.iter("testsuite"):
         for tc in ts.iter("testcase"):
+            num_tests += 1
             for _ in tc.iter("failure"):
-                failed += 1
+                num_failed += 1
 
-    if failed:
-        raise SystemExit(f"ERROR: Failed {failed} tests.")
+    if num_failed:
+        raise SystemExit(f"ERROR: Failed {num_failed} of {num_tests} tests.")
 
 
 def outdated(output: PathLike, dependencies: Sequence[PathLike]) -> bool:
-    """Check if source files are newer than output."""
+    """Return ``True`` if any source files in *dependencies* are newer than the *output* directory.
 
-    if not os.path.isfile(output):
+    Returns:
+        ``True`` if any source files are newer, ``False`` otherwise.
+    """
+
+    if not Path(output).is_file():
         return True
 
-    output_mtime = os.path.getmtime(output)
+    output_mtime = Path(output).stat().st_mtime
 
     dep_mtime = 0.0
-    for file in dependencies:
-        mtime = os.path.getmtime(file)
+    for dependency in dependencies:
+        mtime = Path(dependency).stat().st_mtime
         if mtime > dep_mtime:
             dep_mtime = mtime
 
@@ -314,32 +389,27 @@ def get_abs_paths(paths: Sequence[PathLike]) -> List[str]:
 
     paths_abs: List[str] = []
     for path in paths:
-        if os.path.isabs(path):
-            paths_abs.append(os.path.abspath(path))
+        if PurePath(path).is_absolute():
+            paths_abs.append(str(Path(path).resolve()))
         else:
-            paths_abs.append(os.path.abspath(os.path.join(os.getcwd(), path)))
+            paths_abs.append(str((Path(os.getcwd()) / path).resolve()))
 
     return paths_abs
 
 
 class Icarus(Simulator):
+    def __init__(self) -> None:
+        super().__init__()
+        self.supported_languages = ("verilog",)
+
     @staticmethod
     def simulator_in_path() -> None:
         if shutil.which("iverilog") is None:
-            raise SystemExit("ERROR: iverilog exacutable not found!")
-
-    @staticmethod
-    def check_toplevel_lang(toplevel_lang: Optional[str]) -> str:
-        if toplevel_lang is None or toplevel_lang == "verilog":
-            return "verilog"
-        else:
-            raise ValueError(
-                f"iverilog does not support {toplevel_lang!r} as a toplevel_lang"
-            )
+            raise SystemExit("ERROR: iverilog executable not found!")
 
     @staticmethod
     def get_include_options(includes: Sequence[str]) -> List[str]:
-        return ["-I" + dir for dir in includes]
+        return ["-I" + include for include in includes]
 
     @staticmethod
     def get_define_options(defines: Sequence[str]) -> List[str]:
@@ -353,8 +423,8 @@ class Icarus(Simulator):
         ]
 
     @property
-    def sim_file(self) -> PathLike:
-        return os.path.join(self.build_dir, "sim.vvp")
+    def sim_file(self) -> Path:
+        return Path(self.build_dir) / "sim.vvp"
 
     def test_command(self) -> List[Command]:
 
@@ -367,7 +437,7 @@ class Icarus(Simulator):
                 cocotb.config.lib_name("vpi", "icarus"),
             ]
             + self.sim_args
-            + [self.sim_file]
+            + [str(self.sim_file)]
             + self.plus_args
         ]
 
@@ -376,11 +446,11 @@ class Icarus(Simulator):
         if self.vhdl_sources:
             raise ValueError("This simulator does not support VHDL")
 
-        cmd = []
+        cmds = []
         if outdated(self.sim_file, self.verilog_sources) or self.always:
 
-            cmd = [
-                ["iverilog", "-o", self.sim_file, "-D", "COCOTB_SIM=1", "-g2012"]
+            cmds = [
+                ["iverilog", "-o", str(self.sim_file), "-D", "COCOTB_SIM=1", "-g2012"]
                 + self.get_define_options(self.defines)
                 + self.get_include_options(self.includes)
                 + self.get_parameter_options(self.parameters)
@@ -389,35 +459,24 @@ class Icarus(Simulator):
             ]
 
         else:
-            print("WARNING: Skipping compilation:" + self.sim_file)
+            print("WARNING: Skipping compilation of", self.sim_file)
 
-        return cmd
+        return cmds
 
 
 class Questa(Simulator):
+    def __init__(self) -> None:
+        super().__init__()
+        self.supported_languages = ("verilog", "vhdl")
+
     @staticmethod
     def simulator_in_path() -> None:
         if shutil.which("vsim") is None:
             raise SystemExit("ERROR: vsim executable not found!")
 
-    def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
-        if toplevel_lang is None:
-            if self.vhdl_sources and not self.verilog_sources:
-                return "vhdl"
-            elif self.verilog_sources and not self.vhdl_sources:
-                return "verilog"
-            else:
-                raise ValueError("Must specify a toplevel_lang in a mixed design")
-        elif toplevel_lang in ("verilog", "vhdl"):
-            return toplevel_lang
-        else:
-            raise ValueError(
-                f"Questa does not support {toplevel_lang!r} as a toplevel_lang"
-            )
-
     @staticmethod
     def get_include_options(includes: Sequence[str]) -> List[str]:
-        return ["+incdir+" + as_tcl_value(dir) for dir in includes]
+        return ["+incdir+" + as_tcl_value(include) for include in includes]
 
     @staticmethod
     def get_define_options(defines: Sequence[str]) -> List[str]:
@@ -429,11 +488,11 @@ class Questa(Simulator):
 
     def build_command(self) -> List[Command]:
 
-        cmd = []
+        cmds = []
 
         if self.vhdl_sources:
-            cmd.append(["vlib", as_tcl_value(self.library_name)])
-            cmd.append(
+            cmds.append(["vlib", as_tcl_value(self.library_name)])
+            cmds.append(
                 ["vcom", "-mixedsvvh"]
                 + ["-work", as_tcl_value(self.library_name)]
                 + [as_tcl_value(v) for v in self.compile_args]
@@ -441,8 +500,8 @@ class Questa(Simulator):
             )
 
         if self.verilog_sources:
-            cmd.append(["vlib", as_tcl_value(self.library_name)])
-            cmd.append(
+            cmds.append(["vlib", as_tcl_value(self.library_name)])
+            cmds.append(
                 ["vlog", "-mixedsvvh"]
                 + ([] if self.always else ["-incr"])
                 + ["-work", as_tcl_value(self.library_name)]
@@ -454,11 +513,11 @@ class Questa(Simulator):
                 + [as_tcl_value(v) for v in self.verilog_sources]
             )
 
-        return cmd
+        return cmds
 
     def test_command(self) -> List[Command]:
 
-        cmd = []
+        cmds = []
 
         do_script = ""
         if self.waves:
@@ -471,14 +530,14 @@ class Questa(Simulator):
 
         if self.toplevel_lang == "vhdl":
 
-            if not os.path.isfile(fli_lib_path):
+            if not Path(fli_lib_path).is_file():
                 raise SystemExit(
                     "ERROR: cocotb was not installed with an FLI library, as the mti.h header could not be located.\n\
                     If you installed an FLI-capable simulator after cocotb, you will need to reinstall cocotb.\n\
                     Please check the cocotb documentation on ModelSim support."
                 )
 
-            cmd.append(
+            cmds.append(
                 ["vsim"]
                 + ["-gui" if self.gui else "-c"]
                 + ["-onfinish", "stop" if self.gui else "exit"]
@@ -498,7 +557,7 @@ class Questa(Simulator):
             )
 
         else:
-            cmd.append(
+            cmds.append(
                 ["vsim"]
                 + ["-gui" if self.gui else "-c"]
                 + ["-onfinish", "stop" if self.gui else "exit"]
@@ -510,7 +569,7 @@ class Questa(Simulator):
                 + ["-do", do_script]
             )
 
-            if os.path.isfile(fli_lib_path):
+            if Path(fli_lib_path).is_file():
                 self.env["GPI_EXTRA"] = (
                     cocotb.config.lib_name_path("fli", "questa")
                     + ":cocotbfli_entry_point"
@@ -520,26 +579,22 @@ class Questa(Simulator):
                     "WARNING: FLI library not found. Mixed-mode simulation will not be available."
                 )
 
-        return cmd
+        return cmds
 
 
 class Ghdl(Simulator):
+    def __init__(self) -> None:
+        super().__init__()
+        self.supported_languages = "vhdl"
+
     @staticmethod
     def simulator_in_path() -> None:
         if shutil.which("ghdl") is None:
             raise SystemExit("ERROR: ghdl executable not found!")
 
-    def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
-        if toplevel_lang is None or toplevel_lang == "vhdl":
-            return "vhdl"
-        else:
-            raise ValueError(
-                f"GHDL does not support {toplevel_lang!r} as a toplevel_lang"
-            )
-
     @staticmethod
     def get_include_options(includes: Sequence[str]) -> List[str]:
-        return [f"-I{dir}" for dir in includes]
+        return [f"-I{include}" for include in includes]
 
     @staticmethod
     def get_define_options(defines: Sequence[str]) -> List[str]:
@@ -559,7 +614,7 @@ class Ghdl(Simulator):
                 "This simulator requires the hdl_toplevel parameter to be specified"
             )
 
-        cmd = [
+        cmds = [
             ["ghdl", "-i"]
             + [f"--work={self.library_name}"]
             + self.compile_args
@@ -567,18 +622,18 @@ class Ghdl(Simulator):
             for source_file in self.vhdl_sources
         ]
 
-        cmd += [
+        cmds += [
             ["ghdl", "-m"]
             + [f"--work={self.library_name}"]
             + self.compile_args
             + [self.hdl_toplevel]
         ]
 
-        return cmd
+        return cmds
 
     def test_command(self) -> List[Command]:
 
-        cmd = [
+        cmds = [
             ["ghdl", "-r"]
             + [self.sim_toplevel]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
@@ -586,35 +641,22 @@ class Ghdl(Simulator):
             + self.get_parameter_options(self.parameters)
         ]
 
-        return cmd
+        return cmds
 
 
 class Riviera(Simulator):
+    def __init__(self) -> None:
+        super().__init__()
+        self.supported_languages = ("verilog", "vhdl")
+
     @staticmethod
     def simulator_in_path() -> None:
         if shutil.which("vsimsa") is None:
             raise SystemExit("ERROR: vsimsa executable not found!")
 
-    def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
-        if toplevel_lang is None:
-            if self.vhdl_sources and not self.verilog_sources:
-                return "vhdl"
-            elif self.verilog_sources and not self.vhdl_sources:
-                return "verilog"
-            else:
-                raise ValueError(
-                    "Must specify a toplevel_lang in a mixed-language design"
-                )
-        elif toplevel_lang in ("verilog", "vhdl"):
-            return toplevel_lang
-        else:
-            raise ValueError(
-                f"Riviera does not support {toplevel_lang!r} as a toplevel_lang"
-            )
-
     @staticmethod
     def get_include_options(includes: Sequence[str]) -> List[str]:
-        return ["+incdir+" + as_tcl_value(dir) for dir in includes]
+        return ["+incdir+" + as_tcl_value(include) for include in includes]
 
     @staticmethod
     def get_define_options(defines: Sequence[str]) -> List[str]:
@@ -628,9 +670,7 @@ class Riviera(Simulator):
 
         do_script = "\nonerror {\n quit -code 1 \n} \n"
 
-        out_file = os.path.join(
-            self.build_dir, self.library_name, self.library_name + ".lib"
-        )
+        out_file = self.build_dir / self.library_name / (self.library_name + ".lib")
 
         if outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.always:
 
@@ -660,7 +700,7 @@ class Riviera(Simulator):
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.compile_args),
                 )
         else:
-            print("WARNING: Skipping compilation:" + out_file)
+            print("WARNING: Skipping compilation of", out_file)
 
         do_file = tempfile.NamedTemporaryFile(delete=False)
         do_file.write(do_script.encode())
@@ -718,6 +758,10 @@ class Riviera(Simulator):
 
 
 class Verilator(Simulator):
+    def __init__(self) -> None:
+        super().__init__()
+        self.supported_languages = ("verilog",)
+
     def simulator_in_path(self) -> None:
         executable = shutil.which("verilator")
         if executable is None:
@@ -725,17 +769,8 @@ class Verilator(Simulator):
         self.executable = executable
 
     @staticmethod
-    def check_toplevel_lang(toplevel_lang: Optional[str]) -> str:
-        if toplevel_lang is None or toplevel_lang == "verilog":
-            return "verilog"
-        else:
-            raise ValueError(
-                f"Verilator does not support {toplevel_lang!r} as a toplevel_lang"
-            )
-
-    @staticmethod
     def get_include_options(includes: Sequence[str]) -> List[str]:
-        return ["-I" + dir for dir in includes]
+        return ["-I" + include for include in includes]
 
     @staticmethod
     def get_define_options(defines: Sequence[str]) -> List[str]:
@@ -755,33 +790,29 @@ class Verilator(Simulator):
                 "This simulator requires hdl_toplevel parameter to be specified"
             )
 
-        cmd = []
-
-        verilator_cpp = os.path.join(
-            os.path.dirname(cocotb.__file__),
-            "share",
-            "lib",
-            "verilator",
-            "verilator.cpp",
+        verilator_cpp = (
+            PurePath(cocotb.__file__).parent
+            / "share"
+            / "lib"
+            / "verilator"
+            / "verilator.cpp"
         )
 
-        cmd.append(
-            [
-                "perl",
-                self.executable,
-                "-cc",
-                "--exe",
-                "-Mdir",
-                self.build_dir,
-                "-DCOCOTB_SIM=1",
-                "--top-module",
-                self.hdl_toplevel,
-                "--vpi",
-                "--public-flat-rw",
-                "--prefix",
-                "Vtop",
-                "-o",
-                self.hdl_toplevel,
+        cmds = []
+        cmds += [
+            ["perl"]
+            + [self.executable]
+            + ["-cc"]
+            + ["--exe"]
+            + ["-Mdir", str(self.build_dir)]
+            + ["-DCOCOTB_SIM=1"]
+            + ["--top-module", self.hdl_toplevel]
+            + ["--vpi"]
+            + ["--public-flat-rw"]
+            + ["--prefix"]
+            + ["Vtop"]
+            + ["-o", self.hdl_toplevel]
+            + [
                 "-LDFLAGS",
                 "-Wl,-rpath,{LIB_DIR} -L{LIB_DIR} -lcocotbvpi_verilator".format(
                     LIB_DIR=cocotb.config.libs_dir
@@ -791,39 +822,30 @@ class Verilator(Simulator):
             + self.get_define_options(self.defines)
             + self.get_include_options(self.includes)
             + self.get_parameter_options(self.parameters)
-            + [verilator_cpp]
+            + [str(verilator_cpp)]
             + self.verilog_sources
-        )
+        ]
 
-        cmd.append(["make", "-C", self.build_dir, "-f", "Vtop.mk"])
+        cmds += [
+            ["make"] + ["--directory", str(self.build_dir)] + ["--file", "Vtop.mk"]
+        ]
 
-        return cmd
+        return cmds
 
     def test_command(self) -> List[Command]:
-        out_file = os.path.join(self.build_dir, self.sim_toplevel)
-        return [[out_file] + self.plus_args]
+        out_file = self.build_dir / self.sim_toplevel
+        return [[str(out_file)] + self.plus_args]
 
 
 class Xcelium(Simulator):
+    def __init__(self) -> None:
+        super().__init__()
+        self.supported_languages = ("verilog", "vhdl")
+
     @staticmethod
     def simulator_in_path() -> None:
         if shutil.which("xrun") is None:
             raise SystemExit("ERROR: xrun executable not found!")
-
-    def check_toplevel_lang(self, toplevel_lang: Optional[str]) -> str:
-        if toplevel_lang is None:
-            if self.vhdl_sources and not self.verilog_sources:
-                return "vhdl"
-            elif self.verilog_sources and not self.vhdl_sources:
-                return "verilog"
-            else:
-                raise ValueError("Must specify a toplevel_lang in a mixed design")
-        elif toplevel_lang in ("verilog", "vhdl"):
-            return toplevel_lang
-        else:
-            raise ValueError(
-                f"Xcelium does not support {toplevel_lang!r} as a toplevel_lang"
-            )
 
     @staticmethod
     def get_include_options(includes: Sequence[str]) -> List[str]:
@@ -840,7 +862,7 @@ class Xcelium(Simulator):
     def build_command(self) -> List[Command]:
 
         self.env["CDS_AUTO_64BIT"] = "all"
-        cmd = [
+        cmds = [
             ["xrun"]
             + ["-logfile xrun_build.log"]
             + ["-elaborate"]
@@ -871,15 +893,15 @@ class Xcelium(Simulator):
             + self.verilog_sources
         ]
 
-        return cmd
+        return cmds
 
     def test_command(self) -> List[Command]:
         self.env["CDS_AUTO_64BIT"] = "all"
 
         tmpdir = f"implicit_tmpdir_{self.current_test_name}"
-        cmd = [["mkdir", "-p", tmpdir]]
+        cmds = [["mkdir", "-p", tmpdir]]
 
-        cmd += [
+        cmds += [
             ["xrun"]
             + [f"-logfile xrun_{self.current_test_name}.log"]
             + [
@@ -907,7 +929,7 @@ class Xcelium(Simulator):
             cocotb.config.lib_name_path("vhpi", "xcelium") + ":cocotbvhpi_entry_point"
         )
 
-        return cmd
+        return cmds
 
 
 def get_runner(simulator_name: str) -> Type[Simulator]:
@@ -921,6 +943,7 @@ def get_runner(simulator_name: str) -> Type[Simulator]:
         "verilator": Verilator,
         "xcelium": Xcelium,
         # TODO: "vcs": Vcs,
+        # TODO: "activehdl": ActiveHdl,
     }
     try:
         return supported_sims[sim_name]
@@ -934,9 +957,9 @@ def clean(recursive: bool = False) -> None:
     dir = os.getcwd()
 
     def rm_clean() -> None:
-        build_dir = os.path.join(dir, "sim_build")
-        if os.path.isdir(build_dir):
-            print("INFO: Removing:", build_dir)
+        build_dir = Path(dir) / "sim_build"
+        if Path(build_dir).is_dir():
+            print("INFO: Removing", build_dir)
             shutil.rmtree(build_dir, ignore_errors=True)
 
     rm_clean()
