@@ -9,7 +9,7 @@ sphinxcontrib-makedomain
 sphinxcontrib-spelling >= 5.3.0
 pyenchant
 sphinx-issues
-sphinx-argparse
+sphinx-argparse-cli
 towncrier
 IPython
 sphinx-tabs
