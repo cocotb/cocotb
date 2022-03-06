@@ -112,6 +112,7 @@ setup(
     entry_points={
         "console_scripts": [
             "cocotb-config=cocotb.config:main",
+            "cocotb-runner=cocotb.runner:main",
         ]
     },
     platforms="any",

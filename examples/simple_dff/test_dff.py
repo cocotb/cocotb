@@ -32,7 +32,7 @@ async def dff_simple_test(dut):
 
 def test_simple_dff_runner():
 
-    toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
+    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent
@@ -40,17 +40,17 @@ def test_simple_dff_runner():
     verilog_sources = []
     vhdl_sources = []
 
-    if toplevel_lang == "verilog":
+    if hdl_toplevel_lang == "verilog":
         verilog_sources = [proj_path / "dff.sv"]
     else:
         vhdl_sources = [proj_path / "dff.vhdl"]
 
     runner = get_runner(sim)()
     runner.build(
-        verilog_sources=verilog_sources, vhdl_sources=vhdl_sources, toplevel="dff"
+        verilog_sources=verilog_sources, vhdl_sources=vhdl_sources, hdl_toplevel="dff"
     )
 
-    runner.test(toplevel="dff", py_module="test_dff")
+    runner.test(hdl_toplevel="dff", test_module="test_dff")
 
 
 if __name__ == "__main__":
