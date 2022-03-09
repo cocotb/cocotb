@@ -41,7 +41,7 @@ import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
 from contextlib import contextmanager
-from typing import Any, Union
+from typing import Any, Callable, Union
 
 import cocotb
 import cocotb.decorators
@@ -239,7 +239,8 @@ class Scheduler:
     _read_only = ReadOnly()
     _timer1 = Timer(1)
 
-    def __init__(self):
+    def __init__(self, handle_result: Callable[[Task], None]) -> None:
+        self._handle_result = handle_result
 
         self.log = SimLog("cocotb.scheduler")
         if _debug:
@@ -343,7 +344,7 @@ class Scheduler:
                 self.log.debug("Issue test result to regression object")
 
             # this may schedule another test
-            cocotb.regression_manager.handle_result(test)
+            self._handle_result(test)
 
             # if it did, make sure we handle the test completing
             self._check_termination()
@@ -1040,7 +1041,7 @@ class Scheduler:
         if not self._test.done():
             self.log.debug("Issue sim closedown result to regression object")
             self._abort_test(exc)
-            cocotb.regression_manager.handle_result(self._test)
+            self._handle_result(self._test)
 
     def cleanup(self):
         """
