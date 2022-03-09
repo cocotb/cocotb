@@ -1,5 +1,5 @@
-![cocotb logo](/../../../../cocotb-web/blob/master/assets/img/cocotb-logo.svg#gh-light-mode-only)
-![cocotb logo](/../../../../cocotb-web/blob/master/assets/img/cocotb-logo-dark.svg#gh-dark-mode-only)
+![cocotb logo](/../../../../cocotb/cocotb-web/blob/master/assets/img/cocotb-logo.svg#gh-light-mode-only)
+![cocotb logo](/../../../../cocotb/cocotb-web/blob/master/assets/img/cocotb-logo-dark.svg#gh-dark-mode-only)
 
 **cocotb** is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
 
