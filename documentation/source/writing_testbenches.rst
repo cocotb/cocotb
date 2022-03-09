@@ -223,7 +223,7 @@ Passing and Failing Tests
 
 A cocotb test is considered to have `failed` if the test coroutine,
 or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
-fails an ``assert`` statement or raises a :exc:`cocotb.result.TestFailure`.
+fails an ``assert`` statement.
 Below are examples of `failing` tests.
 
 .. code-block:: python3
@@ -234,20 +234,9 @@ Below are examples of `failing` tests.
 
     @cocotb.test()
     async def test(dut):
-        raise TestFailure("Reason")
-
-    @cocotb.test()
-    async def test(dut):
         async def fails_test():
             assert 1 > 2
         cocotb.start_soon(fails_test())
-        await Timer(10, 'ns')
-
-    @cocotb.test()
-    async def test(dut):
-        async def fails_test():
-            raise TestFailure("Reason")
-        cocotb.start_sson(fails_test())
         await Timer(10, 'ns')
 
 When a test fails, a stacktrace is printed.
