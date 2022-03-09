@@ -323,9 +323,6 @@ def _initialise_testbench_(argv_):
 
     process_plusargs()
 
-    global scheduler
-    scheduler = Scheduler()
-
     # Seed the Python random number generator to make this repeatable
     global RANDOM_SEED
     RANDOM_SEED = os.getenv("RANDOM_SEED")
@@ -374,9 +371,13 @@ def _initialise_testbench_(argv_):
                 "Please file a bug report!".format(pytest.__version__)
             )
 
-    # start Regression Manager
     global regression_manager
     regression_manager = RegressionManager.from_discovery(top)
+
+    global scheduler
+    scheduler = Scheduler(handle_result=regression_manager.handle_result)
+
+    # start Regression Manager
     regression_manager.execute()
 
 
