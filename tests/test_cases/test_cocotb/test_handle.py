@@ -12,7 +12,7 @@ import pytest
 import cocotb
 from cocotb.handle import _Limits
 from cocotb.triggers import Timer
-from cocotb.types import LogicArray
+from cocotb.types import Logic, LogicArray
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
@@ -401,7 +401,18 @@ async def test_access_underscore_name(dut):
 
 
 @cocotb.test()
-async def assign_LogicArray(dut):
+async def test_assign_LogicArray(dut):
     value = LogicArray(dut.stream_in_data.value)
     value &= LogicArray("0x1X011z")
     dut.stream_in_data.value = value
+    with pytest.raises(ValueError):
+        dut.stream_in_data.value = LogicArray("010")  # not the correct size
+
+
+@cocotb.test()
+async def test_assign_Logic(dut):
+    dut.stream_in_ready.value = Logic("X")
+    await Timer(1, "ns")
+    assert dut.stream_in_ready.value.binstr.lower() == "x"
+    with pytest.raises(ValueError):
+        dut.stream_in_data.value = Logic("U")  # not the correct size

@@ -39,7 +39,7 @@ import cocotb
 from cocotb import simulator
 from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.log import SimLog
-from cocotb.types import LogicArray
+from cocotb.types import Logic, LogicArray
 
 # Only issue a warning for each deprecated attribute access
 _deprecation_warned = set()
@@ -867,7 +867,18 @@ class ModifiableObject(NonConstantObject):
             value = BinaryValue(value=num, n_bits=len(self), bigEndian=False)
 
         elif isinstance(value, LogicArray):
+            if len(self) != len(value):
+                raise ValueError(
+                    f"cannot assign value of length {len(value)} to handle of length {len(self)}"
+                )
             value = value.to_BinaryValue()
+
+        elif isinstance(value, Logic):
+            if len(self) != 1:
+                raise ValueError(
+                    f"cannot assign value of length 1 to handle of length {len(self)}"
+                )
+            value = BinaryValue(str(value))
 
         elif not isinstance(value, BinaryValue):
             raise TypeError(
