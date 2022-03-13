@@ -42,7 +42,7 @@ async def mixed_language_functional_test(dut):
     vhdl = dut.i_swapper_vhdl
     dut._log.info("Got: %s" % repr(vhdl._name))
 
-    # setup default valies
+    # setup default values
     dut.reset_n.value = 0
     dut.stream_out_ready.value = 1
 
@@ -67,18 +67,18 @@ async def mixed_language_functional_test(dut):
     await Timer(500, units="ns")
 
     previous_indata = 0
-    # transmit some packages
-    for pkg in range(1, 5):
+    # transmit some packets
+    for _ in range(1, 5):
 
         for i in range(1, 11):
             await RisingEdge(dut.clk)
             previous_indata = dut.stream_in_data.value
 
             # write stream in data
-            dut.stream_in_startofpacket.value = 1 == 1
-            # assert start of packet when i = 1
-            dut.stream_in_endofpacket.value = 1 == 10
-            # assert end of packet when i = 10
+            # set start of packet when i is 1
+            dut.stream_in_startofpacket.value = int(i == 1)
+            # set end of packet when i is 10
+            dut.stream_in_endofpacket.value = int(i == 10)
             dut.stream_in_data.value = i + 0x81FFFFFF2B00  # generate a magic number
             dut.stream_in_valid.value = 1
             await RisingEdge(dut.clk)
@@ -91,4 +91,4 @@ async def mixed_language_functional_test(dut):
             # compare in and out data
             assert int(previous_indata) == int(
                 dut.stream_out_data.value
-            ), "stream in data and stream out data were different"
+            ), f"stream in data and stream out data were different in round {i}"
