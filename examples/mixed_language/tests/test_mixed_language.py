@@ -75,10 +75,6 @@ async def mixed_language_functional_test(dut):
             previous_indata = dut.stream_in_data.value
 
             # write stream in data
-            # set start of packet when i is 1
-            dut.stream_in_startofpacket.value = int(i == 1)
-            # set end of packet when i is 10
-            dut.stream_in_endofpacket.value = int(i == 10)
             dut.stream_in_data.value = i + 0x81FFFFFF2B00  # generate a magic number
             dut.stream_in_valid.value = 1
             await RisingEdge(dut.clk)
