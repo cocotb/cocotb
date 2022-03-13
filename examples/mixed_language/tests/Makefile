@@ -33,7 +33,9 @@ ifneq ($(filter $(SIM),ius xcelium),)
     SIM_ARGS += -v93
 endif
 
-SIM_ARGS += -t 1ps
+ifneq ($(filter $(SIM),questa modelsim),)
+    SIM_ARGS += -t 1ps
+endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 

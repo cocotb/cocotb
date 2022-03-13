@@ -1,7 +1,10 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
 import cocotb
-from cocotb.triggers import Timer
-from cocotb.triggers import RisingEdge
 from cocotb.clock import Clock
+from cocotb.triggers import RisingEdge, Timer
 
 
 @cocotb.test()
@@ -26,7 +29,8 @@ async def mixed_language_accessing_test(dut):
     # Try accessing an object other than a port...
     verilog.flush_pipe.value
     vhdl.flush_pipe.value
-    
+
+
 @cocotb.test()
 async def mixed_language_functional_test(dut):
     """Try concurrent simulation of VHDL and Verilog and check the output."""
@@ -42,8 +46,8 @@ async def mixed_language_functional_test(dut):
     dut.reset_n.value = 0
     dut.stream_out_ready.value = 1
 
-    dut.stream_in_startofpacket.value = 0     
-    dut.stream_in_endofpacket.value = 0    
+    dut.stream_in_startofpacket.value = 0
+    dut.stream_in_endofpacket.value = 0
     dut.stream_in_data.value = 0
     dut.stream_in_valid.value = 1
     dut.stream_in_empty.value = 0
@@ -59,31 +63,32 @@ async def mixed_language_functional_test(dut):
     await Timer(100, units="ns")
 
     # start clock
-    cocotb.start_soon(Clock(dut.clk, 10, units='ns').start())
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     await Timer(500, units="ns")
 
+    previous_indata = 0
     # transmit some packages
-    previouse_indata = 0
-    for pkg in range(1,5):
-        print("pkg#" + str(pkg))
-        for i in range(1,10):  
-            await RisingEdge(dut.clk)
-            previouse_indata = dut.stream_in_data.value
+    for pkg in range(1, 5):
 
-            ## write stream in data
-            dut.stream_in_startofpacket.value = 1 == 1;      
-            dut.stream_in_endofpacket.value = 1 == 20;      
-            dut.stream_in_data.value = i + 0x81FFFFFF2B00
+        for i in range(1, 11):
+            await RisingEdge(dut.clk)
+            previous_indata = dut.stream_in_data.value
+
+            # write stream in data
+            dut.stream_in_startofpacket.value = 1 == 1
+            # assert start of packet when i = 1
+            dut.stream_in_endofpacket.value = 1 == 10
+            # assert end of packet when i = 10
+            dut.stream_in_data.value = i + 0x81FFFFFF2B00  # generate a magic number
             dut.stream_in_valid.value = 1
             await RisingEdge(dut.clk)
             dut.stream_in_valid.value = 0
 
-            ## await stream out data 
+            # await stream out data
             await RisingEdge(dut.clk)
             await RisingEdge(dut.clk)
 
-            ## compare in and out data    
-            assert int(previouse_indata) == int(dut.stream_out_data.value), "stream in data and stream out data were different"
-
-
-
+            # compare in and out data
+            assert int(previous_indata) == int(
+                dut.stream_out_data.value
+            ), "stream in data and stream out data were different"
