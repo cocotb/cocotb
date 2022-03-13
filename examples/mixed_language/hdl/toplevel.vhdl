@@ -1,7 +1,7 @@
 -- Example using mixed-language simulation
 --
 -- Here we have a VHDL toplevel that instantiates both SV and VHDL
---  sub entities
+-- sub entities
 library ieee;
 
 use ieee.std_logic_1164.all;
@@ -38,9 +38,12 @@ entity endian_swapper_mixed is
     );
 end;
 
-architecture impl of endian_swapper_mixed is 
+architecture impl of endian_swapper_mixed is
 
-    component endian_swapper_sv 
+    -- The SV entity is instantiated as a component because cocotb is
+    -- executing vcom before vlog. Hence the toplevel VHDL file is compiled
+    -- before the SV module. Therefore, an entity instantiation is not possible here.
+    component endian_swapper_sv
         generic (
             DATA_BYTES              : integer := 8);
         port (
@@ -69,7 +72,7 @@ architecture impl of endian_swapper_mixed is
             csr_waitrequest         : out   std_ulogic;
             csr_writedata           : in    std_ulogic_vector(31 downto 0)
         );
-  end component; 
+  end component;
 
 
     signal sv_to_vhdl_data:             std_ulogic_vector(DATA_BYTES*8-1 downto 0) ;
