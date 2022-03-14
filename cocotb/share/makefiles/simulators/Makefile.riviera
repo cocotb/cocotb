@@ -94,7 +94,7 @@ endif
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_ARGS = -loadvhpi $(shell cocotb-config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = $(shell cocotb-config --lib-name-path vpi riviera)):cocotbvpi_entry_point
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vpi riviera):cocotbvpi_entry_point
 endif
 
 else
