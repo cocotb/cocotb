@@ -17,7 +17,7 @@ async def mixed_language_accessing_test(dut):
 
     # discover all attributes of the SV component
     # This is a workaround since SV modules are not discovered automatically
-    # when using Modelsim/Questa and a VHLD toplevel file.
+    # when using Modelsim/Questa and a VHDL toplevel file.
     verilog._discover_all()
 
     vhdl = dut.i_swapper_vhdl
