@@ -46,6 +46,7 @@ from typing import Any, Callable, Union
 import cocotb
 import cocotb.decorators
 from cocotb import _py_compat, outcomes
+from cocotb._deprecation import deprecated
 from cocotb.decorators import Task
 from cocotb.log import SimLog
 from cocotb.result import TestComplete
@@ -598,7 +599,7 @@ class Scheduler:
         # TODO: we should be able to better keep track of when this needs to
         # be scheduled
         if self._write_coro_inst is None:
-            self._write_coro_inst = self.add(self._do_writes())
+            self._write_coro_inst = self._add(self._do_writes())
 
         if handle in self._write_calls:
             del self._write_calls[handle]
@@ -783,7 +784,11 @@ class Scheduler:
             )
         )
 
+    @deprecated("This method is now private.")
     def add(self, coroutine: Union[Task, Coroutine]) -> Task:
+        return self._add(coroutine)
+
+    def _add(self, coroutine: Union[Task, Coroutine]) -> Task:
         """Add a new coroutine.
 
         Just a wrapper around self.schedule which provides some debug and

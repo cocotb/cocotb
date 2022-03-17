@@ -42,6 +42,7 @@ from typing import Any, Iterable, Optional, Tuple
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb import simulator
+from cocotb._deprecation import deprecated
 from cocotb.decorators import Task
 from cocotb.decorators import test as Test
 from cocotb.handle import SimHandle
@@ -225,7 +226,11 @@ class RegressionManager:
             )
             raise AttributeError("Test(s) %s doesn't exist in %s" % (tests, modules))
 
+    @deprecated("This method is now private.")
     def tear_down(self) -> None:
+        self._tear_down()
+
+    def _tear_down(self) -> None:
         # prevent re-entering the tear down procedure
         if not self._tearing_down:
             self._tearing_down = True
@@ -234,7 +239,7 @@ class RegressionManager:
 
         # fail remaining tests
         while True:
-            test = self.next_test()
+            test = self._next_test()
             if test is None:
                 break
             self._record_result(
@@ -259,14 +264,22 @@ class RegressionManager:
         # Setup simulator finalization
         simulator.stop_simulator()
 
+    @deprecated("This method is now private.")
     def next_test(self) -> Optional[Test]:
+        return self._next_test()
+
+    def _next_test(self) -> Optional[Test]:
         """Get the next test to run"""
         if not self._queue:
             return None
         self.count += 1
         return self._queue.pop(0)
 
+    @deprecated("This method is now private.")
     def handle_result(self, test: Task) -> None:
+        self._handle_result(test)
+
+    def _handle_result(self, test: Task) -> None:
         """Handle a test completing.
 
         Dump result to XML and schedule the next test (if any). Entered by the scheduler.
@@ -286,7 +299,7 @@ class RegressionManager:
             sim_time_ns=sim_time_ns,
         )
 
-        self.execute()
+        self._execute()
 
     def _init_test(self, test: Test) -> Optional[Task]:
         """Initialize a test.
@@ -468,14 +481,18 @@ class RegressionManager:
         )
 
         if sim_failed:
-            self.tear_down()
+            self._tear_down()
             return
 
+    @deprecated("This method is now private.")
     def execute(self) -> None:
+        self._execute()
+
+    def _execute(self) -> None:
         while True:
-            self._test = self.next_test()
+            self._test = self._next_test()
             if self._test is None:
-                return self.tear_down()
+                return self._tear_down()
 
             self._test_task = self._init_test(self._test)
             if self._test_task is not None:

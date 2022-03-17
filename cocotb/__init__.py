@@ -41,6 +41,7 @@ from collections.abc import Coroutine
 from typing import Dict, List, Optional, Union
 
 import cocotb.handle
+from cocotb._deprecation import deprecated
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import Task, coroutine, external, function, test  # noqa: F401
@@ -196,7 +197,7 @@ def fork(coro: Union[Task, Coroutine]) -> Task:
         DeprecationWarning,
         stacklevel=2,
     )
-    return scheduler.add(coro)
+    return scheduler._add(coro)
 
 
 def start_soon(coro: Union[Task, Coroutine]) -> Task:
@@ -321,7 +322,7 @@ def _initialise_testbench_(argv_):
 
     # Create the base handle type
 
-    process_plusargs()
+    _process_plusargs()
 
     # Seed the Python random number generator to make this repeatable
     global RANDOM_SEED
@@ -375,10 +376,10 @@ def _initialise_testbench_(argv_):
     regression_manager = RegressionManager.from_discovery(top)
 
     global scheduler
-    scheduler = Scheduler(handle_result=regression_manager.handle_result)
+    scheduler = Scheduler(handle_result=regression_manager._handle_result)
 
     # start Regression Manager
-    regression_manager.execute()
+    regression_manager._execute()
 
 
 def _sim_event(level, message):
@@ -403,7 +404,13 @@ def _sim_event(level, message):
         scheduler.log.error("Unsupported sim event")
 
 
-def process_plusargs():
+@deprecated("This function is now private")
+def process_plusargs() -> None:
+
+    _process_plusargs()
+
+
+def _process_plusargs() -> None:
 
     global plusargs
 

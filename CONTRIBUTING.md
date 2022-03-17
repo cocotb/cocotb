@@ -192,8 +192,9 @@ Deprecations serve the following purposes:
 * Remove potentially dangerous, broken, and misunderstood interfaces (usually accompanied with a superior alternative)
 
 Deprecations can be incorporated at any time.
-They are typically implemented by [issuing a `DeprecationWarning`](https://docs.python.org/3/library/warnings.html#warnings.warn) in Python code;
-or [issuing a LOG_WARN](https://docs.cocotb.org/en/stable/generated/file/gpi__logging_8h.html?highlight=LOG_WARN#c.LOG_WARN) with `DEPRECATED` in the message in C++ code.
+They are implemented in Python by [issuing a `DeprecationWarning`](https://docs.python.org/3/library/warnings.html#warnings.warn)
+or using the [`@deprecated`](cocotb/_deprecation.py) decorator.
+In C++ code, deprecations are implemented by [issuing a LOG_WARN](https://docs.cocotb.org/en/stable/generated/file/gpi__logging_8h.html?highlight=LOG_WARN#c.LOG_WARN) with `DEPRECATED` in the message.
 
 Removals only occur on major version bumps.
 One can create removal pull requests at any time, on the condition they will not be accepted until the next release is known to be a major version release.
