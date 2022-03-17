@@ -20,7 +20,7 @@ def deprecated(
     Concrete classes can be deprecated by decorating their ``__init__`` or ``__new__``
     method.
 
-    Args
+    Args:
         msg: the deprecation message
         category: the warning class to use
     """
