@@ -7,7 +7,13 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 
 
-@cocotb.test()
+# Riviera fails to find dut.i_swapper_sv (gh-2921)
+@cocotb.test(
+    expect_error=AttributeError
+    if cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
+    and cocotb.LANGUAGE == "vhdl"
+    else ()
+)
 async def mixed_language_accessing_test(dut):
     """Try accessing handles and setting values in a mixed language environment."""
     await Timer(100, units="ns")
@@ -36,7 +42,13 @@ async def mixed_language_accessing_test(dut):
     vhdl.flush_pipe.value
 
 
-@cocotb.test()
+# Riviera fails to find dut.i_swapper_sv (gh-2921)
+@cocotb.test(
+    expect_error=AttributeError
+    if cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
+    and cocotb.LANGUAGE == "vhdl"
+    else ()
+)
 async def mixed_language_functional_test(dut):
     """Try concurrent simulation of VHDL and Verilog and check the output."""
     await Timer(100, units="ns")
