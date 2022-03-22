@@ -260,21 +260,40 @@ The regression does not end on the first failure, but continues until all tests 
 To run the tests locally with `nox`, issue the following command.
 
 ```command
-nox -e tests
+nox -s dev_test
 ```
 
 At the end of the regression, if there were any test failures, the tests that failed will be printed.
 If the tests succeed you will see the message `Session tests was successful` printed in green.
 
+By default the `dev_test` nox session runs all simulator-agnostic tests, as well as all tests which require a simulator and can be run against Icarus Verilog.
+Icarus Verilog must be installed.
+
+The simulator and the toplevel language can be changed by setting the environment variables [`SIM`](https://docs.cocotb.org/en/latest/building.html#var-SIM) and [`TOPLEVEL_LANG`](https://docs.cocotb.org/en/latest/building.html#var-TOPLEVEL_LANG).
+Alternatively, the simulator-specific nox sessions can be used, as described below.
+
 ### Selecting a Language and Simulator for Regression
 
-`nox` supports the usage of the environment variables [`SIM`](https://docs.cocotb.org/en/latest/building.html#var-SIM) and [`TOPLEVEL_LANG`](https://docs.cocotb.org/en/latest/building.html#var-TOPLEVEL_LANG) to select a simulator and language to run the regression.
-By default the tests will attempt to run with the Icarus Verilog simulator.
+cocotb can be used with multiple simulators, and can run tests against all of them.
+Nox provides a session for each valid simulator/language/GPI interface combination, from which one or multiple sessions can be selected.
 
-For example, if you wanted to run tests with GHDL on Linux with Python 3.8, you would issue the following command:
+The following examples are good starting points;
+refer to the [nox command-line usage documentation](https://nox.thea.codes/en/stable/usage.html) for more information.
 
 ```command
-SIM=ghdl TOPLEVEL_LANG=vhdl nox -e tests
+# List all available sessions.
+nox -l
+
+# Run all simulator-agnostic tests.
+nox -s dev_test_nosim
+
+# Run the simulator-specific tests against Xcelium, using a VHDL toplevel and
+# the VHPI interface.
+nox -s "dev_test_sim(sim='xcelium', toplevel_lang='vhdl', gpi_interface='vhpi')"
+
+# Run all simulator-specific tests against Icarus Verilog and GHDL.
+# Both simulators must be installed locally.
+nox -k "dev_test_sim and (icarus or ghdl)"
 ```
 
 ### Running Individual Tests Locally

@@ -291,7 +291,7 @@ jobs:
       continue-on-error: ${{matrix.may_fail || false}}
       timeout-minutes: 15
       run: |
-        nox -e tests
+        nox -s dev_test
 
     # codecov
     - name: Upload to codecov
