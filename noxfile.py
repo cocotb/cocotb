@@ -8,13 +8,8 @@ import nox
 test_deps = ["coverage", "pytest", "pytest-cov"]
 
 dev_deps = [
-    "black",
-    "isort",
     "mypy",
     "pre-commit",
-    "nox",
-    "flake8",
-    "clang-format",
 ]
 
 
