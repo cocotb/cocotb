@@ -2,6 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import glob
+import sys
 from contextlib import suppress
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -264,6 +265,134 @@ def dev_coverage_report(session: nox.Session) -> None:
 
     session.log("Library coverage")
     session.run("gcovr", "--print-summary", "--txt")
+
+
+#
+# Release pipeline.
+#
+# - Build wheels (release builds).
+# - Install cocotb from wheel.
+# - Run tests against cocotb installed from the wheel.
+#
+# The release pipeline does not collect coverage, and does not run doctests.
+#
+
+# Directory containing the distribution artifacts (sdist and bdist).
+dist_dir = "dist"
+
+
+@nox.session
+def release_build(session: nox.Session) -> None:
+    """Build a release (sdist and bdist)."""
+    session.notify("release_build_bdist")
+    session.notify("release_build_sdist")
+
+
+@nox.session
+def release_build_bdist(session: nox.Session) -> None:
+    """Build a binary distribution (wheels) on the current operating system."""
+
+    # Pin a version to ensure reproducible builds.
+    session.install("cibuildwheel==2.5.0")
+
+    # cibuildwheel only auto-detects the platform if it runs on a CI server.
+    # Do the auto-detect manually to enable local runs.
+    if sys.platform.startswith("linux"):
+        platform = "linux"
+    elif sys.platform == "darwin":
+        platform = "macos"
+    elif sys.platform == "win32":
+        platform = "windows"
+    else:
+        session.error(f"Unknown platform: {sys.platform!r}")
+
+    session.log("Building binary distribution (wheels)")
+    session.run(
+        "cibuildwheel",
+        "--platform",
+        platform,
+        "--output-dir",
+        dist_dir,
+    )
+
+    session.log(
+        f"Binary distribution in release mode for {platform!r} built into {dist_dir!r}"
+    )
+
+
+@nox.session
+def release_build_sdist(session: nox.Session) -> None:
+    """Build the source distribution."""
+
+    session.install("build")
+
+    session.log("Building source distribution (sdist)")
+    session.run("python", "-m", "build", "--sdist", "--outdir", dist_dir, ".")
+
+    session.log(f"Source distribution in release mode built into {dist_dir!r}")
+
+
+def release_install(session: nox.Session) -> None:
+    """Helper: Install cocotb from wheels and also install test dependencies."""
+
+    session.log(f"Installing cocotb from wheels in {dist_dir!r}")
+    session.install(
+        "--only-binary",
+        "cocotb",
+        "--no-index",
+        "--find-links",
+        dist_dir,
+        "cocotb",
+    )
+
+    session.log("Running cocotb-config as basic installation smoke test")
+    session.run("cocotb-config", "--version")
+
+    session.log("Installing test dependencies")
+    session.install(*test_deps)
+
+
+@nox.session
+@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
+def release_test_sim(
+    session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str
+) -> None:
+    """Test a release version of cocotb against a simulator."""
+
+    release_install(session)
+
+    env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
+    config_str = stringify_dict(env)
+
+    session.log(f"Running tests against a simulator: {config_str}")
+    session.run("make", "test", external=True, env=env)
+
+    session.log(f"Running simulator-specific tests against a simulator {config_str}")
+    session.run(
+        "pytest",
+        "-v",
+        "-k",
+        "simulator_required",
+    )
+
+    session.log(f"All tests passed with configuration {config_str}!")
+
+
+@nox.session
+def release_test_nosim(session: nox.Session) -> None:
+    """Run the simulator-agnostic tests against a cocotb release."""
+
+    release_install(session)
+
+    session.log("Running simulator-agnostic tests")
+    session.run(
+        "pytest",
+        "-v",
+        "-k",
+        "not simulator_required",
+    )
+
+    session.log("All tests passed!")
 
 
 @nox.session
