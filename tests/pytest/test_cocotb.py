@@ -4,7 +4,11 @@
 
 import os
 
+import pytest
+
 from cocotb.runner import get_runner
+
+pytestmark = pytest.mark.simulator_required
 
 tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sim_build = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sim_build")

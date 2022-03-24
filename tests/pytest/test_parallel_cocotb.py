@@ -18,6 +18,8 @@ from test_cocotb import (
 
 from cocotb.runner import get_runner
 
+pytestmark = pytest.mark.simulator_required
+
 
 @pytest.mark.compile
 def test_cocotb_parallel_compile():
