@@ -5,10 +5,14 @@ import os
 import random
 from pathlib import Path
 
+import pytest
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.runner import get_runner
 from cocotb.triggers import FallingEdge
+
+pytestmark = pytest.mark.simulator_required
 
 
 @cocotb.test()
