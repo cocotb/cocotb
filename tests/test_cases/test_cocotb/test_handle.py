@@ -10,6 +10,7 @@ import random
 import pytest
 
 import cocotb
+from cocotb.binary import BinaryValue
 from cocotb.handle import _Limits
 from cocotb.triggers import Timer
 from cocotb.types import Logic, LogicArray
@@ -416,3 +417,9 @@ async def test_assign_Logic(dut):
     assert dut.stream_in_ready.value.binstr.lower() == "x"
     with pytest.raises(ValueError):
         dut.stream_in_data.value = Logic("U")  # not the correct size
+
+
+@cocotb.test()
+async def test_assign_BinaryValue_too_big(dut):
+    with pytest.raises(ValueError):
+        dut.stream_in_data.value = BinaryValue(0, n_bits=1)
