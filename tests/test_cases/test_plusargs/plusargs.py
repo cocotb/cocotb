@@ -39,6 +39,6 @@ async def plusargs_test(dut):
     for name in cocotb.plusargs:
         print("COCOTB:", name, cocotb.plusargs[name])
 
-    assert 'test1' in cocotb.plusargs
-    assert cocotb.plusargs['foo'] == 'bar'
-    assert cocotb.plusargs['lol'] == 'wow=4'
+    assert "test1" in cocotb.plusargs
+    assert cocotb.plusargs["foo"] == "bar"
+    assert cocotb.plusargs["lol"] == "wow=4"

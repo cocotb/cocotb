@@ -1,10 +1,10 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
 
+import itertools
+
 import cocotb
 from cocotb.triggers import Timer
-
-import itertools
 
 
 class Regulator_TB:
@@ -31,7 +31,9 @@ class Regulator_TB:
         toggle = next(self._bit_toggle_stream)
         self.tb_hdl.i_analog_probe.node_to_probe.value = node.encode("ascii")
         self.analog_probe.probe_voltage_toggle.value = toggle
-        await Timer(1, units="ps")  # waiting time needed for the analog values to be updated
+        await Timer(
+            1, units="ps"
+        )  # waiting time needed for the analog values to be updated
         self.tb_hdl._log.debug(
             "trim value={}: {}={:.4} V".format(
                 self.tb_hdl.trim_val.value.signed_integer,
@@ -57,7 +59,7 @@ class Regulator_TB:
             float: The calculated best value for *trim_val_node*.
         """
         # assuming two's complement
-        trim_val_min = -2 ** (trim_val_node.value.n_bits - 1)
+        trim_val_min = -(2 ** (trim_val_node.value.n_bits - 1))
         trim_val_max = 2 ** (trim_val_node.value.n_bits - 1) - 1
         # the actual trimming procedure:
         # minimum values
@@ -102,9 +104,7 @@ async def run_test(tb_hdl):
     # show automatic trimming
     target_volt = 3.013
     tb_py.tb_hdl._log.info(
-        "Running trimming algorithm for target voltage {:.4} V".format(
-            target_volt
-        )
+        "Running trimming algorithm for target voltage {:.4} V".format(target_volt)
     )
     best_trim_float = await tb_py.find_trim_val(
         probed_node=node, target_volt=target_volt, trim_val_node=tb_py.tb_hdl.trim_val
@@ -116,7 +116,7 @@ async def run_test(tb_hdl):
     tb_py.tb_hdl._log.info(
         "Best trimming value is {} "
         "--> voltage is {:.4} V (difference to target is {:.4} V)".format(
-            best_trim_rounded, trimmed_volt, trimmed_volt-target_volt
+            best_trim_rounded, trimmed_volt, trimmed_volt - target_volt
         )
     )
     best_trim_rounded_exp = -1

@@ -25,9 +25,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import sys
+
 # TODO: Could use cStringIO?
 import traceback
-import sys
 import warnings
 from io import StringIO
 
@@ -47,7 +48,9 @@ def raise_error(obj, msg):
     """
     warnings.warn(
         "``raise_error`` is deprecated - raise a standard Exception instead",
-        DeprecationWarning, stacklevel=2)
+        DeprecationWarning,
+        stacklevel=2,
+    )
     _raise_error(obj, msg)
 
 
@@ -74,7 +77,9 @@ def create_error(obj, msg):
     """
     warnings.warn(
         "``create_error`` is deprecated - raise a standard Exception instead",
-        DeprecationWarning, stacklevel=2)
+        DeprecationWarning,
+        stacklevel=2,
+    )
     try:
         # use the private version to avoid multiple warnings
         _raise_error(obj, msg)
@@ -95,7 +100,8 @@ class ReturnValue(Exception):
         warnings.warn(
             "``ReturnValue`` is deprecated, use a normal return statement instead.",
             DeprecationWarning,
-            stacklevel=2)
+            stacklevel=2,
+        )
         self.retval = retval
 
 
@@ -116,7 +122,9 @@ class TestComplete(Exception):
     def __deprecated(which: str) -> None:
         warnings.warn(
             f"Attribute {which} is deprecated and will be removed in the next major release",
-            DeprecationWarning, stacklevel=3)
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     @property
     def stdout(self) -> StringIO:
@@ -158,7 +166,9 @@ class TestError(TestComplete):
     def __init__(self, *args, **kwargs):
         warnings.warn(
             "TestError is deprecated - raise a standard Exception instead",
-            DeprecationWarning, stacklevel=2)
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(*args, **kwargs)
 
 
@@ -175,20 +185,25 @@ class TestFailure(TestComplete, AssertionError):
     def __init__(self, *args, **kwargs):
         warnings.warn(
             "TestFailure is deprecated, use an ``assert`` statement instead",
-            DeprecationWarning, stacklevel=2)
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(*args, **kwargs)
 
 
 class TestSuccess(TestComplete):
     """Exception showing that the test was completed successfully."""
+
     pass
 
 
 class SimFailure(TestComplete):
     """Exception showing that the simulator exited unsuccessfully."""
+
     pass
 
 
 class SimTimeoutError(TimeoutError):
     """Exception for when a timeout, in terms of simulation time, occurs."""
+
     pass

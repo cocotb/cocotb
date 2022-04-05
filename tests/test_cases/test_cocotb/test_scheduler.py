@@ -10,12 +10,16 @@ Test for scheduler and coroutine behavior
 """
 import logging
 import re
+import warnings
+from asyncio import CancelledError, InvalidStateError
 from typing import Coroutine
 
-import cocotb
 import pytest
+from common import MyException
+
+import cocotb
 from cocotb.clock import Clock
-from cocotb.decorators import RunningTask
+from cocotb.decorators import Task
 from cocotb.triggers import (
     Combine,
     Event,
@@ -27,8 +31,6 @@ from cocotb.triggers import (
     Timer,
     Trigger,
 )
-
-from common import clock_gen
 
 test_flag = False
 
@@ -43,9 +45,9 @@ async def clock_yield(generator):
 async def test_coroutine_kill(dut):
     """Test that killing a coroutine causes pending routine continue"""
     global test_flag
-    clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(100, "ns")
-    clk_gen_two = cocotb.fork(clock_yield(clk_gen))
+    cocotb.start_soon(clock_yield(clk_gen))
     await Timer(100, "ns")
     clk_gen.kill()
     assert not test_flag
@@ -72,10 +74,10 @@ async def clock_two(dut):
 @cocotb.test()
 async def test_coroutine_close_down(dut):
     log = logging.getLogger("cocotb.test")
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
 
-    coro_one = cocotb.fork(clock_one(dut))
-    coro_two = cocotb.fork(clock_two(dut))
+    coro_one = cocotb.start_soon(clock_one(dut))
+    coro_two = cocotb.start_soon(clock_two(dut))
 
     await Join(coro_one)
     await Join(coro_two)
@@ -96,7 +98,7 @@ async def join_finished(dut):
         await Timer(1, "ns")
         return retval
 
-    coro = cocotb.fork(some_coro())
+    coro = cocotb.start_soon(some_coro())
 
     retval = 1
     x = await coro.join()
@@ -114,16 +116,17 @@ async def consistent_join(dut):
     """
     Test that joining a coroutine returns the finished value
     """
+
     async def wait_for(clk, cycles):
         rising_edge = RisingEdge(clk)
         for _ in range(cycles):
             await rising_edge
         return 3
 
-    cocotb.fork(Clock(dut.clk, 2000, 'ps').start())
+    cocotb.start_soon(Clock(dut.clk, 2000, "ps").start())
 
-    short_wait = cocotb.fork(wait_for(dut.clk, 10))
-    long_wait = cocotb.fork(wait_for(dut.clk, 30))
+    short_wait = cocotb.start_soon(wait_for(dut.clk, 10))
+    long_wait = cocotb.start_soon(wait_for(dut.clk, 30))
 
     await wait_for(dut.clk, 20)
     a = await short_wait.join()
@@ -136,7 +139,7 @@ async def test_kill_twice(dut):
     """
     Test that killing a coroutine that has already been killed does not crash
     """
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(1, "ns")
     clk_gen.kill()
     await Timer(1, "ns")
@@ -148,7 +151,7 @@ async def test_join_identity(dut):
     """
     Test that Join() returns the same object each time
     """
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
 
     assert Join(clk_gen) is Join(clk_gen)
     await Timer(1, "ns")
@@ -157,7 +160,8 @@ async def test_join_identity(dut):
 
 @cocotb.test()
 async def test_trigger_with_failing_prime(dut):
-    """ Test that a trigger failing to prime throws """
+    """Test that a trigger failing to prime throws"""
+
     class ABadTrigger(Trigger):
         def prime(self, callback):
             raise RuntimeError("oops")
@@ -217,14 +221,18 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
         await RisingEdge(dut.clk)
         nonlocal victim_resumed
         victim_resumed = True
-    victim_task = cocotb.fork(victim())
+
+    victim_task = cocotb.start_soon(victim())
 
     async def killer():
         await RisingEdge(dut.clk)
         victim_task.kill()
-    cocotb.fork(killer())
 
-    await Timer(2, "step")  # allow Timer in victim to pass making it schedule RisingEdge after the killer
+    cocotb.start_soon(killer())
+
+    await Timer(
+        2, "step"
+    )  # allow Timer in victim to pass making it schedule RisingEdge after the killer
     dut.clk.value = 1
     await Timer(1, "step")
     assert not victim_resumed
@@ -240,7 +248,7 @@ async def test_nulltrigger_reschedule(dut):
     log = logging.getLogger("cocotb.test")
     last_fork = None
 
-    @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
+    @cocotb.coroutine  # TODO: Remove once Combine accepts bare coroutines
     async def reschedule(n):
         nonlocal last_fork
         for i in range(4):
@@ -296,14 +304,14 @@ async def test_last_scheduled_write_wins(dut):
     e = Event()
     dut.stream_in_data.setimmediatevalue(0)
 
-    @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
+    @cocotb.coroutine  # TODO: Remove once Combine accepts bare coroutines
     async def first():
         await Timer(1, "ns")
         log.info("scheduling stream_in_data.value = 1")
         dut.stream_in_data.value = 1
         e.set()
 
-    @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
+    @cocotb.coroutine  # TODO: Remove once Combine accepts bare coroutines
     async def second():
         await Timer(1, "ns")
         await e.wait()
@@ -318,7 +326,9 @@ async def test_last_scheduled_write_wins(dut):
 
 
 # GHDL unable to put values on nested array types (gh-2588)
-@cocotb.test(expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+@cocotb.test(
+    expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+)
 async def test_last_scheduled_write_wins_array(dut):
     """
     Test that the last scheduled write for an *arrayed* signal handle is the value that is written.
@@ -350,16 +360,16 @@ async def test_last_scheduled_write_wins_array_handle_alias(dut):
 
 @cocotb.test()
 async def test_task_repr(dut):
-    """Test RunningTask.__repr__."""
+    """Test Task.__repr__."""
     log = logging.getLogger("cocotb.test")
-    gen_e = Event('generator_coro_inner')
+    gen_e = Event("generator_coro_inner")
 
     def generator_coro_inner():
         gen_e.set()
-        yield Timer(1, units='ns')
+        yield Timer(1, units="ns")
         raise ValueError("inner")
 
-    @cocotb.coroutine   # testing debug with legacy coroutine syntax
+    @cocotb.coroutine  # testing debug with legacy coroutine syntax
     def generator_coro_outer():
         yield from generator_coro_inner()
 
@@ -373,7 +383,10 @@ async def test_task_repr(dut):
     await gen_e.wait()
 
     log.info(repr(gen_task))
-    assert re.match(r"<Task \d+ pending coro=generator_coro_inner\(\) trigger=<Timer of 1000.00ps at \w+>>", repr(gen_task))
+    assert re.match(
+        r"<Task \d+ pending coro=generator_coro_inner\(\) trigger=<Timer of 1000.00ps at \w+>>",
+        repr(gen_task),
+    )
 
     try:
         await Join(gen_task)
@@ -381,17 +394,20 @@ async def test_task_repr(dut):
         pass
 
     log.info(repr(gen_task))
-    assert re.match(r"<Task \d+ finished coro=generator_coro_outer\(\) outcome=Error\(ValueError\('inner',?\)\)>", repr(gen_task))
+    assert re.match(
+        r"<Task \d+ finished coro=generator_coro_outer\(\) outcome=Error\(ValueError\('inner',?\)\)>",
+        repr(gen_task),
+    )
 
-    coro_e = Event('coroutine_inner')
+    coro_e = Event("coroutine_inner")
 
     async def coroutine_forked(task):
         log.info(repr(task))
         assert re.match(r"<Task \d+ adding coro=coroutine_outer\(\)>", repr(task))
 
-    @cocotb.coroutine   # Combine requires use of cocotb.coroutine
+    @cocotb.coroutine  # Combine requires use of cocotb.coroutine
     async def coroutine_wait():
-        await Timer(1, units='ns')
+        await Timer(1, units="ns")
 
     async def coroutine_inner():
         await coro_e.wait()
@@ -400,7 +416,9 @@ async def test_task_repr(dut):
         log.info(repr(this_task))
         assert re.match(r"<Task \d+ running coro=coroutine_outer\(\)>", repr(this_task))
 
-        cocotb.fork(coroutine_forked(this_task))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cocotb.fork(coroutine_forked(this_task))
         await Combine(*(coroutine_wait() for _ in range(2)))
 
         return "Combine done"
@@ -420,33 +438,39 @@ async def test_task_repr(dut):
     log.info(repr(coro_task))
     assert re.match(
         r"<Task \d+ pending coro=coroutine_inner\(\) trigger=Combine\(Join\(<Task \d+>\), Join\(<Task \d+>\)\)>",
-        repr(coro_task)
+        repr(coro_task),
     )
 
-    await Timer(2, units='ns')
+    await Timer(2, units="ns")
 
     log.info(repr(coro_task))
-    assert re.match(r"<Task \d+ finished coro=coroutine_outer\(\) outcome=Value\('Combine done'\)", repr(coro_task))
+    assert re.match(
+        r"<Task \d+ finished coro=coroutine_outer\(\) outcome=Value\('Combine done'\)",
+        repr(coro_task),
+    )
 
     async def coroutine_first():
-        await First(coroutine_wait(), Timer(2, units='ns'))
+        await First(coroutine_wait(), Timer(2, units="ns"))
 
     coro_task = await cocotb.start(coroutine_first())
 
     log.info(repr(coro_task))
     assert re.match(
         r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\(Join\(<Task \d+>\), <Timer of 2000.00ps at \w+>\)>",
-        repr(coro_task)
+        repr(coro_task),
     )
 
     async def coroutine_timer():
-        await Timer(1, units='ns')
+        await Timer(1, units="ns")
 
     coro_task = await cocotb.start(coroutine_timer())
 
     # Trigger.__await__ should be popped from the coroutine stack
     log.info(repr(coro_task))
-    assert re.match(r"<Task \d+ pending coro=coroutine_timer\(\) trigger=<Timer of 1000.00ps at \w+>>", repr(coro_task))
+    assert re.match(
+        r"<Task \d+ pending coro=coroutine_timer\(\) trigger=<Timer of 1000.00ps at \w+>>",
+        repr(coro_task),
+    )
 
     # created but not scheduled yet
     coro_task = cocotb.start_soon(coroutine_outer())
@@ -457,7 +481,7 @@ async def test_task_repr(dut):
 
 @cocotb.test()
 async def test_start_soon_async(_):
-    """ Tests start_soon works with coroutines """
+    """Tests start_soon works with coroutines"""
     a = 0
 
     async def example():
@@ -472,7 +496,7 @@ async def test_start_soon_async(_):
 
 @cocotb.test()
 async def test_start_soon_decorator(_):
-    """ Tests start_soon works with RunningTasks """
+    """Tests start_soon works with Tasks"""
     a = 0
 
     @cocotb.decorators.coroutine
@@ -504,19 +528,20 @@ async def test_start_soon_scheduling(dut):
         nonlocal coro_scheduled
         coro_scheduled = True
 
-    t = Timer(1, 'step')
+    t = Timer(1, "step")
     # pre-prime with wrapper function instead of letting scheduler prime it normally
     t.prime(react_wrapper)
     await t
     # react_wrapper is now on the stack
     cocotb.start_soon(coro())  # coro() should run before returning to the simulator
-    await Timer(1, 'step')  # await a GPITrigger to ensure control returns to simulator
+    await Timer(1, "step")  # await a GPITrigger to ensure control returns to simulator
     assert coro_scheduled is True
 
 
 @cocotb.test()
 async def test_await_start_soon(_):
     """Test awaiting start_soon queued coroutine before it starts."""
+
     async def coro():
         start_time = cocotb.utils.get_sim_time(units="ns")
         await Timer(1, "ns")
@@ -541,7 +566,7 @@ async def test_kill_start_soon_task(_):
 
     await NullTrigger()
     assert coro_scheduled is False
-    assert task._finished
+    assert task.done()
 
 
 start_soon_started = False
@@ -550,6 +575,7 @@ start_soon_started = False
 @cocotb.test()
 async def test_test_end_after_start_soon(_):
     """Test ending test before start_soon queued coroutine starts."""
+
     async def coro():
         global start_soon_started
         start_soon_started = True
@@ -569,34 +595,34 @@ async def test_previous_start_soon_not_scheduled(_):
 @cocotb.test()
 async def test_start(_):
     async def coro():
-        await Timer(1, 'step')
+        await Timer(1, "step")
 
     task1 = await cocotb.start(coro())
-    assert type(task1) is cocotb.decorators.RunningTask
+    assert type(task1) is cocotb.decorators.Task
     assert task1.has_started()
-    assert not task1._finished
+    assert not task1.done()
 
-    await Timer(1, 'step')
-    assert task1._finished
+    await Timer(1, "step")
+    assert task1.done()
 
     task2 = cocotb.create_task(coro())
     task3 = await cocotb.start(task2)
     assert task3 is task2
 
-    await Timer(1, 'step')
+    await Timer(1, "step")
 
     task4 = cocotb.start_soon(coro())
     assert not task4.has_started()
-    task5 = await cocotb.start(coro())
+    await cocotb.start(coro())
     assert task4.has_started()
-    await Timer(1, 'step')
-    assert task4._finished
+    await Timer(1, "step")
+    assert task4.done()
 
     async def coro_val():
         return 1
 
     task6 = await cocotb.start(coro_val())
-    assert task6._finished
+    assert task6.done()
     assert await task6 == 1
 
 
@@ -620,7 +646,7 @@ async def test_start_scheduling(dut):
         nonlocal coro_started
         coro_started = True
 
-    t = Timer(1, 'step')
+    t = Timer(1, "step")
     # pre-prime with wrapper function instead of letting scheduler prime it normally
     t.prime(react_wrapper)
     await t
@@ -629,7 +655,7 @@ async def test_start_scheduling(dut):
     await cocotb.start(coro())
     assert sim_resumed is False
     assert coro_started is True
-    await Timer(1, 'step')  # await a GPITrigger to ensure control returns to simulator
+    await Timer(1, "step")  # await a GPITrigger to ensure control returns to simulator
     assert sim_resumed is True
 
 
@@ -640,7 +666,7 @@ async def test_create_task(_):
     async def coro():
         pass
 
-    assert type(cocotb.create_task(coro())) == RunningTask
+    assert type(cocotb.create_task(coro())) == Task
 
     # proper construction from Coroutine objects
     class CoroType(Coroutine):
@@ -659,7 +685,7 @@ async def test_create_task(_):
         def __await__(self):
             yield from self._coro.__await__()
 
-    assert type(cocotb.create_task(CoroType())) == RunningTask
+    assert type(cocotb.create_task(CoroType())) == Task
 
     # fail if given async generators
     async def agen():
@@ -683,3 +709,70 @@ async def test_create_task(_):
     # fail if given random type
     with pytest.raises(TypeError):
         cocotb.create_task(object())
+
+
+@cocotb.test()
+async def test_task_completes(_):
+    async def coro():
+        return 123
+
+    task = cocotb.start_soon(coro())
+    assert not task.cancelled()
+    assert not task.done()
+    assert await task == 123
+    assert not task.cancelled()
+    assert task.done()
+    assert task.result() == 123
+    assert task.exception() is None
+
+
+@cocotb.test()
+async def test_task_exception(_):
+    async def coro():
+        raise MyException("msg1234")
+
+    task = cocotb.start_soon(coro())
+    assert not task.cancelled()
+    assert not task.done()
+    with pytest.raises(MyException, match="msg1234"):
+        await task
+    assert not task.cancelled()
+    assert task.done()
+    with pytest.raises(MyException, match="msg1234"):
+        task.result()
+    assert type(task.exception()) is MyException
+    assert str(task.exception()) == "msg1234"
+
+
+@cocotb.test()
+async def test_cancel_task(_):
+    async def coro():
+        return 0
+
+    task = cocotb.start_soon(coro())
+    assert not task.cancelled()
+    assert not task.done()
+    await task
+    assert not task.cancelled()
+    assert task.done()
+
+    task = cocotb.start_soon(coro())
+    with pytest.warns(FutureWarning):
+        task.cancel("msg1234")
+    assert task.cancelled()
+    with pytest.raises(CancelledError, match="msg1234"):
+        task.result()
+    with pytest.raises(CancelledError, match="msg1234"):
+        task.exception()
+
+
+@cocotb.test()
+async def test_invalid_operations_task(_):
+    async def coro():
+        return 123
+
+    task = cocotb.start_soon(coro())
+    with pytest.raises(InvalidStateError):
+        task.result()
+    with pytest.raises(InvalidStateError):
+        task.exception()

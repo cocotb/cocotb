@@ -176,8 +176,6 @@ struct sim_time {
     uint32_t low;
 };
 
-static struct sim_time cache_time;
-
 /**
  * @name    Callback Handling
  * @brief   Handle a callback coming from GPI
@@ -214,9 +212,6 @@ int handle_gpi_callback(void *user_data) {
         goto err;
     }
     cb_data->id_value = COCOTB_INACTIVE_ID;
-
-    /* Cache the sim time */
-    gpi_get_sim_time(&cache_time.high, &cache_time.low);
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
@@ -798,11 +793,7 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args) {
 
     struct sim_time local_time;
 
-    if (is_python_context) {
-        gpi_get_sim_time(&local_time.high, &local_time.low);
-    } else {
-        local_time = cache_time;
-    }
+    gpi_get_sim_time(&local_time.high, &local_time.low);
 
     PyObject *pTuple = PyTuple_New(2);
     PyTuple_SetItem(

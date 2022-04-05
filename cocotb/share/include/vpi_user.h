@@ -1002,4 +1002,3 @@ PLI_VEXTERN PLI_DLLESPEC void (*vlog_startup_routines[])(void);
 #endif
 
 #endif /* VPI_USER_H */
-

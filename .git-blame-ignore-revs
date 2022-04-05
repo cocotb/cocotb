@@ -1,0 +1,12 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# The following command will configure your local git repo to ignore these commits
+# when doing git-blame.
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# clang-format
+78e69fa428477b73808d08aec0e6702a924497f8
+# black and isort
+720b0e1071d0c720e61fa50fcb1813fd99198f20

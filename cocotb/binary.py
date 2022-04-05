@@ -32,11 +32,10 @@ import random
 import re
 import warnings
 
-
-_RESOLVE_TO_0      = "-lL"
-_RESOLVE_TO_1      = "hH"
+_RESOLVE_TO_0 = "-lL"
+_RESOLVE_TO_1 = "hH"
 _RESOLVE_TO_CHOICE = "xXzZuUwW"
-resolve_x_to = os.getenv('COCOTB_RESOLVE_X', "VALUE_ERROR")
+resolve_x_to = os.getenv("COCOTB_RESOLVE_X", "VALUE_ERROR")
 
 
 class _ResolveTable(dict):
@@ -44,6 +43,7 @@ class _ResolveTable(dict):
 
     For use with :func:`str.translate()`, which indexes into table with Unicode ordinals.
     """
+
     def __init__(self):
         self.update({ord("0"): ord("0"), ord("1"): ord("1")})
         self.update({ord(k): ord("0") for k in _RESOLVE_TO_0})
@@ -52,22 +52,29 @@ class _ResolveTable(dict):
         # Do not resolve if resolve_x_to is not set to one of the supported values
         def no_resolve(key):
             return key
+
         self.resolve_x = no_resolve
 
         if resolve_x_to == "VALUE_ERROR":
+
             def resolve_error(key):
-                raise ValueError("Unresolvable bit in binary string: '{}'".format(chr(key)))
+                raise ValueError(
+                    "Unresolvable bit in binary string: '{}'".format(chr(key))
+                )
+
             self.resolve_x = resolve_error
         elif resolve_x_to == "ZEROS":
             self.update({ord(k): ord("0") for k in _RESOLVE_TO_CHOICE})
         elif resolve_x_to == "ONES":
             self.update({ord(k): ord("1") for k in _RESOLVE_TO_CHOICE})
         elif resolve_x_to == "RANDOM":
+
             def resolve_random(key):
                 # convert to correct Unicode ordinal:
                 # ord('0') = 48
                 # ord('1') = 49
                 return random.getrandbits(1) + 48
+
             self.resolve_x = resolve_random
 
         self._resolve_to_choice = {ord(c) for c in _RESOLVE_TO_CHOICE}
@@ -97,9 +104,9 @@ def _clog2(val):
 
 
 class BinaryRepresentation:  # noqa
-    UNSIGNED         = 0  #: Unsigned format
+    UNSIGNED = 0  #: Unsigned format
     SIGNED_MAGNITUDE = 1  #: Sign and magnitude format
-    TWOS_COMPLEMENT  = 2  #: Two's complement format
+    TWOS_COMPLEMENT = 2  #: Two's complement format
 
 
 class BinaryValue:
@@ -123,11 +130,17 @@ class BinaryValue:
     b'*'
 
     """
-    _permitted_chars  = _RESOLVE_TO_0 +_RESOLVE_TO_1 + _RESOLVE_TO_CHOICE + "01"  # noqa
 
-    def __init__(self, value=None, n_bits=None, bigEndian=True,
-                 binaryRepresentation=BinaryRepresentation.UNSIGNED,
-                 bits=None):
+    _permitted_chars = _RESOLVE_TO_0 + _RESOLVE_TO_1 + _RESOLVE_TO_CHOICE + "01"  # noqa
+
+    def __init__(
+        self,
+        value=None,
+        n_bits=None,
+        bigEndian=True,
+        binaryRepresentation=BinaryRepresentation.UNSIGNED,
+        bits=None,
+    ):
         """
         Args:
             value (str or int or long, optional): Value to assign to the bus.
@@ -147,19 +160,25 @@ class BinaryValue:
 
         # bits is the deprecated name for n_bits, allow its use for
         # backward-compat reasons.
-        if (bits is not None and n_bits is not None):
+        if bits is not None and n_bits is not None:
             raise TypeError("You cannot use n_bits and bits at the same time.")
         if bits is not None:
             warnings.warn(
                 "The bits argument to BinaryValue has been renamed to n_bits",
-                DeprecationWarning, stacklevel=2)
+                DeprecationWarning,
+                stacklevel=2,
+            )
             n_bits = bits
 
         self._n_bits = n_bits
 
-        self._convert_to = self._convert_to_map[self.binaryRepresentation].__get__(self, self.__class__)
+        self._convert_to = self._convert_to_map[self.binaryRepresentation].__get__(
+            self, self.__class__
+        )
 
-        self._convert_from = self._convert_from_map[self.binaryRepresentation].__get__(self, self.__class__)
+        self._convert_from = self._convert_from_map[self.binaryRepresentation].__get__(
+            self, self.__class__
+        )
 
         if value is not None:
             self.assign(value)
@@ -188,27 +207,29 @@ class BinaryValue:
             self.buff = value
         else:
             raise TypeError(
-                "value must be int, str, or bytes, not {!r}"
-                .format(type(value).__qualname__)
+                "value must be int, str, or bytes, not {!r}".format(
+                    type(value).__qualname__
+                )
             )
 
     def _convert_to_unsigned(self, x):
         if x == 0:
             return self._adjust_unsigned("")
         x = bin(x)
-        if x[0] == '-':
-            raise ValueError('Attempt to assigned negative number to unsigned '
-                             'BinaryValue')
+        if x[0] == "-":
+            raise ValueError(
+                "Attempt to assigned negative number to unsigned " "BinaryValue"
+            )
         return self._adjust_unsigned(x[2:])
 
     def _convert_to_signed_mag(self, x):
         if x == 0:
             return self._adjust_unsigned("")
         x = bin(x)
-        if x[0] == '-':
-            binstr = self._adjust_signed_mag('1' + x[3:])
+        if x[0] == "-":
+            binstr = self._adjust_signed_mag("1" + x[3:])
         else:
-            binstr = self._adjust_signed_mag('0' + x[2:])
+            binstr = self._adjust_signed_mag("0" + x[2:])
         if self.big_endian:
             binstr = binstr[::-1]
         return binstr
@@ -220,7 +241,7 @@ class BinaryValue:
         elif x == 0:
             binstr = self._adjust_twos_comp("")
         else:
-            binstr = self._adjust_twos_comp('0' + bin(x)[2:])
+            binstr = self._adjust_twos_comp("0" + bin(x)[2:])
         if self.big_endian:
             binstr = binstr[::-1]
         return binstr
@@ -234,14 +255,14 @@ class BinaryValue:
         if not len(x):
             return 0
         rv = int(self._str[1:].translate(_resolve_table), 2)
-        if self._str[0] == '1':
+        if self._str[0] == "1":
             rv = rv * -1
         return rv
 
     def _convert_from_twos_comp(self, x):
         if not len(x):
             return 0
-        if x[0] == '1':
+        if x[0] == "1":
             binstr = x[1:]
             binstr = self._invert(binstr)
             rv = int(binstr, 2) + 1
@@ -251,18 +272,18 @@ class BinaryValue:
         return rv
 
     _convert_to_map = {
-        BinaryRepresentation.UNSIGNED         : _convert_to_unsigned,
-        BinaryRepresentation.SIGNED_MAGNITUDE : _convert_to_signed_mag,
-        BinaryRepresentation.TWOS_COMPLEMENT  : _convert_to_twos_comp,
+        BinaryRepresentation.UNSIGNED: _convert_to_unsigned,
+        BinaryRepresentation.SIGNED_MAGNITUDE: _convert_to_signed_mag,
+        BinaryRepresentation.TWOS_COMPLEMENT: _convert_to_twos_comp,
     }
 
     _convert_from_map = {
-        BinaryRepresentation.UNSIGNED         : _convert_from_unsigned,
-        BinaryRepresentation.SIGNED_MAGNITUDE : _convert_from_signed_mag,
-        BinaryRepresentation.TWOS_COMPLEMENT  : _convert_from_twos_comp,
+        BinaryRepresentation.UNSIGNED: _convert_from_unsigned,
+        BinaryRepresentation.SIGNED_MAGNITUDE: _convert_from_signed_mag,
+        BinaryRepresentation.TWOS_COMPLEMENT: _convert_from_twos_comp,
     }
 
-    _invert_table = str.maketrans({'0': '1', '1': '0'})
+    _invert_table = str.maketrans({"0": "1", "1": "0"})
 
     def _invert(self, x):
         return x.translate(self._invert_table)
@@ -273,16 +294,21 @@ class BinaryValue:
         l = len(x)
         if l <= self._n_bits:
             if self.big_endian:
-                rv = x + '0' * (self._n_bits - l)
+                rv = x + "0" * (self._n_bits - l)
             else:
-                rv = '0' * (self._n_bits - l) + x
+                rv = "0" * (self._n_bits - l) + x
         elif l > self._n_bits:
             if self.big_endian:
-                rv = x[l - self._n_bits:]
+                rv = x[l - self._n_bits :]
             else:
-                rv = x[:l - self._n_bits]
-            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
-                self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
+                rv = x[: l - self._n_bits]
+            warnings.warn(
+                "{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                    self._n_bits, x, l, rv
+                ),
+                category=RuntimeWarning,
+                stacklevel=3,
+            )
         return rv
 
     def _adjust_signed_mag(self, x):
@@ -292,18 +318,23 @@ class BinaryValue:
         l = len(x)
         if l < self._n_bits:
             if self.big_endian:
-                rv = x[:-1] + '0' * (self._n_bits - 1 - l)
+                rv = x[:-1] + "0" * (self._n_bits - 1 - l)
                 rv = rv + x[-1]
             else:
-                rv = '0' * (self._n_bits - 1 - l) + x[1:]
+                rv = "0" * (self._n_bits - 1 - l) + x[1:]
                 rv = x[0] + rv
         elif l > self._n_bits:
             if self.big_endian:
-                rv = x[l - self._n_bits:]
+                rv = x[l - self._n_bits :]
             else:
-                rv = x[:-(l - self._n_bits)]
-            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
-                self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
+                rv = x[: -(l - self._n_bits)]
+            warnings.warn(
+                "{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                    self._n_bits, x, l, rv
+                ),
+                category=RuntimeWarning,
+                stacklevel=3,
+            )
         else:
             rv = x
         return rv
@@ -321,11 +352,16 @@ class BinaryValue:
                 rv = x[0] * (self._n_bits - l) + x
         elif l > self._n_bits:
             if self.big_endian:
-                rv = x[l - self._n_bits:]
+                rv = x[l - self._n_bits :]
             else:
-                rv = x[:-(l - self._n_bits)]
-            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
-                self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
+                rv = x[: -(l - self._n_bits)]
+            warnings.warn(
+                "{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                    self._n_bits, x, l, rv
+                ),
+                category=RuntimeWarning,
+                stacklevel=3,
+            )
         else:
             rv = x
         return rv
@@ -356,7 +392,7 @@ class BinaryValue:
         """The signed integer representation of the underlying vector."""
         ival = int(self._str.translate(_resolve_table), 2)
         bits = len(self._str)
-        signbit = (1 << (bits - 1))
+        signbit = 1 << (bits - 1)
         if (ival & signbit) == 0:
             return ival
         else:
@@ -413,7 +449,7 @@ class BinaryValue:
     def buff(self, val: bytes):
         if not self.big_endian:
             val = reversed(val)
-        self._str = ''.join([format(char, "08b") for char in val])
+        self._str = "".join([format(char, "08b") for char in val])
         self._adjust()
 
     def _adjust(self):
@@ -427,9 +463,14 @@ class BinaryValue:
             else:
                 self._str = "0" * (self._n_bits - l) + self._str
         elif l > self._n_bits:
-            rv = self._str[l - self._n_bits:]
-            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
-                self._n_bits, self._str, l, rv), category=RuntimeWarning, stacklevel=3)
+            rv = self._str[l - self._n_bits :]
+            warnings.warn(
+                "{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                    self._n_bits, self._str, l, rv
+                ),
+                category=RuntimeWarning,
+                stacklevel=3,
+            )
             self._str = rv
 
     get_buff = buff.fget
@@ -437,7 +478,7 @@ class BinaryValue:
 
     @property
     def binstr(self):
-        """ The binary representation stored as a string of ``0``, ``1``, and possibly ``x``, ``z``, and other states. """
+        """The binary representation stored as a string of ``0``, ``1``, and possibly ``x``, ``z``, and other states."""
         return self._str
 
     _non_permitted_regex = re.compile(f"[^{_permitted_chars}]")
@@ -446,8 +487,10 @@ class BinaryValue:
     def binstr(self, string):
         match = self._non_permitted_regex.search(string)
         if match:
-            raise ValueError("Attempting to assign character %s to a %s" %
-                             (match.group(), self.__class__.__name__))
+            raise ValueError(
+                "Attempting to assign character %s to a %s"
+                % (match.group(), self.__class__.__name__)
+            )
         self._str = string
         self._adjust()
 
@@ -640,10 +683,10 @@ class BinaryValue:
         return other / self.integer
 
     def __neg__(self):
-        return - self.integer
+        return -self.integer
 
     def __pos__(self):
-        return + self.integer
+        return +self.integer
 
     def __abs__(self):
         return abs(self.integer)
@@ -671,43 +714,46 @@ class BinaryValue:
             first, second = key.start, key.stop
             if self.big_endian:
                 if first < 0 or second < 0:
-                    raise IndexError('BinaryValue does not support negative '
-                                     'indices')
+                    raise IndexError("BinaryValue does not support negative " "indices")
                 if second > self._n_bits - 1:
-                    raise IndexError('High index greater than number of bits.')
+                    raise IndexError("High index greater than number of bits.")
                 if first > second:
-                    raise IndexError('Big Endian indices must be specified '
-                                     'low to high')
-                _binstr = self.binstr[first:(second + 1)]
+                    raise IndexError(
+                        "Big Endian indices must be specified " "low to high"
+                    )
+                _binstr = self.binstr[first : (second + 1)]
             else:
                 if first < 0 or second < 0:
-                    raise IndexError('BinaryValue does not support negative '
-                                     'indices')
+                    raise IndexError("BinaryValue does not support negative " "indices")
                 if first > self._n_bits - 1:
-                    raise IndexError('High index greater than number of bits.')
+                    raise IndexError("High index greater than number of bits.")
                 if second > first:
-                    raise IndexError('Litte Endian indices must be specified '
-                                     'high to low')
+                    raise IndexError(
+                        "Litte Endian indices must be specified " "high to low"
+                    )
                 high = self._n_bits - second
                 low = self._n_bits - 1 - first
                 _binstr = self.binstr[low:high]
         else:
             index = key
             if index > self._n_bits - 1:
-                raise IndexError('Index greater than number of bits.')
+                raise IndexError("Index greater than number of bits.")
             if self.big_endian:
                 _binstr = self.binstr[index]
             else:
-                _binstr = self.binstr[self._n_bits-1-index]
-        rv = BinaryValue(n_bits=len(_binstr), bigEndian=self.big_endian,
-                         binaryRepresentation=self.binaryRepresentation)
+                _binstr = self.binstr[self._n_bits - 1 - index]
+        rv = BinaryValue(
+            n_bits=len(_binstr),
+            bigEndian=self.big_endian,
+            binaryRepresentation=self.binaryRepresentation,
+        )
         rv.binstr = _binstr
         return rv
 
     def __setitem__(self, key, val):
         """BinaryValue uses Verilog/VHDL style slices as opposed to Python style."""
         if not isinstance(val, str) and not isinstance(val, int):
-            raise TypeError('BinaryValue slices only accept string or integer values')
+            raise TypeError("BinaryValue slices only accept string or integer values")
 
         # convert integer to string
         if isinstance(val, int):
@@ -716,10 +762,11 @@ class BinaryValue:
             else:
                 num_slice_bits = 1
             if val < 0:
-                raise ValueError('Integer must be positive')
+                raise ValueError("Integer must be positive")
             if val >= 2**num_slice_bits:
-                raise ValueError('Integer is too large for the specified slice '
-                                 'length')
+                raise ValueError(
+                    "Integer is too large for the specified slice " "length"
+                )
             val = "{:0{width}b}".format(val, width=num_slice_bits)
 
         if isinstance(key, slice):
@@ -727,49 +774,51 @@ class BinaryValue:
 
             if self.big_endian:
                 if first < 0 or second < 0:
-                    raise IndexError('BinaryValue does not support negative '
-                                     'indices')
+                    raise IndexError("BinaryValue does not support negative " "indices")
                 if second > self._n_bits - 1:
-                    raise IndexError('High index greater than number of bits.')
+                    raise IndexError("High index greater than number of bits.")
                 if first > second:
-                    raise IndexError('Big Endian indices must be specified '
-                                     'low to high')
+                    raise IndexError(
+                        "Big Endian indices must be specified " "low to high"
+                    )
                 if len(val) > (second + 1 - first):
-                    raise ValueError('String length must be equal to slice '
-                                     'length')
+                    raise ValueError("String length must be equal to slice " "length")
                 slice_1 = self.binstr[:first]
-                slice_2 = self.binstr[second + 1:]
+                slice_2 = self.binstr[second + 1 :]
                 self.binstr = slice_1 + val + slice_2
             else:
                 if first < 0 or second < 0:
-                    raise IndexError('BinaryValue does not support negative '
-                                     'indices')
+                    raise IndexError("BinaryValue does not support negative " "indices")
                 if first > self._n_bits - 1:
-                    raise IndexError('High index greater than number of bits.')
+                    raise IndexError("High index greater than number of bits.")
                 if second > first:
-                    raise IndexError('Litte Endian indices must be specified '
-                                     'high to low')
+                    raise IndexError(
+                        "Litte Endian indices must be specified " "high to low"
+                    )
                 high = self._n_bits - second
                 low = self._n_bits - 1 - first
                 if len(val) > (high - low):
-                    raise ValueError('String length must be equal to slice '
-                                     'length')
+                    raise ValueError("String length must be equal to slice " "length")
                 slice_1 = self.binstr[:low]
                 slice_2 = self.binstr[high:]
                 self.binstr = slice_1 + val + slice_2
         else:
             if len(val) != 1:
-                raise ValueError('String length must be equal to slice '
-                                 'length')
+                raise ValueError("String length must be equal to slice " "length")
             index = key
             if index > self._n_bits - 1:
-                raise IndexError('Index greater than number of bits.')
+                raise IndexError("Index greater than number of bits.")
             if self.big_endian:
-                self.binstr = self.binstr[:index] + val + self.binstr[index + 1:]
+                self.binstr = self.binstr[:index] + val + self.binstr[index + 1 :]
             else:
-                self.binstr = self.binstr[0:self._n_bits-index-1] + val + self.binstr[self._n_bits-index:self._n_bits]
+                self.binstr = (
+                    self.binstr[0 : self._n_bits - index - 1]
+                    + val
+                    + self.binstr[self._n_bits - index : self._n_bits]
+                )
 
 
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

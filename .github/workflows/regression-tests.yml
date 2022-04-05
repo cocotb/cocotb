@@ -15,44 +15,23 @@ on:
 
 jobs:
 
-  lint-whitespace:
+  lint-pre-commit:
     runs-on: ubuntu-latest
-    name: whitespace
-    steps:
-    - uses: actions/checkout@v2
-    - name: whitespace
-      run: |
-        ! git --no-pager grep --color --line-number --full-name --extended-regexp -I '\s+$'
-
-  lint-flake8:
-    runs-on: ubuntu-latest
-    name: flake8
+    name: pre-commit
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9]
+        python-version: ["3.10"]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{matrix.python-version}}
       uses: actions/setup-python@v2
       with:
         python-version: ${{matrix.python-version}}
-    - name: flake8
+    - name: pre-commit
       run: |
-        pip install flake8
-        flake8
-
-  clang-format-lint:
-    runs-on: ubuntu-latest
-    name: clang-format
-    steps:
-    - uses: actions/checkout@v2
-    - uses: DoozyX/clang-format-lint-action@v0.11
-      with:
-        source: '.'
-        extensions: 'h,cpp'
-        clangFormatVersion: 10
-        exclude: './cocotb/share/include/*user*.h ./examples'
+        pip install pre-commit
+        pre-commit run -a
 
   tests:
 
@@ -104,6 +83,13 @@ jobs:
             sim-version: apt
             lang: verilog
             python-version: "3.10"
+            os: ubuntu-20.04
+
+          # A single test for the upcoming Python version.
+          - sim: icarus
+            sim-version: apt
+            lang: verilog
+            python-version: "3.11.0-alpha - 3.11.0"
             os: ubuntu-20.04
 
             # Test Icarus dev on Ubuntu
@@ -226,7 +212,7 @@ jobs:
         sudo apt install -y --no-install-recommends ghdl-mcode ghdl
     - name : Set up GHDL (Ubunutu - nightly)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl' && matrix.sim-version == 'nightly'
-      uses: ghdl/setup-ghdl-ci@nightly
+      uses: ghdl/setup-ghdl-ci@c4e457b6596ee2872274c3b7d2615ad8ddacd70c
       with:
         backend: mcode
 
@@ -298,14 +284,14 @@ jobs:
     - name: Install Python testing dependencies (Ubuntu, MacOS)
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       run: |
-        pip install tox tox-gh-actions
+        pip install nox
     - name: Test (Ubuntu, MacOS)
       id: unixtesting
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       continue-on-error: ${{matrix.may_fail || false}}
       timeout-minutes: 15
       run: |
-        tox
+        nox -s dev_test
 
     # codecov
     - name: Upload to codecov

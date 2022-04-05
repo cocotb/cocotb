@@ -9,7 +9,8 @@ import cocotb
 
 
 class SimTimePrompt(Prompts):
-    """ custom prompt that shows the sim time after a trigger fires """
+    """custom prompt that shows the sim time after a trigger fires"""
+
     _show_time = 1
 
     def in_prompt_tokens(self, cli=None):
@@ -23,7 +24,7 @@ class SimTimePrompt(Prompts):
 
 
 def _runner(shell, x):
-    """ Handler for async functions """
+    """Handler for async functions"""
     ret = cocotb.scheduler._queue_function(x)
     shell.prompts._show_time = shell.execution_count
     return ret
@@ -74,12 +75,13 @@ async def embed(user_ns: dict = {}):
     @cocotb.external
     def run_shell():
         shell()
+
     await run_shell()
 
 
 @cocotb.test()
 async def run_ipython(dut):
-    """ A test that launches an interactive Python shell.
+    """A test that launches an interactive Python shell.
 
     Do not call this directly - use this as ``make MODULE=cocotb.ipython_support``.
 

@@ -4,14 +4,18 @@
 """
 Tests that specifically test generator-based coroutines
 """
-import cocotb
-from cocotb.triggers import Timer, NullTrigger
-from common import clock_gen, _check_traceback, assert_raises
-import textwrap
 
+import re
+
+import pytest
+from common import _check_traceback
+
+import cocotb
+from cocotb.triggers import NullTrigger, Timer
 
 # Tests relating to providing meaningful errors if we forget to use the
 # yield keyword correctly to turn a function into a coroutine
+
 
 @cocotb.test(expect_error=TypeError)
 def test_not_a_coroutine(dut):
@@ -31,7 +35,7 @@ def test_function_not_a_coroutine(dut):
     yield Timer(500)
     try:
         # failure should occur before we even try to yield or fork the coroutine
-        coro = function_not_a_coroutine()
+        function_not_a_coroutine()
     except TypeError as exc:
         assert "isn't a valid coroutine" in str(exc)
     else:
@@ -88,8 +92,6 @@ def test_adding_a_coroutine_without_starting(dut):
 @cocotb.test(expect_fail=False)
 def test_yield_list(dut):
     """Example of yielding on a list of triggers"""
-    clock = dut.clk
-    cocotb.scheduler.add(clock_gen(clock))
     yield [Timer(1000), Timer(2000)]
 
     yield Timer(10_000)
@@ -104,14 +106,14 @@ def erroring_coro():
 @cocotb.test()
 def test_coroutine_error(dut):
     """Error in a coroutine that we yield"""
-    yield clock_gen(dut.clk)
-    with assert_raises(NameError):
+    with pytest.raises(NameError):
         yield erroring_coro()
 
 
 @cocotb.test()
 def test_coroutine_return(dut):
-    """ Test that the Python 3.3 syntax for returning from generators works """
+    """Test that the Python 3.3 syntax for returning from generators works"""
+
     @cocotb.coroutine
     def return_it(x):
         return x
@@ -128,6 +130,7 @@ def test_immediate_coro(dut):
     """
     Test that coroutines can return immediately
     """
+
     @cocotb.coroutine
     def immediate_value():
         return 42
@@ -150,41 +153,31 @@ def test_immediate_coro(dut):
 
 @cocotb.test()
 def test_exceptions_direct(dut):
-    """ Test exception propagation via a direct yield statement """
+    """Test exception propagation via a direct yield statement"""
+
     @cocotb.coroutine
     def raise_inner():
         yield Timer(10)
-        raise ValueError('It is soon now')
+        raise ValueError("It is soon now")
 
     @cocotb.coroutine
     def raise_soon():
         yield Timer(1)
         yield raise_inner()
 
-    # it's ok to change this value if the traceback changes - just make sure
-    # that when changed, it doesn't become harder to read.
-    expected = textwrap.dedent(r"""
-    Traceback \(most recent call last\):
-      File ".*common\.py", line \d+, in _check_traceback
-        await running_coro
-      File ".*cocotb[\\\/]decorators.py", line \d+, in __await__
-        return \(yield self\)
-      File ".*test_generator_coroutines\.py", line \d+, in raise_soon
-        yield raise_inner\(\)
-      File ".*test_generator_coroutines\.py", line \d+, in raise_inner
-        raise ValueError\('It is soon now'\)
-    ValueError: It is soon now""").strip()
-
-    yield _check_traceback(raise_soon(), ValueError, expected)
+    yield _check_traceback(
+        raise_soon(), ValueError, r".*in raise_soon.*in raise_inner", re.DOTALL
+    )
 
 
 @cocotb.test()
 def test_exceptions_forked(dut):
-    """ Test exception propagation via cocotb.fork """
+    """Test exception propagation via cocotb.fork"""
+
     @cocotb.coroutine
     def raise_inner():
         yield Timer(10)
-        raise ValueError('It is soon now')
+        raise ValueError("It is soon now")
 
     @cocotb.coroutine
     def raise_soon():
@@ -192,18 +185,6 @@ def test_exceptions_forked(dut):
         coro = cocotb.start_soon(raise_inner())
         yield coro.join()
 
-    # it's ok to change this value if the traceback changes - just make sure
-    # that when changed, it doesn't become harder to read.
-    expected = textwrap.dedent(r"""
-    Traceback \(most recent call last\):
-      File ".*common\.py", line \d+, in _check_traceback
-        await running_coro
-      File ".*cocotb[\\\/]decorators.py", line \d+, in __await__
-        return \(yield self\)
-      File ".*test_generator_coroutines\.py", line \d+, in raise_soon
-        yield coro\.join\(\)
-      File ".*test_generator_coroutines\.py", line \d+, in raise_inner
-        raise ValueError\('It is soon now'\)
-    ValueError: It is soon now""").strip()
-
-    yield _check_traceback(raise_soon(), ValueError, expected)
+    yield _check_traceback(
+        raise_soon(), ValueError, r".*in raise_soon.*in raise_inner", re.DOTALL
+    )

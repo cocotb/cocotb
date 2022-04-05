@@ -4,12 +4,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import cocotb
-from cocotb.triggers import Timer
 from cocotb.result import SimFailure
+from cocotb.triggers import Timer
 
 
 @cocotb.test(
-    expect_error=SimFailure,
-    skip=cocotb.SIM_NAME.lower().startswith("riviera"))
+    expect_error=SimFailure, skip=cocotb.SIM_NAME.lower().startswith("riviera")
+)
 async def test_fatal(_):
-    await Timer(100, 'ns')
+    await Timer(100, "ns")

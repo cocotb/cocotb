@@ -30,24 +30,24 @@ Cocotb is a coroutine, cosimulation framework for writing testbenches in Python.
 
 See https://docs.cocotb.org for full documentation
 """
-import os
-import sys
 import logging
-import threading
+import os
 import random
+import sys
+import threading
 import time
 import warnings
-from typing import Dict, List, Optional, Union
 from collections.abc import Coroutine
+from typing import Dict, List, Optional, Union
 
 import cocotb.handle
-from cocotb.scheduler import Scheduler
-from cocotb.regression import RegressionManager
-from cocotb.decorators import RunningTask
+from cocotb._deprecation import deprecated
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test, coroutine, function, external  # noqa: F401
-from cocotb.log import _log_from_c, _filter_from_c  # noqa: F401
+from cocotb.decorators import Task, coroutine, external, function, test  # noqa: F401
+from cocotb.log import _filter_from_c, _log_from_c  # noqa: F401
+from cocotb.regression import RegressionManager
+from cocotb.scheduler import Scheduler
 
 from ._version import __version__
 
@@ -58,7 +58,11 @@ def _setup_logging():
     def _reopen_stream_with_buffering(stream_name):
         try:
             if not getattr(sys, stream_name).isatty():
-                setattr(sys, stream_name, os.fdopen(getattr(sys, stream_name).fileno(), 'w', 1))
+                setattr(
+                    sys,
+                    stream_name,
+                    os.fdopen(getattr(sys, stream_name).fileno(), "w", 1),
+                )
                 return True
             return False
         except Exception as e:
@@ -68,12 +72,13 @@ def _setup_logging():
     # buffering. In that case, try to reopen them with line buffering
     # explicitly enabled. This ensures that prints such as stack traces always
     # appear. Continue silently if this fails.
-    _stdout_buffer_result = _reopen_stream_with_buffering('stdout')
-    _stderr_buffer_result = _reopen_stream_with_buffering('stderr')
+    _stdout_buffer_result = _reopen_stream_with_buffering("stdout")
+    _stderr_buffer_result = _reopen_stream_with_buffering("stderr")
 
     # Don't set the logging up until we've attempted to fix the standard IO,
     # otherwise it will end up connected to the unfixed IO.
     from cocotb.log import default_config
+
     default_config()
     log = logging.getLogger(__name__)
 
@@ -82,11 +87,19 @@ def _setup_logging():
         log.debug("Reopened stderr with line buffering")
     if _stdout_buffer_result is True:
         log.debug("Reopened stdout with line buffering")
-    if isinstance(_stdout_buffer_result, Exception) or isinstance(_stderr_buffer_result, Exception):
+    if isinstance(_stdout_buffer_result, Exception) or isinstance(
+        _stderr_buffer_result, Exception
+    ):
         if isinstance(_stdout_buffer_result, Exception):
-            log.warning("Failed to ensure that stdout is line buffered", exc_info=_stdout_buffer_result)
+            log.warning(
+                "Failed to ensure that stdout is line buffered",
+                exc_info=_stdout_buffer_result,
+            )
         if isinstance(_stderr_buffer_result, Exception):
-            log.warning("Failed to ensure that stderr is line buffered", exc_info=_stderr_buffer_result)
+            log.warning(
+                "Failed to ensure that stderr is line buffered",
+                exc_info=_stderr_buffer_result,
+            )
         log.warning("Some stack traces may not appear because of this.")
 
     del _stderr_buffer_result, _stdout_buffer_result
@@ -167,12 +180,27 @@ and in parameters to :class:`.TestFactory`\ s.
 """
 
 
-def fork(coro: Union[RunningTask, Coroutine]) -> RunningTask:
-    """ Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on its use. """
-    return scheduler.add(coro)
+def fork(coro: Union[Task, Coroutine]) -> Task:
+    """
+    Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on its use.
+
+    .. deprecated:: 1.7.0
+        This function has been deprecated in favor of :func:`cocotb.start_soon` and :func:`cocotb.start`.
+        In most cases you can simply substitute ``cocotb.fork`` with ``cocotb.start_soon``.
+        For more information on when to use ``start_soon`` vs ``start`` see :ref:`coroutines`.
+    """
+    warnings.warn(
+        "cocotb.fork has been deprecated in favor of cocotb.start_soon and cocotb.start.\n"
+        "In most cases you can simply substitute cocotb.fork with cocotb.start_soon.\n"
+        "For more information about when you would want to use cocotb.start see the docs,\n"
+        "https://docs.cocotb.org/en/latest/coroutines.html#concurrent-execution",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return scheduler._add(coro)
 
 
-def start_soon(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+def start_soon(coro: Union[Task, Coroutine]) -> Task:
     """
     Schedule a coroutine to be run concurrently.
 
@@ -184,7 +212,7 @@ def start_soon(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     return scheduler.start_soon(coro)
 
 
-async def start(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+async def start(coro: Union[Task, Coroutine]) -> Task:
     """
     Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
 
@@ -197,9 +225,9 @@ async def start(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     return task
 
 
-def create_task(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+def create_task(coro: Union[Task, Coroutine]) -> Task:
     """
-    Constructs a coroutine into a Task without scheduling the Task.
+    Construct a coroutine into a Task without scheduling the Task.
 
     The Task can later be scheduled with :func:`cocotb.fork`, :func:`cocotb.start`, or
     :func:`cocotb.start_soon`.
@@ -215,6 +243,7 @@ _rlock = threading.RLock()
 
 def mem_debug(port):
     import cocotb.memdebug
+
     cocotb.memdebug.start(port)
 
 
@@ -236,7 +265,8 @@ def _initialise_testbench(argv_):  # pragma: no cover
             _library_coverage = coverage.coverage(
                 data_file=".coverage.cocotb",
                 branch=True,
-                include=["{}/*".format(os.path.dirname(__file__))])
+                include=["{}/*".format(os.path.dirname(__file__))],
+            )
             _library_coverage.start()
 
         _initialise_testbench_(argv_)
@@ -256,7 +286,7 @@ def _initialise_testbench_(argv_):
         root_name = root_name.strip()
         if root_name == "":
             root_name = None
-        elif '.' in root_name:
+        elif "." in root_name:
             # Skip any library component of the toplevel
             root_name = root_name.split(".", 1)[1]
 
@@ -281,29 +311,28 @@ def _initialise_testbench_(argv_):
 
     cocotb.log.info(f"Running on {SIM_NAME} version {SIM_VERSION}")
 
-    memcheck_port = os.getenv('MEMCHECK')
+    memcheck_port = os.getenv("MEMCHECK")
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
-    log.info("Running tests with cocotb v%s from %s" %
-             (__version__, os.path.dirname(__file__)))
+    log.info(
+        "Running tests with cocotb v%s from %s"
+        % (__version__, os.path.dirname(__file__))
+    )
 
     # Create the base handle type
 
-    process_plusargs()
-
-    global scheduler
-    scheduler = Scheduler()
+    _process_plusargs()
 
     # Seed the Python random number generator to make this repeatable
     global RANDOM_SEED
-    RANDOM_SEED = os.getenv('RANDOM_SEED')
+    RANDOM_SEED = os.getenv("RANDOM_SEED")
 
     if RANDOM_SEED is None:
-        if 'ntb_random_seed' in plusargs:
-            RANDOM_SEED = eval(plusargs['ntb_random_seed'])
-        elif 'seed' in plusargs:
-            RANDOM_SEED = eval(plusargs['seed'])
+        if "ntb_random_seed" in plusargs:
+            RANDOM_SEED = eval(plusargs["ntb_random_seed"])
+        elif "seed" in plusargs:
+            RANDOM_SEED = eval(plusargs["seed"])
         else:
             RANDOM_SEED = int(time.time())
         log.info("Seeding Python random module with %d" % (RANDOM_SEED))
@@ -326,24 +355,31 @@ def _initialise_testbench_(argv_):
         import pytest
     except ImportError:
         log.info(
-            "pytest not found, install it to enable better AssertionError messages")
+            "pytest not found, install it to enable better AssertionError messages"
+        )
     else:
         try:
             # Install the assertion rewriting hook, which must be done before we
             # import the test modules.
-            from _pytest.config import Config
             from _pytest.assertion import install_importhook
-            pytest_conf = Config.fromdictargs({}, ['--capture=no'])
+            from _pytest.config import Config
+
+            pytest_conf = Config.fromdictargs({}, ["--capture=no"])
             install_importhook(pytest_conf)
         except Exception:
             log.exception(
                 "Configuring the assertion rewrite hook using pytest {} failed. "
-                "Please file a bug report!".format(pytest.__version__))
+                "Please file a bug report!".format(pytest.__version__)
+            )
 
-    # start Regression Manager
     global regression_manager
     regression_manager = RegressionManager.from_discovery(top)
-    regression_manager.execute()
+
+    global scheduler
+    scheduler = Scheduler(handle_result=regression_manager._handle_result)
+
+    # start Regression Manager
+    regression_manager._execute()
 
 
 def _sim_event(level, message):
@@ -355,7 +391,9 @@ def _sim_event(level, message):
 
     if level is SIM_TEST_FAIL:
         scheduler.log.error("Failing test at simulator request")
-        scheduler._finish_test(AssertionError(f"Failure from external source: {message}"))
+        scheduler._finish_test(
+            AssertionError(f"Failure from external source: {message}")
+        )
     elif level is SIM_FAIL:
         # We simply return here as the simulator will exit
         # so no cleanup is needed
@@ -366,16 +404,22 @@ def _sim_event(level, message):
         scheduler.log.error("Unsupported sim event")
 
 
-def process_plusargs():
+@deprecated("This function is now private")
+def process_plusargs() -> None:
+
+    _process_plusargs()
+
+
+def _process_plusargs() -> None:
 
     global plusargs
 
     plusargs = {}
 
     for option in cocotb.argv:
-        if option.startswith('+'):
-            if option.find('=') != -1:
-                (name, value) = option[1:].split('=', 1)
+        if option.startswith("+"):
+            if option.find("=") != -1:
+                (name, value) = option[1:].split("=", 1)
                 plusargs[name] = value
             else:
                 plusargs[option[1:]] = True

@@ -69,7 +69,7 @@ enum gpi_log_levels {
     @param level The level at which to log the message
  */
 #define LOG_(level, ...) \
-    gpi_log("cocotb.gpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__);
+    gpi_log("gpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__);
 
 /** Logs a message at TRACE log level using the current log handler.
     Automatically populates arguments using information in the called context.

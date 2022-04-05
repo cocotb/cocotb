@@ -1,0 +1,14 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # Optional: Official actions have moving tags like v1;
+      # if you use those, you don't need updates.
+      - dependency-name: "actions/*"

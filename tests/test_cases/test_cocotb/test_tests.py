@@ -10,15 +10,16 @@ Tests of cocotb.test functionality
 """
 from collections.abc import Coroutine
 
+from common import MyException
+
 import cocotb
 from cocotb.triggers import Timer
-from common import clock_gen
 
 
 @cocotb.test(expect_error=NameError)
 async def test_error(dut):
     """Error in the test"""
-    await clock_gen(dut.clk)
+    await Timer(100, "ns")
     fail  # noqa
 
 
@@ -38,17 +39,13 @@ async def test_async_test_can_fail(dut):
 
 @cocotb.test()
 async def test_immediate_test(dut):
-    """ Test that tests can return immediately """
+    """Test that tests can return immediately"""
     return
 
 
 @cocotb.test(expect_fail=True)
 async def test_assertion_is_failure(dut):
     assert False
-
-
-class MyException(Exception):
-    pass
 
 
 @cocotb.test(expect_error=MyException)
@@ -61,20 +58,24 @@ async def test_expect_exception_list(dut):
     raise MyException()
 
 
-@cocotb.test(expect_error=cocotb.result.SimTimeoutError, timeout_time=1, timeout_unit='ns')
+@cocotb.test(
+    expect_error=cocotb.result.SimTimeoutError, timeout_time=1, timeout_unit="ns"
+)
 async def test_timeout_testdec_fail(dut):
-    await Timer(10, 'ns')
+    await Timer(10, "ns")
 
 
-@cocotb.test(timeout_time=100, timeout_unit='ns')
+@cocotb.test(timeout_time=100, timeout_unit="ns")
 async def test_timeout_testdec_pass(dut):
-    await Timer(10, 'ns')
+    await Timer(10, "ns")
 
 
-@cocotb.test(timeout_time=10, timeout_unit='ns')
+@cocotb.test(timeout_time=10, timeout_unit="ns")
 async def test_timeout_testdec_simultaneous(dut):
     try:
-        await cocotb.triggers.with_timeout(Timer(1, 'ns'), timeout_time=1, timeout_unit='ns')
+        await cocotb.triggers.with_timeout(
+            Timer(1, "ns"), timeout_time=1, timeout_unit="ns"
+        )
     except cocotb.result.SimTimeoutError:
         pass
     else:
@@ -111,7 +112,6 @@ async def test_ordering_1(dut):
 
 @cocotb.test()
 class TestClass(Coroutine):
-
     def __init__(self, dut):
         self._coro = self.run(dut)
 

@@ -384,7 +384,7 @@ The option can be set on the command line, as shown in the following example.
 
 .. code-block:: bash
 
-    SIM_ARGS=--vcd=anyname.vhd make SIM=ghdl
+    SIM_ARGS=--vcd=anyname.vcd make SIM=ghdl
 
 A VCD file named :file:`anyname.vcd` will be generated in the current directory.
 

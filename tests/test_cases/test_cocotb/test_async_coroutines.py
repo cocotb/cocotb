@@ -4,23 +4,25 @@
 """
 Test function and substitutability of async coroutines
 """
+import pytest
+from common import MyException
 
 import cocotb
+from cocotb.outcomes import Error, Value
 from cocotb.triggers import Timer
-from cocotb.outcomes import Value, Error
-from common import assert_raises
 
 
 class produce:
-    """ Test helpers that produce a value / exception in different ways """
+    """Test helpers that produce a value / exception in different ways"""
+
     @staticmethod
-    @cocotb.coroutine   # testing legacy coroutine against async func
+    @cocotb.coroutine  # testing legacy coroutine against async func
     def coro(outcome):
         yield Timer(1)
         return outcome.get()
 
     @staticmethod
-    @cocotb.coroutine   # testing coroutine decorator on async func
+    @cocotb.coroutine  # testing coroutine decorator on async func
     async def async_annotated(outcome):
         await Timer(1)
         return outcome.get()
@@ -29,11 +31,6 @@ class produce:
     async def async_(outcome):
         await Timer(1)
         return outcome.get()
-
-
-class SomeException(Exception):
-    """ Custom exception to test for that can't be thrown by internals """
-    pass
 
 
 @cocotb.test()  # test yielding decorated async coroutine in legacy coroutine
@@ -46,8 +43,8 @@ def test_annotated_async_from_coro(dut):
     assert v == 1
 
     try:
-        yield produce.async_annotated(Error(SomeException))
-    except SomeException:
+        yield produce.async_annotated(Error(MyException))
+    except MyException:
         pass
     else:
         assert False
@@ -55,13 +52,13 @@ def test_annotated_async_from_coro(dut):
 
 @cocotb.test()
 async def test_annotated_async_from_async(dut):
-    """ Test that async coroutines are able to call themselves """
+    """Test that async coroutines are able to call themselves"""
     v = await produce.async_annotated(Value(1))
     assert v == 1
 
     try:
-        await produce.async_annotated(Error(SomeException))
-    except SomeException:
+        await produce.async_annotated(Error(MyException))
+    except MyException:
         pass
     else:
         assert False
@@ -69,13 +66,13 @@ async def test_annotated_async_from_async(dut):
 
 @cocotb.test()
 async def test_async_from_async(dut):
-    """ Test that async coroutines are able to call raw async functions """
+    """Test that async coroutines are able to call raw async functions"""
     v = await produce.async_(Value(1))
     assert v == 1
 
     try:
-        await produce.async_(Error(SomeException))
-    except SomeException:
+        await produce.async_(Error(MyException))
+    except MyException:
         pass
     else:
         assert False
@@ -83,13 +80,13 @@ async def test_async_from_async(dut):
 
 @cocotb.test()
 async def test_coro_from_async(dut):
-    """ Test that async coroutines are able to call regular ones """
+    """Test that async coroutines are able to call regular ones"""
     v = await produce.coro(Value(1))
     assert v == 1
 
     try:
-        await produce.coro(Error(SomeException))
-    except SomeException:
+        await produce.coro(Error(MyException))
+    except MyException:
         pass
     else:
         assert False
@@ -97,7 +94,7 @@ async def test_coro_from_async(dut):
 
 @cocotb.test()
 async def test_trigger_await_gives_self(dut):
-    """ Test that await returns the trigger itself for triggers """
+    """Test that await returns the trigger itself for triggers"""
     t = Timer(1)
     t2 = await t
     assert t2 is t
@@ -105,7 +102,7 @@ async def test_trigger_await_gives_self(dut):
 
 @cocotb.test()
 async def test_await_causes_start(dut):
-    """ Test that an annotated async coroutine gets marked as started """
+    """Test that an annotated async coroutine gets marked as started"""
     coro = produce.async_annotated(Value(1))
     assert not coro.has_started()
     await coro
@@ -118,7 +115,7 @@ def test_undecorated_coroutine_start_soon(dut):
 
     async def example():
         nonlocal ran
-        await cocotb.triggers.Timer(1, 'ns')
+        await cocotb.triggers.Timer(1, "ns")
         ran = True
 
     yield cocotb.start_soon(example()).join()
@@ -131,7 +128,7 @@ def test_undecorated_coroutine_yield(dut):
 
     async def example():
         nonlocal ran
-        await cocotb.triggers.Timer(1, 'ns')
+        await cocotb.triggers.Timer(1, "ns")
         ran = True
 
     yield example()
@@ -143,9 +140,11 @@ async def test_fork_coroutine_function_exception(dut):
     async def coro():
         pass
 
-    pattern = "Coroutine function {} should be called " \
+    pattern = (
+        "Coroutine function {} should be called "
         "prior to being scheduled.".format(coro)
-    with assert_raises(TypeError, pattern):
+    )
+    with pytest.raises(TypeError, match=pattern):
         cocotb.start_soon(coro)
 
 
@@ -154,7 +153,9 @@ async def test_task_coroutine_function_exception(dut):
     async def coro(dut):
         pass
 
-    pattern = "Coroutine function {} should be called " \
+    pattern = (
+        "Coroutine function {} should be called "
         "prior to being scheduled.".format(coro)
-    with assert_raises(TypeError, pattern):
-        cocotb.decorators.RunningTask(coro)
+    )
+    with pytest.raises(TypeError, match=pattern):
+        cocotb.decorators.Task(coro)

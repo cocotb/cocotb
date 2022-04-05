@@ -6,14 +6,14 @@ from cocotb import triggers, utils
 
 
 async def sample_coroutine(dut):
-    """ Very simple coroutine that waits 5 ns."""
+    """Very simple coroutine that waits 5 ns."""
     await triggers.Timer(5, "ns")
     dut._log.info("Sample coroutine yielded.")
 
 
 @cocotb.test()
 async def issue_588_coroutine_list(dut):
-    """ Yield a list of triggers and coroutines."""
+    """Yield a list of triggers and coroutines."""
 
     # Record simulation time.
     current_time = utils.get_sim_time("ns")

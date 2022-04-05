@@ -25,18 +25,24 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
+import collections.abc
 import functools
 import inspect
 import os
+import sys
+import typing
 import warnings
-import collections.abc
+from asyncio import CancelledError, InvalidStateError
 
 import cocotb
+import cocotb.triggers
+from cocotb import outcomes
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
-from cocotb.utils import lazy_property, remove_traceback_frames, extract_coro_stack
-from cocotb import outcomes
+from cocotb.utils import extract_coro_stack, lazy_property, remove_traceback_frames
+
+T = typing.TypeVar("T")
+Self = typing.TypeVar("Self")
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
@@ -54,7 +60,7 @@ def public(f):
     * Improved via a suggestion by Dave Angel:
     http://groups.google.com/group/comp.lang.python/msg/3d400fb22d8a42e1
     """
-    all = sys.modules[f.__module__].__dict__.setdefault('__all__', [])
+    all = sys.modules[f.__module__].__dict__.setdefault("__all__", [])
     if f.__name__ not in all:  # Prevent duplicates if run from an IDE.
         all.append(f.__name__)
     return f
@@ -63,16 +69,13 @@ def public(f):
 public(public)  # Emulate decorating ourself
 
 
-class RunningTask:
-    """Per instance wrapper around a running generator.
+class Task(typing.Coroutine[typing.Any, typing.Any, T]):
+    """Concurrently executing task.
 
-    Provides the following:
-
-        task.join() creates a Trigger that will fire when this coroutine
-        completes.
-
-        task.kill() will destroy a coroutine instance (and cause any Join
-        triggers to fire.
+    This class is not intended for users to directly instantiate.
+    Use :func:`cocotb.create_task` to create a Task object,
+    or use :func:`cocotb.start_soon` or :func:`cocotb.start` to
+    create a Task and schedule it to run.
     """
 
     _name: str = "Task"  # class name of schedulable task
@@ -87,66 +90,95 @@ class RunningTask:
         elif inspect.iscoroutinefunction(inst):
             raise TypeError(
                 "Coroutine function {} should be called prior to being "
-                "scheduled."
-                .format(inst))
+                "scheduled.".format(inst)
+            )
         elif inspect.isasyncgen(inst):
             raise TypeError(
                 "{} is an async generator, not a coroutine. "
                 "You likely used the yield keyword instead of await.".format(
-                    inst.__qualname__))
+                    inst.__qualname__
+                )
+            )
         else:
             raise TypeError(
-                "%s isn't a valid coroutine! Did you forget to use the yield keyword?" % inst)
+                "%s isn't a valid coroutine! Did you forget to use the yield keyword?"
+                % inst
+            )
         self._coro = inst
         self._started = False
-        self._callbacks = []
-        self._outcome = None
-        self._trigger = None
+        self._outcome: outcomes.Outcome = None
+        self._trigger: typing.Optional[cocotb.triggers.Trigger] = None
+        self._cancelled: typing.Optional[CancelledError] = None
 
         self._task_id = self._id_count
-        RunningTask._id_count += 1
+        type(self)._id_count += 1
         self.__name__ = f"{type(self)._name} {self._task_id}"
         self.__qualname__ = self.__name__
 
     @lazy_property
-    def log(self):
+    def log(self) -> SimLog:
         # Creating a logger is expensive, only do it if we actually plan to
         # log anything
         return SimLog("cocotb.coroutine.%s" % self.__qualname__, id(self))
 
     @property
-    def retval(self):
+    def retval(self) -> T:
+        """Return the result of the Task.
+
+        If the Task ran to completion, the result is returned.
+        If the Task failed with an exception, the exception is re-raised.
+        If the Task is not yet complete, a :exc:`RuntimeError` is raised.
+
+        .. deprecated:: 1.7.0
+        """
+        warnings.warn(
+            "Deprecated in favor of the result() method. "
+            "Replace `task.retval` with `task.result()`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if self._outcome is None:
             raise RuntimeError("coroutine is not complete")
         return self._outcome.get()
 
     @property
-    def _finished(self):
+    def _finished(self) -> bool:
+        """``True`` if the Task is finished executing.
+
+        .. deprecated:: 1.7.0
+        """
+        warnings.warn(
+            "Deprecated in favor of the done() method. "
+            "Replace `task._finished` with `task.done()`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._outcome is not None
 
-    def __iter__(self):
+    def __iter__(self: Self) -> Self:
+        # for use in "yield from" statements
         return self
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<{self.__name__}>"
 
-    def _get_coro_stack(self):
+    def _get_coro_stack(self) -> typing.Any:
         """Get the coroutine callstack of this Task."""
         coro_stack = extract_coro_stack(self._coro)
 
         # Remove Trigger.__await__() from the stack, as it's not really useful
         if self._natively_awaitable and len(coro_stack):
-            if coro_stack[-1].name == '__await__':
+            if coro_stack[-1].name == "__await__":
                 coro_stack.pop()
 
         return coro_stack
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         coro_stack = self._get_coro_stack()
 
         if cocotb.scheduler._current_task is self:
             fmt = "<{name} running coro={coro}()>"
-        elif self._finished:
+        elif self.done():
             fmt = "<{name} finished coro={coro}() outcome={outcome}>"
         elif self._trigger is not None:
             fmt = "<{name} pending coro={coro}() trigger={trigger}>"
@@ -167,11 +199,11 @@ class RunningTask:
             name=self.__name__,
             coro=coro_name,
             trigger=self._trigger,
-            outcome=self._outcome
+            outcome=self._outcome,
         )
         return repr_string
 
-    def _advance(self, outcome):
+    def _advance(self, outcome: outcomes.Outcome) -> typing.Any:
         """Advance to the next yield in this coroutine.
 
         Args:
@@ -189,18 +221,20 @@ class RunningTask:
         except StopIteration as e:
             self._outcome = outcomes.Value(e.value)
         except BaseException as e:
-            self._outcome = outcomes.Error(remove_traceback_frames(e, ['_advance', 'send']))
+            self._outcome = outcomes.Error(
+                remove_traceback_frames(e, ["_advance", "send"])
+            )
 
-    def send(self, value):
+    def send(self, value: typing.Any) -> typing.Any:
         return self._coro.send(value)
 
-    def throw(self, exc):
+    def throw(self, exc: BaseException) -> typing.Any:
         return self._coro.throw(exc)
 
-    def close(self):
+    def close(self) -> None:
         return self._coro.close()
 
-    def kill(self):
+    def kill(self) -> None:
         """Kill a coroutine."""
         if self._outcome is not None:
             # already finished, nothing to kill
@@ -212,20 +246,82 @@ class RunningTask:
         self._outcome = outcomes.Value(None)
         cocotb.scheduler._unschedule(self)
 
-    def join(self):
+    def join(self) -> cocotb.triggers.Join:
         """Return a trigger that will fire when the wrapped coroutine exits."""
         return cocotb.triggers.Join(self)
 
-    def has_started(self):
+    def has_started(self) -> bool:
+        """Return ``True`` if the Task has started executing."""
         return self._started
 
-    def __bool__(self):
-        """Provide boolean testing
-            if the coroutine has finished return false
-            otherwise return true"""
-        return not self._finished
+    def cancel(self, msg: typing.Optional[str] = None) -> None:
+        """Cancel a Task's further execution.
 
-    def __await__(self):
+        When a Task is cancelled, a :exc:`asyncio.CancelledError` is thrown into the Task.
+        """
+        self._cancelled = CancelledError(msg)
+        warnings.warn(
+            "Calling this method will cause a CancelledError to be thrown in the "
+            "Task sometime in the future.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        self.kill()
+
+    def cancelled(self) -> bool:
+        """Return ``True`` if the Task was cancelled."""
+        return self._cancelled is not None
+
+    def done(self) -> bool:
+        """Return ``True`` if the Task has finished executing."""
+        return self._outcome is not None or self.cancelled()
+
+    def result(self) -> T:
+        """Return the result of the Task.
+
+        If the Task ran to completion, the result is returned.
+        If the Task failed with an exception, the exception is re-raised.
+        If the Task was cancelled, the CancelledError is re-raised.
+        If the coroutine is not yet complete, a :exc:`asyncio.InvalidStateError` is raised.
+        """
+        if not self.done():
+            raise InvalidStateError("result is not yet available")
+        elif self.cancelled():
+            raise self._cancelled
+        else:
+            return self._outcome.get()
+
+    def exception(self) -> typing.Optional[BaseException]:
+        """Return the exception of the Task.
+
+        If the Task ran to completion, ``None`` is returned.
+        If the Task failed with an exception, the exception is returned.
+        If the Task was cancelled, the CancelledError is re-raised.
+        If the coroutine is not yet complete, a :exc:`asyncio.InvalidStateError` is raised.
+        """
+        if not self.done():
+            raise InvalidStateError("result is not yet available")
+        elif self.cancelled():
+            raise self._cancelled
+        elif isinstance(self._outcome, outcomes.Error):
+            return self._outcome.error
+        else:
+            return None
+
+    def __bool__(self) -> bool:
+        """``True`` if Task is not done.
+
+        .. deprecated:: 1.7.0
+        """
+        warnings.warn(
+            "Deprecated in favor of the done() method. "
+            "Replace with `not task.done()`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return not self.done()
+
+    def __await__(self) -> typing.Generator[typing.Any, typing.Any, T]:
         # It's tempting to use `return (yield from self._coro)` here,
         # which bypasses the scheduler. Unfortunately, this means that
         # we can't keep track of the result or state of the coroutine,
@@ -237,7 +333,10 @@ class RunningTask:
         return (yield self)
 
 
-class RunningCoroutine(RunningTask):
+RunningTask = Task
+
+
+class RunningCoroutine(Task[T]):
     """
     The result of calling a :any:`cocotb.coroutine` decorated coroutine.
 
@@ -245,14 +344,14 @@ class RunningCoroutine(RunningTask):
     """
 
     def __init__(self, inst, parent):
-        RunningTask.__init__(self, inst)
+        super().__init__(inst)
         self._parent = parent
         self.__doc__ = parent._func.__doc__
         self.module = parent._func.__module__
         self.funcname = parent._func.__name__
 
 
-class RunningTest(RunningCoroutine):
+class RunningTest(RunningCoroutine[T]):
     """
     The result of calling a :class:`cocotb.test` decorated object.
 
@@ -267,7 +366,7 @@ class coroutine:
 
     ``log`` methods will log to ``cocotb.coroutine.name``.
 
-    :meth:`~cocotb.decorators.RunningTask.join` method returns an event which will fire when the coroutine exits.
+    :meth:`~cocotb.decorators.Task.join` method returns an event which will fire when the coroutine exits.
 
     Used as ``@cocotb.coroutine``.
     """
@@ -285,7 +384,7 @@ class coroutine:
 
     def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
-            and standalone functions"""
+        and standalone functions"""
         return type(self)(self._func.__get__(obj, owner))
 
     def __iter__(self):
@@ -317,7 +416,7 @@ class function:
 
     def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
-            and standalone functions"""
+        and standalone functions"""
         return type(self)(self._coro._func.__get__(obj, owner))
 
 
@@ -340,7 +439,7 @@ class external:
 
     def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
-            and standalone functions"""
+        and standalone functions"""
         return type(self)(self._func.__get__(obj, owner))
 
 
@@ -359,11 +458,13 @@ class _decorator_helper(type):
 
         MyClass.__init__(this_is_passed_as_f, construction, args='go here')
     """
+
     def __call__(cls, *args, **kwargs):
         def decorator(f):
             # fall back to the normal way of constructing an object, now that
             # we have all the arguments
             return type.__call__(cls, f, *args, **kwargs)
+
         return decorator
 
 
@@ -426,21 +527,31 @@ class test(coroutine, metaclass=_decorator_helper):
             Don't execute this test as part of the regression. Test can still be run
             manually by setting :make:var:`TESTCASE`.
 
-        stage (int, optional)
+        stage (int)
             Order tests logically into stages, where multiple tests can share a stage.
+            Defaults to 0.
     """
 
     _id_count = 0  # used by the RegressionManager to sort tests in definition order
 
-    def __init__(self, f, timeout_time=None, timeout_unit="step",
-                 expect_fail=False, expect_error=(),
-                 skip=False, stage=None):
+    def __init__(
+        self,
+        f,
+        timeout_time=None,
+        timeout_unit="step",
+        expect_fail=False,
+        expect_error=(),
+        skip=False,
+        stage=0,
+    ):
 
         if timeout_unit is None:
             warnings.warn(
                 'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.',
-                DeprecationWarning, stacklevel=2)
-            timeout_unit="step"  # don't propagate deprecated value
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            timeout_unit = "step"  # don't propagate deprecated value
         self._id = self._id_count
         type(self)._id_count += 1
 
@@ -452,7 +563,9 @@ class test(coroutine, metaclass=_decorator_helper):
                 running_co = co(*args, **kwargs)
 
                 try:
-                    res = await cocotb.triggers.with_timeout(running_co, self.timeout_time, self.timeout_unit)
+                    res = await cocotb.triggers.with_timeout(
+                        running_co, self.timeout_time, self.timeout_unit
+                    )
                 except cocotb.result.SimTimeoutError:
                     running_co.kill()
                     raise
@@ -468,7 +581,9 @@ class test(coroutine, metaclass=_decorator_helper):
             warnings.warn(
                 "Passing bool values to `except_error` option of `cocotb.test` is deprecated. "
                 "Pass a specific Exception type instead",
-                DeprecationWarning, stacklevel=2)
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if expect_error is True:
             expect_error = (Exception,)
         elif expect_error is False:
@@ -476,7 +591,7 @@ class test(coroutine, metaclass=_decorator_helper):
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage
-        self.im_test = True    # For auto-regressions
+        self.im_test = True  # For auto-regressions
         self.name = self._func.__name__
 
     def __call__(self, *args, **kwargs):

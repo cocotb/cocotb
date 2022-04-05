@@ -8,9 +8,8 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Mapping
 
 import cocotb
-from cocotb.triggers import RisingEdge, ReadOnly
 from cocotb.handle import SimHandleBase
-
+from cocotb.triggers import ReadOnly, RisingEdge
 
 try:
     from cocotb_bus.bus import Bus
@@ -35,7 +34,9 @@ class Wavedrom:
             self._name = obj._name
         else:
             raise TypeError(
-                "Cannot use {} with {} objects".format(type(self).__qualname__, type(obj).__name__)
+                "Cannot use {} with {} objects".format(
+                    type(self).__qualname__, type(obj).__name__
+                )
             ) from None
         self.clear()
 
@@ -43,7 +44,7 @@ class Wavedrom:
         """Record a sample of the signal value at this point in time."""
 
         def _lastval(samples):
-            for x in range(len(samples)-1, -1, -1):
+            for x in range(len(samples) - 1, -1, -1):
                 if samples[x] not in "=.|":
                     return samples[x]
             return None
@@ -62,9 +63,11 @@ class Wavedrom:
             elif "z" in valstr:
                 char = "z"
             else:
-                if (len(self._data[name]) and
-                        self._data[name][-1] == int(val) and
-                        self._samples[name][-1] in "=."):
+                if (
+                    len(self._data[name])
+                    and self._data[name][-1] == int(val)
+                    and self._samples[name][-1] in "=."
+                ):
                     char = "."
                 else:
                     char = "="
@@ -102,7 +105,7 @@ class Wavedrom:
 
         if add_clock:
             tracelen = len(traces[-1]["wave"])
-            siglist.insert(0, {"name": "clk", "wave": "p" + "."*(tracelen-1)})
+            siglist.insert(0, {"name": "clk", "wave": "p" + "." * (tracelen - 1)})
 
         return siglist
 
@@ -177,7 +180,8 @@ class trace:
     def dumpj(self, header="", footer="", config=""):
         trace = {"signal": []}
         trace["signal"].append(
-            {"name": "clock", "wave": "p" + "."*(self._clocks-1)})
+            {"name": "clock", "wave": "p" + "." * (self._clocks - 1)}
+        )
         for sig in self._signals:
             trace["signal"].extend(sig.get(add_clock=False))
         if header:

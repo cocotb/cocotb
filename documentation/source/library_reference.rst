@@ -58,9 +58,8 @@ Task Management
 
 .. autofunction:: cocotb.create_task
 
-.. autofunction:: cocotb.decorators.RunningTask.join
-
-.. autofunction:: cocotb.decorators.RunningTask.kill
+.. autoclass:: cocotb.decorators.Task
+    :members:
 
 Handle Values
 -------------
