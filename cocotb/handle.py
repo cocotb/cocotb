@@ -839,6 +839,7 @@ class ModifiableObject(NonConstantObject):
                 stacklevel=3,
             )
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
+
         elif isinstance(value, dict):
             warnings.warn(
                 "dict values are no longer accepted for value assignment. "
@@ -880,7 +881,13 @@ class ModifiableObject(NonConstantObject):
                 )
             value = BinaryValue(str(value))
 
-        elif not isinstance(value, BinaryValue):
+        elif isinstance(value, BinaryValue):
+            if len(value) != len(self):
+                raise ValueError(
+                    f"cannot assign value of length {len(value)} to handle of length {len(self)}"
+                )
+
+        else:
             raise TypeError(
                 "Unsupported type for value assignment: {} ({!r})".format(
                     type(value), value
