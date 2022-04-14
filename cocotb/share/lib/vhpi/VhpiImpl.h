@@ -35,13 +35,13 @@
 #define COCOTBVHPI_EXPORT COCOTB_IMPORT
 #endif
 
-#include <vhpi_user.h>
 #include <vhpi_user_ext.h>
 
 #include <map>
 #include <vector>
 
 #include "../gpi/gpi_priv.h"
+#include "_vendor/vhpi/vhpi_user.h"
 
 // Define Index separator
 #ifdef IUS

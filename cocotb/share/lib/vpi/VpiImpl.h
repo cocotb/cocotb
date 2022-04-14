@@ -35,13 +35,12 @@
 #define COCOTBVPI_EXPORT COCOTB_IMPORT
 #endif
 
-#include <sv_vpi_user.h>
-#include <vpi_user_ext.h>
-
 #include <map>
 #include <vector>
 
 #include "../gpi/gpi_priv.h"
+#include "_vendor/vpi/sv_vpi_user.h"
+#include "vpi_user_ext.h"
 
 // Should be run after every VPI call to check error status
 static inline int __check_vpi_error(const char *file, const char *func,
