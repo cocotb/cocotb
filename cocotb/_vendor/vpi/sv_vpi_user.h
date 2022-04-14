@@ -25,7 +25,7 @@
 #ifndef SV_VPI_USER_H
 #define SV_VPI_USER_H
 
-#include <vpi_user.h>
+#include "_vendor/vpi/vpi_user.h"
 
 #ifdef __cplusplus
 extern "C" {

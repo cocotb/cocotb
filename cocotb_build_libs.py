@@ -668,6 +668,7 @@ def get_ext():
     share_lib_dir = os.path.relpath(os.path.join(cocotb_share_dir, "lib"))
     include_dirs = [
         os.path.relpath(os.path.join(cocotb_share_dir, "include")),
+        os.path.relpath(os.path.join(os.path.dirname(__file__), "cocotb")),
     ]
 
     ext = []
