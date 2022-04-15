@@ -478,7 +478,7 @@ def _get_python_lib():
     return python_lib
 
 
-def _get_common_lib_ext(include_dir, share_lib_dir):
+def _get_common_lib_ext(include_dirs, share_lib_dir):
     """
     Defines common libraries.
 
@@ -498,7 +498,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libcocotbutils = Extension(
         os.path.join("cocotb", "libs", "libcocotbutils"),
         define_macros=[("COCOTBUTILS_EXPORTS", "")] + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=libcocotbutils_libraries,
         sources=libcocotbutils_sources,
     )
@@ -516,7 +516,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libgpilog = Extension(
         os.path.join("cocotb", "libs", "libgpilog"),
         define_macros=[("GPILOG_EXPORTS", "")] + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         sources=libgpilog_sources,
     )
 
@@ -531,7 +531,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libpygpilog = Extension(
         os.path.join("cocotb", "libs", "libpygpilog"),
         define_macros=[("PYGPILOG_EXPORTS", "")] + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["gpilog"],
         sources=libpygpilog_sources,
     )
@@ -546,7 +546,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         os.path.join("cocotb", "libs", "libembed"),
         define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_LIB", _get_python_lib())]
         + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["gpilog", "cocotbutils"],
         sources=libembed_sources,
     )
@@ -560,7 +560,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libcocotb = Extension(
         os.path.join("cocotb", "libs", "libcocotb"),
         define_macros=_extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["gpilog", "cocotbutils", "pygpilog"],
         sources=libcocotb_sources,
     )
@@ -582,7 +582,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
             ("SINGLETON_HANDLES", ""),
         ]
         + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["cocotbutils", "gpilog", "embed"],
         sources=libgpi_sources,
     )
@@ -598,7 +598,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libsim = Extension(
         os.path.join("cocotb", "simulator"),
         define_macros=_extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["cocotbutils", "gpilog", "gpi", "pygpilog"],
         library_dirs=python_lib_dirs,
         sources=simulator_sources,
@@ -611,7 +611,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
 
 
 def _get_vpi_lib_ext(
-    include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
+    include_dirs, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
     lib_name = "libcocotbvpi_" + sim_define.lower()
     libcocotbvpi_sources = [
@@ -625,7 +625,7 @@ def _get_vpi_lib_ext(
         define_macros=[("COCOTBVPI_EXPORTS", ""), ("VPI_CHECKING", "1")]
         + [(sim_define, "")]
         + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=extra_lib_dir,
         sources=libcocotbvpi_sources,
@@ -635,7 +635,7 @@ def _get_vpi_lib_ext(
 
 
 def _get_vhpi_lib_ext(
-    include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
+    include_dirs, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
     lib_name = "libcocotbvhpi_" + sim_define.lower()
     libcocotbvhpi_sources = [
@@ -646,7 +646,7 @@ def _get_vhpi_lib_ext(
         libcocotbvhpi_sources += [lib_name + ".rc"]
     libcocotbvhpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         define_macros=[("COCOTBVHPI_EXPORTS", ""), ("VHPI_CHECKING", 1)]
         + [(sim_define, "")]
         + _extra_defines,
@@ -666,13 +666,15 @@ def get_ext():
         cfg_vars["LDSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
 
     share_lib_dir = os.path.relpath(os.path.join(cocotb_share_dir, "lib"))
-    include_dir = os.path.relpath(os.path.join(cocotb_share_dir, "include"))
+    include_dirs = [
+        os.path.relpath(os.path.join(cocotb_share_dir, "include")),
+    ]
 
     ext = []
 
     logger.info("Compiling interface libraries for cocotb ...")
 
-    ext += _get_common_lib_ext(include_dir, share_lib_dir)
+    ext += _get_common_lib_ext(include_dirs, share_lib_dir)
 
     #
     #  Icarus Verilog
@@ -683,7 +685,7 @@ def get_ext():
         icarus_extra_lib = ["icarus"]
 
     icarus_vpi_ext = _get_vpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="ICARUS",
         extra_lib=icarus_extra_lib,
@@ -699,7 +701,7 @@ def get_ext():
         modelsim_extra_lib = ["modelsim"]
 
     modelsim_vpi_ext = _get_vpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="MODELSIM",
         extra_lib=modelsim_extra_lib,
@@ -707,7 +709,7 @@ def get_ext():
     ext.append(modelsim_vpi_ext)
 
     modelsim_vhpi_ext = _get_vhpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="MODELSIM",
         extra_lib=modelsim_extra_lib,
@@ -735,7 +737,7 @@ def get_ext():
             fli_ext = Extension(
                 os.path.join("cocotb", "libs", lib_name),
                 define_macros=[("COCOTBFLI_EXPORTS", "")] + _extra_defines,
-                include_dirs=[include_dir, modelsim_include_dir],
+                include_dirs=include_dirs + [modelsim_include_dir],
                 libraries=["gpi", "gpilog"] + modelsim_extra_lib,
                 sources=fli_sources,
             )
@@ -759,7 +761,7 @@ def get_ext():
         ghdl_extra_lib = ["ghdl"]
 
     ghdl_vpi_ext = _get_vpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="GHDL",
         extra_lib=ghdl_extra_lib,
@@ -772,12 +774,12 @@ def get_ext():
     if os.name == "posix":
         logger.info("Compiling libraries for Incisive/Xcelium")
         ius_vpi_ext = _get_vpi_lib_ext(
-            include_dir=include_dir, share_lib_dir=share_lib_dir, sim_define="IUS"
+            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="IUS"
         )
         ext.append(ius_vpi_ext)
 
         ius_vhpi_ext = _get_vhpi_lib_ext(
-            include_dir=include_dir, share_lib_dir=share_lib_dir, sim_define="IUS"
+            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="IUS"
         )
         ext.append(ius_vhpi_ext)
 
@@ -787,7 +789,7 @@ def get_ext():
     if os.name == "posix":
         logger.info("Compiling libraries for VCS")
         vcs_vpi_ext = _get_vpi_lib_ext(
-            include_dir=include_dir, share_lib_dir=share_lib_dir, sim_define="VCS"
+            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="VCS"
         )
         ext.append(vcs_vpi_ext)
 
@@ -800,7 +802,7 @@ def get_ext():
         aldec_extra_lib = ["aldec"]
 
     aldec_vpi_ext = _get_vpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="ALDEC",
         extra_lib=aldec_extra_lib,
@@ -808,7 +810,7 @@ def get_ext():
     ext.append(aldec_vpi_ext)
 
     aldec_vhpi_ext = _get_vhpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="ALDEC",
         extra_lib=aldec_extra_lib,
@@ -821,7 +823,9 @@ def get_ext():
     if os.name == "posix":
         logger.info("Compiling libraries for Verilator")
         verilator_vpi_ext = _get_vpi_lib_ext(
-            include_dir=include_dir, share_lib_dir=share_lib_dir, sim_define="VERILATOR"
+            include_dirs=include_dirs,
+            share_lib_dir=share_lib_dir,
+            sim_define="VERILATOR",
         )
         ext.append(verilator_vpi_ext)
 
