@@ -271,11 +271,6 @@ In order to use this simulator, set :make:var:`SIM` to ``modelsim``:
 
     make SIM=modelsim
 
-.. note::
-
-   In order to use :term:`FLI` (for VHDL), a ``vdbg`` executable from the simulator installation directory needs to be available on the ``PATH`` during cocotb installation.
-   This is needed to access the proprietary :file:`mti.h` header file.
-
 Any ModelSim PE or ModelSim PE derivatives (like the ModelSim Microsemi, Intel, Lattice Editions) do not support the VHDL :term:`FLI` feature.
 If you try to use them with :term:`FLI`, you will see a ``vsim-FLI-3155`` error:
 

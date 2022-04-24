@@ -28,8 +28,8 @@
 #include <limits>
 
 #include "FliImpl.h"
-#include "mti.h"
-#include "tcl.h"
+#include "_vendor/fli/mti.h"
+#include "_vendor/tcl/tcl.h"
 
 /**
  * @name    cleanup callback

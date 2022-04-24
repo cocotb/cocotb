@@ -39,7 +39,7 @@
 #include <queue>
 
 #include "../gpi/gpi_priv.h"
-#include "mti.h"
+#include "_vendor/fli/mti.h"
 
 extern "C" {
 COCOTBFLI_EXPORT void cocotb_init();
