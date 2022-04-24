@@ -44,7 +44,6 @@ jobs:
       CC: ${{matrix.cc || 'gcc'}}
       OS: ${{matrix.os}}
       PYTHON_VERSION: ${{matrix.python-version}}
-      TOX_TESTENV_PASSENV: GITHUB_ACTIONS
 
     strategy:
       fail-fast: false
