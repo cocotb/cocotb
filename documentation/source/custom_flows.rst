@@ -67,19 +67,19 @@ Aldec Riviera-PRO
    .. group-tab:: Design with a VHDL Toplevel
 
       For a design with a VHDL toplevel, call the ``asim`` executable with the option
-      ``-pli $(cocotb-config --lib-name-path vpi riviera)``.
+      ``-loadvhpi $(cocotb-config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vhpi riviera):cocotbvhpi_entry_point``
+      ``$(cocotb-config --lib-name-path vpi riviera):cocotbvpi_entry_point``
       if there are also (System)Verilog modules in the design.
 
    .. group-tab:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call the ``asim`` executable with the option
-      ``-loadvhpi $(cocotb-config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap``.
+      ``-pli $(cocotb-config --lib-name-path vpi riviera)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vpi riviera)):cocotbvpi_entry_point``
+      ``$(cocotb-config --lib-name-path vhpi riviera):cocotbvhpi_entry_point``
       if there are also VHDL modules in the design.
 
 .. _custom-flows-activehdl:
@@ -94,19 +94,19 @@ Aldec Active-HDL
    .. group-tab:: Design with a VHDL Toplevel
 
       For a design with a VHDL toplevel, call the ``asim`` executable with the option
-      ``-pli $(cocotb-config --lib-name-path vpi activehdl)``.
+      ``-loadvhpi $(cocotb-config --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vhpi activehdl):cocotbvhpi_entry_point``
+      ``$(cocotb-config --lib-name-path vpi activehdl):cocotbvpi_entry_point``
       if there are also (System)Verilog modules in the design.
 
    .. group-tab:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call the ``asim`` executable with the option
-      ``-loadvhpi $(cocotb-config --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap``.
+      ``-pli $(cocotb-config --lib-name-path vpi activehdl)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vpi activehdl)):cocotbvpi_entry_point``
+      ``$(cocotb-config --lib-name-path vhpi activehdl):cocotbvhpi_entry_point``
       if there are also VHDL modules in the design.
 
 .. _custom-flows-siemens:
