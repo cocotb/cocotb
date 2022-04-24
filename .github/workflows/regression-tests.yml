@@ -214,7 +214,7 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl' && matrix.sim-version == 'nightly'
       uses: ghdl/setup-ghdl-ci@c4e457b6596ee2872274c3b7d2615ad8ddacd70c
       with:
-        backend: mcode
+        backend: llvm
 
       # Install Verilator
     - name: Set up Verilator (Ubuntu - apt)
