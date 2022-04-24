@@ -1,0 +1,27 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: Lint
+
+on:
+  pull_request:
+    branches:
+      - master
+      - 'stable/**'
+
+jobs:
+
+  lint-pre-commit:
+    runs-on: ubuntu-latest
+    name: pre-commit
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: pre-commit
+      run: |
+        pip install pre-commit
+        pre-commit run -a
