@@ -4,14 +4,20 @@
 name: Regression Tests
 
 on:
-  push:
-    branches:
-      - master
-      - 'stable/**'
-  pull_request:
-    branches:
-      - master
-      - 'stable/**'
+  workflow_call:
+    inputs:
+      nox_session_test_sim:
+        required: true
+        type: string
+        default: dev_test_sim
+      nox_session_test_nosim:
+        required: true
+        type: string
+        default: dev_test_nosim
+      download_artifacts:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
 
@@ -141,6 +147,13 @@ jobs:
         # A fetch depth of 2 provides enough information without fetching the entire history.
         fetch-depth: 2
 
+     # Download distribution artifacts (if any).
+    - uses: actions/download-artifact@v3
+      with:
+        name: cocotb-dist
+        path: dist
+      if: ${{ inputs.download_artifacts }}
+
       # Install Python
     - name: Set up Python ${{matrix.python-version}}
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
@@ -153,6 +166,14 @@ jobs:
       with:
         auto-update-conda: true
         python-version: ${{matrix.python-version}}
+
+      # Run tests that don't need a simulator.
+    - name: Install Python testing dependencies
+      run: |
+        pip install nox
+    - name: Run tests without simulators
+      run: nox -s "${{ inputs.nox_session_test_nosim }}"
+      continue-on-error: ${{matrix.may_fail || false}}
 
       # Install Icarus
     - name: Set up Icarus (Ubuntu - apt)
@@ -262,17 +283,13 @@ jobs:
       if: startsWith(matrix.os, 'macos')
       run: |
         g++ --version
-    - name: Install Python testing dependencies (Ubuntu, MacOS)
-      if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
-      run: |
-        pip install nox
     - name: Test (Ubuntu, MacOS)
       id: unixtesting
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       continue-on-error: ${{matrix.may_fail || false}}
       timeout-minutes: 15
       run: |
-        nox -s dev_test
+        nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
 
     # codecov
     - name: Upload to codecov
