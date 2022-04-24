@@ -11,7 +11,6 @@ import sysconfig
 import textwrap
 from distutils.ccompiler import get_default_compiler
 from distutils.file_util import copy_file
-from distutils.spawn import find_executable
 from typing import List
 
 from setuptools import Extension
@@ -717,41 +716,23 @@ def get_ext():
     )
     ext.append(modelsim_vhpi_ext)
 
-    vsim_path = find_executable("vopt")
-    if vsim_path is None:
-        logger.warning(
-            "Modelsim/Questa installation not found: did not find the 'vopt' executable. No FLI interface will be available."
-        )
-    else:
-        modelsim_dir = os.path.dirname(os.path.dirname(vsim_path))
-        modelsim_include_dir = os.path.join(modelsim_dir, "include")
-        mti_path = os.path.join(modelsim_include_dir, "mti.h")
-        if os.path.isfile(mti_path):
-            lib_name = "libcocotbfli_modelsim"
-            fli_sources = [
-                os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
-                os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
-                os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
-            ]
-            if os.name == "nt":
-                fli_sources += [lib_name + ".rc"]
-            fli_ext = Extension(
-                os.path.join("cocotb", "libs", lib_name),
-                define_macros=[("COCOTBFLI_EXPORTS", "")] + _extra_defines,
-                include_dirs=include_dirs + [modelsim_include_dir],
-                libraries=["gpi", "gpilog"] + modelsim_extra_lib,
-                sources=fli_sources,
-            )
+    lib_name = "libcocotbfli_modelsim"
+    fli_sources = [
+        os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
+        os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
+        os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
+    ]
+    if os.name == "nt":
+        fli_sources += [lib_name + ".rc"]
+    fli_ext = Extension(
+        os.path.join("cocotb", "libs", lib_name),
+        define_macros=[("COCOTBFLI_EXPORTS", "")] + _extra_defines,
+        include_dirs=include_dirs,
+        libraries=["gpi", "gpilog"] + modelsim_extra_lib,
+        sources=fli_sources,
+    )
 
-            ext.append(fli_ext)
-
-        else:
-            logger.warning(
-                "Cannot build FLI interface for Modelsim/Questa: "
-                "the mti.h header for '{}' was not found at '{}'.".format(
-                    vsim_path, mti_path
-                )
-            )  # some Modelsim version does not include FLI.
+    ext.append(fli_ext)
 
     #
     # GHDL

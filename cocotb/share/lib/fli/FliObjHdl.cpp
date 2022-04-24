@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "FliImpl.h"
-#include "acc_vhdl.h"
+#include "_vendor/fli/acc_vhdl.h"
 
 using std::abs;
 using std::to_string;

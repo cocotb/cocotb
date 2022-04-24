@@ -32,9 +32,9 @@
 #include <string>
 #include <vector>
 
-#include "acc_user.h"
-#include "acc_vhdl.h"  // Messy :(
-#include "mti.h"
+#include "_vendor/fli/acc_user.h"
+#include "_vendor/fli/acc_vhdl.h"  // Messy :(
+#include "_vendor/fli/mti.h"
 
 extern "C" {
 static FliProcessCbHdl *sim_init_cb;
