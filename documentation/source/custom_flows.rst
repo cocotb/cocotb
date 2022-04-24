@@ -70,7 +70,7 @@ Aldec Riviera-PRO
       ``-loadvhpi $(cocotb-config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vpi riviera)):cocotbvpi_entry_point``
+      ``$(cocotb-config --lib-name-path vpi riviera):cocotbvpi_entry_point``
       if there are also (System)Verilog modules in the design.
 
    .. group-tab:: Design with a (System)Verilog Toplevel
@@ -97,7 +97,7 @@ Aldec Active-HDL
       ``-loadvhpi $(cocotb-config --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vpi activehdl)):cocotbvpi_entry_point``
+      ``$(cocotb-config --lib-name-path vpi activehdl):cocotbvpi_entry_point``
       if there are also (System)Verilog modules in the design.
 
    .. group-tab:: Design with a (System)Verilog Toplevel
