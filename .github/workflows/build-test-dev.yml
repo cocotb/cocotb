@@ -1,0 +1,24 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: CI
+
+on:
+  # Run this workflow on every push to the master branch, or a stable branch.
+  push:
+    branches:
+      - master
+      - "stable/**"
+  pull_request:
+    branches:
+      - master
+      - 'stable/**'
+
+jobs:
+  test_dev:
+    name: Regression Tests
+    uses: ./.github/workflows/regression-tests.yml
+    with:
+      nox_session_test_sim: dev_test_sim
+      nox_session_test_nosim: dev_test_nosim
