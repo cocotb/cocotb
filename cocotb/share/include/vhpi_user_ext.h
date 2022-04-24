@@ -23,4 +23,4 @@ typedef enum
 }
 #endif
 
-#endif /* VPI_USER_EXT_H */
+#endif /* VHPI_USER_EXT_H */
