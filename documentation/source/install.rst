@@ -98,13 +98,6 @@ The **stable version** of cocotb can be installed by running
     Use ``pip -V`` to check.
     If this prints "(python 2.7)", use :command:`pip3` or ``python3 -m pip`` in place of :command:`pip` in the command shown.
 
-.. warning::
-
-        If you need to test VHDL in Questa, you must make sure that Questa is in your PATH before attempting to install cocotb.
-        Failure to do so will build cocotb without FLI support necessary to test VHDL in Questa.
-        If you end up in the situation where your cocotb doesn't have FLI support and you need it,
-        add the `--no-cache-dir` option to `pip install` to rebuild cocotb from scratch.
-
 If you want to install the **development version** of cocotb,
 `instructions are here <https://docs.cocotb.org/en/latest/install_devel.html>`_.
 
