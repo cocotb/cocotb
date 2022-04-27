@@ -231,9 +231,6 @@ jobs:
     - name: Install cocotb runtime dependencies (Windows, msvc)
       if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
       run: conda install --yes -c msys2 m2-base m2-make
-    - name: SxS trace test (Windows)
-      if: startsWith(matrix.os, 'windows')
-      run: .\tests\sxs.ps1
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
