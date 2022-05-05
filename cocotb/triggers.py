@@ -803,7 +803,6 @@ async def _wait_callback(trigger, callback):
     """
     Wait for a trigger, and call `callback` with the outcome of the await.
     """
-    trigger = cocotb.scheduler._trigger_from_any(trigger)
     try:
         ret = outcomes.Value(await trigger)
     except BaseException as exc:
