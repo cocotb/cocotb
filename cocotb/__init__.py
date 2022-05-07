@@ -42,67 +42,27 @@ from typing import Dict, List, Optional, Union
 
 import cocotb.handle
 from cocotb._deprecation import deprecated
-
-# Things we want in the cocotb namespace
-from cocotb.decorators import Task, coroutine, external, function, test  # noqa: F401
-from cocotb.log import _filter_from_c, _log_from_c  # noqa: F401
+from cocotb.log import default_config
 from cocotb.regression import RegressionManager
 from cocotb.scheduler import Scheduler
 
 from ._version import __version__
 
+# Things we want in the cocotb namespace
+from cocotb.decorators import (  # isort: skip # noqa: F401
+    Task,
+    coroutine,
+    external,
+    function,
+    test,
+)
+from cocotb.log import _filter_from_c, _log_from_c  # isort: skip # noqa: F401
 
-def _setup_logging():
-    global log
 
-    def _reopen_stream_with_buffering(stream_name):
-        try:
-            if not getattr(sys, stream_name).isatty():
-                setattr(
-                    sys,
-                    stream_name,
-                    os.fdopen(getattr(sys, stream_name).fileno(), "w", 1),
-                )
-                return True
-            return False
-        except Exception as e:
-            return e
-
-    # If stdout/stderr are not TTYs, Python may not have opened them with line
-    # buffering. In that case, try to reopen them with line buffering
-    # explicitly enabled. This ensures that prints such as stack traces always
-    # appear. Continue silently if this fails.
-    _stdout_buffer_result = _reopen_stream_with_buffering("stdout")
-    _stderr_buffer_result = _reopen_stream_with_buffering("stderr")
-
-    # Don't set the logging up until we've attempted to fix the standard IO,
-    # otherwise it will end up connected to the unfixed IO.
-    from cocotb.log import default_config
-
+def _setup_logging() -> None:
     default_config()
+    global log
     log = logging.getLogger(__name__)
-
-    # we can't log these things until the logging is set up!
-    if _stderr_buffer_result is True:
-        log.debug("Reopened stderr with line buffering")
-    if _stdout_buffer_result is True:
-        log.debug("Reopened stdout with line buffering")
-    if isinstance(_stdout_buffer_result, Exception) or isinstance(
-        _stderr_buffer_result, Exception
-    ):
-        if isinstance(_stdout_buffer_result, Exception):
-            log.warning(
-                "Failed to ensure that stdout is line buffered",
-                exc_info=_stdout_buffer_result,
-            )
-        if isinstance(_stderr_buffer_result, Exception):
-            log.warning(
-                "Failed to ensure that stderr is line buffered",
-                exc_info=_stderr_buffer_result,
-            )
-        log.warning("Some stack traces may not appear because of this.")
-
-    del _stderr_buffer_result, _stdout_buffer_result
 
 
 # Singleton scheduler instance
