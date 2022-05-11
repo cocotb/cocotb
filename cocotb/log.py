@@ -45,11 +45,11 @@ except ValueError:
     _suppress = 1
 
 # Column alignment
-_LEVEL_CHARS = len("CRITICAL")  # noqa
-_RECORD_CHARS = 35  # noqa
-_FILENAME_CHARS = 20  # noqa
-_LINENO_CHARS = 4  # noqa
-_FUNCNAME_CHARS = 31  # noqa
+_LEVEL_CHARS = len("CRITICAL")
+_RECORD_CHARS = 34
+_FILENAME_CHARS = 20
+_LINENO_CHARS = 4
+_FUNCNAME_CHARS = 31
 
 # Custom log level
 logging.TRACE = 5
@@ -211,11 +211,17 @@ class SimLogFormatter(logging.Formatter):
         else:
             time_ns = get_time_from_sim_steps(sim_time, "ns")
             sim_time_str = f"{time_ns:6.2f}ns"
-        prefix = sim_time_str.rjust(11) + " " + level + " "
+        prefix = (
+            sim_time_str.rjust(11)
+            + " "
+            + level
+            + " "
+            + self.ljust(record.name, _RECORD_CHARS)
+            + " "
+        )
         if not _suppress:
             prefix += (
-                self.ljust(record.name, _RECORD_CHARS)
-                + self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS)
+                self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS)
                 + ":"
                 + self.ljust(str(record.lineno), _LINENO_CHARS)
                 + " in "
