@@ -478,6 +478,24 @@ async def test_task_repr(dut):
     log.info(repr(coro_task))
     assert re.match(r"<Task \d+ created coro=coroutine_outer\(\)>", repr(coro_task))
 
+    log.info(str(coro_task))
+    assert re.match(r"<Task \d+>", str(coro_task))
+
+
+@cocotb.test()
+async def test_test_repr(_):
+    """Test RunningTest.__repr__"""
+    log = logging.getLogger("cocotb.test")
+
+    current_test = cocotb.scheduler._test
+    log.info(repr(current_test))
+    assert re.match(
+        r"<Test test_test_repr running coro=test_test_repr\(\)>", repr(current_test)
+    )
+
+    log.info(str(current_test))
+    assert re.match(r"<Test test_test_repr>", str(current_test))
+
 
 @cocotb.test()
 async def test_start_soon_async(_):

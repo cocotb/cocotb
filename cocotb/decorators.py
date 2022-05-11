@@ -101,8 +101,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
             )
         else:
             raise TypeError(
-                "%s isn't a valid coroutine! Did you forget to use the yield keyword?"
-                % inst
+                f"{inst} isn't a valid coroutine! Did you forget to use the yield keyword?"
             )
         self._coro = inst
         self._started = False
@@ -119,7 +118,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
     def log(self) -> SimLog:
         # Creating a logger is expensive, only do it if we actually plan to
         # log anything
-        return SimLog("cocotb.coroutine.%s" % self.__qualname__, id(self))
+        return SimLog(f"cocotb.{self.__qualname__}.{self._coro.__qualname__}")
 
     @property
     def retval(self) -> T:
@@ -360,6 +359,11 @@ class RunningTest(RunningCoroutine[T]):
 
     _name: str = "Test"
 
+    def __init__(self, inst, parent):
+        super().__init__(inst, parent)
+        self.__name__ = f"{type(self)._name} {self.funcname}"
+        self.__qualname__ = self.__name__
+
 
 class coroutine:
     """Decorator class that allows us to provide common coroutine mechanisms:
@@ -377,7 +381,7 @@ class coroutine:
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.coroutine.%s" % self._func.__qualname__, id(self))
+        return SimLog(f"cocotb.coroutine.{self._func.__qualname__}.{id(self)}")
 
     def __call__(self, *args, **kwargs):
         return RunningCoroutine(self._func(*args, **kwargs), self)
@@ -409,7 +413,7 @@ class function:
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.function.%s" % self._coro.__qualname__, id(self))
+        return SimLog(f"cocotb.function.{self._coro.__qualname__}.{id(self)}")
 
     def __call__(self, *args, **kwargs):
         return cocotb.scheduler._queue_function(self._coro(*args, **kwargs))
@@ -432,7 +436,7 @@ class external:
 
     def __init__(self, func):
         self._func = func
-        self._log = SimLog("cocotb.external.%s" % self._func.__qualname__, id(self))
+        self._log = SimLog(f"cocotb.external.{self._func.__qualname__}.{id(self)}")
 
     def __call__(self, *args, **kwargs):
         return cocotb.scheduler._run_in_executor(self._func, *args, **kwargs)
