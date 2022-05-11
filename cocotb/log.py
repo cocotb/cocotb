@@ -32,6 +32,7 @@ Everything related to logging
 import logging
 import os
 import sys
+import typing
 import warnings
 
 import cocotb.ANSI as ANSI
@@ -110,7 +111,7 @@ def default_config():
 
     # Notify GPI of log level, which it uses as an optimization to avoid
     # calling into Python.
-    simulator.log_level(log.getEffectiveLevel())
+    logging.getLogger("gpi").setLevel(level)
 
 
 class SimBaseLog(logging.getLoggerClass()):
@@ -136,10 +137,10 @@ class SimBaseLog(logging.getLoggerClass()):
         )
         return want_color_output()
 
-    def setLevel(self, level: int) -> None:
+    def setLevel(self, level: typing.Union[int, str]) -> None:
         super().setLevel(level)
         if self.name == "gpi":
-            simulator.log_level(level)
+            simulator.log_level(self.getEffectiveLevel())
 
 
 # this used to be a class, hence the unusual capitalization
