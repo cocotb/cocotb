@@ -13,6 +13,10 @@ nox.options.sessions = ["dev_test"]
 
 test_deps = ["pytest"]
 coverage_deps = ["coverage", "pytest-cov"]
+# gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See https://github.com/gcovr/gcovr/issues/596
+# When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an Exception is raised during html report generation. See https://github.com/gcovr/gcovr/pull/576
+# These issues are fixed on gcovr master branch, so next release should work.
+coverage_report_deps = ["coverage", "jinja2<3.1", "gcovr==5.0"]
 
 dev_deps = [
     "black",
@@ -82,6 +86,7 @@ def stringify_dict(d: Dict[str, str]) -> str:
 # Development pipeline
 #
 # - Use nox to build an sdist; no separate build step is required.
+#   - NOTE: the first sdist build will be used for all sessions, so run a session that builds for coverage first
 # - Run tests against the installed sdist.
 # - Collect coverage.
 #
@@ -96,8 +101,8 @@ def dev_build(session: nox.Session) -> None:
 def dev_test(session: nox.Session) -> None:
     """Run all development tests as configured through environment variables."""
 
-    dev_test_nosim(session)
     dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
+    dev_test_nosim(session)
 
 
 @nox.session
@@ -136,6 +141,8 @@ def dev_test_sim(
         "-v",
         "--cov=cocotb",
         "--cov-branch",
+        # Don't display coverage report here
+        "--cov-report=",
         "-k",
         "simulator_required",
     )
@@ -180,6 +187,8 @@ def dev_test_nosim(session: nox.Session) -> None:
         "-v",
         "--cov=cocotb",
         "--cov-branch",
+        # Don't display coverage report here
+        "--cov-report=",
         "-k",
         "not simulator_required",
     )
@@ -200,6 +209,8 @@ def dev_test_nosim(session: nox.Session) -> None:
         "--doctest-modules",
         "--cov=cocotb",
         "--cov-branch",
+        # Don't display coverage report here
+        "--cov-report=",
         # Append to the .coverage file created in the previous pytest
         # invocation in this session.
         "--cov-append",
@@ -219,12 +230,26 @@ def dev_test_nosim(session: nox.Session) -> None:
 @nox.session
 def dev_coverage_combine(session: nox.Session) -> None:
     """Combine coverage from previous dev_* runs into a .coverage file."""
-    session.install(*coverage_deps)
+    session.install(*coverage_report_deps)
 
     coverage_files = glob.glob("**/.coverage.test.*", recursive=True)
     session.run("coverage", "combine", *coverage_files)
 
     session.log("Wrote combined coverage database for all tests to '.coverage'.")
+
+    session.notify("dev_coverage_report")
+
+
+@nox.session
+def dev_coverage_report(session: nox.Session) -> None:
+    """Report coverage results."""
+    session.install(*coverage_report_deps)
+
+    session.log("Python coverage")
+    session.run("coverage", "report")
+
+    session.log("Library coverage")
+    session.run("gcovr", "--print-summary", "--txt")
 
 
 @nox.session
