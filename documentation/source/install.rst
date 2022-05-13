@@ -34,8 +34,9 @@ The installation instructions vary depending on your operating system:
 
    .. group-tab:: Windows
 
-      We recommend users who are running Windows, and who are more comfortable with a Unix shell or who have legacy Makefile-based projects,
-      to use either Windows Subsystem for Linux (WSL) or a Virtual Machine, such as Oracle VirtualBox.
+      We recommend users who are running Windows and who are more comfortable with a Unix shell,
+      or who have legacy Makefile-based projects,
+      to use Windows Subsystem for Linux (WSL).
       After installing WSL or a Virtual Machine and a supported Linux distribution, follow the Linux installation instructions for cocotb.
 
       `Conda <https://conda.io/>`_ is an open-source package and environment management system that we recommend for users who are more comfortable with native Windows development.
