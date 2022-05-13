@@ -34,11 +34,11 @@ The installation instructions vary depending on your operating system:
 
    .. group-tab:: Windows
 
-      We recommend users who are comfortable with a Unix shell and who are running Windows 10 or 11 use Windows Subsystem for Linux (WSL).
-      See `here <https://docs.microsoft.com/en-us/windows/wsl/install>`_ for instructions on installing WSL,
-      then follow the Linux installation instructions for cocotb.
+      We recommend users who are running Windows, and who are more comfortable with a Unix shell or who have legacy Makefile-based projects,
+      to use either Windows Subsystem for Linux (WSL) or a Virtual Machine, such as Oracle VirtualBox.
+      After installing WSL or a Virtual Machine and a supported Linux distribution, follow the Linux installation instructions for cocotb.
 
-      `Conda <https://conda.io/>`_ is an open-source package and environment management system that we recommend for users who are more comfortable with Windows.
+      `Conda <https://conda.io/>`_ is an open-source package and environment management system that we recommend for users who are more comfortable with native Windows development.
       Download and install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ from https://conda.io/.
       From an Anaconda Prompt, use the following line to install a compiler (GCC or Clang) and GNU Make:
 
