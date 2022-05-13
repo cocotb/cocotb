@@ -72,9 +72,8 @@ static inline int __check_vpi_error(const char *file, const char *func,
             loglevel = GPIWarning;
     }
 
-    gpi_log("cocotb.gpi", loglevel, file, func, line, "VPI error");
-    gpi_log("cocotb.gpi", loglevel, info.file, info.product, info.line,
-            info.message);
+    gpi_log("gpi", loglevel, file, func, line, "VPI error");
+    gpi_log("gpi", loglevel, info.file, info.product, info.line, info.message);
 
 #endif
     return level;
