@@ -135,6 +135,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
 
       # Install Python
     - name: Set up Python ${{matrix.python-version}}
@@ -280,7 +282,8 @@ jobs:
       # - When changing how many builds are uploaded to codecov also update
       #   `codecov.notify.after_n_builds` in `.codecov.yml`.
       if: >
-        (steps.windowstesting.outcome == 'success'
+        ((steps.windowstesting.outcome == 'success'
+          && matrix.toolchain != 'mingw')
          || steps.unixtesting.outcome == 'success')
         && !startsWith(matrix.os, 'macos')
         && matrix.cxx != 'clang++'
