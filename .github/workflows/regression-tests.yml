@@ -136,6 +136,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
+        # GitHub PR's create a merge commit, and Actions are run on that commit.
+        # Codecov's uploader needs the previous commit (tip of PR branch) to associate coverage correctly.
+        # A fetch depth of 2 provides enough information without fetching the entire history.
         fetch-depth: 2
 
       # Install Python
