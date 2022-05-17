@@ -342,6 +342,7 @@ GHDL
 
     GHDL support in cocotb is experimental.
     Some features of cocotb may not work correctly or at all.
+    At least GHDL 2.0 is required.
 
 In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 
