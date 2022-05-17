@@ -127,15 +127,18 @@ jobs:
         brew install icarus-verilog
 
       # Install GHDL
-    - name: Set up GHDL (Ubuntu - apt)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl' && matrix.sim-version == 'apt'
+    - name: Set up GHDL (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl'
       run: |
-        sudo apt install -y --no-install-recommends ghdl-mcode ghdl
-    - name : Set up GHDL (Ubunutu - nightly)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl' && matrix.sim-version == 'nightly'
-      uses: ghdl/setup-ghdl-ci@c4e457b6596ee2872274c3b7d2615ad8ddacd70c
-      with:
-        backend: llvm
+        sudo apt install -y --no-install-recommends gnat
+        git clone https://github.com/ghdl/ghdl.git
+        cd ghdl
+        git reset --hard ${{matrix.sim-version}}
+        mkdir build
+        cd build
+        ../configure
+        make -j $(nproc)
+        sudo make install
 
       # Install Verilator
     - name: Set up Verilator (Ubuntu - apt)

@@ -75,10 +75,18 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "ghdl",
-        "sim-version": "nightly",
+        "sim-version": "v2.0.0",  # GHDL 2.0 is the minimum supported version.
         "os": "ubuntu-latest",
         "python-version": "3.8",
         "group": "ci",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "ghdl",
+        "sim-version": "master",
+        "os": "ubuntu-latest",
+        "python-version": "3.8",
+        "group": "experimental",
     },
     # Test Verilator on Ubuntu
     {
