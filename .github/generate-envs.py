@@ -62,14 +62,22 @@ ENVS = [
         "python-version": "3.11.0-alpha - 3.11.0",
         "group": "experimental",
     },
-    # Test Icarus dev on Ubuntu
+    # Test Icarus on Ubuntu
     {
         "lang": "verilog",
         "sim": "icarus",
         "sim-version": "master",
         "os": "ubuntu-20.04",
         "python-version": "3.8",
-        "group": "ci",
+        "group": "experimental",
+    },
+    {
+        "lang": "verilog",
+        "sim": "icarus",
+        "sim-version": "v11_0",  # The latest release version.
+        "os": "ubuntu-20.04",
+        "python-version": "3.8",
+        "group": "experimental",
     },
     # Test GHDL on Ubuntu
     {
@@ -99,20 +107,29 @@ ENVS = [
         "group": "ci",
     },
     # Test other OSes
-    # Icarus homebrew --HEAD
+    # Icarus homebrew
+    {
+        "lang": "verilog",
+        "sim": "icarus",
+        "sim-version": "homebrew-stable",
+        "os": "macos-latest",
+        "python-version": "3.8",
+        "group": "ci",
+    },
+    # Icarus homebrew (HEAD/master)
     {
         "lang": "verilog",
         "sim": "icarus",
         "sim-version": "homebrew-HEAD",
         "os": "macos-latest",
         "python-version": "3.8",
-        "group": "ci",
+        "group": "experimental",
     },
-    # Icarus windows master from source
+    # Icarus windows from source
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "master",
+        "sim-version": "b83daa3ae36891a372655652e53c9b4eefdfcafa",
         "os": "windows-latest",
         "python-version": "3.8",
         "toolchain": "mingw",
@@ -123,7 +140,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "master",
+        "sim-version": "b83daa3ae36891a372655652e53c9b4eefdfcafa",
         "os": "windows-latest",
         "python-version": "3.8",
         "toolchain": "msvc",
@@ -135,7 +152,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v11_0",
+        "sim-version": "b83daa3ae36891a372655652e53c9b4eefdfcafa",
         "os": "ubuntu-20.04",
         "python-version": "3.8",
         "cxx": "clang++",

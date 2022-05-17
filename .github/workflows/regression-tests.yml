@@ -100,8 +100,9 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version != 'apt'
       run: |
         sudo apt install -y --no-install-recommends g++ gperf flex bison make autoconf
-        git clone https://github.com/steveicarus/iverilog.git -b ${{matrix.sim-version}}
+        git clone https://github.com/steveicarus/iverilog.git
         cd iverilog
+        git reset --hard ${{matrix.sim-version}}
         bash ./autoconf.sh
         bash ./configure
         make -j $(nproc)
@@ -110,8 +111,9 @@ jobs:
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
       run: |
         conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain
-        git clone https://github.com/steveicarus/iverilog.git -b ${{matrix.sim-version}}
+        git clone https://github.com/steveicarus/iverilog.git
         cd iverilog
+        git reset --hard ${{matrix.sim-version}}
         bash ./autoconf.sh
         bash ./configure --host=x86_64-w64-mingw32 --prefix=/c/iverilog
         make -j $(nproc)
@@ -122,7 +124,7 @@ jobs:
       run: |
         brew install icarus-verilog --HEAD
     - name: Set up Icarus (MacOS - homebrew)
-      if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew'
+      if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-stable'
       run: |
         brew install icarus-verilog
 
