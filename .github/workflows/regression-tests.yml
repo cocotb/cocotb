@@ -143,16 +143,13 @@ jobs:
         sudo make install
 
       # Install Verilator
-    - name: Set up Verilator (Ubuntu - apt)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator' && matrix.sim-version == 'apt'
-      run: |
-        sudo apt install -y --no-install-recommends verilator
     - name: Set up Verilator (Ubunutu - source)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator' && matrix.sim-version != 'apt'
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator'
       run: |
         sudo apt install -y --no-install-recommends make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlibc zlib1g zlib1g-dev
-        git clone https://github.com/verilator/verilator.git -b ${{matrix.sim-version}}
+        git clone https://github.com/verilator/verilator.git
         cd verilator
+        git reset --hard ${{matrix.sim-version}}
         autoconf
         ./configure
         make -j $(nproc)

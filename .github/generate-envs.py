@@ -100,11 +100,23 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
+        "sim-version": "v4.106",
+        "os": "ubuntu-20.04",
+        "python-version": "3.8",
+        # Various cocotb tests are known to fail with Verilator 4.106.
+        # Newer versions of Verilator are not working at all.
+        # See also https://github.com/cocotb/cocotb/issues/2300
+        "group": "experimental",
+    },
+    {
+        "lang": "verilog",
+        "sim": "verilator",
         "sim-version": "master",
         "os": "ubuntu-20.04",
         "python-version": "3.8",
-        "may_fail": "True",
-        "group": "ci",
+        # Tests are currently not expected to work at all.
+        # See also https://github.com/cocotb/cocotb/issues/2300
+        "group": "experimental",
     },
     # Test other OSes
     # Icarus homebrew
