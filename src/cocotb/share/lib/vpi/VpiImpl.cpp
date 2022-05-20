@@ -109,6 +109,7 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype) {
 
         case vpiInterfaceArray:
         case vpiPackedArrayVar:
+        case vpiPackedArrayNet:
         case vpiRegArray:
         case vpiNetArray:
         case vpiGenScopeArray:
@@ -223,6 +224,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiNetArray:
         case vpiInterfaceArray:
         case vpiPackedArrayVar:
+        case vpiPackedArrayNet:
         case vpiMemory:
         case vpiInterconnectArray:
             new_obj = new VpiArrayObjHdl(this, new_hdl, to_gpi_objtype(type));
