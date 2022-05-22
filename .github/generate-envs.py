@@ -60,7 +60,7 @@ ENVS = [
         "sim-version": "apt",
         "os": "ubuntu-20.04",
         "python-version": "3.11.0-alpha - 3.11.0",
-        "group": "ci",
+        "group": "experimental",
     },
     # Test Icarus dev on Ubuntu
     {
