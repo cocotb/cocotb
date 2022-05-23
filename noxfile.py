@@ -13,8 +13,11 @@ nox.options.sessions = ["dev_test"]
 
 test_deps = ["pytest"]
 coverage_deps = ["coverage", "pytest-cov"]
-# gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See https://github.com/gcovr/gcovr/issues/596
-# When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an Exception is raised during html report generation. See https://github.com/gcovr/gcovr/pull/576
+# gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See
+# https://github.com/gcovr/gcovr/issues/596
+# When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an
+# Exception is raised during html report generation.
+# See https://github.com/gcovr/gcovr/pull/576
 # These issues are fixed on gcovr master branch, so next release should work.
 coverage_report_deps = ["coverage", "jinja2<3.1", "gcovr==5.0"]
 
