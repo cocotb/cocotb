@@ -85,11 +85,22 @@ def stringify_dict(d: Dict[str, str]) -> str:
     return ", ".join(f"{k}={v}" for k, v in d.items())
 
 
+def configure_env_for_dev_build(session: nox.session) -> None:
+    """Set environment variables for a development build.
+
+    - Enable coverage collection.
+    - Build with more aggressive error checking.
+    """
+    session.env["CFLAGS"] = "-Werror -Wno-deprecated-declarations -g --coverage"
+    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
+    session.env["CXXFLAGS"] = "-Werror"
+    session.env["LDFLAGS"] = "--coverage"
+
+
 #
 # Development pipeline
 #
 # - Use nox to build an sdist; no separate build step is required.
-#   - NOTE: the first sdist build will be used for all sessions, so run a session that builds for coverage first
 # - Run tests against the installed sdist.
 # - Collect coverage.
 #
@@ -118,10 +129,7 @@ def dev_test_sim(
 ) -> None:
     """Test a development version of cocotb against a simulator."""
 
-    session.env["CFLAGS"] = "-Werror -Wno-deprecated-declarations -g --coverage"
-    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
-    session.env["CXXFLAGS"] = "-Werror"
-    session.env["LDFLAGS"] = "--coverage"
+    configure_env_for_dev_build(session)
 
     session.install(*test_deps, *coverage_deps)
     session.install("-e", ".")
@@ -174,6 +182,9 @@ def dev_test_sim(
 @nox.session
 def dev_test_nosim(session: nox.Session) -> None:
     """Run the simulator-agnostic tests against a cocotb development version."""
+
+    configure_env_for_dev_build(session)
+
     session.install(*test_deps, *coverage_deps)
     session.install("-e", ".")
 
@@ -303,6 +314,9 @@ def docs_spelling(session: nox.Session) -> None:
 @nox.session(reuse_venv=True)
 def dev(session: nox.Session) -> None:
     """Build a development environment and optionally run a command given as extra args"""
+
+    configure_env_for_dev_build(session)
+
     session.install(*test_deps)
     session.install(*dev_deps)
     session.install("-e", ".")
