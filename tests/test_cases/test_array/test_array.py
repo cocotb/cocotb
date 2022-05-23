@@ -368,18 +368,8 @@ async def test_discover_all(dut):
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
         "riviera"
     ):
-        # Numbers for versions before 2019.10 may be outdated
-        if cocotb.SIM_VERSION.startswith("2017.10.61"):
-            pass_total = 803
-        elif cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")):
-            pass_total = 813
-        elif cocotb.SIM_VERSION.startswith("2016.02"):
-            pass_total = 947
-        elif cocotb.SIM_VERSION.startswith(("2019.10", "2020.", "2021.")):
-            # vpiVariables finds port_rec_out and sig_rec
-            pass_total = 1006
-        else:
-            pass_total = 1038
+        # Applies to Riviera-PRO 2019.10 and newer.
+        pass_total = 1006
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
         "chronologic simulation vcs"
     ):
