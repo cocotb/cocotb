@@ -146,7 +146,8 @@ ENVS = [
         "python-version": "3.8",
         "toolchain": "mingw",
         "extra_name": "mingw | ",
-        "group": "ci",
+        # mingw tests fail silently currently due to test harness limitations.
+        "group": "experimental",
     },
     # use msvc instead of mingw
     {
