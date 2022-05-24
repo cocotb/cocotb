@@ -214,7 +214,7 @@ class BinaryValue:
 
     def _convert_to_unsigned(self, x):
         if x == 0:
-            return self._adjust_unsigned("")
+            return self._adjust_unsigned("0")
         x = bin(x)
         if x[0] == "-":
             raise ValueError(
@@ -224,7 +224,7 @@ class BinaryValue:
 
     def _convert_to_signed_mag(self, x):
         if x == 0:
-            return self._adjust_unsigned("")
+            return self._adjust_unsigned("0")
         x = bin(x)
         if x[0] == "-":
             binstr = self._adjust_signed_mag("1" + x[3:])
@@ -239,7 +239,7 @@ class BinaryValue:
             binstr = bin(2 ** (_clog2(abs(x)) + 1) + x)[2:]
             binstr = self._adjust_twos_comp(binstr)
         elif x == 0:
-            binstr = self._adjust_twos_comp("")
+            binstr = self._adjust_twos_comp("0")
         else:
             binstr = self._adjust_twos_comp("0" + bin(x)[2:])
         if self.big_endian:
