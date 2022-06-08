@@ -68,6 +68,6 @@ def test_runner(parameters):
     runner.test(
         hdl_toplevel="runner",
         test_module="test_runner",
-        gpi_interfaces=gpi_interfaces,
+        gpi_interfaces=[gpi_interfaces],
         extra_env=parameters,
     )
