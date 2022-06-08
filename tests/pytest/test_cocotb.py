@@ -78,7 +78,7 @@ def test_cocotb():
         hdl_toplevel_lang=hdl_toplevel_lang,
         hdl_toplevel=hdl_toplevel,
         test_module=module_name,
-        gpi_interfaces=gpi_interfaces,
+        gpi_interfaces=[gpi_interfaces],
         test_args=sim_args,
     )
 

@@ -8,6 +8,7 @@ import sys
 import pytest
 from test_cocotb import (
     compile_args,
+    gpi_interfaces,
     hdl_toplevel,
     hdl_toplevel_lang,
     module_name,
@@ -49,6 +50,7 @@ def test_cocotb_parallel(seed):
         seed=seed,
         hdl_toplevel_lang=hdl_toplevel_lang,
         hdl_toplevel=hdl_toplevel,
+        gpi_interfaces=[gpi_interfaces],
         test_module=module_name,
         test_args=sim_args,
         build_dir=sim_build,
