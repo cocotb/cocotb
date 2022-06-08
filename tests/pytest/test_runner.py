@@ -36,6 +36,7 @@ async def cocotb_runner_test(dut):
 def test_runner(parameters):
 
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+    gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
     verilog_sources = []
     vhdl_sources = []
@@ -67,5 +68,6 @@ def test_runner(parameters):
     runner.test(
         hdl_toplevel="runner",
         test_module="test_runner",
+        gpi_interfaces=gpi_interfaces,
         extra_env=parameters,
     )

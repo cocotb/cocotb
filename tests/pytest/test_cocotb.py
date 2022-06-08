@@ -36,6 +36,7 @@ module_name = [
 verilog_sources = []
 vhdl_sources = []
 hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
 if hdl_toplevel_lang == "verilog":
     verilog_sources = [
@@ -77,6 +78,7 @@ def test_cocotb():
         hdl_toplevel_lang=hdl_toplevel_lang,
         hdl_toplevel=hdl_toplevel,
         test_module=module_name,
+        gpi_interfaces=gpi_interfaces,
         test_args=sim_args,
     )
 
