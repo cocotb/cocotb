@@ -84,6 +84,21 @@ add the ``-s`` option to the ``pytest`` call:
     :ref:`list of command line flags <pytest:command-line-flags>`
     in pytest's official documentation.
 
+Direct usage
+=============
+
+You can also run the test directly.
+
+.. code-block:: bash
+
+    python examples/simple_dff/test_dff.py
+
+For this you need to define the test to run in the script. For example:
+
+.. code-block:: bash
+
+    if __name__ == "__main__":
+        test_simple_dff_runner()
 
 API
 ===
