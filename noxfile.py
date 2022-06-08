@@ -2,6 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import glob
+import os
 import sys
 from contextlib import suppress
 from pathlib import Path
@@ -73,9 +74,14 @@ def env_vars_for_test(
     e = {}
     if sim is not None:
         e["SIM"] = sim
+
+    if os.getenv("TOPLEVEL_LANG") is not None:
+        e["HDL_TOPLEVEL_LANG"] = os.getenv("TOPLEVEL_LANG")
+
     if toplevel_lang is not None:
         e["TOPLEVEL_LANG"] = toplevel_lang
         e["HDL_TOPLEVEL_LANG"] = toplevel_lang
+
     assert not (toplevel_lang == "verilog" and gpi_interface != "vpi")
     if toplevel_lang == "vhdl" and gpi_interface is not None:
         e["VHDL_GPI_INTERFACE"] = gpi_interface
