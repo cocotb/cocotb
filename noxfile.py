@@ -75,6 +75,7 @@ def env_vars_for_test(
         e["SIM"] = sim
     if toplevel_lang is not None:
         e["TOPLEVEL_LANG"] = toplevel_lang
+        e["HDL_TOPLEVEL_LANG"] = toplevel_lang
     assert not (toplevel_lang == "verilog" and gpi_interface != "vpi")
     if toplevel_lang == "vhdl" and gpi_interface is not None:
         e["VHDL_GPI_INTERFACE"] = gpi_interface
@@ -157,6 +158,7 @@ def dev_test_sim(
         "--cov-report=",
         "-k",
         "simulator_required",
+        env=env,
     )
     Path(".coverage").rename(".coverage.pytest")
 
