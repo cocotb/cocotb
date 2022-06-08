@@ -188,6 +188,7 @@ class Simulator(abc.ABC):
         self,
         test_module: Union[str, Sequence[str]],
         hdl_toplevel: str,
+        hdl_toplevel_library: str = "cocotb",
         hdl_toplevel_lang: Optional[str] = None,
         gpi_interfaces: Optional[List[str]] = None,
         testcase: Optional[Union[str, Sequence[str]]] = None,
@@ -209,6 +210,7 @@ class Simulator(abc.ABC):
             test_module: Name(s) of the Python module(s) containing the tests to run.
                 Can be a comma-separated list.
             hdl_toplevel: Name of the HDL toplevel module.
+            hdl_toplevel_library: The library name for HDL toplevel module.
             hdl_toplevel_lang: Language of the HDL toplevel module.
             gpi_interfaces: List of GPI interfaces to use, with the first one being the entry point.
             testcase: Name(s) of a specific testcase(s) to run.
@@ -259,6 +261,7 @@ class Simulator(abc.ABC):
         # a better docstring than using `None` as a default in the parameters
         # list.
         self.sim_hdl_toplevel = hdl_toplevel
+        self.hdl_toplevel_library: str = hdl_toplevel_library
         self.hdl_toplevel_lang = self.check_hdl_toplevel_lang(hdl_toplevel_lang)
         if gpi_interfaces:
             self.gpi_interfaces = gpi_interfaces
@@ -316,13 +319,13 @@ class Simulator(abc.ABC):
         print(f"INFO: Results file: {results_xml_file}")
         return results_xml_file
 
-    @abc.abstractmethod
+    @staticmethod
     def get_include_options(self, includes: Sequence[PathLike]) -> Command:
         """Return simulator-specific formatted option strings with *includes* directories."""
 
         raise NotImplementedError()
 
-    @abc.abstractmethod
+    @staticmethod
     def get_define_options(self, defines: Mapping[str, object]) -> Command:
         """Return simulator-specific formatted option strings with *defines* macros."""
 
@@ -599,7 +602,7 @@ class Questa(Simulator):
             + lib_opts
             + [as_tcl_value(v) for v in self.test_args]
             + [as_tcl_value(v) for v in self.get_parameter_options(self.parameters)]
-            + [as_tcl_value(self.sim_hdl_toplevel)]
+            + [as_tcl_value(f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}")]
             + [as_tcl_value(v) for v in self.plusargs]
             + ["-do", do_script]
         )
@@ -663,6 +666,7 @@ class Ghdl(Simulator):
 
         cmds = [
             ["ghdl", "-r"]
+            + [f"--work={self.hdl_toplevel_library}"]
             + [self.sim_hdl_toplevel]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
             + self.test_args
@@ -743,7 +747,9 @@ class Riviera(Simulator):
 
         if self.hdl_toplevel_lang == "vhdl":
             do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} \n".format(
-                TOPLEVEL=as_tcl_value(self.sim_hdl_toplevel),
+                TOPLEVEL=as_tcl_value(
+                    f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
+                ),
                 EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vhpi", "riviera")),
                 EXTRA_ARGS=" ".join(
                     as_tcl_value(v)
@@ -758,7 +764,9 @@ class Riviera(Simulator):
             )
         else:
             do_script += "asim +access +w -interceptcoutput -O2 -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUSARGS} \n".format(
-                TOPLEVEL=as_tcl_value(self.sim_hdl_toplevel),
+                TOPLEVEL=as_tcl_value(
+                    f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
+                ),
                 EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "riviera")),
                 EXTRA_ARGS=" ".join(
                     as_tcl_value(v)
