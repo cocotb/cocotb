@@ -36,18 +36,20 @@ module_name = [
 verilog_sources = []
 vhdl_sources = []
 hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
-gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
+vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
 if hdl_toplevel_lang == "verilog":
     verilog_sources = [
         os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")
     ]
+    gpi_interfaces = ["vpi"]
 else:
     vhdl_sources = [
         os.path.join(tests_dir, "designs", "sample_module", "sample_module_pack.vhdl"),
         os.path.join(tests_dir, "designs", "sample_module", "sample_module_1.vhdl"),
         os.path.join(tests_dir, "designs", "sample_module", "sample_module.vhdl"),
     ]
+    gpi_interfaces = [vhdl_gpi_interfaces]
 
 sim = os.getenv("SIM", "icarus")
 compile_args = []
@@ -78,7 +80,7 @@ def test_cocotb():
         hdl_toplevel_lang=hdl_toplevel_lang,
         hdl_toplevel=hdl_toplevel,
         test_module=module_name,
-        gpi_interfaces=[gpi_interfaces],
+        gpi_interfaces=gpi_interfaces,
         test_args=sim_args,
     )
 

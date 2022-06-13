@@ -36,15 +36,17 @@ async def cocotb_runner_test(dut):
 def test_runner(parameters):
 
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
-    gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
+    vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
     verilog_sources = []
     vhdl_sources = []
 
     if hdl_toplevel_lang == "verilog":
         verilog_sources = [os.path.join(tests_dir, "designs", "runner", "runner.v")]
+        gpi_interfaces = ["vpi"]
     else:
         vhdl_sources = [os.path.join(tests_dir, "designs", "runner", "runner.vhdl")]
+        gpi_interfaces = [vhdl_gpi_interfaces]
 
     sim = os.getenv("SIM", "icarus")
     runner = get_runner(sim)()
@@ -68,6 +70,6 @@ def test_runner(parameters):
     runner.test(
         hdl_toplevel="runner",
         test_module="test_runner",
-        gpi_interfaces=[gpi_interfaces],
+        gpi_interfaces=gpi_interfaces,
         extra_env=parameters,
     )
