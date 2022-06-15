@@ -320,6 +320,15 @@ class build_ext(_build_ext):
                             "-Wl,-install_name,@rpath/%s.so" % install_name
                         ]
 
+                if sys.platform == "linux":
+                    # Avoid a runtime dependency on libstdc++. Some simulators
+                    # ship a version of libstdc++6.so which is older than the
+                    # one cocotb has been compiled with, which will then lead to
+                    # load-time errors like "libstdc++.so.6: version
+                    # `GLIBCXX_3.4.29' not found (required by
+                    # /path/to/libcocotbvhpi_modelsim.so)."
+                    ext.extra_link_args += ["-static-libstdc++"]
+
                 ext.extra_link_args += ["-Wl,-rpath,%s" % rpath for rpath in rpaths]
 
         # vpi_user.h and vhpi_user.h require that WIN32 is defined

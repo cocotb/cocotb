@@ -1,0 +1,1 @@
+cocotb binaries now statically link libstdc++ on Linux, which prevents library load errors even if the simulator ships its own libstdc++.
