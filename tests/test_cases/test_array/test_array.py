@@ -39,9 +39,9 @@ def _check_logic(tlog, hdl, expected):
 
 def _check_str(tlog, hdl, expected):
     assert hdl.value == expected, "{2!r}: Expected >{0}< but got >{1}<".format(
-        expected, str(hdl), hdl
+        expected, hdl.value, hdl
     )
-    tlog.info("   Found {!r} ({}) with value={}".format(hdl, hdl._type, str(hdl)))
+    tlog.info("   Found {!r} ({}) with value={}".format(hdl, hdl._type, hdl.value))
 
 
 def _check_real(tlog, hdl, expected):
