@@ -273,7 +273,7 @@ async def test_write_single_character(dut):
 
     # iterate over each character handle and uppercase it
     for c in dut.stream_in_string:
-        lowercase = chr(c)
+        lowercase = chr(c.value)
         uppercase = lowercase.upper()
         uppercase_as_int = ord(uppercase)
         c.setimmediatevalue(uppercase_as_int)
