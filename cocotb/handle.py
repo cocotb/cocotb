@@ -394,8 +394,9 @@ class HierarchyArrayObject(RegionObject):
     def _sub_handle_key(self, name):
         """Translate the handle name to a key to use in :any:`_sub_handles` dictionary."""
         # This is slightly hacky, but we need to extract the index from the name
+        # See also GEN_IDX_SEP_* in VhpiImpl.h for the VHPI separators.
         #
-        # FLI and VHPI(IUS):  _name(X) where X is the index
+        # FLI and VHPI:       _name(X) where X is the index
         # VHPI(ALDEC):        _name__X where X is the index
         # VPI:                _name[X] where X is the index
         import re

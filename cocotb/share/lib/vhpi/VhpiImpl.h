@@ -44,12 +44,14 @@
 #include "_vendor/vhpi/vhpi_user.h"
 
 // Define Index separator
-#ifdef IUS
-#define GEN_IDX_SEP_LHS "("
-#define GEN_IDX_SEP_RHS ")"
-#else
+#ifdef ALDEC
+// Aldec
 #define GEN_IDX_SEP_LHS "__"
 #define GEN_IDX_SEP_RHS ""
+#else
+// IUS/Xcelium and Questa
+#define GEN_IDX_SEP_LHS "("
+#define GEN_IDX_SEP_RHS ")"
 #endif
 
 // Should be run after every VHPI call to check error status
