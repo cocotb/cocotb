@@ -91,7 +91,7 @@ async def check_objects(dut):
         fails += 1
 
     try:
-        dut.inst_axi4s_buffer.DATA_WIDTH = 42
+        dut.inst_axi4s_buffer.DATA_WIDTH.value = 42
         tlog.error("Shouldn't be allowed to set a value on constant object")
         fails += 1
     except TypeError:
