@@ -2,10 +2,17 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
+
 import pytest
 
 import cocotb
 from cocotb.triggers import Timer
+
+is_questa_vhpi = (
+    cocotb.SIM_NAME.lower().startswith("modelsim")
+    and os.environ["VHDL_GPI_INTERFACE"] == "vhpi"
+)
 
 
 @cocotb.test()
@@ -21,6 +28,7 @@ async def test_long_signal(dut):
     if cocotb.SIM_NAME.lower().startswith(
         ("ghdl", "xmsim", "ncsim", "riviera", "aldec")
     )
+    or is_questa_vhpi
     else ()
 )
 async def test_read_zero_signal(dut):
@@ -33,6 +41,7 @@ async def test_read_zero_signal(dut):
     if cocotb.SIM_NAME.lower().startswith(
         ("ghdl", "xmsim", "ncsim", "riviera", "aldec")
     )
+    or is_questa_vhpi
     else ()
 )
 async def test_write_zero_signal_with_0(dut):
@@ -47,6 +56,7 @@ async def test_write_zero_signal_with_0(dut):
     if cocotb.SIM_NAME.lower().startswith(
         ("ghdl", "xmsim", "ncsim", "riviera", "aldec")
     )
+    or is_questa_vhpi
     else ()
 )
 async def test_write_zero_signal_with_1(dut):
