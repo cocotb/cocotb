@@ -3,6 +3,7 @@ A set of tests that demonstrate Array structure support
 """
 
 import logging
+import os
 
 import cocotb
 from cocotb.clock import Clock
@@ -363,6 +364,12 @@ async def test_discover_all(dut):
         pass_total = 571
     elif cocotb.SIM_NAME.lower().startswith("ghdl"):
         pass_total = 56
+    elif (
+        cocotb.LANGUAGE in ["vhdl"]
+        and cocotb.SIM_NAME.lower().startswith("modelsim")
+        and os.environ["VHDL_GPI_INTERFACE"] == "vhpi"
+    ):
+        pass_total = 920
     elif cocotb.LANGUAGE in ["vhdl"]:
         pass_total = 856
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(

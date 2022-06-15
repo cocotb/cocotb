@@ -24,6 +24,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import logging
+import os
 
 import cocotb
 from cocotb.triggers import Combine, Timer
@@ -33,6 +34,11 @@ def total_object_count():
     """Return the total object count based on simulator."""
     SIM_NAME = cocotb.SIM_NAME.lower()
     SIM_VERSION = cocotb.SIM_VERSION.lower()
+
+    # Questa with VHPI
+    # TODO: Why do we get massively different numbers for Questa/VHPI than for Questa/FLI or VPI?
+    if SIM_NAME.startswith("modelsim") and os.environ["VHDL_GPI_INTERFACE"] == "vhpi":
+        return 66959
 
     if SIM_NAME.startswith(
         (
