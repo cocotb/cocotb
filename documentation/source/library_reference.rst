@@ -124,8 +124,6 @@ classes used within ``cocotb``.
 Testbench Structure
 ===================
 
-These are provided by the `cocotb-bus <https://github.com/cocotb/cocotb-bus>`_ package.
-
 Clock
 -----
 
