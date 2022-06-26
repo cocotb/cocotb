@@ -4,6 +4,9 @@
 
 include ../../designs/sample_module/Makefile
 
+# The pytest_assertion_rewriting test module deliberately does not follow the
+# test_* naming convention to test that pytest assertion rewriting is enabled
+# on all test modules declared in MODULE (gh-3011)
 MODULE := "\
 	test_deprecated,\
 	test_synchronization_primitives,\
@@ -19,7 +22,7 @@ MODULE := "\
 	test_async_generators,\
 	test_handle,\
 	test_logging,\
-	test_pytest,\
+	pytest_assertion_rewriting,\
 	test_queues,\
 	test_utils,\
 	test_fork,\
