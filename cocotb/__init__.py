@@ -224,6 +224,7 @@ def _initialise_testbench(argv_):  # pragma: no cover
             global _library_coverage
             _library_coverage = coverage.coverage(
                 data_file=".coverage.cocotb",
+                config_file=False,
                 branch=True,
                 include=["{}/*".format(os.path.dirname(__file__))],
             )
