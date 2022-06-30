@@ -30,7 +30,7 @@ Glossary
       Foreign Language Interface. Mentor Graphics' equivalent to :term:`VHPI`
 
    GPI
-      General Procedural Interface, cocotb's abstraction over :term:`VPI`, :term:`VHPI`, and :term:`FLI`.
+      Generic Procedural Interface, cocotb's abstraction over :term:`VPI`, :term:`VHPI`, and :term:`FLI`.
 
    HAL
       Hardware Abstraction Layer
