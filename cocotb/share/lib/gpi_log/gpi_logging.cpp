@@ -129,12 +129,27 @@ extern "C" void gpi_native_logger_vlog(const char *name, int level,
     log_buff.clear();
     int n = vsnprintf(log_buff.data(), log_buff.capacity(), msg, argp);
     if (n < 0) {
-        // LCOV_EXCL_START
-        fprintf(stderr, "Log message construction failed: (error code) %d\n",
-                n);
-        return;
-        // LCOV_EXCL_STOP
-    } else if ((unsigned)n >= log_buff.capacity()) {
+        // On Windows with the Visual C Runtime prior to 2015 the above call to
+        // vsnprintf will return -1 if the buffer would overflow, rather than
+        // the number of bytes that would be written as required by the C99
+        // standard.
+        // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/vsnprintf-vsnprintf-vsnprintf-l-vsnwprintf-vsnwprintf-l
+        // So we try the call again with the buffer NULL and the size 0, which
+        // should return the number of bytes that would be written.
+        va_list argp_copy_again;
+        va_copy(argp_copy_again, argp_copy);
+        DEFER(va_end(argp_copy_again));
+        n = vsnprintf(NULL, 0, msg, argp_copy_again);
+        if (n < 0) {
+            // Here we know the error is for real, so we complain and move on.
+            // LCOV_EXCL_START
+            fprintf(stderr,
+                    "Log message construction failed: (error code) %d\n", n);
+            return;
+            // LCOV_EXCL_STOP
+        }
+    }
+    if ((unsigned)n >= log_buff.capacity()) {
         log_buff.reserve((unsigned)n + 1);
         n = vsnprintf(log_buff.data(), (unsigned)n + 1, msg, argp_copy);
         if (n < 0) {
