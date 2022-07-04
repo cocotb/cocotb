@@ -139,7 +139,7 @@ async def test_read_write(dut):
         dut.sig_int.value = 5000
         dut.sig_real.value = 22.54
         dut.sig_char.value = ord("Z")
-        dut.sig_str.value = "Testing"
+        dut.sig_str.value = b"Testing"
         dut.sig_rec.a.value = 1
         dut.sig_rec.b[0].value = 0x01
         dut.sig_rec.b[1].value = 0x23
