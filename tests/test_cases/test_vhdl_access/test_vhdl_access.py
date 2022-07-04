@@ -24,6 +24,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import logging
+import warnings
 
 import cocotb
 from cocotb.handle import (
@@ -97,7 +98,13 @@ async def check_objects(dut):
         pass
 
     try:
-        dut.inst_axi4s_buffer.DATA_WIDTH <= 42
+        with warnings.catch_warnings():
+            # The <= syntax is deprecated and raises a DeprecationWarning, which
+            # we need to ignore to get to the condition we actually want to
+            # test.
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+            dut.inst_axi4s_buffer.DATA_WIDTH <= 42
         tlog.error(
             "Shouldn't be allowed to set a value on constant object using __le__"
         )
