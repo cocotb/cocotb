@@ -146,9 +146,7 @@ long FliValueObjHdl::get_signal_value_long() {
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value(int32_t value, gpi_set_action_t action) {
-    COCOTB_UNUSED(value);
-    COCOTB_UNUSED(action);
+int FliValueObjHdl::set_signal_value(int32_t, gpi_set_action_t) {
     LOG_ERROR(
         "Setting signal/variable value via int32_t not supported for %s of "
         "type %d",
@@ -156,10 +154,7 @@ int FliValueObjHdl::set_signal_value(int32_t value, gpi_set_action_t action) {
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value_binstr(std::string &value,
-                                            gpi_set_action_t action) {
-    COCOTB_UNUSED(value);
-    COCOTB_UNUSED(action);
+int FliValueObjHdl::set_signal_value_binstr(std::string &, gpi_set_action_t) {
     LOG_ERROR(
         "Setting signal/variable value via string not supported for %s of type "
         "%d",
@@ -167,10 +162,7 @@ int FliValueObjHdl::set_signal_value_binstr(std::string &value,
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value_str(std::string &value,
-                                         gpi_set_action_t action) {
-    COCOTB_UNUSED(value);
-    COCOTB_UNUSED(action);
+int FliValueObjHdl::set_signal_value_str(std::string &, gpi_set_action_t) {
     LOG_ERROR(
         "Setting signal/variable value via string not supported for %s of type "
         "%d",
@@ -178,9 +170,7 @@ int FliValueObjHdl::set_signal_value_str(std::string &value,
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value(double value, gpi_set_action_t action) {
-    COCOTB_UNUSED(value);
-    COCOTB_UNUSED(action);
+int FliValueObjHdl::set_signal_value(double, gpi_set_action_t) {
     LOG_ERROR(
         "Setting signal/variable value via double not supported for %s of type "
         "%d",

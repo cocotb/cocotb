@@ -36,7 +36,6 @@
 #define GPI_EXPORT COCOTB_IMPORT
 #endif
 
-#include <cocotb_utils.h>  // COCOTB_UNUSED
 #include <embed.h>
 #include <gpi.h>
 
@@ -223,9 +222,7 @@ class GPI_EXPORT GpiIterator : public GpiHdl {
         : GpiHdl(impl), m_parent(hdl) {}
     virtual ~GpiIterator() = default;
 
-    virtual Status next_handle(std::string &name, GpiObjHdl **hdl,
-                               void **raw_hdl) {
-        COCOTB_UNUSED(raw_hdl);
+    virtual Status next_handle(std::string &name, GpiObjHdl **hdl, void **) {
         name = "";
         *hdl = NULL;
         return GpiIterator::END;

@@ -70,8 +70,6 @@ extern "C" COCOTBUTILS_EXPORT int is_python_context;
         LOG_TRACE("Returning to simulator");                        \
     } while (0)
 
-#define COCOTB_UNUSED(x) ((void)x)
-
 template <typename F>
 class Deferable {
   public:
