@@ -38,7 +38,7 @@ static int takes = 0;
 static int releases = 0;
 
 #include <Python.h>
-#include <cocotb_utils.h>    // COCOTB_UNUSED
+#include <cocotb_utils.h>    // to_python to_simulator
 #include <gpi_logging.h>     // LOG_* macros
 #include <py_gpi_logging.h>  // py_gpi_logger_set_level
 
@@ -261,9 +261,7 @@ err:
     return ret;
 }
 
-static PyObject *log_msg(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
-
+static PyObject *log_msg(PyObject *, PyObject *args) {
     const char *name;
     const char *path;
     const char *msg;
@@ -299,9 +297,7 @@ static callback_data *callback_data_new(PyObject *func, PyObject *args,
 // Register a callback for read-only state of sim
 // First argument is the function to call
 // Remaining arguments are keyword arguments to be passed to the callback
-static PyObject *register_readonly_callback(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
-
+static PyObject *register_readonly_callback(PyObject *, PyObject *args) {
     if (!gpi_has_registered_impl()) {
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
@@ -345,9 +341,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args) {
     return rv;
 }
 
-static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
-
+static PyObject *register_rwsynch_callback(PyObject *, PyObject *args) {
     if (!gpi_has_registered_impl()) {
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
@@ -391,9 +385,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args) {
     return rv;
 }
 
-static PyObject *register_nextstep_callback(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
-
+static PyObject *register_nextstep_callback(PyObject *, PyObject *args) {
     if (!gpi_has_registered_impl()) {
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
@@ -441,9 +433,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args) {
 // First argument should be the time in picoseconds
 // Second argument is the function to call
 // Remaining arguments and keyword arguments are to be passed to the callback
-static PyObject *register_timed_callback(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
-
+static PyObject *register_timed_callback(PyObject *, PyObject *args) {
     if (!gpi_has_registered_impl()) {
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
@@ -508,10 +498,8 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args) {
 // Second argument is the function to call
 // Remaining arguments and keyword arguments are to be passed to the callback
 static PyObject *register_value_change_callback(
-    PyObject *self, PyObject *args)  //, PyObject *keywds)
+    PyObject *, PyObject *args)  //, PyObject *keywds)
 {
-    COCOTB_UNUSED(self);
-
     if (!gpi_has_registered_impl()) {
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
@@ -595,29 +583,25 @@ static PyObject *next(gpi_hdl_Object<gpi_iterator_hdl> *self) {
 // Return None if for example get bin_string on enum?
 
 static PyObject *get_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self,
-                                       PyObject *args) {
-    COCOTB_UNUSED(args);
+                                       PyObject *) {
     const char *result = gpi_get_signal_value_binstr(self->hdl);
     return PyUnicode_FromString(result);
 }
 
 static PyObject *get_signal_val_str(gpi_hdl_Object<gpi_sim_hdl> *self,
-                                    PyObject *args) {
-    COCOTB_UNUSED(args);
+                                    PyObject *) {
     const char *result = gpi_get_signal_value_str(self->hdl);
     return PyBytes_FromString(result);
 }
 
 static PyObject *get_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self,
-                                     PyObject *args) {
-    COCOTB_UNUSED(args);
+                                     PyObject *) {
     double result = gpi_get_signal_value_real(self->hdl);
     return PyFloat_FromDouble(result);
 }
 
 static PyObject *get_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self,
-                                     PyObject *args) {
-    COCOTB_UNUSED(args);
+                                     PyObject *) {
     long result = gpi_get_signal_value_long(self->hdl);
     return PyLong_FromLong(result);
 }
@@ -675,15 +659,13 @@ static PyObject *set_signal_val_int(gpi_hdl_Object<gpi_sim_hdl> *self,
 }
 
 static PyObject *get_definition_name(gpi_hdl_Object<gpi_sim_hdl> *self,
-                                     PyObject *args) {
-    COCOTB_UNUSED(args);
+                                     PyObject *) {
     const char *result = gpi_get_definition_name(self->hdl);
     return PyUnicode_FromString(result);
 }
 
 static PyObject *get_definition_file(gpi_hdl_Object<gpi_sim_hdl> *self,
-                                     PyObject *args) {
-    COCOTB_UNUSED(args);
+                                     PyObject *) {
     const char *result = gpi_get_definition_file(self->hdl);
     return PyUnicode_FromString(result);
 }
@@ -714,8 +696,7 @@ static PyObject *get_handle_by_index(gpi_hdl_Object<gpi_sim_hdl> *self,
     return gpi_hdl_New(result);
 }
 
-static PyObject *get_root_handle(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
+static PyObject *get_root_handle(PyObject *, PyObject *args) {
     const char *name;
 
     if (!gpi_has_registered_impl()) {
@@ -736,46 +717,35 @@ static PyObject *get_root_handle(PyObject *self, PyObject *args) {
 }
 
 static PyObject *get_name_string(gpi_hdl_Object<gpi_sim_hdl> *self,
-                                 PyObject *args) {
-    COCOTB_UNUSED(args);
-    COCOTB_UNUSED(self);
+                                 PyObject *) {
     const char *result = gpi_get_signal_name_str(self->hdl);
     return PyUnicode_FromString(result);
 }
 
-static PyObject *get_type(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args) {
-    COCOTB_UNUSED(args);
+static PyObject *get_type(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
     gpi_objtype_t result = gpi_get_object_type(self->hdl);
     return PyLong_FromLong(result);
 }
 
-static PyObject *get_const(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args) {
-    COCOTB_UNUSED(args);
+static PyObject *get_const(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
     int result = gpi_is_constant(self->hdl);
     return PyBool_FromLong(result);
 }
 
 static PyObject *get_type_string(gpi_hdl_Object<gpi_sim_hdl> *self,
-                                 PyObject *args) {
-    COCOTB_UNUSED(args);
+                                 PyObject *) {
     const char *result = gpi_get_signal_type_str(self->hdl);
     return PyUnicode_FromString(result);
 }
 
-static PyObject *is_running(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
-    COCOTB_UNUSED(args);
-
+static PyObject *is_running(PyObject *, PyObject *) {
     return PyBool_FromLong(gpi_has_registered_impl());
 }
 
 // Returns a high, low, tuple of simulator time
 // Note we can never log from this function since the logging mechanism calls
 // this to annotate log messages with the current simulation time
-static PyObject *get_sim_time(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
-    COCOTB_UNUSED(args);
-
+static PyObject *get_sim_time(PyObject *, PyObject *) {
     if (!gpi_has_registered_impl()) {
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
@@ -799,10 +769,7 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args) {
     return pTuple;
 }
 
-static PyObject *get_precision(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
-    COCOTB_UNUSED(args);
-
+static PyObject *get_precision(PyObject *, PyObject *) {
     if (!gpi_has_registered_impl()) {
         char const *msg =
             "Simulator is not available! Defaulting precision to 1 fs.";
@@ -819,10 +786,7 @@ static PyObject *get_precision(PyObject *self, PyObject *args) {
     return PyLong_FromLong(precision);
 }
 
-static PyObject *get_simulator_product(PyObject *m, PyObject *args) {
-    COCOTB_UNUSED(m);
-    COCOTB_UNUSED(args);
-
+static PyObject *get_simulator_product(PyObject *, PyObject *) {
     if (!gpi_has_registered_impl()) {
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
@@ -831,10 +795,7 @@ static PyObject *get_simulator_product(PyObject *m, PyObject *args) {
     return PyUnicode_FromString(gpi_get_simulator_product());
 }
 
-static PyObject *get_simulator_version(PyObject *m, PyObject *args) {
-    COCOTB_UNUSED(m);
-    COCOTB_UNUSED(args);
-
+static PyObject *get_simulator_version(PyObject *, PyObject *) {
     if (!gpi_has_registered_impl()) {
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
@@ -843,16 +804,12 @@ static PyObject *get_simulator_version(PyObject *m, PyObject *args) {
     return PyUnicode_FromString(gpi_get_simulator_version());
 }
 
-static PyObject *get_num_elems(gpi_hdl_Object<gpi_sim_hdl> *self,
-                               PyObject *args) {
-    COCOTB_UNUSED(args);
+static PyObject *get_num_elems(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
     int elems = gpi_get_num_elems(self->hdl);
     return PyLong_FromLong(elems);
 }
 
-static PyObject *get_range(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args) {
-    COCOTB_UNUSED(args);
-
+static PyObject *get_range(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
     int indexable = gpi_is_indexable(self->hdl);
     int rng_left = gpi_get_range_left(self->hdl);
     int rng_right = gpi_get_range_right(self->hdl);
@@ -864,10 +821,7 @@ static PyObject *get_range(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args) {
     }
 }
 
-static PyObject *stop_simulator(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
-    COCOTB_UNUSED(args);
-
+static PyObject *stop_simulator(PyObject *, PyObject *) {
     if (!gpi_has_registered_impl()) {
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
@@ -877,17 +831,13 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *args) {
-    COCOTB_UNUSED(args);
-
+static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *) {
     gpi_deregister_callback(self->hdl);
 
     Py_RETURN_NONE;
 }
 
-static PyObject *log_level(PyObject *self, PyObject *args) {
-    COCOTB_UNUSED(self);
-
+static PyObject *log_level(PyObject *, PyObject *args) {
     int l_level;
 
     if (!PyArg_ParseTuple(args, "i:log_level", &l_level)) {
