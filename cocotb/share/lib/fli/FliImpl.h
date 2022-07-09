@@ -79,10 +79,13 @@ class FliSignalCbHdl : public FliProcessCbHdl, public GpiValueCbHdl {
 };
 
 // All other callbacks are related to the simulation phasing
-class FliSimPhaseCbHdl : public FliProcessCbHdl {
+class FliSimPhaseCbHdl : public FliProcessCbHdl, public GpiCommonCbHdl {
   public:
     FliSimPhaseCbHdl(GpiImplInterface *impl, mtiProcessPriorityT priority)
-        : GpiCbHdl(impl), FliProcessCbHdl(impl), m_priority(priority) {}
+        : GpiCbHdl(impl),
+          FliProcessCbHdl(impl),
+          GpiCommonCbHdl(impl),
+          m_priority(priority) {}
 
     int arm_callback() override;
 
@@ -127,7 +130,7 @@ class FliShutdownCbHdl : public FliProcessCbHdl {
     int run_callback() override;
 };
 
-class FliTimedCbHdl : public FliProcessCbHdl {
+class FliTimedCbHdl : public FliProcessCbHdl, public GpiCommonCbHdl {
   public:
     FliTimedCbHdl(GpiImplInterface *impl, uint64_t time);
 
@@ -177,9 +180,10 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
           m_falling_cb(impl, this, GPI_FALLING),
           m_either_cb(impl, this, GPI_FALLING | GPI_RISING) {}
 
-    GpiCbHdl *value_change_cb(int edge) override;
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
+    GpiCbHdl *register_value_change_callback(int edge, int (*function)(void *),
+                                             void *cb_data) override;
 
     bool is_var() { return m_is_var; }
 
@@ -424,10 +428,14 @@ class FliImpl : public GpiImplInterface {
                                 gpi_iterator_sel_t type) override;
 
     /* Callback related, these may (will) return the same handle*/
-    GpiCbHdl *register_timed_callback(uint64_t time) override;
-    GpiCbHdl *register_readonly_callback() override;
-    GpiCbHdl *register_nexttime_callback() override;
-    GpiCbHdl *register_readwrite_callback() override;
+    GpiCbHdl *register_timed_callback(uint64_t time, int (*function)(void *),
+                                      void *cb_data) override;
+    GpiCbHdl *register_readonly_callback(int (*function)(void *),
+                                         void *cb_data) override;
+    GpiCbHdl *register_nexttime_callback(int (*function)(void *),
+                                         void *cb_data) override;
+    GpiCbHdl *register_readwrite_callback(int (*function)(void *),
+                                          void *cb_data) override;
     int deregister_callback(GpiCbHdl *obj_hdl) override;
 
     /* Method to provide strings from operation types */

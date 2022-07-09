@@ -519,70 +519,70 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *),
     GpiSignalObjHdl *signal_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
 
     /* Do something based on int & GPI_RISING | GPI_FALLING */
-    GpiCbHdl *gpi_hdl = signal_hdl->value_change_cb(edge);
+    GpiCbHdl *gpi_hdl = signal_hdl->register_value_change_callback(
+        edge, gpi_function, gpi_cb_data);
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a value change callback");
         return NULL;
+    } else {
+        return gpi_hdl;
     }
-
-    gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
-    return gpi_hdl;
 }
 
-/* It should not matter which implementation we use for this so just pick the
-   first one */
 gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
                                        void *gpi_cb_data, uint64_t time) {
-    GpiCbHdl *gpi_hdl = registered_impls[0]->register_timed_callback(time);
+    // It should not matter which implementation we use for this so just pick
+    // the first one
+    GpiCbHdl *gpi_hdl = registered_impls[0]->register_timed_callback(
+        time, gpi_function, gpi_cb_data);
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a timed callback");
         return NULL;
+    } else {
+        return gpi_hdl;
     }
-
-    gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
-    return gpi_hdl;
 }
 
-/* It should not matter which implementation we use for this so just pick the
-   first one
-*/
 gpi_cb_hdl gpi_register_readonly_callback(int (*gpi_function)(void *),
                                           void *gpi_cb_data) {
-    GpiCbHdl *gpi_hdl = registered_impls[0]->register_readonly_callback();
+    // It should not matter which implementation we use for this so just pick
+    // the first one
+    GpiCbHdl *gpi_hdl = registered_impls[0]->register_readonly_callback(
+        gpi_function, gpi_cb_data);
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a readonly callback");
         return NULL;
+    } else {
+        return gpi_hdl;
     }
-
-    gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
-    return gpi_hdl;
 }
 
 gpi_cb_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *),
                                           void *gpi_cb_data) {
-    GpiCbHdl *gpi_hdl = registered_impls[0]->register_nexttime_callback();
+    // It should not matter which implementation we use for this so just pick
+    // the first one
+    GpiCbHdl *gpi_hdl = registered_impls[0]->register_nexttime_callback(
+        gpi_function, gpi_cb_data);
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a nexttime callback");
         return NULL;
+    } else {
+        return gpi_hdl;
     }
-
-    gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
-    return gpi_hdl;
 }
 
-/* It should not matter which implementation we use for this so just pick the
-   first one
-*/
 gpi_cb_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *),
                                            void *gpi_cb_data) {
-    GpiCbHdl *gpi_hdl = registered_impls[0]->register_readwrite_callback();
+    // It should not matter which implementation we use for this so just pick
+    // the first one
+    GpiCbHdl *gpi_hdl = registered_impls[0]->register_readwrite_callback(
+        gpi_function, gpi_cb_data);
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a readwrite callback");
         return NULL;
+    } else {
+        return gpi_hdl;
     }
-
-    gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
-    return gpi_hdl;
 }
 
 void gpi_deregister_callback(gpi_cb_hdl cb_hdl) {
