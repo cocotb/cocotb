@@ -120,18 +120,24 @@ class VhpiValueCbHdl : public VhpiCbHdl, public GpiValueCbHdl {
     std::string initial_value;
 };
 
-class VhpiTimedCbHdl : public VhpiCbHdl {
+class VhpiCommonCbHdl : public VhpiCbHdl, public GpiCommonCbHdl {
+  public:
+    VhpiCommonCbHdl(GpiImplInterface *impl)
+        : GpiCbHdl(impl), VhpiCbHdl(impl), GpiCommonCbHdl(impl) {}
+};
+
+class VhpiTimedCbHdl : public VhpiCommonCbHdl {
   public:
     VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time);
     int cleanup_callback() override;
 };
 
-class VhpiReadOnlyCbHdl : public VhpiCbHdl {
+class VhpiReadOnlyCbHdl : public VhpiCommonCbHdl {
   public:
     VhpiReadOnlyCbHdl(GpiImplInterface *impl);
 };
 
-class VhpiNextPhaseCbHdl : public VhpiCbHdl {
+class VhpiNextPhaseCbHdl : public VhpiCommonCbHdl {
   public:
     VhpiNextPhaseCbHdl(GpiImplInterface *impl);
 };
@@ -158,9 +164,9 @@ class VhpiShutdownCbHdl : public VhpiCbHdl {
     }
 };
 
-class VhpiReadwriteCbHdl : public VhpiCbHdl {
+class VhpiReadWriteCbHdl : public VhpiCommonCbHdl {
   public:
-    VhpiReadwriteCbHdl(GpiImplInterface *impl);
+    VhpiReadWriteCbHdl(GpiImplInterface *impl);
 };
 
 class VhpiArrayObjHdl : public GpiObjHdl {
@@ -208,9 +214,10 @@ class VhpiSignalObjHdl : public GpiSignalObjHdl {
                                 gpi_set_action_t action) override;
 
     /* Value change callback accessor */
-    GpiCbHdl *value_change_cb(int edge) override;
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
+    GpiCbHdl *register_value_change_callback(int edge, int (*function)(void *),
+                                             void *cb_data) override;
 
   protected:
     vhpiEnumT chr2vhpi(char value);
@@ -275,10 +282,14 @@ class VhpiImpl : public GpiImplInterface {
                                 gpi_iterator_sel_t type) override;
 
     /* Callback related, these may (will) return the same handle*/
-    GpiCbHdl *register_timed_callback(uint64_t time) override;
-    GpiCbHdl *register_readonly_callback() override;
-    GpiCbHdl *register_nexttime_callback() override;
-    GpiCbHdl *register_readwrite_callback() override;
+    GpiCbHdl *register_timed_callback(uint64_t time, int (*function)(void *),
+                                      void *cb_data) override;
+    GpiCbHdl *register_readonly_callback(int (*function)(void *),
+                                         void *cb_data) override;
+    GpiCbHdl *register_nexttime_callback(int (*function)(void *),
+                                         void *cb_data) override;
+    GpiCbHdl *register_readwrite_callback(int (*function)(void *),
+                                          void *cb_data) override;
     int deregister_callback(GpiCbHdl *obj_hdl) override;
     GpiObjHdl *native_check_create(const std::string &name,
                                    GpiObjHdl *parent) override;
@@ -293,7 +304,7 @@ class VhpiImpl : public GpiImplInterface {
                                           const std::string &fq_name);
 
   private:
-    VhpiReadwriteCbHdl m_read_write;
+    VhpiReadWriteCbHdl m_read_write;
     VhpiNextPhaseCbHdl m_next_phase;
     VhpiReadOnlyCbHdl m_read_only;
 };

@@ -932,32 +932,37 @@ GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
     return new_iter;
 }
 
-GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time) {
+GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time,
+                                            int (*function)(void *),
+                                            void *cb_data) {
     VhpiTimedCbHdl *hdl = new VhpiTimedCbHdl(this, time);
 
     if (hdl->arm_callback()) {
         delete (hdl);
-        hdl = NULL;
+        return NULL;
     }
-
+    hdl->set_user_data(function, cb_data);
     return hdl;
 }
 
-GpiCbHdl *VhpiImpl::register_readwrite_callback() {
+GpiCbHdl *VhpiImpl::register_readwrite_callback(int (*function)(void *),
+                                                void *cb_data) {
     if (m_read_write.arm_callback()) return NULL;
-
+    m_read_write.set_user_data(function, cb_data);
     return &m_read_write;
 }
 
-GpiCbHdl *VhpiImpl::register_readonly_callback() {
+GpiCbHdl *VhpiImpl::register_readonly_callback(int (*function)(void *),
+                                               void *cb_data) {
     if (m_read_only.arm_callback()) return NULL;
-
+    m_read_only.set_user_data(function, cb_data);
     return &m_read_only;
 }
 
-GpiCbHdl *VhpiImpl::register_nexttime_callback() {
+GpiCbHdl *VhpiImpl::register_nexttime_callback(int (*function)(void *),
+                                               void *cb_data) {
     if (m_next_phase.arm_callback()) return NULL;
-
+    m_next_phase.set_user_data(function, cb_data);
     return &m_next_phase;
 }
 

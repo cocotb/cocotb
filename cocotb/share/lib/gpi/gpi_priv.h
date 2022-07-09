@@ -165,7 +165,8 @@ class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
     // triggers
     // but the explicit ones are probably better
 
-    virtual GpiCbHdl *value_change_cb(int edge) = 0;
+    virtual GpiCbHdl *register_value_change_callback(
+        int edge, int (*gpi_function)(void *), void *gpi_cb_data) = 0;
 };
 
 /* GPI Callback handle */
@@ -177,14 +178,9 @@ class GPI_EXPORT GpiCbHdl : public GpiHdl {
 
     // Pure virtual functions for derived classes
     virtual int arm_callback() = 0;  // Register with simulator
-    virtual int run_callback();      // Entry point from simulator
+    virtual int run_callback() = 0;  // Entry point from simulator
     virtual int
     cleanup_callback() = 0;  // Cleanup the callback, arm can be called after
-
-    // Set the data to be used for run callback, separate to arm_callback so
-    // data can be re-used
-    int set_user_data(int (*gpi_function)(void *), void *data);
-    void *get_user_data();
 
     void set_call_state(gpi_cb_state_e new_state);
     gpi_cb_state_e get_call_state();
@@ -192,13 +188,22 @@ class GPI_EXPORT GpiCbHdl : public GpiHdl {
     virtual ~GpiCbHdl();
 
   protected:
-    int (*gpi_function)(void *) = nullptr;  // GPI function to callback
-    void *m_cb_data = nullptr;  // GPI data supplied to "gpi_function"
     gpi_cb_state_e m_state =
         GPI_FREE;  // GPI state of the callback through its cycle
 };
 
-class GPI_EXPORT GpiValueCbHdl : public virtual GpiCbHdl {
+class GPI_EXPORT GpiCommonCbHdl : public virtual GpiCbHdl {
+  public:
+    GpiCommonCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {}
+    int run_callback() override;
+    int set_user_data(int (*function)(void *), void *cb_data);
+
+  protected:
+    int (*gpi_function)(void *) = nullptr;  // GPI function to callback
+    void *m_cb_data = nullptr;  // GPI data supplied to "gpi_function"
+};
+
+class GPI_EXPORT GpiValueCbHdl : public virtual GpiCommonCbHdl {
   public:
     GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal, int edge);
     int run_callback() override;
@@ -260,10 +265,15 @@ class GPI_EXPORT GpiImplInterface {
                                         gpi_iterator_sel_t type) = 0;
 
     /* Callback related, these may (will) return the same handle */
-    virtual GpiCbHdl *register_timed_callback(uint64_t time) = 0;
-    virtual GpiCbHdl *register_readonly_callback() = 0;
-    virtual GpiCbHdl *register_nexttime_callback() = 0;
-    virtual GpiCbHdl *register_readwrite_callback() = 0;
+    virtual GpiCbHdl *register_timed_callback(uint64_t time,
+                                              int (*gpi_function)(void *),
+                                              void *gpi_cb_data) = 0;
+    virtual GpiCbHdl *register_readonly_callback(int (*gpi_function)(void *),
+                                                 void *gpi_cb_data) = 0;
+    virtual GpiCbHdl *register_nexttime_callback(int (*gpi_function)(void *),
+                                                 void *gpi_cb_data) = 0;
+    virtual GpiCbHdl *register_readwrite_callback(int (*gpi_function)(void *),
+                                                  void *gpi_cb_data) = 0;
     virtual int deregister_callback(GpiCbHdl *obj_hdl) = 0;
 
     /* Method to provide strings from operation types */

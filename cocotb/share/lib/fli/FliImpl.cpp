@@ -564,35 +564,44 @@ error:
     return NULL;
 }
 
-GpiCbHdl *FliImpl::register_timed_callback(uint64_t time) {
-    // get time from cache instead of allocating
+GpiCbHdl *FliImpl::register_timed_callback(uint64_t time,
+                                           int (*function)(void *),
+                                           void *cb_data) {
+    // get timer from cache instead of allocating
     FliTimedCbHdl *hdl = cache.get_timer(time);
 
     if (hdl->arm_callback()) {
         delete (hdl);
-        hdl = NULL;
+        return NULL;
     }
+    hdl->set_user_data(function, cb_data);
     return hdl;
 }
 
-GpiCbHdl *FliImpl::register_readonly_callback() {
+GpiCbHdl *FliImpl::register_readonly_callback(int (*function)(void *),
+                                              void *cb_data) {
     if (m_readonly_cbhdl.arm_callback()) {
         return NULL;
     }
+    m_readonly_cbhdl.set_user_data(function, cb_data);
     return &m_readonly_cbhdl;
 }
 
-GpiCbHdl *FliImpl::register_readwrite_callback() {
+GpiCbHdl *FliImpl::register_readwrite_callback(int (*function)(void *),
+                                               void *cb_data) {
     if (m_readwrite_cbhdl.arm_callback()) {
         return NULL;
     }
+    m_readwrite_cbhdl.set_user_data(function, cb_data);
     return &m_readwrite_cbhdl;
 }
 
-GpiCbHdl *FliImpl::register_nexttime_callback() {
+GpiCbHdl *FliImpl::register_nexttime_callback(int (*function)(void *),
+                                              void *cb_data) {
     if (m_nexttime_cbhdl.arm_callback()) {
         return NULL;
     }
+    m_nexttime_cbhdl.set_user_data(function, cb_data);
     return &m_nexttime_cbhdl;
 }
 

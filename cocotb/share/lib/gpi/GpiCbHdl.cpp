@@ -76,24 +76,18 @@ int GpiObjHdl::initialise(const std::string &name, const std::string &fq_name) {
     return 0;
 }
 
-int GpiCbHdl::run_callback() {
-    LOG_TRACE("Generic run_callback");
+void GpiCbHdl::set_call_state(gpi_cb_state_e new_state) { m_state = new_state; }
+
+gpi_cb_state_e GpiCbHdl::get_call_state() { return m_state; }
+
+GpiCbHdl::~GpiCbHdl() {}
+
+int GpiCommonCbHdl::run_callback() {
     this->gpi_function(m_cb_data);
-    LOG_TRACE("Generic run_callback done");
     return 0;
 }
 
-int GpiCbHdl::cleanup_callback() {
-    LOG_WARN("Generic cleanup_handler");
-    return 0;
-}
-
-int GpiCbHdl::arm_callback() {
-    LOG_WARN("Generic arm_callback");
-    return 0;
-}
-
-int GpiCbHdl::set_user_data(int (*gpi_function)(void *), void *data) {
+int GpiCommonCbHdl::set_user_data(int (*gpi_function)(void *), void *data) {
     if (!gpi_function) {
         LOG_ERROR("gpi_function to set_user_data is NULL");
     }
@@ -102,17 +96,9 @@ int GpiCbHdl::set_user_data(int (*gpi_function)(void *), void *data) {
     return 0;
 }
 
-void *GpiCbHdl::get_user_data() { return m_cb_data; }
-
-void GpiCbHdl::set_call_state(gpi_cb_state_e new_state) { m_state = new_state; }
-
-gpi_cb_state_e GpiCbHdl::get_call_state() { return m_state; }
-
-GpiCbHdl::~GpiCbHdl() {}
-
 GpiValueCbHdl::GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal,
                              int edge)
-    : GpiCbHdl(impl), m_signal(signal) {
+    : GpiCbHdl(impl), GpiCommonCbHdl(impl), m_signal(signal) {
     if (edge == (GPI_RISING | GPI_FALLING))
         required_value = "X";
     else if (edge & GPI_RISING)

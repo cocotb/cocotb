@@ -36,7 +36,8 @@
 using std::abs;
 using std::to_string;
 
-GpiCbHdl *FliSignalObjHdl::value_change_cb(int edge) {
+GpiCbHdl *FliSignalObjHdl::register_value_change_callback(
+    int edge, int (*function)(void *), void *cb_data) {
     FliSignalCbHdl *cb = NULL;
 
     if (m_is_var) {
@@ -60,7 +61,7 @@ GpiCbHdl *FliSignalObjHdl::value_change_cb(int edge) {
     if (cb->arm_callback()) {
         return NULL;
     }
-
+    cb->set_user_data(function, cb_data);
     return (GpiCbHdl *)cb;
 }
 
