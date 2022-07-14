@@ -159,8 +159,8 @@ class RegressionManager:
         tests = cls._discover_tests()
         return cls(dut, tests)
 
-    @staticmethod
-    def _discover_tests() -> Iterable[Test]:
+    @classmethod
+    def _discover_tests(cls) -> Iterable[Test]:
         """
         Discovers tests in files automatically.
 
@@ -175,6 +175,8 @@ class RegressionManager:
             )
 
         modules = [s.strip() for s in module_str.split(",") if s.strip()]
+
+        cls._setup_pytest_assertion_rewriting(modules)
 
         tests = None
         if test_str:
@@ -232,6 +234,34 @@ class RegressionManager:
                 "Requested test(s) %s wasn't found in module(s) %s", tests, modules
             )
             raise AttributeError("Test(s) %s doesn't exist in %s" % (tests, modules))
+
+    @classmethod
+    def _setup_pytest_assertion_rewriting(cls, test_modules: Iterable[str]) -> None:
+        try:
+            import pytest
+        except ImportError:
+            _logger.info(
+                "pytest not found, install it to enable better AssertionError messages"
+            )
+            return
+        try:
+            # Install the assertion rewriting hook, which must be done before we
+            # import the test modules.
+            from _pytest.assertion import install_importhook
+            from _pytest.config import Config
+
+            # Pass python_files to Config to support assertion rewriting only on test modules.
+            # See https://github.com/pytest-dev/pytest/discussions/10052.
+            test_modules_str = " ".join(f"{name}.py" for name in test_modules)
+            pytest_conf = Config.fromdictargs(
+                {}, ["--capture=no", "-o", f"python_files={test_modules_str}"]
+            )
+            install_importhook(pytest_conf)
+        except Exception:
+            _logger.exception(
+                "Configuring the assertion rewrite hook using pytest {} failed. "
+                "Please file a bug report!".format(pytest.__version__)
+            )
 
     @deprecated("This method is now private.")
     def tear_down(self) -> None:

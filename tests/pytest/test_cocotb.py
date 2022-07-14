@@ -23,7 +23,7 @@ module_name = [
     "test_generator_coroutines",
     "test_handle",
     "test_logging",
-    "test_pytest",
+    "pytest_assertion_rewriting",
     "test_queues",
     "test_scheduler",
     "test_synchronization_primitives",
