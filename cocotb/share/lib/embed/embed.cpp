@@ -7,7 +7,7 @@
 #include <gpi.h>  // gpi_event_t
 
 #include <cstdlib>  // getenv
-#if !defined(__linux__) && !defined(__APPLE__)
+#ifdef _WIN32
 #include <windows.h>  // Win32 API for loading the embed impl library
 
 #include <string>  // string
@@ -32,7 +32,7 @@ static void (*_embed_sim_event)(gpi_event_t level, const char *msg);
 
 static bool init_failed = false;
 
-#if !defined(__linux__) && !defined(__APPLE__)
+#ifdef _WIN32
 static ACTCTX act_ctx = {
     /* cbSize */ sizeof(ACTCTX),
     /* dwFlags */ ACTCTX_FLAG_HMODULE_VALID | ACTCTX_FLAG_RESOURCE_NAME_VALID,
@@ -68,7 +68,7 @@ extern "C" void embed_init_python(void) {
         // LCOV_EXCL_STOP
     }
 
-#if !defined(__linux__) && !defined(__APPLE__)
+#ifdef _WIN32
     if (!act_ctx.hModule) {
         // LCOV_EXCL_START
         init_failed = true;
@@ -130,7 +130,7 @@ extern "C" void embed_init_python(void) {
         // LCOV_EXCL_STOP
     }
 
-#if !defined(__linux__) && !defined(__APPLE__)
+#ifdef _WIN32
     if (!DeactivateActCtx(0, Cookie)) {
         // LCOV_EXCL_START
         init_failed = true;

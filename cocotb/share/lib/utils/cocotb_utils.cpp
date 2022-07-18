@@ -31,10 +31,10 @@
 #include <gpi_logging.h>
 #include <stdlib.h>
 
-#if defined(__linux__) || defined(__APPLE__)
-#include <dlfcn.h>
-#else
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include <dlfcn.h>
 #endif
 
 // Tracks if we are in the context of Python or Simulator
@@ -42,7 +42,7 @@ int is_python_context = 0;
 
 extern "C" void *utils_dyn_open(const char *lib_name) {
     void *ret = NULL;
-#if !defined(__linux__) && !defined(__APPLE__)
+#ifdef _WIN32
     SetErrorMode(0);
     ret = static_cast<void *>(LoadLibrary(lib_name));
     if (!ret) {
@@ -73,7 +73,7 @@ extern "C" void *utils_dyn_open(const char *lib_name) {
 
 extern "C" void *utils_dyn_sym(void *handle, const char *sym_name) {
     void *entry_point;
-#if !defined(__linux__) && !defined(__APPLE__)
+#ifdef _WIN32
     entry_point = reinterpret_cast<void *>(
         GetProcAddress(static_cast<HMODULE>(handle), sym_name));
     if (!entry_point) {

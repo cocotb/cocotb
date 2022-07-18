@@ -9,12 +9,12 @@
 // Changing the default visibility to hidden has the advantage of significantly
 // reducing the code size and load times, as well as letting the optimizer
 // produce better code.
-#if defined(__linux__) || defined(__APPLE__)
-#define COCOTB_EXPORT __attribute__((visibility("default")))
-#define COCOTB_IMPORT
-#else
+#if _WIN32
 #define COCOTB_EXPORT __declspec(dllexport)
 #define COCOTB_IMPORT __declspec(dllimport)
+#else
+#define COCOTB_EXPORT __attribute__((visibility("default")))
+#define COCOTB_IMPORT
 #endif
 
 #endif
