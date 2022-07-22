@@ -117,9 +117,15 @@ class LogicArray(Array[Logic]):
 
     def __init__(
         self,
-        value: typing.Union[int, typing.Iterable[LogicConstructibleT], BinaryValue],
+        value: typing.Optional[typing.Union[int, typing.Iterable[LogicConstructibleT], BinaryValue]] = None,
         range: typing.Optional[Range] = None,
     ) -> None:
+        if value is None:
+            if range is None:
+                raise ValueError(
+                    "at least one between value and range input parameters must not be None"
+                )
+            value = 'X' * len(range)
         if isinstance(value, int):
             if value < 0:
                 bitlen = int.bit_length(value + 1) + 1
