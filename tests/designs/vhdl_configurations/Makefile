@@ -26,7 +26,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES += $(COCOTB)/tests/designs/vhdl_configurations/testbench.vhd
 else
-    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 VHDL_SOURCES += $(COCOTB)/tests/designs/vhdl_configurations/configurations.vhd
 

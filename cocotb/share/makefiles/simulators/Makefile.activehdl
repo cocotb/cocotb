@@ -41,7 +41,7 @@ ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = $(shell cocotb-config --lib-name-path vpi activehdl):cocotbvpi_entry_point
 endif
 else
-   $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+   $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
 # Create a DO script (Tcl-like but not fully compatible) based on the list of $(VERILOG_SOURCES)

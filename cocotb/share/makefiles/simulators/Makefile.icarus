@@ -50,7 +50,7 @@ else
 endif
 
 ifeq (, $(CMD))
-    $(error "Unable to locate command >$(CMD_BIN)<")
+    $(error Unable to locate command >$(CMD_BIN)<)
 else
     ICARUS_BIN_DIR := $(shell dirname $(CMD))
     export ICARUS_BIN_DIR

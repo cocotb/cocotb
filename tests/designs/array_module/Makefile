@@ -47,7 +47,7 @@ else
     VHDL_SOURCES =  $(COCOTB)/tests/designs/array_module/array_module_pack.vhd $(COCOTB)/tests/designs/array_module/array_module.vhd
 endif
 else
-    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
