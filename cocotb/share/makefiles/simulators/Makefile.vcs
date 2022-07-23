@@ -86,11 +86,9 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(CUSTOM_SIM_DEPS)
 
 	$(call check_for_results_file)
 
-.PHONY: clean
 clean::
 	$(RM) -r $(SIM_BUILD)
 	$(RM) -r simv.daidir
 	$(RM) -r cm.log
-	$(RM) -r $(COCOTB_RESULTS_FILE)
 	$(RM) -r ucli.key
 endif
