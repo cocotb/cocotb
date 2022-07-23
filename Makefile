@@ -32,9 +32,9 @@ all: test
 
 .PHONY: clean
 clean:
-	-@find . -name "obj" | xargs rm -rf
-	-@find . -name "*.pyc" | xargs rm -rf
-	-@find . -name "*results.xml" | xargs rm -rf
+	-@find . -name "obj" -exec rm -rf {} +
+	-@find . -name "*.pyc" -delete
+	-@find . -name "*results.xml" -delete
 	$(MAKE) -C examples clean
 	$(MAKE) -C tests clean
 
