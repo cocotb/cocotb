@@ -107,7 +107,7 @@ endif
 LIBS := $(foreach LIB, $(VHDL_LIB_ORDER),-makelib $(LIB) $(VHDL_SOURCES_$(LIB)) -endlib)
 
 $(COCOTB_RESULTS_FILE): $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
-	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(RM) $(COCOTB_RESULTS_FILE)
 
 	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
 	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
@@ -121,7 +121,7 @@ $(COCOTB_RESULTS_FILE): $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	$(call check_for_results_file)
 
 clean::
-	@rm -rf $(SIM_BUILD)
-	@rm -rf xrun.*
-	@rm -rf xmsim.*
-	@rm -rf gdb_cmd_xmsim
+	$(RM) -r $(SIM_BUILD)
+	$(RM) -r xrun.*
+	$(RM) -r xmsim.*
+	$(RM) -r gdb_cmd_xmsim

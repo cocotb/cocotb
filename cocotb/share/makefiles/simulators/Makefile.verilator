@@ -57,7 +57,7 @@ $(SIM_BUILD)/Vtop: $(SIM_BUILD)/Vtop.mk
 	make -C $(SIM_BUILD) $(BUILD_ARGS) -f Vtop.mk
 
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/Vtop $(CUSTOM_SIM_DEPS)
-	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(RM) $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         $(SIM_CMD_PREFIX) $< $(PLUSARGS)
@@ -68,8 +68,8 @@ debug:
 	$(MAKE) VERILATOR_SIM_DEBUG=1 SIM_CMD_PREFIX="gdb --args" $(COCOTB_RESULTS_FILE)
 
 clean::
-	@rm -rf $(SIM_BUILD)
-	@rm -f dump.vcd
-	@rm -f dump.fst
+	$(RM) -r $(SIM_BUILD)
+	$(RM) dump.vcd
+	$(RM) dump.fst
 
 endif

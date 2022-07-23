@@ -7,7 +7,7 @@ include ../../designs/sample_module/Makefile
 SKIPPED_TEST_FILE = ran_skipped_test~
 
 clean::
-	@rm -rf ${SKIPPED_TEST_FILE}
+	$(RM) -r ${SKIPPED_TEST_FILE}
 
 # Override the default target. We need to run clean (to remove the cached test file)
 # and then test to make sure it is recreated.

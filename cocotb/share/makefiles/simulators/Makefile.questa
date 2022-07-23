@@ -155,7 +155,7 @@ ifeq ($(PYTHON_ARCH),64bit)
 endif
 
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do
-	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(RM) $(COCOTB_RESULTS_FILE)
 
 	set -o pipefail; MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
@@ -164,4 +164,4 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do
 	$(call check_for_results_file)
 
 clean::
-	-rm -rf $(SIM_BUILD)
+	$(RM) -r $(SIM_BUILD)

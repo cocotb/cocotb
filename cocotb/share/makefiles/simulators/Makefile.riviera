@@ -143,7 +143,7 @@ endif
 # Note it's the redirection of the output rather than the 'do' command
 # that turns on batch mode (i.e. exit on completion/error)
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
-	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(RM) $(COCOTB_RESULTS_FILE)
 
 	set -o pipefail; GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.tcl | tee $(SIM_BUILD)/sim.log
@@ -151,7 +151,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(CUSTOM_COMPILE_DEPS) $(CUSTOM_
 	$(call check_for_results_file)
 
 clean::
-	@rm -rf $(SIM_BUILD)
-	@rm -rf compile
-	@rm -rf library.cfg
-	@rm -rf dataset.asdb
+	$(RM) -r $(SIM_BUILD)
+	$(RM) -r compile
+	$(RM) -r library.cfg
+	$(RM) -r dataset.asdb
