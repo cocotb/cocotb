@@ -59,7 +59,7 @@ endif
 	@echo "endsim" >> $@
 
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
-	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(RM) $(COCOTB_RESULTS_FILE)
 
 	set -o pipefail; GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.do | tee $(SIM_BUILD)/sim.log
@@ -67,6 +67,6 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(CUSTOM_COMPILE_DEPS) $(CUSTOM_S
 	$(call check_for_results_file)
 
 clean::
-	@rm -rf $(SIM_BUILD)
-	@rm -rf work
-	@rm -rf wave.asdb
+	$(RM) -r $(SIM_BUILD)
+	$(RM) -r work
+	$(RM) -r wave.asdb

@@ -90,5 +90,5 @@ endif
 
 
 clean::
-	-@rm -rf $(SIM_BUILD)
+	$(RM) -r $(SIM_BUILD)
 endif

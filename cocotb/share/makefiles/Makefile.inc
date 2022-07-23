@@ -36,7 +36,7 @@ COCOTB_MAKEFILE_INC_INCLUDED = 1
 # and RTL compilation phases are still evaluated by makefile dependencies)
 .PHONY: sim
 sim:
-	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(RM) $(COCOTB_RESULTS_FILE)
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) $(COCOTB_RESULTS_FILE)
 
 # Make sure to use bash for the pipefail option used in many simulator Makefiles

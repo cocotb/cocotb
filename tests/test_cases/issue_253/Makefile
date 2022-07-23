@@ -64,4 +64,6 @@ no_top_level: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 endif
 
 clean::
-	@rm -rf empty_top_level_result no_top_level_result notset_top_level_result
+	$(RM) -r empty_top_level_result
+	$(RM) -r no_top_level_result
+	$(RM) -r notset_top_level_result

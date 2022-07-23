@@ -73,7 +73,7 @@ analyse: $(VHDL_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	$(CMD) -m $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL)
 
 $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
-	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(RM) $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(SIM_CMD_PREFIX) $(CMD) -r $(GHDL_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL) --vpi=$(shell cocotb-config --lib-name-path vpi ghdl) $(SIM_ARGS) $(PLUSARGS)
@@ -81,5 +81,5 @@ $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 	$(call check_for_results_file)
 
 clean::
-	-@rm -rf $(SIM_BUILD)
+	$(RM) -r $(SIM_BUILD)
 endif

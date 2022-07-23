@@ -72,7 +72,7 @@ $(SIM_BUILD)/sim.vvp: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 # Execution phase
 
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
-	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(RM) $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         $(SIM_CMD_PREFIX) $(ICARUS_BIN_DIR)/vvp -M $(shell cocotb-config --lib-dir) -m $(shell cocotb-config --lib-name vpi icarus) $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(PLUSARGS)
@@ -80,7 +80,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 	$(call check_for_results_file)
 
 debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
-	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(RM) -r $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         $(SIM_CMD_PREFIX) gdb --args $(ICARUS_BIN_DIR)/vvp $(shell cocotb-config --lib-dir) -m $(shell cocotb-config --lib-name vpi icarus) $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
@@ -88,5 +88,5 @@ debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 	$(call check_for_results_file)
 
 clean::
-	-@rm -rf $(SIM_BUILD)
+	$(RM) $(SIM_BUILD)
 endif
