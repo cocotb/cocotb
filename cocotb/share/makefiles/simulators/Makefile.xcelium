@@ -41,7 +41,7 @@ else
 endif
 
 ifeq (, $(CMD))
-    $(error "Unable to locate command >$(CMD_BIN)<")
+    $(error Unable to locate command >$(CMD_BIN)<)
 else
     XCELIUM_BIN_DIR := $(shell dirname $(CMD))
     export XCELIUM_BIN_DIR
@@ -74,7 +74,7 @@ endif
 
 # Xcelium errors out if multiple timescales are specified on the command line.
 ifneq (,$(findstring timescale,$(EXTRA_ARGS)))
-    $(error "Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.")
+    $(error Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.)
 endif
 
 # Loading the VHPI library causes an error, so we always load the VPI library and supply
@@ -100,7 +100,7 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
         HDL_SOURCES += $(VERILOG_SOURCES)
     endif
 else
-    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
 # Builds a list of arguments to support VHDL libraries specified in VHDL_SOURCES_*:

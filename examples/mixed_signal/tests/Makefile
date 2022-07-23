@@ -33,11 +33,11 @@ ifeq ($(SIM),$(filter $(SIM),ius xcelium))
         VERILOG_SOURCES += $(WPWD)/../hdl/tb_rescap.sv
         VERILOG_SOURCES += $(WPWD)/../hdl/tb_regulator.sv
     else ifeq ($(TOPLEVEL_LANG),vhdl)
-        $(error "VHDL toplevel not yet implemented")
+        $(error VHDL toplevel not yet implemented)
         VHDL_SOURCES += $(WPWD)/../hdl/rescap.vhdl
         VHDL_SOURCES += $(WPWD)/../hdl/regulator.vhdl
     else
-        $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+        $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
     endif
 else ifeq ($(SIM),vcs)
     VERILOG_SOURCES += $(WPWD)/../hdl/analog_probe_synopsys.sv
@@ -48,14 +48,14 @@ else ifeq ($(SIM),vcs)
         VERILOG_SOURCES += $(WPWD)/../hdl/tb_rescap.sv
         VERILOG_SOURCES += $(WPWD)/../hdl/tb_regulator.sv
     else ifeq ($(TOPLEVEL_LANG),vhdl)
-        $(error "VHDL toplevel not yet implemented")
+        $(error VHDL toplevel not yet implemented)
         VHDL_SOURCES += $(WPWD)/../hdl/rescap.vhdl
         VHDL_SOURCES += $(WPWD)/../hdl/regulator.vhdl
     else
-        $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+        $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
     endif
 else
-    $(error "This example does not have support for SIM=$(SIM)")
+    $(error This example does not have support for SIM=$(SIM))
 endif
 
 
@@ -82,7 +82,7 @@ else ifeq ($(SIM),vcs)
 #    COMPILE_ARGS += -ams_discipline <discipline_name>
     SIM_ARGS += $(EXTRA_SIM_ARGS)
 else
-    $(error "This example does not have support for SIM=$(SIM)")
+    $(error This example does not have support for SIM=$(SIM))
 endif
 
 

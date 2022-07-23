@@ -45,7 +45,7 @@ else
 endif
 
 ifeq (, $(CMD))
-    $(error "Unable to locate command >$(CMD_BIN)<")
+    $(error Unable to locate command >$(CMD_BIN)<)
 else
     ALDEC_BIN_DIR := $(shell dirname $(CMD))
     export ALDEC_BIN_DIR
@@ -98,7 +98,7 @@ ifneq ($(VERILOG_SOURCES),)
 endif
 
 else
-   $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+   $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
 # Create a TCL script based on the list of $(VERILOG_SOURCES)

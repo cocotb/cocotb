@@ -47,7 +47,7 @@ else
 endif
 
 ifeq (, $(CMD))
-     $(error "Unable to locate command >$(CMD_BIN)<")
+     $(error Unable to locate command >$(CMD_BIN)<)
 else
      VCS_BIN_DIR := $(shell dirname $(CMD))
      export VCS_BIN_DIR

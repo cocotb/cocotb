@@ -49,7 +49,7 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
         COMPILE_ARGS += -2008
     endif
 else
-    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
 # Fix the seed to ensure deterministic tests

@@ -39,7 +39,7 @@ else
 endif
 
 ifeq (, $(CMD))
-    $(error "Unable to locate command >$(CMD_BIN)<")
+    $(error Unable to locate command >$(CMD_BIN)<)
 endif
 
 RTL_LIBRARY ?= work
@@ -84,7 +84,7 @@ GPI_EXTRA :=
 VHDL_GPI_INTERFACE ?= fli
 
 ifeq ($(filter vhpi fli,$(VHDL_GPI_INTERFACE)),)
-    $(error "A valid value (fli or vhpi) was not provided for VHDL_GPI_INTERFACE=$(VHDL_GPI_INTERFACE)")
+    $(error A valid value (fli or vhpi) was not provided for VHDL_GPI_INTERFACE=$(VHDL_GPI_INTERFACE))
 endif
 
 ifeq ($(TOPLEVEL_LANG),vhdl)
@@ -105,7 +105,7 @@ ifneq ($(VHDL_SOURCES),)
 endif
 
 else
-   $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+   $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
 define make_lib
