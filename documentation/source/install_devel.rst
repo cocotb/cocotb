@@ -15,11 +15,8 @@ Installing the Development Version
    `matching documentation <https://docs.cocotb.org/en/latest/>`_.
 
 The development version of cocotb has different prerequisites
-than the stable version:
-
-..
-   Likely changes after 1.5:
-   * pytest
+than the stable version (see below).
+Namely, it requires the Python development headers and a C/C++ compiler.
 
 * Python 3.6+
 * Python development packages
@@ -27,7 +24,37 @@ than the stable version:
 * GNU Make
 * A Verilog or VHDL simulator, depending on your :term:`RTL` source code
 
-Please refer to :ref:`install-prerequisites` for details.
+The installation instructions vary depending on your operating system:
+
+.. tabs::
+
+   .. group-tab:: Windows + Conda
+
+      .. code-block::
+
+         conda install -c msys2 m2-base m2-make
+
+   .. group-tab:: Linux - Debian
+
+      In a terminal, run
+
+      .. code-block:: bash
+
+          sudo apt-get install make gcc g++ python3 python3-dev python3-pip
+
+   .. group-tab:: Linux - Red Hat
+
+      In a terminal, run
+
+      .. code-block:: bash
+
+          sudo yum install make gcc gcc-c++ libstdc++-devel python3 python3-devel python3-pip
+
+   .. group-tab:: macOS
+
+      .. code-block:: bash
+
+           brew install python
 
 
 The development version of cocotb can be installed by running

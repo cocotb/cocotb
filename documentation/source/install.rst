@@ -17,10 +17,10 @@ Installation of Prerequisites
 The current stable version of cocotb requires:
 
 * Python 3.6+
-* Python development packages (Python/C API headers and embedding library)
-* GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
 * GNU Make 3+
 * A Verilog or VHDL simulator, depending on your :term:`RTL` source code
+
+.. versionchanged:: 1.7.0 Dropped requirement of Python development headers and C++ compiler for release versions.
 
 .. versionchanged:: 1.6.0 Dropped Python 3.5 support
 
@@ -53,7 +53,7 @@ The installation instructions vary depending on your operating system:
 
       .. code-block:: bash
 
-          sudo apt-get install make gcc g++ python3 python3-dev python3-pip
+          sudo apt-get install make python3 python3-pip
 
    .. group-tab:: Linux - Red Hat
 
@@ -61,7 +61,7 @@ The installation instructions vary depending on your operating system:
 
       .. code-block:: bash
 
-          sudo yum install make gcc gcc-c++ libstdc++-devel python3 python3-devel python3-pip
+          sudo yum install make python3 python3-pip
 
    .. group-tab:: macOS
 
@@ -70,8 +70,7 @@ The installation instructions vary depending on your operating system:
 
       .. code-block:: bash
 
-           brew install python icarus-verilog gtkwave
-
+           brew install python
 
 .. _install-cocotb:
 .. _installation-via-pip:
