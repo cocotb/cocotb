@@ -315,6 +315,7 @@ async def test_timer_round_mode(_):
     # test valid
     with pytest.raises(ValueError):
         Timer(0.5, "step", round_mode="error")
+    assert Timer(1.5, "step", tolerance=0.4).sim_steps == 2
     assert Timer(24.0, "step", round_mode="error").sim_steps == 24
     assert Timer(1.2, "step", round_mode="floor").sim_steps == 1
     assert Timer(1.2, "step", round_mode="ceil").sim_steps == 2
