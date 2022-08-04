@@ -15,7 +15,7 @@ from cocotb.utils import get_sim_time
 @cocotb.test()
 async def test_clock_with_units(dut):
     clk_1mhz = Clock(dut.clk, 1.0, units="us")
-    clk_250mhz = Clock(dut.clk, 4.0, units="ns")
+    clk_250mhz = Clock(dut.clk, 4 + 1e-10, units="ns", tolerance=1e-10)
 
     assert str(clk_1mhz) == "Clock(1.0 MHz)"
     dut._log.info("Created clock >{}<".format(str(clk_1mhz)))

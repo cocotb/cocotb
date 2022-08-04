@@ -70,6 +70,10 @@ class Clock(BaseClock):
             ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
             When *units* is ``'step'``,
             the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
+        tolerance (float): The allowed relative deviation from *period*.
+            Periods which do not result in an exact number of timesteps are
+            usually rejected, but may be accepted if the relative error is less
+            than this value.
 
     If you need more features like a phase shift and an asymmetric duty cycle,
     it is simple to create your own clock generator (that you then :func:`~cocotb.start`):
@@ -112,9 +116,12 @@ class Clock(BaseClock):
 
     .. deprecated:: 1.5
         Using ``None`` as the *units* argument is deprecated, use ``'step'`` instead.
+
+    .. versionchanged:: 1.7
+        Support a tolerance value.
     """
 
-    def __init__(self, signal, period, units="step"):
+    def __init__(self, signal, period, units="step", tolerance=0):
         BaseClock.__init__(self, signal)
         if units is None:
             warnings.warn(
@@ -123,8 +130,8 @@ class Clock(BaseClock):
                 stacklevel=2,
             )
             units = "step"  # don't propagate deprecated value
-        self.period = get_sim_steps(period, units)
-        self.half_period = get_sim_steps(period / 2.0, units)
+        self.period = get_sim_steps(period, units, tolerance=tolerance)
+        self.half_period = get_sim_steps(period / 2.0, units, tolerance=tolerance)
         self.frequency = 1.0 / get_time_from_sim_steps(self.period, units="us")
         self.hdl = None
         self.signal = signal
