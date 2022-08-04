@@ -120,7 +120,8 @@ def get_time_from_sim_steps(steps: int, units: str) -> int:
 
 
 def get_sim_steps(
-    time: Union[Real, Decimal], units: str = "step", *, round_mode: str = "error"
+    time: Union[Real, Decimal], units: str = "step", *, round_mode: str = "error",
+    tolerance: float = 0
 ) -> int:
     """Calculates the number of simulation time steps for a given amount of *time*.
 
@@ -137,6 +138,7 @@ def get_sim_steps(
             ``'step'`` means *time* is already in simulation time steps.
         round_mode: String specifying how to handle time values that sit between time steps
             (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
+        tolerance: Maximum relative error allowed when *round_mode* is ``'error'``.
 
     Returns:
         The number of simulation time steps.
@@ -150,6 +152,9 @@ def get_sim_steps(
 
     .. versionchanged:: 1.6
         Support rounding modes.
+
+    .. versionchanged:: 1.7
+        Support tolerance
     """
     if units not in (None, "step"):
         result = _ldexp10(time, _get_log_time_scale(units) - _get_simulator_precision())
@@ -164,8 +169,8 @@ def get_sim_steps(
         units = "step"  # don't propagate deprecated value
 
     if round_mode == "error":
-        result_rounded = math.floor(result)
-        if result_rounded != result:
+        result_rounded = round(result)
+        if abs(result_rounded - result) / (result or 1) > tolerance:
             precision = _get_simulator_precision()
             raise ValueError(
                 f"Unable to accurately represent {time}({units}) with the simulator precision of 1e{precision}"

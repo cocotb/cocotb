@@ -21,6 +21,8 @@ async def test_get_sim_steps(_):
     # test valid
     with pytest.raises(ValueError):
         utils.get_sim_steps(0.5, "step", round_mode="error")
+    assert utils.get_sim_steps(0, "step", round_mode="error") == 0
+    assert utils.get_sim_steps(1.5, "step", round_mode="error", tolerance=0.5) == 2
     assert utils.get_sim_steps(24.0, "step", round_mode="error") == 24
     assert utils.get_sim_steps(1.2, "step", round_mode="floor") == 1
     assert utils.get_sim_steps(1.2, "step", round_mode="ceil") == 2
