@@ -1,0 +1,1 @@
+Add support for :class:`fraction.Fraction` and :class:`decimal.Decimal` to the `` period`` argument of :class:`cocotb.clock.Clock`.
