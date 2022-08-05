@@ -4,7 +4,11 @@
 """
 Tests relating to cocotb.clock.Clock
 """
+import decimal
+import fractions
 from math import isclose
+
+import pytest
 
 import cocotb
 from cocotb.clock import Clock
@@ -58,3 +62,15 @@ async def test_clock_with_units(dut):
     assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
 
     clk_gen.kill()
+
+
+@cocotb.test()
+async def test_clocks_with_other_number_types(dut):
+    clk1 = cocotb.start_soon(Clock(dut.clk, decimal.Decimal("1"), units="ns").start())
+    await Timer(10, "ns")
+    with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):
+        clk1.cancel()
+    clk2 = cocotb.start_soon(Clock(dut.clk, fractions.Fraction(1), units="ns").start())
+    await Timer(10, "ns")
+    with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):
+        clk2.cancel()
