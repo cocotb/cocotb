@@ -966,9 +966,13 @@ int VhpiImpl::deregister_callback(GpiCbHdl *gpi_hdl) {
 }
 
 void VhpiImpl::sim_end() {
-    sim_finish_cb->set_call_state(GPI_DELETE);
-    vhpi_control(vhpiFinish, vhpiDiagTimeLoc);
-    check_vhpi_error();
+    // Some sims do not seem to be able to deregister the end of sim callback
+    // so we need to make sure we have tracked this and not call the handler.
+    if (sim_finish_cb->get_call_state() != GPI_DELETE) {
+        sim_finish_cb->set_call_state(GPI_DELETE);
+        vhpi_control(vhpiFinish, vhpiDiagTimeLoc);
+        check_vhpi_error();
+    }
 }
 
 extern "C" {
