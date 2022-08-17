@@ -1084,11 +1084,16 @@ void handle_fli_callback(void *data) {
         gpi_cb_state_e new_state = cb_hdl->get_call_state();
 
         /* We have re-primed in the handler */
-        if (new_state != GPI_PRIMED)
-            if (cb_hdl->cleanup_callback()) delete cb_hdl;
+        if (new_state != GPI_PRIMED) {
+            if (cb_hdl->cleanup_callback()) {
+                delete cb_hdl;
+            }
+        }
     } else {
         /* Issue #188 seems to appear via FLI as well */
-        cb_hdl->cleanup_callback();
+        if (cb_hdl->cleanup_callback()) {
+            delete cb_hdl;
+        }
     }
 
     gpi_to_simulator();
