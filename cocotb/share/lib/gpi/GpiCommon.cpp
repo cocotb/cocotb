@@ -81,7 +81,6 @@ class GpiHandleStore {
 };
 
 static GpiHandleStore unique_handles;
-static bool sim_ending = false;
 
 #define CHECK_AND_STORE(_x) unique_handles.check_and_store(_x)
 #define CLEAR_STORE() unique_handles.clear()
@@ -92,6 +91,8 @@ static bool sim_ending = false;
 #define CLEAR_STORE() (void)0  // No-op
 
 #endif
+
+static bool sim_ending = false;
 
 static size_t gpi_print_registered_impl() {
     vector<GpiImplInterface *>::iterator iter;
