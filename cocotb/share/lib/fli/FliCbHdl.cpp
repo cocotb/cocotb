@@ -88,6 +88,7 @@ int FliTimedCbHdl::cleanup_callback() {
             break;
     }
     FliProcessCbHdl::cleanup_callback();
+    // put Timer back on cache instead of deleting
     FliImpl* impl = (FliImpl*)m_impl;
     impl->cache.put_timer(this);
     return 0;

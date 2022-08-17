@@ -563,6 +563,7 @@ error:
 }
 
 GpiCbHdl *FliImpl::register_timed_callback(uint64_t time) {
+    // get time from cache instead of allocating
     FliTimedCbHdl *hdl = cache.get_timer(time);
 
     if (hdl->arm_callback()) {
@@ -1057,7 +1058,19 @@ FliTimedCbHdl *FliTimerCache::get_timer(uint64_t time) {
     return hdl;
 }
 
-void FliTimerCache::put_timer(FliTimedCbHdl *hdl) { free_list.push(hdl); }
+static constexpr size_t FLI_TIMER_CACHE_SIZE =
+    256;  // Arbitrary large value, it's doubtful more than 256 simultaneous
+          // Timer triggers will be active at any time
+
+void FliTimerCache::put_timer(FliTimedCbHdl *hdl) {
+    // save FLI_TIMER_CACHE_SIZE Timer objects before deleting, this should
+    // prevent "live leaking"
+    if (free_list.size() < FLI_TIMER_CACHE_SIZE) {
+        free_list.push(hdl);
+    } else {
+        delete hdl;
+    }
+}
 
 extern "C" {
 

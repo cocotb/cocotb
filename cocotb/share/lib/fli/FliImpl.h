@@ -343,6 +343,11 @@ class FliStringObjHdl : public FliValueObjHdl {
     char *m_mti_buff = nullptr;
 };
 
+/** Maintains a cache of FliTimedCbHdl objects which can be reused.
+ *
+ * Apparently allocating and freeing Timer callback objects is very expensive
+ * compared to anything Python or the simulator are doing.
+ */
 class FliTimerCache {
   public:
     FliTimerCache(FliImpl *impl) : impl(impl) {}
