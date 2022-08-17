@@ -516,7 +516,7 @@ int VpiTimedCbHdl::cleanup_callback() {
                too, we tag the time as delete, let it fire then do not pass up
                */
             LOG_DEBUG("Not removing PRIMED timer %d", vpi_time.low);
-            m_state = GPI_DELETE;
+            set_call_state(GPI_DELETE);
             return 0;
         case GPI_DELETE:
             LOG_DEBUG("Removing DELETE timer %d", vpi_time.low);

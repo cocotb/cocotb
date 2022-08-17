@@ -1,0 +1,1 @@
+Fixed FLI issue where unprimed triggers were still firing.

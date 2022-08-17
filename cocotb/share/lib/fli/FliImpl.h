@@ -56,13 +56,12 @@ class FliSignalObjHdl;
 class FliProcessCbHdl : public virtual GpiCbHdl {
   public:
     FliProcessCbHdl(GpiImplInterface *impl)
-        : GpiCbHdl(impl), m_proc_hdl(NULL), m_sensitised(false) {}
+        : GpiCbHdl(impl), m_proc_hdl(NULL) {}
 
     int cleanup_callback() override;
 
   protected:
     mtiProcessIdT m_proc_hdl;
-    bool m_sensitised;
 };
 
 // One class of callbacks uses mti_Sensitize to react to a signal

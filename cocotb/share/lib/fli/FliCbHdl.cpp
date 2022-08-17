@@ -41,10 +41,10 @@
  *
  */
 int FliProcessCbHdl::cleanup_callback() {
-    if (m_sensitised) {
+    if (get_call_state() == GPI_PRIMED) {
         mti_Desensitize(m_proc_hdl);
+        set_call_state(GPI_DELETE);
     }
-    m_sensitised = false;
     return 0;
 }
 
@@ -63,7 +63,6 @@ int FliTimedCbHdl::arm_callback() {
                     (mtiUInt32T)(m_time));
     mti_ScheduleWakeup64(m_proc_hdl, m_time_union_ps);
 #endif
-    m_sensitised = true;
     set_call_state(GPI_PRIMED);
     return 0;
 }
@@ -101,11 +100,10 @@ int FliSignalCbHdl::arm_callback() {
         m_proc_hdl = mti_CreateProcess(NULL, handle_fli_callback, (void*)this);
     }
 
-    if (!m_sensitised) {
+    if (get_call_state() != GPI_PRIMED) {
         mti_Sensitize(m_proc_hdl, m_sig_hdl, MTI_EVENT);
-        m_sensitised = true;
+        set_call_state(GPI_PRIMED);
     }
-    set_call_state(GPI_PRIMED);
     return 0;
 }
 
@@ -117,11 +115,10 @@ int FliSimPhaseCbHdl::arm_callback() {
                                                    (void*)this, m_priority);
     }
 
-    if (!m_sensitised) {
+    if (get_call_state() != GPI_PRIMED) {
         mti_ScheduleWakeup(m_proc_hdl, 0);
-        m_sensitised = true;
+        set_call_state(GPI_PRIMED);
     }
-    set_call_state(GPI_PRIMED);
     return 0;
 }
 
