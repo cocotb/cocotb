@@ -3,7 +3,7 @@
 
 module my_design(input logic clk);
 
-  timeunit 1s;
+  timeunit 1ns;
   timeprecision 1ns;
 
   logic my_signal_1;
