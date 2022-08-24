@@ -248,6 +248,10 @@ In order to use this simulator, set :make:var:`SIM` to ``questa``:
 
     make SIM=questa
 
+Starting with Questa 2022.3 and cocotb 1.7 users with VHDL toplevels can choose between two communication interfaces between Questa and cocotb: the proprietary FLI and VHPI.
+For backwards-compatibility cocotb defaults to FLI.
+Users can choose VHPI instead by setting the :envvar:`VHDL_GPI_INTERFACE` environment variable to ``vhpi`` before running cocotb.
+
 For more information, see :ref:`sim-modelsim`.
 
 .. _sim-questa-issues:
@@ -256,8 +260,6 @@ Issues for this simulator
 -------------------------
 
 * `All issues with label category:simulators:questa <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aquesta>`_
-* Questa 2021.1 and later added experimental support the VHPI interface in addition to the proprietary FLI interface, which can be enabled by setting the :envvar:`VHDL_GPI_INTERFACE` environment variable to ``vhpi`` before running cocotb.
-  **However, VHPI support in Questa is not complete yet and users of cocotb should continue to use FLI for the time being.**
 
 
 .. _sim-modelsim:
