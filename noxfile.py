@@ -132,8 +132,8 @@ def dev_test_sim(
 
     configure_env_for_dev_build(session)
 
-    session.install(*test_deps, *coverage_deps)
-    session.install("-e", ".")
+    session.run("pip", "install", *test_deps, *coverage_deps)
+    session.run("pip", "install", "-e", ".")
 
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
@@ -186,8 +186,8 @@ def dev_test_nosim(session: nox.Session) -> None:
 
     configure_env_for_dev_build(session)
 
-    session.install(*test_deps, *coverage_deps)
-    session.install("-e", ".")
+    session.run("pip", "install", *test_deps, *coverage_deps)
+    session.run("pip", "install", "-e", ".")
 
     # Remove a potentially existing coverage file from a previous run for the
     # same test configuration.
@@ -245,7 +245,7 @@ def dev_test_nosim(session: nox.Session) -> None:
 @nox.session
 def dev_coverage_combine(session: nox.Session) -> None:
     """Combine coverage from previous dev_* runs into a .coverage file."""
-    session.install(*coverage_report_deps)
+    session.run("pip", "install", *coverage_report_deps)
 
     coverage_files = glob.glob("**/.coverage.test.*", recursive=True)
     session.run("coverage", "combine", *coverage_files)
@@ -258,7 +258,7 @@ def dev_coverage_combine(session: nox.Session) -> None:
 @nox.session
 def dev_coverage_report(session: nox.Session) -> None:
     """Report coverage results."""
-    session.install(*coverage_report_deps)
+    session.run("pip", "install", *coverage_report_deps)
 
     session.log("Python coverage")
     session.run("coverage", "report")
@@ -293,7 +293,7 @@ def release_build_bdist(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
 
     # Pin a version to ensure reproducible builds.
-    session.install("cibuildwheel==2.5.0")
+    session.run("pip", "install", "cibuildwheel==2.5.0")
 
     # cibuildwheel only auto-detects the platform if it runs on a CI server.
     # Do the auto-detect manually to enable local runs.
@@ -324,7 +324,7 @@ def release_build_bdist(session: nox.Session) -> None:
 def release_build_sdist(session: nox.Session) -> None:
     """Build the source distribution."""
 
-    session.install("build")
+    session.run("pip", "install", "build")
 
     session.log("Building source distribution (sdist)")
     session.run("python", "-m", "build", "--sdist", "--outdir", dist_dir, ".")
@@ -336,7 +336,9 @@ def release_install(session: nox.Session) -> None:
     """Helper: Install cocotb from wheels and also install test dependencies."""
 
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")
-    session.install(
+    session.run(
+        "pip",
+        "install",
         "--only-binary",
         "cocotb",
         "--no-index",
@@ -349,7 +351,7 @@ def release_install(session: nox.Session) -> None:
     session.run("cocotb-config", "--version")
 
     session.log("Installing test dependencies")
-    session.install(*test_deps)
+    session.run("pip", "install", *test_deps)
 
 
 @nox.session
@@ -398,8 +400,8 @@ def release_test_nosim(session: nox.Session) -> None:
 @nox.session
 def docs(session: nox.Session) -> None:
     """invoke sphinx-build to build the HTML docs"""
-    session.install("-r", "documentation/requirements.txt")
-    session.install("-e", ".")
+    session.run("pip", "install", "-r", "documentation/requirements.txt")
+    session.run("pip", "install", "-e", ".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build", "./documentation/source", str(outdir), "--color", "-b", "html"
@@ -411,8 +413,8 @@ def docs(session: nox.Session) -> None:
 @nox.session
 def docs_linkcheck(session: nox.Session) -> None:
     """invoke sphinx-build to linkcheck the docs"""
-    session.install("-r", "documentation/requirements.txt")
-    session.install("-e", ".")
+    session.run("pip", "install", "-r", "documentation/requirements.txt")
+    session.run("pip", "install", "-e", ".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -427,8 +429,8 @@ def docs_linkcheck(session: nox.Session) -> None:
 @nox.session
 def docs_spelling(session: nox.Session) -> None:
     """invoke sphinx-build to spellcheck the docs"""
-    session.install("-r", "documentation/requirements.txt")
-    session.install("-e", ".")
+    session.run("pip", "install", "-r", "documentation/requirements.txt")
+    session.run("pip", "install", "-e", ".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -446,8 +448,8 @@ def dev(session: nox.Session) -> None:
 
     configure_env_for_dev_build(session)
 
-    session.install(*test_deps)
-    session.install(*dev_deps)
-    session.install("-e", ".")
+    session.run("pip", "install", *test_deps)
+    session.run("pip", "install", *dev_deps)
+    session.run("pip", "install", "-e", ".")
     if session.posargs:
         session.run(*session.posargs, external=True)
