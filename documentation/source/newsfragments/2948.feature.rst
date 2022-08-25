@@ -1,1 +1,0 @@
-Removed the need for ModelSim or Questa being installed when building cocotb. Similar to the approach taken with VPI and VHPI, cocotb now includes all C header files to build the FLI interface. This improvement was done in close collaboration with Siemens EDA, who changed the license of the relevant source code file.

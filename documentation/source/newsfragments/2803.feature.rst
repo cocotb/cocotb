@@ -1,1 +1,0 @@
-With Questa 2022.3 VHPI support is now fully working and no longer experimental. cocotb still defaults to using the FLI interface for VHDL toplevels with Questa. Users can choose VHPI instead by setting the :envvar:`VHDL_GPI_INTERFACE` environment variable to ``vhpi`` before running cocotb.

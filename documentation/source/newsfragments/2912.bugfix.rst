@@ -1,1 +1,0 @@
-Fixed Riviera makefile error for mixed-language simulation when VHDL is the top-level. This bug prevented the VPI library from loading correctly, and was a regression in 1.5.0.
