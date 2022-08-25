@@ -1,1 +1,0 @@
-:class:`~cocotb.handle.Force`, :class:`~cocotb.handle.Freeze`, and :class:`~cocotb.handle.Release` are now supported when using the FLI, Questa's traditional method to access VHDL.

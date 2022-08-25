@@ -1,1 +1,0 @@
-When code coverage is enabled with :envvar:`COVERAGE` and a configuration file is specified with :envvar:`COVERAGE_RCFILE`, default coverage configuration is not applied to avoid overriding the user-defined configuration.

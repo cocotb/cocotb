@@ -11,6 +11,42 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+cocotb 1.7.0 (2022-09-06)
+=========================
+
+Features
+--------
+
+- Removed the need for ModelSim or Questa being installed when building cocotb. Similar to the approach taken with VPI and VHPI, cocotb now includes all C header files to build the FLI interface. This improvement was done in close collaboration with Siemens EDA, who changed the license of the relevant source code file. (:pr:`2948`)
+- With Questa 2022.3 VHPI support is now fully working and no longer experimental. cocotb still defaults to using the FLI interface for VHDL toplevels with Questa. Users can choose VHPI instead by setting the :envvar:`VHDL_GPI_INTERFACE` environment variable to ``vhpi`` before running cocotb. (:pr:`2803`)
+- cocotb tests are now more reproducible. (:pr:`2721`)
+- :class:`~cocotb.handle.Force`, :class:`~cocotb.handle.Freeze`, and :class:`~cocotb.handle.Release` are now supported when using the FLI, Questa's traditional method to access VHDL. (:pr:`2775`)
+- cocotb binaries now statically link libstdc++ on Linux, which prevents library load errors even if the simulator ships its own libstdc++. (:pr:`3002`)
+
+
+Bugfixes
+--------
+
+- Fixed write scheduling to apply writes oldest to newest. (:pr:`2792`)
+- Fixed Riviera makefile error for mixed-language simulation when VHDL is the top-level. This bug prevented the VPI library from loading correctly, and was a regression in 1.5.0. (:pr:`2912`)
+- Fixed FLI issue where unprimed triggers were still firing. (:pr:`3010`)
+
+
+Deprecations and Removals
+-------------------------
+
+- :func:`cocotb.fork` has been deprecated in favor of :func:`cocotb.start_soon` or :func:`cocotb.start`. (:pr:`2663`)
+
+
+Changes
+-------
+
+- Passing :term:`python:coroutine`\ s to :func:`~cocotb.triggers.with_timeout` is now supported. (:pr:`2494`)
+- Renamed ``RunningTask`` to :class:`~cocotb.decorators.Task`. (:pr:`2876`)
+- Made :class:`~cocotb.decorators.Task` interface more like :py:class:`asyncio.Task`'s. (:pr:`2876`)
+- When code coverage is enabled with :envvar:`COVERAGE` and a configuration file is specified with :envvar:`COVERAGE_RCFILE`, default coverage configuration is not applied to avoid overriding the user-defined configuration. (:pr:`3014`)
+
+
 cocotb 1.6.2 (2022-02-07)
 =========================
 
