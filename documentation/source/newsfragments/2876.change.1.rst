@@ -1,1 +1,0 @@
-Renamed ``RunningTask`` to :class:`~cocotb.decorators.Task`.
