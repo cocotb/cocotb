@@ -11,6 +11,28 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+cocotb 1.6.2 (2022-02-07)
+=========================
+
+Bugfixes
+--------
+
+- Fix regression in :class:`~cocotb.regression.TestFactory` when using generator-based test coroutines. (:issue:`2839`)
+
+Changes
+-------
+
+- Change how :envvar:`PYTHONHOME` is populated to work with broken mingw environments. (:issue:`2739`)
+
+
+cocotb 1.6.1 (2021-12-07)
+=========================
+
+Bugfixes
+--------
+
+- Fix regression in :class:`~cocotb.regression.TestFactory` wrt unique test names. (:issue:`2781`)
+
 cocotb 1.6.0 (2021-10-20)
 =========================
 
