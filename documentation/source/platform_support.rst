@@ -67,8 +67,8 @@ Supported Windows Versions
 Supported macOS Versions
 ========================
 
-* **macOS 10.15 (Catalina)**
 * **macOS 11 (Big Sur)**
+* **macOS 12 (Monterey) x86_64**
 
 .. _platform-support-policy:
 
