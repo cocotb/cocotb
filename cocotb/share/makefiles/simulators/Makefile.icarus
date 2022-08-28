@@ -88,5 +88,5 @@ debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 	$(call check_for_results_file)
 
 clean::
-	$(RM) $(SIM_BUILD)
+	$(RM) -r $(SIM_BUILD)
 endif
