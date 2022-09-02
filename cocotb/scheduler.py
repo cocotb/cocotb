@@ -265,6 +265,7 @@ class Scheduler:
         self._pending_triggers = []
         self._pending_threads = []
         self._pending_events = []  # Events we need to call set on once we've unwound
+        self._scheduling = []
 
         self._terminate = False
         self._test = None
@@ -437,7 +438,7 @@ class Scheduler:
                 # Scheduled coroutines may append to our waiting list so the first
                 # thing to do is pop all entries waiting on this trigger.
                 try:
-                    scheduling = self._trigger2coros.pop(trigger)
+                    self._scheduling = self._trigger2coros.pop(trigger)
                 except KeyError:
                     # GPI triggers should only be ever pending if there is an
                     # associated coroutine waiting on that trigger, otherwise it would
@@ -463,19 +464,19 @@ class Scheduler:
 
                 if _debug:
                     debugstr = "\n\t".join(
-                        [coro._coro.__qualname__ for coro in scheduling]
+                        [coro._coro.__qualname__ for coro in self._scheduling]
                     )
-                    if len(scheduling) > 0:
+                    if len(self._scheduling) > 0:
                         debugstr = "\n\t" + debugstr
                     self.log.debug(
                         "%d pending coroutines for event %s%s"
-                        % (len(scheduling), str(trigger), debugstr)
+                        % (len(self._scheduling), str(trigger), debugstr)
                     )
 
                 # This trigger isn't needed any more
                 trigger.unprime()
 
-                for coro in scheduling:
+                for coro in self._scheduling:
                     if coro._outcome is not None:
                         # coroutine was killed by another coroutine waiting on the same trigger
                         continue
@@ -493,6 +494,8 @@ class Scheduler:
                     # to try and avoid them being destroyed at a weird time (as
                     # happened in gh-957)
                     del coro
+
+                self._scheduling = []
 
                 # Handle any newly queued coroutines that need to be scheduled
                 while self._pending_coros:
@@ -522,7 +525,6 @@ class Scheduler:
                 # to try and avoid them being destroyed at a weird time (as
                 # happened in gh-957)
                 del trigger
-                del scheduling
 
             # no more pending triggers
             self._check_termination()
@@ -1071,6 +1073,12 @@ class Scheduler:
                 if _debug:
                     self.log.debug("Killing %s" % str(coro))
                 coro.kill()
+
+        # if there are coroutines being scheduled when the test ends, kill them (gh-1347)
+        for coro in self._scheduling:
+            if _debug:
+                self.log.debug("Killing %s" % str(coro))
+            coro.kill()
 
         # kill any queued coroutines
         for task in self._pending_coros:
