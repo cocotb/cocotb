@@ -12,7 +12,7 @@ import logging
 import re
 import warnings
 from asyncio import CancelledError, InvalidStateError
-from typing import Coroutine
+from typing import Any, Awaitable, Coroutine
 
 import pytest
 from common import MyException
@@ -794,3 +794,15 @@ async def test_invalid_operations_task(_):
         task.result()
     with pytest.raises(InvalidStateError):
         task.exception()
+
+
+@cocotb.test(expect_fail=True)
+async def test_multiple_concurrent_test_fails(_) -> None:
+    async def call_error(thing: Awaitable[Any]) -> None:
+        await thing
+        assert False
+
+    thing = Timer(1, "ns")
+    cocotb.start_soon(call_error(thing))
+    cocotb.start_soon(call_error(thing))
+    await Timer(10, "ns")
