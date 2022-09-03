@@ -183,8 +183,8 @@ class GPI_EXPORT GpiCbHdl : public GpiHdl {
 
     // Set the data to be used for run callback, separate to arm_callback so
     // data can be re-used
-    int set_user_data(int (*gpi_function)(const void *), const void *data);
-    const void *get_user_data();
+    int set_user_data(int (*gpi_function)(void *), void *data);
+    void *get_user_data();
 
     void set_call_state(gpi_cb_state_e new_state);
     gpi_cb_state_e get_call_state();
@@ -192,8 +192,8 @@ class GPI_EXPORT GpiCbHdl : public GpiHdl {
     virtual ~GpiCbHdl();
 
   protected:
-    int (*gpi_function)(const void *) = nullptr;  // GPI function to callback
-    const void *m_cb_data = nullptr;  // GPI data supplied to "gpi_function"
+    int (*gpi_function)(void *) = nullptr;  // GPI function to callback
+    void *m_cb_data = nullptr;  // GPI data supplied to "gpi_function"
     gpi_cb_state_e m_state =
         GPI_FREE;  // GPI state of the callback through its cycle
 };

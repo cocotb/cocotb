@@ -156,7 +156,7 @@ template <>
 PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type;
 }  // namespace
 
-typedef int (*gpi_function_t)(const void *);
+typedef int (*gpi_function_t)(void *);
 
 PyGILState_STATE TAKE_GIL(void) {
     PyGILState_STATE state = PyGILState_Ensure();
