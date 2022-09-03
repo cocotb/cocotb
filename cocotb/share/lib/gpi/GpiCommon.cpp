@@ -513,7 +513,7 @@ int gpi_get_range_right(gpi_sim_hdl obj_hdl) {
     return obj_hdl->get_range_right();
 }
 
-gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),
+gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *),
                                               void *gpi_cb_data,
                                               gpi_sim_hdl sig_hdl, int edge) {
     GpiSignalObjHdl *signal_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
@@ -531,7 +531,7 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),
 
 /* It should not matter which implementation we use for this so just pick the
    first one */
-gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(const void *),
+gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
                                        void *gpi_cb_data, uint64_t time) {
     GpiCbHdl *gpi_hdl = registered_impls[0]->register_timed_callback(time);
     if (!gpi_hdl) {
@@ -546,7 +546,7 @@ gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(const void *),
 /* It should not matter which implementation we use for this so just pick the
    first one
 */
-gpi_cb_hdl gpi_register_readonly_callback(int (*gpi_function)(const void *),
+gpi_cb_hdl gpi_register_readonly_callback(int (*gpi_function)(void *),
                                           void *gpi_cb_data) {
     GpiCbHdl *gpi_hdl = registered_impls[0]->register_readonly_callback();
     if (!gpi_hdl) {
@@ -558,7 +558,7 @@ gpi_cb_hdl gpi_register_readonly_callback(int (*gpi_function)(const void *),
     return gpi_hdl;
 }
 
-gpi_cb_hdl gpi_register_nexttime_callback(int (*gpi_function)(const void *),
+gpi_cb_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *),
                                           void *gpi_cb_data) {
     GpiCbHdl *gpi_hdl = registered_impls[0]->register_nexttime_callback();
     if (!gpi_hdl) {
@@ -573,7 +573,7 @@ gpi_cb_hdl gpi_register_nexttime_callback(int (*gpi_function)(const void *),
 /* It should not matter which implementation we use for this so just pick the
    first one
 */
-gpi_cb_hdl gpi_register_readwrite_callback(int (*gpi_function)(const void *),
+gpi_cb_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *),
                                            void *gpi_cb_data) {
     GpiCbHdl *gpi_hdl = registered_impls[0]->register_readwrite_callback();
     if (!gpi_hdl) {

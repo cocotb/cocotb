@@ -93,8 +93,7 @@ int GpiCbHdl::arm_callback() {
     return 0;
 }
 
-int GpiCbHdl::set_user_data(int (*gpi_function)(const void *),
-                            const void *data) {
+int GpiCbHdl::set_user_data(int (*gpi_function)(void *), void *data) {
     if (!gpi_function) {
         LOG_ERROR("gpi_function to set_user_data is NULL");
     }
@@ -103,7 +102,7 @@ int GpiCbHdl::set_user_data(int (*gpi_function)(const void *),
     return 0;
 }
 
-const void *GpiCbHdl::get_user_data() { return m_cb_data; }
+void *GpiCbHdl::get_user_data() { return m_cb_data; }
 
 void GpiCbHdl::set_call_state(gpi_cb_state_e new_state) { m_state = new_state; }
 
