@@ -322,26 +322,15 @@ def _initialise_testbench_(argv_):
     regression_manager._execute()
 
 
-def _sim_event(level, message):
+def _sim_event(message):
     """Function that can be called externally to signal an event."""
-    # SIM_INFO = 0
-    SIM_TEST_FAIL = 1
-    SIM_FAIL = 2
     from cocotb.result import SimFailure
 
-    if level is SIM_TEST_FAIL:
-        scheduler.log.error("Failing test at simulator request")
-        scheduler._finish_test(
-            AssertionError(f"Failure from external source: {message}")
-        )
-    elif level is SIM_FAIL:
-        # We simply return here as the simulator will exit
-        # so no cleanup is needed
-        msg = f"Failing test at simulator request before test run completion: {message}"
-        scheduler.log.error(msg)
-        scheduler._finish_scheduler(SimFailure(msg))
-    else:
-        scheduler.log.error("Unsupported sim event")
+    # We simply return here as the simulator will exit
+    # so no cleanup is needed
+    msg = f"Failing test at simulator request before test run completion: {message}"
+    scheduler.log.error(msg)
+    scheduler._finish_scheduler(SimFailure(msg))
 
 
 @deprecated("This function is now private")

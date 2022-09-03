@@ -296,8 +296,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     return 0;
 }
 
-extern "C" COCOTB_EXPORT void _embed_sim_event(gpi_event_t level,
-                                               const char *msg) {
+extern "C" COCOTB_EXPORT void _embed_sim_event(const char *msg) {
     /* Indicate to the upper layer that a sim event occurred */
 
     if (pEventFn) {
@@ -309,7 +308,7 @@ extern "C" COCOTB_EXPORT void _embed_sim_event(gpi_event_t level,
             msg = "No message provided";
         }
 
-        PyObject *pValue = PyObject_CallFunction(pEventFn, "ls", level, msg);
+        PyObject *pValue = PyObject_CallFunction(pEventFn, "s", msg);
         if (pValue == NULL) {
             PyErr_Print();
             LOG_ERROR("Passing event to upper layer failed");

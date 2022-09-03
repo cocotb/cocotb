@@ -101,12 +101,6 @@ typedef struct GpiIterator *gpi_iterator_hdl;
 extern "C" {
 #endif
 
-typedef enum gpi_event_e {
-    SIM_INFO = 0,
-    SIM_TEST_FAIL = 1,
-    SIM_FAIL = 2,
-} gpi_event_t;
-
 // Functions for controlling/querying the simulation state
 
 /**
