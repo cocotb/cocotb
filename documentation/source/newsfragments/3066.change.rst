@@ -1,0 +1,1 @@
+Removed ``level`` arg from ``_sim_event`` function in the :envvar:`PYGPI_ENTRY_POINT` interface. This function can only indicate a request to shutdown from the simulator or GPI.

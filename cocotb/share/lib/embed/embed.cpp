@@ -28,7 +28,7 @@
 static void (*_embed_init_python)();
 static void (*_embed_sim_cleanup)();
 static int (*_embed_sim_init)(int argc, char const *const *argv);
-static void (*_embed_sim_event)(gpi_event_t level, const char *msg);
+static void (*_embed_sim_event)(const char *msg);
 
 static bool init_failed = false;
 
@@ -161,8 +161,8 @@ extern "C" int embed_sim_init(int argc, char const *const *argv) {
     }
 }
 
-extern "C" void embed_sim_event(gpi_event_t level, const char *msg) {
+extern "C" void embed_sim_event(const char *msg) {
     if (!init_failed) {
-        _embed_sim_event(level, msg);
+        _embed_sim_event(msg);
     }
 }

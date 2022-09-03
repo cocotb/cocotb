@@ -242,9 +242,12 @@ PyGPI
     The entry module must have the following additional functions defined.
     These additional requirements on the entry module may be relaxed over time.
 
-    * ``_sim_event(level: int) -> None``
+    * ``_sim_event(message: str) -> None``
     * ``_log_from_c(logger_name: str, level: int, filename: str, lineno: int, msg: str, function_name: str)) -> None``
     * ``_filter_from_c(logger_name: str, level: int) -> bool``
+
+    .. versionchanged:: 1.8
+        ``level`` argument to ``_sim_event`` is no longer passed, it is assumed to be `SIM_FAIL` (2).
 
 
 Makefile-based Test Scripts
