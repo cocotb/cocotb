@@ -37,6 +37,7 @@
 #include <py_gpi_logging.h>  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
 
 #include <cassert>
+#include <string>
 
 #include "locale.h"
 
@@ -57,18 +58,17 @@ static wchar_t *argv[] = {progname};
 
 #if defined(_WIN32)
 #if defined(__MINGW32__) || defined(__CYGWIN32__)
-const char *PYTHON_INTERPRETER_PATH = "/Scripts/python";
+constexpr char const *PYTHON_INTERPRETER_PATH = "/Scripts/python";
 #else
-const char *PYTHON_INTERPRETER_PATH = "\\Scripts\\python";
+constexpr char const *PYTHON_INTERPRETER_PATH = "\\Scripts\\python";
 #endif
 #else
-const char *PYTHON_INTERPRETER_PATH = "/bin/python";
+constexpr char const *PYTHON_INTERPRETER_PATH = "/bin/python";
 #endif
 
 static PyObject *pEventFn = NULL;
 
 static void set_program_name_in_venv(void) {
-    static char venv_path[PATH_MAX];
     static wchar_t venv_path_w[PATH_MAX];
 
     const char *venv_path_home = getenv("VIRTUAL_ENV");
@@ -79,30 +79,26 @@ static void set_program_name_in_venv(void) {
         return;
     }
 
-    strncpy(venv_path, venv_path_home, sizeof(venv_path) - 1);
-    if (venv_path[sizeof(venv_path) - 1]) {
+    std::string venv_path = venv_path_home;
+    venv_path.append(PYTHON_INTERPRETER_PATH);
+
+    auto venv_path_w_temp = Py_DecodeLocale(venv_path.c_str(), NULL);
+    if (venv_path_w_temp == NULL) {
         LOG_ERROR(
             "Unable to set Python Program Name using virtual environment. "
-            "Path to virtual environment too long");
+            "Decoding error in virtual environment path.");
+        LOG_INFO("Virtual environment path: %s", venv_path.c_str());
         return;
     }
+    DEFER(PyMem_RawFree(venv_path_w_temp));
 
-    strncat(venv_path, PYTHON_INTERPRETER_PATH,
-            sizeof(venv_path) - strlen(venv_path) - 1);
-    if (venv_path[sizeof(venv_path) - 1]) {
-        LOG_ERROR(
-            "Unable to set Python Program Name using virtual environment. "
-            "Path to interpreter too long");
-        return;
-    }
-
-    wcsncpy(venv_path_w, Py_DecodeLocale(venv_path, NULL),
+    wcsncpy(venv_path_w, venv_path_w_temp,
             sizeof(venv_path_w) / sizeof(wchar_t));
-
     if (venv_path_w[(sizeof(venv_path_w) / sizeof(wchar_t)) - 1]) {
         LOG_ERROR(
             "Unable to set Python Program Name using virtual environment. "
             "Path to interpreter too long");
+        LOG_INFO("Virtual environment path: %s", venv_path.c_str());
         return;
     }
 
@@ -127,6 +123,8 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     assert(!gtstate);  // this function should not be called twice
 
     to_python();
+    // must set program name to Python executable before initialization, so
+    // initialization can determine path from executable
     set_program_name_in_venv();
     Py_Initialize(); /* Initialize the interpreter */
     PySys_SetArgvEx(1, argv, 0);
