@@ -248,7 +248,7 @@ def dev_coverage_combine(session: nox.Session) -> None:
     session.run("pip", "install", *coverage_report_deps)
 
     coverage_files = glob.glob("**/.coverage.test.*", recursive=True)
-    session.run("coverage", "combine", *coverage_files)
+    session.run("coverage", "combine", "--append", *coverage_files)
 
     session.log("Wrote combined coverage database for all tests to '.coverage'.")
 
