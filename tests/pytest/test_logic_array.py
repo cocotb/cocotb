@@ -14,6 +14,8 @@ def test_logic_array_constructor():
     with pytest.raises(ValueError):
         LogicArray([object()])
 
+    assert LogicArray(range=Range(0, "to", 3)) == LogicArray("XXXX")
+
     assert LogicArray(0) == LogicArray("0")
     assert LogicArray(0xA7) == LogicArray("10100111")
     assert LogicArray(-1) == LogicArray("1")
@@ -28,6 +30,9 @@ def test_logic_array_constructor():
 
     with pytest.raises(ValueError):
         LogicArray("101010", Range(0, "to", 0))
+
+    with pytest.raises(ValueError):
+        LogicArray()
 
 
 def test_logic_array_properties():

@@ -28,6 +28,8 @@ class LogicArray(Array[Logic]):
     used.
     Like :class:`Array`, if no *range* argument is given, it is deduced from the length
     of the iterable or bit string used to initialize the variable.
+    If a *range* argument is given, but no value,
+    the array is filled with the default value of Logic().
 
     .. code-block:: python3
 
@@ -37,11 +39,14 @@ class LogicArray(Array[Logic]):
         >>> LogicArray([0, True, "X"])
         LogicArray('01X', Range(2, 'downto', 0))
 
-        >>> LogicArray(0xA)                     # picks smallest range that can fit the value
+        >>> LogicArray(0xA)  # picks smallest range that can fit the value
         LogicArray('1010', Range(3, 'downto', 0))
 
-        >>> LogicArray(-4, Range(0, "to", 3))   # will sign-extend
+        >>> LogicArray(-4, Range(0, "to", 3))  # will sign-extend
         LogicArray('1100', Range(0, 'to', 3))
+
+        >>> LogicArray(range=Range(0, "to", 3))  # default values
+        LogicArray('XXXX', Range(0, 'to', 3))
 
     :class:`LogicArray`\ s support the same operations as :class:`Array`;
     however, it enforces the condition that all elements must be a :class:`Logic`.
@@ -115,12 +120,38 @@ class LogicArray(Array[Logic]):
 
     __slots__ = ()
 
+    @typing.overload
     def __init__(
         self,
         value: typing.Union[int, typing.Iterable[LogicConstructibleT], BinaryValue],
+        range: typing.Optional[Range],
+    ):
+        ...
+
+    @typing.overload
+    def __init__(
+        self,
+        value: typing.Union[
+            int, typing.Iterable[LogicConstructibleT], BinaryValue, None
+        ],
+        range: Range,
+    ):
+        ...
+
+    def __init__(
+        self,
+        value: typing.Union[
+            int, typing.Iterable[LogicConstructibleT], BinaryValue, None
+        ] = None,
         range: typing.Optional[Range] = None,
     ) -> None:
-        if isinstance(value, int):
+        if value is None and range is None:
+            raise ValueError(
+                "at least one of the value and range input parameters must be given"
+            )
+        if value is None:
+            self._value = [Logic() for _ in range]
+        elif isinstance(value, int):
             if value < 0:
                 bitlen = int.bit_length(value + 1) + 1
             else:

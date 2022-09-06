@@ -1,0 +1,1 @@
+:class:`cocotb.types.LogicArray` now supports a default value construction if a ``range`` is given.
