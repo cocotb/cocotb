@@ -45,7 +45,7 @@ class LogicArray(Array[Logic]):
         >>> LogicArray(-4, Range(0, "to", 3))  # will sign-extend
         LogicArray('1100', Range(0, 'to', 3))
 
-        >>> LogicArray(range=Range(0, "to", 3))  # defaults values
+        >>> LogicArray(range=Range(0, "to", 3))  # default values
         LogicArray('XXXX', Range(0, 'to', 3))
 
     :class:`LogicArray`\ s support the same operations as :class:`Array`;
