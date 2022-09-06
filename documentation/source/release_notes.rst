@@ -7,9 +7,7 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
-.. include:: master-notes.rst
-
-cocotb 1.7.0 (2022-08-??)
+cocotb 1.7.0 (2022-09-06)
 =========================
 
 Features
