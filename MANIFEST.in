@@ -1,4 +1,5 @@
 recursive-include cocotb/share *
+recursive-include cocotb/_vendor *
 include README.md
 include LICENSE
 include cocotb_build_libs.py
