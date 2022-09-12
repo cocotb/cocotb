@@ -455,7 +455,9 @@ class RegressionManager:
             result_was = ""
         else:
             result_was = f" (result was {type(result).__qualname__})"
-        self.log.info(f"{test} {start_hilight}passed{stop_hilight}{rest}{result_was}")
+        self.log.info(
+            f"{test.__qualname__} {start_hilight}passed{stop_hilight}{rest}{result_was}"
+        )
 
     def _log_test_failed(
         self, test: Test, result: Optional[Exception] = None, msg: Optional[str] = None
@@ -467,7 +469,8 @@ class RegressionManager:
         else:
             rest = f": {msg}"
         self.log.info(
-            f"{test} {start_hilight}failed{stop_hilight}{rest}", exc_info=result
+            f"{test.__qualname__} {start_hilight}failed{stop_hilight}{rest}",
+            exc_info=result,
         )
 
     def _record_result(
