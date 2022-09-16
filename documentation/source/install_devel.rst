@@ -37,7 +37,7 @@ The installation instructions vary depending on your operating system:
 
          conda install -c msys2 m2-base m2-make
 
-   .. group-tab:: Linux - Debian
+   .. group-tab:: Linux - Debian/Ubuntu
 
       In a terminal, run
 
