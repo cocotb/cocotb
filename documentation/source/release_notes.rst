@@ -7,6 +7,15 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
+cocotb 1.7.1 (2022-09-17)
+=========================
+
+Bugfixes
+--------
+
+- Fixed the packaging of the source distribution (sdist) to include all necessary files. (:pr:`3072`)
+- Documented the fact that ``libstdc++-static`` needs to be available on some Linux distributions to install cocotb from source. (:pr:`3082`)
+
 cocotb 1.7.0 (2022-09-06)
 =========================
 
