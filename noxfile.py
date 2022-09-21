@@ -340,6 +340,36 @@ def release_build_sdist(session: nox.Session) -> None:
     session.log(f"Source distribution in release mode built into {dist_dir!r}")
 
 
+@nox.session
+def release_test_sdist(session: nox.Session) -> None:
+    """Build and install the sdist."""
+
+    # Find the sdist to install.
+    sdists = list(Path(dist_dir).glob("cocotb-*.tar.gz"))
+    if len(sdists) == 0:
+        session.error(
+            f"No *.tar.gz sdist file found in {dist_dir!r} "
+            f"Run the 'release_build' session first."
+        )
+    if len(sdists) > 1:
+        session.error(
+            f"More than one potential sdist found in the {dist_dir!r} "
+            f"directory. Run the 'release_clean' session first!"
+        )
+    sdist_path = sdists[0]
+    assert sdist_path.is_file()
+
+    session.log("Installing cocotb from sdist, which includes the build step")
+    session.run(
+        "pip",
+        "install",
+        str(sdist_path),
+    )
+
+    session.log("Running cocotb-config as basic installation smoke test")
+    session.run("cocotb-config", "--version")
+
+
 def release_install(session: nox.Session) -> None:
     """Helper: Install cocotb from wheels and also install test dependencies."""
 
