@@ -2,6 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import glob
+import shutil
 import sys
 from contextlib import suppress
 from pathlib import Path
@@ -270,6 +271,7 @@ def dev_coverage_report(session: nox.Session) -> None:
 #
 # Release pipeline.
 #
+# - Clean out the dist directory.
 # - Build wheels (release builds).
 # - Install cocotb from wheel.
 # - Run tests against cocotb installed from the wheel.
@@ -279,6 +281,12 @@ def dev_coverage_report(session: nox.Session) -> None:
 
 # Directory containing the distribution artifacts (sdist and bdist).
 dist_dir = "dist"
+
+
+@nox.session
+def release_clean(session: nox.Session) -> None:
+    """Remove all build artifacts from the dist directory."""
+    shutil.rmtree(dist_dir, ignore_errors=True)
 
 
 @nox.session
