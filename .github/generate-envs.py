@@ -53,13 +53,21 @@ ENVS = [
         "python-version": "3.10",
         "group": "ci",
     },
+    {
+        "lang": "verilog",
+        "sim": "icarus",
+        "sim-version": "apt",
+        "os": "ubuntu-20.04",
+        "python-version": "3.11.0-rc - 3.11",
+        "group": "ci",
+    },
     # A single test for the upcoming Python version.
     {
         "lang": "verilog",
         "sim": "icarus",
         "sim-version": "apt",
         "os": "ubuntu-20.04",
-        "python-version": "3.11.0-alpha - 3.11.0",
+        "python-version": "3.12.0-alpha - 3.12.0",
         "group": "experimental",
     },
     # Test Icarus on Ubuntu
