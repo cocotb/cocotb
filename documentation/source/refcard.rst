@@ -10,7 +10,7 @@ Reference Card
    The "| " syntax is a "Line Block", see
       https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#line-blocks
 
-.. spelling::
+.. spelling:word-list::
    coro
    coros
    func
