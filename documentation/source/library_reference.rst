@@ -2,7 +2,7 @@
 Library Reference
 *****************
 
-.. spelling::
+.. spelling:word-list::
    AXIProtocolError
    BusDriver
    De

@@ -2,7 +2,7 @@
 Release Notes
 *************
 
-.. spelling::
+.. spelling:word-list::
    dev
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.

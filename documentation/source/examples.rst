@@ -75,7 +75,7 @@ The cocotb testbench pulls the reset on both instances and checks that they beha
 
    This example is not complete.
 
-.. spelling::
+.. spelling:word-list::
    Todo
 
 

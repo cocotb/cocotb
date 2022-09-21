@@ -2,7 +2,7 @@
 Contributors
 ************
 
-.. spelling::
+.. spelling:word-list::
    McGregor
    Grimwood
    FOSSi

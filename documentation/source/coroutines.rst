@@ -1,7 +1,7 @@
 .. _coroutines:
 .. _async_functions:
 
-.. spelling::
+.. spelling:word-list::
    Async
 
 
