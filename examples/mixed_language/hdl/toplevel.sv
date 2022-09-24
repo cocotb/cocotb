@@ -38,6 +38,9 @@ logic                                       sv_to_vhdl_startofpacket;
 logic                                       sv_to_vhdl_endofpacket;
 logic                                       sv_to_vhdl_ready;
 
+logic                                       csr_waitrequest_sv;
+logic                                       csr_waitrequest_vhdl;
+
 
 endian_swapper_sv #(
     .DATA_BYTES                             (DATA_BYTES)
