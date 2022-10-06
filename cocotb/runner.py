@@ -14,6 +14,8 @@ from contextlib import suppress
 from typing import Dict, List, Mapping, Optional, Sequence, Type, Union
 from xml.etree import cElementTree as ET
 
+import find_libpython
+
 import cocotb.config
 
 PathLike = Union["os.PathLike[str]", str]
@@ -70,7 +72,7 @@ class Simulator(abc.ABC):
             self.env[e] = os.environ[e]
 
         if "LIBPYTHON_LOC" not in self.env:
-            self.env["LIBPYTHON_LOC"] = cocotb._vendor.find_libpython.find_libpython()
+            self.env["LIBPYTHON_LOC"] = find_libpython.find_libpython()
 
         self.env["PATH"] += os.pathsep + cocotb.config.libs_dir
 
