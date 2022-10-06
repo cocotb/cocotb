@@ -97,7 +97,9 @@ setup(
     author="Chris Higgs, Stuart Hodgson",
     maintainer="cocotb contributors",
     maintainer_email="cocotb@lists.librecores.org",
-    install_requires=[],
+    install_requires=[
+        "find_libpython",
+    ],
     python_requires=">=3.6",
     packages=find_packages(),
     package_data={
