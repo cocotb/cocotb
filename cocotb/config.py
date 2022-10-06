@@ -44,8 +44,9 @@ import os
 import sys
 import textwrap
 
+import find_libpython
+
 import cocotb
-import cocotb._vendor.find_libpython as find_libpython
 
 __all__ = ["share_dir", "makefiles_dir", "libs_dir"]
 
