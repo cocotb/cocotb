@@ -2,8 +2,8 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import glob
-import shutil
 import os
+import shutil
 import sys
 from contextlib import suppress
 from pathlib import Path

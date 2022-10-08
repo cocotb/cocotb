@@ -14,31 +14,8 @@ The Python Test Runner (short: "runner") described here is a replacement
 for cocotb's traditional Makefile flow.
 It builds the HDL for the simulator and runs the tests.
 
-
-Command-line Interface
-======================
-
-The runner has a command-line interface under the name ``cocotb-runner``.
-
-The following is an example on how to run the tests in file
-:file:`{cocotb-root}/examples/simple_dff/test_dff.py`
-against the design
-:file:`{cocotb-root}/examples/simple_dff/dff.sv`.
-
-.. code-block:: bash
-
-    PYTHONPATH=examples/simple_dff cocotb-runner \
-        --hdl-toplevel=dff \
-        --test-module=test_dff \
-        --verilog-sources=examples/simple_dff/dff.sv
-
-
-See the full list of supported runner arguments by running ``cocotb-runner -h``.
-
-``cocotb-runner`` will set the return code ``1``
-if no tests have been run at all
-or if any failures have been found in the result files.
-It will return ``0`` otherwise.
+It is not meant to be ideal solution for everyone. You can easily integrate cocotb into
+custom flow see :ref:`custom-flows`.
 
 
 Usage with pytest

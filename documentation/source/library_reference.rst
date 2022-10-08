@@ -29,15 +29,6 @@ Python Test Runner
     :synopsis: Build HDL and run cocotb tests.
 
 
-Runner Command Line Interface (CLI)
------------------------------------
-
-.. sphinx_argparse_cli::
-    :module: cocotb.runner
-    :func: get_parser
-    :prog: cocotb-runner
-
-
 Test Results
 ============
 
