@@ -257,7 +257,8 @@ gpi_sim_hdl gpi_get_root_handle(const char *name) {
     }
 }
 
-static GpiObjHdl *gpi_get_handle_by_name_(GpiObjHdl *parent, std::string name,
+static GpiObjHdl *gpi_get_handle_by_name_(GpiObjHdl *parent,
+                                          const std::string &name,
                                           GpiImplInterface *skip_impl) {
     LOG_DEBUG("Searching for %s", name.c_str());
 
