@@ -434,9 +434,9 @@ class FliImpl : public GpiImplInterface {
     const char *reason_to_string(int reason) override;
 
     /* Method to provide strings from operation types */
-    GpiObjHdl *create_gpi_obj_from_handle(void *hdl, std::string &name,
-                                          std::string &fq_name, int accType,
-                                          int accFullType);
+    GpiObjHdl *create_gpi_obj_from_handle(void *hdl, const std::string &name,
+                                          const std::string &fq_name,
+                                          int accType, int accFullType);
 
   private:
     bool isValueConst(int kind);

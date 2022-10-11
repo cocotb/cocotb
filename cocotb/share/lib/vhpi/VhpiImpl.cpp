@@ -266,8 +266,8 @@ bool is_enum_boolean(vhpiHandleT hdl) {
 }
 
 GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
-                                                std::string &name,
-                                                std::string &fq_name) {
+                                                const std::string &name,
+                                                const std::string &fq_name) {
     vhpiIntT type;
     gpi_objtype_t gpi_type;
     GpiObjHdl *new_obj = NULL;

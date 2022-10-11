@@ -277,8 +277,9 @@ class VpiImpl : public GpiImplInterface {
     GpiObjHdl *native_check_create(int32_t index, GpiObjHdl *parent) override;
     GpiObjHdl *native_check_create(void *raw_hdl, GpiObjHdl *parent) override;
     const char *reason_to_string(int reason) override;
-    GpiObjHdl *create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name,
-                                          std::string &fq_name);
+    GpiObjHdl *create_gpi_obj_from_handle(vpiHandle new_hdl,
+                                          const std::string &name,
+                                          const std::string &fq_name);
 
   private:
     /* Singleton callbacks */
