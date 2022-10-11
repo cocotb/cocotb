@@ -174,7 +174,8 @@ vhpiPutValueModeT map_put_value_mode(gpi_set_action_t action) {
     return put_value_mode;
 }
 
-int VhpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VhpiArrayObjHdl::initialise(const std::string &name,
+                                const std::string &fq_name) {
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
 
     m_indexable = true;
@@ -236,7 +237,8 @@ int VhpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int VhpiObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VhpiObjHdl::initialise(const std::string &name,
+                           const std::string &fq_name) {
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
     if (handle != NULL) {
         vhpiHandleT du_handle = vhpi_handle(vhpiDesignUnit, handle);
@@ -256,7 +258,8 @@ int VhpiObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VhpiSignalObjHdl::initialise(const std::string &name,
+                                 const std::string &fq_name) {
     // Determine the type of object, either scalar or vector
     m_value.format = vhpiObjTypeVal;
     m_value.bufSize = 0;
@@ -330,7 +333,8 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VhpiLogicSignalObjHdl::initialise(const std::string &name,
+                                      const std::string &fq_name) {
     // Determine the type of object, either scalar or vector
     m_value.format = vhpiLogicVal;
     m_value.bufSize = 0;

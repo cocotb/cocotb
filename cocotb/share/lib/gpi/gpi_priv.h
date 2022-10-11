@@ -118,7 +118,7 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     };
 
     bool is_native_impl(GpiImplInterface *impl);
-    virtual int initialise(std::string &name, std::string &full_name);
+    virtual int initialise(const std::string &name, const std::string &full_name);
 
   protected:
     int m_num_elems = 0;
