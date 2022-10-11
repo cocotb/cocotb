@@ -113,8 +113,9 @@ bool FliImpl::isTypeSignal(int type, int full_type) {
     return (type == accSignal || full_type == accAliasSignal);
 }
 
-GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name,
-                                               std::string &fq_name,
+GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl,
+                                               const std::string &name,
+                                               const std::string &fq_name,
                                                int accType, int accFullType) {
     GpiObjHdl *new_obj = NULL;
 

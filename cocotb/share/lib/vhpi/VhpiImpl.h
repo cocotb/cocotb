@@ -289,8 +289,8 @@ class VhpiImpl : public GpiImplInterface {
     const char *format_to_string(int format);
 
     GpiObjHdl *create_gpi_obj_from_handle(vhpiHandleT new_hdl,
-                                          std::string &name,
-                                          std::string &fq_name);
+                                          const std::string &name,
+                                          const std::string &fq_name);
 
   private:
     VhpiReadwriteCbHdl m_read_write;

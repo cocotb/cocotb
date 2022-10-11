@@ -172,8 +172,8 @@ static gpi_objtype_t const_type_to_gpi_objtype(int32_t const_type) {
 }
 
 GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
-                                               std::string &name,
-                                               std::string &fq_name) {
+                                               const std::string &name,
+                                               const std::string &fq_name) {
     int32_t type;
     GpiObjHdl *new_obj = NULL;
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
