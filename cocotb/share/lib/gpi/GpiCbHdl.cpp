@@ -70,7 +70,7 @@ bool GpiHdl::is_this_impl(GpiImplInterface *impl) {
     return impl == this->m_impl;
 }
 
-int GpiObjHdl::initialise(std::string &name, std::string &fq_name) {
+int GpiObjHdl::initialise(const std::string &name, const std::string &fq_name) {
     m_name = name;
     m_fullname = fq_name;
     return 0;

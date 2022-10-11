@@ -157,7 +157,8 @@ class VpiArrayObjHdl : public GpiObjHdl {
     VpiArrayObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype)
         : GpiObjHdl(impl, hdl, objtype) {}
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 };
 
 class VpiObjHdl : public GpiObjHdl {
@@ -165,7 +166,8 @@ class VpiObjHdl : public GpiObjHdl {
     VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype)
         : GpiObjHdl(impl, hdl, objtype) {}
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 };
 
 class VpiSignalObjHdl : public GpiSignalObjHdl {
@@ -191,7 +193,8 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
 
     /* Value change callback accessor */
     GpiCbHdl *value_change_cb(int edge) override;
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 
   private:
     int set_signal_value(s_vpi_value value, gpi_set_action_t action);

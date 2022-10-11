@@ -64,7 +64,7 @@ GpiCbHdl *FliSignalObjHdl::value_change_cb(int edge) {
     return (GpiCbHdl *)cb;
 }
 
-int FliObjHdl::initialise(std::string &name, std::string &fq_name) {
+int FliObjHdl::initialise(const std::string &name, const std::string &fq_name) {
     bool is_signal =
         (get_acc_type() == accSignal || get_acc_full_type() == accAliasSignal);
     mtiTypeIdT typeId;
@@ -101,11 +101,13 @@ int FliObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int FliSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
+int FliSignalObjHdl::initialise(const std::string &name,
+                                const std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int FliValueObjHdl::initialise(std::string &name, std::string &fq_name) {
+int FliValueObjHdl::initialise(const std::string &name,
+                               const std::string &fq_name) {
     if (get_type() == GPI_ARRAY) {
         m_range_left = mti_TickLeft(m_val_type);
         m_range_right = mti_TickRight(m_val_type);
@@ -205,7 +207,8 @@ void *FliValueObjHdl::get_sub_hdl(int index) {
         return m_sub_hdls[idx];
 }
 
-int FliEnumObjHdl::initialise(std::string &name, std::string &fq_name) {
+int FliEnumObjHdl::initialise(const std::string &name,
+                              const std::string &fq_name) {
     m_num_elems = 1;
     m_value_enum = mti_GetEnumValues(m_val_type);
     m_num_enum = mti_TickLength(m_val_type);
@@ -277,7 +280,8 @@ int FliEnumObjHdl::set_signal_value(const int32_t value,
     }
 }
 
-int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name) {
+int FliLogicObjHdl::initialise(const std::string &name,
+                               const std::string &fq_name) {
     switch (m_fli_type) {
         case MTI_TYPE_ENUM:
             m_num_elems = 1;
@@ -550,7 +554,8 @@ int FliLogicObjHdl::set_signal_value_binstr(std::string &value,
     }
 }
 
-int FliIntObjHdl::initialise(std::string &name, std::string &fq_name) {
+int FliIntObjHdl::initialise(const std::string &name,
+                             const std::string &fq_name) {
     m_num_elems = 1;
 
     m_val_buff = new char[33];  // Integers are always 32-bits
@@ -635,7 +640,8 @@ int FliIntObjHdl::set_signal_value(const int32_t value,
     }
 }
 
-int FliRealObjHdl::initialise(std::string &name, std::string &fq_name) {
+int FliRealObjHdl::initialise(const std::string &name,
+                              const std::string &fq_name) {
     m_num_elems = 1;
 
     m_mti_buff = new double;
@@ -697,7 +703,8 @@ int FliRealObjHdl::set_signal_value(const double value,
     }
 }
 
-int FliStringObjHdl::initialise(std::string &name, std::string &fq_name) {
+int FliStringObjHdl::initialise(const std::string &name,
+                                const std::string &fq_name) {
     m_range_left = mti_TickLeft(m_val_type);
     m_range_right = mti_TickRight(m_val_type);
     m_num_elems = mti_TickLength(m_val_type);

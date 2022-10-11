@@ -170,7 +170,8 @@ class VhpiArrayObjHdl : public GpiObjHdl {
         : GpiObjHdl(impl, hdl, objtype) {}
     ~VhpiArrayObjHdl() override;
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 };
 
 class VhpiObjHdl : public GpiObjHdl {
@@ -179,7 +180,8 @@ class VhpiObjHdl : public GpiObjHdl {
         : GpiObjHdl(impl, hdl, objtype) {}
     ~VhpiObjHdl() override;
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 };
 
 class VhpiSignalObjHdl : public GpiSignalObjHdl {
@@ -207,7 +209,8 @@ class VhpiSignalObjHdl : public GpiSignalObjHdl {
 
     /* Value change callback accessor */
     GpiCbHdl *value_change_cb(int edge) override;
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 
   protected:
     vhpiEnumT chr2vhpi(char value);
@@ -229,7 +232,8 @@ class VhpiLogicSignalObjHdl : public VhpiSignalObjHdl {
     int set_signal_value_binstr(std::string &value,
                                 gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 };
 
 class VhpiIterator : public GpiIterator {

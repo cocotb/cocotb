@@ -119,7 +119,8 @@ int VpiCbHdl::cleanup_callback() {
     return 0;
 }
 
-int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VpiArrayObjHdl::initialise(const std::string &name,
+                               const std::string &fq_name) {
     vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
 
     m_indexable = true;
@@ -207,7 +208,7 @@ int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int VpiObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VpiObjHdl::initialise(const std::string &name, const std::string &fq_name) {
     char *str;
     vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
     str = vpi_get_str(vpiDefName, hdl);
@@ -218,7 +219,8 @@ int VpiObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VpiSignalObjHdl::initialise(const std::string &name,
+                                const std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
     if ((vpiIntVar == type) || (vpiIntegerVar == type) ||
         (vpiIntegerNet == type) || (vpiRealNet == type)) {

@@ -162,7 +162,8 @@ class FliObjHdl : public GpiObjHdl, public FliObj {
         : GpiObjHdl(impl, hdl, objtype, is_const),
           FliObj(acc_type, acc_full_type) {}
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 };
 
 class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
@@ -177,7 +178,8 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
           m_either_cb(impl, this, GPI_FALLING | GPI_RISING) {}
 
     GpiCbHdl *value_change_cb(int edge) override;
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 
     bool is_var() { return m_is_var; }
 
@@ -217,7 +219,8 @@ class FliValueObjHdl : public FliSignalObjHdl {
 
     void *get_sub_hdl(int index);
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 
     mtiTypeKindT get_fli_typekind() { return m_fli_type; }
     mtiTypeIdT get_fli_typeid() { return m_val_type; }
@@ -243,7 +246,8 @@ class FliEnumObjHdl : public FliValueObjHdl {
     using FliValueObjHdl::set_signal_value;
     int set_signal_value(int32_t value, gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 
   private:
     char **m_value_enum = nullptr;  // Do Not Free
@@ -269,7 +273,8 @@ class FliLogicObjHdl : public FliValueObjHdl {
     int set_signal_value_binstr(std::string &value,
                                 gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 
   private:
     char *m_mti_buff = nullptr;
@@ -292,7 +297,8 @@ class FliIntObjHdl : public FliValueObjHdl {
     using FliValueObjHdl::set_signal_value;
     int set_signal_value(int32_t value, gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 };
 
 class FliRealObjHdl : public FliValueObjHdl {
@@ -312,7 +318,8 @@ class FliRealObjHdl : public FliValueObjHdl {
     using FliValueObjHdl::set_signal_value;
     int set_signal_value(double value, gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 
   private:
     double *m_mti_buff = nullptr;
@@ -336,7 +343,8 @@ class FliStringObjHdl : public FliValueObjHdl {
     int set_signal_value_str(std::string &value,
                              gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name) override;
+    int initialise(const std::string &name,
+                   const std::string &fq_name) override;
 
   private:
     char *m_mti_buff = nullptr;
