@@ -118,7 +118,8 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     };
 
     bool is_native_impl(GpiImplInterface *impl);
-    virtual int initialise(const std::string &name, const std::string &full_name);
+    virtual int initialise(const std::string &name,
+                           const std::string &full_name);
 
   protected:
     int m_num_elems = 0;
@@ -248,7 +249,7 @@ class GPI_EXPORT GpiImplInterface {
     virtual const char *get_simulator_version() = 0;
 
     /* Hierarchy related */
-    virtual GpiObjHdl *native_check_create(std::string &name,
+    virtual GpiObjHdl *native_check_create(const std::string &name,
                                            GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *native_check_create(int32_t index,
                                            GpiObjHdl *parent) = 0;

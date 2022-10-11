@@ -271,7 +271,8 @@ GpiObjHdl *FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *) {
  * @brief   Determine whether a simulation object is native to FLI and create
  *          a handle if it is
  */
-GpiObjHdl *FliImpl::native_check_create(std::string &name, GpiObjHdl *parent) {
+GpiObjHdl *FliImpl::native_check_create(const std::string &name,
+                                        GpiObjHdl *parent) {
     bool search_rgn = false;
     bool search_sig = false;
     bool search_var = false;

@@ -415,7 +415,7 @@ class FliImpl : public GpiImplInterface {
     const char *get_simulator_version() override;
 
     /* Hierachy related */
-    GpiObjHdl *native_check_create(std::string &name,
+    GpiObjHdl *native_check_create(const std::string &name,
                                    GpiObjHdl *parent) override;
     GpiObjHdl *native_check_create(int32_t index, GpiObjHdl *parent) override;
     GpiObjHdl *native_check_create(void *raw_hdl, GpiObjHdl *paret) override;
