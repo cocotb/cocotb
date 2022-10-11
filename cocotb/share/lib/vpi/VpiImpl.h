@@ -272,7 +272,7 @@ class VpiImpl : public GpiImplInterface {
     GpiCbHdl *register_nexttime_callback() override;
     GpiCbHdl *register_readwrite_callback() override;
     int deregister_callback(GpiCbHdl *obj_hdl) override;
-    GpiObjHdl *native_check_create(std::string &name,
+    GpiObjHdl *native_check_create(const std::string &name,
                                    GpiObjHdl *parent) override;
     GpiObjHdl *native_check_create(int32_t index, GpiObjHdl *parent) override;
     GpiObjHdl *native_check_create(void *raw_hdl, GpiObjHdl *parent) override;

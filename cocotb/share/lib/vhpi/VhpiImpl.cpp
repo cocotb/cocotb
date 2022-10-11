@@ -500,7 +500,8 @@ GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
     return new_obj;
 }
 
-GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent) {
+GpiObjHdl *VhpiImpl::native_check_create(const std::string &name,
+                                         GpiObjHdl *parent) {
     vhpiHandleT vhpi_hdl = parent->get_handle<vhpiHandleT>();
 
     vhpiHandleT new_hdl;
