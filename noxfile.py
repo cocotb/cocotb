@@ -373,13 +373,24 @@ def release_test_sdist(session: nox.Session) -> None:
 def release_install(session: nox.Session) -> None:
     """Helper: Install cocotb from wheels and also install test dependencies."""
 
+    # We have to disable the use of the PyPi index when installing cocotb to
+    # guarantee that the wheels in dist are being used. But without an index
+    # pip cannot find the dependencies, which need to be installed from PyPi.
+    # Work around that by explicitly installing the dependencies first from
+    # PyPi, and then installing cocotb itself from the local dist directory.
+
+    session.log("Installing cocotb dependencies from PyPi")
+    session.run("pip", "install", "find_libpython")
+
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")
     session.run(
         "pip",
         "install",
+        "--force-reinstall",
         "--only-binary",
         "cocotb",
         "--no-index",
+        "--no-dependencies",
         "--find-links",
         dist_dir,
         "cocotb",
