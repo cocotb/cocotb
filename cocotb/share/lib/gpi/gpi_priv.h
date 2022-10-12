@@ -126,7 +126,7 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     bool m_indexable = false;
     int m_range_left = -1;
     int m_range_right = -1;
-    std::string m_name;
+    std::string m_name = "unknown";
     std::string m_fullname = "unknown";
 
     std::string m_definition_name;
