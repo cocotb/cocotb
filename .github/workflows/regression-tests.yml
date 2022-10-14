@@ -14,6 +14,10 @@ on:
         required: true
         type: string
         default: dev_test_nosim
+      collect_coverage:
+        required: true
+        type: boolean
+        default: false
       download_artifacts:
         required: false
         type: boolean
@@ -194,7 +198,10 @@ jobs:
         nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
 
     # codecov
-    - name: Upload to codecov
+    - name: Combine and report coverage
+      if: inputs.collect_coverage
+      run: nox -s dev_coverage_combine
+
       # Notes:
       # - The "--relative/-r" argument is not available on macOS gcov, skip
       #   coverage upload there.
