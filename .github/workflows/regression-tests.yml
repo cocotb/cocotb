@@ -210,18 +210,20 @@ jobs:
       #   from clang builds currently, which don't add much anyways.
       # - When changing how many builds are uploaded to codecov also update
       #   `codecov.notify.after_n_builds` in `.codecov.yml`.
+    - name: Upload to codecov
       if: >
         ((steps.windowstesting.outcome == 'success'
           && matrix.toolchain != 'mingw')
          || steps.unixtesting.outcome == 'success')
         && !startsWith(matrix.os, 'macos')
         && matrix.cxx != 'clang++'
-      # There seems to be no way (as of Feb 2021) to get the job name in a
-      # variable; we hence have to re-assemble it here.
-      shell: bash
-      run: |
-        pip install coverage
-        bash <(curl -s https://codecov.io/bash) \
-          -n "${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}}" \
-          -e SIM,TOPLEVEL_LANG,CXX,OS,PYTHON_VERSION \
-          -a "-rl"
+        && inputs.collect_coverage
+      uses: codecov/codecov-action@v3
+      with:
+        gcov: true
+        # There seems to be no way (as of Feb 2021) to get the job name in a
+        # variable; we hence have to re-assemble it here.
+        name: "${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}}"
+        env_vars: SIM,TOPLEVEL_LANG,CXX,OS,PYTHON_VERSION
+        gcov_args: "-rl"
+        verbose: true
