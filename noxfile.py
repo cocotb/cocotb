@@ -119,6 +119,7 @@ def dev_test(session: nox.Session) -> None:
 
     dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
     dev_test_nosim(session)
+    dev_coverage_combine(session)
 
 
 @nox.session
@@ -175,10 +176,6 @@ def dev_test_sim(
     Path(".coverage").rename(coverage_file)
 
     session.log(f"Stored Python coverage for this test run in {coverage_file}.")
-
-    # Combine coverage from all nox sessions as last step after all sessions
-    # have completed.
-    session.notify("dev_coverage_combine")
 
 
 @nox.session
@@ -239,8 +236,6 @@ def dev_test_nosim(session: nox.Session) -> None:
 
     # Rename the .coverage file to make it unique for the
     Path(".coverage").rename(coverage_file)
-
-    session.notify("dev_coverage_combine")
 
 
 @nox.session
