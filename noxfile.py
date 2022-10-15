@@ -141,8 +141,10 @@ def dev_test_sim(
     config_str = stringify_dict(env)
 
     # Remove a potentially existing coverage file from a previous run for the
-    # same test configuration.
-    coverage_file = Path(f".coverage.test.sim-{sim}-{toplevel_lang}-{gpi_interface}")
+    # same test configuration. Use a filename *not* starting with `.coverage.`,
+    # as coverage.py assumes ownership over these files and deleted them at
+    # will.
+    coverage_file = Path(f".cov.test.sim-{sim}-{toplevel_lang}-{gpi_interface}")
     with suppress(FileNotFoundError):
         coverage_file.unlink()
 
@@ -188,8 +190,10 @@ def dev_test_nosim(session: nox.Session) -> None:
     session.run("pip", "install", "-e", ".")
 
     # Remove a potentially existing coverage file from a previous run for the
-    # same test configuration.
-    coverage_file = Path(".coverage.test.pytest")
+    # same test configuration. Use a filename *not* starting with `.coverage.`,
+    # as coverage.py assumes ownership over these files and deleted them at
+    # will.
+    coverage_file = Path(".cov.test.nosim")
     with suppress(FileNotFoundError):
         coverage_file.unlink()
 
@@ -234,8 +238,10 @@ def dev_test_nosim(session: nox.Session) -> None:
 
     session.log("All tests passed!")
 
-    # Rename the .coverage file to make it unique for the
+    # Rename the .coverage file to make it unique to the session.
     Path(".coverage").rename(coverage_file)
+
+    session.log(f"Stored Python coverage for this test run in {coverage_file}.")
 
 
 @nox.session
@@ -243,8 +249,9 @@ def dev_coverage_combine(session: nox.Session) -> None:
     """Combine coverage from previous dev_* runs into a .coverage file."""
     session.run("pip", "install", *coverage_report_deps)
 
-    coverage_files = glob.glob("**/.coverage.test.*", recursive=True)
+    coverage_files = glob.glob("**/.cov.test.*", recursive=True)
     session.run("coverage", "combine", *coverage_files)
+    assert Path(".coverage").is_file()
 
     session.log("Wrote combined coverage database for all tests to '.coverage'.")
 
