@@ -256,6 +256,27 @@ def dev_coverage_report(session: nox.Session) -> None:
     """Report coverage results."""
     session.run("pip", "install", *coverage_report_deps)
 
+    # Produce Cobertura XML coverage reports.
+    session.log("Producing Python and C/C++ coverage in Cobertura XML format")
+
+    coverage_python_xml = Path(".python_coverage.xml")
+    session.run("coverage", "xml", "-o", str(coverage_python_xml))
+    assert coverage_python_xml.is_file()
+
+    coverage_cpp_xml = Path(".cpp_coverage.xml")
+    session.run(
+        "gcovr",
+        "--xml",
+        "--output",
+        str(coverage_cpp_xml),
+    )
+    assert coverage_cpp_xml.is_file()
+
+    session.log(
+        f"Cobertura XML files written to {str(coverage_cpp_xml)!r} (C/C++) and {str(coverage_python_xml)!r} (Python)"
+    )
+
+    # Report human-readable coverage.
     session.log("Python coverage")
     session.run("coverage", "report")
 
