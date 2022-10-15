@@ -202,28 +202,13 @@ jobs:
       if: inputs.collect_coverage
       run: nox -s dev_coverage_combine
 
-      # Notes:
-      # - The "--relative/-r" argument is not available on macOS gcov, skip
-      #   coverage upload there.
-      # - Clang builds must use llvm-cov instead of gcov, which isn't picked
-      #   currently by the codecov uploader. Hence we do not upload coverage
-      #   from clang builds currently, which don't add much anyways.
-      # - When changing how many builds are uploaded to codecov also update
-      #   `codecov.notify.after_n_builds` in `.codecov.yml`.
     - name: Upload to codecov
-      if: >
-        ((steps.windowstesting.outcome == 'success'
-          && matrix.toolchain != 'mingw')
-         || steps.unixtesting.outcome == 'success')
-        && !startsWith(matrix.os, 'macos')
-        && matrix.cxx != 'clang++'
-        && inputs.collect_coverage
+      if: inputs.collect_coverage
       uses: codecov/codecov-action@v3
       with:
-        gcov: true
+        files: .python_coverage.xml,.cpp_coverage.xml
         # There seems to be no way (as of Feb 2021) to get the job name in a
         # variable; we hence have to re-assemble it here.
         name: "${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}}"
         env_vars: SIM,TOPLEVEL_LANG,CXX,OS,PYTHON_VERSION
-        gcov_args: "-rl"
         verbose: true
