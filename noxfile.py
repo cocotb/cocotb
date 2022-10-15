@@ -135,7 +135,16 @@ def dev_test_sim(
     configure_env_for_dev_build(session)
 
     session.run("pip", "install", *test_deps, *coverage_deps)
-    session.run("pip", "install", "-e", ".")
+
+    # Editable installs break C/C++ coverage collection; don't use them.
+    # C/C++ coverage collection requires that the object files produced by the
+    # compiler are not moved around, otherwise the gcno and gcda files produced
+    # at compile and runtime, respectively, are located in the wrong
+    # directories. Depending on the version of the Python install machinery
+    # editable builds are done in a directory in /tmp, which is removed after
+    # the build completes, taking all gcno files with them, as well as the path
+    # to place the gcda files.
+    session.run("pip", "install", ".")
 
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
@@ -276,6 +285,7 @@ def dev_coverage_report(session: nox.Session) -> None:
         "--xml",
         "--output",
         str(coverage_cpp_xml),
+        ".",
     )
     assert coverage_cpp_xml.is_file()
 
