@@ -14,8 +14,8 @@ The Python Test Runner (short: "runner") described here is a replacement
 for cocotb's traditional Makefile flow.
 It builds the HDL for the simulator and runs the tests.
 
-It is not meant to be ideal solution for everyone. You can easily integrate cocotb into
-custom flow see :ref:`custom-flows`.
+It is not meant to be ideal solution for everyone.
+You can easily integrate cocotb into your custom flow, see :ref:`custom-flows`.
 
 
 Usage with pytest
@@ -42,7 +42,7 @@ You run this file with pytest like
 
 Note that the environment variables ``SIM`` and ``HDL_TOPLEVEL_LANG``
 are defined in this test file to set arguments to the runner's
-:meth:`~cocotb.runner.build` and :meth:`~cocotb.runner.test`  functions;
+:meth:`~cocotb.runner.build` and :meth:`~cocotb.runner.test` functions;
 they are not directly handled by the runner itself.
 
 FIXME: mention testcase naming scheme ``foo_test``
@@ -64,13 +64,14 @@ add the ``-s`` option to the ``pytest`` call:
 Direct usage
 =============
 
-You can also run the test directly.
+You can also run the test directly, that is, without using pytest, like so
 
 .. code-block:: bash
 
     python examples/simple_dff/test_dff.py
 
-For this you need to define the test to run in the script. For example:
+This requires that you define the test to run in the testcase file itself.
+For example, add the following code at the end:
 
 .. code-block:: bash
 
