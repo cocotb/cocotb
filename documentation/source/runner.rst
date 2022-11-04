@@ -45,7 +45,9 @@ are defined in this test file to set arguments to the runner's
 :meth:`~cocotb.runner.build` and :meth:`~cocotb.runner.test` functions;
 they are not directly handled by the runner itself.
 
-FIXME: mention testcase naming scheme ``foo_test``
+Test filenames and functions has to follow
+`pytest discovery <https://docs.pytest.org/explanation/goodpractices.html#test-discovery>`_
+convention in order to be automatically find out.
 
 By default, pytest will only show you a terse "pass/fail" information.
 To see more details of the simulation run,
