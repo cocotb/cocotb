@@ -11,6 +11,20 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+cocotb 1.7.2 (2022-11-15)
+=========================
+
+Changes
+-------
+- Python 3.11 is now supported.
+- ``find_libpython``, a library to find (as the name indicates) libpython, is now a dependency of cocotb.
+  Its latest version resolves an issue for users on RedHat Enterprise Linux (RHEL) 8 and Python 3.8, where the correct Python library would not be detected. (:issue:`3097`)
+
+Bugfixes
+--------
+
+- Fixed a segmentation fault in Aldec Riviera-PRO that prevented mixed-language simulation from running. (:issue:`3078`)
+
 cocotb 1.7.1 (2022-09-17)
 =========================
 
