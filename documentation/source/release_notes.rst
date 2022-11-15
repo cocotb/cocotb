@@ -7,6 +7,10 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
+cocotb 1.7.3 (unreleased)
+=========================
+
+
 cocotb 1.7.2 (2022-11-15)
 =========================
 
