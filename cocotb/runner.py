@@ -844,9 +844,11 @@ class Xcelium(Simulator):
         self.env["CDS_AUTO_64BIT"] = "all"
         cmd = [
             ["xrun"]
-            + ["-logfile xrun_build.log"]
+            + ["-logfile"]
+            + ["xrun_build.log"]
             + ["-elaborate"]
-            + [f"-xmlibdirname {self.build_dir}/xrun_snapshot"]
+            + ["-xmlibdirname"]
+            + [f"{self.build_dir}/xrun_snapshot"]
             + ["-licqueue"]
             # TODO: way to switch to these verbose messages?:
             + ["-messages"]
@@ -857,11 +859,8 @@ class Xcelium(Simulator):
             # + ["-plierr_verbose"]  # Expand handle info in PLI/VPI/VHPI messages
             # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
             + ["-access +rwc"]
-            + [
-                "-loadvpi "
-                + cocotb.config.lib_name_path("vpi", "xcelium")
-                + ":vlog_startup_routines_bootstrap"
-            ]
+            + ["-loadvpi"]
+            + [cocotb.config.lib_name_path("vpi", "xcelium") + ":vlog_startup_routines_bootstrap"]
             + [f"-work {self.library_name}"]
             + self.compile_args
             + ["-define COCOTB_SIM"]
@@ -883,10 +882,12 @@ class Xcelium(Simulator):
 
         cmd += [
             ["xrun"]
-            + [f"-logfile xrun_{self.current_test_name}.log"]
-            + [
-                f"-xmlibdirname {self.build_dir}/xrun_snapshot -cds_implicit_tmpdir {tmpdir}"
-            ]
+            + ["-logfile"]
+            + [f"xrun_{self.current_test_name}.log"]
+            + ["-xmlibdirname"]
+            + [f"{self.build_dir}/xrun_snapshot"]
+            + ["-cds_implicit_tmpdir"]
+            + [f"{tmpdir}"]
             + ["-licqueue"]
             # TODO: way to switch to these verbose messages?:
             + ["-messages"]
