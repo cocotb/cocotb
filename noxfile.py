@@ -334,7 +334,7 @@ def release_build_bdist(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
 
     # Pin a version to ensure reproducible builds.
-    session.run("pip", "install", "cibuildwheel==2.10.1")
+    session.run("pip", "install", "cibuildwheel==2.11.2")
 
     # cibuildwheel only auto-detects the platform if it runs on a CI server.
     # Do the auto-detect manually to enable local runs.
