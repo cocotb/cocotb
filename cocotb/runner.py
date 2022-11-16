@@ -887,7 +887,7 @@ class Xcelium(Simulator):
             + ["-xmlibdirname"]
             + [f"{self.build_dir}/xrun_snapshot"]
             + ["-cds_implicit_tmpdir"]
-            + [f"{tmpdir}"]
+            + ["tmpdir"]
             + ["-licqueue"]
             # TODO: way to switch to these verbose messages?:
             + ["-messages"]
@@ -900,10 +900,11 @@ class Xcelium(Simulator):
             + self.sim_args
             + self.plus_args
             + ["-gui" if self.gui else ""]
+            + ["-input"]
             + [
-                '-input "@probe -create {self.sim_toplevel} -all -depth all"'
+                f'@database -open waves -shm; probe -create {self.sim_toplevel} -all -depth all; run; exit;'
                 if self.waves
-                else ""
+                else "@run; exit;"
             ]
         ]
         self.env["GPI_EXTRA"] = (
