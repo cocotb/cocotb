@@ -858,12 +858,17 @@ class Xcelium(Simulator):
             # + ["-plidebug"]  # Enhance the profile output with PLI info
             # + ["-plierr_verbose"]  # Expand handle info in PLI/VPI/VHPI messages
             # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
-            + ["-access +rwc"]
+            + ["-access"]
+            + ["+rwc"]
             + ["-loadvpi"]
-            + [cocotb.config.lib_name_path("vpi", "xcelium") + ":vlog_startup_routines_bootstrap"]
+            + [
+                cocotb.config.lib_name_path("vpi", "xcelium")
+                + ":vlog_startup_routines_bootstrap"
+            ]
             + [f"-work {self.library_name}"]
             + self.compile_args
-            + ["-define COCOTB_SIM"]
+            + ["-define"]
+            + ["COCOTB_SIM"]
             + self.get_define_options(self.defines)
             + self.get_include_options(self.includes)
             + self.get_parameter_options(self.parameters)
@@ -902,7 +907,7 @@ class Xcelium(Simulator):
             + ["-gui" if self.gui else ""]
             + ["-input"]
             + [
-                f'@database -open waves -shm; probe -create {self.sim_toplevel} -all -depth all; run; exit;'
+                f"@database -open waves -shm; probe -create {self.sim_toplevel} -all -depth all; run; exit;"
                 if self.waves
                 else "@run; exit;"
             ]
