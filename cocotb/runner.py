@@ -844,9 +844,11 @@ class Xcelium(Simulator):
         self.env["CDS_AUTO_64BIT"] = "all"
         cmd = [
             ["xrun"]
-            + ["-logfile xrun_build.log"]
+            + ["-logfile"]
+            + ["xrun_build.log"]
             + ["-elaborate"]
-            + [f"-xmlibdirname {self.build_dir}/xrun_snapshot"]
+            + ["-xmlibdirname"]
+            + [f"{self.build_dir}/xrun_snapshot"]
             + ["-licqueue"]
             # TODO: way to switch to these verbose messages?:
             + ["-messages"]
@@ -856,15 +858,17 @@ class Xcelium(Simulator):
             # + ["-plidebug"]  # Enhance the profile output with PLI info
             # + ["-plierr_verbose"]  # Expand handle info in PLI/VPI/VHPI messages
             # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
-            + ["-access +rwc"]
+            + ["-access"]
+            + ["+rwc"]
+            + ["-loadvpi"]
             + [
-                "-loadvpi "
-                + cocotb.config.lib_name_path("vpi", "xcelium")
+                cocotb.config.lib_name_path("vpi", "xcelium")
                 + ":vlog_startup_routines_bootstrap"
             ]
             + [f"-work {self.library_name}"]
             + self.compile_args
-            + ["-define COCOTB_SIM"]
+            + ["-define"]
+            + ["COCOTB_SIM"]
             + self.get_define_options(self.defines)
             + self.get_include_options(self.includes)
             + self.get_parameter_options(self.parameters)
@@ -883,10 +887,12 @@ class Xcelium(Simulator):
 
         cmd += [
             ["xrun"]
-            + [f"-logfile xrun_{self.current_test_name}.log"]
-            + [
-                f"-xmlibdirname {self.build_dir}/xrun_snapshot -cds_implicit_tmpdir {tmpdir}"
-            ]
+            + ["-logfile"]
+            + [f"xrun_{self.current_test_name}.log"]
+            + ["-xmlibdirname"]
+            + [f"{self.build_dir}/xrun_snapshot"]
+            + ["-cds_implicit_tmpdir"]
+            + ["tmpdir"]
             + ["-licqueue"]
             # TODO: way to switch to these verbose messages?:
             + ["-messages"]
@@ -899,10 +905,11 @@ class Xcelium(Simulator):
             + self.sim_args
             + self.plus_args
             + ["-gui" if self.gui else ""]
+            + ["-input"]
             + [
-                '-input "@probe -create {self.sim_toplevel} -all -depth all"'
+                f"@database -open waves -shm; probe -create {self.sim_toplevel} -all -depth all; run; exit;"
                 if self.waves
-                else ""
+                else "@run; exit;"
             ]
         ]
         self.env["GPI_EXTRA"] = (

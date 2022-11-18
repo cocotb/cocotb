@@ -58,7 +58,7 @@ ENVS = [
         "sim": "icarus",
         "sim-version": "apt",
         "os": "ubuntu-20.04",
-        "python-version": "3.11.0-rc - 3.11",
+        "python-version": "3.11",
         "group": "ci",
     },
     # A single test for the upcoming Python version.
