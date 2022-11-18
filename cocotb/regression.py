@@ -376,7 +376,7 @@ class RegressionManager:
 
         # seed random number generator based on test module, name, and RANDOM_SEED
         hasher = hashlib.sha1()
-        hasher.update(test.__qualname__.encode())
+        hasher.update(os.path.basename(test.__qualname__.encode()))
         hasher.update(test.__module__.encode())
         seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
         random.seed(seed)
