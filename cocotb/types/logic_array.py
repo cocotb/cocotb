@@ -88,6 +88,10 @@ class LogicArray(Array[Logic]):
         >>> la.binstr
         '1010'
 
+        >>> la.reverse().binstr # Can convert to/from BigEndian
+        '0101'
+
+
         >>> la.integer          # uses unsigned representation
         10
 
@@ -179,6 +183,13 @@ class LogicArray(Array[Logic]):
                 f"value of length {len(self._value)} will not fit in {self._range}"
             )
 
+    def reverse(self: Self) -> Self:
+        """
+        Usefull for littleEndian/BigEndian conversion
+        000ZX1 <-> 1XZ000
+        """
+        return type(self)(reversed(self))
+
     @property
     def binstr(self) -> str:
         return "".join(str(bit) for bit in self)
@@ -189,6 +200,9 @@ class LogicArray(Array[Logic]):
 
     @property
     def integer(self) -> int:
+        """
+        Raises ValueError if the values cannot be converted to binary ('X' or 'Z')
+        """
         value = 0
         for bit in self:
             value = value << 1 | int(bit)

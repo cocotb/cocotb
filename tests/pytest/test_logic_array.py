@@ -81,6 +81,22 @@ def test_logic_array_and():
     with pytest.raises(ValueError):
         LogicArray("") & LogicArray("01")
 
+def test_integer_non_literal():
+    l = LogicArray("00Z1")
+    p = LogicArray("00X1")
+    with pytest.raises(ValueError):
+        l.integer
+    with pytest.raises(ValueError):
+        p.integer
+
+def test_integer_reverse():
+    l = LogicArray("00XZ1")
+    p = l.reverse()
+    assert(l == LogicArray("00XZ1"))
+    assert(p == LogicArray("1ZX00"))
+
+    m = LogicArray("1010")
+    assert(m.reverse().binstr == "0101")
 
 def test_logic_array_or():
     l = LogicArray("0011XZ")
