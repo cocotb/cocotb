@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
 
-from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.types.array import Array
 from cocotb.types.logic import Logic, LogicConstructibleT
 from cocotb.types.range import Range
@@ -127,7 +126,7 @@ class LogicArray(Array[Logic]):
     @typing.overload
     def __init__(
         self,
-        value: typing.Union[int, typing.Iterable[LogicConstructibleT], BinaryValue],
+        value: typing.Union[int, typing.Iterable[LogicConstructibleT]],
         range: typing.Optional[Range],
     ):
         ...
@@ -136,7 +135,7 @@ class LogicArray(Array[Logic]):
     def __init__(
         self,
         value: typing.Union[
-            int, typing.Iterable[LogicConstructibleT], BinaryValue, None
+            int, typing.Iterable[LogicConstructibleT], None
         ],
         range: Range,
     ):
@@ -145,7 +144,7 @@ class LogicArray(Array[Logic]):
     def __init__(
         self,
         value: typing.Union[
-            int, typing.Iterable[LogicConstructibleT], BinaryValue, None
+            int, typing.Iterable[LogicConstructibleT], None
         ] = None,
         range: typing.Optional[Range] = None,
     ) -> None:
@@ -168,8 +167,6 @@ class LogicArray(Array[Logic]):
                 self._value = [Logic(v) for v in _int_to_bitstr(value, len(range))]
         elif isinstance(value, typing.Iterable):
             self._value = [Logic(v) for v in value]
-        elif isinstance(value, BinaryValue):
-            self._value = [Logic(v) for v in value.binstr]
         else:
             raise TypeError(
                 f"cannot construct {type(self).__qualname__} from value of type {type(value).__qualname__}"
@@ -292,19 +289,6 @@ class LogicArray(Array[Logic]):
 
     def __invert__(self: Self) -> Self:
         return type(self)(~v for v in self)
-
-    def to_BinaryValue(
-        self,
-        bigEndian: bool = True,
-        binaryRepresentation: BinaryRepresentation = BinaryRepresentation.UNSIGNED,
-    ) -> BinaryValue:
-        return BinaryValue(
-            value=self.binstr,
-            n_bits=len(self),
-            bigEndian=bigEndian,
-            binaryRepresentation=binaryRepresentation,
-        )
-
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
