@@ -4,7 +4,7 @@
 Building HDL and Running Tests
 ******************************
 
-.. versionadded:: 1.7
+.. versionadded:: 1.8
 
 .. warning::
     Python runners and associated APIs are an experimental feature and subject to change.
