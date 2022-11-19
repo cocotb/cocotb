@@ -113,8 +113,9 @@ bool FliImpl::isTypeSignal(int type, int full_type) {
     return (type == accSignal || full_type == accAliasSignal);
 }
 
-GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name,
-                                               std::string &fq_name,
+GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl,
+                                               const std::string &name,
+                                               const std::string &fq_name,
                                                int accType, int accFullType) {
     GpiObjHdl *new_obj = NULL;
 
@@ -270,7 +271,8 @@ GpiObjHdl *FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *) {
  * @brief   Determine whether a simulation object is native to FLI and create
  *          a handle if it is
  */
-GpiObjHdl *FliImpl::native_check_create(std::string &name, GpiObjHdl *parent) {
+GpiObjHdl *FliImpl::native_check_create(const std::string &name,
+                                        GpiObjHdl *parent) {
     bool search_rgn = false;
     bool search_sig = false;
     bool search_var = false;
@@ -562,35 +564,44 @@ error:
     return NULL;
 }
 
-GpiCbHdl *FliImpl::register_timed_callback(uint64_t time) {
-    // get time from cache instead of allocating
+GpiCbHdl *FliImpl::register_timed_callback(uint64_t time,
+                                           int (*function)(void *),
+                                           void *cb_data) {
+    // get timer from cache instead of allocating
     FliTimedCbHdl *hdl = cache.get_timer(time);
 
     if (hdl->arm_callback()) {
         delete (hdl);
-        hdl = NULL;
+        return NULL;
     }
+    hdl->set_user_data(function, cb_data);
     return hdl;
 }
 
-GpiCbHdl *FliImpl::register_readonly_callback() {
+GpiCbHdl *FliImpl::register_readonly_callback(int (*function)(void *),
+                                              void *cb_data) {
     if (m_readonly_cbhdl.arm_callback()) {
         return NULL;
     }
+    m_readonly_cbhdl.set_user_data(function, cb_data);
     return &m_readonly_cbhdl;
 }
 
-GpiCbHdl *FliImpl::register_readwrite_callback() {
+GpiCbHdl *FliImpl::register_readwrite_callback(int (*function)(void *),
+                                               void *cb_data) {
     if (m_readwrite_cbhdl.arm_callback()) {
         return NULL;
     }
+    m_readwrite_cbhdl.set_user_data(function, cb_data);
     return &m_readwrite_cbhdl;
 }
 
-GpiCbHdl *FliImpl::register_nexttime_callback() {
+GpiCbHdl *FliImpl::register_nexttime_callback(int (*function)(void *),
+                                              void *cb_data) {
     if (m_nexttime_cbhdl.arm_callback()) {
         return NULL;
     }
+    m_nexttime_cbhdl.set_user_data(function, cb_data);
     return &m_nexttime_cbhdl;
 }
 

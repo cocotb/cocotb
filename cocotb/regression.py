@@ -505,7 +505,9 @@ class RegressionManager:
         else:
             test_pass, sim_failed = self._score_test(test, outcome)
             if not test_pass:
-                self.xunit.add_failure()
+                self.xunit.add_failure(
+                    message=f"Test failed with RANDOM_SEED={cocotb.RANDOM_SEED}"
+                )
                 self.failures += 1
             else:
                 self.passed += 1

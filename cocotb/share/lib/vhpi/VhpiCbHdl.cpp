@@ -174,7 +174,8 @@ vhpiPutValueModeT map_put_value_mode(gpi_set_action_t action) {
     return put_value_mode;
 }
 
-int VhpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VhpiArrayObjHdl::initialise(const std::string &name,
+                                const std::string &fq_name) {
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
 
     m_indexable = true;
@@ -236,7 +237,8 @@ int VhpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int VhpiObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VhpiObjHdl::initialise(const std::string &name,
+                           const std::string &fq_name) {
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
     if (handle != NULL) {
         vhpiHandleT du_handle = vhpi_handle(vhpiDesignUnit, handle);
@@ -256,7 +258,8 @@ int VhpiObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VhpiSignalObjHdl::initialise(const std::string &name,
+                                 const std::string &fq_name) {
     // Determine the type of object, either scalar or vector
     m_value.format = vhpiObjTypeVal;
     m_value.bufSize = 0;
@@ -330,7 +333,8 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
+int VhpiLogicSignalObjHdl::initialise(const std::string &name,
+                                      const std::string &fq_name) {
     // Determine the type of object, either scalar or vector
     m_value.format = vhpiLogicVal;
     m_value.bufSize = 0;
@@ -809,7 +813,8 @@ long VhpiSignalObjHdl::get_signal_value_long() {
     return static_cast<int32_t>(value.value.intg);
 }
 
-GpiCbHdl *VhpiSignalObjHdl::value_change_cb(int edge) {
+GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
+    int edge, int (*function)(void *), void *cb_data) {
     VhpiValueCbHdl *cb = NULL;
 
     switch (edge) {
@@ -826,6 +831,7 @@ GpiCbHdl *VhpiSignalObjHdl::value_change_cb(int edge) {
             return NULL;
     }
 
+    cb->set_user_data(function, cb_data);
     if (cb->arm_callback()) {
         return NULL;
     }
@@ -835,7 +841,10 @@ GpiCbHdl *VhpiSignalObjHdl::value_change_cb(int edge) {
 
 VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig,
                                int edge)
-    : GpiCbHdl(impl), VhpiCbHdl(impl), GpiValueCbHdl(impl, sig, edge) {
+    : GpiCbHdl(impl),
+      GpiCommonCbHdl(impl),
+      VhpiCbHdl(impl),
+      GpiValueCbHdl(impl, sig, edge) {
     cb_data.reason = vhpiCbValueChange;
     cb_data.time = &vhpi_time;
     cb_data.obj = m_signal->get_handle<vhpiHandleT>();
@@ -889,7 +898,7 @@ int VhpiShutdownCbHdl::run_callback() {
 }
 
 VhpiTimedCbHdl::VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time)
-    : GpiCbHdl(impl), VhpiCbHdl(impl) {
+    : GpiCbHdl(impl), VhpiCommonCbHdl(impl) {
     vhpi_time.high = (uint32_t)(time >> 32);
     vhpi_time.low = (uint32_t)(time);
 
@@ -907,20 +916,20 @@ int VhpiTimedCbHdl::cleanup_callback() {
     return 1;
 }
 
-VhpiReadwriteCbHdl::VhpiReadwriteCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCbHdl(impl) {
+VhpiReadWriteCbHdl::VhpiReadWriteCbHdl(GpiImplInterface *impl)
+    : GpiCbHdl(impl), VhpiCommonCbHdl(impl) {
     cb_data.reason = vhpiCbRepLastKnownDeltaCycle;
     cb_data.time = &vhpi_time;
 }
 
 VhpiReadOnlyCbHdl::VhpiReadOnlyCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCbHdl(impl) {
+    : GpiCbHdl(impl), VhpiCommonCbHdl(impl) {
     cb_data.reason = vhpiCbRepEndOfTimeStep;
     cb_data.time = &vhpi_time;
 }
 
 VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCbHdl(impl) {
+    : GpiCbHdl(impl), VhpiCommonCbHdl(impl) {
     cb_data.reason = vhpiCbRepNextTimeStep;
     cb_data.time = &vhpi_time;
 }

@@ -126,6 +126,7 @@ def dev_test(session: nox.Session) -> None:
 
     dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
     dev_test_nosim(session)
+    dev_coverage_combine(session)
 
 
 @nox.session
@@ -141,14 +142,25 @@ def dev_test_sim(
     configure_env_for_dev_build(session)
 
     session.run("pip", "install", *test_deps, *coverage_deps)
-    session.run("pip", "install", "-e", ".")
+
+    # Editable installs break C/C++ coverage collection; don't use them.
+    # C/C++ coverage collection requires that the object files produced by the
+    # compiler are not moved around, otherwise the gcno and gcda files produced
+    # at compile and runtime, respectively, are located in the wrong
+    # directories. Depending on the version of the Python install machinery
+    # editable builds are done in a directory in /tmp, which is removed after
+    # the build completes, taking all gcno files with them, as well as the path
+    # to place the gcda files.
+    session.run("pip", "install", ".")
 
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
 
     # Remove a potentially existing coverage file from a previous run for the
-    # same test configuration.
-    coverage_file = Path(f".coverage.test.sim-{sim}-{toplevel_lang}-{gpi_interface}")
+    # same test configuration. Use a filename *not* starting with `.coverage.`,
+    # as coverage.py assumes ownership over these files and deleted them at
+    # will.
+    coverage_file = Path(f".cov.test.sim-{sim}-{toplevel_lang}-{gpi_interface}")
     with suppress(FileNotFoundError):
         coverage_file.unlink()
 
@@ -184,10 +196,6 @@ def dev_test_sim(
 
     session.log(f"Stored Python coverage for this test run in {coverage_file}.")
 
-    # Combine coverage from all nox sessions as last step after all sessions
-    # have completed.
-    session.notify("dev_coverage_combine")
-
 
 @nox.session
 def dev_test_nosim(session: nox.Session) -> None:
@@ -199,8 +207,10 @@ def dev_test_nosim(session: nox.Session) -> None:
     session.run("pip", "install", "-e", ".")
 
     # Remove a potentially existing coverage file from a previous run for the
-    # same test configuration.
-    coverage_file = Path(".coverage.test.pytest")
+    # same test configuration. Use a filename *not* starting with `.coverage.`,
+    # as coverage.py assumes ownership over these files and deleted them at
+    # will.
+    coverage_file = Path(".cov.test.nosim")
     with suppress(FileNotFoundError):
         coverage_file.unlink()
 
@@ -245,10 +255,10 @@ def dev_test_nosim(session: nox.Session) -> None:
 
     session.log("All tests passed!")
 
-    # Rename the .coverage file to make it unique for the
+    # Rename the .coverage file to make it unique to the session.
     Path(".coverage").rename(coverage_file)
 
-    session.notify("dev_coverage_combine")
+    session.log(f"Stored Python coverage for this test run in {coverage_file}.")
 
 
 @nox.session
@@ -256,8 +266,9 @@ def dev_coverage_combine(session: nox.Session) -> None:
     """Combine coverage from previous dev_* runs into a .coverage file."""
     session.run("pip", "install", *coverage_report_deps)
 
-    coverage_files = glob.glob("**/.coverage.test.*", recursive=True)
+    coverage_files = glob.glob("**/.cov.test.*", recursive=True)
     session.run("coverage", "combine", *coverage_files)
+    assert Path(".coverage").is_file()
 
     session.log("Wrote combined coverage database for all tests to '.coverage'.")
 
@@ -269,6 +280,28 @@ def dev_coverage_report(session: nox.Session) -> None:
     """Report coverage results."""
     session.run("pip", "install", *coverage_report_deps)
 
+    # Produce Cobertura XML coverage reports.
+    session.log("Producing Python and C/C++ coverage in Cobertura XML format")
+
+    coverage_python_xml = Path(".python_coverage.xml")
+    session.run("coverage", "xml", "-o", str(coverage_python_xml))
+    assert coverage_python_xml.is_file()
+
+    coverage_cpp_xml = Path(".cpp_coverage.xml")
+    session.run(
+        "gcovr",
+        "--xml",
+        "--output",
+        str(coverage_cpp_xml),
+        ".",
+    )
+    assert coverage_cpp_xml.is_file()
+
+    session.log(
+        f"Cobertura XML files written to {str(coverage_cpp_xml)!r} (C/C++) and {str(coverage_python_xml)!r} (Python)"
+    )
+
+    # Report human-readable coverage.
     session.log("Python coverage")
     session.run("coverage", "report")
 
@@ -309,7 +342,7 @@ def release_build_bdist(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
 
     # Pin a version to ensure reproducible builds.
-    session.run("pip", "install", "cibuildwheel==2.10.1")
+    session.run("pip", "install", "cibuildwheel==2.11.2")
 
     # cibuildwheel only auto-detects the platform if it runs on a CI server.
     # Do the auto-detect manually to enable local runs.
@@ -381,13 +414,24 @@ def release_test_sdist(session: nox.Session) -> None:
 def release_install(session: nox.Session) -> None:
     """Helper: Install cocotb from wheels and also install test dependencies."""
 
+    # We have to disable the use of the PyPi index when installing cocotb to
+    # guarantee that the wheels in dist are being used. But without an index
+    # pip cannot find the dependencies, which need to be installed from PyPi.
+    # Work around that by explicitly installing the dependencies first from
+    # PyPi, and then installing cocotb itself from the local dist directory.
+
+    session.log("Installing cocotb dependencies from PyPi")
+    session.run("pip", "install", "find_libpython")
+
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")
     session.run(
         "pip",
         "install",
+        "--force-reinstall",
         "--only-binary",
         "cocotb",
         "--no-index",
+        "--no-dependencies",
         "--find-links",
         dist_dir,
         "cocotb",

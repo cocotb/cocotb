@@ -172,8 +172,8 @@ static gpi_objtype_t const_type_to_gpi_objtype(int32_t const_type) {
 }
 
 GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
-                                               std::string &name,
-                                               std::string &fq_name) {
+                                               const std::string &name,
+                                               const std::string &fq_name) {
     int32_t type;
     GpiObjHdl *new_obj = NULL;
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
@@ -292,7 +292,8 @@ GpiObjHdl *VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
     return new_obj;
 }
 
-GpiObjHdl *VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent) {
+GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
+                                        GpiObjHdl *parent) {
     vpiHandle new_hdl;
     const vpiHandle parent_hdl = parent->get_handle<vpiHandle>();
     std::string fq_name = parent->get_fullname() + "." + name;
@@ -577,32 +578,37 @@ GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
     return new_iter;
 }
 
-GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time) {
+GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time,
+                                           int (*function)(void *),
+                                           void *cb_data) {
     VpiTimedCbHdl *hdl = new VpiTimedCbHdl(this, time);
 
     if (hdl->arm_callback()) {
         delete (hdl);
-        hdl = NULL;
+        return NULL;
     }
-
+    hdl->set_user_data(function, cb_data);
     return hdl;
 }
 
-GpiCbHdl *VpiImpl::register_readwrite_callback() {
+GpiCbHdl *VpiImpl::register_readwrite_callback(int (*function)(void *),
+                                               void *cb_data) {
     if (m_read_write.arm_callback()) return NULL;
-
+    m_read_write.set_user_data(function, cb_data);
     return &m_read_write;
 }
 
-GpiCbHdl *VpiImpl::register_readonly_callback() {
+GpiCbHdl *VpiImpl::register_readonly_callback(int (*function)(void *),
+                                              void *cb_data) {
     if (m_read_only.arm_callback()) return NULL;
-
+    m_read_only.set_user_data(function, cb_data);
     return &m_read_only;
 }
 
-GpiCbHdl *VpiImpl::register_nexttime_callback() {
+GpiCbHdl *VpiImpl::register_nexttime_callback(int (*function)(void *),
+                                              void *cb_data) {
     if (m_next_phase.arm_callback()) return NULL;
-
+    m_next_phase.set_user_data(function, cb_data);
     return &m_next_phase;
 }
 

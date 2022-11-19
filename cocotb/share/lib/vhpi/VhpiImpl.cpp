@@ -266,8 +266,8 @@ bool is_enum_boolean(vhpiHandleT hdl) {
 }
 
 GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
-                                                std::string &name,
-                                                std::string &fq_name) {
+                                                const std::string &name,
+                                                const std::string &fq_name) {
     vhpiIntT type;
     gpi_objtype_t gpi_type;
     GpiObjHdl *new_obj = NULL;
@@ -500,7 +500,8 @@ GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
     return new_obj;
 }
 
-GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent) {
+GpiObjHdl *VhpiImpl::native_check_create(const std::string &name,
+                                         GpiObjHdl *parent) {
     vhpiHandleT vhpi_hdl = parent->get_handle<vhpiHandleT>();
 
     vhpiHandleT new_hdl;
@@ -931,32 +932,37 @@ GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
     return new_iter;
 }
 
-GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time) {
+GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time,
+                                            int (*function)(void *),
+                                            void *cb_data) {
     VhpiTimedCbHdl *hdl = new VhpiTimedCbHdl(this, time);
 
     if (hdl->arm_callback()) {
         delete (hdl);
-        hdl = NULL;
+        return NULL;
     }
-
+    hdl->set_user_data(function, cb_data);
     return hdl;
 }
 
-GpiCbHdl *VhpiImpl::register_readwrite_callback() {
+GpiCbHdl *VhpiImpl::register_readwrite_callback(int (*function)(void *),
+                                                void *cb_data) {
     if (m_read_write.arm_callback()) return NULL;
-
+    m_read_write.set_user_data(function, cb_data);
     return &m_read_write;
 }
 
-GpiCbHdl *VhpiImpl::register_readonly_callback() {
+GpiCbHdl *VhpiImpl::register_readonly_callback(int (*function)(void *),
+                                               void *cb_data) {
     if (m_read_only.arm_callback()) return NULL;
-
+    m_read_only.set_user_data(function, cb_data);
     return &m_read_only;
 }
 
-GpiCbHdl *VhpiImpl::register_nexttime_callback() {
+GpiCbHdl *VhpiImpl::register_nexttime_callback(int (*function)(void *),
+                                               void *cb_data) {
     if (m_next_phase.arm_callback()) return NULL;
-
+    m_next_phase.set_user_data(function, cb_data);
     return &m_next_phase;
 }
 

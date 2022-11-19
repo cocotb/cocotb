@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
 from xml.etree import cElementTree as ET
 
+import find_libpython
+
 import cocotb.config
 
 PathLike = Union["os.PathLike[str]", str]
@@ -129,7 +131,7 @@ class Simulator(abc.ABC):
             self.env[e] = os.environ[e]
 
         if "LIBPYTHON_LOC" not in self.env:
-            self.env["LIBPYTHON_LOC"] = cocotb._vendor.find_libpython.find_libpython()
+            self.env["LIBPYTHON_LOC"] = find_libpython.find_libpython()
 
         self.env["PATH"] += os.pathsep + cocotb.config.libs_dir
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
@@ -936,9 +938,11 @@ class Xcelium(Simulator):
 
         cmds = [
             ["xrun"]
-            + ["-logfile xrun_build.log"]
+            + ["-logfile"]
+            + ["xrun_build.log"]
             + ["-elaborate"]
-            + [f"-xmlibdirname {self.build_dir}/xrun_snapshot"]
+            + ["-xmlibdirname"]
+            + [f"{self.build_dir}/xrun_snapshot"]
             + ["-licqueue"]
             + (["-clean"] if self.always else [])
             + verbosity_opts
@@ -946,8 +950,7 @@ class Xcelium(Simulator):
             + ["-access +rwc"]
             # always start with VPI on Xcelium
             + [
-                "-loadvpi "
-                + cocotb.config.lib_name_path("vpi", "xcelium")
+                cocotb.config.lib_name_path("vpi", "xcelium")
                 + ":vlog_startup_routines_bootstrap"
             ]
             + [f"-work {self.hdl_library}"]
@@ -993,23 +996,26 @@ class Xcelium(Simulator):
         cmds = [["mkdir", "-p", tmpdir]]
         cmds += [
             ["xrun"]
-            + [f"-logfile xrun_{self.current_test_name}.log"]
-            + [
-                f"-xmlibdirname {self.build_dir}/xrun_snapshot -cds_implicit_tmpdir {tmpdir}"
-            ]
+            + ["-logfile"]
+            + [f"xrun_{self.current_test_name}.log"]
+            + ["-xmlibdirname"]
+            + [f"{self.build_dir}/xrun_snapshot"]
+            + ["-cds_implicit_tmpdir"]
+            + ["tmpdir"]
             + ["-licqueue"]
             + verbosity_opts
             + ["-R"]
             + self.test_args
             + self.plusargs
             + ["-gui" if self.gui else ""]
+            + ["-input"]
             + [
                 f'-input "@database -open cocotb_waves -default" '
                 f'-input "@probe -database cocotb_waves -create {xrun_top} -all -depth all" '
                 f'-input "@run" '
                 f'-input "@exit" '
                 if self.waves
-                else ""
+                else "@run; exit;"
             ]
         ]
         self.env["GPI_EXTRA"] = (
