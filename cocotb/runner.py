@@ -48,6 +48,27 @@ def as_tcl_value(value: str) -> str:
     return value
 
 
+# Based on https://github.com/python/cpython/blob/main/Lib/shlex.py
+_shlex_find_unsafe = re.compile(r"[^\w@%+=:,./-]", re.ASCII).search
+
+
+def shlex_quote(s):
+    """Return a shell-escaped version of the string *s*."""
+    if not s:
+        return "''"
+    if _shlex_find_unsafe(s) is None:
+        return s
+
+    # use single quotes, and put single quotes into double quotes
+    # the string $'b is then quoted as '$'"'"'b'
+    return "'" + s.replace("'", "'\"'\"'") + "'"
+
+
+def shlex_join(split_command):
+    """Return a shell-escaped string from *split_command*."""
+    return " ".join(shlex_quote(arg) for arg in split_command)
+
+
 class Simulator(abc.ABC):
 
     supported_gpi_interfaces: Dict[str, List[str]] = {}
@@ -340,7 +361,7 @@ class Simulator(abc.ABC):
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
         for cmd in cmds:
-            print(f"INFO: Running command {' '.join(cmd)} in directory {cwd}")
+            print(f"INFO: Running command {shlex_join(cmd)} in directory {cwd}")
 
             # TODO: create a thread to handle stderr and log as error?
             # TODO: log forwarding
