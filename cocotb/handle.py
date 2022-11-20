@@ -37,7 +37,6 @@ from typing import Optional
 
 import cocotb
 from cocotb import simulator
-from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.log import SimLog
 from cocotb.types import Logic, LogicArray
 
@@ -571,12 +570,14 @@ class ConstantObject(NonHierarchyObject):
         elif handle_type == simulator.STRING:
             self._value = self._handle.get_signal_val_str()
         else:
+            # the value may be 'str' or something else that can be converted
+            # to LogicArray
             val = self._handle.get_signal_val_binstr()
-            self._value = BinaryValue(n_bits=len(val))
-            try:
-                self._value.binstr = val
-            except Exception:
-                self._value = val
+            self._value = LogicArray(
+                            value=val,
+                            range=Range(len(val) - 1, "downto", 0)
+                            #range=Range(0, "to", len(val) - 1) # TODO Add option for Big endian
+                            )
 
     def __int__(self):
         return int(self.value)
@@ -783,7 +784,7 @@ class ModifiableObject(NonConstantObject):
         because assigning integers less than 32 bits is faster.
 
         Args:
-            value (cocotb.binary.BinaryValue, int):
+            value (cocotb.types.LogicArray, int):
                 The value to drive onto the simulator object.
 
         Raises:
@@ -791,11 +792,6 @@ class ModifiableObject(NonConstantObject):
 
             OverflowError: If int value is out of the range that can be represented
                 by the target. -2**(Nbits - 1) <= value <= 2**Nbits - 1
-
-        .. deprecated:: 1.5
-            :class:`ctypes.Structure` objects are no longer accepted as values for assignment.
-            Convert the struct object to a :class:`~cocotb.binary.BinaryValue` before assignment using
-            ``BinaryValue(value=bytes(struct_obj), n_bits=len(signal))`` instead.
 
         .. deprecated:: 1.5
             :class:`dict` objects are no longer accepted as values for assignment.
@@ -811,20 +807,12 @@ class ModifiableObject(NonConstantObject):
                     call_sim(self, self._handle.set_signal_val_int, set_action, value)
                     return
 
-                if value < 0:
-                    value = BinaryValue(
+                # For both value < 0 and value >= 0
+                value = LogicArray(
                         value=value,
-                        n_bits=len(self),
-                        bigEndian=False,
-                        binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT,
-                    )
-                else:
-                    value = BinaryValue(
-                        value=value,
-                        n_bits=len(self),
-                        bigEndian=False,
-                        binaryRepresentation=BinaryRepresentation.UNSIGNED,
-                    )
+                        range=Range(len(self) - 1, "downto", 0)
+                        #range=Range(0, "to", len(self) - 1) # TODO Add option for Big endian
+                        )
             else:
                 raise OverflowError(
                     "Int value ({!r}) out of range for assignment of {!r}-bit signal ({!r})".format(
@@ -835,11 +823,15 @@ class ModifiableObject(NonConstantObject):
         if isinstance(value, ctypes.Structure):
             warnings.warn(
                 "`ctypes.Structure` values are no longer accepted for value assignment. "
-                "Use `BinaryValue(value=bytes(struct_obj), n_bits=len(signal))` instead",
+                "Use `LogicArray(value=bytes(struct_obj), range=Range)` instead",
                 DeprecationWarning,
                 stacklevel=3,
             )
-            value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
+            value = LogicArray(
+                    value=cocotb.utils.pack(value),
+                    range=Range(len(self) - 1, "downto", 0)
+                    #range=Range(0, "to", len(self) - 1) # TODO Add option for Big endian
+                   )
 
         elif isinstance(value, dict):
             warnings.warn(
@@ -866,7 +858,11 @@ class ModifiableObject(NonConstantObject):
 
             for val in vallist:
                 num = (num << value["bits"]) + val
-            value = BinaryValue(value=num, n_bits=len(self), bigEndian=False)
+            value = LogicArray(
+                    value=num,
+                    range=Range(len(self) - 1, "downto", 0)
+                    #range=Range(0, "to", len(self) - 1) # TODO Add option for Big endian
+                   )
 
         elif isinstance(value, LogicArray):
             if len(self) != len(value):
@@ -880,13 +876,10 @@ class ModifiableObject(NonConstantObject):
                 raise ValueError(
                     f"cannot assign value of length 1 to handle of length {len(self)}"
                 )
-            value = BinaryValue(str(value))
-
-        elif isinstance(value, BinaryValue):
-            if len(value) != len(self):
-                raise ValueError(
-                    f"cannot assign value of length {len(value)} to handle of length {len(self)}"
-                )
+            value = LogicArray(
+                    value=str(value)
+                    # range is set automatically
+                   )
 
         else:
             raise TypeError(
@@ -903,12 +896,12 @@ class ModifiableObject(NonConstantObject):
         return value._as_gpi_args_for(self)
 
     @NonConstantObject.value.getter
-    def value(self) -> BinaryValue:
-        binstr = self._handle.get_signal_val_binstr()
-        # Skip BinaryValue.assign() as we know we are using a binstr
-        result = BinaryValue(n_bits=len(binstr))
-        # Skip the permitted characters check as we trust the simulator
-        result._set_trusted_binstr(binstr)
+    def value(self) -> LogicArray:
+        result = LogicArray(
+                value=self._handle.get_signal_val_binstr(),
+                range=Range(len(binstr) - 1, "downto", 0)
+                #range=Range(0, "to", len(binstr) - 1) # TODO Add option for Big endian
+                )
         return result
 
     def __int__(self):
@@ -984,7 +977,7 @@ class EnumObject(ModifiableObject):
         """
         value, set_action = self._check_for_set_action(value)
 
-        if isinstance(value, BinaryValue):
+        if isinstance(value, LogicArray):
             value = int(value)
         elif not isinstance(value, int):
             raise TypeError(
@@ -1029,7 +1022,7 @@ class IntegerObject(ModifiableObject):
         """
         value, set_action = self._check_for_set_action(value)
 
-        if isinstance(value, BinaryValue):
+        if isinstance(value, LogicArray):
             value = int(value)
         elif not isinstance(value, int):
             raise TypeError(
