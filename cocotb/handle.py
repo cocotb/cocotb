@@ -38,7 +38,7 @@ from typing import Optional
 import cocotb
 from cocotb import simulator
 from cocotb.log import SimLog
-from cocotb.types import Logic, LogicArray
+from cocotb.types import Range, Logic, LogicArray
 
 # Only issue a warning for each deprecated attribute access
 _deprecation_warned = set()
@@ -869,7 +869,7 @@ class ModifiableObject(NonConstantObject):
                 raise ValueError(
                     f"cannot assign value of length {len(value)} to handle of length {len(self)}"
                 )
-            value = value.to_BinaryValue()
+            # value is already of type LogicArray, no need to convert it
 
         elif isinstance(value, Logic):
             if len(self) != 1:
@@ -897,8 +897,9 @@ class ModifiableObject(NonConstantObject):
 
     @NonConstantObject.value.getter
     def value(self) -> LogicArray:
+        binstr = self._handle.get_signal_val_binstr()
         result = LogicArray(
-                value=self._handle.get_signal_val_binstr(),
+                value=binstr,
                 range=Range(len(binstr) - 1, "downto", 0)
                 #range=Range(0, "to", len(binstr) - 1) # TODO Add option for Big endian
                 )

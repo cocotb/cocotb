@@ -200,6 +200,12 @@ class LogicArray(Array[Logic]):
         """
         Raises ValueError if the values cannot be converted to binary ('X' or 'Z')
         """
+        return int(self)
+
+    def __int__(self):
+        """
+        int(LogicArray) is equivalent to LogicArray.integer
+        """
         value = 0
         for bit in self:
             value = value << 1 | int(bit)
