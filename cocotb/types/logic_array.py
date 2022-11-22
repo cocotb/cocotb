@@ -202,6 +202,15 @@ class LogicArray(Array[Logic]):
         """
         return int(self)
 
+    def __eq__(self, other):
+        """Overrides the default implementation"""
+        if isinstance(other, int):
+            return self.integer == other
+        else:
+            return self == other
+
+    # __ne__ is not required for python3 because by default it negates __eq__
+
     def __int__(self):
         """
         int(LogicArray) is equivalent to LogicArray.integer
