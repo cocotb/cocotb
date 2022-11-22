@@ -17,5 +17,5 @@ value = LogicArray(value=0, range=Range(7, "downto", 0))
 async def do_test(dut):
     dut.stream_in_data.setimmediatevalue(value)
     await Timer(1, "step")
-    assert dut.stream_in_data.value.integer == 0
+    assert dut.stream_in_data.value == 0
     await ReadOnly()
