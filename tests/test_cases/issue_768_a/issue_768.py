@@ -17,5 +17,5 @@ value = 0
 async def test(dut):
     dut.stream_in_data.setimmediatevalue(value)
     await Timer(1, "step")
-    assert dut.stream_in_data.value == 0
+    assert dut.stream_in_data.value.integer == 0
     await ReadOnly()
