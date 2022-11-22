@@ -6,16 +6,16 @@ no more tests can be added to this file.
 """
 
 import cocotb
-from cocotb.binary import BinaryValue
+from cocotb.types import LogicArray, Range
 from cocotb.triggers import ReadOnly, Timer
 
 # this line is different between the two files
-value = BinaryValue(0, n_bits=8)
+value = LogicArray(value=0, range=Range(7, "downto", 0))
 
 
 @cocotb.test()
 async def do_test(dut):
     dut.stream_in_data.setimmediatevalue(value)
     await Timer(1, "step")
-    assert dut.stream_in_data.value == 0
+    assert dut.stream_in_data.value.integer == 0
     await ReadOnly()
