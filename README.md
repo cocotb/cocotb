@@ -134,3 +134,17 @@ and [our wiki](https://github.com/cocotb/cocotb/wiki).
 * [`uvm-python`](https://github.com/tpoikela/uvm-python), an almost 1:1 port of UVM 1.2 to Python
 * our wiki [on extension modules](https://github.com/cocotb/cocotb/wiki/Further-Resources#extension-modules-cocotbext)
 * the list of [GitHub projects depending on cocotb](https://github.com/cocotb/cocotb/network/dependents)
+
+## Setup for development
+```
+echo 'export PYTHONPATH="${PYTHONPATH}:<path to your cocotb fork>"' >> ~/.bash_profile
+sudo dnf install libstdc++-static ghdl
+git clone ...
+cd cocotb/
+sudo pip install pytest
+sudo pip install -e .
+```
+
+## Work in progress:
+- Removing `from cocotb.binary` in cocotb/handle.py:40 (replace with types/logic_array.py)
+- Trying `cd tests/test_cases/test_select_testcase && make`

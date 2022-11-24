@@ -29,9 +29,9 @@ import pytest
 
 import cocotb
 from cocotb._sim_versions import IcarusVersion
-from cocotb.binary import BinaryValue
 from cocotb.handle import ConstantObject, HierarchyObject, IntegerObject, StringObject
 from cocotb.triggers import Timer
+from cocotb.types import LogicArray
 
 
 # GHDL is unable to access signals in generate loops (gh-2594)
@@ -112,7 +112,7 @@ async def access_type_bit_verilog_metavalues(dut):
     The metavalues still may show up as `0` and `1` in HDL (Xcelium and Riviera).
     """
     await Timer(1, "ns")
-    dut.mybits.value = BinaryValue("XZ")
+    dut.mybits.value = LogicArray("XZ")
     await Timer(1, "ns")
     print(dut.mybits.value.binstr)
     if cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim")):
@@ -128,7 +128,7 @@ async def access_type_bit_verilog_metavalues(dut):
             dut.mybits.value.binstr.lower() == "00"
         ), "The assigned value was incorrect"
 
-    dut.mybits.value = BinaryValue("ZX")
+    dut.mybits.value = LogicArray("ZX")
     await Timer(1, "ns")
     print(dut.mybits.value.binstr)
     if cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim")):
@@ -345,7 +345,7 @@ async def access_internal_register_array(dut):
     """Test access to an internal register array"""
 
     assert (
-        dut.register_array[0].value.binstr == "xxxxxxxx"
+        dut.register_array[0].value == "xxxxxxxx"
     ), "Failed to access internal register array value"
 
     dut.register_array[1].setimmediatevalue(4)

@@ -203,9 +203,16 @@ class LogicArray(Array[Logic]):
         return int(self)
 
     def __eq__(self, other):
-        """Overrides the default implementation"""
+        """
+        Overrides the default implementation to enable comparision
+        with integers and strings (case insensitive)
+        """
         if isinstance(other, int):
             return self.integer == other
+        if isinstance(other, str):
+            # case insensitive to make sure 'x' == 'X' and 'z' == 'Z'
+            # internally LogicArray uses upper case but use may not know about it
+            return self.binstr == other.upper()
         else:
             return self == other
 
