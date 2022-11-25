@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
+import sys
 
 import pytest
 
@@ -34,18 +35,21 @@ module_name = [
 
 verilog_sources = []
 vhdl_sources = []
-toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
+hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
-if toplevel_lang == "verilog":
+if hdl_toplevel_lang == "verilog":
     verilog_sources = [
         os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")
     ]
+    gpi_interfaces = ["vpi"]
 else:
     vhdl_sources = [
         os.path.join(tests_dir, "designs", "sample_module", "sample_module_pack.vhdl"),
         os.path.join(tests_dir, "designs", "sample_module", "sample_module_1.vhdl"),
         os.path.join(tests_dir, "designs", "sample_module", "sample_module.vhdl"),
     ]
+    gpi_interfaces = [vhdl_gpi_interfaces]
 
 sim = os.getenv("SIM", "icarus")
 compile_args = []
@@ -56,8 +60,8 @@ if sim == "questa":
 elif sim == "xcelium":
     compile_args = ["-v93"]
 
-toplevel = "sample_module"
-python_search = [os.path.join(tests_dir, "test_cases", "test_cocotb")]
+hdl_toplevel = "sample_module"
+sys.path.insert(0, os.path.join(tests_dir, "test_cases", "test_cocotb"))
 
 
 def test_cocotb():
@@ -67,17 +71,17 @@ def test_cocotb():
     runner.build(
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,
-        toplevel=toplevel,
+        hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
-        extra_args=compile_args,
+        build_args=compile_args,
     )
 
     runner.test(
-        toplevel_lang=toplevel_lang,
-        python_search=python_search,
-        toplevel=toplevel,
-        py_module=module_name,
-        extra_args=sim_args,
+        hdl_toplevel_lang=hdl_toplevel_lang,
+        hdl_toplevel=hdl_toplevel,
+        test_module=module_name,
+        gpi_interfaces=gpi_interfaces,
+        test_args=sim_args,
     )
 
 

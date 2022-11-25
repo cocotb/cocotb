@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
+import sys
 
 import pytest
 
@@ -14,6 +15,7 @@ pytestmark = pytest.mark.simulator_required
 
 tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sim_build = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sim_build")
+sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 
 
 @cocotb.test()
@@ -33,15 +35,18 @@ async def cocotb_runner_test(dut):
 )
 def test_runner(parameters):
 
-    toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
+    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+    vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
     verilog_sources = []
     vhdl_sources = []
 
-    if toplevel_lang == "verilog":
+    if hdl_toplevel_lang == "verilog":
         verilog_sources = [os.path.join(tests_dir, "designs", "runner", "runner.v")]
+        gpi_interfaces = ["vpi"]
     else:
         vhdl_sources = [os.path.join(tests_dir, "designs", "runner", "runner.vhdl")]
+        gpi_interfaces = [vhdl_gpi_interfaces]
 
     sim = os.getenv("SIM", "icarus")
     runner = get_runner(sim)()
@@ -52,19 +57,19 @@ def test_runner(parameters):
     runner.build(
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,
-        toplevel="runner",
+        hdl_toplevel="runner",
         parameters=parameters,
-        defines=["DEFINE=4"],
+        defines={"DEFINE": 4},
         includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
-        extra_args=compile_args,
+        build_args=compile_args,
         build_dir=sim_build
         + "/test_runner/"
         + "_".join(("{}={}".format(*i) for i in parameters.items())),
     )
 
     runner.test(
-        python_search=[os.path.join(tests_dir, "pytest")],
-        toplevel="runner",
-        py_module="test_runner",
+        hdl_toplevel="runner",
+        test_module="test_runner",
+        gpi_interfaces=gpi_interfaces,
         extra_env=parameters,
     )
