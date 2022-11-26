@@ -10,7 +10,6 @@ import pytest
 
 import cocotb
 from cocotb._sim_versions import IcarusVersion
-from cocotb.binary import BinaryValue
 from cocotb.triggers import Timer
 
 
@@ -93,17 +92,19 @@ async def test_handle_compat_mapping(dut):
     assert dut.fullname == "myfullname"
 
 
-@cocotb.test()
-async def test_assigning_structure_deprecated(dut):
-    """signal.value = ctypes.Structure assignment is deprecated"""
+@cocotb.test(expect_error=ValueError)
+async def test_assigning_structure(dut):
+    """
+    signal.value = ctypes.Structure assignment returns a friendly error
+    (have been previously deprecated but working)
+    """
 
     class Example(ctypes.Structure):
         _fields_ = [("a", ctypes.c_byte), ("b", ctypes.c_uint32)]
 
     e = Example(a=0xCC, b=0x12345678)
 
-    with pytest.warns(DeprecationWarning):
-        dut.stream_in_data_wide.value = e
+    dut.stream_in_data_wide.value = e # should fail
 
     await Timer(1, "step")
 

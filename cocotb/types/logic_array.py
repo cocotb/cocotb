@@ -2,6 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
+import ctypes
 
 from cocotb.types.array import Array
 from cocotb.types.logic import Logic, LogicConstructibleT
@@ -165,6 +166,9 @@ class LogicArray(Array[Logic]):
                 if bitlen > len(range):
                     raise ValueError(f"{value} will not fit in {range}")
                 self._value = [Logic(v) for v in _int_to_bitstr(value, len(range))]
+        elif isinstance(value, ctypes.Structure):
+            # ctypes.Structure is also typing.Iterable, but it is not supported
+            raise ValueError(f"{value} is an instance of ctypes.Structure which cannot be converted to LogicArray")
         elif isinstance(value, typing.Iterable):
             self._value = [Logic(v) for v in value]
         else:
