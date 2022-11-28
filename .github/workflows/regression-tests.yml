@@ -171,7 +171,6 @@ jobs:
       id: windowstesting
       continue-on-error: ${{matrix.may_fail || false}}
       timeout-minutes: 15
-      shell: pwsh
       env:
         CONDA_DLL_SEARCH_MODIFICATION_ENABLE: 1
       # Virtual environments don't work on Windows with cocotb. Avoid using them
