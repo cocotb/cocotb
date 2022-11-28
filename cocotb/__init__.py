@@ -254,7 +254,7 @@ def _initialise_testbench_(argv_):
     # sys.path normally includes "" (the current directory), but does not appear to when python is embedded.
     # Add it back because users expect to be able to import files in their test directory.
     # TODO: move this to gpi_embed.cpp
-    sys.path.insert(0, "")
+    sys.path.append("")
 
     _setup_logging()
 

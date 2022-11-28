@@ -171,12 +171,10 @@ jobs:
       id: windowstesting
       continue-on-error: ${{matrix.may_fail || false}}
       timeout-minutes: 15
-      env:
-        CONDA_DLL_SEARCH_MODIFICATION_ENABLE: 1
       # Virtual environments don't work on Windows with cocotb. Avoid using them
       # in nox testing.
       run: |
-        nox --no-venv -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+        nox --verbose --no-venv -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
 
       # Ubuntu / MacOS Testing
     - name: Install cocotb build dependencies (Ubuntu - g++)
