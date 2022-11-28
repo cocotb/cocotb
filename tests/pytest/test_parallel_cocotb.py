@@ -23,7 +23,7 @@ from test_cocotb import (
 from cocotb.runner import get_runner
 
 pytestmark = pytest.mark.simulator_required
-sys.path.insert(0, os.path.join(tests_dir, "pytest"))
+sys.path.append(os.path.join(tests_dir, "pytest"))
 
 
 @pytest.mark.compile

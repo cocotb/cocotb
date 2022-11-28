@@ -13,7 +13,7 @@ import subprocess
 import sys
 
 # Add in-tree extensions to path
-sys.path.insert(0, os.path.abspath("../sphinxext"))
+sys.path.append(os.path.abspath("../sphinxext"))
 
 import cocotb
 from cocotb._vendor.distutils_version import LooseVersion

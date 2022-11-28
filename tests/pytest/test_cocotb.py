@@ -61,7 +61,7 @@ elif sim == "xcelium":
     compile_args = ["-v93"]
 
 hdl_toplevel = "sample_module"
-sys.path.insert(0, os.path.join(tests_dir, "test_cases", "test_cocotb"))
+sys.path.append(os.path.join(tests_dir, "test_cases", "test_cocotb"))
 
 
 def test_cocotb():
@@ -87,3 +87,4 @@ def test_cocotb():
 
 if __name__ == "__main__":
     test_cocotb()
+    
