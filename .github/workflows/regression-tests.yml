@@ -165,7 +165,7 @@ jobs:
       run: conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython
     - name: Install cocotb runtime dependencies (Windows, msvc)
       if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
-      run: conda install --yes -c msys2 m2-base m2-make sqlite
+      run: conda install --yes -c msys2 m2-base m2-make sqlite=3.39
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
