@@ -90,6 +90,7 @@ jobs:
       # Run tests that don't need a simulator.
     - name: Install Python testing dependencies
       run: |
+        conda install --yes sqlite=3.39
         pip install nox
     - name: Run tests without simulators
       run: nox -s "${{ inputs.nox_session_test_nosim }}"
