@@ -91,7 +91,7 @@ jobs:
     - name: Install Python testing dependencies
       run: |
         conda install --yes sqlite=3.39
-        pip install nox==2022.8.7
+        pip install nox==2022.8.7 virtualenv==20.16.7
     - name: Run tests without simulators
       run: nox -s "${{ inputs.nox_session_test_nosim }}"
       continue-on-error: ${{matrix.may_fail || false}}
