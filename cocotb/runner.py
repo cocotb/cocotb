@@ -948,6 +948,7 @@ class Xcelium(Simulator):
             + verbosity_opts
             # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
             + ["-access +rwc"]
+            + ["-loadvpi"]
             # always start with VPI on Xcelium
             + [
                 cocotb.config.lib_name_path("vpi", "xcelium")
@@ -1001,7 +1002,7 @@ class Xcelium(Simulator):
             + ["-xmlibdirname"]
             + [f"{self.build_dir}/xrun_snapshot"]
             + ["-cds_implicit_tmpdir"]
-            + ["tmpdir"]
+            + [tmpdir]
             + ["-licqueue"]
             + verbosity_opts
             + ["-R"]
