@@ -80,22 +80,23 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{matrix.python-version}}
-    - name: Set up Anaconda ${{matrix.python-version}} (Windows)
+    - name: Set up Anaconda (base) ${{matrix.python-version}} (Windows)
       if: startsWith(matrix.os, 'windows')
       uses: conda-incubator/setup-miniconda@v2
       with:
         auto-update-conda: true
+        # see: https://github.com/cocotb/cocotb/pull/3151
         # python-version: ${{matrix.python-version}}
         auto-activate-base: true
         activate-environment: ""
+    - name: Set up python version for Anaconda (base) ${{matrix.python-version}} (Windows)
+      if: startsWith(matrix.os, 'windows')
+      run: conda install --yes python=${{matrix.python-version}}
 
       # Run tests that don't need a simulator.
     - name: Install Python testing dependencies
       run: |
-        conda activate base
-        conda install --yes python=${{matrix.python-version}}
-        conda install --yes sqlite=3.39
-        pip install nox==2022.8.7 virtualenv==20.16.7
+        pip install nox
     - name: Run tests without simulators
       run: nox -s "${{ inputs.nox_session_test_nosim }}"
       continue-on-error: ${{matrix.may_fail || false}}
@@ -170,7 +171,7 @@ jobs:
       run: conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython
     - name: Install cocotb runtime dependencies (Windows, msvc)
       if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
-      run: conda install --yes -c msys2 m2-base m2-make sqlite=3.39
+      run: conda install --yes -c msys2 m2-base m2-make
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
@@ -179,7 +180,7 @@ jobs:
       # Virtual environments don't work on Windows with cocotb. Avoid using them
       # in nox testing.
       run: |
-        nox --verbose --no-venv -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+        nox --no-venv -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
 
       # Ubuntu / MacOS Testing
     - name: Install cocotb build dependencies (Ubuntu - g++)
