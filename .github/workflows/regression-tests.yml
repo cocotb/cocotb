@@ -87,7 +87,7 @@ jobs:
         auto-update-conda: true
         python-version: ${{matrix.python-version}}
         auto-activate-base: true
-        activate-environment: ""
+        activate-environment: base
 
       # Run tests that don't need a simulator.
     - name: Install Python testing dependencies
