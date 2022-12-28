@@ -86,13 +86,12 @@ jobs:
       with:
         auto-update-conda: true
         python-version: ${{matrix.python-version}}
-      run: |
-        conda activate base
-        conda install --yes python=${{matrix.python-version}}
         
       # Run tests that don't need a simulator.
     - name: Install Python testing dependencies
       run: |
+        conda activate base
+        conda install --yes python=${{matrix.python-version}}
         conda install --yes sqlite=3.39
         pip install nox==2022.8.7 virtualenv==20.16.7
     - name: Run tests without simulators
