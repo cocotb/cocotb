@@ -85,7 +85,11 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         auto-update-conda: true
-        python-version: ${{matrix.python-version}}
+        # Use base environment to properly import _sqlite3 DLL - see gh-3166
+        activate-environment: ""
+    - name: Set up python version for Anaconda (base) ${{matrix.python-version}} (Windows)
+      if: startsWith(matrix.os, 'windows')
+      run: conda install --yes python=${{matrix.python-version}}
 
       # Run tests that don't need a simulator.
     - name: Install Python testing dependencies
