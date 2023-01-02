@@ -568,7 +568,13 @@ class ConstantObject(NonHierarchyObject):
             self._value = self._handle.get_signal_val_long()
         elif handle_type == simulator.INTEGER:
             try:
-                self._value = int(self._handle.get_signal_val_binstr(), 2)
+                val = self._handle.get_signal_val_binstr()
+                if isinstance(val, str):
+                    self._value = int(val, 2)
+                else:
+                    # some Simulators don't support binstr, in that case
+                    # just read the value as long
+                    self._value = self._handle.get_signal_val_long()
             except Exception:
                 self._value = self._handle.get_signal_val_long()
         elif handle_type == simulator.REAL:
