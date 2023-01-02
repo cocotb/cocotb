@@ -567,7 +567,10 @@ class ConstantObject(NonHierarchyObject):
         if handle_type == simulator.ENUM:
             self._value = self._handle.get_signal_val_long()
         elif handle_type == simulator.INTEGER:
-            self._value = int(self._handle.get_signal_val_binstr(), 2)
+            try:
+                self._value = int(self._handle.get_signal_val_binstr(), 2)
+            except Exception:
+                self._value = self._handle.get_signal_val_long()
         elif handle_type == simulator.REAL:
             self._value = self._handle.get_signal_val_real()
         elif handle_type == simulator.STRING:
