@@ -567,11 +567,12 @@ class ConstantObject(NonHierarchyObject):
         if handle_type == simulator.ENUM:
             self._value = self._handle.get_signal_val_long()
         elif handle_type == simulator.INTEGER:
-            if self._def_name == "vhpiNameP":
-                # VHPI of some simulators have problems with binstr
-                self._value = self._handle.get_signal_val_long()
-            else:
+            if "[" in self._name:
+                # hacky way to detect if VPI is used
                 self._value = int(self._handle.get_signal_val_binstr(), 2)
+            else:
+                # VHCI cant do binstr yet
+                self._value = self._handle.get_signal_val_long()
         elif handle_type == simulator.REAL:
             self._value = self._handle.get_signal_val_real()
         elif handle_type == simulator.STRING:
