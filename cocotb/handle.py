@@ -567,11 +567,11 @@ class ConstantObject(NonHierarchyObject):
         if handle_type == simulator.ENUM:
             self._value = self._handle.get_signal_val_long()
         elif handle_type == simulator.INTEGER:
-            if "[" in self._name:
-                # hacky way to detect if VPI is used
+            if simulator.get_simulator_product() == "Icarus Verilog":
+                # only enable long integers for iverilog
                 self._value = int(self._handle.get_signal_val_binstr(), 2)
             else:
-                # VHCI cant do binstr yet
+                # some other simulators have problems with binstr()
                 self._value = self._handle.get_signal_val_long()
         elif handle_type == simulator.REAL:
             self._value = self._handle.get_signal_val_real()
