@@ -54,6 +54,7 @@ const char *GpiObjHdl::get_type_str() {
         CASE_OPTION(GPI_STRUCTURE);
         CASE_OPTION(GPI_REAL);
         CASE_OPTION(GPI_INTEGER);
+        CASE_OPTION(GPI_BITS);
         CASE_OPTION(GPI_STRING);
         CASE_OPTION(GPI_GENARRAY);
         default:
