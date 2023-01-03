@@ -68,6 +68,8 @@ module sample_module #(
 
 );
 
+integer INTEGER_VARIABLE = 1234;
+
 `ifndef __ICARUS__
 localparam string STRING_LOCALPARAM = "TESTING_LOCALPARAM";
 

@@ -412,6 +412,7 @@ async def type_check_verilog(dut):
         (dut.INT_PARAM, "GPI_BITS"),
         (dut.REAL_PARAM, "GPI_REAL"),
         (dut.STRING_PARAM, "GPI_STRING"),
+        (dut.INTEGER_VARIABLE, "GPI_INTEGER"),
     ]
 
     if cocotb.SIM_NAME.lower().startswith("icarus"):
