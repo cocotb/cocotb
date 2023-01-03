@@ -564,15 +564,10 @@ class ConstantObject(NonHierarchyObject):
                 ``simulator.REAL``, ``simulator.STRING``).
         """
         NonHierarchyObject.__init__(self, handle, path)
-        if handle_type == simulator.ENUM:
+        if handle_type in [simulator.ENUM, simulator.INTEGER]:
             self._value = self._handle.get_signal_val_long()
-        elif handle_type == simulator.INTEGER:
-            if simulator.get_simulator_product() == "Icarus Verilog":
-                # only enable long integers for iverilog
-                self._value = int(self._handle.get_signal_val_binstr(), 2)
-            else:
-                # some other simulators have problems with binstr()
-                self._value = self._handle.get_signal_val_long()
+        elif handle_type == simulator.BITS:
+            self._value = int(self._handle.get_signal_val_binstr(), 2)
         elif handle_type == simulator.REAL:
             self._value = self._handle.get_signal_val_real()
         elif handle_type == simulator.STRING:
