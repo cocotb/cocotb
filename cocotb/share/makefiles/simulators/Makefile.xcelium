@@ -73,7 +73,7 @@ else
 endif
 
 # Xcelium errors out if multiple timescales are specified on the command line.
-ifneq (,$(findstring timescale,$(EXTRA_ARGS)))
+ifneq (,$(filter -timescale%,$(EXTRA_ARGS)))
     $(error Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.)
 endif
 
