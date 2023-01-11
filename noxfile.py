@@ -465,6 +465,7 @@ def release_test_sim(
         "-v",
         "-k",
         "simulator_required",
+        env=env,
     )
 
     session.log(f"All tests passed with configuration {config_str}!")
