@@ -35,7 +35,7 @@ jobs:
     name: Generate a list of environments to run tests against
     steps:
     - uses: actions/checkout@v3
-    - run: ./.github/generate-envs.py --output-format=gha --group="${{inputs.group}}"
+    - run: ./.github/generate-envs.py --output-format=gha --gha-output-file="$GITHUB_OUTPUT" --group="${{inputs.group}}"
       id: run_generate_script
     outputs:
       envs: ${{ steps.run_generate_script.outputs.envs }}

@@ -188,6 +188,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--group")
     parser.add_argument("--output-format", choices=("gha", "json"), default="json")
+    parser.add_argument(
+        "--gha-output-file",
+        type=argparse.FileType("a", encoding="utf-8"),
+        help="The $GITHUB_OUTPUT file.",
+    )
 
     args = parser.parse_args()
 
@@ -198,13 +203,15 @@ def main() -> int:
         selected_envs = ENVS
 
     if args.output_format == "gha":
-        # Output for GitHub Actions (GHA). Sets the variable 'envs'.
+        # Output for GitHub Actions (GHA). Appends the configuration to
+        # the file named in the "--gha-output-file" argument.
+
+        assert args.gha_output_file is not None
 
         # The generated JSON output may not contain newlines to be parsed by GHA
-        print(f"::set-output name=envs::{json.dumps(selected_envs)}")
+        print(f"envs={json.dumps(selected_envs)}", file=args.gha_output_file)
 
-        # The set-output command is not visible in the GHA logs; print the
-        # the selected environments for easier debugging.
+        # Print the the selected environments for easier debugging.
         print("Generated the following test configurations:")
         print(json.dumps(selected_envs, indent=2))
     elif args.output_format == "json":
