@@ -409,7 +409,7 @@ async def type_check_verilog(dut):
         (dut.stream_in_data, "GPI_NET"),
         (dut.logic_b, "GPI_REGISTER"),
         (dut.logic_c, "GPI_REGISTER"),
-        (dut.INT_PARAM, "GPI_BITS"),
+        (dut.INT_PARAM, "GPI_REGISTER"),
         (dut.REAL_PARAM, "GPI_REAL"),
         (dut.STRING_PARAM, "GPI_STRING"),
         (dut.INTEGER_VARIABLE, "GPI_INTEGER"),

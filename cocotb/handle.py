@@ -566,7 +566,7 @@ class ConstantObject(NonHierarchyObject):
         NonHierarchyObject.__init__(self, handle, path)
         if handle_type in [simulator.ENUM, simulator.INTEGER]:
             self._value = self._handle.get_signal_val_long()
-        elif handle_type == simulator.BITS:
+        elif handle_type == simulator.REG:
             self._value = int(self._handle.get_signal_val_binstr(), 2)
         elif handle_type == simulator.REAL:
             self._value = self._handle.get_signal_val_real()
