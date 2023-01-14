@@ -39,7 +39,6 @@ typedef struct packed
 
 module sample_module #(
     parameter INT_PARAM = 12,
-    parameter INT_PARAM_2 = -12,
     parameter REAL_PARAM = 3.14,
     parameter STRING_PARAM = "Test"
 )(
