@@ -155,7 +155,7 @@ static gpi_objtype_t const_type_to_gpi_objtype(int32_t const_type) {
     switch (const_type) {
         case vpiDecConst:
         case vpiBinaryConst:
-            return GPI_REGISTER;
+            return GPI_BITS;
         case vpiOctConst:
         case vpiHexConst:
         case vpiIntConst:
