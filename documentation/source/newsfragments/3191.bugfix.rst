@@ -1,0 +1,1 @@
+Updated test_sv_interface with a workaround for Verilator so the test now passes with that simulator

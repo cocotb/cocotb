@@ -13,5 +13,7 @@ endinterface
 module top ();
 
 sv_if sv_if_i();
-
+`ifdef VERILATOR
+   logic d; // without this workaround for Verilator, cocotb gets a gpi error 'no root handle found'
+`endif
 endmodule
