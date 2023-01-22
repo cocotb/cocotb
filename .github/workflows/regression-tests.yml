@@ -154,7 +154,7 @@ jobs:
     - name: Set up Verilator (Ubunutu - source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator'
       run: |
-        sudo apt install -y --no-install-recommends make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlibc zlib1g zlib1g-dev
+        sudo apt install -y --no-install-recommends help2man make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlibc zlib1g zlib1g-dev
         git clone https://github.com/verilator/verilator.git
         cd verilator
         git reset --hard ${{matrix.sim-version}}
