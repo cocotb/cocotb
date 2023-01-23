@@ -1,0 +1,1 @@
+parameter DATA_BYTES = 8;
