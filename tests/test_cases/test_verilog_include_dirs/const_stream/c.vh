@@ -1,1 +1,1 @@
-parameter DATA_LAST = 64;
+`define DATA_LAST 64

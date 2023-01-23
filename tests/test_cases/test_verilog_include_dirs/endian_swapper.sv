@@ -53,22 +53,22 @@ module endian_swapper_sv (
     input                                  clk,
     input                                  reset_n,
 
-    input [DATA_BYTES*8-1:0]               stream_in_data,
-    input [$clog2(DATA_BYTES)-1:0]         stream_in_empty,
+    input [`DATA_BYTES*8-1:0]               stream_in_data,
+    input [$clog2(`DATA_BYTES)-1:0]         stream_in_empty,
     input                                  stream_in_valid,
     input                                  stream_in_startofpacket,
     input                                  stream_in_endofpacket,
     output reg                             stream_in_ready,
 
-    output reg [DATA_BYTES*8-1:0]          stream_out_data,
-    output reg [$clog2(DATA_BYTES)-1:0]    stream_out_empty,
+    output reg [`DATA_BYTES*8-1:0]          stream_out_data,
+    output reg [$clog2(`DATA_BYTES)-1:0]    stream_out_empty,
     output reg                             stream_out_valid,
     output reg                             stream_out_startofpacket,
     output reg                             stream_out_endofpacket,
     input                                  stream_out_ready,
 
     input  [1:0]                           csr_address,
-    output reg [DATA_WIDTH-1:0]                      csr_readdata,
+    output reg [`DATA_WIDTH-1:0]                      csr_readdata,
     output reg                             csr_readdatavalid,
     input                                  csr_read,
     input                                  csr_write,
@@ -78,13 +78,13 @@ module endian_swapper_sv (
 
 
 
-function [DATA_BYTES*8-1:0] byteswap(input [DATA_BYTES*8-1:0] data);
+function [`DATA_BYTES*8-1:0] byteswap(input [`DATA_BYTES*8-1:0] data);
 /*
     // FIXME Icarus doesn't seem to like this....
-    reg [$clog2(DATA_BYTES)-1:0] i;
+    reg [$clog2(`DATA_BYTES)-1:0] i;
 
-    for (i=0; i<DATA_BYTES; i=i+1)
-        byteswap[i*8+7 -:8] = data[(DATA_BYTES-i)*8-1 -:8];
+    for (i=0; i<`DATA_BYTES; i=i+1)
+        byteswap[i*8+7 -:8] = data[(`DATA_BYTES-i)*8-1 -:8];
 */
 
     // Hardwire for now
@@ -95,7 +95,7 @@ function [DATA_BYTES*8-1:0] byteswap(input [DATA_BYTES*8-1:0] data);
                  data[39:32],
                  data[47:40],
                  data[55:48],
-                 data[DATA_LAST-1:56]};
+                 data[`DATA_LAST-1:56]};
 endfunction
 
 

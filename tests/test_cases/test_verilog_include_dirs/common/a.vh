@@ -1,1 +1,1 @@
-parameter DATA_BYTES = 8;
+`define DATA_BYTES 8
