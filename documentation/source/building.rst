@@ -290,6 +290,11 @@ The following variables are makefile variables, not environment variables.
       A list of the Verilog source files to include.
       Paths can be absolute or relative; if relative, they are interpreted as relative to the Makefile's location.
 
+.. make:var:: VERILOG_INCLUDE_DIRS
+
+      A list of the Verilog directories to search for include files.
+      Paths can be absolute or relative; if relative, they are interpreted as relative to the Makefile's location.
+
 .. make:var:: VHDL_SOURCES
 
       A list of the VHDL source files to include.
