@@ -54,7 +54,7 @@ endif
 COMPILE_ARGS += +acc
 
 ifdef VERILOG_INCLUDE_DIRS
-    VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
+    VLOG_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
 endif
 
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
