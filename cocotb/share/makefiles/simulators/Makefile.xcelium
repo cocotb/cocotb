@@ -47,6 +47,10 @@ else
     export XCELIUM_BIN_DIR
 endif
 
+ifdef VERILOG_INCLUDE_DIRS
+    COMPILE_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+endif
+
 EXTRA_ARGS += $(COMPILE_ARGS)
 EXTRA_ARGS += $(SIM_ARGS)
 EXTRA_ARGS += -licqueue

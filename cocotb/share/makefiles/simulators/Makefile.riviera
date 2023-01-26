@@ -57,6 +57,10 @@ endif
 
 ALOG_ARGS += -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
+ifdef VERILOG_INCLUDE_DIRS
+    ALOG_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+endif
+
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
 ALOG_ARGS += $(COMPILE_ARGS)
 ACOM_ARGS += $(COMPILE_ARGS)

@@ -64,6 +64,10 @@ endif
 
 COMPILE_ARGS += -f $(SIM_BUILD)/cmds.f -g2012 # Default to latest SystemVerilog standard
 
+ifdef VERILOG_INCLUDE_DIRS
+    COMPILE_ARGS += $(addprefix -I, $(VERILOG_INCLUDE_DIRS))
+endif
+
 # Compilation phase
 $(SIM_BUILD)/sim.vvp: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	@echo "+timescale+$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)" > $(SIM_BUILD)/cmds.f

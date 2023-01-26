@@ -53,6 +53,10 @@ else
      export VCS_BIN_DIR
 endif
 
+ifdef VERILOG_INCLUDE_DIRS
+    COMPILE_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+endif
+
 ifeq ($(PYTHON_ARCH),64bit)
     EXTRA_ARGS += -full64
 endif
