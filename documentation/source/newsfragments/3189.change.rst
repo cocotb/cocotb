@@ -1,1 +1,1 @@
-Added support for `VERILOG_INCLUDE_DIRS` for icarus, verilator, ius and xcelium in the default Makefiles
+Added support for :envvar:`VERILOG_INCLUDE_DIRS` in the Makefiles.

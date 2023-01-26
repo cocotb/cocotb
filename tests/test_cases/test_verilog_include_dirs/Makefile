@@ -15,9 +15,9 @@ else
 VERILOG_INCLUDE_DIRS = \
 	./common \
 	./const_stream
-VERILOG_SOURCES = endian_swapper.sv
-TOPLEVEL = endian_swapper_sv
-MODULE = test_iteration_es
+VERILOG_SOURCES = simple_and.sv
+TOPLEVEL = simple_and
+MODULE = test_verilog_include_dirs
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
