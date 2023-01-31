@@ -656,18 +656,19 @@ class Ghdl(Simulator):
             + [str(source_file) for source_file in self.vhdl_sources]
         ]
 
+        if self.hdl_toplevel is not None:
+            cmds += [
+                ["ghdl", "-m"]
+                + [f"--work={self.hdl_library}"]
+                + self.build_args
+                + [self.hdl_toplevel]
+            ]
+
         return cmds
 
     def _test_command(self) -> List[Command]:
 
         cmds = [
-            ["ghdl", "-m"]
-            + [f"--work={self.hdl_toplevel_library}"]
-            + self.test_args
-            + [self.sim_hdl_toplevel]
-        ]
-
-        cmds += [
             ["ghdl", "-r"]
             + [f"--work={self.hdl_toplevel_library}"]
             + self.test_args

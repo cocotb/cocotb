@@ -40,13 +40,24 @@ def test_toplevel_library():
     if sim == "xcelium":
         compile_args = ["-v93"]
 
-    for lib in ["e", "d", "c", "b", "a"]:
+    # Build additional libraries
+    for lib in ["e", "d", "c", "b"]:
         runner.build(
             hdl_library=f"{lib}lib",
             vhdl_sources=[src_path / f"{lib}.vhdl"],
             build_args=compile_args,
             build_dir=str(src_path / "sim_build" / "pytest"),
         )
+
+    # Build main hdl_library
+    lib = "a"
+    runner.build(
+        hdl_library=f"{lib}lib",
+        vhdl_sources=[src_path / f"{lib}.vhdl"],
+        hdl_toplevel="a",
+        build_args=compile_args,
+        build_dir=str(src_path / "sim_build" / "pytest"),
+    )
 
     runner.test(
         hdl_toplevel="a",
