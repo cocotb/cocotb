@@ -115,7 +115,6 @@ int main(int argc, char** argv) {
         // If there are no more cbAfterDelay callbacks,
         // the next deadline is max value, so end the simulation now
         if (next_time == static_cast<vluint64_t>(~0ULL)) {
-            vl_finish(__FILE__, __LINE__, "");
             break;
         } else {
             main_time = next_time;
