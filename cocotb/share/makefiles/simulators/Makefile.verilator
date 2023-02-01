@@ -36,7 +36,7 @@ else
 endif
 
 ifeq ($(VERILATOR_SIM_DEBUG), 1)
-  COMPILE_ARGS += --debug -CFLAGS "-DVL_DEBUG -g"
+  COMPILE_ARGS += --debug -CFLAGS "-DVL_DEBUG -DVERILATOR_SIM_DEBUG -g"
   PLUSARGS += +verilator+debug
   BUILD_ARGS += OPT_FAST=-Og OPT_SLOW=-Og OPT_GLOBAL=-Og
 endif
