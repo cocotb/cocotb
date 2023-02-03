@@ -17,7 +17,7 @@ codecov:
         #
         # [1] https://docs.codecov.io/docs/merging-reports#how-does-codecov-know-when-to-send-notifications
         # [2] https://docs.codecov.io/docs/notifications#preventing-notifications-until-after-n-builds
-        after_n_builds: 10
+        after_n_builds: 15
 
 coverage:
     status:
