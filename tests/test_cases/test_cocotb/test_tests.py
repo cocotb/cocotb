@@ -126,3 +126,8 @@ class TestClass(Coroutine):
 
     def __await__(self):
         yield from self._coro.__await__()
+
+
+@cocotb.test()
+async def test_empty_docstring(dut) -> None:
+    """"""

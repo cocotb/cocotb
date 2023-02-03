@@ -897,7 +897,7 @@ def _trim(docstring: Optional[str]) -> str:
 
     Based on https://www.python.org/dev/peps/pep-0257/#handling-docstring-indentation.
     """
-    if docstring is None:
+    if docstring is None or docstring == "":
         return ""
     # Convert tabs to spaces (following the normal Python rules)
     # and split into a list of lines:
