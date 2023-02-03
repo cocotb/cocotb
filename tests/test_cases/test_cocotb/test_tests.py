@@ -11,7 +11,6 @@ Tests of cocotb.test functionality
 from collections.abc import Coroutine
 
 import pytest
-from _pytest.outcomes import Failed
 from common import MyBaseException, MyException
 
 import cocotb
@@ -135,13 +134,13 @@ async def test_empty_docstring(dut) -> None:
     """"""
 
 
-@cocotb.test(expect_error=Failed)
+@cocotb.test(expect_fail=True)
 async def test_pytest_raises_fail(dut):
     with pytest.raises(AssertionError):
         assert True
 
 
-@cocotb.test(expect_error=Failed)
+@cocotb.test(expect_fail=True)
 async def test_pytest_warns_fail(dut):
     def test_func():
         pass
@@ -150,7 +149,7 @@ async def test_pytest_warns_fail(dut):
         test_func()
 
 
-@cocotb.test(expect_error=Failed)
+@cocotb.test(expect_fail=True)
 async def test_pytest_deprecated_call_fail(dut):
     def test_func():
         pass
@@ -159,7 +158,7 @@ async def test_pytest_deprecated_call_fail(dut):
         test_func()
 
 
-@cocotb.test(expect_error=Failed)
+@cocotb.test(expect_fail=True)
 async def test_pytest_raises_fail_in_task(dut):
     async def test_func():
         with pytest.raises(AssertionError):
@@ -169,7 +168,7 @@ async def test_pytest_raises_fail_in_task(dut):
     await NullTrigger()
 
 
-@cocotb.test(expect_error=Failed)
+@cocotb.test(expect_fail=True)
 async def test_pytest_warns_fail_in_task(dut):
     def inner_func():
         pass
@@ -182,7 +181,7 @@ async def test_pytest_warns_fail_in_task(dut):
     await NullTrigger()
 
 
-@cocotb.test(expect_error=Failed)
+@cocotb.test(expect_fail=True)
 async def test_pytest_deprecated_call_fail_in_task(dut):
     def inner_func():
         pass
@@ -195,35 +194,15 @@ async def test_pytest_deprecated_call_fail_in_task(dut):
     await NullTrigger()
 
 
-@cocotb.test(expect_fail=True)
-async def test_pytest_raises_fail_expect_fail(dut):
-    with pytest.raises(AssertionError):
-        assert True
-
-
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_error=MyBaseException)
 async def test_base_exception_expect_fail(dut):
     raise MyBaseException
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_error=MyBaseException)
 async def test_base_exception_in_task_expect_fail(dut):
     async def test_func():
         raise MyBaseException
-
-    cocotb.start_soon(test_func())
-    await NullTrigger()
-
-
-@cocotb.test(expect_fail=True)
-async def test_exception_expect_fail(dut):
-    raise MyException()
-
-
-@cocotb.test(expect_fail=True)
-async def test_exception_in_task_expect_fail(dut):
-    async def test_func():
-        raise MyException
 
     cocotb.start_soon(test_func())
     await NullTrigger()

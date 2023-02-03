@@ -193,7 +193,9 @@ class test(coroutine, metaclass=_decorator_helper):
                 Using ``None`` as the *timeout_unit* argument is deprecated, use ``'step'`` instead.
 
         expect_fail (bool, optional):
-            Don't mark the result as a failure if the test fails.
+            If ``True`` and the test fails a functional check via an ``assert`` statement, :class:`pytest.raises`,
+            :class:`pytest.warns`, or :class:`pytest.deprecated_call` the test is considered to have passed.
+            If ``True`` and the test passes successfully, the test is considered to have failed.
 
         expect_error (exception type or tuple of exception types, optional):
             Mark the result as a pass only if one of the exception types is raised in the test.
@@ -279,7 +281,7 @@ class test(coroutine, metaclass=_decorator_helper):
                 stacklevel=2,
             )
         if expect_error is True:
-            expect_error = (Exception,)
+            expect_error = (BaseException,)
         elif expect_error is False:
             expect_error = ()
         self.expect_error = expect_error

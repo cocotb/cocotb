@@ -9,6 +9,6 @@ MODULE := test_failure
 override_for_this_test:
 	-$(MAKE) all
 	$(call check_for_results_file)
-	test $$(../../../bin/combine_results.py | grep "Failure in testsuite" | wc -l) -eq 4 && rm -f results.xml
+	test $$(../../../bin/combine_results.py | grep "Failure in testsuite" | wc -l) -eq 5 && rm -f results.xml
 
 include ../../designs/sample_module/Makefile
