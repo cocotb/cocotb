@@ -29,5 +29,4 @@ jobs:
           If no more activity on this PR occurs in 7 days, it will be closed.
         stale-pr-label: "status:stale"
         any-of-labels: "type:question,status:close?"
-        exempt-issue-labels: "type:bug,type:feature"
         operations-per-run: 30
