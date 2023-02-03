@@ -250,11 +250,8 @@ class RegressionManager:
             from _pytest.assertion import install_importhook
             from _pytest.config import Config
 
-            # Pass python_files to Config to support assertion rewriting only on test modules.
-            # See https://github.com/pytest-dev/pytest/discussions/10052.
-            test_modules_str = " ".join(f"{name}.py" for name in test_modules)
             pytest_conf = Config.fromdictargs(
-                {}, ["--capture=no", "-o", f"python_files={test_modules_str}"]
+                {}, ["--capture=no", "-o", "python_files=*.py"]
             )
             install_importhook(pytest_conf)
         except Exception:
