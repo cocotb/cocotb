@@ -21,6 +21,12 @@ jobs:
           If it has not been resolved, you may need to provide more information.
           If no more activity on this issue occurs in 7 days, it will be closed.
         stale-issue-label: "status:stale"
+        stale-pr-message: >
+          Are you still actively working on this pull request?
+          You may have requested changes that need to be addressed.
+          If the maintainers aren't being timely with a review, we apologize.
+          Please bump this pull request to keep it alive.
+          If no more activity on this pull request occurs in 7 days, it will be closed.
+        stale-pr-label: "status:stale"
         any-of-labels: "type:question,status:close?"
-        exempt-issue-labels: "type:bug,type:feature"
         operations-per-run: 30
