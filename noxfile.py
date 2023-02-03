@@ -539,8 +539,9 @@ def dev(session: nox.Session) -> None:
 
     configure_env_for_dev_build(session)
 
-    session.run("pip", "install", *test_deps)
-    session.run("pip", "install", *dev_deps)
+    session.run(
+        "pip", "install", *test_deps, *dev_deps, *coverage_deps, *coverage_report_deps
+    )
     session.run("pip", "install", "-e", ".")
     if session.posargs:
         session.run(*session.posargs, external=True)
