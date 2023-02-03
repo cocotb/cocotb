@@ -37,7 +37,7 @@ import sys
 import time
 import traceback
 from itertools import product
-from typing import Any, Iterable, Optional, Tuple
+from typing import Any, Iterable, Optional, Tuple, Type
 
 import cocotb
 import cocotb.ANSI as ANSI
@@ -77,6 +77,20 @@ def _my_import(name: str) -> Any:
 
 
 _logger = SimLog(__name__)
+
+_Failed: Type[BaseException]
+try:
+    import pytest
+except ModuleNotFoundError:
+    _Failed = AssertionError
+else:
+    try:
+        with pytest.raises(Exception):
+            pass
+    except BaseException as _raises_e:
+        _Failed = type(_raises_e)
+    else:
+        assert "pytest.raises doesn't raise an exception when it fails"
 
 
 class RegressionManager:
@@ -422,15 +436,15 @@ class RegressionManager:
             # whether we expected it or not, the simulation has failed unrecoverably
             sim_failed = True
 
+        elif isinstance(result, (AssertionError, _Failed)) and test.expect_fail:
+            self._log_test_passed(test, result, "failed as expected")
+
         elif test.expect_error:
             if isinstance(result, test.expect_error):
                 self._log_test_passed(test, result, "errored as expected")
             else:
                 self._log_test_failed(test, result, "errored with unexpected type ")
                 result_pass = False
-
-        elif test.expect_fail:
-            self._log_test_passed(test, result, "failed as expected")
 
         else:
             self._log_test_failed(test, result, None)

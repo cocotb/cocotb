@@ -28,3 +28,8 @@ async def test_pass_expect_error(_):
 @cocotb.test(expect_error=ValueError)
 async def test_wrong_error(_):
     raise TypeError
+
+
+@cocotb.test(expect_fail=True)
+async def test_expect_fail_but_errors(_):
+    raise Exception()
