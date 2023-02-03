@@ -215,7 +215,10 @@ def gen_b(num_samples=NUM_SAMPLES, func=getrandbits):
 
 
 def test_matrix_multiplier_runner():
+    """Simulate the matrix_multiplier example using the Python runner.
 
+    This file can be run directly or via pytest discovery.
+    """
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     sim = os.getenv("SIM", "icarus")
 

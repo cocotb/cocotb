@@ -53,11 +53,15 @@ async def adder_randomised_test(dut):
 
 
 def test_adder_runner():
+    """Simulate the adder example using the Python runner.
 
+    This file can be run directly or via pytest discovery.
+    """
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent
+    # equivalent to setting the PYTHONPATH environment variable
     sys.path.append(str(proj_path / "model"))
 
     verilog_sources = []
@@ -68,6 +72,7 @@ def test_adder_runner():
     else:
         vhdl_sources = [proj_path / "hdl" / "adder.vhdl"]
 
+    # equivalent to setting the PYTHONPATH environment variable
     sys.path.append(str(proj_path / "tests"))
 
     runner = get_runner(sim)()

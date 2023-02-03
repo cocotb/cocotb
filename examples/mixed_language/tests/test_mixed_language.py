@@ -123,7 +123,10 @@ sim = os.getenv("SIM", "icarus")
     reason=f"Skipping example mixed_language since {sim} doesn't support this",
 )
 def test_mixed_language_runner():
+    """Simulate the mixed_language example using the Python runner.
 
+    This file can be run directly or via pytest discovery.
+    """
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
 
     proj_path = Path(__file__).resolve().parent.parent
