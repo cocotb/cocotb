@@ -75,7 +75,7 @@ def test_adder_runner():
     # equivalent to setting the PYTHONPATH environment variable
     sys.path.append(str(proj_path / "tests"))
 
-    runner = get_runner(sim)()
+    runner = get_runner(sim)
     runner.build(
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,

@@ -34,7 +34,7 @@ def test_toplevel_library():
     gpi_interfaces = [vhdl_gpi_interfaces]
 
     sim = os.getenv("SIM", "ghdl")
-    runner = get_runner(sim)()
+    runner = get_runner(sim)
 
     compile_args = []
     if sim == "xcelium":

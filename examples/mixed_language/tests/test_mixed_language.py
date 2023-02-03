@@ -149,9 +149,10 @@ def test_mixed_language_runner():
     elif sim == "questa":
         test_args = ["-t", "1ps"]
 
+    # equivalent to setting the PYTHONPATH environment variable
     sys.path.append(str(proj_path / "tests"))
 
-    runner = get_runner(sim)()
+    runner = get_runner(sim)
 
     runner.build(
         verilog_sources=verilog_sources,

@@ -258,9 +258,10 @@ def test_matrix_multiplier_runner():
         "A_COLUMNS_B_ROWS": 6,
     }
 
+    # equivalent to setting the PYTHONPATH environment variable
     sys.path.append(str(proj_path / "tests"))
 
-    runner = get_runner(sim)()
+    runner = get_runner(sim)
 
     runner.build(
         hdl_toplevel="matrix_multiplier",

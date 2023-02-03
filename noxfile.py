@@ -183,15 +183,14 @@ def dev_test_sim(
 
     session.log(f"Running examples against a simulator {config_str}")
     pytest_example_tree = [
-        "examples/adder"
-        "examples/simple_dff"
-        "examples/matrix_multiplier"
-        "examples/mixed_language"
+        "examples/adder",
+        "examples/simple_dff",
+        "examples/matrix_multiplier",
+        "examples/mixed_language",
     ]
     session.run(
         "pytest",
         "-v",
-        "-k",
         *pytest_example_tree,
         env=env,
     )

@@ -41,7 +41,7 @@ def test_simple_dff_runner():
     else:
         vhdl_sources = [proj_path / "dff.vhdl"]
 
-    runner = get_runner(sim)()
+    runner = get_runner(sim)
     runner.build(
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,

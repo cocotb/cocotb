@@ -66,7 +66,7 @@ sys.path.insert(0, os.path.join(tests_dir, "test_cases", "test_cocotb"))
 
 def test_cocotb():
 
-    runner = get_runner(sim)()
+    runner = get_runner(sim)
 
     runner.build(
         verilog_sources=verilog_sources,
