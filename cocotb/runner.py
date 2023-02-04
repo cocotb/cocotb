@@ -751,7 +751,7 @@ class Riviera(Simulator):
         do_script = "\nonerror {\n quit -code 1 \n} \n"
 
         if self.hdl_toplevel_lang == "vhdl":
-            do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} \n".format(
+            do_script += "asim +access +w -interceptcoutput -O2 -loadvhpi {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUSARGS}\n".format(
                 TOPLEVEL=as_tcl_value(
                     f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
                 ),
@@ -762,6 +762,7 @@ class Riviera(Simulator):
                         self.test_args + self._get_parameter_options(self.parameters)
                     )
                 ),
+                PLUSARGS=" ".join(as_tcl_value(v) for v in self.plusargs),
             )
 
             self.env["GPI_EXTRA"] = (
