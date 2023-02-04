@@ -581,7 +581,7 @@ class Scheduler:
                 coro.log.info("Test stopped by this forked coroutine")
                 e = remove_traceback_frames(e, ["_unschedule", "get"])
                 self._abort_test(e)
-            except Exception as e:
+            except BaseException as e:
                 coro.log.error("Exception raised by this forked coroutine")
                 e = remove_traceback_frames(e, ["_unschedule", "get"])
                 warnings.warn(

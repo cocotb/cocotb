@@ -1,0 +1,1 @@
+The :data:`Regression Manager <cocotb.regression_manager>` now correctly handles exceptions raised in tests when the exceptions inherit from `BaseException`.

@@ -26,3 +26,7 @@ async def _check_traceback(running_coro, exc_type, pattern, *match_args):
 
 class MyException(Exception):
     ...
+
+
+class MyBaseException(BaseException):
+    ...

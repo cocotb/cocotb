@@ -391,7 +391,9 @@ class RegressionManager:
 
         try:
             outcome.get()
-        except Exception as e:
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException as e:
             result = remove_traceback_frames(e, ["_score_test", "get"])
         else:
             result = TestSuccess()
@@ -402,9 +404,6 @@ class RegressionManager:
             and not test.expect_error
         ):
             self._log_test_passed(test, None, None)
-
-        elif isinstance(result, AssertionError) and test.expect_fail:
-            self._log_test_passed(test, result, "failed as expected")
 
         elif isinstance(result, TestSuccess) and test.expect_error:
             self._log_test_failed(test, None, "passed but we expected an error")
@@ -429,6 +428,9 @@ class RegressionManager:
             else:
                 self._log_test_failed(test, result, "errored with unexpected type ")
                 result_pass = False
+
+        elif test.expect_fail:
+            self._log_test_passed(test, result, "failed as expected")
 
         else:
             self._log_test_failed(test, result, None)
