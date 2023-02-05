@@ -27,7 +27,7 @@
 
 # Do not fail on DeprecationWarning caused by virtualenv, which might come from
 # the site module.
-export PYTHONWARNINGS = error,ignore::DeprecationWarning:site
+export PYTHONWARNINGS = error,ignore::DeprecationWarning:site,always::FutureWarning:cocotb.scheduler
 
 REGRESSIONS :=  $(shell ls test_cases/)
 
