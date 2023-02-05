@@ -9,8 +9,9 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 
 # GHDL unable to access record signals (gh-2591)
 # Icarus doesn't support structs (gh-2592)
+# Verilator doesn't support struct member access via vpi (cocotb-1275, verilator-860)
 @cocotb.test(
-    expect_error=AttributeError if SIM_NAME.startswith(("icarus", "ghdl")) else ()
+    skip = cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl", "verilator"))
 )
 async def issue_330_direct(dut):
     """
@@ -28,8 +29,9 @@ async def issue_330_direct(dut):
 
 # GHDL unable to access record signals (gh-2591)
 # Icarus doesn't support structs (gh-2592)
+# Verilator doesn't support struct member vpi iteration (cocotb-1275, verilator-860)
 @cocotb.test(
-    expect_error=AttributeError if SIM_NAME.startswith(("icarus", "ghdl")) else ()
+    skip = cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl", "verilator"))
 )
 async def issue_330_iteration(dut):
     """
