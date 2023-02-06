@@ -35,6 +35,7 @@ extern "C" {
 #endif
 
 /* used by Cadence Xcelium for Verilog-AMS */
+#define vpiUnionNet          525
 #define vpiRealNet           526
 #define vpiInterconnectNet   533
 #define vpiInterconnectArray 534
