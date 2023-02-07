@@ -126,8 +126,8 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype) {
 
         case vpiStructVar:
         case vpiStructNet:
-        case vpiUnionNet:
         case vpiUnionVar:
+        case vpiUnionNet:
             return GPI_STRUCTURE;
 
         case vpiModport:
