@@ -49,7 +49,7 @@ def test_runner(parameters):
         gpi_interfaces = [vhdl_gpi_interfaces]
 
     sim = os.getenv("SIM", "icarus")
-    runner = get_runner(sim)()
+    runner = get_runner(sim)
     compile_args = []
     if sim == "xcelium":
         compile_args = ["-v93"]

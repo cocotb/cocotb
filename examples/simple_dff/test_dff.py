@@ -5,14 +5,10 @@ import os
 import random
 from pathlib import Path
 
-import pytest
-
 import cocotb
 from cocotb.clock import Clock
 from cocotb.runner import get_runner
 from cocotb.triggers import FallingEdge
-
-pytestmark = pytest.mark.simulator_required
 
 
 @cocotb.test()
@@ -45,12 +41,15 @@ def test_simple_dff_runner():
     else:
         vhdl_sources = [proj_path / "dff.vhdl"]
 
-    runner = get_runner(sim)()
+    runner = get_runner(sim)
     runner.build(
-        verilog_sources=verilog_sources, vhdl_sources=vhdl_sources, hdl_toplevel="dff"
+        verilog_sources=verilog_sources,
+        vhdl_sources=vhdl_sources,
+        hdl_toplevel="dff",
+        always=True,
     )
 
-    runner.test(hdl_toplevel="dff", test_module="test_dff")
+    runner.test(hdl_toplevel="dff", test_module="test_dff,")
 
 
 if __name__ == "__main__":

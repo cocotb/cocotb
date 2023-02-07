@@ -1,16 +1,23 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import os
+import sys
+from pathlib import Path
+
+import pytest
 
 import cocotb
 from cocotb.clock import Clock
+from cocotb.runner import get_runner
 from cocotb.triggers import RisingEdge, Timer
 
 
 # Riviera fails to find dut.i_swapper_sv (gh-2921)
 @cocotb.test(
     expect_error=AttributeError
-    if cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
+    if cocotb.simulator.is_running()
+    and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
     and cocotb.LANGUAGE == "vhdl"
     else ()
 )
@@ -45,7 +52,8 @@ async def mixed_language_accessing_test(dut):
 # Riviera fails to find dut.i_swapper_sv (gh-2921)
 @cocotb.test(
     expect_error=AttributeError
-    if cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
+    if cocotb.simulator.is_running()
+    and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
     and cocotb.LANGUAGE == "vhdl"
     else ()
 )
@@ -105,3 +113,60 @@ async def mixed_language_functional_test(dut):
             assert int(previous_indata) == int(
                 dut.stream_out_data.value
             ), f"stream in data and stream out data were different in round {i}"
+
+
+sim = os.getenv("SIM", "icarus")
+
+
+@pytest.mark.skipif(
+    sim in ["icarus", "ghdl", "verilator"],
+    reason=f"Skipping example mixed_language since {sim} doesn't support this",
+)
+def test_mixed_language_runner():
+    """Simulate the mixed_language example using the Python runner.
+
+    This file can be run directly or via pytest discovery.
+    """
+    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+
+    proj_path = Path(__file__).resolve().parent.parent
+
+    verilog_sources = [proj_path / "hdl" / "endian_swapper.sv"]
+    vhdl_sources = [proj_path / "hdl" / "endian_swapper.vhdl"]
+
+    if hdl_toplevel_lang == "verilog":
+        verilog_sources += [proj_path / "hdl" / "toplevel.sv"]
+    elif hdl_toplevel_lang == "vhdl":
+        vhdl_sources += [proj_path / "hdl" / "toplevel.vhdl"]
+    else:
+        raise ValueError(
+            f"A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG={hdl_toplevel_lang}"
+        )
+
+    test_args = []
+    if sim == "xcelium":
+        test_args = ["-v93"]
+    elif sim == "questa":
+        test_args = ["-t", "1ps"]
+
+    # equivalent to setting the PYTHONPATH environment variable
+    sys.path.append(str(proj_path / "tests"))
+
+    runner = get_runner(sim)
+
+    runner.build(
+        verilog_sources=verilog_sources,
+        vhdl_sources=vhdl_sources,
+        always=True,
+    )
+
+    runner.test(
+        hdl_toplevel="endian_swapper_mixed",
+        hdl_toplevel_lang=hdl_toplevel_lang,
+        test_module="test_mixed_language",
+        test_args=test_args,
+    )
+
+
+if __name__ == "__main__":
+    test_mixed_language_runner()

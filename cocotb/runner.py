@@ -1011,8 +1011,8 @@ class Xcelium(Simulator):
         return cmds
 
 
-def get_runner(simulator_name: str) -> Type[Simulator]:
-    """Return the class of the simulator *simulator_name*."""
+def get_runner(simulator_name: str) -> Simulator:
+    """Return the *simulator_name* instance."""
 
     supported_sims: Dict[str, Type[Simulator]] = {
         "icarus": Icarus,
@@ -1025,7 +1025,7 @@ def get_runner(simulator_name: str) -> Type[Simulator]:
         # TODO: "activehdl": ActiveHdl,
     }
     try:
-        return supported_sims[simulator_name]
+        return supported_sims[simulator_name]()
     except KeyError:
         raise ValueError(
             f"Simulator {simulator_name!r} is not in supported list: {', '.join(supported_sims)}"

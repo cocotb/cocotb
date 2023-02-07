@@ -34,7 +34,7 @@ def build_and_run_matrix_multiplier(benchmark, sim):
             proj_path / "hdl" / "matrix_multiplier.vhd",
         ]
 
-    runner = get_runner(sim)()
+    runner = get_runner(sim)
 
     runner.build(
         hdl_toplevel="matrix_multiplier",

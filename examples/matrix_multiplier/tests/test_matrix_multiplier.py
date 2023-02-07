@@ -3,6 +3,8 @@
 
 import math
 import os
+import sys
+from pathlib import Path
 from random import getrandbits
 from typing import Any, Dict, List
 
@@ -11,13 +13,15 @@ from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
 from cocotb.handle import SimHandleBase
 from cocotb.queue import Queue
+from cocotb.runner import get_runner
 from cocotb.triggers import RisingEdge
 
 NUM_SAMPLES = int(os.environ.get("NUM_SAMPLES", 3000))
-DATA_WIDTH = int(cocotb.top.DATA_WIDTH)
-A_ROWS = int(cocotb.top.A_ROWS)
-B_COLUMNS = int(cocotb.top.B_COLUMNS)
-A_COLUMNS_B_ROWS = int(cocotb.top.A_COLUMNS_B_ROWS)
+if cocotb.simulator.is_running():
+    DATA_WIDTH = int(cocotb.top.DATA_WIDTH)
+    A_ROWS = int(cocotb.top.A_ROWS)
+    B_COLUMNS = int(cocotb.top.B_COLUMNS)
+    A_COLUMNS_B_ROWS = int(cocotb.top.A_COLUMNS_B_ROWS)
 
 
 class DataValidMonitor:
@@ -142,9 +146,11 @@ class MatrixMultiplierTester:
 
 
 @cocotb.test(
-    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+    expect_error=IndexError
+    if cocotb.simulator.is_running() and cocotb.SIM_NAME.lower().startswith("ghdl")
+    else ()
 )
-async def test_multiply(dut):
+async def multiply_test(dut):
     """Test multiplication of many matrices."""
 
     cocotb.start_soon(Clock(dut.clk_i, 10, units="ns").start())
@@ -206,3 +212,73 @@ def gen_b(num_samples=NUM_SAMPLES, func=getrandbits):
     """Generate random matrix data for B"""
     for _ in range(num_samples):
         yield create_b(func)
+
+
+def test_matrix_multiplier_runner():
+    """Simulate the matrix_multiplier example using the Python runner.
+
+    This file can be run directly or via pytest discovery.
+    """
+    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+    sim = os.getenv("SIM", "icarus")
+
+    proj_path = Path(__file__).resolve().parent.parent
+
+    verilog_sources = []
+    vhdl_sources = []
+    build_args = []
+
+    if hdl_toplevel_lang == "verilog":
+        verilog_sources = [proj_path / "hdl" / "matrix_multiplier.sv"]
+
+        if sim in ["riviera", "activehdl"]:
+            build_args = ["-sv2k12"]
+
+    elif hdl_toplevel_lang == "vhdl":
+        vhdl_sources = [
+            proj_path / "hdl" / "matrix_multiplier_pkg.vhd",
+            proj_path / "hdl" / "matrix_multiplier.vhd",
+        ]
+
+        if sim in ["questa", "modelsim", "riviera", "activehdl"]:
+            build_args = ["-2008"]
+    else:
+        raise ValueError(
+            f"A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG={hdl_toplevel_lang}"
+        )
+
+    extra_args = []
+    if sim == "ghdl":
+        extra_args = ["--std=08"]
+
+    parameters = {
+        "DATA_WIDTH": "32",
+        "A_ROWS": 10,
+        "B_COLUMNS": 4,
+        "A_COLUMNS_B_ROWS": 6,
+    }
+
+    # equivalent to setting the PYTHONPATH environment variable
+    sys.path.append(str(proj_path / "tests"))
+
+    runner = get_runner(sim)
+
+    runner.build(
+        hdl_toplevel="matrix_multiplier",
+        verilog_sources=verilog_sources,
+        vhdl_sources=vhdl_sources,
+        build_args=build_args + extra_args,
+        parameters=parameters,
+        always=True,
+    )
+
+    runner.test(
+        hdl_toplevel="matrix_multiplier",
+        hdl_toplevel_lang=hdl_toplevel_lang,
+        test_module="test_matrix_multiplier",
+        test_args=extra_args,
+    )
+
+
+if __name__ == "__main__":
+    test_matrix_multiplier_runner()

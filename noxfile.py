@@ -181,7 +181,21 @@ def dev_test_sim(
     )
     Path(".coverage").rename(".coverage.pytest")
 
-    session.log(f"All tests passed with configuration {config_str}!")
+    session.log(f"Running examples against a simulator {config_str}")
+    pytest_example_tree = [
+        "examples/adder",
+        "examples/simple_dff",
+        "examples/matrix_multiplier",
+        "examples/mixed_language",
+    ]
+    session.run(
+        "pytest",
+        "-v",
+        *pytest_example_tree,
+        env=env,
+    )
+
+    session.log(f"All tests and examples passed with configuration {config_str}!")
 
     # Combine coverage produced during the test runs, and place it in a file
     # with a name specific to this invocation of dev_test_sim().
