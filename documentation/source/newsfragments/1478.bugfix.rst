@@ -1,0 +1,1 @@
+Fixed Verilator not writing coverage files in some cases.
