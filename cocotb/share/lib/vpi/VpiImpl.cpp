@@ -219,8 +219,8 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             break;
         case vpiStructVar:
         case vpiStructNet:
-        case vpiUnionNet:
         case vpiUnionVar:
+        case vpiUnionNet:
             new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vpiModule:

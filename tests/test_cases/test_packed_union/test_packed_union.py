@@ -7,7 +7,7 @@ import cocotb
 
 @cocotb.test(
     expect_error=Exception
-    if cocotb.SIM_NAME.lower().startswith(("verilator", "icarus", "riviera", "ghdl"))
+    if cocotb.SIM_NAME.lower().startswith(("verilator", "icarus", "ghdl"))
     else ()
 )
 async def test_packed_union(dut):

@@ -1,1 +1,1 @@
- Adds support for packed union when using xcelium
+Adds support for packed union in SystemVerilog when using Cadence Xcelium.
