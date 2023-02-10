@@ -13,3 +13,18 @@ import cocotb
 @cocotb.test()
 async def test_fail(_):
     assert False
+
+
+@cocotb.test(expect_fail=True)
+async def test_pass_expect_fail(_):
+    assert True
+
+
+@cocotb.test(expect_error=Exception)
+async def test_pass_expect_error(_):
+    assert True
+
+
+@cocotb.test(expect_error=ValueError)
+async def test_wrong_error(_):
+    raise TypeError
