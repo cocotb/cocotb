@@ -89,8 +89,7 @@ Verilator
     Therefore, Verilator support in cocotb is currently experimental.
     Some features of cocotb may not work correctly or at all.
 
-    **Currently cocotb only supports Verilator 4.106 (no earlier or later version).**
-    See also the corresponding cocotb issue :issue:`2300` and `upstream issue <https://github.com/verilator/verilator/issues/2778>`_.
+    **cocotb only supports Verilator 5.006 and later.**
 
 In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 
