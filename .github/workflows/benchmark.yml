@@ -54,6 +54,7 @@ jobs:
       # Will only run on the master branch and not on pull request
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       uses: benchmark-action/github-action-benchmark@v1
+      continue-on-error: true
       with:
         tool: 'pytest'
         output-file-path: output.json
