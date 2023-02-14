@@ -186,7 +186,7 @@ class LogicArray(Array[Logic]):
 
     def reverse(self: Self) -> Self:
         """
-        Usefull for littleEndian/BigEndian conversion
+        Creates a new :class:`LogicArray` with bits reversed.  
         000ZX1 <-> 1XZ000
         """
         return type(self)(reversed(self))
