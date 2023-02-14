@@ -212,7 +212,7 @@ class LogicArray(Array[Logic]):
         with integers and strings (case insensitive)
         """
         if isinstance(other, int):
-            return self.integer == other
+            return self == LogicArray(other)
         if isinstance(other, str):
             # case insensitive to make sure 'x' == 'X' and 'z' == 'Z'
             # internally LogicArray uses upper case but use may not know about it
