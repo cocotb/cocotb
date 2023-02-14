@@ -189,7 +189,7 @@ class LogicArray(Array[Logic]):
         Creates a new :class:`LogicArray` with bits reversed.  
         000ZX1 <-> 1XZ000
         """
-        return type(self)(reversed(self))
+        return type(self)(reversed(self), range=reversed(self.range))
 
     @property
     def binstr(self) -> str:
