@@ -46,6 +46,10 @@ int FliProcessCbHdl::cleanup_callback() {
         case GPI_CALL:
             mti_Desensitize(m_proc_hdl);
             set_call_state(GPI_DELETE);
+            break;
+        case GPI_DELETE:
+        case GPI_FREE:
+            break;
     }
     return 0;
 }
