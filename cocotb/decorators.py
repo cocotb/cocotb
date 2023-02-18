@@ -38,23 +38,6 @@ from cocotb.task import _RunningCoroutine, _RunningTest
 from cocotb.utils import lazy_property
 
 
-def public(f):
-    """Use a decorator to avoid retyping function/class names.
-
-    * Based on an idea by Duncan Booth:
-    http://groups.google.com/group/comp.lang.python/msg/11cbb03e09611b8a
-    * Improved via a suggestion by Dave Angel:
-    http://groups.google.com/group/comp.lang.python/msg/3d400fb22d8a42e1
-    """
-    all = sys.modules[f.__module__].__dict__.setdefault("__all__", [])
-    if f.__name__ not in all:  # Prevent duplicates if run from an IDE.
-        all.append(f.__name__)
-    return f
-
-
-public(public)  # Emulate decorating ourself
-
-
 class coroutine:
     """Decorator class that allows us to provide common coroutine mechanisms:
 
@@ -88,7 +71,6 @@ class coroutine:
         return str(self._func.__qualname__)
 
 
-@public
 class function:
     """Decorator class that allows a function to block.
 
@@ -114,7 +96,6 @@ class function:
         return type(self)(self._coro._func.__get__(obj, owner))
 
 
-@public
 class external:
     """Decorator to apply to an external function to enable calling from cocotb.
 
@@ -168,7 +149,6 @@ class _decorator_helper(type):
         return decorator
 
 
-@public
 class test(coroutine, metaclass=_decorator_helper):
     """
     Decorator to mark a Callable which returns a Coroutine as a test.
