@@ -204,7 +204,10 @@ class LogicArray(Array[Logic]):
         """
         Raises ValueError if the values cannot be converted to binary ('X' or 'Z')
         """
-        return int(self)
+        value = 0
+        for bit in self:
+            value = value << 1 | int(bit)
+        return value
 
     def __eq__(self, other):
         """
@@ -221,15 +224,6 @@ class LogicArray(Array[Logic]):
             return self == other
 
     # __ne__ is not required for python3 because by default it negates __eq__
-
-    def __int__(self):
-        """
-        int(LogicArray) is equivalent to LogicArray.integer
-        """
-        value = 0
-        for bit in self:
-            value = value << 1 | int(bit)
-        return value
 
     @property
     def signed_integer(self) -> int:
