@@ -88,9 +88,11 @@ class LogicArray(Array[Logic]):
         >>> la.binstr
         '1010'
 
-        >>> la.reverse().binstr # Can convert to/from BigEndian
-        '0101'
+        >>> la
+        LogicArray('1010', Range(3, 'downto', 0))
 
+        >>> la.reverse()
+        LogicArray('0101', Range(0, 'to', 3))
 
         >>> la.integer          # uses unsigned representation
         10
@@ -186,10 +188,10 @@ class LogicArray(Array[Logic]):
 
     def reverse(self: Self) -> Self:
         """
-        Creates a new :class:`LogicArray` with bits reversed.  
+        Creates a new :class:`LogicArray` with bits reversed.
         000ZX1 <-> 1XZ000
         """
-        return type(self)(reversed(self), range=reversed(self.range))
+        return type(self)(reversed(self), range=self.range.reverse())
 
     @property
     def binstr(self) -> str:

@@ -17,6 +17,10 @@ class Range(typing.Sequence[int]):
     match VHDL.
     Range directionality can be specified using ``'to'`` or ``'downto'`` between the
     left and right bounds.
+    Ascending ranges are specified with the ``'to'`` keyword and non-null ranges
+    have their left bound value greater than the right one.
+    Descending ranges are specified with the ''`downto'`` keyword and non-null
+    ranges have their left bound value smaller than the right one.
     Not specifying directionality will cause the directionality to be inferred.
 
     .. code-block:: python3
@@ -156,7 +160,22 @@ class Range(typing.Sequence[int]):
         return iter(self._range)
 
     def __reversed__(self) -> typing.Iterator[int]:
+        """Return a reverse iterator"""
         return reversed(self._range)
+
+    def reverse(self) -> "Range":
+        """
+        Return a reversed :class:`Range` copy
+
+        .. code-block:: python3
+
+            >>> Range(7, 'downto', 0).reverse()
+            Range(0, 'to', 7)
+
+            >>> Range(0, 'to', 7).reverse()
+            Range(7, 'downto', 0)
+        """
+        return Range.from_range(_reverse_range(self._range))
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, type(self)):
@@ -196,3 +215,24 @@ def _step_to_direction(step: int) -> str:
     elif step == -1:
         return "downto"
     raise ValueError("step must be 1 or -1")
+
+def _reverse_range(input: range) -> range:
+    """
+    Return a new :class:`range` reversed
+
+    .. code-block:: python3
+
+        >>> list(_reverse_range(range(0, 3, 1))) ==  list(reversed(range(0, 3, 1)))
+        True
+
+        >>> list(_reverse_range(range(3, 0, -1))) ==  list(reversed(range(3, 0, -1)))
+        True
+    """
+    # Example:
+    # list(range(0, 3, 1)) == [0, 1, 2]
+    # list(range(2, -1, -1)) == [2, 1, 0]
+    return range(
+            input.stop - input.step, # start
+            input.start - input.step, # stop
+            - input.step # step
+                 )
