@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
         bool again = true;
         while (again) {
             // Evaluate design
-            top->eval();
+            top->eval_step();
 
             // Call Value Change callbacks triggered by eval()
             // These can modify signal values
@@ -101,6 +101,7 @@ int main(int argc, char** argv) {
             // These can modify signal values
             again |= settle_value_callbacks();
         }
+        top->eval_end_step();
 
         // Call ReadOnly callbacks
         VerilatedVpi::callCbs(cbReadOnlySynch);
