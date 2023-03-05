@@ -211,15 +211,10 @@ class SimLogFormatter(logging.Formatter):
         else:
             time_ns = get_time_from_sim_steps(sim_time, "ns")
             sim_time_str = f"{time_ns:6.2f}ns"
-        prefix = (
-            sim_time_str.rjust(11)
-            + " "
-            + level
-            + " "
-            + self.ljust(record.name, _RECORD_CHARS)
-            + " "
-        )
-        if not _suppress:
+        prefix = sim_time_str.rjust(11) + " " + level + " "
+        if _suppress < 2:
+            prefix += self.ljust(record.name, _RECORD_CHARS) + " "
+        if _suppress < 1:
             prefix += (
                 self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS)
                 + ":"
