@@ -57,8 +57,8 @@ SIM                       Selects which simulator Makefile to use
 WAVES                     Enable wave traces dump for Riviera-PRO and Questa
 VERILOG_SOURCES           A list of the Verilog source files to include
 VHDL_SOURCES              A list of the VHDL source files to include
-VHDL_SOURCES_<lib>        VHDL source files to include in *lib* (GHDL/ModelSim/Questa/Xcelium only)
-VHDL_LIB_ORDER            Compilation order of VHDL libraries (needed for ModelSim/Questa/Xcelium)
+VHDL_SOURCES_<lib>        VHDL source files to include in *lib* (GHDL/ModelSim/Questa/Xcelium/Incisive only)
+VHDL_LIB_ORDER            Compilation order of VHDL libraries (needed for ModelSim/Questa/Xcelium/Incisive)
 SIM_CMD_PREFIX            Prefix for simulation command invocations
 COMPILE_ARGS              Arguments to pass to compile stage of simulation
 SIM_ARGS                  Arguments to pass to execution of compiled simulation
