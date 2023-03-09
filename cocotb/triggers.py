@@ -192,6 +192,10 @@ class Timer(GPITrigger):
                When *units* is ``'step'``,
                the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
 
+            round_mode (str, optional):
+                String specifying how to handle time values that sit between time steps
+                (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
+
         Examples:
 
             >>> await Timer(100, units='ps')
