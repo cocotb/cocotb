@@ -319,3 +319,21 @@ async def test_timer_round_mode(_):
     assert Timer(1.2, "step", round_mode="floor").sim_steps == 1
     assert Timer(1.2, "step", round_mode="ceil").sim_steps == 2
     assert Timer(1.2, "step", round_mode="round").sim_steps == 1
+
+    # test with_timeout round_mode
+    with pytest.raises(ValueError):
+        await cocotb.triggers.with_timeout(
+            Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="error"
+        )
+    await cocotb.triggers.with_timeout(
+        Timer(1, "step"), timeout_time=2, timeout_unit="step", round_mode="error"
+    )
+    await cocotb.triggers.with_timeout(
+        Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="floor"
+    )
+    await cocotb.triggers.with_timeout(
+        Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="ceil"
+    )
+    await cocotb.triggers.with_timeout(
+        Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="round"
+    )

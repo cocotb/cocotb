@@ -33,7 +33,7 @@ import warnings
 from collections.abc import Awaitable
 from decimal import Decimal
 from numbers import Real
-from typing import Optional, Union
+from typing import Any, Coroutine, Optional, TypeVar, Union
 
 import cocotb
 from cocotb import outcomes, simulator
@@ -46,6 +46,8 @@ from cocotb.utils import (
     lazy_property,
     remove_traceback_frames,
 )
+
+T = TypeVar("T")
 
 
 def _pointer_str(obj):
@@ -934,7 +936,12 @@ class ClockCycles(Waitable):
         return fmt.format(type(self).__qualname__, self.signal, self.num_cycles)
 
 
-async def with_timeout(trigger, timeout_time, timeout_unit="step"):
+async def with_timeout(
+    trigger: Union[Trigger, Waitable, Task, Coroutine[Any, Any, T]],
+    timeout_time: Union[float, Decimal],
+    timeout_unit: str = "step",
+    round_mode: Optional[str] = None,
+) -> T:
     r"""
     Waits on triggers or coroutines, throws an exception if it waits longer than the given time.
 
@@ -978,6 +985,9 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
             Simulation time duration before timeout occurs.
         timeout_unit (str, optional):
             Units of timeout_time, accepts any units that :class:`~cocotb.triggers.Timer` does.
+        round_mode (str, optional):
+            String specifying how to handle time values that sit between time steps
+            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
 
     Returns:
         First trigger that completed if timeout did not occur.
@@ -1005,7 +1015,9 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
         shielded = False
     else:
         shielded = True
-    timeout_timer = cocotb.triggers.Timer(timeout_time, timeout_unit)
+    timeout_timer = cocotb.triggers.Timer(
+        timeout_time, timeout_unit, round_mode=round_mode
+    )
     res = await First(timeout_timer, trigger)
     if res is timeout_timer:
         if not shielded:
