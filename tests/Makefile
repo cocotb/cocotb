@@ -27,7 +27,8 @@
 
 # Do not fail on DeprecationWarning caused by virtualenv, which might come from
 # the site module.
-export PYTHONWARNINGS = error,ignore::DeprecationWarning:site,always::FutureWarning:cocotb.scheduler
+# Do not fail on DeprecationWarning caused by attrs dropping 3.6 support
+export PYTHONWARNINGS = error,ignore::DeprecationWarning:site,always::FutureWarning:cocotb.scheduler,ignore::DeprecationWarning:attr
 
 REGRESSIONS :=  $(shell ls test_cases/)
 
