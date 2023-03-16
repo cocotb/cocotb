@@ -47,9 +47,9 @@ import cocotb
 import cocotb.decorators
 from cocotb import _py_compat, outcomes
 from cocotb._deprecation import deprecated
-from cocotb.decorators import Task
 from cocotb.log import SimLog
 from cocotb.result import TestComplete
+from cocotb.task import Task
 from cocotb.triggers import (
     Event,
     GPITrigger,
@@ -698,7 +698,7 @@ class Scheduler:
             event.set()
 
         event = threading.Event()
-        self._pending_coros.append(cocotb.decorators.Task(wrapper()))
+        self._pending_coros.append(Task(wrapper()))
         # The scheduler thread blocks in `thread_wait`, and is woken when we
         # call `thread_suspend` - so we need to make sure the coroutine is
         # queued before that.
@@ -851,14 +851,14 @@ class Scheduler:
     # Doing them as separate functions allows us to avoid repeating unnecessary
     # `isinstance` checks.
 
-    def _trigger_from_started_coro(self, result: cocotb.decorators.Task) -> Trigger:
+    def _trigger_from_started_coro(self, result: Task) -> Trigger:
         if _debug:
             self.log.debug(
                 "Joining to already running coroutine: %s" % result._coro.__qualname__
             )
         return result.join()
 
-    def _trigger_from_unstarted_coro(self, result: cocotb.decorators.Task) -> Trigger:
+    def _trigger_from_unstarted_coro(self, result: Task) -> Trigger:
         self._queue(result)
         if _debug:
             self.log.debug(
@@ -867,7 +867,7 @@ class Scheduler:
         return result.join()
 
     def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
-        return self._trigger_from_unstarted_coro(cocotb.decorators.Task(result._wait()))
+        return self._trigger_from_unstarted_coro(Task(result._wait()))
 
     def _trigger_from_list(self, result: list) -> Trigger:
         return self._trigger_from_waitable(cocotb.triggers.First(*result))
@@ -879,14 +879,14 @@ class Scheduler:
         if isinstance(result, Trigger):
             return result
 
-        if isinstance(result, cocotb.decorators.Task):
+        if isinstance(result, Task):
             if not result.has_started():
                 return self._trigger_from_unstarted_coro(result)
             else:
                 return self._trigger_from_started_coro(result)
 
         if inspect.iscoroutine(result):
-            return self._trigger_from_unstarted_coro(cocotb.decorators.Task(result))
+            return self._trigger_from_unstarted_coro(Task(result))
 
         if isinstance(result, list):
             return self._trigger_from_list(result)

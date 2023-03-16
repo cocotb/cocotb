@@ -19,7 +19,7 @@ from common import MyException
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.decorators import Task
+from cocotb.task import Task
 from cocotb.triggers import (
     Combine,
     Event,
@@ -616,7 +616,7 @@ async def test_start(_):
         await Timer(1, "step")
 
     task1 = await cocotb.start(coro())
-    assert type(task1) is cocotb.decorators.Task
+    assert type(task1) is Task
     assert task1.has_started()
     assert not task1.done()
 

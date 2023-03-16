@@ -45,12 +45,12 @@ from cocotb._deprecation import deprecated
 from cocotb.log import default_config
 from cocotb.regression import RegressionManager
 from cocotb.scheduler import Scheduler
+from cocotb.task import Task
 
 from ._version import __version__
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import (  # isort: skip # noqa: F401
-    Task,
     coroutine,
     external,
     function,

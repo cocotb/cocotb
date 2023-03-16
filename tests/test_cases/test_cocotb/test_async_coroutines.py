@@ -9,6 +9,7 @@ from common import MyException
 
 import cocotb
 from cocotb.outcomes import Error, Value
+from cocotb.task import Task
 from cocotb.triggers import Timer
 
 
@@ -158,4 +159,4 @@ async def test_task_coroutine_function_exception(dut):
         "prior to being scheduled.".format(coro)
     )
     with pytest.raises(TypeError, match=pattern):
-        cocotb.decorators.Task(coro)
+        Task(coro)
