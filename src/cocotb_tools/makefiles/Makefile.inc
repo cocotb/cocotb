@@ -186,6 +186,12 @@ clean::
 	@$(RM) -rf xrun.*
 	@$(RM) -rf xmsim.*
 	@$(RM) -rf gdb_cmd_xmsim
+	@$(RM) -f qrun*
+	@$(RM) -f visualizer.log
+	@$(RM) -f design.bin
+	@$(RM) -f qwave.db
+	@$(RM) -f transcript
+
 
 # DSim
 clean::

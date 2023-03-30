@@ -8,6 +8,12 @@ from cocotb.triggers import Timer
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
+questa_vpi_compat = (
+    LANGUAGE == "verilog"
+    and SIM_NAME.startswith("modelsim")
+    and os.getenv("COCOTB__QUESTA_MODE", "compat") == "compat"
+)
+
 
 @cocotb.test()
 async def test_in_vect_packed(dut):
@@ -141,13 +147,9 @@ async def test_in_vect_packed_packed_packed(dut):
     assert dut.out_vect_packed_packed_packed.value == test_value
 
 
-# Questa is unable to access elements of a logic array if the last dimension is unpacked (gh-2605)
+# Questa (VPI/compat mode) is unable to access elements of a logic array if the last dimension is unpacked (gh-2605)
 # Verilator doesn't support multi-dimensional unpacked arrays (gh-3611)
-@cocotb.test(
-    expect_error=IndexError
-    if LANGUAGE == "verilog" and SIM_NAME.startswith("modelsim")
-    else ()
-)
+@cocotb.test(expect_error=IndexError if questa_vpi_compat else ())
 async def test_in_vect_packed_packed_unpacked(dut):
     assert isinstance(dut.in_vect_packed_packed_unpacked, ArrayObject)
     assert len(dut.in_vect_packed_packed_unpacked) == 3
@@ -220,12 +222,8 @@ async def test_in_arr_packed_packed(dut):
     assert dut.out_arr_packed_packed.value == test_value
 
 
-# Questa is unable to access elements of a logic array if the last dimension is unpacked (gh-2605)
-@cocotb.test(
-    expect_error=IndexError
-    if LANGUAGE == "verilog" and SIM_NAME.startswith("modelsim")
-    else ()
-)
+# Questa (VPI/compat mode) is unable to access elements of a logic array if the last dimension is unpacked (gh-2605)
+@cocotb.test(expect_error=IndexError if questa_vpi_compat else ())
 async def test_in_arr_packed_unpacked(dut):
     assert isinstance(dut.in_arr_packed_unpacked, ArrayObject)
     assert len(dut.in_arr_packed_unpacked) == 3
@@ -273,12 +271,8 @@ async def test_in_2d_arr_packed(dut):
     assert dut.out_2d_arr_packed.value == test_value
 
 
-# Questa is unable to access elements of a logic array if the last dimension is unpacked (gh-2605)
-@cocotb.test(
-    expect_error=IndexError
-    if LANGUAGE == "verilog" and SIM_NAME.startswith("modelsim")
-    else ()
-)
+# Questa (VPI/compat mode) is unable to access elements of a logic array if the last dimension is unpacked (gh-2605)
+@cocotb.test(expect_error=IndexError if questa_vpi_compat else ())
 async def test_in_2d_arr_unpacked(dut):
     assert isinstance(dut.in_2d_arr_unpacked, ArrayObject)
     assert len(dut.in_2d_arr_unpacked) == 3

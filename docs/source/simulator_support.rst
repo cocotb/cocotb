@@ -227,6 +227,26 @@ In order to use this simulator, set :make:var:`SIM` to ``questa``:
 
     make SIM=questa
 
+Cocotb implements two flows for Questa.
+The most suitable flow is chosen based on the Questa version being used.
+
+The newer **QIS/Qrun flow** uses the Questa Information System (QIS) together with the ``qrun`` command.
+One of the most visible user-facing benefits of the ``qrun`` flow is the ability to automatically order VHDL sources.
+The use of the QIS should reduce the overhead from accessing design internals at runtime and mandates the use of Visualizer as GUI.
+
+The QIS/qrun flow is chosen automatically if Questa 2025.2 or newer is detected.
+Users can explicitly use the QIS/Qrun flow with :make:var:`SIM=questa-qisqrun <SIM>`.
+If you are passing simulator-specific arguments to the Makefile, we recommend not relying on the automatic flow selection and instead explicitly selecting a flow by using either ``SIM=questa-qisqrun`` or ``SIM=questa-compat`` to ensure they are interpreted as expected.
+
+The **compat flow** uses the commands ``vlog``, ``vopt`` and ``vsim`` to build and run the simulation, together with the ``+acc`` switch to enable design access for cocotb.
+
+The compat flow is used for ModelSim and Questa older than 2025.2.
+Users can explicitly use the compat flow with ``SIM=questa-compat``.
+
+In order to start Questa with the graphical interface and for the simulator to remain active after the tests have completed, set :make:var:`GUI=1`.
+
+Users of the QIS/Qrun flow can set ``GUI=livesim`` to open Visualizer during the simulation in Live Simulation mode (an alias for ``GUI=1``), or set ``GUI=postsim`` to open Visualizer after the simulation has ended (Post Simulation mode).
+
 Starting with Questa 2022.3 and cocotb 1.7 users with VHDL toplevels can choose between two communication interfaces between Questa and cocotb: the proprietary FLI and VHPI.
 For backwards-compatibility cocotb defaults to FLI.
 Users can choose VHPI instead by setting the :envvar:`VHDL_GPI_INTERFACE` environment variable to ``vhpi`` before running cocotb.
@@ -261,7 +281,8 @@ If you try to use them with :term:`FLI`, you will see a ``vsim-FLI-3155`` error:
 
 ModelSim DE and SE (and Questa, of course) support the :term:`FLI`.
 
-In order to start ModelSim or Questa with the graphical interface and for the simulator to remain active after the tests have completed, set :make:var:`GUI=1`.
+In order to start ModelSim with the graphical interface and for the simulator to remain active after the tests have completed, set :make:var:`GUI=1 <GUI>`.
+
 If you have previously launched a test without this setting, you might have to delete the :make:var:`SIM_BUILD` directory (``sim_build`` by default) to get the correct behavior.
 
 .. _sim-modelsim-issues:
