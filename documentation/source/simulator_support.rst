@@ -281,8 +281,7 @@ If you try to use them with :term:`FLI`, you will see a ``vsim-FLI-3155`` error:
 
 ModelSim DE and SE (and Questa, of course) support the :term:`FLI`.
 
-In order to start ModelSim or Questa with the graphical interface and for the simulator to remain active after the tests have completed, set :make:var:`GUI=1`.
-If you have previously launched a test without this setting, you might have to delete the :make:var:`SIM_BUILD` directory (``sim_build`` by default) to get the correct behavior.
+In order to start Visualizer Debug Environment with the graphical interface in Live Simulation mode, set :make:var:`GUI=1`. and to start Visualizer Debug Environment with the graphical interface in Post Simulation mode and for the simulator to remain active after the tests have completed, set :make:var:`GUI=2`.
 
 .. _sim-modelsim-issues:
 
