@@ -1,0 +1,149 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Questa QIS/Qrun flow using the Questa Information System (QIS) for design
+# access and qrun to build and run the simulation.
+
+QRUN_BIN := qrun
+VIS_BIN := vis
+
+ifdef MODELSIM_BIN_DIR
+    QRUN_CMD := $(shell :; command -v $(MODELSIM_BIN_DIR)/$(QRUN_BIN) 2>/dev/null)
+    VIS_CMD := $(shell :; command -v $(MODELSIM_BIN_DIR)/$(VIS_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    QRUN_CMD := $(shell :; command -v $(QRUN_BIN) 2>/dev/null)
+    VIS_CMD := $(shell :; command -v $(VIS_BIN) 2>/dev/null)
+endif
+
+ifeq (,$(QRUN_CMD))
+    $(error Unable to locate command >$(QRUN_BIN)<)
+endif
+ifeq (,$(VIS_CMD))
+    $(error Unable to locate command >$(VIS_BIN)<)
+endif
+
+DESIGNFILE ?= design.bin
+WAVEFILE ?= qwave.db
+TOPLEVEL_LIBRARY ?= work
+COCOTB_TOPLEVEL := "$(TOPLEVEL_LIBRARY).$(COCOTB_TOPLEVEL)"
+
+
+ifndef VLOG_ARGS
+    VLOG_ARGS = -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) -mfcu
+endif
+
+ifdef VERILOG_INCLUDE_DIRS
+    VLOG_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+endif
+
+# below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
+VLOG_ARGS += $(COMPILE_ARGS)
+VCOM_ARGS +=
+VOPT_ARGS += -access=rw+/.
+VSIM_ARGS += $(SIM_ARGS)
+
+ifdef GUI
+    # Run in GUI mode.
+
+    # Two modes are supported:
+    # - GUI=livesim: Open the Visualizer GUI before running the simulation.
+    #   GUI=1 is a backwards-compatible alias for livesim.
+    # - GUI=postsim: Open the Visualizer GUI after the simulation has finished.
+
+    ifeq ($(filter livesim postsim 1,$(GUI)),)
+        $(error A valid value (livesim, postsim, or 1) was not provided for GUI=$(GUI))
+    endif
+
+    # Map GUI=1 to GUI=livesim.
+    ifeq ($(GUI),1)
+        GUI := livesim
+    endif
+
+    VOPT_ARGS += -designfile $(DESIGNFILE)
+    VSIM_ARGS += -onfinish stop -qwavedb=+signal+memory=all+class+assertion+uvm_schematic+msg+wavefile=$(WAVEFILE)
+
+    ifeq ($(GUI),livesim)
+        QRUN_CMD += -gui -visualizer
+        VOPT_ARGS += -debug,livesim
+    endif
+
+    # For GUI=postsim Visualizer is called in the $(COCOTB_RESULTS_FILE) target.
+else
+    # Run in batch mode (no GUI).
+    QRUN_CMD += -c
+    VSIM_ARGS += -onfinish exit
+endif # ifdef GUI
+
+FLI_LIB := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path fli questa)
+VHPI_LIB := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vhpi questa)
+GPI_EXTRA :=
+
+VHDL_GPI_INTERFACE ?= fli
+
+ifeq ($(filter vhpi fli,$(VHDL_GPI_INTERFACE)),)
+    $(error A valid value (fli or vhpi) was not provided for VHDL_GPI_INTERFACE=$(VHDL_GPI_INTERFACE))
+endif
+
+ifeq ($(TOPLEVEL_LANG),vhdl)
+    VSIM_ARGS += -t $(COCOTB_HDL_TIMEPRECISION)
+ifeq ($(VHDL_GPI_INTERFACE),fli)
+    CUSTOM_COMPILE_DEPS += $(FLI_LIB)
+    VSIM_ARGS += -foreign "cocotb_init $(FLI_LIB)"
+else
+    VSIM_ARGS += -foreign "vhpi_startup_routines_bootstrap $(call to_tcl_path,$(VHPI_LIB))"
+endif
+ifneq ($(VERILOG_SOURCES),)
+    GPI_EXTRA :=  $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi questa):cocotbvpi_entry_point
+endif
+
+else ifeq ($(TOPLEVEL_LANG),verilog)
+    VSIM_ARGS += -pli $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi questa)
+ifneq ($(VHDL_SOURCES),)
+    GPI_EXTRA := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path $(VHDL_GPI_INTERFACE) questa):cocotb$(VHDL_GPI_INTERFACE)_entry_point
+endif
+
+else
+    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
+endif
+
+ifdef SCRIPT_FILE
+    VSIM_ARGS += -do $(SCRIPT_FILE)
+endif
+
+ifeq ($(PYTHON_ARCH),64bit)
+    QRUN_CMD += -64
+endif
+
+define make_lib
+  -makelib $(LIB) $(VHDL_SOURCES_$(LIB)) -end
+endef
+
+$(COCOTB_RESULTS_FILE):
+	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
+	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
+	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
+
+	$(RM) $(COCOTB_RESULTS_FILE)
+	mkdir -p $(SIM_BUILD)
+
+	set -o pipefail; \
+	  COCOTB_TEST_MODULES=$(COCOTB_TEST_MODULES) \
+	  COCOTB_TESTCASE=$(COCOTB_TESTCASE) \
+	  COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) \
+	  COCOTB_TOPLEVEL=$(COCOTB_TOPLEVEL) \
+	  GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	  VHDL_GPI_INTERFACE=$(VHDL_GPI_INTERFACE) \
+	  COCOTB__QUESTA_MODE=qisqrun \
+	  $(SIM_CMD_PREFIX) $(QRUN_CMD) $(RUN_ARGS) -outdir $(SIM_BUILD) \
+	  $(foreach LIB, $(VHDL_LIB_ORDER), $(make_lib)) \
+	  -makelib $(TOPLEVEL_LIBRARY) $(VERILOG_SOURCES) $(VHDL_SOURCES) $(VLOG_ARGS) $(VCOM_ARGS) -end \
+	  $(VOPT_ARGS) $(VSIM_ARGS) $(EXTRA_ARGS) $(COCOTB_PLUSARGS) -sv \
+	  -top $(COCOTB_TOPLEVEL) 2>&1 | tee $(SIM_BUILD)/sim.log
+
+ifeq ($(GUI),postsim)
+	$(VIS_CMD) -designfile $(DESIGNFILE) -wavefile $(WAVEFILE)
+endif
+
+	$(call check_results)

@@ -93,9 +93,15 @@ pip-wheel-metadata/
 # Mentor Modelsim/Questa
 tests/test_cases/*/modelsim.ini
 tests/test_cases/*/transcript
+tests/test_cases/*/qwave.db
+tests/test_cases/*/design.bin
 examples/*/tests/modelsim.ini
 examples/*/tests/transcript
+examples/*/tests/qwave.db
+examples/*/tests/design.bin
 *.wlf
+qrun.log
+visualizer.log
 
 # Riviera
 tests/test_cases/*/library.cfg

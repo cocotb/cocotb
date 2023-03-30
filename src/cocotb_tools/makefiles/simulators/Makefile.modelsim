@@ -5,5 +5,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 
-# Identical to Questa
-include $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.questa
+# Identical to Questa with the compat flow.
+include $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.questa-compat
