@@ -209,6 +209,12 @@ clean::
 	@$(RM) -rf xrun.*
 	@$(RM) -rf xmsim.*
 	@$(RM) -rf gdb_cmd_xmsim
+	@$(RM) -f qrun*
+	@$(RM) -f visualizer.log
+	@$(RM) -f design.bin
+	@$(RM) -f qwave.db
+	@$(RM) -f transcript
+
 
 else
     $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)
