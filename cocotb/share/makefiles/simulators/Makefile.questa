@@ -32,9 +32,9 @@ include $(shell cocotb-config --makefiles)/Makefile.inc
     CMD_BIN := qrun
     CMD_BIN_VIS := vis
 
-ifdef QUESTA_BIN_DIR
-    CMD := $(shell :; command -v $(QUESTA_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
-    CMD_V := $(shell :; command -v $(QUESTA_BIN_DIR)/$(CMD_BIN_VIS) 2>/dev/null)
+ifdef MODELSIM_BIN_DIR
+    CMD := $(shell :; command -v $(MODELSIM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    CMD_V := $(shell :; command -v $(MODELSIM_BIN_DIR)/$(CMD_BIN_VIS) 2>/dev/null)
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
@@ -60,7 +60,7 @@ ifndef VLOG_ARGS
 endif
 
 ifdef VERILOG_INCLUDE_DIRS
-    VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
+    VLOG_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
 endif
 
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
