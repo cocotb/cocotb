@@ -60,16 +60,16 @@ ifndef VLOG_ARGS
 endif
 
 ifdef VERILOG_INCLUDE_DIRS
-    VLOG_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+    VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
 endif
 
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
 VLOG_ARGS += $(COMPILE_ARGS)
-VCOM_ARGS += 
-VOPT_ARGS += -access=rw+/. 
+VCOM_ARGS +=
+VOPT_ARGS += -access=rw+/.
 VSIM_ARGS += $(SIM_ARGS)
 
-# by default Questa runs in Batch Mode, if GUI=1 ==> Visualizer opens in LiveSIM Mode, if GUI=2 ==> Visualizer opens in PostSIM Mode 
+# by default Questa runs in Batch Mode, if GUI=1 ==> Visualizer opens in LiveSIM Mode, if GUI=2 ==> Visualizer opens in PostSIM Mode
 ifdef GUI
 ifeq ($(filter-out 1 2,$(GUI)),)
     VOPT_ARGS += -designfile $(DESIGNFILE)
@@ -136,7 +136,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) -outdir $(SIM_BUILD) -makelib $(RTL_LIBRARY)  $(VERILOG_SOURCES) $(VHDL_SOURCES) \
 	$(VLOG_ARGS) $(VCOM_ARGS) -end $(VOPT_ARGS) $(VSIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS) +define+COCOTB_SIM -sv \
-    -top $(SIM_BUILD)/$(TOPLEVEL) 2>&1 | tee $(SIM_BUILD)/sim.log   
+    -top $(SIM_BUILD)/$(TOPLEVEL) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 ifeq ($(GUI),2)
 	$(CMD_V) -designfile $(DESIGNFILE) -wavefile $(WAVEFILE)
