@@ -76,7 +76,7 @@ if _profiling:
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
-class InternalError(RuntimeError):
+class InternalError(BaseException):
     """An error internal to scheduler. If you see this, report a bug!"""
 
     pass
