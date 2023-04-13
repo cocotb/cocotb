@@ -27,14 +27,24 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+    # check QuestaSim version to use new flow if verion 2021 or later and old flow otherwise
+    CMD_BIN := vsim
+    ver  := $(shell $(CMD_BIN) -version)
+    ver  := $(shell echo $(ver) | sed 's/[ \t]*$$//' | awk '{for(i=1;i<=NF;i++) if($$i == "$(CMD_BIN)") print $$(i+1)+0}')
+    ver1 := $(shell echo $(ver) | cut -d '.' -f 1)
+    ver2 := $(shell echo $(ver) | cut -d '.' -f 2)
+
+ifeq ($(shell (test $(ver1) -lt 2020 && test $(ver1) -gt 0) || (test $(ver1) -eq 2020 && test $(ver2) -lt 2); echo $$?),0)
+    include $(shell cocotb-config --makefiles)/simulators/Makefile.modelsim
+else
 include $(shell cocotb-config --makefiles)/Makefile.inc
 
     CMD_BIN := qrun
     CMD_BIN_VIS := vis
 
-ifdef MODELSIM_BIN_DIR
-    CMD := $(shell :; command -v $(MODELSIM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
-    CMD_V := $(shell :; command -v $(MODELSIM_BIN_DIR)/$(CMD_BIN_VIS) 2>/dev/null)
+ifdef QUESTA_BIN_DIR
+    CMD := $(shell :; command -v $(QUESTA_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    CMD_V := $(shell :; command -v $(QUESTA_BIN_DIR)/$(CMD_BIN_VIS) 2>/dev/null)
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
@@ -93,7 +103,12 @@ $(FLI_LIB):
 
 VHPI_LIB := $(shell cocotb-config --lib-name-path vhpi questa)
 GPI_EXTRA :=
-VHDL_GPI_INTERFACE ?= fli
+# forcing fli for versions older than 2022.3 as VHPI is not supported
+ifeq ($(shell (test $(ver1) -lt 2022 && test $(ver1) -gt 0) || (test $(ver1) -eq 2022 && test $(ver2) -lt 3); echo $$?),0)
+    VHDL_GPI_INTERFACE := fli
+else
+    VHDL_GPI_INTERFACE ?= fli
+endif
 
 ifeq ($(filter vhpi fli,$(VHDL_GPI_INTERFACE)),)
     $(error A valid value (fli or vhpi) was not provided for VHDL_GPI_INTERFACE=$(VHDL_GPI_INTERFACE))
@@ -136,7 +151,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) -outdir $(SIM_BUILD) -makelib $(RTL_LIBRARY)  $(VERILOG_SOURCES) $(VHDL_SOURCES) \
 	$(VLOG_ARGS) $(VCOM_ARGS) -end $(VOPT_ARGS) $(VSIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS) +define+COCOTB_SIM -sv \
-    -top $(SIM_BUILD)/$(TOPLEVEL) 2>&1 | tee $(SIM_BUILD)/sim.log
+    -top $(SIM_BUILD)/$(TOPLEVEL) 2>&1 | tee $(SIM_BUILD)/sim.log  
 
 ifeq ($(GUI),2)
 	$(CMD_V) -designfile $(DESIGNFILE) -wavefile $(WAVEFILE)
@@ -146,3 +161,5 @@ endif
 
 clean::
 	$(RM) -r $(SIM_BUILD) qrun* visualizer.log design.bin qwave.db transcript
+
+endif
