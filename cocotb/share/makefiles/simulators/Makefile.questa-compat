@@ -74,12 +74,6 @@ else
 endif
 
 FLI_LIB := $(shell cocotb-config --lib-name-path fli questa)
-# if this target is run, then cocotb did not build the library
-$(FLI_LIB):
-	@echo -e "ERROR: cocotb was not installed with an FLI library, as the mti.h header could not be located.\n\
-	If you installed an FLI-capable simulator after cocotb, you will need to reinstall cocotb.\n\
-	Please check the cocotb documentation on ModelSim support." >&2 && exit 1
-
 VHPI_LIB := $(shell cocotb-config --lib-name-path vhpi questa)
 
 GPI_EXTRA :=
