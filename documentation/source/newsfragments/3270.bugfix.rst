@@ -1,0 +1,1 @@
+Fixed cleanup in scheduler which caused sporadic warning messages and bugs in some corner cases.
