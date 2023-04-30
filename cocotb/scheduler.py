@@ -623,7 +623,6 @@ class Scheduler:
             trigger_coros.append(coro)
 
         if not trigger.primed:
-
             if trigger_coros != [coro]:
                 # should never happen
                 raise InternalError(
@@ -981,7 +980,6 @@ class Scheduler:
             # where a sim might change what this thread is.
 
             if self._main_thread is threading.current_thread():
-
                 for ext in self._pending_threads:
                     ext.thread_start()
                     if _debug:
@@ -1064,7 +1062,7 @@ class Scheduler:
         Unprime all pending triggers and kill off any coroutines, stop all externals.
         """
         # copy since we modify this in kill
-        items = list(self._trigger2coros.items())
+        items = list((k, list(v)) for k, v in self._trigger2coros.items())
 
         # reversing seems to fix gh-928, although the order is still somewhat
         # arbitrary.
@@ -1073,16 +1071,27 @@ class Scheduler:
                 if _debug:
                     self.log.debug("Killing %s" % str(coro))
                 coro.kill()
+        assert not self._trigger2coros
 
         # if there are coroutines being scheduled when the test ends, kill them (gh-1347)
         for coro in self._scheduling:
             if _debug:
                 self.log.debug("Killing %s" % str(coro))
             coro.kill()
+        self._scheduling = []
+
+        # cancel outstanding triggers *before* queued coroutines (gh-3270)
+        while self._pending_triggers:
+            trigger = self._pending_triggers.pop(0)
+            if _debug:
+                self.log.debug("Unpriming %r", trigger)
+            trigger.unprime()
+        assert not self._pending_triggers
 
         # kill any queued coroutines
         for task in self._pending_coros:
             task.kill()
+        assert not self._pending_coros
 
         if self._main_thread is not threading.current_thread():
             raise Exception("Cleanup() called outside of the main thread")
