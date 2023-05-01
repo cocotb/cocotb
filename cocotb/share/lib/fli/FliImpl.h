@@ -119,6 +119,7 @@ class FliStartupCbHdl : public FliProcessCbHdl {
 
     int arm_callback() override;
     int run_callback() override;
+    int cleanup_callback() override;
 };
 
 class FliShutdownCbHdl : public FliProcessCbHdl {
@@ -128,6 +129,7 @@ class FliShutdownCbHdl : public FliProcessCbHdl {
 
     int arm_callback() override;
     int run_callback() override;
+    int cleanup_callback() override;
 };
 
 class FliTimedCbHdl : public FliProcessCbHdl, public GpiCommonCbHdl {
