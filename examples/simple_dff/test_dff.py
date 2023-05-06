@@ -19,13 +19,13 @@ async def dff_simple_test(dut):
     # Set initial input value to prevent it from floating
     dut.d.setimmediatevalue(1)
     # Assert initial output is unknown
-    assert LogicArray(dut.q.value) == LogicArray('X')
+    assert LogicArray(dut.q.value) == LogicArray("X")
 
     clock = Clock(dut.clk, 10, units="us")  # Create a 10us period clock on port clk
     cocotb.start_soon(clock.start(start_high=False))  # Start the clock
 
-    await RisingEdge(dut.clk) # Synchronize with the clock
-    expected_val = 1 # Matches initial input value
+    await RisingEdge(dut.clk)  # Synchronize with the clock
+    expected_val = 1  # Matches initial input value
     for i in range(10):
         val = random.randint(0, 1)
         dut.d.value = val  # Assign the random value val to the input port d
@@ -35,7 +35,7 @@ async def dff_simple_test(dut):
 
     # Check the final input on the next clock
     await RisingEdge(dut.clk)  # Synchronize with the clock
-    assert dut.q.value == expected_val, f"output q was incorrect on the last cycle"
+    assert dut.q.value == expected_val, "output q was incorrect on the last cycle"
 
 
 def test_simple_dff_runner():
