@@ -22,7 +22,7 @@ async def dff_simple_test(dut):
     assert LogicArray(dut.q.value) == LogicArray("X")
 
     clock = Clock(dut.clk, 10, units="us")  # Create a 10us period clock on port clk
-    cocotb.start_soon(clock.start(start_high=False))  # Start the clock
+    cocotb.start_soon(clock.start())  # Start the clock
 
     await RisingEdge(dut.clk)  # Synchronize with the clock
     expected_val = 1  # Matches initial input value
