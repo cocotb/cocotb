@@ -206,6 +206,12 @@ int FliStartupCbHdl::run_callback() {
     return 0;
 }
 
+int FliStartupCbHdl::cleanup_callback() {
+    mti_RemoveLoadDoneCB(handle_fli_callback, (void*)this);
+    set_call_state(GPI_DELETE);
+    return 0;
+}
+
 int FliShutdownCbHdl::arm_callback() {
     mti_AddQuitCB(handle_fli_callback, (void*)this);
     set_call_state(GPI_PRIMED);
@@ -216,5 +222,11 @@ int FliShutdownCbHdl::arm_callback() {
 int FliShutdownCbHdl::run_callback() {
     gpi_embed_end();
 
+    return 0;
+}
+
+int FliShutdownCbHdl::cleanup_callback() {
+    mti_RemoveQuitCB(handle_fli_callback, (void*)this);
+    set_call_state(GPI_DELETE);
     return 0;
 }

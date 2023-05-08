@@ -93,6 +93,8 @@ mti_Now
 mti_NowUpper
 mti_Quit
 mti_ReleaseSignal
+mti_RemoveLoadDoneCB
+mti_RemoveQuitCB
 mti_ScheduleWakeup
 mti_ScheduleWakeup64
 mti_Sensitize
