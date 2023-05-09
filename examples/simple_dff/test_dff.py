@@ -33,7 +33,7 @@ async def dff_simple_test(dut):
         dut.d.value = val  # Assign the random value val to the input port d
         await RisingEdge(dut.clk)
         assert dut.q.value == expected_val, f"output q was incorrect on the {i}th cycle"
-        expected_val = val # Save random value for next RisingEdge
+        expected_val = val  # Save random value for next RisingEdge
 
     # Check the final input on the next clock
     await RisingEdge(dut.clk)
