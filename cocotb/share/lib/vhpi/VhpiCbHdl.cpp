@@ -874,7 +874,6 @@ int VhpiStartupCbHdl::run_callback() {
                     vhpi_get_str(vhpiStrValP, argv_hdl)));
                 i++;
             }
-            vhpi_release_handle(argv_iter);
         }
 
         vhpi_release_handle(tool);
