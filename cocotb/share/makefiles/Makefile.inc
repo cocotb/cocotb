@@ -57,9 +57,18 @@ else ifneq (, $(findstring MSYS, $(OS)))
 endif
 export OS
 
+# Detects if Python is running in a virtual environment
+# https://docs.python.org/3/library/venv.html
+VENV=$(shell $(shell cocotb-config --python-bin) -c 'import sys; print(sys.prefix != sys.base_prefix)')
+
 # this ensures we use the same python as the one cocotb was installed into
-# realpath to convert windows paths to unix paths, like cygpath -u
-PYTHON_BIN ?= $(realpath $(shell cocotb-config --python-bin))
+ifeq ($(VENV),True)
+    # In a virtual environment, the Python binary may be a symlink, so it should not use realpath
+    PYTHON_BIN ?= $(shell cocotb-config --python-bin)
+else
+    # realpath to convert windows paths to unix paths, like cygpath -u
+    PYTHON_BIN ?= $(realpath $(shell cocotb-config --python-bin))
+endif
 
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.deprecations
 
@@ -70,8 +79,11 @@ ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)
     $(error Unknown Python architecture: $(PYTHON_ARCH))
 endif
 
-# Set PYTHONHOME to properly populate sys.path in embedded python interpreter
-export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'import sys; print(sys.prefix)')
+# Changing PYTHONHOME confuses virtual environments, so only set it when not using a venv
+ifeq ($(VENV),False)
+    # Set PYTHONHOME to properly populate sys.path in embedded python interpreter
+    export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'import sys; print(sys.prefix)')
+endif
 
 ifeq ($(OS),Msys)
     to_tcl_path = $(shell cygpath -m $(1) )
