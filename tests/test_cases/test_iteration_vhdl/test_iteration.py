@@ -45,14 +45,10 @@ def total_object_count():
             "ncsim",
             "xmsim",
             "modelsim",
+            "riviera",
         )
     ):
         return 34569
-
-    # Riviera-PRO
-    if SIM_NAME.startswith("riviera"):
-        # The expected result from Riviera-PRO 2019.10 on.
-        return 27359
 
     # Active-HDL
     if SIM_NAME.startswith("aldec"):
@@ -120,10 +116,7 @@ async def dual_iteration(dut):
 
 # GHDL unable to access record types (gh-2591)
 @cocotb.test(
-    expect_fail=(
-        cocotb.SIM_NAME.lower().startswith("riviera")
-        or cocotb.SIM_NAME.lower().startswith("aldec")
-    ),
+    expect_fail=cocotb.SIM_NAME.lower().startswith("aldec"),
     expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
 )
 async def test_n_dimension_array(dut):

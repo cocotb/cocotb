@@ -260,8 +260,8 @@ async def test_discover_all(dut):
     dut
            TYPE    CNT  NOTES                                                  EXCEPTIONS
        parameters: 7/2 (base types)                                            (VHDL/Verilog)
-                     6 (param_rec.a, param_rec.b[0:2])                         (VHDL only excluding Aldec)
-                    13 (param_cmplx[0:1].a, param_cmplx[0:1].b[0:2])           (VHDL only excluding Aldec)
+                     6 (param_rec.a, param_rec.b[0:2])                         (VHDL Only)
+                    13 (param_cmplx[0:1].a, param_cmplx[0:1].b[0:2])           (VHDL Only)
             ports:   1 (clk)
                      1 (select_in)                                             (VPI - Aldec sees as 32 bit register (i.e. cnt = 33)
                      9 (port_desc_in)
@@ -286,12 +286,12 @@ async def test_discover_all(dut):
                      1 (const_real)                                            (VHDL Only)
                      1 (const_char)                                            (VHDL Only)
                      1 (const_str)                                             (VHDL Only)
-                     6 (const_rec.a, const_rec.b[0:2])                         (VHDL only excluding Aldec)
-                    13 (const_cmplx[1:2].a, const_cmplx[1:2].b[0:2])           (VHDL only excluding Aldec)
+                     6 (const_rec.a, const_rec.b[0:2])                         (VHDL Only)
+                    13 (const_cmplx[1:2].a, const_cmplx[1:2].b[0:2])           (VHDL Only)
           signals:   9 (sig_desc)
                      9 (sig_asc)
-                     1 (\ext_id\)                                              (VHDL only)
-                     1 (\!\)                                                   (VHDL only)
+                     1 (\ext_id\)                                              (VHDL Only)
+                     1 (\!\)                                                   (VHDL Only)
                      5 (sig_t1)
                     37 (sig_t2[7:4][7:0])
                     37 (sig_t3a[1:4][7:0])
@@ -311,12 +311,12 @@ async def test_discover_all(dut):
                     30 (sig_rec.a, sig_rec.b[0:2][7:0])                        (VPI doesn't find, added manually, except for Aldec)
                     61 (sig_cmplx[0:1].a, sig_cmplx[0:1].b[0:2][7:0])          (VPI - Aldec older than 2017.10.67 doesn't find)
           regions:   9 (asc_gen[16:23])
-                     8 (asc_gen: signals)                                      (VHPI - Riviera doesn't find, added manually)
+                     8 (asc_gen: signals)
                      8 (asc_gen: constant)
                      8 (asc_gen: variable)
                      8 (asc_gen: process "always")                             (VPI - Aldec only)
                      9 (desc_gen[7:0])
-                     8 (desc_gen: signals)                                     (VHPI - Riviera doesn't find, added manually)
+                     8 (desc_gen: signals)
                      8 (desc_gen: constant)
                      8 (desc_gen: variable)
                      8 (desc_gen: process "always")                            (VPI - Aldec only)
@@ -353,16 +353,7 @@ async def test_discover_all(dut):
         dut.sig_rec
         dut.port_rec_out
 
-    # Riviera-Pro's VHPI implementation does not find signal declarations when iterating
-    if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith("riviera"):
-        for hdl in dut.asc_gen:
-            hdl.sig
-        for hdl in dut.desc_gen:
-            hdl.sig
-
-    if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith("riviera"):
-        pass_total = 571
-    elif cocotb.SIM_NAME.lower().startswith("ghdl"):
+    if cocotb.SIM_NAME.lower().startswith("ghdl"):
         pass_total = 56
     elif (
         cocotb.LANGUAGE in ["vhdl"]
@@ -521,7 +512,6 @@ async def test_direct_signal_indexing(dut):
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith("2016.02")
     ):
-
         _check_type(tlog, dut.sig_cmplx[1], HierarchyObject)
         _check_type(tlog, dut.sig_cmplx[1].a, ModifiableObject)
         _check_type(tlog, dut.sig_cmplx[1].b, NonHierarchyIndexableObject)
