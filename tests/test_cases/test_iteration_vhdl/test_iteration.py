@@ -27,6 +27,7 @@ import logging
 import os
 
 import cocotb
+from cocotb._sim_versions import QuestaVersion
 from cocotb.triggers import Combine, Timer
 
 
@@ -39,6 +40,19 @@ def total_object_count():
     # TODO: Why do we get massively different numbers for Questa/VHPI than for Questa/FLI or VPI?
     if SIM_NAME.startswith("modelsim") and os.environ["VHDL_GPI_INTERFACE"] == "vhpi":
         return 66959
+
+    # Questa 2023.1 onwards (FLI) do not discover the following objects, which
+    # are instantiated four times:
+    # - inst_generic_sp_ram.clk (<class 'cocotb.handle.ModifiableObject'>)
+    # - inst_generic_sp_ram.rst (<class 'cocotb.handle.ModifiableObject'>)
+    # - inst_generic_sp_ram.wen (<class 'cocotb.handle.ModifiableObject'>)
+    # - inst_generic_sp_ram.en (<class 'cocotb.handle.ModifiableObject'>)
+    if (
+        SIM_NAME.startswith("modelsim")
+        and QuestaVersion(SIM_VERSION) >= QuestaVersion("2023.1")
+        and os.environ["VHDL_GPI_INTERFACE"] == "fli"
+    ):
+        return 34569 - 4 * 4
 
     if SIM_NAME.startswith(
         (
