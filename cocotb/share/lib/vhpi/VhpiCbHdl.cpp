@@ -108,7 +108,7 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
 #ifdef IUS
                     if (l_rng != UNCONSTRAINED && r_rng != UNCONSTRAINED) {
 #else
-                    if (vhpi_get(vhpiIsUnconstrainedP, constraint)) {
+                    if (!vhpi_get(vhpiIsUnconstrainedP, constraint)) {
 #endif
                         error = false;
                         *left = static_cast<int>(l_rng);
