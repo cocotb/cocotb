@@ -59,10 +59,10 @@ export OS
 
 # Detects if Python is running in a virtual environment
 # https://docs.python.org/3/library/venv.html
-VENV=$(shell $(shell cocotb-config --python-bin) -c 'import sys; print(sys.prefix != sys.base_prefix)')
+IS_VENV=$(shell $(shell cocotb-config --python-bin) -c 'import sys; print(sys.prefix != sys.base_prefix)')
 
 # this ensures we use the same python as the one cocotb was installed into
-ifeq ($(VENV),True)
+ifeq ($(IS_VENV),True)
     # In a virtual environment, the Python binary may be a symlink, so it should not use realpath
     PYTHON_BIN ?= $(shell cocotb-config --python-bin)
 else
@@ -80,7 +80,7 @@ ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)
 endif
 
 # Changing PYTHONHOME confuses virtual environments, so only set it when not using a venv
-ifeq ($(VENV),False)
+ifeq ($(IS_VENV),False)
     # Set PYTHONHOME to properly populate sys.path in embedded python interpreter
     export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'import sys; print(sys.prefix)')
 endif

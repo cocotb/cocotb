@@ -16,9 +16,8 @@ from cocotb.types import LogicArray
 async def dff_simple_test(dut):
     """Test that d propagates to q"""
 
-    # Assert initial output is unknown, but not all simulators support 'X'
-    if not cocotb.SIM_NAME.lower().startswith("verilator"):
-        assert LogicArray(dut.q.value) == LogicArray("X")
+    # Assert initial output is unknown
+    assert LogicArray(dut.q.value) == LogicArray("X")
     # Set initial input value to prevent it from floating
     dut.d.value = 0
 

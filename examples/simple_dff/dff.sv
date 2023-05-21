@@ -13,7 +13,7 @@ always @(posedge clk) begin
 end
 
 // the "macro" to dump signals
-`ifdef __ICARUS__
+`ifdef COCOTB_SIM
 initial begin
   $dumpfile ("dff.vcd");
   $dumpvars (0, dff);
