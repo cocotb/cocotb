@@ -68,9 +68,24 @@ class QuestaVersion(LooseVersion):
         True
         >>> QuestaVersion("2020.1 2020.01") > QuestaVersion("10.7c 2018.08")
         True
+        >>> QuestaVersion("2020.1 2020.01") == QuestaVersion("2020.1")
+        True
+        >>> QuestaVersion("2023.1_2 2023.03") > QuestaVersion("2023.1_1")
+        True
     """
 
-    pass
+    def parse(self, vstring):
+        # A Questa version string, as returned by the simulator, consists of two
+        # space-separated parts. The first part is the actual version number,
+        # the second part seems to be the year and month of the initial release.
+        # We only need the first part, which is also used in public
+        # communication by Siemens.
+        try:
+            first_component = vstring.split(" ", 1)[0]
+        except IndexError:
+            first_component = vstring
+
+        super().parse(first_component)
 
 
 class RivieraVersion(LooseVersion):
