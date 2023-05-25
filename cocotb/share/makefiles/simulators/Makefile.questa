@@ -135,16 +135,17 @@ endif
 ifneq ($(VERILOG_SOURCES),)
 	@echo "vlog -work $(RTL_LIBRARY) +define+COCOTB_SIM -sv $(VLOG_ARGS) $(EXTRA_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
 endif
-ifdef SCRIPT_FILE
-	@echo "do $(SCRIPT_FILE)" >> $@
-endif
 	@echo "vsim $(VSIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS) $(SIM_BUILD)/$(TOPLEVEL)" >> $@
 ifeq ($(WAVES),1)
 	@echo "log -recursive /*" >> $@
 endif
 ifeq ($(GUI),1)
 	@echo "add log -r *" >> $@
-else
+endif
+ifdef SCRIPT_FILE
+	@echo "do $(SCRIPT_FILE)" >> $@
+endif
+ifneq ($(GUI),1)
 	@echo "onbreak resume" >> $@
 	@echo "run -all" >> $@
 	@echo "quit" >> $@
