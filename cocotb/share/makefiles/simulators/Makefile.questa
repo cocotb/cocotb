@@ -88,6 +88,7 @@ ifeq ($(filter vhpi fli,$(VHDL_GPI_INTERFACE)),)
 endif
 
 ifeq ($(TOPLEVEL_LANG),vhdl)
+    VSIM_ARGS += -t $(COCOTB_HDL_TIMEPRECISION)
 ifeq ($(VHDL_GPI_INTERFACE),fli)
     CUSTOM_COMPILE_DEPS += $(FLI_LIB)
     VSIM_ARGS += -foreign \"cocotb_init $(FLI_LIB)\"
