@@ -22,6 +22,26 @@ If things fail from within Python, or coroutines aren't being called when you ex
 :envvar:`COCOTB_SCHEDULER_DEBUG` variable can be used to (greatly) increase the verbosity of the scheduler.
 
 
+Building cocotb In Development Mode
+===================================
+
+By default cocotb binaries installed from PyPi are stripped, i.e. they do not contain debug symbols.
+Rebuilding cocotb from source can add this information back, making it significantly easier to debug cocotb code.
+In the following, we'll assume the use of a Linux machine for debugging cocotb, which simplifies the process significantly.
+
+First, install all build requirements as listed at :ref:`install-devel`.
+
+Then execute the following commands to download a development version of cocotb and prepare a shell environment with this a development build of cocotb available:
+
+.. code-block:: shell-session
+
+  $ # Obtain the latest development version of cocotb through git
+  $ git clone https://github.com/cocotb/cocotb.git
+  $ # Build cocotb in debug mode, and enter a bash shell
+  $ cd cocotb
+  $ nox -s dev -- /bin/bash
+
+
 .. _troubleshooting-attaching-debugger:
 
 Attaching a Debugger
