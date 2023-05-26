@@ -52,12 +52,38 @@ Attaching a Debugger
 C and C++
 ---------
 
-In order to give yourself time to attach a debugger to the simulator process before it starts to run,
-you can set the environment variable :envvar:`COCOTB_ATTACH` to a pause time value in seconds.
-If set, cocotb will print the process ID (PID) to attach to and wait the specified time before
-actually letting the simulator run.
+The most convenient way to debug the cocotb C code and the interaction between cocotb and the simulator is using GDB.
+This is a two-step process:
 
-For the GNU debugger GDB, the command is ``attach <process-id>``.
+1. Run the simulation with :envvar:`COCOTB_ATTACH` set.
+2. Use ``gdb -p`` to attach to the simulator process.
+
+Have a look at :ref:`building` for various useful variables related to debugging.
+
+Example:
+Debug the test ``test_array_simple`` with Questa, using the VHDL toplevel and the VHPI.
+
+1. Run the simulation and take note of the process identifier (PID) displayed after the simulator starts up.
+
+  .. code-block:: shell-session
+
+    $ make -C tests/test_cases/test_array_simple SIM=questa TOPLEVEL_LANG=vhdl VHDL_GPI_INTERFACE=vhpi COCOTB_ATTACH=300 COCOTB_LOG_LEVEL=trace
+    ...
+    #      -.--ns ERROR    gpi                                ..mbed/gpi_embed.cpp:154  in _embed_init_python              Waiting for 300 seconds - attach to PID 9583 with your debugger
+
+
+2. Open a new terminal window or tab, and attach GDB to the running process.
+
+  .. code-block:: shell-session
+
+    $ gdb -p 9583
+    ...
+    48        r = INTERNAL_SYSCALL_CANCEL (clock_nanosleep_time64, clock_id, flags, req,
+    (gdb) # Set breakpoints or do anything else you'd like to do. Finally, let the simulation run:
+    (gdb) continue
+    Continuing.
+    [Inferior 1 (process 9583) exited normally]
+    (gdb) quit
 
 .. _troubleshooting-attaching-debugger-python:
 
