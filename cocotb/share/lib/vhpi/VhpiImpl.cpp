@@ -323,7 +323,11 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 if (elem_sub_type_hdl != NULL) {
                     elem_base_type_hdl =
                         vhpi_handle(vhpiBaseType, elem_sub_type_hdl);
-                    vhpi_release_handle(elem_sub_type_hdl);
+                    if (elem_base_type_hdl == NULL) {
+                        elem_base_type_hdl = elem_sub_type_hdl;
+                    } else {
+                        vhpi_release_handle(elem_sub_type_hdl);
+                    }
                 }
 
                 if (elem_base_type_hdl != NULL) {
