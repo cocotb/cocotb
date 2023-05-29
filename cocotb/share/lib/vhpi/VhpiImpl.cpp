@@ -315,10 +315,12 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 vhpiHandleT elem_base_type_hdl = NULL;
                 vhpiIntT elem_base_type = 0;
 
-                /* vhpiElemSubtype is deprecated.  Should be using vhpiElemType,
-                 * but not supported in all simulators. */
                 vhpiHandleT elem_sub_type_hdl =
-                    vhpi_handle(vhpiElemSubtype, query_hdl);
+                    vhpi_handle(vhpiElemType, query_hdl);
+                /* vhpiElemType is not supported in all simulators. */
+                if (!elem_sub_type_hdl) {
+                    elem_sub_type_hdl = vhpi_handle(vhpiElemSubtype, query_hdl);
+                }
 
                 if (elem_sub_type_hdl != NULL) {
                     elem_base_type_hdl =
