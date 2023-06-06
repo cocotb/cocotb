@@ -218,7 +218,7 @@ def dev_test_nosim(session: nox.Session) -> None:
     configure_env_for_dev_build(session)
 
     session.run("pip", "install", *test_deps, *coverage_deps)
-    session.run("pip", "install", "-e", ".")
+    session.run("pip", "install", ".")
 
     # Remove a potentially existing coverage file from a previous run for the
     # same test configuration. Use a filename *not* starting with `.coverage.`,
