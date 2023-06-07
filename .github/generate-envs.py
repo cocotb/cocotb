@@ -166,7 +166,9 @@ ENVS = [
         "python-version": "3.8",
         "toolchain": "msvc",
         "extra_name": "msvc | ",
-        "group": "ci",
+        # TODO: Moved from ci to experimental until
+        # https://github.com/cocotb/cocotb/issues/3326 is fixed.
+        "group": "experimental",
     },
     # Other
     # use clang instead of gcc
