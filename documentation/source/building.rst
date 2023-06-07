@@ -265,8 +265,8 @@ The following variables are makefile variables, not environment variables.
 
 .. make:var:: WAVES
 
-      Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO and Mentor Graphics Questa simulators.
-      To get wave traces in Icarus Verilog see :ref:`sim-icarus-waveforms`.
+      Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO, Mentor Graphics Questa, and Icarus Verilog simulators.
+      To get wave traces in Verilator see :ref:`sim-verilator-waveforms`.
 
 .. make:var:: TOPLEVEL_LANG
 

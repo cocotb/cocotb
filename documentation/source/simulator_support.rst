@@ -47,28 +47,15 @@ See also https://github.com/steveicarus/iverilog/issues/323.
 Waveforms
 ---------
 
-To get waveforms in VCD format some Verilog code must be added
-to the top component as shown in the example below:
+Icarus Verilog can produce waveform traces in the FST format, the native format of GTKWave.
+FST traces are much smaller and more efficient to write than VCD, but requires the use of GTKWave.
 
-.. code-block:: verilog
+To enable FST tracing, set :make:var:`WAVES` to ``1``. This can be set on the command line,
+as shown below, or as an environment variable with an ``EXPORT`` statement in your shell.
 
-    module button_deb(
-        input  clk,
-        input  rst,
-        input  button_in,
-        output button_valid);
+.. code-block:: bash
 
-    //... Verilog module code here
-
-    // the "macro" to dump signals
-    `ifdef COCOTB_SIM
-    initial begin
-      $dumpfile ("button_deb.vcd");
-      $dumpvars (0, button_deb);
-      #1;
-    end
-    `endif
-    endmodule
+    make SIM=icarus WAVES=1
 
 .. _sim-icarus-issues:
 
