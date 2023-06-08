@@ -9,8 +9,7 @@
 * Read the [documentation](https://docs.cocotb.org)
 * Get involved:
   * [Raise a bug / request an enhancement](https://github.com/cocotb/cocotb/issues/new) (Requires a GitHub account)
-  * [Join the mailing list](https://lists.librecores.org/listinfo/cocotb)
-  * [Join the Gitter chat room](https://gitter.im/cocotb)
+  * [Join the Gitter chat room](https://gitter.im/cocotb/Lobby)
 
 ## Installation
 
