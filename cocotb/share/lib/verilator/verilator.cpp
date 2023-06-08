@@ -111,11 +111,15 @@ int main(int argc, char** argv) {
 #endif
         // cocotb controls the clock inputs using cbAfterDelay so
         // skip ahead to the next registered callback
-        vluint64_t next_time = VerilatedVpi::cbNextDeadline();
+        const vluint64_t NO_TOP_EVENTS_PENDING = static_cast<vluint64_t>(~0ULL);
+        vluint64_t next_time_cocotb = VerilatedVpi::cbNextDeadline();
+        vluint64_t next_time_timing =
+            top->eventsPending() ? top->nextTimeSlot() : NO_TOP_EVENTS_PENDING;
+        vluint64_t next_time = std::min(next_time_cocotb, next_time_timing);
 
         // If there are no more cbAfterDelay callbacks,
         // the next deadline is max value, so end the simulation now
-        if (next_time == static_cast<vluint64_t>(~0ULL)) {
+        if (next_time == NO_TOP_EVENTS_PENDING) {
             break;
         } else {
             main_time = next_time;
