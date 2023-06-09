@@ -69,9 +69,24 @@ ifdef VERILOG_INCLUDE_DIRS
 endif
 
 # Compilation phase
+
+ifeq ($(WAVES), 1)
+    VERILOG_SOURCES += $(SIM_BUILD)/cocotb_iverilog_dump.v
+    COMPILE_ARGS += -s cocotb_iverilog_dump
+    PLUSARGS += -fst
+endif
+
 $(SIM_BUILD)/sim.vvp: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	@echo "+timescale+$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)" > $(SIM_BUILD)/cmds.f
 	$(CMD) -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(TOPMODULE_ARG) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+
+$(SIM_BUILD)/cocotb_iverilog_dump.v: | $(SIM_BUILD)
+	@echo 'module cocotb_iverilog_dump();' > $@
+	@echo 'initial begin' >> $@
+	@echo '    $$dumpfile("$(SIM_BUILD)/$(TOPLEVEL).fst");' >> $@
+	@echo '    $$dumpvars(0, $(TOPLEVEL));' >> $@
+	@echo 'end' >> $@
+	@echo 'endmodule' >> $@
 
 # Execution phase
 
