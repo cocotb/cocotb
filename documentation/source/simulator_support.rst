@@ -50,8 +50,7 @@ Waveforms
 Icarus Verilog can produce waveform traces in the FST format, the native format of GTKWave.
 FST traces are much smaller and more efficient to write than VCD, but requires the use of GTKWave.
 
-To enable FST tracing, set :make:var:`WAVES` to ``1``. This can be set on the command line,
-as shown below, or as an environment variable with an ``EXPORT`` statement in your shell.
+To enable FST tracing, set :make:var:`WAVES` to ``1``.
 
 .. code-block:: bash
 
