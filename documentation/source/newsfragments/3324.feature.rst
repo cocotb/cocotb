@@ -1,0 +1,1 @@
+Creating an FST waveform dump in Icarus Verilog can now be done by setting the :envvar:`WAVES` environment variable. Icarus-specific Verilog code is no longer required.
