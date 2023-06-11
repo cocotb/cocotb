@@ -519,6 +519,10 @@ GpiObjHdl *VhpiImpl::native_check_create(const std::string &name,
     } else {
         fq_name += "." + name;
     }
+    /* NVC returns Names instead of CaseNames; cf. nickg/nvc#723 */
+#ifdef NVC
+    std::transform(fq_name.begin(), fq_name.end(), fq_name.begin(), ::toupper);
+#endif
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 

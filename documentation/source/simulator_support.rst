@@ -394,3 +394,51 @@ Issues for this simulator
 -------------------------
 
 * `All issues with label category:simulators:cvc <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Acvc>`_
+
+NVC
+===
+
+.. warning::
+
+    NVC support in cocotb is experimental.
+    Some features of cocotb may not work correctly or at all.
+    At least NVC 1.10 is required.
+
+In order to use this simulator, set :make:var:`SIM` to ``nvc``:
+
+.. code-block:: bash
+
+    make SIM=nvc
+
+.. _sim-nvc-waveforms:
+
+Waveforms
+---------
+
+To get waveforms in FST format, set the :make:var:`SIM_ARGS` option to ``--wave=anyname.fst``, for example in a Makefile:
+
+.. code-block:: make
+
+    SIM_ARGS += --wave=anyname.fst
+
+:make:var:`SIM_ARGS` can also be used to set the waveform output to VCD by adding ``--format=vcd``.
+
+.. _sim-nvc-issues:
+
+Coverage
+--------
+
+To enable code coverage, add ``--cover`` to :make:var:`ELAB_ARGS`, for example
+in a Makefile:
+
+.. code-block:: make
+
+    ELAB_ARGS := --cover
+
+The ``covdb`` files will be placed in the :make:var:`RTL_LIBRARY` subdirectory of :make:var:`SIM_BUILD`.
+For instructions on how to produce a report, refer to `NVC's code coverage documentation <https://www.nickg.me.uk/nvc/manual.html#CODE_COVERAGE>`_.
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:nvc <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Anvc>`_

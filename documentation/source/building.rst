@@ -302,15 +302,19 @@ The following variables are makefile variables, not environment variables.
 
 .. make:var:: VHDL_SOURCES_<lib>
 
-      A list of the VHDL source files to include in the VHDL library *lib* (currently for GHDL/ModelSim/Questa/Xcelium/Incisive only).
+      A list of the VHDL source files to include in the VHDL library *lib* (currently for GHDL/ModelSim/NVC/Questa/Xcelium/Incisive only).
 
 .. make:var:: VHDL_LIB_ORDER
 
-      A space-separated list defining the order in which VHDL libraries should be compiled (needed for ModelSim/Questa/Xcelium/Incisive, GHDL determines the order automatically).
+      A space-separated list defining the order in which VHDL libraries should be compiled (needed for ModelSim/NVC/Questa/Xcelium/Incisive, GHDL determines the order automatically).
 
 .. make:var:: COMPILE_ARGS
 
-      Any arguments or flags to pass to the compile stage of the simulation.
+      Any arguments or flags to pass to the compile (analysis) stage of the simulation.
+
+.. make:var:: ELAB_ARGS
+
+      Any arguments or flags to pass to the elaboration stage of the simulation (NVC only).
 
 .. make:var:: SIM_ARGS
 

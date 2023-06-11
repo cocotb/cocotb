@@ -150,6 +150,21 @@ jobs:
         make -j $(nproc)
         sudo make install
 
+      # Install NVC
+    - name: Set up NVC (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'nvc'
+      run: |
+        sudo apt install -y --no-install-recommends build-essential automake autoconf flex check llvm-dev pkg-config zlib1g-dev libdw-dev libffi-dev libzstd-dev
+        git clone --depth=1 https://github.com/nickg/nvc.git
+        cd nvc
+        git reset --hard ${{matrix.sim-version}}
+        ./autogen.sh
+        mkdir build
+        cd build
+        ../configure
+        make -j $(nproc)
+        sudo make install
+
       # Install Verilator
     - name: Set up Verilator (Ubunutu - source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator'

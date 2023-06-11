@@ -38,6 +38,8 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     ifneq ($(filter $(SIM),ghdl questa modelsim riviera activehdl),)
         # ghdl, questa, and aldec all use SIM_ARGS with '-g' for setting generics
         SIM_ARGS += -gDATA_WIDTH=$(DATA_WIDTH) -gA_ROWS=$(A_ROWS) -gB_COLUMNS=$(B_COLUMNS) -gA_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
+    else ifeq ($(SIM),nvc)
+        ELAB_ARGS += -gDATA_WIDTH=$(DATA_WIDTH) -gA_ROWS=$(A_ROWS) -gB_COLUMNS=$(B_COLUMNS) -gA_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
     else ifneq ($(filter $(SIM),ius xcelium),)
         SIM_ARGS += -generic "matrix_multiplier:DATA_WIDTH=>$(DATA_WIDTH)" -generic "matrix_multiplier:A_ROWS=>$(A_ROWS)" -generic "matrix_multiplier:B_COLUMNS=>$(B_COLUMNS)" -generic "matrix_multiplier:A_COLUMNS_B_ROWS=>$(A_COLUMNS_B_ROWS)"
     endif
@@ -45,6 +47,9 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     ifeq ($(SIM),ghdl)
         EXTRA_ARGS += --std=08
         SIM_ARGS += --wave=wave.ghw
+    else ifeq ($(SIM),nvc)
+        EXTRA_ARGS += --std=08
+        SIM_ARGS += --wave=wave.fst
     else ifneq ($(filter $(SIM),questa modelsim riviera activehdl),)
         COMPILE_ARGS += -2008
     endif

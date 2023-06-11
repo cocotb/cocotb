@@ -178,3 +178,9 @@ Tachyon DA CVC
 
 * Extend the ``cvc64`` call with the option
   ``+interp +acc+2 +loadvpi=$(cocotb-config --lib-name-path vpi cvc):vlog_startup_routines_bootstrap``.
+
+NVC
+===
+
+* Extend the ``nvc -r`` call with the option
+  ``--load=$(cocotb-config --lib-name-path vhpi nvc)``.

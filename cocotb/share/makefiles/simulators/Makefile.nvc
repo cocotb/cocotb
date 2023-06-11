@@ -1,0 +1,130 @@
+# Copyright (C) 2023 Sean Anderson <seanga2@gmail.com>
+# Copyright (c) 2014 Potential Ventures Ltd
+# Licensed under the Revised BSD License, see LICENSE for details
+# SPDX-License-Identifier: BSD-3-Clause
+
+TOPLEVEL_LANG ?= vhdl
+
+MAKEFLAGS += -r
+
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
+ifneq ($(or $(filter-out $(TOPLEVEL_LANG),vhdl),$(VERILOG_SOURCES)),)
+
+$(COCOTB_RESULTS_FILE):
+	@echo "Skipping simulation as only VHDL is supported on simulator=$(SIM)"
+
+else
+
+CMD_BIN := nvc
+ifdef NVC_BIN_DIR
+    CMD := $(shell :; command -v $(NVC_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+# auto-detect bin dir from system path
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq ($(CMD),)
+    $(error "Unable to locate command >$(CMD_BIN)<")
+else
+    NVC_BIN_DIR := $(shell dirname $(CMD))
+    export NVC_BIN_DIR
+endif
+
+.PHONY: checklibs
+checklibs:
+# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
+	@$(foreach LIB,$(VHDL_LIB_ORDER),$(check_vhdl_sources))
+	@$(foreach SOURCES_VAR,$(filter VHDL_SOURCES_%,$(.VARIABLES)),$(check_lib_order))
+
+# NVC always creates library components as ALL CAPS, so convert the sources and
+# library names.
+
+toupper = $(shell echo $1 | tr [:lower:] [:upper:])
+
+RTL_LIBRARY ?= work
+RTL_LIBRARY := $(call toupper,$(RTL_LIBRARY))
+$(foreach LIB,$(VHDL_LIB_ORDER),$(eval \
+	vhdl_sources_$(call toupper,$(LIB)) := $(VHDL_SOURCES_$(LIB))))
+vhdl_lib_order := $(foreach LIB,$(VHDL_LIB_ORDER),$(call toupper,$(LIB)))
+
+# Set up RTL_LIBRARY/VHDL_SOURCES so we can treat all the libraries the same
+vhdl_sources_$(RTL_LIBRARY) := $(VHDL_SOURCES)
+vhdl_lib_order += $(RTL_LIBRARY)
+
+# Some helpers to manipulate lists
+tail = $(wordlist 2,$(words $1),$1)
+reverse = $(if $(call tail,$1), \
+		$(call reverse,$(call tail,$1)) \
+	) $(firstword $1)
+
+# Ensure proper ordering for the initial analysis by adding an order-only
+# dependency to each library on all the libraries listed before it in
+# VHDL_LIB_ORDER. The list of libraries ($1) is reversed because there's no
+# easy way to truncate a list in Make.
+
+define libdeps =
+$(SIM_BUILD)/$(firstword $1): | $(addprefix $(SIM_BUILD)/,$(call tail,$1))
+$(if $(call tail,$1),$(eval $(call libdeps,$(call tail,$1))))
+endef
+
+$(call libdeps,$(call reverse,$(vhdl_lib_order)))
+
+ALL_LIBS := $(addprefix $(SIM_BUILD)/,$(vhdl_lib_order))
+ALL_SOURCES := $(foreach LIB,$(vhdl_lib_order),$(vhdl_sources_$(LIB)))
+
+# Set up the include path, work library, and any extra args
+NVC = $(CMD) -L $(SIM_BUILD) --work=$(notdir $(LIB)):$(LIB) $(EXTRA_ARGS)
+
+# This recipe is only used for the first build. NVC will create the library
+# directory even on failure. In that case, we need to remove it to ensure that
+# subsequent builds will still use this recipe.
+$(ALL_LIBS): LIB = $@
+$(ALL_LIBS): | $(SIM_BUILD) checklibs
+	$(NVC) -a $(COMPILE_ARGS) $(vhdl_sources_$(notdir $(LIB))) || \
+		( ret=$$?; $(RM) -r $@ && exit $$ret )
+
+$(addsuffix /%,$(ALL_LIBS)): LIB = $(@D:/=)
+
+# We need to touch the output manually; see
+# https://github.com/nickg/nvc/issues/710 for details.
+$(foreach LIB,$(ALL_LIBS),$(eval $(LIB)/%: | $(LIB) ; \
+	$(NVC) -a $(COMPILE_ARGS) $$< && \
+	touch -c $$@))
+
+$(foreach LIB,$(ALL_LIBS),$(eval $(LIB)/%.elab $(LIB)/_%.elab.so: | $(LIB) ; \
+	$(NVC) -e $(ELAB_ARGS) $$(subst $(notdir $(LIB)).,,$$*)))
+
+# Generate dependencies for incremental recompilation. The paths for generated
+# files are absolute, but we use relative paths in this makefile, so rewrite
+# them to be relative.
+%.d: LIB = $*
+%.d: | %
+	$(NVC) --ignore-time --print-deps > $@
+	sed -i "s,$(CURDIR)/,,g" $@
+	echo $@: $$(grep : $@ | cut -d : -f 1) >> $@
+
+ifeq ($(filter clean,$(MAKECMDGOALS)),)
+include $(addsuffix .d,$(ALL_LIBS))
+endif
+
+export TESTCASE
+export TOPLEVEL := $(call toupper,$(TOPLEVEL))
+export TOPLEVEL_LANG
+
+ELAB_FILE := $(SIM_BUILD)/$(RTL_LIBRARY)/$(RTL_LIBRARY).$(TOPLEVEL).elab
+NVC_LIB := $(shell cocotb-config --lib-name-path vhpi nvc)
+# Ensure the dependencies include the elaboration targets
+$(SIM_BUILD)/$(RTL_LIBRARY).d: $(ELAB_FILE)
+
+$(COCOTB_RESULTS_FILE): LIB := $(SIM_BUILD)/$(RTL_LIBRARY)
+$(COCOTB_RESULTS_FILE): $(ELAB_FILE) $(CUSTOM_SIM_DEPS)
+	MODULE=$(MODULE) $(SIM_CMD_PREFIX) $(NVC) -r $(TOPLEVEL) --load $(NVC_LIB) \
+	       $(SIM_ARGS) $(PLUSARGS)
+	$(call check_for_results_file)
+
+endif
+
+.PHONY: clean
+clean:
+	$(RM) -r $(SIM_BUILD)
