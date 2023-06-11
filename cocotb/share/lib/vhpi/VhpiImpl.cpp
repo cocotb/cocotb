@@ -294,16 +294,6 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
     vhpiHandleT query_hdl = (base_hdl != NULL) ? base_hdl : new_hdl;
 
     vhpiIntT base_type = vhpi_get(vhpiKindP, query_hdl);
-    vhpiIntT is_static = vhpi_get(vhpiStaticnessP, query_hdl);
-
-    /* Non locally static objects are not accessible for read/write
-       so we create this as a GpiObjType
-    */
-    if (is_static == vhpiGloballyStatic) {
-        gpi_type = GPI_MODULE;
-        goto create;
-    }
-
     switch (base_type) {
         case vhpiArrayTypeDeclK: {
             vhpiIntT num_dim = vhpi_get(vhpiNumDimensionsP, query_hdl);
@@ -440,6 +430,16 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         }
 
         default: {
+            vhpiIntT is_static = vhpi_get(vhpiStaticnessP, query_hdl);
+
+            /* Non locally static objects are not accessible for read/write
+               so we create this as a GpiObjType
+            */
+            if (is_static == vhpiGloballyStatic) {
+                gpi_type = GPI_MODULE;
+                break;
+            }
+
             LOG_ERROR("VHPI: Not able to map type (%s) %u to object",
                       vhpi_get_str(vhpiKindStrP, query_hdl), type);
             new_obj = NULL;
@@ -447,7 +447,6 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         }
     }
 
-create:
     LOG_DEBUG("VHPI: Creating %s of type %d (%s)",
               vhpi_get_str(vhpiFullCaseNameP, new_hdl), gpi_type,
               vhpi_get_str(vhpiKindStrP, query_hdl));
