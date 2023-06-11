@@ -1,0 +1,1 @@
+Fix a performance regression when using Questa with FLI introduced in cocotb 1.7.0.

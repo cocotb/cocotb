@@ -1,0 +1,1 @@
+This release adds the :ref:`Python Test Runner <howto-python-runner>`, an experimental replacement for the traditional Makefile-based build and run flow.
