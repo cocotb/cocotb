@@ -34,7 +34,7 @@ RTL_LIBRARY ?= work
 
 # Split SIM_ARGS into those options that need to be passed to -e and
 # those that need to be passed to -r
-NVC_E_FILTER := -g%
+NVC_E_FILTER := -g% --cover --cover=%
 
 NVC_E_ARGS := $(filter $(NVC_E_FILTER),$(SIM_ARGS))
 NVC_R_ARGS := $(filter-out $(NVC_E_FILTER),$(SIM_ARGS))
