@@ -398,6 +398,39 @@ Issues for this simulator
 
 * `All issues with label category:simulators:nvc <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Anvc>`_
 
+Coverage
+--------
+
+To enable code coverage, add ``--cover`` to :make:var:`SIM_ARGS`, for example
+in a Makefile:
+
+.. code-block:: make
+
+    SIM_ARGS += --cover
+
+Specifying types of coverage is also supported.
+For example, to collect statement and branch coverage:
+
+.. code-block:: make
+
+    SIM_ARGS += --cover=statement,branch
+
+The ``covdb`` files will be placed in the :make:var:`RTL_LIBRARY` subdirectory of :make:var:`SIM_BUILD`.
+For instructions on how to specify coverage types and produce a report, refer to `NVC's code coverage documentation <https://www.nickg.me.uk/nvc/manual.html#CODE_COVERAGE>`_.
+
+.. _sim-nvc-waveforms:
+
+Waveforms
+---------
+
+To get waveforms in FST format, set the :make:var:`SIM_ARGS` option to ``--wave=anyname.fst``, for example in a Makefile:
+
+.. code-block:: make
+
+    SIM_ARGS += --wave=anyname.fst
+
+:make:var:`SIM_ARGS` can also be used to set the waveform output to VCD by adding ``--format=vcd``.
+
 
 .. _sim-cvc:
 
