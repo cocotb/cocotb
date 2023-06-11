@@ -32,7 +32,7 @@ with the relevant part shown here:
 .. literalinclude:: ../../examples/simple_dff/test_dff.py
    :language: python3
    :start-at: def test_simple_dff_runner():
-   :end-at: runner.test(hdl_toplevel="dff", test_module="test_dff")
+   :end-at: runner.test(hdl_toplevel="dff", test_module="test_dff,")
 
 You run this file with pytest like
 
