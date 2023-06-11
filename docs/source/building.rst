@@ -303,7 +303,7 @@ The following variables are makefile variables, not environment variables.
 
 .. make:var:: COMPILE_ARGS
 
-      Any arguments or flags to pass to the compile stage of the simulation.
+      Any arguments or flags to pass to the compile (analysis) stage of the simulation.
 
 .. make:var:: SIM_ARGS
 

@@ -170,6 +170,14 @@ GHDL
 * Extend the ``ghdl -r`` call with the option
   ``--vpi=$(cocotb-config --lib-name-path vpi ghdl)``.
 
+.. _custom-flows-nvc:
+
+NVC
+===
+
+* Extend the ``nvc -r`` call with the option
+  ``--load=$(cocotb-config --lib-name-path vhpi nvc)``.
+
 .. _custom-flows-cvc:
 
 Tachyon DA CVC
