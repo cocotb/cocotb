@@ -240,7 +240,7 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
 int VhpiObjHdl::initialise(const std::string &name,
                            const std::string &fq_name) {
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
-    if (handle != NULL) {
+    if (handle != NULL && m_type != GPI_STRUCTURE) {
         vhpiHandleT du_handle = vhpi_handle(vhpiDesignUnit, handle);
         if (du_handle != NULL) {
             vhpiHandleT pu_handle = vhpi_handle(vhpiPrimaryUnit, du_handle);
