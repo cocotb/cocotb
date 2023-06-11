@@ -49,6 +49,7 @@ const char *VhpiImpl::format_to_string(int format) {
         CASE_STR(vhpiDecStrVal);
         CASE_STR(vhpiHexStrVal);
         CASE_STR(vhpiEnumVal);
+        CASE_STR(vhpiSmallEnumVal);
         CASE_STR(vhpiIntVal);
         CASE_STR(vhpiLogicVal);
         CASE_STR(vhpiRealVal);

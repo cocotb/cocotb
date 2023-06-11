@@ -294,6 +294,7 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
     switch (m_value.format) {
         case vhpiIntVal:
         case vhpiEnumVal:
+        case vhpiSmallEnumVal:
         case vhpiRealVal:
         case vhpiCharVal: {
             break;
@@ -600,6 +601,11 @@ int VhpiSignalObjHdl::set_signal_value(int32_t value, gpi_set_action_t action) {
         case vhpiLogicVal:
         case vhpiEnumVal: {
             m_value.value.enumv = static_cast<vhpiEnumT>(value);
+            break;
+        }
+
+        case vhpiSmallEnumVal: {
+            m_value.value.smallenumv = static_cast<vhpiSmallEnumT>(value);
             break;
         }
 
