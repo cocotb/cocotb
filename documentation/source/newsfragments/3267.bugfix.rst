@@ -1,1 +1,0 @@
-Fixed :class:`RecursionError` caused by certain corner cases in the scheduler.

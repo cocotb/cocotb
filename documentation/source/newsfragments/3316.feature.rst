@@ -1,1 +1,0 @@
-Cocotb can now correctly drive Verilator when its new ``--timing`` flag is used.

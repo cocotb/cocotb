@@ -1,1 +1,0 @@
-Added support for :envvar:`VERILOG_INCLUDE_DIRS` in the Makefiles.
