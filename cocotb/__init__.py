@@ -40,6 +40,10 @@ import warnings
 from collections.abc import Coroutine
 from typing import Dict, List, Optional, Union
 
+if os.name == "nt":
+    _libs_dir = os.path.join(os.path.dirname(__file__), "libs")
+    os.add_dll_directory(_libs_dir)
+
 import cocotb.handle
 from cocotb._deprecation import deprecated
 from cocotb.log import default_config
