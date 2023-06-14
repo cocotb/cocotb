@@ -11,7 +11,7 @@ Accessing the design
 ====================
 
 When cocotb initializes it finds the toplevel instantiation in the simulator
-and creates a handle called ``dut``. Toplevel signals can be accessed using the
+and creates a *handle* called ``dut``. Toplevel signals can be accessed using the
 "dot" notation used for accessing object attributes in Python. The same mechanism
 can be used to access signals inside the design.
 
@@ -22,7 +22,28 @@ can be used to access signals inside the design.
 
     # Get a reference to a register "count"
     # in a sub-block "inst_sub_block"
+    # (the instance name of a Verilog module or VHDL entity/component)
     count = dut.inst_sub_block.count
+
+
+.. _writing_tbs_finding_elements:
+
+Finding elements in the design
+==============================
+
+To find elements of the DUT
+(for example, instances, signals, or constants)
+at a certain hierarchy level,
+you can use the :func:`dir` function on a handle.
+
+.. code-block:: python3
+
+    # Print the instances and signals (which includes the ports) of the design's toplevel
+    print(dir(dut))
+
+    # Print the instances and signals of "inst_sub_block" under the toplevel
+    # which is the instance name of a Verilog module or VHDL entity/component
+    print(dir(dut.inst_sub_block))
 
 
 .. _writing_tbs_assigning_values:
@@ -43,8 +64,10 @@ or using direct assignment while traversing the hierarchy.
     # Direct assignment through the hierarchy
     dut.input_signal.value = 12
 
-    # Assign a value to a memory deep in the hierarchy
-    dut.sub_block.memory.array[4].value = 2
+    # Assign a value to a memory deeper in the hierarchy
+    # ("inst_sub_block" and "inst_memory" are instance names of the
+    # respective Verilog modules or VHDL entity/components in the DUT)
+    dut.inst_sub_block.inst_memory.mem_array[4].value = 2
 
 
 The assignment syntax ``sig.value = new_value`` has the same semantics as :term:`HDL`:

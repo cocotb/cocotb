@@ -229,6 +229,10 @@ Other Handle Methods
 
    For vectors this is the number of bits.
 
+.. function:: dir(handle)
+
+   Return a list of the sub-handles of *handle*,
+   that is, the instances, signals, constants etc. of a certain hierarchy level in the DUT.
 
 Miscellaneous
 =============
