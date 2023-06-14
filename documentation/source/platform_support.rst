@@ -44,17 +44,19 @@ This version of Python can be used with cocotb unless noted otherwise.
   shipping with Python 3.6, pip 9, and glibc 2.17.
   `Upstream support until June 2024 <https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates>`_.
 * **Red Hat Enterprise Linux (RHEL) 8 amd64**,
-  shipping with Python 3.6, pip 9, and glibc 2.28.
+  shipping with Python 3.6 (newer versions of Python are available), pip 9, and glibc 2.28.
   `Upstream support until May 2029 <https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates>`_.
-* **Ubuntu 18.04 LTS amd64**,
-  shipping with Python 3.6, pip 9, and glibc 2.27.
-  `Upstream support until April 2023 <https://wiki.ubuntu.com/Releases>`_.
+* **Red Hat Enterprise Linux (RHEL) 9 amd64**,
+  shipping with Python 3.9 (newer versions of Python are available), pip 21, and glibc 2.34.
+  `Upstream support until May 2032 <https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates>`_.
 * **Ubuntu 20.04 LTS amd64**, shipping with Python 3.8, pip 20, glibc 2.31.
   `Upstream support until April 2025 <https://wiki.ubuntu.com/Releases>`_.
+* **Ubuntu 22.04 LTS amd64**, shipping with Python 3.10, pip 22, glibc 2.35.
+  `Upstream support until April 2027 <https://wiki.ubuntu.com/Releases>`_.
 
 .. note::
 
-  * Binary-compatible RHEL-clones, such as CentOS, are equally supported.
+  * Binary-compatible RHEL-clones, such as CentOS, AlmaLinux or Rocky Linux, are equally supported.
   * For RHEL only Red Hat-supported minor versions are supported by cocotb.
   * Compatible Ubuntu derivatives, such as Kubuntu, Xubuntu, etc., are equally supported.
 
@@ -70,6 +72,7 @@ Supported macOS Versions
 
 * **macOS 11 (Big Sur)**
 * **macOS 12 (Monterey) x86_64**
+* **macOS 13 (Ventura) x86_64**
 
 .. _platform-support-policy:
 
