@@ -34,6 +34,9 @@ dev_deps = [
     "clang-format",
 ]
 
+# Version of the cibuildwheel package used to build wheels.
+cibuildwheel_version = "2.13.1"
+
 #
 # Helpers for use within this file.
 #
@@ -364,7 +367,7 @@ def release_build_bdist(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
 
     # Pin a version to ensure reproducible builds.
-    session.run("pip", "install", "cibuildwheel==2.11.2")
+    session.run("pip", "install", f"cibuildwheel=={cibuildwheel_version}")
 
     # cibuildwheel only auto-detects the platform if it runs on a CI server.
     # Do the auto-detect manually to enable local runs.
