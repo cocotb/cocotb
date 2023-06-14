@@ -1,3 +1,5 @@
+.. _analog_model:
+
 #########################
 Models of Analog Circuits
 #########################
