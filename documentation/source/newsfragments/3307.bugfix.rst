@@ -1,1 +1,0 @@
-Fix "use after free" bug in VHPI implementation causing Riviera to fail to discover some simulation objects.

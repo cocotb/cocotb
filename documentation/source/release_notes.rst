@@ -11,6 +11,40 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+Cocotb 1.8.0 (2023-06-15)
+=========================
+
+Features
+--------
+
+- :class:`cocotb.types.LogicArray` now supports a default value construction if a ``range`` is given. (:pr:`3031`)
+- Add support for :class:`fraction.Fraction` and :class:`decimal.Decimal` to the ``period`` argument of :class:`cocotb.clock.Clock`. (:pr:`3045`)
+- This release adds the :ref:`Python Test Runner <howto-python-runner>`, an experimental replacement for the traditional Makefile-based build and run flow. (:pr:`3103`)
+- Incisive now supports compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`3261`)
+- Cocotb can now correctly drive Verilator when its new ``--timing`` flag is used. (:pr:`3316`)
+- Creating an FST waveform dump in Icarus Verilog can now be done by setting the :envvar:`WAVES` environment variable. Icarus-specific Verilog code is no longer required. (:pr:`3324`)
+
+
+Bugfixes
+--------
+
+- Fixed Verilator not writing coverage files in some cases. (:pr:`1478`)
+- The :data:`Regression Manager <cocotb.regression_manager>` now correctly handles exceptions raised in tests when the exceptions inherit from `BaseException`. (:pr:`3196`)
+- Fix a performance regression when using Questa with FLI introduced in cocotb 1.7.0. (:pr:`3229`)
+- Adds support for packed union in SystemVerilog when using Cadence Xcelium. (:pr:`3239`)
+- Fixed :class:`RecursionError` caused by certain corner cases in the scheduler. (:pr:`3267`)
+- Fixed cleanup in scheduler which caused sporadic warning messages and bugs in some corner cases. (:pr:`3270`)
+- Fix "use after free" bug in VHPI implementation causing Riviera to fail to discover some simulation objects. (:pr:`3307`)
+
+
+Changes
+-------
+
+- Removed ``level`` arg from ``_sim_event`` function in the :envvar:`PYGPI_ENTRY_POINT` interface. This function can only indicate a request to shutdown from the simulator or GPI. (:pr:`3066`)
+- Moved :class:`cocotb.task.Task` and friends to ``cocotb.task`` module to alleviate internal cyclic import dependency. Users should update imports of the :class:`~cocotb.task.Task` to import from the top-level ``cocotb`` namespace. (:pr:`3067`)
+- Added support for :envvar:`VERILOG_INCLUDE_DIRS` in the Makefiles. (:pr:`3189`)
+- Changed platform support: Added Red Hat Enterprise Linux 9 (RHEL) and compatible clones, added macOS 13 x86_64 (Ventura on Intel), removed Ubuntu 18.04 (end-of-life). Note that Python wheels compatible with Ubuntu 18.04 remain available for the time being. Even though the cocotb project does not provide pre-compiled binaries for unsupported platforms users can typically compile cocotb themselves, as done automatically when running ``pip install``.
+
 cocotb 1.7.2 (2022-11-15)
 =========================
 
