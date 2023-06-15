@@ -39,6 +39,7 @@ Changes
 - Removed ``level`` arg from ``_sim_event`` function in the :envvar:`PYGPI_ENTRY_POINT` interface. This function can only indicate a request to shutdown from the simulator or GPI. (:pr:`3066`)
 - Moved :class:`cocotb.task.Task` and friends to ``cocotb.task`` module to alleviate internal cylic import dependency. Users should update imports of the :class:`~cocotb.task.Task` to import from the top-level ``cocotb`` namespace. (:pr:`3067`)
 - Added support for :envvar:`VERILOG_INCLUDE_DIRS` in the Makefiles. (:pr:`3189`)
+- Changed platform support: Added Red Hat Enterprise Linux 9 (RHEL) and compatible clones, added macOS 13 x86_64 (Ventura on Intel), removed Ubuntu 18.04 (end-of-life). Note that Python wheels compatible with Ubuntu 18.04 remain available for the time being. Even though the cocotb project does not provide pre-compiled binaries for unsupported platforms users can typically compile cocotb themselves, as done automatically when running ``pip install``.
 
 
 cocotb 1.7.2 (2022-11-15)
