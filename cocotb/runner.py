@@ -608,7 +608,7 @@ class Questa(Simulator):
             + ["-gui" if self.gui else "-c"]
             + ["-onfinish", "stop" if self.gui else "exit"]
             + lib_opts
-            + [as_tcl_value(v) for v in self.test_args]
+            + self.test_args
             + [as_tcl_value(v) for v in self._get_parameter_options(self.parameters)]
             + [as_tcl_value(f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}")]
             + [as_tcl_value(v) for v in self.plusargs]
