@@ -226,7 +226,8 @@ class Simulator(abc.ABC):
                 If not set, run all testcases found in *test_module*.
                 Can be a comma-separated list.
             seed: A specific random seed to use.
-            test_args: Extra arguments for the simulator.
+            test_args: Extra arguments for the simulator. Mustn't include space symbols.
+                In case of space split command into list.
             plusargs: 'plusargs' to set for the simulator.
             extra_env: Extra environment variables to set.
             waves: Record signal traces.
