@@ -808,7 +808,12 @@ double VhpiSignalObjHdl::get_signal_value_real() {
 
 long VhpiSignalObjHdl::get_signal_value_long() {
     vhpiValueT value;
-    value.format = vhpiIntVal;
+    if (m_value.format == vhpiEnumVal || m_value.format == vhpiSmallEnumVal ||
+        m_value.format == vhpiCharVal) {
+        value.format = m_value.format;
+    } else {
+        value.format = vhpiIntVal;
+    }
     value.numElems = 0;
 
     if (vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &value)) {
@@ -816,7 +821,16 @@ long VhpiSignalObjHdl::get_signal_value_long() {
         LOG_ERROR("VHPI: Failed to get value of type long");
     }
 
-    return static_cast<int32_t>(value.value.intg);
+    switch (value.format) {
+        case vhpiEnumVal:
+            return value.value.enumv;
+        case vhpiSmallEnumVal:
+            return value.value.smallenumv;
+        case vhpiCharVal:
+            return value.value.ch;
+        default:
+            return static_cast<int32_t>(value.value.intg);
+    }
 }
 
 GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
