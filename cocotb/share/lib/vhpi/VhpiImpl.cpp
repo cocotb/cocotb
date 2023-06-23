@@ -148,6 +148,8 @@ bool is_const(vhpiHandleT hdl) {
         vhpiIntT vhpitype = vhpi_get(vhpiKindP, tmp);
         if (vhpiConstDeclK == vhpitype || vhpiGenericDeclK == vhpitype)
             return true;
+        else if (vhpiSelectedNameK != vhpitype && vhpiIndexedNameK != vhpitype)
+            return false;
     } while ((tmp = vhpi_handle(vhpiPrefix, tmp)) != NULL);
 
     return false;
