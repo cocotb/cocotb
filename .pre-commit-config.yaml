@@ -2,14 +2,12 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-exclude: "^cocotb/_vendor"
+exclude: "^.*/_vendor/"
 repos:
 - repo: "https://github.com/psf/black"
   rev: "22.3.0"
   hooks:
   - id: "black"
-    args:
-    - "."
 
 - repo: "https://github.com/pycqa/isort"
   rev: "5.12.0"
@@ -17,7 +15,6 @@ repos:
   - id: "isort"
     args:
     - "--profile=black"
-    - "."
 
 - repo: "https://github.com/pycqa/flake8"
   rev: "3.9.2"
