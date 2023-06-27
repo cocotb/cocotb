@@ -513,11 +513,18 @@ def release_test_nosim(session: nox.Session) -> None:
     session.log("All tests passed!")
 
 
+def create_env_for_docs_build(session: nox.Session) -> None:
+    session.run(
+        "pip", "install", "documentation/_vendor/domaintools"
+    )  # not done in requirements.txt due to the way relative paths are handled in that file (gh-pypa/pip#8765)
+    session.run("pip", "install", "-r", "documentation/requirements.txt")
+    session.run("pip", "install", "-e", ".")
+
+
 @nox.session
 def docs(session: nox.Session) -> None:
     """invoke sphinx-build to build the HTML docs"""
-    session.run("pip", "install", "-r", "documentation/requirements.txt")
-    session.run("pip", "install", "-e", ".")
+    create_env_for_docs_build(session)
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build", "./documentation/source", str(outdir), "--color", "-b", "html"
@@ -529,8 +536,7 @@ def docs(session: nox.Session) -> None:
 @nox.session
 def docs_linkcheck(session: nox.Session) -> None:
     """invoke sphinx-build to linkcheck the docs"""
-    session.run("pip", "install", "-r", "documentation/requirements.txt")
-    session.run("pip", "install", "-e", ".")
+    create_env_for_docs_build(session)
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -545,8 +551,7 @@ def docs_linkcheck(session: nox.Session) -> None:
 @nox.session
 def docs_spelling(session: nox.Session) -> None:
     """invoke sphinx-build to spellcheck the docs"""
-    session.run("pip", "install", "-r", "documentation/requirements.txt")
-    session.run("pip", "install", "-e", ".")
+    create_env_for_docs_build(session)
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -563,6 +568,7 @@ def dev(session: nox.Session) -> None:
     """Build a development environment and optionally run a command given as extra args"""
 
     configure_env_for_dev_build(session)
+    create_env_for_docs_build(session)
 
     session.run(
         "pip", "install", *test_deps, *dev_deps, *coverage_deps, *coverage_report_deps

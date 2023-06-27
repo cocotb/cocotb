@@ -6,4 +6,5 @@ dependencies:
   - pip
   # Packages installed from PyPI
   - pip:
+      - ./_vendor/domaintools
       - -r requirements.txt
