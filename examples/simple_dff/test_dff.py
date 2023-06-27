@@ -41,7 +41,6 @@ async def dff_simple_test(dut):
 
 
 def test_simple_dff_runner():
-
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     sim = os.getenv("SIM", "icarus")
 

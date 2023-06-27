@@ -493,7 +493,6 @@ class RegressionManager:
         wall_time_s: float,
         sim_time_ns: float,
     ) -> None:
-
         ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
         try:
             lineno = inspect.getsourcelines(test._func)[1]
@@ -576,7 +575,6 @@ class RegressionManager:
         cocotb.scheduler._add_test(self._test_task)
 
     def _log_test_summary(self) -> None:
-
         real_time = time.time() - self.start_time
         sim_time_ns = get_sim_time("ns")
         ratio_time = self._safe_divide(sim_time_ns, real_time)
@@ -858,7 +856,6 @@ class TestFactory:
         for index, testoptions in enumerate(
             dict(zip(d, v)) for v in product(*d.values())
         ):
-
             name = "%s%s%s_%03d" % (prefix, self.name, postfix, index + 1)
             doc = "Automatically generated test\n\n"
 

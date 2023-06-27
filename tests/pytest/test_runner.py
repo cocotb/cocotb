@@ -20,7 +20,6 @@ sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 
 @cocotb.test()
 async def cocotb_runner_test(dut):
-
     await Timer(1, "ns")
 
     WIDTH_IN = int(os.environ.get("WIDTH_IN", "8"))
@@ -35,7 +34,6 @@ async def cocotb_runner_test(dut):
 )
 @pytest.mark.parametrize("clean_build", [False, True])
 def test_runner(parameters, clean_build):
-
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 

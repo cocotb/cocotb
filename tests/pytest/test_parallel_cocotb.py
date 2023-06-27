@@ -28,7 +28,6 @@ sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 
 @pytest.mark.compile
 def test_cocotb_parallel_compile():
-
     runner = get_runner(sim)
 
     runner.build(
@@ -43,7 +42,6 @@ def test_cocotb_parallel_compile():
 
 @pytest.mark.parametrize("seed", list(range(4)))
 def test_cocotb_parallel(seed):
-
     runner = get_runner(sim)
 
     runner.test(

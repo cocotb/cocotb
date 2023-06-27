@@ -303,7 +303,6 @@ async def test_time_units_eq_None(dut):
 
 @cocotb.test()
 async def test_timer_round_mode(_):
-
     # test invalid round_mode specifier
     with pytest.raises(ValueError, match="^Invalid round_mode specifier: notvalid"):
         Timer(1, "step", round_mode="notvalid")

@@ -237,7 +237,7 @@ class build_ext(_build_ext):
 
                 # Setuptools defaults to activate automatic manifest generation for msvc,
                 # disable it here as we manually generate it to also support mingw on windows
-                for (k, ldflags) in self.compiler._ldflags.items():
+                for k, ldflags in self.compiler._ldflags.items():
                     self.compiler._ldflags[k] = [
                         x for x in ldflags if not x.startswith("/MANIFEST")
                     ] + ["/MANIFEST:NO"]
@@ -667,7 +667,6 @@ def _get_vhpi_lib_ext(
 
 
 def get_ext():
-
     cfg_vars = distutils.sysconfig.get_config_vars()
 
     if sys.platform == "darwin":

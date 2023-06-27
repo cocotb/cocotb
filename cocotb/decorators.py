@@ -240,7 +240,6 @@ class test(coroutine, metaclass=_decorator_helper):
         skip=False,
         stage=0,
     ):
-
         if timeout_unit is None:
             warnings.warn(
                 'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.',

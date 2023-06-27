@@ -60,11 +60,9 @@ def shlex_join(split_command):
 
 
 class Simulator(abc.ABC):
-
     supported_gpi_interfaces: Dict[str, List[str]] = {}
 
     def __init__(self) -> None:
-
         self._simulator_in_path()
 
         self.env: Dict[str, str] = {}
@@ -352,7 +350,6 @@ class Simulator(abc.ABC):
         raise NotImplementedError()
 
     def _execute(self, cmds: Sequence[Command], cwd: PathLike) -> None:
-
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
         for cmd in cmds:
@@ -484,7 +481,6 @@ class Icarus(Simulator):
         return self.build_dir / "sim.vvp"
 
     def _test_command(self) -> List[Command]:
-
         return [
             [
                 "vvp",
@@ -499,7 +495,6 @@ class Icarus(Simulator):
         ]
 
     def _build_command(self) -> List[Command]:
-
         if self.vhdl_sources:
             raise ValueError(
                 f"{type(self).__qualname__}: Simulator does not support VHDL"
@@ -507,7 +502,6 @@ class Icarus(Simulator):
 
         cmds = []
         if outdated(self.sim_file, self.verilog_sources) or self.always:
-
             cmds = [
                 ["iverilog", "-o", str(self.sim_file), "-D", "COCOTB_SIM=1", "-g2012"]
                 + self._get_define_options(self.defines)
@@ -547,7 +541,6 @@ class Questa(Simulator):
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[Command]:
-
         cmds = []
 
         if self.vhdl_sources:
@@ -576,7 +569,6 @@ class Questa(Simulator):
         return cmds
 
     def _test_command(self) -> List[Command]:
-
         cmds = []
 
         do_script = ""
@@ -653,7 +645,6 @@ class Ghdl(Simulator):
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[Command]:
-
         if self.verilog_sources:
             raise ValueError(
                 f"{type(self).__qualname__}: Simulator does not support Verilog"
@@ -677,7 +668,6 @@ class Ghdl(Simulator):
         return cmds
 
     def _test_command(self) -> List[Command]:
-
         cmds = [
             ["ghdl", "-r"]
             + [f"--work={self.hdl_toplevel_library}"]
@@ -715,13 +705,11 @@ class Riviera(Simulator):
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[Command]:
-
         do_script = "\nonerror {\n quit -code 1 \n} \n"
 
         out_file = self.build_dir / self.hdl_library / f"{self.hdl_library}.lib"
 
         if outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.always:
-
             do_script += "alib {RTL_LIBRARY} \n".format(
                 RTL_LIBRARY=as_tcl_value(self.hdl_library)
             )
@@ -757,7 +745,6 @@ class Riviera(Simulator):
         return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
 
     def _test_command(self) -> List[Command]:
-
         do_script = "\nonerror {\n quit -code 1 \n} \n"
 
         if self.hdl_toplevel_lang == "vhdl":
@@ -832,7 +819,6 @@ class Verilator(Simulator):
         return [f"-G{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[Command]:
-
         if self.vhdl_sources:
             raise ValueError(
                 f"{type(self).__qualname__}: Simulator does not support VHDL"

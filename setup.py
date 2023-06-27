@@ -68,7 +68,7 @@ def read_file(fname):
 
 def package_files(directory):
     paths = []
-    for (fpath, directories, filenames) in walk(directory):
+    for fpath, directories, filenames in walk(directory):
         for filename in filenames:
             paths.append(path.join("..", fpath, filename))
     return paths

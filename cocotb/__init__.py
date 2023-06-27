@@ -217,7 +217,6 @@ def _initialise_testbench(argv_):  # pragma: no cover
     :envvar:`MODULE` and :envvar:`TESTCASE`.
     """
     with _rlock:
-
         if "COCOTB_LIBRARY_COVERAGE" in os.environ:
             import coverage
 
@@ -335,12 +334,10 @@ def _sim_event(message):
 
 @deprecated("This function is now private")
 def process_plusargs() -> None:
-
     _process_plusargs()
 
 
 def _process_plusargs() -> None:
-
     global plusargs
 
     plusargs = {}

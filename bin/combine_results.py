@@ -71,7 +71,6 @@ def get_parser():
 
 
 def main():
-
     parser = get_parser()
     args = parser.parse_args()
     rc = 0

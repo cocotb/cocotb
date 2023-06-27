@@ -181,6 +181,7 @@ async def test_stack_overflow(dut):
     Test against stack overflows when starting many coroutines that terminate
     before passing control to the simulator.
     """
+
     # gh-637
     async def null_coroutine():
         await NullTrigger()
@@ -197,6 +198,7 @@ async def test_stack_overflow_pending_coros(dut):
     Test against stack overflow when queueing many pending coroutines
     before yielding to scheduler.
     """
+
     # gh-2489
     async def simple_coroutine():
         await Timer(10, "step")
@@ -679,7 +681,6 @@ async def test_start_scheduling(dut):
 
 @cocotb.test()
 async def test_create_task(_):
-
     # proper construction from coroutines
     async def coro():
         pass
