@@ -27,7 +27,6 @@ async def monitor(dut):
     else ()
 )
 async def issue_120_scheduling(dut):
-
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
     cocotb.start_soon(monitor(dut))
     await RisingEdge(dut.clk)

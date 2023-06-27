@@ -9,7 +9,6 @@ from cocotb.runner import get_runner
 
 
 def build_and_run_matrix_multiplier(benchmark, sim):
-
     hdl_toplevel_lang = "verilog"
     extra_args = []
 

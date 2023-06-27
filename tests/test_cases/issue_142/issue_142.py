@@ -31,7 +31,6 @@ async def issue_142_overflow_error(dut):
         0x7FFFFFFFFFFF,
         BinaryValue(0x7FFFFFFFFFFFFF, len(dut.stream_in_data_wide), bigEndian=False),
     ]:
-
         dut.stream_in_data_wide.value = value
         await RisingEdge(dut.clk)
         _compare(value)

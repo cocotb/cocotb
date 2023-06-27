@@ -20,7 +20,6 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 
 @cocotb.test()
 async def test_bad_attr(dut):
-
     with pytest.raises(AttributeError):
         dut.fake_signal
 

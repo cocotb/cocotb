@@ -30,7 +30,6 @@ class Queue(Generic[T]):
     """
 
     def __init__(self, maxsize: int = 0):
-
         self._maxsize = maxsize
 
         self._finished = Event()

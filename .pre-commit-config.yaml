@@ -5,7 +5,7 @@
 exclude: "^.*/_vendor/"
 repos:
 - repo: "https://github.com/psf/black"
-  rev: "22.3.0"
+  rev: "23.3.0"
   hooks:
   - id: "black"
 
@@ -17,18 +17,18 @@ repos:
     - "--profile=black"
 
 - repo: "https://github.com/pycqa/flake8"
-  rev: "3.9.2"
+  rev: "6.0.0"
   hooks:
   - id: "flake8"
 
 - repo: "https://github.com/pre-commit/mirrors-clang-format"
-  rev: "v13.0.0"
+  rev: "v16.0.6"
   hooks:
   - id: "clang-format"
     exclude: "^cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
 
 - repo: "https://github.com/pre-commit/pre-commit-hooks"
-  rev: "v4.1.0"
+  rev: "v4.4.0"
   hooks:
   - id: "trailing-whitespace"
   - id: "mixed-line-ending"

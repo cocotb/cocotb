@@ -94,7 +94,6 @@ async def mixed_language_functional_test(dut):
     previous_indata = 0
     # transmit some packets
     for _ in range(1, 5):
-
         for i in range(1, 11):
             await RisingEdge(dut.clk)
             previous_indata = dut.stream_in_data.value

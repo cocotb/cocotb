@@ -39,7 +39,6 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
     _id_count = 0  # used by the scheduler for debug
 
     def __init__(self, inst):
-
         if isinstance(inst, collections.abc.Coroutine):
             self._natively_awaitable = True
         elif inspect.isgenerator(inst):

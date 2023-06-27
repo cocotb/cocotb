@@ -29,7 +29,6 @@ sys.path.insert(0, str(src_path))
     reason="Skipping test since only GHDL, Questa/ModelSim, Riviera and Xcelium are supported",
 )
 def test_toplevel_library():
-
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
     gpi_interfaces = [vhdl_gpi_interfaces]
 

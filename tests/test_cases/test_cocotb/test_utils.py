@@ -9,7 +9,6 @@ import cocotb.utils as utils
 
 @cocotb.test()
 async def test_get_sim_steps(_):
-
     # test invalid round_mode specifier
     with pytest.raises(ValueError, match="^Invalid round_mode specifier: notvalid"):
         utils.get_sim_steps(1, "step", round_mode="notvalid")
