@@ -111,10 +111,6 @@ else
     $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
-# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
-$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
-$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
-
 ifdef SCRIPT_FILE
     VSIM_ARGS += -do $(SCRIPT_FILE)
 endif
