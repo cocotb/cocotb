@@ -24,6 +24,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import logging
+import os
 
 import cocotb
 from cocotb.triggers import First
@@ -35,9 +36,17 @@ async def recursive_discovery(dut):
     Recursively discover every single object in the design
     """
     if cocotb.SIM_NAME.lower().startswith(
-        ("modelsim", "ncsim", "xmsim", "chronologic simulation vcs")
+        ("ncsim", "xmsim", "chronologic simulation vcs")
+    ) or (
+        (
+            cocotb.SIM_NAME.lower().startswith("modelsim")
+            and os.environ["COCOTB__QUESTA_MODE"] == "compat"
+        )
     ):
         # vpiAlways does not show up
+        #
+        # For Questa: the QIS/Qrun flow discovers vpiAlways, the compat flow
+        # doesn't.
         pass_total = 259
     else:
         pass_total = 265
