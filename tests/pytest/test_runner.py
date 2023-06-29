@@ -33,7 +33,8 @@ async def cocotb_runner_test(dut):
 @pytest.mark.parametrize(
     "parameters", [{"WIDTH_IN": "8", "WIDTH_OUT": "16"}, {"WIDTH_IN": "16"}]
 )
-def test_runner(parameters):
+@pytest.mark.parametrize("clean_build", [False, True])
+def test_runner(parameters, clean_build):
 
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
@@ -54,6 +55,15 @@ def test_runner(parameters):
     if sim == "xcelium":
         compile_args = ["-v93"]
 
+    # Pre-make build directory for test file
+    build_dir = (
+        sim_build
+        + "/test_runner/"
+        + "_".join(("{}={}".format(*i) for i in parameters.items()))
+    )
+    os.makedirs(build_dir, exist_ok=True)
+    open(build_dir + "/clean_test_file", "a").close()
+
     runner.build(
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,
@@ -62,9 +72,8 @@ def test_runner(parameters):
         defines={"DEFINE": 4},
         includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
         build_args=compile_args,
-        build_dir=sim_build
-        + "/test_runner/"
-        + "_".join(("{}={}".format(*i) for i in parameters.items())),
+        clean=clean_build,
+        build_dir=build_dir,
     )
 
     runner.test(
@@ -73,3 +82,10 @@ def test_runner(parameters):
         gpi_interfaces=gpi_interfaces,
         extra_env=parameters,
     )
+
+    # In case clean_build runner.build() must purge test directory completely,
+    # with the test file inside
+    if clean_build:
+        assert not os.path.isfile(build_dir + "/clean_test_file")
+    else:
+        assert os.path.isfile(build_dir + "/clean_test_file")
