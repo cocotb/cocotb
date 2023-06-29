@@ -151,6 +151,7 @@ class Simulator(abc.ABC):
         hdl_toplevel: Optional[str] = None,
         always: bool = False,
         build_dir: PathLike = "sim_build",
+        clean: bool = False,
         verbose: bool = False,
     ) -> None:
         """Build the HDL sources.
@@ -166,10 +167,14 @@ class Simulator(abc.ABC):
             hdl_toplevel: The name of the HDL toplevel module.
             always: Always run the build step.
             build_dir: Directory to run the build step in.
+            clean: Delete build_dir before building
             verbose: Enable verbose messages.
         """
 
+        self.clean: bool = clean
         self.build_dir = get_abs_path(build_dir)
+        if self.clean:
+            self.rm_build_folder(self.build_dir)
         os.makedirs(self.build_dir, exist_ok=True)
 
         # note: to avoid mutating argument defaults, we ensure that no value
@@ -362,6 +367,11 @@ class Simulator(abc.ABC):
                 raise SystemExit(
                     f"Process {process.args[0]!r} terminated with error {process.returncode}"
                 )
+
+    def rm_build_folder(self, build_dir: Path):
+        if os.path.isdir(build_dir):
+            print("Removing:", build_dir)
+            shutil.rmtree(build_dir, ignore_errors=True)
 
 
 def get_results(results_xml_file: Path) -> Tuple[int, int]:
