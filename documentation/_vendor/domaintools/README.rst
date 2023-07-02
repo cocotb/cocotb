@@ -93,4 +93,4 @@ New BSD License.
 Author
 ------
 
-`Kay-Uwe (Kiwi) Lorenz <kiwi@franka.dyndns.org>`_ (http://quelltexter.org)
+`Kay-Uwe (Kiwi) Lorenz <tabkiwi@gmail.com>`_
