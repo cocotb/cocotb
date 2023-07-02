@@ -106,7 +106,7 @@ class CustomDomain(Domain):
     def clear_doc(self, docname):
       if 'objects' in self.data:
        
-        for key, (fn, _) in self.data['objects'].items():
+        for key, (fn, _) in list(self.data['objects'].items()):
             if fn == docname:
                 del self.data['objects'][key]
 
@@ -125,7 +125,7 @@ class CustomDomain(Domain):
                             labelid, contnode)
 
     def get_objects(self):
-        for (type, name), info in self.data['objects'].items():
+        for (type, name), info in list(self.data['objects'].items()):
             yield (name, name, type, info[0], info[1],
                    self.object_types[type].attrs['searchprio'])
 
