@@ -75,7 +75,7 @@ class GenericObject(ObjectDescription):
                 indextype = 'single'
                 indexentry = self.indextemplate % (name,)
             self.indexnode['entries'].append((indextype, indexentry,
-                                              targetname, ''))
+                                              targetname, '', None))
         self.env.domaindata[self.domain]['objects'][self.objtype, name] = \
             self.env.docname, targetname
 
