@@ -216,6 +216,7 @@ class Simulator(abc.ABC):
         build_dir: Optional[PathLike] = None,
         test_dir: Optional[PathLike] = None,
         results_xml: str = "results.xml",
+        pre_cmd: str = None,
         verbose: bool = False,
     ) -> Path:
         """Run the tests.
@@ -241,6 +242,7 @@ class Simulator(abc.ABC):
             test_dir: Directory to run the tests in.
             results_xml: Name of xUnit XML file to store test results in.
                 When running with pytest, the testcase name is prefixed to this name.
+            pre_cmd: Command to run before testing.
             verbose: Enable verbose messages.
 
         Returns:
@@ -283,6 +285,11 @@ class Simulator(abc.ABC):
             self.gpi_interfaces = []
             for gpi_if in self.supported_gpi_interfaces.values():
                 self.gpi_interfaces.append(gpi_if[0])
+
+        if pre_cmd:
+            self.pre_cmd = pre_cmd
+        else:
+            self.pre_cmd = []
 
         self.test_args = list(test_args)
         self.plusargs = list(plusargs)
@@ -484,6 +491,8 @@ class Icarus(Simulator):
         return self.build_dir / "sim.vvp"
 
     def _test_command(self) -> List[Command]:
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Icarus Verilog.")
 
         return [
             [
@@ -579,6 +588,9 @@ class Questa(Simulator):
 
         cmds = []
 
+        if self.pre_cmd:
+            self.pre_cmd = ["-do"] + self.pre_cmd
+
         do_script = ""
         if self.waves:
             do_script += "log -recursive /*;"
@@ -622,6 +634,7 @@ class Questa(Simulator):
             + [as_tcl_value(v) for v in self._get_parameter_options(self.parameters)]
             + [as_tcl_value(f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}")]
             + [as_tcl_value(v) for v in self.plusargs]
+            + self.pre_cmd
             + ["-do", do_script]
         )
 
@@ -677,6 +690,8 @@ class Ghdl(Simulator):
         return cmds
 
     def _test_command(self) -> List[Command]:
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for GHDL.")
 
         cmds = [
             ["ghdl", "-r"]
@@ -757,6 +772,8 @@ class Riviera(Simulator):
         return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
 
     def _test_command(self) -> List[Command]:
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Riviera.")
 
         do_script = "\nonerror {\n quit -code 1 \n} \n"
 
@@ -890,6 +907,9 @@ class Verilator(Simulator):
         return cmds
 
     def _test_command(self) -> List[Command]:
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Verilator.")
+
         out_file = self.build_dir / self.sim_hdl_toplevel
         return [[str(out_file)] + self.plusargs]
 
@@ -967,6 +987,9 @@ class Xcelium(Simulator):
 
     def _test_command(self) -> List[Command]:
         self.env["CDS_AUTO_64BIT"] = "all"
+
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Xcelium.")
 
         verbosity_opts = []
         if self.verbose:

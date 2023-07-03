@@ -33,9 +33,9 @@ async def cocotb_runner_test(dut):
 @pytest.mark.parametrize(
     "parameters", [{"WIDTH_IN": "8", "WIDTH_OUT": "16"}, {"WIDTH_IN": "16"}]
 )
+@pytest.mark.parametrize("pre_cmd", [["touch pre_cmd_test_file;"], []])
 @pytest.mark.parametrize("clean_build", [False, True])
-def test_runner(parameters, clean_build):
-
+def test_runner(parameters, pre_cmd, clean_build):
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
@@ -55,11 +55,14 @@ def test_runner(parameters, clean_build):
     if sim == "xcelium":
         compile_args = ["-v93"]
 
-    # Pre-make build directory for test file
+    # Pre-make build directory and test file for clean build assertions
     build_dir = (
         sim_build
         + "/test_runner/"
         + "_".join(("{}={}".format(*i) for i in parameters.items()))
+        + "_pre_cmd"
+        + str(len(pre_cmd))
+        + ("_clean" if clean_build else "")
     )
     os.makedirs(build_dir, exist_ok=True)
     open(build_dir + "/clean_test_file", "a").close()
@@ -79,9 +82,17 @@ def test_runner(parameters, clean_build):
     runner.test(
         hdl_toplevel="runner",
         test_module="test_runner",
+        pre_cmd=pre_cmd,
         gpi_interfaces=gpi_interfaces,
         extra_env=parameters,
     )
+
+    # Assert pre_cmd result. Questa only, at the moment
+    if sim == "questa":
+        if pre_cmd:
+            assert os.path.isfile(build_dir + "/pre_cmd_test_file")
+        else:
+            assert not os.path.isfile(build_dir + "/pre_cmd_test_file")
 
     # In case clean_build runner.build() must purge test directory completely,
     # with the test file inside
