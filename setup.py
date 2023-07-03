@@ -114,6 +114,7 @@ setup(
     entry_points={
         "console_scripts": [
             "cocotb-config=cocotb.config:main",
+            "cocotb-clean=cocotb.clean:main",
         ]
     },
     platforms="any",

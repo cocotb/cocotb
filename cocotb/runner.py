@@ -25,6 +25,7 @@ from xml.etree import cElementTree as ET
 
 import find_libpython
 
+import cocotb.clean
 import cocotb.config
 
 PathLike = Union["os.PathLike[str]", str]
@@ -174,7 +175,7 @@ class Simulator(abc.ABC):
         self.clean: bool = clean
         self.build_dir = get_abs_path(build_dir)
         if self.clean:
-            self.rm_build_folder(self.build_dir)
+            cocotb.clean.rm_build_folder(self.build_dir)
         os.makedirs(self.build_dir, exist_ok=True)
 
         # note: to avoid mutating argument defaults, we ensure that no value
@@ -367,11 +368,6 @@ class Simulator(abc.ABC):
                 raise SystemExit(
                     f"Process {process.args[0]!r} terminated with error {process.returncode}"
                 )
-
-    def rm_build_folder(self, build_dir: Path):
-        if os.path.isdir(build_dir):
-            print("Removing:", build_dir)
-            shutil.rmtree(build_dir, ignore_errors=True)
 
 
 def get_results(results_xml_file: Path) -> Tuple[int, int]:
