@@ -10,6 +10,10 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 cocotb 1.8.1 (unreleased)
 =========================
 
+Bugfixes
+--------
+
+- Fix incorrect cleanup of pending Tasks (queued by :func:`cocotb.start_soon` but not started yet) when a test ends. (:issue:`3354`)
 
 cocotb 1.8.0 (2023-06-15)
 =========================

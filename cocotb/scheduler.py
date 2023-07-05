@@ -1088,8 +1088,11 @@ class Scheduler:
             trigger.unprime()
         assert not self._pending_triggers
 
-        # kill any queued coroutines
-        for task in self._pending_coros:
+        # Kill any queued coroutines.
+        # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_coros.
+        # If that happens a for loop will stop early and then the assert will fail.
+        while self._pending_coros:
+            task = self._pending_coros.pop(0)
             task.kill()
         assert not self._pending_coros
 
