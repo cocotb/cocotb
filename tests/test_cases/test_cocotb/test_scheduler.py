@@ -613,6 +613,18 @@ async def test_previous_start_soon_not_scheduled(_):
 
 
 @cocotb.test()
+async def test_test_end_with_multiple_pending_tasks(_):
+    """Test ending a test with multiple tasks queued by start_soon."""
+
+    async def coro():
+        return 0
+
+    # gh-3354
+    cocotb.start_soon(coro())
+    cocotb.start_soon(coro())
+
+
+@cocotb.test()
 async def test_start(_):
     async def coro():
         await Timer(1, "step")
