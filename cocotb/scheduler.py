@@ -1092,7 +1092,8 @@ class Scheduler:
         # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_coros.
         # If that happens a for loop will stop early and then the assert will fail.
         while self._pending_coros:
-            task = self._pending_coros.pop(0)
+            # Get first task but leave it in the list so that _unschedule() will correctly close the unstarted coroutine object.
+            task = self._pending_coros[0]
             task.kill()
         assert not self._pending_coros
 
