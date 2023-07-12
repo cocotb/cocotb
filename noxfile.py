@@ -534,6 +534,28 @@ def docs(session: nox.Session) -> None:
 
 
 @nox.session
+def docs_preview(session: nox.Session) -> None:
+    """Build a live preview of the documentation"""
+    create_env_for_docs_build(session)
+    session.run("pip", "install", "sphinx-autobuild")
+    outdir = session.cache_dir / "docs_out"
+    session.run(
+        "sphinx-autobuild",
+        # Ignore directories which cause a rebuild loop.
+        "--ignore",
+        "*/source/master-notes.rst",
+        "--ignore",
+        "*/doxygen/*",
+        # Also watch the cocotb source directory to rebuild the API docs on
+        # changes to cocotb code.
+        "--watch",
+        "cocotb",
+        "./documentation/source",
+        str(outdir),
+    )
+
+
+@nox.session
 def docs_linkcheck(session: nox.Session) -> None:
     """invoke sphinx-build to linkcheck the docs"""
     create_env_for_docs_build(session)
