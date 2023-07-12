@@ -1,7 +1,6 @@
 # Python dependencies to build the documentation
 
-# != 3.5.0: https://github.com/sphinx-doc/sphinx/issues/8880
-Sphinx ~= 4.0
+Sphinx ~= 6.0
 breathe
 sphinx-rtd-theme
 sphinxcontrib-svg2pdfconverter[CairoSVG]
