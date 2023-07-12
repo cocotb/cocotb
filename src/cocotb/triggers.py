@@ -385,7 +385,11 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 
 
 class RisingEdge(_EdgeBase):
-    """Fires on the rising edge of *signal*, on a transition from ``0`` to ``1``."""
+    """Fires on the rising edge of *signal*, on a transition from ``0`` to ``1``.
+
+    *signal* may have any width, but only transitions from ``0`` to ``1`` are
+    considered a rising edge.
+    """
 
     __slots__ = ()
     _edge_type = 1
@@ -398,7 +402,11 @@ class RisingEdge(_EdgeBase):
 
 
 class FallingEdge(_EdgeBase):
-    """Fires on the falling edge of *signal*, on a transition from ``1`` to ``0``."""
+    """Fires on the falling edge of *signal*, on a transition from ``1`` to ``0``.
+
+    *signal* may have any width, but only transitions from ``1`` to ``0`` are
+    considered a falling edge.
+    """
 
     __slots__ = ()
     _edge_type = 2
