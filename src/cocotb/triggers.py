@@ -418,8 +418,14 @@ class FallingEdge(_EdgeBase):
         return signal
 
 
-class Edge(_EdgeBase):
-    """Fires on any value change of *signal*."""
+class ValueChange(_EdgeBase):
+    """
+    Fires on any value change of *signal*.
+
+    *signal* may have any width.
+
+    .. versionadded:: 1.9.0
+    """
 
     __slots__ = ()
     _edge_type = 3
@@ -429,6 +435,43 @@ class Edge(_EdgeBase):
         if not isinstance(signal, ModifiableObject):
             raise TypeError("")
         return signal
+
+
+class Edge(ValueChange):
+    """Deprecated alias of :class:`cocotb.triggers.ValueChange`.
+
+    .. note::
+
+        ``Edge()`` in cocotb and ``edge`` in SystemVerilog do different things!
+
+        Cocotb's ``Edge()`` trigger considers changes to *all* bits the signal.
+        The SystemVerilog ``edge`` keyword only considers the least significant
+        bit, or in other words, ``edge`` in SystemVerilog is equivalent to
+        ()``posedge`` or ``negedge``).
+
+        Hence, the SystemVerilog statement ``@(edge my_multibit_signal)`` is
+        equivalent to
+        ``await First(RisingEdge(my_multibit_signal), FallingEdge(my_multibit_signal))``
+        in cocotb.
+
+    .. deprecated:: 2.0
+        Use ``ValueChange()`` instead of ``Edge()``, since the new name better
+        reflects what this trigger does.
+    """
+
+    def __init__(self, signal):
+        # The deprecation warning in here is best-effort: If the same signal
+        # was used previously with a different _EdgeBase subclass __init__()
+        # won't be called again and no deprecation warning is shown (triggers
+        # are singletons, and all _EdgeBase triggers share the same cache).
+        warnings.warn(
+            "Event() is a deprecated alias for ValueChange(). Please update "
+            "your code to use the new ValueChange() name.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        super().__init__(signal)
 
 
 class _Event(PythonTrigger):

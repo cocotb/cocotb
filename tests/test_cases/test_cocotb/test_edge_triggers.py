@@ -23,6 +23,7 @@ from cocotb.triggers import (
     ReadOnly,
     RisingEdge,
     Timer,
+    ValueChange,
     with_timeout,
 )
 
@@ -270,6 +271,45 @@ async def test_edge_on_vector(dut):
         nonlocal edge_cnt
         while True:
             await Edge(dut.stream_out_data_registered)
+            if cocotb.SIM_NAME.lower().startswith("modelsim"):
+                await ReadOnly()  # not needed for other simulators
+            edge_cnt = edge_cnt + 1
+
+    # Reset the design and let it settle.
+    dut.stream_in_data.value = 0
+    await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+    assert dut.stream_out_data_registered.value.integer == 0
+
+    cocotb.start_soon(wait_edge())
+
+    for val in range(1, 2 ** len(dut.stream_in_data) - 1):
+        # produce an edge by setting a value != 0:
+        dut.stream_in_data.value = val
+        await RisingEdge(dut.clk)
+        # set back to all-0:
+        dut.stream_in_data.value = 0
+        await RisingEdge(dut.clk)
+
+    # Ensure that the last transition has made it to the registered output.
+    await RisingEdge(dut.clk)
+    assert dut.stream_out_data_registered.value.integer == 0
+
+    assert edge_cnt == 2 * ((2 ** len(dut.stream_in_data) - 1) - 1)
+
+
+@cocotb.test()
+async def test_valuechange_on_vector(dut):
+    """Test that ValueChange() triggers on any change in a vector"""
+
+    cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
+
+    edge_cnt = 0
+
+    async def wait_edge():
+        nonlocal edge_cnt
+        while True:
+            await ValueChange(dut.stream_out_data_registered)
             if cocotb.SIM_NAME.lower().startswith("modelsim"):
                 await ReadOnly()  # not needed for other simulators
             edge_cnt = edge_cnt + 1
