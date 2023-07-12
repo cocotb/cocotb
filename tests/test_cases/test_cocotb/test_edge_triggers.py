@@ -274,9 +274,11 @@ async def test_edge_on_vector(dut):
                 await ReadOnly()  # not needed for other simulators
             edge_cnt = edge_cnt + 1
 
+    # Reset the design and let it settle.
     dut.stream_in_data.value = 0
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
+    assert dut.stream_out_data_registered.value.integer == 0
 
     cocotb.start_soon(wait_edge())
 
@@ -288,9 +290,11 @@ async def test_edge_on_vector(dut):
         dut.stream_in_data.value = 0
         await RisingEdge(dut.clk)
 
-    expected_count = 2 * ((2 ** len(dut.stream_in_data) - 1) - 1) - 1
+    # Ensure that the last transition has made it to the registered output.
+    await RisingEdge(dut.clk)
+    assert dut.stream_out_data_registered.value.integer == 0
 
-    assert edge_cnt == expected_count
+    assert edge_cnt == 2 * ((2 ** len(dut.stream_in_data) - 1) - 1)
 
 
 @cocotb.test()
