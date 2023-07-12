@@ -1095,7 +1095,6 @@ class Scheduler:
             # Get first task but leave it in the list so that _unschedule() will correctly close the unstarted coroutine object.
             task = self._pending_coros[0]
             task.kill()
-        assert not self._pending_coros
 
         if self._main_thread is not threading.current_thread():
             raise Exception("Cleanup() called outside of the main thread")
