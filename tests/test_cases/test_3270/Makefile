@@ -12,7 +12,7 @@ sim:
 else
 
 MODULE := test_3270
-VERILOG_SOURCES := test_3270.v
+VERILOG_SOURCES := test_3270.sv
 TOPLEVEL := trigger_counter
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
