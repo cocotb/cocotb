@@ -159,11 +159,14 @@ async def test_read_write(dut):
     tlog.info("Checking writes:")
     _check_logic(tlog, dut.port_logic_out, 1)
     _check_logic(tlog, dut.port_logic_vec_out, 0xCC)
-    _check_value(tlog, dut.sig_t2, [0xCC, 0xDD, 0xEE, 0xFF])
-    _check_logic(tlog, dut.sig_t2[7], 0xCC)
-    _check_logic(tlog, dut.sig_t2[4], 0xFF)
-    _check_logic(tlog, dut.sig_t4[1][5], 0x66)
-    _check_logic(tlog, dut.sig_t4[3][7], 0xCC)
+    # Some writes to multi-dimensional arrays don't make it into the design.
+    # https://github.com/cocotb/cocotb/issues/3372
+    if not cocotb.SIM_NAME.startswith("xmsim"):
+        _check_value(tlog, dut.sig_t2, [0xCC, 0xDD, 0xEE, 0xFF])
+        _check_logic(tlog, dut.sig_t2[7], 0xCC)
+        _check_logic(tlog, dut.sig_t2[4], 0xFF)
+        _check_logic(tlog, dut.sig_t4[1][5], 0x66)
+        _check_logic(tlog, dut.sig_t4[3][7], 0xCC)
 
     if cocotb.LANGUAGE in ["vhdl"]:
         _check_int(tlog, dut.port_bool_out, 1)
