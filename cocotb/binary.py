@@ -31,11 +31,32 @@ import os
 import random
 import re
 import warnings
+from enum import Enum
 
 _RESOLVE_TO_0 = "-lL"
 _RESOLVE_TO_1 = "hH"
 _RESOLVE_TO_CHOICE = "xXzZuUwW"
-resolve_x_to = os.getenv("COCOTB_RESOLVE_X", "VALUE_ERROR")
+
+
+class _ResolveXToValue(Enum):
+    VALUE_ERROR = "VALUE_ERROR"
+    ZEROS = "ZEROS"
+    ONES = "ONES"
+    RANDOM = "RANDOM"
+
+
+def _resolve_x_to_from_env() -> _ResolveXToValue:
+    env_value = os.getenv("COCOTB_RESOLVE_X", "VALUE_ERROR")
+    try:
+        return _ResolveXToValue(env_value)
+    except ValueError:
+        raise ValueError(
+            "The COCOTB_RESOLVE_X environment variable is set to an unknown "
+            f"value: {env_value!r}"
+        )
+
+
+resolve_x_to = _resolve_x_to_from_env()
 
 
 class _ResolveTable(dict):
@@ -55,7 +76,7 @@ class _ResolveTable(dict):
 
         self.resolve_x = no_resolve
 
-        if resolve_x_to == "VALUE_ERROR":
+        if resolve_x_to == _ResolveXToValue.VALUE_ERROR:
 
             def resolve_error(key):
                 raise ValueError(
@@ -65,11 +86,11 @@ class _ResolveTable(dict):
                 )
 
             self.resolve_x = resolve_error
-        elif resolve_x_to == "ZEROS":
+        elif resolve_x_to == _ResolveXToValue.ZEROS:
             self.update({ord(k): ord("0") for k in _RESOLVE_TO_CHOICE})
-        elif resolve_x_to == "ONES":
+        elif resolve_x_to == _ResolveXToValue.ONES:
             self.update({ord(k): ord("1") for k in _RESOLVE_TO_CHOICE})
-        elif resolve_x_to == "RANDOM":
+        elif resolve_x_to == _ResolveXToValue.RANDOM:
 
             def resolve_random(key):
                 # convert to correct Unicode ordinal:
