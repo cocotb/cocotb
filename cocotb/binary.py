@@ -59,7 +59,9 @@ class _ResolveTable(dict):
 
             def resolve_error(key):
                 raise ValueError(
-                    "Unresolvable bit in binary string: '{}'".format(chr(key))
+                    f"Unresolvable bit in binary string: {chr(key)!r}. "
+                    "Set the COCOTB_RESOLVE_X environment variable to "
+                    "configure how special values are resolved."
                 )
 
             self.resolve_x = resolve_error
