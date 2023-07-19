@@ -43,6 +43,7 @@ import argparse
 import os
 import sys
 import textwrap
+from pathlib import Path
 
 import find_libpython
 
@@ -50,14 +51,10 @@ import cocotb
 
 __all__ = ["share_dir", "makefiles_dir", "libs_dir"]
 
-
-share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
-makefiles_dir = os.path.join(os.path.dirname(cocotb.__file__), "share", "makefiles")
-libs_dir = os.path.join(os.path.dirname(cocotb.__file__), "libs")
-
-share_dir = share_dir.replace("\\", "/")
-makefiles_dir = makefiles_dir.replace("\\", "/")
-libs_dir = libs_dir.replace("\\", "/")
+base_dir = Path(cocotb.__file__).joinpath("..").resolve()
+share_dir = base_dir.joinpath("share").as_posix()
+makefiles_dir = base_dir.joinpath("share").joinpath("makefiles").as_posix()
+libs_dir = base_dir.joinpath("libs").as_posix()
 
 
 def help_vars_text():
@@ -167,14 +164,14 @@ def lib_name_path(interface, simulator):
     """
     library_name_path = os.path.join(libs_dir, lib_name(interface, simulator))
 
-    return library_name_path.replace("\\", "/")
+    return Path(library_name_path).as_posix()
 
 
 def _findlibpython():
     libpython_path = find_libpython.find_libpython()
     if libpython_path is None:
         sys.exit(1)
-    return libpython_path.replace("\\", "/")
+    return Path(libpython_path).as_posix()
 
 
 class PrintAction(argparse.Action):
@@ -201,12 +198,9 @@ class PrintFuncAction(argparse.Action):
 
 
 def get_parser():
-    prefix_dir = os.path.dirname(os.path.dirname(cocotb.__file__))
+    prefix_dir = base_dir.joinpath("..").resolve().as_posix()
     version = cocotb.__version__
-    python_bin = sys.executable
-
-    prefix_dir = prefix_dir.replace("\\", "/")
-    python_bin = python_bin.replace("\\", "/")
+    python_bin = Path(sys.executable).as_posix()
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
