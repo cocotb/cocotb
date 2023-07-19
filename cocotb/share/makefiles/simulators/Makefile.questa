@@ -145,6 +145,9 @@ ifeq ($(WAVES),1)
 endif
 ifeq ($(GUI),1)
 	@echo "add log -r *" >> $@
+ifdef GUI_SCRIPT_FILE
+	@echo "do $(GUI_SCRIPT_FILE)" >> $@
+endif
 else
 	@echo "onbreak resume" >> $@
 	@echo "run -all" >> $@

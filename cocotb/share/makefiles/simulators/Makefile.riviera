@@ -135,6 +135,9 @@ ifeq ($(WAVES),1)
 endif
 ifeq ($(GUI),1)
 	@echo "wave -rec *" >> $@
+ifdef GUI_SCRIPT_FILE
+	@echo "do $(GUI_SCRIPT_FILE)" >> $@
+endif
 else
 	@echo "run -all" >> $@
 	@echo "endsim" >> $@

@@ -378,11 +378,18 @@ The following variables are makefile variables, not environment variables.
       Use to define a scratch directory for use by the simulator. The path is relative to the location where ``make`` was invoked.
       If not provided, the default scratch directory is :file:`sim_build`.
 
-.. envvar:: SCRIPT_FILE
+.. make:var:: SCRIPT_FILE
 
-    The name of a simulator script that is run as part of the simulation, e.g. for setting up wave traces.
+    The name of a simulator script that is run prior to loading the simulation.
+    This is currently supported for the Mentor Questa, Mentor ModelSim and Aldec Riviera simulators.
+
+.. make:var:: GUI_SCRIPT_FILE
+
+    The name of a simulator script that is run as part of the simulation for setting up wave traces.
     You can usually write out such a file from the simulator's GUI.
     This is currently supported for the Mentor Questa, Mentor ModelSim and Aldec Riviera simulators.
+
+    .. versionadded:: 1.9
 
 .. make:var:: TOPLEVEL_LIBRARY
 
