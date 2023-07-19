@@ -51,13 +51,9 @@ import cocotb
 __all__ = ["share_dir", "makefiles_dir", "libs_dir"]
 
 
-share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
-makefiles_dir = os.path.join(os.path.dirname(cocotb.__file__), "share", "makefiles")
-libs_dir = os.path.join(os.path.dirname(cocotb.__file__), "libs")
-
-# On Windows use mixed mode "c:/a/b/c" as this work in all cases
-if os.name == "nt":
-    libs_dir = libs_dir.replace("\\", "/")
+share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share").replace("\\", "/")
+makefiles_dir = os.path.join(os.path.dirname(cocotb.__file__), "share", "makefiles").replace("\\", "/")
+libs_dir = os.path.join(os.path.dirname(cocotb.__file__), "libs").replace("\\", "/")
 
 
 def help_vars_text():
@@ -165,17 +161,13 @@ def lib_name_path(interface, simulator):
     """
     Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
     """
-    library_name_path = os.path.join(libs_dir, lib_name(interface, simulator))
-
-    # On Windows use mixed mode "c:/a/b/c" as this work in all cases
-    if os.name == "nt":
-        return library_name_path.replace("\\", "/")
+    library_name_path = os.path.join(libs_dir, lib_name(interface, simulator)).replace("\\", "/")
 
     return library_name_path
 
 
 def _findlibpython():
-    libpython_path = find_libpython.find_libpython()
+    libpython_path = find_libpython.find_libpython().replace("\\", "/")
     if libpython_path is None:
         sys.exit(1)
     return libpython_path
@@ -205,9 +197,9 @@ class PrintFuncAction(argparse.Action):
 
 
 def get_parser():
-    prefix_dir = os.path.dirname(os.path.dirname(cocotb.__file__))
+    prefix_dir = os.path.dirname(os.path.dirname(cocotb.__file__)).replace("\\", "/")
     version = cocotb.__version__
-    python_bin = sys.executable
+    python_bin = sys.executable.replace("\\", "/")
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
