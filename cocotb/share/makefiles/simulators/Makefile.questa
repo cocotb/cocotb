@@ -127,7 +127,9 @@ $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEP
 	@echo "}" >> $@
 	@echo "vmap -c" >> $@
 	$(foreach LIB, $(VHDL_LIB_ORDER), $(make_lib))
+ifneq ($(VHDL_SOURCES),)
 	@echo "if [file exists $(SIM_BUILD)/$(RTL_LIBRARY)] {vdel -lib $(SIM_BUILD)/$(RTL_LIBRARY) -all}" >> $@
+endif
 	@echo "vlib $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
 	@echo "vmap $(RTL_LIBRARY) $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)
