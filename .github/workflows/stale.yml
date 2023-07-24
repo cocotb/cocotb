@@ -28,5 +28,5 @@ jobs:
           Please bump this pull request to keep it alive.
           If no more activity on this pull request occurs in 7 days, it will be closed.
         stale-pr-label: "status:stale"
-        any-of-labels: "type:question,status:close?"
+        any-of-labels: "type:question,status:close?,status:needs-info"
         operations-per-run: 30
