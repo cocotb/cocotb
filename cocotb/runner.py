@@ -482,9 +482,19 @@ class Icarus(Simulator):
             for name, value in parameters.items()
         ]
 
+    def _create_cmd_file(self) -> None:
+        with open(self.cmds_file, "w") as f:
+            f.write(
+                f"+timescale+{self.cocotb_hdl_timeunit}/{self.cocotb_hdl_timeprecision}\n"
+            )
+
     @property
     def sim_file(self) -> Path:
         return self.build_dir / "sim.vvp"
+
+    @property
+    def cmds_file(self) -> Path:
+        return self.build_dir / "cmds.f"
 
     def _test_command(self) -> List[Command]:
         return [
@@ -506,10 +516,23 @@ class Icarus(Simulator):
                 f"{type(self).__qualname__}: Simulator does not support VHDL"
             )
 
+        self._create_cmd_file()
+
         cmds = []
         if outdated(self.sim_file, self.verilog_sources) or self.always:
             cmds = [
-                ["iverilog", "-o", str(self.sim_file), "-D", "COCOTB_SIM=1", "-g2012"]
+                [
+                    "iverilog",
+                    "-o",
+                    str(self.sim_file),
+                    "-D",
+                    "COCOTB_SIM=1",
+                    "-s",
+                    self.hdl_toplevel,
+                    "-f",
+                    str(self.cmds_file),
+                    "-g2012",
+                ]
                 + self._get_define_options(self.defines)
                 + self._get_include_options(self.includes)
                 + self._get_parameter_options(self.parameters)
