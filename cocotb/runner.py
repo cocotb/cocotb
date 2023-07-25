@@ -151,6 +151,8 @@ class Simulator(abc.ABC):
         build_dir: PathLike = "sim_build",
         clean: bool = False,
         verbose: bool = False,
+        cocotb_hdl_timeunit: str = "1ns",
+        cocotb_hdl_timeprecision: str = "1ps",
     ) -> None:
         """Build the HDL sources.
 
@@ -167,6 +169,8 @@ class Simulator(abc.ABC):
             build_dir: Directory to run the build step in.
             clean: Delete build_dir before building
             verbose: Enable verbose messages.
+            cocotb_hdl_timeunit: Time unit for simulation
+            cocotb_hdl_timeprecision: Time precision for simulation
         """
 
         self.clean: bool = clean
@@ -189,6 +193,8 @@ class Simulator(abc.ABC):
         self.always: bool = always
         self.hdl_toplevel: Optional[str] = hdl_toplevel
         self.verbose: bool = verbose
+        self.cocotb_hdl_timeunit: str = cocotb_hdl_timeunit
+        self.cocotb_hdl_timeprecision: str = cocotb_hdl_timeprecision
 
         for e in os.environ:
             self.env[e] = os.environ[e]
