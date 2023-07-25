@@ -153,6 +153,7 @@ class Simulator(abc.ABC):
         verbose: bool = False,
         cocotb_hdl_timeunit: str = "1ns",
         cocotb_hdl_timeprecision: str = "1ps",
+        waves: Optional[bool] = None,
     ) -> None:
         """Build the HDL sources.
 
@@ -171,6 +172,7 @@ class Simulator(abc.ABC):
             verbose: Enable verbose messages.
             cocotb_hdl_timeunit: Time unit for simulation
             cocotb_hdl_timeprecision: Time precision for simulation
+            waves: Record signal traces.
         """
 
         self.clean: bool = clean
@@ -195,6 +197,8 @@ class Simulator(abc.ABC):
         self.verbose: bool = verbose
         self.cocotb_hdl_timeunit: str = cocotb_hdl_timeunit
         self.cocotb_hdl_timeprecision: str = cocotb_hdl_timeprecision
+
+        self.waves = bool(waves)
 
         for e in os.environ:
             self.env[e] = os.environ[e]
