@@ -492,15 +492,33 @@ class Icarus(Simulator):
                 f"+timescale+{self.cocotb_hdl_timeunit}/{self.cocotb_hdl_timeprecision}\n"
             )
 
+    def _create_iverilog_dump_file(self) -> None:
+        dumpfile_path = self.build_dir / f"{self.hdl_toplevel}.fst"
+        with open(self.iverilog_dump_file, "w") as f:
+            f.write("module cocotb_iverilog_dump();\n")
+            f.write("initial begin\n")
+            f.write(f'    $dumpfile("{dumpfile_path}");\n')
+            f.write(f"    $dumpvars(0, {self.hdl_toplevel});\n")
+            f.write("end\n")
+            f.write("endmodule\n")
+
     @property
     def sim_file(self) -> Path:
         return self.build_dir / "sim.vvp"
+
+    @property
+    def iverilog_dump_file(self) -> Path:
+        return self.build_dir / "cocotb_iverilog_dump.v"
 
     @property
     def cmds_file(self) -> Path:
         return self.build_dir / "cmds.f"
 
     def _test_command(self) -> List[Command]:
+        plusargs = self.plusargs
+        if self.waves:
+            plusargs += ["-fst"]
+
         return [
             [
                 "vvp",
@@ -511,7 +529,7 @@ class Icarus(Simulator):
             ]
             + self.test_args
             + [str(self.sim_file)]
-            + self.plusargs
+            + plusargs
         ]
 
     def _build_command(self) -> List[Command]:
@@ -519,6 +537,11 @@ class Icarus(Simulator):
             raise ValueError(
                 f"{type(self).__qualname__}: Simulator does not support VHDL"
             )
+
+        build_args = list(self.build_args)
+        if self.waves:
+            self._create_iverilog_dump_file()
+            build_args += ["-s", "cocotb_iverilog_dump"]
 
         self._create_cmd_file()
 
@@ -540,8 +563,13 @@ class Icarus(Simulator):
                 + self._get_define_options(self.defines)
                 + self._get_include_options(self.includes)
                 + self._get_parameter_options(self.parameters)
-                + self.build_args
+                + build_args
                 + [str(source_file) for source_file in self.verilog_sources]
+                + [
+                    str(source_file)
+                    for source_file in [self.iverilog_dump_file]
+                    if self.waves
+                ]
             ]
 
         else:
