@@ -632,7 +632,7 @@ class Questa(Simulator):
         return cmds
 
 
-class Ghdl(Simulator):
+class GHDL(Simulator):
     supported_gpi_interfaces = {"vhdl": ["vpi"]}
 
     @staticmethod
@@ -679,6 +679,9 @@ class Ghdl(Simulator):
         ]
 
         return cmds
+
+
+Ghdl = GHDL
 
 
 class Riviera(Simulator):
@@ -1014,7 +1017,7 @@ def get_runner(simulator_name: str) -> Simulator:
     supported_sims: Dict[str, Type[Simulator]] = {
         "icarus": Icarus,
         "questa": Questa,
-        "ghdl": Ghdl,
+        "ghdl": GHDL,
         "riviera": Riviera,
         "verilator": Verilator,
         "xcelium": Xcelium,
