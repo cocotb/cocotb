@@ -45,6 +45,8 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     ifeq ($(SIM),ghdl)
         EXTRA_ARGS += --std=08
         SIM_ARGS += --wave=wave.ghw
+    else ifneq ($(filter $(SIM),ius xcelium),)
+        COMPILE_ARGS += -v200x
     else ifneq ($(filter $(SIM),questa modelsim riviera activehdl),)
         COMPILE_ARGS += -2008
     endif
