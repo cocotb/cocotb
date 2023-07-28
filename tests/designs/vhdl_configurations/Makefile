@@ -31,7 +31,7 @@ endif
 VHDL_SOURCES += $(COCOTB)/tests/designs/vhdl_configurations/configurations.vhd
 
 ifneq ($(filter $(SIM),ius xcelium),)
-    SIM_ARGS += -v93
+    COMPILE_ARGS += -v93
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
