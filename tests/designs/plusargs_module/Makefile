@@ -44,7 +44,7 @@ else
 endif
 
 ifneq ($(filter $(SIM),ius xcelium),)
-    SIM_ARGS += -v93
+    COMPILE_ARGS += -v93
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
