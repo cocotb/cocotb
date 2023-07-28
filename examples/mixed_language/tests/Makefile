@@ -30,7 +30,7 @@ endif
 MODULE=test_mixed_language
 
 ifneq ($(filter $(SIM),ius xcelium),)
-    SIM_ARGS += -v93
+    COMPILE_ARGS += -v93
 endif
 
 ifneq ($(filter $(SIM),questa modelsim),)
