@@ -55,13 +55,13 @@ begin
   begin
 
     if (rising_edge(clk_i)) then
-      if (reset_i) then
+      if (reset_i = '1') then
         valid_o <= '0';
         c_o <= (others => (others => '0'));
       else
         valid_o <= valid_i;
 
-        if (valid_i) then
+        if (valid_i = '1') then
           c_o <= c_calc;
         else
           c_o <= (others => (others => 'X'));
