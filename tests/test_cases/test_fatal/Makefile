@@ -14,7 +14,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES := $(PWD)/fatal.vhd
     ifneq ($(filter $(SIM),ius xcelium),)
-        SIM_ARGS += -v93
+        COMPILE_ARGS += -v93
     endif
 endif
 
