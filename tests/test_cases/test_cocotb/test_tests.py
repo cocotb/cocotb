@@ -206,3 +206,8 @@ async def test_base_exception_in_task_expect_fail(dut):
 
     cocotb.start_soon(test_func())
     await NullTrigger()
+
+
+@cocotb.test
+async def test_without_parenthesis(dut):
+    pass
