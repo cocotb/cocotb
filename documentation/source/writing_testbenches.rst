@@ -156,6 +156,29 @@ We can also cast the signal handle directly to an integer:
     42
 
 
+.. _writing_tbs_identifying_tests:
+
+Identifying tests
+=================
+
+Cocotb tests are identified using the :class:`~cocotb.test` decorator.
+Using this decorator will tell cocotb that this function is a special type of coroutine that is meant
+to either pass or fail.
+The :class:`~cocotb.test` decorator supports several keyword arguments (see section :ref:`writing-tests`).
+In most cases no arguments are passed to the decorator so cocotb tests can be written as:
+
+.. code-block:: python3
+
+    # A valid cocotb test
+    @cocotb.test
+    async def test(dut):
+        pass
+
+    # Also a valid cocotb test
+    @cocotb.test()
+    async def test(dut):
+        pass
+
 .. _writing_tbs_concurrent_sequential:
 
 Concurrent and sequential execution

@@ -140,7 +140,8 @@ class external:
 class _decorator_helper(type):
     """
     Metaclass that allows a type to be constructed using decorator syntax,
-    passing the decorated function as the first argument.
+    passing the decorated function as the first argument. Supports
+    construction with or without having the type called.
 
     So:
 
@@ -154,6 +155,11 @@ class _decorator_helper(type):
     """
 
     def __call__(cls, *args, **kwargs):
+        if len(args) == 1 and callable(args[0]):  # case without parenthesis
+            f = args[0]
+            return type.__call__(cls, f, **kwargs)
+
+        # case with parenthesis
         def decorator(f):
             # fall back to the normal way of constructing an object, now that
             # we have all the arguments
