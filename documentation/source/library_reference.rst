@@ -40,6 +40,8 @@ The exceptions in this module can be raised at any point by any code and will te
     :synopsis: Exceptions and functions for simulation result handling.
 
 
+.. _writing-tests:
+
 Writing and Generating tests
 ============================
 
