@@ -163,12 +163,10 @@ ENVS = [
         "sim": "icarus",
         "sim-version": "b83daa3ae36891a372655652e53c9b4eefdfcafa",
         "os": "windows-latest",
-        "python-version": "3.8",
+        "python-version": "3.11",
         "toolchain": "msvc",
         "extra_name": "msvc | ",
-        # TODO: Moved from ci to experimental until
-        # https://github.com/cocotb/cocotb/issues/3326 is fixed.
-        "group": "experimental",
+        "group": "ci",
     },
     # Other
     # use clang instead of gcc
