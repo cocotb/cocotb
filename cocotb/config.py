@@ -198,7 +198,7 @@ class PrintFuncAction(argparse.Action):
 
 
 def get_parser():
-    prefix_dir = base_dir.joinpath("..").resolve().as_posix()
+    prefix_dir = base_dir.parent.resolve().as_posix()
     version = cocotb.__version__
     python_bin = Path(sys.executable).as_posix()
 
