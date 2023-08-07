@@ -51,7 +51,7 @@ import cocotb
 
 __all__ = ["share_dir", "makefiles_dir", "libs_dir"]
 
-base_dir = Path(cocotb.__file__).joinpath("..").resolve()
+base_dir = Path(cocotb.__file__).parent.resolve()
 share_dir = base_dir.joinpath("share").as_posix()
 makefiles_dir = base_dir.joinpath("share").joinpath("makefiles").as_posix()
 libs_dir = base_dir.joinpath("libs").as_posix()
