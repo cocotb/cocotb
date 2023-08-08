@@ -140,6 +140,7 @@ jobs:
     - name: Set up GHDL (Ubuntu)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl'
       run: |
+        sudo apt update
         sudo apt install -y --no-install-recommends gnat
         git clone https://github.com/ghdl/ghdl.git
         cd ghdl
