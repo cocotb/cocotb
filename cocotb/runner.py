@@ -29,6 +29,7 @@ import cocotb.config
 
 PathLike = Union["os.PathLike[str]", str]
 Command = List[str]
+Timescale = Tuple[str, str]
 
 warnings.warn(
     "Python runners and associated APIs are an experimental feature and subject to change.",
@@ -151,8 +152,7 @@ class Simulator(abc.ABC):
         build_dir: PathLike = "sim_build",
         clean: bool = False,
         verbose: bool = False,
-        cocotb_hdl_timeunit: str = "1ns",
-        cocotb_hdl_timeprecision: str = "1ps",
+        timescale: Optional[Timescale] = None,
         waves: Optional[bool] = None,
     ) -> None:
         """Build the HDL sources.
@@ -170,8 +170,7 @@ class Simulator(abc.ABC):
             build_dir: Directory to run the build step in.
             clean: Delete build_dir before building
             verbose: Enable verbose messages.
-            cocotb_hdl_timeunit: Time unit for simulation
-            cocotb_hdl_timeprecision: Time precision for simulation
+            timescale: Tuple containing time unit and time precision for simulation
             waves: Record signal traces.
         """
 
@@ -195,8 +194,7 @@ class Simulator(abc.ABC):
         self.always: bool = always
         self.hdl_toplevel: Optional[str] = hdl_toplevel
         self.verbose: bool = verbose
-        self.cocotb_hdl_timeunit: str = cocotb_hdl_timeunit
-        self.cocotb_hdl_timeprecision: str = cocotb_hdl_timeprecision
+        self.timescale: Optional[Timescale] = timescale
 
         self.waves = bool(waves)
 
@@ -488,9 +486,7 @@ class Icarus(Simulator):
 
     def _create_cmd_file(self) -> None:
         with open(self.cmds_file, "w") as f:
-            f.write(
-                f"+timescale+{self.cocotb_hdl_timeunit}/{self.cocotb_hdl_timeprecision}\n"
-            )
+            f.write("+timescale+{}/{}\n".format(*self.timescale))
 
     def _create_iverilog_dump_file(self) -> None:
         dumpfile_path = self.build_dir / f"{self.hdl_toplevel}.fst"
@@ -543,7 +539,9 @@ class Icarus(Simulator):
             self._create_iverilog_dump_file()
             build_args += ["-s", "cocotb_iverilog_dump"]
 
-        self._create_cmd_file()
+        if self.timescale is not None:
+            self._create_cmd_file()
+            build_args += ["-f", str(self.cmds_file)]
 
         cmds = []
         if outdated(self.sim_file, self.verilog_sources) or self.always:
@@ -556,8 +554,6 @@ class Icarus(Simulator):
                     "COCOTB_SIM=1",
                     "-s",
                     self.hdl_toplevel,
-                    "-f",
-                    str(self.cmds_file),
                     "-g2012",
                 ]
                 + self._get_define_options(self.defines)
