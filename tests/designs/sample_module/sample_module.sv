@@ -27,7 +27,9 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+`ifndef NOTIMESCALE
 `timescale 1 ps / 1 ps
+`endif
 
 `ifndef __ICARUS__
 typedef struct packed
