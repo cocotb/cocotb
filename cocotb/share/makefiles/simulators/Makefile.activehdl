@@ -9,7 +9,7 @@ include $(shell cocotb-config --makefiles)/Makefile.inc
 CMD_BIN := vsimsa
 
 ifdef ACTIVEHDL_BIN_DIR
-    CMD := $(shell :; command -v $(realpath $(ACTIVEHDL_BIN_DIR))/$(CMD_BIN) 2>/dev/null)
+    CMD := $(shell :; command -v $(ACTIVEHDL_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)

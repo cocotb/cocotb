@@ -98,8 +98,8 @@ SIM ?= icarus
 # Maintain backwards compatibility by supporting upper and lower case SIM variable
 SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
 
-# Directory containing the cocotb Makfiles (realpath for Windows compatibility)
-COCOTB_MAKEFILES_DIR := $(realpath $(shell cocotb-config --makefiles))
+# Directory containing the cocotb Makfiles
+COCOTB_MAKEFILES_DIR := $(shell cocotb-config --makefiles)
 
 include $(COCOTB_MAKEFILES_DIR)/Makefile.deprecations
 

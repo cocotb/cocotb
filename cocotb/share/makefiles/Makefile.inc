@@ -37,13 +37,13 @@ COCOTB_MAKEFILE_INC_INCLUDED = 1
 .PHONY: sim
 sim:
 	$(RM) $(COCOTB_RESULTS_FILE)
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) $(COCOTB_RESULTS_FILE)
+	"$(MAKE)" -f $(firstword $(MAKEFILE_LIST)) $(COCOTB_RESULTS_FILE)
 
 # Make sure to use bash for the pipefail option used in many simulator Makefiles
 SHELL := bash
 
-# Directory containing the cocotb Python module (realpath for Windows compatibility)
-COCOTB_PY_DIR := $(realpath $(shell cocotb-config --prefix))
+# Directory containing the cocotb Python module
+COCOTB_PY_DIR := $(shell cocotb-config --prefix)
 
 # Directory containing all support files required to build cocotb-based
 # simulations: Makefile fragments, and the simulator libraries.
@@ -62,13 +62,7 @@ export OS
 IS_VENV=$(shell $(shell cocotb-config --python-bin) -c 'import sys; print(sys.prefix != sys.base_prefix)')
 
 # this ensures we use the same python as the one cocotb was installed into
-ifeq ($(IS_VENV),True)
-    # In a virtual environment, the Python binary may be a symlink, so it should not use realpath
-    PYTHON_BIN ?= $(shell cocotb-config --python-bin)
-else
-    # realpath to convert windows paths to unix paths, like cygpath -u
-    PYTHON_BIN ?= $(realpath $(shell cocotb-config --python-bin))
-endif
+PYTHON_BIN ?= $(shell cocotb-config --python-bin)
 
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.deprecations
 
