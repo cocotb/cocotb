@@ -72,6 +72,31 @@ def _as_tcl_value(value: str) -> str:
     return value
 
 
+_sv_escapes = {
+    "\n": "\\n",
+    "\t": "\\t",
+    "\\": "\\\\",
+    '"': '\\"',
+    "\v": "\\v",
+    "\f": "\\f",
+    "\xff": "\\xFF",
+}
+for i in range(32):
+    if chr(i) not in _sv_escapes:
+        _sv_escapes[chr(i)] = f"\\x{i:02x}"
+
+_sv_escape_translate_table = str.maketrans(_sv_escapes)
+
+
+def _as_sv_literal(value: str) -> str:
+    if isinstance(value, (int, float)):
+        return str(value)
+    elif isinstance(value, str):
+        return '"' + value.translate(_sv_escape_translate_table) + '"'
+    else:
+        raise TypeError("Can't serialize this type as an SV literal")
+
+
 def _shlex_join(split_command: Iterable[str]) -> str:
     """
     Return a shell-escaped string from *split_command*
@@ -610,7 +635,7 @@ class Icarus(Runner):
         return [f"-I{include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        return [f"-D{name}={value}" for name, value in defines.items()]
+        return [f"-D{name}={_as_sv_literal(value)}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         assert self.hdl_toplevel is not None
@@ -742,8 +767,7 @@ class Questa(Runner):
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         return [
-            f"+define+{_as_tcl_value(name)}={_as_tcl_value(str(value))}"
-            for name, value in defines.items()
+            f"+define+{name}={_as_sv_literal(value)}" for name, value in defines.items()
         ]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
@@ -1056,9 +1080,24 @@ class Riviera(Runner):
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         return [
-            f"+define+{_as_tcl_value(name)}={_as_tcl_value(str(value))}"
+            f"+define+{name}={self._as_define_value(value)}"
             for name, value in defines.items()
         ]
+
+    def _as_define_value(self, value: object) -> str:
+        if isinstance(value, int):
+            return str(value)
+        elif isinstance(value, str):
+            for char in value:
+                if ord(char) < 32 or ord(char) >= 255 or char in '\\"':
+                    # Control characters are generally not supported.
+                    # Not sure if there's any way to escape quotes or backslashes.
+                    raise ValueError(
+                        f"Character {char!r} not supported in define value"
+                    )
+            return '\\"\\\\"' + value + '\\\\"\\"'
+        else:
+            raise TypeError("Can't serialize this type as an SV literal")
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
@@ -1208,7 +1247,7 @@ class Verilator(Runner):
         return [f"-I{include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        return [f"-D{name}={value}" for name, value in defines.items()]
+        return [f"-D{name}={_as_sv_literal(value)}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-G{name}={value}" for name, value in parameters.items()]
@@ -1314,7 +1353,25 @@ class Xcelium(Runner):
         return [f"-incdir {include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        return [f"-define {name}={value}" for name, value in defines.items()]
+        return [
+            f"-define {name}={self._as_define_value(value)}"
+            for name, value in defines.items()
+        ]
+
+    def _as_define_value(self, value: object) -> str:
+        if isinstance(value, int):
+            return str(value)
+        elif isinstance(value, str):
+            for char in value:
+                if ord(char) < 32 or ord(char) >= 255 or char == '"':
+                    # Control characters are generally not supported.
+                    # Not sure if there's any way to escape quotes.
+                    raise ValueError(
+                        f"Character {char!r} not supported in define value"
+                    )
+            return '"\\"' + value.replace("\\", "\\\\") + '\\""'
+        else:
+            raise TypeError("Can't serialize this type as an SV literal")
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f'-gpg "{name} => {value}"' for name, value in parameters.items()]
@@ -1467,7 +1524,9 @@ class Vcs(Runner):
         return [f"+incdir+{include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        return [f"+define+{name}={value}" for name, value in defines.items()]
+        return [
+            f"+define+{name}={_as_sv_literal(value)}" for name, value in defines.items()
+        ]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         assert self.hdl_toplevel is not None
