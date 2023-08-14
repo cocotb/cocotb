@@ -67,7 +67,7 @@ def test_runner(parameters, clean_build):
         vhdl_sources=vhdl_sources,
         hdl_toplevel="runner",
         parameters=parameters,
-        defines={"DEFINE": 4},
+        defines={"DEFINE": 4, "DEFINE_PATH": "path/to/some/file.wow"},
         includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
         build_args=compile_args,
         clean=clean_build,
