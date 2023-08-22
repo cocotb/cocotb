@@ -492,7 +492,7 @@ class Icarus(Simulator):
             f.write("+timescale+{}/{}\n".format(*self.timescale))
 
     def _create_iverilog_dump_file(self) -> None:
-        dumpfile_path = self.build_dir / f"{self.hdl_toplevel}.fst"
+        dumpfile_path = Path(self.build_dir, f"{self.hdl_toplevel}.fst").as_posix()
         with open(self.iverilog_dump_file, "w") as f:
             f.write("module cocotb_iverilog_dump();\n")
             f.write("initial begin\n")
