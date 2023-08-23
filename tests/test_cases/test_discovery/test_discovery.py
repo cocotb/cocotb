@@ -276,7 +276,13 @@ async def test_write_single_character(dut):
         lowercase = chr(c.value)
         uppercase = lowercase.upper()
         uppercase_as_int = ord(uppercase)
-        dut._log.debug("Converting '%s' (%s) to '%s' (%s)", lowercase, c.value, uppercase, uppercase_as_int)
+        dut._log.debug(
+            "Converting '%s' (%s) to '%s' (%s)",
+            lowercase,
+            c.value,
+            uppercase,
+            uppercase_as_int,
+        )
         c.setimmediatevalue(uppercase_as_int)
     await Timer(1, "ns")
 
