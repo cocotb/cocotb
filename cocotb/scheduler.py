@@ -99,7 +99,6 @@ class external_state:
     EXITED = 3
 
 
-@cocotb.decorators.public
 class external_waiter:
     def __init__(self):
         self._outcome = None
