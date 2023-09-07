@@ -217,13 +217,13 @@ class LogicArray(Array[Logic]):
         with integers and strings (case insensitive)
         """
         if isinstance(other, int):
-            return self == LogicArray(other)
+            return self.integer == other
         if isinstance(other, str):
             # case insensitive to make sure 'x' == 'X' and 'z' == 'Z'
             # internally LogicArray uses upper case but use may not know about it
             return self.binstr == other.upper()
-        else:
-            return self == other
+        
+        return self.integer == other.integer
 
     # __ne__ is not required for python3 because by default it negates __eq__
 
