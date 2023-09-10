@@ -1,8 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import typing
 import ctypes
+import typing
 
 from cocotb.types.array import Array
 from cocotb.types.logic import Logic, LogicConstructibleT
@@ -137,18 +137,14 @@ class LogicArray(Array[Logic]):
     @typing.overload
     def __init__(
         self,
-        value: typing.Union[
-            int, typing.Iterable[LogicConstructibleT], None
-        ],
+        value: typing.Union[int, typing.Iterable[LogicConstructibleT], None],
         range: Range,
     ):
         ...
 
     def __init__(
         self,
-        value: typing.Union[
-            int, typing.Iterable[LogicConstructibleT], None
-        ] = None,
+        value: typing.Union[int, typing.Iterable[LogicConstructibleT], None] = None,
         range: typing.Optional[Range] = None,
     ) -> None:
         if value is None and range is None:
@@ -170,7 +166,9 @@ class LogicArray(Array[Logic]):
                 self._value = [Logic(v) for v in _int_to_bitstr(value, len(range))]
         elif isinstance(value, ctypes.Structure):
             # ctypes.Structure is also typing.Iterable, but it is not supported
-            raise ValueError(f"{value} is an instance of ctypes.Structure which cannot be converted to LogicArray")
+            raise ValueError(
+                f"{value} is an instance of ctypes.Structure which cannot be converted to LogicArray"
+            )
         elif isinstance(value, typing.Iterable):
             self._value = [Logic(v) for v in value]
         else:
@@ -222,7 +220,7 @@ class LogicArray(Array[Logic]):
             # case insensitive to make sure 'x' == 'X' and 'z' == 'Z'
             # internally LogicArray uses upper case but use may not know about it
             return self.binstr == other.upper()
-        
+
         return self.integer == other.integer
 
     # __ne__ is not required for python3 because by default it negates __eq__
@@ -311,6 +309,7 @@ class LogicArray(Array[Logic]):
 
     def __invert__(self: Self) -> Self:
         return type(self)(~v for v in self)
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:

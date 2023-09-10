@@ -216,6 +216,7 @@ def _step_to_direction(step: int) -> str:
         return "downto"
     raise ValueError("step must be 1 or -1")
 
+
 def _reverse_range(input: range) -> range:
     """
     Return a new :class:`range` reversed
@@ -232,7 +233,7 @@ def _reverse_range(input: range) -> range:
     # list(range(0, 3, 1)) == [0, 1, 2]
     # list(range(2, -1, -1)) == [2, 1, 0]
     return range(
-            input.stop - input.step, # start
-            input.start - input.step, # stop
-            - input.step # step
-                 )
+        input.stop - input.step,  # start
+        input.start - input.step,  # stop
+        -input.step,  # step
+    )

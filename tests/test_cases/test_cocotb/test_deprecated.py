@@ -11,6 +11,7 @@ import pytest
 import cocotb
 from cocotb._sim_versions import IcarusVersion
 from cocotb.triggers import Timer
+from cocotb.types import LogicArray, Range
 
 
 @cocotb.test()
@@ -104,12 +105,12 @@ async def test_assigning_structure(dut):
 
     e = Example(a=0xCC, b=0x12345678)
 
-    dut.stream_in_data_wide.value = e # should fail
+    dut.stream_in_data_wide.value = e  # should fail
 
     await Timer(1, "step")
 
-    assert dut.stream_in_data_wide == BinaryValue(
-        value=bytes(e), n_bits=len(dut.stream_in_data_wide)
+    assert dut.stream_in_data_wide == LogicArray(
+        value=bytes(e), range=Range(len(dut.stream_in_data_wide) - 1, "downto", 0)
     )
 
 

@@ -6,8 +6,8 @@ no more tests can be added to this file.
 """
 
 import cocotb
-from cocotb.types import LogicArray, Range
 from cocotb.triggers import ReadOnly, Timer
+from cocotb.types import LogicArray, Range
 
 # this line is different between the two files
 value = LogicArray(value=0, range=Range(7, "downto", 0))
