@@ -813,14 +813,9 @@ class ModifiableObject(NonConstantObject):
                 )
 
         if isinstance(value, ctypes.Structure):
-            warnings.warn(
-                "`ctypes.Structure` values are no longer accepted for value assignment. "
-                "Use `LogicArray(value=bytes(struct_obj), range=Range)` instead",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            value = LogicArray(
-                value=cocotb.utils.pack(value), range=Range(len(self) - 1, "downto", 0)
+            raise ValueError(
+                "`ctypes.Structure` values are no longer accepted for value assignment."
+                "Use `LogicArray(value=bytes(struct_obj), range=Range)` instead"
             )
 
         elif isinstance(value, dict):
