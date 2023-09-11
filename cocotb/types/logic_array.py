@@ -489,6 +489,30 @@ class LogicArray(Array[Logic]):
         self._value = result._value
         return self
 
+    def __mod__(self, other):
+        """
+        >>> LogicArray("1110") % LogicArray("10")
+        0
+        >>> LogicArray("0001") % LogicArray("10")
+        1
+        >>> LogicArray("0001") % 2
+        1
+        >>> 3 % LogicArray("10")
+        1
+        >>> a = LogicArray("1011")
+        >>> a %= 2
+        >>> a
+        1
+        """
+        return self.integer % int(other)
+
+    def __rmod__(self, other):
+        """
+        >>> 3 % LogicArray("10")
+        1
+        """
+        return int(other) % self.integer
+
     def __floordiv__(self, other):
         """
         >>> a = LogicArray("1110")
