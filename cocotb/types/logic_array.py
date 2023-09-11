@@ -475,6 +475,20 @@ class LogicArray(Array[Logic]):
         self._value = result._value
         return self
 
+    def __iadd__(self, other):
+        """
+        >>> a = LogicArray("0011")
+        >>> b = LogicArray("01")
+        >>> a += b
+        >>> bin(b)
+        '0b1'
+        >>> bin(a)
+        '0b100'
+        """
+        result = self + other  # Already check type and length
+        self._value = result._value
+        return self
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
