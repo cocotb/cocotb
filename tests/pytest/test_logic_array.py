@@ -96,7 +96,11 @@ def test_integer_reverse():
     assert l == LogicArray("00XZ1")
     assert p == LogicArray("1ZX00")
 
-    m = LogicArray("1010")
+    m = LogicArray("1010", Range(3, "downto", 0))
+    assert m.reverse().binstr == "0101"
+
+    m = LogicArray("1010", Range(0, "to", 3))
+    assert m.binstr == "1010"
     assert m.reverse().binstr == "0101"
 
 
