@@ -347,9 +347,6 @@ class LogicArray(Array[Logic]):
             return self.__mul__(other)
         return self.integer * other
 
-    def __int__(self):
-        return self.integer
-
     def __abs__(self):
         return abs(self.integer)
 
