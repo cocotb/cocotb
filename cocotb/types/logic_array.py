@@ -311,6 +311,43 @@ class LogicArray(Array[Logic]):
             return type(self)(a | b for a, b in zip(self, other))  # type: ignore
         return NotImplemented
 
+    def __add__(self: Self, other: Self) -> Self:
+        """
+        >>> LogicArray("1110", Range(3, 'downto', 0)) + LogicArray("10", Range(1, 'downto', 0))
+        LogicArray('10000', Range(4, 'downto', 0))
+
+        >>> LogicArray("1110", Range(3, 'downto', 0)) + LogicArray("10", Range(0, 'to', 1))
+        LogicArray('10000', Range(4, 'downto', 0))
+
+        >>> LogicArray("1110", Range(0, 'to', 3)) + LogicArray("10", Range(1, 'downto', 0))
+        LogicArray('10000', Range(0, 'to', 4))
+        """
+        if isinstance(other, type(self)):
+            # The addition of two arrays produces an array of size
+            # max(len(self), len(other)) + 1
+
+            # Identify the largest range
+            if len(self) > len(other):
+                largest_range = self._range
+            else:
+                largest_range = other._range
+
+            # Add 1 bit to the largest range (for the carry)
+            if largest_range.direction == "downto":
+                # Example: Range(8, 'downto', 1) becomes Range(9, 'downto', 1)
+                range = Range(
+                    largest_range.left + 1, largest_range.direction, largest_range.right
+                )
+            else:
+                # Example: Range(1, 'to', 7) becomes Range(1, 'to', 8)
+                range = Range(
+                    largest_range.left, largest_range.direction, largest_range.right + 1
+                )
+
+            value = int(self) + int(other)
+            return type(self)(value, range)
+        return NotImplemented
+
     def __ror__(self: Self, other: Self) -> Self:
         return self | other
 
