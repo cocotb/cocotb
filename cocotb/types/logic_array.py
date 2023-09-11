@@ -331,6 +331,22 @@ class LogicArray(Array[Logic]):
     def __invert__(self: Self) -> Self:
         return type(self)(~v for v in self)
 
+    def __mul__(self, other):
+        if isinstance(other, type(self)):
+            return self.integer * other.integer
+        return self.integer * int(other)
+
+    def __imul__(self, other):
+        if isinstance(other, type(self)):
+            return self.__mul__(other)
+        self.integer = self.integer * int(other)
+        return self
+
+    def __rmul__(self, other):
+        if isinstance(other, type(self)):
+            return self.__mul__(other)
+        return self.integer * other
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
