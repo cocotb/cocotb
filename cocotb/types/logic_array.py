@@ -489,6 +489,52 @@ class LogicArray(Array[Logic]):
         self._value = result._value
         return self
 
+    def __floordiv__(self, other):
+        """
+        >>> a = LogicArray("1110")
+        >>> b = LogicArray("10")
+        >>> a // b
+        7
+        >>> a // 2
+        7
+        >>> c = LogicArray("1110")
+        >>> c //= 2
+        >>> c
+        7
+        """
+        return self.integer // int(other)
+
+    def __rfloordiv__(self, other):
+        """
+        >>> b = LogicArray("10")
+        >>> 14 // b
+        7
+        """
+        return int(other) // self.integer
+
+    def __truediv__(self, other):
+        """
+        >>> a = LogicArray("1110")
+        >>> b = LogicArray("10")
+        >>> a / b
+        7.0
+        >>> a / 2
+        7.0
+        >>> c = LogicArray("1110")
+        >>> c /= 2
+        >>> c
+        7.0
+        """
+        return self.integer / int(other)
+
+    def __rtruediv__(self, other):
+        """
+        >>> b = LogicArray("10")
+        >>> 14 / b
+        7.0
+        """
+        return int(other) / self.integer
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
