@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import pytest
 
-from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.types import Logic, LogicArray, Range, concat
 
 
@@ -127,13 +126,3 @@ def test_logic_array_xor():
 
 def test_logic_array_invert():
     assert ~LogicArray("01XZ") == LogicArray("10XX")
-
-
-def test_binaryvalue_conversion():
-    b = BinaryValue(3, n_bits=5)
-    assert LogicArray(b) == LogicArray("11000")
-    la = LogicArray("1010")
-    bv = la.to_BinaryValue()
-    assert bv.binstr == "1010"
-    assert bv.binaryRepresentation == BinaryRepresentation.UNSIGNED
-    assert len(bv) == 4
