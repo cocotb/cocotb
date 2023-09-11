@@ -350,6 +350,9 @@ class LogicArray(Array[Logic]):
     def __int__(self):
         return self.integer
 
+    def __abs__(self):
+        return abs(self.integer)
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
