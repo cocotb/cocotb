@@ -397,6 +397,34 @@ class LogicArray(Array[Logic]):
         """
         return self.integer
 
+    def __ior__(self, other):
+        """
+        >>> a = LogicArray("0011")
+        >>> b = LogicArray("1001")
+        >>> a |= b
+        >>> bin(a)
+        '0b1011'
+        >>> bin(b)
+        '0b1001'
+        """
+        result = self | other  # Already check type and length
+        self._value = result._value
+        return self
+
+    def __ixor__(self, other):
+        """
+        >>> a = LogicArray("0011")
+        >>> b = LogicArray("1001")
+        >>> a ^= b
+        >>> bin(a)
+        '0b1010'
+        >>> bin(b)
+        '0b1001'
+        """
+        result = self ^ other  # Already check type and length
+        self._value = result._value
+        return self
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
