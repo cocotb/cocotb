@@ -213,15 +213,36 @@ class LogicArray(Array[Logic]):
         """
         Overrides the default implementation to enable comparision
         with integers and strings (case insensitive)
+
+        .. code-block:: python3
+
+            >>> la = LogicArray(10,Range(3, 'downto', 0))
+            >>> la == 10
+            True
+            >>> la == "1010"
+            True
+
+            >>> la = LogicArray("10X1Z0")
+            >>> la == "10X1Z0"
+            True
+            >>> la == "1001Z0" # Try replace X with 0
+            False
+            >>> la == "1011Z0" # Try replace X with 1
+            False
+            >>> la == "10X100" # Try replace Z with 0
+            False
+            >>> la == "10X110" # Try replace Z with 1
+            False
+
+        :class:`LogicArray` supports comparison with integers and strings
         """
         if isinstance(other, int):
             return self.integer == other
-        if isinstance(other, str):
-            # case insensitive to make sure 'x' == 'X' and 'z' == 'Z'
-            # internally LogicArray uses upper case but use may not know about it
-            return self.binstr == other.upper()
+        elif isinstance(other, str):
+            return self == LogicArray(other)
 
-        return self.integer == other.integer
+        # Handle comparison with X and Z
+        return self.binstr == other.binstr
 
     # __ne__ is not required for python3 because by default it negates __eq__
 
