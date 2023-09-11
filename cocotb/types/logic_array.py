@@ -389,6 +389,14 @@ class LogicArray(Array[Logic]):
                 return True
         return False
 
+    def __index__(self):
+        """
+        >>> val = LogicArray("00000001000011110100")
+        >>> hex(val)
+        '0x10f4'
+        """
+        return self.integer
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
