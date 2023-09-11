@@ -559,6 +559,22 @@ class LogicArray(Array[Logic]):
         """
         return int(other) / self.integer
 
+    def __divmod__(self, other):
+        """
+        >>> divmod(LogicArray("1011"), LogicArray("10"))
+        (5, 1)
+        >>> divmod(LogicArray("1011"), 2)
+        (5, 1)
+        """
+        return (self // other, self % other)
+
+    def __rdivmod__(self, other):
+        """
+        >>> divmod(11, LogicArray("10"))
+        (5, 1)
+        """
+        return (other // self, other % self)
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
