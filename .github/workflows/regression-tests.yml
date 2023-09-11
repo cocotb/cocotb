@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Generate a list of environments to run tests against
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: ./.github/generate-envs.py --output-format=gha --gha-output-file="$GITHUB_OUTPUT" --group="${{inputs.group}}"
       id: run_generate_script
     outputs:
@@ -60,7 +60,7 @@ jobs:
         include: ${{ fromJson(needs.generate_envs.outputs.envs) }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         # GitHub PR's create a merge commit, and Actions are run on that commit.
         # Codecov's uploader needs the previous commit (tip of PR branch) to associate coverage correctly.
