@@ -33,7 +33,7 @@ jobs:
         run: sudo apt install -y --no-install-recommends iverilog
 
       - name: Checkout cocotb repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: cocotb
 
@@ -41,7 +41,7 @@ jobs:
         run: pip3 install ./cocotb
 
       - name: Checkout cocotb-coverage repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mciepluc/cocotb-coverage
           path: cocotb-coverage
