@@ -353,6 +353,42 @@ class LogicArray(Array[Logic]):
     def __abs__(self):
         return abs(self.integer)
 
+    def __bool__(self):
+        """Provide boolean testing of a :attr:`binstr`.
+        Returns True if at least one bit is high.
+
+        Raises: ValueError if the array contains X or Z
+
+        >>> val = LogicArray("0000")
+        >>> if val: print("True")
+        ... else:   print("False")
+        False
+        >>> val = 42
+        >>> if val: print("True")
+        ... else:   print("False")
+        True
+
+        >>> val = LogicArray("00X0")
+        >>> if val: print("True")
+        Traceback (most recent call last):
+        ...
+        ValueError: Array contains Uninitialized (Z) or Unknown (X) bits
+
+
+        >>> val = LogicArray("00Z0")
+        >>> if val: print("True")
+        Traceback (most recent call last):
+        ...
+        ValueError: Array contains Uninitialized (Z) or Unknown (X) bits
+
+        """
+        for char in self.binstr:
+            if char.upper() == "X" or char.upper() == "Z":
+                raise ValueError("Array contains Uninitialized (Z) or Unknown (X) bits")
+            elif char == "1":
+                return True
+        return False
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
