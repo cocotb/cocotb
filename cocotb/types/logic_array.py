@@ -347,6 +347,9 @@ class LogicArray(Array[Logic]):
             return self.__mul__(other)
         return self.integer * other
 
+    def __int__(self):
+        return self.integer
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
