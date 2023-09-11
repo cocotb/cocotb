@@ -391,6 +391,8 @@ class LogicArray(Array[Logic]):
         >>> val = LogicArray("00000001000011110100")
         >>> hex(val)
         '0x10f4'
+        >>> oct(val)
+        '0o10364'
         """
         return self.integer
 
