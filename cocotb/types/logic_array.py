@@ -235,6 +235,18 @@ class LogicArray(Array[Logic]):
             False
 
         :class:`LogicArray` supports comparison with integers and strings
+
+        .. code-block:: python3
+            >>> a = LogicArray("0")
+            >>> if a == 0: print("Pass")
+            ... else: print("Fail")
+            Pass
+            >>> if a[0] == 0: print("Pass")
+            ... else: print("Fail")
+            Pass
+
+        :class:`Logic` supports comparison with integers
+
         """
         if isinstance(other, int):
             return self.integer == other

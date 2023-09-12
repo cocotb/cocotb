@@ -193,7 +193,9 @@ class Logic:
         return type(self)(("1", "0", "X", "X")[self._repr])
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, type(self)):
+        if isinstance(other, int):
+            return int(self) == other
+        elif not isinstance(other, type(self)):
             return NotImplemented
         return self._repr == other._repr
 
