@@ -587,6 +587,11 @@ class LogicArray(Array[Logic]):
         """
         return (other // self, other % self)
 
+    def __int__(self):
+        # Required for Python 3.7 or earlier
+        # Python 3.8+ uses index()
+        return self.integer
+
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
