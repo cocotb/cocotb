@@ -10,6 +10,11 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 cocotb 1.8.1 (unreleased)
 =========================
 
+Features
+--------
+
+- Python 3.12 is now supported.
+
 Bugfixes
 --------
 

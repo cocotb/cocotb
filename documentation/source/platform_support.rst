@@ -27,6 +27,7 @@ The following versions of Python (CPython), and all associated patch releases (e
 * Python 3.9
 * Python 3.10
 * Python 3.11
+* Python 3.12
 
 Supported Linux Distributions and Versions
 ==========================================
