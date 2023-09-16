@@ -25,7 +25,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-export COCOTB_LOG_LEVEL := TRACE
 
 include ../../designs/sample_module/Makefile
 
