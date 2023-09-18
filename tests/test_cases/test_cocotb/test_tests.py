@@ -24,14 +24,6 @@ async def test_error(dut):
     fail  # noqa
 
 
-@cocotb.test()
-async def test_tests_are_tests(dut):
-    """
-    Test that things annotated with cocotb.test are tests
-    """
-    assert isinstance(test_tests_are_tests, cocotb.test)
-
-
 # just to be sure...
 @cocotb.test(expect_fail=True)
 async def test_async_test_can_fail(dut):

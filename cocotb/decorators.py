@@ -27,8 +27,8 @@
 
 import functools
 import sys
-import typing
 import warnings
+from typing import Any, Callable, Optional, Sequence, Type, Union
 
 import cocotb
 import cocotb.triggers
@@ -118,38 +118,82 @@ class external:
         return type(self)(self._func.__get__(obj, owner))
 
 
-class _decorator_helper(type):
-    """
-    Metaclass that allows a type to be constructed using decorator syntax,
-    passing the decorated function as the first argument. Supports
-    construction with or without having the type called.
+class Test(coroutine):
+    _id_count = 0  # used by the RegressionManager to sort tests in definition order
 
-    So:
+    def __init__(
+        self,
+        f,
+        timeout_time,
+        timeout_unit,
+        expect_fail,
+        expect_error,
+        skip,
+        stage,
+    ):
+        if timeout_unit is None:
+            warnings.warn(
+                'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            timeout_unit = "step"  # don't propagate deprecated value
+        self._id = self._id_count
+        type(self)._id_count += 1
 
-        @MyClass(construction, args='go here')
-        def this_is_passed_as_f(...):
-            pass
+        if timeout_time is not None:
+            co = coroutine(f)
 
-    ends up calling
+            @functools.wraps(f)
+            async def f(*args, **kwargs):
+                running_co = co(*args, **kwargs)
 
-        MyClass.__init__(this_is_passed_as_f, construction, args='go here')
-    """
+                try:
+                    res = await cocotb.triggers.with_timeout(
+                        running_co, self.timeout_time, self.timeout_unit
+                    )
+                except cocotb.result.SimTimeoutError:
+                    running_co.kill()
+                    raise
+                else:
+                    return res
 
-    def __call__(cls, *args, **kwargs):
-        if len(args) == 1 and callable(args[0]):  # case without parenthesis
-            f = args[0]
-            return type.__call__(cls, f, **kwargs)
+        super().__init__(f)
 
-        # case with parenthesis
-        def decorator(f):
-            # fall back to the normal way of constructing an object, now that
-            # we have all the arguments
-            return type.__call__(cls, f, *args, **kwargs)
+        self.timeout_time = timeout_time
+        self.timeout_unit = timeout_unit
+        self.expect_fail = expect_fail
+        if isinstance(expect_error, bool):
+            warnings.warn(
+                "Passing bool values to `except_error` option of `cocotb.test` is deprecated. "
+                "Pass a specific Exception type instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        if expect_error is True:
+            expect_error = (BaseException,)
+        elif expect_error is False:
+            expect_error = ()
+        self.expect_error = expect_error
+        self.skip = skip
+        self.stage = stage
+        self.im_test = True  # For auto-regressions
+        self.name = self._func.__name__
 
-        return decorator
+    def __call__(self, *args, **kwargs):
+        inst = self._func(*args, **kwargs)
+        coro = _RunningTest(inst, self)
+        return coro
 
 
-class test(coroutine, metaclass=_decorator_helper):
+def test(
+    timeout_time: Optional[float] = None,
+    timeout_unit: str = "step",
+    expect_fail: bool = False,
+    expect_error: Union[bool, Type[Exception], Sequence[Type[Exception]]] = (),
+    skip: bool = False,
+    stage: int = 0,
+) -> Callable[[Callable[..., None]], Test]:
     """
     Decorator to mark a Callable which returns a Coroutine as a test.
 
@@ -214,71 +258,18 @@ class test(coroutine, metaclass=_decorator_helper):
             Defaults to 0.
     """
 
-    _id_count = 0  # used by the RegressionManager to sort tests in definition order
+    def wrapper(f: Callable[..., None]) -> Test:
+        return Test(
+            f=f,
+            timeout_time=timeout_time,
+            timeout_unit=timeout_unit,
+            expect_fail=expect_fail,
+            expect_error=expect_error,
+            skip=skip,
+            stage=stage,
+        )
 
-    def __init__(
-        self,
-        f,
-        timeout_time=None,
-        timeout_unit="step",
-        expect_fail=False,
-        expect_error=(),
-        skip=False,
-        stage=0,
-    ):
-        if timeout_unit is None:
-            warnings.warn(
-                'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.',
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            timeout_unit = "step"  # don't propagate deprecated value
-        self._id = self._id_count
-        type(self)._id_count += 1
-
-        if timeout_time is not None:
-            co = coroutine(f)
-
-            @functools.wraps(f)
-            async def f(*args, **kwargs):
-                running_co = co(*args, **kwargs)
-
-                try:
-                    res = await cocotb.triggers.with_timeout(
-                        running_co, self.timeout_time, self.timeout_unit
-                    )
-                except cocotb.result.SimTimeoutError:
-                    running_co.kill()
-                    raise
-                else:
-                    return res
-
-        super().__init__(f)
-
-        self.timeout_time = timeout_time
-        self.timeout_unit = timeout_unit
-        self.expect_fail = expect_fail
-        if isinstance(expect_error, bool):
-            warnings.warn(
-                "Passing bool values to `except_error` option of `cocotb.test` is deprecated. "
-                "Pass a specific Exception type instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        if expect_error is True:
-            expect_error = (BaseException,)
-        elif expect_error is False:
-            expect_error = ()
-        self.expect_error = expect_error
-        self.skip = skip
-        self.stage = stage
-        self.im_test = True  # For auto-regressions
-        self.name = self._func.__name__
-
-    def __call__(self, *args, **kwargs):
-        inst = self._func(*args, **kwargs)
-        coro = _RunningTest(inst, self)
-        return coro
+    return wrapper
 
 
 if sys.version_info < (3, 7):
@@ -288,7 +279,7 @@ if sys.version_info < (3, 7):
     RunningTest = _RunningTest
 else:
 
-    def __getattr__(attr: str) -> typing.Any:
+    def __getattr__(attr: str) -> Any:
         if attr in ("Task", "RunningTask"):
             warnings.warn(
                 f"The class {attr} has been renamed to cocotb.task.Task.",
