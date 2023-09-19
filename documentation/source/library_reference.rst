@@ -101,8 +101,6 @@ as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
 
 .. autoclass:: cocotb.types.Logic
 
-.. autoclass:: cocotb.types.Bit
-
 .. autoclass:: cocotb.types.Range
     :members:
     :exclude-members: count, index
