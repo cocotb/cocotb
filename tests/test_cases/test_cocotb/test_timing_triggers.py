@@ -44,7 +44,9 @@ async def test_function_reentrant_clock(dut):
         await timer
 
 
-@cocotb.test()
+# Xcelium/VHDL does not correctly report the simulator precision.
+# See also https://github.com/cocotb/cocotb/issues/3419
+@cocotb.test(skip=(cocotb.LANGUAGE == "vhdl" and cocotb.SIM_NAME.startswith("xmsim")))
 async def test_timer_with_units(dut):
     # The following test assumes a time precision of 1ps. Update the simulator
     # invocation if this assert hits!

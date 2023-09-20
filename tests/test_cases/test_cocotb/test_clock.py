@@ -65,7 +65,9 @@ async def test_clock_with_units(dut):
     clk_gen.kill()
 
 
-@cocotb.test()
+# Xcelium/VHDL does not correctly report the simulator precision.
+# See also https://github.com/cocotb/cocotb/issues/3419
+@cocotb.test(skip=(cocotb.LANGUAGE == "vhdl" and cocotb.SIM_NAME.startswith("xmsim")))
 async def test_clocks_with_other_number_types(dut):
     # The following test assumes a time precision of at least 0.1ns.
     # Update the simulator invocation if this assert hits!
