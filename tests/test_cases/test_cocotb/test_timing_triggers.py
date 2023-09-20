@@ -17,6 +17,7 @@ from fractions import Fraction
 import cocotb
 import pytest
 from cocotb.clock import Clock
+from cocotb.simulator import get_precision
 from cocotb.triggers import (
     First,
     Join,
@@ -44,6 +45,10 @@ async def test_function_reentrant_clock(dut):
 
 @cocotb.test()
 async def test_timer_with_units(dut):
+    # The following test assumes a time precision of 1ps. Update the simulator
+    # invocation if this assert hits!
+    assert get_precision() == -12
+
     time_fs = get_sim_time(units="fs")
 
     # Await for one simulator time step
