@@ -20,12 +20,7 @@ async def monitor(dut):
     ), "stream_in_valid should be high on the 5th cycle"
 
 
-# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(
-    expect_error=cocotb.triggers.TriggerException
-    if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
-    else ()
-)
+@cocotb.test()
 async def issue_120_scheduling(dut):
 
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
