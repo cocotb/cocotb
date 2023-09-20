@@ -12,6 +12,7 @@ import pytest
 
 import cocotb
 from cocotb.clock import Clock
+from cocotb.simulator import get_precision
 from cocotb.triggers import RisingEdge, Timer
 from cocotb.utils import get_sim_time
 
@@ -66,6 +67,10 @@ async def test_clock_with_units(dut):
 
 @cocotb.test()
 async def test_clocks_with_other_number_types(dut):
+    # The following test assumes a time precision of at least 0.1ns.
+    # Update the simulator invocation if this assert hits!
+    assert get_precision() <= -10
+
     clk1 = cocotb.start_soon(Clock(dut.clk, decimal.Decimal("1"), units="ns").start())
     await Timer(10, "ns")
     with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):

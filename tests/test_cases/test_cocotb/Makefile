@@ -28,6 +28,5 @@ MODULE := "\
 	test_fork,\
 	"
 
-ifeq ($(SIM),questa)
-	SIM_ARGS := "-t ps"
-endif
+# test_timing_triggers.py requires a 1ps time precision.
+COCOTB_HDL_TIMEPRECISION := 1ps
