@@ -6,12 +6,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
 
 
-# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(
-    expect_error=cocotb.triggers._TriggerException
-    if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
-    else ()
-)
+@cocotb.test()
 async def issue_142_overflow_error(dut):
     """Tranparently convert ints too long to pass
     through the GPI interface natively into BinaryValues"""

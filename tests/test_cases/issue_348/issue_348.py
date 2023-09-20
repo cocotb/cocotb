@@ -48,34 +48,19 @@ class DualMonitor:
             assert mon, "Monitor saw nothing"
 
 
-# Cadence simulators: "Unable set up RisingEdge(ModifiableObject(sample_module.clk)) Trigger" with VHDL (see #1076)
-@cocotb.test(
-    expect_error=cocotb.triggers._TriggerException
-    if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
-    else ()
-)
+@cocotb.test()
 async def issue_348_rising(dut):
     """Start two monitors on RisingEdge"""
     await DualMonitor(RisingEdge, dut.clk).start()
 
 
-# Cadence simulators: "Unable set up FallingEdge(ModifiableObject(sample_module.clk)) Trigger" with VHDL (see #1076)
-@cocotb.test(
-    expect_error=cocotb.triggers._TriggerException
-    if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
-    else ()
-)
+@cocotb.test()
 async def issue_348_falling(dut):
     """Start two monitors on FallingEdge"""
     await DualMonitor(FallingEdge, dut.clk).start()
 
 
-# Cadence simulators: "Unable set up Edge(ModifiableObject(sample_module.clk)) Trigger" with VHDL (see #1076)
-@cocotb.test(
-    expect_error=cocotb.triggers._TriggerException
-    if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
-    else ()
-)
+@cocotb.test()
 async def issue_348_either(dut):
     """Start two monitors on Edge"""
     await DualMonitor(Edge, dut.clk).start()
