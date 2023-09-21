@@ -123,14 +123,23 @@ async def do_test_afterdelay_in_readonly(dut, delay):
     exited = True
 
 
-# Riviera and Questa (in Verilog) correctly fail to register ReadWrite after ReadOnly
-# Riviera and Questa (in VHDL) incorrectly allow registering ReadWrite after ReadOnly
+# A TriggerException is expected to happen in this test, which indicates that
+# ReadWrite after ReadOnly fails to register.
+# - Riviera and Questa (in Verilog) and Xcelium pass.
+# - Riviera and Questa (in VHDL) incorrectly allow registering ReadWrite
+#   after ReadOnly.
+# - Xcelium passes (VHDL and Verilog).
 @cocotb.test(
     expect_error=TriggerException
-    if cocotb.LANGUAGE in ["verilog"]
-    and cocotb.SIM_NAME.lower().startswith(("riviera", "modelsim"))
+    if (
+        (
+            cocotb.LANGUAGE in ["verilog"]
+            and cocotb.SIM_NAME.lower().startswith(("riviera", "modelsim"))
+        )
+        or cocotb.SIM_NAME.lower().startswith(("xmsim"))
+    )
     else (),
-    expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim")),
+    expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim")),
 )
 async def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
