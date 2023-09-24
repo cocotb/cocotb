@@ -10,7 +10,6 @@ Test for scheduler and coroutine behavior
 """
 import logging
 import re
-import warnings
 from asyncio import CancelledError, InvalidStateError
 from typing import Any, Awaitable, Coroutine
 
@@ -403,10 +402,6 @@ async def test_task_repr(dut):
 
     coro_e = Event("coroutine_inner")
 
-    async def coroutine_forked(task):
-        log.info(repr(task))
-        assert re.match(r"<Task \d+ adding coro=coroutine_outer\(\)>", repr(task))
-
     @cocotb.coroutine  # Combine requires use of cocotb.coroutine
     async def coroutine_wait():
         await Timer(1, units="ns")
@@ -418,9 +413,6 @@ async def test_task_repr(dut):
         log.info(repr(this_task))
         assert re.match(r"<Task \d+ running coro=coroutine_outer\(\)>", repr(this_task))
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            cocotb.fork(coroutine_forked(this_task))
         await Combine(*(coroutine_wait() for _ in range(2)))
 
         return "Combine done"

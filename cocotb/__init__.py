@@ -140,26 +140,6 @@ and in parameters to :class:`.TestFactory`\ s.
 """
 
 
-def fork(coro: Union[Task, Coroutine]) -> Task:
-    """
-    Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on its use.
-
-    .. deprecated:: 1.7.0
-        This function has been deprecated in favor of :func:`cocotb.start_soon` and :func:`cocotb.start`.
-        In most cases you can simply substitute ``cocotb.fork`` with ``cocotb.start_soon``.
-        For more information on when to use ``start_soon`` vs ``start`` see :ref:`coroutines`.
-    """
-    warnings.warn(
-        "cocotb.fork has been deprecated in favor of cocotb.start_soon and cocotb.start.\n"
-        "In most cases you can simply substitute cocotb.fork with cocotb.start_soon.\n"
-        "For more information about when you would want to use cocotb.start see the docs,\n"
-        "https://docs.cocotb.org/en/latest/coroutines.html#concurrent-execution",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return scheduler._add(coro)
-
-
 def start_soon(coro: Union[Task, Coroutine]) -> Task:
     """
     Schedule a coroutine to be run concurrently.
@@ -189,8 +169,7 @@ def create_task(coro: Union[Task, Coroutine]) -> Task:
     """
     Construct a coroutine into a Task without scheduling the Task.
 
-    The Task can later be scheduled with :func:`cocotb.fork`, :func:`cocotb.start`, or
-    :func:`cocotb.start_soon`.
+    The Task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
 
     .. versionadded:: 1.6.0
     """

@@ -205,12 +205,6 @@ async def example_coro():
 
 
 @cocotb.test()
-async def test_fork_deprecated(_):
-    with pytest.warns(DeprecationWarning):
-        cocotb.fork(example_coro())
-
-
-@cocotb.test()
 async def test_task_deprecations(_):
     task = cocotb.start_soon(example_coro())
     with pytest.warns(DeprecationWarning):
