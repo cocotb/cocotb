@@ -30,7 +30,7 @@ RTL_LIBRARY ?= work
 
 .PHONY: analyse
 
-VHPI_LIB := $(shell cocotb-config --lib-name-path vhpi ius)
+VHPI_LIB := $(shell cocotb-config --lib-name-path vhpi nvc)
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
