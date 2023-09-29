@@ -20,6 +20,7 @@ Microsemi
 MinGW
 ModelSim
 Msys
+NVC
 PyPi
 Questa
 Quickstart
