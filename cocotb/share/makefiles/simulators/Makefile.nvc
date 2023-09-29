@@ -1,0 +1,54 @@
+# -*- mode: makefile-gmake -*-
+
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
+ifneq ($(VERILOG_SOURCES),)
+
+$(COCOTB_RESULTS_FILE):
+	@echo "Skipping simulation as Verilog is not supported on simulator=$(SIM)"
+clean::
+
+else
+
+ifeq ($(COCOTB_NVC_TRACE), 1)
+    TRACE :=--vhpi-trace
+endif
+
+CMD_BIN := nvc
+
+ifdef NVC_BIN_DIR
+    CMD := $(shell :; command -v $(NVC_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error "Unable to locate command >$(CMD_BIN)<")
+else
+    NVC_BIN_DIR := $(shell dirname $(CMD))
+    export NVC_BIN_DIR
+endif
+
+RTL_LIBRARY ?= work
+
+.PHONY: analyse
+
+# Compilation phase
+analyse: $(VHDL_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
+	cd $(SIM_BUILD) && $(CMD) --work=$(RTL_LIBRARY) -a $(VHDL_SOURCES) $(COMPILE_ARGS) $(EXTRA_ARGS)
+
+$(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
+	-@rm -f $(COCOTB_RESULTS_FILE)
+
+	cd $(SIM_BUILD) && \
+		$(CMD) --work=$(RTL_LIBRARY) -e $(TOPLEVEL)
+	cd $(SIM_BUILD) && MODULE=$(MODULE) \
+		TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
+		$(CMD) $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS) --work=$(RTL_LIBRARY) -r --load $(LIB_DIR)/libcocotbvhpi_ius.$(LIB_EXT) $(TRACE) $(TOPLEVEL)
+
+	$(call check_for_results_file)
+
+clean::
+	-@rm -rf $(SIM_BUILD)
+endif
