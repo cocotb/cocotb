@@ -266,6 +266,19 @@ bool is_enum_boolean(vhpiHandleT hdl) {
     return false;
 }
 
+static bool compare_names(const std::string &a, const std::string &b) {
+#ifdef NVC
+    /* NVC does not properly implement the CaseName property and returns
+       Names instead (nickg/nvc#723). */
+    return a.size() == b.size() &&
+           equal(a.begin(), a.end(), b.begin(), [](char x, char y) {
+               return std::toupper(x) == std::toupper(y);
+           });
+#else
+    return a == b;
+#endif
+}
+
 GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                                                 const std::string &name,
                                                 const std::string &fq_name) {
@@ -408,7 +421,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         case vhpiCompInstStmtK: {
             std::string hdl_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
 
-            if (base_type == vhpiRootInstK && hdl_name != name) {
+            if (base_type == vhpiRootInstK && !compare_names(hdl_name, name)) {
                 vhpiHandleT arch = vhpi_handle(vhpiDesignUnit, new_hdl);
 
                 if (NULL != arch) {
@@ -420,7 +433,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 }
             }
 
-            if (name != hdl_name) {
+            if (!compare_names(name, hdl_name)) {
                 LOG_DEBUG("VHPI: Found pseudo-region %s", fq_name.c_str());
                 gpi_type = GPI_GENARRAY;
             } else {
@@ -536,7 +549,7 @@ GpiObjHdl *VhpiImpl::native_check_create(const std::string &name,
                     selected_name = selected_name.substr(found + 1);
                 }
 
-                if (selected_name == name) {
+                if (compare_names(selected_name, name)) {
                     vhpi_release_handle(iter);
                     break;
                 }
@@ -906,7 +919,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char *name) {
         return NULL;
     }
 
-    if (name != NULL && strcmp(name, found)) {
+    if (name != NULL && !compare_names(name, found)) {
         LOG_WARN("VHPI: DUT '%s' doesn't match requested toplevel %s", found,
                  name);
         return NULL;
@@ -992,7 +1005,7 @@ bool VhpiImpl::compare_generate_labels(const std::string &a,
     /* Compare two generate labels for equality ignoring any suffixed index. */
     std::size_t a_idx = a.rfind(GEN_IDX_SEP_LHS);
     std::size_t b_idx = b.rfind(GEN_IDX_SEP_LHS);
-    return a.substr(0, a_idx) == b.substr(0, b_idx);
+    return compare_names(a.substr(0, a_idx), b.substr(0, b_idx));
 }
 
 extern "C" {
