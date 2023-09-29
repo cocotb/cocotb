@@ -374,6 +374,20 @@ A VCD file named :file:`anyname.vcd` will be generated in the current directory.
 :make:var:`SIM_ARGS` can also be used to pass command line arguments related to :ref:`other waveform formats supported by GHDL <ghdl:export_waves>`.
 
 
+.. _sim-nvc:
+
+NVC
+===
+
+In order to use this simulator, set :make:var:`SIM` to ``nvc``:
+
+.. code-block:: bash
+
+    make SIM=nvc
+
+To enable display of VHPI traces, use ``SIM_ARGS=--vhpi-trace make ...``.
+
+
 .. _sim-cvc:
 
 Tachyon DA CVC
