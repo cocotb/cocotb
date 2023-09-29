@@ -18,7 +18,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
     # Set module parameters
     ifeq ($(SIM),icarus)
         COMPILE_ARGS += -Pmatrix_multiplier.DATA_WIDTH=$(DATA_WIDTH) -Pmatrix_multiplier.A_ROWS=$(A_ROWS) -Pmatrix_multiplier.B_COLUMNS=$(B_COLUMNS) -Pmatrix_multiplier.A_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
-    else ifneq ($(filter $(SIM),questa modelsim riviera activehdl),)
+    else ifneq ($(filter $(SIM),questa modelsim riviera activehdl nvc),)
         SIM_ARGS += -gDATA_WIDTH=$(DATA_WIDTH) -gA_ROWS=$(A_ROWS) -gB_COLUMNS=$(B_COLUMNS) -gA_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
     else ifeq ($(SIM),vcs)
         COMPILE_ARGS += -pvalue+matrix_multiplier/DATA_WIDTH=$(DATA_WIDTH) -pvalue+matrix_multiplier/A_ROWS=$(A_ROWS) -pvalue+matrix_multiplier/B_COLUMNS=$(B_COLUMNS) -pvalue+matrix_multiplier/A_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
@@ -45,6 +45,9 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     ifeq ($(SIM),ghdl)
         EXTRA_ARGS += --std=08
         SIM_ARGS += --wave=wave.ghw
+    else ifeq ($(SIM),nvc)
+        EXTRA_ARGS += --std=08
+        SIM_ARGS += --wave=wave.fst
     else ifneq ($(filter $(SIM),ius xcelium),)
         COMPILE_ARGS += -v200x
     else ifneq ($(filter $(SIM),questa modelsim riviera activehdl),)
