@@ -403,7 +403,7 @@ class HierarchyArrayObject(RegionObject):
 
         result = re.match(rf"{self._name}__(?P<index>\d+)$", name)
         if not result:
-            result = re.match(rf"{self._name}\((?P<index>\d+)\)$", name)
+            result = re.match(rf"{self._name}\((?P<index>\d+)\)$", name, re.IGNORECASE)
         if not result:
             result = re.match(rf"{self._name}\[(?P<index>\d+)\]$", name)
 
