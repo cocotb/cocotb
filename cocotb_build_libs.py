@@ -819,4 +819,14 @@ def get_ext():
         )
         ext.append(verilator_vpi_ext)
 
+    #
+    # NVC
+    #
+    if os.name == "posix":
+        logger.info("Compiling libraries for NVC")
+        nvc_vhpi_ext = _get_vhpi_lib_ext(
+            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="NVC"
+        )
+        ext.append(nvc_vhpi_ext)
+
     return ext
