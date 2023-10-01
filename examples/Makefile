@@ -36,6 +36,11 @@ ifeq ($(TOPLEVEL_LANG),verilog)
 EXAMPLES += doc_examples/quickstart
 endif
 
+# Don't bother with Cadence Incisive/IUS for the mixed_signal example
+ifeq ($(SIM),xcelium)
+EXAMPLES += mixed_signal/tests
+endif
+
 .PHONY: $(EXAMPLES)
 
 .PHONY: all

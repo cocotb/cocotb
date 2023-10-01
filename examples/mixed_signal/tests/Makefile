@@ -1,10 +1,13 @@
+# Mimic the default behavior of assuming "icarus" when SIM is not set
+SIM ?= icarus
+
 # Override this variable to use a VHDL toplevel instead of (System)Verilog
 TOPLEVEL_LANG ?= verilog
 
 TOPLEVEL ?= tb_rescap
 
 ifeq ($(TOPLEVEL),tb_rescap)
-    MODULE ?= test_rescap,test_rescap_minimalist
+    MODULE ?= test_rescap_minimalist,test_rescap
 else ifeq ($(TOPLEVEL),tb_regulator)
     MODULE ?= test_regulator_plot,test_regulator_trim
 else
@@ -65,6 +68,7 @@ COCOTB_HDL_TIMEUNIT=1ns
 COCOTB_HDL_TIMEPRECISION=1ps
 
 ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+    # SIM_ARGS += -licinfo
     SIM_ARGS += -discipline logic
     SIM_ARGS += -amsconnrules ConnRules_full_fast
     SIM_ARGS += +dr_info

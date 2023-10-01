@@ -14,7 +14,10 @@ import nox
 # Sessions run by default if nox is called without further arguments.
 nox.options.sessions = ["dev_test"]
 
-test_deps = ["pytest"]
+test_deps = [
+    "pytest",
+    "matplotlib",  # needed for some tests in examples/mixed_signal
+]
 coverage_deps = ["coverage", "pytest-cov"]
 # gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See
 # https://github.com/gcovr/gcovr/issues/596

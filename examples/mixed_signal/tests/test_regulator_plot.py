@@ -39,7 +39,7 @@ async def get_voltage(tb_hdl, node):
     await Timer(1, units="ps")  # let trim_val take effect
     tb_hdl.i_analog_probe.node_to_probe.value = node.encode("ascii")
     tb_hdl.i_analog_probe.probe_voltage_toggle.value = ~int(
-        tb_hdl.i_analog_probe.probe_voltage_toggle
+        tb_hdl.i_analog_probe.probe_voltage_toggle.value.signed_integer
     )
     await Timer(
         1, units="ps"
