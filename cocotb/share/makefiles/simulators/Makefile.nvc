@@ -10,10 +10,6 @@ clean::
 
 else
 
-ifeq ($(COCOTB_NVC_TRACE), 1)
-    TRACE :=--vhpi-trace
-endif
-
 CMD_BIN := nvc
 
 ifdef NVC_BIN_DIR
