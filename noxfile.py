@@ -58,6 +58,7 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
         ("cvc", "verilog", "vpi"),
         ("ghdl", "vhdl", "vpi"),
         ("icarus", "verilog", "vpi"),
+        ("nvc", "vhdl", "vhpi"),
         ("questa", "verilog", "vpi"),
         ("questa", "vhdl", "fli"),
         ("questa", "vhdl", "vhpi"),
