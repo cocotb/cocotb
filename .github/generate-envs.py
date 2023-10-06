@@ -113,6 +113,15 @@ ENVS = [
         "python-version": "3.8",
         "group": "experimental",
     },
+    # Test NVC on Ubuntu
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "master",  # Only master supported for now
+        "os": "ubuntu-latest",
+        "python-version": "3.8",
+        "group": "experimental",
+    },
     # Test Verilator on Ubuntu
     {
         "lang": "verilog",
