@@ -254,6 +254,26 @@ ENVS = [
         "python-version": "3.8",
         "group": "ci",
     },
+    # Test Cadence Xcelium on Ubuntu
+    {
+        "lang": "verilog",
+        "sim": "xcelium",
+        "sim-version": "cadence/xcelium/2303",
+        "os": "ubuntu-20.04",
+        "self-hosted": True,
+        "python-version": "3.8",
+        "group": "ci",
+    },
+    # Xcelium VHDL (VHPI) is not yet supported.
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "xcelium",
+    #     "sim-version": "cadence/xcelium/2303",
+    #     "os": "ubuntu-20.04",
+    #     "self-hosted": True,
+    #     "python-version": "3.8",
+    #     "group": "ci",
+    # },
 ]
 
 # Questa: test more versions as part of the extended tests.
