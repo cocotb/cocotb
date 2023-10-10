@@ -47,7 +47,7 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
     # Simulators with support for VHDL through VHPI, and Verilog through VPI.
     standard = [
         (sim, toplevel_lang, gpi_interface)
-        for sim in ("activehdl", "rivierapro", "xcelium")
+        for sim in ("activehdl", "riviera", "xcelium")
         for toplevel_lang in ("verilog", "vhdl")
         for gpi_interface in ("vpi", "vhpi")
         if (toplevel_lang, gpi_interface) in (("verilog", "vpi"), ("vhdl", "vhpi"))
