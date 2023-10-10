@@ -143,9 +143,10 @@ def test_mixed_language_runner():
             f"A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG={hdl_toplevel_lang}"
         )
 
+    build_args = []
     test_args = []
     if sim == "xcelium":
-        test_args = ["-v93"]
+        build_args = ["-v93"]
     elif sim == "questa":
         test_args = ["-t", "1ps"]
 
@@ -155,9 +156,11 @@ def test_mixed_language_runner():
     runner = get_runner(sim)
 
     runner.build(
+        hdl_toplevel="endian_swapper_mixed",
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,
         always=True,
+        build_args=build_args,
     )
 
     runner.test(
