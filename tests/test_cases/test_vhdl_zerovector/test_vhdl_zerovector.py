@@ -26,7 +26,7 @@ async def test_long_signal(dut):
 @cocotb.test(
     expect_error=AttributeError
     if cocotb.SIM_NAME.lower().startswith(
-        ("ghdl", "xmsim", "ncsim", "riviera", "aldec")
+        ("ghdl", "xmsim", "ncsim", "riviera", "aldec", "nvc")
     )
     or is_questa_vhpi
     else ()
@@ -39,7 +39,7 @@ async def test_read_zero_signal(dut):
 @cocotb.test(
     expect_error=AttributeError
     if cocotb.SIM_NAME.lower().startswith(
-        ("ghdl", "xmsim", "ncsim", "riviera", "aldec")
+        ("ghdl", "xmsim", "ncsim", "riviera", "aldec", "nvc")
     )
     or is_questa_vhpi
     else ()
@@ -54,7 +54,7 @@ async def test_write_zero_signal_with_0(dut):
 @cocotb.test(
     expect_error=AttributeError
     if cocotb.SIM_NAME.lower().startswith(
-        ("ghdl", "xmsim", "ncsim", "riviera", "aldec")
+        ("ghdl", "xmsim", "ncsim", "riviera", "aldec", "nvc")
     )
     or is_questa_vhpi
     else ()
