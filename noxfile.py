@@ -53,7 +53,7 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
     # Simulators with support for VHDL through VHPI, and Verilog through VPI.
     standard = [
         (sim, toplevel_lang, gpi_interface)
-        for sim in ("activehdl", "rivierapro", "xcelium")
+        for sim in ("activehdl", "riviera", "xcelium")
         for toplevel_lang in ("verilog", "vhdl")
         for gpi_interface in ("vpi", "vhpi")
         if (toplevel_lang, gpi_interface) in (("verilog", "vpi"), ("vhdl", "vhpi"))
@@ -171,7 +171,7 @@ def dev_test_sim(
         coverage_file.unlink()
 
     session.log(f"Running 'make test' against a simulator {config_str}")
-    session.run("make", "clean", "test", external=True, env=env)
+    session.run("make", "test", external=True, env=env)
 
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
@@ -485,7 +485,7 @@ def release_test_sim(
     config_str = stringify_dict(env)
 
     session.log(f"Running tests against a simulator: {config_str}")
-    session.run("make", "clean", "test", external=True, env=env)
+    session.run("make", "test", external=True, env=env)
 
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(

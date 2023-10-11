@@ -11,6 +11,8 @@
   * [Raise a bug / request an enhancement](https://github.com/cocotb/cocotb/issues/new) (Requires a GitHub account)
   * [Join the Gitter chat room](https://gitter.im/cocotb/Lobby)
 
+**Note: The current `master` branch of the cocotb repository is expected to be released as cocotb 2.0, which contains API-breaking changes from previous 1.x releases. Please use the `stable/1.8` branch if you're building cocotb from source, or just [install it from PyPi](https://pypi.org/project/cocotb/).**
+
 ## Installation
 
 The current stable version of cocotb requires:
@@ -33,10 +35,6 @@ see [the documentation](https://docs.cocotb.org/en/stable/install.html).
 
 For details on how to install the *development* version of cocotb,
 see [the preliminary documentation of the future release](https://docs.cocotb.org/en/latest/install_devel.html#install-devel).
-
-**!!! Bus and Testbenching Components !!!**
-The reusable bus interfaces and testbenching components have recently been moved to the [cocotb-bus](https://github.com/cocotb/cocotb-bus) package.
-You can easily install these at the same time as cocotb by adding the `bus` extra install: `pip install cocotb[bus]`.
 
 ## Usage
 

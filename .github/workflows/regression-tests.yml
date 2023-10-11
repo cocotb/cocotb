@@ -45,7 +45,7 @@ jobs:
     needs: generate_envs
 
     name: ${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}} ${{matrix.may_fail && '| May Fail' || ''}}
-    runs-on: ${{matrix.os}}
+    runs-on: ${{matrix.runs-on}}
     env:
       SIM: ${{matrix.sim}}
       TOPLEVEL_LANG: ${{matrix.lang}}
@@ -200,6 +200,9 @@ jobs:
       continue-on-error: ${{matrix.may_fail || false}}
       timeout-minutes: 15
       run: |
+        if [ "${{matrix.self-hosted}}" == "true" ]; then
+          module load "${{ matrix.sim-version }}"
+        fi
         nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
 
     # codecov
