@@ -379,13 +379,24 @@ A VCD file named :file:`anyname.vcd` will be generated in the current directory.
 NVC
 ===
 
+.. warning::
+
+    NVC support in cocotb is experimental.
+    Some features of cocotb may not work correctly or at all.
+    A current master build of NVC is required.
+
 In order to use this simulator, set :make:var:`SIM` to ``nvc``:
 
 .. code-block:: bash
 
     make SIM=nvc
 
-To enable display of VHPI traces, use ``SIM_ARGS=--vhpi-trace make ...``.
+.. _sim-nvc-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:nvc <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Anvc>`_
 
 
 .. _sim-cvc:
