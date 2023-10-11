@@ -489,12 +489,26 @@ out:
     return new_obj;
 }
 
+static std::string fully_qualified_name(const std::string &name,
+                                        GpiObjHdl *parent) {
+    std::string fq_name = parent->get_fullname();
+    if (fq_name == ":") {
+        fq_name += name;
+    } else {
+        fq_name += "." + name;
+    }
+#ifdef NVC
+    /* Convert to a canonical form to avoid problems with case insensitivity. */
+    std::transform(fq_name.begin(), fq_name.end(), fq_name.begin(), ::toupper);
+#endif
+    return fq_name;
+}
+
 GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
     LOG_DEBUG("VHPI: Trying to convert raw to VHPI handle");
 
     vhpiHandleT new_hdl = (vhpiHandleT)raw_hdl;
 
-    std::string fq_name = parent->get_fullname();
     const char *c_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
     if (!c_name) {
         LOG_DEBUG("VHPI: Unable to query name of passed in handle");
@@ -502,12 +516,7 @@ GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
     }
 
     std::string name = c_name;
-
-    if (fq_name == ":") {
-        fq_name += name;
-    } else {
-        fq_name += "." + name;
-    }
+    std::string fq_name = fully_qualified_name(name, parent);
 
     GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
@@ -524,12 +533,8 @@ GpiObjHdl *VhpiImpl::native_check_create(const std::string &name,
     vhpiHandleT vhpi_hdl = parent->get_handle<vhpiHandleT>();
 
     vhpiHandleT new_hdl;
-    std::string fq_name = parent->get_fullname();
-    if (fq_name == ":") {
-        fq_name += name;
-    } else {
-        fq_name += "." + name;
-    }
+    std::string fq_name = fully_qualified_name(name, parent);
+
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
