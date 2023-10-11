@@ -36,10 +36,6 @@ see [the documentation](https://docs.cocotb.org/en/stable/install.html).
 For details on how to install the *development* version of cocotb,
 see [the preliminary documentation of the future release](https://docs.cocotb.org/en/latest/install_devel.html#install-devel).
 
-**!!! Bus and Testbenching Components !!!**
-The reusable bus interfaces and testbenching components have recently been moved to the [cocotb-bus](https://github.com/cocotb/cocotb-bus) package.
-You can easily install these at the same time as cocotb by adding the `bus` extra install: `pip install cocotb[bus]`.
-
 ## Usage
 
 As a first trivial introduction to cocotb, the following example "tests" a flip-flop.
