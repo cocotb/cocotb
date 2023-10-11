@@ -303,6 +303,9 @@ class VhpiImpl : public GpiImplInterface {
                                           const std::string &name,
                                           const std::string &fq_name);
 
+    static bool compare_generate_labels(const std::string &a,
+                                        const std::string &b);
+
   private:
     VhpiReadWriteCbHdl m_read_write;
     VhpiNextPhaseCbHdl m_next_phase;
