@@ -68,7 +68,7 @@ COCOTB_HDL_TIMEUNIT=1ns
 COCOTB_HDL_TIMEPRECISION=1ps
 
 ifeq ($(SIM),$(filter $(SIM),ius xcelium))
-    # SIM_ARGS += -licinfo
+    SIM_ARGS += -licinfo
     SIM_ARGS += -discipline logic
     SIM_ARGS += -amsconnrules ConnRules_full_fast
     SIM_ARGS += +dr_info
