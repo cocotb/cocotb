@@ -551,7 +551,7 @@ GpiObjHdl *VhpiImpl::native_check_create(const std::string &name,
             for (rgn = vhpi_scan(iter); rgn != NULL; rgn = vhpi_scan(iter)) {
                 if (vhpi_get(vhpiKindP, rgn) == vhpiForGenerateK) {
                     std::string rgn_name = vhpi_get_str(vhpiCaseNameP, rgn);
-                    if (rgn_name.compare(0, name.length(), name) == 0) {
+                    if (compare_generate_labels(rgn_name, name)) {
                         new_hdl = vhpi_hdl;
                         vhpi_release_handle(iter);
                         break;
@@ -985,6 +985,14 @@ void VhpiImpl::sim_end() {
         vhpi_control(vhpiFinish, vhpiDiagTimeLoc);
         check_vhpi_error();
     }
+}
+
+bool VhpiImpl::compare_generate_labels(const std::string &a,
+                                       const std::string &b) {
+    /* Compare two generate labels for equality ignoring any suffixed index. */
+    std::size_t a_idx = a.rfind(GEN_IDX_SEP_LHS);
+    std::size_t b_idx = b.rfind(GEN_IDX_SEP_LHS);
+    return a.substr(0, a_idx) == b.substr(0, b_idx);
 }
 
 extern "C" {
