@@ -808,14 +808,20 @@ double VhpiSignalObjHdl::get_signal_value_real() {
 
 long VhpiSignalObjHdl::get_signal_value_long() {
     vhpiValueT value;
+#ifdef MODELSIM
+    // using vhpiCharVal as the format in Questa returns incorrect values.
+    // vhpiIntVal is a valid format for getting character values and reliably
+    // works in Questa.
+    value.format = vhpiIntVal;
+#else
     if (m_value.format == vhpiEnumVal || m_value.format == vhpiSmallEnumVal ||
         m_value.format == vhpiCharVal) {
         value.format = m_value.format;
     } else {
         value.format = vhpiIntVal;
     }
+#endif
     value.numElems = 0;
-
     if (vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &value)) {
         check_vhpi_error();
         LOG_ERROR("VHPI: Failed to get value of type long");

@@ -25,8 +25,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from os import environ
-
 import pytest
 
 import cocotb
@@ -262,19 +260,10 @@ async def test_read_single_character(dut):
     assert dut.stream_out_string[idx].value == test_string[idx - 1]
 
 
-questa_vhpi = (
-    cocotb.SIM_NAME.lower().startswith("modelsim")
-    and cocotb.LANGUAGE.lower() == "vhdl"
-    and environ["VHDL_GPI_INTERFACE"].lower() == "vhpi"
-)
-
-
 # GHDL discovers strings as vpiNetArray (gh-2584)
-# Questa does not initialize slots in a string using handles returned via VHPI
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
     expect_error=TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
-    expect_fail=questa_vhpi,
 )
 async def test_write_single_character(dut):
     # set initial value
