@@ -349,7 +349,7 @@ GpiObjHdl *FliImpl::native_check_create(const std::string &name,
             if (acc_fetch_fulltype(rgn) == accForGenerate) {
                 std::string rgn_name =
                     mti_GetRegionName(static_cast<mtiRegionIdT>(rgn));
-                if (rgn_name.compare(0, name.length(), name) == 0) {
+                if (compare_generate_labels(rgn_name, name)) {
                     FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
                     return create_gpi_obj_from_handle(
                         parent->get_handle<HANDLE>(), name, fq_name,
@@ -631,6 +631,14 @@ GpiIterator *FliImpl::iterate_handle(GpiObjHdl *obj_hdl,
     return new_iter;
 }
 
+bool FliImpl::compare_generate_labels(const std::string &a,
+                                      const std::string &b) {
+    /* Compare two generate labels for equality ignoring any suffixed index. */
+    std::size_t a_idx = a.rfind("(");
+    std::size_t b_idx = b.rfind("(");
+    return a.substr(0, a_idx) == b.substr(0, b_idx);
+}
+
 decltype(FliIterator::iterate_over) FliIterator::iterate_over = [] {
     std::initializer_list<FliIterator::OneToMany> region_options = {
         FliIterator::OTM_CONSTANTS,
@@ -783,8 +791,8 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
                 if (acc_fetch_fulltype(obj) == accForGenerate) {
                     std::string rgn_name =
                         mti_GetRegionName(static_cast<mtiRegionIdT>(obj));
-                    if (rgn_name.compare(0, parent_name.length(),
-                                         parent_name) != 0) {
+                    if (!FliImpl::compare_generate_labels(rgn_name,
+                                                          parent_name)) {
                         obj = NULL;
                         continue;
                     }

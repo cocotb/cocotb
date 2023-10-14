@@ -765,8 +765,8 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
             if (obj != NULL && obj_type == GPI_GENARRAY) {
                 if (vpi_get(vpiType, obj) == vpiGenScope) {
                     std::string rgn_name = vpi_get_str(vpiName, obj);
-                    if (rgn_name.compare(0, parent_name.length(),
-                                         parent_name) != 0) {
+                    if (!VpiImpl::compare_generate_labels(rgn_name,
+                                                          parent_name)) {
                         obj = NULL;
                         continue;
                     }
