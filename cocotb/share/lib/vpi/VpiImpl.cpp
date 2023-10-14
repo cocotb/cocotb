@@ -631,6 +631,14 @@ void VpiImpl::sim_end() {
     }
 }
 
+bool VpiImpl::compare_generate_labels(const std::string &a,
+                                      const std::string &b) {
+    /* Compare two generate labels for equality ignoring any suffixed index. */
+    std::size_t a_idx = a.rfind("[");
+    std::size_t b_idx = b.rfind("[");
+    return a.substr(0, a_idx) == b.substr(0, b_idx);
+}
+
 extern "C" {
 
 // Main re-entry point for callbacks from simulator
