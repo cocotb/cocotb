@@ -188,8 +188,8 @@ An :keyword:`await` will run an :keyword:`async` coroutine and wait for it to co
 The called coroutine "blocks" the execution of the current coroutine.
 Wrapping the call in :func:`~cocotb.start` or :func:`~cocotb.start_soon` runs the coroutine concurrently,
 allowing the current coroutine to continue executing.
-At any time you can :keyword:`await` the result of the forked coroutine,
-which will block until the forked coroutine finishes.
+At any time you can :keyword:`await` the result of a :class:`~cocotb.Task`,
+which will block the current coroutine's execution until the task finishes.
 
 The following example shows these in action:
 
@@ -267,8 +267,7 @@ A workaround is to use indirect access using
 Passing and Failing Tests
 =========================
 
-A cocotb test is considered to have `failed` if the test coroutine,
-or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
+A cocotb test is considered to have `failed` if the test coroutine or any running :class:`~cocotb.Task`
 fails an ``assert`` statement.
 Below are examples of `failing` tests.
 
@@ -299,8 +298,7 @@ For example, see the output for the first test from above.
                     AssertionError: Testing the obvious
 
 
-A cocotb test is considered to have `errored` if the test coroutine,
-or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
+A cocotb test is considered to have `errored` if the test coroutine or any running :class:`~cocotb.Task`
 raises an exception that isn't considered a `failure`.
 Below are examples of `erroring` tests.
 
@@ -330,8 +328,7 @@ For example, see the below output for the first test from above.
 
 
 If a test coroutine completes without `failing` or `erroring`,
-or if the test coroutine,
-or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
+or if the test coroutine or any running :class:`~cocotb.Task`
 raises :exc:`cocotb.result.TestSuccess`,
 the test is considered to have `passed`.
 Below are examples of `passing` tests.
@@ -365,7 +362,7 @@ Logging
 =======
 
 Cocotb uses the builtin :mod:`logging` library, with some configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
-Any forked coroutine holds a :class:`logging.Logger`,
+All :class:`~cocotb.Task`\ s have a :class:`logging.Logger`,
 and can be set to its own logging level.
 
 .. code-block:: python3

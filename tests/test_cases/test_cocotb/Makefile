@@ -25,7 +25,7 @@ MODULE := "\
 	pytest_assertion_rewriting,\
 	test_queues,\
 	test_utils,\
-	test_fork,\
+	test_start_soon,\
 	"
 
 ifeq ($(SIM),questa)

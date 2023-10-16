@@ -53,22 +53,15 @@ Coroutines can :keyword:`return` a value, so that they can be used by other coro
 Concurrent Execution
 ====================
 
-Coroutines can be scheduled for concurrent execution with :func:`~cocotb.fork`, :func:`~cocotb.start`, and :func:`~cocotb.start_soon`.
+Coroutines can be scheduled for concurrent execution with :func:`~cocotb.start` and :func:`~cocotb.start_soon`.
+These concurrently running coroutines are called :type:`~cocotb.Task`\ s.
 
-:func:`~cocotb.fork` (deprecated) schedules and executes the new coroutine immediately,
-returning control to the calling task after the new coroutine finishes or yields control.
-No other pending tasks are run.
-
-The *async* function :func:`~cocotb.start` schedules the new coroutine to be executed concurrently,
+The *async* function :func:`~cocotb.start` schedules the coroutine to be executed concurrently,
 then yields control to allow the new task (and any other pending tasks) to run,
 before resuming the calling task.
 
-:func:`~cocotb.start_soon` schedules the new coroutine for future execution,
+:func:`~cocotb.start_soon` schedules the coroutine for future execution,
 after the calling task yields control.
-
-.. note::
-    The preferred way to schedule tasks is with :func:`~cocotb.start` and :func:`~cocotb.start_soon`.
-    :func:`~cocotb.fork` is deprecated and will be removed in a future version of cocotb.
 
 .. code-block:: python3
 
@@ -144,13 +137,16 @@ forcing their completion before they would naturally end.
 .. versionchanged:: 1.4
     The :any:`cocotb.coroutine` decorator is no longer necessary for ``async def`` coroutines.
     ``async def`` coroutines can be used, without the ``@cocotb.coroutine`` decorator, wherever decorated coroutines are accepted,
-    including :keyword:`yield` statements and :func:`cocotb.fork`.
+    including :keyword:`yield` statements and ``cocotb.fork`` (since replaced with :func:`~cocotb.start` and :func:`~cocotb.start_soon`).
 
 .. versionchanged:: 1.6
     Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions.
 
 .. versionchanged:: 1.7
-    Deprecated :func:`cocotb.fork`.
+    Deprecated ``cocotb.fork``.
+
+.. versionchanged:: 2.0
+    Removed ``cocotb.fork``.
 
 
 Async generators
@@ -202,13 +198,13 @@ including triggers like :class:`~cocotb.triggers.Timer`.
             signal.value = ~signal
 
 Likewise, any place that will accept :keyword:`async` coroutines will also accept generator-based coroutines;
-including :func:`~cocotb.fork`.
+including :func:`~cocotb.start` and :func:`~cocotb.start_soon`.
 
 .. code-block:: python3
 
     @cocotb.coroutine
     def start_clock(clk):
-        # generator-based coroutines can still be forked
+        # generator-based coroutines can be run concurrently
         cocotb.start_soon(simple_clock(clk, 5, units='ns'))
         yield RisingEdge(clk)
 

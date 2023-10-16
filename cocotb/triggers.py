@@ -731,15 +731,15 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
             Typically there is no need to use this attribute - the
             following code samples are equivalent::
 
-                forked = cocotb.start_soon(mycoro())
-                j = Join(forked)
+                task = cocotb.start_soon(mycoro())
+                j = Join(task)
                 await j
                 result = j.retval
 
             ::
 
-                forked = cocotb.start_soon(mycoro())
-                result = await Join(forked)
+                task = cocotb.start_soon(mycoro())
+                result = await Join(task)
         """
         return self._coroutine.result()
 

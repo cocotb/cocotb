@@ -92,7 +92,7 @@ Bugfixes
 Deprecations and Removals
 -------------------------
 
-- :func:`cocotb.fork` has been deprecated in favor of :func:`cocotb.start_soon` or :func:`cocotb.start`. (:pr:`2663`)
+- ``cocotb.fork`` has been deprecated in favor of :func:`cocotb.start_soon` or :func:`cocotb.start`. (:pr:`2663`)
 
 
 Changes
@@ -139,7 +139,7 @@ Features
 - Xcelium now supports compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`2614`)
 - Add the :make:var:`SIM_CMD_PREFIX` to supported Makefile variables, allowing users to pass environment variables and other command prefixes to simulators. (:pr:`2615`)
 - To support VHDL libraries in ModelSim/Questa/Xcelium, :make:var:`VHDL_LIB_ORDER` has been added to specify a library compilation order. (:pr:`2635`)
-- :func:`cocotb.fork`, :func:`cocotb.start`, :func:`cocotb.start_soon`, and :func:`cocotb.create_task` now accept any object that implements the :class:`collections.abc.Coroutine` protocol. (:pr:`2647`)
+- ``cocotb.fork``, :func:`cocotb.start`, :func:`cocotb.start_soon`, and :func:`cocotb.create_task` now accept any object that implements the :class:`collections.abc.Coroutine` protocol. (:pr:`2647`)
 - :class:`~cocotb.regression.TestFactory` and :class:`cocotb.test` now accept any :class:`collections.abc.Callable` object which returns a :class:`collections.abc.Coroutine` as a test function. (:pr:`2647`)
 - Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions. (:pr:`2660`)
 - Add :func:`cocotb.create_task` API for creating a Task from a Coroutine without scheduling. (:pr:`2665`)
@@ -220,9 +220,9 @@ Features
   See :ref:`install` for more details. (:pr:`1798`)
 - Makefiles now automatically deduce :make:var:`TOPLEVEL_LANG` based on the value of :make:var:`VERILOG_SOURCES` and :make:var:`VHDL_SOURCES`.
   Makefiles also detect incorrect usage of :make:var:`TOPLEVEL_LANG` for simulators that only support one language. (:pr:`1982`)
-- :meth:`cocotb.fork` will now raise a descriptive :class:`TypeError` if a coroutine function is passed into them. (:pr:`2006`)
+- ``cocotb.fork`` will now raise a descriptive :class:`TypeError` if a coroutine function is passed into them. (:pr:`2006`)
 - Added :meth:`cocotb.scheduler.start_soon <cocotb.scheduler.Scheduler.start_soon>` which schedules a coroutine to start *after* the current coroutine yields control.
-  This behavior is distinct from :func:`cocotb.fork` which schedules the given coroutine immediately. (:pr:`2023`)
+  This behavior is distinct from ``cocotb.fork`` which schedules the given coroutine immediately. (:pr:`2023`)
 - If ``pytest`` is installed, its assertion-rewriting framework will be used to
   produce more informative tracebacks from the :keyword:`assert` statement. (:pr:`2028`)
 - The handle to :envvar:`TOPLEVEL`, typically seen as the first argument to a cocotb test function, is now available globally as :data:`cocotb.top`. (:pr:`2134`)

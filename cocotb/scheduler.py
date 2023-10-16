@@ -577,11 +577,11 @@ class Scheduler:
                 # and no one was monitoring it
                 coro._outcome.get()
             except (TestComplete, AssertionError) as e:
-                coro.log.info("Test stopped by this forked coroutine")
+                coro.log.info("Test stopped by this task")
                 e = remove_traceback_frames(e, ["_unschedule", "get"])
                 self._abort_test(e)
             except BaseException as e:
-                coro.log.error("Exception raised by this forked coroutine")
+                coro.log.error("Exception raised by this task")
                 e = remove_traceback_frames(e, ["_unschedule", "get"])
                 warnings.warn(
                     '"Unwatched" tasks that throw exceptions will not cause the test to fail. '
@@ -807,11 +807,6 @@ class Scheduler:
     def start_soon(self, coro: Union[Coroutine, Task]) -> Task:
         """
         Schedule a coroutine to be run concurrently, starting after the current coroutine yields control.
-
-        In contrast to :func:`~cocotb.fork` which starts the given coroutine immediately, this function
-        starts the given coroutine only after the current coroutine yields control.
-        This is useful when the coroutine to be forked has logic before the first
-        :keyword:`await` that may not be safe to execute immediately.
 
         .. versionadded:: 1.5
         """

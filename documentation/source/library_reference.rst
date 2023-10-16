@@ -65,8 +65,6 @@ Interacting with the Simulator
 Task Management
 ---------------
 
-.. autofunction:: cocotb.fork
-
 .. autofunction:: cocotb.start_soon
 
 .. autofunction:: cocotb.start

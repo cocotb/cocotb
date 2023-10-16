@@ -17,7 +17,7 @@ Glossary
       The result of calling a :term:`coroutine function`.
       Coroutines are not run immediately, you must either
       :keyword:`await` on them which blocks the awaiting coroutine until it is finished;
-      or fork the coroutine, turning it into a :term:`task`, which runs concurrently.
+      or turn them into a :term:`task`, which can be run concurrently.
       See also the :term:`Python glossary <python:coroutine>`.
 
    DUT
@@ -45,7 +45,7 @@ Glossary
       Register Transfer Level
 
    task
-      The result of forking a :term:`coroutine`. A task represents a concurrently running coroutine.
+      A :term:`coroutine` that can be run concurrently.
 
    UVM
       Universal Verification Methodology

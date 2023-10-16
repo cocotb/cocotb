@@ -140,7 +140,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         elif not self._started:
             fmt = "<{name} created coro={coro}()>"
         else:
-            fmt = "<{name} adding coro={coro}()>"
+            raise RuntimeError("Task in unknown state")
 
         try:
             coro_name = coro_stack[-1].name
