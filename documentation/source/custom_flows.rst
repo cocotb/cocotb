@@ -111,14 +111,16 @@ Aldec Active-HDL
 
 .. _custom-flows-siemens:
 
-Mentor/Siemens EDA Questa and Modelsim
+Mentor/Siemens EDA Modelsim and Questa
 ======================================
+
+Questa supports two different flows: the traditional flow using ``vsim``, which is also used by ModelSim, and a modern alternative using ``qrun``.
 
 .. tabs::
 
    .. group-tab:: Design with a VHDL Toplevel
 
-      For a design with a VHDL toplevel, call the ``vsim`` executable with the option
+      For a design with a VHDL toplevel, call the ``vsim`` or ``qrun`` executable with the option
       ``-foreign "cocotb_init $(cocotb-config --lib-name-path fli questa)"``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
@@ -127,7 +129,7 @@ Mentor/Siemens EDA Questa and Modelsim
 
    .. group-tab:: Design with a (System)Verilog Toplevel
 
-      For a design with a (System)Verilog toplevel, call the ``vsim`` executable with the option
+      For a design with a (System)Verilog toplevel, call the ``vsim`` or ``qrun`` executable with the option
       ``-pli $(cocotb-config --lib-name-path vpi questa)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to

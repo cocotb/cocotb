@@ -17,7 +17,7 @@ ifneq ($(filter $(SIM),xcelium),)
     COMPILE_ARGS += -v93
 endif
 
-ifneq ($(filter questa modelsim xcelium,$(shell echo $(SIM) | tr A-Z a-z)),)
+ifneq ($(filter questa questa-compat questa-qisqrun modelsim xcelium,$(shell echo $(SIM) | tr A-Z a-z)),)
     VHDL_LIB_ORDER := elib dlib clib blib
 endif
 
@@ -25,7 +25,7 @@ ifneq ($(shell echo $(TOPLEVEL_LANG) | tr A-Z a-z),vhdl)
 all:
 	@echo "Skipping test since only VHDL is supported"
 clean::
-else ifeq ($(filter ghdl questa modelsim xcelium,$(shell echo $(SIM) | tr A-Z a-z)),)
+else ifeq ($(filter ghdl questa-compat questa-qisqrun modelsim xcelium,$(shell echo $(SIM) | tr A-Z a-z)),)
 all:
 	@echo "Skipping test since only GHDL, Questa/ModelSim and Xcelium are supported"
 clean::
