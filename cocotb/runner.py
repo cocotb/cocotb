@@ -1033,6 +1033,16 @@ class Xcelium(Simulator):
         else:
             xrun_top = self.sim_hdl_toplevel
 
+        if self.waves:
+            input_tcl = [
+                f'-input "@database -open cocotb_waves -default" '
+                f'-input "@probe -database cocotb_waves -create {xrun_top} -all -depth all" '
+                f'-input "@run" '
+                f'-input "@exit" '
+            ]
+        else:
+            input_tcl = ["-input", "@run; exit;"]
+
         cmds = [["mkdir", "-p", tmpdir]]
         cmds += [
             ["xrun"]
@@ -1048,15 +1058,7 @@ class Xcelium(Simulator):
             + self.test_args
             + self.plusargs
             + ["-gui" if self.gui else ""]
-            + ["-input"]
-            + [
-                f'-input "@database -open cocotb_waves -default" '
-                f'-input "@probe -database cocotb_waves -create {xrun_top} -all -depth all" '
-                f'-input "@run" '
-                f'-input "@exit" '
-                if self.waves
-                else "@run; exit;"
-            ]
+            + input_tcl
         ]
         self.env["GPI_EXTRA"] = (
             cocotb.config.lib_name_path("vhpi", "xcelium") + ":cocotbvhpi_entry_point"
