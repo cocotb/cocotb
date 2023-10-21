@@ -15,7 +15,7 @@ import nox
 nox.options.sessions = ["dev_test"]
 
 test_deps = ["pytest"]
-coverage_deps = ["coverage", "pytest-cov"]
+coverage_deps = ["coverage"]
 # gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See
 # https://github.com/gcovr/gcovr/issues/596
 # When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an
@@ -169,16 +169,17 @@ def dev_test_sim(
         coverage_file.unlink()
 
     session.log(f"Running 'make test' against a simulator {config_str}")
-    session.run("make", "test", external=True, env=env)
+    # session.run("make", "test", external=True, env=env)
 
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
+        "coverage",
+        "run",
+        "--branch",
+        "--source=cocotb",
+        "-m",
         "pytest",
         "-v",
-        "--cov=cocotb",
-        "--cov-branch",
-        # Don't display coverage report here
-        "--cov-report=",
         "-k",
         "simulator_required",
         env=env,
@@ -235,12 +236,13 @@ def dev_test_nosim(session: nox.Session) -> None:
     # Run pytest with the default configuration in setup.cfg.
     session.log("Running simulator-agnostic tests with pytest")
     session.run(
+        "coverage",
+        "run",
+        "--branch",
+        "--source=cocotb",
+        "-m",
         "pytest",
         "-v",
-        "--cov=cocotb",
-        "--cov-branch",
-        # Don't display coverage report here
-        "--cov-report=",
         "-k",
         "not simulator_required",
     )
