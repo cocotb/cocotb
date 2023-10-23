@@ -181,6 +181,7 @@ def dev_test_sim(
         "--cov-report=",
         "-k",
         "simulator_required",
+        "tests/pytest/",
         env=env,
     )
     Path(".coverage").rename(".coverage.pytest")

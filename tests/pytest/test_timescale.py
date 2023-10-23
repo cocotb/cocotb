@@ -3,7 +3,7 @@ import sys
 import tempfile
 
 import pytest
-from test_cocotb import (
+from tests.pytest.test_cocotb import (
     compile_args,
     gpi_interfaces,
     hdl_toplevel,
