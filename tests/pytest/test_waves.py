@@ -21,6 +21,7 @@ from cocotb.triggers import ClockCycles
 
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 test_module = os.path.basename(os.path.splitext(__file__)[0])
+sim = os.getenv("SIM", "icarus")
 
 
 @cocotb.test()
@@ -57,10 +58,15 @@ def run_simulation(sim):
 
 @pytest.mark.simulator_required
 @pytest.mark.skipif(
-    os.getenv("SIM", "icarus") != "icarus",
-    reason="Skipping test because it is only for Icarus simulator",
+    sim not in ["icarus", "xcelium"],
+    reason="Skipping test because it is only for Icarus or Xcelium simulators",
 )
-def test_iverilog():
-    run_simulation(sim="icarus")
-    dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.fst")
+def test_wave_dump():
+    run_simulation(sim=sim)
+    if sim == "icarus":
+        dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.fst")
+    elif sim == "xcelium":
+        dumpfile_path = os.path.join(sim_build, "cocotb_waves.shm", "cocotb_waves.trn")
+    else:
+        raise RuntimeError("Not a supported simulator")
     assert os.path.exists(dumpfile_path)
