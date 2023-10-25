@@ -61,7 +61,7 @@ def run_simulation(sim):
     sim not in ["icarus", "xcelium"],
     reason="Skipping test because it is only for Icarus or Xcelium simulators",
 )
-def test_iverilog():
+def test_wave_dump():
     run_simulation(sim=sim)
     if sim == "icarus":
         dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.fst")
