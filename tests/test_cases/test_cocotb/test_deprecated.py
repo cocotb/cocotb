@@ -112,17 +112,6 @@ async def test_assigning_structure_deprecated(dut):
 
 
 @cocotb.test()
-async def test_expect_error_bool_deprecated(_):
-    async def t():
-        pass
-
-    with pytest.warns(DeprecationWarning):
-        cocotb.test(expect_error=True)(t)
-    with pytest.warns(DeprecationWarning):
-        cocotb.test(expect_error=False)(t)
-
-
-@cocotb.test()
 async def test_time_ps_deprecated(_):
     with pytest.warns(DeprecationWarning):
         Timer(time_ps=7, units="ns")
