@@ -12,18 +12,6 @@ from cocotb.binary import BinaryValue
 from cocotb.triggers import Timer
 
 
-@cocotb.test()
-async def test_returnvalue_deprecated(dut):
-    @cocotb.coroutine  # testing ReturnValue deprecated
-    def get_value():
-        yield cocotb.triggers.Timer(1, units="ns")
-        raise cocotb.result.ReturnValue(42)
-
-    with pytest.warns(DeprecationWarning, match=".*return statement instead.*"):
-        val = await get_value()
-    assert val == 42
-
-
 # strings are not supported on Icarus (gh-2585) or GHDL (gh-2584)
 @cocotb.test(
     expect_error=AttributeError

@@ -12,7 +12,6 @@ import cocotb
 import cocotb.triggers
 from cocotb import outcomes
 from cocotb.log import SimLog
-from cocotb.result import ReturnValue
 from cocotb.utils import extract_coro_stack, lazy_property, remove_traceback_frames
 
 T = typing.TypeVar("T")
@@ -171,8 +170,6 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         try:
             self._started = True
             return outcome.send(self._coro)
-        except ReturnValue as e:
-            self._outcome = outcomes.Value(e.retval)
         except StopIteration as e:
             self._outcome = outcomes.Value(e.value)
         except BaseException as e:
