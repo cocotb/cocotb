@@ -26,14 +26,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import functools
-import sys
 import warnings
-from typing import Any, Callable, Optional, Sequence, Type, Union
+from typing import Callable, Optional, Sequence, Type, Union
 
 import cocotb
 import cocotb.triggers
 from cocotb.log import SimLog
-from cocotb.task import Task as _Task  # noqa: F401
 from cocotb.task import _RunningCoroutine, _RunningTest
 from cocotb.utils import lazy_property
 
@@ -270,33 +268,3 @@ def test(
         )
 
     return wrapper
-
-
-if sys.version_info < (3, 7):
-    Task = _Task
-    RunningTask = _Task
-    RunningCoroutine = _RunningCoroutine
-    RunningTest = _RunningTest
-else:
-
-    def __getattr__(attr: str) -> Any:
-        if attr in ("Task", "RunningTask"):
-            warnings.warn(
-                f"The class {attr} has been renamed to cocotb.task.Task.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            attr = "_Task"
-        elif attr in ("RunningCoroutine", "RunningTest"):
-            warnings.warn(
-                f"The class {attr} is now private. Update all uses to the parent class cocotb.task.Task.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            attr = f"_{attr}"
-        try:
-            return globals()[attr]
-        except KeyError:
-            raise AttributeError(
-                f"module {__name__!r} has no attribute {attr!r}"
-            ) from None
