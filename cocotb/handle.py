@@ -392,26 +392,6 @@ class HierarchyArrayObject(RegionObject):
         raise TypeError("Not permissible to set %s at index %d" % (self._name, index))
 
 
-class _AssignmentResult:
-    """
-    An object that exists solely to provide an error message if the caller
-    is not aware of cocotb's meaning of ``<=``.
-    """
-
-    def __init__(self, signal, value):
-        self._signal = signal
-        self._value = value
-
-    def __bool__(self):
-        raise TypeError(
-            "Attempted to use `{0._signal!r} <= {0._value!r}` (a cocotb "
-            "delayed write) as if it were a numeric comparison. To perform "
-            "comparison, use `{0._signal!r}.value <= {0._value!r}` instead.".format(
-                self
-            )
-        )
-
-
 class NonHierarchyObject(SimHandleBase):
     """Common base class for all non-hierarchy objects."""
 
@@ -460,21 +440,6 @@ class NonHierarchyObject(SimHandleBase):
                 self._name, type(self)
             )
         )
-
-    def __le__(self, value):
-        """Overload less-than-or-equal-to operator to provide an HDL-like shortcut.
-
-        Example:
-        >>> module.signal <= 2
-        """
-        warnings.warn(
-            "Setting values on handles using the ``handle <= value`` syntax is deprecated. "
-            "Instead use the ``handle.value = value`` syntax",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.value = value
-        return _AssignmentResult(self, value)
 
     def __eq__(self, other):
         """Equality comparator for non-hierarchy objects
