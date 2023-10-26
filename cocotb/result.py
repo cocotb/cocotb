@@ -25,67 +25,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-
-# TODO: Could use cStringIO?
-import traceback
 import warnings
 from io import StringIO
 
 """Exceptions and functions for simulation result handling."""
-
-
-def raise_error(obj, msg):
-    """Create a :exc:`TestError` exception and raise it after printing a traceback.
-
-    .. deprecated:: 1.3
-        Raise a standard Python exception instead of calling this function.
-        A stacktrace will be printed by cocotb automatically if the exception is unhandled.
-
-    Args:
-        obj: Object with a log method.
-        msg (str): The log message.
-    """
-    warnings.warn(
-        "``raise_error`` is deprecated - raise a standard Exception instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    _raise_error(obj, msg)
-
-
-def _raise_error(obj, msg):
-    exc_info = sys.exc_info()
-    buff = StringIO()
-    traceback.print_exception(*exc_info, file=buff)
-    obj.log.error(f"{msg}\n{buff.getvalue()}")
-    exception = TestError(msg)
-    exception.stderr.write(buff.getvalue())
-    raise exception
-
-
-def create_error(obj, msg):
-    """Like :func:`raise_error`, but return the exception rather than raise it,
-    simply to avoid too many levels of nested `try/except` blocks.
-
-    .. deprecated:: 1.3
-        Raise a standard Python exception instead of calling this function.
-
-    Args:
-        obj: Object with a log method.
-        msg (str): The log message.
-    """
-    warnings.warn(
-        "``create_error`` is deprecated - raise a standard Exception instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    try:
-        # use the private version to avoid multiple warnings
-        _raise_error(obj, msg)
-    except TestError as error:
-        return error
-    return TestError("Creating error traceback failed")
 
 
 class ReturnValue(Exception):
