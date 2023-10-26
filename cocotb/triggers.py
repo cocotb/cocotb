@@ -174,11 +174,10 @@ class Timer(GPITrigger):
 
     def __init__(
         self,
-        time: Union[Real, Decimal] = None,
+        time: Union[Real, Decimal],
         units: str = "step",
         *,
-        round_mode: Optional[str] = None,
-        time_ps: Union[Real, Decimal] = None
+        round_mode: Optional[str] = None
     ) -> None:
         """
         Args:
@@ -238,22 +237,11 @@ class Timer(GPITrigger):
 
         .. versionchanged:: 2.0
             Passing ``None`` as the *units* argument was removed, use ``'step'`` instead.
+
+        .. versionchanged:: 2.0
+            The ``time_ps`` parameter was removed, use the ``time`` parameter instead.
         """
         GPITrigger.__init__(self)
-        if time_ps is not None:
-            if time is not None:
-                raise TypeError(
-                    "Gave argument to both the 'time' and deprecated 'time_ps' parameter"
-                )
-            time = time_ps
-            warnings.warn(
-                "The parameter name 'time_ps' has been renamed to 'time'. Please update your invocation.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        else:
-            if time is None:
-                raise TypeError("Missing required argument 'time'")
         if time <= 0:
             if time == 0:
                 warnings.warn(
