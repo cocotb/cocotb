@@ -41,7 +41,6 @@ from collections.abc import Coroutine
 from typing import Dict, List, Optional, Union
 
 import cocotb.handle
-from cocotb._deprecation import deprecated
 from cocotb.log import default_config
 from cocotb.regression import RegressionManager
 from cocotb.scheduler import Scheduler
@@ -309,11 +308,6 @@ def _sim_event(message):
     msg = f"Failing test at simulator request before test run completion: {message}"
     scheduler.log.error(msg)
     scheduler._finish_scheduler(SimFailure(msg))
-
-
-@deprecated("This function is now private")
-def process_plusargs() -> None:
-    _process_plusargs()
 
 
 def _process_plusargs() -> None:
