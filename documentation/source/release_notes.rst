@@ -425,7 +425,7 @@ Deprecations and Removals
 - :func:`cocotb.utils.reject_remaining_kwargs` is deprecated, as it is no longer
   needed now that we only support Python 3.5 and newer. (:pr:`1339`)
 - The value of :class:`cocotb.handle.StringObject`\ s is now of type :class:`bytes`, instead of  :class:`str` with an implied ASCII encoding scheme. (:pr:`1381`)
-- :class:`ReturnValue` is now deprecated. Use a :keyword:`return` statement instead; this works in all supported versions of Python. (:pr:`1489`)
+- ``ReturnValue`` is now deprecated. Use a :keyword:`return` statement instead; this works in all supported versions of Python. (:pr:`1489`)
 - The makefile variable :make:var:`VERILATOR_TRACE`
   that was not supported for all simulators has been deprecated.
   Using it prints a deprecation warning and points to the documentation section
