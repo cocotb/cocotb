@@ -80,24 +80,6 @@ class ExternalException(Exception):
         self.exception = exception
 
 
-class TestError(TestComplete):
-    """
-    Exception showing that the test was completed with severity Error.
-
-    .. deprecated:: 1.5
-        Raise a standard Python exception instead.
-        A stacktrace will be printed by cocotb automatically if the exception is unhandled.
-    """
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "TestError is deprecated - raise a standard Exception instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(*args, **kwargs)
-
-
 class TestFailure(TestComplete, AssertionError):
     """
     Exception showing that the test was completed with severity Failure.

@@ -277,7 +277,7 @@ Deprecations and Removals
 - Passing :class:`bool` values to ``expect_error`` option of :class:`cocotb.test` is deprecated.
   Pass a specific :class:`Exception` or a tuple of Exceptions instead. (:pr:`2117`)
 - The system task overloads for ``$info``, ``$warn``, ``$error`` and ``$fatal`` in Verilog and mixed language testbenches have been removed. (:pr:`2133`)
-- :class:`~cocotb.result.TestError` has been deprecated, use :ref:`python:bltin-exceptions`. (:pr:`2177`)
+- ``TestError`` has been deprecated, use :ref:`python:bltin-exceptions`. (:pr:`2177`)
 - The undocumented class ``cocotb.xunit_reporter.File`` has been removed. (:pr:`2200`)
 - Deprecated :class:`cocotb.hook` and :envvar:`COCOTB_HOOKS`.
   See the documentation for :class:`cocotb.hook` for suggestions on alternatives. (:pr:`2201`)
@@ -527,7 +527,7 @@ Deprecations
 ------------
 
 - ``cocotb.result.raise_error`` and ``cocotb.result.create_error`` are deprecated in favor of using Python exceptions directly.
-  :class:`~cocotb.result.TestError` can still be used if the same exception type is desired. (:pr:`1109`)
+  ``TestError`` can still be used if the same exception type is desired. (:pr:`1109`)
 - The ``AvalonSTPktsWithChannel`` type is deprecated.
   Use the ``report_channel`` argument to :class:`~cocotb.monitors.avalon.AvalonSTPkts` instead.
 - The ``colour`` attribute of log objects like ``cocotb.log`` or ``some_coro.log`` is deprecated.
