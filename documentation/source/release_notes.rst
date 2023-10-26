@@ -175,7 +175,7 @@ Deprecations and Removals
 - :func:`cocotb.utils.hexdiffs` is deprecated; use :func:`scapy.utils.hexdiff` instead. (:pr:`2691`)
 - Passing ``None`` to :func:`cocotb.utils.get_sim_time` is deprecated; use ``'step'`` as the time unit instead. (:pr:`2691`)
 - The ``stdout`` and ``stderr`` attributes on :class:`cocotb.result.TestComplete` and subclasses are deprecated. (:pr:`2692`)
-- :exc:`cocotb.result.TestFailure` is deprecated, use an ``assert`` statement instead. (:pr:`2692`)
+- ``TestFailure`` is deprecated, use an ``assert`` statement instead. (:pr:`2692`)
 
 
 Changes

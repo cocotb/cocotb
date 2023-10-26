@@ -97,8 +97,7 @@ Other tasks can be used in an :keyword:`await` statement to suspend the current 
 
         while True:
             result = await First(timer, task)
-            if count > expect:
-                raise TestFailure("Task didn't complete in expected time")
+            assert count <= expect, "Task didn't complete in expected time"
             if result is timer:
                 dut._log.info("Count %d: Task still running" % count)
                 count += 1
@@ -120,8 +119,7 @@ forcing their completion before they would naturally end.
         await Timer(1, units='ns')
         await RisingEdge(dut.clk)
         edge_time_ns = get_sim_time(units='ns')
-        if not isclose(edge_time_ns, start_time_ns + 1000.0):
-            raise TestFailure("Expected a period of 1 us")
+        assert isclose(edge_time_ns, start_time_ns + 1000.0), "Expected a period of 1 us"
 
         clk_gen.kill()  # kill clock coroutine here
 
@@ -130,8 +128,7 @@ forcing their completion before they would naturally end.
         await Timer(1, units='ns')
         await RisingEdge(dut.clk)
         edge_time_ns = get_sim_time(units='ns')
-        if not isclose(edge_time_ns, start_time_ns + 4.0):
-            raise TestFailure("Expected a period of 4 ns")
+        assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
 
 
 .. versionchanged:: 1.4
