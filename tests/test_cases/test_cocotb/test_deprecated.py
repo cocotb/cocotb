@@ -59,19 +59,6 @@ async def test_convert_handle_to_string_deprecated(dut):
 
 
 @cocotb.test()
-async def test_create_error_deprecated(dut):
-    with pytest.warns(DeprecationWarning):
-        _ = cocotb.result.create_error(cocotb.triggers.Timer(1), "A test exception")
-
-
-@cocotb.test()
-async def test_raise_error_deprecated(dut):
-    with pytest.warns(DeprecationWarning):
-        with pytest.raises(cocotb.result.TestError):
-            cocotb.result.raise_error(cocotb.triggers.Timer(1), "A test exception")
-
-
-@cocotb.test()
 async def test_assigning_structure_deprecated(dut):
     """signal.value = ctypes.Structure assignment is deprecated"""
 
