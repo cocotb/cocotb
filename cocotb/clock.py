@@ -28,7 +28,6 @@
 """A clock class."""
 
 import itertools
-import warnings
 from decimal import Decimal
 from numbers import Real
 from typing import Union
@@ -113,21 +112,14 @@ class Clock(BaseClock):
     .. versionchanged:: 1.5
         Support ``'step'`` as the *units* argument to mean "simulator time step".
 
-    .. deprecated:: 1.5
-        Using ``None`` as the *units* argument is deprecated, use ``'step'`` instead.
+    .. versionchanged:: 2.0
+        Passing ``None`` as the *units* argument was removed, use ``'step'`` instead.
     """
 
     def __init__(
         self, signal, period: Union[float, Real, Decimal], units: str = "step"
     ):
         BaseClock.__init__(self, signal)
-        if units is None:
-            warnings.warn(
-                'Using units=None is deprecated, use units="step" instead.',
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            units = "step"  # don't propagate deprecated value
         self.period = get_sim_steps(period, units)
         self.half_period = get_sim_steps(period / 2, units)
         self.frequency = 1 / get_time_from_sim_steps(self.period, units="us")

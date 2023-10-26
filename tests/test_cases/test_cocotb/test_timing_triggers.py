@@ -28,7 +28,7 @@ from cocotb.triggers import (
     Timer,
     TriggerException,
 )
-from cocotb.utils import get_sim_steps, get_sim_time
+from cocotb.utils import get_sim_time
 
 
 @cocotb.test()
@@ -272,42 +272,6 @@ async def test_neg_timer(dut):
             in str(w[-1].message)
         )
         assert issubclass(w[-1].category, RuntimeWarning)
-
-
-@cocotb.test()
-async def test_time_units_eq_None(dut):
-    """Test deprecation warning when time units are None"""
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        Timer(1, units=None)
-        assert issubclass(w[-1].category, DeprecationWarning)
-        assert 'Using units=None is deprecated, use units="step" instead.' in str(
-            w[-1].message
-        )
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        Clock(dut.clk, 2, units=None)
-        assert issubclass(w[-1].category, DeprecationWarning)
-        assert 'Using units=None is deprecated, use units="step" instead.' in str(
-            w[-1].message
-        )
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        get_sim_steps(222, units=None)
-        assert issubclass(w[-1].category, DeprecationWarning)
-        assert 'Using units=None is deprecated, use units="step" instead.' in str(
-            w[-1].message
-        )
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        await cocotb.triggers.with_timeout(
-            example(), timeout_time=12_000_000, timeout_unit=None
-        )
-        assert issubclass(w[-1].category, DeprecationWarning)
-        assert (
-            'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.'
-            in str(w[-1].message)
-        )
 
 
 @cocotb.test()
