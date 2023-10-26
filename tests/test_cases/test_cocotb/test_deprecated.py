@@ -2,7 +2,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import ctypes
-import warnings
 from typing import List
 
 import pytest
@@ -151,21 +150,6 @@ async def test_assigning_setitem_syntax_deprecated(dut):
         with pytest.raises(IndexError):
             # attempt to use __setitem__ syntax on signal that doesn't exist
             dut.stream_in_data[800000] = 1
-
-
-@cocotb.test()
-async def test_assigning_less_than_syntax_deprecated(dut):
-    with pytest.warns(DeprecationWarning):
-        dut.stream_in_data <= 1
-
-
-@cocotb.test()
-async def test_lessthan_raises_error(dut):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        ret = dut.stream_in_data <= 0x12
-    with pytest.raises(TypeError):
-        bool(ret)
 
 
 async def example_coro():
