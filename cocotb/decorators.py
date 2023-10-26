@@ -26,7 +26,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import functools
-import warnings
 from typing import Callable, Optional, Sequence, Type, Union
 
 import cocotb
@@ -154,17 +153,6 @@ class Test(coroutine):
         self.timeout_time = timeout_time
         self.timeout_unit = timeout_unit
         self.expect_fail = expect_fail
-        if isinstance(expect_error, bool):
-            warnings.warn(
-                "Passing bool values to `except_error` option of `cocotb.test` is deprecated. "
-                "Pass a specific Exception type instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        if expect_error is True:
-            expect_error = (BaseException,)
-        elif expect_error is False:
-            expect_error = ()
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage
@@ -236,8 +224,8 @@ def test(
             .. versionchanged:: 1.3
                 Specific exception types can be expected
 
-            .. deprecated:: 1.5
-                Passing a :class:`bool` value is now deprecated.
+            .. versionchanged:: 2.0
+                Passing a :class:`bool` value was removed.
                 Pass a specific :class:`Exception` or a tuple of Exceptions instead.
 
         skip (bool, optional):
