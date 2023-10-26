@@ -25,9 +25,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import warnings
-from io import StringIO
-
 """Exceptions and functions for simulation result handling."""
 
 
@@ -35,42 +32,9 @@ class TestComplete(Exception):
     """
     Exception showing that the test was completed. Sub-exceptions detail the exit status.
 
-    .. deprecated:: 1.6.0
-        The ``stdout`` and ``stderr`` attributes.
+    .. versionchanged:: 2.0
+        The ``stdout`` and ``stderr`` attributes were removed.
     """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.__stdout = StringIO()
-        self.__stderr = StringIO()
-
-    @staticmethod
-    def __deprecated(which: str) -> None:
-        warnings.warn(
-            f"Attribute {which} is deprecated and will be removed in the next major release",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-
-    @property
-    def stdout(self) -> StringIO:
-        self.__deprecated("stdout")
-        return self.__stdout
-
-    @stdout.setter
-    def stdout(self, new_value: StringIO) -> None:
-        self.__deprecated("stdout")
-        self.__stdout = new_value
-
-    @property
-    def stderr(self) -> StringIO:
-        self.__deprecated("stderr")
-        return self.__stderr
-
-    @stderr.setter
-    def stderr(self, new_value: StringIO) -> None:
-        self.__deprecated("stderr")
-        self.__stderr = new_value
 
 
 class ExternalException(Exception):
