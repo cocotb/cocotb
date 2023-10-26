@@ -33,7 +33,6 @@ import logging
 import os
 import sys
 import typing
-import warnings
 
 import cocotb.ANSI as ANSI
 from cocotb import simulator
@@ -116,26 +115,6 @@ def default_config():
 
 class SimBaseLog(logging.getLoggerClass()):
     """This class only exists for backwards compatibility"""
-
-    @property
-    def logger(self):
-        warnings.warn(
-            "the .logger attribute should not be used now that `SimLog` "
-            "returns a native logger instance directly.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self
-
-    @property
-    def colour(self):
-        warnings.warn(
-            "the .colour attribute may be removed in future, use the "
-            "equivalent `cocotb.utils.want_color_output()` instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return want_color_output()
 
     def setLevel(self, level: typing.Union[int, str]) -> None:
         super().setLevel(level)
