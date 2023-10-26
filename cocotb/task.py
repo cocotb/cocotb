@@ -32,6 +32,10 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
 
     .. versionchanged:: 1.8.0
         Moved to the ``cocotb.task`` module.
+
+    .. versionchanged:: 2.0
+        The ``retval``, ``_finished``, and ``__bool__`` methods were removed.
+        Use :meth:`result`, :meth:`done`, and :meth:`done` methods instead, respectively.
     """
 
     _name: str = "Task"  # class name of schedulable task
@@ -74,40 +78,6 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         # Creating a logger is expensive, only do it if we actually plan to
         # log anything
         return SimLog(f"cocotb.{self.__qualname__}.{self._coro.__qualname__}")
-
-    @property
-    def retval(self) -> T:
-        """Return the result of the Task.
-
-        If the Task ran to completion, the result is returned.
-        If the Task failed with an exception, the exception is re-raised.
-        If the Task is not yet complete, a :exc:`RuntimeError` is raised.
-
-        .. deprecated:: 1.7.0
-        """
-        warnings.warn(
-            "Deprecated in favor of the result() method. "
-            "Replace `task.retval` with `task.result()`.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        if self._outcome is None:
-            raise RuntimeError("coroutine is not complete")
-        return self._outcome.get()
-
-    @property
-    def _finished(self) -> bool:
-        """``True`` if the Task is finished executing.
-
-        .. deprecated:: 1.7.0
-        """
-        warnings.warn(
-            "Deprecated in favor of the done() method. "
-            "Replace `task._finished` with `task.done()`.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._outcome is not None
 
     def __iter__(self: Self) -> Self:
         # for use in "yield from" statements
@@ -259,19 +229,6 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
             return self._outcome.error
         else:
             return None
-
-    def __bool__(self) -> bool:
-        """``True`` if Task is not done.
-
-        .. deprecated:: 1.7.0
-        """
-        warnings.warn(
-            "Deprecated in favor of the done() method. "
-            "Replace with `not task.done()`.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return not self.done()
 
     def __await__(self) -> typing.Generator[typing.Any, typing.Any, T]:
         # It's tempting to use `return (yield from self._coro)` here,

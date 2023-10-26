@@ -125,26 +125,3 @@ async def test_assigning_setitem_syntax_deprecated(dut):
         with pytest.raises(IndexError):
             # attempt to use __setitem__ syntax on signal that doesn't exist
             dut.stream_in_data[800000] = 1
-
-
-async def example_coro():
-    return 0
-
-
-@cocotb.test()
-async def test_task_deprecations(_):
-    task = cocotb.start_soon(example_coro())
-    with pytest.warns(DeprecationWarning):
-        assert bool(task) is True
-    with pytest.warns(DeprecationWarning):
-        assert not task._finished
-    with pytest.warns(DeprecationWarning):
-        with pytest.raises(RuntimeError):
-            task.retval
-    await task
-    with pytest.warns(DeprecationWarning):
-        assert bool(task) is False
-    with pytest.warns(DeprecationWarning):
-        assert task._finished
-    with pytest.warns(DeprecationWarning):
-        assert task.retval == 0
