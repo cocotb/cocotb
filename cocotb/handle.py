@@ -29,7 +29,6 @@
 
 # -*- coding: utf-8 -*-
 
-import ctypes
 import enum
 import warnings
 from functools import lru_cache
@@ -685,13 +684,13 @@ class ModifiableObject(NonConstantObject):
             OverflowError: If int value is out of the range that can be represented
                 by the target. -2**(Nbits - 1) <= value <= 2**Nbits - 1
 
-        .. deprecated:: 1.5
-            :class:`ctypes.Structure` objects are no longer accepted as values for assignment.
+        .. versionchanged:: 2.0
+            Using :class:`ctypes.Structure` objects to set values was removed.
             Convert the struct object to a :class:`~cocotb.binary.BinaryValue` before assignment using
             ``BinaryValue(value=bytes(struct_obj), n_bits=len(signal))`` instead.
 
-        .. deprecated:: 1.5
-            :class:`dict` objects are no longer accepted as values for assignment.
+        .. versionchanged:: 2.0
+            Using :class:`dict` objects to set values was removed.
             Convert the dictionary to an integer before assignment using
             ``sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))``.
         """
@@ -724,42 +723,6 @@ class ModifiableObject(NonConstantObject):
                         value, len(self), self._name
                     )
                 )
-
-        if isinstance(value, ctypes.Structure):
-            warnings.warn(
-                "`ctypes.Structure` values are no longer accepted for value assignment. "
-                "Use `BinaryValue(value=bytes(struct_obj), n_bits=len(signal))` instead",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
-
-        elif isinstance(value, dict):
-            warnings.warn(
-                "dict values are no longer accepted for value assignment. "
-                "Use `sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))` "
-                "to convert the dict to an int before assignment.",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            # We're given a dictionary with a list of values and a bit size...
-            num = 0
-            vallist = list(value["values"])
-            vallist.reverse()
-            if len(vallist) * value["bits"] != len(self):
-                raise TypeError(
-                    "Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long"
-                    % (
-                        len(value["values"]),
-                        value["bits"],
-                        len(value["values"]) * value["bits"],
-                        len(self),
-                    )
-                )
-
-            for val in vallist:
-                num = (num << value["bits"]) + val
-            value = BinaryValue(value=num, n_bits=len(self), bigEndian=False)
 
         elif isinstance(value, LogicArray):
             if len(self) != len(value):
