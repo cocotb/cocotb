@@ -73,26 +73,6 @@ async def test_raise_error_deprecated(dut):
 
 
 @cocotb.test()
-async def test_handle_compat_mapping(dut):
-    """
-    Test DeprecationWarnings for _compat_mapping.
-
-    Note that these only warn once per attribute.
-    """
-    # log
-    with pytest.warns(DeprecationWarning):
-        dut.log.info("'log' is deprecated")
-    # name
-    with pytest.warns(DeprecationWarning):
-        dut.name = "myname"
-    assert dut.name == "myname"
-    # fullname
-    with pytest.warns(DeprecationWarning):
-        dut.fullname = "myfullname"
-    assert dut.fullname == "myfullname"
-
-
-@cocotb.test()
 async def test_assigning_structure_deprecated(dut):
     """signal.value = ctypes.Structure assignment is deprecated"""
 

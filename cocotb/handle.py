@@ -41,9 +41,6 @@ from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.log import SimLog
 from cocotb.types import Logic, LogicArray
 
-# Only issue a warning for each deprecated attribute access
-_deprecation_warned = set()
-
 
 class _Limits(enum.IntEnum):
     SIGNED_NBIT = 1
@@ -72,16 +69,6 @@ class SimHandleBase:
 
     We maintain a handle which we can use for GPI calls.
     """
-
-    # For backwards compatibility we support a mapping of old member names
-    # which may alias with the simulator hierarchy.  In these cases the
-    # simulator result takes priority, only falling back to the python member
-    # if there is no colliding object in the elaborated design.
-    _compat_mapping = {
-        "log": "_log",
-        "fullname": "_fullname",
-        "name": "_name",
-    }
 
     def __init__(self, handle, path):
         """
@@ -184,36 +171,6 @@ class SimHandleBase:
 
     def __str__(self):
         return self._path
-
-    def __setattr__(self, name, value):
-        if name in self._compat_mapping:
-            if name not in _deprecation_warned:
-                warnings.warn(
-                    "Use of attribute {!r} is deprecated, use {!r} instead".format(
-                        name, self._compat_mapping[name]
-                    ),
-                    DeprecationWarning,
-                    stacklevel=3,
-                )
-                _deprecation_warned.add(name)
-            return setattr(self, self._compat_mapping[name], value)
-        else:
-            return object.__setattr__(self, name, value)
-
-    def __getattr__(self, name):
-        if name in self._compat_mapping:
-            if name not in _deprecation_warned:
-                warnings.warn(
-                    "Use of attribute {!r} is deprecated, use {!r} instead".format(
-                        name, self._compat_mapping[name]
-                    ),
-                    DeprecationWarning,
-                    stacklevel=3,
-                )
-                _deprecation_warned.add(name)
-            return getattr(self, self._compat_mapping[name])
-        else:
-            return object.__getattribute__(self, name)
 
 
 class RegionObject(SimHandleBase):
@@ -347,10 +304,6 @@ class HierarchyObject(RegionObject):
             sub.value = value
             return
 
-        # compat behavior
-        if name in self._compat_mapping:
-            return SimHandleBase.__setattr__(self, name, value)
-
         raise AttributeError(f"{self._name} contains no object named {name}")
 
     def __getattr__(self, name):
@@ -363,9 +316,6 @@ class HierarchyObject(RegionObject):
         handle = self.__get_sub_handle_by_name(name)
         if handle is not None:
             return handle
-
-        if name in self._compat_mapping:
-            return SimHandleBase.__getattr__(self, name)
 
         raise AttributeError(f"{self._name} contains no object named {name}")
 
