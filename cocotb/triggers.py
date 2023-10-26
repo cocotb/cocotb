@@ -233,11 +233,11 @@ class Timer(GPITrigger):
         .. versionchanged:: 1.5
             Support ``'step'`` as the *units* argument to mean "simulator time step".
 
-        .. deprecated:: 1.5
-            Using ``None`` as the *units* argument is deprecated, use ``'step'`` instead.
-
         .. versionchanged:: 1.6
             Support rounding modes.
+
+        .. versionchanged:: 2.0
+            Passing ``None`` as the *units* argument was removed, use ``'step'`` instead.
         """
         GPITrigger.__init__(self)
         if time_ps is not None:
@@ -263,13 +263,6 @@ class Timer(GPITrigger):
                 )
             else:
                 raise TriggerException("Timer value time_ps must not be negative")
-        if units is None:
-            warnings.warn(
-                'Using units=None is deprecated, use units="step" instead.',
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            units = "step"  # don't propagate deprecated value
         if round_mode is None:
             round_mode = type(self).round_mode
         self.sim_steps = get_sim_steps(time, units, round_mode=round_mode)
@@ -1001,19 +994,12 @@ async def with_timeout(
 
     .. versionadded:: 1.3
 
-    .. deprecated:: 1.5
-        Using ``None`` as the *timeout_unit* argument is deprecated, use ``'step'`` instead.
-
     .. versionchanged:: 1.7.0
         Support passing :term:`python:coroutine`\ s.
+
+    .. versionchanged:: 2.0
+        Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
     """
-    if timeout_unit is None:
-        warnings.warn(
-            'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.',
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        timeout_unit = "step"  # don't propagate deprecated value
     if inspect.iscoroutine(trigger):
         trigger = cocotb.start_soon(trigger)
         shielded = False

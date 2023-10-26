@@ -129,13 +129,6 @@ class Test(coroutine):
         skip,
         stage,
     ):
-        if timeout_unit is None:
-            warnings.warn(
-                'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.',
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            timeout_unit = "step"  # don't propagate deprecated value
         self._id = self._id_count
         type(self)._id_count += 1
 
@@ -217,8 +210,8 @@ def test(
 
             .. versionadded:: 1.3
 
-            .. deprecated:: 1.5
-                Using ``None`` as the *timeout_unit* argument is deprecated, use ``'step'`` instead.
+            .. versionchanged:: 2.0
+                Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
 
         expect_fail (bool, optional):
             If ``True`` and the test fails a functional check via an ``assert`` statement, :class:`pytest.raises`,

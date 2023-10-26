@@ -69,8 +69,8 @@ def get_sim_time(units: str = "step") -> int:
             (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
             ``'step'`` will return the raw simulation time.
 
-            .. deprecated:: 1.6.0
-                Using ``None`` as the *units* argument is deprecated, use ``'step'`` instead.
+            .. versionchanged:: 2.0
+                Passing ``None`` as the *units* argument was removed, use ``'step'`` instead.
 
     Returns:
         The simulation time in the specified units.
@@ -82,14 +82,8 @@ def get_sim_time(units: str = "step") -> int:
 
     result = timeh << 32 | timel
 
-    if units not in (None, "step"):
+    if units != "step":
         result = get_time_from_sim_steps(result, units)
-    if units is None:
-        warnings.warn(
-            'Using units=None is deprecated, use units="step" instead.',
-            DeprecationWarning,
-            stacklevel=2,
-        )
 
     return result
 
@@ -151,17 +145,10 @@ def get_sim_steps(
     .. versionchanged:: 1.6
         Support rounding modes.
     """
-    if units not in (None, "step"):
+    if units != "step":
         result = _ldexp10(time, _get_log_time_scale(units) - _get_simulator_precision())
     else:
         result = time
-    if units is None:
-        warnings.warn(
-            'Using units=None is deprecated, use units="step" instead.',
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        units = "step"  # don't propagate deprecated value
 
     if round_mode == "error":
         result_rounded = math.floor(result)
