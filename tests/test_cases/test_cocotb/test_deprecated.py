@@ -4,7 +4,6 @@
 import pytest
 
 import cocotb
-from cocotb.triggers import Timer
 
 
 # strings are not supported on Icarus (gh-2585) or GHDL (gh-2584)
@@ -39,13 +38,3 @@ async def test_convert_handle_to_string_deprecated(dut):
 
         # in future this will be ` == dut._path`
         assert as_str == str(dut.NUM_OF_MODULES.value)
-
-
-@cocotb.test()
-async def test_time_ps_deprecated(_):
-    with pytest.warns(DeprecationWarning):
-        Timer(time_ps=7, units="ns")
-    with pytest.raises(TypeError):
-        Timer(time=0, time_ps=7, units="ns")
-    with pytest.raises(TypeError):
-        Timer(units="ps")
