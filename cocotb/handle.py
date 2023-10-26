@@ -30,7 +30,6 @@
 # -*- coding: utf-8 -*-
 
 import enum
-import warnings
 from functools import lru_cache
 from typing import Optional
 
@@ -491,14 +490,6 @@ class ConstantObject(NonHierarchyObject):
         """The value of this simulation object."""
         return self._value
 
-    def __str__(self):
-        if isinstance(self.value, bytes):
-            StringObject._emit_str_warning(self)
-            return self.value.decode("ascii")
-        else:
-            ModifiableObject._emit_str_warning(self)
-            return str(self.value)
-
 
 class NonHierarchyIndexableObject(NonHierarchyObject):
     """A non-hierarchy indexable object.
@@ -770,20 +761,6 @@ class ModifiableObject(NonConstantObject):
     def __int__(self):
         return int(self.value)
 
-    def _emit_str_warning(self):
-        warnings.warn(
-            "`str({t})` is deprecated, and in future will return `{t}._path`. "
-            "To get a string representation of the value, use `str({t}.value)`.".format(
-                t=type(self).__qualname__
-            ),
-            FutureWarning,
-            stacklevel=3,
-        )
-
-    def __str__(self):
-        self._emit_str_warning()
-        return str(self.value)
-
 
 class RealObject(ModifiableObject):
     """Specific object handle for Real signals and variables."""
@@ -928,20 +905,9 @@ class StringObject(ModifiableObject):
         .. versionchanged:: 1.4
             Takes :class:`bytes` instead of :class:`str`.
             Users are now expected to choose an encoding when using these objects.
-            As a convenience, when assigning :class:`str` values, ASCII encoding will be used as a safe default.
 
         """
         value, set_action = self._check_for_set_action(value)
-
-        if isinstance(value, str):
-            warnings.warn(
-                "Handles on string objects will soon not accept `str` objects. "
-                "Please use a bytes object by encoding the string as you see fit. "
-                "`str.encode('ascii')` is typically sufficient.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            value = value.encode("ascii")  # may throw UnicodeEncodeError
 
         if not isinstance(value, bytes):
             raise TypeError(
@@ -955,20 +921,6 @@ class StringObject(ModifiableObject):
     @ModifiableObject.value.getter
     def value(self) -> bytes:
         return self._handle.get_signal_val_str()
-
-    def _emit_str_warning(self):
-        warnings.warn(
-            "`str({t})` is deprecated, and in future will return `{t}._path`. "
-            "To access the `bytes` value of this handle, use `{t}.value`.".format(
-                t=type(self).__qualname__
-            ),
-            FutureWarning,
-            stacklevel=3,
-        )
-
-    def __str__(self):
-        self._emit_str_warning()
-        return self.value.decode("ascii")
 
 
 _handle2obj = {}
