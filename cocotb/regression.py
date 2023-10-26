@@ -42,7 +42,6 @@ from typing import Any, Iterable, Optional, Tuple, Type
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb import simulator
-from cocotb._deprecation import deprecated
 from cocotb.decorators import Test
 from cocotb.handle import SimHandle
 from cocotb.log import SimLog
@@ -274,10 +273,6 @@ class RegressionManager:
                 "Please file a bug report!".format(pytest.__version__)
             )
 
-    @deprecated("This method is now private.")
-    def tear_down(self) -> None:
-        self._tear_down()
-
     def _tear_down(self) -> None:
         # prevent re-entering the tear down procedure
         if not self._tearing_down:
@@ -312,20 +307,12 @@ class RegressionManager:
         # Setup simulator finalization
         simulator.stop_simulator()
 
-    @deprecated("This method is now private.")
-    def next_test(self) -> Optional[Test]:
-        return self._next_test()
-
     def _next_test(self) -> Optional[Test]:
         """Get the next test to run"""
         if not self._queue:
             return None
         self.count += 1
         return self._queue.pop(0)
-
-    @deprecated("This method is now private.")
-    def handle_result(self, test: Task) -> None:
-        self._handle_result(test)
 
     def _handle_result(self, test: Task) -> None:
         """Handle a test completing.
@@ -537,10 +524,6 @@ class RegressionManager:
         if sim_failed:
             self._tear_down()
             return
-
-    @deprecated("This method is now private.")
-    def execute(self) -> None:
-        self._execute()
 
     def _execute(self) -> None:
         while True:

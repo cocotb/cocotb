@@ -46,7 +46,6 @@ from typing import Any, Callable, Union
 import cocotb
 import cocotb.decorators
 from cocotb import _py_compat, outcomes
-from cocotb._deprecation import deprecated
 from cocotb.log import SimLog
 from cocotb.result import TestComplete
 from cocotb.task import Task
@@ -350,14 +349,6 @@ class Scheduler:
             # if it did, make sure we handle the test completing
             self._check_termination()
 
-    def react(self, trigger):
-        """
-        .. deprecated:: 1.5
-            This function is now private.
-        """
-        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
-        return self._react(trigger)
-
     def _react(self, trigger):
         """
         Called when a trigger fires.
@@ -532,14 +523,6 @@ class Scheduler:
                     "All coroutines scheduled, handing control back" " to simulator"
                 )
 
-    def unschedule(self, coro):
-        """
-        .. deprecated:: 1.5
-            This function is now private.
-        """
-        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
-        return self._unschedule(coro)
-
     def _unschedule(self, coro):
         """Unschedule a coroutine.  Unprime any pending triggers"""
         if coro in self._pending_coros:
@@ -642,27 +625,11 @@ class Scheduler:
                     ),
                 )
 
-    def queue(self, coroutine):
-        """
-        .. deprecated:: 1.5
-            This function is now private.
-        """
-        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
-        return self._queue(coroutine)
-
     def _queue(self, coroutine):
         """Queue a coroutine for execution"""
         # Don't queue the same coroutine more than once (gh-2503)
         if coroutine not in self._pending_coros:
             self._pending_coros.append(coroutine)
-
-    def queue_function(self, coro):
-        """
-        .. deprecated:: 1.5
-            This function is now private.
-        """
-        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
-        return self._queue_function(coro)
 
     def _queue_function(self, coro):
         """Queue a coroutine for execution and move the containing thread
@@ -704,14 +671,6 @@ class Scheduler:
         # This blocks the calling `@external` thread until the coroutine finishes
         event.wait()
         return event.outcome.get()
-
-    def run_in_executor(self, func, *args, **kwargs):
-        """
-        .. deprecated:: 1.5
-            This function is now private.
-        """
-        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
-        return self._run_in_executor(func, *args, **kwargs)
 
     def _run_in_executor(self, func, *args, **kwargs):
         """Run the coroutine in a separate execution thread
@@ -784,10 +743,6 @@ class Scheduler:
             )
         )
 
-    @deprecated("This method is now private.")
-    def add(self, coroutine: Union[Task, Coroutine]) -> Task:
-        return self._add(coroutine)
-
     def _add(self, coroutine: Union[Task, Coroutine]) -> Task:
         """Add a new coroutine.
 
@@ -818,14 +773,6 @@ class Scheduler:
 
         self._queue(task)
         return task
-
-    def add_test(self, test_coro):
-        """
-        .. deprecated:: 1.5
-            This function is now private.
-        """
-        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
-        return self._add_test(test_coro)
 
     def _add_test(self, test_coro):
         """Called by the regression manager to queue the next test"""
@@ -913,14 +860,6 @@ class Scheduler:
         finally:
             self._current_task = old_task
 
-    def schedule(self, coroutine, trigger=None):
-        """
-        .. deprecated:: 1.5
-            This function is now private.
-        """
-        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
-        return self._schedule(coroutine, trigger)
-
     def _schedule(self, coroutine, trigger=None):
         """Schedule a coroutine by calling the send method.
 
@@ -992,14 +931,6 @@ class Scheduler:
                         self._pending_threads.remove(ext)
                         self._pending_events.append(ext.event)
 
-    def finish_test(self, exc):
-        """
-        .. deprecated:: 1.5
-            This function is now private.
-        """
-        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
-        return self._finish_test(exc)
-
     def _finish_test(self, exc):
         self._abort_test(exc)
         self._check_termination()
@@ -1022,14 +953,6 @@ class Scheduler:
         self._test._outcome = outcome
         self._unschedule(self._test)
 
-    def finish_scheduler(self, exc):
-        """
-        .. deprecated:: 1.5
-            This function is now private.
-        """
-        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
-        return self._finish_scheduler(exc)
-
     def _finish_scheduler(self, exc):
         """Directly call into the regression manager and end test
         once we return the sim will close us so no cleanup is needed.
@@ -1041,14 +964,6 @@ class Scheduler:
             self.log.debug("Issue sim closedown result to regression object")
             self._abort_test(exc)
             self._handle_result(self._test)
-
-    def cleanup(self):
-        """
-        .. deprecated:: 1.5
-            This function is now private.
-        """
-        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
-        return self._cleanup()
 
     def _cleanup(self):
         """Clear up all our state.
