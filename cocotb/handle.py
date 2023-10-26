@@ -292,18 +292,6 @@ class HierarchyObject(RegionObject):
         if name.startswith("_"):
             return SimHandleBase.__setattr__(self, name, value)
 
-        # then try handles
-        sub = self.__get_sub_handle_by_name(name)
-        if sub is not None:
-            warnings.warn(
-                "Setting values on handles using the ``dut.handle = value`` syntax is deprecated. "
-                "Instead use the ``handle.value = value`` syntax",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            sub.value = value
-            return
-
         raise AttributeError(f"{self._name} contains no object named {name}")
 
     def __getattr__(self, name):
@@ -541,16 +529,6 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
     def __init__(self, handle, path):
         NonHierarchyObject.__init__(self, handle, path)
         self._range = self._handle.get_range()
-
-    def __setitem__(self, index, value):
-        """Provide transparent assignment to indexed array handles."""
-        warnings.warn(
-            "Setting values on handles using the ``dut.handle[i] = value`` syntax is deprecated. "
-            "Instead use the ``handle[i].value = value`` syntax",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self[index].value = value
 
     def __getitem__(self, index):
         if isinstance(index, slice):

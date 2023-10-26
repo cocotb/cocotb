@@ -7,7 +7,6 @@ from typing import List
 import pytest
 
 import cocotb
-from cocotb._sim_versions import IcarusVersion
 from cocotb.binary import BinaryValue
 from cocotb.triggers import Timer
 
@@ -96,32 +95,3 @@ async def test_dict_signal_assignment_deprecated(dut):
     await Timer(1, "step")
 
     assert dut.stream_in_data.value == pack_bit_vector(**d)
-
-
-@cocotb.test()
-async def test_assigning_setattr_syntax_deprecated(dut):
-    with pytest.warns(DeprecationWarning):
-        dut.stream_in_data = 1
-    with pytest.raises(AttributeError):
-        # attempt to use __setattr__ syntax on signal that doesn't exist
-        dut.does_not_exist = 0
-
-
-icarus_under_11 = cocotb.SIM_NAME.lower().startswith("icarus") and (
-    IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)")
-)
-
-
-# indexing packed arrays is not supported in iverilog < 11 (gh-2586) or GHDL (gh-2587)
-@cocotb.test(
-    expect_error=IndexError
-    if icarus_under_11 or cocotb.SIM_NAME.lower().startswith("ghdl")
-    else ()
-)
-async def test_assigning_setitem_syntax_deprecated(dut):
-    with pytest.warns(DeprecationWarning):
-        dut.stream_in_data[0] = 1
-    with pytest.warns(DeprecationWarning):
-        with pytest.raises(IndexError):
-            # attempt to use __setitem__ syntax on signal that doesn't exist
-            dut.stream_in_data[800000] = 1
