@@ -36,9 +36,9 @@ from numbers import Real
 from typing import Any, Coroutine, Optional, TypeVar, Union
 
 import cocotb
+import cocotb.task
 from cocotb import outcomes, simulator
 from cocotb.log import SimLog
-from cocotb.task import Task
 from cocotb.utils import (
     ParametrizedSingleton,
     get_sim_steps,
@@ -766,7 +766,7 @@ class _AggregateWaitable(Waitable):
 
         # Do some basic type-checking up front, rather than waiting until we
         # await them.
-        allowed_types = (Trigger, Waitable, Task)
+        allowed_types = (Trigger, Waitable, cocotb.task.Task)
         for trigger in self.triggers:
             if not isinstance(trigger, allowed_types):
                 raise TypeError(
@@ -781,7 +781,8 @@ class _AggregateWaitable(Waitable):
         return "{}({})".format(
             type(self).__qualname__,
             ", ".join(
-                repr(Join(t)) if isinstance(t, Task) else repr(t) for t in self.triggers
+                repr(Join(t)) if isinstance(t, cocotb.task.Task) else repr(t)
+                for t in self.triggers
             ),
         )
 
@@ -922,7 +923,7 @@ class ClockCycles(Waitable):
 
 
 async def with_timeout(
-    trigger: Union[Trigger, Waitable, Task, Coroutine[Any, Any, T]],
+    trigger: Union[Trigger, Waitable, "cocotb.task.Task", Coroutine[Any, Any, T]],
     timeout_time: Union[float, Decimal],
     timeout_unit: str = "step",
     round_mode: Optional[str] = None,

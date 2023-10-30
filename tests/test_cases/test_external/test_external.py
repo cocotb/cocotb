@@ -100,9 +100,9 @@ async def test_time_in_function(dut):
     """
 
     @cocotb.function
-    def wait_cycles(dut, n):
+    async def wait_cycles(dut, n):
         for _ in range(n):
-            yield RisingEdge(dut.clk)
+            await RisingEdge(dut.clk)
 
     @external
     def wait_cycles_wrapper(dut, n):
@@ -311,9 +311,8 @@ async def test_function_returns_exception(dut):
     """
 
     @cocotb.function
-    def gen_func():
+    async def gen_func():
         return ValueError()
-        yield
 
     @external
     def ext():

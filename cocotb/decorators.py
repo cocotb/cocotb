@@ -26,10 +26,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import functools
-from typing import Callable, Optional, Sequence, Type, Union
+from typing import Any, Callable, Coroutine, Optional, Sequence, Type, TypeVar, Union
 
 import cocotb
-import cocotb.triggers
 from cocotb.log import SimLog
 from cocotb.task import _RunningCoroutine, _RunningTest
 from cocotb.utils import lazy_property
@@ -68,51 +67,46 @@ class coroutine:
         return str(self._func.__qualname__)
 
 
-class function:
-    """Decorator class that allows a function to block.
+Result = TypeVar("Result")
+
+
+def function(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., Result]:
+    """Decorator that turns a :term:`coroutine function` into a blocking function.
 
     This allows a coroutine that consumes simulation time
     to be called by a thread started with :class:`cocotb.external`;
     in other words, to internally block while externally
     appear to yield.
+
+    .. versionchanged:: 2.0
+        No longer implemented as a unique type.
+        The ``log`` attribute is no longer available.
     """
 
-    def __init__(self, func):
-        self._coro = cocotb.coroutine(func)
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return cocotb.scheduler._queue_function(func(*args, **kwargs))
 
-    @lazy_property
-    def log(self):
-        return SimLog(f"cocotb.function.{self._coro.__qualname__}.{id(self)}")
-
-    def __call__(self, *args, **kwargs):
-        return cocotb.scheduler._queue_function(self._coro(*args, **kwargs))
-
-    def __get__(self, obj, owner=None):
-        """Permit the decorator to be used on class methods
-        and standalone functions"""
-        return type(self)(self._coro._func.__get__(obj, owner))
+    return wrapper
 
 
-class external:
-    """Decorator to apply to an external function to enable calling from cocotb.
+def external(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Result]]:
+    """Decorator that turns a blocking function into a :term:`coroutine function`.
 
     This turns a normal function that isn't a coroutine into a blocking coroutine.
     Currently, this creates a new execution thread for each function that is
     called.
-    Scope for this to be streamlined to a queue in future.
+
+    .. versionchanged:: 2.0
+        No longer implemented as a unique type.
+        The ``log`` attribute is no longer available.
     """
 
-    def __init__(self, func):
-        self._func = func
-        self._log = SimLog(f"cocotb.external.{self._func.__qualname__}.{id(self)}")
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return cocotb.scheduler._run_in_executor(func, *args, **kwargs)
 
-    def __call__(self, *args, **kwargs):
-        return cocotb.scheduler._run_in_executor(self._func, *args, **kwargs)
-
-    def __get__(self, obj, owner=None):
-        """Permit the decorator to be used on class methods
-        and standalone functions"""
-        return type(self)(self._func.__get__(obj, owner))
+    return wrapper
 
 
 class Test(coroutine):
