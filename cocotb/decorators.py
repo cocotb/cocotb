@@ -166,7 +166,7 @@ def test(
     expect_error: Union[bool, Type[Exception], Sequence[Type[Exception]]] = (),
     skip: bool = False,
     stage: int = 0,
-) -> Callable[[Callable[..., None]], Test]:
+) -> Callable[[Callable[..., Coroutine[Any, Any, None]]], Test]:
     """
     Decorator to mark a Callable which returns a Coroutine as a test.
 
