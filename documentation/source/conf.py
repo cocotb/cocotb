@@ -342,6 +342,10 @@ spelling_ignore_wiki_words = False
 spelling_show_suggestions = True
 spelling_ignore_acronyms = True
 
+# -- Extra setup for inheritance_diagram directive which uses graphviz ---------
+
+graphviz_output_format = "svg"
+
 # -- Extra setup for towncrier -------------------------------------------------
 # see also https://towncrier.readthedocs.io/en/actual-freaking-docs/
 
