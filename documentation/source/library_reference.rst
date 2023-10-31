@@ -188,8 +188,8 @@ Logging
 Simulation Object Handles
 =========================
 
-.. inheritance-diagram:: cocotb.handle
-   :parts: 1
+.. image:: diagrams/svg/inheritance-cocotb.handle.svg
+   :alt: The class inheritance diagram for cocotb.handle
 
 .. currentmodule:: cocotb.handle
 
