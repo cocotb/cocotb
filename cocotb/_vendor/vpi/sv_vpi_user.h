@@ -88,6 +88,7 @@ extern "C" {
 #define vpiSequenceTypespec                   696
 #define vpiPropertyTypespec                   697
 #define vpiEventTypespec                      698
+#define vpiInterfaceTypespec                  906
 
 #define vpiClockingBlock                      650
 #define vpiClockingIODecl                     651
@@ -160,6 +161,7 @@ extern "C" {
 #define vpiConstrIf                           738
 #define vpiConstrIfElse                       739
 #define vpiConstrForEach                      736
+#define vpiSoftDisable                        733
 #define vpiLetDecl                            903
 #define vpiLetExpr                            904
 
@@ -291,7 +293,7 @@ extern "C" {
 #define vpiMethod                             645
 #define vpiIsClockInferred                    649
 #define vpiIsDeferred                         657
-#define vpiIsFinal                            658
+#define vpiIsFinal                            670
 #define vpiIsCoverSequence                    659
 #define vpiQualifier                          650
 #define vpiNoQualifier                     0
@@ -335,6 +337,7 @@ extern "C" {
 #define vpiDPI                             1
 #define vpiDPIC                            2
 #define vpiDPICIdentifier                     668
+#define vpiIsModPort                          669
 
 /******************************** Operators *******************************/
 #define vpiImplyOp                        50 /* -> implication operator */
