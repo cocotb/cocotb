@@ -11,6 +11,7 @@ Tests for edge triggers
 """
 import cocotb
 import pytest
+from cocotb._sim_versions import RivieraVersion
 from cocotb.clock import Clock
 from cocotb.result import SimTimeoutError
 from cocotb.triggers import (
@@ -234,11 +235,12 @@ async def test_clock_cycles_forked(dut):
 @cocotb.test(
     timeout_time=100,
     timeout_unit="ns",
-    expect_error=(
+    expect_error=(  # gh-2344
         SimTimeoutError
         if (
             cocotb.LANGUAGE in ["verilog"]
-            and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))  # gh-2344
+            and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
+            and RivieraVersion(cocotb.SIM_VERSION) < RivieraVersion("2023.04")
         )
         else ()
     ),
