@@ -25,5 +25,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+ifeq ($(shell echo $(SIM) | tr A-Z a-z),riviera)
+all:
+	@echo "Skipping test_iteration_mixedlang since Riviera-PRO crashes (see https://github.com/cocotb/cocotb/issues/3293)"
+clean::
+
+else
+
 include ../../designs/uart2bus/Makefile
 MODULE = test_iteration
+endif
