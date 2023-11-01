@@ -104,7 +104,15 @@ def configure_env_for_dev_build(session: nox.session) -> None:
     - Enable coverage collection.
     - Build with more aggressive error checking.
     """
-    session.env["CFLAGS"] = "-Werror -Wno-deprecated-declarations -g --coverage"
+    session.env["CFLAGS"] = " ".join(
+        [
+            "-Werror",
+            "-Wno-deprecated-declarations",
+            "-Wsuggest-override",
+            "-g",
+            "--coverage",
+        ]
+    )
     session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
     session.env["CXXFLAGS"] = "-Werror"
     session.env["LDFLAGS"] = "--coverage"
