@@ -512,6 +512,33 @@ async def test_test_repr(_):
 
 
 @cocotb.test()
+class TestClassRepr(Coroutine):
+    def __init__(self, dut):
+        self._coro = self.check_repr(dut)
+
+    async def check_repr(self, dut):
+        log = logging.getLogger("cocotb.test")
+
+        current_test = cocotb.scheduler._test
+        log.info(repr(current_test))
+        assert re.match(
+            r"<Test TestClassRepr running coro=TestClassRepr\(\)>", repr(current_test)
+        )
+
+        log.info(str(current_test))
+        assert re.match(r"<Test TestClassRepr>", str(current_test))
+
+    def send(self, value):
+        self._coro.send(value)
+
+    def throw(self, exception):
+        self._coro.throw(exception)
+
+    def __await__(self):
+        yield from self._coro.__await__()
+
+
+@cocotb.test()
 async def test_start_soon_async(_):
     """Tests start_soon works with coroutines"""
     a = 0
