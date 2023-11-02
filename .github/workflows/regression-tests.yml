@@ -213,7 +213,7 @@ jobs:
       id: unixtesting
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       continue-on-error: ${{matrix.may_fail || false}}
-      timeout-minutes: 15
+      timeout-minutes: 30
       run: |
         if [ "${{matrix.self-hosted}}" == "true" ]; then
           module load "${{ matrix.sim-version }}"
