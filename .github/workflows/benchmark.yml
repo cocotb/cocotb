@@ -31,7 +31,7 @@ jobs:
 
     - name: Install Icarus Verilog
       run: |
-        sudo apt install -y --no-install-recommends iverilog
+        sudo apt-get install -y --no-install-recommends iverilog
 
     - name: Set up GHDL - nightly
       uses: ghdl/setup-ghdl-ci@nightly
