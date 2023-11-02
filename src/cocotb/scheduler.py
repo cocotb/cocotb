@@ -273,7 +273,7 @@ class Scheduler:
 
         self._is_reacting = False
 
-        self._write_coro_inst = None
+        self._write_task = None
         self._writes_pending = Event()
 
     async def _do_writes(self):
@@ -298,9 +298,9 @@ class Scheduler:
             if _debug:
                 self.log.debug("Test terminating, scheduling Timer")
 
-            if self._write_coro_inst is not None:
-                self._write_coro_inst.kill()
-                self._write_coro_inst = None
+            if self._write_task is not None:
+                self._write_task.kill()
+                self._write_task = None
 
             for t in self._trigger2coros:
                 t._unprime()
@@ -582,8 +582,8 @@ class Scheduler:
 
         # TODO: we should be able to better keep track of when this needs to
         # be scheduled
-        if self._write_coro_inst is None:
-            self._write_coro_inst = self._add(self._do_writes())
+        if self._write_task is None:
+            self._write_task = self.start_soon(self._do_writes())
 
         if handle in self._write_calls:
             del self._write_calls[handle]
@@ -595,7 +595,7 @@ class Scheduler:
         coro._trigger = trigger
 
         trigger_coros = self._trigger2coros.setdefault(trigger, [])
-        if coro is self._write_coro_inst:
+        if coro is self._write_task:
             # Our internal write coroutine always runs before any user coroutines.
             # This preserves the behavior prior to the refactoring of writes to
             # this coroutine.
@@ -742,22 +742,6 @@ class Scheduler:
                 type(coroutine), coroutine
             )
         )
-
-    def _add(self, coroutine: Union[Task, Coroutine]) -> Task:
-        """Add a new coroutine.
-
-        Just a wrapper around self.schedule which provides some debug and
-        useful error messages in the event of common gotchas.
-        """
-
-        task = self.create_task(coroutine)
-
-        if _debug:
-            self.log.debug("Adding new coroutine %s" % task._coro.__qualname__)
-
-        self._schedule(task)
-        self._check_termination()
-        return task
 
     def start_soon(self, coro: Union[Coroutine, Task]) -> Task:
         """
