@@ -30,7 +30,7 @@ import pytest
 import cocotb
 from cocotb._sim_versions import IcarusVersion
 from cocotb.binary import BinaryValue
-from cocotb.handle import ConstantObject, HierarchyObject, IntegerObject, StringObject
+from cocotb.handle import ConstantObject, IntegerObject, StringObject
 from cocotb.triggers import Timer
 
 
@@ -353,17 +353,6 @@ async def access_internal_register_array(dut):
     assert (
         dut.register_array[1].value == 4
     ), "Failed to set internal register array value"
-
-
-@cocotb.test(
-    skip=cocotb.LANGUAGE in ["vhdl"],
-    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("icarus") else (),
-)
-async def access_gate(dut):
-    """
-    Test access to a gate Object
-    """
-    assert isinstance(dut.test_and_gate, HierarchyObject)
 
 
 # GHDL is unable to access record types (gh-2591)

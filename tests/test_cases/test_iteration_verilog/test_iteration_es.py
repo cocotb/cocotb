@@ -26,21 +26,22 @@
 import logging
 
 import cocotb
-from cocotb.triggers import First
+from cocotb._sim_versions import IcarusVersion
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME in ["Icarus Verilog"])
+@cocotb.test()
 async def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME.lower().startswith(
-        ("modelsim", "ncsim", "xmsim", "chronologic simulation vcs")
-    ):
-        # vpiAlways does not show up
-        pass_total = 259
+    if cocotb.SIM_NAME == "Icarus Verilog" and IcarusVersion(
+        cocotb.SIM_VERSION
+    ) <= IcarusVersion("11.0 (stable)"):
+        # before iverilog 11.0 bits of vectors aren't returned in iteration
+        # so only the 26 top-level objects are found
+        pass_total = 26
     else:
-        pass_total = 265
+        pass_total = 258
 
     tlog = logging.getLogger("cocotb.test")
 
@@ -55,16 +56,3 @@ async def recursive_discovery(dut):
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
     assert total == pass_total
-
-
-async def iteration_loop(dut):
-    for thing in dut:
-        thing._log.info("Found something: %s" % thing._fullname)
-
-
-@cocotb.test()
-async def dual_iteration(dut):
-    loop_one = cocotb.start_soon(iteration_loop(dut))
-    loop_two = cocotb.start_soon(iteration_loop(dut))
-
-    await First(loop_one.join(), loop_two.join())

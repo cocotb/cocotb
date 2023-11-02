@@ -280,7 +280,7 @@ async def test_discover_all(dut):
                      1 (port_real_out)                                         (VHDL Only)
                      1 (port_char_out)                                         (VHDL Only)
                      9 (port_str_out)                                          (VHDL Only)
-                    30 (port_rec_out)                                          (VPI - Aldec sees as a Module and not structure (i.e. cnt = 1))
+                    30 (port_rec_out)
                     61 (port_cmplx_out)                                        (VPI - Aldec sees as a Module and not structure (i.e. cnt = 1))
         constants:   1 (const_logic)
                      1 (const_logic_vec)
@@ -311,24 +311,21 @@ async def test_discover_all(dut):
                      1 (sig_real)                                              (VHDL Only)
                      1 (sig_char)                                              (VHDL Only)
                      9 (sig_str)                                               (VHDL Only)
-                    30 (sig_rec.a, sig_rec.b[0:2][7:0])                        (VPI doesn't find, added manually, except for Aldec)
-                    61 (sig_cmplx[0:1].a, sig_cmplx[0:1].b[0:2][7:0])          (VPI - Aldec older than 2017.10.67 doesn't find)
+                    30 (sig_rec.a, sig_rec.b[0:2][7:0])
+                    61 (sig_cmplx[0:1].a, sig_cmplx[0:1].b[0:2][7:0])          (VPI - Aldec older than 2017.10.67 doesn't find, newer Aldec doesn't find during iteration)
           regions:   9 (asc_gen[16:23])
                      8 (asc_gen: signals)
                      8 (asc_gen: constant)
                      8 (asc_gen: variable)
-                     8 (asc_gen: process "always")                             (VPI - Aldec only)
                      9 (desc_gen[7:0])
                      8 (desc_gen: signals)
                      8 (desc_gen: constant)
                      8 (desc_gen: variable)
-                     8 (desc_gen: process "always")                            (VPI - Aldec only)
-          process:   1 ("always")                                              (VPI - Aldec only)
 
             TOTAL:  856 (VHDL - Default)
                     818 (VHDL - Aldec)
                    1078 (Verilog - Default)
-               947/1038 (Verilog - Aldec)
+                    989 (Verilog - Aldec)
     """
 
     tlog = logging.getLogger("cocotb.test")
@@ -370,7 +367,7 @@ async def test_discover_all(dut):
         "riviera"
     ):
         # Applies to Riviera-PRO 2019.10 and newer.
-        pass_total = 1006
+        pass_total = 989
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
         "chronologic simulation vcs"
     ):

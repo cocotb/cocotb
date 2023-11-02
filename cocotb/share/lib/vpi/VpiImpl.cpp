@@ -130,9 +130,15 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype) {
         case vpiUnionNet:
             return GPI_STRUCTURE;
 
-        case vpiModport:
         case vpiInterface:
         case vpiModule:
+        case vpiGenScope:
+            return GPI_MODULE;
+
+        case vpiStringVar:
+            return GPI_STRING;
+
+        case vpiModport:
         case vpiRefObj:
         case vpiPort:
         case vpiAlways:
@@ -140,11 +146,8 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype) {
         case vpiInitial:
         case vpiGate:
         case vpiPrimTerm:
-        case vpiGenScope:
-            return GPI_MODULE;
-
-        case vpiStringVar:
-            return GPI_STRING;
+            // known, but don't care
+            return GPI_UNKNOWN;
 
         default:
             LOG_DEBUG("Unable to map VPI type %d onto GPI type", vpitype);
@@ -225,14 +228,6 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             break;
         case vpiModule:
         case vpiInterface:
-        case vpiModport:
-        case vpiRefObj:
-        case vpiPort:
-        case vpiAlways:
-        case vpiFunction:
-        case vpiInitial:
-        case vpiGate:
-        case vpiPrimTerm:
         case vpiGenScope:
         case vpiGenScopeArray: {
             std::string hdl_name = vpi_get_str(vpiName, new_hdl);
@@ -246,6 +241,16 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             }
             break;
         }
+        case vpiModport:
+        case vpiRefObj:
+        case vpiPort:
+        case vpiAlways:
+        case vpiFunction:
+        case vpiInitial:
+        case vpiGate:
+        case vpiPrimTerm:
+            // known, but don't care
+            return NULL;
         default:
             /* We should only print a warning here if the type is really
                Verilog, It could be VHDL as some simulators allow querying of
