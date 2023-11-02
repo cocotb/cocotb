@@ -475,6 +475,26 @@ async def test_task_repr(dut):
     log.info(str(coro_task))
     assert re.match(r"<Task \d+>", str(coro_task))
 
+    class CoroutineClass(Coroutine):
+        def __init__(self):
+            self._coro = self.run()
+
+        async def run(self):
+            pass
+
+        def send(self, value):
+            self._coro.send(value)
+
+        def throw(self, exception):
+            self._coro.throw(exception)
+
+        def __await__(self):
+            yield from self._coro.__await__()
+
+    object_task = cocotb.create_task(CoroutineClass())
+    log.info(repr(object_task))
+    assert re.match(r"<Task \d+ created coro=CoroutineClass\(\)>", repr(object_task))
+
 
 @cocotb.test()
 async def test_test_repr(_):
