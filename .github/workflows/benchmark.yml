@@ -9,12 +9,6 @@ on:
     branches:
       - master
 
-permissions:
-  # deployments permission to deploy GitHub pages website
-  deployments: write
-  # contents permission to update benchmark contents in gh-pages branch
-  contents: write
-
 jobs:
 
   tests:
@@ -50,6 +44,15 @@ jobs:
         pip install .
         pytest -c /dev/null tests/benchmark.py --benchmark-json output.json
 
+    - name: Generate a token to access cocotb/cocotb-benchmark-results
+      id: generate_token
+      uses: actions/create-github-app-token@v1
+      with:
+        app-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+        private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}
+        repositories: cocotb-benchmark-results
+
     - name: Store benchmark result
       # Will only run on the master branch and not on pull request
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
@@ -60,6 +63,6 @@ jobs:
         output-file-path: output.json
         alert-threshold: '120%'
         fail-on-alert: true
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ steps.generate_token.outputs.token }}
         auto-push: true
         gh-repository: 'github.com/cocotb/cocotb-benchmark-results'
