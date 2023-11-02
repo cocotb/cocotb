@@ -105,7 +105,7 @@ class external_waiter:
         self.event = Event()
         self.state = external_state.INIT
         self.cond = threading.Condition()
-        self._log = SimLog("cocotb.external.thead.%s" % self.thread, id(self))
+        self._log = SimLog(f"cocotb.external.thead.{self.thread}", id(self))
 
     @property
     def result(self):
@@ -115,15 +115,14 @@ class external_waiter:
         with self.cond:
             if _debug:
                 self._log.debug(
-                    "Changing state from %d -> %d from %s"
-                    % (self.state, new_state, threading.current_thread())
+                    f"Changing state from {self.state} -> {new_state} from {threading.current_thread()}"
                 )
             self.state = new_state
             self.cond.notify()
 
     def thread_done(self):
         if _debug:
-            self._log.debug("Thread finished from %s" % (threading.current_thread()))
+            self._log.debug(f"Thread finished from {threading.current_thread()}")
         self._propagate_state(external_state.EXITED)
 
     def thread_suspend(self):
@@ -143,7 +142,7 @@ class external_waiter:
     def thread_wait(self):
         if _debug:
             self._log.debug(
-                "Waiting for the condition lock %s" % threading.current_thread()
+                f"Waiting for the condition lock {threading.current_thread()}"
             )
 
         with self.cond:
@@ -153,25 +152,20 @@ class external_waiter:
             if _debug:
                 if self.state == external_state.EXITED:
                     self._log.debug(
-                        "Thread {} has exited from {}".format(
-                            self.thread, threading.current_thread()
-                        )
+                        f"Thread {self.thread} has exited from {threading.current_thread()}"
                     )
                 elif self.state == external_state.PAUSED:
                     self._log.debug(
-                        "Thread %s has called yield from %s"
-                        % (self.thread, threading.current_thread())
+                        f"Thread {self.thread} has called yield from {threading.current_thread()}"
                     )
                 elif self.state == external_state.RUNNING:
                     self._log.debug(
-                        "Thread %s is in RUNNING from %d"
-                        % (self.thread, threading.current_thread())
+                        f"Thread {self.thread} is in RUNNING from {threading.current_thread()}"
                     )
 
             if self.state == external_state.INIT:
                 raise Exception(
-                    "Thread %s state was not allowed from %s"
-                    % (self.thread, threading.current_thread())
+                    f"Thread {self.thread} state was not allowed from {threading.current_thread()}"
                 )
 
         return self.state
@@ -313,7 +307,7 @@ class Scheduler:
     def _test_completed(self, trigger=None):
         """Called after a test and its cleanup have completed"""
         if _debug:
-            self.log.debug("_test_completed called with trigger: %s" % (str(trigger)))
+            self.log.debug(f"_test_completed called with trigger: {trigger}")
         if _profiling:
             ps = pstats.Stats(_profile).sort_stats("cumulative")
             ps.dump_stats("test_profile.pstat")
@@ -358,9 +352,7 @@ class Scheduler:
 
         if self._pending_triggers:
             raise InternalError(
-                "Expected all triggers to be handled but found {}".format(
-                    self._pending_triggers
-                )
+                f"Expected all triggers to be handled but found {self._pending_triggers}"
             )
 
         # start the event loop
@@ -388,13 +380,13 @@ class Scheduler:
         with ctx:
             # When a trigger fires it is unprimed internally
             if _debug:
-                self.log.debug("Trigger fired: %s" % str(trigger))
+                self.log.debug(f"Trigger fired: {trigger}")
             # trigger._unprime()
 
             if self._mode == Scheduler._MODE_TERM:
                 if _debug:
                     self.log.debug(
-                        "Ignoring trigger %s since we're terminating" % str(trigger)
+                        f"Ignoring trigger {trigger} since we're terminating"
                     )
                 return
 
@@ -430,7 +422,7 @@ class Scheduler:
                     # have been unprimed already
                     if isinstance(trigger, GPITrigger):
                         self.log.critical(
-                            "No tasks waiting on trigger that fired: %s" % str(trigger)
+                            f"No tasks waiting on trigger that fired: {trigger}"
                         )
 
                         trigger.log.info("I'm the culprit")
@@ -439,21 +431,18 @@ class Scheduler:
                     # waiting on this event, for example
                     elif _debug:
                         self.log.debug(
-                            "No tasks waiting on trigger that fired: %s" % str(trigger)
+                            f"No tasks waiting on trigger that fired: {trigger}"
                         )
 
                     del trigger
                     continue
 
                 if _debug:
-                    debugstr = "\n\t".join(
-                        [task._coro.__qualname__ for task in self._scheduling]
-                    )
+                    debugstr = "\n\t".join([str(task) for task in self._scheduling])
                     if len(self._scheduling) > 0:
                         debugstr = "\n\t" + debugstr
                     self.log.debug(
-                        "%d pending tasks for event %s%s"
-                        % (len(self._scheduling), str(trigger), debugstr)
+                        f"{len(self._scheduling)} pending tasks for trigger {trigger}{debugstr}"
                     )
 
                 # This trigger isn't needed any more
@@ -464,10 +453,10 @@ class Scheduler:
                         # Task was killed by another task waiting on the same trigger
                         continue
                     if _debug:
-                        self.log.debug("Scheduling task %s" % (task._coro.__qualname__))
+                        self.log.debug(f"Scheduling task {task}")
                     self._schedule(task, trigger=trigger)
                     if _debug:
-                        self.log.debug("Scheduled task %s" % (task._coro.__qualname__))
+                        self.log.debug(f"Scheduled task {task}")
 
                     # remove our reference to the objects at the end of each loop,
                     # to try and avoid them being destroyed at a weird time (as
@@ -480,14 +469,10 @@ class Scheduler:
                 while self._pending_tasks:
                     task = self._pending_tasks.pop(0)
                     if _debug:
-                        self.log.debug(
-                            "Scheduling queued task %s" % (task._coro.__qualname__)
-                        )
+                        self.log.debug(f"Scheduling queued task {task}")
                     self._schedule(task)
                     if _debug:
-                        self.log.debug(
-                            "Scheduled queued task %s" % (task._coro.__qualname__)
-                        )
+                        self.log.debug(f"Scheduled queued task {task}")
 
                     del task
 
@@ -495,8 +480,7 @@ class Scheduler:
                 while self._pending_events:
                     if _debug:
                         self.log.debug(
-                            "Scheduling pending event %s"
-                            % (str(self._pending_events[0]))
+                            f"Scheduling pending event {self._pending_events[0]}"
                         )
                     self._pending_events.pop(0).set()
 
@@ -671,7 +655,7 @@ class Scheduler:
             _waiter._outcome = outcomes.capture(func, *args, **kwargs)
             if _debug:
                 self.log.debug(
-                    "Execution of external routine done %s" % threading.current_thread()
+                    f"Execution of external routine done {threading.current_thread()}"
                 )
             _waiter.thread_done()
 
@@ -704,28 +688,24 @@ class Scheduler:
             return Task(coroutine)
         if inspect.iscoroutinefunction(coroutine):
             raise TypeError(
-                "Coroutine function {} should be called prior to being "
-                "scheduled.".format(coroutine)
+                f"Coroutine function {coroutine} should be called prior to being "
+                "scheduled."
             )
         if isinstance(coroutine, cocotb.decorators.coroutine):
             raise TypeError(
-                "Attempt to schedule a coroutine that hasn't started: {}.\n"
+                f"Attempt to schedule a coroutine that hasn't started: {coroutine}.\n"
                 "Did you forget to add parentheses to the @cocotb.test() "
-                "decorator?".format(coroutine)
+                "decorator?"
             )
         if inspect.isasyncgen(coroutine):
             raise TypeError(
-                "{} is an async generator, not a coroutine. "
-                "You likely used the yield keyword instead of await.".format(
-                    coroutine.__qualname__
-                )
+                f"{coroutine.__qualname__} is an async generator, not a coroutine. "
+                "You likely used the yield keyword instead of await."
             )
         raise TypeError(
-            "Attempt to add an object of type {} to the scheduler, which "
-            "isn't a coroutine: {!r}\n"
-            "Did you forget to use the @cocotb.coroutine decorator?".format(
-                type(coroutine), coroutine
-            )
+            f"Attempt to add an object of type {type(coroutine)} to the scheduler, which "
+            f"isn't a coroutine: {coroutine!r}\n"
+            "Did you forget to use the @cocotb.coroutine decorator?"
         )
 
     def start_soon(self, task: Union[Coroutine, Task]) -> Task:
@@ -738,7 +718,7 @@ class Scheduler:
         task = self.create_task(task)
 
         if _debug:
-            self.log.debug("Queueing a new task %s" % task._coro.__qualname__)
+            self.log.debug(f"Queueing a new task {task!r}")
 
         self._queue(task)
         return task
@@ -762,15 +742,13 @@ class Scheduler:
 
     def _trigger_from_started_task(self, result: Task) -> Trigger:
         if _debug:
-            self.log.debug(
-                "Joining to already running task: %s" % result._coro.__qualname__
-            )
+            self.log.debug(f"Joining to already running task: {result}")
         return result.join()
 
     def _trigger_from_unstarted_task(self, result: Task) -> Trigger:
         self._queue(result)
         if _debug:
-            self.log.debug("Scheduling unstarted task: %s" % result._coro.__qualname__)
+            self.log.debug(f"Scheduling unstarted task: {result!r}")
         return result.join()
 
     def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
@@ -803,18 +781,14 @@ class Scheduler:
 
         if inspect.isasyncgen(result):
             raise TypeError(
-                "{} is an async generator, not a coroutine. "
-                "You likely used the yield keyword instead of await.".format(
-                    result.__qualname__
-                )
+                f"{result.__qualname__} is an async generator, not a coroutine. "
+                "You likely used the yield keyword instead of await."
             )
 
         raise TypeError(
-            "Coroutine yielded an object of type {}, which the scheduler can't "
-            "handle: {!r}\n"
-            "Did you forget to decorate with @cocotb.coroutine?".format(
-                type(result), result
-            )
+            f"Coroutine yielded an object of type {type(result)}, which the scheduler can't "
+            f"handle: {result!r}\n"
+            "Did you forget to decorate with @cocotb.coroutine?"
         )
 
     @contextmanager
@@ -848,9 +822,7 @@ class Scheduler:
 
             if task.done():
                 if _debug:
-                    self.log.debug(
-                        "Coroutine {} completed with {}".format(task, task._outcome)
-                    )
+                    self.log.debug(f"{task} completed with {task._outcome}")
                 assert result is None
                 self._unschedule(task)
 
@@ -860,10 +832,7 @@ class Scheduler:
 
             if not task.done():
                 if _debug:
-                    self.log.debug(
-                        "Task %s yielded %s (mode %d)"
-                        % (task._coro.__qualname__, str(result), self._mode)
-                    )
+                    self.log.debug(f"{task!r} yielded {result} (mode {self._mode})")
                 try:
                     result = self._trigger_from_any(result)
                 except TypeError as exc:
@@ -882,15 +851,12 @@ class Scheduler:
                     ext.thread_start()
                     if _debug:
                         self.log.debug(
-                            "Blocking from {} on {}".format(
-                                threading.current_thread(), ext.thread
-                            )
+                            f"Blocking from {threading.current_thread()} on {ext.thread}"
                         )
                     state = ext.thread_wait()
                     if _debug:
                         self.log.debug(
-                            "Back from wait on self %s with newstate %d"
-                            % (threading.current_thread(), state)
+                            f"Back from wait on self {threading.current_thread()} with newstate {state}"
                         )
                     if state == external_state.EXITED:
                         self._pending_threads.remove(ext)
@@ -943,14 +909,14 @@ class Scheduler:
         for trigger, waiting in items[::-1]:
             for task in waiting:
                 if _debug:
-                    self.log.debug("Killing %s" % str(task))
+                    self.log.debug(f"Killing {task}")
                 task.kill()
         assert not self._trigger2tasks
 
         # if there are coroutines being scheduled when the test ends, kill them (gh-1347)
         for task in self._scheduling:
             if _debug:
-                self.log.debug("Killing %s" % str(task))
+                self.log.debug(f"Killing {task}")
             task.kill()
         self._scheduling = []
 
@@ -958,7 +924,7 @@ class Scheduler:
         while self._pending_triggers:
             trigger = self._pending_triggers.pop(0)
             if _debug:
-                self.log.debug("Unpriming %r", trigger)
+                self.log.debug(f"Unpriming {trigger}")
             trigger._unprime()
         assert not self._pending_triggers
 
@@ -974,4 +940,4 @@ class Scheduler:
             raise Exception("Cleanup() called outside of the main thread")
 
         for ext in self._pending_threads:
-            self.log.warning("Waiting for %s to exit", ext.thread)
+            self.log.warning(f"Waiting for {ext.thread} to exit")
