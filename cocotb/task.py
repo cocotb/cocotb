@@ -117,7 +117,10 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         # - exhausted generator
         # - finished coroutine
         except IndexError:
-            coro_name = self._coro.__name__
+            try:
+                coro_name = self._coro.__name__
+            except AttributeError:
+                coro_name = type(self._coro).__name__
 
         repr_string = fmt.format(
             name=self.__name__,
