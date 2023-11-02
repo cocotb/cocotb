@@ -59,7 +59,7 @@ export OS
 
 # Detects if Python is running in a virtual environment
 # https://docs.python.org/3/library/venv.html
-IS_VENV=$(shell $(shell cocotb-config --python-bin) -c 'import sys; print(sys.prefix != sys.base_prefix)')
+IS_VENV=shell $(shell cocotb-config --python-bin) -c 'import sys; print(sys.prefix != sys.base_prefix)'
 
 # this ensures we use the same python as the one cocotb was installed into
 PYTHON_BIN ?= $(shell cocotb-config --python-bin)
