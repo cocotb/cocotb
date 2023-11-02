@@ -33,10 +33,18 @@ jobs:
       run: |
         sudo apt-get install -y --no-install-recommends iverilog
 
-    - name: Set up GHDL - nightly
-      uses: ghdl/setup-ghdl-ci@nightly
-      with:
-        backend: mcode
+    - name: Set up GHDL (Ubuntu)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends gnat
+        git clone https://github.com/ghdl/ghdl.git
+        cd ghdl
+        git reset --hard v3.0.0
+        mkdir build
+        cd build
+        ../configure
+        make -j $(nproc)
+        sudo make install
 
     - name: Run benchmark
       run: |
