@@ -27,9 +27,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Coroutine scheduler.
+"""Task scheduler.
 
-FIXME: We have a problem here.  If a coroutine schedules a read-only but we
+FIXME: We have a problem here. If a task schedules a read-only but we
 also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
@@ -181,29 +181,24 @@ class Scheduler:
     """The main scheduler.
 
     Here we accept callbacks from the simulator and schedule the appropriate
-    coroutines.
+    tasks.
 
     A callback fires, causing the :meth:`_react` method to be called, with the
     trigger that caused the callback as the first argument.
 
-    We look up a list of coroutines to schedule (indexed by the trigger) and
+    We look up a list of tasks to schedule (indexed by the trigger) and
     schedule them in turn.
 
     .. attention::
 
        Implementors should not depend on the scheduling order!
 
-    Some additional management is required since coroutines can return a list
-    of triggers, to be scheduled when any one of the triggers fires.  To
-    ensure we don't receive spurious callbacks, we have to un-prime all the
-    other triggers when any one fires.
-
     Due to the simulator nuances and fun with delta delays we have the
     following modes:
 
     Normal mode
-        - Callbacks cause coroutines to be scheduled
-        - Any pending writes are cached and do not happen immediately
+        - Callbacks cause tasks to be scheduled.
+        - Any pending writes are cached and do not happen immediately.
 
     ReadOnly mode
         - Corresponds to ``cbReadOnlySynch`` (VPI) or ``vhpiCbRepEndOfTimeStep``
@@ -221,7 +216,7 @@ class Scheduler:
     assist with compatibility.
 
 
-    Unless a coroutine has explicitly requested to be scheduled in ReadOnly
+    Unless a task has explicitly requested to be scheduled in ReadOnly
     mode (for example wanting to sample the finally settled value after all
     delta delays) then it can reasonably be expected to be scheduled during
     "normal mode" i.e. where writes are permitted.
@@ -247,9 +242,9 @@ class Scheduler:
 
         # Use OrderedDict here for deterministic behavior (gh-934)
 
-        # A dictionary of pending coroutines for each trigger,
+        # A dictionary of pending tasks for each trigger,
         # indexed by trigger
-        self._trigger2coros = _py_compat.insertion_ordered_dict()
+        self._trigger2tasks = _py_compat.insertion_ordered_dict()
 
         # Our main state
         self._mode = Scheduler._MODE_NORMAL
@@ -259,7 +254,7 @@ class Scheduler:
         # Only the last scheduled write to a particular handle in a timestep is performed.
         self._write_calls = OrderedDict()
 
-        self._pending_coros = []
+        self._pending_tasks = []
         self._pending_triggers = []
         self._pending_threads = []
         self._pending_events = []  # Events we need to call set on once we've unwound
@@ -277,7 +272,7 @@ class Scheduler:
         self._writes_pending = Event()
 
     async def _do_writes(self):
-        """An internal coroutine that performs pending writes"""
+        """An internal task that performs pending writes"""
         while True:
             await self._writes_pending.wait()
             if self._mode != Scheduler._MODE_NORMAL:
@@ -302,14 +297,14 @@ class Scheduler:
                 self._write_task.kill()
                 self._write_task = None
 
-            for t in self._trigger2coros:
+            for t in self._trigger2tasks:
                 t._unprime()
 
             if self._timer1.primed:
                 self._timer1._unprime()
 
             self._timer1._prime(self._test_completed)
-            self._trigger2coros = _py_compat.insertion_ordered_dict()
+            self._trigger2tasks = _py_compat.insertion_ordered_dict()
             self._terminate = False
             self._write_calls = OrderedDict()
             self._writes_pending.clear()
@@ -425,28 +420,26 @@ class Scheduler:
                 # this only exists to enable the warning above
                 is_first = False
 
-                # Scheduled coroutines may append to our waiting list so the first
-                # thing to do is pop all entries waiting on this trigger.
+                # When tasks run, they may append to our waiting list so the first
+                # thing to do is pop all tasks currently waiting on this trigger.
                 try:
-                    self._scheduling = self._trigger2coros.pop(trigger)
+                    self._scheduling = self._trigger2tasks.pop(trigger)
                 except KeyError:
                     # GPI triggers should only be ever pending if there is an
-                    # associated coroutine waiting on that trigger, otherwise it would
+                    # associated task waiting on that trigger, otherwise it would
                     # have been unprimed already
                     if isinstance(trigger, GPITrigger):
                         self.log.critical(
-                            "No coroutines waiting on trigger that fired: %s"
-                            % str(trigger)
+                            "No tasks waiting on trigger that fired: %s" % str(trigger)
                         )
 
                         trigger.log.info("I'm the culprit")
                     # For Python triggers this isn't actually an error - we might do
-                    # event.set() without knowing whether any coroutines are actually
+                    # event.set() without knowing whether any tasks are actually
                     # waiting on this event, for example
                     elif _debug:
                         self.log.debug(
-                            "No coroutines waiting on trigger that fired: %s"
-                            % str(trigger)
+                            "No tasks waiting on trigger that fired: %s" % str(trigger)
                         )
 
                     del trigger
@@ -454,50 +447,46 @@ class Scheduler:
 
                 if _debug:
                     debugstr = "\n\t".join(
-                        [coro._coro.__qualname__ for coro in self._scheduling]
+                        [task._coro.__qualname__ for task in self._scheduling]
                     )
                     if len(self._scheduling) > 0:
                         debugstr = "\n\t" + debugstr
                     self.log.debug(
-                        "%d pending coroutines for event %s%s"
+                        "%d pending tasks for event %s%s"
                         % (len(self._scheduling), str(trigger), debugstr)
                     )
 
                 # This trigger isn't needed any more
                 trigger._unprime()
 
-                for coro in self._scheduling:
-                    if coro._outcome is not None:
-                        # coroutine was killed by another coroutine waiting on the same trigger
+                for task in self._scheduling:
+                    if task._outcome is not None:
+                        # Task was killed by another task waiting on the same trigger
                         continue
                     if _debug:
-                        self.log.debug(
-                            "Scheduling coroutine %s" % (coro._coro.__qualname__)
-                        )
-                    self._schedule(coro, trigger=trigger)
+                        self.log.debug("Scheduling task %s" % (task._coro.__qualname__))
+                    self._schedule(task, trigger=trigger)
                     if _debug:
-                        self.log.debug(
-                            "Scheduled coroutine %s" % (coro._coro.__qualname__)
-                        )
+                        self.log.debug("Scheduled task %s" % (task._coro.__qualname__))
 
                     # remove our reference to the objects at the end of each loop,
                     # to try and avoid them being destroyed at a weird time (as
                     # happened in gh-957)
-                    del coro
+                    del task
 
                 self._scheduling = []
 
-                # Handle any newly queued coroutines that need to be scheduled
-                while self._pending_coros:
-                    task = self._pending_coros.pop(0)
+                # Handle any newly queued tasks that need to be scheduled
+                while self._pending_tasks:
+                    task = self._pending_tasks.pop(0)
                     if _debug:
                         self.log.debug(
-                            "Scheduling queued coroutine %s" % (task._coro.__qualname__)
+                            "Scheduling queued task %s" % (task._coro.__qualname__)
                         )
                     self._schedule(task)
                     if _debug:
                         self.log.debug(
-                            "Scheduled queued coroutine %s" % (task._coro.__qualname__)
+                            "Scheduled queued task %s" % (task._coro.__qualname__)
                         )
 
                     del task
@@ -519,52 +508,50 @@ class Scheduler:
             # no more pending triggers
             self._check_termination()
             if _debug:
-                self.log.debug(
-                    "All coroutines scheduled, handing control back" " to simulator"
-                )
+                self.log.debug("All tasks scheduled, handing control back to simulator")
 
-    def _unschedule(self, coro):
-        """Unschedule a coroutine.  Unprime any pending triggers"""
-        if coro in self._pending_coros:
-            assert not coro.has_started()
-            self._pending_coros.remove(coro)
+    def _unschedule(self, task):
+        """Unschedule a task.  Unprime any pending triggers"""
+        if task in self._pending_tasks:
+            assert not task.has_started()
+            self._pending_tasks.remove(task)
             # Close coroutine so there is no RuntimeWarning that it was never awaited
-            coro.close()
+            task.close()
             return
 
-        # Unprime the trigger this coroutine is waiting on
-        trigger = coro._trigger
+        # Unprime the trigger this task is waiting on
+        trigger = task._trigger
         if trigger is not None:
-            coro._trigger = None
-            if coro in self._trigger2coros.setdefault(trigger, []):
-                self._trigger2coros[trigger].remove(coro)
-            if not self._trigger2coros[trigger]:
+            task._trigger = None
+            if task in self._trigger2tasks.setdefault(trigger, []):
+                self._trigger2tasks[trigger].remove(task)
+            if not self._trigger2tasks[trigger]:
                 trigger._unprime()
-                del self._trigger2coros[trigger]
+                del self._trigger2tasks[trigger]
 
         assert self._test is not None
 
-        if coro is self._test:
+        if task is self._test:
             if _debug:
-                self.log.debug(f"Unscheduling test {coro}")
+                self.log.debug(f"Unscheduling test {task}")
 
             if not self._terminate:
                 self._terminate = True
                 self._cleanup()
 
-        elif Join(coro) in self._trigger2coros:
-            self._react(Join(coro))
+        elif Join(task) in self._trigger2tasks:
+            self._react(Join(task))
         else:
             try:
-                # throws an error if the background coroutine errored
+                # throws an error if the background task errored
                 # and no one was monitoring it
-                coro._outcome.get()
+                task._outcome.get()
             except (TestComplete, AssertionError) as e:
-                coro.log.info("Test stopped by this task")
+                task.log.info("Test stopped by this task")
                 e = remove_traceback_frames(e, ["_unschedule", "get"])
                 self._abort_test(e)
             except BaseException as e:
-                coro.log.error("Exception raised by this task")
+                task.log.error("Exception raised by this task")
                 e = remove_traceback_frames(e, ["_unschedule", "get"])
                 warnings.warn(
                     '"Unwatched" tasks that throw exceptions will not cause the test to fail. '
@@ -590,49 +577,47 @@ class Scheduler:
         self._write_calls[handle] = (write_func, args)
         self._writes_pending.set()
 
-    def _resume_coro_upon(self, coro, trigger):
-        """Schedule `coro` to be resumed when `trigger` fires."""
-        coro._trigger = trigger
+    def _resume_task_upon(self, task, trigger):
+        """Schedule `task` to be resumed when `trigger` fires."""
+        task._trigger = trigger
 
-        trigger_coros = self._trigger2coros.setdefault(trigger, [])
-        if coro is self._write_task:
-            # Our internal write coroutine always runs before any user coroutines.
-            # This preserves the behavior prior to the refactoring of writes to
-            # this coroutine.
-            trigger_coros.insert(0, coro)
+        trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
+        if task is self._write_task:
+            # Our internal write task always runs before any user tasks.
+            # This preserves the behavior prior to the refactoring of
+            # putting the writes in this task.
+            trigger_tasks.insert(0, task)
         else:
             # Everything else joins the back of the queue
-            trigger_coros.append(coro)
+            trigger_tasks.append(task)
 
         if not trigger.primed:
-            if trigger_coros != [coro]:
+            if trigger_tasks != [task]:
                 # should never happen
-                raise InternalError(
-                    "More than one coroutine waiting on an unprimed trigger"
-                )
+                raise InternalError("More than one task waiting on an unprimed trigger")
 
             try:
                 trigger._prime(self._react)
             except Exception as e:
                 # discard the trigger we associated, it will never fire
-                self._trigger2coros.pop(trigger)
+                self._trigger2tasks.pop(trigger)
 
                 # replace it with a new trigger that throws back the exception
-                self._resume_coro_upon(
-                    coro,
+                self._resume_task_upon(
+                    task,
                     NullTrigger(
                         name="Trigger._prime() Error", outcome=outcomes.Error(e)
                     ),
                 )
 
-    def _queue(self, coroutine):
-        """Queue a coroutine for execution"""
-        # Don't queue the same coroutine more than once (gh-2503)
-        if coroutine not in self._pending_coros:
-            self._pending_coros.append(coroutine)
+    def _queue(self, task):
+        """Queue a task for execution"""
+        # Don't queue the same task more than once (gh-2503)
+        if task not in self._pending_tasks:
+            self._pending_tasks.append(task)
 
-    def _queue_function(self, coro):
-        """Queue a coroutine for execution and move the containing thread
+    def _queue_function(self, task):
+        """Queue a task for execution and move the containing thread
         so that it does not block execution of the main thread any longer.
         """
         # We should be able to find ourselves inside the _pending_threads list
@@ -649,7 +634,7 @@ class Scheduler:
         async def wrapper():
             # This function runs in the scheduler thread
             try:
-                _outcome = outcomes.Value(await coro)
+                _outcome = outcomes.Value(await task)
             except BaseException as e:
                 _outcome = outcomes.Error(e)
             event.outcome = _outcome
@@ -658,29 +643,29 @@ class Scheduler:
             # before the background thread gets a chance to go back to sleep by
             # calling thread_suspend.
             # We need to do this here in the scheduler thread so that no more
-            # coroutines run until the background thread goes back to sleep.
+            # tasks run until the background thread goes back to sleep.
             t.thread_resume()
             event.set()
 
         event = threading.Event()
-        self._pending_coros.append(Task(wrapper()))
+        self._pending_tasks.append(Task(wrapper()))
         # The scheduler thread blocks in `thread_wait`, and is woken when we
-        # call `thread_suspend` - so we need to make sure the coroutine is
+        # call `thread_suspend` - so we need to make sure the task is
         # queued before that.
         t.thread_suspend()
-        # This blocks the calling `@external` thread until the coroutine finishes
+        # This blocks the calling `@external` thread until the task finishes
         event.wait()
         return event.outcome.get()
 
     def _run_in_executor(self, func, *args, **kwargs):
-        """Run the coroutine in a separate execution thread
+        """Run the task in a separate execution thread
         and return an awaitable object for the caller.
         """
         # Create a thread
         # Create a trigger that is called as a result of the thread finishing
         # Create an Event object that the caller can await on
         # Event object set when the thread finishes execution, this blocks the
-        #   calling coroutine (but not the thread) until the external completes
+        # calling task (but not the thread) until the external completes
 
         def execute_external(func, _waiter):
             _waiter._outcome = outcomes.capture(func, *args, **kwargs)
@@ -711,7 +696,7 @@ class Scheduler:
 
     @staticmethod
     def create_task(coroutine: Any) -> Task:
-        """Check to see if the given object is a schedulable coroutine object and if so, return it."""
+        """Check to see if the given object is a Task or coroutine and if so, return it as a Task."""
 
         if isinstance(coroutine, Task):
             return coroutine
@@ -743,55 +728,53 @@ class Scheduler:
             )
         )
 
-    def start_soon(self, coro: Union[Coroutine, Task]) -> Task:
+    def start_soon(self, task: Union[Coroutine, Task]) -> Task:
         """
-        Schedule a coroutine to be run concurrently, starting after the current coroutine yields control.
+        Schedule a task to be run concurrently, starting after the current task yields control.
 
         .. versionadded:: 1.5
         """
 
-        task = self.create_task(coro)
+        task = self.create_task(task)
 
         if _debug:
-            self.log.debug("Queueing a new coroutine %s" % task._coro.__qualname__)
+            self.log.debug("Queueing a new task %s" % task._coro.__qualname__)
 
         self._queue(task)
         return task
 
-    def _add_test(self, test_coro):
+    def _add_test(self, test_task):
         """Called by the regression manager to queue the next test"""
         if self._test is not None:
             raise InternalError("Test was added while another was in progress")
 
-        self._test = test_coro
-        self._resume_coro_upon(
-            test_coro,
-            NullTrigger(name=f"Start {test_coro!s}", outcome=outcomes.Value(None)),
+        self._test = test_task
+        self._resume_task_upon(
+            test_task,
+            NullTrigger(name=f"Start {test_task!s}", outcome=outcomes.Value(None)),
         )
 
     # This collection of functions parses a trigger out of the object
-    # that was yielded by a coroutine, converting `list` -> `Waitable`,
+    # that was yielded by a task, converting `list` -> `Waitable`,
     # `Waitable` -> `Task`, `Task` -> `Trigger`.
     # Doing them as separate functions allows us to avoid repeating unnecessary
     # `isinstance` checks.
 
-    def _trigger_from_started_coro(self, result: Task) -> Trigger:
+    def _trigger_from_started_task(self, result: Task) -> Trigger:
         if _debug:
             self.log.debug(
-                "Joining to already running coroutine: %s" % result._coro.__qualname__
+                "Joining to already running task: %s" % result._coro.__qualname__
             )
         return result.join()
 
-    def _trigger_from_unstarted_coro(self, result: Task) -> Trigger:
+    def _trigger_from_unstarted_task(self, result: Task) -> Trigger:
         self._queue(result)
         if _debug:
-            self.log.debug(
-                "Scheduling nested coroutine: %s" % result._coro.__qualname__
-            )
+            self.log.debug("Scheduling unstarted task: %s" % result._coro.__qualname__)
         return result.join()
 
     def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
-        return self._trigger_from_unstarted_coro(Task(result._wait()))
+        return self._trigger_from_unstarted_task(Task(result._wait()))
 
     def _trigger_from_list(self, result: list) -> Trigger:
         return self._trigger_from_waitable(cocotb.triggers.First(*result))
@@ -805,12 +788,12 @@ class Scheduler:
 
         if isinstance(result, Task):
             if not result.has_started():
-                return self._trigger_from_unstarted_coro(result)
+                return self._trigger_from_unstarted_task(result)
             else:
-                return self._trigger_from_started_coro(result)
+                return self._trigger_from_started_task(result)
 
         if inspect.iscoroutine(result):
-            return self._trigger_from_unstarted_coro(Task(result))
+            return self._trigger_from_unstarted_task(Task(result))
 
         if isinstance(result, list):
             return self._trigger_from_list(result)
@@ -844,15 +827,15 @@ class Scheduler:
         finally:
             self._current_task = old_task
 
-    def _schedule(self, coroutine, trigger=None):
-        """Schedule a coroutine by calling the send method.
+    def _schedule(self, task, trigger=None):
+        """Schedule a task to execute.
 
         Args:
-            coroutine (cocotb.decorators.coroutine): The coroutine to schedule.
+            task (cocotb.decorators.coroutine): The task to schedule.
             trigger (cocotb.triggers.Trigger): The trigger that caused this
-                coroutine to be scheduled.
+                task to be scheduled.
         """
-        with self._task_context(coroutine):
+        with self._task_context(task):
             if trigger is None:
                 send_outcome = outcomes.Value(None)
             else:
@@ -860,37 +843,35 @@ class Scheduler:
             if _debug:
                 self.log.debug(f"Scheduling with {send_outcome}")
 
-            coroutine._trigger = None
-            result = coroutine._advance(send_outcome)
+            task._trigger = None
+            result = task._advance(send_outcome)
 
-            if coroutine.done():
+            if task.done():
                 if _debug:
                     self.log.debug(
-                        "Coroutine {} completed with {}".format(
-                            coroutine, coroutine._outcome
-                        )
+                        "Coroutine {} completed with {}".format(task, task._outcome)
                     )
                 assert result is None
-                self._unschedule(coroutine)
+                self._unschedule(task)
 
             # Don't handle the result if we're shutting down
             if self._terminate:
                 return
 
-            if not coroutine.done():
+            if not task.done():
                 if _debug:
                     self.log.debug(
-                        "Coroutine %s yielded %s (mode %d)"
-                        % (coroutine._coro.__qualname__, str(result), self._mode)
+                        "Task %s yielded %s (mode %d)"
+                        % (task._coro.__qualname__, str(result), self._mode)
                     )
                 try:
                     result = self._trigger_from_any(result)
                 except TypeError as exc:
-                    # restart this coroutine with an exception object telling it that
+                    # restart this task with an exception object telling it that
                     # it wasn't allowed to yield that
                     result = NullTrigger(outcome=outcomes.Error(exc))
 
-                self._resume_coro_upon(coroutine, result)
+                self._resume_task_upon(task, result)
 
             # We do not return from here until pending threads have completed, but only
             # from the main thread, this seems like it could be problematic in cases
@@ -955,22 +936,22 @@ class Scheduler:
         Unprime all pending triggers and kill off any coroutines, stop all externals.
         """
         # copy since we modify this in kill
-        items = list((k, list(v)) for k, v in self._trigger2coros.items())
+        items = list((k, list(v)) for k, v in self._trigger2tasks.items())
 
         # reversing seems to fix gh-928, although the order is still somewhat
         # arbitrary.
         for trigger, waiting in items[::-1]:
-            for coro in waiting:
+            for task in waiting:
                 if _debug:
-                    self.log.debug("Killing %s" % str(coro))
-                coro.kill()
-        assert not self._trigger2coros
+                    self.log.debug("Killing %s" % str(task))
+                task.kill()
+        assert not self._trigger2tasks
 
         # if there are coroutines being scheduled when the test ends, kill them (gh-1347)
-        for coro in self._scheduling:
+        for task in self._scheduling:
             if _debug:
-                self.log.debug("Killing %s" % str(coro))
-            coro.kill()
+                self.log.debug("Killing %s" % str(task))
+            task.kill()
         self._scheduling = []
 
         # cancel outstanding triggers *before* queued coroutines (gh-3270)
@@ -982,11 +963,11 @@ class Scheduler:
         assert not self._pending_triggers
 
         # Kill any queued coroutines.
-        # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_coros.
+        # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_tasks.
         # If that happens a for loop will stop early and then the assert will fail.
-        while self._pending_coros:
+        while self._pending_tasks:
             # Get first task but leave it in the list so that _unschedule() will correctly close the unstarted coroutine object.
-            task = self._pending_coros[0]
+            task = self._pending_tasks[0]
             task.kill()
 
         if self._main_thread is not threading.current_thread():
