@@ -303,12 +303,12 @@ class Scheduler:
                 self._write_coro_inst = None
 
             for t in self._trigger2coros:
-                t.unprime()
+                t._unprime()
 
             if self._timer1.primed:
-                self._timer1.unprime()
+                self._timer1._unprime()
 
-            self._timer1.prime(self._test_completed)
+            self._timer1._prime(self._test_completed)
             self._trigger2coros = _py_compat.insertion_ordered_dict()
             self._terminate = False
             self._write_calls = OrderedDict()
@@ -329,7 +329,7 @@ class Scheduler:
         with ctx:
             self._mode = Scheduler._MODE_NORMAL
             if trigger is not None:
-                trigger.unprime()
+                trigger._unprime()
 
             # extract the current test, and clear it
             test = self._test
@@ -394,7 +394,7 @@ class Scheduler:
             # When a trigger fires it is unprimed internally
             if _debug:
                 self.log.debug("Trigger fired: %s" % str(trigger))
-            # trigger.unprime()
+            # trigger._unprime()
 
             if self._mode == Scheduler._MODE_TERM:
                 if _debug:
@@ -464,7 +464,7 @@ class Scheduler:
                     )
 
                 # This trigger isn't needed any more
-                trigger.unprime()
+                trigger._unprime()
 
                 for coro in self._scheduling:
                     if coro._outcome is not None:
@@ -539,7 +539,7 @@ class Scheduler:
             if coro in self._trigger2coros.setdefault(trigger, []):
                 self._trigger2coros[trigger].remove(coro)
             if not self._trigger2coros[trigger]:
-                trigger.unprime()
+                trigger._unprime()
                 del self._trigger2coros[trigger]
 
         assert self._test is not None
@@ -612,7 +612,7 @@ class Scheduler:
                 )
 
             try:
-                trigger.prime(self._react)
+                trigger._prime(self._react)
             except Exception as e:
                 # discard the trigger we associated, it will never fire
                 self._trigger2coros.pop(trigger)
@@ -621,7 +621,7 @@ class Scheduler:
                 self._resume_coro_upon(
                     coro,
                     NullTrigger(
-                        name="Trigger.prime() Error", outcome=outcomes.Error(e)
+                        name="Trigger._prime() Error", outcome=outcomes.Error(e)
                     ),
                 )
 
@@ -994,7 +994,7 @@ class Scheduler:
             trigger = self._pending_triggers.pop(0)
             if _debug:
                 self.log.debug("Unpriming %r", trigger)
-            trigger.unprime()
+            trigger._unprime()
         assert not self._pending_triggers
 
         # Kill any queued coroutines.
