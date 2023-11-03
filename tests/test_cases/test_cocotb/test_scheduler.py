@@ -162,7 +162,7 @@ async def test_trigger_with_failing_prime(dut):
     """Test that a trigger failing to prime throws"""
 
     class ABadTrigger(Trigger):
-        def prime(self, callback):
+        def _prime(self, callback):
             raise RuntimeError("oops")
 
     await Timer(1, "ns")
@@ -589,7 +589,7 @@ async def test_start_soon_scheduling(dut):
 
     t = Timer(1, "step")
     # pre-prime with wrapper function instead of letting scheduler prime it normally
-    t.prime(react_wrapper)
+    t._prime(react_wrapper)
     await t
     # react_wrapper is now on the stack
     cocotb.start_soon(coro())  # coro() should run before returning to the simulator
@@ -719,7 +719,7 @@ async def test_start_scheduling(dut):
 
     t = Timer(1, "step")
     # pre-prime with wrapper function instead of letting scheduler prime it normally
-    t.prime(react_wrapper)
+    t._prime(react_wrapper)
     await t
     # react_wrapper is now on the stack
     assert sim_resumed is False

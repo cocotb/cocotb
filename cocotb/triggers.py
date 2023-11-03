@@ -87,7 +87,7 @@ class Trigger(Awaitable):
         return SimLog("cocotb.%s" % (type(self).__qualname__), id(self))
 
     @abc.abstractmethod
-    def prime(self, callback):
+    def _prime(self, callback):
         """Set a callback to be invoked when the trigger fires.
 
         The callback will be invoked with a single argument, `self`.
@@ -101,11 +101,11 @@ class Trigger(Awaitable):
         """
         self.primed = True
 
-    def unprime(self):
+    def _unprime(self):
         """Remove the callback, and perform cleanup if necessary.
 
         After being un-primed, a Trigger may be re-primed again in the future.
-        Calling `unprime` multiple times is allowed, subsequent calls should be
+        Calling `_unprime` multiple times is allowed, subsequent calls should be
         a no-op.
 
         Sub-classes may override this, but should end by calling the base class
@@ -119,7 +119,7 @@ class Trigger(Awaitable):
 
     def __del__(self):
         # Ensure if a trigger drops out of scope we remove any pending callbacks
-        self.unprime()
+        self._unprime()
 
     @property
     def _outcome(self):
@@ -159,12 +159,12 @@ class GPITrigger(Trigger):
         # else:
         self.cbhdl = None
 
-    def unprime(self):
+    def _unprime(self):
         """Disable a primed trigger, can be re-primed."""
         if self.cbhdl is not None:
             self.cbhdl.deregister()
         self.cbhdl = None
-        Trigger.unprime(self)
+        Trigger._unprime(self)
 
 
 class Timer(GPITrigger):
@@ -255,7 +255,7 @@ class Timer(GPITrigger):
             round_mode = type(self).round_mode
         self.sim_steps = get_sim_steps(time, units, round_mode=round_mode)
 
-    def prime(self, callback):
+    def _prime(self, callback):
         """Register for a timed callback."""
         if self.cbhdl is None:
             self.cbhdl = simulator.register_timed_callback(
@@ -263,7 +263,7 @@ class Timer(GPITrigger):
             )
             if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
-        GPITrigger.prime(self, callback)
+        GPITrigger._prime(self, callback)
 
     def __repr__(self):
         return "<{} of {:1.2f}ps at {}>".format(
@@ -297,12 +297,12 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     def __init__(self):
         GPITrigger.__init__(self)
 
-    def prime(self, callback):
+    def _prime(self, callback):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
             if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
-        GPITrigger.prime(self, callback)
+        GPITrigger._prime(self, callback)
 
     def __repr__(self):
         return "{}()".format(type(self).__qualname__)
@@ -320,12 +320,12 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     def __init__(self):
         GPITrigger.__init__(self)
 
-    def prime(self, callback):
+    def _prime(self, callback):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
-        GPITrigger.prime(self, callback)
+        GPITrigger._prime(self, callback)
 
     def __repr__(self):
         return "{}()".format(type(self).__qualname__)
@@ -343,12 +343,12 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     def __init__(self):
         GPITrigger.__init__(self)
 
-    def prime(self, callback):
+    def _prime(self, callback):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
             if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
-        GPITrigger.prime(self, callback)
+        GPITrigger._prime(self, callback)
 
     def __repr__(self):
         return "{}()".format(type(self).__qualname__)
@@ -373,7 +373,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         super().__init__()
         self.signal = signal
 
-    def prime(self, callback):
+    def _prime(self, callback):
         """Register notification of a value change via a callback"""
         if self.cbhdl is None:
             self.cbhdl = simulator.register_value_change_callback(
@@ -381,7 +381,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
             )
             if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
-        super().prime(callback)
+        super()._prime(callback)
 
     def __repr__(self):
         return "{}({!r})".format(type(self).__qualname__, self.signal)
@@ -421,10 +421,10 @@ class _Event(PythonTrigger):
         PythonTrigger.__init__(self)
         self.parent = parent
 
-    def prime(self, callback):
+    def _prime(self, callback):
         self._callback = callback
         self.parent._prime_trigger(self, callback)
-        Trigger.prime(self, callback)
+        Trigger._prime(self, callback)
 
     def __call__(self):
         self._callback(self)
@@ -508,11 +508,11 @@ class _InternalEvent(PythonTrigger):
         self.fired = False
         self.data = None
 
-    def prime(self, callback):
+    def _prime(self, callback):
         if self._callback is not None:
             raise RuntimeError("This Trigger may only be awaited once")
         self._callback = callback
-        Trigger.prime(self, callback)
+        Trigger._prime(self, callback)
         if self.fired:
             self._callback(self)
 
@@ -551,10 +551,10 @@ class _Lock(PythonTrigger):
         PythonTrigger.__init__(self)
         self.parent = parent
 
-    def prime(self, callback):
+    def _prime(self, callback):
         self._callback = callback
         self.parent._prime_trigger(self, callback)
-        Trigger.prime(self, callback)
+        Trigger._prime(self, callback)
 
     def __call__(self):
         self._callback(self)
@@ -662,7 +662,7 @@ class NullTrigger(Trigger):
             return self.__outcome
         return super()._outcome
 
-    def prime(self, callback):
+    def _prime(self, callback):
         callback(self)
 
     def __repr__(self):
@@ -724,11 +724,11 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
         """
         return self._coroutine.result()
 
-    def prime(self, callback):
+    def _prime(self, callback):
         if self._coroutine.done():
             callback(self)
         else:
-            super().prime(callback)
+            super()._prime(callback)
 
     def __repr__(self):
         return "{}({!s})".format(type(self).__qualname__, self._coroutine)
