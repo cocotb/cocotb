@@ -50,7 +50,7 @@ class DualMonitor:
 
 # Cadence simulators: "Unable set up RisingEdge(ModifiableObject(sample_module.clk)) Trigger" with VHDL (see #1076)
 @cocotb.test(
-    expect_error=cocotb.triggers.TriggerException
+    expect_error=cocotb.triggers._TriggerException
     if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
     else ()
 )
@@ -61,7 +61,7 @@ async def issue_348_rising(dut):
 
 # Cadence simulators: "Unable set up FallingEdge(ModifiableObject(sample_module.clk)) Trigger" with VHDL (see #1076)
 @cocotb.test(
-    expect_error=cocotb.triggers.TriggerException
+    expect_error=cocotb.triggers._TriggerException
     if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
     else ()
 )
@@ -72,7 +72,7 @@ async def issue_348_falling(dut):
 
 # Cadence simulators: "Unable set up Edge(ModifiableObject(sample_module.clk)) Trigger" with VHDL (see #1076)
 @cocotb.test(
-    expect_error=cocotb.triggers.TriggerException
+    expect_error=cocotb.triggers._TriggerException
     if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
     else ()
 )

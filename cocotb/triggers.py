@@ -61,7 +61,7 @@ def _pointer_str(obj):
     return full_repr.rsplit(" ", 1)[1][:-1]
 
 
-class TriggerException(Exception):
+class _TriggerException(Exception):
     pass
 
 
@@ -262,7 +262,7 @@ class Timer(GPITrigger):
                 self.sim_steps, callback, self
             )
             if self.cbhdl is None:
-                raise TriggerException("Unable set up %s Trigger" % (str(self)))
+                raise _TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger._prime(self, callback)
 
     def __repr__(self):
@@ -301,7 +301,7 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
             if self.cbhdl is None:
-                raise TriggerException("Unable set up %s Trigger" % (str(self)))
+                raise _TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger._prime(self, callback)
 
     def __repr__(self):
@@ -324,7 +324,7 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl is None:
-                raise TriggerException("Unable set up %s Trigger" % (str(self)))
+                raise _TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger._prime(self, callback)
 
     def __repr__(self):
@@ -347,7 +347,7 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
             if self.cbhdl is None:
-                raise TriggerException("Unable set up %s Trigger" % (str(self)))
+                raise _TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger._prime(self, callback)
 
     def __repr__(self):
@@ -380,7 +380,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
                 self.signal._handle, callback, type(self)._edge_type, self
             )
             if self.cbhdl is None:
-                raise TriggerException("Unable set up %s Trigger" % (str(self)))
+                raise _TriggerException("Unable set up %s Trigger" % (str(self)))
         super()._prime(callback)
 
     def __repr__(self):

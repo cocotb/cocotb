@@ -26,8 +26,8 @@ from cocotb.triggers import (
     ReadWrite,
     RisingEdge,
     Timer,
-    TriggerException,
 )
+from cocotb.triggers import _TriggerException as TriggerException
 from cocotb.utils import get_sim_time
 
 
@@ -261,7 +261,7 @@ async def test_singleton_isinstance(dut):
 @cocotb.test()
 async def test_neg_timer(dut):
     """Test negative timer values are forbidden"""
-    with pytest.raises(TriggerException):
+    with pytest.raises(ValueError):
         Timer(-42)  # no need to even `await`, constructing it is an error
     # handle 0 special case
     with warnings.catch_warnings(record=True) as w:
