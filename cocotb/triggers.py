@@ -223,7 +223,7 @@ class Timer(GPITrigger):
             :func:`~cocotb.utils.get_sim_steps`
 
         Raises:
-            TriggerException: If a negative value is passed for Timer setup.
+            ValueError: If a negative value is passed for Timer setup.
 
         .. versionchanged:: 1.5
             Raise an exception when Timer uses a negative value as it is undefined behavior.
@@ -250,7 +250,7 @@ class Timer(GPITrigger):
                     stacklevel=2,
                 )
             else:
-                raise TriggerException("Timer value time_ps must not be negative")
+                raise ValueError("Timer value time_ps must not be negative")
         if round_mode is None:
             round_mode = type(self).round_mode
         self.sim_steps = get_sim_steps(time, units, round_mode=round_mode)
@@ -607,9 +607,7 @@ class Lock:
     def release(self):
         """Release the lock."""
         if not self.locked:
-            raise TriggerException(
-                "Attempt to release an unacquired Lock %s" % (str(self))
-            )
+            raise RuntimeError("Attempt to release an unacquired Lock %s" % (str(self)))
 
         self.locked = False
 
