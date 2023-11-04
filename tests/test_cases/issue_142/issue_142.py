@@ -8,7 +8,7 @@ from cocotb.triggers import RisingEdge
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
 @cocotb.test(
-    expect_error=cocotb.triggers.TriggerException
+    expect_error=cocotb.triggers._TriggerException
     if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
     else ()
 )
