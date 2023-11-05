@@ -52,7 +52,11 @@ jobs:
         pip install .
         pytest -c /dev/null tests/benchmark.py --benchmark-json output.json
 
+    # Pushing the benchmark requires elevated permissions to the
+    # cocotb/cocotb-benchmark-results repository, which we only grant for
+    # master builds, not for PR builds.
     - name: Generate a token to access cocotb/cocotb-benchmark-results
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       id: generate_token
       uses: actions/create-github-app-token@v1
       with:
@@ -62,7 +66,6 @@ jobs:
         repositories: cocotb-benchmark-results
 
     - name: Store benchmark result
-      # Will only run on the master branch and not on pull request
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       uses: benchmark-action/github-action-benchmark@v1
       continue-on-error: true
