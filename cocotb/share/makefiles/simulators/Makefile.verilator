@@ -42,7 +42,11 @@ ifeq ($(VERILATOR_SIM_DEBUG), 1)
 endif
 
 ifeq ($(VERILATOR_TRACE),1)
-  EXTRA_ARGS += --trace --trace-structs
+  WAVES = 1
+endif
+
+ifeq ($(WAVES),1)
+  EXTRA_ARGS += --trace-fst --trace-structs
 endif
 
 EXTRA_ARGS += --timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
