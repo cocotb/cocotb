@@ -250,7 +250,7 @@ class Timer(GPITrigger):
                     stacklevel=2,
                 )
             else:
-                raise ValueError("Timer value time_ps must not be negative")
+                raise ValueError("Timer argument time must not be negative")
         if round_mode is None:
             round_mode = type(self).round_mode
         self.sim_steps = get_sim_steps(time, units, round_mode=round_mode)
