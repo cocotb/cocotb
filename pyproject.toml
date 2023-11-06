@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.towncrier]
     package = "cocotb"
-    directory = "documentation/source/newsfragments"
-    filename = "documentation/source/release_notes.rst"
+    directory = "docs/source/newsfragments"
+    filename = "docs/source/release_notes.rst"
     issue_format = ":pr:`{issue}`"
     # The first underline is used for the version/date header,
     # the second underline for the subcategories (like 'Features')

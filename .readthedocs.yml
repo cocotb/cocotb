@@ -13,11 +13,11 @@ build:
 
 python:
   install:
-    - requirements: documentation/requirements.txt
+    - requirements: docs/requirements.txt
     - method: pip
       path: .
       extra_requirements:
         - bus
 
 sphinx:
-  configuration: documentation/source/conf.py
+  configuration: docs/source/conf.py
