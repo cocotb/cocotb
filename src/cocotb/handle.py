@@ -27,8 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# -*- coding: utf-8 -*-
-
 import enum
 from functools import lru_cache
 from typing import Optional
@@ -572,7 +570,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
 
         See the docstring for this class.
         """
-        if type(value) is not list:
+        if type(value) is not list:  # noqa: E721
             raise TypeError(
                 "Assigning non-list value to object {} of type {}".format(
                     self._name, type(self)

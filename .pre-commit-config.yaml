@@ -4,8 +4,17 @@
 
 exclude: "^.*/_vendor/"
 repos:
+# ruff with --fix should run before other formatting tools
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: "v0.1.4"
+  hooks:
+    - id: "ruff"
+      args:
+      - "--fix"
+      - "--exit-non-zero-on-fix"
+
 - repo: "https://github.com/psf/black"
-  rev: "23.3.0"
+  rev: "23.10.1"
   hooks:
   - id: "black"
 
@@ -16,19 +25,14 @@ repos:
     args:
     - "--profile=black"
 
-- repo: "https://github.com/pycqa/flake8"
-  rev: "6.0.0"
-  hooks:
-  - id: "flake8"
-
 - repo: "https://github.com/pre-commit/mirrors-clang-format"
-  rev: "v16.0.6"
+  rev: "v17.0.4"
   hooks:
   - id: "clang-format"
     exclude: "^src/cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
 
 - repo: "https://github.com/pre-commit/pre-commit-hooks"
-  rev: "v4.4.0"
+  rev: "v4.5.0"
   hooks:
   - id: "trailing-whitespace"
   - id: "mixed-line-ending"
@@ -36,3 +40,13 @@ repos:
     - "--fix=lf"
   - id: "end-of-file-fixer"
     exclude: "^docs/source/diagrams/(svg|xml)/"
+
+- repo: "https://github.com/tox-dev/pyproject-fmt"
+  rev: "1.4.1"
+  hooks:
+  - id: "pyproject-fmt"
+
+- repo: "https://github.com/abravalheri/validate-pyproject"
+  rev: "v0.15"
+  hooks:
+  - id: "validate-pyproject"
