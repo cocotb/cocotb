@@ -70,12 +70,12 @@ def package_files(directory):
     paths = []
     for fpath, directories, filenames in walk(directory):
         for filename in filenames:
-            paths.append(path.join("..", fpath, filename))
+            paths.append(path.join("..", "..", fpath, filename))
     return paths
 
 
 # this sets the __version__ variable
-exec(read_file(path.join("cocotb", "_version.py")))
+exec(read_file(path.join("src", "cocotb", "_version.py")))
 
 # store log from build_libs and display at the end in verbose mode
 # see https://github.com/pypa/pip/issues/6634
@@ -101,13 +101,14 @@ setup(
         "find_libpython",
     ],
     python_requires=">=3.6",
-    packages=find_packages(),
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     package_data={
         "cocotb": (
-            package_files("cocotb/share/makefiles")
-            + package_files("cocotb/share/include")  # noqa: W504
-            + package_files("cocotb/share/def")  # noqa: W504
-            + package_files("cocotb/share/lib/verilator")  # noqa: W504
+            package_files("src/cocotb/share/makefiles")
+            + package_files("src/cocotb/share/include")  # noqa: W504
+            + package_files("src/cocotb/share/def")  # noqa: W504
+            + package_files("src/cocotb/share/lib/verilator")  # noqa: W504
         )
     },
     ext_modules=get_ext(),
