@@ -183,7 +183,7 @@ class Scheduler:
     Here we accept callbacks from the simulator and schedule the appropriate
     coroutines.
 
-    A callback fires, causing the :any:`react` method to be called, with the
+    A callback fires, causing the :meth:`_react` method to be called, with the
     trigger that caused the callback as the first argument.
 
     We look up a list of coroutines to schedule (indexed by the trigger) and

@@ -101,8 +101,6 @@ If you want to install the **development version** of cocotb,
 
 After installation, you should be able to execute :command:`cocotb-config`.
 If it is not found, you need to append its location to the :envvar:`PATH` environment variable.
-This may happen when you use the ``--user`` option to :command:`pip`,
-in which case the location is documented :ref:`here<python:inst-alt-install-user>`.
-
+This may happen when you use the ``--user`` option to :command:`pip`.
 
 For more installation options, please see `our Wiki <https://github.com/cocotb/cocotb/wiki/Tier-2-Setup-Instructions>`_.
