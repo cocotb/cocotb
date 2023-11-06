@@ -7,10 +7,10 @@ Most important: please explain *why* you are proposing this change.
 
 * Make sure you have read https://github.com/cocotb/cocotb/blob/master/CONTRIBUTING.md
 * Extend or add a test under `tests/test_cases/`.
-* Add documentation under `documentation/source/`,
+* Add documentation under `docs/source/`,
   docstrings in Python code, or Doxygen markup in C/C++ code.
   Use ``versionadded``/``versionchanged``/``deprecated``.
-* Add a newsfragment - see `documentation/source/newsfragments/README.rst`.
+* Add a newsfragment - see `docs/source/newsfragments/README.rst`.
 * Use `closes #XXXX` to auto-close the issue that this PR fixes (if such).
 
 -->

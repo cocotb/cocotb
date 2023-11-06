@@ -35,4 +35,4 @@ repos:
     args:
     - "--fix=lf"
   - id: "end-of-file-fixer"
-    exclude: "^documentation/source/diagrams/(svg|xml)/"
+    exclude: "^docs/source/diagrams/(svg|xml)/"

@@ -524,9 +524,9 @@ def release_test_nosim(session: nox.Session) -> None:
 
 def create_env_for_docs_build(session: nox.Session) -> None:
     session.run(
-        "pip", "install", "documentation/_vendor/domaintools"
+        "pip", "install", "docs/_vendor/domaintools"
     )  # not done in requirements.txt due to the way relative paths are handled in that file (gh-pypa/pip#8765)
-    session.run("pip", "install", "-r", "documentation/requirements.txt")
+    session.run("pip", "install", "-r", "docs/requirements.txt")
     session.run("pip", "install", "-e", ".")
 
 
@@ -535,9 +535,7 @@ def docs(session: nox.Session) -> None:
     """invoke sphinx-build to build the HTML docs"""
     create_env_for_docs_build(session)
     outdir = session.cache_dir / "docs_out"
-    session.run(
-        "sphinx-build", "./documentation/source", str(outdir), "--color", "-b", "html"
-    )
+    session.run("sphinx-build", "./docs/source", str(outdir), "--color", "-b", "html")
     index = (outdir / "index.html").resolve().as_uri()
     session.log(f"Documentation is available at {index}")
 
@@ -559,7 +557,7 @@ def docs_preview(session: nox.Session) -> None:
         # changes to cocotb code.
         "--watch",
         "cocotb",
-        "./documentation/source",
+        "./docs/source",
         str(outdir),
     )
 
@@ -571,7 +569,7 @@ def docs_linkcheck(session: nox.Session) -> None:
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
-        "./documentation/source",
+        "./docs/source",
         str(outdir),
         "--color",
         "-b",
@@ -586,7 +584,7 @@ def docs_spelling(session: nox.Session) -> None:
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
-        "./documentation/source",
+        "./docs/source",
         str(outdir),
         "--color",
         "-b",
