@@ -54,7 +54,7 @@ Concurrent Execution
 ====================
 
 Coroutines can be scheduled for concurrent execution with :func:`~cocotb.start` and :func:`~cocotb.start_soon`.
-These concurrently running coroutines are called :type:`~cocotb.Task`\ s.
+These concurrently running coroutines are called :class:`~cocotb.task.Task`\ s.
 
 The *async* function :func:`~cocotb.start` schedules the coroutine to be executed concurrently,
 then yields control to allow the new task (and any other pending tasks) to run,
