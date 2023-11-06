@@ -18,7 +18,7 @@ from setuptools.command.build_ext import build_ext as _build_ext
 
 logger = logging.getLogger(__name__)
 cocotb_share_dir = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "cocotb", "share")
+    os.path.join(os.path.dirname(__file__), "src", "cocotb", "share")
 )
 _base_warns = [
     "-Wall",
@@ -675,7 +675,7 @@ def get_ext():
     share_lib_dir = os.path.relpath(os.path.join(cocotb_share_dir, "lib"))
     include_dirs = [
         os.path.relpath(os.path.join(cocotb_share_dir, "include")),
-        os.path.relpath(os.path.join(os.path.dirname(__file__), "cocotb")),
+        os.path.relpath(os.path.join(os.path.dirname(__file__), "src", "cocotb")),
     ]
 
     ext = []

@@ -25,7 +25,7 @@ repos:
   rev: "v16.0.6"
   hooks:
   - id: "clang-format"
-    exclude: "^cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
+    exclude: "^src/cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
 
 - repo: "https://github.com/pre-commit/pre-commit-hooks"
   rev: "v4.4.0"
