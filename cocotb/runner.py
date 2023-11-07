@@ -728,8 +728,11 @@ class Riviera(Simulator):
                 )
 
             if self.verilog_sources:
-                do_script += "alog -work {RTL_LIBRARY} +define+COCOTB_SIM -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
+                do_script += "alog -work {RTL_LIBRARY} +define+COCOTB_SIM -pli {EXT_NAME} -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.hdl_library),
+                    EXT_NAME=as_tcl_value(
+                        cocotb.config.lib_name_path("vpi", "riviera")
+                    ),
                     VERILOG_SOURCES=" ".join(
                         as_tcl_value(str(v)) for v in self.verilog_sources
                     ),
