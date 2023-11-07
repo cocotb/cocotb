@@ -59,7 +59,6 @@ Synopsys VCS
 Aldec Riviera-PRO
 =================
 
-* The ``alog`` call needs the ``-pli libgpi`` option set.
 * The ``asim`` call needs the ``+access +w_nets`` option set to allow cocotb to access values in the design.
 
 .. tabs::
@@ -75,7 +74,7 @@ Aldec Riviera-PRO
 
    .. group-tab:: Design with a (System)Verilog Toplevel
 
-      For a design with a (System)Verilog toplevel, call ``asim`` with the option
+      For a design with a (System)Verilog toplevel, call ``alog`` and ``asim`` with the option
       ``-pli $(cocotb-config --lib-name-path vpi riviera)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
@@ -102,7 +101,7 @@ Aldec Active-HDL
 
    .. group-tab:: Design with a (System)Verilog Toplevel
 
-      For a design with a (System)Verilog toplevel, call ``asim`` with the option
+      For a design with a (System)Verilog toplevel, call ``alog`` and ``asim`` with the option
       ``-pli $(cocotb-config --lib-name-path vpi activehdl)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
