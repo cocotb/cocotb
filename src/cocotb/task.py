@@ -79,10 +79,6 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         # log anything
         return SimLog(f"cocotb.{self.__qualname__}.{self._coro.__qualname__}")
 
-    def __iter__(self: Self) -> Self:
-        # for use in "yield from" statements
-        return self
-
     def __str__(self) -> str:
         return f"<{self.__name__}>"
 
