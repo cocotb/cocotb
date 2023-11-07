@@ -126,9 +126,9 @@ ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@
 endif
 ifneq ($(CFG_TOPLEVEL),)
-	@echo "asim $(ASIM_ARGS) +access +w -interceptcoutput -O2 -dbg $(GPI_ARGS) $(CFG_TOPLEVEL) $(EXTRA_TOPS)" >> $@
+	@echo "asim $(ASIM_ARGS) +access +w_nets -interceptcoutput -O2 -dbg $(GPI_ARGS) $(CFG_TOPLEVEL) $(EXTRA_TOPS)" >> $@
 else
-	@echo "asim $(ASIM_ARGS) +access +w -interceptcoutput -O2 -dbg $(GPI_ARGS) $(TOPLEVEL) $(EXTRA_TOPS)" >> $@
+	@echo "asim $(ASIM_ARGS) +access +w_nets -interceptcoutput -O2 -dbg $(GPI_ARGS) $(TOPLEVEL) $(EXTRA_TOPS)" >> $@
 endif
 ifeq ($(WAVES),1)
 	@echo "log -recursive *" >> $@

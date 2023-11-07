@@ -54,7 +54,7 @@ endif
 ifneq ($(VERILOG_SOURCES),)
 	@echo "alog $(ALOG_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
 endif
-	@echo "asim $(ASIM_ARGS) $(PLUSARGS) +access +w -interceptcoutput -O2 -dbg $(GPI_ARGS) $(TOPLEVEL) $(EXTRA_TOPS)" >> $@
+	@echo "asim $(ASIM_ARGS) $(PLUSARGS) +access +w_nets -interceptcoutput -O2 -dbg $(GPI_ARGS) $(TOPLEVEL) $(EXTRA_TOPS)" >> $@
 	@echo "run -all" >> $@
 	@echo "endsim" >> $@
 
