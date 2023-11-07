@@ -202,7 +202,7 @@ def dev_test_sim(
     ]
     session.run(
         "pytest",
-        "-v",
+        "-sv",
         *pytest_example_tree,
         env=env,
     )
