@@ -527,13 +527,13 @@ def create_env_for_docs_build(session: nox.Session) -> None:
         "pip", "install", "docs/_vendor/domaintools"
     )  # not done in requirements.txt due to the way relative paths are handled in that file (gh-pypa/pip#8765)
     session.run("pip", "install", "-r", "docs/requirements.txt")
-    session.run("pip", "install", "-e", ".")
 
 
 @nox.session
 def docs(session: nox.Session) -> None:
     """invoke sphinx-build to build the HTML docs"""
     create_env_for_docs_build(session)
+    session.run("pip", "install", ".")
     outdir = session.cache_dir / "docs_out"
     session.run("sphinx-build", "./docs/source", str(outdir), "--color", "-b", "html")
     index = (outdir / "index.html").resolve().as_uri()
@@ -544,6 +544,8 @@ def docs(session: nox.Session) -> None:
 def docs_preview(session: nox.Session) -> None:
     """Build a live preview of the documentation"""
     create_env_for_docs_build(session)
+    # Editable install allows editing cocotb source and seing it updated in the live preview
+    session.run("pip", "install", "-e", ".")
     session.run("pip", "install", "sphinx-autobuild")
     outdir = session.cache_dir / "docs_out"
     session.run(
@@ -566,6 +568,7 @@ def docs_preview(session: nox.Session) -> None:
 def docs_linkcheck(session: nox.Session) -> None:
     """invoke sphinx-build to linkcheck the docs"""
     create_env_for_docs_build(session)
+    session.run("pip", "install", ".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -581,6 +584,7 @@ def docs_linkcheck(session: nox.Session) -> None:
 def docs_spelling(session: nox.Session) -> None:
     """invoke sphinx-build to spellcheck the docs"""
     create_env_for_docs_build(session)
+    session.run("pip", "install", ".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
