@@ -66,7 +66,7 @@ Aldec Riviera-PRO
 
    .. group-tab:: Design with a VHDL Toplevel
 
-      For a design with a VHDL toplevel, call the ``asim`` executable with the option
+      For a design with a VHDL toplevel, call ``asim`` with the option
       ``-loadvhpi $(cocotb-config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
@@ -75,7 +75,7 @@ Aldec Riviera-PRO
 
    .. group-tab:: Design with a (System)Verilog Toplevel
 
-      For a design with a (System)Verilog toplevel, call the ``asim`` executable with the option
+      For a design with a (System)Verilog toplevel, call ``asim`` with the option
       ``-pli $(cocotb-config --lib-name-path vpi riviera)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
@@ -93,7 +93,7 @@ Aldec Active-HDL
 
    .. group-tab:: Design with a VHDL Toplevel
 
-      For a design with a VHDL toplevel, call the ``asim`` executable with the option
+      For a design with a VHDL toplevel, call ``asim`` with the option
       ``-loadvhpi $(cocotb-config --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
@@ -102,7 +102,7 @@ Aldec Active-HDL
 
    .. group-tab:: Design with a (System)Verilog Toplevel
 
-      For a design with a (System)Verilog toplevel, call the ``asim`` executable with the option
+      For a design with a (System)Verilog toplevel, call ``asim`` with the option
       ``-pli $(cocotb-config --lib-name-path vpi activehdl)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
