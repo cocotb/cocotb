@@ -70,8 +70,7 @@ ASIM_ARGS += $(SIM_ARGS)
 ASIM_ARGS += $(PLUSARGS)
 
 RTL_LIBRARY ?= $(SIM_BUILD)/work
-ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
-ACOM_ARGS += -dbg
+ALOG_ARGS += +define+COCOTB_SIM -pli libgpi
 
 # Aldec-specific coverage types:
 # - (s)tatement
@@ -84,8 +83,10 @@ ACOM_ARGS += -dbg
 # Documentation: Riviera Pro 2017.02 Documentation - Page 359
 COVERAGE_TYPES ?= sb
 ifeq ($(COVERAGE),1)
-    ASIM_ARGS += -acdb -acdb_cov $(COVERAGE_TYPES)
-    ALOG_ARGS += -coverage $(COVERAGE_TYPES)
+    ALOG_ARGS += -dbg -coverage $(COVERAGE_TYPES)
+    ACOM_ARGS += -dbg -coverage $(COVERAGE_TYPES)
+
+    ASIM_ARGS += -dbg -acdb -acdb_cov $(COVERAGE_TYPES)
 endif
 
 GPI_EXTRA:=
@@ -126,9 +127,9 @@ ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@
 endif
 ifneq ($(CFG_TOPLEVEL),)
-	@echo "asim $(ASIM_ARGS) +access +w_nets -interceptcoutput -O2 -dbg $(GPI_ARGS) $(CFG_TOPLEVEL) $(EXTRA_TOPS)" >> $@
+	@echo "asim $(ASIM_ARGS) +access +w_nets -interceptcoutput $(GPI_ARGS) $(CFG_TOPLEVEL) $(EXTRA_TOPS)" >> $@
 else
-	@echo "asim $(ASIM_ARGS) +access +w_nets -interceptcoutput -O2 -dbg $(GPI_ARGS) $(TOPLEVEL) $(EXTRA_TOPS)" >> $@
+	@echo "asim $(ASIM_ARGS) +access +w_nets -interceptcoutput $(GPI_ARGS) $(TOPLEVEL) $(EXTRA_TOPS)" >> $@
 endif
 ifeq ($(WAVES),1)
 	@echo "log -recursive *" >> $@
