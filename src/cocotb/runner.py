@@ -798,6 +798,13 @@ class Riviera(Simulator):
         else:
             print("WARNING: Skipping compilation of", out_file)
 
+        # Explicitly exit the script at the end. In batch mode, which is invoked
+        # implicitly by redirecting STDOUT/STDERR of the alog/acom commands,
+        # the tool exits by itself even without this 'exit' command -- but not
+        # when running from an interactive terminal. Be explicit for predictable
+        # behavior.
+        do_script += "\nexit"
+
         do_file = tempfile.NamedTemporaryFile(delete=False)
         do_file.write(do_script.encode())
         do_file.close()
