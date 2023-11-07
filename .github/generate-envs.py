@@ -90,7 +90,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v11_0",  # The latest release version.
+        "sim-version": "v12_0",  # The latest release version.
         "os": "ubuntu-20.04",
         "python-version": "3.8",
         "group": "experimental",
@@ -157,7 +157,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "b83daa3ae36891a372655652e53c9b4eefdfcafa",
+        "sim-version": "v12_0",
         "os": "windows-latest",
         "python-version": "3.8",
         "toolchain": "mingw",
@@ -169,7 +169,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "b83daa3ae36891a372655652e53c9b4eefdfcafa",
+        "sim-version": "v12_0",
         "os": "windows-latest",
         "python-version": "3.8",
         "toolchain": "msvc",
@@ -183,7 +183,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "b83daa3ae36891a372655652e53c9b4eefdfcafa",
+        "sim-version": "v12_0",
         "os": "ubuntu-20.04",
         "python-version": "3.8",
         "cxx": "clang++",
