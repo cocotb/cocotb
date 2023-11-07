@@ -49,6 +49,7 @@ def build_and_run_matrix_multiplier(benchmark, sim):
             hdl_toplevel_lang=hdl_toplevel_lang,
             test_module="test_matrix_multiplier",
             test_args=extra_args,
+            seed=123456789,
         )
 
 
