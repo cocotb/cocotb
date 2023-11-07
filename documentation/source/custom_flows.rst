@@ -60,7 +60,7 @@ Aldec Riviera-PRO
 =================
 
 * The ``alog`` call needs the ``-pli libgpi`` option set.
-* The ``asim`` call needs the ``+access +w`` option set to allow cocotb to access values in the design.
+* The ``asim`` call needs the ``+access +w_nets`` option set to allow cocotb to access values in the design.
 
 .. tabs::
 
@@ -87,7 +87,7 @@ Aldec Riviera-PRO
 Aldec Active-HDL
 ================
 
-* The ``asim`` call needs the ``+access +w`` option set to allow cocotb to access values in the design.
+* The ``asim`` call needs the ``+access +w_nets`` option set to allow cocotb to access values in the design.
 
 .. tabs::
 
