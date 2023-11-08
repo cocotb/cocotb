@@ -37,16 +37,31 @@ build-backend = "setuptools.build_meta"
         name = "Changes"
         showcontent = true
 
-[tool.isort]
-profile = "black"
-extend_skip_glob = [
-    "*/_vendor/*"
+[tool.ruff]
+extend-exclude = [
+    "docs/source/conf.py",
+    "makefiles",
+    "venv",
+    "_vendor",
+    ".nox/",
+]
+ignore = [
+    # ambiguous variable name (preference)
+    "E741",
+    # line too long (preference)
+    "E501",
+    # whitespace before ':' (black)
+    "E203",
+    # line break before binary operator (black)
+    # "W503",  # not implemented by ruff
 ]
 
-[tool.black]
-extend_exclude = '''
-_vendor
-'''
+[tool.ruff.per-file-ignores]
+# necessary because of how file is included into documentation
+"examples/doc_examples/quickstart/test_my_design.py" = [
+    "E402",
+    "F811",
+]
 
 [tool.cibuildwheel]
 # Build for supported platforms only.

@@ -104,6 +104,7 @@ class Logic:
     Raises:
         ValueError: if the value cannot be constructed into a :class:`Logic`.
     """
+
     __slots__ = ("_repr",)
     _repr: int
 
@@ -286,6 +287,7 @@ class Bit(Logic):
     Raises:
         ValueError: if the value cannot be constructed into a :class:`Bit`.
     """
+
     __slots__ = ()
 
     _default = _0

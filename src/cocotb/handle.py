@@ -572,7 +572,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
 
         See the docstring for this class.
         """
-        if type(value) is not list:
+        if type(value) is not list:  # noqa: E721
             raise TypeError(
                 "Assigning non-list value to object {} of type {}".format(
                     self._name, type(self)
