@@ -40,7 +40,6 @@ import threading
 import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
-from contextlib import contextmanager
 from typing import Any, Callable, Union
 
 import cocotb
@@ -791,16 +790,6 @@ class Scheduler:
             "Did you forget to decorate with @cocotb.coroutine?"
         )
 
-    @contextmanager
-    def _task_context(self, task):
-        """Context manager for the currently running task."""
-        old_task = self._current_task
-        self._current_task = task
-        try:
-            yield
-        finally:
-            self._current_task = old_task
-
     def _schedule(self, task, trigger=None):
         """Schedule a task to execute.
 
@@ -809,7 +798,10 @@ class Scheduler:
             trigger (cocotb.triggers.Trigger): The trigger that caused this
                 task to be scheduled.
         """
-        with self._task_context(task):
+        if self._current_task is not None:
+            raise InternalError("_schedule() called while another Task is executing")
+        try:
+            self._current_task = task
             if trigger is None:
                 send_outcome = outcomes.Value(None)
             else:
@@ -861,6 +853,8 @@ class Scheduler:
                     if state == external_state.EXITED:
                         self._pending_threads.remove(ext)
                         self._pending_events.append(ext.event)
+        finally:
+            self._current_task = None
 
     def _finish_test(self, exc):
         self._abort_test(exc)
