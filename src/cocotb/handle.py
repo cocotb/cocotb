@@ -454,33 +454,9 @@ class NonHierarchyObject(SimHandleBase):
         return SimHandleBase.__hash__(self)
 
 
-class NonHierarchyIndexableObject(NonHierarchyObject):
-    """A non-hierarchy indexable object.
-
-    Getting and setting the current value of an array is done
-    by iterating through sub-handles in left-to-right order.
-
-    Given an HDL array ``arr``:
-
-    +--------------+---------------------+--------------------------------------------------------------+
-    | Verilog      | VHDL                | ``arr.value`` is equivalent to                               |
-    +==============+=====================+==============================================================+
-    | ``arr[4:7]`` | ``arr(4 to 7)``     | ``[arr[4].value, arr[5].value, arr[6].value, arr[7].value]`` |
-    +--------------+---------------------+--------------------------------------------------------------+
-    | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``[arr[7].value, arr[6].value, arr[5].value, arr[4].value]`` |
-    +--------------+---------------------+--------------------------------------------------------------+
-
-    When setting the signal as in ``arr.value = ...``, the same index equivalence as noted in the table holds.
-
-    .. warning::
-        Assigning a value to a sub-handle:
-
-        - **Wrong**: ``dut.some_array.value[0] = 1`` (gets value as a list then updates index 0)
-        - **Correct**: ``dut.some_array[0].value = 1``
-    """
-
+class NonHierarchyIndexableObjectBase(NonHierarchyObject):
     def __init__(self, handle, path):
-        NonHierarchyObject.__init__(self, handle, path)
+        super().__init__(handle, path)
         self._range = self._handle.get_range()
 
     def __getitem__(self, index):
@@ -523,6 +499,32 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
             while left <= right:
                 yield left
                 left = left + 1
+
+
+class NonHierarchyIndexableObject(NonHierarchyIndexableObjectBase):
+    """A non-hierarchy indexable object.
+
+    Getting and setting the current value of an array is done
+    by iterating through sub-handles in left-to-right order.
+
+    Given an HDL array ``arr``:
+
+    +--------------+---------------------+--------------------------------------------------------------+
+    | Verilog      | VHDL                | ``arr.value`` is equivalent to                               |
+    +==============+=====================+==============================================================+
+    | ``arr[4:7]`` | ``arr(4 to 7)``     | ``[arr[4].value, arr[5].value, arr[6].value, arr[7].value]`` |
+    +--------------+---------------------+--------------------------------------------------------------+
+    | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``[arr[7].value, arr[6].value, arr[5].value, arr[4].value]`` |
+    +--------------+---------------------+--------------------------------------------------------------+
+
+    When setting the signal as in ``arr.value = ...``, the same index equivalence as noted in the table holds.
+
+    .. warning::
+        Assigning a value to a sub-handle:
+
+        - **Wrong**: ``dut.some_array.value[0] = 1`` (gets value as a list then updates index 0)
+        - **Correct**: ``dut.some_array[0].value = 1``
+    """
 
     @NonHierarchyObject.value.getter
     def value(self) -> list:
@@ -624,7 +626,7 @@ class ModifiableObject(NonHierarchyObject):
         return int(self.value)
 
 
-class LogicObject(ModifiableObject):
+class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
     """Specific object handle for Verilog nets and regs and VHDL std_logic and std_logic_vectors"""
 
     def _set_value(self, value, call_sim):
@@ -843,7 +845,7 @@ class IntegerObject(ModifiableObject):
         return self._handle.get_signal_val_long()
 
 
-class StringObject(ModifiableObject):
+class StringObject(ModifiableObject, NonHierarchyIndexableObjectBase):
     """Specific object handle for String variables."""
 
     def _set_value(self, value, call_sim):
