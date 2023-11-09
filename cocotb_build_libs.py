@@ -83,9 +83,8 @@ def create_sxs_assembly_manifest(
         )
 
     if not dependency_only:
-        manifest_body = (
-            textwrap.dedent(
-                """\
+        manifest_body = textwrap.dedent(
+            """\
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
             <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
                 <assemblyIdentity name="%s" version="1.0.0.0" type="win32" processorArchitecture="%s" />
@@ -93,26 +92,21 @@ def create_sxs_assembly_manifest(
                 %s
             </assembly>
             """
-            )
-            % (
-                name,
-                architecture,
-                filename,
-                textwrap.indent("".join(dependencies), "    ").strip(),
-            )
+        ) % (
+            name,
+            architecture,
+            filename,
+            textwrap.indent("".join(dependencies), "    ").strip(),
         )
     else:
-        manifest_body = (
-            textwrap.dedent(
-                """\
+        manifest_body = textwrap.dedent(
+            """\
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
             <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
                 %s
             </assembly>
             """
-            )
-            % (textwrap.indent("".join(dependencies), "    ").strip())
-        )
+        ) % (textwrap.indent("".join(dependencies), "    ").strip())
 
     return manifest_body
 

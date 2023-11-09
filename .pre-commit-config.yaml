@@ -4,22 +4,17 @@
 
 exclude: "^.*/_vendor/"
 repos:
-- repo: "https://github.com/psf/black"
-  rev: "23.3.0"
+# ruff with --fix should run before other formatting tools
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: "v0.1.4"
   hooks:
-  - id: "black"
-
-- repo: "https://github.com/pycqa/isort"
-  rev: "5.12.0"
-  hooks:
-  - id: "isort"
-    args:
-    - "--profile=black"
-
-- repo: "https://github.com/pycqa/flake8"
-  rev: "6.0.0"
-  hooks:
-  - id: "flake8"
+    # Run the linter.
+    - id: "ruff"
+      args:
+      - "--fix"
+      - "--exit-non-zero-on-fix"
+    # Run the formatter.
+    - id: ruff-format
 
 - repo: "https://github.com/pre-commit/mirrors-clang-format"
   rev: "v16.0.6"

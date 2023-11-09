@@ -141,10 +141,7 @@ async def test_fork_coroutine_function_exception(dut):
     async def coro():
         pass
 
-    pattern = (
-        "Coroutine function {} should be called "
-        "prior to being scheduled.".format(coro)
-    )
+    pattern = f"Coroutine function {coro} should be called prior to being scheduled."
     with pytest.raises(TypeError, match=pattern):
         cocotb.start_soon(coro)
 
@@ -154,9 +151,6 @@ async def test_task_coroutine_function_exception(dut):
     async def coro(dut):
         pass
 
-    pattern = (
-        "Coroutine function {} should be called "
-        "prior to being scheduled.".format(coro)
-    )
+    pattern = f"Coroutine function {coro} should be called prior to being scheduled."
     with pytest.raises(TypeError, match=pattern):
         Task(coro)

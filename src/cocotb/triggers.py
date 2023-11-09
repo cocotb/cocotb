@@ -177,7 +177,7 @@ class Timer(GPITrigger):
         time: Union[Real, Decimal],
         units: str = "step",
         *,
-        round_mode: Optional[str] = None
+        round_mode: Optional[str] = None,
     ) -> None:
         """
         Args:
@@ -688,6 +688,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
     If the coroutine threw an exception, the :keyword:`await` will re-raise it.
 
     """
+
     __slots__ = ("_coroutine",)
 
     @classmethod

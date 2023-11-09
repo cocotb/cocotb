@@ -25,12 +25,10 @@ coverage_deps = ["coverage", "pytest-cov"]
 coverage_report_deps = ["coverage", "jinja2<3.1", "gcovr==5.0"]
 
 dev_deps = [
-    "black",
-    "isort",
     "mypy",
     "pre-commit",
     "nox",
-    "flake8",
+    "ruff",
     "clang-format",
 ]
 
