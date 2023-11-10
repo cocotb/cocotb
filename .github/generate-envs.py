@@ -3,7 +3,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Get a list test environments."""
+"""Get a list of test environments."""
 
 import argparse
 import json
