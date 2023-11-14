@@ -286,21 +286,14 @@ def remove_traceback_frames(tb_or_exc, frame_names):
 
 
 def walk_coro_stack(coro):
-    """Walk down the coroutine stack, starting at *coro*.
-
-    Supports coroutines and generators.
-    """
+    """Walk down the coroutine stack, starting at *coro*."""
     while coro is not None:
         try:
             f = getattr(coro, "cr_frame")
             coro = coro.cr_await
         except AttributeError:
-            try:
-                f = getattr(coro, "gi_frame")
-                coro = coro.gi_yieldfrom
-            except AttributeError:
-                f = None
-                coro = None
+            f = None
+            coro = None
         if f is not None:
             yield (f, f.f_lineno)
 

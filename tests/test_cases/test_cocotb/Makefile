@@ -13,7 +13,6 @@ MODULE := "\
 	test_concurrency_primitives,\
 	test_tests,\
 	test_testfactory,\
-	test_generator_coroutines,\
 	test_timing_triggers,\
 	test_scheduler,\
 	test_clock,\

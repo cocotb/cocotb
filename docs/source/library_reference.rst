@@ -47,8 +47,6 @@ Writing and Generating tests
 
 .. autoclass:: cocotb.test
 
-.. autoclass:: cocotb.coroutine
-
 .. autoclass:: cocotb.external
 
 .. autoclass:: cocotb.function

@@ -249,7 +249,6 @@ async def test_nulltrigger_reschedule(dut):
     log = logging.getLogger("cocotb.test")
     last_fork = None
 
-    @cocotb.coroutine  # TODO: Remove once Combine accepts bare coroutines
     async def reschedule(n):
         nonlocal last_fork
         for i in range(4):
@@ -259,12 +258,12 @@ async def test_nulltrigger_reschedule(dut):
             await NullTrigger()
 
     # Test should start in event loop
-    await Combine(*(reschedule(i) for i in range(4)))
+    await Combine(*(cocotb.start_soon(reschedule(i)) for i in range(4)))
 
     await Timer(1, "ns")
 
     # Event loop when simulator returns
-    await Combine(*(reschedule(i) for i in range(4)))
+    await Combine(*(cocotb.start_soon(reschedule(i)) for i in range(4)))
 
 
 @cocotb.test()
@@ -305,21 +304,19 @@ async def test_last_scheduled_write_wins(dut):
     e = Event()
     dut.stream_in_data.setimmediatevalue(0)
 
-    @cocotb.coroutine  # TODO: Remove once Combine accepts bare coroutines
     async def first():
         await Timer(1, "ns")
         log.info("scheduling stream_in_data.value = 1")
         dut.stream_in_data.value = 1
         e.set()
 
-    @cocotb.coroutine  # TODO: Remove once Combine accepts bare coroutines
     async def second():
         await Timer(1, "ns")
         await e.wait()
         log.info("scheduling stream_in_data.value = 2")
         dut.stream_in_data.value = 2
 
-    await Combine(first(), second())
+    await Combine(cocotb.start_soon(first()), cocotb.start_soon(second()))
 
     await ReadOnly()
 
@@ -363,46 +360,9 @@ async def test_last_scheduled_write_wins_array_handle_alias(dut):
 async def test_task_repr(dut):
     """Test Task.__repr__."""
     log = logging.getLogger("cocotb.test")
-    gen_e = Event("generator_coro_inner")
-
-    def generator_coro_inner():
-        gen_e.set()
-        yield Timer(1, units="ns")
-        raise ValueError("inner")
-
-    @cocotb.coroutine  # testing debug with legacy coroutine syntax
-    def generator_coro_outer():
-        yield from generator_coro_inner()
-
-    gen_task = generator_coro_outer()
-
-    log.info(repr(gen_task))
-    assert re.match(r"<Task \d+ created coro=generator_coro_outer\(\)>", repr(gen_task))
-
-    cocotb.start_soon(gen_task)
-
-    await gen_e.wait()
-
-    log.info(repr(gen_task))
-    assert re.match(
-        r"<Task \d+ pending coro=generator_coro_inner\(\) trigger=<Timer of 1000.00ps at \w+>>",
-        repr(gen_task),
-    )
-
-    try:
-        await Join(gen_task)
-    except ValueError:
-        pass
-
-    log.info(repr(gen_task))
-    assert re.match(
-        r"<Task \d+ finished coro=generator_coro_outer\(\) outcome=Error\(ValueError\('inner',?\)\)>",
-        repr(gen_task),
-    )
 
     coro_e = Event("coroutine_inner")
 
-    @cocotb.coroutine  # Combine requires use of cocotb.coroutine
     async def coroutine_wait():
         await Timer(1, units="ns")
 
@@ -413,7 +373,7 @@ async def test_task_repr(dut):
         log.info(repr(this_task))
         assert re.match(r"<Task \d+ running coro=coroutine_outer\(\)>", repr(this_task))
 
-        await Combine(*(coroutine_wait() for _ in range(2)))
+        await Combine(*(cocotb.start_soon(coroutine_wait()) for _ in range(2)))
 
         return "Combine done"
 
@@ -444,7 +404,9 @@ async def test_task_repr(dut):
     )
 
     async def coroutine_first():
-        await First(coroutine_wait(), Timer(2, units="ns"))
+        task = Task(coroutine_wait())
+        await First(task, Timer(2, units="ns"))
+        task.kill()
 
     coro_task = await cocotb.start(coroutine_first())
 
@@ -543,22 +505,6 @@ async def test_start_soon_async(_):
     """Tests start_soon works with coroutines"""
     a = 0
 
-    async def example():
-        nonlocal a
-        a = 1
-
-    cocotb.start_soon(example())
-    assert a == 0
-    await NullTrigger()
-    assert a == 1
-
-
-@cocotb.test()
-async def test_start_soon_decorator(_):
-    """Tests start_soon works with Tasks"""
-    a = 0
-
-    @cocotb.decorators.coroutine
     async def example():
         nonlocal a
         a = 1

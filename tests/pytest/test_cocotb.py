@@ -21,7 +21,6 @@ module_name = [
     "test_concurrency_primitives",
     "test_deprecated",
     "test_edge_triggers",
-    "test_generator_coroutines",
     "test_handle",
     "test_logging",
     "pytest_assertion_rewriting",

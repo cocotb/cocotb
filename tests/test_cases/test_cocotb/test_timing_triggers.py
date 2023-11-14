@@ -198,7 +198,6 @@ async def test_writes_have_taken_effect_after_readwrite(dut):
     assert dut.stream_in_data.value == 2
 
 
-@cocotb.coroutine
 async def example_coro():
     await Timer(10, "ns")
     return 1
