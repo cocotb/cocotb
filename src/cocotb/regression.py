@@ -203,7 +203,6 @@ class RegressionManager:
             except Exception as E:
                 _logger.critical("Failed to import module %s: %s", module_name, E)
                 _logger.info('MODULE variable was "%s"', ".".join(modules))
-                _logger.info("Traceback: ")
                 _logger.info(traceback.format_exc())
                 raise
 

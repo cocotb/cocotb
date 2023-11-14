@@ -289,7 +289,12 @@ def _initialise_testbench_(argv_):
     top = cocotb.handle.SimHandle(handle)
 
     global regression_manager
-    regression_manager = RegressionManager.from_discovery(top)
+    try:
+        regression_manager = RegressionManager.from_discovery(top)
+    except BaseException as e:
+        log.error(e)
+        simulator.stop_simulator()
+        return
 
     global scheduler
     scheduler = Scheduler(handle_result=regression_manager._handle_result)
