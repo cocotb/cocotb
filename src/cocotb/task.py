@@ -42,11 +42,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
     _id_count = 0  # used by the scheduler for debug
 
     def __init__(self, inst):
-        if isinstance(inst, collections.abc.Coroutine):
-            self._natively_awaitable = True
-        elif inspect.isgenerator(inst):
-            self._natively_awaitable = False
-        elif inspect.iscoroutinefunction(inst):
+        if inspect.iscoroutinefunction(inst):
             raise TypeError(
                 "Coroutine function {} should be called prior to being "
                 "scheduled.".format(inst)
@@ -58,10 +54,8 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
                     inst.__qualname__
                 )
             )
-        else:
-            raise TypeError(
-                f"{inst} isn't a valid coroutine! Did you forget to use the yield keyword?"
-            )
+        elif not isinstance(inst, collections.abc.Coroutine):
+            raise TypeError(f"{inst} isn't a valid coroutine!")
         self._coro = inst
         self._started = False
         self._outcome: outcomes.Outcome = None
@@ -87,9 +81,8 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         coro_stack = extract_coro_stack(self._coro)
 
         # Remove Trigger.__await__() from the stack, as it's not really useful
-        if self._natively_awaitable and len(coro_stack):
-            if coro_stack[-1].name == "__await__":
-                coro_stack.pop()
+        if len(coro_stack) > 0 and coro_stack[-1].name == "__await__":
+            coro_stack.pop()
 
         return coro_stack
 
@@ -241,25 +234,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         return (yield self)
 
 
-class _RunningCoroutine(Task[T]):
-    """
-    The result of calling a :any:`cocotb.coroutine` decorated coroutine.
-
-    All this class does is provide some extra attributes.
-
-    .. versionchanged:: 1.8.0
-        Moved to the ``cocotb.task`` module.
-    """
-
-    def __init__(self, inst, parent):
-        super().__init__(inst)
-        self._parent = parent
-        self.__doc__ = parent._func.__doc__
-        self.module = parent._func.__module__
-        self.funcname = parent._func.__name__
-
-
-class _RunningTest(_RunningCoroutine[T]):
+class _RunningTest(Task[None]):
     """
     The result of calling a :class:`cocotb.test` decorated object.
 
@@ -272,6 +247,10 @@ class _RunningTest(_RunningCoroutine[T]):
     _name: str = "Test"
 
     def __init__(self, inst, parent):
-        super().__init__(inst, parent)
+        super().__init__(inst)
+        self._parent = parent
+        self.__doc__ = parent._func.__doc__
+        self.module = parent._func.__module__
+        self.funcname = parent._func.__name__
         self.__name__ = f"{type(self)._name} {self.funcname}"
         self.__qualname__ = self.__name__

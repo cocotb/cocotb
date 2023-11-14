@@ -10,7 +10,6 @@ from collections.abc import Coroutine
 
 import cocotb
 from cocotb.regression import TestFactory
-from cocotb.triggers import NullTrigger
 
 testfactory_test_names = set()
 testfactory_test_args = set()
@@ -62,22 +61,3 @@ class TestClass(Coroutine):
 tf = TestFactory(TestClass)
 tf.add_option("myarg", [1])
 tf.generate_tests()
-
-
-generator_testfactory_args = set()
-
-
-@cocotb.coroutine
-def generator_test(dut, arg):
-    generator_testfactory_args.add(arg)
-    yield NullTrigger()
-
-
-generator_testfactory = TestFactory(generator_test)
-generator_testfactory.add_option("arg", [1, 2, 3, 4])
-generator_testfactory.generate_tests()
-
-
-@cocotb.test()
-async def test_generator_testfactory(_):
-    assert generator_testfactory_args == {1, 2, 3, 4}

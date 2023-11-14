@@ -43,7 +43,6 @@ from collections.abc import Coroutine
 from typing import Any, Callable, Union
 
 import cocotb
-import cocotb.decorators
 from cocotb import _py_compat, outcomes
 from cocotb.log import SimLog
 from cocotb.result import TestComplete
@@ -690,12 +689,6 @@ class Scheduler:
                 f"Coroutine function {coroutine} should be called prior to being "
                 "scheduled."
             )
-        if isinstance(coroutine, cocotb.decorators.coroutine):
-            raise TypeError(
-                f"Attempt to schedule a coroutine that hasn't started: {coroutine}.\n"
-                "Did you forget to add parentheses to the @cocotb.test() "
-                "decorator?"
-            )
         if inspect.isasyncgen(coroutine):
             raise TypeError(
                 f"{coroutine.__qualname__} is an async generator, not a coroutine. "
@@ -704,7 +697,6 @@ class Scheduler:
         raise TypeError(
             f"Attempt to add an object of type {type(coroutine)} to the scheduler, which "
             f"isn't a coroutine: {coroutine!r}\n"
-            "Did you forget to use the @cocotb.coroutine decorator?"
         )
 
     def start_soon(self, task: Union[Coroutine, Task]) -> Task:
@@ -753,9 +745,6 @@ class Scheduler:
     def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
         return self._trigger_from_unstarted_task(Task(result._wait()))
 
-    def _trigger_from_list(self, result: list) -> Trigger:
-        return self._trigger_from_waitable(cocotb.triggers.First(*result))
-
     def _trigger_from_any(self, result) -> Trigger:
         """Convert a yielded object into a Trigger instance"""
         # note: the order of these can significantly impact performance
@@ -772,9 +761,6 @@ class Scheduler:
         if inspect.iscoroutine(result):
             return self._trigger_from_unstarted_task(Task(result))
 
-        if isinstance(result, list):
-            return self._trigger_from_list(result)
-
         if isinstance(result, cocotb.triggers.Waitable):
             return self._trigger_from_waitable(result)
 
@@ -787,14 +773,13 @@ class Scheduler:
         raise TypeError(
             f"Coroutine yielded an object of type {type(result)}, which the scheduler can't "
             f"handle: {result!r}\n"
-            "Did you forget to decorate with @cocotb.coroutine?"
         )
 
     def _schedule(self, task, trigger=None):
         """Schedule a task to execute.
 
         Args:
-            task (cocotb.decorators.coroutine): The task to schedule.
+            task (cocotb.task.Task): The task to schedule.
             trigger (cocotb.triggers.Trigger): The trigger that caused this
                 task to be scheduled.
         """

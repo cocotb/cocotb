@@ -1,0 +1,1 @@
+Support for generator-based coroutines, which used the ``cocotb.coroutine`` decorator and ``yield`` syntax, has been removed. To update to the new syntax, remove all uses of the decorator and convert the function to a :term:`coroutine function` using the ``async`` and ``await`` syntax.

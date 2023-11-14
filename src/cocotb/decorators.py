@@ -30,42 +30,8 @@ from typing import Any, Callable, Coroutine, Optional, Sequence, Type, TypeVar, 
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.task import _RunningCoroutine, _RunningTest
+from cocotb.task import Task, _RunningTest
 from cocotb.utils import lazy_property
-
-
-class coroutine:
-    """Decorator class that allows us to provide common coroutine mechanisms:
-
-    ``log`` methods will log to ``cocotb.coroutine.name``.
-
-    :meth:`~cocotb.task.Task.join` method returns an event which will fire when the coroutine exits.
-
-    Used as ``@cocotb.coroutine``.
-    """
-
-    def __init__(self, func):
-        self._func = func
-        functools.update_wrapper(self, func)
-
-    @lazy_property
-    def log(self):
-        return SimLog(f"cocotb.coroutine.{self._func.__qualname__}.{id(self)}")
-
-    def __call__(self, *args, **kwargs):
-        return _RunningCoroutine(self._func(*args, **kwargs), self)
-
-    def __get__(self, obj, owner=None):
-        """Permit the decorator to be used on class methods
-        and standalone functions"""
-        return type(self)(self._func.__get__(obj, owner))
-
-    def __iter__(self):
-        return self
-
-    def __str__(self):
-        return str(self._func.__qualname__)
-
 
 Result = TypeVar("Result")
 
@@ -109,7 +75,7 @@ def external(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, R
     return wrapper
 
 
-class Test(coroutine):
+class Test:
     _id_count = 0  # used by the RegressionManager to sort tests in definition order
 
     def __init__(
@@ -126,11 +92,11 @@ class Test(coroutine):
         type(self)._id_count += 1
 
         if timeout_time is not None:
-            co = coroutine(f)
+            co = f  # must save ref because we overwrite variable f
 
             @functools.wraps(f)
             async def f(*args, **kwargs):
-                running_co = co(*args, **kwargs)
+                running_co = Task(co(*args, **kwargs))
 
                 try:
                     res = await cocotb.triggers.with_timeout(
@@ -142,7 +108,8 @@ class Test(coroutine):
                 else:
                     return res
 
-        super().__init__(f)
+        self._func = f
+        functools.update_wrapper(self, f)
 
         self.timeout_time = timeout_time
         self.timeout_unit = timeout_unit
@@ -155,8 +122,14 @@ class Test(coroutine):
 
     def __call__(self, *args, **kwargs):
         inst = self._func(*args, **kwargs)
-        coro = _RunningTest(inst, self)
-        return coro
+        return _RunningTest(inst, self)
+
+    @lazy_property
+    def log(self):
+        return SimLog(f"cocotb.test.{self._func.__qualname__}.{id(self)}")
+
+    def __str__(self):
+        return str(self._func.__qualname__)
 
 
 def test(
