@@ -52,6 +52,15 @@ def as_tcl_value(value: str) -> str:
     return value
 
 
+def as_sv_literal(value: str) -> str:
+    if isinstance(value, int):
+        return str(value)
+    elif isinstance(value, str):
+        return '"' + value.replace('"', '\\"') + '"'
+    else:
+        raise TypeError("Can't serialize this type as an SV literal")
+
+
 def shlex_join(split_command):
     """
     Return a shell-escaped string from *split_command*
@@ -475,7 +484,7 @@ class Icarus(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        return [f"-D{name}={value}" for name, value in defines.items()]
+        return [f"-D{name}={as_sv_literal(value)}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> Command:
         assert self.hdl_toplevel is not None
@@ -589,8 +598,7 @@ class Questa(Simulator):
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
         return [
-            f"+define+{as_tcl_value(name)}={as_tcl_value(str(value))}"
-            for name, value in defines.items()
+            f"+define+{name}={as_sv_literal(value)}" for name, value in defines.items()
         ]
 
     @staticmethod
@@ -753,7 +761,7 @@ class Riviera(Simulator):
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
         return [
-            f"+define+{as_tcl_value(name)}={as_tcl_value(str(value))}"
+            f"+define+{name}={as_tcl_value(as_sv_literal(value))}"
             for name, value in defines.items()
         ]
 
@@ -879,7 +887,7 @@ class Verilator(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        return [f"-D{name}={value}" for name, value in defines.items()]
+        return [f"-D{name}={as_sv_literal(value)}" for name, value in defines.items()]
 
     @staticmethod
     def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
@@ -961,7 +969,10 @@ class Xcelium(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        return [f"-define {name}={value}" for name, value in defines.items()]
+        return [
+            f"-define {name}={as_tcl_value(as_sv_literal(value))}"
+            for name, value in defines.items()
+        ]
 
     @staticmethod
     def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
