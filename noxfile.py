@@ -15,7 +15,7 @@ import nox
 nox.options.sessions = ["dev_test"]
 
 test_deps = ["pytest"]
-coverage_deps = ["coverage", "pytest-cov"]
+coverage_deps = ["coverage", "pytest-cov", "monkeytype"]
 # gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See
 # https://github.com/gcovr/gcovr/issues/596
 # When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an
@@ -138,6 +138,14 @@ def dev_test(session: nox.Session) -> None:
     dev_test_nosim(session)
     dev_coverage_combine(session)
 
+@nox.session
+def dev_test_typing(session: nox.Session) -> None:
+    """generate type annotations in monkeytype.sqlite3 for cocotb"""
+    session.env.update({
+        "MONKEYTYPE_TRACE_MODULES": "cocotb",
+        "MT_DB_PATH": os.getcwd() + "/monkeytype.sqlite3",
+    })
+    dev_test(session)
 
 @nox.session
 @nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())

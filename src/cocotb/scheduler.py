@@ -68,6 +68,23 @@ if _profiling:
     import pstats
 
     _profile = cProfile.Profile()
+    
+_typing = "MONKEYTYPE_TRACE_MODULES" in os.environ
+_trace_logger = None
+if _typing:
+    import sys
+
+    import monkeytype
+    my_config =  monkeytype.config.DefaultConfig()
+    _trace_logger = my_config.trace_logger()
+    _tracer = monkeytype.tracing.CallTracer(
+        logger=_trace_logger,
+        max_typed_dict_size=my_config.max_typed_dict_size(),
+        code_filter=my_config.code_filter(),
+        sample_rate=my_config.sample_rate(),
+    )
+    sys.setprofile(_tracer)
+
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
@@ -935,3 +952,7 @@ class Scheduler:
 
         for ext in self._pending_threads:
             self.log.warning(f"Waiting for {ext.thread} to exit")
+            
+        if _typing and _trace_logger is not None:
+            _trace_logger.flush()
+            

@@ -77,6 +77,8 @@ def help_vars_text():
     COCOTB_REDUCED_LOG_FMT    Display log lines shorter
     COCOTB_ATTACH             Pause time value in seconds before the simulator start
     COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
+    MONKEYTYPE_TRACE_MODULES  Record type data for this list of modules
+    MT_DB_PATH                Path to the MonkeyType database
     COCOTB_LOG_LEVEL          Default logging level (default INFO)
     COCOTB_RESOLVE_X          How to resolve X, Z, U, W on integer conversion
     MEMCHECK                  HTTP port to use for debugging Python memory usage
