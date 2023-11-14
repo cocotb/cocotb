@@ -99,8 +99,8 @@ Changes
 -------
 
 - Passing :term:`python:coroutine`\ s to :func:`~cocotb.triggers.with_timeout` is now supported. (:pr:`2494`)
-- Renamed ``RunningTask`` to :class:`~cocotb.decorators.Task`. (:pr:`2876`)
-- Made :class:`~cocotb.decorators.Task` interface more like :py:class:`asyncio.Task`'s. (:pr:`2876`)
+- Renamed ``RunningTask`` to :class:`~cocotb.task.Task`. (:pr:`2876`)
+- Made :class:`~cocotb.task.Task` interface more like :python:class:`asyncio.Task`'s. (:pr:`2876`)
 - When code coverage is enabled with :envvar:`COVERAGE` and a configuration file is specified with :envvar:`COVERAGE_RCFILE`, default coverage configuration is not applied to avoid overriding the user-defined configuration. (:pr:`3014`)
 
 
