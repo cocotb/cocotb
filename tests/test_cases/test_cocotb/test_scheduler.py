@@ -450,12 +450,17 @@ async def test_task_repr(dut):
         def throw(self, exception):
             self._coro.throw(exception)
 
+        def close(self):
+            self._coro.close()
+
         def __await__(self):
             yield from self._coro.__await__()
 
     object_task = cocotb.create_task(CoroutineClass())
     log.info(repr(object_task))
     assert re.match(r"<Task \d+ created coro=CoroutineClass\(\)>", repr(object_task))
+
+    object_task.close()  # prevent RuntimeWarning of unwatched coroutine
 
 
 @cocotb.test()
@@ -495,6 +500,9 @@ class TestClassRepr(Coroutine):
 
     def throw(self, exception):
         self._coro.throw(exception)
+
+    def close(self):
+        self._coro.close()
 
     def __await__(self):
         yield from self._coro.__await__()
