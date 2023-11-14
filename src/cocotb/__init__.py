@@ -310,8 +310,11 @@ def _sim_event(message):
     # We simply return here as the simulator will exit
     # so no cleanup is needed
     msg = f"Failing test at simulator request before test run completion: {message}"
-    scheduler.log.error(msg)
-    scheduler._finish_scheduler(SimFailure(msg))
+    if scheduler is not None:
+        scheduler.log.error(msg)
+        scheduler._finish_scheduler(SimFailure(msg))
+    else:
+        log.error(msg)
 
 
 def _process_plusargs() -> None:
