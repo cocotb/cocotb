@@ -298,13 +298,10 @@ class RegressionManager:
             self.log.info("Writing coverage data")
             self._cov.save()
             self._cov.html_report()
-        if cocotb._library_coverage is not None:
-            # TODO: move this once we have normal shutdown behavior to _sim_event
-            cocotb._library_coverage.stop()
-            cocotb._library_coverage.save()
 
         # Setup simulator finalization
         simulator.stop_simulator()
+        cocotb._stop_library_coverage()
 
     def _next_test(self) -> Optional[Test]:
         """Get the next test to run"""
