@@ -295,13 +295,21 @@ def _initialise_testbench_(argv_):
     except BaseException as e:
         log.error(e)
         simulator.stop_simulator()
-        return
+        _stop_library_coverage()
+        return  # pragma: no cover
 
     global scheduler
     scheduler = Scheduler(handle_result=regression_manager._handle_result)
 
     # start Regression Manager
     regression_manager._execute()
+
+
+def _stop_library_coverage() -> None:
+    if _library_coverage is not None:
+        # TODO: move this once we have normal shutdown behavior to _sim_event
+        _library_coverage.stop()
+        _library_coverage.save()  # pragma: no cover
 
 
 def _sim_event(message):
@@ -316,6 +324,7 @@ def _sim_event(message):
         scheduler._finish_scheduler(SimFailure(msg))
     else:
         log.error(msg)
+        _stop_library_coverage()
 
 
 def _process_plusargs() -> None:
