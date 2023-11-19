@@ -35,7 +35,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES = $(PWD)/../hdl/matrix_multiplier_pkg.vhd $(PWD)/../hdl/matrix_multiplier.vhd
 
-    ifneq ($(filter $(SIM),ghdl questa modelsim riviera activehdl),)
+    ifneq ($(filter $(SIM),ghdl questa modelsim riviera activehdl nvc),)
         # ghdl, questa, and aldec all use SIM_ARGS with '-g' for setting generics
         SIM_ARGS += -gDATA_WIDTH=$(DATA_WIDTH) -gA_ROWS=$(A_ROWS) -gB_COLUMNS=$(B_COLUMNS) -gA_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
     else ifneq ($(filter $(SIM),ius xcelium),)
