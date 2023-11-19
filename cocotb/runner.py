@@ -747,6 +747,48 @@ class Ghdl(Simulator):
         return cmds
 
 
+class Nvc(Simulator):
+    supported_gpi_interfaces = {"vhdl": ["vhpi"]}
+
+    @staticmethod
+    def _simulator_in_path() -> None:
+        if shutil.which("nvc") is None:
+            raise SystemExit("ERROR: nvc executable not found!")
+
+    @staticmethod
+    def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
+        return [f"-g{name}={value}" for name, value in parameters.items()]
+
+    def _build_command(self) -> List[Command]:
+        if self.verilog_sources:
+            raise ValueError(
+                f"{type(self).__qualname__}: Simulator does not support Verilog"
+            )
+
+        cmds = [
+            ["nvc", f"--work={self.hdl_library}"]
+            + self.build_args
+            + ["-a"]
+            + [str(source_file) for source_file in self.vhdl_sources]
+        ]
+
+        return cmds
+
+    def _test_command(self) -> List[Command]:
+        cmds = [
+            ["nvc", f"--work={self.hdl_toplevel_library}"]
+            + self.build_args
+            + ["-e", self.sim_hdl_toplevel, "--no-save", "--jit"]
+            + self._get_parameter_options(self.parameters)
+            + ["-r"]
+            + self.test_args
+            + ["--load=" + cocotb.config.lib_name_path("vhpi", "nvc")]
+            + self.plusargs
+        ]
+
+        return cmds
+
+
 class Riviera(Simulator):
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
 
@@ -1100,6 +1142,7 @@ def get_runner(simulator_name: str) -> Simulator:
         "riviera": Riviera,
         "verilator": Verilator,
         "xcelium": Xcelium,
+        "nvc": Nvc,
         # TODO: "vcs": Vcs,
         # TODO: "activehdl": ActiveHdl,
     }
