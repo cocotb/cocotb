@@ -227,6 +227,16 @@ def test_init_little_endian_twos_comp():
     assert bin7.get_value_signed() == -980
     assert bin7.integer == -980
 
+    bin8 = BinaryValue(
+        value=0,
+        n_bits=4,
+        bigEndian=False,
+        binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT,
+    )
+    assert bin8.integer == 0
+    assert bin8.signed_integer == 0
+
+
 
 def test_init_unsigned_negative_value():
     with pytest.raises(ValueError):

@@ -413,6 +413,8 @@ class BinaryValue:
     @property
     def signed_integer(self):
         """The signed integer representation of the underlying vector."""
+        if len(self._str) == 0:
+            return 0
         ival = int(self._str.translate(_resolve_table), 2)
         bits = len(self._str)
         signbit = 1 << (bits - 1)
