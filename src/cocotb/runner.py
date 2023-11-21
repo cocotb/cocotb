@@ -760,7 +760,9 @@ class Riviera(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        return [f"+define+{name}={value}" for name, value in defines.items()]
+        return [
+            f"+define+{name}={as_sv_literal(value)}" for name, value in defines.items()
+        ]
 
     @staticmethod
     def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
@@ -796,8 +798,13 @@ class Riviera(Simulator):
                     VERILOG_SOURCES=" ".join(
                         as_tcl_value(str(v)) for v in self.verilog_sources
                     ),
-                    DEFINES=" ".join(self._get_define_options(self.defines)),
-                    INCDIR=" ".join(self._get_include_options(self.includes)),
+                    DEFINES=" ".join(
+                        as_tcl_value(v) for v in self._get_define_options(self.defines)
+                    ),
+                    INCDIR=" ".join(
+                        as_tcl_value(v)
+                        for v in self._get_include_options(self.includes)
+                    ),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.build_args),
                 )
         else:
@@ -966,9 +973,12 @@ class Xcelium(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        options: List[str] = []
+        options = []
         for name, value in defines.items():
-            value_str = as_sv_literal(value).replace("/", "\\/")
+            if isinstance(value, int):
+                value_str = str(value)
+            elif isinstance(value, str):
+                value_str = '\\"' + value.replace('"', '\\"') + '\\"'
             options.append(f"-define {name}={value_str}")
         return options
 

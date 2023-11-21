@@ -5,9 +5,8 @@
 import os
 import sys
 
-import pytest
-
 import cocotb
+import pytest
 from cocotb.runner import get_runner
 from cocotb.triggers import Timer
 
@@ -67,7 +66,7 @@ def test_runner(parameters, clean_build):
         vhdl_sources=vhdl_sources,
         hdl_toplevel="runner",
         parameters=parameters,
-        defines={"DEFINE": 4, "DEFINE_PATH": "path/to/some/file.wow"},
+        defines={"DEFINE": 4, "DEFINE_PATH": 'path/to/some"(random quote)/file.wow'},
         includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
         build_args=compile_args,
         clean=clean_build,
