@@ -760,11 +760,7 @@ class Riviera(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        options: List[str] = []
-        for name, value in defines.items():
-            value_str = as_sv_literal(value).replace("/", "\\/")
-            options.append(f"+define+{name}={value_str}")
-        return options
+        return [f"+define+{name}={value}" for name, value in defines.items()]
 
     @staticmethod
     def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
