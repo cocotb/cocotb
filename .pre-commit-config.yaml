@@ -6,7 +6,7 @@ exclude: "^.*/_vendor/"
 repos:
 # ruff with --fix should run before other formatting tools
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.1.4"
+  rev: "v0.1.6"
   hooks:
     # Run the linter.
     - id: "ruff"
@@ -17,13 +17,13 @@ repos:
     - id: ruff-format
 
 - repo: "https://github.com/pre-commit/mirrors-clang-format"
-  rev: "v16.0.6"
+  rev: "v17.0.5"
   hooks:
   - id: "clang-format"
     exclude: "^src/cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
 
 - repo: "https://github.com/pre-commit/pre-commit-hooks"
-  rev: "v4.4.0"
+  rev: "v4.5.0"
   hooks:
   - id: "trailing-whitespace"
   - id: "mixed-line-ending"

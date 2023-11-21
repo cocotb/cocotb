@@ -45,6 +45,12 @@ extend-exclude = [
     "_vendor",
     ".nox/",
 ]
+target-version = "py37"
+select = [
+    "I",  # isort
+    "UP", # pyupgrade
+    "PL", # pylint
+]
 ignore = [
     # ambiguous variable name (preference)
     "E741",
@@ -52,8 +58,11 @@ ignore = [
     "E501",
     # whitespace before ':' (black)
     "E203",
-    # line break before binary operator (black)
-    # "W503",  # not implemented by ruff
+    "PLR0912", # Too many branches (>12) (preference)
+    "PLR0913", # Too many arguments to function call (>5) (preference)
+    "PLR0915", # Too many statements (>50) (preference)
+    "PLR2004", # Magic value used in comparison (preference)
+    "PLW0603", # Using the global statement (preference)
 ]
 
 [tool.ruff.per-file-ignores]
