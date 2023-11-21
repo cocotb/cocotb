@@ -145,7 +145,7 @@ def test(
             Defaults to 0.
     """
 
-    def wrapper(f: Callable[..., None] | TestFactory) -> Optional[Test]:
+    def wrapper(f: Union[Callable[..., None], TestFactory]) -> Optional[Test]:
         if isinstance(f, TestFactory):
             f.generate_tests(
                 test_dec=test(
