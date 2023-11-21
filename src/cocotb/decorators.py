@@ -29,9 +29,7 @@ import functools
 from typing import Any, Callable, Coroutine, Optional, Sequence, Type, TypeVar, Union
 
 import cocotb
-from cocotb.log import SimLog
-from cocotb.task import Task, _RunningTest
-from cocotb.utils import lazy_property
+from cocotb.regression import Test, TestFactory
 
 Result = TypeVar("Result")
 
@@ -75,63 +73,6 @@ def external(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, R
     return wrapper
 
 
-class Test:
-    _id_count = 0  # used by the RegressionManager to sort tests in definition order
-
-    def __init__(
-        self,
-        f,
-        timeout_time,
-        timeout_unit,
-        expect_fail,
-        expect_error,
-        skip,
-        stage,
-    ):
-        self._id = self._id_count
-        type(self)._id_count += 1
-
-        if timeout_time is not None:
-            co = f  # must save ref because we overwrite variable f
-
-            @functools.wraps(f)
-            async def f(*args, **kwargs):
-                running_co = Task(co(*args, **kwargs))
-
-                try:
-                    res = await cocotb.triggers.with_timeout(
-                        running_co, self.timeout_time, self.timeout_unit
-                    )
-                except cocotb.result.SimTimeoutError:
-                    running_co.kill()
-                    raise
-                else:
-                    return res
-
-        self._func = f
-        functools.update_wrapper(self, f)
-
-        self.timeout_time = timeout_time
-        self.timeout_unit = timeout_unit
-        self.expect_fail = expect_fail
-        self.expect_error = expect_error
-        self.skip = skip
-        self.stage = stage
-        self.im_test = True  # For auto-regressions
-        self.name = self._func.__name__
-
-    def __call__(self, *args, **kwargs):
-        inst = self._func(*args, **kwargs)
-        return _RunningTest(inst, self)
-
-    @lazy_property
-    def log(self):
-        return SimLog(f"cocotb.test.{self._func.__qualname__}.{id(self)}")
-
-    def __str__(self):
-        return str(self._func.__qualname__)
-
-
 def test(
     timeout_time: Optional[float] = None,
     timeout_unit: str = "step",
@@ -139,7 +80,7 @@ def test(
     expect_error: Union[bool, Type[Exception], Sequence[Type[Exception]]] = (),
     skip: bool = False,
     stage: int = 0,
-) -> Callable[[Callable[..., Coroutine[Any, Any, None]]], Test]:
+) -> Callable[[Callable[..., Coroutine[Any, Any, None]]], Optional[Test]]:
     """
     Decorator to mark a Callable which returns a Coroutine as a test.
 
@@ -204,7 +145,21 @@ def test(
             Defaults to 0.
     """
 
-    def wrapper(f: Callable[..., None]) -> Test:
+    def wrapper(f: Callable[..., None] | TestFactory) -> Optional[Test]:
+        if isinstance(f, TestFactory):
+            f.generate_tests(
+                test_dec=test(
+                    timeout_time=timeout_time,
+                    timeout_unit=timeout_unit,
+                    expect_fail=expect_fail,
+                    expect_error=expect_error,
+                    skip=skip,
+                    stage=stage,
+                ),
+                stacklevel=2,
+            )
+            return None
+
         return Test(
             f=f,
             timeout_time=timeout_time,
@@ -214,5 +169,42 @@ def test(
             skip=skip,
             stage=stage,
         )
+
+    return wrapper
+
+
+def parameterize(
+    **kwargs,
+) -> Callable[[Callable[..., Coroutine[Any, Any, None]]], TestFactory]:
+    """
+    Decorator to more idiomatically parameterize a test.
+    Allows for passing normal test() kwargs
+
+    Usage:
+        @cocotb.test(
+            skip=False,
+        )
+        @cocotb.parameterize(
+            arg1=[0,1],
+            arg2=['a','b'],
+        )
+        def my_test(arg1: int, arg2: str) -> None:
+            ...
+    Args:
+        **kwargs: (name -> list[options])
+            Cartesian product of all options will be generated
+    """
+
+    for key, lis in kwargs.items():
+        if not isinstance(lis, list):
+            raise TypeError(
+                f"All arguments to parameterize must be lists, got {key}={lis}({type(lis)})"
+            )
+
+    def wrapper(f):
+        tf = TestFactory(f)
+        for key, lis in kwargs.items():
+            tf.add_option(key, lis)
+        return tf
 
     return wrapper

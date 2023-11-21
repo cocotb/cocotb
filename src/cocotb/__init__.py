@@ -53,6 +53,7 @@ from cocotb.decorators import (  # isort: skip # noqa: F401
     external,
     function,
     test,
+    parameterize,
 )
 from cocotb.log import _filter_from_c, _log_from_c  # isort: skip # noqa: F401
 
