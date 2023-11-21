@@ -760,9 +760,7 @@ class Riviera(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        return [
-            f"+define+{name}={as_sv_literal(value)}" for name, value in defines.items()
-        ]
+        return [f"+define+{name}={value}" for name, value in defines.items()]
 
     @staticmethod
     def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
@@ -978,7 +976,7 @@ class Xcelium(Simulator):
             if isinstance(value, int):
                 value_str = str(value)
             elif isinstance(value, str):
-                value_str = '\\"' + value.replace('"', '\\"') + '\\"'
+                value_str = '\\"' + as_tcl_value(value).replace('"', '\\"') + '\\"'
             options.append(f"-define {name}={value_str}")
         return options
 
