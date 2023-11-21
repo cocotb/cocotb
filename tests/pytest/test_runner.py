@@ -32,6 +32,10 @@ async def cocotb_runner_test(dut):
     "parameters", [{"WIDTH_IN": "8", "WIDTH_OUT": "16"}, {"WIDTH_IN": "16"}]
 )
 @pytest.mark.parametrize("clean_build", [False, True])
+@pytest.mark.skipif(
+    os.getenv("SIM", "icarus") == "xcelium",
+    reason="Xcelium doesn't like spaces in define strings",
+)
 def test_runner(parameters, clean_build):
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
@@ -66,7 +70,7 @@ def test_runner(parameters, clean_build):
         vhdl_sources=vhdl_sources,
         hdl_toplevel="runner",
         parameters=parameters,
-        defines={"DEFINE": 4, "DEFINE_PATH": 'path/to/some"(randomquote)/file.wow'},
+        defines={"DEFINE": 4, "DEFINE_PATH": 'path/to/some"(random quote)/file.wow'},
         includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
         build_args=compile_args,
         clean=clean_build,
