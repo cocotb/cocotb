@@ -760,10 +760,11 @@ class Riviera(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        return [
-            f"+define+{name}={as_tcl_value(as_sv_literal(value))}"
-            for name, value in defines.items()
-        ]
+        options: List[str] = []
+        for name, value in defines.items():
+            value_str = as_sv_literal(value).replace("/", "\\/")
+            options.append(f"+define+{name}={value_str}")
+        return options
 
     @staticmethod
     def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
@@ -969,10 +970,11 @@ class Xcelium(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        return [
-            f"-define {name}={as_tcl_value(as_sv_literal(value))}"
-            for name, value in defines.items()
-        ]
+        options: List[str] = []
+        for name, value in defines.items():
+            value_str = as_sv_literal(value).replace("/", "\\/")
+            options.append(f"-define {name}={value_str}")
+        return options
 
     @staticmethod
     def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
