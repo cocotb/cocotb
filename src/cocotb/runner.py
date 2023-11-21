@@ -760,7 +760,7 @@ class Riviera(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        return [f"+define+{name}={value}" for name, value in defines.items()]
+        return [f"+define+{name}={value!r}" for name, value in defines.items()]
 
     @staticmethod
     def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
