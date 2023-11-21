@@ -61,6 +61,11 @@ def as_sv_literal(value: str) -> str:
         raise TypeError("Can't serialize this type as an SV literal")
 
 
+def as_tcl_string_literal(value: str) -> str:
+    """Applies proper escapes such that evaluating the output string as a TCL double quote literal will result in the input string"""
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def shlex_join(split_command):
     """
     Return a shell-escaped string from *split_command*
@@ -761,7 +766,7 @@ class Riviera(Simulator):
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
         return [
-            f"+define+{name}={as_tcl_value(as_sv_literal(value))}"
+            f"+define+{name}={as_tcl_string_literal(as_tcl_string_literal(as_sv_literal(value)))}"
             for name, value in defines.items()
         ]
 
@@ -799,13 +804,8 @@ class Riviera(Simulator):
                     VERILOG_SOURCES=" ".join(
                         as_tcl_value(str(v)) for v in self.verilog_sources
                     ),
-                    DEFINES=" ".join(
-                        as_tcl_value(v) for v in self._get_define_options(self.defines)
-                    ),
-                    INCDIR=" ".join(
-                        as_tcl_value(v)
-                        for v in self._get_include_options(self.includes)
-                    ),
+                    DEFINES=" ".join(self._get_define_options(self.defines)),
+                    INCDIR=" ".join(self._get_include_options(self.includes)),
                     EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.build_args),
                 )
         else:
@@ -974,14 +974,10 @@ class Xcelium(Simulator):
 
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> Command:
-        options = []
-        for name, value in defines.items():
-            if isinstance(value, int):
-                value_str = str(value)
-            elif isinstance(value, str):
-                value_str = '\\"' + as_tcl_value(value).replace('"', '\\"') + '\\"'
-            options.append(f"-define {name}={value_str}")
-        return options
+        return [
+            f"-define {name}={as_tcl_string_literal(as_sv_literal(value))}"
+            for name, value in defines.items()
+        ]
 
     @staticmethod
     def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
