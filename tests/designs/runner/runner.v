@@ -16,7 +16,9 @@ module runner #(
 basic_hierarchy_module  basic_hierarchy_module(.clk(1'b0), .reset(1'b0));
 
 initial begin
-    assert (`DEFINE_PATH == "path/to/some/file.wow");
+    if (`DEFINE_PATH != "path/to/some/file.wow") begin
+        $error();
+    end
 end
 
 endmodule
