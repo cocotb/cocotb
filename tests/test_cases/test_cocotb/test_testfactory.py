@@ -61,3 +61,34 @@ class TestClass(Coroutine):
 tf = TestFactory(TestClass)
 tf.add_option("myarg", [1])
 tf.generate_tests()
+
+
+p_testfactory_test_names = set()
+p_testfactory_test_args = set()
+
+
+@cocotb.test()
+@cocotb.parameterize(
+    arg1=["a1v1", "a1v2"],
+    arg2=["a2v1", "a2v2"],
+)
+async def p_run_testfactory_test(dut, arg1, arg2):
+    p_testfactory_test_names.add(cocotb.regression_manager._test.__qualname__)
+    p_testfactory_test_args.add((arg1, arg2))
+
+
+@cocotb.test()
+async def test_params_verify_args(dut):
+    assert p_testfactory_test_args == {
+        ("a1v1", "a2v1"),
+        ("a1v2", "a2v1"),
+        ("a1v1", "a2v2"),
+        ("a1v2", "a2v2"),
+    }
+
+
+@cocotb.test()
+async def test_params_verify_names(dut):
+    assert p_testfactory_test_names == {
+        f"p_run_testfactory_test_{i:03}" for i in range(1, 5)
+    }

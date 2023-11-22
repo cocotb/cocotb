@@ -27,6 +27,7 @@
 
 """All things relating to regression capabilities."""
 
+import functools
 import hashlib
 import inspect
 import math
@@ -42,13 +43,17 @@ from typing import Any, Iterable, Optional, Tuple, Type
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb import simulator
-from cocotb.decorators import Test
 from cocotb.handle import SimHandle
 from cocotb.log import SimLog
 from cocotb.outcomes import Error, Outcome
 from cocotb.result import SimFailure, TestSuccess
-from cocotb.task import Task
-from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
+from cocotb.task import Task, _RunningTest
+from cocotb.utils import (
+    get_sim_time,
+    lazy_property,
+    remove_traceback_frames,
+    want_color_output,
+)
 from cocotb.xunit_reporter import XUnitReporter
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
@@ -90,6 +95,63 @@ else:
         _Failed = type(_raises_e)
     else:
         assert "pytest.raises doesn't raise an exception when it fails"
+
+
+class Test:
+    _id_count = 0  # used by the RegressionManager to sort tests in definition order
+
+    def __init__(
+        self,
+        f,
+        timeout_time,
+        timeout_unit,
+        expect_fail,
+        expect_error,
+        skip,
+        stage,
+    ):
+        self._id = self._id_count
+        type(self)._id_count += 1
+
+        if timeout_time is not None:
+            co = f  # must save ref because we overwrite variable f
+
+            @functools.wraps(f)
+            async def f(*args, **kwargs):
+                running_co = Task(co(*args, **kwargs))
+
+                try:
+                    res = await cocotb.triggers.with_timeout(
+                        running_co, self.timeout_time, self.timeout_unit
+                    )
+                except cocotb.result.SimTimeoutError:
+                    running_co.kill()
+                    raise
+                else:
+                    return res
+
+        self._func = f
+        functools.update_wrapper(self, f)
+
+        self.timeout_time = timeout_time
+        self.timeout_unit = timeout_unit
+        self.expect_fail = expect_fail
+        self.expect_error = expect_error
+        self.skip = skip
+        self.stage = stage
+        self.im_test = True  # For auto-regressions
+        self.name = self._func.__name__
+
+    def __call__(self, *args, **kwargs):
+        inst = self._func(*args, **kwargs)
+        return _RunningTest(inst, self)
+
+    @lazy_property
+    def log(self):
+        return SimLog(f"cocotb.test.{self._func.__qualname__}.{id(self)}")
+
+    def __str__(self):
+        return str(self._func.__qualname__)
 
 
 class RegressionManager:
@@ -687,7 +749,15 @@ class RegressionManager:
                 return float("inf")
 
 
-def _create_test(function, name, documentation, mod, *args, **kwargs):
+def _create_test(
+    func,
+    name,
+    documentation,
+    mod,
+    test_dec,
+    *args,
+    **kwargs,
+):
     """Factory function to create tests, avoids late binding.
 
     Creates a test dynamically.  The test will call the supplied
@@ -706,14 +776,17 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
     """
 
     async def _my_test(dut):
-        await function(dut, *args, **kwargs)
+        await func(dut, *args, **kwargs)
 
     _my_test.__name__ = name
     _my_test.__qualname__ = name
     _my_test.__doc__ = documentation
     _my_test.__module__ = mod.__name__
 
-    return cocotb.test()(_my_test)
+    if test_dec is None:
+        test_dec = cocotb.test()
+
+    return test_dec(_my_test)
 
 
 class TestFactory:
@@ -808,7 +881,13 @@ class TestFactory:
                     )
         self.kwargs[name] = optionlist
 
-    def generate_tests(self, prefix="", postfix=""):
+    def generate_tests(
+        self,
+        prefix="",
+        postfix="",
+        test_dec=None,
+        stacklevel=1,
+    ):
         """
         Generate an exhaustive set of tests using the cartesian product of the
         possible keyword arguments.
@@ -825,10 +904,11 @@ class TestFactory:
                      when naming generated test cases. This allows reuse of
                      a single ``test_function`` with multiple
                      :class:`TestFactories <.TestFactory>` without name clashes.
+            test_dec (decorator) the test decorator to use for the generated tests
+            stacklevel (int): the stacklevel to add these tests to
         """
 
-        frm = inspect.stack()[1]
-        mod = inspect.getmodule(frm[0])
+        mod = inspect.getmodule(inspect.stack()[stacklevel][0])
 
         d = self.kwargs
 
@@ -861,8 +941,8 @@ class TestFactory:
                 else:
                     doc += "\t{}: {}\n".format(optname, repr(optvalue))
 
-            self.log.debug(
-                'Adding generated test "%s" to module "%s"' % (name, mod.__name__)
+            self.log.info(
+                'Adding generated test "%s" to module "%s"', name, mod.__name__
             )
             kwargs = {}
             kwargs.update(self.kwargs_constant)
@@ -872,12 +952,22 @@ class TestFactory:
                     "Overwriting %s in module %s. "
                     "This causes a previously defined testcase "
                     "not to be run. Consider setting/changing "
-                    "name_postfix" % (name, mod)
+                    "name_postfix",
+                    name,
+                    mod,
                 )
             setattr(
                 mod,
                 name,
-                _create_test(self.test_function, name, doc, mod, *self.args, **kwargs),
+                _create_test(
+                    self.test_function,
+                    name,
+                    doc,
+                    mod,
+                    test_dec,
+                    *self.args,
+                    **kwargs,
+                ),
             )
 
 
