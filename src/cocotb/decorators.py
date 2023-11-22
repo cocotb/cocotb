@@ -26,7 +26,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import functools
-from typing import Any, Callable, Coroutine, Optional, Sequence, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import cocotb
 from cocotb.regression import Test, TestFactory
@@ -174,13 +184,16 @@ def test(
 
 
 def parameterize(
-    **kwargs,
+    **kwargs: List[Any],
 ) -> Callable[[Callable[..., Coroutine[Any, Any, None]]], TestFactory]:
-    """
-    Decorator to more idiomatically parameterize a test.
-    Allows for passing normal test() kwargs
+    """Decorator to generate parameterized tests from a single test function.
 
-    Usage:
+    Decorates a test function with named test parameters.
+    The call to ``parameterize`` should include the name of each test parameter and the possible values each parameter can hold.
+    This will generate a test for each of the Cartesian products of the parameters and their values.
+
+    .. code-block:: python3
+
         @cocotb.test(
             skip=False,
         )
@@ -188,11 +201,36 @@ def parameterize(
             arg1=[0,1],
             arg2=['a','b'],
         )
-        def my_test(arg1: int, arg2: str) -> None:
+        async def my_test(arg1: int, arg2: str) -> None:
             ...
+
+    The above is equivalent to the following.
+
+    .. code-block:: python3
+
+        @cocotb.test(skip=False)
+        async def my_test_0_a() -> None:
+            arg1, arg2 = 0, 'a'
+            ...
+
+        @cocotb.test(skip=False)
+        async def my_test_0_b() -> None:
+            arg1, arg2 = 0, 'b'
+            ...
+
+        @cocotb.test(skip=False)
+        async def my_test_1_a() -> None:
+            arg1, arg2 = 1, 'a'
+            ...
+
+        @cocotb.test(skip=False)
+        async def my_test_1_b() -> None:
+            arg1, arg2 = 1, 'b'
+            ...
+
     Args:
-        **kwargs: (name -> list[options])
-            Cartesian product of all options will be generated
+        kwargs:
+            Mapping of test function parameter names to the list of values each
     """
 
     for key, lis in kwargs.items():

@@ -51,6 +51,8 @@ Writing and Generating tests
 
 .. autoclass:: cocotb.function
 
+.. autofunction:: cocotb.parameterize
+
 .. autoclass:: cocotb.regression.TestFactory
     :members:
     :member-order: bysource
