@@ -100,7 +100,7 @@ Changes
 
 - Passing :term:`python:coroutine`\ s to :func:`~cocotb.triggers.with_timeout` is now supported. (:pr:`2494`)
 - Renamed ``RunningTask`` to :class:`~cocotb.task.Task`. (:pr:`2876`)
-- Made :class:`~cocotb.task.Task` interface more like :python:class:`asyncio.Task`'s. (:pr:`2876`)
+- Made :class:`~cocotb.task.Task` interface more like :class:`asyncio.Task`'s. (:pr:`2876`)
 - When code coverage is enabled with :envvar:`COVERAGE` and a configuration file is specified with :envvar:`COVERAGE_RCFILE`, default coverage configuration is not applied to avoid overriding the user-defined configuration. (:pr:`3014`)
 
 
@@ -536,7 +536,7 @@ Deprecations
 Other news
 ----------
 
-- cocotb is now packaged for Fedora Linux and available as `python-cocotb <https://apps.fedoraproject.org/packages/python-cocotb>`_. (`Fedora bug #1747574 <https://bugzilla.redhat.com/show_bug.cgi?id=1747574>`_) (thanks Ben Rosser)
+- cocotb is now packaged for Fedora Linux and available as `python-cocotb <https://src.fedoraproject.org/rpms/python-cocotb>`_. (`Fedora bug #1747574 <https://bugzilla.redhat.com/show_bug.cgi?id=1747574>`_) (thanks Ben Rosser)
 
 cocotb 1.2.0
 ============
@@ -586,7 +586,6 @@ cocotb 1.1
 Released on 24 January 2019.
 
 This release is the result of four years of work with too many bug fixes, improvements and refactorings to name them all.
-Please have a look at the release announcement `on the mailing list <https://lists.librecores.org/pipermail/cocotb/2019-January/000053.html>`_ for further information.
 
 cocotb 1.0
 ==========

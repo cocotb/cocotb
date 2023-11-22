@@ -132,7 +132,7 @@ forcing their completion before they would naturally end.
 
 
 .. versionchanged:: 1.4
-    The :any:`cocotb.coroutine` decorator is no longer necessary for ``async def`` coroutines.
+    The ``cocotb.coroutine`` decorator is no longer necessary for ``async def`` coroutines.
     ``async def`` coroutines can be used, without the ``@cocotb.coroutine`` decorator, wherever decorated coroutines are accepted,
     including :keyword:`yield` statements and ``cocotb.fork`` (since replaced with :func:`~cocotb.start` and :func:`~cocotb.start_soon`).
 
