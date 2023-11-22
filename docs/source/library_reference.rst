@@ -45,11 +45,11 @@ The exceptions in this module can be raised at any point by any code and will te
 Writing and Generating tests
 ============================
 
-.. autoclass:: cocotb.test
+.. autofunction:: cocotb.test
 
-.. autoclass:: cocotb.external
+.. autofunction:: cocotb.external
 
-.. autoclass:: cocotb.function
+.. autofunction:: cocotb.function
 
 .. autofunction:: cocotb.parameterize
 
