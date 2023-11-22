@@ -198,8 +198,8 @@ def parameterize(
             skip=False,
         )
         @cocotb.parameterize(
-            arg1=[0,1],
-            arg2=['a','b'],
+            arg1=[0, 1],
+            arg2=["a", "b"],
         )
         async def my_test(arg1: int, arg2: str) -> None:
             ...
@@ -210,22 +210,22 @@ def parameterize(
 
         @cocotb.test(skip=False)
         async def my_test_0_a() -> None:
-            arg1, arg2 = 0, 'a'
+            arg1, arg2 = 0, "a"
             ...
 
         @cocotb.test(skip=False)
         async def my_test_0_b() -> None:
-            arg1, arg2 = 0, 'b'
+            arg1, arg2 = 0, "b"
             ...
 
         @cocotb.test(skip=False)
         async def my_test_1_a() -> None:
-            arg1, arg2 = 1, 'a'
+            arg1, arg2 = 1, "a"
             ...
 
         @cocotb.test(skip=False)
         async def my_test_1_b() -> None:
-            arg1, arg2 = 1, 'b'
+            arg1, arg2 = 1, "b"
             ...
 
     Args:
