@@ -3,9 +3,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import warnings
 
-from common import MyException
-
 import cocotb
+from common import MyException
 
 
 @cocotb.test()

@@ -230,9 +230,7 @@ class BinaryValue:
             self.buff = value
         else:
             raise TypeError(
-                "value must be int, str, or bytes, not {!r}".format(
-                    type(value).__qualname__
-                )
+                f"value must be int, str, or bytes, not {type(value).__qualname__!r}"
             )
 
     def _convert_to_unsigned(self, x):
@@ -511,8 +509,7 @@ class BinaryValue:
         match = self._non_permitted_regex.search(string)
         if match:
             raise ValueError(
-                "Attempting to assign character %s to a %s"
-                % (match.group(), self.__class__.__name__)
+                f"Attempting to assign character {match.group()} to a {self.__class__.__name__}"
             )
         self._str = string
         self._adjust()

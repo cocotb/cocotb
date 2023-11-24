@@ -57,24 +57,22 @@ class Queue(Generic[T]):
                 break
 
     def __repr__(self):
-        return "<{} {} at {}>".format(
-            type(self).__name__, self._format(), _pointer_str(self)
-        )
+        return f"<{type(self).__name__} {self._format()} at {_pointer_str(self)}>"
 
     def __str__(self):
-        return "<{} {}>".format(type(self).__name__, self._format())
+        return f"<{type(self).__name__} {self._format()}>"
 
     def __class_getitem__(cls, type):
         return cls
 
     def _format(self):
-        result = "maxsize={}".format(repr(self._maxsize))
+        result = f"maxsize={repr(self._maxsize)}"
         if getattr(self, "_queue", None):
-            result += " _queue={}".format(repr(list(self._queue)))
+            result += f" _queue={repr(list(self._queue))}"
         if self._getters:
-            result += " _getters[{}]".format(len(self._getters))
+            result += f" _getters[{len(self._getters)}]"
         if self._putters:
-            result += " _putters[{}]".format(len(self._putters))
+            result += f" _putters[{len(self._putters)}]"
         return result
 
     def qsize(self) -> int:
@@ -109,7 +107,7 @@ class Queue(Generic[T]):
         slot is available before adding the item.
         """
         while self.full():
-            event = Event("{} put".format(type(self).__name__))
+            event = Event(f"{type(self).__name__} put")
             self._putters.append((event, cocotb.scheduler._current_task))
             await event.wait()
         self.put_nowait(item)
@@ -131,7 +129,7 @@ class Queue(Generic[T]):
         If the queue is empty, wait until an item is available.
         """
         while self.empty():
-            event = Event("{} get".format(type(self).__name__))
+            event = Event(f"{type(self).__name__} get")
             self._getters.append((event, cocotb.scheduler._current_task))
             await event.wait()
         return self.get_nowait()

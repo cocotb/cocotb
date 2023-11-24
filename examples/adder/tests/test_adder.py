@@ -46,9 +46,7 @@ async def adder_randomised_test(dut):
 
         assert dut.X.value == adder_model(
             A, B
-        ), "Randomised test failed with: {A} + {B} = {X}".format(
-            A=dut.A.value, B=dut.B.value, X=dut.X.value
-        )
+        ), f"Randomised test failed with: {dut.A.value} + {dut.B.value} = {dut.X.value}"
 
 
 def test_adder_runner():

@@ -7,9 +7,8 @@ Tests for handles
 import logging
 import random
 
-import pytest
-
 import cocotb
+import pytest
 from cocotb.binary import BinaryValue
 from cocotb.handle import _Limits
 from cocotb.triggers import Timer

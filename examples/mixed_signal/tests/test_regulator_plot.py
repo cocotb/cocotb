@@ -3,9 +3,8 @@
 
 import math
 
-import matplotlib.pyplot as plt
-
 import cocotb
+import matplotlib.pyplot as plt
 from cocotb.triggers import Timer
 
 
@@ -45,9 +44,7 @@ async def get_voltage(tb_hdl, node):
         1, units="ps"
     )  # waiting time needed for the analog values to be updated
     tb_hdl._log.debug(
-        "Voltage on node {} is {:.4} V".format(
-            node, tb_hdl.i_analog_probe.voltage.value
-        )
+        f"Voltage on node {node} is {tb_hdl.i_analog_probe.voltage.value:.4} V"
     )
     return tb_hdl.i_analog_probe.voltage.value
 

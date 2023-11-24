@@ -44,7 +44,5 @@ def concat(a: typing.Any, b: typing.Any) -> typing.Any:
             return res
 
     raise TypeError(
-        "cannot concatenate {!r} with {!r}".format(
-            type_a.__qualname__, type_b.__qualname__
-        )
+        f"cannot concatenate {type_a.__qualname__!r} with {type_b.__qualname__!r}"
     )

@@ -232,7 +232,7 @@ class LogicArray(Array[Logic]):
             )
 
     def __repr__(self) -> str:
-        return "{}({!r}, {!r})".format(type(self).__qualname__, self.binstr, self.range)
+        return f"{type(self).__qualname__}({self.binstr!r}, {self.range!r})"
 
     def __and__(self: Self, other: Self) -> Self:
         if isinstance(other, type(self)):

@@ -32,9 +32,8 @@ Also used a regression test of cocotb capabilities
 """
 import threading
 
-import pytest
-
 import cocotb
+import pytest
 from cocotb.clock import Clock
 from cocotb.decorators import external
 from cocotb.triggers import ReadOnly, RisingEdge, Timer

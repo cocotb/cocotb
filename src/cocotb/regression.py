@@ -41,8 +41,7 @@ from itertools import product
 from typing import Any, Iterable, Optional, Tuple, Type
 
 import cocotb
-import cocotb.ANSI as ANSI
-from cocotb import simulator
+from cocotb import ANSI, simulator
 from cocotb.handle import SimHandle
 from cocotb.log import SimLog
 from cocotb.outcomes import Error, Outcome
@@ -307,7 +306,7 @@ class RegressionManager:
             _logger.error(
                 "Requested test(s) %s wasn't found in module(s) %s", tests, modules
             )
-            raise AttributeError("Test(s) %s doesn't exist in %s" % (tests, modules))
+            raise AttributeError(f"Test(s) {tests} doesn't exist in {modules}")
 
     @classmethod
     def _setup_pytest_assertion_rewriting(cls, test_modules: Iterable[str]) -> None:
@@ -935,11 +934,9 @@ class TestFactory:
                         desc = "No docstring supplied"
                     else:
                         desc = optvalue.__doc__.split("\n")[0]
-                    doc += "\t{}: {} ({})\n".format(
-                        optname, optvalue.__qualname__, desc
-                    )
+                    doc += f"\t{optname}: {optvalue.__qualname__} ({desc})\n"
                 else:
-                    doc += "\t{}: {}\n".format(optname, repr(optvalue))
+                    doc += f"\t{optname}: {repr(optvalue)}\n"
 
             self.log.info(
                 'Adding generated test "%s" to module "%s"', name, mod.__name__

@@ -395,9 +395,7 @@ class NonHierarchyObject(SimHandleBase):
             Use :meth:`setimmediatevalue` to set the value immediately.
         """
         raise TypeError(
-            "Not permissible to get values of object {} of type {}".format(
-                self._name, type(self)
-            )
+            f"Not permissible to get values of object {self._name} of type {type(self)}"
         )
 
     @value.setter
@@ -422,9 +420,7 @@ class NonHierarchyObject(SimHandleBase):
         rather than performing them directly as ``f(*args)``.
         """
         raise TypeError(
-            "Not permissible to set values on object {} of type {}".format(
-                self._name, type(self)
-            )
+            f"Not permissible to set values on object {self._name} of type {type(self)}"
         )
 
     def __eq__(self, other):
@@ -574,9 +570,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         """
         if type(value) is not list:  # noqa: E721
             raise TypeError(
-                "Assigning non-list value to object {} of type {}".format(
-                    self._name, type(self)
-                )
+                f"Assigning non-list value to object {self._name} of type {type(self)}"
             )
         if len(value) != len(self):
             raise ValueError(
@@ -737,9 +731,7 @@ class ModifiableObject(NonConstantObject):
 
         else:
             raise TypeError(
-                "Unsupported type for value assignment: {} ({!r})".format(
-                    type(value), value
-                )
+                f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
         call_sim(self, self._handle.set_signal_val_binstr, set_action, value.binstr)
@@ -784,9 +776,7 @@ class RealObject(ModifiableObject):
             value = float(value)
         except ValueError:
             raise TypeError(
-                "Unsupported type for real value assignment: {} ({!r})".format(
-                    type(value), value
-                )
+                f"Unsupported type for real value assignment: {type(value)} ({value!r})"
             )
 
         call_sim(self, self._handle.set_signal_val_real, set_action, value)
@@ -821,9 +811,7 @@ class EnumObject(ModifiableObject):
             value = int(value)
         elif not isinstance(value, int):
             raise TypeError(
-                "Unsupported type for enum value assignment: {} ({!r})".format(
-                    type(value), value
-                )
+                f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
             )
 
         min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)

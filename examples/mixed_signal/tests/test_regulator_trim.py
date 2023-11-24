@@ -104,7 +104,7 @@ async def run_test(tb_hdl):
     # show automatic trimming
     target_volt = 3.013
     tb_py.tb_hdl._log.info(
-        "Running trimming algorithm for target voltage {:.4} V".format(target_volt)
+        f"Running trimming algorithm for target voltage {target_volt:.4} V"
     )
     best_trim_float = await tb_py.find_trim_val(
         probed_node=node, target_volt=target_volt, trim_val_node=tb_py.tb_hdl.trim_val

@@ -5,9 +5,8 @@
 import os
 import sys
 
-import pytest
-
 import cocotb
+import pytest
 from cocotb.runner import get_runner
 from cocotb.triggers import Timer
 
@@ -57,7 +56,7 @@ def test_runner(parameters, clean_build):
     build_dir = (
         sim_build
         + "/test_runner/"
-        + "_".join(("{}={}".format(*i) for i in parameters.items()))
+        + "_".join("{}={}".format(*i) for i in parameters.items())
     )
     os.makedirs(build_dir, exist_ok=True)
     open(build_dir + "/clean_test_file", "a").close()

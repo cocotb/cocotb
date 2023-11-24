@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from cocotb.runner import get_runner
 
 pytestmark = pytest.mark.simulator_required

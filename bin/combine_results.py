@@ -133,11 +133,11 @@ def main():
                     )
                     relative_file = testcase.get("file").replace(repo_root, "")
                     print(
-                        "::error file={2},line={3}::Test {0}:{1} failed".format(
-                            testcase.get("classname"),
-                            testcase.get("name"),
+                        "::error file={},line={}::Test {}:{} failed".format(
                             relative_file,
                             testcase.get("lineno"),
+                            testcase.get("classname"),
+                            testcase.get("name"),
                         )
                     )
 

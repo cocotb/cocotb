@@ -44,15 +44,13 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
     def __init__(self, inst):
         if inspect.iscoroutinefunction(inst):
             raise TypeError(
-                "Coroutine function {} should be called prior to being "
-                "scheduled.".format(inst)
+                f"Coroutine function {inst} should be called prior to being "
+                "scheduled."
             )
         elif inspect.isasyncgen(inst):
             raise TypeError(
-                "{} is an async generator, not a coroutine. "
-                "You likely used the yield keyword instead of await.".format(
-                    inst.__qualname__
-                )
+                f"{inst.__qualname__} is an async generator, not a coroutine. "
+                "You likely used the yield keyword instead of await."
             )
         elif not isinstance(inst, collections.abc.Coroutine):
             raise TypeError(f"{inst} isn't a valid coroutine!")

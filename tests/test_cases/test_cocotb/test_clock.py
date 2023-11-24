@@ -8,9 +8,8 @@ import decimal
 import fractions
 from math import isclose
 
-import pytest
-
 import cocotb
+import pytest
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 from cocotb.utils import get_sim_time
@@ -22,10 +21,10 @@ async def test_clock_with_units(dut):
     clk_250mhz = Clock(dut.clk, 4.0, units="ns")
 
     assert str(clk_1mhz) == "Clock(1.0 MHz)"
-    dut._log.info("Created clock >{}<".format(str(clk_1mhz)))
+    dut._log.info(f"Created clock >{str(clk_1mhz)}<")
 
     assert str(clk_250mhz) == "Clock(250.0 MHz)"
-    dut._log.info("Created clock >{}<".format(str(clk_250mhz)))
+    dut._log.info(f"Created clock >{str(clk_250mhz)}<")
 
     clk_gen = cocotb.start_soon(clk_1mhz.start())
 

@@ -1,10 +1,9 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import pytest
-
 import cocotb
-import cocotb.utils as utils
+import pytest
+from cocotb import utils
 
 
 @cocotb.test()
