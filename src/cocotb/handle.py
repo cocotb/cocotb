@@ -159,7 +159,7 @@ class RegionObject(SimHandleBase, Generic[IndexType]):
     """
 
     def __init__(self, handle, path):
-        SimHandleBase.__init__(self, handle, path)
+        super().__init__(handle, path)
         self._sub_handles: Dict[IndexType, SimHandleBase] = {}
 
     def __iter__(self):
