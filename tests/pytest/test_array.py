@@ -2,7 +2,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import pytest
-
 from cocotb.types import Array, Range, concat
 
 
@@ -80,7 +79,7 @@ def test_contains():
 
 
 def test_index():
-    r = Array((i for j in range(10) for i in range(10)))  # 0-9 repeated 10 times
+    r = Array(i for j in range(10) for i in range(10))  # 0-9 repeated 10 times
     assert r.index(5) == 5
     assert r.index(5, 10, 20) == 15
     with pytest.raises(IndexError):

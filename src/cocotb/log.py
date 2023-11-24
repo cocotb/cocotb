@@ -34,8 +34,7 @@ import os
 import sys
 import typing
 
-import cocotb.ANSI as ANSI
-from cocotb import simulator
+from cocotb import ANSI, simulator
 from cocotb.utils import get_sim_time, get_time_from_sim_steps, want_color_output
 
 try:
@@ -103,9 +102,9 @@ def default_config():
     except ValueError:
         valid_levels = ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE")
         raise ValueError(
-            "Invalid log level %r passed through the "
+            "Invalid log level {!r} passed through the "
             "COCOTB_LOG_LEVEL environment variable. Valid log "
-            "levels: %s" % (level, ", ".join(valid_levels))
+            "levels: {}".format(level, ", ".join(valid_levels))
         )
 
     # Notify GPI of log level, which it uses as an optimization to avoid

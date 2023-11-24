@@ -8,11 +8,10 @@ import re
 from collections import deque
 from random import randint
 
-from common import _check_traceback
-
 import cocotb
 from cocotb.triggers import Combine, Event, First, Timer
 from cocotb.utils import get_sim_time
+from common import _check_traceback
 
 
 @cocotb.test()

@@ -25,9 +25,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import pytest
-
 import cocotb
+import pytest
 from cocotb._sim_versions import IcarusVersion
 from cocotb.binary import BinaryValue
 from cocotb.handle import ConstantObject, HierarchyObject, IntegerObject, StringObject

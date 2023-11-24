@@ -10,11 +10,10 @@ Tests of cocotb.test functionality
 """
 from collections.abc import Coroutine
 
-import pytest
-from common import MyBaseException, MyException
-
 import cocotb
+import pytest
 from cocotb.triggers import NullTrigger, Timer
+from common import MyBaseException, MyException
 
 
 @cocotb.test(expect_error=NameError)

@@ -134,10 +134,10 @@ class Logic:
                 _repr = _literal_repr[value]
             except KeyError:
                 raise ValueError(
-                    "{!r} is not convertible to a {}".format(value, cls.__qualname__)
+                    f"{value!r} is not convertible to a {cls.__qualname__}"
                 ) from None
         if _repr not in cls._valid:
-            raise ValueError("{!r} is not a valid {}".format(value, cls.__qualname__))
+            raise ValueError(f"{value!r} is not a valid {cls.__qualname__}")
         obj = cls._make(_repr)
         return obj
 
@@ -202,7 +202,7 @@ class Logic:
         return self._repr
 
     def __repr__(self) -> str:
-        return "{}({!r})".format(type(self).__qualname__, str(self))
+        return f"{type(self).__qualname__}({str(self)!r})"
 
     def __str__(self) -> str:
         return ("0", "1", "X", "Z")[self._repr]

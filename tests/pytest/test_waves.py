@@ -1,7 +1,11 @@
 import os
 import sys
 
+import cocotb
 import pytest
+from cocotb.clock import Clock
+from cocotb.runner import get_runner
+from cocotb.triggers import ClockCycles
 from test_cocotb import (
     compile_args,
     gpi_interfaces,
@@ -13,11 +17,6 @@ from test_cocotb import (
     verilog_sources,
     vhdl_sources,
 )
-
-import cocotb
-from cocotb.clock import Clock
-from cocotb.runner import get_runner
-from cocotb.triggers import ClockCycles
 
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 test_module = os.path.basename(os.path.splitext(__file__)[0])

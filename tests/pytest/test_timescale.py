@@ -3,6 +3,8 @@ import sys
 import tempfile
 
 import pytest
+from cocotb.runner import get_runner
+from cocotb.utils import _get_log_time_scale
 from test_cocotb import (
     compile_args,
     gpi_interfaces,
@@ -15,9 +17,6 @@ from test_cocotb import (
     verilog_sources,
     vhdl_sources,
 )
-
-from cocotb.runner import get_runner
-from cocotb.utils import _get_log_time_scale
 
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 
@@ -38,7 +37,7 @@ async def check_timescale(dut):
 )
 @pytest.mark.parametrize("precision", ["fs", "ps", "ns", "us", "ms", "s"])
 def test_precision(precision):
-    build_dir = os.path.join(sim_build, "test_timescale_{}".format(precision))
+    build_dir = os.path.join(sim_build, f"test_timescale_{precision}")
 
     timescale = (f"1{precision}", f"1{precision}")
     precision_log = _get_log_time_scale(precision if precision != "s" else "sec")

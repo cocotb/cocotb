@@ -146,7 +146,7 @@ class Range(typing.Sequence[int]):
         elif isinstance(item, slice):
             return type(self).from_range(self._range[item])
         raise TypeError(
-            "indices must be integers or slices, not {}".format(type(item).__name__)
+            f"indices must be integers or slices, not {type(item).__name__}"
         )
 
     def __contains__(self, item: object) -> bool:

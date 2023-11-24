@@ -21,7 +21,7 @@ import warnings
 from contextlib import suppress
 from pathlib import Path
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
-from xml.etree import cElementTree as ET
+from xml.etree import ElementTree as ET
 
 import find_libpython
 
@@ -809,9 +809,7 @@ class Riviera(Simulator):
         out_file = self.build_dir / self.hdl_library / f"{self.hdl_library}.lib"
 
         if outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.always:
-            do_script += "alib {RTL_LIBRARY} \n".format(
-                RTL_LIBRARY=as_tcl_value(self.hdl_library)
-            )
+            do_script += f"alib {as_tcl_value(self.hdl_library)} \n"
 
             if self.vhdl_sources:
                 do_script += (

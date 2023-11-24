@@ -14,9 +14,8 @@ import warnings
 from decimal import Decimal
 from fractions import Fraction
 
-import pytest
-
 import cocotb
+import pytest
 from cocotb.clock import Clock
 from cocotb.triggers import (
     First,
@@ -136,7 +135,7 @@ async def do_test_afterdelay_in_readonly(dut, delay):
             cocotb.LANGUAGE in ["verilog"]
             and cocotb.SIM_NAME.lower().startswith(("riviera", "modelsim"))
         )
-        or cocotb.SIM_NAME.lower().startswith(("xmsim"))
+        or cocotb.SIM_NAME.lower().startswith("xmsim")
     )
     else (),
     expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim")),

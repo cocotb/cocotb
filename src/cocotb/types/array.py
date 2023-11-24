@@ -220,9 +220,7 @@ class Array(typing.Reversible[T], typing.Collection[T]):
             value = self._value[start_i : stop_i + 1]
             range = Range(start, self.direction, stop)
             return type(self)(value=value, range=range)
-        raise TypeError(
-            "indexes must be ints or slices, not {}".format(type(item).__name__)
-        )
+        raise TypeError(f"indexes must be ints or slices, not {type(item).__name__}")
 
     @typing.overload
     def __setitem__(self, item: int, value: T) -> None:
@@ -261,11 +259,11 @@ class Array(typing.Reversible[T], typing.Collection[T]):
             self._value[start_i : stop_i + 1] = value
         else:
             raise TypeError(
-                "indexes must be ints or slices, not {}".format(type(item).__name__)
+                f"indexes must be ints or slices, not {type(item).__name__}"
             )
 
     def __repr__(self) -> str:
-        return "{}({!r}, {!r})".format(type(self).__name__, self._value, self._range)
+        return f"{type(self).__name__}({self._value!r}, {self._range!r})"
 
     def __concat__(self: Self, other: Self) -> Self:
         if isinstance(other, type(self)):

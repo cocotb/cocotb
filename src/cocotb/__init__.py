@@ -203,7 +203,7 @@ def _initialise_testbench(argv_):  # pragma: no cover
                 data_file=".coverage.cocotb",
                 config_file=False,
                 branch=True,
-                include=["{}/*".format(os.path.dirname(__file__))],
+                include=[f"{os.path.dirname(__file__)}/*"],
             )
             _library_coverage.start()
 
@@ -254,8 +254,7 @@ def _initialise_testbench_(argv_):
         mem_debug(int(memcheck_port))
 
     log.info(
-        "Running tests with cocotb v%s from %s"
-        % (__version__, os.path.dirname(__file__))
+        f"Running tests with cocotb v{__version__} from {os.path.dirname(__file__)}"
     )
 
     # Create the base handle type

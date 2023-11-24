@@ -46,7 +46,7 @@ async def port_not_hierarchy(dut):
                 )
             )
             return 1
-        tlog.info("{} is {}".format(obj._fullname, type(obj).__name__))
+        tlog.info(f"{obj._fullname} is {type(obj).__name__}")
         return 0
 
     fails += check_instance(dut.clk, ModifiableObject)

@@ -3,9 +3,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """ Tests relating to pytest integration """
 
-import pytest
-
 import cocotb
+import pytest
 
 
 @cocotb.test()
