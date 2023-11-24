@@ -185,26 +185,10 @@ class RegionObject(SimHandleBase, Generic[IndexType]):
         self._discover_all()
 
         for name, handle in self._sub_handles.items():
-            if isinstance(handle, list):
-                self._log.debug("Found index list length %d", len(handle))
-                for subindex, subhdl in enumerate(handle):
-                    if subhdl is None:
-                        self._log.warning(
-                            "Index %d doesn't exist in %s.%s",
-                            subindex,
-                            self._name,
-                            name,
-                        )
-                        continue
-                    self._log.debug(
-                        "Yielding index %d from %s (%s)", subindex, name, type(subhdl)
-                    )
-                    yield subhdl
-            else:
-                self._log.debug(
-                    "Yielding %s of type %s (%s)", name, type(handle), handle._path
-                )
-                yield handle
+            self._log.debug(
+                "Yielding %s of type %s (%s)", name, type(handle), handle._path
+            )
+            yield handle
 
     @lru_cache(maxsize=None)
     def _discover_all(self) -> None:
