@@ -270,7 +270,7 @@ class HierarchyObject(RegionObject[str]):
 
         # private attributes pass through directly
         if name.startswith("_"):
-            return SimHandleBase.__setattr__(self, name, value)
+            return object.__setattr__(self, name, value)
 
         raise AttributeError(f"{self._name} contains no object named {name}")
 
@@ -279,7 +279,7 @@ class HierarchyObject(RegionObject[str]):
         and cache the result to build a tree of objects.
         """
         if name.startswith("_"):
-            return SimHandleBase.__getattr__(self, name)
+            return object.__getattribute__(self, name)
 
         handle = self.__get_sub_handle_by_name(name)
         if handle is not None:
