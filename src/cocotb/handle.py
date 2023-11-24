@@ -425,21 +425,6 @@ class NonHierarchyObject(SimHandleBase):
             f"Not permissible to set values on object {self._name} of type {type(self)}"
         )
 
-    def __eq__(self, other):
-        """Equality comparator for non-hierarchy objects
-
-        If ``other`` is not a :class:`SimHandleBase` instance the comparison
-        uses the comparison method of the ``other`` object against our
-        ``.value``.
-        """
-        if isinstance(other, SimHandleBase):
-            return SimHandleBase.__eq__(self, other)
-        return self.value == other
-
-    # Re-define hash because we defined __eq__
-    def __hash__(self):
-        return SimHandleBase.__hash__(self)
-
 
 class NonHierarchyIndexableObjectBase(NonHierarchyObject):
     def __init__(self, handle, path):
