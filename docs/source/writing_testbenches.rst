@@ -148,13 +148,6 @@ or a resolved integer value can be accessed using the :attr:`~cocotb.binary.Bina
     >>> print(count.n_bits)
     6
 
-We can also cast the signal handle directly to an integer:
-
-.. code-block:: pycon
-
-    >>> print(int(dut.counter))
-    42
-
 
 .. _writing_tbs_identifying_tests:
 
