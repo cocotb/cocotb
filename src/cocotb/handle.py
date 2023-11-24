@@ -163,9 +163,6 @@ class SimHandleBase:
                 desc += " (at " + deffile + ")"
         return type(self).__qualname__ + "(" + desc + ")"
 
-    def __str__(self):
-        return self._path
-
 
 class RegionObject(SimHandleBase):
     """A region object, such as a scope or namespace.
@@ -594,9 +591,6 @@ class ModifiableObject(NonHierarchyObject):
             return value, 0  # GPI_DEPOSIT
         return value._as_gpi_args_for(self)
 
-    def __int__(self):
-        return int(self.value)
-
 
 class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
     """Specific object handle for Verilog nets and regs and VHDL std_logic and std_logic_vectors"""
@@ -727,9 +721,6 @@ class RealObject(ModifiableObject):
     @ModifiableObject.value.getter
     def value(self) -> float:
         return self._handle.get_signal_val_real()
-
-    def __float__(self):
-        return float(self.value)
 
 
 class EnumObject(ModifiableObject):
