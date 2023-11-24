@@ -382,9 +382,6 @@ class HierarchyArrayObject(RegionObject):
 class NonHierarchyObject(SimHandleBase):
     """Common base class for all non-hierarchy objects."""
 
-    def __iter__(self):
-        return iter(())
-
     @property
     def value(self):
         """The value of this simulation object.
