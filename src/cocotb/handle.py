@@ -153,11 +153,6 @@ class SimHandleBase:
             return NotImplemented
         return self._handle == other._handle
 
-    def __ne__(self, other):
-        if not isinstance(other, SimHandleBase):
-            return NotImplemented
-        return self._handle != other._handle
-
     def __repr__(self):
         desc = self._path
         defname = self._def_name
@@ -440,11 +435,6 @@ class NonHierarchyObject(SimHandleBase):
         if isinstance(other, SimHandleBase):
             return SimHandleBase.__eq__(self, other)
         return self.value == other
-
-    def __ne__(self, other):
-        if isinstance(other, SimHandleBase):
-            return SimHandleBase.__ne__(self, other)
-        return self.value != other
 
     # Re-define hash because we defined __eq__
     def __hash__(self):
