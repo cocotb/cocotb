@@ -557,7 +557,6 @@ class ModifiableObject(NonHierarchyObject):
 
     def __init__(self, handle, path):
         super().__init__(handle, path)
-        self._range = self._handle.get_range()
 
     def drivers(self):
         """An iterator for gathering all drivers for a signal.
