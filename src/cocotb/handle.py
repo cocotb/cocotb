@@ -35,6 +35,7 @@ from typing import Optional
 
 import cocotb
 from cocotb import simulator
+from cocotb._py_compat import cached_property
 from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.log import SimLog
 from cocotb.types import Logic, LogicArray
@@ -400,15 +401,24 @@ class NonHierarchyObject(SimHandleBase):
 
     @value.setter
     def value(self, value):
+        if self.is_const:
+            raise TypeError(f"{self._path} is constant")
         self._set_value(value, cocotb.scheduler._schedule_write)
 
     def setimmediatevalue(self, value):
         """Assign a value to this simulation object immediately."""
+        if self.is_const:
+            raise TypeError(f"{self._path} is constant")
 
         def _call_now(handle, f, *args):
             f(*args)
 
         self._set_value(value, _call_now)
+
+    @cached_property
+    def is_const(self) -> bool:
+        """``True`` if the simulator object is immutable, e.g. a Verilog parameter or VHDL constant or generic."""
+        return self._handle.get_const()
 
     def _set_value(self, value, call_sim):
         """This should be overriden in subclasses.
@@ -442,49 +452,6 @@ class NonHierarchyObject(SimHandleBase):
     # Re-define hash because we defined __eq__
     def __hash__(self):
         return SimHandleBase.__hash__(self)
-
-
-class ConstantObject(NonHierarchyObject):
-    """An object which has a value that can be read, but not set.
-
-    The value is cached in the class since it is fixed at elaboration
-    time and won't change within a simulation.
-    """
-
-    def __init__(self, handle, path, handle_type):
-        """
-        Args:
-            handle (int): The GPI handle to the simulator object.
-            path (str): Path to this handle, ``None`` if root.
-            handle_type: The type of the handle
-                (``simulator.INTEGER``, ``simulator.ENUM``,
-                ``simulator.REAL``, ``simulator.STRING``).
-        """
-        NonHierarchyObject.__init__(self, handle, path)
-        if handle_type in [simulator.INTEGER, simulator.ENUM]:
-            self._value = self._handle.get_signal_val_long()
-        elif handle_type == simulator.REAL:
-            self._value = self._handle.get_signal_val_real()
-        elif handle_type == simulator.STRING:
-            self._value = self._handle.get_signal_val_str()
-        else:
-            val = self._handle.get_signal_val_binstr()
-            self._value = BinaryValue(n_bits=len(val))
-            try:
-                self._value.binstr = val
-            except Exception:
-                self._value = val
-
-    def __int__(self):
-        return int(self.value)
-
-    def __float__(self):
-        return float(self.value)
-
-    @NonHierarchyObject.value.getter
-    def value(self):
-        """The value of this simulation object."""
-        return self._value
 
 
 class NonHierarchyIndexableObject(NonHierarchyObject):
@@ -948,18 +915,6 @@ def SimHandle(handle, path=None):
         pass
 
     t = handle.get_type()
-
-    # Special case for constants
-    if handle.get_const() and t not in [
-        simulator.MODULE,
-        simulator.STRUCTURE,
-        simulator.NETARRAY,
-        simulator.GENARRAY,
-    ]:
-        obj = ConstantObject(handle, path, t)
-        _handle2obj[handle] = obj
-        return obj
-
     if t not in _type2cls:
         raise NotImplementedError(
             "Couldn't find a matching object for GPI type %s(%d) (path=%s)"
