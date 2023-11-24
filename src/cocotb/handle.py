@@ -31,6 +31,7 @@
 
 import enum
 from functools import lru_cache
+from typing import Dict, Generic, Set, TypeVar
 
 import cocotb
 from cocotb import simulator
@@ -77,10 +78,6 @@ class SimHandleBase:
             path (str): Path to this handle, ``None`` if root.
         """
         self._handle = handle
-        self._sub_handles: dict = {}
-        """Dictionary of this handle's children."""
-        self._invalid_sub_handles: set = set()
-        """Python :class:`set` of invalid queries, for caching purposes."""
         self._name: str = self._handle.get_name_string()
         """The name of an object.
 
@@ -152,7 +149,10 @@ class SimHandleBase:
         return type(self).__qualname__ + "(" + desc + ")"
 
 
-class RegionObject(SimHandleBase):
+IndexType = TypeVar("IndexType")
+
+
+class RegionObject(SimHandleBase, Generic[IndexType]):
     """A region object, such as a scope or namespace.
 
     Region objects don't have values, they are effectively scopes or namespaces.
@@ -160,6 +160,7 @@ class RegionObject(SimHandleBase):
 
     def __init__(self, handle, path):
         SimHandleBase.__init__(self, handle, path)
+        self._sub_handles: Dict[IndexType, SimHandleBase] = {}
 
     def __iter__(self):
         """Iterate over all known objects in this layer of hierarchy."""
@@ -229,8 +230,12 @@ class RegionObject(SimHandleBase):
         return super().__dir__() + [str(k) for k in self._sub_handles]
 
 
-class HierarchyObject(RegionObject):
+class HierarchyObject(RegionObject[str]):
     """Hierarchy objects are namespace/scope objects."""
+
+    def __init__(self, handle, path) -> None:
+        super().__init__(handle, path)
+        self._invalid_sub_handles: Set[str] = set()
 
     def __get_sub_handle_by_name(self, name):
         try:
@@ -300,7 +305,7 @@ class HierarchyObject(RegionObject):
         raise AttributeError(f"{self._name} contains no object named {name}")
 
 
-class HierarchyArrayObject(RegionObject):
+class HierarchyArrayObject(RegionObject[int]):
     """Hierarchy Arrays are containers of Hierarchy Objects."""
 
     def _sub_handle_key(self, name):
@@ -405,6 +410,7 @@ class NonHierarchyObject(SimHandleBase):
 class NonHierarchyIndexableObjectBase(NonHierarchyObject):
     def __init__(self, handle, path):
         super().__init__(handle, path)
+        self._sub_handles: Dict[int, SimHandleBase] = {}
         self._range = self._handle.get_range()
 
     def __getitem__(self, index):
