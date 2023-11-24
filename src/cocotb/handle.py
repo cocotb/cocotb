@@ -160,12 +160,10 @@ class RegionObject(SimHandleBase):
 
     def __init__(self, handle, path):
         SimHandleBase.__init__(self, handle, path)
-        self._discovered = False  # True if this object has already been discovered
 
     def __iter__(self):
         """Iterate over all known objects in this layer of hierarchy."""
-        if not self._discovered:
-            self._discover_all()
+        self._discover_all()
 
         for name, handle in self._sub_handles.items():
             if isinstance(handle, list):
@@ -189,14 +187,13 @@ class RegionObject(SimHandleBase):
                 )
                 yield handle
 
-    def _discover_all(self):
+    @lru_cache(maxsize=None)
+    def _discover_all(self) -> None:
         """When iterating or performing IPython tab completion, we run through ahead of
         time and discover all possible children, populating the :any:`_sub_handles`
         mapping. Hierarchy can't change after elaboration so we only have to
         do this once.
         """
-        if self._discovered:
-            return
         self._log.debug("Discovering all on %s", self._name)
         for thing in self._handle.iterate(simulator.OBJECTS):
             name = thing.get_name_string()
@@ -217,8 +214,6 @@ class RegionObject(SimHandleBase):
                 continue
 
             self._sub_handles[key] = hdl
-
-        self._discovered = True
 
     def _child_path(self, name) -> str:
         """Return a string of the path of the child :any:`SimHandle` for a given *name*."""
@@ -331,8 +326,7 @@ class HierarchyArrayObject(RegionObject):
 
     @lru_cache(maxsize=None)
     def __len__(self) -> int:
-        if not self._discovered:
-            self._discover_all()
+        self._discover_all()
         return len(self._sub_handles)
 
     def __getitem__(self, index):
