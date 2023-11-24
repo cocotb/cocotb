@@ -31,7 +31,8 @@
 
 import enum
 from functools import lru_cache
-from typing import Dict, Generic, Set, TypeVar
+from logging import Logger
+from typing import Dict, Generic, Set, Tuple, TypeVar
 
 import cocotb
 from cocotb import simulator
@@ -78,27 +79,40 @@ class SimHandleBase:
             path (str): Path to this handle, ``None`` if root.
         """
         self._handle = handle
-        self._name: str = self._handle.get_name_string()
-        """The name of an object.
-
-        :meta public:
-        """
-        self._type: str = self._handle.get_type_string()
-        """The type of an object as a string.
-
-        :meta public:
-        """
-        self._fullname: str = self._name + "(%s)" % self._type
-        """The name of an object with its type appended in parentheses."""
         self._path: str = self._name if path is None else path
         """The path to this handle, or its name if this is the root handle.
 
         :meta public:
         """
-        self._log = SimLog("cocotb.%s" % self._name)
+
+    @cached_property
+    def _name(self) -> str:
+        """The name of an object.
+
+        :meta public:
+        """
+        return self._handle.get_name_string()
+
+    @cached_property
+    def _type(self) -> str:
+        """The type of an object as a string.
+
+        :meta public:
+        """
+        return self._handle.get_type_string()
+
+    @cached_property
+    def _fullname(self) -> str:
+        """The name of an object with its type appended in parentheses."""
+        return self._name + "(%s)" % self._type
+
+    @cached_property
+    def _log(self) -> Logger:
         """The logging object."""
-        self._log.debug("Created")
-        self._def_name: str = self._handle.get_definition_name()
+        return SimLog("cocotb.%s" % self._name)
+
+    @cached_property
+    def _def_name(self) -> str:
         """The name of a GPI object's definition.
 
         This is the value of ``vpiDefName`` for VPI, ``vhpiNameP`` for VHPI,
@@ -107,7 +121,10 @@ class SimHandleBase:
 
         :meta public:
         """
-        self._def_file: str = self._handle.get_definition_file()
+        return self._handle.get_definition_name()
+
+    @cached_property
+    def _def_file(self) -> str:
         """The name of the file that sources the object's definition.
 
         This is the value of ``vpiDefFile`` for VPI, ``vhpiFileNameP`` for VHPI,
@@ -116,6 +133,7 @@ class SimHandleBase:
 
         :meta public:
         """
+        return self._handle.get_definition_file()
 
     def get_definition_name(self):
         return self._def_name
@@ -411,7 +429,10 @@ class NonHierarchyIndexableObjectBase(NonHierarchyObject):
     def __init__(self, handle, path):
         super().__init__(handle, path)
         self._sub_handles: Dict[int, SimHandleBase] = {}
-        self._range = self._handle.get_range()
+
+    @cached_property
+    def _range(self) -> Tuple[int, int]:
+        return self._handle.get_range()
 
     def __getitem__(self, index):
         if isinstance(index, slice):
