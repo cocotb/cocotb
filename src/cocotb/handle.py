@@ -185,9 +185,6 @@ class RegionObject(SimHandleBase, Generic[IndexType]):
         self._discover_all()
 
         for name, handle in self._sub_handles.items():
-            self._log.debug(
-                "Yielding %s of type %s (%s)", name, type(handle), handle._path
-            )
             yield handle
 
     @lru_cache(maxsize=None)
@@ -197,7 +194,6 @@ class RegionObject(SimHandleBase, Generic[IndexType]):
         mapping. Hierarchy can't change after elaboration so we only have to
         do this once.
         """
-        self._log.debug("Discovering all on %s", self._name)
         for thing in self._handle.iterate(simulator.OBJECTS):
             name = thing.get_name_string()
             path = self._child_path(name)
@@ -441,7 +437,6 @@ class NonHierarchyIndexableObjectBase(NonHierarchyObject):
         if self._range is None:
             return
 
-        self._log.debug("Iterating with range [%d:%d]", self._range[0], self._range[1])
         for i in self._range_iter(self._range[0], self._range[1]):
             try:
                 result = self[i]
