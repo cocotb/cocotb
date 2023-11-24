@@ -68,7 +68,7 @@ def read_file(fname):
 
 def package_files(directory):
     paths = []
-    for fpath, directories, filenames in walk(directory):
+    for fpath, _, filenames in walk(directory):
         for filename in filenames:
             paths.append(path.join("..", "..", fpath, filename))
     return paths
@@ -86,21 +86,8 @@ log.setLevel(logging.INFO)
 log.addHandler(handler)
 
 setup(
-    name="cocotb",
     cmdclass={"build_ext": build_ext},
     version=__version__,  # noqa: F821
-    description="cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.",
-    url="https://www.cocotb.org",
-    license="BSD",
-    long_description=read_file("README.md"),
-    long_description_content_type="text/markdown",
-    author="Chris Higgs, Stuart Hodgson",
-    maintainer="cocotb contributors",
-    maintainer_email="cocotb@lists.librecores.org",
-    install_requires=[
-        "find_libpython",
-    ],
-    python_requires=">=3.6",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     package_data={
@@ -112,30 +99,7 @@ setup(
         )
     },
     ext_modules=get_ext(),
-    entry_points={
-        "console_scripts": [
-            "cocotb-config=cocotb.config:main",
-        ]
-    },
     platforms="any",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "License :: OSI Approved :: BSD License",
-        "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
-        "Framework :: cocotb",
-    ],
-    # these appear in the sidebar on PyPI
-    project_urls={
-        "Bug Tracker": "https://github.com/cocotb/cocotb/issues",
-        "Source Code": "https://github.com/cocotb/cocotb",
-        "Documentation": "https://docs.cocotb.org",
-    },
 )
 
 print(log_stream.getvalue())
