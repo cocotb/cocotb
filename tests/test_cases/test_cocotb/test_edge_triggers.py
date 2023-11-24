@@ -37,7 +37,7 @@ async def do_single_edge_check(dut, level):
     """Do test for rising edge"""
     old_value = dut.clk.value.integer
     dut._log.info("Value of %s is %d" % (dut.clk._path, old_value))
-    assert old_value != level, "%s not to %d start with" % (dut.clk._path, not level)
+    assert old_value != level
     if level == 1:
         await RisingEdge(dut.clk)
     else:

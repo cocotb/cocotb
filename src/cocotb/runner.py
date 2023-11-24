@@ -366,12 +366,7 @@ class Simulator(abc.ABC):
             # TODO: create a thread to handle stderr and log as error?
             # TODO: log forwarding
 
-            process = subprocess.run(cmd, cwd=cwd, env=self.env)
-
-            if process.returncode != 0:
-                raise SystemExit(
-                    f"Process {process.args[0]!r} terminated with error {process.returncode}"
-                )
+            subprocess.run(cmd, cwd=cwd, env=self.env, check=True)
 
     def rm_build_folder(self, build_dir: Path):
         if os.path.isdir(build_dir):

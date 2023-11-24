@@ -55,7 +55,7 @@ class nullcontext:
 # On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.
 # Since `OrderedDict` is a little slower that `dict`, we prefer the latter
 # when possible.
-if sys.version_info[:2] >= (3, 7):
+if sys.version_info[:2] >= (3, 7):  # noqa: UP036 | bug in ruff
     insertion_ordered_dict = dict
 else:
     import collections
