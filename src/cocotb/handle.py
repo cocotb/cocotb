@@ -611,6 +611,18 @@ class ModifiableObject(NonHierarchyIndexableObject):
         """
         return self._handle.iterate(simulator.LOADS)
 
+    def _check_for_set_action(self, value):
+        if not isinstance(value, _SetAction):
+            return value, 0  # GPI_DEPOSIT
+        return value._as_gpi_args_for(self)
+
+    def __int__(self):
+        return int(self.value)
+
+
+class LogicObject(ModifiableObject):
+    """Specific object handle for Verilog nets and regs and VHDL std_logic and std_logic_vectors"""
+
     def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
 
@@ -697,12 +709,7 @@ class ModifiableObject(NonHierarchyIndexableObject):
 
         call_sim(self, self._handle.set_signal_val_binstr, set_action, value.binstr)
 
-    def _check_for_set_action(self, value):
-        if not isinstance(value, _SetAction):
-            return value, 0  # GPI_DEPOSIT
-        return value._as_gpi_args_for(self)
-
-    @NonHierarchyIndexableObject.value.getter
+    @ModifiableObject.value.getter
     def value(self) -> BinaryValue:
         binstr = self._handle.get_signal_val_binstr()
         # Skip BinaryValue.assign() as we know we are using a binstr
@@ -710,9 +717,6 @@ class ModifiableObject(NonHierarchyIndexableObject):
         # Skip the permitted characters check as we trust the simulator
         result._set_trusted_binstr(binstr)
         return result
-
-    def __int__(self):
-        return int(self.value)
 
 
 class RealObject(ModifiableObject):
@@ -877,8 +881,8 @@ _handle2obj = {}
 _type2cls = {
     simulator.MODULE: HierarchyObject,
     simulator.STRUCTURE: HierarchyObject,
-    simulator.REG: ModifiableObject,
-    simulator.NET: ModifiableObject,
+    simulator.REG: LogicObject,
+    simulator.NET: LogicObject,
     simulator.NETARRAY: NonHierarchyIndexableObject,
     simulator.REAL: RealObject,
     simulator.INTEGER: IntegerObject,
