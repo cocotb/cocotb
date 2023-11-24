@@ -11,5 +11,5 @@ import pytest
 async def test_assertion_rewriting(_):
     """Test that assertion rewriting hooks take effect in cocotb tests"""
     with pytest.raises(AssertionError) as e:
-        assert 1 == 42
+        assert 1 == 42  # noqa: PLR0133
     assert "42" in str(e), f"Assertion rewriting seems not to work, message was {e}"

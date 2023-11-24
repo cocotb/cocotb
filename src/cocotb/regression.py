@@ -93,7 +93,7 @@ else:
     except BaseException as _raises_e:
         _Failed = type(_raises_e)
     else:
-        assert "pytest.raises doesn't raise an exception when it fails"
+        assert False, "pytest.raises doesn't raise an exception when it fails"
 
 
 class Test:

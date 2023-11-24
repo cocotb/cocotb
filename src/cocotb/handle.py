@@ -942,7 +942,6 @@ def SimHandle(handle, path=None):
 
     # Enforce singletons since it's possible to retrieve handles avoiding
     # the hierarchy by getting driver/load information
-    global _handle2obj
     try:
         return _handle2obj[handle]
     except KeyError:

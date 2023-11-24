@@ -430,7 +430,8 @@ class build_ext(_build_ext):
                         "/def:" + os.path.join(def_dir, sim + ".def"),
                         "/out:" + os.path.join(def_dir, sim + ".lib"),
                         "/machine:" + ("X64" if sys.maxsize > 2**32 else "X86"),
-                    ]
+                    ],
+                    check=True,
                 )
             else:
                 subprocess.run(
@@ -440,7 +441,8 @@ class build_ext(_build_ext):
                         os.path.join(def_dir, sim + ".def"),
                         "-l",
                         os.path.join(def_dir, "lib" + sim + ".a"),
-                    ]
+                    ],
+                    check=True,
                 )
 
 

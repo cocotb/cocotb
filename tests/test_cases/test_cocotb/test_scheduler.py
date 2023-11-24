@@ -42,7 +42,6 @@ async def clock_yield(generator):
 @cocotb.test()
 async def test_coroutine_kill(dut):
     """Test that killing a coroutine causes pending routine continue"""
-    global test_flag
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(100, "ns")
     cocotb.start_soon(clock_yield(clk_gen))

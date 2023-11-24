@@ -62,16 +62,15 @@ class Wavedrom:
                 char = "u"
             elif "z" in valstr:
                 char = "z"
+            elif (
+                len(self._data[name])
+                and self._data[name][-1] == int(val)
+                and self._samples[name][-1] in "=."
+            ):
+                char = "."
             else:
-                if (
-                    len(self._data[name])
-                    and self._data[name][-1] == int(val)
-                    and self._samples[name][-1] in "=."
-                ):
-                    char = "."
-                else:
-                    char = "="
-                    self._data[name].append(int(val))
+                char = "="
+                self._data[name].append(int(val))
 
             # Detect if this is unchanged
             if len(valstr) == 1 and char == _lastval(self._samples[name]):

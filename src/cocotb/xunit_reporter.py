@@ -71,9 +71,8 @@ class XUnitReporter:
                 self.indent(elem, level + 1)
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
+        elif level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
     def write(self):
         self.indent(self.results)
