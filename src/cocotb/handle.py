@@ -30,6 +30,7 @@
 # -*- coding: utf-8 -*-
 
 import enum
+from abc import ABC, abstractmethod
 from functools import lru_cache
 from logging import Logger
 from typing import Dict, Generic, Set, Tuple, TypeVar
@@ -64,12 +65,13 @@ def _value_limits(n_bits, limits):
     return min_val, max_val
 
 
-class SimHandleBase:
+class SimHandleBase(ABC):
     """Base class for all simulation objects.
 
     We maintain a handle which we can use for GPI calls.
     """
 
+    @abstractmethod
     def __init__(self, handle, path):
         """
         .. Constructor. This RST comment works around sphinx-doc/sphinx#6885
@@ -176,6 +178,7 @@ class RegionObject(SimHandleBase, Generic[IndexType]):
     Region objects don't have values, they are effectively scopes or namespaces.
     """
 
+    @abstractmethod
     def __init__(self, handle, path):
         super().__init__(handle, path)
         self._sub_handles: Dict[IndexType, SimHandleBase] = {}
@@ -306,6 +309,9 @@ class HierarchyObject(RegionObject[str]):
 class HierarchyArrayObject(RegionObject[int]):
     """Hierarchy Arrays are containers of Hierarchy Objects."""
 
+    def __init__(self, handle, path) -> None:
+        super().__init__(handle, path)
+
     def _sub_handle_key(self, name):
         """Translate the handle name to a key to use in :any:`_sub_handles` dictionary."""
         # This is slightly hacky, but we need to extract the index from the name
@@ -406,6 +412,7 @@ class NonHierarchyObject(SimHandleBase):
 
 
 class NonHierarchyIndexableObjectBase(NonHierarchyObject):
+    @abstractmethod
     def __init__(self, handle, path):
         super().__init__(handle, path)
         self._sub_handles: Dict[int, SimHandleBase] = {}
@@ -484,6 +491,9 @@ class NonHierarchyIndexableObject(NonHierarchyIndexableObjectBase):
         - **Correct**: ``dut.some_array[0].value = 1``
     """
 
+    def __init__(self, handle, path):
+        super().__init__(handle, path)
+
     @NonHierarchyObject.value.getter
     def value(self) -> list:
         # Don't use self.__iter__, because it has an unwanted `except IndexError`
@@ -555,9 +565,6 @@ class Release(_SetAction):
 class ModifiableObject(NonHierarchyObject):
     """Base class for simulator objects whose values can be modified."""
 
-    def __init__(self, handle, path):
-        super().__init__(handle, path)
-
     def drivers(self):
         """An iterator for gathering all drivers for a signal.
 
@@ -582,6 +589,9 @@ class ModifiableObject(NonHierarchyObject):
 
 class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
     """Specific object handle for Verilog nets and regs and VHDL std_logic and std_logic_vectors"""
+
+    def __init__(self, handle, path):
+        super().__init__(handle, path)
 
     def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
@@ -682,6 +692,9 @@ class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
 class RealObject(ModifiableObject):
     """Specific object handle for Real signals and variables."""
 
+    def __init__(self, handle, path):
+        super().__init__(handle, path)
+
     def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to value.
 
@@ -713,6 +726,9 @@ class RealObject(ModifiableObject):
 
 class EnumObject(ModifiableObject):
     """Specific object handle for enumeration signals and variables."""
+
+    def __init__(self, handle, path):
+        super().__init__(handle, path)
 
     def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
@@ -753,6 +769,9 @@ class EnumObject(ModifiableObject):
 
 class IntegerObject(ModifiableObject):
     """Specific object handle for integer and enumeration signals and variables."""
+
+    def __init__(self, handle, path):
+        super().__init__(handle, path)
 
     def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
@@ -798,6 +817,9 @@ class IntegerObject(ModifiableObject):
 
 class StringObject(ModifiableObject, NonHierarchyIndexableObjectBase):
     """Specific object handle for String variables."""
+
+    def __init__(self, handle, path):
+        super().__init__(handle, path)
 
     def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
