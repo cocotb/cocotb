@@ -33,13 +33,13 @@ jobs:
       run: |
         sudo apt-get install -y --no-install-recommends iverilog
 
-    - name: Set up GHDL (Ubuntu)
+    - name: Set up NVC (Ubuntu)
       run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends gnat
-        git clone https://github.com/ghdl/ghdl.git
-        cd ghdl
-        git reset --hard v3.0.0
+        sudo apt install -y --no-install-recommends llvm-dev libdw-dev flex libzstd-dev pkg-config
+        git clone https://github.com/nickg/nvc.git
+        cd nvc
+        git reset --hard ${{matrix.sim-version}}
+        ./autogen.sh
         mkdir build
         cd build
         ../configure

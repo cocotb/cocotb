@@ -25,9 +25,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import pytest
-
 import cocotb
+import pytest
 from cocotb._sim_versions import IcarusVersion
 from cocotb.binary import BinaryValue
 from cocotb.handle import ConstantObject, HierarchyObject, IntegerObject, StringObject
@@ -423,3 +422,75 @@ async def type_check_verilog(dut):
 
     for handle in test_handles:
         assert handle[0]._type == handle[1]
+
+
+# GHDL cannot find signal in "block" statement, may be related to (gh-2594)
+@cocotb.test(
+    skip=cocotb.LANGUAGE in ["verilog"],
+    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
+)
+async def access_block_vhdl(dut):
+    """Access a VHDL block statement"""
+
+    dut._log.info(
+        "Block: {} ({})".format(
+            dut.isample_module1.SAMPLE_BLOCK._name,
+            type(dut.isample_module1.SAMPLE_BLOCK),
+        )
+    )
+    dut._log.info(
+        "Signal inside Block:vhdl {} ({})".format(
+            dut.isample_module1.SAMPLE_BLOCK.clk_inv._name,
+            type(dut.isample_module1.SAMPLE_BLOCK.clk_inv),
+        )
+    )
+
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+async def discover_all_in_component_vhdl(dut):
+    """Access a non local indexed name"""
+
+    def _discover(obj):
+        count = 0
+        for thing in obj:
+            count += 1
+            dut._log.info("Found %s (%s)", thing._path, type(thing))
+            count += _discover(thing)
+        return count
+
+    total_count = _discover(dut.isample_module1)
+
+    sim = cocotb.SIM_NAME.lower()
+
+    # ideally should be 25:
+    #   1   EXAMPLE_STRING
+    #   1   EXAMPLE_BOOL
+    #   1   EXAMPLE_WIDTH
+    #   1   clk
+    #   1   stream_in_data
+    #   8   stream_in_data[*]
+    #   1   stream_out_data_registered
+    #   8   stream_out_data_registered[*]
+    #   1   stream_out_data_valid
+    #   1   SAMPLE_BLOCK
+    #   1   SAMPLE_BLOCK.clk_inv
+    if sim.startswith("modelsim"):
+        assert total_count == 25
+    elif sim.startswith("riviera"):
+        assert total_count == 25
+    elif sim.startswith("xcelium"):
+        assert total_count == 25
+    elif sim.startswith("ghdl"):
+        # finds SAMPLE_BLOCK twice
+        # doesn't find EXAMPLE_STRING or elements
+        # doesn't find elements of stream_in_data or stream_out_data_registered
+        assert total_count == 9
+    elif sim.startswith("nvc"):
+        # doesn't find elements of string
+        # finds SAMPLE_BLOCK.clk_inv twice?
+        assert total_count == 26
+    else:
+        cocotb.log.info(
+            "Found %d items in component instantion. Simulator is not checked.",
+            total_count,
+        )
