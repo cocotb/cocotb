@@ -252,6 +252,28 @@ class VpiSingleIterator : public GpiIterator {
     vpiHandle m_iterator = nullptr;
 };
 
+class VpiPackageIterator : public GpiIterator {
+  public:
+    VpiPackageIterator(GpiImplInterface *impl)
+        : GpiIterator(impl, nullptr)
+
+    {
+        m_iterator = vpi_iterate(vpiInstance, nullptr);
+        if (NULL == m_iterator) {
+            LOG_WARN("vpi_iterate returned NULL for type vpiInstance for object NULL");
+            return;
+        }
+    }
+
+    Status next_handle(std::string &name, GpiObjHdl **hdl,
+                       void **raw_hdl) override;
+
+    bool empty() { return m_iterator == NULL; }
+
+  private:
+    vpiHandle m_iterator = nullptr;
+};
+
 class VpiImpl : public GpiImplInterface {
   public:
     VpiImpl(const std::string &name)
@@ -295,7 +317,11 @@ class VpiImpl : public GpiImplInterface {
     static bool compare_generate_labels(const std::string &a,
                                         const std::string &b);
 
+    const char *get_type_delimiter(GpiObjHdl *obj_hdl);
+
   private:
+    GpiObjHdl *get_scope_handle(const char *name, bool is_package);
+
     /* Singleton callbacks */
     VpiReadWriteCbHdl m_read_write;
     VpiNextPhaseCbHdl m_next_phase;

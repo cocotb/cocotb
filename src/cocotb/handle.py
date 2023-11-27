@@ -215,7 +215,8 @@ class RegionObject(SimHandleBase, Generic[IndexType]):
 
     def _child_path(self, name) -> str:
         """Return a string of the path of the child :any:`SimHandle` for a given *name*."""
-        return self._path + "." + name
+        delimiter = "" if self._type == 'GPI_PACKAGE' else '.'
+        return self._path + delimiter + name
 
     def _sub_handle_key(self, name):
         """Translate the handle name to a key to use in :any:`_sub_handles` dictionary."""
@@ -864,6 +865,7 @@ _type2cls = {
     simulator.ENUM: EnumObject,
     simulator.STRING: StringObject,
     simulator.GENARRAY: HierarchyArrayObject,
+    simulator.PACKAGE: HierarchyObject,
 }
 
 

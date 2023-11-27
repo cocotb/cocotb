@@ -38,6 +38,7 @@ import threading
 import time
 import warnings
 from collections.abc import Coroutine
+from types import SimpleNamespace
 from typing import Dict, List, Optional, Union
 
 import cocotb.handle
@@ -98,6 +99,13 @@ plusargs: Optional[Dict[str, Union[bool, str]]] = None
 
 See :make:var:`PLUSARGS` for details.
 This is guaranteed to hold a value at test time.
+"""
+
+packages: Optional[SimpleNamespace] = None
+"""A SimpleNamespace of package handles.
+
+This will be populated with handles at test time if packages
+can be discovered via the GPI.
 """
 
 LANGUAGE: Optional[str] = os.getenv("TOPLEVEL_LANG")
@@ -250,6 +258,7 @@ def _initialise_testbench_(argv_):
     # Create the base handle type
 
     _process_plusargs()
+    _process_packages()
 
     # Seed the Python random number generator to make this repeatable
     global RANDOM_SEED
@@ -328,3 +337,27 @@ def _process_plusargs() -> None:
                 plusargs[name] = value
             else:
                 plusargs[option[1:]] = True
+
+
+def _process_packages() -> None:
+    global packages
+
+    pkg_dict = {}
+    pkgs = simulator.package_iterate()
+    if pkgs is None:
+        return
+
+    for pkg in pkgs:
+        handle = cocotb.handle.SimHandle(pkg)
+        name = str(handle)
+        if name.endswith("::"):
+            name = name[:-2]
+
+        # Icarus doesn't support named access to package objects:
+        # https://github.com/steveicarus/iverilog/issues/1038
+        # so we cannot lazily create handles
+        if SIM_NAME == "Icarus Verilog":
+            handle._discover_all()
+        pkg_dict[name] = handle
+
+    packages = SimpleNamespace(**pkg_dict)

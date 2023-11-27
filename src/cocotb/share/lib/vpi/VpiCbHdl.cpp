@@ -645,6 +645,10 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
              vpiTableEntry,
              vpiUdpDefn,
          }},
+        {vpiPackage,
+         {
+             vpiParameter,
+        }},
     };
 }();
 
@@ -742,6 +746,35 @@ GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
         return GpiIterator::NATIVE;
     } else
         return GpiIterator::NOT_NATIVE;
+}
+
+GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
+                                                    GpiObjHdl **hdl,
+                                                    void **) {
+    GpiObjHdl *new_obj;
+    vpiHandle obj;
+
+    if (NULL == m_iterator) return GpiIterator::END;
+
+    while (true) {
+        obj = vpi_scan(m_iterator);
+        if (NULL == obj) return GpiIterator::END;
+
+        PLI_INT32 type = vpi_get(vpiType, obj);
+        if (type == vpiPackage) break;
+    }
+
+    VpiImpl *vpi_impl = reinterpret_cast<VpiImpl *>(m_impl);
+    std::string scope_name = vpi_get_str(vpiFullName, obj);
+#ifdef ICARUS
+    // Icarus does not include '::' in its package names:
+    // https://github.com/steveicarus/iverilog/issues/1037
+    scope_name += "::";
+#endif
+    new_obj = new GpiObjHdl(vpi_impl, obj, GPI_PACKAGE);
+    new_obj->initialise(scope_name, scope_name);
+    *hdl = new_obj;
+    return GpiIterator::NATIVE;
 }
 
 GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
@@ -861,6 +894,7 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
        */
 
     std::string fq_name = m_parent->get_fullname();
+    VpiImpl *vpi_impl = reinterpret_cast<VpiImpl *>(m_impl);
 
     if (obj_type == GPI_GENARRAY) {
         std::size_t found = name.rfind("[");
@@ -882,11 +916,10 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
             fq_name += "." + name;
         }
     } else {
-        fq_name += "." + name;
+        fq_name += vpi_impl->get_type_delimiter(m_parent) + name;
     }
 
     LOG_DEBUG("vpi_scan found '%s'", fq_name.c_str());
-    VpiImpl *vpi_impl = reinterpret_cast<VpiImpl *>(m_impl);
     new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
     if (new_obj) {
         *hdl = new_obj;

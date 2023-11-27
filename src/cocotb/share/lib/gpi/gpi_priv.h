@@ -235,6 +235,8 @@ class GPI_EXPORT GpiIterator : public GpiHdl {
 
     GpiObjHdl *get_parent() { return m_parent; }
 
+    bool empty() { return false; }
+
   protected:
     GpiObjHdl *m_parent;
 };
