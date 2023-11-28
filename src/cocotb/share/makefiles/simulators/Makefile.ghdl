@@ -70,13 +70,13 @@ analyse: $(VHDL_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), \
 		$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) --work=$(SOURCES_VAR:VHDL_SOURCES_%=%) $($(SOURCES_VAR)) && ) \
 	$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && \
-	$(CMD) -m $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL)
+	$(CMD) -m $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL) $(ARCH)
 
 $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(SIM_CMD_PREFIX) $(CMD) -r $(GHDL_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL) --vpi=$(shell cocotb-config --lib-name-path vpi ghdl) $(SIM_ARGS) $(PLUSARGS)
+	$(SIM_CMD_PREFIX) $(CMD) -r $(GHDL_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL) $(ARCH) --vpi=$(shell cocotb-config --lib-name-path vpi ghdl) $(SIM_ARGS) $(PLUSARGS)
 
 	$(call check_for_results_file)
 
