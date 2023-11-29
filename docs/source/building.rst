@@ -133,13 +133,6 @@ Cocotb
 
     Set to ``VALUE_ERROR`` by default.
 
-.. envvar:: MEMCHECK
-
-    HTTP port to use for debugging Python's memory usage.
-    When set to e.g. ``8088``, data will be presented at `<http://localhost:8088>`_.
-
-    This needs the :mod:`cherrypy` and :mod:`dowser` Python modules installed.
-
 .. envvar:: LIBPYTHON_LOC
 
     The absolute path to the Python library associated with the current Python installation;
