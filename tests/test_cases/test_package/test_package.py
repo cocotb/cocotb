@@ -3,11 +3,8 @@ A set of tests that demonstrate package access
 """
 
 import logging
-import os
 
 import cocotb
-from cocotb import simulator
-from cocotb.handle import SimHandle
 
 
 @cocotb.test()
@@ -23,6 +20,7 @@ async def test_params(dut):
     pkg2 = cocotb.packages.cocotb_package_pkg_2
     assert pkg2.eleven_int.value == 11
 
+
 @cocotb.test()
 async def test_stringification(dut):
     """Test package stringification"""
@@ -36,6 +34,7 @@ async def test_stringification(dut):
     pkg2 = cocotb.packages.cocotb_package_pkg_2
     assert str(pkg2) == "cocotb_package_pkg_2::"
     assert str(pkg2.eleven_int) == "cocotb_package_pkg_2::eleven_int"
+
 
 @cocotb.test()
 async def test_dollar_unit(dut):

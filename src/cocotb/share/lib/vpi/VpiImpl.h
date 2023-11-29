@@ -260,7 +260,9 @@ class VpiPackageIterator : public GpiIterator {
     {
         m_iterator = vpi_iterate(vpiInstance, nullptr);
         if (NULL == m_iterator) {
-            LOG_WARN("vpi_iterate returned NULL for type vpiInstance for object NULL");
+            LOG_WARN(
+                "vpi_iterate returned NULL for type vpiInstance for object "
+                "NULL");
             return;
         }
     }

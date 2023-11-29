@@ -379,9 +379,11 @@ gpi_iterator_hdl gpi_iterate(gpi_sim_hdl obj_hdl, gpi_iterator_sel_t type) {
         LOG_DEBUG("Looking for packages over %d implementations",
                   registered_impls.size());
 
-        for (implIter = registered_impls.begin(); implIter != registered_impls.end();
-             implIter++) {
-            GpiIterator *iter = (*implIter)->iterate_handle(NULL, GPI_PACKAGE_SCOPES);
+        for (implIter = registered_impls.begin();
+             implIter != registered_impls.end(); implIter++) {
+            GpiIterator *iter =
+                (*implIter)->iterate_handle(NULL, GPI_PACKAGE_SCOPES);
+            if (iter == NULL) continue;
             if (!iter->empty()) return iter;
         }
         return NULL;

@@ -648,7 +648,7 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
         {vpiPackage,
          {
              vpiParameter,
-        }},
+         }},
     };
 }();
 
@@ -749,8 +749,7 @@ GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
 }
 
 GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
-                                                    GpiObjHdl **hdl,
-                                                    void **) {
+                                                    GpiObjHdl **hdl, void **) {
     GpiObjHdl *new_obj;
     vpiHandle obj;
 

@@ -858,7 +858,9 @@ static int add_module_constants(PyObject *simulator) {
         PyModule_AddIntConstant(simulator, "OBJECTS", GPI_OBJECTS) < 0 ||
         PyModule_AddIntConstant(simulator, "DRIVERS", GPI_DRIVERS) < 0 ||
         PyModule_AddIntConstant(simulator, "LOADS", GPI_LOADS) < 0 ||
-        PyModule_AddIntConstant(simulator, "PACKAGE_SCOPES", GPI_PACKAGE_SCOPES) < 0 || false) {
+        PyModule_AddIntConstant(simulator, "PACKAGE_SCOPES",
+                                GPI_PACKAGE_SCOPES) < 0 ||
+        false) {
         return -1;
     }
 

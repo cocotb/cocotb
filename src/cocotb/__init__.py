@@ -343,6 +343,9 @@ def _process_packages() -> None:
     global packages
 
     pkg_dict = {}
+
+    from cocotb import simulator
+
     pkgs = simulator.package_iterate()
     if pkgs is None:
         return
