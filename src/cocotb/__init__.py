@@ -179,12 +179,6 @@ def create_task(coro: Union[Task, Coroutine]) -> Task:
 _rlock = threading.RLock()
 
 
-def mem_debug(port):
-    import cocotb.memdebug
-
-    cocotb.memdebug.start(port)
-
-
 def _initialise_testbench(argv_):  # pragma: no cover
     """Initialize testbench.
 
@@ -248,10 +242,6 @@ def _initialise_testbench_(argv_):
     SIM_VERSION = simulator.get_simulator_version().strip()
 
     cocotb.log.info(f"Running on {SIM_NAME} version {SIM_VERSION}")
-
-    memcheck_port = os.getenv("MEMCHECK")
-    if memcheck_port is not None:
-        mem_debug(int(memcheck_port))
 
     log.info(
         "Running tests with cocotb v%s from %s"
