@@ -343,6 +343,8 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the :term:`VPI` interface.
 
+To specify a VHDL architecture to simulate, set the ``ARCH`` make variable to the architecture name.
+
 .. _sim-ghdl-issues:
 
 Issues for this simulator
