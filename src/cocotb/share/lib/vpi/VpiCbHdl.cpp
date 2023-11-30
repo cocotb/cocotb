@@ -765,19 +765,12 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
 
     VpiImpl *vpi_impl = reinterpret_cast<VpiImpl *>(m_impl);
     std::string scope_name = vpi_get_str(vpiFullName, obj);
-#ifdef ICARUS
-    // Icarus does not include '::' in its package names:
+    // Some simulators (including Icarus) do not include '::' in package names:
     // https://github.com/steveicarus/iverilog/issues/1037
-    scope_name += "::";
-#endif
-#ifdef MODELSIM
-    // Also Questa
-    scope_name += "::";
-#endif
-#ifdef ALDEC
-    // maybe also riviera?  NOCOMMIT
-    scope_name += "::";
-#endif
+    std::string package_delim = "::";
+    if (scope_name.compare(scope_name.length() - package_delim.length(), package_delim.length(), package_delim)) {
+        scope_name += "::";
+    }
     new_obj = new GpiObjHdl(vpi_impl, obj, GPI_PACKAGE);
     new_obj->initialise(scope_name, scope_name);
     *hdl = new_obj;
