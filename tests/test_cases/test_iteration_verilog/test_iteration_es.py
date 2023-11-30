@@ -45,10 +45,18 @@ async def recursive_discovery(dut):
     tlog = logging.getLogger("cocotb.test")
 
     def dump_all_the_things(parent):
+        if not isinstance(
+            parent,
+            (
+                cocotb.handle.RegionObject,
+                cocotb.handle.NonHierarchyIndexableObjectBase,
+            ),
+        ):
+            return 0
         count = 0
         for thing in parent:
             count += 1
-            tlog.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+            tlog.info("Found %s (%s)", thing._path, type(thing))
             count += dump_all_the_things(thing)
         return count
 

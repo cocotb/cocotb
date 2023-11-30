@@ -348,7 +348,7 @@ async def test_real_assign_double(dut):
     dut.stream_in_real.value = val
     await timer_shortest
     await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
-    got = float(dut.stream_out_real)
+    got = dut.stream_out_real.value
     log.info("Read back value %g" % got)
     assert got == val, "Values didn't match!"
 
@@ -374,9 +374,9 @@ async def test_real_assign_int(dut):
     dut.stream_in_real.value = val
     await timer_shortest
     await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
-    got = dut.stream_out_real
+    got = dut.stream_out_real.value
     log.info("Read back value %d" % got)
-    assert got == float(val), "Values didn't match!"
+    assert got == val, "Values didn't match!"
 
 
 # identifiers starting with `_` are illegal in VHDL

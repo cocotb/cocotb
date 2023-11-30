@@ -25,11 +25,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
+
 import cocotb
 import pytest
 from cocotb._sim_versions import IcarusVersion
 from cocotb.binary import BinaryValue
-from cocotb.handle import ConstantObject, HierarchyObject, IntegerObject, StringObject
+from cocotb.handle import (
+    HierarchyObject,
+    IntegerObject,
+    NonHierarchyIndexableObject,
+    NonHierarchyIndexableObjectBase,
+    RegionObject,
+    StringObject,
+)
 from cocotb.triggers import Timer
 
 
@@ -52,6 +61,8 @@ async def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
 
     def _discover(obj):
+        if not isinstance(obj, (HierarchyObject, NonHierarchyIndexableObject)):
+            return
         for thing in obj:
             dut._log.debug("Found %s (%s)", thing._name, type(thing))
             _discover(thing)
@@ -187,11 +198,6 @@ async def access_integer(dut):
     """Integer should show as an IntegerObject"""
     assert isinstance(dut.stream_in_int, IntegerObject)
 
-    with pytest.raises(IndexError):
-        dut.stream_in_int[3]
-
-    assert len(dut.stream_in_int) == 1
-
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 async def access_ulogic(dut):
@@ -199,24 +205,32 @@ async def access_ulogic(dut):
     dut.stream_in_valid
 
 
-@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+# GHDL discovers generics as vpiParameter (gh-2722)
+@cocotb.test(
+    skip=cocotb.LANGUAGE in ["verilog"],
+    expect_error=NotImplementedError
+    if cocotb.SIM_NAME.lower().startswith("ghdl")
+    else (),
+)
 async def access_constant_integer(dut):
     """
     Access a constant integer
     """
-    assert isinstance(dut.isample_module1.EXAMPLE_WIDTH, ConstantObject)
-    assert dut.isample_module1.EXAMPLE_WIDTH == 7
+    assert isinstance(dut.isample_module1.EXAMPLE_WIDTH, IntegerObject)
+    assert dut.isample_module1.EXAMPLE_WIDTH.value == 7
 
 
-# GHDL inexplicably crashes, so we will skip this test for now
-# likely has to do with overall poor support of string over the VPI
+# GHDL discovers generics as vpiParameter (gh-2722)
 @cocotb.test(
-    skip=cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("ghdl")
+    skip=cocotb.LANGUAGE in ["verilog"],
+    expect_error=NotImplementedError
+    if cocotb.SIM_NAME.lower().startswith("ghdl")
+    else (),
 )
 async def access_constant_string_vhdl(dut):
     """Access to a string, both constant and signal."""
     constant_string = dut.isample_module1.EXAMPLE_STRING
-    assert isinstance(constant_string, ConstantObject)
+    assert isinstance(constant_string, StringObject)
     assert constant_string.value == b"TESTING"
 
 
@@ -228,7 +242,7 @@ async def access_constant_string_vhdl(dut):
 async def test_writing_string_undersized(dut):
     test_string = b"cocotb"
     dut.stream_in_string.setimmediatevalue(test_string)
-    assert dut.stream_out_string == b""
+    assert dut.stream_out_string.value == b""
     await Timer(1, "ns")
     assert dut.stream_out_string.value == test_string
 
@@ -294,11 +308,11 @@ async def access_const_string_verilog(dut):
 
     await Timer(10, "ns")
     assert isinstance(dut.STRING_CONST, StringObject)
-    assert dut.STRING_CONST == b"TESTING_CONST"
+    assert dut.STRING_CONST.value == b"TESTING_CONST"
 
     dut.STRING_CONST.value = b"MODIFIED"
     await Timer(10, "ns")
-    assert dut.STRING_CONST != b"TESTING_CONST"
+    assert dut.STRING_CONST.value != b"TESTING_CONST"
 
 
 @cocotb.test(
@@ -310,28 +324,35 @@ async def access_var_string_verilog(dut):
 
     await Timer(10, "ns")
     assert isinstance(dut.STRING_VAR, StringObject)
-    assert dut.STRING_VAR == b"TESTING_VAR"
+    assert dut.STRING_VAR.value == b"TESTING_VAR"
 
     dut.STRING_VAR.value = b"MODIFIED"
     await Timer(10, "ns")
-    assert dut.STRING_VAR == b"MODIFIED"
+    assert dut.STRING_VAR.value == b"MODIFIED"
 
 
-@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+# GHDL discovers generics as vpiParameter (gh-2722)
+@cocotb.test(
+    skip=cocotb.LANGUAGE in ["verilog"],
+    expect_error=NotImplementedError
+    if cocotb.SIM_NAME.lower().startswith("ghdl")
+    else (),
+)
 async def access_constant_boolean(dut):
     """Test access to a constant boolean"""
-    assert isinstance(dut.isample_module1.EXAMPLE_BOOL, ConstantObject)
+    assert isinstance(dut.isample_module1.EXAMPLE_BOOL, IntegerObject)
     assert dut.isample_module1.EXAMPLE_BOOL.value == True  # noqa
 
 
-@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+# GHDL discovers booleans as vpiNet (gh-2596)
+@cocotb.test(
+    skip=cocotb.LANGUAGE in ["verilog"],
+    expect_fail=cocotb.SIM_NAME.lower().startswith("ghdl"),
+)
+@cocotb.test()
 async def access_boolean(dut):
     """Test access to a boolean"""
-
-    with pytest.raises(IndexError):
-        dut.stream_in_bool[3]
-
-    assert len(dut.stream_in_bool) == 1
+    assert isinstance(dut.stream_out_bool, IntegerObject)
 
     curr_val = dut.stream_in_bool.value
     dut.stream_in_bool.setimmediatevalue(not curr_val)
@@ -380,6 +401,8 @@ async def custom_type(dut):
     count = 0
 
     def _discover(obj):
+        if not isinstance(obj, (RegionObject, NonHierarchyIndexableObjectBase)):
+            return 0
         iter_count = 0
         for elem in obj:
             iter_count += 1
@@ -450,7 +473,17 @@ async def access_block_vhdl(dut):
 async def discover_all_in_component_vhdl(dut):
     """Access a non local indexed name"""
 
+    questa_vhpi = (
+        cocotb.SIM_NAME.lower().startswith("modelsim")
+        and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
+    )
+
     def _discover(obj):
+        if questa_vhpi and isinstance(obj, StringObject):
+            # Iterating over the elements of a string with Questa's VHPI causes a stacktrace
+            return 0
+        if not isinstance(obj, (RegionObject, NonHierarchyIndexableObjectBase)):
+            return 0
         count = 0
         for thing in obj:
             count += 1
@@ -462,8 +495,9 @@ async def discover_all_in_component_vhdl(dut):
 
     sim = cocotb.SIM_NAME.lower()
 
-    # ideally should be 25:
+    # ideally should be 32:
     #   1   EXAMPLE_STRING
+    #   7   EXAMPLE_STRING[*]
     #   1   EXAMPLE_BOOL
     #   1   EXAMPLE_WIDTH
     #   1   clk
@@ -474,17 +508,20 @@ async def discover_all_in_component_vhdl(dut):
     #   1   stream_out_data_valid
     #   1   SAMPLE_BLOCK
     #   1   SAMPLE_BLOCK.clk_inv
-    if sim.startswith("modelsim"):
+    if sim.startswith("modelsim") and questa_vhpi:
+        # Iterating over the elements of a string with Questa's VHPI causes a stacktrace
         assert total_count == 25
+    elif sim.startswith("modelsim"):
+        assert total_count == 32
     elif sim.startswith("riviera"):
-        assert total_count == 25
+        assert total_count == 32
     elif sim.startswith("xcelium"):
-        assert total_count == 25
+        assert total_count == 32
     elif sim.startswith("ghdl"):
         # finds SAMPLE_BLOCK twice
-        # doesn't find EXAMPLE_STRING or elements
+        # doesn't find EXAMPLE_STRING or elements, EXAMPLE_BOOL, or EXAMPLE_WIDTH
         # doesn't find elements of stream_in_data or stream_out_data_registered
-        assert total_count == 9
+        assert total_count == 7
     elif sim.startswith("nvc"):
         # doesn't find elements of string
         # finds SAMPLE_BLOCK.clk_inv twice?

@@ -63,8 +63,18 @@ export RANDOM_SEED := 123456789
 TOPLEVEL    := matrix_multiplier
 MODULE      := test_matrix_multiplier
 
+ifeq ($(SIM),ghdl)
+
+all:
+	@echo "Skipping since GHDL doesn't support constants effectively"
+
+clean::
+
+else
+
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
+endif
 
 # Profiling
 

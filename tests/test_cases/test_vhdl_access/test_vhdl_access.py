@@ -24,16 +24,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import logging
-import warnings
 
 import cocotb
-from cocotb.handle import (
-    ConstantObject,
-    EnumObject,
-    HierarchyObject,
-    IntegerObject,
-    ModifiableObject,
-)
+import pytest
+from cocotb.handle import EnumObject, HierarchyObject, IntegerObject, LogicObject
 
 
 # GHDL discovers enum as `vpiNet` (gh-2600)
@@ -56,83 +50,48 @@ async def check_objects(dut):
     Check the types of objects that are returned
     """
     tlog = logging.getLogger("cocotb.test")
-    fails = 0
 
     def check_instance(obj, objtype):
-        if not isinstance(obj, objtype):
-            tlog.error(
-                "Expected {} to be of type {} but got {}".format(
-                    obj._fullname, objtype.__name__, type(obj).__name__
-                )
-            )
-            return 1
+        assert isinstance(
+            obj, objtype
+        ), "Expected {} to be of type {} but got {}".format(
+            obj._fullname, objtype.__name__, type(obj).__name__
+        )
         tlog.info(f"{obj._fullname} is {type(obj).__name__}")
-        return 0
 
     # Hierarchy checks
-    fails += check_instance(dut.inst_axi4s_buffer, HierarchyObject)
-    fails += check_instance(dut.gen_branch_distance[0], HierarchyObject)
-    fails += check_instance(
-        dut.gen_branch_distance[0].inst_branch_distance, HierarchyObject
-    )
-    fails += check_instance(dut.gen_acs[0].inbranch_tdata_low, ModifiableObject)
-    fails += check_instance(dut.gen_acs[0].inbranch_tdata_low[0], ModifiableObject)
-    fails += check_instance(dut.aclk, ModifiableObject)
-    fails += check_instance(dut.s_axis_input_tdata, ModifiableObject)
-    fails += check_instance(dut.current_active, IntegerObject)
-    fails += check_instance(dut.inst_axi4s_buffer.DATA_WIDTH, ConstantObject)
-    fails += check_instance(dut.inst_ram_ctrl, HierarchyObject)
+    check_instance(dut.inst_axi4s_buffer, HierarchyObject)
+    check_instance(dut.gen_branch_distance[0], HierarchyObject)
+    check_instance(dut.gen_branch_distance[0].inst_branch_distance, HierarchyObject)
+    check_instance(dut.gen_acs[0].inbranch_tdata_low, LogicObject)
+    check_instance(dut.gen_acs[0].inbranch_tdata_low[0], LogicObject)
+    check_instance(dut.aclk, LogicObject)
+    check_instance(dut.s_axis_input_tdata, LogicObject)
+    check_instance(dut.current_active, IntegerObject)
+    check_instance(dut.inst_axi4s_buffer.DATA_WIDTH, IntegerObject)
+    check_instance(dut.inst_ram_ctrl, HierarchyObject)
 
-    if dut.inst_axi4s_buffer.DATA_WIDTH != 32:
-        tlog.error(
-            "Expected dut.inst_axi4s_buffer.DATA_WIDTH to be 32 but got %d",
-            dut.inst_axi4s_buffer.DATA_WIDTH,
-        )
-        fails += 1
+    assert (
+        dut.inst_axi4s_buffer.DATA_WIDTH.value == 32
+    ), f"Expected dut.inst_axi4s_buffer.DATA_WIDTH to be 32 but got {dut.inst_axi4s_buffer.DATA_WIDTH.value}"
 
-    try:
+    with pytest.raises(TypeError):
         dut.inst_axi4s_buffer.DATA_WIDTH.value = 42
-        tlog.error("Shouldn't be allowed to set a value on constant object")
-        fails += 1
-    except TypeError:
-        pass
-
-    try:
-        with warnings.catch_warnings():
-            # The <= syntax is deprecated and raises a DeprecationWarning, which
-            # we need to ignore to get to the condition we actually want to
-            # test.
-            warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-            dut.inst_axi4s_buffer.DATA_WIDTH <= 42
-        tlog.error(
-            "Shouldn't be allowed to set a value on constant object using __le__"
-        )
-        fails += 1
-    except TypeError:
-        pass
-
-    assert fails == 0
 
 
 @cocotb.test()
 async def port_not_hierarchy(dut):
     """
     Test for issue raised by Luke - iteration causes a toplevel port type to
-    change from ModifiableObject to HierarchyObject
+    change from LogicObject to HierarchyObject
     """
-    tlog = logging.getLogger("cocotb.test")
-    if not isinstance(dut.aclk, ModifiableObject):
-        tlog.error(
-            "dut.aclk should be ModifiableObject but got %s", type(dut.aclk).__name__
-        )
-    else:
-        tlog.info("dut.aclk is ModifiableObject")
+    assert isinstance(
+        dut.aclk, LogicObject
+    ), f"dut.aclk should be LogicObject but got {type(dut.aclk).__name__}"
+
     for _ in dut:
         pass
-    if not isinstance(dut.aclk, ModifiableObject):
-        tlog.error(
-            "dut.aclk should be ModifiableObject but got %s", type(dut.aclk).__name__
-        )
-    else:
-        tlog.info("dut.aclk is ModifiableObject")
+
+    assert isinstance(
+        dut.aclk, LogicObject
+    ), f"dut.aclk should be LogicObject but got {type(dut.aclk).__name__}"

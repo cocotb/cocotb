@@ -8,10 +8,9 @@ import os
 import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import (
-    ConstantObject,
     HierarchyArrayObject,
     HierarchyObject,
-    ModifiableObject,
+    LogicObject,
     NonHierarchyIndexableObject,
 )
 from cocotb.triggers import Timer
@@ -21,19 +20,21 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 
 def _check_type(tlog, hdl, expected):
     assert isinstance(hdl, expected), f">{hdl!r} ({hdl._type})< should be >{expected}<"
-    tlog.info("   Found %r (%s) with length=%d", hdl, hdl._type, len(hdl))
+    tlog.info("   Found %r (%s)", hdl, hdl._type)
 
 
 def _check_int(tlog, hdl, expected):
-    assert int(hdl) == expected, f"{hdl!r}: Expected >{expected}< but got >{int(hdl)}<"
-    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={int(hdl)}")
+    assert hdl.value == expected, "{!r}: Expected >{}< but got >{}<".format(
+        hdl, expected, hdl.value
+    )
+    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
 
 
 def _check_logic(tlog, hdl, expected):
-    assert int(hdl) == expected, "{!r}: Expected >0x{:X}< but got >0x{:X}<".format(
-        hdl, expected, int(hdl)
+    assert hdl.value == expected, "{!r}: Expected >{}< but got >{}<".format(
+        hdl, expected, hdl.value
     )
-    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value=0x{int(hdl):X}")
+    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
 
 
 def _check_str(tlog, hdl, expected):
@@ -44,10 +45,10 @@ def _check_str(tlog, hdl, expected):
 
 
 def _check_real(tlog, hdl, expected):
-    assert float(hdl) == expected, "{!r}: Expected >{}< but got >{}<".format(
-        hdl, expected, float(hdl)
+    assert hdl.value == expected, "{!r}: Expected >{}< but got >{}<".format(
+        hdl, expected, hdl.value
     )
-    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={float(hdl)}")
+    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
 
 
 def _check_value(tlog, hdl, expected):
@@ -281,14 +282,31 @@ async def test_discover_all(dut):
                     30 (port_rec_out)                                          (VPI - Aldec sees as a Module and not structure (i.e. cnt = 1))
                     61 (port_cmplx_out)                                        (VPI - Aldec sees as a Module and not structure (i.e. cnt = 1))
         constants:   1 (const_logic)
-                     1 (const_logic_vec)
+                     9 (const_logic_vec)
                      1 (const_bool)                                            (VHDL Only)
                      1 (const_int)                                             (VHDL Only)
                      1 (const_real)                                            (VHDL Only)
                      1 (const_char)                                            (VHDL Only)
-                     1 (const_str)                                             (VHDL Only)
-                     6 (const_rec.a, const_rec.b[0:2])                         (VHDL Only)
-                    13 (const_cmplx[1:2].a, const_cmplx[1:2].b[0:2])           (VHDL Only)
+                     9 (const_str)                                             (VHDL Only)
+                     1 (const_rec)                                             (VHDL Only)
+                     1 (const_rec.a)                                           (VHDL Only)
+                     1 (const_rec.b)                                           (VHDL Only)
+                     9 (const_rec.b[0])                                        (VHDL Only)
+                     9 (const_rec.b[1])                                        (VHDL Only)
+                     9 (const_rec.b[2])                                        (VHDL Only)
+                     1 (const_cmplx)                                           (VHDL Only)
+                     1 (const_cmplx[1])                                        (VHDL Only)
+                     1 (const_cmplx[1].a)                                      (VHDL Only)
+                     1 (const_cmplx[1].b)                                      (VHDL Only)
+                     9 (const_cmplx[1].b[0])                                   (VHDL Only)
+                     9 (const_cmplx[1].b[1])                                   (VHDL Only)
+                     9 (const_cmplx[1].b[2])                                   (VHDL Only)
+                     1 (const_cmplx[2])                                        (VHDL Only)
+                     1 (const_cmplx[2].a)                                      (VHDL Only)
+                     1 (const_cmplx[2].b)                                      (VHDL Only)
+                     9 (const_cmplx[2].b[0])                                   (VHDL Only)
+                     9 (const_cmplx[2].b[1])                                   (VHDL Only)
+                     9 (const_cmplx[2].b[2])                                   (VHDL Only)
           signals:   9 (sig_desc)
                      9 (sig_asc)
                      1 (\ext_id\)                                              (VHDL Only)
@@ -323,7 +341,7 @@ async def test_discover_all(dut):
                      8 (desc_gen: process "always")                            (VPI - Aldec only)
           process:   1 ("always")                                              (VPI - Aldec only)
 
-            TOTAL:  856 (VHDL - Default)
+            TOTAL: 1032 (VHDL - Default)
                     818 (VHDL - Aldec)
                    1078 (Verilog - Default)
                947/1038 (Verilog - Aldec)
@@ -361,9 +379,10 @@ async def test_discover_all(dut):
         and cocotb.SIM_NAME.lower().startswith("modelsim")
         and os.environ["VHDL_GPI_INTERFACE"] == "vhpi"
     ):
-        pass_total = 920
+        # VHPI finds the array_module.asc_gen and array_module.desc_gen more than once =/
+        pass_total = 1096
     elif cocotb.LANGUAGE in ["vhdl"]:
-        pass_total = 856
+        pass_total = 1032
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
         "riviera"
     ):
@@ -376,17 +395,24 @@ async def test_discover_all(dut):
     else:
         pass_total = 1078
 
-    def _discover(obj, indent):
+    def _discover(obj):
+        if not isinstance(
+            obj,
+            (
+                cocotb.handle.RegionObject,
+                cocotb.handle.NonHierarchyIndexableObjectBase,
+            ),
+        ):
+            return 0
         count = 0
-        new_indent = indent + "---"
         for thing in obj:
             count += 1
-            tlog.info("%sFound %r (%s)", indent, thing, thing._type)
-            count += _discover(thing, new_indent)
+            tlog.info("Found %s (%s)", thing._path, type(thing))
+            count += _discover(thing)
         return count
 
     tlog.info("Iterating over %r (%s)", dut, dut._type)
-    total = _discover(dut, "")
+    total = _discover(dut)
     tlog.info("Found a total of %d things", total)
     assert total == pass_total
 
@@ -405,26 +431,26 @@ async def test_direct_constant_indexing(dut):
 
     tlog.info("Checking Types of complex array structures in constants/parameters.")
     _check_type(tlog, dut.param_rec, HierarchyObject)
-    _check_type(tlog, dut.param_rec.a, ConstantObject)
+    _check_type(tlog, dut.param_rec.a, LogicObject)
     _check_type(tlog, dut.param_rec.b, NonHierarchyIndexableObject)
-    _check_type(tlog, dut.param_rec.b[1], ConstantObject)
+    _check_type(tlog, dut.param_rec.b[1], LogicObject)
 
     _check_type(tlog, dut.param_cmplx, NonHierarchyIndexableObject)
     _check_type(tlog, dut.param_cmplx[0], HierarchyObject)
-    _check_type(tlog, dut.param_cmplx[0].a, ConstantObject)
+    _check_type(tlog, dut.param_cmplx[0].a, LogicObject)
     _check_type(tlog, dut.param_cmplx[0].b, NonHierarchyIndexableObject)
-    _check_type(tlog, dut.param_cmplx[0].b[1], ConstantObject)
+    _check_type(tlog, dut.param_cmplx[0].b[1], LogicObject)
 
     _check_type(tlog, dut.const_rec, HierarchyObject)
-    _check_type(tlog, dut.const_rec.a, ConstantObject)
+    _check_type(tlog, dut.const_rec.a, LogicObject)
     _check_type(tlog, dut.const_rec.b, NonHierarchyIndexableObject)
-    _check_type(tlog, dut.const_rec.b[1], ConstantObject)
+    _check_type(tlog, dut.const_rec.b[1], LogicObject)
 
     _check_type(tlog, dut.const_cmplx, NonHierarchyIndexableObject)
     _check_type(tlog, dut.const_cmplx[1], HierarchyObject)
-    _check_type(tlog, dut.const_cmplx[1].a, ConstantObject)
+    _check_type(tlog, dut.const_cmplx[1].a, LogicObject)
     _check_type(tlog, dut.const_cmplx[1].b, NonHierarchyIndexableObject)
-    _check_type(tlog, dut.const_cmplx[1].b[1], ConstantObject)
+    _check_type(tlog, dut.const_cmplx[1].b[1], LogicObject)
 
 
 # GHDL unable to index packed arrays (gh-2587)
@@ -449,30 +475,30 @@ async def test_direct_signal_indexing(dut):
     await Timer(20, "ns")
 
     tlog.info("Checking bit mapping from input to generate loops.")
-    assert int(dut.desc_gen[2].sig) == 1
-    tlog.info("   %r = %d", dut.desc_gen[2].sig, int(dut.desc_gen[2].sig))
+    assert dut.desc_gen[2].sig.value == 1
+    tlog.info("   %r = %d", dut.desc_gen[2].sig, dut.desc_gen[2].sig.value)
 
-    assert int(dut.asc_gen[18].sig) == 1
-    tlog.info("   %r = %d", dut.asc_gen[18].sig, int(dut.asc_gen[18].sig))
+    assert dut.asc_gen[18].sig.value == 1
+    tlog.info("   %r = %d", dut.asc_gen[18].sig, dut.asc_gen[18].sig.value)
 
     tlog.info("Checking indexing of data with offset index.")
-    assert int(dut.port_ofst_out) == 64
+    assert dut.port_ofst_out.value == 64
     tlog.info(
         "   %r = %d (%s)",
         dut.port_ofst_out,
-        int(dut.port_ofst_out),
+        dut.port_ofst_out.value,
         dut.port_ofst_out.value.binstr,
     )
 
     tlog.info("Checking Types of complex array structures in signals.")
-    _check_type(tlog, dut.sig_desc[20], ModifiableObject)
-    _check_type(tlog, dut.sig_asc[17], ModifiableObject)
-    _check_type(tlog, dut.sig_t1, ModifiableObject)
+    _check_type(tlog, dut.sig_desc[20], LogicObject)
+    _check_type(tlog, dut.sig_asc[17], LogicObject)
+    _check_type(tlog, dut.sig_t1, LogicObject)
     _check_type(tlog, dut.sig_t2, NonHierarchyIndexableObject)
-    _check_type(tlog, dut.sig_t2[5], ModifiableObject)
-    _check_type(tlog, dut.sig_t2[5][3], ModifiableObject)
-    _check_type(tlog, dut.sig_t3a[2][3], ModifiableObject)
-    _check_type(tlog, dut.sig_t3b[3], ModifiableObject)
+    _check_type(tlog, dut.sig_t2[5], LogicObject)
+    _check_type(tlog, dut.sig_t2[5][3], LogicObject)
+    _check_type(tlog, dut.sig_t3a[2][3], LogicObject)
+    _check_type(tlog, dut.sig_t3b[3], LogicObject)
     _check_type(tlog, dut.sig_t3a, NonHierarchyIndexableObject)
     _check_type(tlog, dut.sig_t4, NonHierarchyIndexableObject)
     _check_type(tlog, dut.sig_t4[3], NonHierarchyIndexableObject)
@@ -482,12 +508,12 @@ async def test_direct_signal_indexing(dut):
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
     ):
-        _check_type(tlog, dut.sig_t4[3][4], ModifiableObject)
-        _check_type(tlog, dut.sig_t4[3][4][1], ModifiableObject)
+        _check_type(tlog, dut.sig_t4[3][4], LogicObject)
+        _check_type(tlog, dut.sig_t4[3][4][1], LogicObject)
     _check_type(tlog, dut.sig_t5, NonHierarchyIndexableObject)
     _check_type(tlog, dut.sig_t5[1], NonHierarchyIndexableObject)
-    _check_type(tlog, dut.sig_t5[1][0], ModifiableObject)
-    _check_type(tlog, dut.sig_t5[1][0][6], ModifiableObject)
+    _check_type(tlog, dut.sig_t5[1][0], LogicObject)
+    _check_type(tlog, dut.sig_t5[1][0][6], LogicObject)
     _check_type(tlog, dut.sig_t6, NonHierarchyIndexableObject)
     _check_type(tlog, dut.sig_t6[1], NonHierarchyIndexableObject)
     # the following version cannot index into those arrays and will error out
@@ -496,15 +522,17 @@ async def test_direct_signal_indexing(dut):
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
     ):
-        _check_type(tlog, dut.sig_t6[0][3], ModifiableObject)
-        _check_type(tlog, dut.sig_t6[0][3][7], ModifiableObject)
+        _check_type(tlog, dut.sig_t6[0][3], LogicObject)
+        _check_type(tlog, dut.sig_t6[0][3][7], LogicObject)
     _check_type(tlog, dut.sig_cmplx, NonHierarchyIndexableObject)
 
     if cocotb.LANGUAGE in ["verilog"]:
         _check_type(tlog, dut.sig_t7[1], NonHierarchyIndexableObject)
-        _check_type(tlog, dut.sig_t7[0][3], ModifiableObject)
-        _check_type(tlog, dut.sig_t8[1], NonHierarchyIndexableObject)
-        _check_type(tlog, dut.sig_t8[0][3], ModifiableObject)
+        _check_type(tlog, dut.sig_t7[0][3], LogicObject)
+        _check_type(
+            tlog, dut.sig_t8[1], LogicObject
+        )  # packed array of logic is mapped to GPI_NET
+        _check_type(tlog, dut.sig_t8[0][3], LogicObject)
 
     # Riviera has a bug and finds dut.sig_cmplx[1], but the type returned is a vpiBitVar
     # only true for version 2016.02
@@ -514,13 +542,13 @@ async def test_direct_signal_indexing(dut):
         and cocotb.SIM_VERSION.startswith("2016.02")
     ):
         _check_type(tlog, dut.sig_cmplx[1], HierarchyObject)
-        _check_type(tlog, dut.sig_cmplx[1].a, ModifiableObject)
+        _check_type(tlog, dut.sig_cmplx[1].a, LogicObject)
         _check_type(tlog, dut.sig_cmplx[1].b, NonHierarchyIndexableObject)
-        _check_type(tlog, dut.sig_cmplx[1].b[1], ModifiableObject)
-        _check_type(tlog, dut.sig_cmplx[1].b[1][2], ModifiableObject)
+        _check_type(tlog, dut.sig_cmplx[1].b[1], LogicObject)
+        _check_type(tlog, dut.sig_cmplx[1].b[1][2], LogicObject)
 
     _check_type(tlog, dut.sig_rec, HierarchyObject)
-    _check_type(tlog, dut.sig_rec.a, ModifiableObject)
+    _check_type(tlog, dut.sig_rec.a, LogicObject)
     _check_type(tlog, dut.sig_rec.b, NonHierarchyIndexableObject)
 
     # Riviera has a bug and finds dut.sig_rec.b[1], but the type returned is 0 which is unknown
@@ -530,8 +558,8 @@ async def test_direct_signal_indexing(dut):
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith("2016.02")
     ):
-        _check_type(tlog, dut.sig_rec.b[1], ModifiableObject)
-        _check_type(tlog, dut.sig_rec.b[1][2], ModifiableObject)
+        _check_type(tlog, dut.sig_rec.b[1], LogicObject)
+        _check_type(tlog, dut.sig_rec.b[1][2], LogicObject)
 
 
 @cocotb.test(skip=(cocotb.LANGUAGE in ["verilog"]))
@@ -540,5 +568,5 @@ async def test_extended_identifiers(dut):
 
     tlog = logging.getLogger("cocotb.test")
     tlog.info("Checking extended identifiers.")
-    _check_type(tlog, dut._id("\\ext_id\\", extended=False), ModifiableObject)
-    _check_type(tlog, dut._id("!"), ModifiableObject)
+    _check_type(tlog, dut._id("\\ext_id\\", extended=False), LogicObject)
+    _check_type(tlog, dut._id("!"), LogicObject)
