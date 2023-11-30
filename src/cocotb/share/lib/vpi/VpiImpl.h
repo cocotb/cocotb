@@ -172,8 +172,8 @@ class VpiObjHdl : public GpiObjHdl {
     VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype)
         : GpiObjHdl(impl, hdl, objtype) {}
 
-    int initialise(const std::string &name,
-                   const std::string &fq_name) override;
+    const char *get_definition_name() override;
+    const char *get_definition_file() override;
 };
 
 class VpiSignalObjHdl : public GpiSignalObjHdl {

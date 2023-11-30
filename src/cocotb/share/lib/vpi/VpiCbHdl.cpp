@@ -208,15 +208,26 @@ int VpiArrayObjHdl::initialise(const std::string &name,
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-int VpiObjHdl::initialise(const std::string &name, const std::string &fq_name) {
-    char *str;
-    vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
-    str = vpi_get_str(vpiDefName, hdl);
-    if (str != NULL) m_definition_name = str;
-    str = vpi_get_str(vpiDefFile, hdl);
-    if (str != NULL) m_definition_file = str;
+const char *VpiObjHdl::get_definition_name() {
+    if (m_definition_name.empty()) {
+        auto hdl = get_handle<vpiHandle>();
+        auto *str = vpi_get_str(vpiDefName, hdl);
+        if (str != NULL) {
+            m_definition_name = str;
+        }
+    }
+    return m_definition_name.c_str();
+}
 
-    return GpiObjHdl::initialise(name, fq_name);
+const char *VpiObjHdl::get_definition_file() {
+    if (m_definition_file.empty()) {
+        auto hdl = GpiObjHdl::get_handle<vpiHandle>();
+        auto *str = vpi_get_str(vpiDefFile, hdl);
+        if (str != NULL) {
+            m_definition_file = str;
+        }
+    }
+    return m_definition_file.c_str();
 }
 
 int VpiSignalObjHdl::initialise(const std::string &name,
