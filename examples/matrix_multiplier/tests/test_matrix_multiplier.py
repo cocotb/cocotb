@@ -9,6 +9,7 @@ from random import getrandbits
 from typing import Any, Dict, List
 
 import cocotb
+import pytest
 from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
 from cocotb.handle import SimHandleBase
@@ -18,10 +19,10 @@ from cocotb.triggers import RisingEdge
 
 NUM_SAMPLES = int(os.environ.get("NUM_SAMPLES", 3000))
 if cocotb.simulator.is_running():
-    DATA_WIDTH = int(cocotb.top.DATA_WIDTH)
-    A_ROWS = int(cocotb.top.A_ROWS)
-    B_COLUMNS = int(cocotb.top.B_COLUMNS)
-    A_COLUMNS_B_ROWS = int(cocotb.top.A_COLUMNS_B_ROWS)
+    DATA_WIDTH = cocotb.top.DATA_WIDTH.value
+    A_ROWS = cocotb.top.A_ROWS.value
+    B_COLUMNS = cocotb.top.B_COLUMNS.value
+    A_COLUMNS_B_ROWS = cocotb.top.A_COLUMNS_B_ROWS.value
 
 
 class DataValidMonitor:
@@ -145,11 +146,7 @@ class MatrixMultiplierTester:
             assert actual["C"] == expected
 
 
-@cocotb.test(
-    expect_error=IndexError
-    if cocotb.simulator.is_running() and cocotb.SIM_NAME.lower().startswith("ghdl")
-    else ()
-)
+@cocotb.test()
 async def multiply_test(dut):
     """Test multiplication of many matrices."""
 
@@ -214,6 +211,10 @@ def gen_b(num_samples=NUM_SAMPLES, func=getrandbits):
         yield create_b(func)
 
 
+@pytest.mark.skipif(
+    os.getenv("SIM", "icarus") == "ghdl",
+    reason="Skipping since GHDL doesn't support constants effectively",
+)
 def test_matrix_multiplier_runner():
     """Simulate the matrix_multiplier example using the Python runner.
 

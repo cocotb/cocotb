@@ -77,8 +77,8 @@ async def test_compare_nonhierarchy(dut):
     # A handle and a value
     # Because one is a value, it is compared against the value of the handle
     await tb.clkedge
-    assert dut.clk == 1
-    assert dut.clk != 0
+    assert dut.clk.value == 1
+    assert dut.clk.value != 0
     await FallingEdge(tb.dut.clk)
-    assert dut.clk == 0
-    assert dut.clk != 1
+    assert dut.clk.value == 0
+    assert dut.clk.value != 1

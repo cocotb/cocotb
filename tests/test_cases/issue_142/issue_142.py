@@ -17,13 +17,6 @@ async def issue_142_overflow_error(dut):
     through the GPI interface natively into BinaryValues"""
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
-    def _compare(value):
-        assert int(dut.stream_in_data_wide.value) == int(
-            value
-        ), "Expecting 0x{:x} but got 0x{:x} on {}".format(
-            int(value), int(dut.stream_in_data_wide.value), str(dut.stream_in_data_wide)
-        )
-
     # Wider values are transparently converted to BinaryValues
     for value in [
         0,
@@ -33,7 +26,7 @@ async def issue_142_overflow_error(dut):
     ]:
         dut.stream_in_data_wide.value = value
         await RisingEdge(dut.clk)
-        _compare(value)
+        assert dut.stream_in_data_wide.value.integer == value
         dut.stream_in_data_wide.value = value
         await RisingEdge(dut.clk)
-        _compare(value)
+        assert dut.stream_in_data_wide.value.integer == value

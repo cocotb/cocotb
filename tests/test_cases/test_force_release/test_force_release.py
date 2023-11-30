@@ -15,8 +15,8 @@ async def test_force_release(dut):
     dut.stream_in_data.value = 4
     dut.stream_out_data_comb.value = Force(5)
     await Timer(10, "ns")
-    got_in = int(dut.stream_in_data)
-    got_out = int(dut.stream_out_data_comb)
+    got_in = dut.stream_in_data.value.integer
+    got_out = dut.stream_out_data_comb.value.integer
     log.info("dut.stream_in_data = %d" % got_in)
     log.info("dut.stream_out_data_comb = %d" % got_out)
     assert got_in != got_out
@@ -24,8 +24,8 @@ async def test_force_release(dut):
     dut.stream_out_data_comb.value = Release()
     dut.stream_in_data.value = 3
     await Timer(10, "ns")
-    got_in = int(dut.stream_in_data)
-    got_out = int(dut.stream_out_data_comb)
+    got_in = dut.stream_in_data.value.integer
+    got_out = dut.stream_out_data_comb.value.integer
     log.info("dut.stream_in_data = %d" % got_in)
     log.info("dut.stream_out_data_comb = %d" % got_out)
     assert got_in == got_out

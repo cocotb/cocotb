@@ -34,10 +34,15 @@ def recursive_dump(parent, log):
 
     Returns a count of the total number of objects found
     """
+    if not isinstance(
+        parent,
+        (cocotb.handle.RegionObject, cocotb.handle.NonHierarchyIndexableObjectBase),
+    ):
+        return 0
     count = 0
     for thing in parent:
         count += 1
-        log.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+        log.info("Found %s (%s)", thing._path, type(thing))
         count += recursive_dump(thing, log)
     return count
 
@@ -78,7 +83,7 @@ async def recursive_discovery(dut):
         # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS/Xcelium
         pass_total = 975
     elif cocotb.SIM_NAME.lower().startswith("modelsim"):
-        pass_total = 991
+        pass_total = 1332
     else:
         pass_total = 1024
 
@@ -89,7 +94,7 @@ async def recursive_discovery(dut):
     tlog.info("Found a total of %d things", total)
 
     assert isinstance(
-        dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject
+        dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.LogicObject
     ), (
         "Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable"
         " but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__
@@ -105,7 +110,7 @@ async def recursive_discovery_boundary(dut):
     if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
         pass_total = 462
     else:
-        pass_total = 478
+        pass_total = 819
 
     tlog = logging.getLogger("cocotb.test")
     total = recursive_dump(dut.i_vhdl, tlog)

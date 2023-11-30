@@ -41,7 +41,7 @@ async def mixed_language_accessing_test(dut):
     vhdl.reset_n.value = 1
     await Timer(100, units="ns")
 
-    assert int(verilog.reset_n) == int(vhdl.reset_n), "reset_n signals were different"
+    assert verilog.reset_n.value == vhdl.reset_n.value, "reset_n signals were different"
 
     # Try accessing an object other than a port...
     verilog.flush_pipe.value
@@ -95,7 +95,7 @@ async def mixed_language_functional_test(dut):
     for _ in range(1, 5):
         for i in range(1, 11):
             await RisingEdge(dut.clk)
-            previous_indata = dut.stream_in_data.value
+            previous_indata = dut.stream_in_data.value.integer
 
             # write stream in data
             dut.stream_in_data.value = i + 0x81FFFFFF2B00  # generate a magic number
@@ -108,8 +108,8 @@ async def mixed_language_functional_test(dut):
             await RisingEdge(dut.clk)
 
             # compare in and out data
-            assert int(previous_indata) == int(
-                dut.stream_out_data.value
+            assert (
+                previous_indata == dut.stream_out_data.value.integer
             ), f"stream in data and stream out data were different in round {i}"
 
 

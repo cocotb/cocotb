@@ -39,7 +39,7 @@ def total_object_count():
     # Questa with VHPI
     # TODO: Why do we get massively different numbers for Questa/VHPI than for Questa/FLI or VPI?
     if SIM_NAME.startswith("modelsim") and os.environ["VHDL_GPI_INTERFACE"] == "vhpi":
-        return 66959
+        return 68127
 
     # Questa 2023.1 onwards (FLI) do not discover the following objects, which
     # are instantiated four times:
@@ -52,7 +52,7 @@ def total_object_count():
         and QuestaVersion(SIM_VERSION) >= QuestaVersion("2023.1")
         and os.environ["VHDL_GPI_INTERFACE"] == "fli"
     ):
-        return 34569 - 4 * 4
+        return 35153 - 4 * 4
 
     if SIM_NAME.startswith(
         (
@@ -62,7 +62,7 @@ def total_object_count():
             "riviera",
         )
     ):
-        return 34569
+        return 35153
 
     # Active-HDL
     if SIM_NAME.startswith("aldec"):
@@ -86,10 +86,18 @@ async def recursive_discovery(dut):
     await Timer(100)
 
     def dump_all_the_things(parent):
+        if not isinstance(
+            parent,
+            (
+                cocotb.handle.RegionObject,
+                cocotb.handle.NonHierarchyIndexableObjectBase,
+            ),
+        ):
+            return 0
         count = 0
         for thing in parent:
             count += 1
-            tlog.debug("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+            tlog.info("Found %s (%s)", thing._path, type(thing))
             count += dump_all_the_things(thing)
         return count
 
