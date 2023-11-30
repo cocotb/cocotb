@@ -770,6 +770,14 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
     // https://github.com/steveicarus/iverilog/issues/1037
     scope_name += "::";
 #endif
+#ifdef MODELSIM
+    // Also Questa
+    scope_name += "::";
+#endif
+#ifdef ALDEC
+    // maybe also riviera?  NOCOMMIT
+    scope_name += "::";
+#endif
     new_obj = new GpiObjHdl(vpi_impl, obj, GPI_PACKAGE);
     new_obj->initialise(scope_name, scope_name);
     *hdl = new_obj;
