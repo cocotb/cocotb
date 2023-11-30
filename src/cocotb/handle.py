@@ -31,7 +31,6 @@
 
 import enum
 from functools import lru_cache
-from typing import Optional
 
 import cocotb
 from cocotb import simulator
@@ -78,8 +77,6 @@ class SimHandleBase:
             path (str): Path to this handle, ``None`` if root.
         """
         self._handle = handle
-        self._len: Optional[int] = None
-        """The "length" (the number of elements) of the underlying object. For vectors this is the number of bits."""
         self._sub_handles: dict = {}
         """Dictionary of this handle's children."""
         self._invalid_sub_handles: set = set()
@@ -131,15 +128,6 @@ class SimHandleBase:
 
     def __hash__(self):
         return hash(self._handle)
-
-    def __len__(self):
-        """Return the "length" (the number of elements) of the underlying object.
-
-        For vectors this is the number of bits.
-        """
-        if self._len is None:
-            self._len = self._handle.get_num_elems()
-        return self._len
 
     def __eq__(self, other):
         """Compare equality of handles.
@@ -341,14 +329,11 @@ class HierarchyArrayObject(RegionObject):
         else:
             raise ValueError(f"Unable to match an index pattern: {name}")
 
-    def __len__(self):
-        """Return the "length" of the generate block."""
-        if self._len is None:
-            if not self._discovered:
-                self._discover_all()
-
-            self._len = len(self._sub_handles)
-        return self._len
+    @lru_cache(maxsize=None)
+    def __len__(self) -> int:
+        if not self._discovered:
+            self._discover_all()
+        return len(self._sub_handles)
 
     def __getitem__(self, index):
         if isinstance(index, slice):
@@ -468,6 +453,10 @@ class NonHierarchyIndexableObjectBase(NonHierarchyObject):
             while left <= right:
                 yield left
                 left = left + 1
+
+    @lru_cache(maxsize=None)
+    def __len__(self) -> int:
+        return self._handle.get_num_elems()
 
 
 class NonHierarchyIndexableObject(NonHierarchyIndexableObjectBase):
