@@ -768,7 +768,8 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
     // Some simulators (including Icarus) do not include '::' in package names:
     // https://github.com/steveicarus/iverilog/issues/1037
     std::string package_delim = "::";
-    if (scope_name.compare(scope_name.length() - package_delim.length(), package_delim.length(), package_delim)) {
+    if (scope_name.compare(scope_name.length() - package_delim.length(),
+                           package_delim.length(), package_delim)) {
         scope_name += "::";
     }
 // Questa calls $unit "design_sv_unit" for whatever reason
