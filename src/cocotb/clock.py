@@ -38,18 +38,7 @@ from cocotb.triggers import Timer
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 
-class BaseClock:
-    """Base class to derive from."""
-
-    def __init__(self, signal):
-        self.signal = signal
-
-    @cached_property
-    def log(self):
-        return SimLog(f"cocotb.{type(self).__qualname__}.{self.signal._name}")
-
-
-class Clock(BaseClock):
+class Clock:
     r"""Simple 50:50 duty cycle clock driver.
 
     Instances of this class should call its :meth:`start` method
@@ -120,7 +109,7 @@ class Clock(BaseClock):
     def __init__(
         self, signal, period: Union[float, Real, Decimal], units: str = "step"
     ):
-        BaseClock.__init__(self, signal)
+        self.signal = signal
         self.period = get_sim_steps(period, units)
         self.half_period = get_sim_steps(period / 2, units)
         self.frequency = 1 / get_time_from_sim_steps(self.period, units="us")
@@ -165,3 +154,7 @@ class Clock(BaseClock):
 
     def __str__(self):
         return type(self).__qualname__ + "(%3.1f MHz)" % self.frequency
+
+    @cached_property
+    def log(self):
+        return SimLog(f"cocotb.{type(self).__qualname__}.{self.signal._name}")
