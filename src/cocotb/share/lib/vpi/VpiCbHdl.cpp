@@ -765,8 +765,7 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
 
     VpiImpl *vpi_impl = reinterpret_cast<VpiImpl *>(m_impl);
     std::string scope_name = vpi_get_str(vpiFullName, obj);
-    // Some simulators (including Icarus) do not include '::' in package names:
-    // https://github.com/steveicarus/iverilog/issues/1037
+    // '::' may or may not be included in package names:
     std::string package_delim = "::";
     if (scope_name.compare(scope_name.length() - package_delim.length(),
                            package_delim.length(), package_delim)) {
