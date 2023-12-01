@@ -32,9 +32,10 @@ from decimal import Decimal
 from numbers import Real
 from typing import Union
 
+from cocotb._py_compat import cached_property
 from cocotb.log import SimLog
 from cocotb.triggers import Timer
-from cocotb.utils import get_sim_steps, get_time_from_sim_steps, lazy_property
+from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 
 class BaseClock:
@@ -43,7 +44,7 @@ class BaseClock:
     def __init__(self, signal):
         self.signal = signal
 
-    @lazy_property
+    @cached_property
     def log(self):
         return SimLog(f"cocotb.{type(self).__qualname__}.{self.signal._name}")
 
