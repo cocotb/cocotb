@@ -212,32 +212,6 @@ class ParametrizedSingleton(type):
         return inspect.signature(cls.__singleton_key__)
 
 
-class lazy_property:
-    """
-    A property that is executed the first time, then cached forever.
-
-    It does this by replacing itself on the instance, which works because
-    unlike `@property` it does not define __set__.
-
-    This should be used for expensive members of objects that are not always
-    used.
-    """
-
-    def __init__(self, fget):
-        self.fget = fget
-
-        # copy the getter function's docstring and other attributes
-        functools.update_wrapper(self, fget)
-
-    def __get__(self, obj, cls):
-        if obj is None:
-            return self
-
-        value = self.fget(obj)
-        setattr(obj, self.fget.__name__, value)
-        return value
-
-
 def want_color_output():
     """Return ``True`` if colored output is possible/requested and not running in GUI.
 

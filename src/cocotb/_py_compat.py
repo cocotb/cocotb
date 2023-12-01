@@ -61,3 +61,13 @@ else:
     import collections
 
     insertion_ordered_dict = collections.OrderedDict
+
+
+# simple, but less than optimal backport of Python 3.8's cached_property
+if sys.version_info >= (3, 8):
+    from functools import cached_property
+else:
+    from functools import lru_cache
+
+    def cached_property(meth):
+        return property(lru_cache(maxsize=None)(meth))

@@ -38,12 +38,12 @@ from typing import Any, Coroutine, Optional, TypeVar, Union
 import cocotb
 import cocotb.task
 from cocotb import outcomes, simulator
+from cocotb._py_compat import cached_property
 from cocotb.log import SimLog
 from cocotb.utils import (
     ParametrizedSingleton,
     get_sim_steps,
     get_time_from_sim_steps,
-    lazy_property,
     remove_traceback_frames,
 )
 
@@ -68,7 +68,7 @@ class _TriggerException(Exception):
 class Trigger(Awaitable):
     """Base class to derive from."""
 
-    # __dict__ is needed here for the `.log` lazy_property below to work.
+    # __dict__ is needed here for the `.log` cached_property below to work.
     # The implementation of `_PyObject_GenericGetAttrWithDict` suggests that
     # despite its inclusion, __slots__ will overall give speed and memory
     # improvements:
@@ -82,7 +82,7 @@ class Trigger(Awaitable):
     def __init__(self):
         self.primed = False
 
-    @lazy_property
+    @cached_property
     def log(self):
         return SimLog("cocotb.%s" % (type(self).__qualname__), id(self))
 

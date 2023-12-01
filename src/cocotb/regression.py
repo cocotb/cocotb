@@ -42,6 +42,7 @@ from typing import Any, Iterable, Optional, Tuple, Type
 
 import cocotb
 from cocotb import ANSI, simulator
+from cocotb._py_compat import cached_property
 from cocotb.handle import SimHandle
 from cocotb.log import SimLog
 from cocotb.outcomes import Error, Outcome
@@ -49,7 +50,6 @@ from cocotb.result import SimFailure, TestSuccess
 from cocotb.task import Task, _RunningTest
 from cocotb.utils import (
     get_sim_time,
-    lazy_property,
     remove_traceback_frames,
     want_color_output,
 )
@@ -145,7 +145,7 @@ class Test:
         inst = self._func(*args, **kwargs)
         return _RunningTest(inst, self)
 
-    @lazy_property
+    @cached_property
     def log(self):
         return SimLog(f"cocotb.test.{self._func.__qualname__}.{id(self)}")
 

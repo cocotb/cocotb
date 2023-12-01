@@ -11,8 +11,9 @@ from asyncio import CancelledError, InvalidStateError
 import cocotb
 import cocotb.triggers
 from cocotb import outcomes
+from cocotb._py_compat import cached_property
 from cocotb.log import SimLog
-from cocotb.utils import extract_coro_stack, lazy_property, remove_traceback_frames
+from cocotb.utils import extract_coro_stack, remove_traceback_frames
 
 T = typing.TypeVar("T")
 Self = typing.TypeVar("Self")
@@ -65,7 +66,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         self.__name__ = f"{type(self)._name} {self._task_id}"
         self.__qualname__ = self.__name__
 
-    @lazy_property
+    @cached_property
     def log(self) -> SimLog:
         # Creating a logger is expensive, only do it if we actually plan to
         # log anything
