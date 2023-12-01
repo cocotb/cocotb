@@ -64,7 +64,7 @@ else:
 
 
 # simple, but less than optimal backport of Python 3.8's cached_property
-if sys.version_info >= (3, 12):
+if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from functools import lru_cache
