@@ -4,58 +4,64 @@
 import typing
 from functools import lru_cache
 
-LogicT = typing.TypeVar("LogicT", bound="Logic")
 LogicLiteralT = typing.Union[str, int, bool]
 LogicConstructibleT = typing.Union[LogicLiteralT, "Logic"]
 
 
-_0 = 0
-_1 = 1
-_X = 2
-_Z = 3
+_U = 0
+_X = 1
+_0 = 2
+_1 = 3
+_Z = 4
+_W = 5
+_L = 6
+_H = 7
+_D = 8
 
 _literal_repr: typing.Dict[LogicLiteralT, int] = {
-    # 0 and weak 0
+    # unassigned
+    "U": _U,
+    "u": _U,
+    # unknown
+    "X": _X,
+    "x": _X,
+    # 0
     False: _0,
     0: _0,
     "0": _0,
-    "L": _0,
-    "l": _0,
-    # 1 and weak 1
+    # 1
     True: _1,
     1: _1,
     "1": _1,
-    "H": _1,
-    "h": _1,
-    # unknown, unassigned, and weak unknown
-    "X": _X,
-    "x": _X,
-    "U": _X,
-    "u": _X,
-    "W": _X,
-    "w": _X,
-    "-": _X,
     # high impedance
     "Z": _Z,
     "z": _Z,
+    # weak unknown
+    "W": _W,
+    "w": _W,
+    # weak 0
+    "L": _L,
+    "l": _L,
+    # weak 1
+    "H": _H,
+    "h": _H,
+    # don't care
+    "-": _D,
 }
 
 
 class Logic:
     r"""
-    Model of a 4-value (``0``, ``1``, ``X``, ``Z``) datatype commonly seen in HDLs.
+    Model of a 9-value (``U``, ``X``, ``0``, ``1``, ``Z``, ``W``, ``L``, ``H``, ``-``) datatype commonly seen in VHDL.
 
     .. currentmodule:: cocotb.types
 
-    This is modeled after (System)Verilog's 4-value ``logic`` type.
-    VHDL's 9-value ``std_ulogic`` type maps to this type by treating weak values as full strength values
-    and treating "uninitialized" (``U``) and "don't care" (``-``) as "unknown" (``X``).
+    This is modeled after VHDL's ``std_ulogic`` type.
+    (System)Verilog's 4-value ``logic`` type only utilizes ``X``, ``0``, ``1``, and ``Z`` values.
 
-    :class:`Logic` can be converted to and from :class:`int`, :class:`str`, :class:`bool`, and :class:`Bit`
-    by using the appropriate constructor syntax.
+    :class:`Logic` can be converted to and from :class:`int`, :class:`str`, and :class:`bool`.
     The list of values convertable to :class:`Logic` includes
-    ``0``, ``1``, ``True``, ``False``, ``"0"``, ``"1"``, ``"X"``, ``"Z"``, ``Bit('0')``, and ``Bit('1')``.
-    For a comprehensive list of values that can be converted into :class:`Logic` see :file:`tests/pytest/test_logic.py`.
+    ``"U"``, ``"X"``, ``"0"``, ``"1"``, ``"Z"``, ``"W"``, ``"L"``, ``"H"``, ``"-"``, ``0``, ``1``, ``True``, and ``False``.
 
     .. code-block:: python3
 
@@ -65,8 +71,6 @@ class Logic:
         Logic('1')
         >>> Logic(1)
         Logic('1')
-        >>> Logic(Bit(0))
-        Logic('0')
 
         >>> Logic()  # default value
         Logic('X')
@@ -77,8 +81,6 @@ class Logic:
         False
         >>> int(Logic(1))
         1
-        >>> Bit(Logic("1"))
-        Bit('1')
 
     .. note::
 
@@ -106,28 +108,25 @@ class Logic:
     """
 
     __slots__ = ("_repr",)
-    _repr: int
-
-    _default = _X
-    _valid = {_X, _0, _1, _Z}
 
     @classmethod
     @lru_cache(maxsize=None)
-    def _make(cls: typing.Type[LogicT], _repr: int) -> LogicT:
+    def _make(cls: typing.Type["Logic"], _repr: int) -> "Logic":
         """enforce singleton"""
         self = object.__new__(cls)
         self._repr = _repr
-        return typing.cast(LogicT, self)
+        return typing.cast("Logic", self)
 
+    @lru_cache(maxsize=None)
     def __new__(
-        cls: typing.Type[LogicT],
+        cls: typing.Type["Logic"],
         value: typing.Optional[LogicConstructibleT] = None,
-    ) -> LogicT:
+    ) -> "Logic":
         if isinstance(value, Logic):
             # convert Logic
             _repr = value._repr
         elif value is None:
-            _repr = cls._default
+            _repr = _X
         else:
             # convert literal
             try:
@@ -136,62 +135,80 @@ class Logic:
                 raise ValueError(
                     f"{value!r} is not convertible to a {cls.__qualname__}"
                 ) from None
-        if _repr not in cls._valid:
-            raise ValueError(f"{value!r} is not a valid {cls.__qualname__}")
         obj = cls._make(_repr)
         return obj
 
-    if not typing.TYPE_CHECKING:  # pragma: no cover
-        # mypy currently does not support lru_cache on __new__
-        __new__ = lru_cache(maxsize=None)(__new__)
-
-    def __and__(self: LogicT, other: LogicT) -> LogicT:
+    def __and__(self, other: "Logic") -> "Logic":
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
             (
-                ("0", "0", "0", "0"),
-                ("0", "1", "X", "X"),
-                ("0", "X", "X", "X"),
-                ("0", "X", "X", "X"),
+                # -----------------------------------------------------
+                # U    X    0    1    Z    W    L    H    -       |   |
+                # -----------------------------------------------------
+                ("U", "U", "0", "U", "U", "U", "0", "U", "U"),  # | U |
+                ("U", "X", "0", "X", "X", "X", "0", "X", "X"),  # | X |
+                ("0", "0", "0", "0", "0", "0", "0", "0", "0"),  # | 0 |
+                ("U", "X", "0", "1", "X", "X", "0", "1", "X"),  # | 1 |
+                ("U", "X", "0", "X", "X", "X", "0", "X", "X"),  # | Z |
+                ("U", "X", "0", "X", "X", "X", "0", "X", "X"),  # | W |
+                ("0", "0", "0", "0", "0", "0", "0", "0", "0"),  # | L |
+                ("U", "X", "0", "1", "X", "X", "0", "1", "X"),  # | H |
+                ("U", "X", "0", "X", "X", "X", "0", "X", "X"),  # | - |
             )[self._repr][other._repr]
         )
 
-    def __rand__(self: LogicT, other: LogicT) -> LogicT:
+    def __rand__(self: "Logic", other: "Logic") -> "Logic":
         return self & other
 
-    def __or__(self: LogicT, other: LogicT) -> LogicT:
+    def __or__(self: "Logic", other: "Logic") -> "Logic":
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
             (
-                ("0", "1", "X", "X"),
-                ("1", "1", "1", "1"),
-                ("X", "1", "X", "X"),
-                ("X", "1", "X", "X"),
+                # -----------------------------------------------------
+                # U    X    0    1    Z    W    L    H    -       |   |
+                # -----------------------------------------------------
+                ("U", "U", "U", "1", "U", "U", "U", "1", "U"),  # | U |
+                ("U", "X", "X", "1", "X", "X", "X", "1", "X"),  # | X |
+                ("U", "X", "0", "1", "X", "X", "0", "1", "X"),  # | 0 |
+                ("1", "1", "1", "1", "1", "1", "1", "1", "1"),  # | 1 |
+                ("U", "X", "X", "1", "X", "X", "X", "1", "X"),  # | Z |
+                ("U", "X", "X", "1", "X", "X", "X", "1", "X"),  # | W |
+                ("U", "X", "0", "1", "X", "X", "0", "1", "X"),  # | L |
+                ("1", "1", "1", "1", "1", "1", "1", "1", "1"),  # | H |
+                ("U", "X", "X", "1", "X", "X", "X", "1", "X"),  # | - |
             )[self._repr][other._repr]
         )
 
-    def __ror__(self: LogicT, other: LogicT) -> LogicT:
+    def __ror__(self: "Logic", other: "Logic") -> "Logic":
         return self | other
 
-    def __xor__(self: LogicT, other: LogicT) -> LogicT:
+    def __xor__(self: "Logic", other: "Logic") -> "Logic":
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
             (
-                ("0", "1", "X", "X"),
-                ("1", "0", "X", "X"),
-                ("X", "X", "X", "X"),
-                ("X", "X", "X", "X"),
+                # -----------------------------------------------------
+                # U    X    0    1    Z    W    L    H    -       |   |
+                # -----------------------------------------------------
+                ("U", "U", "U", "U", "U", "U", "U", "U", "U"),  # | U |
+                ("U", "X", "X", "X", "X", "X", "X", "X", "X"),  # | X |
+                ("U", "X", "0", "1", "X", "X", "0", "1", "X"),  # | 0 |
+                ("U", "X", "1", "0", "X", "X", "1", "0", "X"),  # | 1 |
+                ("U", "X", "X", "X", "X", "X", "X", "X", "X"),  # | Z |
+                ("U", "X", "X", "X", "X", "X", "X", "X", "X"),  # | W |
+                ("U", "X", "0", "1", "X", "X", "0", "1", "X"),  # | L |
+                ("U", "X", "1", "0", "X", "X", "1", "0", "X"),  # | H |
+                ("U", "X", "X", "X", "X", "X", "X", "X", "X"),  # | - |
             )[self._repr][other._repr]
         )
 
-    def __rxor__(self: LogicT, other: LogicT) -> LogicT:
+    def __rxor__(self: "Logic", other: "Logic") -> "Logic":
         return self ^ other
 
-    def __invert__(self: LogicT) -> LogicT:
-        return type(self)(("1", "0", "X", "X")[self._repr])
+    def __invert__(self: "Logic") -> "Logic":
+        return type(self)(("U", "X", "1", "0", "X", "X", "1", "0", "X")[self._repr])
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, type(self)):
@@ -205,90 +222,18 @@ class Logic:
         return f"{type(self).__qualname__}({str(self)!r})"
 
     def __str__(self) -> str:
-        return ("0", "1", "X", "Z")[self._repr]
+        return ("U", "X", "0", "1", "Z", "W", "L", "H", "-")[self._repr]
 
     def __bool__(self) -> bool:
-        if self._repr in {_0, _1}:
-            return bool(self._repr)
+        if self._repr == _0:
+            return False
+        elif self._repr == _1:
+            return True
         raise ValueError(f"Cannot convert {self!r} to bool")
 
     def __int__(self) -> int:
-        if self._repr in {_0, _1}:
-            return int(self._repr)
+        if self._repr == _0:
+            return 0
+        elif self._repr == _1:
+            return 1
         raise ValueError(f"Cannot convert {self!r} to int")
-
-
-class Bit(Logic):
-    r"""
-    Model of a 2-value (``0``, ``1``) datatype commonly seen in HDLs.
-
-    .. currentmodule:: cocotb.types
-
-    This is modeled after (System)Verilog's 2-value ``bit`` type.
-    VHDL's ``bit`` type maps to this type perfectly.
-
-    :class:`Bit` is a proper subtype of :class:`Logic`, meaning a use of :class:`Logic` can be substituted with a :class:`Bit`.
-    Some behavior may surprise you if you do not expect it.
-
-    .. code-block:: python3
-
-        >>> Bit(0) == Logic(0)
-        True
-        >>> Bit(0) in {Logic(0)}
-        True
-
-    :class:`Bit` can be converted to and from :class:`int`, :class:`str`, :class:`bool`, and :class:`Logic`
-    by using the appropriate constructor syntax.
-    The list of values convertable to :class:`Bit` includes
-    ``0``, ``1``, ``True``, ``False``, ``"0"``, ``"1"``, ``Logic('0')``, and ``Logic('1')``.
-    For a comprehensive list of values that can be converted into :class:`Bit` see :file:`tests/pytest/test_logic.py`.
-
-    .. code-block:: python3
-
-        >>> Bit("0")
-        Bit('0')
-        >>> Bit(True)
-        Bit('1')
-        >>> Bit(1)
-        Bit('1')
-        >>> Bit(Logic(0))
-        Bit('0')
-
-        >>> Bit()  # default value
-        Bit('0')
-
-        >>> str(Bit("0"))
-        '0'
-        >>> bool(Bit(False))
-        False
-        >>> int(Bit(1))
-        1
-        >>> Logic(Bit("1"))
-        Logic('1')
-
-    :class:`Bit` values are hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
-
-    :class:`Bit` supports the common logic operations ``&``, ``|``, ``^``, and ``~``.
-
-    .. code-block:: py3
-
-        >>> def mux(a: Bit, b: Bit, s: Bit) -> Bit:
-        ...     return (a & ~s) | (b & s)
-
-        >>> a = Bit(0)
-        >>> b = Bit(1)
-        >>> sel = Bit(1)  # choose second argument
-        >>> mux(a, b, sel)
-        Bit('1')
-
-    Args:
-        value: value to construct into a :class:`Bit`.
-
-    Raises:
-        ValueError: if the value cannot be constructed into a :class:`Bit`.
-    """
-
-    __slots__ = ()
-
-    _default = _0
-    _valid = {_0, _1}
