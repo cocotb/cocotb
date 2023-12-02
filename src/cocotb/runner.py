@@ -761,9 +761,14 @@ class Nvc(Simulator):
         return cmds
 
     def _test_command(self) -> List[Command]:
+        build_args = []
+        if hasattr(self, "build_args"):
+            # May not be set if build() was not called
+            build_args = self.build_args
+
         cmds = [
             ["nvc", f"--work={self.hdl_toplevel_library}"]
-            + self.build_args
+            + build_args
             + ["-e", self.sim_hdl_toplevel, "--no-save", "--jit"]
             + self._get_parameter_options(self.parameters)
             + ["-r"]
