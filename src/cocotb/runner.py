@@ -154,6 +154,7 @@ class Simulator(abc.ABC):
         verbose: bool = False,
         timescale: Optional[Timescale] = None,
         waves: Optional[bool] = None,
+        extra_args: Sequence[str] = [],
     ) -> None:
         """Build the HDL sources.
 
@@ -172,6 +173,7 @@ class Simulator(abc.ABC):
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation
             waves: Record signal traces.
+            extra_args: Additional arguments required by some simulators.
         """
 
         self.clean: bool = clean
@@ -195,6 +197,7 @@ class Simulator(abc.ABC):
         self.hdl_toplevel: Optional[str] = hdl_toplevel
         self.verbose: bool = verbose
         self.timescale: Optional[Timescale] = timescale
+        self.extra_args = list(extra_args)
 
         self.waves = bool(waves)
 
@@ -223,6 +226,7 @@ class Simulator(abc.ABC):
         test_dir: Optional[PathLike] = None,
         results_xml: str = "results.xml",
         verbose: bool = False,
+        extra_args: Sequence[str] = [],
     ) -> Path:
         """Run the tests.
 
@@ -248,6 +252,7 @@ class Simulator(abc.ABC):
             results_xml: Name of xUnit XML file to store test results in.
                 When running with pytest, the testcase name is prefixed to this name.
             verbose: Enable verbose messages.
+            extra_args: Additional arguments required by some simulators.
 
         Returns:
             The absolute location of the results XML file which can be
@@ -293,6 +298,7 @@ class Simulator(abc.ABC):
         self.test_args = list(test_args)
         self.plusargs = list(plusargs)
         self.env = dict(extra_env)
+        self.extra_args = list(extra_args)
 
         if testcase is not None:
             if isinstance(testcase, str):
@@ -753,22 +759,18 @@ class Nvc(Simulator):
 
         cmds = [
             ["nvc", f"--work={self.hdl_library}"]
-            + self.build_args
+            + self.extra_args
             + ["-a"]
+            + self.build_args
             + [str(source_file) for source_file in self.vhdl_sources]
         ]
 
         return cmds
 
     def _test_command(self) -> List[Command]:
-        build_args = []
-        if hasattr(self, "build_args"):
-            # May not be set if build() was not called
-            build_args = self.build_args
-
         cmds = [
             ["nvc", f"--work={self.hdl_toplevel_library}"]
-            + build_args
+            + self.extra_args
             + ["-e", self.sim_hdl_toplevel, "--no-save", "--jit"]
             + self._get_parameter_options(self.parameters)
             + ["-r"]

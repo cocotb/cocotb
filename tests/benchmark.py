@@ -12,9 +12,10 @@ def build_and_run_matrix_multiplier(benchmark, sim):
     hdl_toplevel_lang = "verilog"
     build_args = []
     test_args = []
+    extra_args = []
 
     if sim == "nvc":
-        build_args = ["--std=08"]
+        extra_args = ["--std=08"]
         hdl_toplevel_lang = "vhdl"
 
     verilog_sources = []
@@ -41,6 +42,7 @@ def build_and_run_matrix_multiplier(benchmark, sim):
         verilog_sources=verilog_sources,
         vhdl_sources=vhdl_sources,
         build_args=build_args,
+        extra_args=extra_args,
     )
 
     @benchmark
@@ -50,6 +52,7 @@ def build_and_run_matrix_multiplier(benchmark, sim):
             hdl_toplevel_lang=hdl_toplevel_lang,
             test_module="test_matrix_multiplier",
             test_args=test_args,
+            extra_args=extra_args,
             seed=123456789,
         )
 
