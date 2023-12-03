@@ -523,9 +523,8 @@ async def discover_all_in_component_vhdl(dut):
         # doesn't find elements of stream_in_data or stream_out_data_registered
         assert total_count == 7
     elif sim.startswith("nvc"):
-        # doesn't find elements of string
         # finds SAMPLE_BLOCK.clk_inv twice?
-        assert total_count == 26
+        assert total_count == 33
     else:
         cocotb.log.info(
             "Found %d items in component instantion. Simulator is not checked.",
