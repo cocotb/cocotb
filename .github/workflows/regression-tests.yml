@@ -82,7 +82,7 @@ jobs:
         python-version: ${{matrix.python-version}}
     - name: Set up Anaconda ${{matrix.python-version}} (Windows)
       if: startsWith(matrix.os, 'windows')
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
         # Use base environment to properly import _sqlite3 DLL - see gh-3166
