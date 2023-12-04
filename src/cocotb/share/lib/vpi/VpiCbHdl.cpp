@@ -772,6 +772,7 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
         scope_name += "::";
     }
     new_obj = new GpiObjHdl(vpi_impl, obj, GPI_PACKAGE);
+    // NOCOMMIT -- vpiName vs vpiFullName?
     new_obj->initialise(scope_name, scope_name);
     *hdl = new_obj;
     return GpiIterator::NATIVE;
