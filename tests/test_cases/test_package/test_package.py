@@ -29,12 +29,12 @@ async def test_stringification(dut):
 
     tlog.info("Checking Strings:")
     pkg1 = cocotb.packages.cocotb_package_pkg_1
-    assert str(pkg1) == "cocotb_package_pkg_1::"
-    assert str(pkg1.five_int) == "cocotb_package_pkg_1::five_int"
-    assert str(pkg1.eight_logic) == "cocotb_package_pkg_1::eight_logic"
+    assert str(pkg1) == "HierarchyObject(cocotb_package_pkg_1)"
+    assert str(pkg1.five_int) == "IntegerObject(cocotb_package_pkg_1::five_int)"
+    assert str(pkg1.eight_logic) == "IntegerObject(cocotb_package_pkg_1::eight_logic)"
     pkg2 = cocotb.packages.cocotb_package_pkg_2
-    assert str(pkg2) == "cocotb_package_pkg_2::"
-    assert str(pkg2.eleven_int) == "cocotb_package_pkg_2::eleven_int"
+    assert str(pkg2) == "HierarchyObject(cocotb_package_pkg_2)"
+    assert str(pkg2.eleven_int) == "IntegerObject(cocotb_package_pkg_2::eleven_int)"
 
 
 @cocotb.test()
@@ -53,4 +53,4 @@ async def test_dollar_unit(dut):
     unit = list(f)[0]
     tlog.info(f"Found $unit as {unit}")
     unit_pkg = getattr(cocotb.packages, unit)
-    assert unit_pkg.unit_four_int == 4
+    assert unit_pkg.unit_four_int.value == 4

@@ -215,7 +215,7 @@ class RegionObject(SimHandleBase, Generic[IndexType]):
 
     def _child_path(self, name) -> str:
         """Return a string of the path of the child :any:`SimHandle` for a given *name*."""
-        delimiter = "" if self._type == "GPI_PACKAGE" else "."
+        delimiter = "::" if self._type == "GPI_PACKAGE" else "."
         return self._path + delimiter + name
 
     def _sub_handle_key(self, name):

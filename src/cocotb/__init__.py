@@ -352,9 +352,7 @@ def _process_packages() -> None:
 
     for pkg in pkgs:
         handle = cocotb.handle.SimHandle(pkg)
-        name = str(handle)
-        if name.endswith("::"):
-            name = name[:-2]
+        name = handle._name
 
         # Icarus doesn't support named access to package objects:
         # https://github.com/steveicarus/iverilog/issues/1038
