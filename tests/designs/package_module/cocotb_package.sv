@@ -1,3 +1,7 @@
+// Copyright cocotb contributors
+// Licensed under the Revised BSD License, see LICENSE for details.
+// SPDX-License-Identifier: BSD-3-Clause
+
 // Necessary for at least Xcelium in order for compiled packages to be visible
 import cocotb_package_pkg_1::*;
 import cocotb_package_pkg_2::*;
