@@ -348,7 +348,8 @@ def _process_packages() -> None:
 
     pkgs = simulator.package_iterate()
     if pkgs is None:
-        SimpleNamespace()
+        packages = SimpleNamespace()
+        return
 
     for pkg in pkgs:
         handle = cocotb.handle.SimHandle(pkg)
