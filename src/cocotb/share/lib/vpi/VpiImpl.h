@@ -270,8 +270,6 @@ class VpiPackageIterator : public GpiIterator {
     Status next_handle(std::string &name, GpiObjHdl **hdl,
                        void **raw_hdl) override;
 
-    bool empty() { return m_iterator == NULL; }
-
   private:
     vpiHandle m_iterator = nullptr;
 };
@@ -322,8 +320,6 @@ class VpiImpl : public GpiImplInterface {
     const char *const get_type_delimiter(GpiObjHdl *obj_hdl);
 
   private:
-    GpiObjHdl *get_scope_handle(const char *name, bool is_package);
-
     /* Singleton callbacks */
     VpiReadWriteCbHdl m_read_write;
     VpiNextPhaseCbHdl m_next_phase;
