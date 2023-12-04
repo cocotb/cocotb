@@ -647,7 +647,7 @@ bool VpiImpl::compare_generate_labels(const std::string &a,
     return a.substr(0, a_idx) == b.substr(0, b_idx);
 }
 
-const char *VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
+const char *const VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
     return (obj_hdl->get_type() == GPI_PACKAGE) ? "" : ".";
 }
 

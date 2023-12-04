@@ -319,7 +319,7 @@ class VpiImpl : public GpiImplInterface {
     static bool compare_generate_labels(const std::string &a,
                                         const std::string &b);
 
-    const char *get_type_delimiter(GpiObjHdl *obj_hdl);
+    const char *const get_type_delimiter(GpiObjHdl *obj_hdl);
 
   private:
     GpiObjHdl *get_scope_handle(const char *name, bool is_package);
