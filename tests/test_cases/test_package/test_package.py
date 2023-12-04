@@ -5,6 +5,7 @@ A set of tests that demonstrate package access
 import logging
 
 import cocotb
+from cocotb.result import TestSuccess
 
 
 @cocotb.test()
@@ -40,6 +41,10 @@ async def test_stringification(dut):
 async def test_dollar_unit(dut):
     """Test $unit scope"""
     tlog = logging.getLogger("cocotb.test")
+
+    if cocotb.SIM_NAME.lower().startswith("riviera"):
+        tlog.info("Riviera does not support $unit access via vpiInstance")
+        raise TestSuccess
 
     tlog.info("Checking $unit:")
     # Is $unit even a package?  Xcelium says yes and 37.10 detail 5 would also suggest yes
