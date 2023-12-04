@@ -771,12 +771,6 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
                            package_delim.length(), package_delim)) {
         scope_name += "::";
     }
-// Questa calls $unit "design_sv_unit" for whatever reason
-#ifdef MODELSIM
-    if (scope_name == "design_sv_unit::") {
-        scope_name = "$unit::";
-    }
-#endif
     new_obj = new GpiObjHdl(vpi_impl, obj, GPI_PACKAGE);
     new_obj->initialise(scope_name, scope_name);
     *hdl = new_obj;
