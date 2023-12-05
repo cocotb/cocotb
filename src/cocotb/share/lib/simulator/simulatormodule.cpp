@@ -911,7 +911,9 @@ static PyMethodDef SimulatorMethods[] = {
      PyDoc_STR("package_iterate(/)\n"
                "--\n\n"
                "package_iterate() -> cocotb.simulator.gpi_iterator_hdl\n"
-               "Get an iterator handle to loop over all packages.")},
+               "Get an iterator handle to loop over all packages."
+               "\n"
+               ".. versionadded:: 2.0")},
     {"register_timed_callback", register_timed_callback, METH_VARARGS,
      PyDoc_STR("register_timed_callback(time, func, /, *args)\n"
                "--\n\n"

@@ -28,7 +28,7 @@ MODULE = test_package
 else
 
 all:
-	@echo "Skipping test_array since icarus < v12.0 doesn't support vpiInsance iteration"
+	@echo "Skipping test_array since icarus < v12.0 doesn't support vpiInstance iteration"
 
 clean::
 # nothing to clean, just define target in this branch
