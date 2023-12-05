@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 module cocotb_package;
-    // Necessary for at least Xcelium in order for compiled packages to be visible
+    // Necessary for Xcelium and Riviera in order for compiled packages to be visible
     import cocotb_package_pkg_1::*;
     import cocotb_package_pkg_2::*;
 
