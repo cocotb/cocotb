@@ -106,8 +106,8 @@ packages: Optional[SimpleNamespace] = None
 
 This will be populated with handles at test time if packages can be discovered
 via the GPI.  Depending on the simulator, packages may need to be imported in
-the compliation unit scope or inside a module in order to be discoverable.
-Also note, the $unit pseudo-package is implemented differently between
+the compilation unit scope or inside a module in order to be discoverable.
+Also note, the ``$unit`` pseudo-package is implemented differently between
 simulators.  It may appear as one or more attributes here depending on the
 number of compilation units.
 """
