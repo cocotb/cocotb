@@ -22,8 +22,6 @@ endif
 ifeq ($(SKIP),)
 
 include ../../designs/package_module/Makefile
-# NOCOMMIT
-export COCOTB_LOG_LEVEL:=DEBUG
 
 MODULE = test_package
 
