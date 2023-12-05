@@ -755,6 +755,8 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
 
     if (NULL == m_iterator) return GpiIterator::END;
 
+    // obj might not be a package since we are forced to iterate over all vpiInstance due to a limitation in Questa
+    // so we keep searching until we find one
     while (true) {
         obj = vpi_scan(m_iterator);
         if (NULL == obj) return GpiIterator::END;
