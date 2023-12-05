@@ -33,11 +33,11 @@ async def test_stringification(dut):
 
     tlog.info("Checking Strings:")
     pkg1 = cocotb.packages.cocotb_package_pkg_1
-    assert str(pkg1) == "HierarchyObject(cocotb_package_pkg_1)"
+    assert str(pkg1).startswith("HierarchyObject(cocotb_package_pkg_1")
     assert str(pkg1.five_int) == "IntegerObject(cocotb_package_pkg_1::five_int)"
     assert str(pkg1.eight_logic) == "IntegerObject(cocotb_package_pkg_1::eight_logic)"
     pkg2 = cocotb.packages.cocotb_package_pkg_2
-    assert str(pkg2) == "HierarchyObject(cocotb_package_pkg_2)"
+    assert str(pkg2).startswith("HierarchyObject(cocotb_package_pkg_2")
     assert str(pkg2.eleven_int) == "IntegerObject(cocotb_package_pkg_2::eleven_int)"
 
 

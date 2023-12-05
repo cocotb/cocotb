@@ -258,6 +258,8 @@ class VpiPackageIterator : public GpiIterator {
         : GpiIterator(impl, nullptr)
 
     {
+        // Questa doesn't support iteration over vpiPackage but everything
+        // supports vpiInstance which is a superset
         m_iterator = vpi_iterate(vpiInstance, nullptr);
         if (NULL == m_iterator) {
             LOG_WARN(

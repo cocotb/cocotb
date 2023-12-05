@@ -774,7 +774,7 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
                         package_delim.length(), package_delim)) {
         fq_name += "::";
     }
-    new_obj = new GpiObjHdl(vpi_impl, obj, GPI_PACKAGE);
+    new_obj = new VpiObjHdl(vpi_impl, obj, GPI_PACKAGE);
     new_obj->initialise(name, fq_name);
     *hdl = new_obj;
     return GpiIterator::NATIVE;
