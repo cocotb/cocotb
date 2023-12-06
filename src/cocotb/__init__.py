@@ -102,7 +102,7 @@ This is guaranteed to hold a value at test time.
 """
 
 packages: Optional[SimpleNamespace] = None
-"""A SimpleNamespace of package handles.
+"""A :class:`python:types.SimpleNamespace` of package handles.
 
 This will be populated with handles at test time if packages can be discovered
 via the GPI.
