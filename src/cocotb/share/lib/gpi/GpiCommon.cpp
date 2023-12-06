@@ -373,6 +373,26 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl base, int32_t index) {
 }
 
 gpi_iterator_hdl gpi_iterate(gpi_sim_hdl obj_hdl, gpi_iterator_sel_t type) {
+    if (type == GPI_PACKAGE_SCOPES) {
+        if (obj_hdl != NULL) {
+            LOG_ERROR("Cannot iterate over package from non-NULL handles");
+            return NULL;
+        }
+
+        vector<GpiImplInterface *>::iterator implIter;
+
+        LOG_DEBUG("Looking for packages over %d implementations",
+                  registered_impls.size());
+
+        for (implIter = registered_impls.begin();
+             implIter != registered_impls.end(); implIter++) {
+            GpiIterator *iter =
+                (*implIter)->iterate_handle(NULL, GPI_PACKAGE_SCOPES);
+            if (iter != NULL) return iter;
+        }
+        return NULL;
+    }
+
     GpiIterator *iter = obj_hdl->m_impl->iterate_handle(obj_hdl, type);
     if (!iter) {
         return NULL;

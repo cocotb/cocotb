@@ -143,6 +143,9 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype) {
         case vpiGenScope:
             return GPI_MODULE;
 
+        case vpiPackage:
+            return GPI_PACKAGE;
+
         case vpiStringVar:
             return GPI_STRING;
 
@@ -283,7 +286,8 @@ GpiObjHdl *VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
     }
 
     std::string name = c_name;
-    std::string fq_name = parent->get_fullname() + "." + name;
+    std::string fq_name =
+        parent->get_fullname() + get_type_delimiter(parent) + name;
 
     GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
@@ -298,7 +302,8 @@ GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
                                         GpiObjHdl *parent) {
     vpiHandle new_hdl;
     const vpiHandle parent_hdl = parent->get_handle<vpiHandle>();
-    std::string fq_name = parent->get_fullname() + "." + name;
+    std::string fq_name =
+        parent->get_fullname() + get_type_delimiter(parent) + name;
 
     new_hdl = vpi_handle_by_name(const_cast<char *>(fq_name.c_str()), NULL);
 
@@ -573,6 +578,9 @@ GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
         case GPI_LOADS:
             new_iter = new VpiSingleIterator(this, obj_hdl, vpiLoad);
             break;
+        case GPI_PACKAGE_SCOPES:
+            new_iter = new VpiPackageIterator(this);
+            break;
         default:
             LOG_WARN("Other iterator types not implemented yet");
             break;
@@ -637,6 +645,10 @@ bool VpiImpl::compare_generate_labels(const std::string &a,
     std::size_t a_idx = a.rfind("[");
     std::size_t b_idx = b.rfind("[");
     return a.substr(0, a_idx) == b.substr(0, b_idx);
+}
+
+const char *VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
+    return (obj_hdl->get_type() == GPI_PACKAGE) ? "" : ".";
 }
 
 extern "C" {

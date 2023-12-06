@@ -32,7 +32,7 @@ Finding elements in the design
 ==============================
 
 To find elements of the DUT
-(for example, instances, signals, or constants)
+(for example, instances, signals, constants or Verilog packages)
 at a certain hierarchy level,
 you can use the :func:`dir` function on a handle.
 
@@ -44,6 +44,9 @@ you can use the :func:`dir` function on a handle.
     # Print the instances and signals of "inst_sub_block" under the toplevel
     # which is the instance name of a Verilog module or VHDL entity/component
     print(dir(dut.inst_sub_block))
+
+    # Print the packages
+    print(dir(cocotb.packages))
 
 
 .. _writing_tbs_assigning_values:
@@ -256,6 +259,28 @@ A workaround is to use indirect access using
 :meth:`~cocotb.handle.HierarchyObject._id` like in the following example:
 ``dut._id("_some_signal", extended=False)``.
 
+
+.. _writing_tbs_accessing_verilog_packages:
+
+Accessing Verilog Packages
+==========================
+
+Verilog packages are accessible via :any:`cocotb.packages`.
+Depending on the simulator, packages may need to be imported in
+the compilation unit scope or inside a module in order to be discoverable.
+Also note, the ``$unit`` pseudo-package is implemented differently between simulators.
+It may appear as one or more attributes here depending on the number of compilation units.
+
+.. code-block:: verilog
+
+    package my_package;
+        parameter int foo = 7
+    endpackage
+
+.. code-block:: python3
+
+    # prints "7"
+    print(cocotb.packages.my_package.foo.value)
 
 Passing and Failing Tests
 =========================

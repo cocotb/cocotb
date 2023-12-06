@@ -156,6 +156,7 @@ typedef enum gpi_objtype_e {
     GPI_INTEGER = 10,
     GPI_STRING = 11,
     GPI_GENARRAY = 12,
+    GPI_PACKAGE = 13,
 } gpi_objtype_t;
 
 // When iterating, we can chose to either get child objects, drivers or loads
@@ -163,6 +164,7 @@ typedef enum gpi_iterator_sel_e {
     GPI_OBJECTS = 1,
     GPI_DRIVERS = 2,
     GPI_LOADS = 3,
+    GPI_PACKAGE_SCOPES = 4,
 } gpi_iterator_sel_t;
 
 typedef enum gpi_set_action_e {

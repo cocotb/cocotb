@@ -550,6 +550,12 @@ static PyObject *iterate(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args) {
     return gpi_hdl_New(result);
 }
 
+static PyObject *package_iterate(PyObject *, PyObject *) {
+    gpi_iterator_hdl result = gpi_iterate(NULL, GPI_PACKAGE_SCOPES);
+
+    return gpi_hdl_New(result);
+}
+
 static PyObject *next(gpi_hdl_Object<gpi_iterator_hdl> *self) {
     gpi_sim_hdl result = gpi_next(self->hdl);
 
@@ -848,6 +854,7 @@ static int add_module_constants(PyObject *simulator) {
         PyModule_AddIntConstant(simulator, "INTEGER", GPI_INTEGER) < 0 ||
         PyModule_AddIntConstant(simulator, "STRING", GPI_STRING) < 0 ||
         PyModule_AddIntConstant(simulator, "GENARRAY", GPI_GENARRAY) < 0 ||
+        PyModule_AddIntConstant(simulator, "PACKAGE", GPI_PACKAGE) < 0 ||
         PyModule_AddIntConstant(simulator, "OBJECTS", GPI_OBJECTS) < 0 ||
         PyModule_AddIntConstant(simulator, "DRIVERS", GPI_DRIVERS) < 0 ||
         PyModule_AddIntConstant(simulator, "LOADS", GPI_LOADS) < 0 || false) {
@@ -900,6 +907,13 @@ static PyMethodDef SimulatorMethods[] = {
                "--\n\n"
                "get_root_handle(name: str) -> cocotb.simulator.gpi_sim_hdl\n"
                "Get the root handle.")},
+    {"package_iterate", package_iterate, METH_NOARGS,
+     PyDoc_STR("package_iterate(/)\n"
+               "--\n\n"
+               "package_iterate() -> cocotb.simulator.gpi_iterator_hdl\n"
+               "Get an iterator handle to loop over all packages."
+               "\n"
+               ".. versionadded:: 2.0")},
     {"register_timed_callback", register_timed_callback, METH_VARARGS,
      PyDoc_STR("register_timed_callback(time, func, /, *args)\n"
                "--\n\n"

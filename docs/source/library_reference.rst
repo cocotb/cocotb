@@ -257,6 +257,8 @@ Other Runtime Information
 
 .. autodata:: cocotb.plusargs
 
+.. autodata:: cocotb.packages
+
 .. autodata:: cocotb.LANGUAGE
 
 .. autodata:: cocotb.top

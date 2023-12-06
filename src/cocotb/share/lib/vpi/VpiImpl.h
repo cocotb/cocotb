@@ -252,6 +252,30 @@ class VpiSingleIterator : public GpiIterator {
     vpiHandle m_iterator = nullptr;
 };
 
+class VpiPackageIterator : public GpiIterator {
+  public:
+    VpiPackageIterator(GpiImplInterface *impl)
+        : GpiIterator(impl, nullptr)
+
+    {
+        // Questa doesn't support iteration over vpiPackage but everything
+        // supports vpiInstance which is a superset
+        m_iterator = vpi_iterate(vpiInstance, nullptr);
+        if (NULL == m_iterator) {
+            LOG_WARN(
+                "vpi_iterate returned NULL for type vpiInstance for object "
+                "NULL");
+            return;
+        }
+    }
+
+    Status next_handle(std::string &name, GpiObjHdl **hdl,
+                       void **raw_hdl) override;
+
+  private:
+    vpiHandle m_iterator = nullptr;
+};
+
 class VpiImpl : public GpiImplInterface {
   public:
     VpiImpl(const std::string &name)
@@ -294,6 +318,8 @@ class VpiImpl : public GpiImplInterface {
 
     static bool compare_generate_labels(const std::string &a,
                                         const std::string &b);
+
+    const char *get_type_delimiter(GpiObjHdl *obj_hdl);
 
   private:
     /* Singleton callbacks */
