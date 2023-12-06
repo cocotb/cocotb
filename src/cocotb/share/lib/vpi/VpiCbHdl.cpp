@@ -289,9 +289,11 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                         vpi_get_value(rightRange, &val);
                         m_range_right = val.value.integer;
                     } else {
-                        LOG_WARN("VPI: Cannot discover range bounds, guessing based on elements");
+                        LOG_WARN(
+                            "VPI: Cannot discover range bounds, guessing based "
+                            "on elements");
                         m_range_left = 0;
-                        m_range_right = m_num_elems-1;
+                        m_range_right = m_num_elems - 1;
                     }
                 }
 
