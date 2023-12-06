@@ -93,6 +93,12 @@ endef
 SIM_BUILD ?= sim_build
 export SIM_BUILD
 
+ifeq ($(NO_SIM_LOG),)
+    SIM_LOG_TEE := 2>&1 | tee $(SIM_BUILD)/sim.log
+else
+    SIM_LOG_TEE :=
+endif
+
 COCOTB_RESULTS_FILE ?= results.xml
 COCOTB_HDL_TIMEUNIT ?= 1ns
 COCOTB_HDL_TIMEPRECISION ?= 1ps
