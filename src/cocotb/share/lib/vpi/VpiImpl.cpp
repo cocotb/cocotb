@@ -157,6 +157,11 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype) {
 
 static gpi_objtype_t const_type_to_gpi_objtype(int32_t const_type) {
     switch (const_type) {
+#ifdef IUS
+        case vpiUndefined:
+            LOG_WARN("VPI: Xcelium reports undefined parameters as vpiUndefined, guessing this is an integer");
+            return GPI_NET;
+#endif
         case vpiDecConst:
         case vpiBinaryConst:
         case vpiOctConst:

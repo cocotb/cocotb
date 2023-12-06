@@ -277,13 +277,22 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                         return -1;
                     }
                 } else {
-                    vpi_get_value(vpi_handle(vpiLeftRange, hdl), &val);
+                    vpiHandle leftRange = vpi_handle(vpiLeftRange, hdl);
                     check_vpi_error();
-                    m_range_left = val.value.integer;
+                    vpiHandle rightRange = vpi_handle(vpiRightRange, hdl);
+                    check_vpi_error();
 
-                    vpi_get_value(vpi_handle(vpiRightRange, hdl), &val);
-                    check_vpi_error();
-                    m_range_right = val.value.integer;
+                    if (leftRange != NULL and rightRange != NULL) {
+                        vpi_get_value(leftRange, &val);
+                        m_range_left = val.value.integer;
+
+                        vpi_get_value(rightRange, &val);
+                        m_range_right = val.value.integer;
+                    } else {
+                        LOG_WARN("VPI: Cannot discover range bounds, guessing based on elements");
+                        m_range_left = 0;
+                        m_range_right = m_num_elems-1;
+                    }
                 }
 
                 LOG_DEBUG(
