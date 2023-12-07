@@ -20,7 +20,7 @@ COCOTB?=$(PWD)/../../..
 
 VERILOG_SOURCES = $(COCOTB)/tests/designs/defaultless_parameter_module/cocotb_defaultless_parameter.sv
 # Needed for defaultless parameter support in Xcelium
-export CADENCE_ENABLE_AVSREQ_44905_PHASE_1=1
+EXTRA_ARGS += -newsv
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
