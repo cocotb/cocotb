@@ -16,19 +16,30 @@ ICARUS_VERSION := $(shell iverilog -V 2>/dev/null | head -n1 | cut -d ' ' -f 4)
 MIN_VERSION := $(shell printf "%s\n%s\n" "$(ICARUS_MIN)" "$(ICARUS_VERSION)" | sort -g | head -1)
 ifneq ($(MIN_VERSION),$(ICARUS_MIN))
 SKIP := 1
+$(info "Skipping test_defaultless_parameter since icarus < v12.0 doesn't support defaultless parameters")
 endif
+endif
+
+TOPLEVEL_LANG ?= verilog
+ifneq ($(TOPLEVEL_LANG),verilog)
+SKIP := 1
+$(info "Skipping . . . Verilog only")
 endif
 
 ifeq ($(SKIP),)
 
-include ../../designs/defaultless_parameter_module/Makefile
-
+VERILOG_SOURCES = test_defaultless_parameter.sv
+# Needed for defaultless parameter support in Xcelium
+EXTRA_ARGS += -newsv
+TOPLEVEL := cocotb_defaultless_parameter
 MODULE = test_defaultless_parameter
+
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 else
 
 all:
-	@echo "Skipping test_defaultless_parameter since icarus < v12.0 doesn't support defaultless parameters"
+	@echo "Skipping test_defaultless_parameter"
 
 clean::
 # nothing to clean, just define target in this branch
