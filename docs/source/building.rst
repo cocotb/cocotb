@@ -373,9 +373,11 @@ The following variables are makefile variables, not environment variables.
 
 .. make:var:: SIM_OUTPUT_REDIRECT
 
-      Use to specify how to redirect simulator output.
+      Used to specify how to redirect simulator output.
       Setting to the empty string will prevent redirection.
       Defaults to sending both stdout and stderr to :file:`sim.log` under :make:var:`SIM_BUILD`.
+
+        .. versionadded:: 2.0
 
 .. envvar:: SCRIPT_FILE
 
