@@ -39,6 +39,7 @@ import cocotb
 import cocotb.task
 from cocotb import outcomes, simulator
 from cocotb._py_compat import cached_property
+from cocotb.handle import LogicObject, ModifiableObject
 from cocotb.log import SimLog
 from cocotb.utils import (
     ParametrizedSingleton,
@@ -365,10 +366,6 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         """The edge type, as understood by the C code. Must be set in sub-classes."""
         raise NotImplementedError
 
-    @classmethod
-    def __singleton_key__(cls, signal):
-        return signal
-
     def __init__(self, signal):
         super().__init__()
         self.signal = signal
@@ -393,6 +390,12 @@ class RisingEdge(_EdgeBase):
     __slots__ = ()
     _edge_type = 1
 
+    @classmethod
+    def __singleton_key__(cls, signal):
+        if not (isinstance(signal, LogicObject) and len(signal) == 1):
+            raise TypeError("")
+        return signal
+
 
 class FallingEdge(_EdgeBase):
     """Fires on the falling edge of *signal*, on a transition from ``1`` to ``0``."""
@@ -400,12 +403,24 @@ class FallingEdge(_EdgeBase):
     __slots__ = ()
     _edge_type = 2
 
+    @classmethod
+    def __singleton_key__(cls, signal):
+        if not (isinstance(signal, LogicObject) and len(signal) == 1):
+            raise TypeError("")
+        return signal
+
 
 class Edge(_EdgeBase):
     """Fires on any value change of *signal*."""
 
     __slots__ = ()
     _edge_type = 3
+
+    @classmethod
+    def __singleton_key__(cls, signal):
+        if not isinstance(signal, ModifiableObject):
+            raise TypeError("")
+        return signal
 
 
 class _Event(PythonTrigger):

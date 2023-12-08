@@ -10,6 +10,7 @@ Tests for edge triggers
 * ClockCycles
 """
 import cocotb
+import pytest
 from cocotb.clock import Clock
 from cocotb.result import SimTimeoutError
 from cocotb.triggers import (
@@ -21,6 +22,7 @@ from cocotb.triggers import (
     ReadOnly,
     RisingEdge,
     Timer,
+    with_timeout,
 )
 
 
@@ -284,3 +286,48 @@ async def test_edge_on_vector(dut):
         await RisingEdge(dut.clk)
 
     assert edge_cnt == 2 * ((2 ** len(dut.stream_in_data) - 1) - 1)
+
+
+@cocotb.test()
+async def test_edge_bad_handles(dut):
+    with pytest.raises(TypeError):
+        RisingEdge(dut)
+
+    with pytest.raises(TypeError):
+        FallingEdge(dut)
+
+    with pytest.raises(TypeError):
+        Edge(dut)
+
+    with pytest.raises(TypeError):
+        RisingEdge(dut.stream_in_data)
+
+    with pytest.raises(TypeError):
+        FallingEdge(dut.stream_in_data)
+
+
+@cocotb.test()
+async def test_edge_logic_vector(dut):
+    dut.stream_in_data.value = 0
+
+    async def change_stream_in_data():
+        await Timer(10, "ns")
+        dut.stream_in_data.value = 10
+
+    cocotb.start_soon(change_stream_in_data())
+
+    await with_timeout(Edge(dut.stream_in_data), 20, "ns")
+
+
+# icarus doesn't support integer inputs/outputs
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+async def test_edge_non_logic_handles(dut):
+    dut.stream_in_int.value = 0
+
+    async def change_stream_in_int():
+        await Timer(10, "ns")
+        dut.stream_in_int.value = 10
+
+    cocotb.start_soon(change_stream_in_int())
+
+    await with_timeout(Edge(dut.stream_in_int), 20, "ns")
