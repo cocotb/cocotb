@@ -43,6 +43,8 @@ def test_cocotb_parallel_compile():
 def test_cocotb_parallel(seed):
     runner = get_runner(sim)
 
+    runner.build_args = compile_args
+
     runner.test(
         seed=seed,
         hdl_toplevel_lang=hdl_toplevel_lang,
