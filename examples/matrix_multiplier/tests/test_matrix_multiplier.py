@@ -242,6 +242,8 @@ def test_matrix_multiplier_runner():
 
         if sim in ["questa", "modelsim", "riviera", "activehdl"]:
             build_args = ["-2008"]
+        elif sim == "nvc":
+            build_args = ["--std=08"]
     else:
         raise ValueError(
             f"A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG={hdl_toplevel_lang}"
