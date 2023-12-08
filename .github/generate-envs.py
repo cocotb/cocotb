@@ -132,10 +132,10 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "master",  # Only master supported for now
+        "sim-version": "r1.11.0",
         "os": "ubuntu-latest",
         "python-version": "3.8",
-        "group": "experimental",
+        "group": "ci",
     },
     # Test Verilator on Ubuntu
     {
