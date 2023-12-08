@@ -381,11 +381,9 @@ A VCD file named :file:`anyname.vcd` will be generated in the current directory.
 NVC
 ===
 
-.. warning::
+.. note::
 
-    NVC support in cocotb is experimental.
-    Some features of cocotb may not work correctly or at all.
-    A current master build of NVC is required.
+    NVC version **1.11.0** or later is required.
 
 In order to use this simulator, set :make:var:`SIM` to ``nvc``:
 
