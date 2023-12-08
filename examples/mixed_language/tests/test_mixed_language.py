@@ -117,7 +117,7 @@ sim = os.getenv("SIM", "icarus")
 
 
 @pytest.mark.skipif(
-    sim in ["icarus", "ghdl", "verilator"],
+    sim in ["icarus", "ghdl", "verilator", "nvc"],
     reason=f"Skipping example mixed_language since {sim} doesn't support this",
 )
 def test_mixed_language_runner():
