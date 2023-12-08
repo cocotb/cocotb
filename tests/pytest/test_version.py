@@ -12,5 +12,5 @@ def test_version():
     if "dev" in cocotb.__version__ and os.path.exists(".git") and shutil.which("git"):
         assert "+" in cocotb.__version__
         parts = cocotb.__version__.split("+")
-        rev = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
+        rev = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], universal_newlines=True).strip()
         assert parts[1] == rev
