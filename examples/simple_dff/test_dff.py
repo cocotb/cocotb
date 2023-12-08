@@ -17,7 +17,12 @@ async def dff_simple_test(dut):
     """Test that d propagates to q"""
 
     # Assert initial output is unknown
-    assert LogicArray(dut.q.value) == LogicArray("X")
+    initial = (
+        LogicArray("U")
+        if cocotb.LANGUAGE.lower().startswith("vhdl")
+        else LogicArray("X")
+    )
+    assert LogicArray(dut.q.value) == initial
     # Set initial input value to prevent it from floating
     dut.d.value = 0
 
