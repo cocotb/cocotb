@@ -96,7 +96,7 @@ log.addHandler(handler)
 setup(
     name="cocotb",
     cmdclass={"build_ext": build_ext},
-    version=__version__,  # noqa: F821
+    version=__version__,
     description="cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.",
     url="https://www.cocotb.org",
     license="BSD",
