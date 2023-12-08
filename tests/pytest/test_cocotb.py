@@ -59,6 +59,8 @@ if sim == "questa":
     sim_args = ["-t", "ps"]
 elif sim == "xcelium":
     compile_args = ["-v93"]
+elif sim == "nvc":
+    compile_args = ["--std=08"]
 
 hdl_toplevel = "sample_module"
 sys.path.insert(0, os.path.join(tests_dir, "test_cases", "test_cocotb"))
