@@ -371,6 +371,14 @@ The following variables are makefile variables, not environment variables.
       Use to define a scratch directory for use by the simulator. The path is relative to the location where ``make`` was invoked.
       If not provided, the default scratch directory is :file:`sim_build`.
 
+.. make:var:: SIM_OUTPUT_REDIRECT
+
+      Used to specify how to redirect simulator output.
+      Setting to the empty string will prevent redirection.
+      Defaults to sending both stdout and stderr to :file:`sim.log` under :make:var:`SIM_BUILD`.
+
+      .. versionadded:: 2.0
+
 .. envvar:: SCRIPT_FILE
 
     The name of a simulator script that is run as part of the simulation, e.g. for setting up wave traces.

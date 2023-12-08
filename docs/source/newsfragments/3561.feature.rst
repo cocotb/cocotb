@@ -1,0 +1,1 @@
+Added :make:var:`SIM_OUTPUT_REDIRECT`, an environment variable to control how simulator output is redirected.
