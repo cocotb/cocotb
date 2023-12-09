@@ -199,6 +199,15 @@ async def test_base_exception_in_task_expect_fail(dut):
     await NullTrigger()
 
 
+a = 0
+
+
 @cocotb.test
 async def test_without_parenthesis(dut):
-    pass
+    global a
+    a = 1
+
+
+@cocotb.test()
+async def test_test_without_parenthesis_ran(dut):
+    assert a == 1

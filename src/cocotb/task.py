@@ -245,11 +245,9 @@ class _RunningTest(Task[None]):
 
     _name: str = "Test"
 
-    def __init__(self, inst, parent):
+    def __init__(
+        self, inst: typing.Coroutine[typing.Any, typing.Any, None], name: str
+    ) -> None:
         super().__init__(inst)
-        self._parent = parent
-        self.__doc__ = parent._func.__doc__
-        self.module = parent._func.__module__
-        self.funcname = parent._func.__name__
-        self.__name__ = f"{type(self)._name} {self.funcname}"
+        self.__name__ = f"{type(self)._name} {name}"
         self.__qualname__ = self.__name__

@@ -154,10 +154,10 @@ Regression Manager
 
 .. envvar:: TESTCASE
 
-    The name of the test function(s) to run.  If this variable is not defined cocotb
-    discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied :envvar:`MODULE` list.
+    A regex matching names of test function(s) to run.
+    If this variable is not defined cocotb discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied :envvar:`MODULE` list.
 
-    Multiple test functions can be specified using a comma-separated list.
+    Multiple test function regexes can be specified using a comma-separated list.
 
 .. envvar:: COCOTB_RESULTS_FILE
 

@@ -6,6 +6,7 @@ Tests of cocotb.regression.TestFactory functionality
 """
 import random
 import string
+import warnings
 from collections.abc import Coroutine
 
 import cocotb
@@ -18,14 +19,16 @@ postfix = "".join(random.choices(string.ascii_letters, k=4))
 
 
 async def run_testfactory_test(dut, arg1, arg2, arg3):
-    testfactory_test_names.add(cocotb.regression_manager._test.__qualname__)
+    testfactory_test_names.add(cocotb.regression_manager._test.name)
     testfactory_test_args.add((arg1, arg2, arg3))
 
 
 factory = TestFactory(run_testfactory_test)
 factory.add_option("arg1", ["a1v1", "a1v2"])
 factory.add_option(("arg2", "arg3"), [("a2v1", "a3v1"), ("a2v2", "a3v2")])
-factory.generate_tests(prefix=prefix, postfix=postfix)
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore")
+    factory.generate_tests(prefix=prefix, postfix=postfix)
 
 
 @cocotb.test()
@@ -73,7 +76,7 @@ p_testfactory_test_args = set()
     arg2=["a2v1", "a2v2"],
 )
 async def p_run_testfactory_test(dut, arg1, arg2):
-    p_testfactory_test_names.add(cocotb.regression_manager._test.__qualname__)
+    p_testfactory_test_names.add(cocotb.regression_manager._test.name)
     p_testfactory_test_args.add((arg1, arg2))
 
 
@@ -91,4 +94,26 @@ async def test_params_verify_args(dut):
 async def test_params_verify_names(dut):
     assert p_testfactory_test_names == {
         f"p_run_testfactory_test_{i:03}" for i in range(1, 5)
+    }
+
+
+testfactory_no_empty_call_test_args = set()
+
+
+@cocotb.test
+@cocotb.parameterize(
+    arg1=["a1v1", "a1v2"],
+    arg2=["a2v1", "a2v2"],
+)
+async def test_testfactory_no_empty_call(dut, arg1, arg2):
+    testfactory_no_empty_call_test_args.add((arg1, arg2))
+
+
+@cocotb.test()
+async def test_testfactory_no_empty_call_verify_args(dut):
+    assert testfactory_no_empty_call_test_args == {
+        ("a1v1", "a2v1"),
+        ("a1v2", "a2v1"),
+        ("a1v1", "a2v2"),
+        ("a1v2", "a2v2"),
     }
