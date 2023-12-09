@@ -70,7 +70,7 @@ def package_files(directory):
     return paths
 
 
-__version__ = "2.0.dev0"
+__version__ = "2.0.0.dev0"
 if "dev" in __version__:
     try:
         rev = subprocess.check_output(
