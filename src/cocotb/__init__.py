@@ -138,6 +138,9 @@ This is guaranteed to hold a value at test time.
 _library_coverage = None
 """ used for cocotb library coverage """
 
+_user_coverage = None
+""" used for user code coverage """
+
 top: Optional[cocotb.handle.SimHandleBase] = None
 r"""
 A handle to the :envvar:`TOPLEVEL` entity/module.
@@ -289,12 +292,15 @@ def _initialise_testbench_(argv_):
     global top
     top = cocotb.handle.SimHandle(handle)
 
+    _start_user_coverage()
+
     global regression_manager
     try:
         regression_manager = RegressionManager.from_discovery(top)
     except BaseException as e:
         log.error(e)
         simulator.stop_simulator()
+        _stop_user_coverage()
         _stop_library_coverage()
         return  # pragma: no cover
 
@@ -324,6 +330,7 @@ def _sim_event(message):
         scheduler._finish_scheduler(SimFailure(msg))
     else:
         log.error(msg)
+        _stop_user_coverage()
         _stop_library_coverage()
 
 
@@ -365,3 +372,39 @@ def _process_packages() -> None:
         pkg_dict[name] = handle
 
     packages = SimpleNamespace(**pkg_dict)
+
+
+def _start_user_coverage() -> None:
+    if "COVERAGE" in os.environ:
+        try:
+            import coverage
+        except ImportError as e:
+            cocotb.log.error(
+                "Coverage collection requested but coverage module not available. Install it using `pip install coverage`."
+            )
+        else:
+            global _user_coverage
+            config_filepath = os.getenv("COVERAGE_RCFILE")
+            if config_filepath is None:
+                # Exclude cocotb itself from coverage collection.
+                cocotb.log.info(
+                    "Collecting coverage of user code. No coverage config file supplied."
+                )
+                cocotb_package_dir = os.path.dirname(__file__)
+                _user_coverage = coverage.coverage(
+                    branch=True, omit=[f"{cocotb_package_dir}/*"]
+                )
+            else:
+                cocotb.log.info(
+                    "Collecting coverage of user code. Coverage config file supplied."
+                )
+                # Allow the config file to handle all configuration
+                _user_coverage = coverage.coverage()
+            _user_coverage.start()
+
+
+def _stop_user_coverage() -> None:
+    if _user_coverage is not None:
+        _user_coverage.stop()
+        cocotb.log.debug("Writing coverage data")
+        _user_coverage.save()
