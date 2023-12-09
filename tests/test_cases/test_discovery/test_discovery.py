@@ -349,7 +349,6 @@ async def access_constant_boolean(dut):
     skip=cocotb.LANGUAGE in ["verilog"],
     expect_fail=cocotb.SIM_NAME.lower().startswith("ghdl"),
 )
-@cocotb.test()
 async def access_boolean(dut):
     """Test access to a boolean"""
     assert isinstance(dut.stream_out_bool, IntegerObject)

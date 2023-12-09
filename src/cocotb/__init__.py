@@ -202,19 +202,15 @@ def _initialise_testbench(argv_):  # pragma: no cover
     :envvar:`MODULE` and :envvar:`TESTCASE`.
     """
     with _rlock:
-        if "COCOTB_LIBRARY_COVERAGE" in os.environ:
-            import coverage
+        try:
+            _start_library_coverage()
+            _initialise_testbench_(argv_)
+        except BaseException:
+            log.exception("cocotb testbench initialization failed. Exiting.")
+            from cocotb import simulator
 
-            global _library_coverage
-            _library_coverage = coverage.coverage(
-                data_file=".coverage.cocotb",
-                config_file=False,
-                branch=True,
-                include=[f"{os.path.dirname(__file__)}/*"],
-            )
-            _library_coverage.start()
-
-        _initialise_testbench_(argv_)
+            simulator.stop_simulator()
+            _stop_library_coverage()
 
 
 def _initialise_testbench_(argv_):
@@ -283,8 +279,6 @@ def _initialise_testbench_(argv_):
     random.seed(RANDOM_SEED)
 
     # Setup DUT object
-    from cocotb import simulator
-
     handle = simulator.get_root_handle(root_name)
     if not handle:
         raise RuntimeError(f"Can not find root handle ({root_name})")
@@ -295,20 +289,44 @@ def _initialise_testbench_(argv_):
     _start_user_coverage()
 
     global regression_manager
-    try:
-        regression_manager = RegressionManager.from_discovery(top)
-    except BaseException as e:
-        log.error(e)
-        simulator.stop_simulator()
-        _stop_user_coverage()
-        _stop_library_coverage()
-        return  # pragma: no cover
+    regression_manager = RegressionManager()
+
+    # discover tests
+    module_str = os.getenv("MODULE").strip()
+    if module_str is None or len(module_str) == 0:
+        raise RuntimeError(
+            "Environment variable MODULE, which defines the module(s) to execute, is not defined or empty."
+        )
+    modules = [s.strip() for s in module_str.split(",") if s.strip()]
+    test_str = os.getenv("TESTCASE", "")
+    filters = [s.strip() for s in test_str.split(",") if s.strip()]
+    regression_manager.setup_pytest_assertion_rewriting(modules)
+    regression_manager.discover_tests(modules=modules, filters=filters)
 
     global scheduler
     scheduler = Scheduler(handle_result=regression_manager._handle_result)
 
     # start Regression Manager
-    regression_manager._execute()
+    regression_manager.start_regression()
+
+
+def _start_library_coverage() -> None:  # pragma: no cover
+    if "COCOTB_LIBRARY_COVERAGE" in os.environ:
+        try:
+            import coverage
+        except ImportError as e:
+            log.error(
+                "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`."
+            )
+        else:
+            global _library_coverage
+            _library_coverage = coverage.coverage(
+                data_file=".coverage.cocotb",
+                config_file=False,
+                branch=True,
+                include=[f"{os.path.dirname(__file__)}/*"],
+            )
+            _library_coverage.start()
 
 
 def _stop_library_coverage() -> None:

@@ -36,10 +36,11 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 
 import cocotb
-from cocotb.regression import Test, TestFactory
+from cocotb.regression import TestFactory
 
 Result = TypeVar("Result")
 
@@ -83,25 +84,68 @@ def external(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, R
     return wrapper
 
 
+F = TypeVar("F", bound=Callable[..., Coroutine[Any, Any, None]])
+
+
+@overload
+def test(_func: Union[F, TestFactory[F]]) -> F:
+    ...
+
+
+@overload
 def test(
+    *,
     timeout_time: Optional[float] = None,
     timeout_unit: str = "step",
     expect_fail: bool = False,
-    expect_error: Union[bool, Type[Exception], Sequence[Type[Exception]]] = (),
+    expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
     skip: bool = False,
     stage: int = 0,
-) -> Callable[[Callable[..., Coroutine[Any, Any, None]]], Optional[Test]]:
-    """
-    Decorator to mark a Callable which returns a Coroutine as a test.
+    name: Optional[str] = None,
+) -> Callable[[Union[F, TestFactory[F]]], F]:
+    ...
 
-    The test decorator provides a test timeout, and allows us to mark tests as skipped
-    or expecting errors or failures.
+
+def test(
+    _func: Optional[Union[F, TestFactory[F]]] = None,
+    *,
+    timeout_time: Optional[float] = None,
+    timeout_unit: str = "step",
+    expect_fail: bool = False,
+    expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+    skip: bool = False,
+    stage: int = 0,
+    name: Optional[str] = None,
+) -> Callable[[Union[F, TestFactory[F]]], F]:
+    """
+    Decorator to register a Callable which returns a Coroutine as a test.
+
+    The test decorator provides a test timeout, and allows us to mark tests as skipped or expecting errors or failures.
     Tests are evaluated in the order they are defined in a test module.
 
-    Used as ``@cocotb.test(...)``.
+    Usage:
+        .. code-block:: python3
+
+            @cocotb.test(timeout_time=10, timeout_unit="ms")
+            async def test_thing(dut):
+                ...
+
+    .. versionchanged:: 2.0
+        Support using decorator on test function without supplying parameters first.
+
+        Assumes all default values for the test parameters.
+
+        .. code-block:: python3
+
+            @cocotb.test
+            async def test_thing(dut):
+                ...
+
+    .. versionchanged:: 2.0
+        Decorated tests now return the decorated object.
 
     Args:
-        timeout_time (numbers.Real or decimal.Decimal, optional):
+        timeout_time:
             Simulation time duration before timeout occurs.
 
             .. versionadded:: 1.3
@@ -111,7 +155,7 @@ def test(
                 Users should use :class:`~cocotb.triggers.with_timeout` if they require a
                 more general-purpose timeout mechanism.
 
-        timeout_unit (str, optional):
+        timeout_unit:
             Units of timeout_time, accepts any units that :class:`~cocotb.triggers.Timer` does.
 
             .. versionadded:: 1.3
@@ -119,12 +163,12 @@ def test(
             .. versionchanged:: 2.0
                 Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
 
-        expect_fail (bool, optional):
+        expect_fail:
             If ``True`` and the test fails a functional check via an ``assert`` statement, :class:`pytest.raises`,
             :class:`pytest.warns`, or :class:`pytest.deprecated_call` the test is considered to have passed.
             If ``True`` and the test passes successfully, the test is considered to have failed.
 
-        expect_error (exception type or tuple of exception types, optional):
+        expect_error:
             Mark the result as a pass only if one of the exception types is raised in the test.
             This is primarily for cocotb internal regression use for when a simulator error is expected.
 
@@ -146,39 +190,61 @@ def test(
                 Passing a :class:`bool` value was removed.
                 Pass a specific :class:`Exception` or a tuple of Exceptions instead.
 
-        skip (bool, optional):
+        skip:
             Don't execute this test as part of the regression. Test can still be run
             manually by setting :make:var:`TESTCASE`.
 
-        stage (int)
+        stage:
             Order tests logically into stages, where multiple tests can share a stage.
             Defaults to 0.
+
+        name:
+            Override the default name of the test.
+            The default test name is the :any:`__qualname__` of the decorated test function.
+
+            .. versionadded:: 2.0
+
+    Returns:
+        The test function to which the decorator is applied.
     """
 
-    def wrapper(f: Union[Callable[..., None], TestFactory]) -> Optional[Test]:
+    if _func is not None:
+        if isinstance(_func, TestFactory):
+            if cocotb.regression_manager is not None:
+                _func.generate_tests()
+            return _func.test_function
+        else:
+            if cocotb.regression_manager is not None:
+                cocotb.regression_manager.register_test(func=_func)
+            return _func
+
+    def wrapper(f: Union[F, TestFactory[F]]) -> F:
         if isinstance(f, TestFactory):
-            f.generate_tests(
-                test_dec=test(
+            if cocotb.regression_manager is not None:
+                f.generate_tests(
+                    name=name,
                     timeout_time=timeout_time,
                     timeout_unit=timeout_unit,
                     expect_fail=expect_fail,
                     expect_error=expect_error,
                     skip=skip,
                     stage=stage,
-                ),
-                stacklevel=2,
-            )
-            return None
+                )
+            return f.test_function
 
-        return Test(
-            f=f,
-            timeout_time=timeout_time,
-            timeout_unit=timeout_unit,
-            expect_fail=expect_fail,
-            expect_error=expect_error,
-            skip=skip,
-            stage=stage,
-        )
+        else:
+            if cocotb.regression_manager is not None:
+                cocotb.regression_manager.register_test(
+                    func=f,
+                    name=name,
+                    timeout_time=timeout_time,
+                    timeout_unit=timeout_unit,
+                    expect_fail=expect_fail,
+                    expect_error=expect_error,
+                    skip=skip,
+                    stage=stage,
+                )
+            return f
 
     return wrapper
 
@@ -231,6 +297,8 @@ def parameterize(
     Args:
         kwargs:
             Mapping of test function parameter names to the list of values each
+
+    .. versionadded:: 2.0
     """
 
     for key, lis in kwargs.items():
