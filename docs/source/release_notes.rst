@@ -133,7 +133,7 @@ Features
 --------
 
 - Support a custom entry point from C to Python with :envvar:`PYGPI_ENTRY_POINT`. (:pr:`1225`)
-- Added :class:`~cocotb.types.Logic` and :class:`~cocotb.types.Bit` modeling datatypes. (:pr:`2059`)
+- Added :class:`~cocotb.types.Logic` and ``cocotb.types.Bit`` modeling datatypes. (:pr:`2059`)
 - ModelSim and Questa now support compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`2465`)
 - Added the :class:`~cocotb.types.LogicArray` modeling datatype. (:pr:`2514`)
 - Xcelium now supports compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`2614`)
