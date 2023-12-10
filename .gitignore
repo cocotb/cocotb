@@ -111,3 +111,4 @@ examples/*/tests/verilog.log
 
 # Build artifacts
 /dist/
+src/cocotb/_version.py
