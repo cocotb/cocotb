@@ -388,7 +388,7 @@ def _start_user_coverage() -> None:
             if config_filepath is None:
                 # Exclude cocotb itself from coverage collection.
                 cocotb.log.info(
-                    "Collecting coverage of user code. No coverage config file supplied."
+                    "Collecting coverage of user code. No coverage config file supplied via COVERAGE_RCFILE."
                 )
                 cocotb_package_dir = os.path.dirname(__file__)
                 _user_coverage = coverage.coverage(
