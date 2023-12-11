@@ -57,19 +57,6 @@ from cocotb.xunit_reporter import XUnitReporter
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
-# Optional support for coverage collection of testbench files
-coverage = None
-if "COVERAGE" in os.environ:
-    try:
-        import coverage
-    except ImportError as e:
-        msg = (
-            "Coverage collection requested but coverage module not available"
-            "\n"
-            "Import error was: %s\n" % repr(e)
-        )
-        sys.stderr.write(msg)
-
 
 def _my_import(name: str) -> Any:
     mod = __import__(name)
@@ -167,7 +154,6 @@ class RegressionManager:
         self._test_task = None
         self._test_start_time = None
         self._test_start_sim_time = None
-        self._cov = None
         self.log = _logger
         self.start_time = time.time()
         self.test_results = []
@@ -189,23 +175,6 @@ class RegressionManager:
         self.xunit.add_testsuite(name=suite_name, package=package_name)
 
         self.xunit.add_property(name="random_seed", value=str(cocotb.RANDOM_SEED))
-
-        # Setup Coverage
-        ####################
-
-        if coverage is not None:
-            self.log.info("Enabling coverage collection of Python code")
-            config_filepath = os.getenv("COVERAGE_RCFILE")
-            if config_filepath is None:
-                # Exclude cocotb itself from coverage collection.
-                cocotb_package_dir = os.path.dirname(__file__)
-                self._cov = coverage.coverage(
-                    branch=True, omit=[f"{cocotb_package_dir}/*"]
-                )
-            else:
-                # Allow the config file to handle all configuration
-                self._cov = coverage.coverage()
-            self._cov.start()
 
         # Test Discovery
         ####################
@@ -354,14 +323,10 @@ class RegressionManager:
 
         # Generate output reports
         self.xunit.write()
-        if self._cov:
-            self._cov.stop()
-            self.log.info("Writing coverage data")
-            self._cov.save()
-            self._cov.html_report()
 
         # Setup simulator finalization
         simulator.stop_simulator()
+        cocotb._stop_user_coverage()
         cocotb._stop_library_coverage()
 
     def _next_test(self) -> Optional[Test]:
