@@ -249,7 +249,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "xcelium",
-        "sim-version": "cadence/xcelium/2303",
+        "sim-version": "cadence/xcelium/2309",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -259,7 +259,7 @@ ENVS = [
     # {
     #     "lang": "vhdl",
     #     "sim": "xcelium",
-    #     "sim-version": "cadence/xcelium/2303",
+    #     "sim-version": "cadence/xcelium/2309",
     #     "os": "ubuntu-20.04",
     #     "self-hosted": True,
     #     "python-version": "3.8",
