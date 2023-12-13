@@ -230,7 +230,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "riviera",
-        "sim-version": "aldec/rivierapro/2022.04",
+        "sim-version": "aldec/rivierapro/2023.10",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -239,7 +239,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "riviera",
-        "sim-version": "aldec/rivierapro/2022.04",
+        "sim-version": "aldec/rivierapro/2023.10",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
