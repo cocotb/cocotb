@@ -103,11 +103,11 @@ jobs:
     - name: Set up Icarus (Ubuntu - apt)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version == 'apt'
       run: |
-        sudo apt install -y --no-install-recommends iverilog
+        sudo apt-get install -y --no-install-recommends iverilog
     - name: Set up Icarus (Ubuntu - source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version != 'apt'
       run: |
-        sudo apt install -y --no-install-recommends g++ gperf flex bison make autoconf
+        sudo apt-get install -y --no-install-recommends g++ gperf flex bison make autoconf
         git clone https://github.com/steveicarus/iverilog.git
         cd iverilog
         git reset --hard ${{matrix.sim-version}}
@@ -141,7 +141,7 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl'
       run: |
         sudo apt update
-        sudo apt install -y --no-install-recommends gnat
+        sudo apt-get install -y --no-install-recommends gnat
         git clone https://github.com/ghdl/ghdl.git
         cd ghdl
         git reset --hard ${{matrix.sim-version}}
@@ -155,7 +155,7 @@ jobs:
     - name: Set up NVC (Ubuntu)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'nvc'
       run: |
-        sudo apt install -y --no-install-recommends llvm-dev libdw-dev flex
+        sudo apt-get install -y --no-install-recommends llvm-dev libdw-dev flex
         git clone --depth=1 --no-single-branch https://github.com/nickg/nvc.git
         cd nvc
         git reset --hard ${{matrix.sim-version}}
@@ -170,7 +170,7 @@ jobs:
     - name: Set up Verilator (Ubunutu - source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator'
       run: |
-        sudo apt install -y --no-install-recommends help2man make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlibc zlib1g zlib1g-dev
+        sudo apt-get install -y --no-install-recommends help2man make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlibc zlib1g zlib1g-dev
         git clone https://github.com/verilator/verilator.git
         cd verilator
         git reset --hard ${{matrix.sim-version}}
@@ -200,11 +200,11 @@ jobs:
     - name: Install cocotb build dependencies (Ubuntu - g++)
       if: startsWith(matrix.os, 'ubuntu') && (!matrix.cxx || matrix.cxx == 'g++')
       run: |
-        sudo apt install g++
+        sudo apt-get install g++
     - name: Install cocotb build dependencies (Ubuntu - clang++)
       if: startsWith(matrix.os, 'ubuntu') && matrix.cxx == 'clang++'
       run: |
-        sudo apt install clang
+        sudo apt-get install clang
     - name: Install cocotb build dependencies (MacOS)
       if: startsWith(matrix.os, 'macos')
       run: |

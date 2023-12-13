@@ -35,7 +35,7 @@ jobs:
 
     - name: Set up NVC (Ubuntu)
       run: |
-        sudo apt install -y --no-install-recommends llvm-dev libdw-dev flex libzstd-dev pkg-config
+        sudo apt-get install -y --no-install-recommends llvm-dev libdw-dev flex libzstd-dev pkg-config
         git clone https://github.com/nickg/nvc.git
         cd nvc
         git reset --hard ${{matrix.sim-version}}

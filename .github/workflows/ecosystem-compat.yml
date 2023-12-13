@@ -30,7 +30,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install Icarus Verilog
-        run: sudo apt install -y --no-install-recommends iverilog
+        run: sudo apt-get install -y --no-install-recommends iverilog
 
       - name: Checkout cocotb repository
         uses: actions/checkout@v4
