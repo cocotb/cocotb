@@ -3,14 +3,23 @@
 import logging
 
 import cocotb
+from cocotb._sim_versions import RivieraVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
 
 # GHDL unable to access record signals (gh-2591)
 # Icarus doesn't support structs (gh-2592)
+# Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587)
 @cocotb.test(
-    expect_error=AttributeError if SIM_NAME.startswith(("icarus", "ghdl")) else ()
+    expect_error=AttributeError
+    if SIM_NAME.startswith(("icarus", "ghdl"))
+    or (
+        SIM_NAME.startswith("riviera")
+        and RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
+        and cocotb.LANGUAGE == "verilog"
+    )
+    else ()
 )
 async def issue_330_direct(dut):
     """
@@ -45,4 +54,13 @@ async def issue_330_iteration(dut):
         tlog.info("Found %s" % member._path)
         count += 1
 
-    assert count == 2, "There should have been two members of the structure"
+    # Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587)
+    rv_2022_10_plus = RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
+    if (
+        SIM_NAME.startswith("riviera")
+        and rv_2022_10_plus
+        and cocotb.LANGUAGE == "verilog"
+    ):
+        assert count == 0
+    else:
+        assert count == 2, "There should have been two members of the structure"
