@@ -6,6 +6,7 @@ import contextlib
 import logging
 
 import cocotb
+from cocotb._sim_versions import RivieraVersion
 from cocotb.clock import Clock
 from cocotb.triggers import Timer
 
@@ -139,9 +140,15 @@ async def test_ndim_array_indexes(dut):
 
 # GHDL unable to access record signals (gh-2591)
 # Icarus doesn't support structs (gh-2592)
+# Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587)
 @cocotb.test(
     expect_error=AttributeError
     if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl"))
+    or (
+        cocotb.SIM_NAME.lower().startswith("riviera")
+        and RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
+        and cocotb.LANGUAGE == "verilog"
+    )
     else ()
 )
 async def test_struct(dut):
