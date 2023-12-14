@@ -44,7 +44,7 @@ jobs:
 
     needs: generate_envs
 
-    name: ${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}} ${{matrix.may_fail && '| May Fail' || ''}}
+    name: ${{matrix.name}}
     runs-on: ${{matrix.runs-on}}
     env:
       SIM: ${{matrix.sim}}
@@ -97,7 +97,7 @@ jobs:
         pip install nox
     - name: Run tests without simulators
       run: nox -s "${{ inputs.nox_session_test_nosim }}"
-      continue-on-error: ${{matrix.may_fail || false}}
+      continue-on-error: ${{matrix.may-fail || false}}
 
       # Install Icarus
     - name: Set up Icarus (Ubuntu - apt)
@@ -173,7 +173,7 @@ jobs:
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
-      continue-on-error: ${{matrix.may_fail || false}}
+      continue-on-error: ${{matrix.may-fail || false}}
       timeout-minutes: 15
       # Virtual environments don't work on Windows with cocotb. Avoid using them
       # in nox testing.
@@ -196,7 +196,7 @@ jobs:
     - name: Test (Ubuntu, MacOS)
       id: unixtesting
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
-      continue-on-error: ${{matrix.may_fail || false}}
+      continue-on-error: ${{matrix.may-fail || false}}
       timeout-minutes: 15
       run: |
         if [ "${{matrix.self-hosted}}" == "true" ]; then
@@ -214,8 +214,6 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         files: .python_coverage.xml,.cpp_coverage.xml
-        # There seems to be no way (as of Feb 2021) to get the job name in a
-        # variable; we hence have to re-assemble it here.
-        name: "${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}}"
+        name: ${{ matrix.name }}
         env_vars: SIM,TOPLEVEL_LANG,CXX,OS,PYTHON_VERSION
         verbose: true

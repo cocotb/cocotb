@@ -161,7 +161,7 @@ ENVS = [
         "os": "windows-latest",
         "python-version": "3.8",
         "toolchain": "mingw",
-        "extra_name": "mingw | ",
+        "extra-name": "mingw",
         # mingw tests fail silently currently due to test harness limitations.
         "group": "experimental",
     },
@@ -173,7 +173,7 @@ ENVS = [
         "os": "windows-latest",
         "python-version": "3.8",
         "toolchain": "msvc",
-        "extra_name": "msvc | ",
+        "extra-name": "msvc",
         # TODO: Moved from ci to experimental until
         # https://github.com/cocotb/cocotb/issues/3326 is fixed.
         "group": "experimental",
@@ -188,7 +188,7 @@ ENVS = [
         "python-version": "3.8",
         "cxx": "clang++",
         "cc": "clang",
-        "extra_name": "clang | ",
+        "extra-name": "clang",
         "group": "ci",
     },
     # Test Siemens Questa on Ubuntu
@@ -241,6 +241,12 @@ ENVS = [
 ]
 
 
+def append_str_val(listref, my_list, key) -> None:
+    if key not in my_list:
+        return
+    listref.append(str(my_list[key]))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--group")
@@ -259,14 +265,31 @@ def main() -> int:
         # Return all tasks if no group is selected.
         selected_envs = ENVS
 
-    # The "runs-on" job attribute is a string if we're using the GitHub-provided
-    # hosted runners, or an array with special keys if we're using self-hosted
-    # runners.
     for env in selected_envs:
+        # The "runs-on" job attribute is a string if we're using the GitHub-
+        # provided hosted runners, or an array with special keys if we're
+        # using self-hosted runners.
         if "self-hosted" in env and env["self-hosted"] and "runs-on" not in env:
             env["runs-on"] = ["self-hosted", "cocotb-private", env["os"]]
         else:
             env["runs-on"] = env["os"]
+
+        # Assemble the human-readable name of the job.
+        name_parts = []
+        append_str_val(name_parts, env, "extra-name")
+        append_str_val(name_parts, env, "sim")
+        if "/" in env["sim-version"]:
+            # Shorten versions like 'siemens/questa/2023.2' to '2023.2'.
+            name_parts.append(env["sim-version"].split("/")[-1])
+        else:
+            name_parts.append(env["sim-version"])
+        append_str_val(name_parts, env, "lang")
+        append_str_val(name_parts, env, "os")
+        append_str_val(name_parts, env, "python-version")
+        if "may-fail" in env and env["may-fail"]:
+            name_parts.append("May fail")
+
+        env["name"] = "|".join(name_parts)
 
     if args.output_format == "gha":
         # Output for GitHub Actions (GHA). Appends the configuration to
