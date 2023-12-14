@@ -195,7 +195,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "questa",
-        "sim-version": "siemens/questa/2023.2",
+        "sim-version": "siemens/questa/2023.4",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -204,7 +204,7 @@ ENVS = [
     {
         "lang": "vhdl and fli",
         "sim": "questa",
-        "sim-version": "siemens/questa/2023.2",
+        "sim-version": "siemens/questa/2023.4",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -213,7 +213,7 @@ ENVS = [
     {
         "lang": "vhdl and vhpi",
         "sim": "questa",
-        "sim-version": "siemens/questa/2023.2",
+        "sim-version": "siemens/questa/2023.4",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
