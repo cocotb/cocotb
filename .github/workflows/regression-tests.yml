@@ -68,7 +68,7 @@ jobs:
         fetch-depth: 2
 
      # Download distribution artifacts (if any).
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: cocotb-dist
         path: dist
