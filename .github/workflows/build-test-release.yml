@@ -38,7 +38,7 @@ jobs:
       - name: Build cocotb release
         run: nox -s release_build
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: cocotb-dist
           path: |
