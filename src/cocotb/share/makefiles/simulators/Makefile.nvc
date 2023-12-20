@@ -41,13 +41,19 @@ NVC_R_ARGS := $(filter-out $(NVC_E_FILTER),$(SIM_ARGS))
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
-	$(CMD) $(EXTRA_ARGS) --work=$(SIM_BUILD)/$(RTL_LIBRARY) -a $(VHDL_SOURCES) $(COMPILE_ARGS)
+	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
+	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
+	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
+
+	$(foreach LIB_VAR,$(VHDL_LIB_ORDER), \
+		$(CMD) $(EXTRA_ARGS) --work=$(LIB_VAR):$(SIM_BUILD)/$(LIB_VAR) -L $(SIM_BUILD) -a $(VHDL_SOURCES_$(LIB_VAR)) $(COMPILE_ARGS) && ) \
+	$(CMD) $(EXTRA_ARGS) --work=$(RTL_LIBRARY):$(SIM_BUILD)/$(RTL_LIBRARY) -L $(SIM_BUILD) -a $(VHDL_SOURCES) $(COMPILE_ARGS)
 
 $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 
 	TESTCASE=$(TESTCASE) MODULE=$(MODULE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	  $(SIM_CMD_PREFIX) $(CMD) $(EXTRA_ARGS) --work=$(SIM_BUILD)/$(RTL_LIBRARY) \
+	  $(SIM_CMD_PREFIX) $(CMD) $(EXTRA_ARGS) --work=$(RTL_LIBRARY):$(SIM_BUILD)/$(RTL_LIBRARY) -L $(SIM_BUILD) \
 	  -e $(TOPLEVEL) --no-save $(NVC_E_ARGS) \
 	  -r --load $(shell cocotb-config --lib-name-path vhpi nvc) $(TRACE) $(NVC_R_ARGS) $(PLUSARGS)
 
