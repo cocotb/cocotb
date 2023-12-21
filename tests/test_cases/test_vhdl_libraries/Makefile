@@ -12,7 +12,7 @@ ifneq ($(filter $(SIM),xcelium),)
     COMPILE_ARGS += -v93
 endif
 
-ifneq ($(filter questa modelsim xcelium ius,$(shell echo $(SIM) | tr A-Z a-z)),)
+ifneq ($(filter nvc questa modelsim xcelium ius,$(shell echo $(SIM) | tr A-Z a-z)),)
     VHDL_LIB_ORDER := blib
 endif
 
@@ -20,9 +20,9 @@ ifneq ($(shell echo $(TOPLEVEL_LANG) | tr A-Z a-z),vhdl)
 all:
 	@echo "Skipping test since only VHDL is supported"
 clean::
-else ifeq ($(filter ghdl questa modelsim xcelium ius,$(shell echo $(SIM) | tr A-Z a-z)),)
+else ifeq ($(filter ghdl nvc questa modelsim xcelium ius,$(shell echo $(SIM) | tr A-Z a-z)),)
 all:
-	@echo "Skipping test since only GHDL, Questa/ModelSim, Xcelium and Incisive are supported"
+	@echo "Skipping test since only GHDL, NVC, Questa/ModelSim, Xcelium and Incisive are supported"
 clean::
 else
 include $(shell cocotb-config --makefiles)/Makefile.sim
