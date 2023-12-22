@@ -55,9 +55,9 @@ async def check_objects(dut):
         assert isinstance(
             obj, objtype
         ), "Expected {} to be of type {} but got {}".format(
-            obj._fullname, objtype.__name__, type(obj).__name__
+            obj._path, objtype.__name__, type(obj).__name__
         )
-        tlog.info(f"{obj._fullname} is {type(obj).__name__}")
+        tlog.info(f"{obj._path} is {type(obj).__name__}")
 
     # Hierarchy checks
     check_instance(dut.inst_axi4s_buffer, HierarchyObject)

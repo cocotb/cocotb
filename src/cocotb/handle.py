@@ -29,7 +29,7 @@ import enum
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from logging import Logger
-from typing import Dict, Generic, Set, Tuple, TypeVar
+from typing import Any, Dict, Generic, Optional, Set, Tuple, TypeVar
 
 import cocotb
 from cocotb import simulator
@@ -64,18 +64,19 @@ def _value_limits(n_bits, limits):
 class SimHandleBase(ABC):
     """Base class for all simulation objects.
 
-    We maintain a handle which we can use for GPI calls.
+    All simulation objects are hashable and equatable by identity.
+
+    .. code-block:: python3
+        a = dut.clk
+        b = dut.clk
+        assert a == b
+
+    .. versionchanged:: 2.0
+        ``get_definition_name()`` and ``get_definition_file()`` were removed in favor of :meth:`_def_name` and :meth:`_def_file`, respectively.
     """
 
     @abstractmethod
-    def __init__(self, handle, path):
-        """
-        .. Constructor. This RST comment works around sphinx-doc/sphinx#6885
-
-        Args:
-            handle (int): The GPI handle to the simulator object.
-            path (str): Path to this handle, ``None`` if root.
-        """
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         self._handle = handle
         self._path: str = self._name if path is None else path
         """The path to this handle, or its name if this is the root handle.
@@ -100,13 +101,11 @@ class SimHandleBase(ABC):
         return self._handle.get_type_string()
 
     @cached_property
-    def _fullname(self) -> str:
-        """The name of an object with its type appended in parentheses."""
-        return self._name + "(%s)" % self._type
-
-    @cached_property
     def _log(self) -> Logger:
-        """The logging object."""
+        """The logging object.
+
+        :meta public:
+        """
         return SimLog("cocotb.%s" % self._name)
 
     @cached_property
@@ -133,28 +132,15 @@ class SimHandleBase(ABC):
         """
         return self._handle.get_definition_file()
 
-    def get_definition_name(self):
-        return self._def_name
-
-    def get_definition_file(self):
-        return self._def_file
-
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self._handle)
 
-    def __eq__(self, other):
-        """Compare equality of handles.
-
-        Example usage::
-
-            if clk == dut.clk:
-                do_something()
-        """
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, SimHandleBase):
             return NotImplemented
         return self._handle == other._handle
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         desc = self._path
         defname = self._def_name
         if defname:
@@ -422,17 +408,12 @@ class NonHierarchyIndexableObjectBase(NonHierarchyObject):
         if isinstance(index, slice):
             raise IndexError("Slice indexing is not supported")
         if self._range is None:
-            raise IndexError(
-                "%s is not indexable.  Unable to get object at index %d"
-                % (self._fullname, index)
-            )
+            raise IndexError(f"{self._path} is not indexable.")
         if index in self._sub_handles:
             return self._sub_handles[index]
         new_handle = self._handle.get_handle_by_index(index)
         if not new_handle:
-            raise IndexError(
-                "%s contains no object at index %d" % (self._fullname, index)
-            )
+            raise IndexError(f"{self._path} contains no object at index {index}")
         path = self._path + "[" + str(index) + "]"
         self._sub_handles[index] = SimHandle(new_handle, path)
         return self._sub_handles[index]

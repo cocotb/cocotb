@@ -1,0 +1,1 @@
+Methods ``get_definition_name()`` and ``get_definition_file()`` of :class:`cocotb.handle.SimHandleBase` were removed in favor of :meth:`~cocotb.handle.SimHandleBase._def_name` and :meth:`~cocotb.handle.SimHandleBase._def_file`, respectively.

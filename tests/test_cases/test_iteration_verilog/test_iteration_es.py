@@ -67,7 +67,7 @@ async def recursive_discovery(dut):
 
 async def iteration_loop(dut):
     for thing in dut:
-        thing._log.info("Found something: %s" % thing._fullname)
+        thing._log.info("Found something: %s", thing._path)
 
 
 @cocotb.test()
