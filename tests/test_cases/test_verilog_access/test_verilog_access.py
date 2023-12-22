@@ -42,11 +42,11 @@ async def port_not_hierarchy(dut):
         if not isinstance(obj, objtype):
             tlog.error(
                 "Expected {} to be of type {} but got {}".format(
-                    obj._fullname, objtype.__name__, type(obj).__name__
+                    obj._path, objtype.__name__, type(obj).__name__
                 )
             )
             return 1
-        tlog.info(f"{obj._fullname} is {type(obj).__name__}")
+        tlog.info(f"{obj._path} is {type(obj).__name__}")
         return 0
 
     fails += check_instance(dut.clk, LogicObject)
