@@ -212,10 +212,12 @@ def test(
         if isinstance(_func, TestFactory):
             if cocotb.regression_manager is not None:
                 _func.generate_tests()
+            _func.test_function.__cocotb_test__ = True
             return _func.test_function
         else:
             if cocotb.regression_manager is not None:
                 cocotb.regression_manager.register_test(func=_func)
+            _func.__cocotb_test__ = True
             return _func
 
     def wrapper(f: Union[F, TestFactory[F]]) -> F:
@@ -230,6 +232,7 @@ def test(
                     skip=skip,
                     stage=stage,
                 )
+            f.test_function.__cocotb_test__ = True
             return f.test_function
 
         else:
@@ -244,6 +247,7 @@ def test(
                     skip=skip,
                     stage=stage,
                 )
+            f.__cocotb_test__ = True
             return f
 
     return wrapper
