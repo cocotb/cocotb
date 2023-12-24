@@ -15,11 +15,17 @@ clean::
 
 else
 
-CMD := verilator
+CMD_BIN := verilator
 
-ifeq ($(shell which $(CMD) 2>/dev/null),)
-# Verilator is not in PATH, lets start searching for it
-$(error Cannot find verilator.)
+ifdef VERILATOR_BIN_DIR
+  CMD := $(shell :; command -v $(VERILATOR_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+  # auto-detect bin dir from system path
+  CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+  $(error Unable to locate command >$(CMD_BIN)<)
 endif
 
 VLT_MIN := 4.106
