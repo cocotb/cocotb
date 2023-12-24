@@ -99,7 +99,6 @@ var int stream_in_string_asciival_sum;
 `ifndef _VCP  // Aldec Riviera-PRO and Active-HDL
   // workaround for
   // # ELAB2: Fatal Error: ELAB2_0036 Unresolved hierarchical reference to "stream_in_string.len.len" from module "sample_module" (module not found).
-`ifndef VERILATOR
 always @(stream_in_string) begin
     $display("%m: stream_in_string has been updated, new value is '%s'", stream_in_string);
     stream_in_string_asciival_sum = 0;
@@ -111,7 +110,6 @@ always @(stream_in_string) begin
                  idx, stream_in_string_asciival, stream_in_string_asciival_sum);
     end
 end
-`endif //  `ifndef VERILATOR
 `endif //  `ifndef _VCP
 
 test_if struct_var;
@@ -126,7 +124,7 @@ initial begin
 end
 `endif
 
-parameter NUM_OF_MODULES = 4;
+parameter NUM_OF_MODULES /*verilator public_flat_rd*/ = 4;
 reg[NUM_OF_MODULES-1:0] temp;
 genvar idx;
 generate
@@ -180,16 +178,14 @@ initial begin
     mybits = '1;
 end
 
-`ifndef VERILATOR
-always @(*) begin
+always @(mybit) begin
     $display("%m: mybit has been updated, new value is %b", mybit);
 end
-always @(*) begin
+always @(mybits) begin
     $display("%m: mybits has been updated, new value is %b", mybits);
 end
-always @(*) begin
+always @(mybits_uninitialized) begin
     $display("%m: mybits_uninitialized has been updated, new value is %b", mybits_uninitialized);
 end
-`endif
 
 endmodule
