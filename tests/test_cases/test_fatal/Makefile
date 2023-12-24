@@ -18,6 +18,10 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     endif
 endif
 
+ifeq ($(shell echo $(SIM) | tr A-Z a-z),verilator)
+    COMPILE_ARGS += --timing
+endif
+
 # squash error code from simulator and ensure the cocotb test passed
 .PHONY: override_for_this_test
 override_for_this_test:
