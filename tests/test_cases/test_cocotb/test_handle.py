@@ -408,7 +408,9 @@ async def test_assign_LogicArray(dut):
         dut.stream_in_data.value = LogicArray("010")  # not the correct size
 
 
-@cocotb.test()
+# verilator does not support 4-state signals
+# see https://veripool.org/guide/latest/languages.html#unknown-states
+@cocotb.test(expect_error=AssertionError if SIM_NAME.startswith("verilator") else ())
 async def test_assign_Logic(dut):
     dut.stream_in_ready.value = Logic("X")
     await Timer(1, "ns")
