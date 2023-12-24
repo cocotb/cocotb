@@ -30,6 +30,8 @@ def test_toplevel_library():
     build_test_args = []
     if hdl_toplevel_lang == "vhdl" and sim == "xcelium":
         build_test_args = ["-v93"]
+    if sim == "verilator":
+        build_test_args = ["--timing"]
 
     verilog_sources = []
     vhdl_sources = []
