@@ -47,4 +47,8 @@ ifneq ($(filter $(SIM),ius xcelium),)
     COMPILE_ARGS += -v93
 endif
 
+ifeq ($(shell echo $(SIM) | tr A-Z a-z),verilator)
+    COMPILE_ARGS += --timing
+endif
+
 include $(shell cocotb-config --makefiles)/Makefile.sim

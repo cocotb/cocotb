@@ -17,4 +17,8 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     endif
 endif
 
+ifeq ($(shell echo $(SIM) | tr A-Z a-z),verilator)
+    COMPILE_ARGS += --timing
+endif
+
 include $(shell cocotb-config --makefiles)/Makefile.sim
