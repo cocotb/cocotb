@@ -17,10 +17,16 @@ async def dff_simple_test(dut):
     """Test that d propagates to q"""
 
     # Assert initial output is unknown
+    # verilator does not support 4-state signals
+    # see https://veripool.org/guide/latest/languages.html#unknown-states
     initial = (
-        LogicArray("U")
-        if cocotb.LANGUAGE.lower().startswith("vhdl")
-        else LogicArray("X")
+        LogicArray(0)
+        if cocotb.SIM_NAME.lower().startswith("verilator")
+        else (
+            LogicArray("U")
+            if cocotb.LANGUAGE.lower().startswith("vhdl")
+            else LogicArray("X")
+        )
     )
     assert LogicArray(dut.q.value) == initial
     # Set initial input value to prevent it from floating
