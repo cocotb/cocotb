@@ -7,9 +7,14 @@ import logging
 import cocotb
 
 
-# GHDL doesn't discover the generate blocks
+# GHDL is unable to access signals in generate loops (gh-2594)
+# Verilator doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)
 @cocotb.test(
-    expect_error=AssertionError if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+    expect_error=AssertionError
+    if cocotb.SIM_NAME.lower().startswith("ghdl")
+    else AttributeError
+    if cocotb.SIM_NAME.lower().startswith("verilator")
+    else ()
 )
 async def test_distinct_generates(dut):
     tlog = logging.getLogger("cocotb.test")
