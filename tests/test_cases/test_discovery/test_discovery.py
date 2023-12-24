@@ -344,8 +344,15 @@ async def access_boolean(dut):
 async def access_internal_register_array(dut):
     """Test access to an internal register array"""
 
+    # verilator does not support 4-state signals
+    # see https://veripool.org/guide/latest/languages.html#unknown-states
+    if cocotb.SIM_NAME.lower().startswith("verilator"):
+        expected_value = "00000000"
+    else:
+        expected_value = "xxxxxxxx"
+
     assert (
-        dut.register_array[0].value.binstr == "xxxxxxxx"
+        dut.register_array[0].value.binstr == expected_value
     ), "Failed to access internal register array value"
 
     dut.register_array[1].setimmediatevalue(4)
