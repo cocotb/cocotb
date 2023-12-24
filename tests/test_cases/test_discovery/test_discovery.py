@@ -35,8 +35,13 @@ from cocotb.triggers import Timer
 
 
 # GHDL is unable to access signals in generate loops (gh-2594)
+# Verilator doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)
 @cocotb.test(
-    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+    expect_error=IndexError
+    if cocotb.SIM_NAME.lower().startswith("ghdl")
+    else AttributeError
+    if cocotb.SIM_NAME.lower().startswith("verilator")
+    else ()
 )
 async def pseudo_region_access(dut):
     """Test that pseudo-regions are accessible before iteration"""
