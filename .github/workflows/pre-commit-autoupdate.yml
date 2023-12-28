@@ -3,12 +3,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 name: "Update pre-commit hooks"
+
 on:
   schedule:
-  - cron: "00 30 * * *"
+  - cron: "00 03 * * *"
 
 jobs:
   update-pre-commit-hooks:
+    name: Update pre-commit hooks
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
