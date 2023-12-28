@@ -1074,6 +1074,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
     {"set_signal_val_int", (PyCFunction)set_signal_val_int, METH_VARARGS,
      PyDoc_STR("set_signal_val_int($self, action, value, /)\n"
                "--\n\n"
+               "set_signal_val_int(action: int, value: int) -> None\n"
                "Set the value of a signal using an int")},
     {"set_signal_val_str", (PyCFunction)set_signal_val_str, METH_VARARGS,
      PyDoc_STR("set_signal_val_str($self, action, value, /)\n"
