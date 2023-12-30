@@ -5,7 +5,7 @@ from cocotb.handle import Force, Release
 from cocotb.triggers import Timer
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("ghdl"))
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("ghdl", "verilator")))
 async def test_force_release(dut):
     """
     Test force and release on simulation handles
