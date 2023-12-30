@@ -26,15 +26,25 @@
 import logging
 
 import cocotb
+from cocotb._sim_versions import IcarusVersion
 from cocotb.triggers import First
 
+SIM_NAME = cocotb.SIM_NAME.lower()
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME in ["Icarus Verilog"])
+
+@cocotb.test()
 async def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME.lower().startswith(
+    if SIM_NAME.startswith("verilator"):
+        pass_total = 26
+    elif SIM_NAME.startswith("icarus"):
+        if IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"):
+            pass_total = 27
+        else:
+            pass_total = 259
+    elif SIM_NAME.startswith(
         ("modelsim", "ncsim", "xmsim", "chronologic simulation vcs")
     ):
         # vpiAlways does not show up
