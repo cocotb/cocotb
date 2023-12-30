@@ -284,6 +284,7 @@ async def test_integer(dut):
         cocotb.LANGUAGE in ["verilog"]
         and SIM_NAME.startswith("riviera")
         or SIM_NAME.startswith("ghdl")
+        or SIM_NAME.startswith("verilator")
     ):
         limits = (
             _Limits.VECTOR_NBIT
@@ -301,6 +302,7 @@ async def test_integer_overflow(dut):
         cocotb.LANGUAGE in ["verilog"]
         and SIM_NAME.startswith("riviera")
         or SIM_NAME.startswith("ghdl")
+        or SIM_NAME.startswith("verilator")
     ):
         limits = (
             _Limits.VECTOR_NBIT
@@ -382,7 +384,7 @@ async def test_real_assign_int(dut):
 
 
 # identifiers starting with `_` are illegal in VHDL
-@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
+@cocotb.test(skip=cocotb.LANGUAGE in ("vhdl"))
 async def test_access_underscore_name(dut):
     """Test accessing HDL name starting with an underscore"""
     # direct access does not work because we consider such names cocotb-internal
