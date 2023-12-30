@@ -41,14 +41,16 @@ from cocotb.handle import (
 )
 from cocotb.triggers import Timer
 
+SIM_NAME = cocotb.SIM_NAME.lower()
+
 
 # GHDL is unable to access signals in generate loops (gh-2594)
 # Verilator doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)
 @cocotb.test(
     expect_error=IndexError
-    if cocotb.SIM_NAME.lower().startswith("ghdl")
+    if SIM_NAME.startswith("ghdl")
     else AttributeError
-    if cocotb.SIM_NAME.lower().startswith("verilator")
+    if SIM_NAME.startswith("verilator")
     else ()
 )
 async def pseudo_region_access(dut):
@@ -130,11 +132,11 @@ async def access_type_bit_verilog_metavalues(dut):
     dut.mybits.value = BinaryValue("XZ")
     await Timer(1, "ns")
     print(dut.mybits.value.binstr)
-    if cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim")):
+    if SIM_NAME.startswith(("icarus", "ncsim", "xmsim")):
         assert (
             dut.mybits.value.binstr.lower() == "xz"
         ), "The assigned value was not as expected"
-    elif cocotb.SIM_NAME.lower().startswith(("riviera",)):
+    elif SIM_NAME.startswith(("riviera",)):
         assert (
             dut.mybits.value.binstr.lower() == "10"
         ), "The assigned value was not as expected"
@@ -146,11 +148,11 @@ async def access_type_bit_verilog_metavalues(dut):
     dut.mybits.value = BinaryValue("ZX")
     await Timer(1, "ns")
     print(dut.mybits.value.binstr)
-    if cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim")):
+    if SIM_NAME.startswith(("icarus", "ncsim", "xmsim")):
         assert (
             dut.mybits.value.binstr.lower() == "zx"
         ), "The assigned value was not as expected"
-    elif cocotb.SIM_NAME.lower().startswith(("riviera",)):
+    elif SIM_NAME.startswith(("riviera",)):
         assert (
             dut.mybits.value.binstr.lower() == "01"
         ), "The assigned value was not as expected"
@@ -162,10 +164,14 @@ async def access_type_bit_verilog_metavalues(dut):
 
 @cocotb.test(
     # Icarus up to (and including) 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
+    # Verilator does not support net bits
     expect_error=IndexError
     if (
-        cocotb.SIM_NAME.lower().startswith("icarus")
-        and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))
+        (
+            SIM_NAME.startswith("icarus")
+            and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))
+        )
+        or SIM_NAME.startswith("verilator")
     )
     else (),
     skip=cocotb.LANGUAGE in ["vhdl"],
@@ -191,12 +197,12 @@ async def access_single_bit_erroneous(dut):
 # Icarus does not support integer signals (gh-2598)
 @cocotb.test(
     expect_error=AttributeError
-    if cocotb.SIM_NAME.lower().startswith(("icarus", "chronologic simulation vcs"))
+    if SIM_NAME.startswith(("icarus", "chronologic simulation vcs"))
     else (),
     expect_fail=(
-        cocotb.SIM_NAME.lower().startswith("riviera")
+        SIM_NAME.startswith("riviera")
         and cocotb.LANGUAGE in ["verilog"]
-        or cocotb.SIM_NAME.lower().startswith("ghdl")
+        or SIM_NAME.startswith(("ghdl", "verilator"))
     ),
 )
 async def access_integer(dut):
@@ -213,9 +219,7 @@ async def access_ulogic(dut):
 # GHDL discovers generics as vpiParameter (gh-2722)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
-    expect_error=NotImplementedError
-    if cocotb.SIM_NAME.lower().startswith("ghdl")
-    else (),
+    expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else (),
 )
 async def access_constant_integer(dut):
     """
@@ -228,9 +232,7 @@ async def access_constant_integer(dut):
 # GHDL discovers generics as vpiParameter (gh-2722)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
-    expect_error=NotImplementedError
-    if cocotb.SIM_NAME.lower().startswith("ghdl")
-    else (),
+    expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else (),
 )
 async def access_constant_string_vhdl(dut):
     """Access to a string, both constant and signal."""
@@ -242,7 +244,7 @@ async def access_constant_string_vhdl(dut):
 # GHDL discovers strings as vpiNetArray (gh-2584)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
-    expect_error=TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
+    expect_error=TypeError if SIM_NAME.startswith("ghdl") else (),
 )
 async def test_writing_string_undersized(dut):
     test_string = b"cocotb"
@@ -255,7 +257,7 @@ async def test_writing_string_undersized(dut):
 # GHDL discovers strings as vpiNetArray (gh-2584)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
-    expect_error=TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
+    expect_error=TypeError if SIM_NAME.startswith("ghdl") else (),
 )
 async def test_writing_string_oversized(dut):
     test_string = b"longer_than_the_array"
@@ -267,7 +269,7 @@ async def test_writing_string_oversized(dut):
 # GHDL discovers strings as vpiNetArray (gh-2584)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
-    expect_error=TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
+    expect_error=TypeError if SIM_NAME.startswith("ghdl") else (),
 )
 async def test_read_single_character(dut):
     test_string = b"cocotb!!!"
@@ -281,7 +283,7 @@ async def test_read_single_character(dut):
 # GHDL discovers strings as vpiNetArray (gh-2584)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
-    expect_error=TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
+    expect_error=TypeError if SIM_NAME.startswith("ghdl") else (),
 )
 async def test_write_single_character(dut):
     # set initial value
@@ -305,8 +307,8 @@ async def test_write_single_character(dut):
 
 
 @cocotb.test(
-    skip=cocotb.LANGUAGE in ["vhdl"] or cocotb.SIM_NAME.lower().startswith("riviera"),
-    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("icarus") else (),
+    skip=cocotb.LANGUAGE in ["vhdl"] or SIM_NAME.startswith("riviera"),
+    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
 )
 async def access_const_string_verilog(dut):
     """Access to a const Verilog string."""
@@ -322,7 +324,7 @@ async def access_const_string_verilog(dut):
 
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["vhdl"],
-    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("icarus") else (),
+    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
 )
 async def access_var_string_verilog(dut):
     """Access to a var Verilog string."""
@@ -339,9 +341,7 @@ async def access_var_string_verilog(dut):
 # GHDL discovers generics as vpiParameter (gh-2722)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
-    expect_error=NotImplementedError
-    if cocotb.SIM_NAME.lower().startswith("ghdl")
-    else (),
+    expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else (),
 )
 async def access_constant_boolean(dut):
     """Test access to a constant boolean"""
@@ -352,7 +352,7 @@ async def access_constant_boolean(dut):
 # GHDL discovers booleans as vpiNet (gh-2596)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
-    expect_fail=cocotb.SIM_NAME.lower().startswith("ghdl"),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def access_boolean(dut):
     """Test access to a boolean"""
@@ -370,7 +370,7 @@ async def access_internal_register_array(dut):
 
     # verilator does not support 4-state signals
     # see https://veripool.org/guide/latest/languages.html#unknown-states
-    if SIM_NAME.lower().startswith("verilator"):
+    if SIM_NAME.startswith("verilator"):
         expected_value = "00000000"
     else:
         expected_value = "xxxxxxxx"
@@ -388,7 +388,7 @@ async def access_internal_register_array(dut):
 
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["vhdl"],
-    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("icarus") else (),
+    expect_error=AttributeError if SIM_NAME.startswith(("icarus", "verilator")) else (),
 )
 async def access_gate(dut):
     """
@@ -400,7 +400,7 @@ async def access_gate(dut):
 # GHDL is unable to access record types (gh-2591)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
-    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
+    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else (),
 )
 async def custom_type(dut):
     """
@@ -438,21 +438,29 @@ async def type_check_verilog(dut):
         (dut.stream_in_ready, "GPI_REGISTER"),
         (dut.register_array, "GPI_ARRAY"),
         (dut.temp, "GPI_REGISTER"),
-        (dut.and_output, "GPI_NET"),
-        (dut.stream_in_data, "GPI_NET"),
         (dut.logic_b, "GPI_REGISTER"),
         (dut.logic_c, "GPI_REGISTER"),
         (dut.INT_PARAM, "GPI_INTEGER"),
         (dut.REAL_PARAM, "GPI_REAL"),
-        (dut.STRING_PARAM, "GPI_STRING"),
     ]
 
-    if cocotb.SIM_NAME.lower().startswith("icarus"):
+    if SIM_NAME.startswith("icarus"):
         test_handles.append(
             (dut.logic_a, "GPI_NET")
         )  # https://github.com/steveicarus/iverilog/issues/312
     else:
         test_handles.append((dut.logic_a, "GPI_REGISTER"))
+
+    # Verilator returns vpiReg rather than vpiNet
+    # Verilator (correctly) treats parameters with implicit type, that are assigned a string literal value, as an unsigned integer. See IEEE 1800-2017 Section 5.9 and Section 6.20.2
+    if SIM_NAME.startswith("verilator"):
+        test_handles.append((dut.stream_in_data, "GPI_REGISTER"))
+        test_handles.append((dut.and_output, "GPI_REGISTER"))
+        test_handles.append((dut.STRING_PARAM, "GPI_INTEGER"))
+    else:
+        test_handles.append((dut.stream_in_data, "GPI_NET"))
+        test_handles.append((dut.and_output, "GPI_NET"))
+        test_handles.append((dut.STRING_PARAM, "GPI_STRING"))
 
     for handle in test_handles:
         assert handle[0]._type == handle[1]
@@ -461,7 +469,7 @@ async def type_check_verilog(dut):
 # GHDL cannot find signal in "block" statement, may be related to (gh-2594)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
-    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
+    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else (),
 )
 async def access_block_vhdl(dut):
     """Access a VHDL block statement"""
@@ -485,7 +493,7 @@ async def discover_all_in_component_vhdl(dut):
     """Access a non local indexed name"""
 
     questa_vhpi = (
-        cocotb.SIM_NAME.lower().startswith("modelsim")
+        SIM_NAME.startswith("modelsim")
         and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
     )
 
@@ -504,7 +512,7 @@ async def discover_all_in_component_vhdl(dut):
 
     total_count = _discover(dut.isample_module1)
 
-    sim = cocotb.SIM_NAME.lower()
+    sim = SIM_NAME
 
     # ideally should be 32:
     #   1   EXAMPLE_STRING
