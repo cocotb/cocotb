@@ -42,9 +42,12 @@ async def test_1dim_array_handles(dut):
 
 # GHDL unable to put values on nested array types (gh-2588)
 # iverilog flattens multi-dimensional unpacked arrays (gh-2595)
+# Verilator doesn't support multi-dimensional unpacked arrays (gh-3611)
 @cocotb.test(
     expect_error=Exception
     if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl"))
+    else AttributeError
+    if cocotb.SIM_NAME.lower().startswith("verilator")
     else ()
 )
 async def test_ndim_array_handles(dut):
@@ -106,9 +109,12 @@ async def test_1dim_array_indexes(dut):
 
 # GHDL unable to put values on nested array types (gh-2588)
 # iverilog flattens multi-dimensional unpacked arrays (gh-2595)
+# Verilator doesn't support multi-dimensional unpacked arrays (gh-3611)
 @cocotb.test(
     expect_error=Exception
     if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl"))
+    else AttributeError
+    if cocotb.SIM_NAME.lower().startswith("verilator")
     else ()
 )
 async def test_ndim_array_indexes(dut):
