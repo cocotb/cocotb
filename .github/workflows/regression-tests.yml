@@ -70,8 +70,9 @@ jobs:
      # Download distribution artifacts (if any).
     - uses: actions/download-artifact@v4
       with:
-        name: cocotb-dist
         path: dist
+        pattern: cocotb-dist-*
+        merge-multiple: true
       if: ${{ inputs.download_artifacts }}
 
       # Install Python
