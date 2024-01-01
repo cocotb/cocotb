@@ -14,6 +14,10 @@ endif
 
 TOPLEVEL := test
 
+ifneq ($(filter $(SIM),ius xcelium),)
+COMPILE_ARGS += -v93
+endif
+
 export MODULE := test_issue2255
 export COCOTB_LOG_LEVEL := DEBUG
 

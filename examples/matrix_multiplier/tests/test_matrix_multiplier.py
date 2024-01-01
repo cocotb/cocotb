@@ -253,6 +253,8 @@ def test_matrix_multiplier_runner():
     extra_args = []
     if sim == "ghdl":
         extra_args = ["--std=08"]
+    elif sim == "xcelium":
+        extra_args = ["-v200x"]
 
     parameters = {
         "DATA_WIDTH": "32",
