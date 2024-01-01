@@ -100,12 +100,12 @@ manylinux-i686-image = "manylinux1"
 testpaths = [
     "tests/pytest",
 ]
+markers = [
+    "simulator_required: mark tests as needing a simulator",
+    "compile: the compile step in runner-based tests",
+]
 # log_cli = true
 # log_cli_level = DEBUG
-
-[tool.pytest.ini_options.markers]
-simulator_required = "mark tests as needing a simulator"
-compile = "the compile step in runner-based tests"
 
 [tool.coverage.run]
 omit = [
