@@ -1,0 +1,1 @@
+For Aldec simulators, the `-dbg` and `-O2` options are no longer passed by default, as they reduce simulation speed. Pass these options in ``COMPILE_ARGS`` and ``SIM_ARGS`` if you need them for increased observability.
