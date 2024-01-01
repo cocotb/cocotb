@@ -97,6 +97,9 @@ ifeq ($(TOPLEVEL_LANG),verilog)
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point
     EXTRA_ARGS += -top $(TOPLEVEL)
+    # Xcelium 23.09.004 fixes cocotb issue #1076 as long as the following define
+    # is set.
+    EXTRA_ARGS += -NEW_VHPI_PROPAGATE_DELAY
     RTL_LIBRARY ?= $(TOPLEVEL)
     MAKE_LIB = -makelib $(RTL_LIBRARY)
     END_LIB = -endlib
