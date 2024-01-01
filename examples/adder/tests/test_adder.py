@@ -69,6 +69,10 @@ def test_adder_runner():
     else:
         vhdl_sources = [proj_path / "hdl" / "adder.vhdl"]
 
+    build_test_args = []
+    if hdl_toplevel_lang == "vhdl" and sim == "xcelium":
+        build_test_args = ["-v93"]
+
     # equivalent to setting the PYTHONPATH environment variable
     sys.path.append(str(proj_path / "tests"))
 
@@ -78,8 +82,11 @@ def test_adder_runner():
         vhdl_sources=vhdl_sources,
         hdl_toplevel="adder",
         always=True,
+        build_args=build_test_args,
     )
-    runner.test(hdl_toplevel="adder", test_module="test_adder")
+    runner.test(
+        hdl_toplevel="adder", test_module="test_adder", test_args=build_test_args
+    )
 
 
 if __name__ == "__main__":

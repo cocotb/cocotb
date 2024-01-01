@@ -27,9 +27,9 @@ def test_toplevel_library():
 
     runner = get_runner(sim)
 
-    test_args = []
-    if sim == "xcelium":
-        test_args = ["-v93"]
+    build_test_args = []
+    if hdl_toplevel_lang == "vhdl" and sim == "xcelium":
+        build_test_args = ["-v93"]
 
     verilog_sources = []
     vhdl_sources = []
@@ -46,12 +46,13 @@ def test_toplevel_library():
         verilog_sources=verilog_sources,
         hdl_toplevel="tb_top",
         build_dir=str(test_module_path / "sim_build" / "pytest"),
+        build_args=build_test_args,
     )
 
     runner.test(
         hdl_toplevel="tb_top",
         test_module="plusargs",
-        test_args=test_args,
+        test_args=build_test_args,
         gpi_interfaces=gpi_interfaces,
         plusargs=["+foo=bar", "+test1", "+test2", "+options=fubar", "+lol=wow=4"],
     )
