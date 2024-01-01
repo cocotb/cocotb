@@ -312,6 +312,8 @@ In order to use this simulator, set :make:var:`SIM` to ``xcelium``:
 
 The simulator automatically loads :term:`VPI` even when only :term:`VHPI` is requested.
 
+Testing designs with VHDL toplevels is only supported with Xcelium 23.09.004 and newer.
+
 .. _sim-xcelium-issues:
 
 Issues for this simulator

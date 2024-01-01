@@ -1042,6 +1042,11 @@ class Xcelium(Simulator):
             verbosity_opts += ["-quiet"]
             verbosity_opts += ["-plinowarn"]
 
+        vhpi_opts = []
+        # Xcelium 23.09.004 fixes cocotb issue #1076 as long as the
+        # following define is set.
+        vhpi_opts.append("-NEW_VHPI_PROPAGATE_DELAY")
+
         cmds = [
             ["xrun"]
             + ["-logfile"]
@@ -1060,6 +1065,7 @@ class Xcelium(Simulator):
                 cocotb.config.lib_name_path("vpi", "xcelium")
                 + ":vlog_startup_routines_bootstrap"
             ]
+            + vhpi_opts
             + [f"-work {self.hdl_library}"]
             + self.build_args
             + ["-define COCOTB_SIM"]
@@ -1110,6 +1116,11 @@ class Xcelium(Simulator):
         else:
             input_tcl = ["-input", "@run; exit;"]
 
+        vhpi_opts = []
+        # Xcelium 23.09.004 fixes cocotb issue #1076 as long as the
+        # following define is set.
+        vhpi_opts.append("-NEW_VHPI_PROPAGATE_DELAY")
+
         cmds = [["mkdir", "-p", tmpdir]]
         cmds += [
             ["xrun"]
@@ -1120,6 +1131,7 @@ class Xcelium(Simulator):
             + ["-cds_implicit_tmpdir"]
             + [tmpdir]
             + ["-licqueue"]
+            + vhpi_opts
             + verbosity_opts
             + ["-R"]
             + self.test_args
