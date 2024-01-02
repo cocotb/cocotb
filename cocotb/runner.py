@@ -1025,6 +1025,8 @@ class Xcelium(Simulator):
     def _build_command(self) -> List[Command]:
         self.env["CDS_AUTO_64BIT"] = "all"
 
+        assert self.hdl_toplevel, "A HDL toplevel is required in all Xcelium compiles."
+
         verbosity_opts = []
         if self.verbose:
             verbosity_opts += ["-messages"]
