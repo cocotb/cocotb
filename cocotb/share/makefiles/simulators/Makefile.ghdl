@@ -63,6 +63,31 @@ ifeq ($(OS),Msys)
     export PATH := $(GHDL_BIN_DIR)/../lib:$(PATH)
 endif
 
+GHDL_RUN_ARGS ?=
+ifneq ($(COCOTB_HDL_TIMEPRECISION),)
+    # Convert the time precision to a format string supported by GHDL, if
+    # possible.
+    # GHDL only supports setting the time precision if the mcode backend is
+    # used, using the --time-resolution argument causes GHDL to error out
+    # otherwise.
+    # https://ghdl.github.io/ghdl/using/InvokingGHDL.html#cmdoption-ghdl-time-resolution
+    ifeq ($(COCOTB_HDL_TIMEPRECISION),1fs)
+        GHDL_TIME_RESOLUTION=fs
+    else ifeq ($(COCOTB_HDL_TIMEPRECISION),1ps)
+        GHDL_TIME_RESOLUTION=ps
+    else ifeq ($(COCOTB_HDL_TIMEPRECISION),1us)
+        GHDL_TIME_RESOLUTION=us
+    else ifeq ($(COCOTB_HDL_TIMEPRECISION),1ms)
+        GHDL_TIME_RESOLUTION=ms
+    else ifeq ($(COCOTB_HDL_TIMEPRECISION),1s)
+        GHDL_TIME_RESOLUTION=sec
+    else
+        $(error GHDL only supports the following values for COCOTB_HDL_TIMEPRECISION: 1fs, 1ps, 1us, 1ms, 1s)
+    endif
+
+    GHDL_RUN_ARGS += --time-resolution=$(GHDL_TIME_RESOLUTION)
+endif
+
 .PHONY: analyse
 
 # Compilation phase
@@ -76,7 +101,7 @@ $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(SIM_CMD_PREFIX) $(CMD) -r $(GHDL_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL) --vpi=$(shell cocotb-config --lib-name-path vpi ghdl) $(SIM_ARGS) $(PLUSARGS)
+	$(SIM_CMD_PREFIX) $(CMD) -r $(GHDL_ARGS) $(GHDL_RUN_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL) $(ARCH) --vpi=$(shell cocotb-config --lib-name-path vpi ghdl) $(SIM_ARGS) $(PLUSARGS)
 
 	$(call check_for_results_file)
 
