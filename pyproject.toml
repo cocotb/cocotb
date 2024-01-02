@@ -100,6 +100,10 @@ manylinux-i686-image = "manylinux1"
 testpaths = [
     "tests/pytest",
 ]
+
+# Ensure that all markers used in pytests are declared (in here).
+addopts = "--strict-markers"
+
 markers = [
     "simulator_required: mark tests as needing a simulator",
     "compile: the compile step in runner-based tests",
