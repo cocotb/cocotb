@@ -6,7 +6,7 @@
 
 # TODO: maybe do globbing and expanduser/expandvars in --include, --vhdl-sources, --verilog-sources
 # TODO: create a short README and a .gitignore (content: "*") in both build_dir and test_dir? (Some other tools do this.)
-# TODO: support timescale
+# TODO: support timescale on all simulators
 # TODO: support custom dependencies
 
 import abc
@@ -170,7 +170,7 @@ class Simulator(abc.ABC):
             build_dir: Directory to run the build step in.
             clean: Delete build_dir before building
             verbose: Enable verbose messages.
-            timescale: Tuple containing time unit and time precision for simulation
+            timescale: Tuple containing time unit and time precision for simulation.
             waves: Record signal traces.
         """
 
@@ -223,6 +223,7 @@ class Simulator(abc.ABC):
         test_dir: Optional[PathLike] = None,
         results_xml: str = "results.xml",
         verbose: bool = False,
+        timescale: Optional[Timescale] = None,
     ) -> Path:
         """Run the tests.
 
@@ -248,6 +249,7 @@ class Simulator(abc.ABC):
             results_xml: Name of xUnit XML file to store test results in.
                 When running with pytest, the testcase name is prefixed to this name.
             verbose: Enable verbose messages.
+            timescale: Tuple containing time unit and time precision for simulation.
 
         Returns:
             The absolute location of the results XML file which can be
@@ -305,6 +307,7 @@ class Simulator(abc.ABC):
 
         self.waves = bool(waves)
         self.gui = bool(gui)
+        self.timescale: Optional[Timescale] = timescale
 
         if verbose is not None:
             self.verbose = verbose
@@ -720,10 +723,39 @@ class Ghdl(Simulator):
         return cmds
 
     def _test_command(self) -> List[Command]:
+        ghdl_run_args = self.test_args
+
+        if self.timescale:
+            _, precision = self.timescale
+            # Convert the time precision to a format string supported by GHDL,
+            # if possible.
+            # GHDL only supports setting the time precision if the mcode backend
+            # is used, using the --time-resolution argument causes GHDL to error
+            # out otherwise.
+            # https://ghdl.github.io/ghdl/using/InvokingGHDL.html#cmdoption-ghdl-time-resolution
+            if precision == "1fs":
+                ghdl_time_resolution = "fs"
+            elif precision == "1ps":
+                ghdl_time_resolution = "ps"
+            elif precision == "1ns":
+                ghdl_time_resolution = "ns"
+            elif precision == "1us":
+                ghdl_time_resolution = "us"
+            elif precision == "1ms":
+                ghdl_time_resolution = "ms"
+            elif precision == "1s":
+                ghdl_time_resolution = "sec"
+            else:
+                raise ValueError(
+                    "GHDL only supports the following precisions in timescale: 1fs, 1ps, 1us, 1ms, 1s"
+                )
+
+            ghdl_run_args.append(f"--time-resolution={ghdl_time_resolution}")
+
         cmds = [
             ["ghdl", "-r"]
             + [f"--work={self.hdl_toplevel_library}"]
-            + self.test_args
+            + ghdl_run_args
             + [self.sim_hdl_toplevel]
             + ["--vpi=" + cocotb.config.lib_name_path("vpi", "ghdl")]
             + self.plusargs

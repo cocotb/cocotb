@@ -45,11 +45,12 @@ async def test_function_reentrant_clock(dut):
 
 # Xcelium/VHDL does not correctly report the simulator precision.
 # See also https://github.com/cocotb/cocotb/issues/3419
-# NVC and GHDL do not support setting precision and always use 1 fs.
+# NVC does not support setting precision and always uses 1 fs
+# (https://github.com/nickg/nvc/issues/607).
 @cocotb.test(
     skip=(
         cocotb.LANGUAGE == "vhdl"
-        and cocotb.SIM_NAME.lower().startswith(("xmsim", "ghdl", "nvc"))
+        and cocotb.SIM_NAME.lower().startswith(("xmsim", "nvc"))
     )
 )
 async def test_timer_with_units(dut):
