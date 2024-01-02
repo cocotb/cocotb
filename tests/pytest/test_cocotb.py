@@ -65,6 +65,9 @@ elif sim == "nvc":
 hdl_toplevel = "sample_module"
 sys.path.insert(0, os.path.join(tests_dir, "test_cases", "test_cocotb"))
 
+# test_timing_triggers.py requires a 1ps time precision.
+timescale = ("1ps", "1ps")
+
 
 def test_cocotb():
 
@@ -76,6 +79,7 @@ def test_cocotb():
         hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
         build_args=compile_args,
+        timescale=timescale,
     )
 
     runner.test(
@@ -84,6 +88,7 @@ def test_cocotb():
         test_module=module_name,
         gpi_interfaces=gpi_interfaces,
         test_args=sim_args,
+        timescale=timescale,
     )
 
 

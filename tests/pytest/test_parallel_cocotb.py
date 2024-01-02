@@ -25,6 +25,9 @@ from cocotb.runner import get_runner
 pytestmark = pytest.mark.simulator_required
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 
+# test_timing_triggers.py requires a 1ps time precision.
+timescale = ("1ps", "1ps")
+
 
 @pytest.mark.compile
 def test_cocotb_parallel_compile():
@@ -38,6 +41,7 @@ def test_cocotb_parallel_compile():
         hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
         build_args=compile_args,
+        timescale=timescale,
     )
 
 
@@ -56,4 +60,5 @@ def test_cocotb_parallel(seed):
         test_module=module_name,
         test_args=sim_args,
         build_dir=sim_build,
+        timescale=timescale,
     )
