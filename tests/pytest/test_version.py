@@ -6,7 +6,6 @@ import shutil
 import subprocess
 
 import cocotb
-import pytest
 
 
 def test_version():
