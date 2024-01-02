@@ -25,8 +25,8 @@ sys.path.insert(0, str(src_path))
     reason="Skipping test since only VHDL is supported",
 )
 @pytest.mark.skipif(
-    os.getenv("SIM", "ghdl") not in ["ghdl", "questa", "riviera", "xcelium"],
-    reason="Skipping test since only GHDL, Questa/ModelSim, Riviera and Xcelium are supported",
+    os.getenv("SIM", "ghdl") not in ["ghdl", "questa", "riviera"],
+    reason="Skipping test since only GHDL, Questa/ModelSim, and Riviera are supported",
 )
 def test_toplevel_library():
 
