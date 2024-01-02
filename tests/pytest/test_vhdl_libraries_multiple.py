@@ -20,7 +20,7 @@ sys.path.insert(0, str(src_path))
 
 
 @pytest.mark.skipif(
-    os.getenv("TOPLEVEL_LANG", "vhdl") != "vhdl",
+    os.getenv("HDL_TOPLEVEL_LANG", "vhdl") != "vhdl",
     reason="Skipping test since only VHDL is supported",
 )
 @pytest.mark.skipif(
