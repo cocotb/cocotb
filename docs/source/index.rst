@@ -124,7 +124,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    rotating_logger
 
 .. todo::
-   - Add WaveDrom, IPython sections
+   - Add IPython section
    - How to deal with existing Verification IP?
    - Point to https://github.com/cocotb/cocotb/wiki/Code-Examples
 
