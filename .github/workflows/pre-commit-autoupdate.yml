@@ -25,6 +25,7 @@ jobs:
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v5
       with:
+        author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
         commit-message: "Update pre-commit hooks"
         branch: update-pre-commit
         title: "Update pre-commit hooks"
