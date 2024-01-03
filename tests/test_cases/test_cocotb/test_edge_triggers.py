@@ -272,10 +272,11 @@ async def test_edge_on_vector(dut):
                 await ReadOnly()  # not needed for other simulators
             edge_cnt = edge_cnt + 1
 
-    cocotb.start_soon(wait_edge())
-
     dut.stream_in_data.value = 0
     await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    cocotb.start_soon(wait_edge())
 
     for val in range(1, 2 ** len(dut.stream_in_data) - 1):
         # produce an edge by setting a value != 0:
@@ -285,4 +286,6 @@ async def test_edge_on_vector(dut):
         dut.stream_in_data.value = 0
         await RisingEdge(dut.clk)
 
-    assert edge_cnt == 2 * ((2 ** len(dut.stream_in_data) - 1) - 1)
+    expected_count = 2 * ((2 ** len(dut.stream_in_data) - 1) - 1) - 1
+
+    assert edge_cnt == expected_count
