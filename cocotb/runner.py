@@ -707,6 +707,17 @@ class Ghdl(Simulator):
         if shutil.which("ghdl") is None:
             raise SystemExit("ERROR: ghdl executable not found!")
 
+    def _is_mcode_backend(self) -> bool:
+        """Is GHDL using the mcode backend?"""
+        result = subprocess.run(
+            ["ghdl", "--version"],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        return "mcode" in result.stdout
+
     @staticmethod
     def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
@@ -738,7 +749,7 @@ class Ghdl(Simulator):
     def _test_command(self) -> List[Command]:
         ghdl_run_args = self.test_args
 
-        if self.timescale:
+        if self._is_mcode_backend() and self.timescale:
             _, precision = self.timescale
             # Convert the time precision to a format string supported by GHDL,
             # if possible.
