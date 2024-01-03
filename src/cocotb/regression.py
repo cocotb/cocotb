@@ -460,6 +460,7 @@ class RegressionManager:
             result_pass = False
 
             if _pdb_on_exception:
+                print(result)
                 pdb.post_mortem(result.__traceback__)
 
         return result_pass, sim_failed
