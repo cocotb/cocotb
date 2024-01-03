@@ -296,7 +296,7 @@ def main() -> int:
         # provided hosted runners, or an array with special keys if we're
         # using self-hosted runners.
         if "self-hosted" in env and env["self-hosted"] and "runs-on" not in env:
-            env["runs-on"] = ["self-hosted", "cocotb-private", env["os"]]
+            env["runs-on"] = ["self-hosted", f"cocotb-private-{env['os']}"]
         else:
             env["runs-on"] = env["os"]
 
