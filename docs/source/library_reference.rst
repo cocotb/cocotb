@@ -262,15 +262,6 @@ Other Runtime Information
 .. autodata:: cocotb.top
 
 
-Signal Tracer for WaveDrom
---------------------------
-
-.. automodule:: cocotb.wavedrom
-    :members:
-    :member-order: bysource
-    :synopsis: A signal tracer for WaveDrom.
-
-
 Implementation Details
 ======================
 
