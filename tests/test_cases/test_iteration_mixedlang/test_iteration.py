@@ -73,6 +73,7 @@ async def test_loads(dut):
         tlog.info("Found %s" % repr(load))
 
 
+@cocotb.test
 async def recursive_discovery(dut):
     """Recursively discover every single object in the design."""
     if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
@@ -97,6 +98,7 @@ async def recursive_discovery(dut):
     )
 
 
+@cocotb.test
 async def recursive_discovery_boundary(dut):
     """Iteration through the boundary works but this just double checks."""
     if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
