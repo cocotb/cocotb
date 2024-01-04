@@ -2,9 +2,10 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
+from itertools import chain
 
 from cocotb.binary import BinaryRepresentation, BinaryValue
-from cocotb.types.array import Array
+from cocotb.types import ArrayLike
 from cocotb.types.logic import Logic, LogicConstructibleT
 from cocotb.types.range import Range
 
@@ -13,7 +14,7 @@ S = typing.TypeVar("S")
 Self = typing.TypeVar("Self", bound="LogicArray")
 
 
-class LogicArray(Array[Logic]):
+class LogicArray(ArrayLike[Logic]):
     r"""
     Fixed-sized, arbitrarily-indexed, array of :class:`cocotb.types.Logic`.
 
@@ -180,6 +181,40 @@ class LogicArray(Array[Logic]):
             )
 
     @property
+    def range(self) -> Range:
+        """:class:`Range` of the indexes of the array."""
+        return self._range
+
+    @range.setter
+    def range(self, new_range: Range) -> None:
+        """Set a new indexing scheme on the array. Must be the same size."""
+        if not isinstance(new_range, Range):
+            raise TypeError("range argument must be of type 'Range'")
+        if len(new_range) != len(self):
+            raise ValueError(
+                f"{new_range!r} not the same length as old range ({self._range!r})."
+            )
+        self._range = new_range
+
+    def __iter__(self) -> typing.Iterator[Logic]:
+        return iter(self._value)
+
+    def __reversed__(self) -> typing.Iterator[Logic]:
+        return reversed(self._value)
+
+    def __contains__(self, item: object) -> bool:
+        return item in self._value
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, type(self)):
+            return self._value == other._value
+        return NotImplemented
+
+    def count(self, value: Logic) -> int:
+        """Return number of occurrences of *value*."""
+        return self._value.count(value)
+
+    @property
     def binstr(self) -> str:
         return "".join(str(bit) for bit in self)
 
@@ -202,6 +237,38 @@ class LogicArray(Array[Logic]):
         return value
 
     @typing.overload
+    def __getitem__(self, item: int) -> Logic:
+        ...
+
+    @typing.overload
+    def __getitem__(self, item: slice) -> "LogicArray":
+        ...
+
+    def __getitem__(
+        self, item: typing.Union[int, slice]
+    ) -> typing.Union[Logic, "LogicArray"]:
+        if isinstance(item, int):
+            idx = self._translate_index(item)
+            return self._value[idx]
+        elif isinstance(item, slice):
+            start = item.start if item.start is not None else self.left
+            stop = item.stop if item.stop is not None else self.right
+            if item.step is not None:
+                raise IndexError("do not specify step")
+            start_i = self._translate_index(start)
+            stop_i = self._translate_index(stop)
+            if start_i > stop_i:
+                raise IndexError(
+                    "slice [{}:{}] direction does not match array direction [{}:{}]".format(
+                        start, stop, self.left, self.right
+                    )
+                )
+            value = self._value[start_i : stop_i + 1]
+            range = Range(start, self.direction, stop)
+            return type(self)(value=value, range=range)
+        raise TypeError(f"indexes must be ints or slices, not {type(item).__name__}")
+
+    @typing.overload
     def __setitem__(self, item: int, value: LogicConstructibleT) -> None:
         ...
 
@@ -217,22 +284,55 @@ class LogicArray(Array[Logic]):
         value: typing.Union[LogicConstructibleT, typing.Iterable[LogicConstructibleT]],
     ) -> None:
         if isinstance(item, int):
-            super().__setitem__(item, Logic(typing.cast(LogicConstructibleT, value)))
+            idx = self._translate_index(item)
+            self._value[idx] = Logic(typing.cast(LogicConstructibleT, value))
         elif isinstance(item, slice):
-            super().__setitem__(
-                item,
-                (
-                    Logic(v)
-                    for v in typing.cast(typing.Iterable[LogicConstructibleT], value)
-                ),
-            )
+            start = item.start if item.start is not None else self.left
+            stop = item.stop if item.stop is not None else self.right
+            if item.step is not None:
+                raise IndexError("do not specify step")
+            start_i = self._translate_index(start)
+            stop_i = self._translate_index(stop)
+            if start_i > stop_i:
+                raise IndexError(
+                    "slice [{}:{}] direction does not match array direction [{}:{}]".format(
+                        start, stop, self.left, self.right
+                    )
+                )
+            value = [
+                Logic(v)
+                for v in typing.cast(typing.Iterable[LogicConstructibleT], value)
+            ]
+            if len(value) != (stop_i - start_i + 1):
+                raise ValueError(
+                    "value of length {!r} will not fit in slice [{}:{}]".format(
+                        len(value), start, stop
+                    )
+                )
+            self._value[start_i : stop_i + 1] = value
         else:
             raise TypeError(
                 f"indexes must be ints or slices, not {type(item).__name__}"
             )
 
+    def _translate_index(self, item: int) -> int:
+        try:
+            return self._range.index(item)
+        except ValueError:
+            raise IndexError(f"index {item} out of range") from None
+
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({self.binstr!r}, {self.range!r})"
+
+    def __concat__(self: Self, other: Self) -> Self:
+        if isinstance(other, type(self)):
+            return type(self)(chain(self, other))
+        return NotImplemented
+
+    def __rconcat__(self: Self, other: Self) -> Self:
+        if isinstance(other, type(self)):
+            return type(self)(chain(other, self))
+        return NotImplemented
 
     def __and__(self: Self, other: Self) -> Self:
         if isinstance(other, type(self)):
