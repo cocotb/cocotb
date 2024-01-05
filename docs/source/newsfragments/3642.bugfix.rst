@@ -1,0 +1,1 @@
+Fix tests being started before initial blocks are evaluated under Verilator.
