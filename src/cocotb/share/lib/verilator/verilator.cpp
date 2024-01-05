@@ -58,6 +58,9 @@ int main(int argc, char** argv) {
     Verilated::internalsDump();
 #endif
 
+    // Evaluate initial blocks before starting cocotb
+    top->eval_step();
+
     vlog_startup_routines_bootstrap();
     VerilatedVpi::callCbs(cbStartOfSimulation);
 
