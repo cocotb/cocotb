@@ -74,26 +74,10 @@ Task Management
 .. autoclass:: cocotb.task.Task
     :members:
 
-Handle Values
--------------
-
-.. currentmodule:: cocotb.binary
-
-.. autoclass:: BinaryRepresentation
-    :members:
-    :member-order: bysource
-
-.. autoclass:: BinaryValue
-    :members:
-    :member-order: bysource
-    :exclude-members: get_value, get_buff, get_binstr, get_value_signed
-
 HDL Datatypes
 -------------
 
 These are a set of datatypes that model the behavior of common HDL datatypes.
-They can be used independently of cocotb for modeling and will replace :class:`BinaryValue`
-as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
 
 .. versionadded:: 1.6.0
 

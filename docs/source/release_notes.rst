@@ -207,7 +207,7 @@ Bugfixes
 
 - Prevent pytest assertion rewriting (:pr:`2028`) from capturing stdin, which causes problems with IPython support (:pr:`1649`). (:pr:`2462`)
 - Add dependency on `cocotb_bus <https://github.com/cocotb/cocotb-bus>`_ to prevent breaking users that were previously using the bus and testbenching objects. (:pr:`2477`)
-- Add back functionality to :class:`cocotb.binary.BinaryValue` that allows the user to change ``binaryRepresentation`` after object creation. (:pr:`2480`)
+- Add back functionality to ``cocotb.binary.BinaryValue`` that allows the user to change ``binaryRepresentation`` after object creation. (:pr:`2480`)
 
 
 cocotb 1.5.0 (2021-03-11)
@@ -430,7 +430,7 @@ Deprecations and Removals
   that was not supported for all simulators has been deprecated.
   Using it prints a deprecation warning and points to the documentation section
   :ref:`simulator-support` explaining how to get the same effect by other means. (:pr:`1495`)
-- ``BinaryValue.get_hex_buff`` produced nonsense and has been removed. (:pr:`1511`)
+- ``cocotb.binary.BinaryValue.get_hex_buff`` produced nonsense and has been removed. (:pr:`1511`)
 - Passing :class:`str` instances to :func:`cocotb.utils.hexdump` and :func:`cocotb.utils.hexdiffs` is deprecated. :class:`bytes` objects should be passed instead. (:pr:`1519`)
 - ``Makefile.pylib``, which provided helpers for building C extension modules for Python, has been removed.
   Users of the ``PYTHON_LIBDIR`` and ``PYTHON_INCLUDEDIR`` variables will now have to compute these values themselves.
@@ -455,7 +455,7 @@ Changes
   Previously the list was always ordered low-to-high. (:pr:`1507`)
 - Various binary representations have changed type from :class:`str` to :class:`bytes`. These include:
 
-  * :attr:`cocotb.binary.BinaryValue.buff`, which as a consequence means :meth:`cocotb.binary.BinaryValue.assign` no longer accepts malformed ``10xz``-style :class:`str`\ s (which were treated as binary).
+  * ``cocotb.binary.BinaryValue.buff``, which as a consequence means ``cocotb.binary.BinaryValue.assign``, no longer accepts malformed ``10xz``-style :class:`str`\ s (which were treated as binary).
   * The objects produced by :mod:`cocotb.generators.byte`, which means that single bytes are represented by :class:`int` instead of 1-character :class:`str`\ s.
   * The packets produced by the :class:`~cocotb.drivers.avalon.AvalonSTPkts`.
 
@@ -566,7 +566,7 @@ Notable changes and bug fixes
 Deprecations
 ------------
 
-- The `bits` argument to :class:`~cocotb.binary.BinaryValue`, which is now called `n_bits`.
+- The `bits` argument to ``cocotb.binary.BinaryValue``, which is now called `n_bits`.
 - The `logger` attribute of log objects like ``cocotb.log`` or ``some_coro.log``, which is now just an alias for ``self``.
 - The ``cocotb.utils.get_python_integer_types`` function, which was intended to be private.
 

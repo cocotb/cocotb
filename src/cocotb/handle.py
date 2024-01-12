@@ -46,7 +46,6 @@ import cocotb
 from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
-from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.log import SimLog
 from cocotb.types import Logic, LogicArray
 from cocotb.types.range import Range
@@ -761,7 +760,7 @@ class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
         because assigning integers less than 32 bits is faster.
 
         Args:
-            value (cocotb.binary.BinaryValue, int):
+            value (cocotb.types.LogicArray, int):
                 The value to drive onto the simulator object.
 
         Raises:
@@ -772,8 +771,8 @@ class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
 
         .. versionchanged:: 2.0
             Using :class:`ctypes.Structure` objects to set values was removed.
-            Convert the struct object to a :class:`~cocotb.binary.BinaryValue` before assignment using
-            ``BinaryValue(value=bytes(struct_obj), n_bits=len(signal))`` instead.
+            Convert the struct object to a :class:`~cocotb.types.LogicArray` before assignment using
+            ``LogicArray("".join(format(int(byte), "08b") for byte in bytes(struct_obj)))`` instead.
 
         .. versionchanged:: 2.0
             Using :class:`dict` objects to set values was removed.
@@ -790,18 +789,14 @@ class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
                     return
 
                 if value < 0:
-                    value = BinaryValue(
-                        value=value,
-                        n_bits=len(self),
-                        bigEndian=False,
-                        binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT,
+                    value = LogicArray(
+                        value,
+                        Range(len(self) - 1, "downto", 0),
                     )
                 else:
-                    value = BinaryValue(
-                        value=value,
-                        n_bits=len(self),
-                        bigEndian=False,
-                        binaryRepresentation=BinaryRepresentation.UNSIGNED,
+                    value = LogicArray(
+                        value,
+                        Range(len(self) - 1, "downto", 0),
                     )
             else:
                 raise OverflowError(
@@ -815,20 +810,13 @@ class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
                 raise ValueError(
                     f"cannot assign value of length {len(value)} to handle of length {len(self)}"
                 )
-            value = value.to_BinaryValue()
 
         elif isinstance(value, Logic):
             if len(self) != 1:
                 raise ValueError(
                     f"cannot assign value of length 1 to handle of length {len(self)}"
                 )
-            value = BinaryValue(str(value))
-
-        elif isinstance(value, BinaryValue):
-            if len(value) != len(self):
-                raise ValueError(
-                    f"cannot assign value of length {len(value)} to handle of length {len(self)}"
-                )
+            value = LogicArray([value])
 
         else:
             raise TypeError(
@@ -838,13 +826,9 @@ class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
         call_sim(self, self._handle.set_signal_val_binstr, set_action, value.binstr)
 
     @ModifiableObject.value.getter
-    def value(self) -> BinaryValue:
+    def value(self) -> LogicArray:
         binstr = self._handle.get_signal_val_binstr()
-        # Skip BinaryValue.assign() as we know we are using a binstr
-        result = BinaryValue(n_bits=len(binstr))
-        # Skip the permitted characters check as we trust the simulator
-        result._set_trusted_binstr(binstr)
-        return result
+        return LogicArray(binstr)
 
 
 class RealObject(ModifiableObject):
@@ -903,9 +887,7 @@ class EnumObject(ModifiableObject):
         """
         value, set_action = self._check_for_set_action(value)
 
-        if isinstance(value, BinaryValue):
-            value = int(value)
-        elif not isinstance(value, int):
+        if not isinstance(value, int):
             raise TypeError(
                 f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
             )
@@ -949,9 +931,7 @@ class IntegerObject(ModifiableObject):
         """
         value, set_action = self._check_for_set_action(value)
 
-        if isinstance(value, BinaryValue):
-            value = int(value)
-        elif not isinstance(value, int):
+        if not isinstance(value, int):
             raise TypeError(
                 "Unsupported type for integer value assignment: {} ({!r})".format(
                     type(value), value

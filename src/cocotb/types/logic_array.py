@@ -4,7 +4,6 @@
 import typing
 from itertools import chain
 
-from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.types import ArrayLike
 from cocotb.types.logic import Logic, LogicConstructibleT
 from cocotb.types.range import Range
@@ -124,7 +123,7 @@ class LogicArray(ArrayLike[Logic]):
     @typing.overload
     def __init__(
         self,
-        value: typing.Union[int, typing.Iterable[LogicConstructibleT], BinaryValue],
+        value: typing.Union[int, typing.Iterable[LogicConstructibleT]],
         range: typing.Optional[Range],
     ):
         ...
@@ -132,18 +131,14 @@ class LogicArray(ArrayLike[Logic]):
     @typing.overload
     def __init__(
         self,
-        value: typing.Union[
-            int, typing.Iterable[LogicConstructibleT], BinaryValue, None
-        ],
+        value: typing.Union[int, typing.Iterable[LogicConstructibleT], None],
         range: Range,
     ):
         ...
 
     def __init__(
         self,
-        value: typing.Union[
-            int, typing.Iterable[LogicConstructibleT], BinaryValue, None
-        ] = None,
+        value: typing.Union[int, typing.Iterable[LogicConstructibleT], None] = None,
         range: typing.Optional[Range] = None,
     ) -> None:
         if value is None and range is None:
@@ -165,8 +160,6 @@ class LogicArray(ArrayLike[Logic]):
                 self._value = [Logic(v) for v in _int_to_bitstr(value, len(range))]
         elif isinstance(value, typing.Iterable):
             self._value = [Logic(v) for v in value]
-        elif isinstance(value, BinaryValue):
-            self._value = [Logic(v) for v in value.binstr]
         else:
             raise TypeError(
                 f"cannot construct {type(self).__qualname__} from value of type {type(value).__qualname__}"
@@ -378,18 +371,6 @@ class LogicArray(ArrayLike[Logic]):
 
     def __invert__(self: Self) -> Self:
         return type(self)(~v for v in self)
-
-    def to_BinaryValue(
-        self,
-        bigEndian: bool = True,
-        binaryRepresentation: BinaryRepresentation = BinaryRepresentation.UNSIGNED,
-    ) -> BinaryValue:
-        return BinaryValue(
-            value=self.binstr,
-            n_bits=len(self),
-            bigEndian=bigEndian,
-            binaryRepresentation=binaryRepresentation,
-        )
 
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:

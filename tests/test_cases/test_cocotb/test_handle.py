@@ -9,7 +9,6 @@ import random
 
 import cocotb
 import pytest
-from cocotb.binary import BinaryValue
 from cocotb.handle import _Limits
 from cocotb.triggers import Timer
 from cocotb.types import Logic, LogicArray
@@ -85,8 +84,6 @@ async def test_string_ansi_color(dut):
 
 async def test_delayed_assignment_still_errors(dut):
     """Writing a bad value should fail even if the write is scheduled to happen later"""
-
-    # note: all these fail because BinaryValue.assign rejects them
 
     with pytest.raises(ValueError):
         dut.stream_in_int.setimmediatevalue("1010 not a real binary string")
@@ -419,9 +416,3 @@ async def test_assign_Logic(dut):
     assert dut.stream_in_ready.value.binstr.lower() == "x"
     with pytest.raises(ValueError):
         dut.stream_in_data.value = Logic("U")  # not the correct size
-
-
-@cocotb.test()
-async def test_assign_BinaryValue_too_big(dut):
-    with pytest.raises(ValueError):
-        dut.stream_in_data.value = BinaryValue(0, n_bits=1)
