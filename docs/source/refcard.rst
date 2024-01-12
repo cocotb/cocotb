@@ -27,7 +27,6 @@ Reference Card
 +------------------------+-----------------------------------------------------------------+
 | Assign metavalue       | | ``dut.mysignal.value = Logic("X")``                           |
 |                        | | ``dut.mysignal.value = LogicArray("01XZ")``                   |
-|                        | | ``dut.mysignal.value = BinaryValue("X")``  (deprecated)       |
 +------------------------+-----------------------------------------------------------------+
 | Read                   | | ``val = dut.mysignal.value``                                  |
 |                        | | (``mysig = dut.mysignal`` *creates an alias/reference*)       |

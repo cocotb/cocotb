@@ -90,7 +90,7 @@ the minimum negative value for a signed number up to the maximum positive
 value for an unsigned number: ``-2**(Nbits - 1) <= value <= 2**Nbits - 1``
 Note: assigning out-of-range values will raise an :exc:`OverflowError`.
 
-A :class:`BinaryValue` object can be used instead of a Python int to assign a
+A :class:`~cocotb.types.LogicArray` object can be used instead of a Python int to assign a
 value to signals with more fine-grained control (e.g. signed values only).
 
 .. code-block:: verilog
@@ -128,15 +128,15 @@ A common mistake is forgetting the ``.value`` which just gives you a reference t
 The Python type of a value depends on the handle's HDL type:
 
 * Arrays of ``logic`` and subtypes of that (``sfixed``, ``unsigned``, etc.)
-  are of type :class:`~cocotb.binary.BinaryValue`.
+  are of type :class:`~cocotb.types.LogicArray`.
 * Integer nets and constants (``integer``, ``natural``, etc.) return :class:`int`.
 * Floating point nets and constants (``real``) return :class:`float`.
 * Boolean nets and constants (``boolean``) return :class:`bool`.
 * String nets and constants (``string``) return :class:`bytes`.
 
-For a :class:`~cocotb.binary.BinaryValue` object, any unresolved bits are preserved and
-can be accessed using the :attr:`~cocotb.binary.BinaryValue.binstr` attribute,
-or a resolved integer value can be accessed using the :attr:`~cocotb.binary.BinaryValue.integer` attribute.
+For a :class:`~cocotb.types.LogicArray` object, any unresolved bits are preserved and
+can be accessed using the :attr:`~cocotb.types.LogicArray.binstr` attribute,
+or a resolved integer value can be accessed using the :attr:`~cocotb.types.LogicArray.integer` attribute.
 
 .. code-block:: pycon
 

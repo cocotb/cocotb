@@ -10,12 +10,12 @@ from typing import Any, Dict, List
 
 import cocotb
 import pytest
-from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
 from cocotb.handle import SimHandleBase
 from cocotb.queue import Queue
 from cocotb.runner import get_runner
 from cocotb.triggers import RisingEdge
+from cocotb.types import LogicArray, Range
 
 NUM_SAMPLES = int(os.environ.get("NUM_SAMPLES", 3000))
 if cocotb.simulator.is_running():
@@ -114,23 +114,28 @@ class MatrixMultiplierTester:
         self._checker.kill()
         self._checker = None
 
-    def model(self, a_matrix: List[int], b_matrix: List[int]) -> List[int]:
+    def model(
+        self, a_matrix: List[LogicArray], b_matrix: List[LogicArray]
+    ) -> List[int]:
         """Transaction-level model of the matrix multipler as instantiated"""
         A_ROWS = self.dut.A_ROWS.value
         A_COLUMNS_B_ROWS = self.dut.A_COLUMNS_B_ROWS.value
         B_COLUMNS = self.dut.B_COLUMNS.value
         DATA_WIDTH = self.dut.DATA_WIDTH.value
         return [
-            BinaryValue(
+            LogicArray(
                 sum(
                     [
-                        a_matrix[(i * A_COLUMNS_B_ROWS) + n]
-                        * b_matrix[(n * B_COLUMNS) + j]
+                        a_matrix[(i * A_COLUMNS_B_ROWS) + n].integer
+                        * b_matrix[(n * B_COLUMNS) + j].integer
                         for n in range(A_COLUMNS_B_ROWS)
                     ]
                 ),
-                n_bits=(DATA_WIDTH * 2) + math.ceil(math.log2(A_COLUMNS_B_ROWS)),
-                bigEndian=False,
+                Range(
+                    (DATA_WIDTH * 2) + math.ceil(math.log2(A_COLUMNS_B_ROWS)) - 1,
+                    "downto",
+                    0,
+                ),
             )
             for i in range(A_ROWS)
             for j in range(B_COLUMNS)

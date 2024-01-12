@@ -30,7 +30,6 @@ import os
 import cocotb
 import pytest
 from cocotb._sim_versions import IcarusVersion
-from cocotb.binary import BinaryValue
 from cocotb.handle import (
     HierarchyObject,
     HierarchyObjectBase,
@@ -40,6 +39,7 @@ from cocotb.handle import (
     StringObject,
 )
 from cocotb.triggers import Timer
+from cocotb.types import LogicArray
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
@@ -129,7 +129,7 @@ async def access_type_bit_verilog_metavalues(dut):
     The metavalues still may show up as `0` and `1` in HDL (Xcelium and Riviera).
     """
     await Timer(1, "ns")
-    dut.mybits.value = BinaryValue("XZ")
+    dut.mybits.value = LogicArray("XZ")
     await Timer(1, "ns")
     print(dut.mybits.value.binstr)
     if SIM_NAME.startswith(("icarus", "ncsim", "xmsim")):
@@ -145,7 +145,7 @@ async def access_type_bit_verilog_metavalues(dut):
             dut.mybits.value.binstr.lower() == "00"
         ), "The assigned value was incorrect"
 
-    dut.mybits.value = BinaryValue("ZX")
+    dut.mybits.value = LogicArray("ZX")
     await Timer(1, "ns")
     print(dut.mybits.value.binstr)
     if SIM_NAME.startswith(("icarus", "ncsim", "xmsim")):
@@ -373,7 +373,7 @@ async def access_internal_register_array(dut):
     if SIM_NAME.startswith("verilator"):
         expected_value = "00000000"
     else:
-        expected_value = "xxxxxxxx"
+        expected_value = "XXXXXXXX"
 
     assert (
         dut.register_array[0].value.binstr == expected_value
