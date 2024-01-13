@@ -76,9 +76,12 @@ async def test_loads(dut):
 @cocotb.test
 async def recursive_discovery(dut):
     """Recursively discover every single object in the design."""
-    if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
+    if cocotb.SIM_NAME.lower().startswith("ncsim"):
         # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS/Xcelium
         pass_total = 975
+    elif cocotb.SIM_NAME.lower().startswith("xmsim"):
+        # Xcelium sometimes doesn't find bits in a std_logic_vector
+        pass_total = 1257
     elif cocotb.SIM_NAME.lower().startswith("modelsim"):
         pass_total = 1332
     else:
@@ -101,8 +104,11 @@ async def recursive_discovery(dut):
 @cocotb.test
 async def recursive_discovery_boundary(dut):
     """Iteration through the boundary works but this just double checks."""
-    if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
+    if cocotb.SIM_NAME.lower().startswith("ncsim"):
         pass_total = 462
+    elif cocotb.SIM_NAME.lower().startswith("xmsim"):
+        # Xcelium sometimes doesn't find bits in a std_logic_vector
+        pass_total = 744
     else:
         pass_total = 819
 
