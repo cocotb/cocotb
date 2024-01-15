@@ -199,9 +199,17 @@ class LogicArray(ArrayLike[Logic]):
         return item in self._value
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, type(self)):
-            return self._value == other._value
-        return NotImplemented
+        if isinstance(other, int):
+            try:
+                return self.integer == other
+            except ValueError:
+                return False
+        elif isinstance(other, type(self)):
+            if len(self) != len(other):
+                return False
+            return all(a == b for a, b in zip(self, other))
+        else:
+            return NotImplemented
 
     def count(self, value: Logic) -> int:
         """Return number of occurrences of *value*."""
