@@ -117,7 +117,6 @@ class Logic:
         self._repr = _repr
         return typing.cast("Logic", self)
 
-    @lru_cache(maxsize=None)
     def __new__(
         cls: typing.Type["Logic"],
         value: typing.Optional[LogicConstructibleT] = None,
@@ -212,11 +211,11 @@ class Logic:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, type(self)):
-            return NotImplemented
+            try:
+                other = type(self)(other)
+            except Exception:
+                return NotImplemented
         return self._repr == other._repr
-
-    def __hash__(self) -> int:
-        return self._repr
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({str(self)!r})"
