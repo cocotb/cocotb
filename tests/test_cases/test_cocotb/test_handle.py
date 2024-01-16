@@ -390,15 +390,15 @@ async def test_access_underscore_name(dut):
         dut._underscore_name
 
     # indirect access works
-    dut._id("_underscore_name", extended=False).value = 0
+    dut["_underscore_name"].value = 0
     await Timer(1, "ns")
-    assert dut._id("_underscore_name", extended=False).value == 0
-    dut._id("_underscore_name", extended=False).value = 1
+    assert dut["_underscore_name"].value == 0
+    dut["_underscore_name"].value = 1
     await Timer(1, "ns")
-    assert dut._id("_underscore_name", extended=False).value == 1
-    dut._id("_underscore_name", extended=False).value = 0
+    assert dut["_underscore_name"].value == 1
+    dut["_underscore_name"].value = 0
     await Timer(1, "ns")
-    assert dut._id("_underscore_name", extended=False).value == 0
+    assert dut["_underscore_name"].value == 0
 
 
 @cocotb.test()

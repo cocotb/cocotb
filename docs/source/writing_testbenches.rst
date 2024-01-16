@@ -247,17 +247,23 @@ the various actions described in :ref:`assignment-methods` can be used.
 
 .. _writing_tbs_accessing_underscore_identifiers:
 
-Accessing Identifiers Starting with an Underscore
-=================================================
+Accessing Identifiers Starting with an Underscore or Invalid Python Names
+=========================================================================
 
 The attribute syntax of ``dut._some_signal`` cannot be used to access
 an identifier that starts with an underscore (``_``, as is valid in Verilog)
 because we reserve such names for cocotb-internals,
 thus the access will raise an :exc:`AttributeError`.
 
-A workaround is to use indirect access using
-:meth:`~cocotb.handle.HierarchyObject._id` like in the following example:
-``dut._id("_some_signal", extended=False)``.
+Both SystemVerilog and VHDL allow developers to create signals or nets with non-standard characters by using special syntax.
+These objects are generally not accessible using attribute syntax since attributes in Python must follow a strict form.
+
+All named objects, including those with the aforementioned limitations, can be accessed using index syntax.
+
+.. code-block:: python3
+
+    dut["_some_signal"]  # begins with underscore
+    dut["\\!WOOOOW!\\"]  # escaped identifier (Verilog), extended identifier (VHDL)
 
 
 .. _writing_tbs_accessing_verilog_packages:

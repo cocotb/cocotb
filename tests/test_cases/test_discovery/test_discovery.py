@@ -33,10 +33,10 @@ from cocotb._sim_versions import IcarusVersion
 from cocotb.binary import BinaryValue
 from cocotb.handle import (
     HierarchyObject,
+    HierarchyObjectBase,
     IntegerObject,
     NonHierarchyIndexableObject,
     NonHierarchyIndexableObjectBase,
-    RegionObject,
     StringObject,
 )
 from cocotb.triggers import Timer
@@ -412,7 +412,7 @@ async def custom_type(dut):
     count = 0
 
     def _discover(obj):
-        if not isinstance(obj, (RegionObject, NonHierarchyIndexableObjectBase)):
+        if not isinstance(obj, (HierarchyObjectBase, NonHierarchyIndexableObjectBase)):
             return 0
         iter_count = 0
         for elem in obj:
@@ -501,7 +501,7 @@ async def discover_all_in_component_vhdl(dut):
         if questa_vhpi and isinstance(obj, StringObject):
             # Iterating over the elements of a string with Questa's VHPI causes a stacktrace
             return 0
-        if not isinstance(obj, (RegionObject, NonHierarchyIndexableObjectBase)):
+        if not isinstance(obj, (HierarchyObjectBase, NonHierarchyIndexableObjectBase)):
             return 0
         count = 0
         for thing in obj:

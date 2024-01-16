@@ -399,7 +399,7 @@ async def test_discover_all(dut):
         if not isinstance(
             obj,
             (
-                cocotb.handle.RegionObject,
+                cocotb.handle.HierarchyObjectBase,
                 cocotb.handle.NonHierarchyIndexableObjectBase,
             ),
         ):
@@ -568,5 +568,5 @@ async def test_extended_identifiers(dut):
 
     tlog = logging.getLogger("cocotb.test")
     tlog.info("Checking extended identifiers.")
-    _check_type(tlog, dut._id("\\ext_id\\", extended=False), LogicObject)
-    _check_type(tlog, dut._id("!"), LogicObject)
+    _check_type(tlog, dut["\\ext_id\\"], LogicObject)
+    _check_type(tlog, dut["\\!\\"], LogicObject)

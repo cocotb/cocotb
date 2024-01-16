@@ -89,7 +89,7 @@ async def recursive_discovery(dut):
         if not isinstance(
             parent,
             (
-                cocotb.handle.RegionObject,
+                cocotb.handle.HierarchyObjectBase,
                 cocotb.handle.NonHierarchyIndexableObjectBase,
             ),
         ):

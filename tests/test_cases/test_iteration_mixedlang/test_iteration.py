@@ -36,7 +36,10 @@ def recursive_dump(parent, log):
     """
     if not isinstance(
         parent,
-        (cocotb.handle.RegionObject, cocotb.handle.NonHierarchyIndexableObjectBase),
+        (
+            cocotb.handle.HierarchyObjectBase,
+            cocotb.handle.NonHierarchyIndexableObjectBase,
+        ),
     ):
         return 0
     count = 0
