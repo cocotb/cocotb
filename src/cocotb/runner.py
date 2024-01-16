@@ -125,6 +125,7 @@ class Simulator(abc.ABC):
         self.env["PYTHONHOME"] = sys.prefix
         self.env["TOPLEVEL"] = self.sim_hdl_toplevel
         self.env["MODULE"] = self.test_module
+        self.env["TOPLEVEL_LANG"] = self.hdl_toplevel_lang
 
     @abc.abstractmethod
     def _build_command(self) -> Sequence[Command]:
