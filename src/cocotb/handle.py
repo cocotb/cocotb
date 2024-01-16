@@ -26,17 +26,30 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import enum
+import re
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from logging import Logger
-from typing import Any, Dict, Generic, Optional, Set, Tuple, TypeVar
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+)
 
 import cocotb
 from cocotb import simulator
+from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
 from cocotb.binary import BinaryRepresentation, BinaryValue
 from cocotb.log import SimLog
 from cocotb.types import Logic, LogicArray
+from cocotb.types.range import Range
 
 
 class _Limits(enum.IntEnum):
@@ -151,26 +164,55 @@ class SimHandleBase(ABC):
         return type(self).__qualname__ + "(" + desc + ")"
 
 
-IndexType = TypeVar("IndexType")
+#: Type of keys (name or index) in HierarchyObjectBase.
+KeyType = TypeVar("KeyType")
 
 
-class RegionObject(SimHandleBase, Generic[IndexType]):
-    """A region object, such as a scope or namespace.
+class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
+    """Base class for hierarchical objects.
 
-    Region objects don't have values, they are effectively scopes or namespaces.
+    Hierarchical objects don't have values, they are just scopes/namespaces of other objects.
+    This includes array-like hierarchical structures like "generate loops"
+    and named hierarchical structures like "generate blocks" or "module"/"entity" instantiations.
+
+    This base class defines logic to discover, cache, and inspect child objects.
+    It provides a :class:`dict`-like interface for doing so.
+
+    :meth:`_keys`, :meth:`_values`, and :meth:`_items` mimic their :class:`dict` counterparts.
+    You can also iterate over an object, which returns child objects, not keys like in :class:`dict`;
+    and can check the :func:`len`.
+
+    See :class:`HierarchyObject` and :class:`HierarchyArrayObject` for examples.
     """
 
     @abstractmethod
-    def __init__(self, handle, path):
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
-        self._sub_handles: Dict[IndexType, SimHandleBase] = {}
+        self._sub_handles: Dict[KeyType, SimHandleBase] = {}
 
-    def __iter__(self):
-        """Iterate over all known objects in this layer of hierarchy."""
+    def _keys(self) -> Iterable[KeyType]:
+        """Iterate over the keys (name or index) of the child objects.
+
+        :meta public:
+        """
         self._discover_all()
+        return self._sub_handles.keys()
 
-        for name, handle in self._sub_handles.items():
-            yield handle
+    def _values(self) -> Iterable[SimHandleBase]:
+        """Iterate over the child objects.
+
+        :meta public:
+        """
+        self._discover_all()
+        return self._sub_handles.values()
+
+    def _items(self) -> Iterable[Tuple[KeyType, SimHandleBase]]:
+        """Iterate over ``(key, object)`` tuples of child objects.
+
+        :meta public:
+        """
+        self._discover_all()
+        return self._sub_handles.items()
 
     @lru_cache(maxsize=None)
     def _discover_all(self) -> None:
@@ -181,130 +223,246 @@ class RegionObject(SimHandleBase, Generic[IndexType]):
         """
         for thing in self._handle.iterate(simulator.OBJECTS):
             name = thing.get_name_string()
-            path = self._child_path(name)
-            try:
-                hdl = SimHandle(thing, path)
-            except NotImplementedError as e:
-                self._log.debug("%s", e)
-                continue
 
+            # translate HDL name into a consistent key name
             try:
                 key = self._sub_handle_key(name)
             except ValueError:
-                self._log.debug(
+                self._log.exception(
                     "Unable to translate handle >%s< to a valid _sub_handle key",
-                    hdl._name,
+                    name,
                 )
                 continue
 
+            # compute a full path using the key name
+            path = self._child_path(key)
+
+            # attempt to create the child object
+            try:
+                hdl = SimHandle(thing, path)
+            except NotImplementedError:
+                self._log.exception(
+                    "Unable to construct a SimHandle object for %s", path
+                )
+                continue
+
+            # add to cache
             self._sub_handles[key] = hdl
 
-    def _child_path(self, name) -> str:
-        """Return a string of the path of the child :any:`SimHandle` for a given *name*."""
-        delimiter = "::" if self._type == "GPI_PACKAGE" else "."
-        return self._path + delimiter + name
-
-    def _sub_handle_key(self, name):
-        """Translate the handle name to a key to use in :any:`_sub_handles` dictionary."""
-        return name.split(".")[-1]
-
-    def __dir__(self):
-        """Permits IPython tab completion to work."""
-        self._discover_all()
-        return super().__dir__() + [str(k) for k in self._sub_handles]
-
-
-class HierarchyObject(RegionObject[str]):
-    """Hierarchy objects are namespace/scope objects."""
-
-    def __init__(self, handle, path) -> None:
-        super().__init__(handle, path)
-        self._invalid_sub_handles: Set[str] = set()
-
-    def __get_sub_handle_by_name(self, name):
+    def __getitem__(self, key: KeyType) -> SimHandleBase:
+        # try to use cached value
         try:
-            return self._sub_handles[name]
+            return self._sub_handles[key]
         except KeyError:
             pass
 
-        # Cache to avoid a call to the simulator if we already know the name is
-        # invalid. Unclear if we care, but we had this before.
-        if name in self._invalid_sub_handles:
-            return None
-
-        new_handle = self._handle.get_handle_by_name(name)
-
+        # try to get value from GPI
+        new_handle = self._get_handle_by_key(key)
         if not new_handle:
-            self._invalid_sub_handles.add(name)
-            return None
+            raise KeyError(f"{self._path} contains no child object named {key}")
 
-        sub_handle = SimHandle(new_handle, self._child_path(name))
-        self._sub_handles[name] = sub_handle
+        # if successful, construct and cache
+        sub_handle = SimHandle(new_handle, self._child_path(key))
+        self._sub_handles[key] = sub_handle
+
         return sub_handle
 
-    def __setattr__(self, name, value):
-        """Provide transparent access to signals via the hierarchy.
+    @abstractmethod
+    def _get_handle_by_key(self, key: KeyType) -> Optional[simulator.gpi_sim_hdl]:
+        """Get child object by key from the simulator.
 
-        Slightly hacky version of operator overloading in Python.
+        Args:
+            key: The key of the child object.
 
-        Raise an :exc:`AttributeError` if users attempt to create new members which
-        don't exist in the design.
+        Returns:
+            A raw simulator handle for the child object at the given key, or ``None``.
         """
 
+    @abstractmethod
+    def _child_path(self, key: KeyType) -> str:
+        """Compute the path string of a child object at the given key.
+
+        Args:
+            key: The key of the child object.
+
+        Returns:
+            A path string of the child object at the a given key.
+        """
+
+    @abstractmethod
+    def _sub_handle_key(self, name: str) -> KeyType:
+        """Translate a discovered child object name into a key.
+
+        Args:
+            name: The GPI name of the child object.
+
+        Returns:
+            A unique key for the child object.
+
+        Raises:
+            ValueError: if unable to translate handle to a valid _sub_handle key.
+        """
+
+    def __iter__(self) -> Iterable[SimHandleBase]:
+        return iter(self._values())
+
+    def __len__(self) -> int:
+        self._discover_all()
+        return len(self._sub_handles)
+
+    def __dir__(self) -> List[str]:
+        """Permits IPython tab completion and debuggers to work."""
+        self._discover_all()
+        return super().__dir__() + [str(k) for k in self._keys()]
+
+
+class HierarchyObject(HierarchyObjectBase[str]):
+    r"""Named hierarchical scope objects.
+
+    This class is used for named hierarchical structures, such as "generate blocks" or "module"/"entity" instantiations.
+
+    Children under this structure are found by using the name of the child with either the attribute syntax or index syntax.
+    For example, if in your :envvar:`TOPLEVEL` entity/module you have a signal/net named ``count``, you could do either of the following.
+
+    .. code-block:: python3
+
+        dut.count  # attribute syntax
+        dut["count"]  # index syntax
+
+    Attribute syntax is usually shorter and easier to read, and is more common.
+    However, it has limitations:
+
+    - the name cannot start with a number
+    - the name cannot start with a ``_`` character
+    - the name can only contain ASCII letters, numbers, and the ``_`` character
+
+    Any possible name of an object is supported with the index syntax,
+    but it can be more verbose.
+
+    .. note::
+        If you need to access signals/nets that start with ``_``,
+        or use escaped identifier (Verilog) or extended identifier (VHDL) characters,
+        you have to use the index syntax.
+        Accessing escaped/extended identifiers requires enclosing the name
+        with leading and trailing double backslashes (``\\``).
+
+        .. code-block:: python3
+
+            dut["_underscore_signal]
+            dut["\\%extended !ID\\"]
+
+    Iteration yields all child objects in no particular order.
+    The :func:`len` function can be used to find the number of children.
+
+    .. code-block:: python3
+
+        # discover all children in 'some_module'
+        total = 0
+        for handle in dut.some_module:
+            cocotb.log("Found %r", handle._path)
+            total += 1
+
+        # make sure we found them all
+        assert len(dut.some_module) == total
+    """
+
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+        super().__init__(handle, path)
+
+    def __setattr__(self, name: str, value: Any) -> None:
         # private attributes pass through directly
         if name.startswith("_"):
             return object.__setattr__(self, name, value)
 
         raise AttributeError(f"{self._name} contains no object named {name}")
 
-    def __getattr__(self, name):
-        """Query the simulator for an object with the specified name
-        and cache the result to build a tree of objects.
-        """
+    def __getattr__(self, name: str) -> SimHandleBase:
         if name.startswith("_"):
             return object.__getattribute__(self, name)
 
-        handle = self.__get_sub_handle_by_name(name)
-        if handle is not None:
-            return handle
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(str(e)) from None
 
-        raise AttributeError(f"{self._name} contains no object named {name}")
-
-    def _id(self, name, extended: bool = True):
-        """Query the simulator for an object with the specified *name*,
-        and cache the result to build a tree of objects.
+    @deprecated(
+        "Use `handle[child_name]` syntax instead. If extended identifiers are needed simply add a '\\' character before and after the name."
+    )
+    def _id(self, name: str, extended: bool = True) -> SimHandleBase:
+        """Query the simulator for an object with the specified *name*.
 
         If *extended* is ``True``, run the query only for VHDL extended identifiers.
         For Verilog, only ``extended=False`` is supported.
+
+        .. deprecated:: 2.0
+            Use ``handle[child_name]`` syntax instead.
+            If extended identifiers are needed simply add a ``\\`` character before and after the name.
 
         :meta public:
         """
         if extended:
             name = "\\" + name + "\\"
 
-        handle = self.__get_sub_handle_by_name(name)
-        if handle is not None:
-            return handle
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(str(e)) from None
 
-        raise AttributeError(f"{self._name} contains no object named {name}")
+    def _child_path(self, name: str) -> str:
+        delimiter = "::" if self._type == "GPI_PACKAGE" else "."
+        return f"{self._path}{delimiter}{name}"
+
+    def _sub_handle_key(self, name: str) -> str:
+        return name.rsplit(".", 1)[-1]
+
+    def _get_handle_by_key(self, key: str) -> Optional[simulator.gpi_sim_hdl]:
+        return self._handle.get_handle_by_name(key)
 
 
-class HierarchyArrayObject(RegionObject[int]):
-    """Hierarchy Arrays are containers of Hierarchy Objects."""
+class HierarchyArrayObject(HierarchyObjectBase[int]):
+    """Arrays of hierarchy objects.
 
-    def __init__(self, handle, path) -> None:
+    This class is used for array-like hierarchical structures like "generate loops".
+
+    Children of this object are found by supplying a numerical index using index syntax.
+    For example, if you have a design with a generate loop ``gen_pipe_stages`` from the range ``0`` to ``7``:
+
+    .. code-block:: python3
+
+        block_0 = dut.gen_pipe_stages[0]
+        block_7 = dut.gen_pipe_stages[7]
+
+    Iteration yields all child objects in order.
+
+    .. code-block:: python3
+
+        # set all 'reg's in each pipe stage to 0
+        for pipe_stage in dut.gen_pipe_stages:
+            pipe_stage.reg.value = 0
+
+    Use the :meth:`range` property if you want to iterate over the indexes.
+    The :func:`len` function can be used to find the number of elements.
+
+    .. code-block:: python3
+
+        # set all 'reg's in each pipe stage to 0
+        for idx in dut.gen_pipe_stages.range:
+            dut.gen_pipe_stages[idx].reg.value = 0
+
+        # make sure we have all the pipe stages
+        assert len(dut.gen_pipe_stage) == len(dut.gen_pipe_stages.range)
+    """
+
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
-    def _sub_handle_key(self, name):
-        """Translate the handle name to a key to use in :any:`_sub_handles` dictionary."""
+    def _sub_handle_key(self, name: str) -> int:
         # This is slightly hacky, but we need to extract the index from the name
         # See also GEN_IDX_SEP_* in VhpiImpl.h for the VHPI separators.
         #
         # FLI and VHPI:       _name(X) where X is the index
         # VHPI(ALDEC):        _name__X where X is the index
         # VPI:                _name[X] where X is the index
-        import re
-
         result = re.match(rf"{self._name}__(?P<index>\d+)$", name)
         if not result:
             result = re.match(rf"{self._name}\((?P<index>\d+)\)$", name, re.IGNORECASE)
@@ -316,30 +474,52 @@ class HierarchyArrayObject(RegionObject[int]):
         else:
             raise ValueError(f"Unable to match an index pattern: {name}")
 
-    @lru_cache(maxsize=None)
-    def __len__(self) -> int:
-        self._discover_all()
-        return len(self._sub_handles)
+    def _child_path(self, key: int) -> str:
+        return f"{self._path}[{key}]"
 
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            raise IndexError("Slice indexing is not supported")
-        if index in self._sub_handles:
-            return self._sub_handles[index]
-        new_handle = self._handle.get_handle_by_index(index)
-        if not new_handle:
-            raise IndexError("%s contains no object at index %d" % (self._name, index))
-        path = self._path + "[" + str(index) + "]"
-        self._sub_handles[index] = SimHandle(new_handle, path)
-        return self._sub_handles[index]
+    def _get_handle_by_key(self, key: int) -> Optional[simulator.gpi_sim_hdl]:
+        return self._handle.get_handle_by_index(key)
 
-    def _child_path(self, name):
-        """Return a string of the path of the child :any:`SimHandle` for a given name."""
-        index = self._sub_handle_key(name)
-        return self._path + "[" + str(index) + "]"
+    def __getitem__(self, key: int) -> SimHandleBase:
+        if isinstance(key, slice):
+            raise TypeError("Slice indexing is not supported")
+        try:
+            return super().__getitem__(key)
+        except KeyError as e:
+            raise IndexError(str(e)) from None
 
-    def __setitem__(self, index, value):
-        raise TypeError("Not permissible to set %s at index %d" % (self._name, index))
+    @cached_property
+    def range(self) -> Range:
+        """Return a :class:`~cocotb.types.Range` over the indexes of the array/vector."""
+        left, right = self._handle.get_range()
+
+        # guess direction based on length until we can get that from the GPI
+        length = self._handle.get_num_elems()
+        if length == 0:
+            direction = "to" if left < right else "downto"
+        else:
+            direction = "to" if left <= right else "downto"
+
+        return Range(left, direction, right)
+
+    def left(self) -> int:
+        """Return the leftmost index in the array/vector."""
+        return self.range.left
+
+    def direction(self) -> str:
+        """Return the direction (``"to"``/``"downto"``) of indexes in the array/vector."""
+        return self.range.direction
+
+    def right(self) -> int:
+        """Return the rightmost index in the array/vector."""
+        return self.range.right
+
+    # ideally `__len__` could be implemented in terms of `range`
+
+    def __iter__(self) -> Iterable[SimHandleBase]:
+        # must use `sorted(self._keys())` instead of the range because `range` doesn't work universally.
+        for i in sorted(self._keys()):
+            yield self[i]
 
 
 class NonHierarchyObject(SimHandleBase):

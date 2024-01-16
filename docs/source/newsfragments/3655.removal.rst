@@ -1,0 +1,1 @@
+:meth:`cocotb.handle.HierarchyObject._id` was deprecated. Use ``handle["sub_handle_name"]`` syntax instead.
