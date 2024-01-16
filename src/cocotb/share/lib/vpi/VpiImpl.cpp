@@ -141,7 +141,8 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype) {
         case vpiInitial:
         case vpiGate:
         case vpiPrimTerm:
-        case vpiGenScope:
+        case vpiGenScope: 
+        case vpiScope:
             return GPI_MODULE;
 
         case vpiPackage:
@@ -246,16 +247,20 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiGate:
         case vpiPrimTerm:
         case vpiGenScope:
+        case vpiScope:
         case vpiGenScopeArray: {
             std::string hdl_name = vpi_get_str(vpiName, new_hdl);
 
+            #ifdef MODELSIM
             if (hdl_name != name) {
                 LOG_DEBUG("Found pseudo-region %s (hdl_name=%s but name=%s)",
                           fq_name.c_str(), hdl_name.c_str(), name.c_str());
                 new_obj = new VpiObjHdl(this, new_hdl, GPI_GENARRAY);
-            } else {
-                new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
-            }
+                break;
+            } 
+            #endif
+
+            new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         }
         default:

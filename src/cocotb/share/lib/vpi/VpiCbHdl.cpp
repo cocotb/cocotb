@@ -596,7 +596,7 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
         vpiPrimitive, vpiPrimitiveArray,
         // vpiContAssign,        // Don't care
         vpiProcess,  // Don't care
-        vpiModPath, vpiTchk, vpiAttribute, vpiPort, vpiInternalScope,
+        vpiModPath, vpiTchk, vpiAttribute, vpiPort, vpiInternalScope, vpiScope,
         // vpiInterface,         // Aldec SEGV on mixed language
         // vpiInterfaceArray,    // Aldec SEGV on mixed language
     };
@@ -618,6 +618,7 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
         {vpiModule, module_options},
         {vpiInterface, instance_options},
         {vpiGenScope, module_options},
+        {vpiScope, module_options},
 
         {vpiStructVar, struct_options},
         {vpiStructNet, struct_options},

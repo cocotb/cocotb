@@ -25,6 +25,15 @@ async def test_params(dut):
     pkg2 = cocotb.packages.cocotb_package_pkg_2
     assert pkg2.eleven_int.value == 11
 
+    found_len = len([hdl for hdl in dut])
+
+    if cocotb.SIM_NAME.lower().startswith("verilator"):
+        # misses both scopes on iterate
+        assert found_len == 1
+
+    assert dut.always_scope.six_int.value == 6
+    assert dut.cond_scope.seven_int.value == 7
+
 
 @cocotb.test()
 async def test_stringification(dut):
@@ -39,6 +48,16 @@ async def test_stringification(dut):
     pkg2 = cocotb.packages.cocotb_package_pkg_2
     assert str(pkg2).startswith("HierarchyObject(cocotb_package_pkg_2")
     assert str(pkg2.eleven_int) == "IntegerObject(cocotb_package_pkg_2::eleven_int)"
+
+
+@cocotb.test(expect_fail=True)
+def test_long_parameter(dut):
+    # On verilator:
+    # 0.00ns ERROR    gpi                                VPI error
+    # 0.00ns ERROR    gpi                                vl_check_format: Unsupported format (vpiIntVal) for cocotb_package_pkg_1.long_param
+    # 0.00ns ERROR    cocotb.regression                  Failed to initialize test test_long_parameter
+    pkg1 = cocotb.packages.cocotb_package_pkg_1
+    assert pkg1.long_param.value != 0
 
 
 @cocotb.test()
