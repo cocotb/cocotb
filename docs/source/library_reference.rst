@@ -107,10 +107,11 @@ as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
 
 .. autoclass:: cocotb.types.Array
     :members:
-    :exclude-members: count, index
+    :inherited-members:
 
 .. autoclass:: cocotb.types.LogicArray
     :members:
+    :inherited-members:
 
 Triggers
 --------

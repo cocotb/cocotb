@@ -4,14 +4,14 @@
 import typing
 from itertools import chain
 
+from cocotb.types import ArrayLike
 from cocotb.types.range import Range
 
 T = typing.TypeVar("T")
-S = typing.TypeVar("S")
 Self = typing.TypeVar("Self", bound="Array[typing.Any]")
 
 
-class Array(typing.Reversible[T], typing.Collection[T]):
+class Array(ArrayLike[T]):
     r"""
     Fixed-size, arbitrarily-indexed, homogeneous collection type.
 
@@ -143,21 +143,6 @@ class Array(typing.Reversible[T], typing.Collection[T]):
                 )
 
     @property
-    def left(self) -> int:
-        """Leftmost index of the array."""
-        return self.range.left
-
-    @property
-    def direction(self) -> str:
-        """``"to"`` if indexes are ascending, ``"downto"`` otherwise."""
-        return self.range.direction
-
-    @property
-    def right(self) -> int:
-        """Rightmost index of the array."""
-        return self.range.right
-
-    @property
     def range(self) -> Range:
         """:class:`Range` of the indexes of the array."""
         return self._range
@@ -172,9 +157,6 @@ class Array(typing.Reversible[T], typing.Collection[T]):
                 f"{new_range!r} not the same length as old range ({self._range!r})."
             )
         self._range = new_range
-
-    def __len__(self) -> int:
-        return len(self.range)
 
     def __iter__(self) -> typing.Iterator[T]:
         return iter(self._value)
@@ -274,27 +256,6 @@ class Array(typing.Reversible[T], typing.Collection[T]):
         if isinstance(other, type(self)):
             return type(self)(chain(other, self))
         return NotImplemented
-
-    def index(
-        self,
-        value: T,
-        start: typing.Optional[int] = None,
-        stop: typing.Optional[int] = None,
-    ) -> int:
-        """
-        Return index of first occurrence of *value*.
-
-        Raises :exc:`IndexError` if the value is not found.
-        Search only within *start* and *stop* if given.
-        """
-        if start is None:
-            start = self.left
-        if stop is None:
-            stop = self.right
-        for i in Range(start, self.direction, stop):
-            if self[i] == value:
-                return i
-        raise IndexError(f"{value!r} not in array")
 
     def count(self, value: T) -> int:
         """Return number of occurrences of *value*."""
