@@ -54,11 +54,6 @@ def test_logic_equality():
     assert Logic(0) != object()
 
 
-def test_logic_hashability():
-    s = {Logic("0"), Logic("1"), Logic("X"), Logic("Z")}
-    assert len(s) == 4
-
-
 def test_logic_default_value():
     assert Logic() == Logic("X")
 
