@@ -946,6 +946,10 @@ class Verilator(Simulator):
     supported_gpi_interfaces = {"verilog": ["vpi"]}
 
     def _simulator_in_path(self) -> None:
+        # the verilator binary is only needed for building
+        return
+
+    def _simulator_in_path_build_only(self) -> None:
         executable = shutil.which("verilator")
         if executable is None:
             raise SystemExit("ERROR: verilator executable not found!")
@@ -964,6 +968,8 @@ class Verilator(Simulator):
         return [f"-G{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[Command]:
+        self._simulator_in_path_build_only()
+
         if self.vhdl_sources:
             raise ValueError(
                 f"{type(self).__qualname__}: Simulator does not support VHDL"
