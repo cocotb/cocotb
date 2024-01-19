@@ -386,7 +386,7 @@ class Simulator(abc.ABC):
             # TODO: create a thread to handle stderr and log as error?
             # TODO: log forwarding
 
-            stderr = None if stdout is None else subprocess.PIPE
+            stderr = None if stdout is None else subprocess.STDOUT
             subprocess.run(
                 cmd, cwd=cwd, env=self.env, check=True, stdout=stdout, stderr=stderr
             )
