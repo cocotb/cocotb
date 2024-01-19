@@ -1,1 +1,1 @@
-Add `--trace` to Verilator binaries for run-time trace generation and integrate with :ref:`Python Test Runner <howto-python-runner>`
+Add `--trace` to Verilator binaries for run-time trace generation and integrate with :ref:`Python Test Runner <howto-python-runner>`.
