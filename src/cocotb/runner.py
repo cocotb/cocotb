@@ -254,7 +254,7 @@ class Simulator(abc.ABC):
                 When running with pytest, the testcase name is prefixed to this name.
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
-            log_file: File to write log
+            log_file: File to write the test log to.
 
         Returns:
             The absolute location of the results XML file which can be
