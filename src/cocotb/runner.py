@@ -173,7 +173,7 @@ class Simulator(abc.ABC):
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
             waves: Record signal traces.
-            log_file: File to write log
+            log_file: File to write the build log to.
         """
 
         self.clean: bool = clean
