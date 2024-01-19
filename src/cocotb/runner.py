@@ -254,6 +254,7 @@ class Simulator(abc.ABC):
         Returns:
             The absolute location of the results XML file which can be
             defined by the *results_xml* argument.
+            If *results_xml* is an absolute path it will be used as-is.
             The default is :file:`{build_dir}/{pytest_test_name}.results.xml`
             when run with ``pytest``,
             :file:`{build_dir}/results.xml` otherwise.
@@ -321,7 +322,10 @@ class Simulator(abc.ABC):
             self.current_test_name = "test"
             results_xml_name = results_xml
 
-        results_xml_file = Path(self.test_dir) / results_xml_name
+        if os.path.isabs(results_xml):
+            results_xml_file = Path(results_xml)
+        else:
+            results_xml_file = Path(self.test_dir) / results_xml_name
 
         with suppress(OSError):
             os.remove(results_xml_file)
