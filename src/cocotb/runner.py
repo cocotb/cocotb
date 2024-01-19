@@ -322,7 +322,7 @@ class Simulator(abc.ABC):
             self.current_test_name = "test"
             results_xml_name = results_xml
 
-        if os.path.isabs(results_xml):
+        if Path(results_xml).is_absolute():
             results_xml_file = Path(results_xml)
         else:
             results_xml_file = Path(self.test_dir) / results_xml_name
