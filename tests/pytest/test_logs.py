@@ -1,3 +1,7 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import sys
 from pathlib import Path
@@ -20,8 +24,8 @@ from test_cocotb import (
     vhdl_sources,
 )
 
-sys.path.insert(0, os.path.join(tests_dir, "pytest"))
-test_module = os.path.basename(os.path.splitext(__file__)[0])
+sys.path.insert(0, str(Path(tests_dir) / "pytest"))
+test_module = Path(__file__).stem
 sim = os.getenv("SIM", "icarus")
 
 
@@ -62,5 +66,5 @@ def test_wave_dump():
     temp_dir = TemporaryDirectory()
     log_dir = Path(temp_dir.name)
     run_simulation(sim=sim, log_dir=log_dir)
-    assert os.path.exists(log_dir / "build.log")
-    assert os.path.exists(log_dir / "test.log")
+    assert (log_dir / "build.log").exists()
+    assert (log_dir / "test.log").exists()
