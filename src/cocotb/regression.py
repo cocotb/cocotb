@@ -60,9 +60,9 @@ from typing import (
 
 import cocotb
 from cocotb import ANSI, simulator
+from cocotb._outcomes import Error, Outcome, capture
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.log import SimLog
-from cocotb.outcomes import Error, Outcome
 from cocotb.result import SimFailure, TestSuccess
 from cocotb.task import Task, _RunningTest
 from cocotb.utils import (
@@ -395,9 +395,9 @@ class RegressionManager:
             self._record_test_excluded(test)
             return None
 
-        test_init_outcome = cocotb.outcomes.capture(test.func, cocotb.top)
+        test_init_outcome = capture(test.func, cocotb.top)
 
-        if isinstance(test_init_outcome, cocotb.outcomes.Error):
+        if isinstance(test_init_outcome, Error):
             self.log.error(
                 "Failed to initialize test %s",
                 test.name,

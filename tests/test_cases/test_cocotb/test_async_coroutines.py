@@ -6,7 +6,7 @@ Test function and substitutability of async coroutines
 """
 import cocotb
 import pytest
-from cocotb.outcomes import Error, Value
+from cocotb._outcomes import Error, Value
 from cocotb.task import Task
 from cocotb.triggers import Timer
 from common import MyException
