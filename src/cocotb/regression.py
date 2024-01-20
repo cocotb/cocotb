@@ -38,7 +38,6 @@ import re
 import sys
 import time
 import warnings
-from enum import Enum, auto
 from itertools import product
 from typing import (
     Any,
@@ -966,7 +965,7 @@ class TestFactory(Generic[F]):
         for index, testoptions in enumerate(
             dict(zip(d, v)) for v in product(*d.values())
         ):
-            name = f"%s%s%s_%03d" % (
+            name = "%s%s%s_%03d" % (
                 prefix,
                 test_func_name,
                 postfix,

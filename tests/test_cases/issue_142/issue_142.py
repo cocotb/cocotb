@@ -4,7 +4,6 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
 from cocotb.types import LogicArray, Range
-from cocotb.types.range import Range
 
 
 @cocotb.test()
