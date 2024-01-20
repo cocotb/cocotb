@@ -333,7 +333,7 @@ Features
      towncrier will append the issue number taken from the file name here:
 
   Issue (:pr:`1255`)
-- The cocotb log configuration is now less intrusive, and only configures the root logger instance, ``logging.getLogger()``, as part of :func:`cocotb.log.default_config` (:pr:`1266`).
+- The cocotb log configuration is now less intrusive, and only configures the root logger instance, ``logging.getLogger()``, as part of :func:`cocotb.logging.default_config` (:pr:`1266`).
 
   As such, it is now possible to override the default cocotb logging behavior with something like::
 
@@ -367,8 +367,8 @@ Features
   Issue (:pr:`1403`)
 - Custom logging handlers can now access the simulator time using
   :attr:`logging.LogRecord.created_sim_time`, provided the
-  :class:`~cocotb.log.SimTimeContextFilter` filter added by
-  :func:`~cocotb.log.default_config` is not removed from the logger instance. (:pr:`1411`)
+  :class:`~cocotb.logging.SimTimeContextFilter` filter added by
+  :func:`~cocotb.logging.default_config` is not removed from the logger instance. (:pr:`1411`)
 - Questa now supports :envvar:`PLUSARGS`.
   This requires that ``tcl.h`` be present on the system.
   This is likely included in your installation of Questa, otherwise, specify ``CFLAGS=-I/path/to/tcl/includedir``. (:pr:`1424`)

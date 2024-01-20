@@ -30,7 +30,6 @@ Cocotb is a coroutine, cosimulation framework for writing testbenches in Python.
 
 See https://docs.cocotb.org for full documentation
 """
-import logging
 import os
 import random
 import sys
@@ -42,7 +41,7 @@ from types import SimpleNamespace
 from typing import Dict, List, Optional, Union
 
 import cocotb.handle
-from cocotb.log import default_config
+from cocotb.logging import default_config
 from cocotb.regression import RegressionManager
 from cocotb.scheduler import Scheduler
 from cocotb.task import Task
@@ -56,10 +55,12 @@ from cocotb.decorators import (  # isort: skip # noqa: F401
     test,
     parameterize,
 )
-from cocotb.log import _filter_from_c, _log_from_c  # isort: skip # noqa: F401
+from cocotb.logging import _filter_from_c, _log_from_c  # isort: skip # noqa: F401
 
 
 def _setup_logging() -> None:
+    import logging
+
     default_config()
     global log
     log = logging.getLogger(__name__)

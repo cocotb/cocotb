@@ -141,7 +141,7 @@ Utilities
 Logging
 -------
 
-.. currentmodule:: cocotb.log
+.. currentmodule:: cocotb.logging
 
 .. autofunction:: default_config
 
