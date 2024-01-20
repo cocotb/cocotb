@@ -60,6 +60,7 @@ from typing import (
 
 import cocotb
 from cocotb import ANSI, simulator
+from cocotb._xunit_reporter import XUnitReporter
 from cocotb.log import SimLog
 from cocotb.outcomes import Error, Outcome
 from cocotb.result import SimFailure, TestSuccess
@@ -69,7 +70,6 @@ from cocotb.utils import (
     remove_traceback_frames,
     want_color_output,
 )
-from cocotb.xunit_reporter import XUnitReporter
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
