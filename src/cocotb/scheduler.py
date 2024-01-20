@@ -103,7 +103,7 @@ class external_waiter:
         self.state = external_state.INIT
         self.cond = threading.Condition()
         self._log = logging.getLogger(
-            f"cocotb.external.thead.{self.thread}.0x{id(self):x}"
+            f"cocotb.external.thread.{self.thread}.0x{id(self):x}"
         )
 
     @property

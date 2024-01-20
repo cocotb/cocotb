@@ -13,7 +13,7 @@ and the Python documentation for :class:`logging.handlers.RotatingFileHandler`.
 .. code-block:: python3
 
     from logging.handlers import RotatingFileHandler
-    from cocotb.log import SimLogFormatter
+    from cocotb.logging import SimLogFormatter
 
     root_logger = logging.getLogger()
 
