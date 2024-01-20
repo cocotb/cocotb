@@ -37,7 +37,7 @@ from typing import Any, Coroutine, Optional, TypeVar, Union
 
 import cocotb
 import cocotb.task
-from cocotb import outcomes, simulator
+from cocotb import _outcomes, simulator
 from cocotb._py_compat import cached_property
 from cocotb.handle import LogicObject, ModifiableObject
 from cocotb.log import SimLog
@@ -129,7 +129,7 @@ class Trigger(Awaitable):
         The default is to produce the trigger itself, which is done for
         ease of use with :class:`~cocotb.triggers.First`.
         """
-        return outcomes.Value(self)
+        return _outcomes.Value(self)
 
     def __await__(self):
         # hand the trigger back to the scheduler trampoline
@@ -806,10 +806,10 @@ async def _wait_callback(trigger, callback):
     Wait for a trigger, and call `callback` with the outcome of the await.
     """
     try:
-        ret = outcomes.Value(await trigger)
+        ret = _outcomes.Value(await trigger)
     except BaseException as exc:
         # hide this from the traceback
-        ret = outcomes.Error(remove_traceback_frames(exc, ["_wait_callback"]))
+        ret = _outcomes.Error(remove_traceback_frames(exc, ["_wait_callback"]))
     callback(ret)
 
 

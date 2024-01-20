@@ -10,7 +10,7 @@ from asyncio import CancelledError, InvalidStateError
 
 import cocotb
 import cocotb.triggers
-from cocotb import outcomes
+from cocotb import _outcomes
 from cocotb._py_compat import cached_property
 from cocotb.log import SimLog
 from cocotb.utils import extract_coro_stack, remove_traceback_frames
@@ -57,7 +57,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
             raise TypeError(f"{inst} isn't a valid coroutine!")
         self._coro = inst
         self._started = False
-        self._outcome: outcomes.Outcome = None
+        self._outcome: _outcomes.Outcome = None
         self._trigger: typing.Optional[cocotb.triggers.Trigger] = None
         self._cancelled: typing.Optional[CancelledError] = None
 
@@ -118,7 +118,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         )
         return repr_string
 
-    def _advance(self, outcome: outcomes.Outcome) -> typing.Any:
+    def _advance(self, outcome: _outcomes.Outcome) -> typing.Any:
         """Advance to the next yield in this coroutine.
 
         Args:
@@ -132,9 +132,9 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
             self._started = True
             return outcome.send(self._coro)
         except StopIteration as e:
-            self._outcome = outcomes.Value(e.value)
+            self._outcome = _outcomes.Value(e.value)
         except BaseException as e:
-            self._outcome = outcomes.Error(
+            self._outcome = _outcomes.Error(
                 remove_traceback_frames(e, ["_advance", "send"])
             )
 
@@ -156,7 +156,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         if _debug:
             self.log.debug("kill() called on coroutine")
         # todo: probably better to throw an exception for anyone waiting on the coroutine
-        self._outcome = outcomes.Value(None)
+        self._outcome = _outcomes.Value(None)
         cocotb.scheduler._unschedule(self)
 
     def join(self) -> "cocotb.triggers.Join":
@@ -216,7 +216,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
             raise InvalidStateError("result is not yet available")
         elif self.cancelled():
             raise self._cancelled
-        elif isinstance(self._outcome, outcomes.Error):
+        elif isinstance(self._outcome, _outcomes.Error):
             return self._outcome.error
         else:
             return None

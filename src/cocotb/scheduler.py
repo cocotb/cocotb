@@ -43,7 +43,7 @@ from collections.abc import Coroutine
 from typing import Any, Callable, Union
 
 import cocotb
-from cocotb import _py_compat, outcomes
+from cocotb import _outcomes, _py_compat
 from cocotb.log import SimLog
 from cocotb.result import TestComplete
 from cocotb.task import Task
@@ -588,7 +588,7 @@ class Scheduler:
                 self._resume_task_upon(
                     task,
                     NullTrigger(
-                        name="Trigger._prime() Error", outcome=outcomes.Error(e)
+                        name="Trigger._prime() Error", outcome=_outcomes.Error(e)
                     ),
                 )
 
@@ -616,9 +616,9 @@ class Scheduler:
         async def wrapper():
             # This function runs in the scheduler thread
             try:
-                _outcome = outcomes.Value(await task)
+                _outcome = _outcomes.Value(await task)
             except BaseException as e:
-                _outcome = outcomes.Error(e)
+                _outcome = _outcomes.Error(e)
             event.outcome = _outcome
             # Notify the current (scheduler) thread that we are about to wake
             # up the background (`@external`) thread, making sure to do so
@@ -650,7 +650,7 @@ class Scheduler:
         # calling task (but not the thread) until the external completes
 
         def execute_external(func, _waiter):
-            _waiter._outcome = outcomes.capture(func, *args, **kwargs)
+            _waiter._outcome = _outcomes.capture(func, *args, **kwargs)
             if _debug:
                 self.log.debug(
                     f"Execution of external routine done {threading.current_thread()}"
@@ -722,7 +722,7 @@ class Scheduler:
         self._test = test_task
         self._resume_task_upon(
             test_task,
-            NullTrigger(name=f"Start {test_task!s}", outcome=outcomes.Value(None)),
+            NullTrigger(name=f"Start {test_task!s}", outcome=_outcomes.Value(None)),
         )
 
     # This collection of functions parses a trigger out of the object
@@ -788,7 +788,7 @@ class Scheduler:
         try:
             self._current_task = task
             if trigger is None:
-                send_outcome = outcomes.Value(None)
+                send_outcome = _outcomes.Value(None)
             else:
                 send_outcome = trigger._outcome
             if _debug:
@@ -815,7 +815,7 @@ class Scheduler:
                 except TypeError as exc:
                     # restart this task with an exception object telling it that
                     # it wasn't allowed to yield that
-                    result = NullTrigger(outcome=outcomes.Error(exc))
+                    result = NullTrigger(outcome=_outcomes.Error(exc))
 
                 self._resume_task_upon(task, result)
 
@@ -857,7 +857,7 @@ class Scheduler:
         """
         if self._test._outcome is not None:  # pragma: no cover
             raise InternalError("Outcome already has a value, but is being set again.")
-        outcome = outcomes.Error(exc)
+        outcome = _outcomes.Error(exc)
         if _debug:
             self._test.log.debug(f"outcome forced to {outcome}")
         self._test._outcome = outcome
