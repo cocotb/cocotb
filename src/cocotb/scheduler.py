@@ -44,7 +44,6 @@ from typing import Any, Callable, Union
 
 import cocotb
 from cocotb import _outcomes, _py_compat
-from cocotb.log import SimLog
 from cocotb.result import TestComplete
 from cocotb.task import Task
 from cocotb.triggers import (
@@ -103,7 +102,9 @@ class external_waiter:
         self.event = Event()
         self.state = external_state.INIT
         self.cond = threading.Condition()
-        self._log = SimLog(f"cocotb.external.thead.{self.thread}", id(self))
+        self._log = logging.getLogger(
+            f"cocotb.external.thead.{self.thread}.0x{id(self):x}"
+        )
 
     @property
     def result(self):
@@ -228,7 +229,7 @@ class Scheduler:
     def __init__(self, handle_result: Callable[[Task], None]) -> None:
         self._handle_result = handle_result
 
-        self.log = SimLog("cocotb.scheduler")
+        self.log = logging.getLogger("cocotb.scheduler")
         if _debug:
             self.log.setLevel(logging.DEBUG)
 

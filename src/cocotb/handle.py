@@ -26,6 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import enum
+import logging
 import re
 from abc import ABC, abstractmethod
 from functools import lru_cache
@@ -46,7 +47,6 @@ import cocotb
 from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
-from cocotb.log import SimLog
 from cocotb.types import Logic, LogicArray
 from cocotb.types.range import Range
 
@@ -118,7 +118,7 @@ class SimHandleBase(ABC):
 
         :meta public:
         """
-        return SimLog("cocotb.%s" % self._name)
+        return logging.getLogger(f"cocotb.{self._name}")
 
     @cached_property
     def _def_name(self) -> str:

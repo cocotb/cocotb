@@ -29,6 +29,7 @@
 
 import abc
 import inspect
+import logging
 import warnings
 from collections.abc import Awaitable
 from decimal import Decimal
@@ -40,7 +41,6 @@ import cocotb.task
 from cocotb import _outcomes, simulator
 from cocotb._py_compat import cached_property
 from cocotb.handle import LogicObject, ModifiableObject
-from cocotb.log import SimLog
 from cocotb.utils import (
     ParametrizedSingleton,
     get_sim_steps,
@@ -85,7 +85,7 @@ class Trigger(Awaitable):
 
     @cached_property
     def log(self):
-        return SimLog("cocotb.%s" % (type(self).__qualname__), id(self))
+        return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
     @abc.abstractmethod
     def _prime(self, callback):
