@@ -30,6 +30,7 @@
 import functools
 import hashlib
 import inspect
+import logging
 import math
 import os
 import pdb
@@ -61,7 +62,6 @@ import cocotb
 from cocotb import ANSI, simulator
 from cocotb._outcomes import Error, Outcome, capture
 from cocotb._xunit_reporter import XUnitReporter
-from cocotb.log import SimLog
 from cocotb.result import SimFailure, TestSuccess
 from cocotb.task import Task, _RunningTest
 from cocotb.utils import (
@@ -73,7 +73,7 @@ from cocotb.utils import (
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
 
-_logger = SimLog(__name__)
+_logger = logging.getLogger(__name__)
 
 _Failed: Type[BaseException]
 try:

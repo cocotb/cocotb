@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import collections.abc
 import inspect
+import logging
 import os
 import typing
 import warnings
@@ -12,7 +13,6 @@ import cocotb
 import cocotb.triggers
 from cocotb import _outcomes
 from cocotb._py_compat import cached_property
-from cocotb.log import SimLog
 from cocotb.utils import extract_coro_stack, remove_traceback_frames
 
 T = typing.TypeVar("T")
@@ -67,10 +67,12 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         self.__qualname__ = self.__name__
 
     @cached_property
-    def log(self) -> SimLog:
+    def log(self) -> logging.Logger:
         # Creating a logger is expensive, only do it if we actually plan to
         # log anything
-        return SimLog(f"cocotb.{self.__qualname__}.{self._coro.__qualname__}")
+        return logging.getLogger(
+            f"cocotb.{self.__qualname__}.{self._coro.__qualname__}"
+        )
 
     def __str__(self) -> str:
         return f"<{self.__name__}>"

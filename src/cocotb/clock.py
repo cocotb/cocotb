@@ -28,12 +28,12 @@
 """A clock class."""
 
 import itertools
+import logging
 from decimal import Decimal
 from numbers import Real
 from typing import Union
 
 from cocotb._py_compat import cached_property
-from cocotb.log import SimLog
 from cocotb.triggers import Timer
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
@@ -157,4 +157,6 @@ class Clock:
 
     @cached_property
     def log(self):
-        return SimLog(f"cocotb.{type(self).__qualname__}.{self.signal._name}")
+        return logging.getLogger(
+            f"cocotb.{type(self).__qualname__}.{self.signal._name}"
+        )

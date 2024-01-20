@@ -1,5 +1,4 @@
 import cocotb
-from cocotb.log import SimLog
 from cocotb.triggers import Edge, FallingEdge, RisingEdge, Timer
 
 
@@ -11,21 +10,8 @@ async def clock_gen(signal, num):
         await Timer(5, "ns")
 
 
-async def signal_mon(signal, idx, edge):
-    _ = SimLog("cocotb.signal_mon.%d.%s" % (idx, signal._name))
-    _ = signal.value
-    edges = 0
-
-    while True:
-        await edge(signal)
-        edges += 1
-
-    return edges
-
-
 class DualMonitor:
     def __init__(self, edge, signal):
-        self.log = SimLog(f"cocotb.{edge}.{signal._path}")
         self.edge_type = edge
         self.monitor_edges = [0, 0]
         self.signal = signal
