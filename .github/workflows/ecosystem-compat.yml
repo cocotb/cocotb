@@ -21,7 +21,7 @@ on:
 
 jobs:
   cocotb-coverage:
-    name: Test cocotb-coverage 1.1
+    name: Test cocotb-coverage 1.2
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
@@ -47,7 +47,7 @@ jobs:
           path: cocotb-coverage
 
       - name: Install the release version of cocotb-coverage
-        run: pip3 install cocotb-coverage==1.1
+        run: pip3 install cocotb-coverage==1.2
 
       - name: Run tests
         # Don't run tests through tox (as present in cocotb-coverage) to be able
