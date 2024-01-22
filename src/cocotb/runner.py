@@ -221,7 +221,7 @@ class Simulator(abc.ABC):
         parameters: Mapping[str, object] = None,
         build_dir: Optional[PathLike] = None,
         test_dir: Optional[PathLike] = None,
-        results_xml: str = "results.xml",
+        results_xml: Optional[str] = None,
         verbose: bool = False,
         timescale: Optional[Timescale] = None,
     ) -> Path:
@@ -247,17 +247,15 @@ class Simulator(abc.ABC):
             build_dir: Directory the build step has been run in.
             test_dir: Directory to run the tests in.
             results_xml: Name of xUnit XML file to store test results in.
-                When running with pytest, the testcase name is prefixed to this name.
+                If an absolute path is provided it will be used as-is,
+                :file:`{build_dir}/results.xml` otherwise.
+                This argument should not be set when run with ``pytest``.
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
 
         Returns:
             The absolute location of the results XML file which can be
             defined by the *results_xml* argument.
-            If *results_xml* is an absolute path it will be used as-is.
-            The default is :file:`{build_dir}/{pytest_test_name}.results.xml`
-            when run with ``pytest``,
-            :file:`{build_dir}/results.xml` otherwise.
         """
 
         __tracebackhide__ = True  # Hide the traceback when using pytest
@@ -315,17 +313,21 @@ class Simulator(abc.ABC):
 
         # When using pytest, use test name as result file name
         pytest_current_test = os.getenv("PYTEST_CURRENT_TEST", "")
-        if pytest_current_test:
+        test_dir_path = Path(self.test_dir)
+        self.current_test_name = "test"
+        if results_xml is not None:
+            # PYTEST_CURRENT_TEST only allowed when results_xml is not set
+            assert not pytest_current_test
+            results_xml_path = Path(results_xml)
+            if results_xml_path.is_absolute():
+                results_xml_file = results_xml_path
+            else:
+                results_xml_file = test_dir_path / results_xml_path
+        elif pytest_current_test:
             self.current_test_name = pytest_current_test.split(":")[-1].split(" ")[0]
-            results_xml_name = f"{self.current_test_name}.{results_xml}"
+            results_xml_file = test_dir_path / f"{self.current_test_name}.{results_xml}"
         else:
-            self.current_test_name = "test"
-            results_xml_name = results_xml
-
-        if Path(results_xml).is_absolute():
-            results_xml_file = Path(results_xml)
-        else:
-            results_xml_file = Path(self.test_dir) / results_xml_name
+            results_xml_file = test_dir_path / "results.xml"
 
         with suppress(OSError):
             os.remove(results_xml_file)
