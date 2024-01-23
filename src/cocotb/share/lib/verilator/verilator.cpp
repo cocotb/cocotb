@@ -48,20 +48,34 @@ static inline bool settle_value_callbacks() {
 
 int main(int argc, char** argv) {
     bool traceOn = false;
+#if VM_TRACE_FST
+    const char* traceFile = "dump.fst";
+#else
+    const char* traceFile = "dump.vcd";
+#endif
 
     for (int i = 1; i < argc; i++) {
         std::string arg = std::string(argv[i]);
         if (arg == "--trace") {
             traceOn = true;
+        } else if (arg == "--trace-file") {
+            if (++i < argc) {
+                traceFile = argv[i];
+            } else {
+                fprintf(stderr, "Error: --trace-file requires a parameter\n");
+                return -1;
+            }
         } else if (arg == "--help") {
             fprintf(stderr,
-                    "usage: %s [--trace]\n"
+                    "usage: %s [--trace] [--trace-file TRACEFILE]\n"
                     "\n"
                     "Cocotb + Verilator sim\n"
                     "\n"
                     "options:\n"
-                    "  --trace      Enables tracing (VCD or FST)\n",
-                    basename(argv[0]));
+                    "  --trace      Enables tracing (VCD or FST)\n"
+                    "  --trace-file Specifies the trace file name (%s by "
+                    "default)\n",
+                    basename(argv[0]), traceFile);
             return 0;
         }
     }
@@ -83,10 +97,8 @@ int main(int argc, char** argv) {
 #if VM_TRACE
 #if VM_TRACE_FST
     std::unique_ptr<VerilatedFstC> tfp(new VerilatedFstC);
-    const char* traceFile = "dump.fst";
 #else
     std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
-    const char* traceFile = "dump.vcd";
 #endif
 
     if (traceOn) {
