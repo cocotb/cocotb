@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<VerilatedFstC> tfp(new VerilatedFstC);
     const char* traceFile = "dump.fst";
 #else
-    std::unique_ptr<VerilatedvcdC> tfp(new VerilatedVcdC);
+    std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
     const char* traceFile = "dump.vcd";
 #endif
 
