@@ -1055,7 +1055,12 @@ class Verilator(Simulator):
 
     def _test_command(self) -> List[Command]:
         out_file = self.build_dir / self.sim_hdl_toplevel
-        return [[str(out_file)] + (["--trace"] if self.waves else []) + self.plusargs]
+        return [
+            [str(out_file)]
+            + (["--trace"] if self.waves else [])
+            + self.test_args
+            + self.plusargs
+        ]
 
 
 class Xcelium(Simulator):
