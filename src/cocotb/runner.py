@@ -1041,6 +1041,7 @@ class Verilator(Simulator):
                     LIB_DIR=cocotb.config.libs_dir
                 ),
             ]
+            + (["--trace"] if self.waves else [])
             + self.build_args
             + self._get_define_options(self.defines)
             + self._get_include_options(self.includes)
@@ -1049,7 +1050,16 @@ class Verilator(Simulator):
             + [str(source_file) for source_file in self.verilog_sources]
         )
 
-        cmds.append(["make", "-C", str(self.build_dir), "-f", "Vtop.mk"])
+        cmds.append(
+            [
+                "make",
+                "-C",
+                str(self.build_dir),
+                "-f",
+                "Vtop.mk",
+                f"VM_TRACE={int(self.waves)}",
+            ]
+        )
 
         return cmds
 
