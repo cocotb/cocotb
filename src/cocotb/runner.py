@@ -248,7 +248,7 @@ class Simulator(abc.ABC):
             test_dir: Directory to run the tests in.
             results_xml: Name of xUnit XML file to store test results in.
                 If an absolute path is provided it will be used as-is,
-                :file:`{build_dir}/results.xml` otherwise.
+                ``{build_dir}/results.xml`` otherwise.
                 This argument should not be set when run with ``pytest``.
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
@@ -312,7 +312,7 @@ class Simulator(abc.ABC):
             self.verbose = verbose
 
         # When using pytest, use test name as result file name
-        pytest_current_test = os.getenv("PYTEST_CURRENT_TEST", "")
+        pytest_current_test = os.getenv("PYTEST_CURRENT_TEST", None)
         test_dir_path = Path(self.test_dir)
         self.current_test_name = "test"
         if results_xml is not None:
@@ -323,7 +323,7 @@ class Simulator(abc.ABC):
                 results_xml_file = results_xml_path
             else:
                 results_xml_file = test_dir_path / results_xml_path
-        elif pytest_current_test:
+        elif pytest_current_test is not None:
             self.current_test_name = pytest_current_test.split(":")[-1].split(" ")[0]
             results_xml_file = test_dir_path / f"{self.current_test_name}.{results_xml}"
         else:
