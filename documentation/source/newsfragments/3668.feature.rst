@@ -1,0 +1,1 @@
+Add `log_file` argument to :ref:`Python Test Runner <howto-python-runner>` to redirect stdout and stderr to the specified file.
