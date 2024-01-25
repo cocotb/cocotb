@@ -283,7 +283,7 @@ async def test_integer(dut):
     ):
         limits = (
             _Limits.VECTOR_NBIT
-        )  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
+        )  # stream_in_int is LogicObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -301,7 +301,7 @@ async def test_integer_overflow(dut):
     ):
         limits = (
             _Limits.VECTOR_NBIT
-        )  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
+        )  # stream_in_int is LogicObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -318,7 +318,7 @@ async def test_integer_underflow(dut):
     ):
         limits = (
             _Limits.VECTOR_NBIT
-        )  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
+        )  # stream_in_int is LogicObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 

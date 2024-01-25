@@ -55,7 +55,7 @@ Assigning values to signals
 ===========================
 
 Values can be assigned to signals using either the
-:attr:`~cocotb.handle.NonHierarchyObject.value` property of a handle object
+:attr:`~cocotb.handle.ValueObjectBase.value` property of a handle object
 or using direct assignment while traversing the hierarchy.
 
 .. code-block:: python3
@@ -76,7 +76,7 @@ or using direct assignment while traversing the hierarchy.
 The assignment syntax ``sig.value = new_value`` has the same semantics as :term:`HDL`:
 writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
-(see :meth:`~cocotb.handle.NonHierarchyObject.setimmediatevalue`).
+(see :meth:`~cocotb.handle.ValueObjectBase.setimmediatevalue`).
 
 .. _writing_tbs_assigning_values_signed_unsigned:
 
@@ -120,7 +120,7 @@ value to signals with more fine-grained control (e.g. signed values only).
 Reading values from signals
 ===========================
 
-Values in the DUT can be accessed with the :attr:`~cocotb.handle.NonHierarchyObject.value`
+Values in the DUT can be accessed with the :attr:`~cocotb.handle.ValueObjectBase.value`
 property of a handle object.
 A common mistake is forgetting the ``.value`` which just gives you a reference to a handle
 (useful for defining an alias name), not the value.

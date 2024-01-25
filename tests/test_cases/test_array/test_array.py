@@ -8,10 +8,10 @@ import os
 import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import (
+    ArrayObject,
     HierarchyArrayObject,
     HierarchyObject,
     LogicObject,
-    NonHierarchyIndexableObject,
 )
 from cocotb.triggers import Timer
 
@@ -400,7 +400,7 @@ async def test_discover_all(dut):
             obj,
             (
                 cocotb.handle.HierarchyObjectBase,
-                cocotb.handle.NonHierarchyIndexableObjectBase,
+                cocotb.handle.IndexableValueObjectBase,
             ),
         ):
             return 0
@@ -432,24 +432,24 @@ async def test_direct_constant_indexing(dut):
     tlog.info("Checking Types of complex array structures in constants/parameters.")
     _check_type(tlog, dut.param_rec, HierarchyObject)
     _check_type(tlog, dut.param_rec.a, LogicObject)
-    _check_type(tlog, dut.param_rec.b, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.param_rec.b, ArrayObject)
     _check_type(tlog, dut.param_rec.b[1], LogicObject)
 
-    _check_type(tlog, dut.param_cmplx, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.param_cmplx, ArrayObject)
     _check_type(tlog, dut.param_cmplx[0], HierarchyObject)
     _check_type(tlog, dut.param_cmplx[0].a, LogicObject)
-    _check_type(tlog, dut.param_cmplx[0].b, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.param_cmplx[0].b, ArrayObject)
     _check_type(tlog, dut.param_cmplx[0].b[1], LogicObject)
 
     _check_type(tlog, dut.const_rec, HierarchyObject)
     _check_type(tlog, dut.const_rec.a, LogicObject)
-    _check_type(tlog, dut.const_rec.b, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.const_rec.b, ArrayObject)
     _check_type(tlog, dut.const_rec.b[1], LogicObject)
 
-    _check_type(tlog, dut.const_cmplx, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.const_cmplx, ArrayObject)
     _check_type(tlog, dut.const_cmplx[1], HierarchyObject)
     _check_type(tlog, dut.const_cmplx[1].a, LogicObject)
-    _check_type(tlog, dut.const_cmplx[1].b, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.const_cmplx[1].b, ArrayObject)
     _check_type(tlog, dut.const_cmplx[1].b[1], LogicObject)
 
 
@@ -494,14 +494,14 @@ async def test_direct_signal_indexing(dut):
     _check_type(tlog, dut.sig_desc[20], LogicObject)
     _check_type(tlog, dut.sig_asc[17], LogicObject)
     _check_type(tlog, dut.sig_t1, LogicObject)
-    _check_type(tlog, dut.sig_t2, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.sig_t2, ArrayObject)
     _check_type(tlog, dut.sig_t2[5], LogicObject)
     _check_type(tlog, dut.sig_t2[5][3], LogicObject)
     _check_type(tlog, dut.sig_t3a[2][3], LogicObject)
     _check_type(tlog, dut.sig_t3b[3], LogicObject)
-    _check_type(tlog, dut.sig_t3a, NonHierarchyIndexableObject)
-    _check_type(tlog, dut.sig_t4, NonHierarchyIndexableObject)
-    _check_type(tlog, dut.sig_t4[3], NonHierarchyIndexableObject)
+    _check_type(tlog, dut.sig_t3a, ArrayObject)
+    _check_type(tlog, dut.sig_t4, ArrayObject)
+    _check_type(tlog, dut.sig_t4[3], ArrayObject)
     # the following version cannot index into those arrays and will error out
     if not (
         cocotb.LANGUAGE in ["verilog"]
@@ -510,12 +510,12 @@ async def test_direct_signal_indexing(dut):
     ):
         _check_type(tlog, dut.sig_t4[3][4], LogicObject)
         _check_type(tlog, dut.sig_t4[3][4][1], LogicObject)
-    _check_type(tlog, dut.sig_t5, NonHierarchyIndexableObject)
-    _check_type(tlog, dut.sig_t5[1], NonHierarchyIndexableObject)
+    _check_type(tlog, dut.sig_t5, ArrayObject)
+    _check_type(tlog, dut.sig_t5[1], ArrayObject)
     _check_type(tlog, dut.sig_t5[1][0], LogicObject)
     _check_type(tlog, dut.sig_t5[1][0][6], LogicObject)
-    _check_type(tlog, dut.sig_t6, NonHierarchyIndexableObject)
-    _check_type(tlog, dut.sig_t6[1], NonHierarchyIndexableObject)
+    _check_type(tlog, dut.sig_t6, ArrayObject)
+    _check_type(tlog, dut.sig_t6[1], ArrayObject)
     # the following version cannot index into those arrays and will error out
     if not (
         cocotb.LANGUAGE in ["verilog"]
@@ -524,10 +524,10 @@ async def test_direct_signal_indexing(dut):
     ):
         _check_type(tlog, dut.sig_t6[0][3], LogicObject)
         _check_type(tlog, dut.sig_t6[0][3][7], LogicObject)
-    _check_type(tlog, dut.sig_cmplx, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.sig_cmplx, ArrayObject)
 
     if cocotb.LANGUAGE in ["verilog"]:
-        _check_type(tlog, dut.sig_t7[1], NonHierarchyIndexableObject)
+        _check_type(tlog, dut.sig_t7[1], ArrayObject)
         _check_type(tlog, dut.sig_t7[0][3], LogicObject)
         _check_type(
             tlog, dut.sig_t8[1], LogicObject
@@ -543,13 +543,13 @@ async def test_direct_signal_indexing(dut):
     ):
         _check_type(tlog, dut.sig_cmplx[1], HierarchyObject)
         _check_type(tlog, dut.sig_cmplx[1].a, LogicObject)
-        _check_type(tlog, dut.sig_cmplx[1].b, NonHierarchyIndexableObject)
+        _check_type(tlog, dut.sig_cmplx[1].b, ArrayObject)
         _check_type(tlog, dut.sig_cmplx[1].b[1], LogicObject)
         _check_type(tlog, dut.sig_cmplx[1].b[1][2], LogicObject)
 
     _check_type(tlog, dut.sig_rec, HierarchyObject)
     _check_type(tlog, dut.sig_rec.a, LogicObject)
-    _check_type(tlog, dut.sig_rec.b, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.sig_rec.b, ArrayObject)
 
     # Riviera has a bug and finds dut.sig_rec.b[1], but the type returned is 0 which is unknown
     # only true for version 2016.02

@@ -374,7 +374,7 @@ Features
   This is likely included in your installation of Questa, otherwise, specify ``CFLAGS=-I/path/to/tcl/includedir``. (:pr:`1424`)
 - The name of the entry point symbol for libraries in :envvar:`GPI_EXTRA` can now be customized.
   The delimiter between each library in the list has changed from ``:`` to ``,``. (:pr:`1457`)
-- New methods for setting the value of a :class:`~cocotb.handle.NonHierarchyIndexableObject` (HDL arrays). (:pr:`1507`)
+- New methods for setting the value of a ``cocotb.handle.NonHierarchyIndexableObject`` (HDL arrays). (:pr:`1507`)
 
   .. code-block:: python3
 
@@ -402,7 +402,7 @@ Bugfixes
   Previously, these tests were ignored. (:pr:`1279`)
 - Makefiles now correctly fail if the simulation crashes before a ``results.xml`` file can be written. (:pr:`1314`)
 - Logging of non-string messages with colored log output is now working. (:pr:`1410`)
-- Getting and setting the value of a :class:`~cocotb.handle.NonHierarchyIndexableObject` now iterates through the correct range of the simulation object, so arrays that do not start/end at index 0 are supported. (:pr:`1507`)
+- Getting and setting the value of a ``cocotb.handle.NonHierarchyIndexableObject`` now iterates through the correct range of the simulation object, so arrays that do not start/end at index 0 are supported. (:pr:`1507`)
 - The :class:`~cocotb.monitors.xgmii.XGMII` monitor no longer crashes on Python 3, and now assembles packets as :class:`bytes` instead of :class:`str`. The :class:`~cocotb.drivers.xgmii.XGMII` driver has expected :class:`bytes` since cocotb 1.2.0. (:pr:`1545`)
 - ``signal <= value_of_wrong_type`` no longer breaks the scheduler, and throws an error immediately. (:pr:`1661`)
 - Scheduling behavior is now consistent before and after the first :keyword:`await` of a :class:`~cocotb.triggers.GPITrigger`. (:pr:`1705`)
@@ -451,7 +451,7 @@ Changes
   The ``simulator`` module has moved to :mod:`cocotb.simulator`.
   The ``LD_LIBRARY_PATH`` environment variable no longer needs to be set by the makefiles, as the libraries now discover each other via ``RPATH`` settings. (:pr:`1425`)
 - Cocotb must now be :ref:`installed <installation-via-pip>` before it can be used. (:pr:`1445`)
-- :attr:`cocotb.handle.NonHierarchyIndexableObject.value` is now a list in left-to-right range order of the underlying simulation object.
+- ``cocotb.handle.NonHierarchyIndexableObject.value`` is now a list in left-to-right range order of the underlying simulation object.
   Previously the list was always ordered low-to-high. (:pr:`1507`)
 - Various binary representations have changed type from :class:`str` to :class:`bytes`. These include:
 

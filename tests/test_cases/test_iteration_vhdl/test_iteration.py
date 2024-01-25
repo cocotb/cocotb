@@ -43,10 +43,10 @@ def total_object_count():
 
     # Questa 2023.1 onwards (FLI) do not discover the following objects, which
     # are instantiated four times:
-    # - inst_generic_sp_ram.clk (<class 'cocotb.handle.ModifiableObject'>)
-    # - inst_generic_sp_ram.rst (<class 'cocotb.handle.ModifiableObject'>)
-    # - inst_generic_sp_ram.wen (<class 'cocotb.handle.ModifiableObject'>)
-    # - inst_generic_sp_ram.en (<class 'cocotb.handle.ModifiableObject'>)
+    # - inst_generic_sp_ram.clk (<class 'cocotb.handle.LogicObject'>)
+    # - inst_generic_sp_ram.rst (<class 'cocotb.handle.LogicObject'>)
+    # - inst_generic_sp_ram.wen (<class 'cocotb.handle.LogicObject'>)
+    # - inst_generic_sp_ram.en (<class 'cocotb.handle.LogicObject'>)
     if (
         SIM_NAME.startswith("modelsim")
         and QuestaVersion(SIM_VERSION) >= QuestaVersion("2023.1")
@@ -90,7 +90,7 @@ async def recursive_discovery(dut):
             parent,
             (
                 cocotb.handle.HierarchyObjectBase,
-                cocotb.handle.NonHierarchyIndexableObjectBase,
+                cocotb.handle.IndexableValueObjectBase,
             ),
         ):
             return 0
