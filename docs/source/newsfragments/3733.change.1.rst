@@ -1,0 +1,1 @@
+Renamed ``cocotb.handle.NonHierarchyIndexableObjectBase`` to :class:`~cocotb.handle.IndexableValueObjectBase`.

@@ -520,7 +520,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int]):
             yield self[i]
 
 
-class NonHierarchyObject(SimHandleBase):
+class ValueObjectBase(SimHandleBase):
     """Common base class for all non-hierarchy objects."""
 
     @property
@@ -572,7 +572,7 @@ class NonHierarchyObject(SimHandleBase):
         )
 
 
-class NonHierarchyIndexableObjectBase(NonHierarchyObject):
+class IndexableValueObjectBase(ValueObjectBase):
     @abstractmethod
     def __init__(self, handle, path):
         super().__init__(handle, path)
@@ -622,7 +622,7 @@ class NonHierarchyIndexableObjectBase(NonHierarchyObject):
         return self._handle.get_num_elems()
 
 
-class NonHierarchyIndexableObject(NonHierarchyIndexableObjectBase):
+class ArrayObject(IndexableValueObjectBase):
     """A non-hierarchy indexable object.
 
     Getting and setting the current value of an array is done
@@ -650,7 +650,7 @@ class NonHierarchyIndexableObject(NonHierarchyIndexableObjectBase):
     def __init__(self, handle, path):
         super().__init__(handle, path)
 
-    @NonHierarchyObject.value.getter
+    @ValueObjectBase.value.getter
     def value(self) -> list:
         # Don't use self.__iter__, because it has an unwanted `except IndexError`
         return [self[i].value for i in self._range_iter(self._range[0], self._range[1])]
@@ -718,7 +718,7 @@ class Release(_SetAction):
         return 0, 2  # GPI_RELEASE
 
 
-class ModifiableObject(NonHierarchyObject):
+class UnitValueObjectBase(ValueObjectBase):
     """Base class for simulator objects whose values can be modified."""
 
     def drivers(self):
@@ -743,7 +743,7 @@ class ModifiableObject(NonHierarchyObject):
         return value._as_gpi_args_for(self)
 
 
-class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
+class LogicObject(UnitValueObjectBase, IndexableValueObjectBase):
     """Specific object handle for Verilog nets and regs and VHDL std_logic and std_logic_vectors"""
 
     def __init__(self, handle, path):
@@ -824,13 +824,13 @@ class LogicObject(ModifiableObject, NonHierarchyIndexableObjectBase):
 
         call_sim(self, self._handle.set_signal_val_binstr, set_action, value.binstr)
 
-    @ModifiableObject.value.getter
+    @UnitValueObjectBase.value.getter
     def value(self) -> LogicArray:
         binstr = self._handle.get_signal_val_binstr()
         return LogicArray(binstr)
 
 
-class RealObject(ModifiableObject):
+class RealObject(UnitValueObjectBase):
     """Specific object handle for Real signals and variables."""
 
     def __init__(self, handle, path):
@@ -860,12 +860,12 @@ class RealObject(ModifiableObject):
 
         call_sim(self, self._handle.set_signal_val_real, set_action, value)
 
-    @ModifiableObject.value.getter
+    @UnitValueObjectBase.value.getter
     def value(self) -> float:
         return self._handle.get_signal_val_real()
 
 
-class EnumObject(ModifiableObject):
+class EnumObject(UnitValueObjectBase):
     """Specific object handle for enumeration signals and variables."""
 
     def __init__(self, handle, path):
@@ -901,12 +901,12 @@ class EnumObject(ModifiableObject):
                 )
             )
 
-    @ModifiableObject.value.getter
+    @UnitValueObjectBase.value.getter
     def value(self) -> int:
         return self._handle.get_signal_val_long()
 
 
-class IntegerObject(ModifiableObject):
+class IntegerObject(UnitValueObjectBase):
     """Specific object handle for integer and enumeration signals and variables."""
 
     def __init__(self, handle, path):
@@ -947,12 +947,12 @@ class IntegerObject(ModifiableObject):
                 )
             )
 
-    @ModifiableObject.value.getter
+    @UnitValueObjectBase.value.getter
     def value(self) -> int:
         return self._handle.get_signal_val_long()
 
 
-class StringObject(ModifiableObject, NonHierarchyIndexableObjectBase):
+class StringObject(UnitValueObjectBase, IndexableValueObjectBase):
     """Specific object handle for String variables."""
 
     def __init__(self, handle, path):
@@ -987,7 +987,7 @@ class StringObject(ModifiableObject, NonHierarchyIndexableObjectBase):
 
         call_sim(self, self._handle.set_signal_val_str, set_action, value)
 
-    @ModifiableObject.value.getter
+    @UnitValueObjectBase.value.getter
     def value(self) -> bytes:
         return self._handle.get_signal_val_str()
 
@@ -999,7 +999,7 @@ _type2cls = {
     simulator.STRUCTURE: HierarchyObject,
     simulator.REG: LogicObject,
     simulator.NET: LogicObject,
-    simulator.NETARRAY: NonHierarchyIndexableObject,
+    simulator.NETARRAY: ArrayObject,
     simulator.REAL: RealObject,
     simulator.INTEGER: IntegerObject,
     simulator.ENUM: EnumObject,

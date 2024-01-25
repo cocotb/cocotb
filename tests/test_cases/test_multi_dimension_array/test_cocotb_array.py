@@ -1,6 +1,5 @@
 import cocotb
-from cocotb.handle import LogicObject
-from cocotb.handle import NonHierarchyIndexableObject as ArrayObject
+from cocotb.handle import ArrayObject, LogicObject
 from cocotb.triggers import Timer
 
 SIM_NAME = cocotb.SIM_NAME.lower()

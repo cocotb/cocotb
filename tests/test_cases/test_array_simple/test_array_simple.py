@@ -91,7 +91,7 @@ async def test_1dim_array_indexes(dut):
     _check_value(tlog, dut.array_0_to_3[3], 0x00)
     _check_value(tlog, dut.array_0_to_3[1], 0x20)
 
-    # Get sub-handles through NonHierarchyIndexableObject.__getitem__
+    # Get sub-handles through ArrayObject.__getitem__
     dut.array_7_downto_4[7].value = 0xDE
     dut.array_4_to_7[4].value = 0xFC
     dut.array_3_downto_0[0].value = 0xAB
@@ -132,7 +132,7 @@ async def test_ndim_array_indexes(dut):
     _check_value(tlog, dut.array_2d[1][29], 0x90)
     _check_value(tlog, dut.array_2d[1][28], 0x80)
 
-    # Get sub-handles through NonHierarchyIndexableObject.__getitem__
+    # Get sub-handles through ArrayObject.__getitem__
     dut.array_2d[1].value = [0xDE, 0xAD, 0xBE, 0xEF]
     dut.array_2d[0][31].value = 0x0F
 

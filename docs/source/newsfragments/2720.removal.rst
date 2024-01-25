@@ -1,1 +1,1 @@
-``cocotb.handle.NonConstantObject`` was removed, use :class:`~cocotb.handle.NonHierarchyObject` instead.
+``cocotb.handle.NonConstantObject`` was removed, use :class:`~cocotb.handle.ValueObjectBase` instead.

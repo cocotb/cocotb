@@ -59,7 +59,7 @@ async def recursive_discovery(dut):
             parent,
             (
                 cocotb.handle.HierarchyObjectBase,
-                cocotb.handle.NonHierarchyIndexableObjectBase,
+                cocotb.handle.IndexableValueObjectBase,
             ),
         ):
             return 0

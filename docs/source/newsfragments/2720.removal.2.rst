@@ -1,1 +1,1 @@
-All casts on :class:`simulator value objects <cocotb.handle.NonHierarchyObject>` have been removed. If you want to get the value from a simulator value object, use the :meth:`~cocotb.handle.NonHierarchyObject.value` property.
+All casts on :class:`simulator value objects <cocotb.handle.ValueObjectBase>` have been removed. If you want to get the value from a simulator value object, use the :meth:`~cocotb.handle.ValueObjectBase.value` property.

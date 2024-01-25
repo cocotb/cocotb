@@ -31,11 +31,11 @@ import cocotb
 import pytest
 from cocotb._sim_versions import IcarusVersion
 from cocotb.handle import (
+    ArrayObject,
     HierarchyObject,
     HierarchyObjectBase,
+    IndexableValueObjectBase,
     IntegerObject,
-    NonHierarchyIndexableObject,
-    NonHierarchyIndexableObjectBase,
     StringObject,
 )
 from cocotb.triggers import Timer
@@ -68,7 +68,7 @@ async def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
 
     def _discover(obj):
-        if not isinstance(obj, (HierarchyObject, NonHierarchyIndexableObject)):
+        if not isinstance(obj, (HierarchyObject, ArrayObject)):
             return
         for thing in obj:
             dut._log.debug("Found %s (%s)", thing._name, type(thing))
@@ -412,7 +412,7 @@ async def custom_type(dut):
     count = 0
 
     def _discover(obj):
-        if not isinstance(obj, (HierarchyObjectBase, NonHierarchyIndexableObjectBase)):
+        if not isinstance(obj, (HierarchyObjectBase, IndexableValueObjectBase)):
             return 0
         iter_count = 0
         for elem in obj:
@@ -501,7 +501,7 @@ async def discover_all_in_component_vhdl(dut):
         if questa_vhpi and isinstance(obj, StringObject):
             # Iterating over the elements of a string with Questa's VHPI causes a stacktrace
             return 0
-        if not isinstance(obj, (HierarchyObjectBase, NonHierarchyIndexableObjectBase)):
+        if not isinstance(obj, (HierarchyObjectBase, IndexableValueObjectBase)):
             return 0
         count = 0
         for thing in obj:
