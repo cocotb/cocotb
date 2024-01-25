@@ -41,7 +41,7 @@ async def test_stringification(dut):
     assert str(pkg2.eleven_int) == "IntegerObject(cocotb_package_pkg_2::eleven_int)"
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("verilator"))
+@cocotb.test()
 async def test_long_parameter(dut):
     # On verilator:
     # 0.00ns ERROR    gpi                                VPI error
@@ -50,8 +50,17 @@ async def test_long_parameter(dut):
 
     # returns 0 on verilator for unsupported format
     pkg1 = cocotb.packages.cocotb_package_pkg_1
-    assert pkg1.long_param.value == 255
-    assert pkg1.really_long_param.value == 255
+    assert pkg1.five_int.value == 5
+    assert str(pkg1.five_int) == "IntegerObject(cocotb_package_pkg_1::five_int)"
+
+    assert pkg1.long_param.value.integer == int("5a89901af1", 16)
+    assert str(pkg1.long_param) == "LogicObject(cocotb_package_pkg_1::long_param)"
+
+    assert pkg1.really_long_param.value.integer == int("5a89901af1", 16)
+    assert (
+        str(pkg1.really_long_param)
+        == "LogicObject(cocotb_package_pkg_1::really_long_param)"
+    )
 
 
 @cocotb.test()
