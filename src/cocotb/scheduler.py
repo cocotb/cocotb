@@ -543,7 +543,7 @@ class Scheduler:
                 )
                 self._abort_test(e)
 
-    def _schedule_write(self, handle, write_func, *args):
+    def _schedule_write(self, handle, write_func, args):
         """Queue `write_func` to be called on the next ReadWrite trigger."""
         if self._mode == Scheduler._MODE_READONLY:
             raise Exception(
