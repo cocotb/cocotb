@@ -41,14 +41,17 @@ async def test_stringification(dut):
     assert str(pkg2.eleven_int) == "IntegerObject(cocotb_package_pkg_2::eleven_int)"
 
 
-@cocotb.test()
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("verilator"))
 async def test_long_parameter(dut):
-    # On verilator:
-    # 0.00ns ERROR    gpi                                VPI error
-    # 0.00ns ERROR    gpi                                vl_check_format: Unsupported format (vpiIntVal) for cocotb_package_pkg_1.long_param
-    # 0.00ns ERROR    cocotb.regression                  Failed to initialize test test_long_parameter
+    """
+    Test package parameter access
 
-    # returns 0 on verilator for unsupported format
+    # On verilator:
+    # 0.00ns ERROR    VPI error
+    # 0.00ns ERROR    vl_check_format: Unsupported format (vpiIntVal) for cocotb_package_pkg_1.long_param
+    # 0.00ns ERROR    Failed to initialize test test_long_parameter
+    """
+
     pkg1 = cocotb.packages.cocotb_package_pkg_1
     assert pkg1.five_int.value == 5
     assert str(pkg1.five_int) == "IntegerObject(cocotb_package_pkg_1::five_int)"
