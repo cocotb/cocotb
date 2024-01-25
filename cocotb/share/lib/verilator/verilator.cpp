@@ -47,6 +47,25 @@ static inline bool settle_value_callbacks() {
 }
 
 int main(int argc, char** argv) {
+    bool traceOn = false;
+
+    for (int i = 1; i < argc; i++) {
+        std::string arg = std::string(argv[i]);
+        if (arg == "--trace") {
+            traceOn = true;
+        } else if (arg == "--help") {
+            fprintf(stderr,
+                    "usage: %s [--trace]\n"
+                    "\n"
+                    "Cocotb + Verilator sim\n"
+                    "\n"
+                    "options:\n"
+                    "  --trace      Enables tracing (VCD or FST)\n",
+                    basename(argv[0]));
+            return 0;
+        }
+    }
+
     Verilated::commandArgs(argc, argv);
 #ifdef VERILATOR_SIM_DEBUG
     Verilated::debug(99);
@@ -62,16 +81,19 @@ int main(int argc, char** argv) {
     VerilatedVpi::callCbs(cbStartOfSimulation);
 
 #if VM_TRACE
-    Verilated::traceEverOn(true);
 #if VM_TRACE_FST
     std::unique_ptr<VerilatedFstC> tfp(new VerilatedFstC);
-    top->trace(tfp.get(), 99);
-    tfp->open("dump.fst");
+    const char* traceFile = "dump.fst";
 #else
     std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
-    top->trace(tfp.get(), 99);
-    tfp->open("dump.vcd");
+    const char* traceFile = "dump.vcd";
 #endif
+
+    if (traceOn) {
+        Verilated::traceEverOn(true);
+        top->trace(tfp.get(), 99);
+        tfp->open(traceFile);
+    }
 #endif
 
     while (!Verilated::gotFinish()) {
@@ -107,7 +129,9 @@ int main(int argc, char** argv) {
         VerilatedVpi::callCbs(cbReadOnlySynch);
 
 #if VM_TRACE
-        tfp->dump(main_time);
+        if (traceOn) {
+            tfp->dump(main_time);
+        }
 #endif
         // cocotb controls the clock inputs using cbAfterDelay so
         // skip ahead to the next registered callback
@@ -140,7 +164,9 @@ int main(int argc, char** argv) {
     top->final();
 
 #if VM_TRACE
-    tfp->close();
+    if (traceOn) {
+        tfp->close();
+    }
 #endif
 
 // VM_COVERAGE is a define which is set if Verilator is
