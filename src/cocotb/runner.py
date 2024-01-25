@@ -20,7 +20,7 @@ import tempfile
 import warnings
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import Dict, List, Mapping, Optional, Sequence, TextIO, Tuple, Type, Union
 from xml.etree import ElementTree as ET
 
 import find_libpython
@@ -155,6 +155,7 @@ class Simulator(abc.ABC):
         verbose: bool = False,
         timescale: Optional[Timescale] = None,
         waves: Optional[bool] = None,
+        log_file: Optional[PathLike] = None,
     ) -> None:
         """Build the HDL sources.
 
@@ -173,6 +174,7 @@ class Simulator(abc.ABC):
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
             waves: Record signal traces.
+            log_file: File to write the build log to.
         """
 
         self.clean: bool = clean
@@ -196,6 +198,7 @@ class Simulator(abc.ABC):
         self.hdl_toplevel: Optional[str] = hdl_toplevel
         self.verbose: bool = verbose
         self.timescale: Optional[Timescale] = timescale
+        self.log_file: Optional[PathLike] = log_file
 
         self.waves = bool(waves)
 
@@ -225,6 +228,7 @@ class Simulator(abc.ABC):
         results_xml: Optional[str] = None,
         verbose: bool = False,
         timescale: Optional[Timescale] = None,
+        log_file: Optional[PathLike] = None,
     ) -> Path:
         """Run the tests.
 
@@ -253,6 +257,7 @@ class Simulator(abc.ABC):
                 This argument should not be set when run with ``pytest``.
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
+            log_file: File to write the test log to.
 
         Returns:
             The absolute location of the results XML file which can be
@@ -305,6 +310,7 @@ class Simulator(abc.ABC):
         if seed is not None:
             self.env["RANDOM_SEED"] = str(seed)
 
+        self.log_file = log_file
         self.waves = bool(waves)
         self.gui = bool(gui)
         self.timescale: Optional[Timescale] = timescale
@@ -370,13 +376,27 @@ class Simulator(abc.ABC):
     def _execute(self, cmds: Sequence[Command], cwd: PathLike) -> None:
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
+        if self.log_file is None:
+            self._execute_cmds(cmds, cwd)
+        else:
+            with open(self.log_file, "w") as f:
+                self._execute_cmds(cmds, cwd, f)
+
+    def _execute_cmds(
+        self, cmds: Sequence[Command], cwd: PathLike, stdout: Optional[TextIO] = None
+    ) -> None:
+        __tracebackhide__ = True  # Hide the traceback when using PyTest.
+
         for cmd in cmds:
             print(f"INFO: Running command {shlex_join(cmd)} in directory {cwd}")
 
             # TODO: create a thread to handle stderr and log as error?
             # TODO: log forwarding
 
-            subprocess.run(cmd, cwd=cwd, env=self.env, check=True)
+            stderr = None if stdout is None else subprocess.STDOUT
+            subprocess.run(
+                cmd, cwd=cwd, env=self.env, check=True, stdout=stdout, stderr=stderr
+            )
 
     def rm_build_folder(self, build_dir: Path):
         if os.path.isdir(build_dir):
