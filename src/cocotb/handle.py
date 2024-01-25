@@ -33,13 +33,18 @@ from functools import lru_cache
 from logging import Logger
 from typing import (
     Any,
+    Callable,
     Dict,
     Generic,
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
+    Type,
     TypeVar,
+    Union,
+    cast,
 )
 
 import cocotb
@@ -520,11 +525,62 @@ class HierarchyArrayObject(HierarchyObjectBase[int]):
             yield self[i]
 
 
-class ValueObjectBase(SimHandleBase):
+class _GPISetAction(enum.IntEnum):
+    DEPOSIT = 0
+    FORCE = 1
+    RELEASE = 2
+
+
+T = TypeVar("T")
+
+
+class Deposit(Generic[T]):
+    """Action used for placing a value into a given handle."""
+
+    def __init__(self, value: T) -> None:
+        self.value = value
+
+
+class Force(Generic[T]):
+    """Action used to force a handle to a given value until a release is applied."""
+
+    def __init__(self, value: T) -> None:
+        self.value = value
+
+
+class Freeze:
+    """Action used to make a handle keep its current value until a release is used."""
+
+
+class Release:
+    """Action used to stop the effects of a previously applied force/freeze action."""
+
+
+def _map_action_obj_to_value_action_enum_pair(
+    handle: "ValueObjectBase[Any, Any]",
+    value: Union[T, Deposit[T], Force[T], Freeze, Release],
+) -> Tuple[T, _GPISetAction]:
+    if isinstance(value, Deposit):
+        return value.value, _GPISetAction.DEPOSIT
+    elif isinstance(value, Force):
+        return value.value, _GPISetAction.FORCE
+    elif isinstance(value, Freeze):
+        return handle.value, _GPISetAction.FORCE
+    elif isinstance(value, Release):
+        return handle.value, _GPISetAction.RELEASE
+    else:
+        return value, _GPISetAction.DEPOSIT
+
+
+ValueGetT = TypeVar("ValueGetT")
+ValueSetT = TypeVar("ValueSetT")
+
+
+class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
     """Common base class for all non-hierarchy objects."""
 
     @property
-    def value(self):
+    def value(self) -> ValueGetT:
         """The value of this simulation object.
 
         .. note::
@@ -533,56 +589,88 @@ class ValueObjectBase(SimHandleBase):
 
             Use :meth:`setimmediatevalue` to set the value immediately.
         """
-        raise TypeError(
-            f"Not permissible to get values of object {self._name} of type {type(self)}"
-        )
+        return self._get_value()
 
     @value.setter
-    def value(self, value):
+    def value(self, value: ValueGetT) -> None:
         if self.is_const:
             raise TypeError(f"{self._path} is constant")
-        self._set_value(value, cocotb.scheduler._schedule_write)
 
-    def setimmediatevalue(self, value):
+        value, action = _map_action_obj_to_value_action_enum_pair(self, value)
+
+        # cast works because we expect that ValueSetT >= ValueGetT
+        self._set_value(
+            cast(ValueSetT, value), action, cocotb.scheduler._schedule_write
+        )
+
+    def setimmediatevalue(
+        self,
+        value: Union[ValueSetT, Deposit[ValueSetT], Force[ValueSetT], Freeze, Release],
+    ) -> None:
         """Assign a value to this simulation object immediately."""
         if self.is_const:
             raise TypeError(f"{self._path} is constant")
 
-        def _call_now(handle, f, *args):
+        def _call_now(
+            handle: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
+        ) -> None:
             f(*args)
 
-        self._set_value(value, _call_now)
+        value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
+
+        self._set_value(value_, action, _call_now)
 
     @cached_property
     def is_const(self) -> bool:
         """``True`` if the simulator object is immutable, e.g. a Verilog parameter or VHDL constant or generic."""
         return self._handle.get_const()
 
-    def _set_value(self, value, call_sim):
-        """This should be overriden in subclasses.
+    @abstractmethod
+    def _get_value(self) -> ValueGetT:
+        """Gets the value of the simulator object.
+
+        Conversion from a type understood by the simulator into an appropriate Python type is expected.
+        """
+
+    @abstractmethod
+    def _set_value(
+        self,
+        value: ValueSetT,
+        action: _GPISetAction,
+        schedule_write: Callable[
+            ["ValueObjectBase[Any, Any]", Callable[..., None], Sequence[Any]], None
+        ],
+    ) -> None:
+        """Schedule a write of the given value to a simulator object.
+
+        Conversion from multiple Python types into a type understood by the simulator is expected.
 
         This is used to implement both the setter for :attr:`value`, and the
         :meth:`setimmediatevalue` method.
 
-        ``call_sim(handle, f, *args)`` should be used to schedule simulator writes,
-        rather than performing them directly as ``f(*args)``.
+        Args:
+            value: A value used to set the handle.
+            action: Whether to deposit, force, or release the value on the handle.
+            schedule_write: A function which takes ``(handle, callback, args)`` to schedule the writes.
         """
-        raise TypeError(
-            f"Not permissible to set values on object {self._name} of type {type(self)}"
-        )
 
 
-class IndexableValueObjectBase(ValueObjectBase):
+ChildObjectT = TypeVar("ChildObjectT", bound=ValueObjectBase[Any, Any])
+
+
+class IndexableValueObjectBase(
+    ValueObjectBase[ValueGetT, ValueSetT], Generic[ValueGetT, ValueSetT, ChildObjectT]
+):
     @abstractmethod
-    def __init__(self, handle, path):
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
-        self._sub_handles: Dict[int, SimHandleBase] = {}
+        self._sub_handles: Dict[int, ChildObjectT] = {}
 
     @cached_property
     def _range(self) -> Tuple[int, int]:
         return self._handle.get_range()
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
             raise IndexError("Slice indexing is not supported")
         if self._range is None:
@@ -593,10 +681,10 @@ class IndexableValueObjectBase(ValueObjectBase):
         if not new_handle:
             raise IndexError(f"{self._path} contains no object at index {index}")
         path = self._path + "[" + str(index) + "]"
-        self._sub_handles[index] = SimHandle(new_handle, path)
+        self._sub_handles[index] = cast(ChildObjectT, SimHandle(new_handle, path))
         return self._sub_handles[index]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[ChildObjectT]:
         if self._range is None:
             return
 
@@ -607,7 +695,7 @@ class IndexableValueObjectBase(ValueObjectBase):
             except IndexError:
                 continue
 
-    def _range_iter(self, left, right):
+    def _range_iter(self, left: int, right: int) -> Iterable[int]:
         if left > right:
             while left >= right:
                 yield left
@@ -622,7 +710,13 @@ class IndexableValueObjectBase(ValueObjectBase):
         return self._handle.get_num_elems()
 
 
-class ArrayObject(IndexableValueObjectBase):
+ElemT = TypeVar("ElemT")
+
+
+class ArrayObject(
+    IndexableValueObjectBase[List[ElemT], List[ElemT], ChildObjectT],
+    Generic[ElemT, ChildObjectT],
+):
     """A non-hierarchy indexable object.
 
     Getting and setting the current value of an array is done
@@ -647,21 +741,27 @@ class ArrayObject(IndexableValueObjectBase):
         - **Correct**: ``dut.some_array[0].value = 1``
     """
 
-    def __init__(self, handle, path):
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
-    @ValueObjectBase.value.getter
-    def value(self) -> list:
+    def _get_value(self) -> List[ElemT]:
         # Don't use self.__iter__, because it has an unwanted `except IndexError`
         return [self[i].value for i in self._range_iter(self._range[0], self._range[1])]
 
-    def _set_value(self, value, call_sim):
+    def _set_value(
+        self,
+        value: List[ElemT],
+        action: _GPISetAction,
+        schedule_write: Callable[
+            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
+        ],
+    ) -> None:
         """Assign value from a list of same length to an array in left-to-right order.
         Index 0 of the list maps to the left-most index in the array.
 
         See the docstring for this class.
         """
-        if type(value) is not list:  # noqa: E721
+        if not isinstance(value, list):
             raise TypeError(
                 f"Assigning non-list value to object {self._name} of type {type(self)}"
             )
@@ -673,55 +773,13 @@ class ArrayObject(IndexableValueObjectBase):
         for val_idx, self_idx in enumerate(
             self._range_iter(self._range[0], self._range[1])
         ):
-            self[self_idx]._set_value(value[val_idx], call_sim)
+            self[self_idx]._set_value(value[val_idx], action, schedule_write)
 
 
-class _SetAction:
-    """Base class representing the type of action used while write-accessing a handle."""
-
-    pass
-
-
-class _SetValueAction(_SetAction):
-    __slots__ = ("value",)
-    """Base class representing the type of action used while write-accessing a handle with a value."""
-
-    def __init__(self, value):
-        self.value = value
-
-
-class Deposit(_SetValueAction):
-    """Action used for placing a value into a given handle."""
-
-    def _as_gpi_args_for(self, hdl):
-        return self.value, 0  # GPI_DEPOSIT
-
-
-class Force(_SetValueAction):
-    """Action used to force a handle to a given value until a release is applied."""
-
-    def _as_gpi_args_for(self, hdl):
-        return self.value, 1  # GPI_FORCE
-
-
-class Freeze(_SetAction):
-    """Action used to make a handle keep its current value until a release is used."""
-
-    def _as_gpi_args_for(self, hdl):
-        return hdl.value, 1  # GPI_FORCE
-
-
-class Release(_SetAction):
-    """Action used to stop the effects of a previously applied force/freeze action."""
-
-    def _as_gpi_args_for(self, hdl):
-        return 0, 2  # GPI_RELEASE
-
-
-class UnitValueObjectBase(ValueObjectBase):
+class UnitValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
     """Base class for simulator objects whose values can be modified."""
 
-    def drivers(self):
+    def drivers(self) -> simulator.gpi_iterator_hdl:
         """An iterator for gathering all drivers for a signal.
 
         This is currently only available for VPI.
@@ -729,7 +787,7 @@ class UnitValueObjectBase(ValueObjectBase):
         """
         return self._handle.iterate(simulator.DRIVERS)
 
-    def loads(self):
+    def loads(self) -> simulator.gpi_iterator_hdl:
         """An iterator for gathering all loads on a signal.
 
         This is currently only available for VPI.
@@ -737,19 +795,24 @@ class UnitValueObjectBase(ValueObjectBase):
         """
         return self._handle.iterate(simulator.LOADS)
 
-    def _check_for_set_action(self, value):
-        if not isinstance(value, _SetAction):
-            return value, 0  # GPI_DEPOSIT
-        return value._as_gpi_args_for(self)
 
-
-class LogicObject(UnitValueObjectBase, IndexableValueObjectBase):
+class LogicObject(
+    UnitValueObjectBase[LogicArray, Union[LogicArray, Logic, int]],
+    IndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int], "LogicObject"],
+):
     """Specific object handle for Verilog nets and regs and VHDL std_logic and std_logic_vectors"""
 
-    def __init__(self, handle, path):
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
-    def _set_value(self, value, call_sim):
+    def _set_value(
+        self,
+        value: Union[LogicArray, Logic, int],
+        action: _GPISetAction,
+        schedule_write: Callable[
+            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
+        ],
+    ) -> None:
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -759,7 +822,7 @@ class LogicObject(UnitValueObjectBase, IndexableValueObjectBase):
         because assigning integers less than 32 bits is faster.
 
         Args:
-            value (cocotb.types.LogicArray, int):
+            value:
                 The value to drive onto the simulator object.
 
         Raises:
@@ -778,22 +841,23 @@ class LogicObject(UnitValueObjectBase, IndexableValueObjectBase):
             Convert the dictionary to an integer before assignment using
             ``sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))``.
         """
-        value, set_action = self._check_for_set_action(value)
-
+        value_: LogicArray
         if isinstance(value, int):
             min_val, max_val = _value_limits(len(self), _Limits.VECTOR_NBIT)
             if min_val <= value <= max_val:
                 if len(self) <= 32:
-                    call_sim(self, self._handle.set_signal_val_int, set_action, value)
+                    schedule_write(
+                        self, self._handle.set_signal_val_int, (action, value)
+                    )
                     return
 
                 if value < 0:
-                    value = LogicArray(
+                    value_ = LogicArray(
                         value,
                         Range(len(self) - 1, "downto", 0),
                     )
                 else:
-                    value = LogicArray(
+                    value_ = LogicArray(
                         value,
                         Range(len(self) - 1, "downto", 0),
                     )
@@ -809,34 +873,43 @@ class LogicObject(UnitValueObjectBase, IndexableValueObjectBase):
                 raise ValueError(
                     f"cannot assign value of length {len(value)} to handle of length {len(self)}"
                 )
+            value_ = value
 
         elif isinstance(value, Logic):
             if len(self) != 1:
                 raise ValueError(
                     f"cannot assign value of length 1 to handle of length {len(self)}"
                 )
-            value = LogicArray([value])
+            value_ = LogicArray([value])
 
         else:
             raise TypeError(
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
-        call_sim(self, self._handle.set_signal_val_binstr, set_action, value.binstr)
+        schedule_write(
+            self, self._handle.set_signal_val_binstr, (action, value_.binstr)
+        )
 
-    @UnitValueObjectBase.value.getter
-    def value(self) -> LogicArray:
+    def _get_value(self) -> LogicArray:
         binstr = self._handle.get_signal_val_binstr()
         return LogicArray(binstr)
 
 
-class RealObject(UnitValueObjectBase):
+class RealObject(UnitValueObjectBase[float, float]):
     """Specific object handle for Real signals and variables."""
 
-    def __init__(self, handle, path):
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
-    def _set_value(self, value, call_sim):
+    def _set_value(
+        self,
+        value: float,
+        action: _GPISetAction,
+        schedule_write: Callable[
+            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
+        ],
+    ) -> None:
         """Set the value of the underlying simulation object to value.
 
         This operation will fail unless the handle refers to a modifiable
@@ -849,8 +922,6 @@ class RealObject(UnitValueObjectBase):
             TypeError: If target has an unsupported type for
                 real value assignment.
         """
-        value, set_action = self._check_for_set_action(value)
-
         try:
             value = float(value)
         except ValueError:
@@ -858,20 +929,26 @@ class RealObject(UnitValueObjectBase):
                 f"Unsupported type for real value assignment: {type(value)} ({value!r})"
             )
 
-        call_sim(self, self._handle.set_signal_val_real, set_action, value)
+        schedule_write(self, self._handle.set_signal_val_real, (action, value))
 
-    @UnitValueObjectBase.value.getter
-    def value(self) -> float:
+    def _get_value(self) -> float:
         return self._handle.get_signal_val_real()
 
 
-class EnumObject(UnitValueObjectBase):
+class EnumObject(UnitValueObjectBase[int, int]):
     """Specific object handle for enumeration signals and variables."""
 
-    def __init__(self, handle, path):
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
-    def _set_value(self, value, call_sim):
+    def _set_value(
+        self,
+        value: int,
+        action: _GPISetAction,
+        schedule_write: Callable[
+            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
+        ],
+    ) -> None:
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -884,8 +961,6 @@ class EnumObject(UnitValueObjectBase):
             TypeError: If target has an unsupported type for
                  integer value assignment.
         """
-        value, set_action = self._check_for_set_action(value)
-
         if not isinstance(value, int):
             raise TypeError(
                 f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
@@ -893,7 +968,7 @@ class EnumObject(UnitValueObjectBase):
 
         min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
         if min_val <= value <= max_val:
-            call_sim(self, self._handle.set_signal_val_int, set_action, value)
+            schedule_write(self, self._handle.set_signal_val_int, (action, value))
         else:
             raise OverflowError(
                 "Int value ({!r}) out of range for assignment of enum signal ({!r})".format(
@@ -901,18 +976,24 @@ class EnumObject(UnitValueObjectBase):
                 )
             )
 
-    @UnitValueObjectBase.value.getter
-    def value(self) -> int:
+    def _get_value(self) -> int:
         return self._handle.get_signal_val_long()
 
 
-class IntegerObject(UnitValueObjectBase):
+class IntegerObject(UnitValueObjectBase[int, int]):
     """Specific object handle for integer and enumeration signals and variables."""
 
-    def __init__(self, handle, path):
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
-    def _set_value(self, value, call_sim):
+    def _set_value(
+        self,
+        value: int,
+        action: _GPISetAction,
+        schedule_write: Callable[
+            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
+        ],
+    ) -> None:
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -928,8 +1009,6 @@ class IntegerObject(UnitValueObjectBase):
             OverflowError: If value is out of range for assignment
                  of 32-bit IntegerObject.
         """
-        value, set_action = self._check_for_set_action(value)
-
         if not isinstance(value, int):
             raise TypeError(
                 "Unsupported type for integer value assignment: {} ({!r})".format(
@@ -939,7 +1018,7 @@ class IntegerObject(UnitValueObjectBase):
 
         min_val, max_val = _value_limits(32, _Limits.SIGNED_NBIT)
         if min_val <= value <= max_val:
-            call_sim(self, self._handle.set_signal_val_int, set_action, value)
+            schedule_write(self, self._handle.set_signal_val_int, (action, value))
         else:
             raise OverflowError(
                 "Int value ({!r}) out of range for assignment of integer signal ({!r})".format(
@@ -947,18 +1026,27 @@ class IntegerObject(UnitValueObjectBase):
                 )
             )
 
-    @UnitValueObjectBase.value.getter
-    def value(self) -> int:
+    def _get_value(self) -> int:
         return self._handle.get_signal_val_long()
 
 
-class StringObject(UnitValueObjectBase, IndexableValueObjectBase):
+class StringObject(
+    UnitValueObjectBase[bytes, bytes],
+    IndexableValueObjectBase[bytes, bytes, IntegerObject],
+):
     """Specific object handle for String variables."""
 
-    def __init__(self, handle, path):
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
-    def _set_value(self, value, call_sim):
+    def _set_value(
+        self,
+        value: bytes,
+        action: _GPISetAction,
+        schedule_write: Callable[
+            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
+        ],
+    ) -> None:
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -976,8 +1064,6 @@ class StringObject(UnitValueObjectBase, IndexableValueObjectBase):
             Users are now expected to choose an encoding when using these objects.
 
         """
-        value, set_action = self._check_for_set_action(value)
-
         if not isinstance(value, bytes):
             raise TypeError(
                 "Unsupported type for string value assignment: {} ({!r})".format(
@@ -985,21 +1071,35 @@ class StringObject(UnitValueObjectBase, IndexableValueObjectBase):
                 )
             )
 
-        call_sim(self, self._handle.set_signal_val_str, set_action, value)
+        schedule_write(self, self._handle.set_signal_val_str, (action, value))
 
-    @UnitValueObjectBase.value.getter
-    def value(self) -> bytes:
+    def _get_value(self) -> bytes:
         return self._handle.get_signal_val_str()
 
 
-_handle2obj = {}
+_ConcreteHandleTypes = Union[
+    HierarchyObject,
+    HierarchyArrayObject,
+    LogicObject,
+    ArrayObject[Any, ValueObjectBase[Any, Any]],
+    RealObject,
+    IntegerObject,
+    EnumObject,
+    StringObject,
+]
 
-_type2cls = {
+
+_handle2obj: Dict[
+    simulator.gpi_sim_hdl,
+    _ConcreteHandleTypes,
+] = {}
+
+_type2cls: Dict[int, Type[_ConcreteHandleTypes]] = {
     simulator.MODULE: HierarchyObject,
     simulator.STRUCTURE: HierarchyObject,
     simulator.REG: LogicObject,
     simulator.NET: LogicObject,
-    simulator.NETARRAY: ArrayObject,
+    simulator.NETARRAY: ArrayObject[Any, ValueObjectBase[Any, Any]],
     simulator.REAL: RealObject,
     simulator.INTEGER: IntegerObject,
     simulator.ENUM: EnumObject,
@@ -1009,7 +1109,9 @@ _type2cls = {
 }
 
 
-def SimHandle(handle, path=None):
+def SimHandle(
+    handle: simulator.gpi_sim_hdl, path: Optional[str] = None
+) -> SimHandleBase:
     """Factory function to create the correct type of `SimHandle` object.
 
     Args:
@@ -1033,8 +1135,7 @@ def SimHandle(handle, path=None):
     t = handle.get_type()
     if t not in _type2cls:
         raise NotImplementedError(
-            "Couldn't find a matching object for GPI type %s(%d) (path=%s)"
-            % (handle.get_type_string(), t, path)
+            f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) (path={path})"
         )
     obj = _type2cls[t](handle, path)
     _handle2obj[handle] = obj
