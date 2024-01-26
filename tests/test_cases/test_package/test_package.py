@@ -41,7 +41,7 @@ async def test_stringification(dut):
     assert str(pkg2.eleven_int) == "IntegerObject(cocotb_package_pkg_2::eleven_int)"
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("verilator"))
+@cocotb.test()
 async def test_long_parameter(dut):
     """
     Test package parameter access
@@ -56,8 +56,12 @@ async def test_long_parameter(dut):
     assert pkg1.five_int.value == 5
     assert str(pkg1.five_int) == "IntegerObject(cocotb_package_pkg_1::five_int)"
 
-    assert pkg1.long_param.value.integer == int("5a89901af1", 16)
-    assert str(pkg1.long_param) == "LogicObject(cocotb_package_pkg_1::long_param)"
+    if cocotb.SIM_NAME.lower().startswith(("verilator", "icarus")):
+        assert pkg1.long_param.value == int("5a89901af1", 16)
+        assert str(pkg1.long_param) == "IntegerObject(cocotb_package_pkg_1::long_param)"
+    else:
+        assert pkg1.long_param.value.integer == int("5a89901af1", 16)
+        assert str(pkg1.long_param) == "LogicObject(cocotb_package_pkg_1::long_param)"
 
     assert pkg1.really_long_param.value.integer == int("5a89901af1", 16)
     assert (
