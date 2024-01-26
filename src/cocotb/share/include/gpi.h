@@ -194,6 +194,9 @@ GPI_EXPORT int gpi_get_range_left(gpi_sim_hdl gpi_sim_hdl);
 // Returns the right side of the range constraint
 GPI_EXPORT int gpi_get_range_right(gpi_sim_hdl gpi_sim_hdl);
 
+// Returns the pointer to the sim handle
+GPI_EXPORT long gpi_get_sim_handle(gpi_sim_hdl gpi_sim_hdl);
+
 // Functions for querying the properties of a handle
 // Caller responsible for freeing the returned string.
 // This is all slightly verbose but it saves having to enumerate various value

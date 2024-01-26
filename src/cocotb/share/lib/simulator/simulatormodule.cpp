@@ -571,6 +571,11 @@ static PyObject *next(gpi_hdl_Object<gpi_iterator_hdl> *self) {
 // Raise an exception on failure
 // Return None if for example get bin_string on enum?
 
+static PyObject *get_sim_handle(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
+    long result = gpi_get_sim_handle(self->hdl);
+    return PyLong_FromLong(result);
+}
+
 static PyObject *get_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self,
                                        PyObject *) {
     const char *result = gpi_get_signal_value_binstr(self->hdl);
@@ -1144,6 +1149,11 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
                "get_range() -> Tuple[int, int]\n"
                "Get the range of elements (tuple) contained in the handle, "
                "return ``None`` if not indexable.")},
+    {"get_sim_handle", (PyCFunction)get_sim_handle, METH_NOARGS,
+     PyDoc_STR("get_sim_handle($self)\n"
+               "--\n\n"
+               "get_sim_handle() -> int\n"
+               "Get the sim handle as a long.")},
     {"iterate", (PyCFunction)iterate, METH_VARARGS,
      PyDoc_STR(
          "iterate($self, mode, /)\n"
