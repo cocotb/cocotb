@@ -46,7 +46,7 @@ extend-exclude = [
     ".nox/",
 ]
 target-version = "py37"
-select = [
+extend-select = [
     "I",  # isort
     "UP", # pyupgrade
     "PL", # pylint

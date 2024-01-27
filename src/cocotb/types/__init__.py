@@ -66,7 +66,7 @@ def concat(a: ConcatableT, b: ConcatableT) -> ConcatableT:
     )
 
 
-from .range import Range  # noqa: F401
+from .range import Range  # noqa: E402 F401
 
 
 class ArrayLike(Concatable[T], Protocol, Generic[T]):
@@ -175,6 +175,6 @@ class ArrayLike(Concatable[T], Protocol, Generic[T]):
         return 0
 
 
-from .array import Array  # noqa: F401
-from .logic import Logic  # noqa: F401
-from .logic_array import LogicArray  # noqa: F401
+from .array import Array  # noqa: E402 F401
+from .logic import Logic  # noqa: E402 F401
+from .logic_array import LogicArray  # noqa: E402 F401

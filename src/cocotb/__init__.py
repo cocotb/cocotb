@@ -314,7 +314,7 @@ def _start_library_coverage() -> None:  # pragma: no cover
     if "COCOTB_LIBRARY_COVERAGE" in os.environ:
         try:
             import coverage
-        except ImportError as e:
+        except ImportError:
             log.error(
                 "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`."
             )
@@ -396,7 +396,7 @@ def _start_user_coverage() -> None:
     if "COVERAGE" in os.environ:
         try:
             import coverage
-        except ImportError as e:
+        except ImportError:
             cocotb.log.error(
                 "Coverage collection requested but coverage module not available. Install it using `pip install coverage`."
             )

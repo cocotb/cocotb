@@ -269,7 +269,7 @@ ENVS = [
 
 
 def append_str_val(listref, my_list, key) -> None:
-    if not key in my_list:
+    if key not in my_list:
         return
     listref.append(str(my_list[key]))
 
