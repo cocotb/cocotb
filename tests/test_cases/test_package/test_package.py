@@ -41,6 +41,13 @@ async def test_stringification(dut):
     assert str(pkg2.eleven_int) == "IntegerObject(cocotb_package_pkg_2::eleven_int)"
 
 
+def get_integer(hdl):
+    if isinstance(hdl, cocotb.handle.IntegerObject):
+        return hdl.value
+    else:
+        return hdl.value.integer
+
+
 @cocotb.test()
 async def test_long_parameter(dut):
     """
@@ -53,21 +60,24 @@ async def test_long_parameter(dut):
     """
 
     pkg1 = cocotb.packages.cocotb_package_pkg_1
-    assert pkg1.five_int.value == 5
-    assert str(pkg1.five_int) == "IntegerObject(cocotb_package_pkg_1::five_int)"
 
-    if cocotb.SIM_NAME.lower().startswith(("verilator", "icarus")):
-        assert pkg1.long_param.value == int("5a89901af1", 16)
-        assert str(pkg1.long_param) == "IntegerObject(cocotb_package_pkg_1::long_param)"
-    else:
-        assert pkg1.long_param.value.integer == int("5a89901af1", 16)
-        assert str(pkg1.long_param) == "LogicObject(cocotb_package_pkg_1::long_param)"
+    # icarus and xcelium truncate the value to 32 bits, and ignore the signedness
 
-    assert pkg1.really_long_param.value.integer == int("5a89901af1", 16)
-    assert (
-        str(pkg1.really_long_param)
-        == "LogicObject(cocotb_package_pkg_1::really_long_param)"
-    )
+    if cocotb.SIM_NAME.lower().startswith(("icarus", "xmsim")):
+        assert get_integer(pkg1.long_param) == -1987044623
+        assert (
+            str(pkg1.really_long_param)
+            == "IntegerObject(cocotb_package_pkg_1::really_long_param)"
+        )
+        assert get_integer(pkg1.really_long_param) == -1987044623
+
+    elif not cocotb.SIM_NAME.lower().startswith("verilator"):
+        assert (
+            str(pkg1.really_long_param)
+            == "LogicObject(cocotb_package_pkg_1::really_long_param)"
+        )
+        assert get_integer(pkg1.long_param) == int("5a89901af1", 16)
+        assert get_integer(pkg1.really_long_param) == int("5a89901af1", 16)
 
 
 @cocotb.test()
