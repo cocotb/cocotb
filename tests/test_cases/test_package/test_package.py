@@ -60,24 +60,19 @@ async def test_long_parameter(dut):
     """
 
     pkg1 = cocotb.packages.cocotb_package_pkg_1
-
-    # icarus and xcelium truncate the value to 32 bits, and ignore the signedness
-
-    if cocotb.SIM_NAME.lower().startswith(("icarus", "xmsim")):
+    if cocotb.SIM_NAME.lower().startswith("verilator"):
+        pass
+    else:
+        # most sims truncate the value to 32 bits, and interpret as signed despite the marking
+        assert str(pkg1.long_param) == "IntegerObject(cocotb_package_pkg_1::long_param)"
+        # should really be 0x5A89901AF1 (40 bits)
+        # -1987044623 = (two's comp) 0b10001001100100000001101011110001 = 0x5A89901AF1[31:0]
         assert get_integer(pkg1.long_param) == -1987044623
         assert (
             str(pkg1.really_long_param)
             == "IntegerObject(cocotb_package_pkg_1::really_long_param)"
         )
         assert get_integer(pkg1.really_long_param) == -1987044623
-
-    elif not cocotb.SIM_NAME.lower().startswith("verilator"):
-        assert (
-            str(pkg1.really_long_param)
-            == "LogicObject(cocotb_package_pkg_1::really_long_param)"
-        )
-        assert get_integer(pkg1.long_param) == int("5a89901af1", 16)
-        assert get_integer(pkg1.really_long_param) == int("5a89901af1", 16)
 
 
 @cocotb.test()
