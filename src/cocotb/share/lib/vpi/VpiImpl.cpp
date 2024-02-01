@@ -157,20 +157,21 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype) {
 }
 
 static gpi_objtype_t const_type_to_gpi_objtype(int32_t const_type) {
+    // Most simulators only return vpiDecConst or vpiBinaryConst
     switch (const_type) {
 #ifdef IUS
         case vpiUndefined:
             LOG_WARN(
                 "VPI: Xcelium reports undefined parameters as vpiUndefined, "
                 "guessing this is a logic vector");
-            return GPI_NET;
+            return GPI_REGISTER;
 #endif
         case vpiDecConst:
         case vpiBinaryConst:
         case vpiOctConst:
         case vpiHexConst:
         case vpiIntConst:
-            return GPI_INTEGER;
+            return GPI_REGISTER;
         case vpiRealConst:
             return GPI_REAL;
         case vpiStringConst:
