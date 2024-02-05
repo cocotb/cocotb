@@ -1,1 +1,1 @@
-Observe :ref:`Python Test Runner <howto-python-runner>` `waves` parameter for Verilator and build a binary capable of producing wave files
+Support :ref:`Python Test Runner <howto-python-runner>` `waves` parameter for Verilator.
