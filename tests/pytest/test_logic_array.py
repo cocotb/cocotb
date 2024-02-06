@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import pytest
-from cocotb.types import Logic, LogicArray, Range, concat
+from cocotb.types import Logic, LogicArray, Range
 
 
 def test_logic_array_constructor():
@@ -58,14 +58,6 @@ def test_logic_array_setattr():
 def test_logic_array_repr():
     l = LogicArray("1XX110")
     assert eval(repr(l)) == l
-
-
-def test_logic_array_concat():
-    l = LogicArray("01ZX", Range(0, "to", 3))
-    p = LogicArray("1101")
-    assert concat(l, p) == LogicArray("01ZX1101")
-    with pytest.raises(TypeError):
-        concat(l, "nope")
 
 
 def test_logic_array_and():

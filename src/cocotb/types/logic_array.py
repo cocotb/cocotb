@@ -2,7 +2,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
-from itertools import chain
 
 from cocotb.types import ArrayLike
 from cocotb.types.logic import Logic, LogicConstructibleT
@@ -327,16 +326,6 @@ class LogicArray(ArrayLike[Logic]):
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({self.binstr!r}, {self.range!r})"
-
-    def __concat__(self: Self, other: Self) -> Self:
-        if isinstance(other, type(self)):
-            return type(self)(chain(self, other))
-        return NotImplemented
-
-    def __rconcat__(self: Self, other: Self) -> Self:
-        if isinstance(other, type(self)):
-            return type(self)(chain(other, self))
-        return NotImplemented
 
     def __and__(self: Self, other: Self) -> Self:
         if isinstance(other, type(self)):
