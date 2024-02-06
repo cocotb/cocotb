@@ -7,7 +7,6 @@ from cocotb.types import ArrayLike
 from cocotb.types.range import Range
 
 T = typing.TypeVar("T")
-Self = typing.TypeVar("Self", bound="Array[typing.Any]")
 
 
 class Array(ArrayLike[T]):
@@ -167,12 +166,12 @@ class Array(ArrayLike[T]):
         return item in self._value
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Array):
-            try:
-                other = type(self)(other)
-            except Exception:
-                return NotImplemented
-        return self._value == other._value
+        if isinstance(other, Array):
+            return self._value == other._value
+        elif isinstance(other, (list, tuple)):
+            return self == Array(other)
+        else:
+            return NotImplemented
 
     @typing.overload
     def __getitem__(self, item: int) -> T:
@@ -203,7 +202,7 @@ class Array(ArrayLike[T]):
                 )
             value = self._value[start_i : stop_i + 1]
             range = Range(start, self.direction, stop)
-            return type(self)(value=value, range=range)
+            return Array(value=value, range=range)
         raise TypeError(f"indexes must be ints or slices, not {type(item).__name__}")
 
     @typing.overload

@@ -109,22 +109,24 @@ class Logic:
 
     __slots__ = ("_repr",)
 
+    _repr: int
+
     @classmethod
     @lru_cache(maxsize=None)
-    def _make(cls: typing.Type["Logic"], _repr: int) -> "Logic":
-        """enforce singleton"""
+    def _get_object(cls: typing.Type["Logic"], _repr: int) -> "Logic":
+        """Return the Logic object associated with the repr, enforcing singleton."""
         self = object.__new__(cls)
         self._repr = _repr
-        return typing.cast("Logic", self)
+        return self
 
-    def __new__(
+    @classmethod
+    @lru_cache(maxsize=None)
+    def _map_literal(
         cls: typing.Type["Logic"],
-        value: typing.Optional[LogicConstructibleT] = None,
+        value: typing.Optional[LogicLiteralT] = None,
     ) -> "Logic":
-        if isinstance(value, Logic):
-            # convert Logic
-            _repr = value._repr
-        elif value is None:
+        """Convert and cache all literals."""
+        if value is None:
             _repr = _X
         else:
             # convert literal
@@ -134,13 +136,21 @@ class Logic:
                 raise ValueError(
                     f"{value!r} is not convertible to a {cls.__qualname__}"
                 ) from None
-        obj = cls._make(_repr)
+        obj = cls._get_object(_repr)
         return obj
 
+    def __new__(
+        cls: typing.Type["Logic"],
+        value: typing.Optional[LogicConstructibleT] = None,
+    ) -> "Logic":
+        if isinstance(value, Logic):
+            return value
+        return cls._map_literal(value)
+
     def __and__(self, other: "Logic") -> "Logic":
-        if not isinstance(other, type(self)):
+        if not isinstance(other, Logic):
             return NotImplemented
-        return type(self)(
+        return Logic(
             (
                 # -----------------------------------------------------
                 # U    X    0    1    Z    W    L    H    -       |   |
@@ -157,13 +167,10 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __rand__(self: "Logic", other: "Logic") -> "Logic":
-        return self & other
-
     def __or__(self: "Logic", other: "Logic") -> "Logic":
-        if not isinstance(other, type(self)):
+        if not isinstance(other, Logic):
             return NotImplemented
-        return type(self)(
+        return Logic(
             (
                 # -----------------------------------------------------
                 # U    X    0    1    Z    W    L    H    -       |   |
@@ -180,13 +187,10 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __ror__(self: "Logic", other: "Logic") -> "Logic":
-        return self | other
-
     def __xor__(self: "Logic", other: "Logic") -> "Logic":
-        if not isinstance(other, type(self)):
+        if not isinstance(other, Logic):
             return NotImplemented
-        return type(self)(
+        return Logic(
             (
                 # -----------------------------------------------------
                 # U    X    0    1    Z    W    L    H    -       |   |
@@ -203,19 +207,20 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __rxor__(self: "Logic", other: "Logic") -> "Logic":
-        return self ^ other
-
     def __invert__(self: "Logic") -> "Logic":
-        return type(self)(("U", "X", "1", "0", "X", "X", "1", "0", "X")[self._repr])
+        return Logic(("U", "X", "1", "0", "X", "X", "1", "0", "X")[self._repr])
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, type(self)):
+        if isinstance(other, Logic):
+            return self is other
+        elif isinstance(other, (int, str, bool)):
             try:
-                other = type(self)(other)
-            except Exception:
-                return NotImplemented
-        return self._repr == other._repr
+                other = Logic(other)
+            except ValueError:
+                return False
+            return self == other
+        else:
+            return NotImplemented
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({str(self)!r})"

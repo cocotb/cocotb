@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
 
-T = typing.TypeVar("T")
-
 
 class Range(typing.Sequence[int]):
     r"""
