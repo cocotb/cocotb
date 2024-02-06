@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from typing import Generic, Iterable, Iterator, Optional, TypeVar, Union, overload
 
 T = TypeVar("T")
-Self = TypeVar("Self")
 
 
 from .range import Range  # noqa: E402 F401
@@ -40,13 +39,13 @@ class ArrayLike(ABC, Generic[T]):
     def __len__(self) -> int:
         return len(self.range)
 
-    @abstractmethod
     def __iter__(self) -> Iterator[T]:
-        ...
+        for i in self.range:
+            yield self[i]
 
-    @abstractmethod
     def __reversed__(self) -> Iterator[T]:
-        ...
+        for i in reversed(self.range):
+            yield self[i]
 
     def __contains__(self, item: object) -> bool:
         for v in self:
@@ -54,23 +53,16 @@ class ArrayLike(ABC, Generic[T]):
                 return True
         return False
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        if len(self) != len(other):
-            return False
-        return all(a == b for a, b in zip(self, other))
-
     @overload
     def __getitem__(self, item: int) -> T:
         ...
 
     @overload
-    def __getitem__(self: Self, item: slice) -> Self:
+    def __getitem__(self, item: slice) -> "ArrayLike[T]":
         ...
 
     @abstractmethod
-    def __getitem__(self: Self, item: Union[int, slice]) -> Union[T, Self]:
+    def __getitem__(self, item: Union[int, slice]) -> Union[T, "ArrayLike[T]"]:
         ...
 
     @overload
