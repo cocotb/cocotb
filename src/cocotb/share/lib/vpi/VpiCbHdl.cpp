@@ -239,8 +239,8 @@ int VpiSignalObjHdl::initialise(const std::string &name,
     } else {
         m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
 
-        if (vpiConstant == type || vpiParameter == type ||
-            vpiStringVar == type) {
+        if (GpiObjHdl::get_type() == GPI_STRING || type == vpiConstant ||
+            type == vpiParameter) {
             m_indexable = false;  // Don't want to iterate over indices
             m_range_left = 0;
             m_range_right = m_num_elems - 1;
