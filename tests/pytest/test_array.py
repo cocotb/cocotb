@@ -51,8 +51,8 @@ def test_equality():
     assert Array("1234", Range(1, 4)) == Array("1234", Range(0, -3))
     assert Array("1234", Range(1, 4)) != Array("4321", Range(1, 4))
     assert Array("1234") != Array("12")
-    assert Array("1234") != "1234"
     assert Array("1234") != 8
+    assert Array([1, 2, 3, 4]) == [1, 2, 3, 4]
 
 
 def test_repr_eval():
