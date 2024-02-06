@@ -168,9 +168,12 @@ class Array(ArrayLike[T]):
         return item in self._value
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, type(self)):
-            return self._value == other._value
-        return NotImplemented
+        if not isinstance(other, Array):
+            try:
+                other = type(self)(other)
+            except Exception:
+                return NotImplemented
+        return self._value == other._value
 
     @typing.overload
     def __getitem__(self, item: int) -> T:
