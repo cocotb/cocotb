@@ -230,6 +230,9 @@ class LogicArray(ArrayLike[Logic]):
             value = value << 1 | int(bit)
         return value
 
+    def __int__(self) -> int:
+        return self.integer
+
     @property
     def signed_integer(self) -> int:
         value = self.integer
