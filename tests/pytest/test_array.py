@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import pytest
-from cocotb.types import Array, Range, concat
+from cocotb.types import Array, Range
 
 
 def test_value_only_construction():
@@ -155,28 +155,6 @@ def test_slice_correct_infered():
     a = Array("1234")
     b = a[:0]
     assert b.right == 0
-
-
-def test_array_concat():
-    l = Array("01ZX", Range(0, "to", 3))
-    p = Array("1101")
-    r = concat(l, p)
-    assert r == Array("01ZX1101")
-
-    with pytest.raises(TypeError):
-        concat(l, "nope")
-    with pytest.raises(TypeError):
-        concat("nope", l)
-
-
-def test_array_concat_promotion():
-    class MyArray(Array[int]):
-        ...
-
-    assert type(concat(Array([]), Array([]))) is Array
-    assert type(concat(MyArray([]), Array([]))) is Array
-    assert type(concat(Array([]), MyArray([]))) is Array
-    assert type(concat(MyArray([]), MyArray([]))) is MyArray
 
 
 def test_changing_range():

@@ -2,7 +2,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
-from itertools import chain
 
 from cocotb.types import ArrayLike
 from cocotb.types.range import Range
@@ -249,16 +248,6 @@ class Array(ArrayLike[T]):
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._value!r}, {self._range!r})"
-
-    def __concat__(self: Self, other: Self) -> Self:
-        if isinstance(other, type(self)):
-            return type(self)(chain(self, other))
-        return NotImplemented
-
-    def __rconcat__(self: Self, other: Self) -> Self:
-        if isinstance(other, type(self)):
-            return type(self)(chain(other, self))
-        return NotImplemented
 
     def count(self, value: T) -> int:
         """Return number of occurrences of *value*."""

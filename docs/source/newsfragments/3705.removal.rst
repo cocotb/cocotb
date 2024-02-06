@@ -1,0 +1,1 @@
+``cocotb.types.concat`` was removed. Use ``Array(itertools.chain(a, b))`` instead.
