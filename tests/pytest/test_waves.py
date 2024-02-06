@@ -71,7 +71,7 @@ def test_wave_dump():
     if sim == "icarus":
         dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.fst")
     elif sim == "verilator":
-        dumpfile_path = os.path.join(sim_build, f"dump.vcd")
+        dumpfile_path = os.path.join(sim_build, "dump.vcd")
     elif sim == "xcelium":
         dumpfile_path = os.path.join(sim_build, "cocotb_waves.shm", "cocotb_waves.trn")
     else:
