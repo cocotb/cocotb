@@ -52,6 +52,10 @@ def test_logic_equality():
     assert Logic(0) == Logic("0")
     assert Logic(0) != Logic("X")
     assert Logic(0) != object()
+    assert Logic(0) == 0
+    assert Logic("X") == "X"
+    assert Logic("X") != "j"
+    assert Logic("1") != 5
 
 
 def test_logic_default_value():
