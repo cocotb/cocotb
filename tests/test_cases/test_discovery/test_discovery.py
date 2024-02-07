@@ -440,7 +440,7 @@ async def type_check_verilog(dut):
         (dut.temp, "GPI_REGISTER"),
         (dut.logic_b, "GPI_REGISTER"),
         (dut.logic_c, "GPI_REGISTER"),
-        (dut.INT_PARAM, "GPI_INTEGER"),
+        (dut.INT_PARAM, "GPI_REGISTER"),
         (dut.REAL_PARAM, "GPI_REAL"),
     ]
 
@@ -456,7 +456,7 @@ async def type_check_verilog(dut):
     if SIM_NAME.startswith("verilator"):
         test_handles.append((dut.stream_in_data, "GPI_REGISTER"))
         test_handles.append((dut.and_output, "GPI_REGISTER"))
-        test_handles.append((dut.STRING_PARAM, "GPI_INTEGER"))
+        test_handles.append((dut.STRING_PARAM, "GPI_REGISTER"))
     else:
         test_handles.append((dut.stream_in_data, "GPI_NET"))
         test_handles.append((dut.and_output, "GPI_NET"))

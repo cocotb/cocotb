@@ -19,10 +19,10 @@ from cocotb.types import LogicArray, Range
 
 NUM_SAMPLES = int(os.environ.get("NUM_SAMPLES", 3000))
 if cocotb.simulator.is_running():
-    DATA_WIDTH = cocotb.top.DATA_WIDTH.value
-    A_ROWS = cocotb.top.A_ROWS.value
-    B_COLUMNS = cocotb.top.B_COLUMNS.value
-    A_COLUMNS_B_ROWS = cocotb.top.A_COLUMNS_B_ROWS.value
+    DATA_WIDTH = int(cocotb.top.DATA_WIDTH.value)
+    A_ROWS = int(cocotb.top.A_ROWS.value)
+    B_COLUMNS = int(cocotb.top.B_COLUMNS.value)
+    A_COLUMNS_B_ROWS = int(cocotb.top.A_COLUMNS_B_ROWS.value)
 
 
 class DataValidMonitor:
@@ -118,10 +118,10 @@ class MatrixMultiplierTester:
         self, a_matrix: List[LogicArray], b_matrix: List[LogicArray]
     ) -> List[int]:
         """Transaction-level model of the matrix multipler as instantiated"""
-        A_ROWS = self.dut.A_ROWS.value
-        A_COLUMNS_B_ROWS = self.dut.A_COLUMNS_B_ROWS.value
-        B_COLUMNS = self.dut.B_COLUMNS.value
-        DATA_WIDTH = self.dut.DATA_WIDTH.value
+        A_ROWS = int(self.dut.A_ROWS.value)
+        A_COLUMNS_B_ROWS = int(self.dut.A_COLUMNS_B_ROWS.value)
+        B_COLUMNS = int(self.dut.B_COLUMNS.value)
+        DATA_WIDTH = int(self.dut.DATA_WIDTH.value)
         return [
             LogicArray(
                 sum(
