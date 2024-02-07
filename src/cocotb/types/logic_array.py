@@ -205,6 +205,12 @@ class LogicArray(ArrayLike[Logic]):
                 return self.integer == other
             except ValueError:
                 return False
+        elif isinstance(other, (str, list, tuple)):
+            try:
+                other = LogicArray(other)
+            except ValueError:
+                return False
+            return self == other
         else:
             return NotImplemented
 
