@@ -37,6 +37,9 @@
 #include <py_gpi_logging.h>  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
 
 #include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <map>
 #include <string>
 
 #include "locale.h"
@@ -121,6 +124,20 @@ static void set_program_name_in_venv(void) {
 
 extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     assert(!gtstate);  // this function should not be called twice
+
+    const char *log_level = getenv("COCOTB_LOG_LEVEL");
+    if (log_level) {
+        static const std::map<std::string, int> logStrToLevel = {
+            {"CRITICAL", GPICritical}, {"ERROR", GPIError},
+            {"WARNING", GPIWarning},   {"INFO", GPIInfo},
+            {"DEBUG", GPIDebug},       {"TRACE", GPITrace}};
+        auto it = logStrToLevel.find(log_level);
+        if (it != logStrToLevel.end()) {
+            py_gpi_logger_set_level(it->second);
+        } else {
+            LOG_ERROR("Invalid log level: %s", log_level);
+        }
+    }
 
     to_python();
     // must set program name to Python executable before initialization, so
