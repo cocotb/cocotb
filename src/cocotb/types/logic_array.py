@@ -233,9 +233,6 @@ class LogicArray(ArrayLike[Logic]):
             value = value << 1 | int(bit)
         return value
 
-    def __int__(self) -> int:
-        return self.integer
-
     @property
     def signed_integer(self) -> int:
         value = self.integer
@@ -330,6 +327,12 @@ class LogicArray(ArrayLike[Logic]):
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({self.binstr!r}, {self.range!r})"
+
+    def __str__(self) -> str:
+        return self.binstr
+
+    def __int__(self) -> int:
+        return self.integer
 
     def __and__(self, other: "LogicArray") -> "LogicArray":
         if isinstance(other, LogicArray):
