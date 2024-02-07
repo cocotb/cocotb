@@ -100,6 +100,11 @@ def test_logic_array_invert():
     assert ~LogicArray("01XZ") == LogicArray("10XX")
 
 
+def test_logic_array_literal_casts():
+    assert str(LogicArray("UX01ZWLH-")) == "UX01ZWLH-"
+    assert int(LogicArray("0101010")) == 0b0101010
+
+
 def test_equality():
     # fmt: off
     assert LogicArray("0101", Range(0, 'to', 3)) == LogicArray("0101", Range(0, 'to', 3))
