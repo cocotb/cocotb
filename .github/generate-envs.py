@@ -169,23 +169,22 @@ ENVS = [
         "sim": "icarus",
         "sim-version": "v12_0",
         "os": "windows-latest",
-        "python-version": "3.8",
+        "python-version": "3.11",
         "toolchain": "mingw",
         "extra-name": "mingw",
-        # mingw tests fail silently currently due to test harness limitations.
-        "group": "experimental",
+        "group": "ci",
     },
     # use msvc instead of mingw
-    # {
-    #     "lang": "verilog",
-    #     "sim": "icarus",
-    #     "sim-version": "v12_0",
-    #     "os": "windows-latest",
-    #     "python-version": "3.11",
-    #     "toolchain": "msvc",
-    #     "extra-name": "msvc",
-    #     "group": "ci",
-    # },
+    {
+        "lang": "verilog",
+        "sim": "icarus",
+        "sim-version": "v12_0",
+        "os": "windows-latest",
+        "python-version": "3.11",
+        "toolchain": "msvc",
+        "extra-name": "msvc",
+        "group": "ci",
+    },
     # Other
     # use clang instead of gcc
     {
