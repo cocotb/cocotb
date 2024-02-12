@@ -39,3 +39,8 @@ repos:
     - "--fix=lf"
   - id: "end-of-file-fixer"
     exclude: "^documentation/source/diagrams/(svg|xml)/"
+
+- repo: https://github.com/henryiii/validate-pyproject-schema-store
+  rev: "2024.01.31"
+  hooks:
+    - id: validate-pyproject
