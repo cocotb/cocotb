@@ -1,8 +1,11 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import warnings
+
 import cocotb
 import pytest
+from cocotb.regression import TestFactory
 
 
 # identifiers starting with `_` are illegal in VHDL
@@ -10,3 +13,26 @@ import pytest
 async def test_id_deprecated(dut):
     with pytest.warns(DeprecationWarning):
         dut._id("_underscore_name", extended=False)
+
+
+test_testfactory_deprecated_values = []
+
+
+async def test_testfactory_deprecated_test(dut, a):
+    test_testfactory_deprecated_values.append(a)
+
+
+tf = TestFactory(test_testfactory_deprecated_test)
+tf.add_option("a", [1, 2])
+with warnings.catch_warnings(record=True) as tf_warns:
+    warnings.simplefilter("default", category=DeprecationWarning)
+    tf.generate_tests()
+
+
+@cocotb.test
+async def test_testfactory_deprecated(dut):
+    assert "test_testfactory_deprecated_test_001" in globals()
+    assert "test_testfactory_deprecated_test_002" in globals()
+    assert test_testfactory_deprecated_values == [1, 2]
+    assert len(tf_warns) == 1
+    assert tf_warns[0].category is DeprecationWarning
