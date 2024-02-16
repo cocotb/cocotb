@@ -553,6 +553,15 @@ class RegressionManager:
         )
         self.xunit.add_skipped()
 
+        self._test_results.append(
+            {
+                "test": test.fullname,
+                "pass": None,
+                "sim": 0,
+                "real": 0,
+            }
+        )
+
         self.skipped += 1
         self.count += 1
 
