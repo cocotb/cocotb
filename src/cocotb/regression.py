@@ -31,7 +31,6 @@ import functools
 import hashlib
 import inspect
 import logging
-import math
 import os
 import pdb
 import random
@@ -179,7 +178,17 @@ class Test:
         self.name = self.func.__qualname__ if name is None else name
         self.module = self.func.__module__ if module is None else module
         self.doc = self.func.__doc__ if doc is None else doc
+        if self.doc is not None:
+            self.doc = inspect.cleandoc(self.doc)
         self.fullname = f"{self.module}.{self.name}"
+
+
+def _format_doc(docstring: Union[str, None]) -> str:
+    if docstring is None:
+        return ""
+    else:
+        brief = docstring.split("\n")[0]
+        return f"\n    {brief}"
 
 
 class RegressionManager:
@@ -532,13 +541,13 @@ class RegressionManager:
         hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ""
         # Want this to stand out a little bit
         self.log.info(
-            "{start}skipping{end} {name} ({i}/{total})".format(
-                start=hilight_start,
-                i=self.count,
-                total=self.ntests,
-                end=hilight_end,
-                name=test.name,
-            )
+            "%sskipping%s %s (%d/%d)%s",
+            hilight_start,
+            hilight_end,
+            test.name,
+            self.count,
+            self.ntests,
+            _format_doc(test.doc),
         )
         lineno = self._get_lineno(test)
 
@@ -626,15 +635,15 @@ class RegressionManager:
         if want_color_output():
             start = ANSI.COLOR_TEST
             end = ANSI.COLOR_DEFAULT
+
         self.log.info(
-            "{start}running{end} {name} ({i}/{total}){description}".format(
-                start=start,
-                i=self.count,
-                total=self.ntests,
-                end=end,
-                name=self._test.name,
-                description=_trim(self._test.doc),
-            )
+            "%srunning%s %s (%d/%d)%s",
+            start,
+            end,
+            self._test.name,
+            self.count,
+            self.ntests,
+            _format_doc(self._test.doc),
         )
 
         self._test_start_time = time.time()
@@ -1079,35 +1088,3 @@ class TestFactory(Generic[F]):
                 skip=skip,
                 stage=stage,
             )
-
-
-def _trim(docstring: Optional[str]) -> str:
-    """Normalizes test docstrings
-
-    Based on https://www.python.org/dev/peps/pep-0257/#handling-docstring-indentation.
-    """
-    if docstring is None or docstring == "":
-        return ""
-    # Convert tabs to spaces (following the normal Python rules)
-    # and split into a list of lines:
-    lines = docstring.expandtabs().splitlines()
-    # Determine minimum indentation (first line doesn't count):
-    indent = math.inf
-    for line in lines[1:]:
-        stripped = line.lstrip()
-        if stripped:
-            indent = min(indent, len(line) - len(stripped))
-    # Remove indentation (first line is special):
-    trimmed = [lines[0].strip()]
-    if indent < math.inf:
-        for line in lines[1:]:
-            trimmed.append(line[indent:].rstrip())
-    # Strip off trailing and leading blank lines:
-    while trimmed and not trimmed[-1]:
-        trimmed.pop()
-    while trimmed and not trimmed[0]:
-        trimmed.pop(0)
-    # Add one newline back
-    trimmed.insert(0, "")
-    # Return a single string:
-    return "\n  ".join(trimmed)
