@@ -293,16 +293,20 @@ def _initialise_testbench_(argv_):
     regression_manager = RegressionManager()
 
     # discover tests
-    module_str = os.getenv("MODULE").strip()
-    if module_str is None or len(module_str) == 0:
+    module_str = os.getenv("MODULE", "").strip()
+    if not module_str:
         raise RuntimeError(
             "Environment variable MODULE, which defines the module(s) to execute, is not defined or empty."
         )
     modules = [s.strip() for s in module_str.split(",") if s.strip()]
-    test_str = os.getenv("TESTCASE", "")
-    filters = [s.strip() for s in test_str.split(",") if s.strip()]
-    regression_manager.setup_pytest_assertion_rewriting(modules)
-    regression_manager.discover_tests(modules=modules, filters=filters)
+    regression_manager.setup_pytest_assertion_rewriting(*modules)
+    regression_manager.discover_tests(*modules)
+
+    # filter tests
+    test_str = os.getenv("TESTCASE", "").strip()
+    if test_str:
+        filters = [s.strip() for s in test_str.split(",") if s.strip()]
+        regression_manager.filter_tests(*filters)
 
     global scheduler
     scheduler = Scheduler(handle_result=regression_manager._handle_result)

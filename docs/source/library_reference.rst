@@ -272,6 +272,8 @@ The Regression Manager
 
 .. autodata:: cocotb.regression_manager
 
+.. autoclass:: Test
+
 .. autoclass:: RegressionManager
     :members:
     :member-order: bysource

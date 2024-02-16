@@ -26,6 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import functools
+import sys
 from typing import (
     Any,
     Callable,
@@ -40,7 +41,7 @@ from typing import (
 )
 
 import cocotb
-from cocotb.regression import TestFactory
+from cocotb.regression import Test, TestFactory
 
 Result = TypeVar("Result")
 
@@ -208,22 +209,27 @@ def test(
         The test function to which the decorator is applied.
     """
 
+    def _add_tests(module_name: str, *tests: Test) -> None:
+        mod = sys.modules[module_name]
+        if not hasattr(mod, "__cocotb_tests__"):
+            mod.__cocotb_tests__ = []
+        mod.__cocotb_tests__.extend(tests)
+
     if _func is not None:
         if isinstance(_func, TestFactory):
-            if cocotb.regression_manager is not None:
-                _func.generate_tests()
-            _func.test_function.__cocotb_test__ = True
-            return _func.test_function
+            test_func = _func.test_function
+            _add_tests(test_func.__module__, *_func._generate_tests())
+            return test_func
         else:
-            if cocotb.regression_manager is not None:
-                cocotb.regression_manager.register_test(func=_func)
-            _func.__cocotb_test__ = True
+            _add_tests(_func.__module__, Test(func=_func))
             return _func
 
     def wrapper(f: Union[F, TestFactory[F]]) -> F:
         if isinstance(f, TestFactory):
-            if cocotb.regression_manager is not None:
-                f.generate_tests(
+            test_func = f.test_function
+            _add_tests(
+                test_func.__module__,
+                *f._generate_tests(
                     name=name,
                     timeout_time=timeout_time,
                     timeout_unit=timeout_unit,
@@ -231,13 +237,13 @@ def test(
                     expect_error=expect_error,
                     skip=skip,
                     stage=stage,
-                )
-            f.test_function.__cocotb_test__ = True
-            return f.test_function
-
+                ),
+            )
+            return test_func
         else:
-            if cocotb.regression_manager is not None:
-                cocotb.regression_manager.register_test(
+            _add_tests(
+                f.__module__,
+                Test(
                     func=f,
                     name=name,
                     timeout_time=timeout_time,
@@ -246,8 +252,8 @@ def test(
                     expect_error=expect_error,
                     skip=skip,
                     stage=stage,
-                )
-            f.__cocotb_test__ = True
+                ),
+            )
             return f
 
     return wrapper
