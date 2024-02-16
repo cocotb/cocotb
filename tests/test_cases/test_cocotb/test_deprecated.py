@@ -22,11 +22,12 @@ async def test_testfactory_deprecated_test(dut, a):
     test_testfactory_deprecated_values.append(a)
 
 
-tf = TestFactory(test_testfactory_deprecated_test)
-tf.add_option("a", [1, 2])
 with warnings.catch_warnings(record=True) as tf_warns:
     warnings.simplefilter("default", category=DeprecationWarning)
-    tf.generate_tests()
+    tf = TestFactory(test_testfactory_deprecated_test)
+
+tf.add_option("a", [1, 2])
+tf.generate_tests()
 
 
 @cocotb.test

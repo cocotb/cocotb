@@ -46,7 +46,6 @@ from typing import (
     Coroutine,
     Dict,
     Generic,
-    Iterable,
     List,
     Optional,
     Sequence,
@@ -963,6 +962,11 @@ class TestFactory(Generic[F]):
     """
 
     def __init__(self, test_function: F, *args: Any, **kwargs: Any) -> None:
+        warnings.warn(
+            "TestFactory is deprecated, use `@cocotb.parameterize` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.test_function = test_function
         self.args = args
         self.kwargs_constant = kwargs
@@ -1078,54 +1082,7 @@ class TestFactory(Generic[F]):
 
                 .. versionadded:: 2.0
         """
-        warnings.warn(
-            "TestFactory is deprecated, use `@cocotb.parameterize` instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
 
-        glbs = inspect.currentframe().f_back.f_globals
-
-        if "__cocotb_tests__" not in glbs:
-            glbs["__cocotb_tests__"] = []
-
-        for test in self._generate_tests(
-            prefix=prefix,
-            postfix=postfix,
-            name=name,
-            module=glbs["__name__"],
-            timeout_time=timeout_time,
-            timeout_unit=timeout_unit,
-            expect_fail=expect_fail,
-            expect_error=expect_error,
-            skip=skip,
-            stage=stage,
-        ):
-            if test.name in glbs:
-                _logger.error(
-                    "Overwriting %s in module %s. "
-                    "This causes a previously defined testcase not to be run. "
-                    "Consider using the `name`, `prefix`, or `postfix` arguments to augment the name.",
-                    name,
-                    glbs["__name__"],
-                )
-            glbs["__cocotb_tests__"].append(test)
-            glbs[test.name] = test
-
-    def _generate_tests(
-        self,
-        *,
-        prefix: Optional[str] = None,
-        postfix: Optional[str] = None,
-        name: Optional[str] = None,
-        module: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: str = "steps",
-        expect_fail: bool = False,
-        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
-        skip: bool = False,
-        stage: int = 0,
-    ) -> Iterable[Test]:
         if prefix is not None:
             warnings.warn(
                 "``prefix`` argument is deprecated. Use the more flexible ``name`` field instead.",
@@ -1141,6 +1098,11 @@ class TestFactory(Generic[F]):
             )
         else:
             postfix = ""
+
+        glbs = inspect.currentframe().f_back.f_globals
+
+        if "__cocotb_tests__" not in glbs:
+            glbs["__cocotb_tests__"] = []
 
         test_func_name = self.test_function.__qualname__ if name is None else name
 
@@ -1190,10 +1152,19 @@ class TestFactory(Generic[F]):
             _my_test.__name__ = name
             _my_test.__qualname__ = name
 
-            yield Test(
+            if name in glbs:
+                _logger.error(
+                    "Overwriting %s in module %s. "
+                    "This causes a previously defined testcase not to be run. "
+                    "Consider using the `name`, `prefix`, or `postfix` arguments to augment the name.",
+                    name,
+                    glbs["__name__"],
+                )
+
+            test = Test(
                 func=_my_test,
                 name=name,
-                module=module,
+                module=glbs["__name__"],
                 timeout_time=timeout_time,
                 timeout_unit=timeout_unit,
                 expect_fail=expect_fail,
@@ -1201,3 +1172,6 @@ class TestFactory(Generic[F]):
                 skip=skip,
                 stage=stage,
             )
+
+            glbs["__cocotb_tests__"].append(test)
+            glbs[test.name] = test
