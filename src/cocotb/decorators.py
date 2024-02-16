@@ -31,9 +31,9 @@ from typing import (
     Any,
     Callable,
     Coroutine,
-    List,
     Optional,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -260,7 +260,10 @@ def test(
 
 
 def parameterize(
-    **kwargs: List[Any],
+    *args: Union[
+        Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
+    ],
+    **kwargs: Sequence[Any],
 ) -> Callable[[Callable[..., Coroutine[Any, Any, None]]], TestFactory]:
     """Decorator to generate parameterized tests from a single test function.
 
@@ -304,21 +307,32 @@ def parameterize(
             arg1, arg2 = 1, "b"
             ...
 
+    Options can also be specified in much the same way that :meth:`TestFactory.add_option <cocotb.regression.TestFactory.add_option>` can,
+    either by supplying tuples of the parameter name to values,
+    or a sequence of variable names and a sequence of values.
+
+    .. code-block:: python3
+
+        @cocotb.parameterize(
+            ("arg1", [0, 1]),
+            (("arg2", arg3"), [(1, 2), (3, 4)])
+        )
+
     Args:
+        args:
+            Tuple of parameter name to sequence of values for that parameter,
+            or tuple of sequence of parameter names to sequence of sequences of values for that pack of parameters.
+
         kwargs:
-            Mapping of test function parameter names to the list of values each
+            Parameter name to sequence of values for that parameter.
 
     .. versionadded:: 2.0
     """
 
-    for key, lis in kwargs.items():
-        if not isinstance(lis, list):
-            raise TypeError(
-                f"All arguments to parameterize must be lists, got {key}={lis}({type(lis)})"
-            )
-
     def wrapper(f):
         tf = TestFactory(f)
+        for option_tuple in args:
+            tf.add_option(*option_tuple)
         for key, lis in kwargs.items():
             tf.add_option(key, lis)
         return tf
