@@ -27,21 +27,28 @@
 
 import functools
 import sys
+from enum import Enum
+from itertools import product
 from typing import (
     Any,
     Callable,
     Coroutine,
+    Dict,
+    Generic,
+    Iterable,
+    List,
     Optional,
     Sequence,
     Tuple,
     Type,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
 import cocotb
-from cocotb.regression import Test, TestFactory
+from cocotb.regression import Test
 
 Result = TypeVar("Result")
 
@@ -88,8 +95,127 @@ def external(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, R
 F = TypeVar("F", bound=Callable[..., Coroutine[Any, Any, None]])
 
 
+class _Parameterized(Generic[F]):
+    def __init__(
+        self,
+        test_function: F,
+        options: List[
+            Union[
+                Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
+            ]
+        ],
+    ) -> None:
+        self.test_function = test_function
+        self.options = options
+        # we are assuming the input checking is done in parameterize()
+
+        self._option_reprs: Dict[str, List[str]] = {}
+
+        for name, values in options:
+            if isinstance(name, str):
+                self._option_reprs[name] = _reprs(values)
+            else:
+                # transform to Dict[name, values]
+                transformed: Dict[str, List[Optional[str]]] = {}
+                for nam_idx, nam in enumerate(name):
+                    transformed[nam] = []
+                    for value_array in cast(Sequence[Sequence[Any]], values):
+                        value = value_array[nam_idx]
+                        transformed[nam].append(value)
+                for n, vs in transformed.items():
+                    self._option_reprs[n] = _reprs(vs)
+
+    def generate_tests(
+        self,
+        *,
+        name: Optional[str] = None,
+        timeout_time: Optional[float] = None,
+        timeout_unit: str = "step",
+        expect_fail: bool = False,
+        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+        skip: bool = False,
+        stage: int = 0,
+    ) -> Iterable[Test]:
+        test_func_name = self.test_function.__qualname__ if name is None else name
+
+        # this value is a list of ranges of the same length as each set of values in self.options for passing to itertools.product
+        option_indexes = [range(len(option[1])) for option in self.options]
+
+        # go through the cartesian product of all values of all options
+        for selected_options in product(*option_indexes):
+            test_kwargs: Dict[str, Sequence[Any]] = {}
+            test_name_pieces: List[str] = [test_func_name]
+            for option_idx, select_idx in enumerate(selected_options):
+                option_name, option_values = self.options[option_idx]
+                selected_value = option_values[select_idx]
+
+                if isinstance(option_name, str):
+                    # single params per option
+                    selected_value = cast(Sequence[Any], selected_value)
+                    test_kwargs[option_name] = selected_value
+                    test_name_pieces.append(
+                        f"/{option_name}={self._option_reprs[option_name][select_idx]}"
+                    )
+                else:
+                    # multiple params per option
+                    selected_value = cast(Sequence[Any], selected_value)
+                    for n, v in zip(option_name, selected_value):
+                        test_kwargs[n] = v
+                        test_name_pieces.append(
+                            f"/{n}={self._option_reprs[n][select_idx]}"
+                        )
+
+            parameterized_test_name = "".join(test_name_pieces)
+
+            # create wrapper function to bind kwargs
+            @functools.wraps(self.test_function)
+            async def _my_test(dut, kwargs: Dict[str, Any] = test_kwargs) -> None:
+                await self.test_function(dut, **kwargs)
+
+            yield Test(
+                func=_my_test,
+                name=parameterized_test_name,
+                timeout_time=timeout_time,
+                timeout_unit=timeout_unit,
+                expect_fail=expect_fail,
+                expect_error=expect_error,
+                skip=skip,
+                stage=stage,
+            )
+
+
+def _reprs(values: Sequence[Any]) -> List[str]:
+    result: List[str] = []
+    for value in values:
+        value_repr = _repr(value)
+        if value_repr is None:
+            # non-representable value in option, so default to index strings and give up
+            return [str(i) for i in range(len(values))]
+        else:
+            result.append(value_repr)
+    return result
+
+
+def _repr(v: Any) -> Optional[str]:
+    if isinstance(v, str):
+        if len(v) <= 10 and v.isidentifier():
+            return v
+        else:
+            return None
+    elif isinstance(v, (int, float, bool, type(None))):
+        return repr(v)
+    elif isinstance(v, Enum):
+        return v.name
+    elif isinstance(v, type):
+        return v.__qualname__
+    elif callable(v) and hasattr(v, "__qualname__"):
+        return v.__qualname__
+    else:
+        return None
+
+
 @overload
-def test(_func: Union[F, TestFactory[F]]) -> F:
+def test(_func: Union[F, _Parameterized[F]]) -> F:
     ...
 
 
@@ -103,12 +229,12 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
-) -> Callable[[Union[F, TestFactory[F]]], F]:
+) -> Callable[[Union[F, _Parameterized[F]]], F]:
     ...
 
 
 def test(
-    _func: Optional[Union[F, TestFactory[F]]] = None,
+    _func: Optional[Union[F, _Parameterized[F]]] = None,
     *,
     timeout_time: Optional[float] = None,
     timeout_unit: str = "step",
@@ -117,7 +243,7 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
-) -> Callable[[Union[F, TestFactory[F]]], F]:
+) -> Callable[[Union[F, _Parameterized[F]]], F]:
     """
     Decorator to register a Callable which returns a Coroutine as a test.
 
@@ -216,20 +342,20 @@ def test(
         mod.__cocotb_tests__.extend(tests)
 
     if _func is not None:
-        if isinstance(_func, TestFactory):
+        if isinstance(_func, _Parameterized):
             test_func = _func.test_function
-            _add_tests(test_func.__module__, *_func._generate_tests())
+            _add_tests(test_func.__module__, *_func.generate_tests())
             return test_func
         else:
             _add_tests(_func.__module__, Test(func=_func))
             return _func
 
-    def wrapper(f: Union[F, TestFactory[F]]) -> F:
-        if isinstance(f, TestFactory):
+    def wrapper(f: Union[F, _Parameterized[F]]) -> F:
+        if isinstance(f, _Parameterized):
             test_func = f.test_function
             _add_tests(
                 test_func.__module__,
-                *f._generate_tests(
+                *f.generate_tests(
                     name=name,
                     timeout_time=timeout_time,
                     timeout_unit=timeout_unit,
@@ -260,11 +386,11 @@ def test(
 
 
 def parameterize(
-    *args: Union[
+    *options_by_tuple: Union[
         Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
     ],
-    **kwargs: Sequence[Any],
-) -> Callable[[Callable[..., Coroutine[Any, Any, None]]], TestFactory]:
+    **options_by_name: Sequence[Any],
+) -> Callable[[F], _Parameterized[F]]:
     """Decorator to generate parameterized tests from a single test function.
 
     Decorates a test function with named test parameters.
@@ -319,7 +445,7 @@ def parameterize(
         )
 
     Args:
-        args:
+        options_by_tuple:
             Tuple of parameter name to sequence of values for that parameter,
             or tuple of sequence of parameter names to sequence of sequences of values for that pack of parameters.
 
@@ -329,12 +455,29 @@ def parameterize(
     .. versionadded:: 2.0
     """
 
-    def wrapper(f):
-        tf = TestFactory(f)
-        for option_tuple in args:
-            tf.add_option(*option_tuple)
-        for key, lis in kwargs.items():
-            tf.add_option(key, lis)
-        return tf
+    # check good inputs
+    for i, option_by_tuple in enumerate(options_by_tuple):
+        if len(option_by_tuple) != 2:
+            raise ValueError(
+                f"Invalid option tuple {i}, expected exactly two fields `(name, values)`"
+            )
+        name, values = option_by_tuple
+        if not isinstance(name, str):
+            for n in name:
+                if not n.isidentifier():
+                    raise ValueError("Option names must be valid Python identifiers")
+            values = cast(Sequence[Sequence[Any]], values)
+            for value in values:
+                if len(name) != len(value):
+                    raise ValueError(
+                        f"Invalid option tuple {i}, mismatching number of parameters ({name}) and values ({value})"
+                    )
+        elif not name.isidentifier():
+            raise ValueError("Option names must be valid Python identifiers")
+
+    options = [*options_by_tuple, *options_by_name.items()]
+
+    def wrapper(f: F) -> _Parameterized[F]:
+        return _Parameterized(f, options)
 
     return wrapper
