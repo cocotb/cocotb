@@ -39,6 +39,7 @@ import re
 import sys
 import time
 import warnings
+from importlib import import_module
 from itertools import product
 from typing import (
     Any,
@@ -90,20 +91,63 @@ else:
         assert False, "pytest.raises doesn't raise an exception when it fails"
 
 
-class _Test:
+class Test:
+    """A cocotb test in a regression.
+
+    Args:
+        func:
+            The test function object.
+
+        name:
+            The name of the test function.
+            Defaults to ``func.__qualname__`` (the dotted path to the test function in the module).
+
+        module:
+            The name of the module containing the test function.
+            Defaults to ``func.__module__`` (the name of the module containing the test function).
+
+        doc:
+            The docstring for the test.
+            Defaults to ``func.__doc__`` (the docstring of the test function).
+
+        timeout_time:
+            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.result. SimTimeoutError`.
+
+        timeout_unit:
+            Units of ``timeout_time``, accepts any units that :class:`~cocotb.triggers.Timer` does.
+
+        expect_fail:
+            If ``True`` and the test fails a functional check via an ``assert`` statement, :pytest:class:`pytest.raises`,
+            :pytest:class:`pytest.warns`, or :pytest:class:`pytest.deprecated_call`, the test is considered to have passed.
+            If ``True`` and the test passes successfully, the test is considered to have failed.
+
+        expect_error:
+            Mark the result as a pass only if one of the given exception types is raised in the test.
+
+        skip:
+            Don't execute this test as part of the regression.
+            The test can still be run manually by setting :envvar:`TESTCASE`.
+
+        stage:
+            Order tests logically into stages.
+            Tests from earlier stages are run before tests from later stages.
+    """
+
     _id_count = 0  # used by the RegressionManager to sort tests in definition order
 
     def __init__(
         self,
+        *,
         func: Callable[..., Coroutine[Any, Any, None]],
-        name: Optional[str],
-        module: Optional[str],
-        timeout_time: Optional[float],
-        timeout_unit: str,
-        expect_fail: bool,
-        expect_error: Union[Type[Exception], Sequence[Type[Exception]]],
-        skip: bool,
-        stage: int,
+        name: Optional[str] = None,
+        module: Optional[str] = None,
+        doc: Optional[str] = None,
+        timeout_time: Optional[float] = None,
+        timeout_unit: str = "step",
+        expect_fail: bool = False,
+        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+        skip: bool = False,
+        stage: int = 0,
     ):
         self._id = self._id_count
         type(self)._id_count += 1
@@ -134,28 +178,29 @@ class _Test:
         self.stage = stage
         self.name = self.func.__qualname__ if name is None else name
         self.module = self.func.__module__ if module is None else module
+        self.doc = self.func.__doc__ if doc is None else doc
         self.fullname = f"{self.module}.{self.name}"
-        self.included: Optional[bool] = None
 
 
 class RegressionManager:
     """Encapsulates all regression capability into a single place"""
 
     def __init__(self) -> None:
-        self._test = None
-        self._test_task = None
-        self._test_start_time = None
-        self._test_start_sim_time = None
+        self._test: Test
+        self._test_task: Task[None]
+        self._test_start_time: float
+        self._test_start_sim_time: float
         self.log = _logger
         self._regression_start_time: float
-        self.test_results = []
+        self._test_results: List[Dict[str, Any]] = []
         self.ntests = 0
         self.count = 0
         self.passed = 0
         self.skipped = 0
         self.failures = 0
         self._tearing_down = False
-        self._queue: List[_Test] = []
+        self._test_queue: List[Test] = []
+        self._filtered_tests: List[Test] = []
 
         # Setup XUnit
         ###################
@@ -165,132 +210,86 @@ class RegressionManager:
         package_name = os.getenv("RESULT_TESTPACKAGE", "all")
 
         self.xunit = XUnitReporter(filename=results_filename)
-
         self.xunit.add_testsuite(name=suite_name, package=package_name)
-
         self.xunit.add_property(name="random_seed", value=str(cocotb.RANDOM_SEED))
 
-    def discover_tests(
-        self, modules: Iterable[str], filters: Optional[Sequence[str]] = None
-    ) -> None:
+    def discover_tests(self, *modules: str) -> None:
         """Discover tests in files automatically.
 
         Should be called before :meth:`start_regression` is called.
-        If no filters are given, all tests are included.
-        If one or more filters are given, only those tests which match a filter are included; the rest are excluded.
 
         Args:
-            modules: a list of module names to execute to find tests.
-            filters: regex patterns for test names.
-                A match *includes* the test.
+            modules: Name of module where tests are found.
 
+        Raises:
+            RuntimeError: If no tests are found.
         """
         for module_name in modules:
             self.log.debug("Searching for tests in module %s", module_name)
             self.log.debug("Python Path: %s", ",".join(sys.path))
             self.log.debug("PWD: %s", os.getcwd())
-            __import__(module_name)
+            mod = import_module(module_name)
 
-        self.ntests = len(self._queue)
+            if not hasattr(mod, "__cocotb_tests__"):
+                raise RuntimeError(
+                    f"No tests were discovered in module: {module_name!r}"
+                )
+
+            for test in mod.__cocotb_tests__:
+                self.register_test(test)
 
         # error if no tests were discovered
-        if self.ntests == 0:
+        if not self._test_queue:
             modules_str = ", ".join(repr(m) for m in modules)
-            raise RuntimeError(f"No tests were discovered in modules: {modules_str}")
+            raise RuntimeError(f"No tests were discovered in any module: {modules_str}")
 
-        # if no filters, accept all tests
-        if not filters:
-            return
+    def filter_tests(self, *filters: str) -> None:
+        """Filter discovered tests.
 
-        # else mark all tests as excluded
-        self.ntests = 0
-        for test in self._queue:
-            test.included = False
+        Only those tests which match at least one of the given filters are included;
+        the rest are excluded.
+
+        Should be called before :meth:`start_regression` is called.
+
+        Args:
+            filters: A regex pattern for test names.
+                A match *includes* the test.
+        """
+        included: List[Test] = []
+        excluded: List[Test] = []
 
         # include tests that match filter
-        for test in self._queue:
+        for test in self._test_queue:
             for filter in filters:
                 if re.search(filter, test.fullname):
-                    self.ntests += 1
-                    test.included = True
+                    included.append(test)
                     break
             else:
                 self.log.debug("Filtered out test %s", test.fullname)
+                excluded.append(test)
 
-        if self.ntests == 0:
+        if not included:
             self.log.warning(
                 "No tests left after filtering with: %s",
                 ", ".join(repr(f) for f in filters),
             )
 
-        self._queue.sort(key=lambda test: (test.stage, test._id))
+        self._test_queue = included
+        self._filtered_tests = excluded
 
-    def register_test(
-        self,
-        func: Callable[..., Coroutine[Any, Any, None]],
-        name: Optional[str] = None,
-        module: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: str = "step",
-        expect_fail: bool = False,
-        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
-        skip: bool = False,
-        stage: int = 0,
-    ) -> None:
+    def register_test(self, test: Test) -> None:
         """Register a test with the RegressionManager.
 
         Should be called before :meth:`start_regression` is called.
 
         Args:
-            func:
-                The test function to register.
-
-            name:
-                The name of the test function.
-                Defaults to ``func.__qualname__`` if not given.
-
-            module:
-                The name of the module containing the test function.
-                Defaults to ``func.__module__`` if not given.
-
-            timeout_time:
-                Simulation time duration before timeout occurs.
-
-            timeout_unit:
-                Units of ``timeout_time``, accepts any units that :class:`~cocotb.triggers.Timer` does.
-
-            expect_fail:
-                If ``True`` and the test fails a functional check via an ``assert`` statement, :class:`pytest.raises`,
-                :class:`pytest.warns`, or :class:`pytest.deprecated_call`, the test is considered to have passed.
-                If ``True`` and the test passes successfully, the test is considered to have failed.
-
-            expect_error:
-                Mark the result as a pass only if one of the exception types is raised in the test.
-                This is primarily for cocotb internal regression use for when a simulator error is expected.
-
-            skip:
-                Don't execute this test as part of the regression.
-                The test can still be run manually by setting :make:var:`TESTCASE`.
-
-            stage:
-                Order tests logically into stages, where multiple tests can share a stage.
+            test: The test object to register.
         """
-        test = _Test(
-            func=func,
-            name=name,
-            module=module,
-            timeout_time=timeout_time,
-            timeout_unit=timeout_unit,
-            expect_fail=expect_fail,
-            expect_error=expect_error,
-            skip=skip,
-            stage=stage,
-        )
         self.log.debug("Registered test %r", test.fullname)
-        self._queue.append(test)
+        self._test_queue.append(test)
 
     @classmethod
-    def setup_pytest_assertion_rewriting(cls, test_modules: Iterable[str]) -> None:
+    def setup_pytest_assertion_rewriting(cls, *modules: str) -> None:
         try:
             import pytest
         except ImportError:
@@ -319,7 +318,14 @@ class RegressionManager:
 
         Should be called only once after :meth:`discover_tests` is called.
         """
+        self._test_queue.sort(key=lambda test: (test.stage, test._id))
+        self.ntests = len(self._test_queue)
         self.count = 1
+
+        # record exclusions
+        for test in self._filtered_tests:
+            self._record_test_excluded(test)
+
         self._regression_start_time = time.time()
         self._execute()
 
@@ -350,11 +356,11 @@ class RegressionManager:
         cocotb._stop_user_coverage()
         cocotb._stop_library_coverage()
 
-    def _next_test(self) -> Optional[_Test]:
+    def _next_test(self) -> Optional[Test]:
         """Get the next test to run"""
-        if not self._queue:
+        if not self._test_queue:
             return None
-        return self._queue.pop(0)
+        return self._test_queue.pop(0)
 
     def _handle_result(self, test: Task) -> None:
         """Handle a test completing.
@@ -378,7 +384,7 @@ class RegressionManager:
 
         self._execute()
 
-    def _init_test(self, test: _Test) -> Optional[Task]:
+    def _init_test(self, test: Test) -> Optional[Task]:
         """Initialize a test.
 
         Record outcome if the initialization fails.
@@ -386,12 +392,8 @@ class RegressionManager:
         Save the initialized test if it successfully initializes.
         """
 
-        if test.included is None and test.skip:
+        if test.skip:
             self._record_test_skipped(test)
-            return None
-
-        if test.included is False:
-            self._record_test_excluded(test)
             return None
 
         test_init_outcome = capture(test.func, cocotb.top)
@@ -413,7 +415,7 @@ class RegressionManager:
 
         return _RunningTest(test_init_outcome.get(), test.name)
 
-    def _score_test(self, test: _Test, outcome: Outcome) -> Tuple[bool, bool]:
+    def _score_test(self, test: Test, outcome: Outcome) -> Tuple[bool, bool]:
         """
         Given a test and the test's outcome, determine if the test met expectations and log pertinent information
         """
@@ -474,14 +476,14 @@ class RegressionManager:
 
         return result_pass, sim_failed
 
-    def _get_lineno(self, test: _Test) -> None:
+    def _get_lineno(self, test: Test) -> None:
         try:
             return inspect.getsourcelines(test.func)[1]
         except OSError:
             return 1
 
     def _log_test_passed(
-        self, test: _Test, result: Optional[Exception] = None, msg: Optional[str] = None
+        self, test: Test, result: Optional[Exception] = None, msg: Optional[str] = None
     ) -> None:
         start_hilight = ANSI.COLOR_PASSED if want_color_output() else ""
         stop_hilight = ANSI.COLOR_DEFAULT if want_color_output() else ""
@@ -498,7 +500,7 @@ class RegressionManager:
         )
 
     def _log_test_failed(
-        self, test: _Test, result: Optional[Exception] = None, msg: Optional[str] = None
+        self, test: Test, result: Optional[Exception] = None, msg: Optional[str] = None
     ) -> None:
         start_hilight = ANSI.COLOR_FAILED if want_color_output() else ""
         stop_hilight = ANSI.COLOR_DEFAULT if want_color_output() else ""
@@ -511,7 +513,7 @@ class RegressionManager:
             exc_info=result,
         )
 
-    def _record_test_excluded(self, test: _Test) -> None:
+    def _record_test_excluded(self, test: Test) -> None:
         lineno = self._get_lineno(test)
 
         self.xunit.add_testcase(
@@ -525,7 +527,7 @@ class RegressionManager:
         )
         self.xunit.add_skipped()
 
-    def _record_test_skipped(self, test: _Test) -> None:
+    def _record_test_skipped(self, test: Test) -> None:
         hilight_start = ANSI.COLOR_SKIPPED if want_color_output() else ""
         hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ""
         # Want this to stand out a little bit
@@ -556,7 +558,7 @@ class RegressionManager:
 
     def _record_result(
         self,
-        test: _Test,
+        test: Test,
         outcome: Outcome,
         wall_time_s: float,
         sim_time_ns: float,
@@ -584,7 +586,7 @@ class RegressionManager:
             self.passed += 1
         self.count += 1
 
-        self.test_results.append(
+        self._test_results.append(
             {
                 "test": test.fullname,
                 "pass": test_pass,
@@ -622,7 +624,7 @@ class RegressionManager:
                 total=self.ntests,
                 end=end,
                 name=self._test.name,
-                description=_trim(self._test.__doc__),
+                description=_trim(self._test.doc),
             )
         )
 
@@ -635,7 +637,7 @@ class RegressionManager:
         sim_time_ns = get_sim_time("ns")
         ratio_time = self._safe_divide(sim_time_ns, real_time)
 
-        if len(self.test_results) == 0:
+        if len(self._test_results) == 0:
             return
 
         TEST_FIELD = "TEST"
@@ -648,7 +650,7 @@ class RegressionManager:
         TEST_FIELD_LEN = max(
             len(TEST_FIELD),
             len(TOTAL_NAME),
-            len(max([x["test"] for x in self.test_results], key=len)),
+            len(max([x["test"] for x in self._test_results], key=len)),
         )
         RESULT_FIELD_LEN = len(RESULT_FIELD)
         SIM_FIELD_LEN = len(SIM_FIELD)
@@ -692,7 +694,7 @@ class RegressionManager:
         summary += LINE_SEP
 
         test_line = "** {a:<{a_len}}  {start}{b:^{b_len}}{end}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}}  **\n"
-        for result in self.test_results:
+        for result in self._test_results:
             hilite = ""
             lolite = ""
 
@@ -942,7 +944,48 @@ class TestFactory(Generic[F]):
 
                 .. versionadded:: 2.0
         """
+        glbs = inspect.currentframe().f_back.f_globals
 
+        if "__cocotb_tests__" not in glbs:
+            glbs["__cocotb_tests__"] = []
+
+        for test in self._generate_tests(
+            prefix=prefix,
+            postfix=postfix,
+            name=name,
+            module=glbs["__name__"],
+            timeout_time=timeout_time,
+            timeout_unit=timeout_unit,
+            expect_fail=expect_fail,
+            expect_error=expect_error,
+            skip=skip,
+            stage=stage,
+        ):
+            if test.name in glbs:
+                _logger.error(
+                    "Overwriting %s in module %s. "
+                    "This causes a previously defined testcase not to be run. "
+                    "Consider using the `name`, `prefix`, or `postfix` arguments to augment the name.",
+                    name,
+                    glbs["__name__"],
+                )
+            glbs["__cocotb_tests__"].append(test)
+            glbs[test.name] = test
+
+    def _generate_tests(
+        self,
+        *,
+        prefix: Optional[str] = None,
+        postfix: Optional[str] = None,
+        name: Optional[str] = None,
+        module: Optional[str] = None,
+        timeout_time: Optional[float] = None,
+        timeout_unit: str = "steps",
+        expect_fail: bool = False,
+        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+        skip: bool = False,
+        stage: int = 0,
+    ) -> Iterable[Test]:
         if prefix is not None:
             warnings.warn(
                 "``prefix`` argument is deprecated. Use the more flexible ``name`` field instead.",
@@ -959,11 +1002,10 @@ class TestFactory(Generic[F]):
         else:
             postfix = ""
 
-        d = self.kwargs
         test_func_name = self.test_function.__qualname__ if name is None else name
 
         for index, testoptions in enumerate(
-            dict(zip(d, v)) for v in product(*d.values())
+            dict(zip(self.kwargs, v)) for v in product(*self.kwargs.values())
         ):
             name = "%s%s%s_%03d" % (
                 prefix,
@@ -1001,16 +1043,17 @@ class TestFactory(Generic[F]):
             kwargs.update(testoptions_split)
 
             @functools.wraps(self.test_function)
-            async def _my_test(dut, kwargs: Dict[str, Any] = kwargs):
+            async def _my_test(dut, kwargs: Dict[str, Any] = kwargs) -> None:
                 await self.test_function(dut, *self.args, **kwargs)
 
             _my_test.__doc__ = doc
             _my_test.__name__ = name
             _my_test.__qualname__ = name
 
-            cocotb.regression_manager.register_test(
+            yield Test(
                 func=_my_test,
                 name=name,
+                module=module,
                 timeout_time=timeout_time,
                 timeout_unit=timeout_unit,
                 expect_fail=expect_fail,
