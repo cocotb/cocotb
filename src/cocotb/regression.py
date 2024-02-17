@@ -132,8 +132,6 @@ class Test:
             Tests from earlier stages are run before tests from later stages.
     """
 
-    _id_count = 0  # used by the RegressionManager to sort tests in definition order
-
     def __init__(
         self,
         *,
@@ -147,10 +145,7 @@ class Test:
         expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
         skip: bool = False,
         stage: int = 0,
-    ):
-        self._id = self._id_count
-        type(self)._id_count += 1
-
+    ) -> None:
         if timeout_time is not None:
             co = func  # must save ref because we overwrite variable "func"
 
@@ -327,7 +322,7 @@ class RegressionManager:
 
         Should be called only once after :meth:`discover_tests` is called.
         """
-        self._test_queue.sort(key=lambda test: (test.stage, test._id))
+        self._test_queue.sort(key=lambda test: test.stage)
         self.ntests = len(self._test_queue)
         self.count = 1
 
