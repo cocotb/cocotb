@@ -13,3 +13,4 @@ towncrier
 IPython
 sphinx-tabs
 sphinxcontrib-details-directive
+enum-tools[sphinx]

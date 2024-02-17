@@ -35,9 +35,9 @@ import os
 import pdb
 import random
 import re
-import sys
 import time
 import warnings
+from enum import auto
 from importlib import import_module
 from itertools import product
 from typing import (
@@ -60,11 +60,12 @@ from typing import (
 
 import cocotb
 from cocotb import ANSI, simulator
-from cocotb._outcomes import Error, Outcome, capture
+from cocotb._outcomes import Error, Outcome
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.result import SimFailure, TestSuccess
 from cocotb.task import Task, _RunningTest
 from cocotb.utils import (
+    DocEnum,
     get_sim_time,
     remove_traceback_frames,
     want_color_output,
@@ -174,6 +175,7 @@ class Test:
         self.module = self.func.__module__ if module is None else module
         self.doc = self.func.__doc__ if doc is None else doc
         if self.doc is not None:
+            # cleanup docstring using `trim` function from PEP257
             self.doc = inspect.cleandoc(self.doc)
         self.fullname = f"{self.module}.{self.name}"
 
@@ -186,8 +188,37 @@ def _format_doc(docstring: Union[str, None]) -> str:
         return f"\n    {brief}"
 
 
+class RegressionMode(DocEnum):
+    """The mode of the :class:`RegressionManager`."""
+
+    REGRESSION = (
+        auto(),
+        """Tests are run if included. Skipped tests are skipped, expected failures and errors are respected.""",
+    )
+
+    TESTCASE = (
+        auto(),
+        """Like :attr:`REGRESSION`, but skipped tests are *not* skipped if included.""",
+    )
+
+
 class RegressionManager:
-    """Encapsulates all regression capability into a single place"""
+    """Object which manages tests.
+
+    This object uses the builder pattern to build up a regression.
+    Tests are added using :meth:`register_test` or :meth:`discover_tests`.
+    Inclusion filters for tests can be added using :meth:`add_filters`.
+    The "mode" of the regression can be controlled using :meth:`set_mode`.
+    These methods can be called in any order any number of times before :meth:`start_regression` is called,
+    and should not be called again after that.
+
+    Once all the tests, filters, and regression behavior configuration is done,
+    the user starts the regression with :meth:`start_regression`.
+    This method must be called exactly once.
+
+    Until the regression is started, :attr:`total_tests`, :attr:`count`, :attr:`passed`,
+    :attr:`skipped`, and :attr:`failures` hold placeholder values.
+    """
 
     def __init__(self) -> None:
         self._test: Test
@@ -197,14 +228,21 @@ class RegressionManager:
         self.log = _logger
         self._regression_start_time: float
         self._test_results: List[Dict[str, Any]] = []
-        self.ntests = 0
+        self.total_tests = 0
+        """Total number of tests that will be run or skipped."""
         self.count = 0
+        """The current test count."""
         self.passed = 0
+        """The current number of passed tests."""
         self.skipped = 0
+        """The current number of skipped tests."""
         self.failures = 0
+        """The current number of failed tests."""
         self._tearing_down = False
         self._test_queue: List[Test] = []
-        self._filtered_tests: List[Test] = []
+        self._filters: List[re.Pattern[str]] = []
+        self._mode = RegressionMode.REGRESSION
+        self._included: List[bool]
 
         # Setup XUnit
         ###################
@@ -223,15 +261,12 @@ class RegressionManager:
         Should be called before :meth:`start_regression` is called.
 
         Args:
-            modules: Name of module where tests are found.
+            modules: Each argument given is the name of a module where tests are found.
 
         Raises:
-            RuntimeError: If no tests are found.
+            RuntimeError: If no tests are found in any of the provided modules.
         """
         for module_name in modules:
-            self.log.debug("Searching for tests in module %s", module_name)
-            self.log.debug("Python Path: %s", ",".join(sys.path))
-            self.log.debug("PWD: %s", os.getcwd())
             mod = import_module(module_name)
 
             if not hasattr(mod, "__cocotb_tests__"):
@@ -247,8 +282,8 @@ class RegressionManager:
             modules_str = ", ".join(repr(m) for m in modules)
             raise RuntimeError(f"No tests were discovered in any module: {modules_str}")
 
-    def filter_tests(self, *filters: str) -> None:
-        """Filter discovered tests.
+    def add_filters(self, *filters: str) -> None:
+        """Add regular expressions to filter-in registered tests.
 
         Only those tests which match at least one of the given filters are included;
         the rest are excluded.
@@ -256,33 +291,26 @@ class RegressionManager:
         Should be called before :meth:`start_regression` is called.
 
         Args:
-            filters: A regex pattern for test names.
+            filters: Each argument given is a regex pattern for test names.
                 A match *includes* the test.
         """
-        included: List[Test] = []
-        excluded: List[Test] = []
+        for filter in filters:
+            compiled_filter = re.compile(filter)
+            self._filters.append(compiled_filter)
 
-        # include tests that match filter
-        for test in self._test_queue:
-            for filter in filters:
-                if re.search(filter, test.fullname):
-                    included.append(test)
-                    break
-            else:
-                self.log.debug("Filtered out test %s", test.fullname)
-                excluded.append(test)
+    def set_mode(self, mode: RegressionMode) -> None:
+        """Set the regression mode.
 
-        if not included:
-            self.log.warning(
-                "No tests left after filtering with: %s",
-                ", ".join(repr(f) for f in filters),
-            )
+        See :class:`RegressionMode` for more details on how each mode affects :class:`RegressionManager` behavior.
+        Should be called before :meth:`start_regression` is called.
 
-        self._test_queue = included
-        self._filtered_tests = excluded
+        Args:
+            mode: The regression mode to set.
+        """
+        self._mode = mode
 
     def register_test(self, test: Test) -> None:
-        """Register a test with the RegressionManager.
+        """Register a test with the :class:`RegressionManager`.
 
         Should be called before :meth:`start_regression` is called.
 
@@ -293,7 +321,11 @@ class RegressionManager:
         self._test_queue.append(test)
 
     @classmethod
-    def setup_pytest_assertion_rewriting(cls, *modules: str) -> None:
+    def setup_pytest_assertion_rewriting(cls) -> None:
+        """Configure pytest to rewrite assertions for better failure messages.
+
+        Must be called before all modules containing tests are imported.
+        """
         try:
             import pytest
         except ImportError:
@@ -318,36 +350,100 @@ class RegressionManager:
             )
 
     def start_regression(self) -> None:
-        """Start the regression.
+        """Start the regression."""
 
-        Should be called only once after :meth:`discover_tests` is called.
-        """
+        # sort tests into stages
         self._test_queue.sort(key=lambda test: test.stage)
-        self.ntests = len(self._test_queue)
+
+        # mark tests for running
+        if self._filters:
+            self._included = [False] * len(self._test_queue)
+            for i, test in enumerate(self._test_queue):
+                for filter in self._filters:
+                    if filter.search(test.fullname):
+                        self._included[i] = True
+        else:
+            self._included = [True] * len(self._test_queue)
+
+        # compute counts
         self.count = 1
+        self.total_tests = sum(self._included)
+        if self.total_tests == 0:
+            self.log.warning(
+                "No tests left after filtering with: %s",
+                ", ".join(f.pattern for f in self._filters),
+            )
 
-        # record exclusions
-        for test in self._filtered_tests:
-            self._record_test_excluded(test)
-
+        # start test loop
         self._regression_start_time = time.time()
         self._execute()
 
+    def _execute(self, *, sim_failed: bool = False) -> None:
+        """Used by both :meth:`start_regression` and :meth:`_test_complete` to continue the main test running loop.
+
+        If *sim_failed* is ``True``, when a test would otherwise be run (respecting inclusion, skip, etc.),
+        it is instead immediately marked as having failed with :class:`~cocotb.result.SimFailure`
+        without running the test.
+
+        Args:
+            sim_failed: If ``True``, mark the remaining tests as failed rather than running them.
+        """
+
+        while self._test_queue:
+            self._test = self._test_queue.pop(0)
+            included = self._included.pop(0)
+
+            # if the test is not included, record and continue
+            if not included:
+                self._record_test_excluded(self._test)
+                continue
+
+            # if the test is skipped, record and continue
+            if self._test.skip and self._mode != RegressionMode.TESTCASE:
+                self._record_test_skipped(self._test)
+                continue
+
+            # initialize the test, if it fails, record and continue
+            try:
+                self._test_task = _RunningTest(
+                    self._test.func(cocotb.top), self._test.name
+                )
+            except Exception:
+                self._record_test_init_failed(self._test)
+                continue
+
+            self._log_test_start(self._test)
+
+            # seed random number generator based on test module, name, and RANDOM_SEED
+            hasher = hashlib.sha1()
+            hasher.update(self._test.fullname.encode())
+            seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
+            random.seed(seed)
+
+            # start test or immediately fail test
+            if sim_failed:
+                self._record_result(
+                    test=self._test,
+                    outcome=Error(SimFailure),
+                    wall_time_s=0,
+                    sim_time_ns=0,
+                )
+            else:
+                self._test_start_sim_time = get_sim_time("ns")
+                self._test_start_time = time.time()
+                return cocotb.scheduler._add_test(self._test_task)
+
+        return self._tear_down()
+
     def _tear_down(self) -> None:
+        """Called by :meth:`_execute` when there are no more tests to run to finalize the regression."""
         # prevent re-entering the tear down procedure
         if not self._tearing_down:
             self._tearing_down = True
         else:
             return
 
-        # fail remaining tests
-        while True:
-            test = self._next_test()
-            if test is None:
-                break
-            self._record_result(
-                test=test, outcome=Error(SimFailure), wall_time_s=0, sim_time_ns=0
-            )
+        assert not self._test_queue
 
         # Write out final log messages
         self._log_test_summary()
@@ -360,68 +456,31 @@ class RegressionManager:
         cocotb._stop_user_coverage()
         cocotb._stop_library_coverage()
 
-    def _next_test(self) -> Optional[Test]:
-        """Get the next test to run"""
-        if not self._test_queue:
-            return None
-        return self._test_queue.pop(0)
+    def _test_complete(self) -> None:
+        """Callback given to the scheduler, to be called when the current test completes.
 
-    def _handle_result(self, test: Task) -> None:
-        """Handle a test completing.
-
-        Dump result to XML and schedule the next test (if any). Entered by the scheduler.
-
-        Args:
-            test: The test that completed
+        Due to the way that simulation failure is handled,
+        this function must be able to detect simulation failure and finalize the regression.
         """
-        assert test is self._test_task
 
-        real_time = time.time() - self._test_start_time
+        # compute test completion time
+        wall_time_s = time.time() - self._test_start_time
         sim_time_ns = get_sim_time("ns") - self._test_start_sim_time
 
-        self._record_result(
+        sim_failed = self._record_result(
             test=self._test,
             outcome=self._test_task._outcome,
-            wall_time_s=real_time,
+            wall_time_s=wall_time_s,
             sim_time_ns=sim_time_ns,
         )
 
-        self._execute()
-
-    def _init_test(self, test: Test) -> Optional[Task]:
-        """Initialize a test.
-
-        Record outcome if the initialization fails.
-        Record skip if the test is skipped.
-        Save the initialized test if it successfully initializes.
-        """
-
-        if test.skip:
-            self._record_test_skipped(test)
-            return None
-
-        test_init_outcome = capture(test.func, cocotb.top)
-
-        if isinstance(test_init_outcome, Error):
-            self.log.error(
-                "Failed to initialize test %s",
-                test.name,
-                exc_info=test_init_outcome.error,
-            )
-            self._record_result(test, test_init_outcome, 0, 0)
-            return None
-
-        # seed random number generator based on test module, name, and RANDOM_SEED
-        hasher = hashlib.sha1()
-        hasher.update(test.fullname.encode())
-        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
-        random.seed(seed)
-
-        return _RunningTest(test_init_outcome.get(), test.name)
+        # continue test loop, assuming sim failure or not
+        return self._execute(sim_failed=sim_failed)
 
     def _score_test(self, test: Test, outcome: Outcome) -> Tuple[bool, bool]:
-        """
-        Given a test and the test's outcome, determine if the test met expectations and log pertinent information
+        """Given a test and the test's outcome, determine if the test met expectations and log pertinent information.
+
+        Returns: (test passed, simulation failed) tuple of booleans.
         """
 
         # scoring outcomes
@@ -486,9 +545,25 @@ class RegressionManager:
         except OSError:
             return 1
 
+    def _log_test_start(self, test: Test) -> None:
+        """Called by :meth:`_execute` to log that a test is starting."""
+        hilight_start = ANSI.COLOR_TEST if want_color_output() else ""
+        hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ""
+        self.log.info(
+            "%srunning%s %s (%d/%d)%s",
+            hilight_start,
+            hilight_end,
+            test.fullname,
+            self.count,
+            self.total_tests,
+            _format_doc(test.doc),
+        )
+
     def _log_test_passed(
         self, test: Test, result: Optional[Exception] = None, msg: Optional[str] = None
     ) -> None:
+        """Called by :meth:`_score_test` to log that the test passed with the given information."""
+
         start_hilight = ANSI.COLOR_PASSED if want_color_output() else ""
         stop_hilight = ANSI.COLOR_DEFAULT if want_color_output() else ""
         if msg is None:
@@ -500,12 +575,19 @@ class RegressionManager:
         else:
             result_was = f" (result was {type(result).__qualname__})"
         self.log.info(
-            f"{test.name} {start_hilight}passed{stop_hilight}{rest}{result_was}"
+            "%s %spassed%s%s%s",
+            test.fullname,
+            start_hilight,
+            stop_hilight,
+            rest,
+            result_was,
         )
 
     def _log_test_failed(
         self, test: Test, result: Optional[Exception] = None, msg: Optional[str] = None
     ) -> None:
+        """Called by :meth:`_score_test` to log that the test failed with the given information."""
+
         start_hilight = ANSI.COLOR_FAILED if want_color_output() else ""
         stop_hilight = ANSI.COLOR_DEFAULT if want_color_output() else ""
         if msg is None:
@@ -513,13 +595,19 @@ class RegressionManager:
         else:
             rest = f": {msg}"
         self.log.info(
-            f"{test.name} {start_hilight}failed{stop_hilight}{rest}",
+            "%s %sfailed%s%s",
+            test.fullname,
+            start_hilight,
+            stop_hilight,
+            rest,
             exc_info=result,
         )
 
     def _record_test_excluded(self, test: Test) -> None:
-        lineno = self._get_lineno(test)
+        """Called by :meth:`_execute` when a test is excluded by filters."""
 
+        # write out xunit results
+        lineno = self._get_lineno(test)
         self.xunit.add_testcase(
             name=test.name,
             classname=test.module,
@@ -531,21 +619,26 @@ class RegressionManager:
         )
         self.xunit.add_skipped()
 
+        # do not log anything, nor save details for the summary
+
     def _record_test_skipped(self, test: Test) -> None:
+        """Called by :meth:`_execute` when a test is skipped."""
+
+        # log test results
         hilight_start = ANSI.COLOR_SKIPPED if want_color_output() else ""
         hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ""
-        # Want this to stand out a little bit
         self.log.info(
             "%sskipping%s %s (%d/%d)%s",
             hilight_start,
             hilight_end,
-            test.name,
+            test.fullname,
             self.count,
-            self.ntests,
+            self.total_tests,
             _format_doc(test.doc),
         )
-        lineno = self._get_lineno(test)
 
+        # write out xunit results
+        lineno = self._get_lineno(test)
         self.xunit.add_testcase(
             name=test.name,
             classname=test.module,
@@ -557,6 +650,7 @@ class RegressionManager:
         )
         self.xunit.add_skipped()
 
+        # save details for summary
         self._test_results.append(
             {
                 "test": test.fullname,
@@ -566,7 +660,51 @@ class RegressionManager:
             }
         )
 
+        # update running passed/failed/skipped counts
         self.skipped += 1
+        self.count += 1
+
+    def _record_test_init_failed(self, test: Test) -> None:
+        """Called by :meth:`_execute` when a test initialization fails."""
+
+        # log test results
+        hilight_start = ANSI.COLOR_FAILED if want_color_output() else ""
+        hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ""
+        self.log.exception(
+            "%sFailed to initialize%s %s! (%d/%d)%s",
+            hilight_start,
+            hilight_end,
+            test.fullname,
+            self.count,
+            self.total_tests,
+            _format_doc(test.doc),
+        )
+
+        # write out xunit results
+        lineno = self._get_lineno(test)
+        self.xunit.add_testcase(
+            name=test.name,
+            classname=test.module,
+            file=inspect.getfile(test.func),
+            lineno=repr(lineno),
+            time=repr(0),
+            sim_time_ns=repr(0),
+            ratio_time=repr(0),
+        )
+        self.xunit.add_failure(msg="Test initialization failed")
+
+        # save details for summary
+        self._test_results.append(
+            {
+                "test": test.fullname,
+                "pass": False,
+                "sim": 0,
+                "real": 0,
+            }
+        )
+
+        # update running passed/failed/skipped counts
+        self.failures += 1
         self.count += 1
 
     def _record_result(
@@ -575,10 +713,20 @@ class RegressionManager:
         outcome: Outcome,
         wall_time_s: float,
         sim_time_ns: float,
-    ) -> None:
+    ) -> bool:
+        """Called by :meth:`_test_complete` to score and record the result of a finished test.
+
+        Because of how simulation failure is handled, this function must detect and return whether the simulation failed.
+
+        Returns: Whether the simulation has failed.
+        """
+
+        # determines pass/fail, but also logs test results with good messages
+        test_pass, sim_failed = self._score_test(test, outcome)
+
+        # write out xunit results
         ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
         lineno = self._get_lineno(test)
-
         self.xunit.add_testcase(
             name=test.name,
             classname=test.module,
@@ -588,17 +736,19 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
-
-        test_pass, sim_failed = self._score_test(test, outcome)
         if not test_pass:
             self.xunit.add_failure(
                 message=f"Test failed with RANDOM_SEED={cocotb.RANDOM_SEED}"
             )
-            self.failures += 1
-        else:
+
+        # update running passed/failed/skipped counts
+        if test_pass:
             self.passed += 1
+        else:
+            self.failures += 1
         self.count += 1
 
+        # save details for summary
         self._test_results.append(
             {
                 "test": test.fullname,
@@ -609,43 +759,10 @@ class RegressionManager:
             }
         )
 
-        if sim_failed:
-            self._tear_down()
-            return
-
-    def _execute(self) -> None:
-        while True:
-            self._test = self._next_test()
-            if self._test is None:
-                return self._tear_down()
-
-            self._test_task = self._init_test(self._test)
-            if self._test_task is not None:
-                return self._start_test()
-
-    def _start_test(self) -> None:
-        # Want this to stand out a little bit
-        start = ""
-        end = ""
-        if want_color_output():
-            start = ANSI.COLOR_TEST
-            end = ANSI.COLOR_DEFAULT
-
-        self.log.info(
-            "%srunning%s %s (%d/%d)%s",
-            start,
-            end,
-            self._test.name,
-            self.count,
-            self.ntests,
-            _format_doc(self._test.doc),
-        )
-
-        self._test_start_time = time.time()
-        self._test_start_sim_time = get_sim_time("ns")
-        cocotb.scheduler._add_test(self._test_task)
+        return sim_failed
 
     def _log_test_summary(self) -> None:
+        """Called by :meth:`_tear_down` to log the test summary."""
         real_time = time.time() - self._regression_start_time
         sim_time_ns = get_sim_time("ns")
         ratio_time = self._safe_divide(sim_time_ns, real_time)
@@ -658,7 +775,7 @@ class RegressionManager:
         SIM_FIELD = "SIM TIME (ns)"
         REAL_FIELD = "REAL TIME (s)"
         RATIO_FIELD = "RATIO (ns/s)"
-        TOTAL_NAME = f"TESTS={self.ntests} PASS={self.passed} FAIL={self.failures} SKIP={self.skipped}"
+        TOTAL_NAME = f"TESTS={self.total_tests} PASS={self.passed} FAIL={self.failures} SKIP={self.skipped}"
 
         TEST_FIELD_LEN = max(
             len(TEST_FIELD),
@@ -770,6 +887,7 @@ class RegressionManager:
 
     @staticmethod
     def _safe_divide(a: float, b: float) -> float:
+        """Used when computing time ratios to ensure no exception is raised if either time is 0."""
         try:
             return a / b
         except ZeroDivisionError:

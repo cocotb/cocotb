@@ -274,6 +274,8 @@ The Regression Manager
 
 .. autoclass:: Test
 
+.. autoenum:: RegressionMode
+
 .. autoclass:: RegressionManager
     :members:
     :member-order: bysource
