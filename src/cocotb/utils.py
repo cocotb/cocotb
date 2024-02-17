@@ -33,8 +33,9 @@ import sys
 import traceback
 import weakref
 from decimal import Decimal
+from enum import Enum
 from numbers import Real
-from typing import Union
+from typing import Any, Optional, Type, TypeVar, Union
 
 from cocotb import simulator
 
@@ -285,3 +286,35 @@ def extract_coro_stack(coro, limit=None):
     whitespace stripped; if the source is not available it is ``None``.
     """
     return traceback.StackSummary.extract(walk_coro_stack(coro), limit=limit)
+
+
+Self = TypeVar("Self")
+
+
+class DocEnum(Enum):
+    """Like :class:`enum.Enum`, but allows documenting enum values.
+
+    Documentation for enum members can be optionally added by setting enum values to a tuple of the intended value and the docstring.
+    This adds the provided docstring to the ``__doc__`` field of the enum value.
+
+    .. code-block:: python3
+
+        class MyEnum(DocEnum):
+            \"\"\"Class documentation\"\"\"
+
+            VALUE1 = 1, "Value documentation"
+            VALUE2 = 2  # no documentation
+
+    Taken from :ref:`this StackOverflow answer <https://stackoverflow.com/questions/50473951/how-can-i-attach-documentation-to-members-of-a-python-enum/50473952#50473952>`
+    by :ref:`Eric Wieser <https://stackoverflow.com/users/102441/eric>`,
+    as recommended by the ``enum_tools`` documentation.
+    """
+
+    def __new__(cls: Type[Self], value: Any, doc: Optional[str] = None) -> Self:
+        # super().__new__() assumes the value is already an enum value
+        # so we side step that and create a raw object and fill in _value_
+        self = object.__new__(cls)
+        self._value_ = value
+        if doc is not None:
+            self.__doc__ = doc
+        return self

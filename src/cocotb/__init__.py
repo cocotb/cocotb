@@ -42,7 +42,7 @@ from typing import Dict, List, Optional, Union
 
 import cocotb.handle
 from cocotb.logging import default_config
-from cocotb.regression import RegressionManager
+from cocotb.regression import RegressionManager, RegressionMode
 from cocotb.scheduler import Scheduler
 from cocotb.task import Task
 
@@ -299,17 +299,18 @@ def _initialise_testbench_(argv_):
             "Environment variable MODULE, which defines the module(s) to execute, is not defined or empty."
         )
     modules = [s.strip() for s in module_str.split(",") if s.strip()]
-    regression_manager.setup_pytest_assertion_rewriting(*modules)
+    regression_manager.setup_pytest_assertion_rewriting()
     regression_manager.discover_tests(*modules)
 
     # filter tests
     test_str = os.getenv("TESTCASE", "").strip()
     if test_str:
         filters = [s.strip() for s in test_str.split(",") if s.strip()]
-        regression_manager.filter_tests(*filters)
+        regression_manager.add_filters(*filters)
+        regression_manager.set_mode(RegressionMode.TESTCASE)
 
     global scheduler
-    scheduler = Scheduler(handle_result=regression_manager._handle_result)
+    scheduler = Scheduler(test_complete_cb=regression_manager._test_complete)
 
     # start Regression Manager
     regression_manager.start_regression()

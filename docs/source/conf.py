@@ -46,6 +46,7 @@ extensions = [
     "sphinxcontrib.spelling",
     "sphinx_tabs.tabs",
     "sphinxcontrib.details.directive",
+    "enum_tools.autoenum",
 ]
 
 intersphinx_mapping = {

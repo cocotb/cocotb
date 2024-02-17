@@ -226,8 +226,8 @@ class Scheduler:
     _read_only = ReadOnly()
     _timer1 = Timer(1)
 
-    def __init__(self, handle_result: Callable[[Task], None]) -> None:
-        self._handle_result = handle_result
+    def __init__(self, test_complete_cb: Callable[[Task], None]) -> None:
+        self._test_complete_cb = test_complete_cb
 
         self.log = logging.getLogger("cocotb.scheduler")
         if _debug:
@@ -332,7 +332,7 @@ class Scheduler:
                 self.log.debug("Issue test result to regression object")
 
             # this may schedule another test
-            self._handle_result(test)
+            self._test_complete_cb()
 
             # if it did, make sure we handle the test completing
             self._check_termination()
@@ -874,7 +874,7 @@ class Scheduler:
         if not self._test.done():
             self.log.debug("Issue sim closedown result to regression object")
             self._abort_test(exc)
-            self._handle_result(self._test)
+            self._test_complete_cb()
 
     def _cleanup(self):
         """Clear up all our state.
