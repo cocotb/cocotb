@@ -32,9 +32,6 @@ class Queue(Generic[T]):
     def __init__(self, maxsize: int = 0):
         self._maxsize = maxsize
 
-        self._finished = Event()
-        self._finished.set()
-
         self._getters = collections.deque()
         self._putters = collections.deque()
 
@@ -120,7 +117,6 @@ class Queue(Generic[T]):
         if self.full():
             raise QueueFull()
         self._put(item)
-        self._finished.clear()
         self._wakeup_next(self._getters)
 
     async def get(self) -> T:
