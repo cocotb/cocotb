@@ -950,26 +950,26 @@ async def with_timeout(
     the caller blocks until the callee completes,
     and the callee's result is returned to the caller.
     If timeout occurs, the callee is killed
-    and :exc:`SimTimeoutError` is raised.
+    and :exc:`~cocotb.result.SimTimeoutError` is raised.
 
     When an unstarted :class:`~cocotb.coroutine`\ is passed,
     the callee coroutine is started,
     the caller blocks until the callee completes,
     and the callee's result is returned to the caller.
     If timeout occurs, the callee `continues to run`
-    and :exc:`SimTimeoutError` is raised.
+    and :exc:`~cocotb.result.SimTimeoutError` is raised.
 
     When a :term:`task` is passed,
     the caller blocks until the callee completes
     and the callee's result is returned to the caller.
     If timeout occurs, the callee `continues to run`
-    and :exc:`SimTimeoutError` is raised.
+    and :exc:`~cocotb.result.SimTimeoutError` is raised.
 
     If a :class:`~cocotb.triggers.Trigger` or :class:`~cocotb.triggers.Waitable` is passed,
     the caller blocks until the trigger fires,
     and the trigger is returned to the caller.
     If timeout occurs, the trigger is cancelled
-    and :exc:`SimTimeoutError` is raised.
+    and :exc:`~cocotb.result.SimTimeoutError` is raised.
 
     Usage:
 
@@ -993,7 +993,7 @@ async def with_timeout(
         First trigger that completed if timeout did not occur.
 
     Raises:
-        :exc:`SimTimeoutError`: If timeout occurs.
+        :exc:`~cocotb.result.SimTimeoutError`: If timeout occurs.
 
     .. versionadded:: 1.3
 
