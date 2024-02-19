@@ -62,7 +62,7 @@ class _Limits(enum.IntEnum):
 
 
 @lru_cache(maxsize=None)
-def _value_limits(n_bits, limits):
+def _value_limits(n_bits: int, limits: _Limits) -> Tuple[int, int]:
     """Calculate min/max for given number of bits and limits class"""
     if limits == _Limits.SIGNED_NBIT:
         min_val = -(2 ** (n_bits - 1))
@@ -313,10 +313,10 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         self._discover_all()
         return len(self._sub_handles)
 
-    def __dir__(self) -> List[str]:
+    def __dir__(self) -> Iterable[str]:
         """Permits IPython tab completion and debuggers to work."""
         self._discover_all()
-        return super().__dir__() + [str(k) for k in self._keys()]
+        return set(super().__dir__()) | {str(k) for k in self._keys()}
 
 
 class HierarchyObject(HierarchyObjectBase[str]):
@@ -381,7 +381,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
 
     def __getattr__(self, name: str) -> SimHandleBase:
         if name.startswith("_"):
-            return object.__getattribute__(self, name)
+            return object.__getattribute__(self, name)  # type: ignore
 
         try:
             return self[name]
