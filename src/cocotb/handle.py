@@ -785,29 +785,9 @@ class ArrayObject(
             self[self_idx]._set_value(value[val_idx], action, schedule_write)
 
 
-class UnitValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
-    """Base class for simulator objects whose values can be modified."""
-
-    def drivers(self) -> simulator.gpi_iterator_hdl:
-        """An iterator for gathering all drivers for a signal.
-
-        This is currently only available for VPI.
-        Also, only a few simulators implement this.
-        """
-        return self._handle.iterate(simulator.DRIVERS)
-
-    def loads(self) -> simulator.gpi_iterator_hdl:
-        """An iterator for gathering all loads on a signal.
-
-        This is currently only available for VPI.
-        Also, only a few simulators implement this.
-        """
-        return self._handle.iterate(simulator.LOADS)
-
-
 class LogicObject(
-    UnitValueObjectBase[LogicArray, Union[LogicArray, Logic, int]],
     IndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int], "LogicObject"],
+    ValueObjectBase[LogicArray, Union[LogicArray, Logic, int]],
 ):
     """Specific object handle for Verilog nets and regs and VHDL std_logic and std_logic_vectors"""
 
@@ -905,7 +885,7 @@ class LogicObject(
         return LogicArray(binstr)
 
 
-class RealObject(UnitValueObjectBase[float, float]):
+class RealObject(ValueObjectBase[float, float]):
     """Specific object handle for Real signals and variables."""
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
@@ -944,7 +924,7 @@ class RealObject(UnitValueObjectBase[float, float]):
         return self._handle.get_signal_val_real()
 
 
-class EnumObject(UnitValueObjectBase[int, int]):
+class EnumObject(ValueObjectBase[int, int]):
     """Specific object handle for enumeration signals and variables."""
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
@@ -989,7 +969,7 @@ class EnumObject(UnitValueObjectBase[int, int]):
         return self._handle.get_signal_val_long()
 
 
-class IntegerObject(UnitValueObjectBase[int, int]):
+class IntegerObject(ValueObjectBase[int, int]):
     """Specific object handle for integer and enumeration signals and variables."""
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
@@ -1040,8 +1020,8 @@ class IntegerObject(UnitValueObjectBase[int, int]):
 
 
 class StringObject(
-    UnitValueObjectBase[bytes, bytes],
     IndexableValueObjectBase[bytes, bytes, IntegerObject],
+    ValueObjectBase[bytes, bytes],
 ):
     """Specific object handle for String variables."""
 

@@ -40,7 +40,7 @@ import cocotb
 import cocotb.task
 from cocotb import _outcomes, simulator
 from cocotb._py_compat import cached_property
-from cocotb.handle import LogicObject, UnitValueObjectBase
+from cocotb.handle import LogicObject, ValueObjectBase
 from cocotb.utils import (
     ParametrizedSingleton,
     get_sim_steps,
@@ -418,7 +418,7 @@ class Edge(_EdgeBase):
 
     @classmethod
     def __singleton_key__(cls, signal):
-        if not isinstance(signal, UnitValueObjectBase):
+        if not isinstance(signal, ValueObjectBase):
             raise TypeError("")
         return signal
 
