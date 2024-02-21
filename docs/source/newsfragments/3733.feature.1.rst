@@ -1,0 +1,1 @@
+Added :attr:`~cocotb.handle.IndexableValueObjectBase.range`, :attr:`~cocotb.handle.IndexableValueObjectBase.left`, :attr:`~cocotb.handle.IndexableValueObjectBase.direction`, and :attr:`~cocotb.handle.IndexableValueObjectBase.right` properties to :class:`~cocotb.handle.ArrayObject`, :class:`~cocotb.handle.LogicObject`, and :class:`~cocotb.handle.StringObject`.
