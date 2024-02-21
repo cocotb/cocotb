@@ -621,6 +621,9 @@ def _get_vpi_lib_ext(
     libcocotbvpi_sources = [
         os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
         os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
+        os.path.join(share_lib_dir, "vpi", "VpiObj.cpp"),
+        os.path.join(share_lib_dir, "vpi", "VpiIterator.cpp"),
+        os.path.join(share_lib_dir, "vpi", "VpiSignal.cpp"),
     ]
     if os.name == "nt":
         libcocotbvpi_sources += [lib_name + ".rc"]
