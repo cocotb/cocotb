@@ -50,32 +50,6 @@ def recursive_dump(parent, log):
     return count
 
 
-@cocotb.test(expect_fail=True)
-async def test_drivers(dut):
-    """Try iterating over drivers of a signal.
-
-    Seems that few simulators implement ``vpiDriver``.
-    """
-    tlog = logging.getLogger("cocotb.test")
-    drivers = list(dut.i_verilog.uart1.uart_rx_1.rx_data.drivers())
-    assert drivers, "No drivers found for dut.i_verilog.uart1.uart_rx_1.rx_data"
-    for driver in drivers:
-        tlog.info("Found %s" % repr(driver))
-
-
-@cocotb.test(expect_fail=True)
-async def test_loads(dut):
-    """Try iterating over loads of a signal.
-
-    Seems that few simulators implement ``vpiLoad``.
-    """
-    tlog = logging.getLogger("cocotb.test")
-    loads = list(dut.i_verilog.uart1.ser_in.loads())
-    assert loads, "No loads found for dut.i_verilog.uart1.ser_in"
-    for load in loads:
-        tlog.info("Found %s" % repr(load))
-
-
 @cocotb.test
 async def recursive_discovery(dut):
     """Recursively discover every single object in the design."""
