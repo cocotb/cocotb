@@ -769,14 +769,43 @@ class IndexableValueObjectBase(
         self._sub_handles: Dict[int, ChildObjectT] = {}
 
     @cached_property
-    def _range(self) -> Tuple[int, int]:
-        return self._handle.get_range()
+    def _is_indexable(self) -> bool:
+        return self._handle.get_indexable()
+
+    @cached_property
+    def range(self) -> Range:
+        """Return a :class:`~cocotb.types.Range` over the indexes of the array/vector."""
+        left, right = self._handle.get_range()
+
+        # guess direction based on length until we can get that from the GPI
+        length = self._handle.get_num_elems()
+        if length == 0:
+            direction = "downto" if left <= right else "to"
+        else:
+            direction = "to" if left <= right else "downto"
+
+        return Range(left, direction, right)
+
+    @property
+    def left(self) -> int:
+        """Return the leftmost index in the array/vector."""
+        return self.range.left
+
+    @property
+    def direction(self) -> str:
+        """Return the direction (``"to"``/``"downto"``) of indexes in the array/vector."""
+        return self.range.direction
+
+    @property
+    def right(self) -> int:
+        """Return the rightmost index in the array/vector."""
+        return self.range.right
 
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
             raise IndexError("Slice indexing is not supported")
-        if self._range is None:
-            raise IndexError(f"{self._path} is not indexable.")
+        if not self._is_indexable:
+            raise RuntimeError(f"{self._path} is not indexable.")
         if index in self._sub_handles:
             return self._sub_handles[index]
         new_handle = self._handle.get_handle_by_index(index)
@@ -787,25 +816,13 @@ class IndexableValueObjectBase(
         return self._sub_handles[index]
 
     def __iter__(self) -> Iterable[ChildObjectT]:
-        if self._range is None:
+        if not self._is_indexable:
             return
-
-        for i in self._range_iter(self._range[0], self._range[1]):
+        for i in self.range:
             try:
-                result = self[i]
-                yield result
+                yield self[i]
             except IndexError:
                 continue
-
-    def _range_iter(self, left: int, right: int) -> Iterable[int]:
-        if left > right:
-            while left >= right:
-                yield left
-                left = left - 1
-        else:
-            while left <= right:
-                yield left
-                left = left + 1
 
     @lru_cache(maxsize=None)
     def __len__(self) -> int:
@@ -867,8 +884,7 @@ class ArrayObject(
             ValueError:
                 If assigning a :class:`list` of different length than the simulation object.
         """
-        # Don't use self.__iter__, because it has an unwanted `except IndexError`
-        return [self[i].value for i in self._range_iter(self._range[0], self._range[1])]
+        return [self[i].value for i in self.range]
 
     @value.setter
     def value(self, value: List[ElemValueT]) -> None:
@@ -891,9 +907,7 @@ class ArrayObject(
                 "Assigning list of length %d to object %s of length %d"
                 % (len(value), self._name, len(self))
             )
-        for val_idx, self_idx in enumerate(
-            self._range_iter(self._range[0], self._range[1])
-        ):
+        for val_idx, self_idx in enumerate(self.range):
             self[self_idx]._set_value(value[val_idx], action, schedule_write)
 
 
