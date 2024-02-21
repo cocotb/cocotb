@@ -42,6 +42,51 @@ async def test_stringification(dut):
 
 
 @cocotb.test()
+async def test_integer_parameters(dut):
+    """Test package integer parameter access"""
+
+    pkg1 = cocotb.packages.cocotb_package_pkg_1
+
+    assert str(pkg1.bit_1_param) == "LogicObject(cocotb_package_pkg_1::bit_1_param)"
+    assert pkg1.bit_1_param.value.integer == 1
+
+    assert str(pkg1.bit_2_param) == "LogicObject(cocotb_package_pkg_1::bit_2_param)"
+    assert pkg1.bit_2_param.value.integer == 3
+
+    assert str(pkg1.bit_600_param) == "LogicObject(cocotb_package_pkg_1::bit_600_param)"
+    assert pkg1.bit_600_param.value.integer == 12345678912345678912345689
+
+    assert str(pkg1.byte_param) == "LogicObject(cocotb_package_pkg_1::byte_param)"
+    assert pkg1.byte_param.value.integer == 100
+
+    assert (
+        str(pkg1.shortint_param) == "LogicObject(cocotb_package_pkg_1::shortint_param)"
+    )
+    assert pkg1.shortint_param.value.integer == 63000
+
+    assert str(pkg1.int_param) == "LogicObject(cocotb_package_pkg_1::int_param)"
+    assert pkg1.int_param.value.integer == 50
+
+    assert str(pkg1.longint_param) == "LogicObject(cocotb_package_pkg_1::longint_param)"
+    assert pkg1.longint_param.value.integer == 0x11C98C031CB
+
+    assert str(pkg1.integer_param) == "LogicObject(cocotb_package_pkg_1::integer_param)"
+    assert pkg1.integer_param.value.integer == 125000
+
+    assert (
+        str(pkg1.logic_130_param)
+        == "LogicObject(cocotb_package_pkg_1::logic_130_param)"
+    )
+    assert pkg1.logic_130_param.value.integer == 0x8C523EC7DC553A2B
+
+    assert str(pkg1.reg_8_param) == "LogicObject(cocotb_package_pkg_1::reg_8_param)"
+    assert pkg1.reg_8_param.value.integer == 200
+
+    assert str(pkg1.time_param) == "LogicObject(cocotb_package_pkg_1::time_param)"
+    assert pkg1.time_param.value.integer == 0x2540BE400
+
+
+@cocotb.test()
 async def test_dollar_unit(dut):
     """Test $unit scope"""
     tlog = logging.getLogger("cocotb.test")
