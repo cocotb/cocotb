@@ -56,7 +56,7 @@ Assigning values to signals
 
 Values can be assigned to signals using either the
 :attr:`~cocotb.handle.ValueObjectBase.value` property of a handle object
-or using direct assignment while traversing the hierarchy.
+or :meth:`~cocotb.handle.ValueObjectBase.set` method of a handle object.
 
 .. code-block:: python3
 

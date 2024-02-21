@@ -593,15 +593,24 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
 
     @value.setter
     def value(self, value: ValueGetT) -> None:
+        # cast works because we expect that ValueSetT >= ValueGetT
+        self.set(cast(ValueSetT, value))
+
+    def set(
+        self,
+        value: Union[ValueSetT, Deposit[ValueSetT], Force[ValueSetT], Freeze, Release],
+    ) -> None:
+        """Assign the value to this simulation object at the end of the current delta cycle.
+
+        This is known in Verilog as a "non-blocking assignment",
+        and in VHDL as a "signal assignment".
+        """
         if self.is_const:
             raise TypeError(f"{self._path} is constant")
 
-        value, action = _map_action_obj_to_value_action_enum_pair(self, value)
+        value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
 
-        # cast works because we expect that ValueSetT >= ValueGetT
-        self._set_value(
-            cast(ValueSetT, value), action, cocotb.scheduler._schedule_write
-        )
+        self._set_value(value_, action, cocotb.scheduler._schedule_write)
 
     def setimmediatevalue(
         self,
