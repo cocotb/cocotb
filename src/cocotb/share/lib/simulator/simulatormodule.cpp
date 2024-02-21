@@ -799,15 +799,16 @@ static PyObject *get_num_elems(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
 }
 
 static PyObject *get_range(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
-    int indexable = gpi_is_indexable(self->hdl);
     int rng_left = gpi_get_range_left(self->hdl);
     int rng_right = gpi_get_range_right(self->hdl);
 
-    if (indexable) {
-        return Py_BuildValue("(i,i)", rng_left, rng_right);
-    } else {
-        Py_RETURN_NONE;
-    }
+    return Py_BuildValue("(i,i)", rng_left, rng_right);
+}
+
+static PyObject *get_indexable(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
+    int indexable = gpi_is_indexable(self->hdl);
+
+    return PyBool_FromLong(indexable);
 }
 
 static PyObject *stop_simulator(PyObject *, PyObject *) {
@@ -1144,8 +1145,12 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
      PyDoc_STR("get_range($self)\n"
                "--\n\n"
                "get_range() -> Tuple[int, int]\n"
-               "Get the range of elements (tuple) contained in the handle, "
-               "return ``None`` if not indexable.")},
+               "Get the range of elements (tuple) contained in the handle.")},
+    {"get_indexable", (PyCFunction)get_indexable, METH_NOARGS,
+     PyDoc_STR("get_indexable($self)\n"
+               "--\n\n"
+               "get_indexable() -> bool\n"
+               "Return ``True`` if indexable.")},
     {"iterate", (PyCFunction)iterate, METH_VARARGS,
      PyDoc_STR(
          "iterate($self, mode, /)\n"
