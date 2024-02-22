@@ -314,9 +314,10 @@ async def access_constant_string_vhdl(dut):
 # GHDL discovers strings as vpiNetArray (gh-2584)
 @cocotb.test(
     skip=LANGUAGE in ["verilog"],
-    expect_error=TypeError if SIM_NAME.startswith("ghdl") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def test_writing_string_undersized(dut):
+    assert isinstance(dut.stream_in_string, StringObject)
     test_string = b"cocotb"
     dut.stream_in_string.setimmediatevalue(test_string)
     assert dut.stream_out_string.value == b""
@@ -327,9 +328,10 @@ async def test_writing_string_undersized(dut):
 # GHDL discovers strings as vpiNetArray (gh-2584)
 @cocotb.test(
     skip=LANGUAGE in ["verilog"],
-    expect_error=TypeError if SIM_NAME.startswith("ghdl") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def test_writing_string_oversized(dut):
+    assert isinstance(dut.stream_in_string, StringObject)
     test_string = b"longer_than_the_array"
     dut.stream_in_string.setimmediatevalue(test_string)
     await Timer(1, "ns")
@@ -339,9 +341,10 @@ async def test_writing_string_oversized(dut):
 # GHDL discovers strings as vpiNetArray (gh-2584)
 @cocotb.test(
     skip=LANGUAGE in ["verilog"],
-    expect_error=TypeError if SIM_NAME.startswith("ghdl") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def test_read_single_character(dut):
+    assert isinstance(dut.stream_in_string, StringObject)
     test_string = b"cocotb!!!"
     idx = 3
     dut.stream_in_string.setimmediatevalue(test_string)
@@ -353,9 +356,10 @@ async def test_read_single_character(dut):
 # GHDL discovers strings as vpiNetArray (gh-2584)
 @cocotb.test(
     skip=LANGUAGE in ["verilog"],
-    expect_error=TypeError if SIM_NAME.startswith("ghdl") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def test_write_single_character(dut):
+    assert isinstance(dut.stream_in_string, StringObject)
     # set initial value
     test_string = b"verilog0"
     dut.stream_in_string.setimmediatevalue(test_string)
