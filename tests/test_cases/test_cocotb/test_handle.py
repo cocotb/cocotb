@@ -12,7 +12,7 @@ import random
 import pytest
 
 import cocotb
-from cocotb.handle import _Limits
+from cocotb.handle import StringObject, _Limits
 from cocotb.triggers import Timer
 from cocotb.types import Logic, LogicArray
 
@@ -36,13 +36,11 @@ async def test_bad_attr(dut):
 # iverilog fails to discover string inputs (gh-2585)
 # GHDL fails to discover string input properly (gh-2584)
 @cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith("icarus")
-    else TypeError
-    if SIM_NAME.startswith("ghdl")
-    else ()
+    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def test_string_handle_takes_bytes(dut):
+    assert isinstance(dut.stream_in_string, StringObject)
     dut.stream_in_string.value = b"bytes"
     await cocotb.triggers.Timer(10, "ns")
     val = dut.stream_in_string.value
@@ -53,15 +51,13 @@ async def test_string_handle_takes_bytes(dut):
 # iverilog fails to discover string inputs (gh-2585)
 # GHDL fails to discover string input properly (gh-2584)
 @cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith("icarus")
-    else TypeError
-    if SIM_NAME.startswith("ghdl")
-    else (),
+    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
     skip=LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
 )
 async def test_string_ansi_color(dut):
     """Check how different simulators treat ANSI-colored strings, see gh-2328"""
+    assert isinstance(dut.stream_in_string, StringObject)
     teststr = "\x1b[33myellow\x1b[49m\x1b[39m"
     asciival_sum = sum(ord(char) for char in teststr)
     await cocotb.triggers.Timer(10, "ns")
