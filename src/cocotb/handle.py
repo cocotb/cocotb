@@ -912,8 +912,10 @@ class ArrayObject(
 
 
 class LogicObject(
-    IndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int], "LogicObject"],
-    ValueObjectBase[LogicArray, Union[LogicArray, Logic, int]],
+    IndexableValueObjectBase[
+        LogicArray, Union[LogicArray, Logic, int, str], "LogicObject"
+    ],
+    ValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
 ):
     """A logic or logic array simulation object.
 
@@ -939,7 +941,7 @@ class LogicObject(
 
     def _set_value(
         self,
-        value: Union[LogicArray, Logic, int],
+        value: Union[LogicArray, Logic, int, str],
         action: _GPISetAction,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
@@ -969,6 +971,9 @@ class LogicObject(
                 raise OverflowError(
                     f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
                 )
+
+        elif isinstance(value, str):
+            value_ = LogicArray(value, self.range)
 
         elif isinstance(value, LogicArray):
             if len(self) != len(value):
