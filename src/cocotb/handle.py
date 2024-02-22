@@ -83,6 +83,7 @@ class SimHandleBase(ABC):
     All simulation objects are hashable and equatable by identity.
 
     .. code-block:: python3
+
         a = dut.clk
         b = dut.clk
         assert a == b
@@ -172,7 +173,7 @@ KeyType = TypeVar("KeyType")
 
 
 class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
-    """Base class for hierarchical objects.
+    """Base class for hierarchical simulation objects.
 
     Hierarchical objects don't have values, they are just scopes/namespaces of other objects.
     This includes array-like hierarchical structures like "generate loops"
@@ -320,7 +321,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
 
 class HierarchyObject(HierarchyObjectBase[str]):
-    r"""Named hierarchical scope objects.
+    r"""A simulation object that is a name-indexed collection of hierarchical simulation objects.
 
     This class is used for named hierarchical structures, such as "generate blocks" or "module"/"entity" instantiations.
 
@@ -342,6 +343,9 @@ class HierarchyObject(HierarchyObjectBase[str]):
     Any possible name of an object is supported with the index syntax,
     but it can be more verbose.
 
+    Accessing a non-existent child with attribute syntax results in an :class:`AttributeError`,
+    and accessing a non-existent child with index syntax results in a :class:`KeyError`.
+
     .. note::
         If you need to access signals/nets that start with ``_``,
         or use escaped identifier (Verilog) or extended identifier (VHDL) characters,
@@ -351,7 +355,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
 
         .. code-block:: python3
 
-            dut["_underscore_signal]
+            dut["_underscore_signal"]
             dut["\\%extended !ID\\"]
 
     Iteration yields all child objects in no particular order.
@@ -397,6 +401,15 @@ class HierarchyObject(HierarchyObjectBase[str]):
         If *extended* is ``True``, run the query only for VHDL extended identifiers.
         For Verilog, only ``extended=False`` is supported.
 
+        Args:
+            name: The child object by name.
+            extended: If ``True``, treat the *name* as an extended identifier.
+
+        Returns: The child object.
+
+        Raises:
+            AttributeError: If the child object is not found.
+
         .. deprecated:: 2.0
             Use ``handle[child_name]`` syntax instead.
             If extended identifiers are needed simply add a ``\\`` character before and after the name.
@@ -423,7 +436,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
 
 
 class HierarchyArrayObject(HierarchyObjectBase[int]):
-    """Arrays of hierarchy objects.
+    """A simulation object that is an array of hierarchical simulation objects.
 
     This class is used for array-like hierarchical structures like "generate loops".
 
@@ -434,6 +447,8 @@ class HierarchyArrayObject(HierarchyObjectBase[int]):
 
         block_0 = dut.gen_pipe_stages[0]
         block_7 = dut.gen_pipe_stages[7]
+
+    Accessing a non-existent child results in an :class:`IndexError`.
 
     Iteration yields all child objects in order.
 
@@ -531,35 +546,54 @@ class _GPISetAction(enum.IntEnum):
     RELEASE = 2
 
 
-T = TypeVar("T")
+#: The type of the value a :class:`Deposit` or :class:`Force` action contains.
+ValueT = TypeVar("ValueT")
 
 
-class Deposit(Generic[T]):
-    """Action used for placing a value into a given handle."""
+class Deposit(Generic[ValueT]):
+    """Action used for placing a value into a given handle. This is the default action.
 
-    def __init__(self, value: T) -> None:
+    If another deposit comes after this deposit, the newer deposit overwrites the old value.
+    If an HDL process is driving the signal/net/register where a deposit from cocotb is made,
+    the deposited value will be overwritten at the end of the next delta cycle,
+    essentially causing a single delta cycle "glitch" in the waveform.
+    """
+
+    def __init__(self, value: ValueT) -> None:
         self.value = value
 
 
-class Force(Generic[T]):
-    """Action used to force a handle to a given value until a release is applied."""
+class Force(Generic[ValueT]):
+    """Action used to force a handle to a given value until a :class:`Release` is applied.
 
-    def __init__(self, value: T) -> None:
+    :class:`Deposit` writes from cocotb or drives from HDL processes
+    do not cause the value to change until the handle is :class:`Release`\ d.
+    Further :class:`Force`\ s will overwrite the value and leave the value forced.
+    :class:`Freeze`\ s will act as a no-op.
+    """
+
+    def __init__(self, value: ValueT) -> None:
         self.value = value
 
 
 class Freeze:
-    """Action used to make a handle keep its current value until a release is used."""
+    """Action used to make a handle keep its current value until a :class:`Release` is applied.
+
+    :class:`Deposit` writes from cocotb or drives from HDL processes
+    do not cause the value to change until the handle is :class:`Release`\ d.
+    :class:`Force`\ s will overwrite the value and leave the value forced.
+    Further :class:`Freeze`\ s will act as a no-op.
+    """
 
 
 class Release:
-    """Action used to stop the effects of a previously applied force/freeze action."""
+    """Action used to stop the effects of a previously applied :class:`Force`/:class:`Freeze` action."""
 
 
 def _map_action_obj_to_value_action_enum_pair(
     handle: "ValueObjectBase[Any, Any]",
-    value: Union[T, Deposit[T], Force[T], Freeze, Release],
-) -> Tuple[T, _GPISetAction]:
+    value: Union[ValueT, Deposit[ValueT], Force[ValueT], Freeze, Release],
+) -> Tuple[ValueT, _GPISetAction]:
     if isinstance(value, Deposit):
         return value.value, _GPISetAction.DEPOSIT
     elif isinstance(value, Force):
@@ -572,29 +606,38 @@ def _map_action_obj_to_value_action_enum_pair(
         return value, _GPISetAction.DEPOSIT
 
 
-ValueGetT = TypeVar("ValueGetT")
+#: Type accepted and returned by the :attr:`~ValueObjectBase.value` property.
+ValuePropertyT = TypeVar("ValuePropertyT")
+
+
+#: Type accepted by :meth:`~ValueObjectBase.set` and :meth:`~ValueObjectBase.setimmediatevalue`.
 ValueSetT = TypeVar("ValueSetT")
 
 
-class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
-    """Common base class for all non-hierarchy objects."""
+class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
+    """Base class for all simulation objects that have a value."""
 
     @property
-    def value(self) -> ValueGetT:
-        """The value of this simulation object.
+    @abstractmethod
+    def value(self) -> ValuePropertyT:
+        """Get or set the value of the simulation object.
+
+        :getter: Returns the current value of the simulation object.
+
+        :setter:
+            Assigns the value at end of the current simulator delta cycle.
+            Takes whatever values that :meth:`set` takes,
+            including :class:`Deposit`, :class:`Force`, :class:`Freeze`, and :class:`Release` actions.
 
         .. note::
-            When setting this property, the value is stored by the :class:`~cocotb.scheduler.Scheduler`
-            and all stored values are written at the same time at the end of the current simulator time step.
 
-            Use :meth:`setimmediatevalue` to set the value immediately.
+            Use :meth:`setimmediatevalue` if you need to set the value of the simulation object immediately.
         """
-        return self._get_value()
 
     @value.setter
-    def value(self, value: ValueGetT) -> None:
-        # cast works because we expect that ValueSetT >= ValueGetT
-        self.set(cast(ValueSetT, value))
+    @abstractmethod
+    def value(self, value: ValuePropertyT) -> None:
+        ...
 
     def set(
         self,
@@ -602,8 +645,19 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
     ) -> None:
         """Assign the value to this simulation object at the end of the current delta cycle.
 
-        This is known in Verilog as a "non-blocking assignment",
-        and in VHDL as a "signal assignment".
+        This is known in Verilog as a "non-blocking assignment" and in VHDL as a "signal assignment".
+
+        See :class:`Deposit`, :class:`Force`, :class:`Freeze`, and :class:`Release` for additional actions that can be taken when setting a value.
+        The default behavior is to :class:`Deposit` the value.
+        Use these actions like so:
+
+        .. code-block:: python3
+
+            dut.handle.set(1)  # default Deposit action
+            dut.handle.set(Deposit(2))
+            dut.handle.set(Force(3))
+            dut.handle.set(Freeze())
+            dut.handle.set(Release())
         """
         if self.is_const:
             raise TypeError(f"{self._path} is constant")
@@ -616,7 +670,14 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         self,
         value: Union[ValueSetT, Deposit[ValueSetT], Force[ValueSetT], Freeze, Release],
     ) -> None:
-        """Assign a value to this simulation object immediately."""
+        """Assign a value to this simulation object immediately.
+
+        This is known in Verilog as a "blocking" assignment and in VHDL as a variable assignment.
+
+        See :class:`Deposit`, :class:`Force`, :class:`Freeze`, and :class:`Release` for additional actions that can be taken when setting a value.
+        The default behavior is to :class:`Deposit` the value.
+        See :meth:`set` for an example on how to use these action types.
+        """
         if self.is_const:
             raise TypeError(f"{self._path} is constant")
 
@@ -635,13 +696,6 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         return self._handle.get_const()
 
     @abstractmethod
-    def _get_value(self) -> ValueGetT:
-        """Gets the value of the simulator object.
-
-        Conversion from a type understood by the simulator into an appropriate Python type is expected.
-        """
-
-    @abstractmethod
     def _set_value(
         self,
         value: ValueSetT,
@@ -653,9 +707,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         """Schedule a write of the given value to a simulator object.
 
         Conversion from multiple Python types into a type understood by the simulator is expected.
-
-        This is used to implement both the setter for :attr:`value`, and the
-        :meth:`setimmediatevalue` method.
+        This is used to implement the :attr:`value` property setter, :meth:`setimmediatevalue`, and :meth:`set`.
 
         Args:
             value: A value used to set the handle.
@@ -664,12 +716,40 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         """
 
 
+#: Subtype of :class:`ValueObjectBase` returned when iterating or indexing a :class:`IndexableValueObjectBase`.
 ChildObjectT = TypeVar("ChildObjectT", bound=ValueObjectBase[Any, Any])
 
 
 class IndexableValueObjectBase(
-    ValueObjectBase[ValueGetT, ValueSetT], Generic[ValueGetT, ValueSetT, ChildObjectT]
+    ValueObjectBase[ValuePropertyT, ValueSetT],
+    Generic[ValuePropertyT, ValueSetT, ChildObjectT],
 ):
+    """Base class for all simulation object types that have a range and can be indexed.
+
+    These objects can be iterated over to yield child objects:
+
+    .. code-block:: python3
+
+        for child in dut.array_object:
+            print(child._path)
+
+    A particular child can be retrieved using its index:
+
+    .. code-block:: python3
+
+        child = dut.array_object[0]
+
+        # reversed iteration over children
+        for child_idx in reversed(dut.array_object.range):
+            dut.array_object[child_idx]
+
+    .. note::
+
+        While seemingly all objects that inherit from this class should be able to be indexed, this is not the case.
+        For example, a single logic object cannot be indexed, while an array of logics may be able to be indexed.
+        If this object cannot be indexed, trying to index will raise an :exc:`IndexError` and iteration will yield nothing.
+    """
+
     @abstractmethod
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
@@ -719,57 +799,76 @@ class IndexableValueObjectBase(
         return self._handle.get_num_elems()
 
 
-ElemT = TypeVar("ElemT")
+#: Type of value of each element in an :class:`ArrayObject`.
+ElemValueT = TypeVar("ElemValueT")
 
 
 class ArrayObject(
-    IndexableValueObjectBase[List[ElemT], List[ElemT], ChildObjectT],
-    Generic[ElemT, ChildObjectT],
+    IndexableValueObjectBase[List[ElemValueT], List[ElemValueT], ChildObjectT],
+    Generic[ElemValueT, ChildObjectT],
 ):
-    """A non-hierarchy indexable object.
+    """A simulation object that is an array of value-having simulation objects.
 
-    Getting and setting the current value of an array is done
-    by iterating through sub-handles in left-to-right order.
-
-    Given an HDL array ``arr``:
-
-    +--------------+---------------------+--------------------------------------------------------------+
-    | Verilog      | VHDL                | ``arr.value`` is equivalent to                               |
-    +==============+=====================+==============================================================+
-    | ``arr[4:7]`` | ``arr(4 to 7)``     | ``[arr[4].value, arr[5].value, arr[6].value, arr[7].value]`` |
-    +--------------+---------------------+--------------------------------------------------------------+
-    | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``[arr[7].value, arr[6].value, arr[5].value, arr[4].value]`` |
-    +--------------+---------------------+--------------------------------------------------------------+
-
-    When setting the signal as in ``arr.value = ...``, the same index equivalence as noted in the table holds.
-
-    .. warning::
-        Assigning a value to a sub-handle:
-
-        - **Wrong**: ``dut.some_array.value[0] = 1`` (gets value as a list then updates index 0)
-        - **Correct**: ``dut.some_array[0].value = 1``
+    This object is used whenever an array is seen that isn't either a logic array or string.
+    In Verilog, only unpacked vectors use this type.
+    Packed vectors are typically mapped to :class:`LogicObject`.
     """
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
-    def _get_value(self) -> List[ElemT]:
+    @property
+    def value(self) -> List[ElemValueT]:
+        """The current value of the simulation object.
+
+        :getter:
+            Returns the current values of each element of the array object as a :class:`list` of element values.
+            The elements of the array appear in the list in left-to-right order.
+
+        :setter:
+            Assigns a :class:`list` of values to each element of the array at the end of the current delta cycle.
+            The element values are assigned in left-to-right order.
+
+        Given an HDL array ``arr``, when getting the value:
+
+        +--------------+---------------------+--------------------------------------------------------------+
+        | Verilog      | VHDL                | ``arr.value`` is equivalent to                               |
+        +==============+=====================+==============================================================+
+        | ``arr[4:7]`` | ``arr(4 to 7)``     | ``[arr[4].value, arr[5].value, arr[6].value, arr[7].value]`` |
+        +--------------+---------------------+--------------------------------------------------------------+
+        | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``[arr[7].value, arr[6].value, arr[5].value, arr[4].value]`` |
+        +--------------+---------------------+--------------------------------------------------------------+
+
+        When setting the signal as in ``arr.value = ...``, the same index equivalence as noted in the table holds.
+
+        .. warning::
+            Assigning a value to a sub-handle:
+
+            - **Wrong**: ``dut.some_array.value[0] = 1`` (gets value as a list then updates index 0)
+            - **Correct**: ``dut.some_array[0].value = 1``
+
+        Raises:
+            TypeError:
+                If assigning a type other than :class:`list`.
+
+            ValueError:
+                If assigning a :class:`list` of different length than the simulation object.
+        """
         # Don't use self.__iter__, because it has an unwanted `except IndexError`
         return [self[i].value for i in self._range_iter(self._range[0], self._range[1])]
 
+    @value.setter
+    def value(self, value: List[ElemValueT]) -> None:
+        self.set(value)
+
     def _set_value(
         self,
-        value: List[ElemT],
+        value: List[ElemValueT],
         action: _GPISetAction,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
     ) -> None:
-        """Assign value from a list of same length to an array in left-to-right order.
-        Index 0 of the list maps to the left-most index in the array.
-
-        See the docstring for this class.
-        """
         if not isinstance(value, list):
             raise TypeError(
                 f"Assigning non-list value to object {self._name} of type {type(self)}"
@@ -789,7 +888,24 @@ class LogicObject(
     IndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int], "LogicObject"],
     ValueObjectBase[LogicArray, Union[LogicArray, Logic, int]],
 ):
-    """Specific object handle for Verilog nets and regs and VHDL std_logic and std_logic_vectors"""
+    """A logic or logic array simulation object.
+
+    Verilog types that map to this object:
+        * ``logic``
+        * ``reg``
+        * ``bit``
+        * packed any-dimensional vectors of ``logic``, ``reg``, or ``bit``
+        * packed any-dimensional vectors of packed structures
+
+    VHDL types that map to this object:
+        * ``std_logic`` and ``std_ulogic``
+        * ``std_logic_vector`` and ``std_ulogic_vector``
+        * ``unsigned``
+        * ``signed``
+        * ``ufixed``
+        * ``sfixed``
+        * ``float``
+    """
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
@@ -802,34 +918,6 @@ class LogicObject(
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
     ) -> None:
-        """Set the value of the underlying simulation object to *value*.
-
-        This operation will fail unless the handle refers to a modifiable
-        object, e.g. net, signal or variable.
-
-        We determine the library call to make based on the type of the value
-        because assigning integers less than 32 bits is faster.
-
-        Args:
-            value:
-                The value to drive onto the simulator object.
-
-        Raises:
-            TypeError: If target has an unsupported type for value assignment.
-
-            OverflowError: If int value is out of the range that can be represented
-                by the target. -2**(Nbits - 1) <= value <= 2**Nbits - 1
-
-        .. versionchanged:: 2.0
-            Using :class:`ctypes.Structure` objects to set values was removed.
-            Convert the struct object to a :class:`~cocotb.types.LogicArray` before assignment using
-            ``LogicArray("".join(format(int(byte), "08b") for byte in bytes(struct_obj)))`` instead.
-
-        .. versionchanged:: 2.0
-            Using :class:`dict` objects to set values was removed.
-            Convert the dictionary to an integer before assignment using
-            ``sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))``.
-        """
         value_: LogicArray
         if isinstance(value, int):
             min_val, max_val = _value_limits(len(self), _Limits.VECTOR_NBIT)
@@ -880,13 +968,49 @@ class LogicObject(
             self, self._handle.set_signal_val_binstr, (action, value_.binstr)
         )
 
-    def _get_value(self) -> LogicArray:
+    @property
+    def value(self) -> LogicArray:
+        """The value of the simulation object.
+
+        :getter:
+            Returns the current value of the simulation object as a :class:`~cocotb.types.LogicArray`,
+            even when the object is a single logic object and not an array.
+
+        :setter:
+            Assigns a value at the end of the current delta cycle.
+            A :class:`~cocotb.types.LogicArray`, :class:`str`, or :class:`int` can be used to set the value.
+            When a :class:`str` or :class:`int` is given, it is as if it is first converted a :class:`~cocotb.types.LogicArray`.
+
+        Raises:
+            TypeError: If assignment is given a type other than :class:`~cocotb.types.LogicArray`, :class:`int`, or :class:`str`.
+
+            OverflowError:
+                If int value is out of the range that can be represented by the target:
+                ``-2**(len(handle) - 1) <= value <= 2**len(handle) - 1``
+
+        .. versionchanged:: 2.0
+            Using :class:`ctypes.Structure` objects to set values was removed.
+            Convert the struct object to a :class:`~cocotb.types.LogicArray` before assignment using
+            ``LogicArray("".join(format(int(byte), "08b") for byte in bytes(struct_obj)))`` instead.
+
+        .. versionchanged:: 2.0
+            Using :class:`dict` objects to set values was removed.
+            Convert the dictionary to an integer before assignment using
+            ``sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))`` instead.
+        """
         binstr = self._handle.get_signal_val_binstr()
         return LogicArray(binstr)
 
+    @value.setter
+    def value(self, value: LogicArray) -> None:
+        self.set(value)
+
 
 class RealObject(ValueObjectBase[float, float]):
-    """Specific object handle for Real signals and variables."""
+    """A real/float simulation object.
+
+    This type is used when a ``real`` object in VHDL or ``float`` object in Verilog is seen.
+    """
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
@@ -899,33 +1023,38 @@ class RealObject(ValueObjectBase[float, float]):
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
     ) -> None:
-        """Set the value of the underlying simulation object to value.
-
-        This operation will fail unless the handle refers to a modifiable
-        object, e.g. net, signal or variable.
-
-        Args:
-            value (float): The value to drive onto the simulator object.
-
-        Raises:
-            TypeError: If target has an unsupported type for
-                real value assignment.
-        """
-        try:
-            value = float(value)
-        except ValueError:
+        if not isinstance(value, (float, int)):
             raise TypeError(
                 f"Unsupported type for real value assignment: {type(value)} ({value!r})"
             )
 
         schedule_write(self, self._handle.set_signal_val_real, (action, value))
 
-    def _get_value(self) -> float:
+    @property
+    def value(self) -> float:
+        """The value of the simulation object.
+
+        :getter:
+            Returns the current value of the simulation object as a :class:`float`.
+
+        :setter:
+            Assigns a :class:`float` value at the end of the current delta cycle.
+
+        Raises:
+            TypeError: If assignment is given a type other than :class:`float`.
+        """
         return self._handle.get_signal_val_real()
+
+    @value.setter
+    def value(self, value: float) -> None:
+        self.set(value)
 
 
 class EnumObject(ValueObjectBase[int, int]):
-    """Specific object handle for enumeration signals and variables."""
+    """An enumeration simulation object.
+
+    This type is used when an enumerated-type simulation object is seen that isn't a "logic" or similar type.
+    """
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
@@ -938,18 +1067,6 @@ class EnumObject(ValueObjectBase[int, int]):
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
     ) -> None:
-        """Set the value of the underlying simulation object to *value*.
-
-        This operation will fail unless the handle refers to a modifiable
-        object, e.g. net, signal or variable.
-
-        Args:
-            value (int): The value to drive onto the simulator object.
-
-        Raises:
-            TypeError: If target has an unsupported type for
-                 integer value assignment.
-        """
         if not isinstance(value, int):
             raise TypeError(
                 f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
@@ -965,12 +1082,48 @@ class EnumObject(ValueObjectBase[int, int]):
                 )
             )
 
-    def _get_value(self) -> int:
+    @property
+    def value(self) -> int:
+        """The value of the simulation object.
+
+        :getter:
+            Returns the current enumeration value of the simulation object as an :class:`int`.
+            The value is the integer mapping of the enumeration value.
+
+        :setter:
+            Assigns a new enumeration value at the end of the current delta cycle using an :class:`int`.
+            The :class:`int` value is the integer mapping of the enumeration value.
+
+        Raises:
+            TypeError: If assignment is given a type other than :class:`int`.
+
+            OverflowError: If the value used in assignment is out of range of a 32-bit signed integer.
+        """
         return self._handle.get_signal_val_long()
+
+    @value.setter
+    def value(self, value: int) -> None:
+        self.set(value)
 
 
 class IntegerObject(ValueObjectBase[int, int]):
-    """Specific object handle for integer and enumeration signals and variables."""
+    """An integer simulation object.
+
+    Verilog types that map to this object:
+        * ``byte``
+        * ``shortint``
+        * ``int``
+        * ``longint``
+
+    This type should not be used for the 4-state integer types ``integer`` and ``time``.
+
+    VHDL types that map to this object:
+        * ``integer``
+        * ``natural``
+        * ``positive``
+
+    Objects that use this type are assumed to be two's complement 32-bit integers with 2-state (``0`` and ``1``) bits.
+    """
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
@@ -983,21 +1136,6 @@ class IntegerObject(ValueObjectBase[int, int]):
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
     ) -> None:
-        """Set the value of the underlying simulation object to *value*.
-
-        This operation will fail unless the handle refers to a modifiable
-        object, e.g. net, signal or variable.
-
-        Args:
-            value (int): The value to drive onto the simulator object.
-
-        Raises:
-            TypeError: If target has an unsupported type for
-                 integer value assignment.
-
-            OverflowError: If value is out of range for assignment
-                 of 32-bit IntegerObject.
-        """
         if not isinstance(value, int):
             raise TypeError(
                 "Unsupported type for integer value assignment: {} ({!r})".format(
@@ -1015,15 +1153,36 @@ class IntegerObject(ValueObjectBase[int, int]):
                 )
             )
 
-    def _get_value(self) -> int:
+    @property
+    def value(self) -> int:
+        """The value of the simulation object.
+
+        :getter:
+            Returns the current value of the simulation object as a :class:`int`.
+
+        :setter:
+            Assigns a :class:`int` value at the end of the current delta cycle.
+
+        Raises:
+            TypeError: If assignment is given a type other than :class:`int`.
+
+            OverflowError: If the value used in assignment is out of range of a 32-bit signed integer.
+        """
         return self._handle.get_signal_val_long()
+
+    @value.setter
+    def value(self, value: int) -> None:
+        self.set(value)
 
 
 class StringObject(
     IndexableValueObjectBase[bytes, bytes, IntegerObject],
     ValueObjectBase[bytes, bytes],
 ):
-    """Specific object handle for String variables."""
+    """A string simulation object.
+
+    This type is used when a ``string`` (VHDL or Verilog) simulation object is seen.
+    """
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
@@ -1036,23 +1195,6 @@ class StringObject(
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
     ) -> None:
-        """Set the value of the underlying simulation object to *value*.
-
-        This operation will fail unless the handle refers to a modifiable
-        object, e.g. net, signal or variable.
-
-        Args:
-            value (bytes): The value to drive onto the simulator object.
-
-        Raises:
-            TypeError: If target has an unsupported type for
-                 string value assignment.
-
-        .. versionchanged:: 1.4
-            Takes :class:`bytes` instead of :class:`str`.
-            Users are now expected to choose an encoding when using these objects.
-
-        """
         if not isinstance(value, bytes):
             raise TypeError(
                 "Unsupported type for string value assignment: {} ({!r})".format(
@@ -1062,8 +1204,47 @@ class StringObject(
 
         schedule_write(self, self._handle.set_signal_val_str, (action, value))
 
-    def _get_value(self) -> bytes:
+    @property
+    def value(self) -> bytes:
+        """The value of the simulation object.
+
+        :getter:
+            Returns the current value of the simulation object as a :class:`bytes`.
+
+        :setter:
+            Assigns a :class:`bytes` value at the end of the current delta cycle.
+            When the value's length is less than the simulation object's,
+            the value is padded with NUL (``'\0'``) characters up to the appropriate length.
+            When the value's length is greater than the simulation object's,
+            the value is truncated without a NUL terminator to the appropriate length,
+            without warning.
+
+        Strings in both Verilog and VHDL are byte arrays without any particular encoding.
+        Encoding must be done to turn Python strings into byte arrays.
+        Because :ref:`there are many encodings <https://docs.python.org/3/library/codecs.html#standard-encodings>`,
+        this step is left up to the user.
+
+        An example of how encoding and decoding could be accomplished using an ASCII string.
+
+        .. code-block:: python3
+
+            # lowercase a string
+            value = dut.string_handle.value.decode("ascii")
+            value = value.lower()
+            dut.string_handle.value = value.encode("ascii")
+
+        Raises:
+            TypeError: If assignment is given a type other than :class:`bytes`.
+
+        .. versionchanged:: 1.4
+            Takes :class:`bytes` instead of :class:`str`.
+            Users are now expected to choose an encoding when using these objects.
+        """
         return self._handle.get_signal_val_str()
+
+    @value.setter
+    def value(self, value: bytes) -> None:
+        self.set(value)
 
 
 _ConcreteHandleTypes = Union[
@@ -1104,11 +1285,10 @@ def SimHandle(
     """Factory function to create the correct type of `SimHandle` object.
 
     Args:
-        handle (int): The GPI handle to the simulator object.
-        path (str): Path to this handle, ``None`` if root.
+        handle: The GPI handle to the simulator object.
+        path: Path to this handle.
 
-    Returns:
-        The `SimHandle` object.
+    Returns: An appropriate :class:`SimHandleBase` object.
 
     Raises:
         NotImplementedError: If no matching object for GPI type could be found.
