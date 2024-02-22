@@ -25,6 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import collections.abc
 import enum
 import logging
 import re
@@ -37,7 +38,6 @@ from typing import (
     Dict,
     Generic,
     Iterable,
-    List,
     Optional,
     Sequence,
     Tuple,
@@ -51,8 +51,7 @@ import cocotb._conf
 from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
-from cocotb.types import Logic, LogicArray
-from cocotb.types.range import Range
+from cocotb.types import Array, Logic, LogicArray, Range
 
 
 def _write_now(
@@ -834,7 +833,9 @@ ElemValueT = TypeVar("ElemValueT")
 
 
 class ArrayObject(
-    IndexableValueObjectBase[List[ElemValueT], List[ElemValueT], ChildObjectT],
+    IndexableValueObjectBase[
+        Array[ElemValueT], Union[Array[ElemValueT], Sequence[ElemValueT]], ChildObjectT
+    ],
     Generic[ElemValueT, ChildObjectT],
 ):
     """A simulation object that is an array of value-having simulation objects.
@@ -848,26 +849,26 @@ class ArrayObject(
         super().__init__(handle, path)
 
     @property
-    def value(self) -> List[ElemValueT]:
+    def value(self) -> Array[ElemValueT]:
         """The current value of the simulation object.
 
         :getter:
-            Returns the current values of each element of the array object as a :class:`list` of element values.
+            Returns the current values of each element of the array object as a :class:`~cocotb.types.Array` of element values.
             The elements of the array appear in the list in left-to-right order.
 
         :setter:
-            Assigns a :class:`list` of values to each element of the array at the end of the current delta cycle.
+            Assigns a :class:`~cocotb.types.Array`, :class:`list`, or :class:`tuple` of values to each element of the array at the end of the current delta cycle.
             The element values are assigned in left-to-right order.
 
         Given an HDL array ``arr``, when getting the value:
 
-        +--------------+---------------------+--------------------------------------------------------------+
-        | Verilog      | VHDL                | ``arr.value`` is equivalent to                               |
-        +==============+=====================+==============================================================+
-        | ``arr[4:7]`` | ``arr(4 to 7)``     | ``[arr[4].value, arr[5].value, arr[6].value, arr[7].value]`` |
-        +--------------+---------------------+--------------------------------------------------------------+
-        | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``[arr[7].value, arr[6].value, arr[5].value, arr[4].value]`` |
-        +--------------+---------------------+--------------------------------------------------------------+
+        +--------------+---------------------+--------------------------------------------------------------------------------------------------+
+        | Verilog      | VHDL                | ``arr.value`` is equivalent to                                                                   |
+        +==============+=====================+==================================================================================================+
+        | ``arr[4:7]`` | ``arr(4 to 7)``     | ``Array([arr[4].value, arr[5].value, arr[6].value, arr[7].value], range=Range(4, 'to', 7))``     |
+        +--------------+---------------------+--------------------------------------------------------------------------------------------------+
+        | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``Array([arr[7].value, arr[6].value, arr[5].value, arr[4].value], range=Range(7, 'downto', 4))`` |
+        +--------------+---------------------+--------------------------------------------------------------------------------------------------+
 
         When setting the signal as in ``arr.value = ...``, the same index equivalence as noted in the table holds.
 
@@ -884,21 +885,21 @@ class ArrayObject(
             ValueError:
                 If assigning a :class:`list` of different length than the simulation object.
         """
-        return [self[i].value for i in self.range]
+        return Array((self[i].value for i in self.range), range=self.range)
 
     @value.setter
-    def value(self, value: List[ElemValueT]) -> None:
+    def value(self, value: Array[ElemValueT]) -> None:
         self.set(value)
 
     def _set_value(
         self,
-        value: List[ElemValueT],
+        value: Union[Array[ElemValueT], Sequence[ElemValueT]],
         action: _GPISetAction,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
     ) -> None:
-        if not isinstance(value, list):
+        if not isinstance(value, (collections.abc.Sequence, Array)):
             raise TypeError(
                 f"Assigning non-list value to object {self._name} of type {type(self)}"
             )
@@ -907,8 +908,8 @@ class ArrayObject(
                 "Assigning list of length %d to object %s of length %d"
                 % (len(value), self._name, len(self))
             )
-        for val_idx, self_idx in enumerate(self.range):
-            self[self_idx]._set_value(value[val_idx], action, schedule_write)
+        for elem, self_idx in zip(value, self.range):
+            self[self_idx]._set_value(elem, action, schedule_write)
 
 
 class LogicObject(

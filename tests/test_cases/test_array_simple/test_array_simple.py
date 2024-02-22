@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """Test getting and setting values of arrays"""
 
-import contextlib
 import logging
 import os
+
+import pytest
 
 import cocotb
 from cocotb.clock import Clock
@@ -167,24 +168,12 @@ async def test_struct_unpacked(dut):
     _check_value(tlog, dut.inout_if.a_in, 0)
 
 
-@contextlib.contextmanager
-def assert_raises(exc_type):
-    try:
-        yield
-    except exc_type as exc:
-        tlog.info(f"   {exc_type.__name__} raised as expected: {exc}")
-    else:
-        raise AssertionError(f"{exc_type.__name__} was not raised")
-
-
 @cocotb.test()
 async def test_exceptions(dut):
     """Test that correct Exceptions are raised."""
-    with assert_raises(TypeError):
-        dut.array_7_downto_4.value = (0xF0, 0xE0, 0xD0, 0xC0)
-    with assert_raises(TypeError):
+    with pytest.raises(TypeError):
         dut.array_4_to_7.value = Exception("Exception Object")
-    with assert_raises(ValueError):
+    with pytest.raises(ValueError):
         dut.array_3_downto_0.value = [0x70, 0x60, 0x50]
-    with assert_raises(ValueError):
+    with pytest.raises(ValueError):
         dut.array_0_to_3.value = [0x40, 0x30, 0x20, 0x10, 0x00]
