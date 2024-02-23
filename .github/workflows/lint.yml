@@ -9,6 +9,7 @@ on:
     branches:
       - master
       - 'stable/**'
+  workflow_call:
 
 jobs:
 
