@@ -33,3 +33,7 @@ jobs:
           Update pre-commit hooks to most recent versions
         reviewers: |
           cocotb/maintainers
+  lint:
+    uses: ./.github/workflows/lint.yml
+  regression:
+    uses: ./.github/workflows/regression-tests.yml
