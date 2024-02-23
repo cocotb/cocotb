@@ -46,7 +46,14 @@ async def test_in_2d_vect_packed_unpacked(dut):
 
 
 # Verilator doesn't support multi-dimensional unpacked arrays (gh-3611)
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+# Icarus flattens multi-dimensional unpacked arrays (gh-2595)
+@cocotb.test(
+    expect_error=(
+        AttributeError
+        if SIM_NAME.startswith("verilator")
+        else (ValueError if SIM_NAME.startswith("icarus") else ())
+    )
+)
 async def test_in_2d_vect_unpacked_unpacked(dut):
     test_value = 3 * [[0x1, 0x0, 0x1]]
     dut.in_2d_vect_unpacked_unpacked.value = test_value
@@ -103,7 +110,14 @@ async def test_in_vect_packed_packed_unpacked(dut):
 
 
 # Verilator doesn't support multi-dimensional unpacked arrays (gh-3611)
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+# Icarus flattens multi-dimensional unpacked arrays (gh-2595)
+@cocotb.test(
+    expect_error=(
+        AttributeError
+        if SIM_NAME.startswith("verilator")
+        else (ValueError if SIM_NAME.startswith("icarus") else ())
+    )
+)
 async def test_in_vect_packed_unpacked_unpacked(dut):
     test_value = 3 * [3 * [5]]
     dut.in_vect_packed_unpacked_unpacked.value = test_value
@@ -112,7 +126,14 @@ async def test_in_vect_packed_unpacked_unpacked(dut):
 
 
 # Verilator doesn't support multi-dimensional unpacked arrays (gh-3611)
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+# Icarus flattens multi-dimensional unpacked arrays (gh-2595)
+@cocotb.test(
+    expect_error=(
+        AttributeError
+        if SIM_NAME.startswith("verilator")
+        else (ValueError if SIM_NAME.startswith("icarus") else ())
+    )
+)
 async def test_in_vect_unpacked_unpacked_unpacked(dut):
     test_value = 3 * [3 * [[1, 0, 1]]]
     dut.in_vect_unpacked_unpacked_unpacked.value = test_value
@@ -145,7 +166,14 @@ async def test_in_arr_packed_unpacked(dut):
 
 
 # Verilator doesn't support multi-dimensional unpacked arrays (gh-3611)
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+# Icarus flattens multi-dimensional unpacked arrays (gh-2595)
+@cocotb.test(
+    expect_error=(
+        AttributeError
+        if SIM_NAME.startswith("verilator")
+        else (ValueError if SIM_NAME.startswith("icarus") else ())
+    )
+)
 async def test_in_arr_unpacked_unpacked(dut):
     test_value = 3 * [3 * [5]]
     dut.in_arr_unpacked_unpacked.value = test_value
