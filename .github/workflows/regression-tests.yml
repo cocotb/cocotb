@@ -46,6 +46,8 @@ jobs:
 
     name: ${{matrix.name}}
     runs-on: ${{matrix.runs-on}}
+    timeout-minutes: 40
+
     env:
       SIM: ${{matrix.sim}}
       TOPLEVEL_LANG: ${{matrix.lang}}
