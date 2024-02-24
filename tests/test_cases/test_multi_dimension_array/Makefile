@@ -27,6 +27,35 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+
+ifeq ($(SIM),)
+USING_ICARUS := 1
+endif
+
+ifeq ($(shell echo $(SIM) | tr A-Z a-z),icarus)
+USING_ICARUS := 1
+endif
+
+ifneq ($(USING_ICARUS),)
+ICARUS_MIN := 11.0
+ICARUS_VERSION := $(shell iverilog -V 2>/dev/null | head -n1 | cut -d ' ' -f 4)
+MIN_VERSION := $(shell printf "%s\n%s\n" "$(ICARUS_MIN)" "$(ICARUS_VERSION)" | sort -g | head -1)
+ifneq ($(MIN_VERSION),$(ICARUS_MIN))
+SKIP := 1
+$(info Skipping test_multi_dimension_array since icarus < v$(ICARUS_MIN) doesn't support packages)
+endif
+endif
+
+ifeq ($(SKIP),)
+
 include ../../designs/multi_dimension_array/Makefile
 
 MODULE = test_cocotb_array
+
+else
+
+all:
+
+clean::
+
+endif
