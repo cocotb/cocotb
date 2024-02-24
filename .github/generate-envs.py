@@ -116,7 +116,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.11.0",
+        "sim-version": "r1.11.3",
         "os": "ubuntu-latest",
         "python-version": "3.8",
         "group": "ci",
