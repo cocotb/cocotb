@@ -26,6 +26,7 @@ In order to use this simulator, set :make:var:`SIM` to ``icarus``:
     make SIM=icarus
 
 .. note::
+
     A working installation of `Icarus Verilog <http://iverilog.icarus.com/>`_ is required.
     You can find installation instructions `in the Icarus Verilog Installation Guide <https://iverilog.fandom.com/wiki/Installation_Guide>`_.
 
@@ -71,11 +72,13 @@ Verilator
 
 .. warning::
 
-    Verilator is in the process of adding more functionality to its VPI interface, which is used by cocotb to access the design.
-    Therefore, Verilator support in cocotb is currently experimental.
-    Some features of cocotb may not work correctly or at all.
+    **cocotb supports Verilator 5.022 and later.**
 
-    **cocotb only supports Verilator 5.006 and later.**
+    Verilator is in the process of adding more functionality to its VPI interface, which is used by cocotb to access the design.
+    Therefore, Verilator support in cocotb is currently experimental, and some features of cocotb may not work correctly or at all.
+    If you encounter an issue using Verilator with cocotb, please try the newest release and
+    [check existing issues](https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Averilator)
+    before opening a new one.
 
 In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 
@@ -84,10 +87,13 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
     make SIM=verilator
 
 .. note::
+
     A working installation of `Verilator <https://www.veripool.org/verilator/>`_ is required.
     You can find installation instructions `in the Verilator documentation <https://verilator.org/guide/latest/install.html>`_.
 
-One major limitation compared to standard Verilog simulators is that it does not support delayed assignments when accessed from cocotb.
+.. note::
+
+    Delayed assignments require the use of Verilator's `--timing <https://verilator.org/guide/latest/exe_verilator.html#cmdoption-timing>`_ argument.
 
 To run cocotb with Verilator, you need ``verilator`` in your PATH.
 
@@ -340,6 +346,7 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
     make SIM=ghdl
 
 .. note::
+
     A working installation of `GHDL <https://ghdl.github.io/ghdl/about.html>`_ is required.
     You can find installation instructions `in the GHDL documentation <https://ghdl.github.io/ghdl/getting.html>`_.
 
