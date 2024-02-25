@@ -125,12 +125,10 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "8ea814e4b4ce7416188130647c87dea41401a5b6",
+        "sim-version": "v5.022",
         # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
         "python-version": "3.8",
-        # Various cocotb tests are known to fail with Verilator.
-        # See also https://github.com/cocotb/cocotb/issues/3194
         "group": "ci",
     },
     {
@@ -140,8 +138,6 @@ ENVS = [
         # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
         "python-version": "3.8",
-        # Various cocotb tests are known to fail with Verilator.
-        # See also https://github.com/cocotb/cocotb/issues/3194
         "group": "experimental",
     },
     # Test other OSes
