@@ -399,7 +399,7 @@ async def test_discover_all(dut):
             obj,
             (
                 cocotb.handle.HierarchyObjectBase,
-                cocotb.handle.IndexableValueObjectBase,
+                cocotb.handle.ArrayObject,
             ),
         ):
             return 0

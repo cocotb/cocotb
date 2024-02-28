@@ -167,6 +167,42 @@ class SimHandleBase(ABC):
         return type(self).__qualname__ + "(" + desc + ")"
 
 
+class RangeableObjectBase(SimHandleBase):
+    """Base class for simulation objects that have a range."""
+
+    @cached_property
+    def range(self) -> Range:
+        """Return a :class:`~cocotb.types.Range` over the indexes of the array/vector."""
+        left, right = self._handle.get_range()
+
+        # guess direction based on length until we can get that from the GPI
+        length = self._handle.get_num_elems()
+        if length == 0:
+            direction = "downto" if left <= right else "to"
+        else:
+            direction = "to" if left <= right else "downto"
+
+        return Range(left, direction, right)
+
+    @property
+    def left(self) -> int:
+        """Return the leftmost index in the array/vector."""
+        return self.range.left
+
+    @property
+    def direction(self) -> str:
+        """Return the direction (``"to"``/``"downto"``) of indexes in the array/vector."""
+        return self.range.direction
+
+    @property
+    def right(self) -> int:
+        """Return the rightmost index in the array/vector."""
+        return self.range.right
+
+    def __len__(self) -> int:
+        return len(self.range)
+
+
 #: Type of keys (name or index) in HierarchyObjectBase.
 KeyType = TypeVar("KeyType")
 
@@ -505,36 +541,11 @@ class HierarchyArrayObject(HierarchyObjectBase[int]):
         except KeyError as e:
             raise IndexError(str(e)) from None
 
-    @cached_property
-    def range(self) -> Range:
-        """Return a :class:`~cocotb.types.Range` over the indexes of the array/vector."""
-        left, right = self._handle.get_range()
-
-        # guess direction based on length until we can get that from the GPI
-        length = self._handle.get_num_elems()
-        if length == 0:
-            direction = "downto" if left <= right else "to"
-        else:
-            direction = "to" if left <= right else "downto"
-
-        return Range(left, direction, right)
-
-    def left(self) -> int:
-        """Return the leftmost index in the array/vector."""
-        return self.range.left
-
-    def direction(self) -> str:
-        """Return the direction (``"to"``/``"downto"``) of indexes in the array/vector."""
-        return self.range.direction
-
-    def right(self) -> int:
-        """Return the rightmost index in the array/vector."""
-        return self.range.right
-
-    # ideally `__len__` could be implemented in terms of `range`
+    # ideally `__len__` could be implemented in terms of `range`, but `range` doesn't work universally.
+    __len__ = HierarchyObjectBase.__len__
 
     def __iter__(self) -> Iterable[SimHandleBase]:
-        # must use `sorted(self._keys())` instead of the range because `range` doesn't work universally.
+        # must use `sorted(self._keys())` instead of `range` because `range` doesn't work universally.
         for i in sorted(self._keys()):
             yield self[i]
 
@@ -715,15 +726,23 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
         """
 
 
-#: Subtype of :class:`ValueObjectBase` returned when iterating or indexing a :class:`IndexableValueObjectBase`.
+#: Type of value of each element in an :class:`ArrayObject`.
+ElemValueT = TypeVar("ElemValueT")
+
+#: Subtype of :class:`ValueObjectBase` returned when iterating or indexing a :class:`ArrayObject`.
 ChildObjectT = TypeVar("ChildObjectT", bound=ValueObjectBase[Any, Any])
 
 
-class IndexableValueObjectBase(
-    ValueObjectBase[ValuePropertyT, ValueSetT],
-    Generic[ValuePropertyT, ValueSetT, ChildObjectT],
+class ArrayObject(
+    ValueObjectBase[Array[ElemValueT], Array[ElemValueT]],
+    RangeableObjectBase,
+    Generic[ElemValueT, ChildObjectT],
 ):
-    """Base class for all simulation object types that have a range and can be indexed.
+    """A simulation object that is an array of value-having simulation objects.
+
+    This object is used whenever an array, that isn't a logic array or string, is seen.
+    In Verilog, only unpacked vectors use this type.
+    Packed vectors are typically mapped to :class:`LogicObject`.
 
     These objects can be iterated over to yield child objects:
 
@@ -742,98 +761,11 @@ class IndexableValueObjectBase(
         for child_idx in reversed(dut.array_object.range):
             dut.array_object[child_idx]
 
-    .. note::
-
-        While seemingly all objects that inherit from this class should be able to be indexed, this is not the case.
-        For example, a single logic object cannot be indexed, while an array of logics may be able to be indexed.
-        If this object cannot be indexed, trying to index will raise an :exc:`IndexError` and iteration will yield nothing.
     """
 
-    @abstractmethod
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
         self._sub_handles: Dict[int, ChildObjectT] = {}
-
-    @cached_property
-    def _is_indexable(self) -> bool:
-        return self._handle.get_indexable()
-
-    @cached_property
-    def range(self) -> Range:
-        """Return a :class:`~cocotb.types.Range` over the indexes of the array/vector."""
-        left, right = self._handle.get_range()
-
-        # guess direction based on length until we can get that from the GPI
-        length = self._handle.get_num_elems()
-        if length == 0:
-            direction = "downto" if left <= right else "to"
-        else:
-            direction = "to" if left <= right else "downto"
-
-        return Range(left, direction, right)
-
-    @property
-    def left(self) -> int:
-        """Return the leftmost index in the array/vector."""
-        return self.range.left
-
-    @property
-    def direction(self) -> str:
-        """Return the direction (``"to"``/``"downto"``) of indexes in the array/vector."""
-        return self.range.direction
-
-    @property
-    def right(self) -> int:
-        """Return the rightmost index in the array/vector."""
-        return self.range.right
-
-    def __getitem__(self, index: int) -> ChildObjectT:
-        if isinstance(index, slice):
-            raise IndexError("Slice indexing is not supported")
-        if not self._is_indexable:
-            raise RuntimeError(f"{self._path} is not indexable.")
-        if index in self._sub_handles:
-            return self._sub_handles[index]
-        new_handle = self._handle.get_handle_by_index(index)
-        if not new_handle:
-            raise IndexError(f"{self._path} contains no object at index {index}")
-        path = self._path + "[" + str(index) + "]"
-        self._sub_handles[index] = cast(ChildObjectT, SimHandle(new_handle, path))
-        return self._sub_handles[index]
-
-    def __iter__(self) -> Iterable[ChildObjectT]:
-        if not self._is_indexable:
-            return
-        for i in self.range:
-            try:
-                yield self[i]
-            except IndexError:
-                continue
-
-    @lru_cache(maxsize=None)
-    def __len__(self) -> int:
-        return self._handle.get_num_elems()
-
-
-#: Type of value of each element in an :class:`ArrayObject`.
-ElemValueT = TypeVar("ElemValueT")
-
-
-class ArrayObject(
-    IndexableValueObjectBase[
-        Array[ElemValueT], Union[Array[ElemValueT], Sequence[ElemValueT]], ChildObjectT
-    ],
-    Generic[ElemValueT, ChildObjectT],
-):
-    """A simulation object that is an array of value-having simulation objects.
-
-    This object is used whenever an array is seen that isn't either a logic array or string.
-    In Verilog, only unpacked vectors use this type.
-    Packed vectors are typically mapped to :class:`LogicObject`.
-    """
-
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
-        super().__init__(handle, path)
 
     @property
     def value(self) -> Array[ElemValueT]:
@@ -898,12 +830,26 @@ class ArrayObject(
         for elem, self_idx in zip(value, self.range):
             self[self_idx]._set_value(elem, action, schedule_write)
 
+    def __getitem__(self, index: int) -> ChildObjectT:
+        if isinstance(index, slice):
+            raise IndexError("Slice indexing is not supported")
+        if index in self._sub_handles:
+            return self._sub_handles[index]
+        new_handle = self._handle.get_handle_by_index(index)
+        if not new_handle:
+            raise IndexError(f"{self._path} contains no object at index {index}")
+        path = self._path + "[" + str(index) + "]"
+        self._sub_handles[index] = cast(ChildObjectT, SimHandle(new_handle, path))
+        return self._sub_handles[index]
+
+    def __iter__(self) -> Iterable[ChildObjectT]:
+        for i in self.range:
+            yield self[i]
+
 
 class LogicObject(
-    IndexableValueObjectBase[
-        LogicArray, Union[LogicArray, Logic, int, str], "LogicObject"
-    ],
-    ValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
+    ValueObjectBase[LogicArray, Union[LogicArray, Logic, int]],
+    RangeableObjectBase,
 ):
     """A logic or logic array simulation object.
 
@@ -1024,6 +970,12 @@ class LogicObject(
     @value.setter
     def value(self, value: LogicArray) -> None:
         self.set(value)
+
+    @lru_cache(maxsize=None)
+    def __len__(self) -> int:
+        # can't use `range` to get length because `range` is for outer-most dimension only
+        # and this object needs to support multi-dimensional packed arrays.
+        return self._handle.get_num_elems()
 
 
 class RealObject(ValueObjectBase[float, float]):
@@ -1196,8 +1148,8 @@ class IntegerObject(ValueObjectBase[int, int]):
 
 
 class StringObject(
-    IndexableValueObjectBase[bytes, bytes, IntegerObject],
     ValueObjectBase[bytes, bytes],
+    RangeableObjectBase,
 ):
     """A string simulation object.
 
