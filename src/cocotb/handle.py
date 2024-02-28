@@ -514,7 +514,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int]):
         # guess direction based on length until we can get that from the GPI
         length = self._handle.get_num_elems()
         if length == 0:
-            direction = "to" if left < right else "downto"
+            direction = "downto" if left <= right else "to"
         else:
             direction = "to" if left <= right else "downto"
 
