@@ -30,12 +30,11 @@ import os
 import pytest
 
 import cocotb
-from cocotb._sim_versions import IcarusVersion, VerilatorVersion
+from cocotb._sim_versions import VerilatorVersion
 from cocotb.handle import (
     ArrayObject,
     HierarchyObject,
     HierarchyObjectBase,
-    IndexableValueObjectBase,
     IntegerObject,
     StringObject,
 )
@@ -232,36 +231,6 @@ async def access_type_bit_verilog_metavalues(dut):
         assert dut.mybits.value == "00"
 
 
-@cocotb.test(
-    # Icarus up to (and including) 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
-    # Verilator does not support net bits
-    expect_error=IndexError
-    if (
-        (
-            SIM_NAME.startswith("icarus")
-            and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))
-        )
-        or SIM_NAME.startswith("verilator")
-    )
-    else (),
-    skip=LANGUAGE in ["vhdl"],
-)
-async def access_single_bit(dut):
-    """Access a single bit in a vector of the DUT"""
-    dut.stream_in_data.value = 0
-    await Timer(1, "ns")
-    dut.stream_in_data[2].value = 1
-    await Timer(1, "ns")
-    assert dut.stream_out_data_comb.value == (1 << 2)
-
-
-@cocotb.test()
-async def access_single_bit_erroneous(dut):
-    """Access a non-existent single bit"""
-    with pytest.raises(IndexError):
-        dut.stream_in_data[100000]
-
-
 # Riviera discovers integers as nets (gh-2597)
 # GHDL discovers integers as nets (gh-2596)
 # Icarus does not support integer signals (gh-2598)
@@ -336,45 +305,6 @@ async def test_writing_string_oversized(dut):
     dut.stream_in_string.setimmediatevalue(test_string)
     await Timer(1, "ns")
     assert dut.stream_out_string.value == test_string[: len(dut.stream_out_string)]
-
-
-# GHDL discovers strings as vpiNetArray (gh-2584)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_fail=SIM_NAME.startswith("ghdl"),
-)
-async def test_read_single_character(dut):
-    assert isinstance(dut.stream_in_string, StringObject)
-    test_string = b"cocotb!!!"
-    idx = 3
-    dut.stream_in_string.setimmediatevalue(test_string)
-    await Timer(1, "ns")
-    # String is defined as string(1 to 8) so idx=3 will access the 3rd character
-    assert dut.stream_out_string[idx].value == test_string[idx - 1]
-
-
-# GHDL discovers strings as vpiNetArray (gh-2584)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_fail=SIM_NAME.startswith("ghdl"),
-)
-async def test_write_single_character(dut):
-    assert isinstance(dut.stream_in_string, StringObject)
-    # set initial value
-    test_string = b"verilog0"
-    dut.stream_in_string.setimmediatevalue(test_string)
-    await Timer(1, "ns")
-
-    # iterate over each character handle and uppercase it
-    for c in dut.stream_in_string:
-        lowercase = chr(c.value)
-        uppercase = lowercase.upper()
-        uppercase_as_int = ord(uppercase)
-        c.setimmediatevalue(uppercase_as_int)
-    await Timer(1, "ns")
-
-    # test the output is uppercased
-    assert dut.stream_out_string.value == test_string.upper()
 
 
 # TODO: add tests for Verilog "string_input_port" and "STRING_LOCALPARAM" (see issue #802)
@@ -467,26 +397,20 @@ async def custom_type(dut):
     """
     Test iteration over a custom type
     """
-    expected_sub = 84
-    expected_top = 4
+    # Hardcoded to ensure correctness
+    expected_inner = 7
+    expected_outer = 4
+    expected_elem = 11
 
-    count = 0
-
-    def _discover(obj):
-        if not isinstance(obj, (HierarchyObjectBase, IndexableValueObjectBase)):
-            return 0
-        iter_count = 0
-        for elem in obj:
-            iter_count += 1
-            iter_count += _discover(elem)
-        return iter_count
-
-    for sub in dut.cosLut:
-        sub_count = _discover(sub)
-        assert sub_count == expected_sub
-        count += 1
-
-    assert expected_top == count
+    outer_count = 0
+    for inner_array in dut.cosLut:
+        inner_count = 0
+        for elem in inner_array:
+            assert len(elem) == expected_elem
+            inner_count += 1
+        assert inner_count == expected_inner
+        outer_count += 1
+    assert expected_outer == outer_count
 
 
 @cocotb.test(skip=LANGUAGE in ["vhdl"])
@@ -552,7 +476,7 @@ async def discover_all_in_component_vhdl(dut):
         if questa_vhpi and isinstance(obj, StringObject):
             # Iterating over the elements of a string with Questa's VHPI causes a stacktrace
             return 0
-        if not isinstance(obj, (HierarchyObjectBase, IndexableValueObjectBase)):
+        if not isinstance(obj, (HierarchyObjectBase, ArrayObject)):
             return 0
         count = 0
         for thing in obj:
@@ -565,38 +489,22 @@ async def discover_all_in_component_vhdl(dut):
 
     sim = SIM_NAME
 
-    # ideally should be 32:
+    # ideally should be 9:
     #   1   EXAMPLE_STRING
-    #   7   EXAMPLE_STRING[*]
     #   1   EXAMPLE_BOOL
     #   1   EXAMPLE_WIDTH
     #   1   clk
     #   1   stream_in_data
-    #   8   stream_in_data[*]
     #   1   stream_out_data_registered
-    #   8   stream_out_data_registered[*]
     #   1   stream_out_data_valid
     #   1   SAMPLE_BLOCK
     #   1   SAMPLE_BLOCK.clk_inv
-    if sim.startswith("modelsim") and questa_vhpi:
-        # Iterating over the elements of a string with Questa's VHPI causes a stacktrace
-        assert total_count == 25
-    elif sim.startswith("modelsim"):
-        assert total_count == 32
-    elif sim.startswith("riviera"):
-        assert total_count == 32
-    elif sim.startswith("xcelium"):
-        assert total_count == 32
-    elif sim.startswith("ghdl"):
+    if sim.startswith("ghdl"):
         # finds SAMPLE_BLOCK twice
-        # doesn't find EXAMPLE_STRING or elements, EXAMPLE_BOOL, or EXAMPLE_WIDTH
-        # doesn't find elements of stream_in_data or stream_out_data_registered
+        # doesn't find EXAMPLE_STRING, EXAMPLE_BOOL, or EXAMPLE_WIDTH
         assert total_count == 7
     elif sim.startswith("nvc"):
         # finds SAMPLE_BLOCK.clk_inv twice?
-        assert total_count == 33
+        assert total_count == 10
     else:
-        cocotb.log.info(
-            "Found %d items in component instantion. Simulator is not checked.",
-            total_count,
-        )
+        assert total_count == 9

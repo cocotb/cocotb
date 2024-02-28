@@ -82,32 +82,3 @@ async def test_struct_format(dut):
     tlog.info(
         f"Value of inout_if => a_in = {structure.a_in.value} ; b_out = {structure.b_out.value}"
     )
-
-
-# GHDL unable to access record signals (gh-2591)
-# Icarus doesn't support structs (gh-2592)
-# Verilator doesn't support structs (gh-1275)
-@cocotb.test(
-    expect_error=(
-        AttributeError if SIM_NAME.startswith(("icarus", "ghdl", "verilator")) else ()
-    )
-)
-async def test_struct_iteration(dut):
-    """
-    Access a structure via issue_330_iteration
-    """
-
-    tlog = logging.getLogger("cocotb.test")
-
-    structure = dut.inout_if
-
-    count = 0
-    for member in structure:
-        tlog.info(f"Found {member._path}")
-        count += 1
-
-    # Riviera-PRO does not discover inout_if correctly over VPI (gh-3587, gh-3933)
-    if SIM_NAME.startswith("riviera") and LANGUAGE == "verilog":
-        assert count == 0
-    else:
-        assert count == 2, "There should have been two members of the structure"

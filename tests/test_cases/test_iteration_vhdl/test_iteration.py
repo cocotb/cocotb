@@ -39,7 +39,7 @@ def total_object_count():
     # Questa with VHPI
     # TODO: Why do we get massively different numbers for Questa/VHPI than for Questa/FLI or VPI?
     if SIM_NAME.startswith("modelsim") and os.environ["VHDL_GPI_INTERFACE"] == "vhpi":
-        return 68127
+        return 5119
 
     if SIM_NAME.startswith("modelsim") and os.environ["VHDL_GPI_INTERFACE"] == "fli":
         # Questa 2024.1 onwards (FLI) do not discover the following objects, which
@@ -48,7 +48,7 @@ def total_object_count():
         # - inst_generic_sp_ram.rst (<class 'cocotb.handle.LogicObject'>)
         # - inst_generic_sp_ram.wen (<class 'cocotb.handle.LogicObject'>)
         if QuestaVersion(SIM_VERSION) >= QuestaVersion("2024.1"):
-            return 35153 - 4 * 3
+            return 2663 - 4 * 3
 
         # Questa 2023.1 onwards (FLI) do not discover the following objects, which
         # are instantiated four times:
@@ -57,7 +57,7 @@ def total_object_count():
         # - inst_generic_sp_ram.wen (<class 'cocotb.handle.LogicObject'>)
         # - inst_generic_sp_ram.en (<class 'cocotb.handle.LogicObject'>)
         if QuestaVersion(SIM_VERSION) >= QuestaVersion("2023.1"):
-            return 35153 - 4 * 4
+            return 2663 - 4 * 4
 
     if SIM_NAME.startswith(
         (
@@ -67,16 +67,7 @@ def total_object_count():
             "riviera",
         )
     ):
-        return 35153
-
-    # Active-HDL
-    if SIM_NAME.startswith("aldec"):
-        if SIM_VERSION.startswith("11.1"):
-            # Active-HDL 11.1 only finds 'inbranch_tdata_low' inside the gen_acs for generate block
-            return 27359
-        if SIM_VERSION.startswith("10.01"):
-            # Active-HDL 10.1 doesn't find any signals declared inside the gen_acs for generate block
-            return 26911
+        return 2663
 
     return 0
 
@@ -95,7 +86,7 @@ async def recursive_discovery(dut):
             parent,
             (
                 cocotb.handle.HierarchyObjectBase,
-                cocotb.handle.IndexableValueObjectBase,
+                cocotb.handle.ArrayObject,
             ),
         ):
             return 0
@@ -139,25 +130,3 @@ async def dual_iteration(dut):
     loop_two = cocotb.start_soon(iteration_loop())
 
     await Combine(loop_one, loop_two)
-
-
-# GHDL unable to access record types (gh-2591)
-@cocotb.test(
-    expect_fail=cocotb.SIM_NAME.lower().startswith("aldec"),
-    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
-)
-async def test_n_dimension_array(dut):
-    """Test iteration over multi-dimensional array."""
-    tlog = logging.getLogger("cocotb.test")
-    inner_count = 0
-    outer_count = 0
-    config = dut.inst_ram_ctrl.config
-    # This signal is a 2 x 7 vhpiEnumVecVal
-    for thing in config:
-        for sub_thing in thing:
-            tlog.info("Found %s", sub_thing._name)
-            inner_count += 1
-        outer_count += 1
-
-    assert outer_count == 2, outer_count
-    assert inner_count == 14, inner_count
