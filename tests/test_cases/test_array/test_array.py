@@ -12,7 +12,6 @@ from cocotb.handle import (
     HierarchyArrayObject,
     HierarchyObject,
     HierarchyObjectBase,
-    IndexableValueObjectBase,
     LogicObject,
 )
 from cocotb.triggers import Timer
@@ -354,7 +353,7 @@ async def test_discover_all(dut):
             obj,
             (
                 HierarchyObjectBase,
-                IndexableValueObjectBase,
+                ArrayObject,
             ),
         ):
             return 0

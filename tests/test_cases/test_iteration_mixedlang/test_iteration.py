@@ -38,7 +38,7 @@ def recursive_dump(parent, log):
         parent,
         (
             cocotb.handle.HierarchyObjectBase,
-            cocotb.handle.IndexableValueObjectBase,
+            cocotb.handle.ArrayObject,
         ),
     ):
         return 0
