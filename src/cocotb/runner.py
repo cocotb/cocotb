@@ -226,6 +226,7 @@ class Simulator(abc.ABC):
         build_dir: Optional[PathLike] = None,
         test_dir: Optional[PathLike] = None,
         results_xml: Optional[str] = None,
+        pre_cmd: list = [],
         verbose: bool = False,
         timescale: Optional[Timescale] = None,
         log_file: Optional[PathLike] = None,
@@ -256,6 +257,7 @@ class Simulator(abc.ABC):
                 ``{build_dir}/results.xml`` otherwise.
                 This argument should not be set when run with ``pytest``.
             verbose: Enable verbose messages.
+            pre_cmd: Command to run before testing.
             timescale: Tuple containing time unit and time precision for simulation.
             log_file: File to write the test log to.
 
@@ -296,6 +298,11 @@ class Simulator(abc.ABC):
             self.gpi_interfaces = []
             for gpi_if in self.supported_gpi_interfaces.values():
                 self.gpi_interfaces.append(gpi_if[0])
+
+        if pre_cmd:
+            self.pre_cmd = pre_cmd
+        else:
+            self.pre_cmd = []
 
         self.test_args = list(test_args)
         self.plusargs = list(plusargs)
@@ -540,6 +547,9 @@ class Icarus(Simulator):
         if self.waves:
             plusargs += ["-fst"]
 
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Icarus Verilog.")
+
         return [
             [
                 "vvp",
@@ -653,6 +663,9 @@ class Questa(Simulator):
     def _test_command(self) -> List[Command]:
         cmds = []
 
+        if self.pre_cmd:
+            self.pre_cmd = ["-do"] + self.pre_cmd
+
         do_script = ""
         if self.waves:
             do_script += "log -recursive /*;"
@@ -696,6 +709,7 @@ class Questa(Simulator):
             + [as_tcl_value(v) for v in self._get_parameter_options(self.parameters)]
             + [as_tcl_value(f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}")]
             + [as_tcl_value(v) for v in self.plusargs]
+            + self.pre_cmd
             + ["-do", do_script]
         )
 
@@ -761,6 +775,9 @@ class Ghdl(Simulator):
         return cmds
 
     def _test_command(self) -> List[Command]:
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for GHDL.")
+
         ghdl_run_args = self.test_args
 
         if self._is_mcode_backend() and self.timescale:
@@ -917,6 +934,9 @@ class Riviera(Simulator):
         return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
 
     def _test_command(self) -> List[Command]:
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Riviera.")
+
         do_script = "\nonerror {\n quit -code 1 \n} \n"
 
         if self.hdl_toplevel_lang == "vhdl":
@@ -1064,6 +1084,9 @@ class Verilator(Simulator):
         return cmds
 
     def _test_command(self) -> List[Command]:
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Verilator.")
+
         out_file = self.build_dir / self.sim_hdl_toplevel
         return [
             [str(out_file)]
@@ -1153,6 +1176,9 @@ class Xcelium(Simulator):
         return cmds
 
     def _test_command(self) -> List[Command]:
+        if self.pre_cmd:
+            print("WARNING: pre_cmd is not implemented for Xcelium.")
+
         self.env["CDS_AUTO_64BIT"] = "all"
 
         verbosity_opts = []
