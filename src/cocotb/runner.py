@@ -299,10 +299,7 @@ class Simulator(abc.ABC):
             for gpi_if in self.supported_gpi_interfaces.values():
                 self.gpi_interfaces.append(gpi_if[0])
 
-        if pre_cmd:
-            self.pre_cmd = pre_cmd
-        else:
-            self.pre_cmd = []
+        self.pre_cmd = pre_cmd
 
         self.test_args = list(test_args)
         self.plusargs = list(plusargs)
