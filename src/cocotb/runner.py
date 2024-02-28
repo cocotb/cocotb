@@ -226,7 +226,7 @@ class Simulator(abc.ABC):
         build_dir: Optional[PathLike] = None,
         test_dir: Optional[PathLike] = None,
         results_xml: Optional[str] = None,
-        pre_cmd: list = [],
+        pre_cmd: List[str] = [],
         verbose: bool = False,
         timescale: Optional[Timescale] = None,
         log_file: Optional[PathLike] = None,
