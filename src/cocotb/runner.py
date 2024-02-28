@@ -257,7 +257,7 @@ class Simulator(abc.ABC):
                 ``{build_dir}/results.xml`` otherwise.
                 This argument should not be set when run with ``pytest``.
             verbose: Enable verbose messages.
-            pre_cmd: Command to run before testing.
+            pre_cmd: Commands to run before simulation begins.
             timescale: Tuple containing time unit and time precision for simulation.
             log_file: File to write the test log to.
 
