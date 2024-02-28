@@ -63,7 +63,6 @@ async def check_objects(dut):
     check_instance(dut.gen_branch_distance[0], HierarchyObject)
     check_instance(dut.gen_branch_distance[0].inst_branch_distance, HierarchyObject)
     check_instance(dut.gen_acs[0].inbranch_tdata_low, LogicObject)
-    check_instance(dut.gen_acs[0].inbranch_tdata_low[0], LogicObject)
     check_instance(dut.aclk, LogicObject)
     check_instance(dut.s_axis_input_tdata, LogicObject)
     check_instance(dut.current_active, IntegerObject)

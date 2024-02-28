@@ -26,7 +26,6 @@
 import logging
 
 import cocotb
-from cocotb._sim_versions import IcarusVersion
 from cocotb.triggers import First
 
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -39,18 +38,12 @@ async def recursive_discovery(dut):
     """
     if SIM_NAME.startswith("verilator"):
         pass_total = 26
-    elif SIM_NAME.startswith("icarus"):
-        if IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"):
-            pass_total = 27
-        else:
-            pass_total = 259
-    elif SIM_NAME.startswith(
-        ("modelsim", "ncsim", "xmsim", "chronologic simulation vcs")
-    ):
-        # vpiAlways does not show up
-        pass_total = 259
+    elif SIM_NAME.startswith("riviera"):
+        # finds always and initial blocks
+        pass_total = 33
     else:
-        pass_total = 265
+        # everyone seems to find the byteswap() function besides verilator
+        pass_total = 27
 
     tlog = logging.getLogger("cocotb.test")
 
@@ -59,7 +52,7 @@ async def recursive_discovery(dut):
             parent,
             (
                 cocotb.handle.HierarchyObjectBase,
-                cocotb.handle.IndexableValueObjectBase,
+                cocotb.handle.ArrayObject,
             ),
         ):
             return 0

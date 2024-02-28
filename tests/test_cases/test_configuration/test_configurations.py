@@ -24,17 +24,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import cocotb
-from cocotb.triggers import Timer
 
 
-def sub_iterate(unit):
-    for thing in unit:
-        thing._log.info(f"Found {unit._name}.{thing._name} {type(thing)}")
-        sub_iterate(thing)
-
-
-@cocotb.test()
-async def iterate(dut):
-    await Timer(1, "ns")
-    sub_iterate(dut)
-    await Timer(1, "ns")
+@cocotb.test
+async def test_configuration(dut):
+    for item in dut.dut_inst:
+        cocotb.log.info("Found %r", item)

@@ -4,7 +4,7 @@ module testbench (
     output logic        data_out
 );
 
-dut i_dut (
+dut dut_inst (
     .clk                (clk),
     .data_in            (data_in),
     .data_out           (data_out)

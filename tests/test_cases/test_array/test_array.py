@@ -13,7 +13,6 @@ from cocotb.handle import (
     HierarchyArrayObject,
     HierarchyObject,
     HierarchyObjectBase,
-    IndexableValueObjectBase,
     LogicObject,
 )
 from cocotb.triggers import Timer
@@ -148,43 +147,6 @@ async def test_read_write(dut):
         assert dut.port_cmplx_out[1].b[0].value == 0xCD
         assert dut.port_cmplx_out[1].b[1].value == 0xEF
         assert dut.port_cmplx_out[1].b[2].value == 0x55
-
-    dut.sig_logic_vec[2].value = 0
-    if LANGUAGE in ["vhdl"] or not (
-        cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim"))
-        or (
-            cocotb.SIM_NAME.lower().startswith("riviera")
-            and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
-        )
-    ):
-        dut.sig_t6[1][3][2].value = 1
-        dut.sig_t6[0][2][7].value = 0
-
-    if LANGUAGE in ["vhdl"]:
-        dut.sig_str[2].value = ord("E")
-        dut.sig_rec.b[1][7].value = 1
-        dut.sig_cmplx[1].b[1][0].value = 0
-
-    await Timer(10, "ns")
-
-    assert dut.port_logic_vec_out.value == 0xC8
-    if LANGUAGE in ["vhdl"] or not (
-        cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim"))
-        or (
-            cocotb.SIM_NAME.lower().startswith("riviera")
-            and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
-        )
-    ):
-        assert dut.sig_t6[1][3][2].value == 1
-        assert dut.sig_t6[0][2][7].value == 0
-
-    if LANGUAGE in ["vhdl"]:
-        assert (
-            dut.port_str_out.value == b"TEsting"
-        )  # the uppercase "E" from a few lines before
-
-        assert dut.port_rec_out.b[1].value == 0xA3
-        assert dut.port_cmplx_out[1].b[1].value == 0xEE
 
 
 # GHDL unable to access signals in generate loops (gh-2594)
@@ -340,25 +302,22 @@ async def test_discover_all(dut):
         and os.environ["VHDL_GPI_INTERFACE"] == "vhpi"
     ):
         # VHPI finds the array_module.asc_gen and array_module.desc_gen more than once =/
-        pass_total = 1096
-    elif LANGUAGE in ["vhdl"]:
-        pass_total = 1032
+        pass_total = 308
     elif LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
         # Applies to Riviera-PRO 2019.10 and newer.
-        pass_total = 1006
-    elif LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
-        "chronologic simulation vcs"
-    ):
-        pass_total = 606
+        pass_total = 198
+    elif LANGUAGE in ["vhdl"]:
+        pass_total = 244
     else:
-        pass_total = 1078
+        # verilog
+        pass_total = 206
 
     def _discover(obj):
         if not isinstance(
             obj,
             (
                 HierarchyObjectBase,
-                IndexableValueObjectBase,
+                ArrayObject,
             ),
         ):
             return 0
@@ -405,36 +364,16 @@ async def test_direct_constant_indexing(dut):
     assert isinstance(dut.const_cmplx[1].b[1], LogicObject)
 
 
-# GHDL unable to index packed arrays (gh-2587)
-@cocotb.test(expect_error=IndexError if SIM_NAME.startswith("ghdl") else ())
+# GHDL unable to index multi-dimensional arrays (gh-2587)
+@cocotb.test(expect_fail=SIM_NAME.startswith("ghdl"))
 async def test_direct_signal_indexing(dut):
     """Test directly accessing signal/net data in arrays, i.e. not iterating"""
 
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
-    dut.port_desc_in.value = 0
-    dut.port_asc_in.value = 0
-    dut.port_ofst_in.value = 0
-
-    await Timer(20, "ns")
-
-    dut.port_desc_in[2].value = 1
-    dut.port_asc_in[2].value = 1
-    dut.port_ofst_in[2].value = 1
-
-    await Timer(20, "ns")
-
-    assert dut.desc_gen[2].sig.value == 1
-    assert dut.asc_gen[18].sig.value == 1
-    assert dut.port_ofst_out.value == 64
-
-    assert isinstance(dut.sig_desc[20], LogicObject)
-    assert isinstance(dut.sig_asc[17], LogicObject)
     assert isinstance(dut.sig_t1, LogicObject)
     assert isinstance(dut.sig_t2, ArrayObject)
     assert isinstance(dut.sig_t2[5], LogicObject)
-    assert isinstance(dut.sig_t2[5][3], LogicObject)
-    assert isinstance(dut.sig_t3a[2][3], LogicObject)
     assert isinstance(dut.sig_t3b[3], LogicObject)
     assert isinstance(dut.sig_t3a, ArrayObject)
     assert isinstance(dut.sig_t4, ArrayObject)
@@ -446,11 +385,9 @@ async def test_direct_signal_indexing(dut):
         and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
     ):
         assert isinstance(dut.sig_t4[3][4], LogicObject)
-        assert isinstance(dut.sig_t4[3][4][1], LogicObject)
     assert isinstance(dut.sig_t5, ArrayObject)
     assert isinstance(dut.sig_t5[1], ArrayObject)
     assert isinstance(dut.sig_t5[1][0], LogicObject)
-    assert isinstance(dut.sig_t5[1][0][6], LogicObject)
     assert isinstance(dut.sig_t6, ArrayObject)
     assert isinstance(dut.sig_t6[1], ArrayObject)
     # the following version cannot index into those arrays and will error out
@@ -460,16 +397,11 @@ async def test_direct_signal_indexing(dut):
         and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
     ):
         assert isinstance(dut.sig_t6[0][3], LogicObject)
-        assert isinstance(dut.sig_t6[0][3][7], LogicObject)
     assert isinstance(dut.sig_cmplx, ArrayObject)
 
     if LANGUAGE in ["verilog"]:
         assert isinstance(dut.sig_t7[1], ArrayObject)
         assert isinstance(dut.sig_t7[0][3], LogicObject)
-        assert isinstance(
-            dut.sig_t8[1], LogicObject
-        )  # packed array of logic is mapped to GPI_NET
-        assert isinstance(dut.sig_t8[0][3], LogicObject)
 
     # Riviera has a bug and finds dut.sig_cmplx[1], but the type returned is a vpiBitVar
     # only true for version 2016.02
@@ -482,7 +414,6 @@ async def test_direct_signal_indexing(dut):
         assert isinstance(dut.sig_cmplx[1].a, LogicObject)
         assert isinstance(dut.sig_cmplx[1].b, ArrayObject)
         assert isinstance(dut.sig_cmplx[1].b[1], LogicObject)
-        assert isinstance(dut.sig_cmplx[1].b[1][2], LogicObject)
 
     assert isinstance(dut.sig_rec, HierarchyObject)
     assert isinstance(dut.sig_rec.a, LogicObject)
@@ -496,7 +427,6 @@ async def test_direct_signal_indexing(dut):
         and cocotb.SIM_VERSION.startswith("2016.02")
     ):
         assert isinstance(dut.sig_rec.b[1], LogicObject)
-        assert isinstance(dut.sig_rec.b[1][2], LogicObject)
 
 
 @cocotb.test(skip=(LANGUAGE in ["verilog"]))
