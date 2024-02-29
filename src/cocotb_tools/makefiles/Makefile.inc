@@ -42,13 +42,6 @@ sim:
 # Make sure to use bash for the pipefail option used in many simulator Makefiles
 SHELL := bash
 
-# Directory containing the cocotb Python module
-COCOTB_PY_DIR := $(shell cocotb-config --prefix)
-
-# Directory containing all support files required to build cocotb-based
-# simulations: Makefile fragments, and the simulator libraries.
-COCOTB_SHARE_DIR := $(COCOTB_PY_DIR)/cocotb/share
-
 OS=$(shell uname)
 ifneq (, $(findstring MINGW, $(OS)))
     OS := Msys
@@ -65,8 +58,6 @@ IS_VENV=$(shell $(shell cocotb-config --python-bin) -c 'import sys; print(sys.pr
 PYTHON_BIN ?= $(shell cocotb-config --python-bin)
 
 include $(shell cocotb-config --makefiles)/Makefile.deprecations
-
-LIB_DIR=$(COCOTB_PY_DIR)/cocotb/libs
 
 PYTHON_ARCH := $(shell $(PYTHON_BIN) -c 'from platform import architecture; print(architecture()[0])')
 ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)

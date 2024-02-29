@@ -487,7 +487,6 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
     Defines common libraries.
 
     All libraries go into the same directory to enable loading without modifying the library path (e.g. LD_LIBRARY_PATH).
-    In Makefile `LIB_DIR` (s) is used to point to this directory.
     """
 
     #

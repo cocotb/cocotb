@@ -411,36 +411,3 @@ and
 
 ..
    `CXXFLAGS`, `LDLIBS` are not supported by distutils/pip
-
-
-Internal Variables
-------------------
-
-The following variables are used for cocotb internals.
-They may change at any time, and users should not rely on them.
-
-.. envvar:: COCOTB_PY_DIR
-
-    Path to the directory containing the cocotb Python package in the :file:`cocotb` subdirectory.
-
-.. envvar:: COCOTB_SHARE_DIR
-
-    Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories
-    :file:`lib`, :file:`include`, and :file:`makefiles`.
-
-.. envvar:: COCOTB_LIBRARY_COVERAGE
-
-   Enable code coverage collection for cocotb internals.
-   When set, a file :file:`.coverage.cocotb` will be written which contains statistics about the code coverage.
-   This is mainly useful for cocotb's own Continuous Integration setup.
-
-..
-   TODO
-
-   Build Defines
-   -------------
-
-   SINGLETON_HANDLES
-   PYTHON_SO_LIB
-
-   simulator sim defines
