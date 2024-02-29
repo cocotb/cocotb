@@ -123,7 +123,7 @@ setup(
             + package_files("src/cocotb/share/def")
             + package_files("src/cocotb/share/lib/verilator")
         ),
-        "cocotb_tools": (package_files("src/cocotb/share/makefiles")),
+        "cocotb_tools": (package_files("src/cocotb_tools/makefiles")),
     },
     ext_modules=get_ext(),
     entry_points={
