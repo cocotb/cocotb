@@ -22,13 +22,15 @@ Simulator Triggers
 Signals
 -------
 
-.. autoclass:: cocotb.triggers.Edge(signal)
-
 .. autoclass:: cocotb.triggers.RisingEdge(signal)
 
 .. autoclass:: cocotb.triggers.FallingEdge(signal)
 
+.. autoclass:: cocotb.triggers.ValueChange(signal)
+
 .. autoclass:: cocotb.triggers.ClockCycles
+
+.. autoclass:: cocotb.triggers.Edge(signal)
 
 
 Timing
