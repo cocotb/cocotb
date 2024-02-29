@@ -39,6 +39,7 @@ Global variables:
     makefiles_dir: str, path where the cocotb makefiles are installed
     libs_dir: str, path where the cocotb interface libraries are located
 """
+
 import argparse
 import os
 import sys
@@ -47,21 +48,31 @@ from pathlib import Path
 
 import find_libpython
 
-import cocotb
+import cocotb_tools
 
-__all__ = ["share_dir", "makefiles_dir", "libs_dir"]
+base_tools_dir = Path(cocotb_tools.__file__).parent.resolve()
+base_cocotb_dir = base_tools_dir.parent.joinpath("cocotb").resolve()
+if not base_cocotb_dir.exists():
+    import cocotb
 
-base_dir = Path(cocotb.__file__).parent.resolve()
-share_dir = base_dir.joinpath("share").as_posix()
-makefiles_dir = base_dir.joinpath("share").joinpath("makefiles").as_posix()
-libs_dir = base_dir.joinpath("libs").as_posix()
+    base_cocotb_dir = Path(cocotb.__file__).parent.resolve()
+
+share_dir = base_cocotb_dir.joinpath("share")
+libs_dir = base_cocotb_dir.joinpath("libs")
+makefiles_dir = base_tools_dir.joinpath("makefiles")
 
 
-def help_vars_text():
-    if "dev" in cocotb.__version__:
+def get_version() -> str:
+    import cocotb
+
+    return cocotb.__version__
+
+
+def help_vars_text() -> str:
+    if "dev" in get_version():
         doclink = "https://docs.cocotb.org/en/latest/building.html"
     else:
-        doclink = f"https://docs.cocotb.org/en/v{cocotb.__version__}/building.html"
+        doclink = f"https://docs.cocotb.org/en/v{get_version()}/building.html"
 
     # NOTE: make sure to keep "helpmsg" aligned with documentation/source/building.rst
     # Also keep it at 80 chars.
@@ -199,40 +210,42 @@ class PrintFuncAction(argparse.Action):
 
 
 def get_parser():
-    prefix_dir = base_dir.parent.resolve().as_posix()
-    version = cocotb.__version__
-    python_bin = Path(sys.executable).as_posix()
-
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
         "--prefix",
         help="echo the package-prefix of cocotb",
-        action=PrintAction,
-        text=prefix_dir,
+        nargs=0,
+        metavar=(),
+        action=PrintFuncAction,
+        function=lambda: base_cocotb_dir.parent.resolve().as_posix(),
     )
     parser.add_argument(
         "--share",
         help="echo the package-share of cocotb",
         action=PrintAction,
-        text=share_dir,
+        text=share_dir.as_posix(),
     )
     parser.add_argument(
         "--makefiles",
         help="echo the package-makefiles of cocotb",
         action=PrintAction,
-        text=makefiles_dir,
+        text=makefiles_dir.as_posix(),
     )
     parser.add_argument(
         "--python-bin",
         help="echo the path to the Python binary cocotb is installed for",
-        action=PrintAction,
-        text=python_bin,
+        nargs=0,
+        metavar=(),
+        action=PrintFuncAction,
+        function=lambda: Path(sys.executable).as_posix(),
     )
     parser.add_argument(
         "--help-vars",
         help="show help about supported variables",
-        action=PrintAction,
-        text=help_vars_text(),
+        nargs=0,
+        metavar=(),
+        action=PrintFuncAction,
+        function=help_vars_text,
     )
     parser.add_argument(
         "--libpython",
@@ -246,7 +259,7 @@ def get_parser():
         "--lib-dir",
         help="Print the absolute path to the interface libraries location",
         action=PrintAction,
-        text=libs_dir,
+        text=libs_dir.as_posix(),
     )
     parser.add_argument(
         "--lib-name",
@@ -268,8 +281,10 @@ def get_parser():
         "-v",
         "--version",
         help="echo the version of cocotb",
-        action=PrintAction,
-        text=version,
+        nargs=0,
+        metavar=(),
+        action=PrintFuncAction,
+        function=get_version,
     )
 
     return parser

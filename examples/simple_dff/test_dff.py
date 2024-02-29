@@ -7,9 +7,9 @@ from pathlib import Path
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.runner import get_runner
 from cocotb.triggers import RisingEdge
 from cocotb.types import LogicArray
+from cocotb_tools.runner import get_runner
 
 
 @cocotb.test()

@@ -10,8 +10,8 @@ from tempfile import TemporaryDirectory
 import cocotb
 import pytest
 from cocotb.clock import Clock
-from cocotb.runner import get_runner
 from cocotb.triggers import ClockCycles
+from cocotb_tools.runner import get_runner
 from test_cocotb import (
     compile_args,
     gpi_interfaces,
