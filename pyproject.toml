@@ -65,6 +65,7 @@ ignore = [
     "PLR0915", # Too many statements (>50) (preference)
     "PLR2004", # Magic value used in comparison (preference)
     "PLW0603", # Using the global statement (preference)
+    "PLR0911", # Too many return statements (preference)
 ]
 
 [tool.ruff.lint.per-file-ignores]
