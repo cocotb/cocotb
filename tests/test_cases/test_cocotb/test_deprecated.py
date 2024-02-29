@@ -37,3 +37,15 @@ async def test_testfactory_deprecated(dut):
     assert test_testfactory_deprecated_values == [1, 2]
     assert len(tf_warns) == 1
     assert tf_warns[0].category is DeprecationWarning
+
+
+@cocotb.test
+async def test_runner_deprecated(_):
+    with pytest.warns(DeprecationWarning):
+        import cocotb.runner  # noqa: F401
+
+
+@cocotb.test
+async def test_config_deprecated(_):
+    with pytest.warns(DeprecationWarning):
+        import cocotb.config  # noqa: F401
