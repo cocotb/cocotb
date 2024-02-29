@@ -59,8 +59,10 @@ ifdef VERILOG_INCLUDE_DIRS
   COMPILE_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
 endif
 
-$(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp | $(SIM_BUILD)
-	$(CMD) -cc --exe -Mdir $(SIM_BUILD) -DCOCOTB_SIM=1 $(TOPMODULE_ARG) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp
+VERILATOR_CPP := $(shell cocotb-config --share)/lib/verilator/verilator.cpp
+
+$(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(VERILATOR_CPP) | $(SIM_BUILD)
+	$(CMD) -cc --exe -Mdir $(SIM_BUILD) -DCOCOTB_SIM=1 $(TOPMODULE_ARG) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(VERILATOR_CPP)
 
 # Compilation phase
 $(SIM_BUILD)/Vtop: $(SIM_BUILD)/Vtop.mk
