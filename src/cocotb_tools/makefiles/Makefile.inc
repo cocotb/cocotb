@@ -64,7 +64,7 @@ IS_VENV=$(shell $(shell cocotb-config --python-bin) -c 'import sys; print(sys.pr
 # this ensures we use the same python as the one cocotb was installed into
 PYTHON_BIN ?= $(shell cocotb-config --python-bin)
 
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.deprecations
+include $(shell cocotb-config --makefiles)/Makefile.deprecations
 
 LIB_DIR=$(COCOTB_PY_DIR)/cocotb/libs
 

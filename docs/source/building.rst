@@ -38,7 +38,7 @@ Of the environment variables, only :envvar:`MODULE` is mandatory to be set
 (typically done in a makefile or run script), all others are optional.
 
 ..
-  If you edit the following sections, please also update the "helpmsg" text in src/cocotb/config.py
+  If you edit the following sections, please also update the "helpmsg" text in src/cocotb_tools/config.py
 
 Cocotb
 ------

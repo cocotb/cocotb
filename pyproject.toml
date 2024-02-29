@@ -128,7 +128,7 @@ source = [
 
 [tool.coverage.report]
 omit = [
-    "*/cocotb/config.py",
+    "*/cocotb_tools/*",
     "*/_vendor/*",
 ]
 exclude_lines = [

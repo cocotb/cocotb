@@ -119,16 +119,16 @@ setup(
     package_dir={"": "src"},
     package_data={
         "cocotb": (
-            package_files("src/cocotb/share/makefiles")
-            + package_files("src/cocotb/share/include")  # noqa: W504
-            + package_files("src/cocotb/share/def")  # noqa: W504
-            + package_files("src/cocotb/share/lib/verilator")  # noqa: W504
-        )
+            package_files("src/cocotb/share/include")
+            + package_files("src/cocotb/share/def")
+            + package_files("src/cocotb/share/lib/verilator")
+        ),
+        "cocotb_tools": (package_files("src/cocotb/share/makefiles")),
     },
     ext_modules=get_ext(),
     entry_points={
         "console_scripts": [
-            "cocotb-config=cocotb.config:main",
+            "cocotb-config=cocotb_tools.config:main",
         ]
     },
     platforms="any",

@@ -3,8 +3,8 @@ import sys
 import tempfile
 
 import pytest
-from cocotb.runner import get_runner
 from cocotb.utils import _get_log_time_scale
+from cocotb_tools.runner import get_runner
 from test_cocotb import (
     compile_args,
     gpi_interfaces,

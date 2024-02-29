@@ -13,9 +13,9 @@ import pytest
 from cocotb.clock import Clock
 from cocotb.handle import SimHandleBase
 from cocotb.queue import Queue
-from cocotb.runner import get_runner
 from cocotb.triggers import RisingEdge
 from cocotb.types import LogicArray, Range
+from cocotb_tools.runner import get_runner
 
 NUM_SAMPLES = int(os.environ.get("NUM_SAMPLES", 3000))
 if cocotb.simulator.is_running():

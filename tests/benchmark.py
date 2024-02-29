@@ -5,7 +5,7 @@
 import sys
 from pathlib import Path
 
-from cocotb.runner import get_runner
+from cocotb_tools.runner import get_runner
 
 
 def build_and_run_matrix_multiplier(benchmark, sim):

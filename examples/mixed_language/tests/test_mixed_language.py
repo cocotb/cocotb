@@ -8,8 +8,8 @@ from pathlib import Path
 import cocotb
 import pytest
 from cocotb.clock import Clock
-from cocotb.runner import get_runner
 from cocotb.triggers import RisingEdge, Timer
+from cocotb_tools.runner import get_runner
 
 
 # Riviera fails to find dut.i_swapper_sv (gh-2921)

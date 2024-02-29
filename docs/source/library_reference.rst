@@ -23,7 +23,7 @@ Python Test Runner
 .. warning::
     Python runners and associated APIs are an experimental feature and subject to change.
 
-.. automodule:: cocotb.runner
+.. automodule:: cocotb_tools.runner
     :members:
     :member-order: bysource
     :synopsis: Build HDL and run cocotb tests.
@@ -361,6 +361,6 @@ The ``cocotb-config`` script
 ----------------------------
 
 .. sphinx_argparse_cli::
-    :module: cocotb.config
+    :module: cocotb_tools.config
     :func: get_parser
     :prog: cocotb-config

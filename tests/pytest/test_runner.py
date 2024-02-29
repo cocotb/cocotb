@@ -7,8 +7,8 @@ import sys
 
 import cocotb
 import pytest
-from cocotb.runner import get_runner
 from cocotb.triggers import Timer
+from cocotb_tools.runner import get_runner
 
 pytestmark = pytest.mark.simulator_required
 
