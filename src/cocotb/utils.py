@@ -34,6 +34,7 @@ import traceback
 import weakref
 from decimal import Decimal
 from enum import Enum
+from functools import lru_cache
 from numbers import Real
 from typing import Any, Optional, Type, TypeVar, Union
 
@@ -212,6 +213,7 @@ class ParametrizedSingleton(type):
         return inspect.signature(cls.__singleton_key__)
 
 
+@lru_cache(maxsize=None)
 def want_color_output():
     """Return ``True`` if colored output is possible/requested and not running in GUI.
 
