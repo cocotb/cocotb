@@ -128,7 +128,7 @@ To enable FST tracing, add ``--trace-fst`` to :make:var:`EXTRA_ARGS` as shown be
 
   .. code-block:: make
 
-    EXTRA_ARGS += --trace-fst --trace-structs
+    EXTRA_ARGS += --trace --trace-fst --trace-structs
 
 The resulting file will be :file:`dump.fst` and can be opened by ``gtkwave dump.fst``.
 
