@@ -122,6 +122,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    triggers
    custom_flows
    rotating_logger
+   extensions
 
 .. todo::
    - Add IPython section
@@ -176,7 +177,6 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    GPI Library Reference <library_reference_c>
    simulator_support
    platform_support
-   extensions
    refcard
 
 .. toctree::
