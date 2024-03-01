@@ -97,10 +97,73 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
     :members:
     :inherited-members:
 
+
 Triggers
---------
-See :ref:`simulator-triggers` for a list of sub-classes. Below are the internal
-classes used within ``cocotb``.
+========
+
+.. _simulator-triggers:
+
+Simulator Triggers
+------------------
+
+Signals
+^^^^^^^
+
+.. autoclass:: cocotb.triggers.Edge(signal)
+
+.. autoclass:: cocotb.triggers.RisingEdge(signal)
+
+.. autoclass:: cocotb.triggers.FallingEdge(signal)
+
+.. autoclass:: cocotb.triggers.ClockCycles
+
+
+Timing
+^^^^^^
+
+.. autoclass:: cocotb.triggers.Timer
+
+.. autoclass:: cocotb.triggers.ReadOnly()
+
+.. autoclass:: cocotb.triggers.ReadWrite()
+
+.. autoclass:: cocotb.triggers.NextTimeStep()
+
+
+.. _python-triggers:
+
+Python Triggers
+---------------
+
+.. autoclass:: cocotb.triggers.Combine
+
+.. autoclass:: cocotb.triggers.First
+
+.. autoclass:: cocotb.triggers.Join(coroutine)
+    :members: retval
+
+
+Synchronization
+^^^^^^^^^^^^^^^
+
+These are not :class:`Trigger`\ s themselves, but contain methods that can be used as triggers.
+These are used to synchronize coroutines with each other.
+
+.. autoclass:: cocotb.triggers.Event
+    :members:
+    :member-order: bysource
+
+.. autoclass:: cocotb.triggers.Lock
+    :members:
+    :member-order: bysource
+
+.. autofunction:: cocotb.triggers.with_timeout
+
+
+Triggers (Internals)
+--------------------
+
+The following are internal classes used within ``cocotb``.
 
 .. currentmodule:: cocotb.triggers
 
