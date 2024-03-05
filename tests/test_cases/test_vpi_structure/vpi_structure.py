@@ -27,8 +27,9 @@ def get_len(obj):
 @cocotb.test()
 async def test_structure(dut):
     """
-    Tests that name, fullname, handle type, and length match accross simulators.
-    Not all of the match at the moment, but we can use this to measure progress.
+    Tests that name, fullname, handle type, and length match across simulators.
+    
+    Not all of them match at the moment, but we can use this to measure progress.
     """
 
     # TODO store and check the outputs
