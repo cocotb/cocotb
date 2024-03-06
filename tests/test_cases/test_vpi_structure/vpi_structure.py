@@ -115,5 +115,12 @@ async def test_name_matches_iter(dut):
         direct_obj = eval(obj._path)
         assert obj._handle == direct_obj._handle
 
+        if get_len(direct_obj) != objlen:
+            d_obj = f"{direct_obj=}[{get_len(direct_obj)}]"
+            o_obj = f"{obj=}[{objlen}]"
+            raise Exception(
+                f"len of direct object does not match iterated object {d_obj}, {o_obj}"
+            )
+
         if get_len(obj) != objlen:
             raise Exception("eval of copy changed underlying length")
