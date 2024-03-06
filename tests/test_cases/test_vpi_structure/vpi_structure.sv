@@ -6,6 +6,8 @@
 // Version 2.0.
 // SPDX-License-Identifier: LGPL-3.0-only OR Artistic-2.0
 
+// Matches the corresponding verilator test file found here https://github.com/verilator/verilator/blob/master/test_regress/t/t_vpi_dump.v
+
 /* verilator public_on */
 
 typedef struct packed {
