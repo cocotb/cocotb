@@ -1,4 +1,4 @@
-t: HierarchyObject[28]                             t
+t: HierarchyObject                                 t
   LONGSTART_a_very_long_name_which_will_get_hashed_a_very_long_name_which_will_get_hashed_a_very_long_name_which_will_get_hashed_a_very_long_name_which_will_get_hashed_LONGEND: LogicObject[1] t.LONGSTART_a_very_long_name_which_will_get_hashed_a_very_long_name_which_will_get_hashed_a_very_long_name_which_will_get_hashed_a_very_long_name_which_will_get_hashed_LONGEND
   a: LogicObject[8]                                t.a
   bus1: LogicObject[96]                            t.bus1
@@ -20,120 +20,138 @@ t: HierarchyObject[28]                             t
   text_word: LogicObject[32]                       t.text_word
   twoone: LogicObject[2]                           t.twoone
   x: LogicObject[8]                                t.x
-  arr: HierarchyArrayObject[2]                     t.arr
-    arr[1]: HierarchyObject[1]                     t.arr[1]
-      arr: HierarchyObject[5]                      t.arr[1].arr
+  arr: HierarchyArrayObject                        t.arr
+    arr[1]: HierarchyObject                        t.arr[1]
+      arr: HierarchyObject                         t.arr[1].arr
         LENGTH: LogicObject[32]                    t.arr[1].arr.LENGTH
         check: LogicObject[1]                      t.arr[1].arr.check
         rfr: LogicObject[1]                        t.arr[1].arr.rfr
         sig: LogicObject[1]                        t.arr[1].arr.sig
         verbose: LogicObject[1]                    t.arr[1].arr.verbose
-    arr[2]: HierarchyObject[1]                     t.arr[2]
-      arr: HierarchyObject[5]                      t.arr[2].arr
+    arr[2]: HierarchyObject                        t.arr[2]
+      arr: HierarchyObject                         t.arr[2].arr
         LENGTH: LogicObject[32]                    t.arr[2].arr.LENGTH
         check: LogicObject[1]                      t.arr[2].arr.check
         rfr: LogicObject[2]                        t.arr[2].arr.rfr
         sig: LogicObject[2]                        t.arr[2].arr.sig
         verbose: LogicObject[1]                    t.arr[2].arr.verbose
-  cond_scope: HierarchyObject[3]                   t.cond_scope
+  cond_scope: HierarchyObject                      t.cond_scope
     scoped_wire: LogicObject[32]                   t.cond_scope.scoped_wire
-    scoped_sub: HierarchyObject[2]                 t.cond_scope.scoped_sub
+    scoped_sub: HierarchyObject                    t.cond_scope.scoped_sub
+      redundant: LogicObject[1]                    t.cond_scope.scoped_sub.redundant
       subsig1: LogicObject[1]                      t.cond_scope.scoped_sub.subsig1
       subsig2: LogicObject[1]                      t.cond_scope.scoped_sub.subsig2
-    sub_wrap_gen: HierarchyObject[1]               t.cond_scope.sub_wrap_gen
-      my_sub: HierarchyObject[2]                   t.cond_scope.sub_wrap_gen.my_sub
+    sub_wrap_gen: HierarchyObject                  t.cond_scope.sub_wrap_gen
+      gen_wrap: HierarchyObject                    t.cond_scope.sub_wrap_gen.gen_wrap
+        LENGTH: LogicObject[32]                    t.cond_scope.sub_wrap_gen.gen_wrap.LENGTH
+        gen_loop: HierarchyArrayObject             t.cond_scope.sub_wrap_gen.gen_wrap.gen_loop
+          gen_loop[0]: HierarchyObject             t.cond_scope.sub_wrap_gen.gen_wrap.gen_loop[0]
+            my_sub: HierarchyObject                t.cond_scope.sub_wrap_gen.gen_wrap.gen_loop[0].my_sub
+              redundant: LogicObject[1]            t.cond_scope.sub_wrap_gen.gen_wrap.gen_loop[0].my_sub.redundant
+              subsig1: LogicObject[1]              t.cond_scope.sub_wrap_gen.gen_wrap.gen_loop[0].my_sub.subsig1
+              subsig2: LogicObject[1]              t.cond_scope.sub_wrap_gen.gen_wrap.gen_loop[0].my_sub.subsig2
+      my_sub: HierarchyObject                      t.cond_scope.sub_wrap_gen.my_sub
+        redundant: LogicObject[1]                  t.cond_scope.sub_wrap_gen.my_sub.redundant
         subsig1: LogicObject[1]                    t.cond_scope.sub_wrap_gen.my_sub.subsig1
         subsig2: LogicObject[1]                    t.cond_scope.sub_wrap_gen.my_sub.subsig2
-  intf_arr[0]: HierarchyObject[1]                  t.intf_arr[0]
+  intf_arr[0]: HierarchyObject                     t.intf_arr[0]
     addr: LogicObject[32]                          t.intf_arr[0].addr
-  intf_arr[1]: HierarchyObject[1]                  t.intf_arr[1]
+  intf_arr[1]: HierarchyObject                     t.intf_arr[1]
     addr: LogicObject[32]                          t.intf_arr[1].addr
-  outer_scope: HierarchyArrayObject[3]             t.outer_scope
-    outer_scope[1]: HierarchyObject[2]             t.outer_scope[1]
+  outer_scope: HierarchyArrayObject                t.outer_scope
+    outer_scope[1]: HierarchyObject                t.outer_scope[1]
       scoped_param: LogicObject[32]                t.outer_scope[1].scoped_param
-      inner_scope: HierarchyArrayObject[3]         t.outer_scope[1].inner_scope
-        inner_scope[1]: HierarchyObject[2]         t.outer_scope[1].inner_scope[1]
+      inner_scope: HierarchyArrayObject            t.outer_scope[1].inner_scope
+        inner_scope[1]: HierarchyObject            t.outer_scope[1].inner_scope[1]
           scoped_param_inner: LogicObject[32]      t.outer_scope[1].inner_scope[1].scoped_param_inner
-          arr: HierarchyObject[5]                  t.outer_scope[1].inner_scope[1].arr
+          arr: HierarchyObject                     t.outer_scope[1].inner_scope[1].arr
             LENGTH: LogicObject[32]                t.outer_scope[1].inner_scope[1].arr.LENGTH
             check: LogicObject[1]                  t.outer_scope[1].inner_scope[1].arr.check
             rfr: LogicObject[3]                    t.outer_scope[1].inner_scope[1].arr.rfr
             sig: LogicObject[3]                    t.outer_scope[1].inner_scope[1].arr.sig
             verbose: LogicObject[1]                t.outer_scope[1].inner_scope[1].arr.verbose
-        inner_scope[2]: HierarchyObject[2]         t.outer_scope[1].inner_scope[2]
+        inner_scope[2]: HierarchyObject            t.outer_scope[1].inner_scope[2]
           scoped_param_inner: LogicObject[32]      t.outer_scope[1].inner_scope[2].scoped_param_inner
-          arr: HierarchyObject[5]                  t.outer_scope[1].inner_scope[2].arr
+          arr: HierarchyObject                     t.outer_scope[1].inner_scope[2].arr
             LENGTH: LogicObject[32]                t.outer_scope[1].inner_scope[2].arr.LENGTH
             check: LogicObject[1]                  t.outer_scope[1].inner_scope[2].arr.check
             rfr: LogicObject[3]                    t.outer_scope[1].inner_scope[2].arr.rfr
             sig: LogicObject[3]                    t.outer_scope[1].inner_scope[2].arr.sig
             verbose: LogicObject[1]                t.outer_scope[1].inner_scope[2].arr.verbose
-        inner_scope[3]: HierarchyObject[2]         t.outer_scope[1].inner_scope[3]
+        inner_scope[3]: HierarchyObject            t.outer_scope[1].inner_scope[3]
           scoped_param_inner: LogicObject[32]      t.outer_scope[1].inner_scope[3].scoped_param_inner
-          arr: HierarchyObject[5]                  t.outer_scope[1].inner_scope[3].arr
+          arr: HierarchyObject                     t.outer_scope[1].inner_scope[3].arr
             LENGTH: LogicObject[32]                t.outer_scope[1].inner_scope[3].arr.LENGTH
             check: LogicObject[1]                  t.outer_scope[1].inner_scope[3].arr.check
             rfr: LogicObject[3]                    t.outer_scope[1].inner_scope[3].arr.rfr
             sig: LogicObject[3]                    t.outer_scope[1].inner_scope[3].arr.sig
             verbose: LogicObject[1]                t.outer_scope[1].inner_scope[3].arr.verbose
-    outer_scope[2]: HierarchyObject[2]             t.outer_scope[2]
+    outer_scope[2]: HierarchyObject                t.outer_scope[2]
       scoped_param: LogicObject[32]                t.outer_scope[2].scoped_param
-      inner_scope: HierarchyArrayObject[3]         t.outer_scope[2].inner_scope
-        inner_scope[1]: HierarchyObject[2]         t.outer_scope[2].inner_scope[1]
+      inner_scope: HierarchyArrayObject            t.outer_scope[2].inner_scope
+        inner_scope[1]: HierarchyObject            t.outer_scope[2].inner_scope[1]
           scoped_param_inner: LogicObject[32]      t.outer_scope[2].inner_scope[1].scoped_param_inner
-          arr: HierarchyObject[5]                  t.outer_scope[2].inner_scope[1].arr
+          arr: HierarchyObject                     t.outer_scope[2].inner_scope[1].arr
             LENGTH: LogicObject[32]                t.outer_scope[2].inner_scope[1].arr.LENGTH
             check: LogicObject[1]                  t.outer_scope[2].inner_scope[1].arr.check
             rfr: LogicObject[5]                    t.outer_scope[2].inner_scope[1].arr.rfr
             sig: LogicObject[5]                    t.outer_scope[2].inner_scope[1].arr.sig
             verbose: LogicObject[1]                t.outer_scope[2].inner_scope[1].arr.verbose
-        inner_scope[2]: HierarchyObject[2]         t.outer_scope[2].inner_scope[2]
+        inner_scope[2]: HierarchyObject            t.outer_scope[2].inner_scope[2]
           scoped_param_inner: LogicObject[32]      t.outer_scope[2].inner_scope[2].scoped_param_inner
-          arr: HierarchyObject[5]                  t.outer_scope[2].inner_scope[2].arr
+          arr: HierarchyObject                     t.outer_scope[2].inner_scope[2].arr
             LENGTH: LogicObject[32]                t.outer_scope[2].inner_scope[2].arr.LENGTH
             check: LogicObject[1]                  t.outer_scope[2].inner_scope[2].arr.check
             rfr: LogicObject[5]                    t.outer_scope[2].inner_scope[2].arr.rfr
             sig: LogicObject[5]                    t.outer_scope[2].inner_scope[2].arr.sig
             verbose: LogicObject[1]                t.outer_scope[2].inner_scope[2].arr.verbose
-        inner_scope[3]: HierarchyObject[2]         t.outer_scope[2].inner_scope[3]
+        inner_scope[3]: HierarchyObject            t.outer_scope[2].inner_scope[3]
           scoped_param_inner: LogicObject[32]      t.outer_scope[2].inner_scope[3].scoped_param_inner
-          arr: HierarchyObject[5]                  t.outer_scope[2].inner_scope[3].arr
+          arr: HierarchyObject                     t.outer_scope[2].inner_scope[3].arr
             LENGTH: LogicObject[32]                t.outer_scope[2].inner_scope[3].arr.LENGTH
             check: LogicObject[1]                  t.outer_scope[2].inner_scope[3].arr.check
             rfr: LogicObject[5]                    t.outer_scope[2].inner_scope[3].arr.rfr
             sig: LogicObject[5]                    t.outer_scope[2].inner_scope[3].arr.sig
             verbose: LogicObject[1]                t.outer_scope[2].inner_scope[3].arr.verbose
-    outer_scope[3]: HierarchyObject[2]             t.outer_scope[3]
+    outer_scope[3]: HierarchyObject                t.outer_scope[3]
       scoped_param: LogicObject[32]                t.outer_scope[3].scoped_param
-      inner_scope: HierarchyArrayObject[3]         t.outer_scope[3].inner_scope
-        inner_scope[1]: HierarchyObject[2]         t.outer_scope[3].inner_scope[1]
+      inner_scope: HierarchyArrayObject            t.outer_scope[3].inner_scope
+        inner_scope[1]: HierarchyObject            t.outer_scope[3].inner_scope[1]
           scoped_param_inner: LogicObject[32]      t.outer_scope[3].inner_scope[1].scoped_param_inner
-          arr: HierarchyObject[5]                  t.outer_scope[3].inner_scope[1].arr
+          arr: HierarchyObject                     t.outer_scope[3].inner_scope[1].arr
             LENGTH: LogicObject[32]                t.outer_scope[3].inner_scope[1].arr.LENGTH
             check: LogicObject[1]                  t.outer_scope[3].inner_scope[1].arr.check
             rfr: LogicObject[7]                    t.outer_scope[3].inner_scope[1].arr.rfr
             sig: LogicObject[7]                    t.outer_scope[3].inner_scope[1].arr.sig
             verbose: LogicObject[1]                t.outer_scope[3].inner_scope[1].arr.verbose
-        inner_scope[2]: HierarchyObject[2]         t.outer_scope[3].inner_scope[2]
+        inner_scope[2]: HierarchyObject            t.outer_scope[3].inner_scope[2]
           scoped_param_inner: LogicObject[32]      t.outer_scope[3].inner_scope[2].scoped_param_inner
-          arr: HierarchyObject[5]                  t.outer_scope[3].inner_scope[2].arr
+          arr: HierarchyObject                     t.outer_scope[3].inner_scope[2].arr
             LENGTH: LogicObject[32]                t.outer_scope[3].inner_scope[2].arr.LENGTH
             check: LogicObject[1]                  t.outer_scope[3].inner_scope[2].arr.check
             rfr: LogicObject[7]                    t.outer_scope[3].inner_scope[2].arr.rfr
             sig: LogicObject[7]                    t.outer_scope[3].inner_scope[2].arr.sig
             verbose: LogicObject[1]                t.outer_scope[3].inner_scope[2].arr.verbose
-        inner_scope[3]: HierarchyObject[2]         t.outer_scope[3].inner_scope[3]
+        inner_scope[3]: HierarchyObject            t.outer_scope[3].inner_scope[3]
           scoped_param_inner: LogicObject[32]      t.outer_scope[3].inner_scope[3].scoped_param_inner
-          arr: HierarchyObject[5]                  t.outer_scope[3].inner_scope[3].arr
+          arr: HierarchyObject                     t.outer_scope[3].inner_scope[3].arr
             LENGTH: LogicObject[32]                t.outer_scope[3].inner_scope[3].arr.LENGTH
             check: LogicObject[1]                  t.outer_scope[3].inner_scope[3].arr.check
             rfr: LogicObject[7]                    t.outer_scope[3].inner_scope[3].arr.rfr
             sig: LogicObject[7]                    t.outer_scope[3].inner_scope[3].arr.sig
             verbose: LogicObject[1]                t.outer_scope[3].inner_scope[3].arr.verbose
-  sub: HierarchyObject[2]                          t.sub
+  sub: HierarchyObject                             t.sub
+    redundant: LogicObject[1]                      t.sub.redundant
     subsig1: LogicObject[1]                        t.sub.subsig1
     subsig2: LogicObject[1]                        t.sub.subsig2
-  sub_wrap: HierarchyObject[1]                     t.sub_wrap
-    my_sub: HierarchyObject[2]                     t.sub_wrap.my_sub
+  sub_wrap: HierarchyObject                        t.sub_wrap
+    gen_wrap: HierarchyObject                      t.sub_wrap.gen_wrap
+      LENGTH: LogicObject[32]                      t.sub_wrap.gen_wrap.LENGTH
+      my_sub: HierarchyObject                      t.sub_wrap.gen_wrap.my_sub
+        redundant: LogicObject[1]                  t.sub_wrap.gen_wrap.my_sub.redundant
+        subsig1: LogicObject[1]                    t.sub_wrap.gen_wrap.my_sub.subsig1
+        subsig2: LogicObject[1]                    t.sub_wrap.gen_wrap.my_sub.subsig2
+    my_sub: HierarchyObject                        t.sub_wrap.my_sub
+      redundant: LogicObject[1]                    t.sub_wrap.my_sub.redundant
       subsig1: LogicObject[1]                      t.sub_wrap.my_sub.subsig1
       subsig2: LogicObject[1]                      t.sub_wrap.my_sub.subsig2

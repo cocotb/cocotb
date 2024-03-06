@@ -14,10 +14,10 @@ typedef struct packed {
    int              sel;  // select
 } t_bus;
 
-interface TestInterface();
+interface TestInterface ();
 
    logic [31:0] addr;
-   modport source (input addr);
+   modport source(input addr);
 
 endinterface
 
@@ -67,7 +67,7 @@ module t (  /*AUTOARG*/
 
    sub sub ();
 
-   TestInterface intf_arr[2]();
+   TestInterface intf_arr[2] ();
 
 
    genvar i;
@@ -108,10 +108,8 @@ endmodule : t
 module sub;
    reg subsig1;
    reg subsig2;
-`ifdef IVERILOG
    // stop icarus optimizing signals away
    wire redundant = subsig1 | subsig2;
-`endif
 endmodule : sub
 
 module arr;
@@ -140,4 +138,16 @@ endmodule : arr
 
 module sub_wrapper;
    sub my_sub ();
+   gen_wrapper gen_wrap ();
+endmodule
+
+module gen_wrapper #(
+   parameter int LENGTH = 1
+);
+   genvar i;
+   generate
+      for (i = 0; i < LENGTH; i++) begin : gen_loop
+         sub my_sub ();
+      end
+   endgenerate
 endmodule
