@@ -46,8 +46,8 @@ async def test_name_matches_iter(dut):
     """
     Test name accessibility and handle lengths.
     
-     All of the names accessible through iteration are also accessible through the name.
-     Multiple instances in Python don't corrupt C++ handle lengths, particularly pseudo objects.
+    All of the names accessible through iteration are also accessible through the name.
+    Multiple instances in Python don't corrupt C++ handle lengths, particularly pseudo objects.
     """
 
     t = cocotb.handle.HierarchyObject(dut._handle, dut._path)
