@@ -37,6 +37,15 @@ typedef struct packed
     logic a_in;
     logic b_out;
 } test_if;
+
+typedef struct packed
+{
+    logic val_a;
+    logic val_b;
+    logic value;
+} test_struct;
+
+
 `endif
 
 interface TestInterface ();
@@ -68,6 +77,7 @@ module sample_module #(
     output real                                 stream_out_real,
     output integer                              stream_out_int,
     input  test_if                              inout_if,
+    input  test_struct                          my_struct,
     input  string                               stream_in_string,
 `endif
     input  [7:0]                                stream_in_data,

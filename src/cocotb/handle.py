@@ -1015,6 +1015,16 @@ class LogicObject(
         return str(self.value)
 
 
+class PackedStructObject(LogicObject):
+    """A packed struct object.
+
+    Some simulators allow packed struct signal access, so we allow converting to that type.
+    """
+
+    def asHierarchyObject(self):
+        return HierarchyObject(self._handle, self._path)
+
+
 class RealObject(ValueObjectBase[float, float]):
     """A real/float simulation object.
 
@@ -1292,6 +1302,7 @@ _handle2obj: Dict[
 _type2cls: Dict[int, Type[_ConcreteHandleTypes]] = {
     simulator.MODULE: HierarchyObject,
     simulator.STRUCTURE: HierarchyObject,
+    simulator.PACKED_STRUCTURE: PackedStructObject,
     simulator.REG: LogicObject,
     simulator.NET: LogicObject,
     simulator.NETARRAY: ArrayObject[Any, ValueObjectBase[Any, Any]],
