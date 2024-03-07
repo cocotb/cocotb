@@ -4,21 +4,20 @@
 
 TOPLEVEL_LANG ?= verilog
 
-TOPLEVEL := t
+ifneq ($(TOPLEVEL_LANG),verilog)
 
-PWD = $(shell pwd)
+all:
+	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
+clean::
 
-# SIM_OUTPUT_REDIRECT := "asdf.out"
+else
 
 COCOTB ?= $(PWD)/../../..
-
-ifeq ($(TOPLEVEL_LANG),verilog)
-    VERILOG_SOURCES = $(COCOTB)/tests/test_cases/test_vpi_structure/vpi_structure.sv
-else
-    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
-endif
+PWD = $(shell pwd)
+VERILOG_SOURCES = $(COCOTB)/tests/test_cases/test_vpi_structure/vpi_structure.sv
+TOPLEVEL := t
+MODULE = vpi_structure
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
-
-MODULE = vpi_structure
+endif
