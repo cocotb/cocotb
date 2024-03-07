@@ -234,6 +234,11 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiStructNet:
         case vpiUnionVar:
         case vpiUnionNet:
+            if (vpi_get(vpiPacked, new_hdl)) {
+                new_obj = new VpiSignalObjHdl(this, new_hdl,
+                                              GPI_PACKED_STRUCTURE, false);
+                break;
+            }
             new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vpiModule:

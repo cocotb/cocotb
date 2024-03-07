@@ -21,6 +21,7 @@ REAL: int
 REG: int
 STRING: int
 STRUCTURE: int
+PACKED_STRUCTURE: int
 UNKNOWN: int
 
 class gpi_cb_hdl:
