@@ -52,9 +52,15 @@ async def recursive_discovery(dut):
     else:
         pass_total = 265
 
+    # Icarus doesn't support array indexes like get_handle_by_name("some_path[x]")
+    SKIP_HANDLE_ASSERT = cocotb.SIM_NAME.lower().startswith(
+        ("riviera", "icarus")
+    ) or cocotb.LANGUAGE in ["vhdl"]
+    # SKIP_HANDLE_ASSERT = cocotb.SIM_NAME.lower().startswith(("icarus")
+
     tlog = logging.getLogger("cocotb.test")
 
-    def dump_all_the_things(parent):
+    def sim_iter(parent):
         if not isinstance(
             parent,
             (
@@ -62,15 +68,21 @@ async def recursive_discovery(dut):
                 cocotb.handle.NonHierarchyIndexableObjectBase,
             ),
         ):
-            return 0
-        count = 0
+            return
         for thing in parent:
-            count += 1
-            tlog.info("Found %s (%s)", thing._path, type(thing))
-            count += dump_all_the_things(thing)
-        return count
+            yield thing
+            yield from sim_iter(thing)
 
-    total = dump_all_the_things(dut)
+    total = 0
+    for thing in sim_iter(dut):
+        tlog.info("Found %s (%s)", thing._path, type(thing))
+
+        if not SKIP_HANDLE_ASSERT:
+            subpath = thing._path.split(".", 1)[1]
+            assert dut._handle.get_handle_by_name(subpath) == thing._handle
+
+        total += 1
+
     tlog.info("Found a total of %d things", total)
     assert total == pass_total
 
