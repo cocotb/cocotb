@@ -187,6 +187,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
         self._sub_handles: Dict[KeyType, SimHandleBase] = {}
+        self._is_discovered = False
 
     def _keys(self) -> Iterable[KeyType]:
         """Iterate over the keys (name or index) of the child objects.
@@ -212,13 +213,16 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         self._discover_all()
         return self._sub_handles.items()
 
-    @cached_property
     def _discover_all(self) -> None:
         """When iterating or performing IPython tab completion, we run through ahead of
         time and discover all possible children, populating the :any:`_sub_handles`
         mapping. Hierarchy can't change after elaboration so we only have to
         do this once.
         """
+        if self._is_discovered:
+            return
+        self._is_discovered = True
+
         for thing in self._handle.iterate(simulator.OBJECTS):
             name = thing.get_name_string()
 
@@ -246,7 +250,6 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
             # add to cache
             self._sub_handles[key] = hdl
-        return lambda: None
 
     def __getitem__(self, key: KeyType) -> SimHandleBase:
         # try to use cached value
