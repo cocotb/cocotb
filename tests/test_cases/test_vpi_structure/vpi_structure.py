@@ -88,7 +88,7 @@ async def test_structure(dut):
         )
 
 
-@cocotb.test()
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"))
 async def test_name_matches_iter(dut):
     """
     Test name accessibility and handle lengths.
