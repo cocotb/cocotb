@@ -8,16 +8,8 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
-  apt_packages:
-    - graphviz
-
-python:
-  install:
-    - requirements: docs/requirements.txt
-    - method: pip
-      path: .
-      extra_requirements:
-        - bus
-
-sphinx:
-  configuration: docs/source/conf.py
+  commands:
+    - apt-get update --assume-yes --quiet
+    - apt-get install --assume-yes --quiet -- graphviz
+    - pip install nox
+    - nox -e docs -- $READTHEDOCS_OUTPUT/html/
