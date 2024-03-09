@@ -70,7 +70,6 @@ ASIM_ARGS += $(SIM_ARGS)
 ASIM_ARGS += $(PLUSARGS)
 
 RTL_LIBRARY ?= $(SIM_BUILD)/work
-ALOG_ARGS += +define+COCOTB_SIM
 
 # Pass the VPI library to the Verilog compilation to get extended checking.
 ALOG_ARGS += -pli $(shell cocotb-config --lib-name-path vpi riviera)

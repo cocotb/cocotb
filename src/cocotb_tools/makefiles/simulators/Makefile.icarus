@@ -78,7 +78,7 @@ endif
 
 $(SIM_BUILD)/sim.vvp: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	@echo "+timescale+$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)" > $(SIM_BUILD)/cmds.f
-	$(CMD) -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(TOPMODULE_ARG) -g2012 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+	$(CMD) -o $(SIM_BUILD)/sim.vvp $(TOPMODULE_ARG) -g2012 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 $(SIM_BUILD)/cocotb_iverilog_dump.v: | $(SIM_BUILD)
 	@echo 'module cocotb_iverilog_dump();' > $@

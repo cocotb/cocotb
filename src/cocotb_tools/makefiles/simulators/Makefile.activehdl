@@ -23,7 +23,7 @@ ACOM_ARGS += $(COMPILE_ARGS)
 ASIM_ARGS += $(SIM_ARGS)
 
 RTL_LIBRARY ?= work
-ALOG_ARGS += +define+COCOTB_SIM -dbg
+ALOG_ARGS += -dbg
 ACOM_ARGS += -dbg
 
 GPI_EXTRA:=

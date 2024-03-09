@@ -62,7 +62,7 @@ endif
 VERILATOR_CPP := $(shell cocotb-config --share)/lib/verilator/verilator.cpp
 
 $(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(VERILATOR_CPP) | $(SIM_BUILD)
-	$(CMD) -cc --exe -Mdir $(SIM_BUILD) -DCOCOTB_SIM=1 $(TOPMODULE_ARG) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(VERILATOR_CPP)
+	$(CMD) -cc --exe -Mdir $(SIM_BUILD) $(TOPMODULE_ARG) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(VERILATOR_CPP)
 
 # Compilation phase
 $(SIM_BUILD)/Vtop: $(SIM_BUILD)/Vtop.mk

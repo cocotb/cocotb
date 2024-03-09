@@ -582,8 +582,6 @@ class Icarus(Simulator):
                     "iverilog",
                     "-o",
                     str(self.sim_file),
-                    "-D",
-                    "COCOTB_SIM=1",
                     "-s",
                     self.hdl_toplevel,
                     "-g2012",
@@ -647,7 +645,6 @@ class Questa(Simulator):
                 ["vlog"]
                 + ([] if self.always else ["-incr"])
                 + ["-work", as_tcl_value(self.hdl_library)]
-                + ["+define+COCOTB_SIM"]
                 + ["-sv"]
                 + self._get_define_options(self.defines)
                 + self._get_include_options(self.includes)
@@ -904,7 +901,7 @@ class Riviera(Simulator):
                 )
 
             if self.verilog_sources:
-                do_script += "alog -work {RTL_LIBRARY} +define+COCOTB_SIM -pli {EXT_NAME} -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
+                do_script += "alog -work {RTL_LIBRARY} -pli {EXT_NAME} -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.hdl_library),
                     EXT_NAME=as_tcl_value(
                         cocotb_tools.config.lib_name_path("vpi", "riviera")
@@ -1047,7 +1044,6 @@ class Verilator(Simulator):
                 "--exe",
                 "-Mdir",
                 str(self.build_dir),
-                "-DCOCOTB_SIM=1",
                 "--top-module",
                 self.hdl_toplevel,
                 "--vpi",
@@ -1162,7 +1158,6 @@ class Xcelium(Simulator):
             + vhpi_opts
             + [f"-work {self.hdl_library}"]
             + self.build_args
-            + ["-define COCOTB_SIM"]
             + self._get_include_options(self.includes)
             + self._get_define_options(self.defines)
             + self._get_parameter_options(self.parameters)
