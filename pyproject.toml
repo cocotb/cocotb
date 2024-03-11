@@ -114,12 +114,6 @@ markers = [
 # log_cli = true
 # log_cli_level = DEBUG
 
-[tool.coverage.run]
-omit = [
-    "*/cocotb/config.py",
-    "*/cocotb/_vendor/*",
-]
-
 [tool.coverage.paths]
 source = [
     "src/cocotb/",
