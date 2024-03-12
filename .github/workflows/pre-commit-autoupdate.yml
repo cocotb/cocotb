@@ -37,3 +37,6 @@ jobs:
     uses: ./.github/workflows/lint.yml
   regression:
     uses: ./.github/workflows/regression-tests.yml
+    with:
+      nox_session_test_nosim: dev_test_nosim
+      nox_session_test_sim: dev_test_sim
