@@ -18,4 +18,5 @@ from cocotb._sim_versions import RivieraVersion
     else ()
 )
 async def test_packed_union(dut):
-    dut.t.a.value = 0
+    pbs = dut.t.asHierarchyObject()
+    pbs.a.value = 0
