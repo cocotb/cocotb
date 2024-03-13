@@ -102,6 +102,22 @@ ENVS = [
         "sim-version": "v2.0.0",  # GHDL 2.0 is the minimum supported version.
         "os": "ubuntu-latest",
         "python-version": "3.8",
+        "group": "extended",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "ghdl",
+        "sim-version": "v3.0.0",
+        "os": "ubuntu-latest",
+        "python-version": "3.8",
+        "group": "extended",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "ghdl",
+        "sim-version": "v4.0.0",  # The latest release version.
+        "os": "ubuntu-latest",
+        "python-version": "3.8",
         "group": "ci",
     },
     {
