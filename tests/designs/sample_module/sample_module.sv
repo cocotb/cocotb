@@ -32,11 +32,14 @@
 `endif
 
 `ifndef __ICARUS__
+
+`ifndef VERILATOR
 typedef struct
 {
     logic a_in;
     logic b_out;
 } test_if;
+`endif // `ifndef VERILATOR
 
 typedef struct packed
 {
@@ -76,7 +79,9 @@ module sample_module #(
     input  integer                              stream_in_int,
     output real                                 stream_out_real,
     output integer                              stream_out_int,
+    `ifndef VERILATOR
     input  test_if                              inout_if,
+    `endif
     input  test_struct                          my_struct,
     input  string                               stream_in_string,
 `endif
@@ -136,7 +141,9 @@ always @(stream_in_string) begin
 end
 `endif //  `ifndef _VCP
 
+`ifndef VERILATOR
 test_if struct_var;
+`endif
 `endif //  `ifndef __ICARUS__
 
 and test_and_gate(and_output, stream_in_ready, stream_in_valid);
