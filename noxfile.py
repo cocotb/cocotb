@@ -4,7 +4,6 @@
 import glob
 import os
 import shutil
-import sys
 from contextlib import suppress
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -33,7 +32,7 @@ dev_deps = [
 ]
 
 # Version of the cibuildwheel package used to build wheels.
-cibuildwheel_version = "2.15.0"
+cibuildwheel_version = "2.17.0"
 
 #
 # Helpers for use within this file.
@@ -376,29 +375,14 @@ def release_build_bdist(session: nox.Session) -> None:
     # Pin a version to ensure reproducible builds.
     session.run("pip", "install", f"cibuildwheel=={cibuildwheel_version}")
 
-    # cibuildwheel only auto-detects the platform if it runs on a CI server.
-    # Do the auto-detect manually to enable local runs.
-    if sys.platform.startswith("linux"):
-        platform = "linux"
-    elif sys.platform == "darwin":
-        platform = "macos"
-    elif sys.platform == "win32":
-        platform = "windows"
-    else:
-        session.error(f"Unknown platform: {sys.platform!r}")
-
     session.log("Building binary distribution (wheels)")
     session.run(
         "cibuildwheel",
-        "--platform",
-        platform,
         "--output-dir",
         dist_dir,
     )
 
-    session.log(
-        f"Binary distribution in release mode for {platform!r} built into {dist_dir!r}"
-    )
+    session.log(f"Binary distribution in release mode built into {dist_dir!r}")
 
 
 @nox.session
