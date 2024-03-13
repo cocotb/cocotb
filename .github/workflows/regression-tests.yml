@@ -27,6 +27,11 @@ on:
         type: string
         default: "ci"
         description: Group of environments to run the tests against. Leave empty to run them all.
+      max_parallel:
+        required: false
+        type: number
+        default: 0
+        description: Maximum number of parallel matrix jobs
 
 jobs:
 
@@ -60,6 +65,7 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.generate_envs.outputs.envs) }}
+      max-parallel: ${{ inputs.max_parallel }}
 
     steps:
     - uses: actions/checkout@v4
