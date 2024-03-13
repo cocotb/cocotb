@@ -82,15 +82,15 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "master",
+        "sim-version": "v12_0",  # The latest release version.
         "os": "ubuntu-20.04",
         "python-version": "3.8",
-        "group": "experimental",
+        "group": "ci",
     },
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v12_0",  # The latest release version.
+        "sim-version": "master",
         "os": "ubuntu-20.04",
         "python-version": "3.8",
         "group": "experimental",
