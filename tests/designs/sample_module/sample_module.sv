@@ -32,7 +32,7 @@
 `endif
 
 `ifndef __ICARUS__
-typedef struct packed
+typedef struct
 {
     logic a_in;
     logic b_out;

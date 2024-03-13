@@ -31,43 +31,43 @@ def assert_raises(exc_type):
 @test_dec
 async def test_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
-    assert repr(dut.inout_if) == "PackedStructObject(sample_module.inout_if)"
+    assert repr(dut.my_struct) == "PackedStructObject(sample_module.my_struct)"
 
     # use value or value to access signal
-    cocotb.log.info(f"dut.inout_if.value={dut.inout_if.value}")
-    assert repr(dut.inout_if.value) == "LogicArray('ZZ', Range(1, 'downto', 0))"
+    cocotb.log.info(f"dut.my_struct.value={dut.my_struct.value}")
+    assert repr(dut.my_struct.value) == "LogicArray('ZZZ', Range(2, 'downto', 0))"
 
-    hier_obj = dut.inout_if.asHierarchyObject()
-    assert repr(hier_obj) == "HierarchyObject(sample_module.inout_if)"
-    cocotb.log.info(f"a_in={hier_obj.a_in.value}")
-    assert repr(hier_obj.a_in) == "LogicObject(sample_module.inout_if.a_in)"
+    hier_obj = dut.my_struct.asHierarchyObject()
+    assert repr(hier_obj) == "HierarchyObject(sample_module.my_struct)"
+    cocotb.log.info(f"val_a={hier_obj.val_a.value}")
+    assert repr(hier_obj.val_a) == "LogicObject(sample_module.my_struct.val_a)"
 
-    cocotb.log.info(f"b_out={hier_obj.b_out.value}")
-    assert repr(hier_obj.b_out) == "LogicObject(sample_module.inout_if.b_out)"
+    cocotb.log.info(f"val_b={hier_obj.val_b.value}")
+    assert repr(hier_obj.val_b) == "LogicObject(sample_module.my_struct.val_b)"
 
 
 @test_dec
 async def test_struct_setting(dut):
     """Test getting and setting setting the value of an entire struct"""
 
-    assert dut.inout_if.value.binstr == "ZZ"
+    assert dut.my_struct.value.binstr == "ZZZ"
 
     # test struct write -> individual signals
-    dut.inout_if.value = 0
+    dut.my_struct.value = 0
     await Timer(1000, "ns")
 
-    assert dut.inout_if.value.binstr == "00"
+    assert dut.my_struct.value.binstr == "000"
 
     # check inner signals
-    hier_obj = dut.inout_if.asHierarchyObject()
-    assert hier_obj.a_in.value == 0
-    assert hier_obj.b_out.value == 0
+    hier_obj = dut.my_struct.asHierarchyObject()
+    assert hier_obj.val_a.value == 0
+    assert hier_obj.val_b.value == 0
 
     # test signal write -> struct value
-    hier_obj.a_in.value = 1
+    hier_obj.val_a.value = 1
     await Timer(1000, "ns")
-    assert dut.inout_if.value.binstr == "10"
+    assert dut.my_struct.value.binstr == "100"
 
-    hier_obj.b_out.value = 1
+    hier_obj.val_b.value = 1
     await Timer(1000, "ns")
-    assert dut.inout_if.value.binstr == "11"
+    assert dut.my_struct.value.binstr == "110"
