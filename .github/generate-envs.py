@@ -66,19 +66,18 @@ ENVS = [
         "sim": "icarus",
         "sim-version": "apt",
         "os": "ubuntu-20.04",
-        "python-version": "3.12.0-rc - 3.12",
+        "python-version": "3.12",
         "group": "ci",
     },
     # A single test for the upcoming Python version.
-    # TODO: Enable once Python 3.13 development starts.
-    # {
-    #    "lang": "verilog",
-    #    "sim": "icarus",
-    #    "sim-version": "apt",
-    #    "os": "ubuntu-20.04",
-    #    "python-version": "3.13.0-alpha - 3.13.0",
-    #    "group": "experimental",
-    # },
+    {
+        "lang": "verilog",
+        "sim": "icarus",
+        "sim-version": "apt",
+        "os": "ubuntu-20.04",
+        "python-version": "3.13.0-alpha - 3.13.0",
+        "group": "experimental",
+    },
     # Test Icarus on Ubuntu
     {
         "lang": "verilog",
@@ -91,7 +90,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v11_0",  # The latest release version.
+        "sim-version": "v12_0",  # The latest release version.
         "os": "ubuntu-20.04",
         "python-version": "3.8",
         "group": "experimental",
@@ -158,45 +157,42 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "b83daa3ae36891a372655652e53c9b4eefdfcafa",
+        "sim-version": "v12_0",
         "os": "windows-latest",
-        "python-version": "3.8",
+        "python-version": "3.11",
         "toolchain": "mingw",
-        "extra_name": "mingw | ",
-        # mingw tests fail silently currently due to test harness limitations.
-        "group": "experimental",
+        "extra-name": "mingw",
+        "group": "ci",
     },
     # use msvc instead of mingw
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "b83daa3ae36891a372655652e53c9b4eefdfcafa",
+        "sim-version": "v12_0",
         "os": "windows-latest",
-        "python-version": "3.8",
+        "python-version": "3.11",
         "toolchain": "msvc",
-        "extra_name": "msvc | ",
-        # TODO: Moved from ci to experimental until
-        # https://github.com/cocotb/cocotb/issues/3326 is fixed.
-        "group": "experimental",
+        "extra-name": "msvc",
+        "group": "ci",
     },
     # Other
     # use clang instead of gcc
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "b83daa3ae36891a372655652e53c9b4eefdfcafa",
+        "sim-version": "v12_0",
         "os": "ubuntu-20.04",
         "python-version": "3.8",
         "cxx": "clang++",
         "cc": "clang",
-        "extra_name": "clang | ",
+        "extra-name": "clang",
         "group": "ci",
     },
     # Test Siemens Questa on Ubuntu
     {
         "lang": "verilog",
         "sim": "questa",
-        "sim-version": "siemens/questa/2023.2",
+        "sim-version": "siemens/questa/2023.4",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -205,7 +201,7 @@ ENVS = [
     {
         "lang": "vhdl and fli",
         "sim": "questa",
-        "sim-version": "siemens/questa/2023.2",
+        "sim-version": "siemens/questa/2023.4",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -214,7 +210,7 @@ ENVS = [
     {
         "lang": "vhdl and vhpi",
         "sim": "questa",
-        "sim-version": "siemens/questa/2023.2",
+        "sim-version": "siemens/questa/2023.4",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -224,7 +220,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "riviera",
-        "sim-version": "aldec/rivierapro/2022.04",
+        "sim-version": "aldec/rivierapro/2023.10",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -233,13 +229,19 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "riviera",
-        "sim-version": "aldec/rivierapro/2022.04",
+        "sim-version": "aldec/rivierapro/2023.10",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
         "group": "ci",
     },
 ]
+
+
+def append_str_val(listref, my_list, key) -> None:
+    if key not in my_list:
+        return
+    listref.append(str(my_list[key]))
 
 
 def main() -> int:
@@ -260,14 +262,31 @@ def main() -> int:
         # Return all tasks if no group is selected.
         selected_envs = ENVS
 
-    # The "runs-on" job attribute is a string if we're using the GitHub-provided
-    # hosted runners, or an array with special keys if we're using self-hosted
-    # runners.
     for env in selected_envs:
+        # The "runs-on" job attribute is a string if we're using the GitHub-
+        # provided hosted runners, or an array with special keys if we're
+        # using self-hosted runners.
         if "self-hosted" in env and env["self-hosted"] and "runs-on" not in env:
-            env["runs-on"] = ["self-hosted", "cocotb-private", env["os"]]
+            env["runs-on"] = ["self-hosted", f"cocotb-private-{env['os']}"]
         else:
             env["runs-on"] = env["os"]
+
+        # Assemble the human-readable name of the job.
+        name_parts = []
+        append_str_val(name_parts, env, "extra-name")
+        append_str_val(name_parts, env, "sim")
+        if "/" in env["sim-version"]:
+            # Shorten versions like 'siemens/questa/2023.2' to '2023.2'.
+            name_parts.append(env["sim-version"].split("/")[-1])
+        else:
+            name_parts.append(env["sim-version"])
+        append_str_val(name_parts, env, "lang")
+        append_str_val(name_parts, env, "os")
+        append_str_val(name_parts, env, "python-version")
+        if "may-fail" in env and env["may-fail"]:
+            name_parts.append("May fail")
+
+        env["name"] = "|".join(name_parts)
 
     if args.output_format == "gha":
         # Output for GitHub Actions (GHA). Appends the configuration to

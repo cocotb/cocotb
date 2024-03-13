@@ -21,19 +21,19 @@ on:
 
 jobs:
   cocotb-coverage:
-    name: Test cocotb-coverage 1.1
+    name: Test cocotb-coverage 1.2
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install Icarus Verilog
-        run: sudo apt install -y --no-install-recommends iverilog
+        run: sudo apt-get install -y --no-install-recommends iverilog
 
       - name: Checkout cocotb repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: cocotb
 
@@ -41,13 +41,13 @@ jobs:
         run: pip3 install ./cocotb
 
       - name: Checkout cocotb-coverage repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mciepluc/cocotb-coverage
           path: cocotb-coverage
 
       - name: Install the release version of cocotb-coverage
-        run: pip3 install cocotb-coverage==1.1
+        run: pip3 install cocotb-coverage==1.2
 
       - name: Run tests
         # Don't run tests through tox (as present in cocotb-coverage) to be able
