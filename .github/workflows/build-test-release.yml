@@ -25,10 +25,10 @@ jobs:
           - windows-2022
           - macos-12
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Install nox
         run: python3 -m pip install nox
 
@@ -38,9 +38,9 @@ jobs:
       - name: Build cocotb release
         run: nox -s release_build
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: cocotb-dist
+          name: cocotb-dist-${{ matrix.os }}
           path: |
             dist/*.whl
             dist/*.tar.gz
@@ -50,14 +50,15 @@ jobs:
     needs: build_release
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        python-version: "3.10"
-    - uses: actions/download-artifact@v3
+        python-version: "3.12"
+    - uses: actions/download-artifact@v4
       with:
-        name: cocotb-dist
         path: dist
+        pattern: cocotb-dist-*
+        merge-multiple: true
     - name: Install nox
       run: python3 -m pip install nox
     - name: Smoke-test the sdist
@@ -82,14 +83,15 @@ jobs:
     # Only upload tagged releases.
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        python-version: "3.11"
-    - uses: actions/download-artifact@v3
+        python-version: "3.12"
+    - uses: actions/download-artifact@v4
       with:
-        name: cocotb-dist
         path: dist
+        pattern: cocotb-dist-*
+        merge-multiple: true
     - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:

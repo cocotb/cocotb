@@ -14,15 +14,15 @@ import nox
 # Sessions run by default if nox is called without further arguments.
 nox.options.sessions = ["dev_test"]
 
-test_deps = ["pytest"]
-coverage_deps = ["coverage", "pytest-cov"]
+test_deps = ["pytest>=6"]
+coverage_deps = ["coverage[toml]>=5.0", "pytest-cov"]
 # gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See
 # https://github.com/gcovr/gcovr/issues/596
 # When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an
 # Exception is raised during html report generation.
 # See https://github.com/gcovr/gcovr/pull/576
 # These issues are fixed on gcovr master branch, so next release should work.
-coverage_report_deps = ["coverage", "jinja2<3.1", "gcovr==5.0"]
+coverage_report_deps = ["coverage[toml]>=5.0", "jinja2<3.1", "gcovr==5.0"]
 
 dev_deps = [
     "black",
@@ -33,6 +33,9 @@ dev_deps = [
     "flake8",
     "clang-format",
 ]
+
+# Version of the cibuildwheel package used to build wheels.
+cibuildwheel_version = "2.15.0"
 
 #
 # Helpers for use within this file.
@@ -364,7 +367,7 @@ def release_build_bdist(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
 
     # Pin a version to ensure reproducible builds.
-    session.run("pip", "install", "cibuildwheel==2.15.0")
+    session.run("pip", "install", f"cibuildwheel=={cibuildwheel_version}")
 
     # cibuildwheel only auto-detects the platform if it runs on a CI server.
     # Do the auto-detect manually to enable local runs.

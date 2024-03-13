@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Generate a list of environments to run tests against
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: ./.github/generate-envs.py --output-format=gha --gha-output-file="$GITHUB_OUTPUT" --group="${{inputs.group}}"
       id: run_generate_script
     outputs:
@@ -44,8 +44,10 @@ jobs:
 
     needs: generate_envs
 
-    name: ${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}} ${{matrix.may_fail && '| May Fail' || ''}}
+    name: ${{matrix.name}}
     runs-on: ${{matrix.runs-on}}
+    timeout-minutes: 40
+
     env:
       SIM: ${{matrix.sim}}
       TOPLEVEL_LANG: ${{matrix.lang}}
@@ -60,7 +62,7 @@ jobs:
         include: ${{ fromJson(needs.generate_envs.outputs.envs) }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         # GitHub PR's create a merge commit, and Actions are run on that commit.
         # Codecov's uploader needs the previous commit (tip of PR branch) to associate coverage correctly.
@@ -68,21 +70,22 @@ jobs:
         fetch-depth: 2
 
      # Download distribution artifacts (if any).
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
-        name: cocotb-dist
         path: dist
+        pattern: cocotb-dist-*
+        merge-multiple: true
       if: ${{ inputs.download_artifacts }}
 
       # Install Python
     - name: Set up Python ${{matrix.python-version}}
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{matrix.python-version}}
     - name: Set up Anaconda ${{matrix.python-version}} (Windows)
       if: startsWith(matrix.os, 'windows')
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
         # Use base environment to properly import _sqlite3 DLL - see gh-3166
@@ -97,17 +100,17 @@ jobs:
         pip install nox
     - name: Run tests without simulators
       run: nox -s "${{ inputs.nox_session_test_nosim }}"
-      continue-on-error: ${{matrix.may_fail || false}}
+      continue-on-error: ${{matrix.may-fail || false}}
 
       # Install Icarus
     - name: Set up Icarus (Ubuntu - apt)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version == 'apt'
       run: |
-        sudo apt install -y --no-install-recommends iverilog
+        sudo apt-get install -y --no-install-recommends iverilog
     - name: Set up Icarus (Ubuntu - source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version != 'apt'
       run: |
-        sudo apt install -y --no-install-recommends g++ gperf flex bison make autoconf
+        sudo apt-get install -y --no-install-recommends g++ gperf flex bison make autoconf
         git clone https://github.com/steveicarus/iverilog.git
         cd iverilog
         git reset --hard ${{matrix.sim-version}}
@@ -140,7 +143,8 @@ jobs:
     - name: Set up GHDL (Ubuntu)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl'
       run: |
-        sudo apt install -y --no-install-recommends gnat
+        sudo apt update
+        sudo apt-get install -y --no-install-recommends gnat
         git clone https://github.com/ghdl/ghdl.git
         cd ghdl
         git reset --hard ${{matrix.sim-version}}
@@ -154,7 +158,7 @@ jobs:
     - name: Set up Verilator (Ubunutu - source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator'
       run: |
-        sudo apt install -y --no-install-recommends help2man make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlibc zlib1g zlib1g-dev
+        sudo apt-get install -y --no-install-recommends help2man make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlib1g zlib1g-dev
         git clone https://github.com/verilator/verilator.git
         cd verilator
         git reset --hard ${{matrix.sim-version}}
@@ -173,8 +177,8 @@ jobs:
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
-      continue-on-error: ${{matrix.may_fail || false}}
-      timeout-minutes: 15
+      continue-on-error: ${{matrix.may-fail || false}}
+      timeout-minutes: 20
       # Virtual environments don't work on Windows with cocotb. Avoid using them
       # in nox testing.
       run: |
@@ -184,11 +188,11 @@ jobs:
     - name: Install cocotb build dependencies (Ubuntu - g++)
       if: startsWith(matrix.os, 'ubuntu') && (!matrix.cxx || matrix.cxx == 'g++')
       run: |
-        sudo apt install g++
+        sudo apt-get install g++
     - name: Install cocotb build dependencies (Ubuntu - clang++)
       if: startsWith(matrix.os, 'ubuntu') && matrix.cxx == 'clang++'
       run: |
-        sudo apt install clang
+        sudo apt-get install clang
     - name: Install cocotb build dependencies (MacOS)
       if: startsWith(matrix.os, 'macos')
       run: |
@@ -196,8 +200,8 @@ jobs:
     - name: Test (Ubuntu, MacOS)
       id: unixtesting
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
-      continue-on-error: ${{matrix.may_fail || false}}
-      timeout-minutes: 15
+      continue-on-error: ${{matrix.may-fail || false}}
+      timeout-minutes: 30
       run: |
         if [ "${{matrix.self-hosted}}" == "true" ]; then
           module load "${{ matrix.sim-version }}"
@@ -212,10 +216,11 @@ jobs:
     - name: Upload to codecov
       if: inputs.collect_coverage
       uses: codecov/codecov-action@v3
+      env:
+        # https://community.codecov.com/t/upload-issues-unable-to-locate-build-via-github-actions-api/3954
+        CODECOV_TOKEN: 669f2048-851e-479e-a618-8fa64f3736cc
       with:
         files: .python_coverage.xml,.cpp_coverage.xml
-        # There seems to be no way (as of Feb 2021) to get the job name in a
-        # variable; we hence have to re-assemble it here.
-        name: "${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}}"
+        name: ${{ matrix.name }}
         env_vars: SIM,TOPLEVEL_LANG,CXX,OS,PYTHON_VERSION
         verbose: true
