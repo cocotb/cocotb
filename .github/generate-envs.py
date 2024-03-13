@@ -256,6 +256,68 @@ ENVS = [
     },
 ]
 
+# Questa: test more versions as part of the extended tests.
+questa_versions_novhpi = ("2021.2", "2021.3", "2021.4", "2022.1", "2022.2")
+questa_versions_vhpi = ("2022.3", "2022.4", "2023.1", "2023.2")
+
+for version in questa_versions_novhpi + questa_versions_vhpi:
+    ENVS += [
+        {
+            "lang": "verilog",
+            "sim": "questa",
+            "sim-version": f"siemens/questa/{version}",
+            "os": "ubuntu-20.04",
+            "self-hosted": True,
+            "python-version": "3.8",
+            "group": "extended",
+        },
+        {
+            "lang": "vhdl and fli",
+            "sim": "questa",
+            "sim-version": f"siemens/questa/{version}",
+            "os": "ubuntu-20.04",
+            "self-hosted": True,
+            "python-version": "3.8",
+            "group": "extended",
+        },
+    ]
+for version in questa_versions_vhpi:
+    ENVS += [
+        {
+            "lang": "vhdl and vhpi",
+            "sim": "questa",
+            "sim-version": f"siemens/questa/{version}",
+            "os": "ubuntu-20.04",
+            "self-hosted": True,
+            "python-version": "3.8",
+            "group": "extended",
+        },
+    ]
+
+# Riviera-PRO: test more versions as part of the extended tests.
+riviera_versions = ("2019.10", "2020.04", "2020.10", "2021.04", "2021.10", "2022.04")
+for version in riviera_versions:
+    ENVS += [
+        {
+            "lang": "verilog",
+            "sim": "riviera",
+            "sim-version": f"aldec/rivierapro/{version}",
+            "os": "ubuntu-20.04",
+            "self-hosted": True,
+            "python-version": "3.8",
+            "group": "extended",
+        },
+        {
+            "lang": "vhdl",
+            "sim": "riviera",
+            "sim-version": f"aldec/rivierapro/{version}",
+            "os": "ubuntu-20.04",
+            "self-hosted": True,
+            "python-version": "3.8",
+            "group": "extended",
+        },
+    ]
+
 
 def append_str_val(listref, my_list, key) -> None:
     if key not in my_list:
