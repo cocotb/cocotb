@@ -16,11 +16,5 @@ all:
 	@echo "Skipping test since only VHDL is supported"
 clean::
 else
-ifeq ($(SIM),xcelium)
-.PHONY: override_for_this_test
-# This test is expected to fail until a fix exists.
-override_for_this_test:
-	if $(MAKE) all; then echo "Expected this to fail"; false; else echo "Failed as expected"; fi
-endif
 include $(shell cocotb-config --makefiles)/Makefile.sim
 endif

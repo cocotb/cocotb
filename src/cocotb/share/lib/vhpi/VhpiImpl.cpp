@@ -866,73 +866,103 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
 }
 
 GpiObjHdl *VhpiImpl::get_root_handle(const char *name) {
-    vhpiHandleT root = NULL;
-    vhpiHandleT arch = NULL;
-    vhpiHandleT dut = NULL;
-    std::string root_name;
-    const char *found;
-
-    root = vhpi_handle(vhpiRootInst, NULL);
-    check_vhpi_error();
-
+    vhpiHandleT root = vhpi_handle(vhpiRootInst, NULL);
     if (!root) {
         LOG_ERROR("VHPI: Attempting to get the vhpiRootInst failed");
+        check_vhpi_error();
         return NULL;
+    }
+
+    // IEEE 1076-2019 Clause 19.4.3
+    // For an object of class rootInst, the values of the Name and CaseName
+    // properties are the simple name of the entity declaration whose
+    // instantiation is represented by the object.
+    std::string root_name = vhpi_get_str(vhpiCaseNameP, root);
+    LOG_DEBUG("VHPI: We have found root='%s'", root_name.c_str());
+
+    if (name && !compare_names(name, root_name)) {
+        LOG_DEBUG(
+            "VHPI: root name '%s' doesn't match requested name '%s'. Trying "
+            "fallbacks",
+            root_name.c_str(), name);
     } else {
-        LOG_DEBUG("VHPI: We have found root='%s'",
-                  vhpi_get_str(vhpiCaseNameP, root));
+        return create_gpi_obj_from_handle(root, root_name, root_name);
     }
 
-    if (name) {
-        if (NULL == (dut = vhpi_handle_by_name(name, NULL))) {
-            LOG_DEBUG("VHPI: Unable to query by name");
-            check_vhpi_error();
+    // Some simulators do not return the correct entity name for rootInst,
+    // so implement fallbacks.
+
+    // First, try to get the entity (primaryUnit) associated with the rootInst
+    // and its name.
+    vhpiHandleT arch = vhpi_handle(vhpiDesignUnit, root);
+    if (!arch) {
+        LOG_DEBUG(
+            "VHPI: Unable to get vhpiDesignUnit (arch) from root handle. "
+            "Trying handle lookup by name");
+        check_vhpi_error();
+    }
+
+    vhpiHandleT entity = NULL;
+    if (arch && !(entity = vhpi_handle(vhpiPrimaryUnit, arch))) {
+        LOG_DEBUG(
+            "VHPI: Unable to get vhpiPrimaryUnit (entity) from arch handle. "
+            "Trying handle lookup by name");
+        check_vhpi_error();
+    }
+
+    if (entity) {
+        root_name = vhpi_get_str(vhpiCaseNameP, entity);
+
+        // If this matches the name then it is what we want,
+        // but we use the root handle two levels up as the DUT
+        // because we do not want an object of type vhpiEntityDeclK as the DUT
+        if (name && !compare_names(name, root_name)) {
+            LOG_DEBUG(
+                "VHPI: Root entity name '%s' doesn't match requested name "
+                "'%s'. Trying handle lookup by name",
+                root_name.c_str(), name);
+        } else {
+            return create_gpi_obj_from_handle(root, root_name, root_name);
         }
     }
 
+    // Second, we search for the root handle by name
+    if (!name) {
+        // name should never be null here, but fail if it is.
+        LOG_ERROR("VHPI: Couldn't find root handle");
+        return NULL;
+    }
+
+    // Search using hierarchical path, which starts with ':',
+    // to disambiguate with library information model objects
+    // that have the same name as the rootInst entity.
+    std::string search_name;
+    if (name[0] != ':') {
+        search_name = ":";
+    }
+    search_name += name;
+
+    vhpiHandleT dut = vhpi_handle_by_name(search_name.c_str(), NULL);
     if (!dut) {
-        if (NULL == (arch = vhpi_handle(vhpiDesignUnit, root))) {
-            LOG_DEBUG("VHPI: Unable to get vhpiDesignUnit via root");
-            check_vhpi_error();
-            return NULL;
-        }
-
-        if (NULL == (dut = vhpi_handle(vhpiPrimaryUnit, arch))) {
-            LOG_DEBUG("VHPI: Unable to get vhpiPrimaryUnit via arch");
-            check_vhpi_error();
-            return NULL;
-        }
-
-        /* If this matches the name then it is what we want, but we
-           use the handle two levels up as the DUT as we do not want an
-           object of type vhpiEntityDeclK as the DUT */
-
-        found = vhpi_get_str(vhpiCaseNameP, dut);
-        dut = root;
-
+        LOG_DEBUG("VHPI: Unable to get root handle by name");
+        check_vhpi_error();
     } else {
-        found = vhpi_get_str(vhpiCaseNameP, dut);
+        root_name = vhpi_get_str(vhpiCaseNameP, dut);
+        vhpiIntT dut_kind = vhpi_get(vhpiKindP, dut);
+        std::string dut_kind_str = vhpi_get_str(vhpiKindStrP, dut);
+
+        if (!compare_names(name, root_name)) {
+            LOG_DEBUG(
+                "VHPI: found root handle of type %s (%d) with name '%s' "
+                "doesn't match requested name '%s'",
+                dut_kind_str.c_str(), dut_kind, root_name.c_str(), name);
+        } else {
+            return create_gpi_obj_from_handle(dut, root_name, root_name);
+        }
     }
 
-    if (!dut) {
-        LOG_ERROR("VHPI: Attempting to get the DUT handle failed");
-        return NULL;
-    }
-
-    if (!found) {
-        LOG_ERROR("VHPI: Unable to query name for DUT handle");
-        return NULL;
-    }
-
-    if (name != NULL && !compare_names(name, found)) {
-        LOG_WARN("VHPI: DUT '%s' doesn't match requested toplevel %s", found,
-                 name);
-        return NULL;
-    }
-
-    root_name = found;
-
-    return create_gpi_obj_from_handle(dut, root_name, root_name);
+    LOG_ERROR("VHPI: Couldn't find root handle '%s'", name);
+    return NULL;
 }
 
 GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
