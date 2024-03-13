@@ -124,3 +124,17 @@ async def test_name_matches_iter(dut):
 
         if get_len(obj) != objlen:
             raise Exception("eval of copy changed underlying length")
+
+
+@cocotb.test()
+async def test_intf_arr_iteration(dut):
+    """
+    Test that we can iterate through interface arrays properly.
+    Verilator has a hack for accessing directly via iteration,
+    but our common iteration code used to only find vpiGenScope, not vpiGenModule,
+    so it would be empty
+    """
+    assert len(dut.intf_arr) == 2
+    for i, intf in enumerate(dut.intf_arr):
+        assert intf._name == f"intf_arr[{i}]"
+        assert intf._path == f"{dut._path}.intf_arr[{i}]"
