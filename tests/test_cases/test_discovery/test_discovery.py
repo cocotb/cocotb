@@ -64,6 +64,45 @@ async def pseudo_region_access(dut):
     dut.genblk1[0]
 
 
+def verilog_test(**kwargs):
+    return cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"], **kwargs)
+
+
+@verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+async def test_cond_scope(dut):
+    assert dut.cond_scope.scoped_sub._path == f"{dut._path}.cond_scope.scoped_sub"
+
+
+@verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+async def test_arr_scope(dut):
+    assert dut.arr[1].arr_sub._path == f"{dut._path}.arr[1].arr_sub"
+
+
+@verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+async def test_nested_scope(dut):
+    assert (
+        dut.outer_scope[1].inner_scope[1]._path
+        == f"{dut._path}.outer_scope[1].inner_scope[1]"
+    )
+
+
+@verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+async def test_scoped_params(dut):
+    assert dut.cond_scope.scoped_param.value == 1
+    assert dut.outer_scope[1].outer_param.value == 2
+    assert dut.outer_scope[1].inner_scope[1].inner_param.value == 3
+
+
+@verilog_test(
+    expect_error=AttributeError if SIM_NAME.startswith(("icarus", "verilator")) else ()
+)
+async def test_intf_array(dut):
+    assert len(dut.intf_arr) == 2
+    for i, intf in enumerate(dut.intf_arr):
+        assert intf._name == f"intf_arr[{i}]"
+        assert intf._path == f"{dut._path}.intf_arr[{i}]"
+
+
 @cocotb.test()
 async def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
