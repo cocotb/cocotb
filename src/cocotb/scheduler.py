@@ -33,6 +33,7 @@ FIXME: We have a problem here. If a task schedules a read-only but we
 also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
+
 import inspect
 import logging
 import os
@@ -226,7 +227,7 @@ class Scheduler:
     _read_only = ReadOnly()
     _timer1 = Timer(1)
 
-    def __init__(self, test_complete_cb: Callable[[Task], None]) -> None:
+    def __init__(self, test_complete_cb: Callable[[], None]) -> None:
         self._test_complete_cb = test_complete_cb
 
         self.log = logging.getLogger("cocotb.scheduler")
