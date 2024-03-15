@@ -25,12 +25,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
-Cocotb is a coroutine, cosimulation framework for writing testbenches in Python.
-
-See https://docs.cocotb.org for full documentation
-"""
-
 import os
 import random
 import sys
@@ -66,11 +60,6 @@ def _setup_logging() -> None:
     global log
     log = logging.getLogger(__name__)
 
-
-# Singleton scheduler instance
-# NB this cheekily ensures a singleton since we're replacing the reference
-# so that cocotb.scheduler gives you the singleton instance and not the
-# scheduler package
 
 scheduler: Scheduler
 """The global scheduler instance."""
@@ -173,14 +162,6 @@ _rlock = threading.RLock()
 
 
 def _initialise_testbench(argv_):  # pragma: no cover
-    """Initialize testbench.
-
-    This function is called after the simulator has elaborated all
-    entities and is ready to run the test.
-
-    The test must be defined by the environment variables
-    :envvar:`MODULE` and :envvar:`TESTCASE`.
-    """
     with _rlock:
         try:
             _start_library_coverage()
