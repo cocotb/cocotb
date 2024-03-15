@@ -38,6 +38,7 @@ from typing import (
     Dict,
     Generic,
     Iterable,
+    Iterator,
     Optional,
     Sequence,
     Tuple,
@@ -342,7 +343,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
             ValueError: if unable to translate handle to a valid _sub_handle key.
         """
 
-    def __iter__(self) -> Iterable[SimHandleBase]:
+    def __iter__(self) -> Iterator[SimHandleBase]:
         return iter(self._values())
 
     def __len__(self) -> int:
@@ -544,7 +545,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int]):
     # ideally `__len__` could be implemented in terms of `range`, but `range` doesn't work universally.
     __len__ = HierarchyObjectBase.__len__
 
-    def __iter__(self) -> Iterable[SimHandleBase]:
+    def __iter__(self) -> Iterator[SimHandleBase]:
         # must use `sorted(self._keys())` instead of `range` because `range` doesn't work universally.
         for i in sorted(self._keys()):
             yield self[i]
@@ -740,7 +741,7 @@ class ArrayObject(
 ):
     """A simulation object that is an array of value-having simulation objects.
 
-    This object is used whenever an array, that isn't a logic array or string, is seen.
+    This object is used whenever an array is seen that isn't a logic array or string.
     In Verilog, only unpacked vectors use this type.
     Packed vectors are typically mapped to :class:`LogicObject`.
 
@@ -838,11 +839,11 @@ class ArrayObject(
         new_handle = self._handle.get_handle_by_index(index)
         if not new_handle:
             raise IndexError(f"{self._path} contains no object at index {index}")
-        path = self._path + "[" + str(index) + "]"
+        path = f"{self._path}[{index}]"
         self._sub_handles[index] = cast(ChildObjectT, SimHandle(new_handle, path))
         return self._sub_handles[index]
 
-    def __iter__(self) -> Iterable[ChildObjectT]:
+    def __iter__(self) -> Iterator[ChildObjectT]:
         for i in self.range:
             yield self[i]
 
