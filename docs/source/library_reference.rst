@@ -305,6 +305,8 @@ Other Runtime Information
 
 .. autodata:: cocotb.top
 
+.. autodata:: cocotb.is_simulation
+
 
 Implementation Details
 ======================
