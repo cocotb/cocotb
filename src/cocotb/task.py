@@ -5,9 +5,9 @@ import collections.abc
 import inspect
 import logging
 import os
-import typing
 import warnings
 from asyncio import CancelledError, InvalidStateError
+from typing import Any, Coroutine, Generator, Optional, TypeVar
 
 import cocotb
 import cocotb.triggers
@@ -15,15 +15,14 @@ from cocotb import _outcomes
 from cocotb._py_compat import cached_property
 from cocotb.utils import extract_coro_stack, remove_traceback_frames
 
-T = typing.TypeVar("T")
-Self = typing.TypeVar("Self")
+T = TypeVar("T")
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
-class Task(typing.Coroutine[typing.Any, typing.Any, T]):
+class Task(Coroutine[Any, Any, T]):
     """Concurrently executing task.
 
     This class is not intended for users to directly instantiate.
@@ -55,11 +54,11 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
             )
         elif not isinstance(inst, collections.abc.Coroutine):
             raise TypeError(f"{inst} isn't a valid coroutine!")
-        self._coro = inst
-        self._started = False
+        self._coro: Coroutine = inst
+        self._started: bool = False
         self._outcome: _outcomes.Outcome = None
-        self._trigger: typing.Optional[cocotb.triggers.Trigger] = None
-        self._cancelled: typing.Optional[CancelledError] = None
+        self._trigger: Optional[cocotb.triggers.Trigger] = None
+        self._cancelled: Optional[CancelledError] = None
 
         self._task_id = self._id_count
         type(self)._id_count += 1
@@ -77,7 +76,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
     def __str__(self) -> str:
         return f"<{self.__name__}>"
 
-    def _get_coro_stack(self) -> typing.Any:
+    def _get_coro_stack(self) -> Any:
         """Get the coroutine callstack of this Task."""
         coro_stack = extract_coro_stack(self._coro)
 
@@ -120,7 +119,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         )
         return repr_string
 
-    def _advance(self, outcome: _outcomes.Outcome) -> typing.Any:
+    def _advance(self, outcome: _outcomes.Outcome) -> Any:
         """Advance to the next yield in this coroutine.
 
         Args:
@@ -140,10 +139,10 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
                 remove_traceback_frames(e, ["_advance", "send"])
             )
 
-    def send(self, value: typing.Any) -> typing.Any:
+    def send(self, value: Any) -> Any:
         return self._coro.send(value)
 
-    def throw(self, exc: BaseException) -> typing.Any:
+    def throw(self, exc: BaseException) -> Any:
         return self._coro.throw(exc)
 
     def close(self) -> None:
@@ -169,7 +168,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         """Return ``True`` if the Task has started executing."""
         return self._started
 
-    def cancel(self, msg: typing.Optional[str] = None) -> None:
+    def cancel(self, msg: Optional[str] = None) -> None:
         """Cancel a Task's further execution.
 
         When a Task is cancelled, a :exc:`asyncio.CancelledError` is thrown into the Task.
@@ -206,7 +205,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         else:
             return self._outcome.get()
 
-    def exception(self) -> typing.Optional[BaseException]:
+    def exception(self) -> Optional[BaseException]:
         """Return the exception of the Task.
 
         If the Task ran to completion, ``None`` is returned.
@@ -223,7 +222,7 @@ class Task(typing.Coroutine[typing.Any, typing.Any, T]):
         else:
             return None
 
-    def __await__(self) -> typing.Generator[typing.Any, typing.Any, T]:
+    def __await__(self) -> Generator[Any, Any, T]:
         # It's tempting to use `return (yield from self._coro)` here,
         # which bypasses the scheduler. Unfortunately, this means that
         # we can't keep track of the result or state of the coroutine,
@@ -247,9 +246,7 @@ class _RunningTest(Task[None]):
 
     _name: str = "Test"
 
-    def __init__(
-        self, inst: typing.Coroutine[typing.Any, typing.Any, None], name: str
-    ) -> None:
+    def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
         super().__init__(inst)
         self.__name__ = f"{type(self)._name} {name}"
         self.__qualname__ = self.__name__
