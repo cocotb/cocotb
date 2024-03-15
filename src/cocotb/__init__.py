@@ -25,6 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import ast
 import os
 import random
 import sys
@@ -185,15 +186,6 @@ def _initialise_testbench_(argv_):
     argv = argv_
     argc = len(argv)
 
-    root_name = os.getenv("TOPLEVEL")
-    if root_name is not None:
-        root_name = root_name.strip()
-        if root_name == "":
-            root_name = None
-        elif "." in root_name:
-            # Skip any library component of the toplevel
-            root_name = root_name.split(".", 1)[1]
-
     # sys.path normally includes "" (the current directory), but does not appear to when python is embedded.
     # Add it back because users expect to be able to import files in their test directory.
     # TODO: move this to gpi_embed.cpp
@@ -225,29 +217,10 @@ def _initialise_testbench_(argv_):
     _process_packages()
 
     # Seed the Python random number generator to make this repeatable
-    global _random_seed
-    _random_seed = os.getenv("RANDOM_SEED")
-
-    if _random_seed is None:
-        if "ntb_random_seed" in plusargs:
-            _random_seed = eval(plusargs["ntb_random_seed"])
-        elif "seed" in plusargs:
-            _random_seed = eval(plusargs["seed"])
-        else:
-            _random_seed = int(time.time())
-        log.info("Seeding Python random module with %d" % (_random_seed))
-    else:
-        _random_seed = int(_random_seed)
-        log.info("Seeding Python random module with supplied seed %d" % (_random_seed))
-    random.seed(_random_seed)
+    _setup_random_seed()
 
     # Setup DUT object
-    handle = simulator.get_root_handle(root_name)
-    if not handle:
-        raise RuntimeError(f"Can not find root handle ({root_name})")
-
-    global top
-    top = cocotb.handle.SimHandle(handle)
+    _setup_root_handle()
 
     _start_user_coverage()
 
@@ -394,3 +367,54 @@ def _stop_user_coverage() -> None:
         _user_coverage.stop()
         cocotb.log.debug("Writing coverage data")
         _user_coverage.save()
+
+
+def _setup_random_seed() -> None:
+    global _random_seed
+
+    seed_envvar = os.getenv("RANDOM_SEED")
+    if seed_envvar is None:
+        if "ntb_random_seed" in plusargs:
+            plusarg_seed = plusargs["ntb_random_seed"]
+            if not isinstance(plusarg_seed, str):
+                raise TypeError("ntb_random_seed plusarg is not a valid seed value.")
+            seed = ast.literal_eval(plusarg_seed)
+            if not isinstance(seed, int):
+                raise TypeError("ntb_random_seed plusargs is not a valid seed value.")
+            _random_seed = seed
+        elif "seed" in plusargs:
+            plusarg_seed = plusargs["seed"]
+            if not isinstance(plusarg_seed, str):
+                raise TypeError("seed plusarg is not a valid seed value.")
+            seed = ast.literal_eval(plusarg_seed)
+            if not isinstance(seed, int):
+                raise TypeError("seed plusargs is not a valid seed value.")
+            _random_seed = seed
+        else:
+            _random_seed = int(time.time())
+        log.info("Seeding Python random module with %d" % (_random_seed))
+    else:
+        _random_seed = ast.literal_eval(seed_envvar)
+        log.info("Seeding Python random module with supplied seed %d" % (_random_seed))
+
+    random.seed(_random_seed)
+
+
+def _setup_root_handle() -> None:
+    root_name = os.getenv("TOPLEVEL")
+    if root_name is not None:
+        root_name = root_name.strip()
+        if root_name == "":
+            root_name = None
+        elif "." in root_name:
+            # Skip any library component of the toplevel
+            root_name = root_name.split(".", 1)[1]
+
+    from cocotb import simulator
+
+    handle = simulator.get_root_handle(root_name)
+    if not handle:
+        raise RuntimeError(f"Can not find root handle {root_name!r}")
+
+    global top
+    top = cocotb.handle.SimHandle(handle)
