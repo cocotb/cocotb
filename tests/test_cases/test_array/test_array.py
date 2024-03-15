@@ -16,6 +16,7 @@ from cocotb.handle import (
 from cocotb.triggers import Timer
 
 SIM_NAME = cocotb.SIM_NAME.lower()
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 def _check_type(tlog, hdl, expected):
@@ -73,7 +74,7 @@ async def test_read_write(dut):
     _check_logic(tlog, dut.param_logic, 1)
     _check_logic(tlog, dut.param_logic_vec, 0xDA)
 
-    if cocotb.LANGUAGE in ["vhdl"]:
+    if LANGUAGE in ["vhdl"]:
         _check_int(tlog, dut.param_bool, 1)
         _check_int(tlog, dut.param_int, 6)
         _check_real(tlog, dut.param_real, 3.14)
@@ -98,7 +99,7 @@ async def test_read_write(dut):
     _check_logic(tlog, dut.const_logic, 0)
     _check_logic(tlog, dut.const_logic_vec, 0x3D)
 
-    if cocotb.LANGUAGE in ["vhdl"]:
+    if LANGUAGE in ["vhdl"]:
         _check_int(tlog, dut.const_bool, 0)
         _check_int(tlog, dut.const_int, 12)
         _check_real(tlog, dut.const_real, 6.28)
@@ -134,7 +135,7 @@ async def test_read_write(dut):
         [0xCC, 0xDD, 0xEE, 0xFF],
     ]
 
-    if cocotb.LANGUAGE in ["vhdl"]:
+    if LANGUAGE in ["vhdl"]:
         dut.sig_bool.value = 1
         dut.sig_int.value = 5000
         dut.sig_real.value = 22.54
@@ -167,7 +168,7 @@ async def test_read_write(dut):
         _check_logic(tlog, dut.sig_t4[1][5], 0x66)
         _check_logic(tlog, dut.sig_t4[3][7], 0xCC)
 
-    if cocotb.LANGUAGE in ["vhdl"]:
+    if LANGUAGE in ["vhdl"]:
         _check_int(tlog, dut.port_bool_out, 1)
         _check_int(tlog, dut.port_int_out, 5000)
         _check_real(tlog, dut.port_real_out, 22.54)
@@ -189,7 +190,7 @@ async def test_read_write(dut):
 
     tlog.info("Writing a few signal sub-indices!!!")
     dut.sig_logic_vec[2].value = 0
-    if cocotb.LANGUAGE in ["vhdl"] or not (
+    if LANGUAGE in ["vhdl"] or not (
         cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim"))
         or (
             cocotb.SIM_NAME.lower().startswith("riviera")
@@ -199,7 +200,7 @@ async def test_read_write(dut):
         dut.sig_t6[1][3][2].value = 1
         dut.sig_t6[0][2][7].value = 0
 
-    if cocotb.LANGUAGE in ["vhdl"]:
+    if LANGUAGE in ["vhdl"]:
         dut.sig_str[2].value = ord("E")
         dut.sig_rec.b[1][7].value = 1
         dut.sig_cmplx[1].b[1][0].value = 0
@@ -208,7 +209,7 @@ async def test_read_write(dut):
 
     tlog.info("Checking writes (2):")
     _check_logic(tlog, dut.port_logic_vec_out, 0xC8)
-    if cocotb.LANGUAGE in ["vhdl"] or not (
+    if LANGUAGE in ["vhdl"] or not (
         cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim"))
         or (
             cocotb.SIM_NAME.lower().startswith("riviera")
@@ -218,7 +219,7 @@ async def test_read_write(dut):
         _check_logic(tlog, dut.sig_t6[1][3][2], 1)
         _check_logic(tlog, dut.sig_t6[0][2][7], 0)
 
-    if cocotb.LANGUAGE in ["vhdl"]:
+    if LANGUAGE in ["vhdl"]:
         _check_str(
             tlog, dut.port_str_out, b"TEsting"
         )  # the uppercase "E" from a few lines before
@@ -355,7 +356,7 @@ async def test_discover_all(dut):
     #
     # DO NOT REMOVE.  Aldec cannot iterate over the complex records due to bugs in the VPI interface.
     if (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith("2016.02")
     ):
@@ -366,7 +367,7 @@ async def test_discover_all(dut):
     # to ensure the handle is in the dut "sub_handles" for iterating
     #
     # DO NOT ADD FOR ALDEC.  Older Versions do not iterate over properly
-    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
+    if LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
         ("modelsim", "ncsim", "xmsim")
     ):
         dut.sig_rec
@@ -375,20 +376,18 @@ async def test_discover_all(dut):
     if cocotb.SIM_NAME.lower().startswith("ghdl"):
         pass_total = 56
     elif (
-        cocotb.LANGUAGE in ["vhdl"]
+        LANGUAGE in ["vhdl"]
         and cocotb.SIM_NAME.lower().startswith("modelsim")
         and os.environ["VHDL_GPI_INTERFACE"] == "vhpi"
     ):
         # VHPI finds the array_module.asc_gen and array_module.desc_gen more than once =/
         pass_total = 1096
-    elif cocotb.LANGUAGE in ["vhdl"]:
+    elif LANGUAGE in ["vhdl"]:
         pass_total = 1032
-    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
-        "riviera"
-    ):
+    elif LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
         # Applies to Riviera-PRO 2019.10 and newer.
         pass_total = 1006
-    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
+    elif LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
         "chronologic simulation vcs"
     ):
         pass_total = 606
@@ -419,9 +418,7 @@ async def test_discover_all(dut):
 
 # GHDL unable to access std_logic_vector generics (gh-2593)
 @cocotb.test(
-    skip=(
-        cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("riviera")
-    ),
+    skip=(LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("riviera")),
     expect_error=AttributeError if SIM_NAME.startswith("ghdl") else (),
 )
 async def test_direct_constant_indexing(dut):
@@ -504,7 +501,7 @@ async def test_direct_signal_indexing(dut):
     _check_type(tlog, dut.sig_t4[3], ArrayObject)
     # the following version cannot index into those arrays and will error out
     if not (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
     ):
@@ -518,7 +515,7 @@ async def test_direct_signal_indexing(dut):
     _check_type(tlog, dut.sig_t6[1], ArrayObject)
     # the following version cannot index into those arrays and will error out
     if not (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
     ):
@@ -526,7 +523,7 @@ async def test_direct_signal_indexing(dut):
         _check_type(tlog, dut.sig_t6[0][3][7], LogicObject)
     _check_type(tlog, dut.sig_cmplx, ArrayObject)
 
-    if cocotb.LANGUAGE in ["verilog"]:
+    if LANGUAGE in ["verilog"]:
         _check_type(tlog, dut.sig_t7[1], ArrayObject)
         _check_type(tlog, dut.sig_t7[0][3], LogicObject)
         _check_type(
@@ -537,7 +534,7 @@ async def test_direct_signal_indexing(dut):
     # Riviera has a bug and finds dut.sig_cmplx[1], but the type returned is a vpiBitVar
     # only true for version 2016.02
     if not (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith("2016.02")
     ):
@@ -554,7 +551,7 @@ async def test_direct_signal_indexing(dut):
     # Riviera has a bug and finds dut.sig_rec.b[1], but the type returned is 0 which is unknown
     # only true for version 2016.02
     if not (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith("2016.02")
     ):
@@ -562,7 +559,7 @@ async def test_direct_signal_indexing(dut):
         _check_type(tlog, dut.sig_rec.b[1][2], LogicObject)
 
 
-@cocotb.test(skip=(cocotb.LANGUAGE in ["verilog"]))
+@cocotb.test(skip=(LANGUAGE in ["verilog"]))
 async def test_extended_identifiers(dut):
     """Test accessing extended identifiers"""
 

@@ -10,6 +10,8 @@ Tests related to timing triggers
 * NextTimeStep
 * with_timeout
 """
+
+import os
 import warnings
 from decimal import Decimal
 from fractions import Fraction
@@ -30,6 +32,8 @@ from cocotb.triggers import (
 from cocotb.triggers import _TriggerException as TriggerException
 from cocotb.utils import get_sim_time
 
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+
 
 @cocotb.test()
 async def test_function_reentrant_clock(dut):
@@ -48,10 +52,7 @@ async def test_function_reentrant_clock(dut):
 # NVC does not support setting precision and always uses 1 fs
 # (https://github.com/nickg/nvc/issues/607).
 @cocotb.test(
-    skip=(
-        cocotb.LANGUAGE == "vhdl"
-        and cocotb.SIM_NAME.lower().startswith(("xmsim", "nvc"))
-    )
+    skip=(LANGUAGE == "vhdl" and cocotb.SIM_NAME.lower().startswith(("xmsim", "nvc")))
 )
 async def test_timer_with_units(dut):
     # The following test assumes a time precision of 1ps. Update the simulator
@@ -146,7 +147,7 @@ async def do_test_afterdelay_in_readonly(dut, delay):
     expect_error=TriggerException
     if (
         (
-            cocotb.LANGUAGE in ["verilog"]
+            LANGUAGE in ["verilog"]
             and cocotb.SIM_NAME.lower().startswith(("riviera", "modelsim"))
         )
         or cocotb.SIM_NAME.lower().startswith("xmsim")

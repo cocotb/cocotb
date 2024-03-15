@@ -11,6 +11,8 @@ from cocotb.triggers import RisingEdge
 from cocotb.types import LogicArray
 from cocotb_tools.runner import get_runner
 
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+
 
 @cocotb.test()
 async def dff_simple_test(dut):
@@ -23,9 +25,7 @@ async def dff_simple_test(dut):
         LogicArray(0)
         if cocotb.SIM_NAME.lower().startswith("verilator")
         else (
-            LogicArray("U")
-            if cocotb.LANGUAGE.lower().startswith("vhdl")
-            else LogicArray("X")
+            LogicArray("U") if LANGUAGE.lower().startswith("vhdl") else LogicArray("X")
         )
     )
     assert LogicArray(dut.q.value) == initial

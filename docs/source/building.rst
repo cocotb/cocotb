@@ -267,8 +267,6 @@ The following variables are makefile variables, not environment variables.
     Currently it supports the values ``verilog`` for Verilog or SystemVerilog tops, and ``vhdl`` for VHDL tops.
     This is used by simulators that support more than one interface (:term:`VPI`, :term:`VHPI`, or :term:`FLI`) to select the appropriate interface to start cocotb.
 
-    The variable is also made available to cocotb tests conveniently as :data:`cocotb.LANGUAGE`.
-
 .. make:var:: VHDL_GPI_INTERFACE
 
     Explicitly sets the simulator interface to use when :make:var:`TOPLEVEL_LANG` is ``vhdl``.

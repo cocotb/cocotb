@@ -9,6 +9,9 @@ Tests for edge triggers
 * FallingEdge
 * ClockCycles
 """
+
+import os
+
 import cocotb
 import pytest
 from cocotb._sim_versions import RivieraVersion
@@ -25,6 +28,8 @@ from cocotb.triggers import (
     Timer,
     with_timeout,
 )
+
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 async def count_edges_cycles(signal, edges):
@@ -238,7 +243,7 @@ async def test_clock_cycles_forked(dut):
     expect_error=(  # gh-2344
         SimTimeoutError
         if (
-            cocotb.LANGUAGE in ["verilog"]
+            LANGUAGE in ["verilog"]
             and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
             and RivieraVersion(cocotb.SIM_VERSION) < RivieraVersion("2023.04")
         )

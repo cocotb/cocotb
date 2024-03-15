@@ -1,8 +1,11 @@
+import os
+
 import cocotb
 from cocotb.handle import ArrayObject, LogicObject
 from cocotb.triggers import Timer
 
 SIM_NAME = cocotb.SIM_NAME.lower()
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 @cocotb.test()
@@ -145,7 +148,7 @@ async def test_in_vect_packed_packed_packed(dut):
 # Verilator doesn't support multi-dimensional unpacked arrays (gh-3611)
 @cocotb.test(
     expect_error=IndexError
-    if cocotb.LANGUAGE == "verilog" and SIM_NAME.startswith("modelsim")
+    if LANGUAGE == "verilog" and SIM_NAME.startswith("modelsim")
     else AttributeError
     if SIM_NAME.startswith("verilator")
     else ()
@@ -231,7 +234,7 @@ async def test_in_arr_packed_packed(dut):
 # Verilator doesn't support multi-dimensional unpacked arrays (gh-3611)
 @cocotb.test(
     expect_error=IndexError
-    if cocotb.LANGUAGE == "verilog" and SIM_NAME.startswith("modelsim")
+    if LANGUAGE == "verilog" and SIM_NAME.startswith("modelsim")
     else AttributeError
     if SIM_NAME.startswith("verilator")
     else ()
@@ -289,7 +292,7 @@ async def test_in_2d_arr_packed(dut):
 # Verilator doesn't support multi-dimensional unpacked arrays (gh-3611)
 @cocotb.test(
     expect_error=IndexError
-    if cocotb.LANGUAGE == "verilog" and SIM_NAME.startswith("modelsim")
+    if LANGUAGE == "verilog" and SIM_NAME.startswith("modelsim")
     else AttributeError
     if SIM_NAME.startswith("verilator")
     else ()

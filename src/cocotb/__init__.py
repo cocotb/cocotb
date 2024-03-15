@@ -30,6 +30,7 @@ Cocotb is a coroutine, cosimulation framework for writing testbenches in Python.
 
 See https://docs.cocotb.org for full documentation
 """
+
 import os
 import random
 import sys
@@ -109,12 +110,6 @@ This will be populated with handles at test time if packages can be discovered
 via the GPI.
 
 .. versionadded:: 2.0
-"""
-
-LANGUAGE: Optional[str] = os.getenv("TOPLEVEL_LANG")
-"""The value of :make:var:`TOPLEVEL_LANG`.
-
-This is guaranteed to hold a value at test time.
 """
 
 SIM_NAME: Optional[str] = None

@@ -1,11 +1,13 @@
 # A set of regression tests for open issues
 
 import logging
+import os
 
 import cocotb
 from cocotb._sim_versions import RivieraVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 # GHDL unable to access record signals (gh-2591)
@@ -18,7 +20,7 @@ SIM_NAME = cocotb.SIM_NAME.lower()
     or (
         SIM_NAME.startswith("riviera")
         and RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
-        and cocotb.LANGUAGE == "verilog"
+        and LANGUAGE == "verilog"
     )
     else ()
 )
@@ -62,11 +64,7 @@ async def issue_330_iteration(dut):
 
     # Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587)
     rv_2022_10_plus = RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
-    if (
-        SIM_NAME.startswith("riviera")
-        and rv_2022_10_plus
-        and cocotb.LANGUAGE == "verilog"
-    ):
+    if SIM_NAME.startswith("riviera") and rv_2022_10_plus and LANGUAGE == "verilog":
         assert count == 0
     else:
         assert count == 2, "There should have been two members of the structure"

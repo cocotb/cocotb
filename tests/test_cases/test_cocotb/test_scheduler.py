@@ -8,7 +8,9 @@ Test for scheduler and coroutine behavior
 * join
 * kill
 """
+
 import logging
+import os
 import re
 from asyncio import CancelledError, InvalidStateError
 from typing import Any, Awaitable, Coroutine
@@ -29,6 +31,8 @@ from cocotb.triggers import (
     Trigger,
 )
 from common import MyException
+
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 test_flag = False
 
@@ -340,7 +344,7 @@ async def test_last_scheduled_write_wins_array(dut):
 # Most simulators do not support setting the value of a single bit of a packed array
 @cocotb.test(
     skip=not cocotb.SIM_NAME.lower().startswith(("modelsim", "riviera"))
-    or cocotb.LANGUAGE != "vhdl"
+    or LANGUAGE != "vhdl"
 )
 async def test_last_scheduled_write_wins_array_handle_alias(dut):
     """
