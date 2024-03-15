@@ -34,9 +34,10 @@ import time
 import warnings
 from collections.abc import Coroutine
 from types import SimpleNamespace
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, cast
 
 import cocotb.handle
+import cocotb.triggers
 from cocotb.logging import default_config
 from cocotb.regression import RegressionManager, RegressionMode
 from cocotb.scheduler import Scheduler
@@ -273,7 +274,7 @@ def _stop_library_coverage() -> None:
         _library_coverage.save()  # pragma: no cover
 
 
-def _sim_event(message):
+def _sim_event(message: str) -> None:
     """Function that can be called externally to signal an event."""
     from cocotb.result import SimFailure
 
@@ -316,7 +317,7 @@ def _process_packages() -> None:
         return
 
     for pkg in pkgs:
-        handle = cocotb.handle.SimHandle(pkg)
+        handle = cast(cocotb.handle.HierarchyObject, cocotb.handle.SimHandle(pkg))
         name = handle._name
 
         # Icarus doesn't support named access to package objects:
