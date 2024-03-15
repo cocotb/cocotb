@@ -39,7 +39,7 @@ import time
 import warnings
 from collections.abc import Coroutine
 from types import SimpleNamespace
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 import cocotb.handle
 from cocotb.logging import default_config
@@ -72,38 +72,25 @@ def _setup_logging() -> None:
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
 
-scheduler: Optional[Scheduler] = None
-"""The global scheduler instance.
+scheduler: Scheduler
+"""The global scheduler instance."""
 
-This is guaranteed to hold a value at test time.
-"""
+regression_manager: RegressionManager
+"""The global regression manager instance."""
 
-regression_manager: Optional[RegressionManager] = None
-"""The global regression manager instance.
+argv: List[str]
+"""The argument list as seen by the simulator."""
 
-This is guaranteed to hold a value at test time.
-"""
+argc: int
+"""The length of :data:`cocotb.argv`."""
 
-argv: Optional[List[str]] = None
-"""The argument list as seen by the simulator.
-
-This is guaranteed to hold a value at test time.
-"""
-
-argc: Optional[int] = None
-"""The length of :data:`cocotb.argv`.
-
-This is guaranteed to hold a value at test time.
-"""
-
-plusargs: Optional[Dict[str, Union[bool, str]]] = None
+plusargs: Dict[str, Union[bool, str]]
 """A dictionary of "plusargs" handed to the simulation.
 
 See :make:var:`PLUSARGS` for details.
-This is guaranteed to hold a value at test time.
 """
 
-packages: Optional[SimpleNamespace] = None
+packages: SimpleNamespace
 """A :class:`python:types.SimpleNamespace` of package handles.
 
 This will be populated with handles at test time if packages can be discovered
@@ -112,18 +99,13 @@ via the GPI.
 .. versionadded:: 2.0
 """
 
-SIM_NAME: Optional[str] = None
-"""The running simulator product information.
+SIM_NAME: str
+"""The running simulator product information."""
 
-``None`` if :mod:`cocotb` was not loaded from a simulator.
-"""
+SIM_VERSION: str
+"""The version of the running simulator."""
 
-SIM_VERSION: Optional[str] = None
-"""The version of the running simulator.
-
-``None`` if :mod:`cocotb` was not loaded from a simulator."""
-
-_random_seed: Optional[int] = None
+_random_seed: int
 """
 The value passed to the Python default random number generator.
 
@@ -131,20 +113,19 @@ See :envvar:`RANDOM_SEED` for details on how the value is computed.
 This is guaranteed to hold a value at test time.
 """
 
-_library_coverage = None
+_library_coverage: Any = None
 """ used for cocotb library coverage """
 
-_user_coverage = None
+_user_coverage: Any = None
 """ used for user code coverage """
 
-top: Optional[cocotb.handle.SimHandleBase] = None
+top: cocotb.handle.SimHandleBase
 r"""
 A handle to the :envvar:`TOPLEVEL` entity/module.
 
 This is equivalent to the :term:`DUT` parameter given to cocotb tests, so it can be used wherever that variable can be used.
 It is particularly useful for extracting information about the :term:`DUT` in module-level class and function definitions;
 and in parameters to :class:`.TestFactory`\ s.
-``None`` if :mod:`cocotb` was not loaded from a simulator.
 """
 
 
