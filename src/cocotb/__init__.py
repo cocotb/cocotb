@@ -71,9 +71,6 @@ regression_manager: RegressionManager
 argv: List[str]
 """The argument list as seen by the simulator."""
 
-argc: int
-"""The length of :data:`cocotb.argv`."""
-
 plusargs: Dict[str, Union[bool, str]]
 """A dictionary of "plusargs" handed to the simulation.
 
@@ -182,9 +179,8 @@ def _initialise_testbench_(argv_):
     global is_simulation
     is_simulation = True
 
-    global argc, argv
+    global argv
     argv = argv_
-    argc = len(argv)
 
     # sys.path normally includes "" (the current directory), but does not appear to when python is embedded.
     # Add it back because users expect to be able to import files in their test directory.
