@@ -29,7 +29,6 @@ import ast
 import os
 import random
 import sys
-import threading
 import time
 import warnings
 from collections.abc import Coroutine
@@ -156,21 +155,16 @@ def create_task(coro: Union[Task, Coroutine]) -> Task:
     return cocotb.scheduler.create_task(coro)
 
 
-# FIXME is this really required?
-_rlock = threading.RLock()
-
-
 def _initialise_testbench(argv_):  # pragma: no cover
-    with _rlock:
-        try:
-            _start_library_coverage()
-            _initialise_testbench_(argv_)
-        except BaseException:
-            log.exception("cocotb testbench initialization failed. Exiting.")
-            from cocotb import simulator
+    try:
+        _start_library_coverage()
+        _initialise_testbench_(argv_)
+    except BaseException:
+        log.exception("cocotb testbench initialization failed. Exiting.")
+        from cocotb import simulator
 
-            simulator.stop_simulator()
-            _stop_library_coverage()
+        simulator.stop_simulator()
+        _stop_library_coverage()
 
 
 def _initialise_testbench_(argv_):
