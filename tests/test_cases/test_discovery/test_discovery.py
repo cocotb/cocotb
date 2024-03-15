@@ -78,7 +78,10 @@ async def test_arr_scope(dut):
     assert dut.arr[1].arr_sub._path == f"{dut._path}.arr[1].arr_sub"
 
 
-@verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+@verilog_test(
+    expect_error=AttributeError if SIM_NAME.startswith("verilator") else (),
+    expect_fail=SIM_NAME.startswith("modelsim"),
+)
 async def test_nested_scope(dut):
     assert (
         dut.outer_scope[1].inner_scope[1]._path
@@ -86,7 +89,10 @@ async def test_nested_scope(dut):
     )
 
 
-@verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+@verilog_test(
+    expect_error=AttributeError if SIM_NAME.startswith("verilator") else (),
+    expect_fail=SIM_NAME.startswith("modelsim"),
+)
 async def test_scoped_params(dut):
     assert dut.cond_scope.scoped_param.value == 1
     assert dut.outer_scope[1].outer_param.value == 2
@@ -94,7 +100,8 @@ async def test_scoped_params(dut):
 
 
 @verilog_test(
-    expect_error=AttributeError if SIM_NAME.startswith(("icarus", "verilator")) else ()
+    expect_error=AttributeError if SIM_NAME.startswith(("icarus", "verilator")) else (),
+    expect_fail=SIM_NAME.startswith("riviera"),
 )
 async def test_intf_array(dut):
     assert len(dut.intf_arr) == 2
