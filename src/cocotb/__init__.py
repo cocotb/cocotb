@@ -128,6 +128,9 @@ It is particularly useful for extracting information about the :term:`DUT` in mo
 and in parameters to :class:`.TestFactory`\ s.
 """
 
+is_simulation: bool = False
+"""``True`` if cocotb was loaded in a simulation."""
+
 
 def start_soon(coro: Union[Task, Coroutine]) -> Task:
     """
@@ -194,6 +197,8 @@ def _initialise_testbench_(argv_):
     # The body of this function is split in two because no coverage is collected on
     # the function that starts the coverage. By splitting it in two we get coverage
     # on most of the function.
+    global is_simulation
+    is_simulation = True
 
     global argc, argv
     argv = argv_
