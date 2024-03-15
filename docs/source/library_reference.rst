@@ -299,8 +299,6 @@ Other Runtime Information
 
 .. autodata:: cocotb.SIM_VERSION
 
-.. autodata:: cocotb.RANDOM_SEED
-
 .. autodata:: cocotb.plusargs
 
 .. autodata:: cocotb.packages

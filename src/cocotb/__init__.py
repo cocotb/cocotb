@@ -123,7 +123,7 @@ SIM_VERSION: Optional[str] = None
 
 ``None`` if :mod:`cocotb` was not loaded from a simulator."""
 
-RANDOM_SEED: Optional[int] = None
+_random_seed: Optional[int] = None
 """
 The value passed to the Python default random number generator.
 
@@ -258,21 +258,21 @@ def _initialise_testbench_(argv_):
     _process_packages()
 
     # Seed the Python random number generator to make this repeatable
-    global RANDOM_SEED
-    RANDOM_SEED = os.getenv("RANDOM_SEED")
+    global _random_seed
+    _random_seed = os.getenv("RANDOM_SEED")
 
-    if RANDOM_SEED is None:
+    if _random_seed is None:
         if "ntb_random_seed" in plusargs:
-            RANDOM_SEED = eval(plusargs["ntb_random_seed"])
+            _random_seed = eval(plusargs["ntb_random_seed"])
         elif "seed" in plusargs:
-            RANDOM_SEED = eval(plusargs["seed"])
+            _random_seed = eval(plusargs["seed"])
         else:
-            RANDOM_SEED = int(time.time())
-        log.info("Seeding Python random module with %d" % (RANDOM_SEED))
+            _random_seed = int(time.time())
+        log.info("Seeding Python random module with %d" % (_random_seed))
     else:
-        RANDOM_SEED = int(RANDOM_SEED)
-        log.info("Seeding Python random module with supplied seed %d" % (RANDOM_SEED))
-    random.seed(RANDOM_SEED)
+        _random_seed = int(_random_seed)
+        log.info("Seeding Python random module with supplied seed %d" % (_random_seed))
+    random.seed(_random_seed)
 
     # Setup DUT object
     handle = simulator.get_root_handle(root_name)

@@ -252,7 +252,7 @@ class RegressionManager:
 
         self.xunit = XUnitReporter(filename=results_filename)
         self.xunit.add_testsuite(name=suite_name, package=package_name)
-        self.xunit.add_property(name="random_seed", value=str(cocotb.RANDOM_SEED))
+        self.xunit.add_property(name="random_seed", value=str(cocotb._random_seed))
 
     def discover_tests(self, *modules: str) -> None:
         """Discover tests in files automatically.
@@ -416,7 +416,7 @@ class RegressionManager:
             # seed random number generator based on test module, name, and RANDOM_SEED
             hasher = hashlib.sha1()
             hasher.update(self._test.fullname.encode())
-            seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
+            seed = cocotb._random_seed + int(hasher.hexdigest(), 16)
             random.seed(seed)
 
             # start test or immediately fail test
@@ -737,7 +737,7 @@ class RegressionManager:
         )
         if not test_pass:
             self.xunit.add_failure(
-                message=f"Test failed with RANDOM_SEED={cocotb.RANDOM_SEED}"
+                message=f"Test failed with RANDOM_SEED={cocotb._random_seed}"
             )
 
         # update running passed/failed/skipped counts
