@@ -11,13 +11,15 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 from cocotb_tools.runner import get_runner
 
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+
 
 # Riviera fails to find dut.i_swapper_sv (gh-2921)
 @cocotb.test(
     expect_error=AttributeError
     if cocotb.simulator.is_running()
     and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
-    and cocotb.LANGUAGE == "vhdl"
+    and LANGUAGE == "vhdl"
     else ()
 )
 async def mixed_language_accessing_test(dut):
@@ -53,7 +55,7 @@ async def mixed_language_accessing_test(dut):
     expect_error=AttributeError
     if cocotb.simulator.is_running()
     and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
-    and cocotb.LANGUAGE == "vhdl"
+    and LANGUAGE == "vhdl"
     else ()
 )
 async def mixed_language_functional_test(dut):

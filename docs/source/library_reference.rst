@@ -305,8 +305,6 @@ Other Runtime Information
 
 .. autodata:: cocotb.packages
 
-.. autodata:: cocotb.LANGUAGE
-
 .. autodata:: cocotb.top
 
 

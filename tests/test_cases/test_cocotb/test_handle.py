@@ -4,7 +4,9 @@
 """
 Tests for handles
 """
+
 import logging
+import os
 import random
 
 import cocotb
@@ -14,6 +16,7 @@ from cocotb.triggers import Timer
 from cocotb.types import Logic, LogicArray
 
 SIM_NAME = cocotb.SIM_NAME.lower()
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 @cocotb.test()
@@ -54,7 +57,7 @@ async def test_string_handle_takes_bytes(dut):
     else TypeError
     if SIM_NAME.startswith("ghdl")
     else (),
-    skip=cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
+    skip=LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
 )
 async def test_string_ansi_color(dut):
     """Check how different simulators treat ANSI-colored strings, see gh-2328"""
@@ -65,14 +68,14 @@ async def test_string_ansi_color(dut):
     await cocotb.triggers.Timer(10, "ns")
     val = dut.stream_in_string.value
     assert isinstance(val, bytes)
-    if cocotb.LANGUAGE in ["vhdl"] and SIM_NAME.startswith("riviera"):
+    if LANGUAGE in ["vhdl"] and SIM_NAME.startswith("riviera"):
         # Riviera-PRO doesn't return anything with VHDL:
         assert val == b""
         # ...and the value shows up differently in the HDL:
         assert dut.stream_in_string_asciival_sum.value == sum(
             ord(char) for char in teststr.replace("\x1b", "\0")
         )
-    elif cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith(("ncsim", "xmsim")):
+    elif LANGUAGE in ["verilog"] and SIM_NAME.startswith(("ncsim", "xmsim")):
         # Xcelium with VPI strips the escape char when reading:
         assert val == bytes(teststr.replace("\x1b", "").encode("ascii"))
         # the HDL gets the correct value though:
@@ -276,7 +279,7 @@ async def test_int_128bit_underflow(dut):
 async def test_integer(dut):
     """Test access to integers."""
     if (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and SIM_NAME.startswith("riviera")
         or SIM_NAME.startswith("ghdl")
         or SIM_NAME.startswith("verilator")
@@ -294,7 +297,7 @@ async def test_integer(dut):
 async def test_integer_overflow(dut):
     """Test integer overflow."""
     if (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and SIM_NAME.startswith("riviera")
         or SIM_NAME.startswith("ghdl")
         or SIM_NAME.startswith("verilator")
@@ -312,7 +315,7 @@ async def test_integer_overflow(dut):
 async def test_integer_underflow(dut):
     """Test integer underflow."""
     if (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and SIM_NAME.startswith("riviera")
         or SIM_NAME.startswith("ghdl")
     ):
@@ -379,7 +382,7 @@ async def test_real_assign_int(dut):
 
 
 # identifiers starting with `_` are illegal in VHDL
-@cocotb.test(skip=cocotb.LANGUAGE in ("vhdl"))
+@cocotb.test(skip=LANGUAGE in ("vhdl"))
 async def test_access_underscore_name(dut):
     """Test accessing HDL name starting with an underscore"""
     # direct access does not work because we consider such names cocotb-internal

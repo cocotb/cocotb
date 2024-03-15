@@ -4,8 +4,10 @@
 """
 Tests relating to cocotb.clock.Clock
 """
+
 import decimal
 import fractions
+import os
 from math import isclose
 
 import cocotb
@@ -14,6 +16,8 @@ from cocotb.clock import Clock
 from cocotb.simulator import get_precision
 from cocotb.triggers import RisingEdge, Timer
 from cocotb.utils import get_sim_time
+
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 @cocotb.test()
@@ -66,7 +70,7 @@ async def test_clock_with_units(dut):
 
 # Xcelium/VHDL does not correctly report the simulator precision.
 # See also https://github.com/cocotb/cocotb/issues/3419
-@cocotb.test(skip=(cocotb.LANGUAGE == "vhdl" and cocotb.SIM_NAME.startswith("xmsim")))
+@cocotb.test(skip=(LANGUAGE == "vhdl" and cocotb.SIM_NAME.startswith("xmsim")))
 async def test_clocks_with_other_number_types(dut):
     # The following test assumes a time precision of at least 0.1ns.
     # Update the simulator invocation if this assert hits!

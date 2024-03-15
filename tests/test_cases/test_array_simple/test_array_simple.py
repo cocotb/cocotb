@@ -2,8 +2,10 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 """Test getting and setting values of arrays"""
+
 import contextlib
 import logging
+import os
 
 import cocotb
 from cocotb._sim_versions import RivieraVersion
@@ -11,6 +13,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import Timer
 
 tlog = logging.getLogger("cocotb.test")
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 def _check_value(tlog, hdl, expected):
@@ -154,7 +157,7 @@ async def test_ndim_array_indexes(dut):
     or (
         cocotb.SIM_NAME.lower().startswith("riviera")
         and RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
-        and cocotb.LANGUAGE == "verilog"
+        and LANGUAGE == "verilog"
     )
     else ()
 )
