@@ -87,7 +87,7 @@ via the GPI.
 """
 
 SIM_NAME: str
-"""The running simulator product information."""
+"""The product information of the running simulator."""
 
 SIM_VERSION: str
 """The version of the running simulator."""
