@@ -20,7 +20,8 @@ coverage_deps = ["coverage[toml]>=5.0", "pytest-cov"]
 # When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an
 # Exception is raised during html report generation.
 # See https://github.com/gcovr/gcovr/pull/576
-# These issues are fixed on gcovr master branch, so next release should work.
+# gcovr 5.2 would solve these issues, but has dropped Python 3.6 support.
+# TODO: Switch to the latest gcovr version once we drop Python 3.6 support.
 coverage_report_deps = ["coverage[toml]>=5.0", "jinja2<3.1", "gcovr==5.0"]
 
 dev_deps = [
