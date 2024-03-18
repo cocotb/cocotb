@@ -175,8 +175,8 @@ jobs:
         make -j $(nproc)
         sudo make install
 
-      # Install Verilator
-    - name: Set up Verilator (Ubunutu - source)
+      # Install Verilator (Linux)
+    - name: Set up Verilator (Ubuntu - source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator'
       run: |
         sudo apt-get install -y --no-install-recommends help2man make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlib1g zlib1g-dev
@@ -187,6 +187,12 @@ jobs:
         ./configure
         make -j $(nproc)
         sudo make install
+
+      # Install Verilator (MacOS)
+    - name: Set up Verilator (MacOS - source)
+      if: startsWith(matrix.os, 'macos') && matrix.sim == 'verilator' && matrix.sim-version == 'stable'
+      run: |
+        brew install verilator
 
       # Windows Testing
     - name: Install cocotb build dependencies (Windows, mingw)
