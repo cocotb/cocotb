@@ -65,7 +65,7 @@ async def pseudo_region_access(dut):
 
 
 def verilog_test(**kwargs):
-    return cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"], **kwargs)
+    return cocotb.test(skip=LANGUAGE in ["vhdl"], **kwargs)
 
 
 @verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
