@@ -175,6 +175,15 @@ ENVS = [
         "python-version": "3.8",
         "group": "experimental",
     },
+    # Verilator macOS
+    {
+        "lang": "verilog",
+        "sim": "verilator",
+        "sim-version": "stable",
+        "os": "macos-latest",
+        "python-version": "3.8",
+        "group": "ci",
+    },
     # Icarus windows from source
     {
         "lang": "verilog",
