@@ -120,8 +120,7 @@ class LogicArray(ArrayLike[Logic]):
         self,
         value: typing.Union[int, typing.Iterable[LogicConstructibleT]],
         range: typing.Optional[Range] = None,
-    ):
-        ...
+    ): ...
 
     @typing.overload
     def __init__(
@@ -129,8 +128,7 @@ class LogicArray(ArrayLike[Logic]):
         value: typing.Union[int, typing.Iterable[LogicConstructibleT], None] = None,
         *,
         range: Range,
-    ):
-        ...
+    ): ...
 
     def __init__(
         self,
@@ -241,12 +239,10 @@ class LogicArray(ArrayLike[Logic]):
         return value
 
     @typing.overload
-    def __getitem__(self, item: int) -> Logic:
-        ...
+    def __getitem__(self, item: int) -> Logic: ...
 
     @typing.overload
-    def __getitem__(self, item: slice) -> "LogicArray":
-        ...
+    def __getitem__(self, item: slice) -> "LogicArray": ...
 
     def __getitem__(
         self, item: typing.Union[int, slice]
@@ -263,9 +259,7 @@ class LogicArray(ArrayLike[Logic]):
             stop_i = self._translate_index(stop)
             if start_i > stop_i:
                 raise IndexError(
-                    "slice [{}:{}] direction does not match array direction [{}:{}]".format(
-                        start, stop, self.left, self.right
-                    )
+                    f"slice [{start}:{stop}] direction does not match array direction [{self.left}:{self.right}]"
                 )
             value = self._value[start_i : stop_i + 1]
             range = Range(start, self.direction, stop)
@@ -273,14 +267,12 @@ class LogicArray(ArrayLike[Logic]):
         raise TypeError(f"indexes must be ints or slices, not {type(item).__name__}")
 
     @typing.overload
-    def __setitem__(self, item: int, value: LogicConstructibleT) -> None:
-        ...
+    def __setitem__(self, item: int, value: LogicConstructibleT) -> None: ...
 
     @typing.overload
     def __setitem__(
         self, item: slice, value: typing.Iterable[LogicConstructibleT]
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __setitem__(
         self,
@@ -299,9 +291,7 @@ class LogicArray(ArrayLike[Logic]):
             stop_i = self._translate_index(stop)
             if start_i > stop_i:
                 raise IndexError(
-                    "slice [{}:{}] direction does not match array direction [{}:{}]".format(
-                        start, stop, self.left, self.right
-                    )
+                    f"slice [{start}:{stop}] direction does not match array direction [{self.left}:{self.right}]"
                 )
             value_as_logics = [
                 Logic(v)
@@ -309,9 +299,7 @@ class LogicArray(ArrayLike[Logic]):
             ]
             if len(value_as_logics) != (stop_i - start_i + 1):
                 raise ValueError(
-                    "value of length {!r} will not fit in slice [{}:{}]".format(
-                        len(value_as_logics), start, stop
-                    )
+                    f"value of length {len(value_as_logics)!r} will not fit in slice [{start}:{stop}]"
                 )
             self._value[start_i : stop_i + 1] = value_as_logics
         else:

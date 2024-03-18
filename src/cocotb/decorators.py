@@ -215,8 +215,7 @@ def _repr(v: Any) -> Optional[str]:
 
 
 @overload
-def test(_func: Union[F, _Parameterized[F]]) -> F:
-    ...
+def test(_func: Union[F, _Parameterized[F]]) -> F: ...
 
 
 @overload
@@ -229,8 +228,7 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
-) -> Callable[[Union[F, _Parameterized[F]]], F]:
-    ...
+) -> Callable[[Union[F, _Parameterized[F]]], F]: ...
 
 
 def test(

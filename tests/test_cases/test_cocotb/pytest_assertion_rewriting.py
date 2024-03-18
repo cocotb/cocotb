@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-""" Tests relating to pytest integration """
+"""Tests relating to pytest integration"""
 
 import cocotb
 import pytest

@@ -4,6 +4,7 @@
 """
 Common utilities shared by many tests in this directory
 """
+
 import re
 import traceback
 
@@ -24,9 +25,7 @@ async def _check_traceback(running_coro, exc_type, pattern, *match_args):
     )
 
 
-class MyException(Exception):
-    ...
+class MyException(Exception): ...
 
 
-class MyBaseException(BaseException):
-    ...
+class MyBaseException(BaseException): ...

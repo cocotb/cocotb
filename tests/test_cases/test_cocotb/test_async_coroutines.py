@@ -4,6 +4,7 @@
 """
 Test function and substitutability of async coroutines
 """
+
 import cocotb
 import pytest
 from cocotb._outcomes import Error, Value

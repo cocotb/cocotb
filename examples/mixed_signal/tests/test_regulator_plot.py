@@ -22,9 +22,7 @@ async def test_trim_vals(tb_hdl):
         await Timer(1, units="ns")
         trimmed_volt = await get_voltage(tb_hdl, probed_node)
         tb_hdl._log.info(
-            "trim_val={} results in {}={:.4} V".format(
-                tb_hdl.trim_val.value.signed_integer, probed_node, trimmed_volt
-            )
+            f"trim_val={tb_hdl.trim_val.value.signed_integer} results in {probed_node}={trimmed_volt:.4} V"
         )
         # sanity check: output voltage can not exceed supply
         assert tb_hdl.vss_val.value <= trimmed_volt <= tb_hdl.vdd_val.value

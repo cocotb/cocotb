@@ -28,6 +28,7 @@ Backports and compatibility shims for newer python features.
 These are for internal use - users should use a third party library like `six`
 if they want to use these shims in their own code
 """
+
 import sys
 
 

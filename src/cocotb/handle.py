@@ -636,8 +636,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
 
     @value.setter
     @abstractmethod
-    def value(self, value: ValuePropertyT) -> None:
-        ...
+    def value(self, value: ValuePropertyT) -> None: ...
 
     def set(
         self,
@@ -940,9 +939,7 @@ class LogicObject(
                     )
             else:
                 raise OverflowError(
-                    "Int value ({!r}) out of range for assignment of {!r}-bit signal ({!r})".format(
-                        value, len(self), self._name
-                    )
+                    f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
                 )
 
         elif isinstance(value, LogicArray):
@@ -1077,9 +1074,7 @@ class EnumObject(ValueObjectBase[int, int]):
             schedule_write(self, self._handle.set_signal_val_int, (action, value))
         else:
             raise OverflowError(
-                "Int value ({!r}) out of range for assignment of enum signal ({!r})".format(
-                    value, self._name
-                )
+                f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
             )
 
     @property
@@ -1138,9 +1133,7 @@ class IntegerObject(ValueObjectBase[int, int]):
     ) -> None:
         if not isinstance(value, int):
             raise TypeError(
-                "Unsupported type for integer value assignment: {} ({!r})".format(
-                    type(value), value
-                )
+                f"Unsupported type for integer value assignment: {type(value)} ({value!r})"
             )
 
         min_val, max_val = _value_limits(32, _Limits.SIGNED_NBIT)
@@ -1148,9 +1141,7 @@ class IntegerObject(ValueObjectBase[int, int]):
             schedule_write(self, self._handle.set_signal_val_int, (action, value))
         else:
             raise OverflowError(
-                "Int value ({!r}) out of range for assignment of integer signal ({!r})".format(
-                    value, self._name
-                )
+                f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
             )
 
     @property
@@ -1197,9 +1188,7 @@ class StringObject(
     ) -> None:
         if not isinstance(value, bytes):
             raise TypeError(
-                "Unsupported type for string value assignment: {} ({!r})".format(
-                    type(value), value
-                )
+                f"Unsupported type for string value assignment: {type(value)} ({value!r})"
             )
 
         schedule_write(self, self._handle.set_signal_val_str, (action, value))

@@ -8,6 +8,7 @@ Tests of cocotb.test functionality
 * expect_fail
 * timeout
 """
+
 from collections.abc import Coroutine
 
 import cocotb
