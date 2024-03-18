@@ -44,3 +44,6 @@ repos:
   rev: "2024.01.31"
   hooks:
     - id: validate-pyproject
+
+ci:
+  autofix_prs: false
