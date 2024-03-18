@@ -4,6 +4,7 @@ Inspired by https://github.com/python-trio/outcome
 An outcome is similar to the builtin `concurrent.futures.Future`
 or `asyncio.Future`, but without being tied to a particular task model.
 """
+
 import abc
 from typing import Any, Callable, Coroutine
 

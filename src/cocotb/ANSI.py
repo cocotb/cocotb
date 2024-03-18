@@ -26,8 +26,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-    Some constants for doing ANSI stuff.
+Some constants for doing ANSI stuff.
 """
+
 # flake8: noqa (skip this file for flake8: pypi.python.org/pypi/flake8)
 _ESCAPE = "\033["
 

@@ -13,12 +13,10 @@ class MyEnum(Enum):
     ENUM_VALUE = 1
 
 
-class A:
-    ...
+class A: ...
 
 
-def b():
-    ...
+def b(): ...
 
 
 def test_parameterize_repr():

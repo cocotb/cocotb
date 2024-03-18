@@ -4,6 +4,7 @@
 """
 Tests for concurrency primitives like First and Combine
 """
+
 import re
 from collections import deque
 from random import randint

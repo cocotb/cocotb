@@ -168,9 +168,7 @@ class Range(typing.Sequence[int]):
         return self._range.count(item)
 
     def __repr__(self) -> str:
-        return "{}({!r}, {!r}, {!r})".format(
-            type(self).__qualname__, self.left, self.direction, self.right
-        )
+        return f"{type(self).__qualname__}({self.left!r}, {self.direction!r}, {self.right!r})"
 
 
 def _guess_step(left: int, right: int) -> int:

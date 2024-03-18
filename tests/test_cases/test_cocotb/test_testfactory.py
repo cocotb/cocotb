@@ -4,6 +4,7 @@
 """
 Tests of cocotb.regression.TestFactory functionality
 """
+
 from collections.abc import Coroutine
 
 import cocotb

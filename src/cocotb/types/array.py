@@ -135,9 +135,7 @@ class Array(ArrayLike[T]):
             self._range = range
             if len(self._value) != len(self._range):
                 raise ValueError(
-                    "init value of length {!r} does not fit in {!r}".format(
-                        len(self._value), self._range
-                    )
+                    f"init value of length {len(self._value)!r} does not fit in {self._range!r}"
                 )
 
     @property
@@ -174,12 +172,10 @@ class Array(ArrayLike[T]):
             return NotImplemented
 
     @typing.overload
-    def __getitem__(self, item: int) -> T:
-        ...
+    def __getitem__(self, item: int) -> T: ...
 
     @typing.overload
-    def __getitem__(self, item: slice) -> "Array[T]":
-        ...
+    def __getitem__(self, item: slice) -> "Array[T]": ...
 
     def __getitem__(
         self, item: typing.Union[int, slice]
@@ -196,9 +192,7 @@ class Array(ArrayLike[T]):
             stop_i = self._translate_index(stop)
             if start_i > stop_i:
                 raise IndexError(
-                    "slice [{}:{}] direction does not match array direction [{}:{}]".format(
-                        start, stop, self.left, self.right
-                    )
+                    f"slice [{start}:{stop}] direction does not match array direction [{self.left}:{self.right}]"
                 )
             value = self._value[start_i : stop_i + 1]
             range = Range(start, self.direction, stop)
@@ -206,12 +200,10 @@ class Array(ArrayLike[T]):
         raise TypeError(f"indexes must be ints or slices, not {type(item).__name__}")
 
     @typing.overload
-    def __setitem__(self, item: int, value: T) -> None:
-        ...
+    def __setitem__(self, item: int, value: T) -> None: ...
 
     @typing.overload
-    def __setitem__(self, item: slice, value: typing.Iterable[T]) -> None:
-        ...
+    def __setitem__(self, item: slice, value: typing.Iterable[T]) -> None: ...
 
     def __setitem__(
         self, item: typing.Union[int, slice], value: typing.Union[T, typing.Iterable[T]]
@@ -228,16 +220,12 @@ class Array(ArrayLike[T]):
             stop_i = self._translate_index(stop)
             if start_i > stop_i:
                 raise IndexError(
-                    "slice [{}:{}] direction does not match array direction [{}:{}]".format(
-                        start, stop, self.left, self.right
-                    )
+                    f"slice [{start}:{stop}] direction does not match array direction [{self.left}:{self.right}]"
                 )
             value = list(typing.cast(typing.Iterable[T], value))
             if len(value) != (stop_i - start_i + 1):
                 raise ValueError(
-                    "value of length {!r} will not fit in slice [{}:{}]".format(
-                        len(value), start, stop
-                    )
+                    f"value of length {len(value)!r} will not fit in slice [{start}:{stop}]"
                 )
             self._value[start_i : stop_i + 1] = value
         else:

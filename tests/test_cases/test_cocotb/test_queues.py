@@ -4,6 +4,7 @@
 """
 Tests relating to cocotb.queue.Queue, cocotb.queue.LifoQueue, cocotb.queue.PriorityQueue
 """
+
 import cocotb
 import pytest
 from cocotb.queue import LifoQueue, PriorityQueue, Queue, QueueEmpty, QueueFull

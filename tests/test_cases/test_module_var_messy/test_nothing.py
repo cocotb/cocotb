@@ -1,1 +1,1 @@
-""" This test module is purposefully empty """
+"""This test module is purposefully empty"""

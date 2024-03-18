@@ -4,6 +4,7 @@
 """
 Tests for synchronization primitives like Lock and Event
 """
+
 import cocotb
 import pytest
 from cocotb.triggers import Lock, Timer, _InternalEvent
