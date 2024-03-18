@@ -146,7 +146,7 @@ module gen_wrapper;
 
    genvar i;
    generate
-      for (i = 0; i < LENGTH; i++) begin : gen_loop
+      for (i = 0; i < LENGTH; i = i + 1) begin : gen_loop
          sub wrapped_sub ();
       end
    endgenerate
