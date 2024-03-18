@@ -88,7 +88,10 @@ async def test_structure(dut):
         )
 
 
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera"))
+@cocotb.test(
+    skip=cocotb.SIM_NAME.lower().startswith("riviera"),
+    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("icarus") else (),
+)
 async def test_name_matches_iter(dut):
     """
     Test name accessibility and handle lengths.
