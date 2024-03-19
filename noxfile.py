@@ -95,16 +95,29 @@ def stringify_dict(d: Dict[str, str]) -> str:
     return ", ".join(f"{k}={v}" for k, v in d.items())
 
 
-def configure_env_for_dev_build(session: nox.session) -> None:
-    """Set environment variables for a development build.
+def configure_env_for_dev_test(session: nox.session) -> None:
+    """Set environment variables for a development test.
 
     - Enable coverage collection.
+    """
+    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
+
+
+def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
+    """Build local cocotb for a development test.
+
     - Build with more aggressive error checking.
     """
-    session.env["CFLAGS"] = "-Werror -Wno-deprecated-declarations -g --coverage"
-    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
-    session.env["CXXFLAGS"] = "-Werror"
-    session.env["LDFLAGS"] = "--coverage"
+
+    env = session.env.copy()
+    env["CFLAGS"] = "-Werror -Wno-deprecated-declarations -g --coverage"
+    env["CXXFLAGS"] = "-Werror"
+    env["LDFLAGS"] = "--coverage"
+
+    if editable:
+        session.run("pip", "install", "-e", ".", env=env)
+    else:
+        session.run("pip", "install", ".", env=env)
 
 
 #
@@ -140,7 +153,7 @@ def dev_test_sim(
 ) -> None:
     """Test a development version of cocotb against a simulator."""
 
-    configure_env_for_dev_build(session)
+    configure_env_for_dev_test(session)
 
     session.run("pip", "install", *test_deps, *coverage_deps)
 
@@ -152,7 +165,7 @@ def dev_test_sim(
     # editable builds are done in a directory in /tmp, which is removed after
     # the build completes, taking all gcno files with them, as well as the path
     # to place the gcda files.
-    session.run("pip", "install", ".")
+    build_cocotb_for_dev_test(session, editable=False)
 
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
@@ -216,10 +229,10 @@ def dev_test_sim(
 def dev_test_nosim(session: nox.Session) -> None:
     """Run the simulator-agnostic tests against a cocotb development version."""
 
-    configure_env_for_dev_build(session)
+    configure_env_for_dev_test(session)
 
     session.run("pip", "install", *test_deps, *coverage_deps)
-    session.run("pip", "install", ".")
+    build_cocotb_for_dev_test(session, editable=False)
 
     # Remove a potentially existing coverage file from a previous run for the
     # same test configuration. Use a filename *not* starting with `.coverage.`,
@@ -560,11 +573,11 @@ def docs_spelling(session: nox.Session) -> None:
 def dev(session: nox.Session) -> None:
     """Build a development environment and optionally run a command given as extra args"""
 
-    configure_env_for_dev_build(session)
+    configure_env_for_dev_test(session)
 
     session.run(
         "pip", "install", *test_deps, *dev_deps, *coverage_deps, *coverage_report_deps
     )
-    session.run("pip", "install", "-e", ".")
+    build_cocotb_for_dev_test(session, editable=True)
     if session.posargs:
         session.run(*session.posargs, external=True)
