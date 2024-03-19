@@ -1002,6 +1002,18 @@ class LogicObject(
     def value(self, value: LogicArray) -> None:
         self.set(value)
 
+    @deprecated(
+        "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
+    )
+    def __int__(self) -> int:
+        return int(self.value)
+
+    @deprecated(
+        "`str(handle)` casts have been deprecated. Use `str(handle.value)` instead."
+    )
+    def __str__(self) -> str:
+        return str(self.value)
+
 
 class RealObject(ValueObjectBase[float, float]):
     """A real/float simulation object.
@@ -1045,6 +1057,12 @@ class RealObject(ValueObjectBase[float, float]):
     @value.setter
     def value(self, value: float) -> None:
         self.set(value)
+
+    @deprecated(
+        "`float(handle)` casts have been deprecated. Use `float(handle.value)` instead."
+    )
+    def __float__(self) -> float:
+        return self.value
 
 
 class EnumObject(ValueObjectBase[int, int]):
@@ -1099,6 +1117,12 @@ class EnumObject(ValueObjectBase[int, int]):
     @value.setter
     def value(self, value: int) -> None:
         self.set(value)
+
+    @deprecated(
+        "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
+    )
+    def __int__(self) -> int:
+        return int(self.value)
 
 
 class IntegerObject(ValueObjectBase[int, int]):
@@ -1164,6 +1188,12 @@ class IntegerObject(ValueObjectBase[int, int]):
     @value.setter
     def value(self, value: int) -> None:
         self.set(value)
+
+    @deprecated(
+        "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
+    )
+    def __int__(self) -> int:
+        return self.value
 
 
 class StringObject(
@@ -1234,6 +1264,12 @@ class StringObject(
     @value.setter
     def value(self, value: bytes) -> None:
         self.set(value)
+
+    @deprecated(
+        '`str(handle)` casts have been deprecated. Use `handle.value.decode("ascii")` instead.'
+    )
+    def __str__(self) -> str:
+        return self.value.decode("ascii")
 
 
 _ConcreteHandleTypes = Union[
