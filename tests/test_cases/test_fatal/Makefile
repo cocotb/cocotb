@@ -32,7 +32,7 @@ else
 override_for_this_test:
 	-$(MAKE) all
 	$(call check_for_results_file)
-	../../../bin/combine_results.py &> /dev/null
+	python -m cocotb_tools.combine_results &> /dev/null
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
