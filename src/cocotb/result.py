@@ -37,13 +37,6 @@ class TestComplete(Exception):
     """
 
 
-class ExternalException(Exception):
-    """Exception thrown by :class:`cocotb.external` functions."""
-
-    def __init__(self, exception):
-        self.exception = exception
-
-
 class TestSuccess(TestComplete):
     """Exception showing that the test was completed successfully."""
 
