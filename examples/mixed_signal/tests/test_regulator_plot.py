@@ -21,12 +21,13 @@ async def test_trim_vals(tb_hdl):
         tb_hdl.trim_val.value = trim_val
         await Timer(1, units="ns")
         trimmed_volt = await get_voltage(tb_hdl, probed_node)
+        actual_trim_val = tb_hdl.trim_val.value.signed_integer
         tb_hdl._log.info(
-            f"trim_val={tb_hdl.trim_val.value.signed_integer} results in {probed_node}={trimmed_volt:.4} V"
+            f"trim_val={actual_trim_val} results in {probed_node}={trimmed_volt:.4} V"
         )
         # sanity check: output voltage can not exceed supply
         assert tb_hdl.vss_val.value <= trimmed_volt <= tb_hdl.vdd_val.value
-        probedata.append((tb_hdl.trim_val.value.signed_integer, trimmed_volt))
+        probedata.append((actual_trim_val, trimmed_volt))
 
     plot_data(tb_hdl, datasets=probedata, graphfile="regulator.png")
 

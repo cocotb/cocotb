@@ -11,6 +11,8 @@ from cocotb.handle import (
     ArrayObject,
     HierarchyArrayObject,
     HierarchyObject,
+    HierarchyObjectBase,
+    IndexableValueObjectBase,
     LogicObject,
 )
 from cocotb.triggers import Timer
@@ -19,112 +21,68 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
-def _check_type(tlog, hdl, expected):
-    assert isinstance(hdl, expected), f">{hdl!r} ({hdl._type})< should be >{expected}<"
-    tlog.info("   Found %r (%s)", hdl, hdl._type)
-
-
-def _check_int(tlog, hdl, expected):
-    assert (
-        hdl.value == expected
-    ), f"{hdl!r}: Expected >{expected}< but got >{hdl.value}<"
-    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
-
-
-def _check_logic(tlog, hdl, expected):
-    assert (
-        hdl.value == expected
-    ), f"{hdl!r}: Expected >{expected}< but got >{hdl.value}<"
-    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
-
-
-def _check_str(tlog, hdl, expected):
-    assert (
-        hdl.value == expected
-    ), f"{hdl!r}: Expected >{expected}< but got >{hdl.value}<"
-    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
-
-
-def _check_real(tlog, hdl, expected):
-    assert (
-        hdl.value == expected
-    ), f"{hdl!r}: Expected >{expected}< but got >{hdl.value}<"
-    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
-
-
-def _check_value(tlog, hdl, expected):
-    assert (
-        hdl.value == expected
-    ), f"{hdl!r}: Expected >{expected}< but got >{hdl.value}<"
-    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
-
-
 # NOTE: simulator-specific handling is done in this test itself, not via expect_error in the decorator
 # GHDL unable to access std_logic_vector generics (gh-2593) (hard crash, so skip)
 @cocotb.test(skip=SIM_NAME.startswith("ghdl"))
 async def test_read_write(dut):
     """Test handle inheritance"""
-    tlog = logging.getLogger("cocotb.test")
 
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
     await Timer(10, "ns")
 
-    tlog.info("Checking Generics/Parameters:")
-    _check_logic(tlog, dut.param_logic, 1)
-    _check_logic(tlog, dut.param_logic_vec, 0xDA)
+    assert dut.param_logic.value == 1
+    assert dut.param_logic_vec.value == 0xDA
 
     if LANGUAGE in ["vhdl"]:
-        _check_int(tlog, dut.param_bool, 1)
-        _check_int(tlog, dut.param_int, 6)
-        _check_real(tlog, dut.param_real, 3.14)
-        _check_int(tlog, dut.param_char, ord("p"))
-        _check_str(tlog, dut.param_str, b"ARRAYMOD")
+        assert dut.param_bool.value == 1
+        assert dut.param_int.value == 6
+        assert dut.param_real.value == 3.14
+        assert dut.param_char.value == ord("p")
+        assert dut.param_str.value == b"ARRAYMOD"
 
         if not cocotb.SIM_NAME.lower().startswith("riviera"):
-            _check_logic(tlog, dut.param_rec.a, 0)
-            _check_logic(tlog, dut.param_rec.b[0], 0)
-            _check_logic(tlog, dut.param_rec.b[1], 0)
-            _check_logic(tlog, dut.param_rec.b[2], 0)
-            _check_logic(tlog, dut.param_cmplx[0].a, 0)
-            _check_logic(tlog, dut.param_cmplx[0].b[0], 0)
-            _check_logic(tlog, dut.param_cmplx[0].b[1], 0)
-            _check_logic(tlog, dut.param_cmplx[0].b[2], 0)
-            _check_logic(tlog, dut.param_cmplx[1].a, 0)
-            _check_logic(tlog, dut.param_cmplx[1].b[0], 0)
-            _check_logic(tlog, dut.param_cmplx[1].b[1], 0)
-            _check_logic(tlog, dut.param_cmplx[1].b[2], 0)
+            assert dut.param_rec.a.value == 0
+            assert dut.param_rec.b[0].value == 0
+            assert dut.param_rec.b[1].value == 0
+            assert dut.param_rec.b[2].value == 0
+            assert dut.param_cmplx[0].a.value == 0
+            assert dut.param_cmplx[0].b[0].value == 0
+            assert dut.param_cmplx[0].b[1].value == 0
+            assert dut.param_cmplx[0].b[2].value == 0
+            assert dut.param_cmplx[1].a.value == 0
+            assert dut.param_cmplx[1].b[0].value == 0
+            assert dut.param_cmplx[1].b[1].value == 0
+            assert dut.param_cmplx[1].b[2].value == 0
 
-    tlog.info("Checking Constants:")
-    _check_logic(tlog, dut.const_logic, 0)
-    _check_logic(tlog, dut.const_logic_vec, 0x3D)
+    assert dut.const_logic.value == 0
+    assert dut.const_logic_vec.value == 0x3D
 
     if LANGUAGE in ["vhdl"]:
-        _check_int(tlog, dut.const_bool, 0)
-        _check_int(tlog, dut.const_int, 12)
-        _check_real(tlog, dut.const_real, 6.28)
-        _check_int(tlog, dut.const_char, ord("c"))
-        _check_str(tlog, dut.const_str, b"MODARRAY")
+        assert dut.const_bool.value == 0
+        assert dut.const_int.value == 12
+        assert dut.const_real.value == 6.28
+        assert dut.const_char.value == ord("c")
+        assert dut.const_str.value == b"MODARRAY"
 
         if not cocotb.SIM_NAME.lower().startswith("riviera"):
-            _check_logic(tlog, dut.const_rec.a, 1)
-            _check_logic(tlog, dut.const_rec.b[0], 0xFF)
-            _check_logic(tlog, dut.const_rec.b[1], 0xFF)
-            _check_logic(tlog, dut.const_rec.b[2], 0xFF)
-            _check_logic(tlog, dut.const_cmplx[1].a, 1)
-            _check_logic(tlog, dut.const_cmplx[1].b[0], 0xFF)
-            _check_logic(tlog, dut.const_cmplx[1].b[1], 0xFF)
-            _check_logic(tlog, dut.const_cmplx[1].b[2], 0xFF)
-            _check_logic(tlog, dut.const_cmplx[2].a, 1)
-            _check_logic(tlog, dut.const_cmplx[2].b[0], 0xFF)
-            _check_logic(tlog, dut.const_cmplx[2].b[1], 0xFF)
-            _check_logic(tlog, dut.const_cmplx[2].b[2], 0xFF)
+            assert dut.const_rec.a.value == 1
+            assert dut.const_rec.b[0].value == 0xFF
+            assert dut.const_rec.b[1].value == 0xFF
+            assert dut.const_rec.b[2].value == 0xFF
+            assert dut.const_cmplx[1].a.value == 1
+            assert dut.const_cmplx[1].b[0].value == 0xFF
+            assert dut.const_cmplx[1].b[1].value == 0xFF
+            assert dut.const_cmplx[1].b[2].value == 0xFF
+            assert dut.const_cmplx[2].a.value == 1
+            assert dut.const_cmplx[2].b[0].value == 0xFF
+            assert dut.const_cmplx[2].b[1].value == 0xFF
+            assert dut.const_cmplx[2].b[2].value == 0xFF
 
     dut.select_in.value = 2
 
     await Timer(10, "ns")
 
-    tlog.info("Writing the signals!!!")
     dut.sig_logic.value = 1
     dut.sig_logic_vec.value = 0xCC
     dut.sig_t2.value = [0xCC, 0xDD, 0xEE, 0xFF]
@@ -156,39 +114,37 @@ async def test_read_write(dut):
 
     await Timer(10, "ns")
 
-    tlog.info("Checking writes:")
-    _check_logic(tlog, dut.port_logic_out, 1)
-    _check_logic(tlog, dut.port_logic_vec_out, 0xCC)
+    assert dut.port_logic_out.value == 1
+    assert dut.port_logic_vec_out.value == 0xCC
     # Some writes to multi-dimensional arrays don't make it into the design.
     # https://github.com/cocotb/cocotb/issues/3372
     if not cocotb.SIM_NAME.startswith("xmsim"):
-        _check_value(tlog, dut.sig_t2, [0xCC, 0xDD, 0xEE, 0xFF])
-        _check_logic(tlog, dut.sig_t2[7], 0xCC)
-        _check_logic(tlog, dut.sig_t2[4], 0xFF)
-        _check_logic(tlog, dut.sig_t4[1][5], 0x66)
-        _check_logic(tlog, dut.sig_t4[3][7], 0xCC)
+        assert dut.sig_t2.value == [0xCC, 0xDD, 0xEE, 0xFF]
+        assert dut.sig_t2[7].value == 0xCC
+        assert dut.sig_t2[4].value == 0xFF
+        assert dut.sig_t4[1][5].value == 0x66
+        assert dut.sig_t4[3][7].value == 0xCC
 
     if LANGUAGE in ["vhdl"]:
-        _check_int(tlog, dut.port_bool_out, 1)
-        _check_int(tlog, dut.port_int_out, 5000)
-        _check_real(tlog, dut.port_real_out, 22.54)
-        _check_int(tlog, dut.port_char_out, ord("Z"))
-        _check_str(tlog, dut.port_str_out, b"Testing")
+        assert dut.port_bool_out.value == 1
+        assert dut.port_int_out.value == 5000
+        assert dut.port_real_out.value == 22.54
+        assert dut.port_char_out.value == ord("Z")
+        assert dut.port_str_out.value == b"Testing"
 
-        _check_logic(tlog, dut.port_rec_out.a, 1)
-        _check_logic(tlog, dut.port_rec_out.b[0], 0x01)
-        _check_logic(tlog, dut.port_rec_out.b[1], 0x23)
-        _check_logic(tlog, dut.port_rec_out.b[2], 0x45)
-        _check_logic(tlog, dut.port_cmplx_out[0].a, 0)
-        _check_logic(tlog, dut.port_cmplx_out[0].b[0], 0x67)
-        _check_logic(tlog, dut.port_cmplx_out[0].b[1], 0x89)
-        _check_logic(tlog, dut.port_cmplx_out[0].b[2], 0xAB)
-        _check_logic(tlog, dut.port_cmplx_out[1].a, 1)
-        _check_logic(tlog, dut.port_cmplx_out[1].b[0], 0xCD)
-        _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEF)
-        _check_logic(tlog, dut.port_cmplx_out[1].b[2], 0x55)
+        assert dut.port_rec_out.a.value == 1
+        assert dut.port_rec_out.b[0].value == 0x01
+        assert dut.port_rec_out.b[1].value == 0x23
+        assert dut.port_rec_out.b[2].value == 0x45
+        assert dut.port_cmplx_out[0].a.value == 0
+        assert dut.port_cmplx_out[0].b[0].value == 0x67
+        assert dut.port_cmplx_out[0].b[1].value == 0x89
+        assert dut.port_cmplx_out[0].b[2].value == 0xAB
+        assert dut.port_cmplx_out[1].a.value == 1
+        assert dut.port_cmplx_out[1].b[0].value == 0xCD
+        assert dut.port_cmplx_out[1].b[1].value == 0xEF
+        assert dut.port_cmplx_out[1].b[2].value == 0x55
 
-    tlog.info("Writing a few signal sub-indices!!!")
     dut.sig_logic_vec[2].value = 0
     if LANGUAGE in ["vhdl"] or not (
         cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim"))
@@ -207,8 +163,7 @@ async def test_read_write(dut):
 
     await Timer(10, "ns")
 
-    tlog.info("Checking writes (2):")
-    _check_logic(tlog, dut.port_logic_vec_out, 0xC8)
+    assert dut.port_logic_vec_out.value == 0xC8
     if LANGUAGE in ["vhdl"] or not (
         cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim"))
         or (
@@ -216,16 +171,16 @@ async def test_read_write(dut):
             and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
         )
     ):
-        _check_logic(tlog, dut.sig_t6[1][3][2], 1)
-        _check_logic(tlog, dut.sig_t6[0][2][7], 0)
+        assert dut.sig_t6[1][3][2].value == 1
+        assert dut.sig_t6[0][2][7].value == 0
 
     if LANGUAGE in ["vhdl"]:
-        _check_str(
-            tlog, dut.port_str_out, b"TEsting"
+        assert (
+            dut.port_str_out.value == b"TEsting"
         )  # the uppercase "E" from a few lines before
 
-        _check_logic(tlog, dut.port_rec_out.b[1], 0xA3)
-        _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEE)
+        assert dut.port_rec_out.b[1].value == 0xA3
+        assert dut.port_cmplx_out[1].b[1].value == 0xEE
 
 
 # GHDL unable to access signals in generate loops (gh-2594)
@@ -398,8 +353,8 @@ async def test_discover_all(dut):
         if not isinstance(
             obj,
             (
-                cocotb.handle.HierarchyObjectBase,
-                cocotb.handle.IndexableValueObjectBase,
+                HierarchyObjectBase,
+                IndexableValueObjectBase,
             ),
         ):
             return 0
@@ -410,7 +365,6 @@ async def test_discover_all(dut):
             count += _discover(thing)
         return count
 
-    tlog.info("Iterating over %r (%s)", dut, dut._type)
     total = _discover(dut)
     tlog.info("Found a total of %d things", total)
     assert total == pass_total
@@ -424,38 +378,33 @@ async def test_discover_all(dut):
 async def test_direct_constant_indexing(dut):
     """Test directly accessing constant/parameter data in arrays, i.e. not iterating"""
 
-    tlog = logging.getLogger("cocotb.test")
+    assert isinstance(dut.param_rec, HierarchyObject)
+    assert isinstance(dut.param_rec.a, LogicObject)
+    assert isinstance(dut.param_rec.b, ArrayObject)
+    assert isinstance(dut.param_rec.b[1], LogicObject)
 
-    tlog.info("Checking Types of complex array structures in constants/parameters.")
-    _check_type(tlog, dut.param_rec, HierarchyObject)
-    _check_type(tlog, dut.param_rec.a, LogicObject)
-    _check_type(tlog, dut.param_rec.b, ArrayObject)
-    _check_type(tlog, dut.param_rec.b[1], LogicObject)
+    assert isinstance(dut.param_cmplx, ArrayObject)
+    assert isinstance(dut.param_cmplx[0], HierarchyObject)
+    assert isinstance(dut.param_cmplx[0].a, LogicObject)
+    assert isinstance(dut.param_cmplx[0].b, ArrayObject)
+    assert isinstance(dut.param_cmplx[0].b[1], LogicObject)
 
-    _check_type(tlog, dut.param_cmplx, ArrayObject)
-    _check_type(tlog, dut.param_cmplx[0], HierarchyObject)
-    _check_type(tlog, dut.param_cmplx[0].a, LogicObject)
-    _check_type(tlog, dut.param_cmplx[0].b, ArrayObject)
-    _check_type(tlog, dut.param_cmplx[0].b[1], LogicObject)
+    assert isinstance(dut.const_rec, HierarchyObject)
+    assert isinstance(dut.const_rec.a, LogicObject)
+    assert isinstance(dut.const_rec.b, ArrayObject)
+    assert isinstance(dut.const_rec.b[1], LogicObject)
 
-    _check_type(tlog, dut.const_rec, HierarchyObject)
-    _check_type(tlog, dut.const_rec.a, LogicObject)
-    _check_type(tlog, dut.const_rec.b, ArrayObject)
-    _check_type(tlog, dut.const_rec.b[1], LogicObject)
-
-    _check_type(tlog, dut.const_cmplx, ArrayObject)
-    _check_type(tlog, dut.const_cmplx[1], HierarchyObject)
-    _check_type(tlog, dut.const_cmplx[1].a, LogicObject)
-    _check_type(tlog, dut.const_cmplx[1].b, ArrayObject)
-    _check_type(tlog, dut.const_cmplx[1].b[1], LogicObject)
+    assert isinstance(dut.const_cmplx, ArrayObject)
+    assert isinstance(dut.const_cmplx[1], HierarchyObject)
+    assert isinstance(dut.const_cmplx[1].a, LogicObject)
+    assert isinstance(dut.const_cmplx[1].b, ArrayObject)
+    assert isinstance(dut.const_cmplx[1].b[1], LogicObject)
 
 
 # GHDL unable to index packed arrays (gh-2587)
 @cocotb.test(expect_error=IndexError if SIM_NAME.startswith("ghdl") else ())
 async def test_direct_signal_indexing(dut):
     """Test directly accessing signal/net data in arrays, i.e. not iterating"""
-
-    tlog = logging.getLogger("cocotb.test")
 
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
@@ -471,65 +420,52 @@ async def test_direct_signal_indexing(dut):
 
     await Timer(20, "ns")
 
-    tlog.info("Checking bit mapping from input to generate loops.")
     assert dut.desc_gen[2].sig.value == 1
-    tlog.info("   %r = %d", dut.desc_gen[2].sig, dut.desc_gen[2].sig.value)
-
     assert dut.asc_gen[18].sig.value == 1
-    tlog.info("   %r = %d", dut.asc_gen[18].sig, dut.asc_gen[18].sig.value)
-
-    tlog.info("Checking indexing of data with offset index.")
     assert dut.port_ofst_out.value == 64
-    tlog.info(
-        "   %r = %d (%s)",
-        dut.port_ofst_out,
-        dut.port_ofst_out.value,
-        dut.port_ofst_out.value.binstr,
-    )
 
-    tlog.info("Checking Types of complex array structures in signals.")
-    _check_type(tlog, dut.sig_desc[20], LogicObject)
-    _check_type(tlog, dut.sig_asc[17], LogicObject)
-    _check_type(tlog, dut.sig_t1, LogicObject)
-    _check_type(tlog, dut.sig_t2, ArrayObject)
-    _check_type(tlog, dut.sig_t2[5], LogicObject)
-    _check_type(tlog, dut.sig_t2[5][3], LogicObject)
-    _check_type(tlog, dut.sig_t3a[2][3], LogicObject)
-    _check_type(tlog, dut.sig_t3b[3], LogicObject)
-    _check_type(tlog, dut.sig_t3a, ArrayObject)
-    _check_type(tlog, dut.sig_t4, ArrayObject)
-    _check_type(tlog, dut.sig_t4[3], ArrayObject)
+    assert isinstance(dut.sig_desc[20], LogicObject)
+    assert isinstance(dut.sig_asc[17], LogicObject)
+    assert isinstance(dut.sig_t1, LogicObject)
+    assert isinstance(dut.sig_t2, ArrayObject)
+    assert isinstance(dut.sig_t2[5], LogicObject)
+    assert isinstance(dut.sig_t2[5][3], LogicObject)
+    assert isinstance(dut.sig_t3a[2][3], LogicObject)
+    assert isinstance(dut.sig_t3b[3], LogicObject)
+    assert isinstance(dut.sig_t3a, ArrayObject)
+    assert isinstance(dut.sig_t4, ArrayObject)
+    assert isinstance(dut.sig_t4[3], ArrayObject)
     # the following version cannot index into those arrays and will error out
     if not (
         LANGUAGE in ["verilog"]
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
     ):
-        _check_type(tlog, dut.sig_t4[3][4], LogicObject)
-        _check_type(tlog, dut.sig_t4[3][4][1], LogicObject)
-    _check_type(tlog, dut.sig_t5, ArrayObject)
-    _check_type(tlog, dut.sig_t5[1], ArrayObject)
-    _check_type(tlog, dut.sig_t5[1][0], LogicObject)
-    _check_type(tlog, dut.sig_t5[1][0][6], LogicObject)
-    _check_type(tlog, dut.sig_t6, ArrayObject)
-    _check_type(tlog, dut.sig_t6[1], ArrayObject)
+        assert isinstance(dut.sig_t4[3][4], LogicObject)
+        assert isinstance(dut.sig_t4[3][4][1], LogicObject)
+    assert isinstance(dut.sig_t5, ArrayObject)
+    assert isinstance(dut.sig_t5[1], ArrayObject)
+    assert isinstance(dut.sig_t5[1][0], LogicObject)
+    assert isinstance(dut.sig_t5[1][0][6], LogicObject)
+    assert isinstance(dut.sig_t6, ArrayObject)
+    assert isinstance(dut.sig_t6[1], ArrayObject)
     # the following version cannot index into those arrays and will error out
     if not (
         LANGUAGE in ["verilog"]
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
     ):
-        _check_type(tlog, dut.sig_t6[0][3], LogicObject)
-        _check_type(tlog, dut.sig_t6[0][3][7], LogicObject)
-    _check_type(tlog, dut.sig_cmplx, ArrayObject)
+        assert isinstance(dut.sig_t6[0][3], LogicObject)
+        assert isinstance(dut.sig_t6[0][3][7], LogicObject)
+    assert isinstance(dut.sig_cmplx, ArrayObject)
 
     if LANGUAGE in ["verilog"]:
-        _check_type(tlog, dut.sig_t7[1], ArrayObject)
-        _check_type(tlog, dut.sig_t7[0][3], LogicObject)
-        _check_type(
-            tlog, dut.sig_t8[1], LogicObject
+        assert isinstance(dut.sig_t7[1], ArrayObject)
+        assert isinstance(dut.sig_t7[0][3], LogicObject)
+        assert isinstance(
+            dut.sig_t8[1], LogicObject
         )  # packed array of logic is mapped to GPI_NET
-        _check_type(tlog, dut.sig_t8[0][3], LogicObject)
+        assert isinstance(dut.sig_t8[0][3], LogicObject)
 
     # Riviera has a bug and finds dut.sig_cmplx[1], but the type returned is a vpiBitVar
     # only true for version 2016.02
@@ -538,15 +474,15 @@ async def test_direct_signal_indexing(dut):
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith("2016.02")
     ):
-        _check_type(tlog, dut.sig_cmplx[1], HierarchyObject)
-        _check_type(tlog, dut.sig_cmplx[1].a, LogicObject)
-        _check_type(tlog, dut.sig_cmplx[1].b, ArrayObject)
-        _check_type(tlog, dut.sig_cmplx[1].b[1], LogicObject)
-        _check_type(tlog, dut.sig_cmplx[1].b[1][2], LogicObject)
+        assert isinstance(dut.sig_cmplx[1], HierarchyObject)
+        assert isinstance(dut.sig_cmplx[1].a, LogicObject)
+        assert isinstance(dut.sig_cmplx[1].b, ArrayObject)
+        assert isinstance(dut.sig_cmplx[1].b[1], LogicObject)
+        assert isinstance(dut.sig_cmplx[1].b[1][2], LogicObject)
 
-    _check_type(tlog, dut.sig_rec, HierarchyObject)
-    _check_type(tlog, dut.sig_rec.a, LogicObject)
-    _check_type(tlog, dut.sig_rec.b, ArrayObject)
+    assert isinstance(dut.sig_rec, HierarchyObject)
+    assert isinstance(dut.sig_rec.a, LogicObject)
+    assert isinstance(dut.sig_rec.b, ArrayObject)
 
     # Riviera has a bug and finds dut.sig_rec.b[1], but the type returned is 0 which is unknown
     # only true for version 2016.02
@@ -555,15 +491,13 @@ async def test_direct_signal_indexing(dut):
         and cocotb.SIM_NAME.lower().startswith("riviera")
         and cocotb.SIM_VERSION.startswith("2016.02")
     ):
-        _check_type(tlog, dut.sig_rec.b[1], LogicObject)
-        _check_type(tlog, dut.sig_rec.b[1][2], LogicObject)
+        assert isinstance(dut.sig_rec.b[1], LogicObject)
+        assert isinstance(dut.sig_rec.b[1][2], LogicObject)
 
 
 @cocotb.test(skip=(LANGUAGE in ["verilog"]))
 async def test_extended_identifiers(dut):
     """Test accessing extended identifiers"""
 
-    tlog = logging.getLogger("cocotb.test")
-    tlog.info("Checking extended identifiers.")
-    _check_type(tlog, dut["\\ext_id\\"], LogicObject)
-    _check_type(tlog, dut["\\!\\"], LogicObject)
+    assert isinstance(dut["\\ext_id\\"], LogicObject)
+    assert isinstance(dut["\\!\\"], LogicObject)
