@@ -59,11 +59,11 @@ def get_parser():
     )
     parser.add_argument(
         "--suppress_rc",
-        dest="set_rc",
+        dest="suppress_rc",
         action="store_const",
         required=False,
-        const=False,
-        default=True,
+        const=True,
+        default=False,
         help="Suppress return code if failures found",
     )
 
@@ -113,7 +113,7 @@ def main():
         for testcase in testsuite.iter("testcase"):
             testcase_count += 1
             for failure in testcase.iter("failure"):
-                if args.set_rc:
+                if not args.suppress_rc:
                     rc = 1
                 print(
                     "Failure in testsuite: '{}' classname: '{}' testcase: '{}' with parameters '{}'".format(
