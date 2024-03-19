@@ -45,7 +45,7 @@ from typing import Any, Callable, Union
 
 import cocotb
 from cocotb import _outcomes, _py_compat
-from cocotb.result import TestComplete
+from cocotb.result import SimFailure, TestSuccess
 from cocotb.task import Task
 from cocotb.triggers import (
     Event,
@@ -530,7 +530,7 @@ class Scheduler:
                 # throws an error if the background task errored
                 # and no one was monitoring it
                 task._outcome.get()
-            except (TestComplete, AssertionError) as e:
+            except (TestSuccess, SimFailure, AssertionError) as e:
                 task.log.info("Test stopped by this task")
                 e = remove_traceback_frames(e, ["_unschedule", "get"])
                 self._abort_test(e)

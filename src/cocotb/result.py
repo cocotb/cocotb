@@ -28,28 +28,13 @@
 """Exceptions and functions for simulation result handling."""
 
 
-class TestComplete(Exception):
-    """
-    Exception showing that the test was completed. Sub-exceptions detail the exit status.
-
-    .. versionchanged:: 2.0
-        The ``stdout`` and ``stderr`` attributes were removed.
-    """
-
-
-class TestSuccess(TestComplete):
+class TestSuccess(BaseException):
     """Exception showing that the test was completed successfully."""
 
-    pass
 
-
-class SimFailure(TestComplete):
+class SimFailure(BaseException):
     """Exception showing that the simulator exited unsuccessfully."""
-
-    pass
 
 
 class SimTimeoutError(TimeoutError):
     """Exception for when a timeout, in terms of simulation time, occurs."""
-
-    pass
