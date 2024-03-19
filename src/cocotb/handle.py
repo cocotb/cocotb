@@ -928,12 +928,12 @@ class LogicObject(
                     return
 
                 if value < 0:
-                    value_ = LogicArray(
+                    value_ = LogicArray.from_signed(
                         value,
                         Range(len(self) - 1, "downto", 0),
                     )
                 else:
-                    value_ = LogicArray(
+                    value_ = LogicArray.from_unsigned(
                         value,
                         Range(len(self) - 1, "downto", 0),
                     )
@@ -961,9 +961,7 @@ class LogicObject(
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(
-            self, self._handle.set_signal_val_binstr, (action, value_.binstr)
-        )
+        schedule_write(self, self._handle.set_signal_val_binstr, (action, str(value_)))
 
     @property
     def value(self) -> LogicArray:
