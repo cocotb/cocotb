@@ -2,7 +2,11 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <memory>
+#include <libgen.h>  // basename
+#include <stdio.h>   // stderr, fprintf
+
+#include <memory>  // std::unique_ptr
+#include <string>  // std::string
 
 #include "Vtop.h"
 #include "verilated.h"
