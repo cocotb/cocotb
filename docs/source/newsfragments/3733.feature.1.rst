@@ -1,0 +1,1 @@
+Added ``range``, ``left``, ``direction``, and ``right`` properties to :class:`~cocotb.handle.ArrayObject`, :class:`~cocotb.handle.LogicObject`, and :class:`~cocotb.handle.StringObject`.
