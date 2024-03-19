@@ -79,7 +79,9 @@ async def test_arr_scope(dut):
 
 
 @verilog_test(
-    expect_error=AttributeError if SIM_NAME.startswith("verilator", "modelsim") else ()
+    expect_error=AttributeError
+    if SIM_NAME.startswith(("verilator", "modelsim"))
+    else ()
 )
 async def test_nested_scope(dut):
     assert (
