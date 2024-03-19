@@ -48,12 +48,12 @@ do_tests::
 # failures and the XML to track test results
 .PHONY: jenkins
 jenkins: do_tests
-	./bin/combine_results.py --suppress_rc --testsuites_name=cocotb_regression
+	python -m cocotb_tools.combine_results --suppress_rc --testsuites_name=cocotb_regression
 
 # By default want the exit code to indicate the test results
 .PHONY: test
 test:
-	$(MAKE) do_tests; ret=$$?; ./bin/combine_results.py && exit $$ret
+	$(MAKE) do_tests; ret=$$?; python -m cocotb_tools.combine_results && exit $$ret
 
 COCOTB_MAKEFILES_DIR = $(realpath $(shell cocotb-config --makefiles))
 AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.*)))
