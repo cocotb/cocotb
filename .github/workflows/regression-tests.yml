@@ -139,10 +139,12 @@ jobs:
     - name: Set up Icarus (MacOS - homebrew --HEAD)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-HEAD'
       run: |
+        brew update
         brew install icarus-verilog --HEAD
     - name: Set up Icarus (MacOS - homebrew)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-stable'
       run: |
+        brew update
         brew install icarus-verilog
 
       # Install GHDL
@@ -192,6 +194,7 @@ jobs:
     - name: Set up Verilator (MacOS - source)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'verilator' && matrix.sim-version == 'stable'
       run: |
+        brew update
         brew install verilator
 
       # Windows Testing
