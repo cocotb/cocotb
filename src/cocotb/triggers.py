@@ -784,9 +784,7 @@ class _AggregateWaitable(Waitable):
         for trigger in self.triggers:
             if not isinstance(trigger, allowed_types):
                 raise TypeError(
-                    "All triggers must be instances of Trigger! Got: {}".format(
-                        type(trigger).__qualname__
-                    )
+                    f"All triggers must be instances of Trigger! Got: {type(trigger).__qualname__}"
                 )
 
     def __repr__(self):

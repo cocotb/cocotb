@@ -344,8 +344,8 @@ class RegressionManager:
             install_importhook(pytest_conf)
         except Exception:
             _logger.exception(
-                "Configuring the assertion rewrite hook using pytest {} failed. "
-                "Please file a bug report!".format(pytest.__version__)
+                f"Configuring the assertion rewrite hook using pytest {pytest.__version__} failed. "
+                "Please file a bug report!"
             )
 
     def start_regression(self) -> None:
@@ -975,14 +975,12 @@ class TestFactory(Generic[F]):
         ] = {}
 
     @overload
-    def add_option(self, name: str, optionlist: Sequence[Any]) -> None:
-        ...
+    def add_option(self, name: str, optionlist: Sequence[Any]) -> None: ...
 
     @overload
     def add_option(
         self, name: Sequence[str], optionlist: Sequence[Sequence[Any]]
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def add_option(
         self,

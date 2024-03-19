@@ -1053,9 +1053,7 @@ class Verilator(Simulator):
                 "-o",
                 self.hdl_toplevel,
                 "-LDFLAGS",
-                "-Wl,-rpath,{LIB_DIR} -L{LIB_DIR} -lcocotbvpi_verilator".format(
-                    LIB_DIR=cocotb_tools.config.libs_dir
-                ),
+                f"-Wl,-rpath,{cocotb_tools.config.libs_dir} -L{cocotb_tools.config.libs_dir} -lcocotbvpi_verilator",
             ]
             + (["--trace"] if self.waves else [])
             + self.build_args

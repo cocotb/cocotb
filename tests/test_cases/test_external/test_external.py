@@ -30,6 +30,7 @@ A set of tests that demonstrate cocotb functionality
 
 Also used a regression test of cocotb capabilities
 """
+
 import threading
 
 import cocotb

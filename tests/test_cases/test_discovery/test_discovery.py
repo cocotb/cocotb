@@ -476,16 +476,10 @@ async def access_block_vhdl(dut):
     """Access a VHDL block statement"""
 
     dut._log.info(
-        "Block: {} ({})".format(
-            dut.isample_module1.SAMPLE_BLOCK._name,
-            type(dut.isample_module1.SAMPLE_BLOCK),
-        )
+        f"Block: {dut.isample_module1.SAMPLE_BLOCK._name} ({type(dut.isample_module1.SAMPLE_BLOCK)})"
     )
     dut._log.info(
-        "Signal inside Block:vhdl {} ({})".format(
-            dut.isample_module1.SAMPLE_BLOCK.clk_inv._name,
-            type(dut.isample_module1.SAMPLE_BLOCK.clk_inv),
-        )
+        f"Signal inside Block:vhdl {dut.isample_module1.SAMPLE_BLOCK.clk_inv._name} ({type(dut.isample_module1.SAMPLE_BLOCK.clk_inv)})"
     )
 
 
