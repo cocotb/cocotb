@@ -25,16 +25,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Exceptions and functions for simulation result handling."""
-
 
 class TestSuccess(BaseException):
-    """Exception showing that the test was completed successfully."""
+    """Exception to be thrown by the user to end a test early, forcing a PASS."""
 
 
 class SimFailure(BaseException):
-    """Exception showing that the simulator exited unsuccessfully."""
+    """Exception showing that the simulator exited unsuccessfully.
+
+    Not intended to be thrown by the user.
+    Exists to be used to mark tests that are expected to error due to simulation failure.
+    """
 
 
 class SimTimeoutError(TimeoutError):
-    """Exception for when a timeout, in terms of simulation time, occurs."""
+    """Exception thrown when a timeout, in terms of simulation time, occurs."""
