@@ -10,7 +10,7 @@ from cocotb.triggers import ReadOnly, Timer
 from cocotb.types import LogicArray, Range
 
 # this line is different between the two files
-value = LogicArray(0, Range(7, "downto", 0))
+value = LogicArray.from_unsigned(0, Range(7, "downto", 0))
 
 
 @cocotb.test()

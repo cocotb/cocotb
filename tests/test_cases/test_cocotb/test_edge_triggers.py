@@ -43,14 +43,14 @@ async def count_edges_cycles(signal, edges):
 
 async def do_single_edge_check(dut, level):
     """Do test for rising edge"""
-    old_value = dut.clk.value.integer
+    old_value = dut.clk.value
     dut._log.info("Value of %s is %d" % (dut.clk._path, old_value))
     assert old_value != level
     if level == 1:
         await RisingEdge(dut.clk)
     else:
         await FallingEdge(dut.clk)
-    new_value = dut.clk.value.integer
+    new_value = dut.clk.value
     dut._log.info("Value of %s is %d" % (dut.clk._path, new_value))
     assert new_value == level, "%s not %d at end" % (dut.clk._path, level)
 
@@ -88,27 +88,27 @@ async def test_either_edge(dut):
     await Timer(1, "ns")
     dut.clk.value = 1
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 1
+    assert dut.clk.value == 1
     await Timer(10, "ns")
     dut.clk.value = 0
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 0
+    assert dut.clk.value == 0
     await Timer(10, "ns")
     dut.clk.value = 1
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 1
+    assert dut.clk.value == 1
     await Timer(10, "ns")
     dut.clk.value = 0
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 0
+    assert dut.clk.value == 0
     await Timer(10, "ns")
     dut.clk.value = 1
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 1
+    assert dut.clk.value == 1
     await Timer(10, "ns")
     dut.clk.value = 0
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 0
+    assert dut.clk.value == 0
 
 
 @cocotb.test()
