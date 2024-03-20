@@ -475,12 +475,8 @@ async def type_check_verilog(dut):
 async def access_block_vhdl(dut):
     """Access a VHDL block statement"""
 
-    dut._log.info(
-        f"Block: {dut.isample_module1.SAMPLE_BLOCK._name} ({type(dut.isample_module1.SAMPLE_BLOCK)})"
-    )
-    dut._log.info(
-        f"Signal inside Block:vhdl {dut.isample_module1.SAMPLE_BLOCK.clk_inv._name} ({type(dut.isample_module1.SAMPLE_BLOCK.clk_inv)})"
-    )
+    dut.isample_module1.SAMPLE_BLOCK
+    dut.isample_module1.SAMPLE_BLOCK.clk_inv
 
 
 @cocotb.test(skip=LANGUAGE in ["verilog"])
