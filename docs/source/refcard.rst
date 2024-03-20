@@ -34,8 +34,9 @@ Reference Card
 | Bit slice              | | ``mybit = dut.myarray[0].value``                              |
 |                        | | ``mybits = dut.mysignal.value[0]``                            |
 +------------------------+-----------------------------------------------------------------+
-| Convert                | | ``val = dut.mysignal.value.integer``                          |
-|                        | | ``val = dut.mysignal.value.binstr``                           |
+| Convert                | | ``val = dut.mysignal.value.to_unsigned()``                    |
+|                        | | ``val = dut.mysignal.value.to_signed()``                      |
+|                        | | ``val = str(dut.mysignal.value)``                             |
 +------------------------+-----------------------------------------------------------------+
 | Vector length          | ``num_bits = len(dut.mysignal)``                                |
 +------------------------+-----------------------------------------------------------------+

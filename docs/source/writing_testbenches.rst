@@ -134,22 +134,8 @@ The Python type of a value depends on the handle's HDL type:
 * Boolean nets and constants (``boolean``) return :class:`bool`.
 * String nets and constants (``string``) return :class:`bytes`.
 
-For a :class:`~cocotb.types.LogicArray` object, any unresolved bits are preserved and
-can be accessed using the :attr:`~cocotb.types.LogicArray.binstr` attribute,
-or a resolved integer value can be accessed using the :attr:`~cocotb.types.LogicArray.integer` attribute.
-
-.. code-block:: pycon
-
-    >>> # Read a value back from the DUT
-    >>> count = dut.counter.value
-    >>> print(count.binstr)
-    1X1010
-    >>> # Resolve the value to an integer (X or Z treated as 0)
-    >>> print(count.integer)
-    42
-    >>> # Show number of bits in a value
-    >>> print(count.n_bits)
-    6
+.. todo::
+    Add simple example of how to use LogicArray
 
 
 .. _writing_tbs_identifying_tests:

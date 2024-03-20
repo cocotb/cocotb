@@ -302,27 +302,13 @@ async def test_last_scheduled_write_wins(dut):
     """
     Test that the last scheduled write for a signal handle is the value that is written.
     """
-    log = logging.getLogger("cocotb.test")
-    e = Event()
-    dut.stream_in_data.setimmediatevalue(0)
-
-    async def first():
-        await Timer(1, "ns")
-        log.info("scheduling stream_in_data.value = 1")
-        dut.stream_in_data.value = 1
-        e.set()
-
-    async def second():
-        await Timer(1, "ns")
-        await e.wait()
-        log.info("scheduling stream_in_data.value = 2")
-        dut.stream_in_data.value = 2
-
-    await Combine(cocotb.start_soon(first()), cocotb.start_soon(second()))
-
+    dut.stream_in_data.value = 0
+    await Timer(10, "ns")
+    assert dut.stream_in_data.value == 0
+    dut.stream_in_data.value = 1
+    dut.stream_in_data.value = 2
     await ReadOnly()
-
-    assert dut.stream_in_data.value.integer == 2
+    assert dut.stream_in_data.value == 2
 
 
 # GHDL unable to put values on nested array types (gh-2588)

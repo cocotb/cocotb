@@ -14,15 +14,6 @@ def test_logic_array_constructor():
 
     assert LogicArray(range=Range(0, "to", 3)) == LogicArray("XXXX")
 
-    assert LogicArray(0) == LogicArray("0")
-    assert LogicArray(0xA7) == LogicArray("10100111")
-    assert LogicArray(-1) == LogicArray("1")
-
-    assert LogicArray(10, Range(5, "downto", 0)) == LogicArray("001010")
-    assert LogicArray(-2, Range(5, "downto", 0)) == LogicArray("111110")
-    with pytest.raises(ValueError):
-        LogicArray(10, Range(1, "to", 3))
-
     with pytest.raises(TypeError):
         LogicArray(object())
 
@@ -33,18 +24,63 @@ def test_logic_array_constructor():
         LogicArray()
 
 
+def test_logic_array_constructor_deprecated():
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(0xA7) == LogicArray("10100111")
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(10, Range(5, "downto", 0)) == LogicArray("001010")
+
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(-1) == LogicArray("1")
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(-2, Range(5, "downto", 0)) == LogicArray("111110")
+
+    with pytest.raises(ValueError):
+        with pytest.warns(DeprecationWarning):
+            LogicArray(10, Range(1, "to", 3))
+    with pytest.raises(ValueError):
+        with pytest.warns(DeprecationWarning):
+            LogicArray(-45, Range(1, "to", 3))
+
+
+def test_logic_array_int_conversion():
+    assert LogicArray.from_unsigned(0xA7) == LogicArray("10100111")
+    assert LogicArray.from_unsigned(10, Range(5, "downto", 0)) == LogicArray("001010")
+    with pytest.raises(ValueError):
+        LogicArray.from_unsigned(-10)
+    with pytest.raises(ValueError):
+        LogicArray.from_unsigned(10, Range(1, "to", 3))
+
+    assert LogicArray.from_signed(-1) == LogicArray("1")
+    assert LogicArray.from_signed(-2, Range(5, "downto", 0)) == LogicArray("111110")
+    with pytest.raises(ValueError):
+        LogicArray.from_signed(-45, Range(1, "to", 3))
+
+
 def test_logic_array_properties():
-    assert LogicArray(0).integer == 0
-    assert LogicArray(0).signed_integer == 0
-    assert LogicArray(0).binstr == "0"
-    assert LogicArray(10).integer == 10
-    assert LogicArray(10).signed_integer == -6
-    assert LogicArray(10).binstr == "1010"
-    assert LogicArray(-6).integer == 10
-    assert LogicArray(-6).signed_integer == -6
-    assert LogicArray(-6).binstr == "1010"
-    assert LogicArray(0).is_resolvable
+    assert LogicArray("01").is_resolvable
     assert not LogicArray("1X1").is_resolvable
+
+
+def test_logic_array_properties_deprecated():
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(0).integer == 0
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(0).signed_integer == 0
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(0).binstr == "0"
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(10).integer == 10
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(10).signed_integer == -6
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(10).binstr == "1010"
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(-6).integer == 10
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(-6).signed_integer == -6
+    with pytest.warns(DeprecationWarning):
+        assert LogicArray(-6).binstr == "1010"
 
 
 def test_logic_array_setattr():
