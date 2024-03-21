@@ -198,24 +198,24 @@ class Timer(GPITrigger):
 
         Examples:
 
-            >>> await Timer(100, units='ps')
+            >>> await Timer(100, units="ps")
 
             The time can also be a ``float``:
 
-            >>> await Timer(100e-9, units='sec')
+            >>> await Timer(100e-9, units="sec")
 
             which is particularly convenient when working with frequencies:
 
             >>> freq = 10e6  # 10 MHz
-            >>> await Timer(1 / freq, units='sec')
+            >>> await Timer(1 / freq, units="sec")
 
             Other builtin exact numeric types can be used too:
 
             >>> from fractions import Fraction
-            >>> await Timer(Fraction(1, 10), units='ns')
+            >>> await Timer(Fraction(1, 10), units="ns")
 
             >>> from decimal import Decimal
-            >>> await Timer(Decimal('100e-9'), units='sec')
+            >>> await Timer(Decimal("100e-9"), units="sec")
 
             These are most useful when using computed durations while
             avoiding floating point inaccuracies.
@@ -693,8 +693,9 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
     result::
 
         async def coro_inner():
-            await Timer(1, units='ns')
+            await Timer(1, units="ns")
             return "Hello world"
+
 
         task = cocotb.start_soon(coro_inner())
         result = await Join(task)
@@ -857,8 +858,8 @@ class First(_AggregateWaitable):
         For this reason, the value of ``t_ret is t1`` in the following example
         is implementation-defined, and will vary by simulator::
 
-            t1 = Timer(10, units='ps')
-            t2 = Timer(10, units='ps')
+            t1 = Timer(10, units="ps")
+            t2 = Timer(10, units="ps")
             t_ret = await First(t1, t2)
 
     .. note::
@@ -973,8 +974,8 @@ async def with_timeout(
 
     .. code-block:: python
 
-        await with_timeout(coro, 100, 'ns')
-        await with_timeout(First(coro, event.wait()), 100, 'ns')
+        await with_timeout(coro, 100, "ns")
+        await with_timeout(First(coro, event.wait()), 100, "ns")
 
     Args:
         trigger (:class:`~cocotb.triggers.Trigger`, :class:`~cocotb.triggers.Waitable`, :class:`~cocotb.task.Task`, or :term:`python:coroutine`):
