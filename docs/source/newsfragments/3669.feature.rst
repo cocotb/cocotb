@@ -1,1 +1,1 @@
-Allow `results_xml` argument to :ref:`Python Test Runner <howto-python-runner>` to be an absolute path
+The ``results_xml`` argument to :meth:`cocotb_tools.runner.Simulator.test` can now be an absolute path.

@@ -401,11 +401,14 @@ class HierarchyObject(HierarchyObjectBase[str]):
         If *extended* is ``True``, run the query only for VHDL extended identifiers.
         For Verilog, only ``extended=False`` is supported.
 
+        :meta public:
+
         Args:
             name: The child object by name.
             extended: If ``True``, treat the *name* as an extended identifier.
 
-        Returns: The child object.
+        Returns:
+            The child object.
 
         Raises:
             AttributeError: If the child object is not found.
@@ -414,7 +417,6 @@ class HierarchyObject(HierarchyObjectBase[str]):
             Use ``handle[child_name]`` syntax instead.
             If extended identifiers are needed simply add a ``\\`` character before and after the name.
 
-        :meta public:
         """
         if extended:
             name = "\\" + name + "\\"
@@ -1313,7 +1315,8 @@ def SimHandle(
         handle: The GPI handle to the simulator object.
         path: Path to this handle.
 
-    Returns: An appropriate :class:`SimHandleBase` object.
+    Returns:
+        An appropriate :class:`SimHandleBase` object.
 
     Raises:
         NotImplementedError: If no matching object for GPI type could be found.

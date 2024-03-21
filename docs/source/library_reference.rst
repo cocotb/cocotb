@@ -87,8 +87,6 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
     :members:
     :exclude-members: count, index
 
-.. autofunction:: cocotb.types.concat
-
 .. autoclass:: cocotb.types.Array
     :members:
     :inherited-members:
@@ -204,7 +202,10 @@ Utilities
 Logging
 -------
 
-.. currentmodule:: cocotb.logging
+.. module:: cocotb.logging
+    :synopsis: Classes for logging messages from cocotb during simulation.
+
+.. autodata:: cocotb.log
 
 .. autofunction:: default_config
 
@@ -289,6 +290,7 @@ Asynchronous Queues
 .. automodule:: cocotb.queue
     :members:
     :member-order: bysource
+    :synopsis: Asynchronous queues.
 
 Other Runtime Information
 -------------------------
@@ -342,7 +344,8 @@ Implementation Details
 The Regression Manager
 ----------------------
 
-.. currentmodule:: cocotb.regression
+.. module:: cocotb.regression
+    :synopsis: Regression test suite manager.
 
 .. autodata:: cocotb.regression_manager
 
@@ -365,3 +368,4 @@ of cocotb.
     :members:
     :undoc-members:
     :member-order: bysource
+    :synopsis: Interface to simulator.

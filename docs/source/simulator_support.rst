@@ -77,7 +77,7 @@ Verilator
     Verilator is in the process of adding more functionality to its VPI interface, which is used by cocotb to access the design.
     Therefore, Verilator support in cocotb is currently experimental, and some features of cocotb may not work correctly or at all.
     If you encounter an issue using Verilator with cocotb, please try the newest release and
-    [check existing issues](https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Averilator)
+    `check existing issues <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Averilator>`_
     before opening a new one.
 
 In order to use this simulator, set :make:var:`SIM` to ``verilator``:
@@ -93,7 +93,7 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 
 .. note::
 
-    Delayed assignments require the use of Verilator's `--timing <https://verilator.org/guide/latest/exe_verilator.html#cmdoption-timing>`_ argument.
+    Delayed assignments require the use of Verilator's `timing <https://verilator.org/guide/latest/exe_verilator.html#cmdoption-timing>`_ argument.
 
 To run cocotb with Verilator, you need ``verilator`` in your PATH.
 

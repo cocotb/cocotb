@@ -26,6 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import ast
+import logging as py_logging
 import os
 import random
 import sys
@@ -54,13 +55,8 @@ from cocotb.decorators import (  # isort: skip # noqa: F401
 from cocotb.logging import _filter_from_c, _log_from_c  # isort: skip # noqa: F401
 
 
-def _setup_logging() -> None:
-    import logging
-
-    default_config()
-    global log
-    log = logging.getLogger(__name__)
-
+log: py_logging.Logger
+"""The default cocotb logger."""
 
 _scheduler: Scheduler
 """The global scheduler instance."""
@@ -119,12 +115,24 @@ is_simulation: bool = False
 """``True`` if cocotb was loaded in a simulation."""
 
 
+def _setup_logging() -> None:
+    default_config()
+    global log
+    log = py_logging.getLogger(__name__)
+
+
 def start_soon(coro: Union[Task, Coroutine]) -> Task:
     """
     Schedule a coroutine to be run concurrently.
 
-    Note that this is not an async function,
+    Note that this is not an ``async`` function,
     and the new task will not execute until the calling task yields control.
+
+    Args:
+        coro: A task or coroutine to be run.
+
+    Returns:
+        The :class:`~cocotb.task.Task` that is scheduled to be run.
 
     .. versionadded:: 1.6.0
     """
@@ -137,6 +145,15 @@ async def start(coro: Union[Task, Coroutine]) -> Task:
 
     The calling task will resume execution before control is returned to the simulator.
 
+    When the calling task resumes, the newly scheduled task may have completed,
+    raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
+
+    Args:
+        coro: A task or coroutine to be run.
+
+    Returns:
+        The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
+
     .. versionadded:: 1.6.0
     """
     task = _scheduler.start_soon(coro)
@@ -146,9 +163,15 @@ async def start(coro: Union[Task, Coroutine]) -> Task:
 
 def create_task(coro: Union[Task, Coroutine]) -> Task:
     """
-    Construct a coroutine into a Task without scheduling the Task.
+    Construct a coroutine into a :class:`~cocotb.task.Task` without scheduling the task.
 
-    The Task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
+    The task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
+
+    Args:
+        coro: An existing task or a coroutine to be wrapped.
+
+    Returns:
+        Either the provided :class:`~cocotb.task.Task` or a new Task wrapping the coroutine.
 
     .. versionadded:: 1.6.0
     """
