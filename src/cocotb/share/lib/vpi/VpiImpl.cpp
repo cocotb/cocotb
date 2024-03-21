@@ -317,8 +317,8 @@ GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
 
     new_hdl = vpi_handle_by_name(const_cast<char *>(fq_name.c_str()), NULL);
 
-#ifdef ICARUS
-    /* Icarus does not support vpiGenScopeArray, only vpiGenScope.
+#if defined(ICARUS) || defined(VERILATOR)
+    /* Icarus and Verilator do not support vpiGenScopeArray, only vpiGenScope.
      * If handle is not found by name, look for a generate block with
      * a matching prefix.
      *     For Example:
@@ -344,7 +344,8 @@ GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
         }
 
         for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
-            if (vpi_get(vpiType, rgn) == vpiGenScope) {
+            auto rgn_type = vpi_get(vpiType, rgn);
+            if (rgn_type == vpiGenScope || rgn_type == vpiModule) {
                 auto rgn_name = vpi_get_str(vpiName, rgn);
                 /* Check if name is a prefix of rgn_name */
                 if (rgn_name && name.length() > 0 &&

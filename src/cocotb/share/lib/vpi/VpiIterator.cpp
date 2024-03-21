@@ -274,8 +274,9 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
             /* For GPI_GENARRAY, only allow the generate statements through that
              * match the name of the generate block.
              */
+            auto rgn_type = vpi_get(vpiType, obj);
             if (obj != NULL && obj_type == GPI_GENARRAY) {
-                if (vpi_get(vpiType, obj) == vpiGenScope) {
+                if (rgn_type == vpiGenScope || rgn_type == vpiModule) {
                     std::string rgn_name = vpi_get_str(vpiName, obj);
                     if (!VpiImpl::compare_generate_labels(rgn_name,
                                                           parent_name)) {
