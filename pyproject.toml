@@ -47,6 +47,9 @@ extend-exclude = [
 ]
 target-version = "py37"
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
 extend-select = [
     "I",  # isort
