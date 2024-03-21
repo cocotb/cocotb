@@ -252,8 +252,7 @@ def test(
         .. code-block:: python3
 
             @cocotb.test(timeout_time=10, timeout_unit="ms")
-            async def test_thing(dut):
-                ...
+            async def test_thing(dut): ...
 
     .. versionchanged:: 2.0
         Support using decorator on test function without supplying parameters first.
@@ -263,8 +262,7 @@ def test(
         .. code-block:: python3
 
             @cocotb.test
-            async def test_thing(dut):
-                ...
+            async def test_thing(dut): ...
 
     .. versionchanged:: 2.0
         Decorated tests now return the decorated object.
@@ -404,8 +402,7 @@ def parameterize(
             arg1=[0, 1],
             arg2=["a", "b"],
         )
-        async def my_test(arg1: int, arg2: str) -> None:
-            ...
+        async def my_test(arg1: int, arg2: str) -> None: ...
 
     The above is equivalent to the following.
 
@@ -416,15 +413,18 @@ def parameterize(
             arg1, arg2 = 0, "a"
             ...
 
+
         @cocotb.test(skip=False)
         async def my_test_0_b() -> None:
             arg1, arg2 = 0, "b"
             ...
 
+
         @cocotb.test(skip=False)
         async def my_test_1_a() -> None:
             arg1, arg2 = 1, "a"
             ...
+
 
         @cocotb.test(skip=False)
         async def my_test_1_b() -> None:

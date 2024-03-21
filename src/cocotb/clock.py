@@ -51,7 +51,7 @@ class Clock:
 
     .. code-block:: python
 
-        c = Clock(dut.clk, 10, 'ns')
+        c = Clock(dut.clk, 10, "ns")
         await cocotb.start(c.start())
 
     Args:
@@ -92,6 +92,7 @@ class Clock:
                 await Timer(high_delay, units="ns")
                 dut.clk.value = 0
                 await Timer(low_delay, units="ns")
+
 
         high_delay = low_delay = 100
         await cocotb.start(custom_clock())

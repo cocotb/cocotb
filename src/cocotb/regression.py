@@ -926,9 +926,11 @@ class TestFactory(Generic[F]):
     need to test against data generation routines ``gen_a`` and ``gen_b``:
 
     >>> tf = TestFactory(test_function=run_test)
-    >>> tf.add_option(name='data_in', optionlist=[gen_a, gen_b])
-    >>> tf.add_option('backpressure', [None, random_backpressure])
-    >>> tf.add_option(('feature_a', 'feature_b'), [(False, False), (True, False), (True, True)])
+    >>> tf.add_option(name="data_in", optionlist=[gen_a, gen_b])
+    >>> tf.add_option("backpressure", [None, random_backpressure])
+    >>> tf.add_option(
+    ...     ("feature_a", "feature_b"), [(False, False), (True, False), (True, True)]
+    ... )
     >>> tf.generate_tests()
 
     We would get the following tests:
