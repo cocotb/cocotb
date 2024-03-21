@@ -13,3 +13,22 @@ async def test_sv_if(dut):
     assert hasattr(dut.sv_if_i, "a")
     assert hasattr(dut.sv_if_i, "b")
     assert hasattr(dut.sv_if_i, "c")
+
+
+@cocotb.test(expect_fail=True)
+async def test_sv_if_arrays(dut):
+    """Test that interface arrays are the correct type and iterable"""
+
+    # should be a HierarchyArrayObject, currently is a NonHierarchyIndexableObject in Xcelium
+    print(dut.sv_if_arr)
+
+    assert isinstance(dut.sv_if_arr, cocotb.handle.HierarchyArrayObject)
+
+    dut.sv_if_arr._discover_all()
+
+    m = len(dut.sv_if_arr)
+    assert m == 3
+    for i in range(m):
+        assert hasattr(dut.sv_if_arr[i], "a")
+        assert hasattr(dut.sv_if_arr[i], "b")
+        assert hasattr(dut.sv_if_arr[i], "c")
