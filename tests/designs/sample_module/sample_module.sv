@@ -39,6 +39,20 @@ typedef struct packed
 } test_if;
 `endif
 
+interface TestInterface ();
+
+   logic [31:0] addr;
+   modport source(input addr);
+
+endinterface
+
+module sub;
+   reg subsig1;
+   reg subsig2;
+   // stop icarus optimizing signals away
+   wire redundant = subsig1 | subsig2;
+endmodule : sub
+
 module sample_module #(
     parameter INT_PARAM = 12,
     parameter REAL_PARAM = 3.14,
@@ -131,6 +145,33 @@ generate
     for (idx = 0; idx < NUM_OF_MODULES; idx=idx+1) begin
         always @(posedge clk) begin
             temp[idx] <= 1'b0;
+        end
+    end
+endgenerate
+
+TestInterface intf_arr[2] ();
+
+generate
+    if (INT_PARAM == 12) begin : cond_scope
+        localparam int scoped_param = 1;
+        sub scoped_sub ();
+    end else begin : cond_scope_else
+        sub scoped_sub_else ();
+    end
+endgenerate
+
+genvar i;
+generate
+    for (i = 1; i <= 2; i = i + 1) begin : arr
+        sub arr_sub();
+    end
+
+    for (i = 1; i <= 2; i = i + 1) begin : outer_scope
+        localparam int outer_param = i * 2;
+        genvar j;
+        for (j = 1; j <= 2; j = j + 1) begin : inner_scope
+            localparam int inner_param = outer_param + 1;
+            sub inner_sub();
         end
     end
 endgenerate
