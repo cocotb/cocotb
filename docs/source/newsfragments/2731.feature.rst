@@ -1,1 +1,1 @@
-Support not using parenthesis on ``@cocotb.test`` decorator
+Not using parentheses on ``@cocotb.test`` decorator is now supported.
