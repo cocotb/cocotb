@@ -62,17 +62,17 @@ libs_dir = base_cocotb_dir.joinpath("libs")
 makefiles_dir = base_tools_dir.joinpath("makefiles")
 
 
-def get_version() -> str:
+def _get_version() -> str:
     import cocotb
 
     return cocotb.__version__
 
 
-def help_vars_text() -> str:
-    if "dev" in get_version():
+def _help_vars_text() -> str:
+    if "dev" in _get_version():
         doclink = "https://docs.cocotb.org/en/latest/building.html"
     else:
-        doclink = f"https://docs.cocotb.org/en/v{get_version()}/building.html"
+        doclink = f"https://docs.cocotb.org/en/v{_get_version()}/building.html"
 
     # NOTE: make sure to keep "helpmsg" aligned with documentation/source/building.rst
     # Also keep it at 80 chars.
@@ -170,134 +170,95 @@ def lib_name(interface: str, simulator: str) -> str:
     return lib_prefix + "cocotb" + interface_name + "_" + library_name + lib_ext
 
 
-def lib_name_path(interface, simulator):
+def lib_name_path(interface: str, simulator: str) -> Path:
     """
     Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
     """
     library_name_path = os.path.join(libs_dir, lib_name(interface, simulator))
 
-    return Path(library_name_path).as_posix()
+    return Path(library_name_path)
 
 
-def _findlibpython():
-    libpython_path = find_libpython.find_libpython()
-    if libpython_path is None:
-        sys.exit(1)
-    return Path(libpython_path).as_posix()
-
-
-class PrintAction(argparse.Action):
-    def __init__(self, option_strings, dest, text=None, **kwargs):
-        super().__init__(option_strings, dest, nargs=0, **kwargs)
-        self.text = text
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        print(self.text)
-        parser.exit()
-
-
-class PrintFuncAction(argparse.Action):
-    def __init__(self, option_strings, dest, function=None, **kwargs):
-        super().__init__(option_strings, dest, **kwargs)
-        self.function = function
-
-    def __call__(self, parser, args, values, option_string=None):
-        try:
-            print(self.function(*values))
-        except ValueError as e:
-            parser.error(e)
-        parser.exit()
-
-
-def get_parser():
+def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument(
-        "--prefix",
-        help="echo the package-prefix of cocotb",
-        nargs=0,
-        metavar=(),
-        action=PrintFuncAction,
-        function=lambda: base_cocotb_dir.parent.resolve().as_posix(),
-    )
-    parser.add_argument(
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "--share",
-        help="echo the package-share of cocotb",
-        action=PrintAction,
-        text=share_dir.as_posix(),
+        action="store_true",
+        help="Print the path to cocotb's share directory",
     )
-    parser.add_argument(
+    group.add_argument(
         "--makefiles",
-        help="echo the package-makefiles of cocotb",
-        action=PrintAction,
-        text=makefiles_dir.as_posix(),
+        action="store_true",
+        help="Print the path to cocotb's makefile directory",
     )
-    parser.add_argument(
+    group.add_argument(
         "--python-bin",
-        help="echo the path to the Python binary cocotb is installed for",
-        nargs=0,
-        metavar=(),
-        action=PrintFuncAction,
-        function=lambda: Path(sys.executable).as_posix(),
+        action="store_true",
+        help="Print the path to the Python executable associated with the environment that cocotb is installed in.",
     )
-    parser.add_argument(
+    group.add_argument(
         "--help-vars",
-        help="show help about supported variables",
-        nargs=0,
-        metavar=(),
-        action=PrintFuncAction,
-        function=help_vars_text,
+        action="store_true",
+        help="Print help about supported Makefile variables",
     )
-    parser.add_argument(
+    group.add_argument(
         "--libpython",
+        action="store_true",
         help="Print the absolute path to the libpython associated with the current Python installation",
-        nargs=0,
-        metavar=(),
-        action=PrintFuncAction,
-        function=_findlibpython,
     )
-    parser.add_argument(
+    group.add_argument(
         "--lib-dir",
+        action="store_true",
         help="Print the absolute path to the interface libraries location",
-        action=PrintAction,
-        text=libs_dir.as_posix(),
     )
-    parser.add_argument(
+    group.add_argument(
         "--lib-name",
         help="Print the name of interface library for given interface (VPI/VHPI/FLI) and simulator",
         nargs=2,
         metavar=("INTERFACE", "SIMULATOR"),
-        action=PrintFuncAction,
-        function=lib_name,
     )
-    parser.add_argument(
+    group.add_argument(
         "--lib-name-path",
         help="Print the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator",
         nargs=2,
         metavar=("INTERFACE", "SIMULATOR"),
-        action=PrintFuncAction,
-        function=lib_name_path,
     )
-    parser.add_argument(
-        "-v",
+    group.add_argument(
         "--version",
-        help="echo the version of cocotb",
-        nargs=0,
-        metavar=(),
-        action=PrintFuncAction,
-        function=get_version,
+        action="store_true",
+        help="Print the version of cocotb",
     )
 
     return parser
 
 
-def main():
-    parser = get_parser()
+def main() -> None:
+    parser = _get_parser()
+    args = parser.parse_args()
 
-    if len(sys.argv) == 1:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-
-    parser.parse_args()
+    if args.share:
+        print(share_dir.as_posix())
+    elif args.makefiles:
+        print(makefiles_dir.as_posix())
+    elif args.python_bin:
+        print(Path(sys.executable).as_posix())
+    elif args.help_vars:
+        print(_help_vars_text)
+    elif args.libpython:
+        libpython_path = find_libpython.find_libpython()
+        if libpython_path is None:
+            sys.exit(1)
+        print(Path(libpython_path).as_posix())
+    elif args.lib_dir:
+        print(libs_dir.as_posix())
+    elif args.lib_name:
+        print(lib_name(*args.lib_name))
+    elif args.lib_name_path:
+        print(lib_name_path(*args.lib_name_path).as_posix())
+    elif args.version:
+        print(_get_version())
 
 
 if __name__ == "__main__":
