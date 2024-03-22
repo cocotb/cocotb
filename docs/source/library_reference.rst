@@ -307,6 +307,18 @@ Other Runtime Information
 
 .. autodata:: cocotb.is_simulation
 
+.. _combine-results:
+
+The ``combine_results`` script
+------------------------------
+
+Use ``python -m cocotb_tools.combine_results`` to call the script.
+
+.. sphinx_argparse_cli::
+    :module: cocotb_tools.combine_results
+    :func: _get_parser
+    :prog: combine_results
+
 
 Implementation Details
 ======================
