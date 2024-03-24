@@ -89,7 +89,7 @@ class Task(Coroutine[Any, Any, T]):
     def __repr__(self) -> str:
         coro_stack = self._get_coro_stack()
 
-        if cocotb.scheduler._current_task is self:
+        if cocotb._scheduler._current_task is self:
             fmt = "<{name} running coro={coro}()>"
         elif self.done():
             fmt = "<{name} finished coro={coro}() outcome={outcome}>"
@@ -158,7 +158,7 @@ class Task(Coroutine[Any, Any, T]):
             self.log.debug("kill() called on coroutine")
         # todo: probably better to throw an exception for anyone waiting on the coroutine
         self._outcome = _outcomes.Value(None)
-        cocotb.scheduler._unschedule(self)
+        cocotb._scheduler._unschedule(self)
 
     def join(self) -> "cocotb.triggers.Join":
         """Return a trigger that will fire when the wrapped coroutine exits."""

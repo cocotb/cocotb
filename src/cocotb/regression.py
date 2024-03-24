@@ -430,7 +430,7 @@ class RegressionManager:
             else:
                 self._test_start_sim_time = get_sim_time("ns")
                 self._test_start_time = time.time()
-                return cocotb.scheduler._add_test(self._test_task)
+                return cocotb._scheduler._add_test(self._test_task)
 
         return self._tear_down()
 

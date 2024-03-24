@@ -663,7 +663,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
 
         value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
 
-        self._set_value(value_, action, cocotb.scheduler._schedule_write)
+        self._set_value(value_, action, cocotb._scheduler._schedule_write)
 
     def setimmediatevalue(
         self,

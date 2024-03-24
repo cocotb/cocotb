@@ -319,6 +319,18 @@ Use ``python -m cocotb_tools.combine_results`` to call the script.
     :func: _get_parser
     :prog: combine_results
 
+.. _cocotb-config::
+
+The ``cocotb-config`` script
+----------------------------
+
+Use ``cocotb-config`` or ``python -m cocotb_tools.config`` to call the script.
+
+.. sphinx_argparse_cli::
+    :module: cocotb_tools.config
+    :func: _get_parser
+    :prog: cocotb-config
+
 
 Implementation Details
 ======================
@@ -342,7 +354,6 @@ The Regression Manager
     :members:
     :member-order: bysource
 
-
 The ``cocotb.simulator`` module
 -------------------------------
 
@@ -354,12 +365,3 @@ of cocotb.
     :members:
     :undoc-members:
     :member-order: bysource
-
-
-The ``cocotb-config`` script
-----------------------------
-
-.. sphinx_argparse_cli::
-    :module: cocotb_tools.config
-    :func: _get_parser
-    :prog: cocotb-config
