@@ -154,7 +154,7 @@ Bugfixes
 - VHDL signals that are zero bits in width now read as the integer ``0``, instead of raising an exception. (:pr:`2294`)
 - Correctly parse plusargs with ``=``\ s in the value. (:pr:`2483`)
 - :envvar:`COCOTB_RESULTS_FILE` now properly communicates with the :data:`Regression Manager <cocotb.regression_manager>` to allow overloading the result filename. (:pr:`2487`)
-- Fixed several scheduling issues related to the use of :meth:`cocotb.scheduler.start_soon <cocotb.scheduler.Scheduler.start_soon>`. (:pr:`2504`)
+- Fixed several scheduling issues related to the use of :meth:`cocotb.start_soon <cocotb.start_soon>`. (:pr:`2504`)
 - Verilator and Icarus now support running without specifying a :envvar:`TOPLEVEL`. (:pr:`2547`)
 - Fixed discovery of signals inside SystemVerilog interfaces. (:pr:`2683`)
 
@@ -221,7 +221,7 @@ Features
 - Makefiles now automatically deduce :make:var:`TOPLEVEL_LANG` based on the value of :make:var:`VERILOG_SOURCES` and :make:var:`VHDL_SOURCES`.
   Makefiles also detect incorrect usage of :make:var:`TOPLEVEL_LANG` for simulators that only support one language. (:pr:`1982`)
 - ``cocotb.fork`` will now raise a descriptive :class:`TypeError` if a coroutine function is passed into them. (:pr:`2006`)
-- Added :meth:`cocotb.scheduler.start_soon <cocotb.scheduler.Scheduler.start_soon>` which schedules a coroutine to start *after* the current coroutine yields control.
+- Added ``cocotb.scheduler.start_soon`` which schedules a coroutine to start *after* the current coroutine yields control.
   This behavior is distinct from ``cocotb.fork`` which schedules the given coroutine immediately. (:pr:`2023`)
 - If ``pytest`` is installed, its assertion-rewriting framework will be used to
   produce more informative tracebacks from the :keyword:`assert` statement. (:pr:`2028`)

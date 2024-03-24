@@ -25,7 +25,7 @@ class SimTimePrompt(Prompts):
 
 def _runner(shell, x):
     """Handler for async functions"""
-    ret = cocotb.scheduler._queue_function(x)
+    ret = cocotb._scheduler._queue_function(x)
     shell.prompts._show_time = shell.execution_count
     return ret
 

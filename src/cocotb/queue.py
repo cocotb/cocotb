@@ -105,7 +105,7 @@ class Queue(Generic[T]):
         """
         while self.full():
             event = Event(f"{type(self).__name__} put")
-            self._putters.append((event, cocotb.scheduler._current_task))
+            self._putters.append((event, cocotb._scheduler._current_task))
             await event.wait()
         self.put_nowait(item)
 
@@ -126,7 +126,7 @@ class Queue(Generic[T]):
         """
         while self.empty():
             event = Event(f"{type(self).__name__} get")
-            self._getters.append((event, cocotb.scheduler._current_task))
+            self._getters.append((event, cocotb._scheduler._current_task))
             await event.wait()
         return self.get_nowait()
 

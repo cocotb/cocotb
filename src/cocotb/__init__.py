@@ -62,7 +62,7 @@ def _setup_logging() -> None:
     log = logging.getLogger(__name__)
 
 
-scheduler: Scheduler
+_scheduler: Scheduler
 """The global scheduler instance."""
 
 regression_manager: RegressionManager
@@ -128,7 +128,7 @@ def start_soon(coro: Union[Task, Coroutine]) -> Task:
 
     .. versionadded:: 1.6.0
     """
-    return scheduler.start_soon(coro)
+    return _scheduler.start_soon(coro)
 
 
 async def start(coro: Union[Task, Coroutine]) -> Task:
@@ -139,7 +139,7 @@ async def start(coro: Union[Task, Coroutine]) -> Task:
 
     .. versionadded:: 1.6.0
     """
-    task = scheduler.start_soon(coro)
+    task = _scheduler.start_soon(coro)
     await cocotb.triggers.NullTrigger()
     return task
 
@@ -152,7 +152,7 @@ def create_task(coro: Union[Task, Coroutine]) -> Task:
 
     .. versionadded:: 1.6.0
     """
-    return cocotb.scheduler.create_task(coro)
+    return cocotb._scheduler.create_task(coro)
 
 
 def _initialise_testbench(argv_):  # pragma: no cover
@@ -235,8 +235,8 @@ def _initialise_testbench_(argv_):
         regression_manager.add_filters(*filters)
         regression_manager.set_mode(RegressionMode.TESTCASE)
 
-    global scheduler
-    scheduler = Scheduler(test_complete_cb=regression_manager._test_complete)
+    global _scheduler
+    _scheduler = Scheduler(test_complete_cb=regression_manager._test_complete)
 
     # start Regression Manager
     regression_manager.start_regression()
@@ -275,9 +275,9 @@ def _sim_event(message: str) -> None:
     # We simply return here as the simulator will exit
     # so no cleanup is needed
     msg = f"Failing test at simulator request before test run completion: {message}"
-    if scheduler is not None:
-        scheduler.log.error(msg)
-        scheduler._finish_scheduler(SimFailure(msg))
+    if _scheduler is not None:
+        _scheduler.log.error(msg)
+        _scheduler._finish_scheduler(SimFailure(msg))
     else:
         log.error(msg)
         _stop_user_coverage()
