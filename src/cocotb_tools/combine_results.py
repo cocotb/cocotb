@@ -1,110 +1,98 @@
 #!/usr/bin/env python
 """
 Simple script to combine JUnit test results into a single XML file.
-
-Useful for Jenkins.
 """
 
 import argparse
 import os
+import re
 import sys
+from typing import Iterable, Pattern
 from xml.etree import ElementTree as ET
 
 
-def find_all(name, path):
-    for root, dirs, files in os.walk(path):
-        if name in files:
-            yield os.path.join(root, name)
+def _find_all(name: Pattern, path: str) -> Iterable[str]:
+    for root, _, files in os.walk(path):
+        for file in files:
+            if re.match(name, file):
+                yield os.path.join(root, file)
 
 
-def get_parser():
+def _get_parser() -> argparse.ArgumentParser:
     """Return the cmdline parser"""
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-
     parser.add_argument(
-        "--directory",
-        dest="directory",
-        type=str,
-        required=False,
-        default=".",
-        help="Name of base directory to search from",
+        "directories",
+        nargs="*",
+        default=["."],
+        help="Directories to search for input files.",
     )
-
     parser.add_argument(
-        "--output_file",
-        dest="output_file",
-        type=str,
-        required=False,
+        "-i",
+        "--input-filename",
+        default="results.xml",
+        help="A regular expression to match input filenames.",
+    )
+    parser.add_argument(
+        "-o",
+        "--output-file",
         default="combined_results.xml",
-        help="Name of output file",
+        help="Path of output XML file.",
     )
     parser.add_argument(
-        "--testsuites_name",
-        dest="testsuites_name",
-        type=str,
-        required=False,
+        "--output-testsuites-name",
         default="results",
-        help="Name value for testsuites tag",
+        help="Name of 'testsuites' element in output XML file.",
     )
     parser.add_argument(
         "--verbose",
-        dest="debug",
-        action="store_const",
-        required=False,
-        const=True,
-        default=False,
-        help="Verbose/debug output",
+        action="store_true",
+        help="Enables verbose output.",
     )
-    parser.add_argument(
-        "--suppress_rc",
-        dest="suppress_rc",
-        action="store_const",
-        required=False,
-        const=True,
-        default=False,
-        help="Suppress return code if failures found",
-    )
-
     return parser
 
 
-def main():
-    parser = get_parser()
+def main() -> int:
+    parser = _get_parser()
     args = parser.parse_args()
     rc = 0
 
-    result = ET.Element("testsuites", name=args.testsuites_name)
+    result = ET.Element("testsuites", name=args.output_testsuites_name)
 
-    for fname in find_all("results.xml", args.directory):
-        if args.debug:
-            print("Reading file %s" % fname)
-        tree = ET.parse(fname)
-        for ts in tree.iter("testsuite"):
-            if args.debug:
-                print(
-                    "Ts name : {}, package : {}".format(
-                        ts.get("name"), ts.get("package")
+    input_pattern = re.compile(args.input_filename)
+
+    for directory in args.directories:
+        if args.verbose:
+            print(f"Searching in {directory} for results.xml files.")
+        for fname in _find_all(input_pattern, directory):
+            if args.verbose:
+                print(f"Reading file {fname}.")
+            tree = ET.parse(fname)
+            for ts in tree.iter("testsuite"):
+                if args.verbose:
+                    print(
+                        "Testsuite name: {!r}, package: {!r}".format(
+                            ts.get("name"), ts.get("package")
+                        )
                     )
-                )
-            use_element = None
-            for existing in result:
-                if existing.get("name") == ts.get("name") and existing.get(
-                    "package"
-                ) == ts.get("package"):
-                    if args.debug:
-                        print("Already found")
-                    use_element = existing
-                    break
-            if use_element is None:
-                result.append(ts)
-            else:
-                # for tc in ts.getiterator("testcase"):
-                use_element.extend(list(ts))
-
-    if args.debug:
-        ET.dump(result)
+                for existing in result:
+                    if (existing.get("name") == ts.get("name")) and (
+                        existing.get("package") == ts.get("package")
+                    ):
+                        if args.verbose:
+                            print(
+                                "Testsuite already exists in combined results. Extending it."
+                            )
+                        existing.extend(list(ts))
+                        break
+                else:
+                    if args.verbose:
+                        print(
+                            "Testsuite does not already exist in combined results. Adding it."
+                        )
+                    result.append(ts)
 
     testsuite_count = 0
     testcase_count = 0
@@ -113,8 +101,7 @@ def main():
         for testcase in testsuite.iter("testcase"):
             testcase_count += 1
             for failure in testcase.iter("failure"):
-                if not args.suppress_rc:
-                    rc = 1
+                rc = 1
                 print(
                     "Failure in testsuite: '{}' classname: '{}' testcase: '{}' with parameters '{}'".format(
                         testsuite.get("name"),
@@ -125,13 +112,17 @@ def main():
                 )
                 if os.getenv("GITHUB_ACTIONS") is not None:
                     # Get test file relative to root of repo
+                    file = testcase.get("file")
+                    assert (
+                        file is not None
+                    )  # if this file was output by cocotb, it has this attribute
                     repo_root = os.path.commonprefix(
                         [
-                            os.path.abspath(testcase.get("file")),
+                            os.path.abspath(file),
                             os.path.abspath(__file__),
                         ]
                     )
-                    relative_file = testcase.get("file").replace(repo_root, "")
+                    relative_file = file.replace(repo_root, "")
                     print(
                         "::error file={},line={}::Test {}:{} failed".format(
                             relative_file,
@@ -141,11 +132,10 @@ def main():
                         )
                     )
 
-    print(
-        "Ran a total of %d TestSuites and %d TestCases"
-        % (testsuite_count, testcase_count)
-    )
+    print(f"Ran a total of {testsuite_count} TestSuites and {testcase_count} TestCases")
 
+    if args.verbose:
+        print(f"Writing combined results to {args.output_file}")
     ET.ElementTree(result).write(args.output_file, encoding="UTF-8")
     return rc
 
