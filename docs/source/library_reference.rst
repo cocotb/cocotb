@@ -327,17 +327,6 @@ Implementation Details
     In general, nothing in this section should be interacted with directly -
     these components work mostly behind the scenes.
 
-The Scheduler
--------------
-
-.. currentmodule:: cocotb.scheduler
-
-.. autodata:: cocotb.scheduler
-
-.. autoclass:: Scheduler
-    :members:
-    :member-order: bysource
-
 The Regression Manager
 ----------------------
 
