@@ -37,9 +37,9 @@ from typing import Any, Dict, List, Union, cast
 
 import cocotb.handle
 import cocotb.triggers
+from cocotb._scheduler import Scheduler
 from cocotb.logging import default_config
 from cocotb.regression import RegressionManager, RegressionMode
-from cocotb.scheduler import Scheduler
 from cocotb.task import Task
 
 from ._version import __version__
