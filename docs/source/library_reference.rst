@@ -372,5 +372,5 @@ The ``cocotb-config`` script
 
 .. sphinx_argparse_cli::
     :module: cocotb_tools.config
-    :func: get_parser
+    :func: _get_parser
     :prog: cocotb-config

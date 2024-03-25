@@ -676,22 +676,28 @@ class Questa(Simulator):
             lib_opts = [
                 "-foreign",
                 "cocotb_init "
-                + as_tcl_value(cocotb_tools.config.lib_name_path("fli", "questa")),
+                + as_tcl_value(
+                    cocotb_tools.config.lib_name_path("fli", "questa").as_posix()
+                ),
             ]
         elif gpi_if_entry == "vhpi":
             lib_opts = ["-voptargs=-access=rw+/."]
             lib_opts += [
                 "-foreign",
                 "vhpi_startup_routines_bootstrap "
-                + as_tcl_value(cocotb_tools.config.lib_name_path("vhpi", "questa")),
+                + as_tcl_value(
+                    cocotb_tools.config.lib_name_path("vhpi", "questa").as_posix()
+                ),
             ]
         else:
             lib_opts = [
                 "-pli",
-                as_tcl_value(cocotb_tools.config.lib_name_path("vpi", "questa")),
+                as_tcl_value(
+                    cocotb_tools.config.lib_name_path("vpi", "questa").as_posix()
+                ),
             ]
 
-        if not Path(gpi_if_entry_lib_path).is_file():
+        if not gpi_if_entry_lib_path.is_file():
             raise SystemExit(
                 "ERROR: cocotb was not installed with a {gpi_if_entry} library."
             )
@@ -712,10 +718,9 @@ class Questa(Simulator):
         gpi_extra_list = []
         for gpi_if in self.gpi_interfaces[1:]:
             gpi_if_lib_path = cocotb_tools.config.lib_name_path(gpi_if, "questa")
-            if Path(gpi_if_lib_path).is_file():
+            if gpi_if_lib_path.is_file():
                 gpi_extra_list.append(
-                    cocotb_tools.config.lib_name_path(gpi_if, "questa")
-                    + f":cocotb{gpi_if}_entry_point"
+                    gpi_if_lib_path.as_posix() + f":cocotb{gpi_if}_entry_point"
                 )
             else:
                 print("WARNING: {gpi_if_lib_path} library not found.")
@@ -808,7 +813,7 @@ class Ghdl(Simulator):
             + [f"--work={self.hdl_toplevel_library}"]
             + ghdl_run_args
             + [self.sim_hdl_toplevel]
-            + ["--vpi=" + cocotb_tools.config.lib_name_path("vpi", "ghdl")]
+            + ["--vpi=" + cocotb_tools.config.lib_name_path("vpi", "ghdl").as_posix()]
             + self.plusargs
             + self._get_parameter_options(self.parameters)
         ]
@@ -851,7 +856,7 @@ class Nvc(Simulator):
             + self._get_parameter_options(self.parameters)
             + ["-r"]
             + self.test_args
-            + ["--load=" + cocotb_tools.config.lib_name_path("vhpi", "nvc")]
+            + ["--load=" + cocotb_tools.config.lib_name_path("vhpi", "nvc").as_posix()]
             + self.plusargs
         ]
 
@@ -904,7 +909,7 @@ class Riviera(Simulator):
                 do_script += "alog -work {RTL_LIBRARY} -pli {EXT_NAME} -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
                     RTL_LIBRARY=as_tcl_value(self.hdl_library),
                     EXT_NAME=as_tcl_value(
-                        cocotb_tools.config.lib_name_path("vpi", "riviera")
+                        cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
                     ),
                     VERILOG_SOURCES=" ".join(
                         as_tcl_value(str(v)) for v in self.verilog_sources
@@ -941,7 +946,7 @@ class Riviera(Simulator):
                     f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
                 ),
                 EXT_NAME=as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vhpi", "riviera")
+                    cocotb_tools.config.lib_name_path("vhpi", "riviera").as_posix()
                 ),
                 EXTRA_ARGS=" ".join(
                     as_tcl_value(v)
@@ -953,7 +958,7 @@ class Riviera(Simulator):
             )
 
             self.env["GPI_EXTRA"] = (
-                cocotb_tools.config.lib_name_path("vpi", "riviera")
+                cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
                 + ":cocotbvpi_entry_point"
             )
         else:
@@ -962,7 +967,7 @@ class Riviera(Simulator):
                     f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
                 ),
                 EXT_NAME=as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vpi", "riviera")
+                    cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
                 ),
                 EXTRA_ARGS=" ".join(
                     as_tcl_value(v)
@@ -974,7 +979,7 @@ class Riviera(Simulator):
             )
 
             self.env["GPI_EXTRA"] = (
-                cocotb_tools.config.lib_name_path("vhpi", "riviera")
+                cocotb_tools.config.lib_name_path("vhpi", "riviera").as_posix()
                 + ":cocotbvhpi_entry_point"
             )
 
@@ -1150,7 +1155,7 @@ class Xcelium(Simulator):
             + ["-loadvpi"]
             # always start with VPI on Xcelium
             + [
-                cocotb_tools.config.lib_name_path("vpi", "xcelium")
+                cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
                 + ":vlog_startup_routines_bootstrap"
             ]
             + vhpi_opts
@@ -1230,7 +1235,7 @@ class Xcelium(Simulator):
             + input_tcl
         ]
         self.env["GPI_EXTRA"] = (
-            cocotb_tools.config.lib_name_path("vhpi", "xcelium")
+            cocotb_tools.config.lib_name_path("vhpi", "xcelium").as_posix()
             + ":cocotbvhpi_entry_point"
         )
 
