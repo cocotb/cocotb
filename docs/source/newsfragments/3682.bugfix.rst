@@ -1,1 +1,1 @@
-Pass ``test_args`` to test command when using :ref:`Python Test Runner <howto-python-runner>` for Verilator, which was previously missing.
+The ``test_args`` argument to :meth:`cocotb_tools.runner.Simulator.test` is now passed to the Verilator simulation binary when running the simulation, which was previously missing.

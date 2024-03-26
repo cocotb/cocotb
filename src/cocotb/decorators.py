@@ -56,10 +56,22 @@ Result = TypeVar("Result")
 def function(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., Result]:
     """Decorator that turns a :term:`coroutine function` into a blocking function.
 
-    This allows a coroutine that consumes simulation time
-    to be called by a thread started with :class:`cocotb.external`;
-    in other words, to internally block while externally
-    appear to yield.
+    This allows an :keyword:`async` function that yields to the simulator and consumes simulation time
+    to be called by a thread started with :class:`cocotb.external`.
+    When the returned blocking function is called, a new :class:`~cocotb.task.Task` is constructed
+    from the :keyword:`async` function, passing through any arguments provided by the caller,
+    and scheduled on the main thread.
+    The external caller thread will block until the task finishes,
+    and the result will be returned to the caller of the blocking function.
+
+    Args:
+        func: The :term:`coroutine function` to wrap/convert.
+
+    Returns:
+        The function to be called.
+
+    Raises:
+        RuntimeError: If the blocking function that is returned is subsequently called from a thread that was not started with :class:`cocotb.external`.
 
     .. versionchanged:: 2.0
         No longer implemented as a unique type.
@@ -76,9 +88,17 @@ def function(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., 
 def external(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Result]]:
     """Decorator that turns a blocking function into a :term:`coroutine function`.
 
-    This turns a normal function that isn't a coroutine into a blocking coroutine.
-    Currently, this creates a new execution thread for each function that is
-    called.
+    When the returned :keyword:`async` function is called, it creates a coroutine object
+    that can be directly :keyword:`await`\ ed or constructed into a :class:`~cocotb.task.Task`.
+    The coroutine will suspend the awaiting task until the wrapped function completes in its thread,
+    and the result of the function will be returned from the coroutine.
+    Currently, this creates a new execution thread for each function that is called.
+
+    Args:
+        func: The function to run externally.
+
+    Returns:
+        The :term:`coroutine function`.
 
     .. versionchanged:: 2.0
         No longer implemented as a unique type.
@@ -447,8 +467,8 @@ def parameterize(
             Tuple of parameter name to sequence of values for that parameter,
             or tuple of sequence of parameter names to sequence of sequences of values for that pack of parameters.
 
-        kwargs:
-            Parameter name to sequence of values for that parameter.
+        options_by_name:
+            Mapping of parameter name to sequence of values for that parameter.
 
     .. versionadded:: 2.0
     """

@@ -170,7 +170,7 @@ class Simulator(abc.ABC):
             hdl_toplevel: The name of the HDL toplevel module.
             always: Always run the build step.
             build_dir: Directory to run the build step in.
-            clean: Delete build_dir before building
+            clean: Delete *build_dir* before building.
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
             waves: Record signal traces.
@@ -258,6 +258,7 @@ class Simulator(abc.ABC):
                 This argument should not be set when run with ``pytest``.
             verbose: Enable verbose messages.
             pre_cmd: Commands to run before simulation begins.
+                Typically Tcl commands for simulators that support them.
             timescale: Tuple containing time unit and time precision for simulation.
             log_file: File to write the test log to.
 
@@ -1243,7 +1244,14 @@ class Xcelium(Simulator):
 
 
 def get_runner(simulator_name: str) -> Simulator:
-    """Return the *simulator_name* instance."""
+    """Return an instance of a runner for *simulator_name*.
+
+    Args:
+        simulator_name: Name of simulator to get runner for.
+
+    Raises:
+        ValueError: If *simulator_name* is not one of the supported simulators or an alias of one.
+    """
 
     supported_sims: Dict[str, Type[Simulator]] = {
         "icarus": Icarus,

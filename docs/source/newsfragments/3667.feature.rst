@@ -1,1 +1,1 @@
-Add `--trace` to Verilator binaries for run-time trace generation and integrate with :ref:`Python Test Runner <howto-python-runner>`.
+Added ``--trace`` command line argument to Verilator simulation binaries for run-time trace generation. This new argument is passed to the binary when the ``waves`` argument to :meth:`cocotb_tools.runner.Simulator.test` is ``True``.

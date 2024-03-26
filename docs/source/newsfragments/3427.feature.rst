@@ -1,1 +1,1 @@
-Add support for the `NVC <https://github.com/nickg/nvc>`_ VHDL simulator.
+Added support for the `NVC <https://github.com/nickg/nvc>`_ VHDL simulator.
