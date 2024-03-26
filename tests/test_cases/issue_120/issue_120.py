@@ -16,7 +16,7 @@ async def monitor(dut):
         await RisingEdge(dut.clk)
     await ReadOnly()
     assert (
-        dut.stream_in_valid.value.integer
+        dut.stream_in_valid.value == 1
     ), "stream_in_valid should be high on the 5th cycle"
 
 

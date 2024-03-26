@@ -60,7 +60,7 @@ class DataValidMonitor:
     async def _run(self) -> None:
         while True:
             await RisingEdge(self._clk)
-            if self._valid.value.binstr != "1":
+            if self._valid.value != "1":
                 await RisingEdge(self._valid)
                 continue
             self.values.put_nowait(self._sample())
@@ -126,8 +126,8 @@ class MatrixMultiplierTester:
             LogicArray(
                 sum(
                     [
-                        a_matrix[(i * A_COLUMNS_B_ROWS) + n].integer
-                        * b_matrix[(n * B_COLUMNS) + j].integer
+                        a_matrix[(i * A_COLUMNS_B_ROWS) + n].to_unsigned()
+                        * b_matrix[(n * B_COLUMNS) + j].to_unsigned()
                         for n in range(A_COLUMNS_B_ROWS)
                     ]
                 ),

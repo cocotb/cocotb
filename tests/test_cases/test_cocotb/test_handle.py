@@ -108,9 +108,9 @@ async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
 
         if limits == _Limits.VECTOR_NBIT:
             if val < 0:
-                got = signal.value.signed_integer
+                got = signal.value.to_signed()
             else:
-                got = signal.value.integer
+                got = signal.value.to_unsigned()
         else:
             got = signal.value
 
@@ -416,6 +416,6 @@ async def test_assign_LogicArray(dut):
 async def test_assign_Logic(dut):
     dut.stream_in_ready.value = Logic("X")
     await Timer(1, "ns")
-    assert dut.stream_in_ready.value.binstr.lower() == "x"
+    assert dut.stream_in_ready.value == "x"
     with pytest.raises(ValueError):
         dut.stream_in_data.value = Logic("U")  # not the correct size
