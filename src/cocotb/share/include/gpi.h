@@ -157,6 +157,7 @@ typedef enum gpi_objtype_e {
     GPI_STRING = 11,
     GPI_GENARRAY = 12,
     GPI_PACKAGE = 13,
+    GPI_PACKED_STRUCTURE = 14,
 } gpi_objtype_t;
 
 // When iterating, we can chose to either get child objects, drivers or loads

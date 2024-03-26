@@ -43,9 +43,7 @@ async def issue_330_direct(dut):
 # Verilator doesn't support structs (gh-1275)
 @cocotb.test(
     expect_error=AttributeError
-    if SIM_NAME.startswith(("icarus", "ghdl"))
-    else AssertionError
-    if SIM_NAME.startswith("verilator")
+    if SIM_NAME.startswith(("icarus", "ghdl", "verilator"))
     else ()
 )
 async def issue_330_iteration(dut):
