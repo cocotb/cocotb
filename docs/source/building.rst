@@ -38,7 +38,7 @@ Of the environment variables, only :envvar:`MODULE` is mandatory to be set
 (typically done in a makefile or run script), all others are optional.
 
 ..
-  If you edit the following sections, please also update the "helpmsg" text in src/cocotb_tools/config.py
+  If you edit the following sections, please also update the "helpmsg" text in ../../src/cocotb_tools/config.py
 
 Cocotb
 ------
@@ -167,9 +167,35 @@ Regression Manager
 
 .. envvar:: COVERAGE
 
-    Enable to report Python coverage data. For some simulators, this will also report :term:`HDL` coverage.
+    Enable to collect Python coverage data for user code.
+    For some simulators, this will also report :term:`HDL` coverage.
+    If :envvar:`COVERAGE_RCFILE` is not set,
+    branch coverage is collected
+    and files in the cocotb package directory are excluded.
 
     This needs the :mod:`coverage` Python module to be installed.
+
+.. envvar:: COVERAGE_RCFILE
+
+    Location of a configuration file for coverage collection of Python user code
+    using the the :mod:`coverage` module.
+    See https://coverage.readthedocs.io/en/latest/config.html for documentation of this file.
+
+    If this environment variable is set,
+    cocotb will *not* apply its own default coverage collection settings,
+    like enabling branch coverage and excluding files in the cocotb package directory.
+
+    .. versionadded:: 1.7
+
+.. envvar:: COCOTB_LIBRARY_COVERAGE
+
+    Enable to collect Python coverage data for code in cocotb's own library.
+    Branch coverage is collected
+    and only files in the cocotb package directory are included.
+
+    This needs the :mod:`coverage` Python module to be installed.
+
+    .. versionadded:: 1.4
 
 .. envvar:: COCOTB_PDB_ON_EXCEPTION
 

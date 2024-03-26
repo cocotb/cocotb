@@ -74,7 +74,7 @@ def _help_vars_text() -> str:
     else:
         doclink = f"https://docs.cocotb.org/en/v{_get_version()}/building.html"
 
-    # NOTE: make sure to keep "helpmsg" aligned with documentation/source/building.rst
+    # NOTE: make sure to keep "helpmsg" aligned with ../../docs/source/building.rst
     # Also keep it at 80 chars.
     helpmsg = textwrap.dedent(
         """\
@@ -98,7 +98,9 @@ def _help_vars_text() -> str:
     MODULE                    Modules to search for test functions (comma-separated)
     TESTCASE                  Test function(s) to run (comma-separated list)
     COCOTB_RESULTS_FILE       File name for xUnit XML tests results
-    COVERAGE                  Report Python coverage (also HDL for some simulators)
+    COVERAGE                  Collect Python user coverage (HDL for some simulators)
+    COVERAGE_RCFILE           Configuration for user code coverage
+    COCOTB_LIBRARY_COVERAGE   Collect cocotb library coverage
 
     GPI
     ---
