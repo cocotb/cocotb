@@ -125,6 +125,7 @@ Embedding an IPython shell
 ==========================
 
 .. module:: cocotb.ipython_support
+    :synopsis: Support for embedding an IPython shell.
 
 .. versionadded:: 1.4
 

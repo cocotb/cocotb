@@ -92,7 +92,7 @@ Bugfixes
 Deprecations and Removals
 -------------------------
 
-- ``cocotb.fork`` has been deprecated in favor of :func:`cocotb.start_soon` or :func:`cocotb.start`. (:pr:`2663`)
+- ``cocotb.fork()`` has been deprecated in favor of :func:`cocotb.start_soon` or :func:`cocotb.start`. (:pr:`2663`)
 
 
 Changes
@@ -139,12 +139,12 @@ Features
 - Xcelium now supports compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`2614`)
 - Add the :make:var:`SIM_CMD_PREFIX` to supported Makefile variables, allowing users to pass environment variables and other command prefixes to simulators. (:pr:`2615`)
 - To support VHDL libraries in ModelSim/Questa/Xcelium, :make:var:`VHDL_LIB_ORDER` has been added to specify a library compilation order. (:pr:`2635`)
-- ``cocotb.fork``, :func:`cocotb.start`, :func:`cocotb.start_soon`, and :func:`cocotb.create_task` now accept any object that implements the :class:`collections.abc.Coroutine` protocol. (:pr:`2647`)
+- ``cocotb.fork()``, :func:`cocotb.start`, :func:`cocotb.start_soon`, and :func:`cocotb.create_task` now accept any object that implements the :class:`collections.abc.Coroutine` protocol. (:pr:`2647`)
 - :class:`~cocotb.regression.TestFactory` and :class:`cocotb.test` now accept any :class:`collections.abc.Callable` object which returns a :class:`collections.abc.Coroutine` as a test function. (:pr:`2647`)
 - Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions. (:pr:`2660`)
 - Add :func:`cocotb.create_task` API for creating a Task from a Coroutine without scheduling. (:pr:`2665`)
 - Support rounding modes in :class:`~cocotb.triggers.Timer`. (:pr:`2684`)
-- Support rounding modes in :class:`cocotb.utils.get_sim_steps`. (:pr:`2684`)
+- Support rounding modes in :func:`~cocotb.utils.get_sim_steps`. (:pr:`2684`)
 - Support passing ``'step'`` as a time unit in :func:`cocotb.utils.get_sim_time`. (:pr:`2691`)
 
 
@@ -154,7 +154,7 @@ Bugfixes
 - VHDL signals that are zero bits in width now read as the integer ``0``, instead of raising an exception. (:pr:`2294`)
 - Correctly parse plusargs with ``=``\ s in the value. (:pr:`2483`)
 - :envvar:`COCOTB_RESULTS_FILE` now properly communicates with the :data:`Regression Manager <cocotb.regression_manager>` to allow overloading the result filename. (:pr:`2487`)
-- Fixed several scheduling issues related to the use of :meth:`cocotb.start_soon <cocotb.start_soon>`. (:pr:`2504`)
+- Fixed several scheduling issues related to the use of :func:`cocotb.start_soon`. (:pr:`2504`)
 - Verilator and Icarus now support running without specifying a :envvar:`TOPLEVEL`. (:pr:`2547`)
 - Fixed discovery of signals inside SystemVerilog interfaces. (:pr:`2683`)
 
@@ -195,8 +195,8 @@ cocotb 1.5.2 (2021-05-03)
 Bugfixes
 --------
 
-- Change some makefile syntax to support GNU Make 3 (:pr:`2496`)
-- Fix behavior of ``cocotb-config --libpython`` when finding libpython fails (:pr:`2522`)
+- Changed some makefile syntax to support GNU Make 3. (:pr:`2496`)
+- Fixed behavior of ``cocotb-config --libpython`` when finding libpython fails. (:pr:`2522`)
 
 
 cocotb 1.5.1 (2021-03-20)
@@ -205,7 +205,7 @@ cocotb 1.5.1 (2021-03-20)
 Bugfixes
 --------
 
-- Prevent pytest assertion rewriting (:pr:`2028`) from capturing stdin, which causes problems with IPython support (:pr:`1649`). (:pr:`2462`)
+- Prevent pytest assertion rewriting (:pr:`2028`) from capturing stdin, which causes problems with IPython support. (:pr:`1649`) (:pr:`2462`)
 - Add dependency on `cocotb_bus <https://github.com/cocotb/cocotb-bus>`_ to prevent breaking users that were previously using the bus and testbenching objects. (:pr:`2477`)
 - Add back functionality to ``cocotb.binary.BinaryValue`` that allows the user to change ``binaryRepresentation`` after object creation. (:pr:`2480`)
 
@@ -220,20 +220,20 @@ Features
   See :ref:`install` for more details. (:pr:`1798`)
 - Makefiles now automatically deduce :make:var:`TOPLEVEL_LANG` based on the value of :make:var:`VERILOG_SOURCES` and :make:var:`VHDL_SOURCES`.
   Makefiles also detect incorrect usage of :make:var:`TOPLEVEL_LANG` for simulators that only support one language. (:pr:`1982`)
-- ``cocotb.fork`` will now raise a descriptive :class:`TypeError` if a coroutine function is passed into them. (:pr:`2006`)
-- Added ``cocotb.scheduler.start_soon`` which schedules a coroutine to start *after* the current coroutine yields control.
-  This behavior is distinct from ``cocotb.fork`` which schedules the given coroutine immediately. (:pr:`2023`)
+- ``cocotb.fork()`` will now raise a descriptive :class:`TypeError` if a coroutine function is passed into them. (:pr:`2006`)
+- Added ``cocotb.scheduler.start_soon()`` which schedules a coroutine to start *after* the current coroutine yields control.
+  This behavior is distinct from ``cocotb.fork()`` which schedules the given coroutine immediately. (:pr:`2023`)
 - If ``pytest`` is installed, its assertion-rewriting framework will be used to
   produce more informative tracebacks from the :keyword:`assert` statement. (:pr:`2028`)
 - The handle to :envvar:`TOPLEVEL`, typically seen as the first argument to a cocotb test function, is now available globally as :data:`cocotb.top`. (:pr:`2134`)
-- The ``units`` argument to :class:`cocotb.triggers.Timer`,
-  :class:`cocotb.clock.Clock` and :func:`cocotb.utils.get_sim_steps`,
+- The ``units`` argument to :class:`~cocotb.triggers.Timer`,
+  :class:`~cocotb.clock.Clock` and :func:`~cocotb.utils.get_sim_steps`,
   and the ``timeout_unit`` argument to
-  :func:`cocotb.triggers.with_timeout` and :class:`cocotb.test`
+  :func:`~cocotb.triggers.with_timeout` and :class:`cocotb.test`
   now accepts ``'step'`` to mean the simulator time step.
   This used to be expressed using ``None``, which is now deprecated. (:pr:`2171`)
-- :func:`cocotb.regression.TestFactory.add_option` now supports groups of options when a full Cartesian product is not desired (:pr:`2175`)
-- Added asyncio-style queues, :class:`cocotb.queue.Queue`, :class:`cocotb.queue.PriorityQueue`, and :class:`cocotb.queue.LifoQueue`. (:pr:`2297`)
+- :meth:`TestFactory.add_option() <cocotb.regression.TestFactory.add_option>` now supports groups of options when a full Cartesian product is not desired. (:pr:`2175`)
+- Added asyncio-style queues, :class:`~cocotb.queue.Queue`, :class:`~cocotb.queue.PriorityQueue`, and :class:`~cocotb.queue.LifoQueue`. (:pr:`2297`)
 - Support for the SystemVerilog type ``bit`` has been added. (:pr:`2322`)
 - Added the ``--lib-dir``,  ``--lib-name`` and ``--lib-name-path`` options to the ``cocotb-config`` command to make cocotb integration into existing flows easier. (:pr:`2387`)
 - Support for using Questa's VHPI has been added.
@@ -317,7 +317,7 @@ Features
 
 - :class:`~cocotb.triggers.Lock` can now be used in :keyword:`async with` statements. (:pr:`1031`)
 - Add support for distinguishing between ``net`` (``vpiNet``) and ``reg`` (``vpiReg``) type when using the VPI interface. (:pr:`1107`)
-- Support for dropping into :mod:`pdb` upon failure, via the new :envvar:`COCOTB_PDB_ON_EXCEPTION` environment variable (:pr:`1180`)
+- Support for dropping into :mod:`pdb` upon failure, via the new :envvar:`COCOTB_PDB_ON_EXCEPTION` environment variable. (:pr:`1180`)
 - Simulators run through a Tcl script (Aldec Riviera Pro and Mentor simulators) now support a new :make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime. (:pr:`1244`)
 - Cocotb now supports the following example of forking a *non-decorated* :ref:`async coroutine <async_functions>`.
 
@@ -347,7 +347,7 @@ Features
       logging.basicConfig()
 
   .. consume the towncrier issue number on this line. (:pr:`1266`)
-- Support for ``vpiRealNet`` (:pr:`1282`)
+- Support for ``vpiRealNet``. (:pr:`1282`)
 - The colored output can now be disabled by the :envvar:`NO_COLOR` environment variable. (:pr:`1309`)
 - Cocotb now supports deposit/force/release/freeze actions on simulator handles, exposing functionality similar to the respective Verilog/VHDL assignments.
 
@@ -397,7 +397,7 @@ Features
 Bugfixes
 --------
 
-- Tests which fail at initialization, for instance due to no ``yield`` being present, are no longer silently ignored (:pr:`1253`)
+- Tests which fail at initialization, for instance due to no ``yield`` being present, are no longer silently ignored. (:pr:`1253`)
 - Tests that were not run because predecessors threw :class:`cocotb.result.SimFailure`, and caused the simulator to exit, are now recorded with an outcome of :class:`cocotb.result.SimFailure`.
   Previously, these tests were ignored. (:pr:`1279`)
 - Makefiles now correctly fail if the simulation crashes before a ``results.xml`` file can be written. (:pr:`1314`)
@@ -504,9 +504,9 @@ New features
   Please use the latest version of Verilator, and `report bugs <https://github.com/cocotb/cocotb/issues/new>`_ if you experience problems.
 - New makefile variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` for setting the default time unit and precision that should be assumed for simulation when not specified by modules in the design. (:pr:`1113`)
 - New ``timeout_time`` and ``timeout_unit`` arguments to :func:`cocotb.test`, for adding test timeouts. (:pr:`1119`)
-- :func:`cocotb.triggers.with_timeout`, for a shorthand for waiting for a trigger with a timeout. (:pr:`1119`)
+- :func:`~cocotb.triggers.with_timeout`, for a shorthand for waiting for a trigger with a timeout. (:pr:`1119`)
 - The ``expect_error`` argument to :func:`cocotb.test` now accepts a specific exception type. (:pr:`1116`)
-- New environment variable :envvar:`COCOTB_RESULTS_FILE`, to allow configuration of the xUnit XML output filename.  (:pr:`1053`)
+- New environment variable :envvar:`COCOTB_RESULTS_FILE`, to allow configuration of the xUnit XML output filename. (:pr:`1053`)
 - A new ``bus_separator`` argument to :class:`cocotb.drivers.BusDriver`. (:pr:`1160`)
 - A new ``start_high`` argument to :meth:`cocotb.clock.Clock.start`. (:pr:`1036`)
 - A new :data:`cocotb.__version__` constant, which contains the version number of the running cocotb. (:pr:`1196`)
@@ -520,7 +520,7 @@ Notable changes and bug fixes
 - :func:`cocotb.external` and :func:`cocotb.function` now work more reliably and with fewer race conditions.
 - A failing ``assert`` will be considered a test failure. Previously, it was considered a test *error*.
 - :meth:`~cocotb.handle.NonConstantObject.drivers` and :meth:`~cocotb.handle.NonConstantObject.loads` now also work correctly in Python 3.7 onwards.
-- :class:`cocotb.triggers.Timer` can now be used with :class:`decimal.Decimal` instances, allowing constructs like ``Timer(Decimal('1e-9'), units='sec')`` as an alternate spelling for ``Timer(100, units='us')``. (:pr:`1114`)
+- :class:`~cocotb.triggers.Timer` can now be used with :class:`decimal.Decimal` instances, allowing constructs like ``Timer(Decimal("1e-9"), units="sec")`` as an alternate spelling for ``Timer(100, units="us")``. (:pr:`1114`)
 - Many (editorial) documentation improvements.
 
 Deprecations

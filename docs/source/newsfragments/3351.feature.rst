@@ -1,1 +1,1 @@
-Add `clean` argument to :ref:`Python Test Runner <howto-python-runner>` to remove build_dir completely during runner.build() stage
+The :meth:`cocotb_tools.runner.Simulator.build` method now accepts a ``clean`` argument to remove ``build_dir`` completely during build stage.
