@@ -310,15 +310,18 @@ GpiObjHdl *VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
 
 GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
                                         GpiObjHdl *parent) {
-    vpiHandle new_hdl;
     const vpiHandle parent_hdl = parent->get_handle<vpiHandle>();
     std::string fq_name =
         parent->get_fullname() + get_type_delimiter(parent) + name;
 
-    new_hdl = vpi_handle_by_name(const_cast<char *>(fq_name.c_str()), NULL);
+    vpiHandle new_hdl =
+        vpi_handle_by_name(const_cast<char *>(fq_name.c_str()), NULL);
 
-#ifdef ICARUS
-    /* Icarus does not support vpiGenScopeArray, only vpiGenScope.
+    /* Some simulators do not support vpiGenScopeArray, only vpiGenScope:
+     * - Icarus Verilog
+     * - Verilator
+     * - Questa/Modelsim
+     *
      * If handle is not found by name, look for a generate block with
      * a matching prefix.
      *     For Example:
@@ -338,29 +341,28 @@ GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
      *     genblk1 must exist, so create the pseudo-region object for it.
      */
     if (new_hdl == NULL) {
-        vpiHandle iter = vpi_iterate(vpiInternalScope, parent_hdl);
-        if (iter == NULL) {
-            goto skip_iterate;
-        }
+        LOG_DEBUG(
+            "Unable to find '%s' through vpi_handle_by_name, looking for "
+            "matching generate scope array using fallback",
+            fq_name.c_str());
 
-        for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
-            if (vpi_get(vpiType, rgn) == vpiGenScope) {
-                auto rgn_name = vpi_get_str(vpiName, rgn);
-                /* Check if name is a prefix of rgn_name */
-                if (rgn_name && name.length() > 0 &&
-                    std::strncmp(name.c_str(), rgn_name, name.length()) == 0) {
-                    new_hdl = parent_hdl;
-                    vpi_free_object(iter);
-                    break;
+        vpiHandle iter = vpi_iterate(vpiInternalScope, parent_hdl);
+        if (iter != NULL) {
+            for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
+                if (vpi_get(vpiType, rgn) == vpiGenScope) {
+                    std::string rgn_name = vpi_get_str(vpiName, rgn);
+                    if (VpiImpl::compare_generate_labels(rgn_name, name)) {
+                        new_hdl = parent_hdl;
+                        vpi_free_object(iter);
+                        break;
+                    }
                 }
             }
         }
     }
-skip_iterate:
-#endif
 
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", fq_name.c_str());
+        LOG_DEBUG("Unable to find '%s'", fq_name.c_str());
         return NULL;
     }
 
@@ -382,7 +384,7 @@ skip_iterate:
     GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
+        LOG_DEBUG("Unable to create object '%s'", fq_name.c_str());
         return NULL;
     }
     return new_obj;
@@ -401,7 +403,7 @@ GpiObjHdl *VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
         snprintf(buff, 14, "[%d]", index);
 
         LOG_DEBUG(
-            "Native check create for index %d of parent %s (pseudo-region)",
+            "Native check create for index %d of parent '%s' (pseudo-region)",
             index, parent->get_name_str());
 
         std::string idx = buff;
