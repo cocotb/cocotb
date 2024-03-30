@@ -669,10 +669,6 @@ class Questa(Simulator):
             do_script += "run -all; quit"
 
         gpi_if_entry = self.gpi_interfaces[0]
-        gpi_if_entry_lib_path = cocotb_tools.config.lib_name_path(
-            gpi_if_entry, "questa"
-        )
-
         if gpi_if_entry == "fli":
             lib_opts = [
                 "-foreign",
@@ -697,11 +693,6 @@ class Questa(Simulator):
                     cocotb_tools.config.lib_name_path("vpi", "questa").as_posix()
                 ),
             ]
-
-        if not gpi_if_entry_lib_path.is_file():
-            raise SystemExit(
-                "ERROR: cocotb was not installed with a {gpi_if_entry} library."
-            )
 
         cmds.append(
             ["vsim"]
