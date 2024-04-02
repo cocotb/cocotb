@@ -84,7 +84,7 @@ async def test_structure(dut):
                 f.print(f"{treeinfo:50} {obj._path}")
     except FileNotFoundError:
         cocotb.log.warning(
-            f"No expected output file found for {sim_name}, assuming this is because it's a proprietary simulator. Use +update to update output file"
+            f"No expected output file found for {sim_name}. Pass plusarg +update to update output file"
         )
 
 
