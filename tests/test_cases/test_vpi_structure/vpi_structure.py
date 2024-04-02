@@ -116,7 +116,7 @@ async def test_name_matches_iter(dut):
         objlen = get_len(obj)
 
         direct_obj = eval(obj._path)
-        assert obj._handle == direct_obj._handle
+        assert obj == direct_obj
 
         if get_len(direct_obj) != objlen:
             d_obj = f"direct_obj={direct_obj}[{get_len(direct_obj)}]"
