@@ -13,7 +13,7 @@ import pytest
 
 import cocotb
 from cocotb.handle import StringObject, _Limits
-from cocotb.triggers import Timer
+from cocotb.triggers import Edge, Timer
 from cocotb.types import Logic, LogicArray
 
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -416,3 +416,33 @@ async def test_assign_Logic(dut):
     assert dut.stream_in_ready.value == "x"
     with pytest.raises(ValueError):
         dut.stream_in_data.value = Logic("U")  # not the correct size
+
+
+@cocotb.test(
+    skip=LANGUAGE in ["vhdl"],
+)
+async def test_assign_immediate(dut):
+    dut.mybits_uninitialized.setimmediatevalue(2)
+    assert dut.mybits_uninitialized.value == 2
+
+
+# Icarus re-enters cocotb because it calls callbacks immediately on value change (gh-4067)
+@cocotb.test(
+    skip=LANGUAGE in ["vhdl"] or SIM_NAME.startswith("icarus"),
+)
+async def test_immediate_reentrace(dut):
+    dut.mybits_uninitialized.value = 0
+    await Timer(1, "ns")
+    seen = 0
+
+    async def watch():
+        nonlocal seen
+        await Edge(dut.mybits_uninitialized)
+        seen += 1
+
+    cocotb.start_soon(watch())
+    await Timer(1, "ns")
+
+    dut.mybits_uninitialized.setimmediatevalue(2)
+    await Timer(1, "ns")
+    assert seen == 1
