@@ -569,6 +569,7 @@ class _GPISetAction(enum.IntEnum):
     DEPOSIT = 0
     FORCE = 1
     RELEASE = 2
+    NO_DELAY = 3
 
 
 #: The type of the value a :class:`Deposit` or :class:`Force` action contains.
@@ -708,6 +709,8 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
             raise TypeError(f"{self._path} is constant")
 
         value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
+        if action == _GPISetAction.DEPOSIT:
+            action = _GPISetAction.NO_DELAY
 
         self._set_value(value_, action, _write_now)
 

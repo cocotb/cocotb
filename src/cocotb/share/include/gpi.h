@@ -172,6 +172,7 @@ typedef enum gpi_set_action_e {
     GPI_DEPOSIT = 0,
     GPI_FORCE = 1,
     GPI_RELEASE = 2,
+    GPI_NO_DELAY = 3,
 } gpi_set_action_t;
 
 // Functions for iterating over entries of a handle

@@ -196,12 +196,12 @@ async def test_afterdelay_in_readonly_valid(dut):
 @cocotb.test()
 async def test_writes_have_taken_effect_after_readwrite(dut):
     """Test that ReadWrite fires first for the background write coro"""
-    dut.stream_in_data.setimmediatevalue(0)
+    dut.stream_in_data.value = 0
 
     async def write_manually():
         await ReadWrite()
         # this should overwrite the write written below
-        dut.stream_in_data.setimmediatevalue(2)
+        dut.stream_in_data.value = 2
 
     # queue a background task to do a manual write
     waiter = cocotb.start_soon(write_manually())

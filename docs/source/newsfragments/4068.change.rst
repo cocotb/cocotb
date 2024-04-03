@@ -1,0 +1,1 @@
+Updated :meth:`.ValueObjectBase.setimmediatevalue` to use ``GPI_NO_DELAY`` to set values, so values are *actually* set immediately and can be read back immediately.
