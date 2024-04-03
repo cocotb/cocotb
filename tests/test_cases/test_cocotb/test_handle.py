@@ -419,3 +419,9 @@ async def test_assign_Logic(dut):
     assert dut.stream_in_ready.value.binstr.lower() == "x"
     with pytest.raises(ValueError):
         dut.stream_in_data.value = Logic("U")  # not the correct size
+
+
+@cocotb.test()
+async def test_assign_immediate(dut):
+    dut.mybits_uninitialized.setimmediatevalue(2)
+    assert dut.mybits_uninitialized.value == 2

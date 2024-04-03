@@ -223,6 +223,9 @@ int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s,
             vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
             vpi_put_flag = vpiReleaseFlag;
             break;
+        case GPI_NO_DELAY:
+            vpi_put_flag = vpiNoDelay;
+            break;
         default:
             assert(0);
     }
