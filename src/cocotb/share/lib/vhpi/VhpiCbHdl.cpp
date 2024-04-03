@@ -161,6 +161,7 @@ vhpiPutValueModeT map_put_value_mode(gpi_set_action_t action) {
     vhpiPutValueModeT put_value_mode = vhpiDeposit;
     switch (action) {
         case GPI_DEPOSIT:
+        case GPI_NO_DELAY:
             put_value_mode = vhpiDepositPropagate;
             break;
         case GPI_FORCE:
