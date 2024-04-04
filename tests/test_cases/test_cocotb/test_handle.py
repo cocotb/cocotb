@@ -431,12 +431,13 @@ async def test_assign_immediate(dut):
 async def test_immediate_reentrace(dut):
     dut.mybits_uninitialized.value = 0
     await Timer(1, "ns")
-    seen = False
+    seen = 0
 
     async def watch():
-        global seen
+        nonlocal seen
         await Edge(dut.mybits_uninitialized)
-        seen = True
+        dut._log.warning("SEEN")
+        seen += 1
 
     cocotb.start_soon(watch())
     await Timer(1, "ns")

@@ -41,6 +41,7 @@ static int releases = 0;
 #include <cocotb_utils.h>    // to_python to_simulator
 #include <py_gpi_logging.h>  // py_gpi_logger_set_level
 
+#include <deque>
 #include <limits>
 #include <type_traits>
 
@@ -199,6 +200,13 @@ struct sim_time {
  *
  */
 int handle_gpi_callback(void *user_data) {
+    static std::deque<void *> deferred_callbacks;
+
+    if (is_python_context) {
+        deferred_callbacks.push_back(user_data);
+        return 0;
+    }
+
     int ret = 0;
     to_python();
     callback_data *cb_data = (callback_data *)user_data;
@@ -257,6 +265,14 @@ out:
 
 err:
     to_simulator();
+    while (!deferred_callbacks.empty()) {
+        auto deferred_user_data = deferred_callbacks.front();
+        deferred_callbacks.pop_front();
+        auto deferred_ret = handle_gpi_callback(deferred_user_data);
+        if (deferred_ret) {
+            ret = deferred_ret;
+        }
+    }
     return ret;
 }
 
