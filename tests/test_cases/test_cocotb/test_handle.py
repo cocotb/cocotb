@@ -12,7 +12,7 @@ import random
 import cocotb
 import pytest
 from cocotb.handle import _Limits
-from cocotb.triggers import Timer
+from cocotb.triggers import Edge, Timer
 from cocotb.types import Logic, LogicArray
 
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -425,3 +425,22 @@ async def test_assign_Logic(dut):
 async def test_assign_immediate(dut):
     dut.mybits_uninitialized.setimmediatevalue(2)
     assert dut.mybits_uninitialized.value == 2
+
+
+@cocotb.test()
+async def test_immediate_reentrace(dut):
+    dut.mybits_uninitialized.value = 0
+    await Timer(1, "ns")
+    seen = False
+
+    async def watch():
+        global seen
+        await Edge(dut.mybits_uninitialized)
+        seen = True
+
+    cocotb.start_soon(watch())
+    await Timer(1, "ns")
+
+    dut.mybits_uninitialized.setimmediatevalue(2)
+    await Timer(1, "ns")
+    assert seen
