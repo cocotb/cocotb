@@ -173,7 +173,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.022",  # Latest release version.
+        "sim-version": "v5.024",  # Latest release version.
         # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
         "python-version": "3.8",
@@ -187,6 +187,15 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.8",
         "group": "experimental",
+    },
+    {
+        "lang": "verilog",
+        "sim": "verilator",
+        "sim-version": "v5.022",  # Minimum supported version.
+        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
+        "os": "ubuntu-22.04",
+        "python-version": "3.8",
+        "group": "extended",
     },
     # Test other OSes
     # Icarus homebrew
