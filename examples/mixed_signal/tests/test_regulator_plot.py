@@ -21,7 +21,7 @@ async def test_trim_vals(tb_hdl):
         tb_hdl.trim_val.value = trim_val
         await Timer(1, units="ns")
         trimmed_volt = await get_voltage(tb_hdl, probed_node)
-        actual_trim_val = tb_hdl.trim_val.value.signed_integer
+        actual_trim_val = tb_hdl.trim_val.value.to_signed()
         tb_hdl._log.info(
             f"trim_val={actual_trim_val} results in {probed_node}={trimmed_volt:.4} V"
         )

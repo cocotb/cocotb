@@ -1,0 +1,1 @@
+Constructing a :class:`~cocotb.types.LogicArray` from an :class:`int` is deprecated. Use :meth:`LogicArray.from_unsigned() <cocotb.types.LogicArray.from_unsigned>` and :meth:`LogicArray.from_signed() <cocotb.types.LogicArray.from_signed>` instead.

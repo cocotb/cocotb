@@ -97,7 +97,7 @@ async def mixed_language_functional_test(dut):
     for _ in range(1, 5):
         for i in range(1, 11):
             await RisingEdge(dut.clk)
-            previous_indata = dut.stream_in_data.value.integer
+            previous_indata = dut.stream_in_data.value.to_unsigned()
 
             # write stream in data
             dut.stream_in_data.value = i + 0x81FFFFFF2B00  # generate a magic number
@@ -111,7 +111,7 @@ async def mixed_language_functional_test(dut):
 
             # compare in and out data
             assert (
-                previous_indata == dut.stream_out_data.value.integer
+                previous_indata == dut.stream_out_data.value.to_unsigned()
             ), f"stream in data and stream out data were different in round {i}"
 
 

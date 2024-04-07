@@ -141,7 +141,7 @@ async def access_signal(dut):
     """Access a signal using the assignment mechanism"""
     dut.stream_in_data.setimmediatevalue(1)
     await Timer(1, "ns")
-    assert dut.stream_in_data.value.integer == 1
+    assert dut.stream_in_data.value == 1
 
 
 @cocotb.test(skip=LANGUAGE in ["vhdl"])
@@ -174,35 +174,21 @@ async def access_type_bit_verilog_metavalues(dut):
     await Timer(1, "ns")
     dut.mybits.value = LogicArray("XZ")
     await Timer(1, "ns")
-    print(dut.mybits.value.binstr)
     if SIM_NAME.startswith(("icarus", "ncsim", "xmsim")):
-        assert (
-            dut.mybits.value.binstr.lower() == "xz"
-        ), "The assigned value was not as expected"
+        assert dut.mybits.value == "xz"
     elif SIM_NAME.startswith(("riviera",)):
-        assert (
-            dut.mybits.value.binstr.lower() == "10"
-        ), "The assigned value was not as expected"
+        assert dut.mybits.value == "10"
     else:
-        assert (
-            dut.mybits.value.binstr.lower() == "00"
-        ), "The assigned value was incorrect"
+        assert dut.mybits.value == "00"
 
     dut.mybits.value = LogicArray("ZX")
     await Timer(1, "ns")
-    print(dut.mybits.value.binstr)
     if SIM_NAME.startswith(("icarus", "ncsim", "xmsim")):
-        assert (
-            dut.mybits.value.binstr.lower() == "zx"
-        ), "The assigned value was not as expected"
+        assert dut.mybits.value == "zx"
     elif SIM_NAME.startswith(("riviera",)):
-        assert (
-            dut.mybits.value.binstr.lower() == "01"
-        ), "The assigned value was not as expected"
+        assert dut.mybits.value == "01"
     else:
-        assert (
-            dut.mybits.value.binstr.lower() == "00"
-        ), "The assigned value was incorrect"
+        assert dut.mybits.value == "00"
 
 
 @cocotb.test(
@@ -225,7 +211,7 @@ async def access_single_bit(dut):
     await Timer(1, "ns")
     dut.stream_in_data[2].value = 1
     await Timer(1, "ns")
-    assert dut.stream_out_data_comb.value.integer == (1 << 2)
+    assert dut.stream_out_data_comb.value == (1 << 2)
 
 
 @cocotb.test()
@@ -411,22 +397,9 @@ async def access_boolean(dut):
 async def access_internal_register_array(dut):
     """Test access to an internal register array"""
 
-    # verilator does not support 4-state signals
-    # see https://veripool.org/guide/latest/languages.html#unknown-states
-    if SIM_NAME.startswith("verilator"):
-        expected_value = "00000000"
-    else:
-        expected_value = "XXXXXXXX"
-
-    assert (
-        dut.register_array[0].value.binstr == expected_value
-    ), "Failed to access internal register array value"
-
-    dut.register_array[1].setimmediatevalue(4)
+    dut.register_array[1].value = 4
     await Timer(1, "ns")
-    assert (
-        dut.register_array[1].value == 4
-    ), "Failed to set internal register array value"
+    assert dut.register_array[1].value == 4
 
 
 @cocotb.test(

@@ -36,7 +36,7 @@ class Regulator_TB:
         )  # waiting time needed for the analog values to be updated
         self.tb_hdl._log.debug(
             "trim value={}: {}={:.4} V".format(
-                self.tb_hdl.trim_val.value.signed_integer,
+                self.tb_hdl.trim_val.value.to_signed(),
                 self.analog_probe.node_to_probe.value.decode("ascii"),
                 self.analog_probe.voltage.value,
             )
