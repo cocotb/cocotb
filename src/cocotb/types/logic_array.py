@@ -110,6 +110,7 @@ class LogicArray(ArrayLike[Logic]):
         range: Indexing scheme of the array.
 
     Raises:
+        OverflowError: When given *value* cannot fit in given *range*.
         ValueError: When argument values cannot be used to construct an array.
         TypeError: When invalid argument types are used.
     """
@@ -170,7 +171,7 @@ class LogicArray(ArrayLike[Logic]):
 
         # check that _value and _range align
         if len(self._value) != len(self._range):
-            raise ValueError(
+            raise OverflowError(
                 f"value of length {len(self._value)} will not fit in {self._range}"
             )
 
