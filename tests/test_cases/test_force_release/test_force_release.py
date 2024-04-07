@@ -1,10 +1,16 @@
+import os
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import Force, Release
 from cocotb.triggers import ClockCycles, Timer
 
+SIM_NAME = cocotb.SIM_NAME.lower()
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("ghdl", "verilator")))
+
+# Release doesn't work on GHDL (gh-3830)
+# Force/Release doesn't work on Verilator (gh-3831)
+@cocotb.test(expect_fail=SIM_NAME.startswith(("ghdl", "verilator")))
 async def test_hdl_writes_dont_overwrite_force_combo(dut):
     """Test Forcing then later Releasing a combo signal."""
 
@@ -24,7 +30,9 @@ async def test_hdl_writes_dont_overwrite_force_combo(dut):
     assert dut.stream_out_data_comb.value == 3
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("ghdl", "verilator")))
+# Release doesn't work on GHDL (gh-3830)
+# Force/Release doesn't work on Verilator (gh-3831)
+@cocotb.test(expect_fail=SIM_NAME.startswith(("ghdl", "verilator")))
 async def test_hdl_writes_dont_overwrite_force_registered(dut):
     """Test Forcing then Releasing a registered output."""
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
@@ -41,7 +49,9 @@ async def test_hdl_writes_dont_overwrite_force_registered(dut):
     assert dut.stream_out_data_registered.value == 4
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("ghdl"))
+# Release doesn't work on GHDL (gh-3830)
+# Force/Release doesn't work on Verilator (gh-3831)
+@cocotb.test(expect_fail=SIM_NAME.startswith("ghdl"))
 async def test_force_followed_by_release_combo(dut):
     """Test if Force followed immediately by Release works on combo signals."""
 
@@ -59,7 +69,9 @@ async def test_force_followed_by_release_combo(dut):
     assert dut.stream_out_data_comb.value == 16
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("ghdl"))
+# Release doesn't work on GHDL (gh-3830)
+# Force/Release doesn't work on Verilator (gh-3831)
+@cocotb.test(expect_fail=SIM_NAME.startswith("ghdl"))
 async def test_force_followed_by_release_registered(dut):
     """Test if Force followed immediately by Release works on registered signals."""
 
@@ -75,7 +87,24 @@ async def test_force_followed_by_release_registered(dut):
     assert dut.stream_out_data_registered.value == 90
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("ghdl", "verilator")))
+questa_fli = (
+    SIM_NAME.startswith("modelsim") and os.getenv("VHDL_GPI_INTERFACE", "") == "fli"
+)
+
+
+riviera_vpi = (
+    SIM_NAME.startswith("riviera")
+    and os.getenv("TOPLEVEL_LANG", "verilog") == "verilog"
+)
+
+
+# Release doesn't work on GHDL (gh-3830)
+# Force/Release doesn't work on Verilator (gh-3831)
+# Riviera's VPI implicitly releases signal when overwriting forced signal with normal deposit (gh-3832)
+# Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
+@cocotb.test(
+    expect_fail=SIM_NAME.startswith(("ghdl", "verilator")) or riviera_vpi or questa_fli
+)
 async def test_cocotb_writes_dont_overwrite_force_combo(dut):
     """Test Deposits following a Force don't overwrite the value."""
     dut.stream_in_data.value = 56
@@ -87,6 +116,7 @@ async def test_cocotb_writes_dont_overwrite_force_combo(dut):
 
     # Attempt depositing on the forced signal. This shouldn't change the value.
     dut.stream_out_data_comb.value = 11
+    dut.stream_in_data.value = 70  # attempt to trigger a change in value
     await Timer(10, "ns")
     assert dut.stream_out_data_comb.value == 10
 
@@ -99,7 +129,13 @@ async def test_cocotb_writes_dont_overwrite_force_combo(dut):
     assert dut.stream_in_data.value == 46
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("ghdl", "verilator")))
+# Release doesn't work on GHDL (gh-3830)
+# Force/Release doesn't work on Verilator (gh-3831)
+# Riviera's VPI implicitly releases signal when overwriting forced signal with normal deposit (gh-3832)
+# Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
+@cocotb.test(
+    expect_fail=SIM_NAME.startswith(("ghdl", "verilator")) or questa_fli or riviera_vpi
+)
 async def test_cocotb_writes_dont_overwrite_force_registered(dut):
     """Test Deposits following a Force don't overwrite the value."""
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
@@ -121,6 +157,7 @@ async def test_cocotb_writes_dont_overwrite_force_registered(dut):
     assert dut.stream_in_data.value == 77
 
 
+# Release and Freeze read current simulator values, not scheduled values (gh-3829)
 @cocotb.test(expect_fail=True)
 async def test_force_followed_by_release_correct_value(dut):
     """Tests if Forcing then immediately Releasing a signal yield the correct value.
