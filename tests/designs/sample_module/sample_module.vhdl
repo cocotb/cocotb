@@ -47,7 +47,6 @@ entity sample_module is
         stream_in_data_wide             : in    std_ulogic_vector(63 downto 0);
         stream_in_data_dqword           : in    std_ulogic_vector(127 downto 0);
         stream_in_valid                 : in    std_ulogic;
-        stream_in_func_en               : in    std_ulogic;
         stream_in_ready                 : out   std_ulogic;
         stream_in_real                  : in    real;
         stream_in_int                   : in    integer;
@@ -84,18 +83,6 @@ architecture impl of sample_module is
     end component sample_module_1;
 
     type lutType is array (0 to 3, 0 to 6) of signed(10 downto 0);
-
-    function afunc(value : std_ulogic_vector) return std_ulogic_vector is
-        variable i: integer;
-        variable rv: std_ulogic_vector(7 downto 0);
-    begin
-        i := 0;
-        while i <= 7 loop
-            rv(i) := value(7-i);
-            i := i + 1;
-        end loop;
-        return rv;
-    end afunc;
 
     signal cosLut0, sinLut0 : lutType;
     signal cosLut1, sinLut1 : lutType;
@@ -154,7 +141,11 @@ begin
       stream_in_string_asciival_sum <= v_stream_in_string_asciival_sum;
     end process;
 
-    stream_out_data_comb <= afunc(stream_in_data) when stream_in_func_en = '0' else stream_in_data;
+    process (stream_in_data) is
+    begin
+        stream_out_data_comb <= stream_in_data;
+    end process;
+
     stream_in_ready      <= stream_out_ready;
     stream_out_real      <= stream_in_real;
     stream_out_int       <= stream_in_int;
