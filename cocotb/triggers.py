@@ -37,6 +37,7 @@ from typing import Any, Coroutine, Optional, TypeVar, Union
 
 import cocotb
 from cocotb import outcomes, simulator
+from cocotb._deprecation import deprecated
 from cocotb.log import SimLog
 from cocotb.task import Task
 from cocotb.utils import (
@@ -178,7 +179,7 @@ class Timer(GPITrigger):
         units: str = "step",
         *,
         round_mode: Optional[str] = None,
-        time_ps: Union[Real, Decimal] = None
+        time_ps: Union[Real, Decimal] = None,
     ) -> None:
         """
         Args:
@@ -462,15 +463,20 @@ class Event:
     def __init__(self, name=None):
         self._pending = []
         self.name = name
-        self.fired = False
+        self._fired = False
         self.data = None
+
+    @property
+    @deprecated("The `.fired` attribute is deprecated, use `.is_set()` instead.")
+    def fired(self) -> bool:
+        return self._fired
 
     def _prime_trigger(self, trigger, callback):
         self._pending.append(trigger)
 
     def set(self, data=None):
         """Wake up all coroutines blocked on this event."""
-        self.fired = True
+        self._fired = True
         self.data = data
 
         p = self._pending[:]
@@ -488,8 +494,8 @@ class Event:
         To reset the event (and enable the use of ``wait`` again),
         :meth:`clear` should be called.
         """
-        if self.fired:
-            return NullTrigger(name="{}.wait()".format(str(self)))
+        if self._fired:
+            return NullTrigger(name=f"{str(self)}.wait()")
         return _Event(self)
 
     def clear(self):
@@ -497,11 +503,11 @@ class Event:
 
         Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until
         :meth:`~cocotb.triggers.Event.set` is called again."""
-        self.fired = False
+        self._fired = False
 
     def is_set(self) -> bool:
-        """Return true if event has been set"""
-        return self.fired
+        """Return ``True`` if event has been set."""
+        return self._fired
 
     def __repr__(self):
         if self.name is None:
@@ -709,6 +715,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
     If the coroutine threw an exception, the :keyword:`await` will re-raise it.
 
     """
+
     __slots__ = ("_coroutine",)
 
     @classmethod
