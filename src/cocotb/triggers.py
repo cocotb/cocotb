@@ -71,7 +71,7 @@ class Trigger(Awaitable):
     """Base class to derive from."""
 
     def __init__(self):
-        self.primed = False
+        self._primed = False
 
     @cached_property
     def log(self):
@@ -90,7 +90,7 @@ class Trigger(Awaitable):
             Do not call this directly within a :term:`task`. It is intended to be used
             only by the scheduler.
         """
-        self.primed = True
+        self._primed = True
 
     def _unprime(self):
         """Remove the callback, and perform cleanup if necessary.
@@ -106,7 +106,7 @@ class Trigger(Awaitable):
             Do not call this directly within a :term:`task`. It is intended to be used
             only by the scheduler.
         """
-        self.primed = False
+        self._primed = False
 
     def __del__(self):
         # Ensure if a trigger drops out of scope we remove any pending callbacks
@@ -146,13 +146,13 @@ class GPITrigger(Trigger):
         # if simulator is not None:
         #    self.cbhdl = simulator.create_callback(self)
         # else:
-        self.cbhdl = None
+        self._cbhdl = None
 
     def _unprime(self):
         """Disable a primed trigger, can be re-primed."""
-        if self.cbhdl is not None:
-            self.cbhdl.deregister()
-        self.cbhdl = None
+        if self._cbhdl is not None:
+            self._cbhdl.deregister()
+        self._cbhdl = None
         super()._unprime()
 
 
@@ -242,22 +242,22 @@ class Timer(GPITrigger):
                 raise ValueError("Timer argument time must not be negative")
         if round_mode is None:
             round_mode = type(self).round_mode
-        self.sim_steps = get_sim_steps(time, units, round_mode=round_mode)
+        self._sim_steps = get_sim_steps(time, units, round_mode=round_mode)
 
     def _prime(self, callback):
         """Register for a timed callback."""
-        if self.cbhdl is None:
-            self.cbhdl = simulator.register_timed_callback(
-                self.sim_steps, callback, self
+        if self._cbhdl is None:
+            self._cbhdl = simulator.register_timed_callback(
+                self._sim_steps, callback, self
             )
-            if self.cbhdl is None:
+            if self._cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self):
         return "<{} of {:1.2f}ps at {}>".format(
             type(self).__qualname__,
-            get_time_from_sim_steps(self.sim_steps, units="ps"),
+            get_time_from_sim_steps(self._sim_steps, units="ps"),
             _pointer_str(self),
         )
 
@@ -282,9 +282,9 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         return None
 
     def _prime(self, callback):
-        if self.cbhdl is None:
-            self.cbhdl = simulator.register_readonly_callback(callback, self)
-            if self.cbhdl is None:
+        if self._cbhdl is None:
+            self._cbhdl = simulator.register_readonly_callback(callback, self)
+            if self._cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
@@ -300,9 +300,9 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         return None
 
     def _prime(self, callback):
-        if self.cbhdl is None:
-            self.cbhdl = simulator.register_rwsynch_callback(callback, self)
-            if self.cbhdl is None:
+        if self._cbhdl is None:
+            self._cbhdl = simulator.register_rwsynch_callback(callback, self)
+            if self._cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
@@ -318,9 +318,9 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         return None
 
     def _prime(self, callback):
-        if self.cbhdl is None:
-            self.cbhdl = simulator.register_nextstep_callback(callback, self)
-            if self.cbhdl is None:
+        if self._cbhdl is None:
+            self._cbhdl = simulator.register_nextstep_callback(callback, self)
+            if self._cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
@@ -339,11 +339,11 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 
     def _prime(self, callback):
         """Register notification of a value change via a callback"""
-        if self.cbhdl is None:
-            self.cbhdl = simulator.register_value_change_callback(
+        if self._cbhdl is None:
+            self._cbhdl = simulator.register_value_change_callback(
                 self.signal._handle, callback, type(self)._edge_type, self
             )
-            if self.cbhdl is None:
+            if self._cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
@@ -398,18 +398,18 @@ class _Event(PythonTrigger):
 
     def __init__(self, parent):
         super().__init__()
-        self.parent = parent
+        self._parent = parent
 
     def _prime(self, callback):
         self._callback = callback
-        self.parent._prime_trigger(self, callback)
+        self._parent._prime_trigger(self, callback)
         super()._prime(callback)
 
     def __call__(self):
         self._callback(self)
 
     def __repr__(self):
-        return f"<{self.parent!r}.wait() at {_pointer_str(self)}>"
+        return f"<{self._parent!r}.wait() at {_pointer_str(self)}>"
 
 
 class Event:
@@ -482,7 +482,7 @@ class _InternalEvent(PythonTrigger):
 
     def __init__(self, parent):
         super().__init__()
-        self.parent = parent
+        self._parent = parent
         self._callback = None
         self.fired = False
         self.data = None
@@ -508,13 +508,13 @@ class _InternalEvent(PythonTrigger):
         return self.fired
 
     def __await__(self):
-        if self.primed:
+        if self._primed:
             raise RuntimeError("Only one coroutine may await this Trigger")
         # hand the trigger back to the scheduler trampoline
         return (yield self)
 
     def __repr__(self):
-        return repr(self.parent)
+        return repr(self._parent)
 
 
 class _Lock(PythonTrigger):
@@ -528,18 +528,18 @@ class _Lock(PythonTrigger):
 
     def __init__(self, parent):
         super().__init__()
-        self.parent = parent
+        self._parent = parent
 
     def _prime(self, callback):
         self._callback = callback
-        self.parent._prime_trigger(self, callback)
+        self._parent._prime_trigger(self, callback)
         super()._prime(callback)
 
     def __call__(self):
         self._callback(self)
 
     def __repr__(self):
-        return f"<{self.parent!r}.acquire() at {_pointer_str(self)}>"
+        return f"<{self._parent!r}.acquire() at {_pointer_str(self)}>"
 
 
 class Lock:
@@ -735,12 +735,12 @@ class _AggregateWaitable(Waitable):
     """
 
     def __init__(self, *triggers):
-        self.triggers = triggers
+        self._triggers = triggers
 
         # Do some basic type-checking up front, rather than waiting until we
         # await them.
         allowed_types = (Trigger, Waitable, cocotb.task.Task)
-        for trigger in self.triggers:
+        for trigger in self._triggers:
             if not isinstance(trigger, allowed_types):
                 raise TypeError(
                     f"All triggers must be instances of Trigger! Got: {type(trigger).__qualname__}"
@@ -753,7 +753,7 @@ class _AggregateWaitable(Waitable):
             type(self).__qualname__,
             ", ".join(
                 repr(Join(t)) if isinstance(t, cocotb.task.Task) else repr(t)
-                for t in self.triggers
+                for t in self._triggers
             ),
         )
 
@@ -782,7 +782,7 @@ class Combine(_AggregateWaitable):
     async def _wait(self):
         waiters = []
         e = _InternalEvent(self)
-        triggers = list(self.triggers)
+        triggers = list(self._triggers)
 
         # start a parallel task for each trigger
         for t in triggers:
@@ -829,7 +829,7 @@ class First(_AggregateWaitable):
         e = _InternalEvent(self)
         completed = []
         # start a parallel task for each trigger
-        for t in self.triggers:
+        for t in self._triggers:
 
             def on_done(ret):
                 completed.append(ret)
