@@ -294,7 +294,7 @@ class Scheduler:
             for t in self._trigger2tasks:
                 t._unprime()
 
-            if self._timer1.primed:
+            if self._timer1._primed:
                 self._timer1._unprime()
 
             self._timer1._prime(self._test_completed)
@@ -575,7 +575,7 @@ class Scheduler:
             # Everything else joins the back of the queue
             trigger_tasks.append(task)
 
-        if not trigger.primed:
+        if not trigger._primed:
             if trigger_tasks != [task]:
                 # should never happen
                 raise InternalError("More than one task waiting on an unprimed trigger")
