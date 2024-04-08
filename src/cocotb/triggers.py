@@ -139,7 +139,7 @@ class GPITrigger(Trigger):
     """
 
     def __init__(self):
-        Trigger.__init__(self)
+        super().__init__()
 
         # Required to ensure documentation can build
         # if simulator is not None:
@@ -152,7 +152,7 @@ class GPITrigger(Trigger):
         if self.cbhdl is not None:
             self.cbhdl.deregister()
         self.cbhdl = None
-        Trigger._unprime(self)
+        super()._unprime()
 
 
 class Timer(GPITrigger):
@@ -229,7 +229,7 @@ class Timer(GPITrigger):
         .. versionchanged:: 2.0
             The ``time_ps`` parameter was removed, use the ``time`` parameter instead.
         """
-        GPITrigger.__init__(self)
+        super().__init__()
         if time <= 0:
             if time == 0:
                 warnings.warn(
@@ -251,7 +251,7 @@ class Timer(GPITrigger):
             )
             if self.cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
-        GPITrigger._prime(self, callback)
+        super()._prime(callback)
 
     def __repr__(self):
         return "<{} of {:1.2f}ps at {}>".format(
@@ -280,15 +280,12 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     def __singleton_key__(cls):
         return None
 
-    def __init__(self):
-        GPITrigger.__init__(self)
-
     def _prime(self, callback):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
             if self.cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
-        GPITrigger._prime(self, callback)
+        super()._prime(callback)
 
     def __repr__(self):
         return f"{type(self).__qualname__}()"
@@ -301,15 +298,12 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     def __singleton_key__(cls):
         return None
 
-    def __init__(self):
-        GPITrigger.__init__(self)
-
     def _prime(self, callback):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
-        GPITrigger._prime(self, callback)
+        super()._prime(callback)
 
     def __repr__(self):
         return f"{type(self).__qualname__}()"
@@ -322,15 +316,12 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     def __singleton_key__(cls):
         return None
 
-    def __init__(self):
-        GPITrigger.__init__(self)
-
     def _prime(self, callback):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
             if self.cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
-        GPITrigger._prime(self, callback)
+        super()._prime(callback)
 
     def __repr__(self):
         return f"{type(self).__qualname__}()"
@@ -409,13 +400,13 @@ class _Event(PythonTrigger):
     """
 
     def __init__(self, parent):
-        PythonTrigger.__init__(self)
+        super().__init__()
         self.parent = parent
 
     def _prime(self, callback):
         self._callback = callback
         self.parent._prime_trigger(self, callback)
-        Trigger._prime(self, callback)
+        super()._prime(callback)
 
     def __call__(self):
         self._callback(self)
@@ -493,7 +484,7 @@ class _InternalEvent(PythonTrigger):
     """
 
     def __init__(self, parent):
-        PythonTrigger.__init__(self)
+        super().__init__()
         self.parent = parent
         self._callback = None
         self.fired = False
@@ -503,7 +494,7 @@ class _InternalEvent(PythonTrigger):
         if self._callback is not None:
             raise RuntimeError("This Trigger may only be awaited once")
         self._callback = callback
-        Trigger._prime(self, callback)
+        super()._prime(callback)
         if self.fired:
             self._callback(self)
 
@@ -539,13 +530,13 @@ class _Lock(PythonTrigger):
     """
 
     def __init__(self, parent):
-        PythonTrigger.__init__(self)
+        super().__init__()
         self.parent = parent
 
     def _prime(self, callback):
         self._callback = callback
         self.parent._prime_trigger(self, callback)
-        Trigger._prime(self, callback)
+        super()._prime(callback)
 
     def __call__(self):
         self._callback(self)
