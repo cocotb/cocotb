@@ -104,7 +104,7 @@ def get_time_from_sim_steps(steps: int, units: str) -> int:
 
 
 def get_sim_steps(
-    time: Union[Real, Decimal], units: str = "step", *, round_mode: str = "error"
+    time: Union[float, Real, Decimal], units: str = "step", *, round_mode: str = "error"
 ) -> int:
     """Calculates the number of simulation time steps for a given amount of *time*.
 
