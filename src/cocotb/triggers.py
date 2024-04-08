@@ -422,7 +422,7 @@ class Event:
     def __init__(self, name=None):
         self._pending = []
         self.name = name
-        self.fired = False
+        self._fired = False
         self.data = None
 
     def _prime_trigger(self, trigger, callback):
@@ -430,7 +430,7 @@ class Event:
 
     def set(self, data=None):
         """Wake up all coroutines blocked on this event."""
-        self.fired = True
+        self._fired = True
         self.data = data
 
         p = self._pending[:]
@@ -448,7 +448,7 @@ class Event:
         To reset the event (and enable the use of ``wait`` again),
         :meth:`clear` should be called.
         """
-        if self.fired:
+        if self._fired:
             return NullTrigger(name=f"{str(self)}.wait()")
         return _Event(self)
 
@@ -457,11 +457,11 @@ class Event:
 
         Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until
         :meth:`~cocotb.triggers.Event.set` is called again."""
-        self.fired = False
+        self._fired = False
 
     def is_set(self) -> bool:
         """Return true if event has been set"""
-        return self.fired
+        return self._fired
 
     def __repr__(self):
         if self.name is None:
