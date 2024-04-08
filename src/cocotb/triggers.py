@@ -41,6 +41,7 @@ import cocotb.task
 from cocotb import _outcomes, simulator
 from cocotb._py_compat import cached_property
 from cocotb.handle import LogicObject, ValueObjectBase
+from cocotb.result import SimTimeoutError
 from cocotb.utils import (
     ParametrizedSingleton,
     get_sim_steps,
@@ -960,13 +961,11 @@ async def with_timeout(
         shielded = False
     else:
         shielded = True
-    timeout_timer = cocotb.triggers.Timer(
-        timeout_time, timeout_unit, round_mode=round_mode
-    )
+    timeout_timer = Timer(timeout_time, timeout_unit, round_mode=round_mode)
     res = await First(timeout_timer, trigger)
     if res is timeout_timer:
         if not shielded:
             trigger.kill()
-        raise cocotb.result.SimTimeoutError
+        raise SimTimeoutError
     else:
         return res
