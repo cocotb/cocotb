@@ -69,17 +69,6 @@ class _TriggerException(Exception):
 class Trigger(Awaitable):
     """Base class to derive from."""
 
-    # __dict__ is needed here for the `.log` cached_property below to work.
-    # The implementation of `_PyObject_GenericGetAttrWithDict` suggests that
-    # despite its inclusion, __slots__ will overall give speed and memory
-    # improvements:
-    #  - the `__dict__` is not actually constructed until it's needed, and that
-    #    only happens if the `.log` attribute is used, where performance
-    #    concerns no longer matter.
-    #  - Attribute setting and getting will still go through the slot machinery
-    #    first, as "data descriptors" take priority over dict access
-    __slots__ = ("primed", "__weakref__", "__dict__")
-
     def __init__(self):
         self.primed = False
 
@@ -148,8 +137,6 @@ class GPITrigger(Trigger):
 
     Consumes simulation time.
     """
-
-    __slots__ = ("cbhdl",)
 
     def __init__(self):
         Trigger.__init__(self)
@@ -289,8 +276,6 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
     """
 
-    __slots__ = ()
-
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -311,8 +296,6 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 
 class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     """Fires when the read-write portion of the simulation cycles is reached."""
-
-    __slots__ = ()
 
     @classmethod
     def __singleton_key__(cls):
@@ -335,8 +318,6 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     """Fires when the next time step is started."""
 
-    __slots__ = ()
-
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -357,8 +338,6 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 
 class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     """Internal base class that fires on a given edge of a signal."""
-
-    __slots__ = ("signal",)
 
     @classmethod
     @property
@@ -387,7 +366,6 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 class RisingEdge(_EdgeBase):
     """Fires on the rising edge of *signal*, on a transition from ``0`` to ``1``."""
 
-    __slots__ = ()
     _edge_type = 1
 
     @classmethod
@@ -400,7 +378,6 @@ class RisingEdge(_EdgeBase):
 class FallingEdge(_EdgeBase):
     """Fires on the falling edge of *signal*, on a transition from ``1`` to ``0``."""
 
-    __slots__ = ()
     _edge_type = 2
 
     @classmethod
@@ -413,7 +390,6 @@ class FallingEdge(_EdgeBase):
 class Edge(_EdgeBase):
     """Fires on any value change of *signal*."""
 
-    __slots__ = ()
     _edge_type = 3
 
     @classmethod
@@ -705,8 +681,6 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
 
     """
 
-    __slots__ = ("_coroutine",)
-
     @classmethod
     def __singleton_key__(cls, coroutine):
         return coroutine
@@ -756,8 +730,6 @@ class Waitable(Awaitable):
     This converts a `_wait` abstract method into a suitable `__await__`.
     """
 
-    __slots__ = ()
-
     async def _wait(self):
         """
         Should be implemented by the sub-class. Called by `await self` to
@@ -773,8 +745,6 @@ class _AggregateWaitable(Waitable):
     """
     Base class for Waitables that take mutiple triggers in their constructor
     """
-
-    __slots__ = ("triggers",)
 
     def __init__(self, *triggers):
         self.triggers = triggers
@@ -821,8 +791,6 @@ class Combine(_AggregateWaitable):
     This is similar to Verilog's ``join``.
     """
 
-    __slots__ = ()
-
     async def _wait(self):
         waiters = []
         e = _InternalEvent(self)
@@ -867,8 +835,6 @@ class First(_AggregateWaitable):
         ``t = yield First(a, b)``. This spelling is no longer available when using :keyword:`await`-based
         coroutines.
     """
-
-    __slots__ = ()
 
     async def _wait(self):
         waiters = []
