@@ -34,7 +34,7 @@ import warnings
 from collections.abc import Awaitable
 from decimal import Decimal
 from numbers import Real
-from typing import Any, Coroutine, Optional, TypeVar, Union
+from typing import Any, ClassVar, Coroutine, Optional, TypeVar, Union
 
 import cocotb
 import cocotb.task
@@ -330,11 +330,7 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     """Internal base class that fires on a given edge of a signal."""
 
-    @classmethod
-    @property
-    def _edge_type(self):
-        """The edge type, as understood by the C code. Must be set in sub-classes."""
-        raise NotImplementedError
+    _edge_type: ClassVar[int]
 
     def __init__(self, signal):
         super().__init__()
