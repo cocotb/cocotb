@@ -163,7 +163,7 @@ class Timer(GPITrigger):
 
     def __init__(
         self,
-        time: Union[Real, Decimal],
+        time: Union[float, Real, Decimal],
         units: str = "step",
         *,
         round_mode: Optional[str] = None,
