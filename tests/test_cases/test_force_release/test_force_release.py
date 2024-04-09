@@ -1,3 +1,9 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+"""Tests the Force/Freeze/Release features."""
+
 import os
 
 import cocotb
@@ -22,7 +28,7 @@ async def test_hdl_writes_dont_overwrite_force_combo(dut):
     assert dut.stream_out_data_comb.value == 5
 
     # Release the driven signal.
-    # The driver signal is set again to trigger the process which recomputes the driven signal
+    # The driver signal is set again to trigger the process which recomputes the driven signal.
     # This is done because releasing the driven signal does not cause the process to run again.
     dut.stream_in_data.value = 3
     dut.stream_out_data_comb.value = Release()
@@ -62,7 +68,7 @@ async def test_force_followed_by_release_combo(dut):
     dut.stream_out_data_comb.value = Release()
 
     # Check if the driven signal is actually released.
-    # The driver signal is set again to trigger the process which recomputes the driven signal
+    # The driver signal is set again to trigger the process which recomputes the driven signal.
     # This is done because releasing the driven signal does not cause the process to run again.
     dut.stream_in_data.value = 16
     await Timer(10, "ns")
@@ -106,7 +112,7 @@ riviera_vpi = (
     expect_fail=SIM_NAME.startswith(("ghdl", "verilator")) or riviera_vpi or questa_fli
 )
 async def test_cocotb_writes_dont_overwrite_force_combo(dut):
-    """Test Deposits following a Force don't overwrite the value."""
+    """Test Deposits following a Force don't overwrite the value on combo signals."""
     dut.stream_in_data.value = 56
 
     # Force the driven signal.
@@ -121,7 +127,7 @@ async def test_cocotb_writes_dont_overwrite_force_combo(dut):
     assert dut.stream_out_data_comb.value == 10
 
     # Release the forced signal. The value should follow driver.
-    # The driver signal is set again to trigger the process which recomputes the driven signal
+    # The driver signal is set again to trigger the process which recomputes the driven signal.
     # This is done because releasing the driven signal does not cause the process to run again.
     dut.stream_in_data.value = 46
     dut.stream_out_data_registered.value = Release()
@@ -137,7 +143,7 @@ async def test_cocotb_writes_dont_overwrite_force_combo(dut):
     expect_fail=SIM_NAME.startswith(("ghdl", "verilator")) or questa_fli or riviera_vpi
 )
 async def test_cocotb_writes_dont_overwrite_force_registered(dut):
-    """Test Deposits following a Force don't overwrite the value."""
+    """Test Deposits following a Force don't overwrite the value on registered signals."""
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
     dut.stream_in_data.value = 77
 
@@ -160,7 +166,7 @@ async def test_cocotb_writes_dont_overwrite_force_registered(dut):
 # Release and Freeze read current simulator values, not scheduled values (gh-3829)
 @cocotb.test(expect_fail=True)
 async def test_force_followed_by_release_correct_value(dut):
-    """Tests if Forcing then immediately Releasing a signal yield the correct value.
+    """Test if Forcing then immediately Releasing a signal yields the correct value.
 
     Due to the way that Release and Freeze are implemented (reading the current value then doing a set with that value) this test will always fail.
     Leaving this test for when a better implementation of Freeze and Release are implemented.
