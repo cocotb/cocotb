@@ -28,12 +28,13 @@
 """A collections of triggers which a testbench can await."""
 
 import abc
+import functools
 import inspect
 import warnings
 from collections.abc import Awaitable
 from decimal import Decimal
 from numbers import Real
-from typing import Any, Coroutine, Optional, TypeVar, Union
+from typing import Any, Callable, Coroutine, Optional, TypeVar, Union
 
 import cocotb
 from cocotb import outcomes, simulator
@@ -588,6 +589,42 @@ class _Lock(PythonTrigger):
         return "<{!r}.acquire() at {}>".format(self.parent, _pointer_str(self))
 
 
+_FT = TypeVar("_FT", bound=Callable)
+
+
+def _locked_back_compat_dec(func: _FT) -> _FT:
+    # this hack is implemented this way so that it is easy to delete later
+
+    def get(inst, _=None):
+        method = _LockBackCompat(inst, func)
+        # cache bound method on object to override the descriptor
+        setattr(inst, func.__name__, method)
+        return method
+
+    # Override the default function descriptor with one that returns a _LockBackCompat object that *acts* like a bound method,
+    # but also defines the __bool__ overload that provides the deprecation warning.
+    func.__get__ = get
+    return func
+
+
+class _LockBackCompat:
+    def __init__(self, inst, func):
+        self._inst = inst
+        self._func = func
+        functools.update_wrapper(self, func)
+
+    def __call__(self):
+        return self._func(self._inst)
+
+    def __bool__(self):
+        warnings.warn(
+            f"Using `{self._func.__qualname__}` as a boolean attribute is deprecated. Call it as if it were a method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._func(self._inst)
+
+
 class Lock:
     """Lock primitive (not re-entrant).
 
@@ -612,13 +649,22 @@ class Lock:
         self._pending_unprimed = []
         self._pending_primed = []
         self.name = name
-        self.locked = False  #: ``True`` if the lock is held.
+        self._locked = False
+
+    @_locked_back_compat_dec
+    def locked(self) -> bool:
+        """Return ``True`` if the lock has been acquired.
+
+        .. versionchanged:: 2.0
+            This is now a method rather than an attribute, to match :meth:`asyncio.Lock.locked`.
+        """
+        return self._locked
 
     def _prime_trigger(self, trigger, callback):
         self._pending_unprimed.remove(trigger)
 
-        if not self.locked:
-            self.locked = True
+        if not self._locked:
+            self._locked = True
             callback(trigger)
         else:
             self._pending_primed.append(trigger)
@@ -631,19 +677,19 @@ class Lock:
 
     def release(self):
         """Release the lock."""
-        if not self.locked:
+        if not self._locked:
             raise TriggerException(
                 "Attempt to release an unacquired Lock %s" % (str(self))
             )
 
-        self.locked = False
+        self._locked = False
 
         # nobody waiting for this lock
         if not self._pending_primed:
             return
 
         trigger = self._pending_primed.pop(0)
-        self.locked = True
+        self._locked = True
         trigger()
 
     def __repr__(self):
@@ -658,9 +704,10 @@ class Lock:
             _pointer_str(self),
         )
 
+    @deprecated("`bool(lock)` is deprecated. Use the `.locked()` method instead.")
     def __bool__(self):
         """Provide boolean of a Lock"""
-        return self.locked
+        return self._locked
 
     async def __aenter__(self):
         return await self.acquire()
