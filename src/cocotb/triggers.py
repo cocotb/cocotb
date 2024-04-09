@@ -34,7 +34,14 @@ import warnings
 from collections.abc import Awaitable
 from decimal import Decimal
 from numbers import Real
-from typing import Any, ClassVar, Coroutine, Optional, TypeVar, Union
+from typing import (
+    Any,
+    ClassVar,
+    Coroutine,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 import cocotb
 import cocotb.task
@@ -566,13 +573,21 @@ class Lock:
         self._pending_unprimed = []
         self._pending_primed = []
         self.name = name
-        self.locked = False  #: ``True`` if the lock is held.
+        self._locked = False
+
+    def locked(self) -> bool:
+        """Return True if the lock is locked.
+
+        .. versionchanged:: 2.0
+            This is now a method to match :meth:`asyncio.Lock.locked`, rather than an attribute.
+        """
+        return self._locked
 
     def _prime_trigger(self, trigger, callback):
         self._pending_unprimed.remove(trigger)
 
-        if not self.locked:
-            self.locked = True
+        if not self._locked:
+            self._locked = True
             callback(trigger)
         else:
             self._pending_primed.append(trigger)
@@ -585,17 +600,17 @@ class Lock:
 
     def release(self):
         """Release the lock."""
-        if not self.locked:
+        if not self._locked:
             raise RuntimeError(f"Attempt to release an unacquired Lock {str(self)}")
 
-        self.locked = False
+        self._locked = False
 
         # nobody waiting for this lock
         if not self._pending_primed:
             return
 
         trigger = self._pending_primed.pop(0)
-        self.locked = True
+        self._locked = True
         trigger()
 
     def __repr__(self):
@@ -609,10 +624,6 @@ class Lock:
             len(self._pending_primed),
             _pointer_str(self),
         )
-
-    def __bool__(self):
-        """Provide boolean of a Lock"""
-        return self.locked
 
     async def __aenter__(self):
         return await self.acquire()
