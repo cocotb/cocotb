@@ -1,0 +1,1 @@
+:meth:`Lock.locked <cocotb.triggers.Lock.locked>` is now a method rather than an attribute to mirror :meth:`asyncio.Lock.locked`.
