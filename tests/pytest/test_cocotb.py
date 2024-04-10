@@ -31,18 +31,14 @@ module_name = [
     "test_timing_triggers",
 ]
 
-verilog_sources = []
-vhdl_sources = []
 hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
 vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
 if hdl_toplevel_lang == "verilog":
-    verilog_sources = [
-        os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")
-    ]
+    sources = [os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")]
     gpi_interfaces = ["vpi"]
 else:
-    vhdl_sources = [
+    sources = [
         os.path.join(tests_dir, "designs", "sample_module", "sample_module_pack.vhdl"),
         os.path.join(tests_dir, "designs", "sample_module", "sample_module_1.vhdl"),
         os.path.join(tests_dir, "designs", "sample_module", "sample_module.vhdl"),
@@ -71,8 +67,7 @@ def test_cocotb():
     runner = get_runner(sim)
 
     runner.build(
-        verilog_sources=verilog_sources,
-        vhdl_sources=vhdl_sources,
+        sources=sources,
         hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
         build_args=compile_args,

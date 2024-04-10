@@ -16,9 +16,8 @@ from test_cocotb import (
     sim,
     sim_args,
     sim_build,
+    sources,
     tests_dir,
-    verilog_sources,
-    vhdl_sources,
 )
 
 pytestmark = pytest.mark.simulator_required
@@ -34,8 +33,7 @@ def test_cocotb_parallel_compile():
 
     runner.build(
         always=True,
-        verilog_sources=verilog_sources,
-        vhdl_sources=vhdl_sources,
+        sources=sources,
         hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
         build_args=compile_args,

@@ -13,9 +13,8 @@ from test_cocotb import (
     sim,
     sim_args,
     sim_build,
+    sources,
     tests_dir,
-    verilog_sources,
-    vhdl_sources,
 )
 
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
@@ -54,8 +53,7 @@ def test_precision(precision):
         runner.build(
             always=True,
             clean=True,
-            verilog_sources=verilog_sources,
-            vhdl_sources=vhdl_sources,
+            sources=sources,
             hdl_toplevel=hdl_toplevel,
             build_dir=build_dir,
             build_args=compile_args,

@@ -61,13 +61,10 @@ def test_adder_runner():
     # equivalent to setting the PYTHONPATH environment variable
     sys.path.append(str(proj_path / "model"))
 
-    verilog_sources = []
-    vhdl_sources = []
-
     if hdl_toplevel_lang == "verilog":
-        verilog_sources = [proj_path / "hdl" / "adder.sv"]
+        sources = [proj_path / "hdl" / "adder.sv"]
     else:
-        vhdl_sources = [proj_path / "hdl" / "adder.vhdl"]
+        sources = [proj_path / "hdl" / "adder.vhdl"]
 
     build_test_args = []
     if hdl_toplevel_lang == "vhdl" and sim == "xcelium":
@@ -78,8 +75,7 @@ def test_adder_runner():
 
     runner = get_runner(sim)
     runner.build(
-        verilog_sources=verilog_sources,
-        vhdl_sources=vhdl_sources,
+        sources=sources,
         hdl_toplevel="adder",
         always=True,
         build_args=build_test_args,

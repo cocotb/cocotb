@@ -230,18 +230,16 @@ def test_matrix_multiplier_runner():
 
     proj_path = Path(__file__).resolve().parent.parent
 
-    verilog_sources = []
-    vhdl_sources = []
     build_args = []
 
     if hdl_toplevel_lang == "verilog":
-        verilog_sources = [proj_path / "hdl" / "matrix_multiplier.sv"]
+        sources = [proj_path / "hdl" / "matrix_multiplier.sv"]
 
         if sim in ["riviera", "activehdl"]:
             build_args = ["-sv2k12"]
 
     elif hdl_toplevel_lang == "vhdl":
-        vhdl_sources = [
+        sources = [
             proj_path / "hdl" / "matrix_multiplier_pkg.vhd",
             proj_path / "hdl" / "matrix_multiplier.vhd",
         ]
@@ -275,8 +273,7 @@ def test_matrix_multiplier_runner():
 
     runner.build(
         hdl_toplevel="matrix_multiplier",
-        verilog_sources=verilog_sources,
-        vhdl_sources=vhdl_sources,
+        sources=sources,
         build_args=build_args + extra_args,
         parameters=parameters,
         always=True,

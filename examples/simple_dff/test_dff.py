@@ -57,18 +57,14 @@ def test_simple_dff_runner():
 
     proj_path = Path(__file__).resolve().parent
 
-    verilog_sources = []
-    vhdl_sources = []
-
     if hdl_toplevel_lang == "verilog":
-        verilog_sources = [proj_path / "dff.sv"]
+        sources = [proj_path / "dff.sv"]
     else:
-        vhdl_sources = [proj_path / "dff.vhdl"]
+        sources = [proj_path / "dff.vhdl"]
 
     runner = get_runner(sim)
     runner.build(
-        verilog_sources=verilog_sources,
-        vhdl_sources=vhdl_sources,
+        sources=sources,
         hdl_toplevel="dff",
         always=True,
     )
