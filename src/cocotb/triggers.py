@@ -134,13 +134,6 @@ class Trigger(Awaitable):
         return (yield self)
 
 
-class PythonTrigger(Trigger):
-    """Python triggers don't use GPI at all.
-
-    For example: notification of coroutine completion.
-    """
-
-
 class GPITrigger(Trigger):
     """Base Trigger class for GPI triggers.
 
@@ -395,7 +388,7 @@ class Edge(_EdgeBase):
         return signal
 
 
-class _Event(PythonTrigger):
+class _Event(Trigger):
     """Unique instance used by the Event object.
 
     One created for each attempt to wait on the event so that the scheduler
@@ -479,7 +472,7 @@ class Event:
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class _InternalEvent(PythonTrigger):
+class _InternalEvent(Trigger):
     """Event used internally for triggers that need cross-coroutine synchronization.
 
     This Event can only be waited on once, by a single coroutine.
@@ -525,7 +518,7 @@ class _InternalEvent(PythonTrigger):
         return repr(self._parent)
 
 
-class _Lock(PythonTrigger):
+class _Lock(Trigger):
     """Unique instance used by the Lock object.
 
     One created for each attempt to acquire the Lock so that the scheduler
@@ -662,7 +655,7 @@ class NullTrigger(Trigger):
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
+class Join(Trigger, metaclass=_ParameterizedSingletonAndABC):
     r"""Fires when a task completes.
 
     The result of blocking on the trigger can be used to get the coroutine
