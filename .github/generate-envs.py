@@ -3,7 +3,31 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Get a list test environments."""
+"""Generate a list of test environments.
+
+Each environment must contain the following fields:
+- lang: The TOPLEVEL_LANG of the test. Must be one of "verilog" or "vhdl".
+- sim: The SIM of the test. Must be one of "icarus", "ghdl", "nvc", "verilator", "riviera", "questa", or "xcelium".
+- sim-version: The version of the simulator to use. Valid values depend upon the simulator and build recipe.
+- os: The OS to operate on. Must be a valid value for the "jobs.<job_name>.runs-on" field for Github Actions.
+- python-version: The Python version to test with. Must be a valid value for the "python-version" field of the "actions/setup-python" Github Action.
+- group: The group to run the test in. One of "ci", "experimental", or "extended". See below note.
+
+Optional fields:
+- self-hosted: True if test needs to be run on a self-hosted Github Action runner. Default: False.
+- cc: C compiler and linker to use. Default: gcc.
+- cxx: C++ compiler and linker to use. Default: g++.
+- extra_name: Additional tag prepended to computed name for test. Default: <none>.
+
+What tests belong in what groups:
+- ci: The most recent stable release of a given simulator, all supported versions of Python, and all supported operating systems. Run on all PRs and master pushes.
+- experimental: Development HEAD for each simulator, any under-development version of Python, and under-development simulator. Run weekly.
+- extended: The minimum supoprted version of a simulator, and a smattering of released simulator versions between the minimum and most recent. Run weekly.
+
+Ideally, whenever a new version of a simulator is released, a new test should be added for that simulator.
+The current test in the "ci" group should be moved to "extended",
+and the new version should be added to "ci" and any changes in behavior recorded with expectations to make CI pass.
+"""
 
 import argparse
 import json
