@@ -17,9 +17,6 @@ def build_and_run_matrix_multiplier(benchmark, sim):
         build_args = ["--std=08"]
         hdl_toplevel_lang = "vhdl"
 
-    verilog_sources = []
-    vhdl_sources = []
-
     proj_path = (
         Path(__file__).resolve().parent.parent / "examples" / "matrix_multiplier"
     )
@@ -27,9 +24,9 @@ def build_and_run_matrix_multiplier(benchmark, sim):
     sys.path.append(str(proj_path / "tests"))
 
     if hdl_toplevel_lang == "verilog":
-        verilog_sources = [proj_path / "hdl" / "matrix_multiplier.sv"]
+        sources = [proj_path / "hdl" / "matrix_multiplier.sv"]
     else:
-        vhdl_sources = [
+        sources = [
             proj_path / "hdl" / "matrix_multiplier_pkg.vhd",
             proj_path / "hdl" / "matrix_multiplier.vhd",
         ]
@@ -38,8 +35,7 @@ def build_and_run_matrix_multiplier(benchmark, sim):
 
     runner.build(
         hdl_toplevel="matrix_multiplier",
-        verilog_sources=verilog_sources,
-        vhdl_sources=vhdl_sources,
+        sources=sources,
         build_args=build_args,
     )
 

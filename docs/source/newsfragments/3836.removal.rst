@@ -1,0 +1,1 @@
+Deprecated the ``verilog_sources`` and ``vhdl_sources`` parameters to :meth:`cocotb.runner.Simulator.build`. Use the language-agnostic ``sources`` parameter instead.

@@ -33,19 +33,15 @@ def test_toplevel_library():
     if sim == "verilator":
         build_test_args = ["--timing"]
 
-    verilog_sources = []
-    vhdl_sources = []
-
     if hdl_toplevel_lang == "verilog":
-        verilog_sources = [src_path / "tb_top.v"]
+        sources = [src_path / "tb_top.v"]
         gpi_interfaces = ["vpi"]
     else:
-        vhdl_sources = [src_path / "tb_top.vhd"]
+        sources = [src_path / "tb_top.vhd"]
         gpi_interfaces = [vhdl_gpi_interfaces]
 
     runner.build(
-        vhdl_sources=vhdl_sources,
-        verilog_sources=verilog_sources,
+        sources=sources,
         hdl_toplevel="tb_top",
         build_dir=str(test_module_path / "sim_build" / "pytest"),
         build_args=build_test_args,

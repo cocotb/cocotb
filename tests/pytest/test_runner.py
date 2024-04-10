@@ -37,14 +37,11 @@ def test_runner(parameters, pre_cmd, clean_build):
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
-    verilog_sources = []
-    vhdl_sources = []
-
     if hdl_toplevel_lang == "verilog":
-        verilog_sources = [os.path.join(tests_dir, "designs", "runner", "runner.v")]
+        sources = [os.path.join(tests_dir, "designs", "runner", "runner.v")]
         gpi_interfaces = ["vpi"]
     else:
-        vhdl_sources = [os.path.join(tests_dir, "designs", "runner", "runner.vhdl")]
+        sources = [os.path.join(tests_dir, "designs", "runner", "runner.vhdl")]
         gpi_interfaces = [vhdl_gpi_interfaces]
 
     sim = os.getenv("SIM", "icarus")
@@ -66,8 +63,7 @@ def test_runner(parameters, pre_cmd, clean_build):
     open(build_dir + "/clean_test_file", "a").close()
 
     runner.build(
-        verilog_sources=verilog_sources,
-        vhdl_sources=vhdl_sources,
+        sources=sources,
         hdl_toplevel="runner",
         parameters=parameters,
         defines={"DEFINE": 4},

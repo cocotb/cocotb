@@ -223,6 +223,10 @@ class Simulator(abc.ABC):
             timescale: Tuple containing time unit and time precision for simulation.
             waves: Record signal traces.
             log_file: File to write the build log to.
+
+        .. deprecated:: 2.0
+
+            Uses of the *verilog_sources* and *vhdl_sources* parameters should be replaced with the language-agnostic *sources* argument.
         """
 
         self.clean: bool = clean
@@ -236,7 +240,19 @@ class Simulator(abc.ABC):
         # a better docstring than using `None` as a default in the parameters
         # list.
         self.hdl_library: str = hdl_library
+        if verilog_sources:
+            warnings.warn(
+                "Simulator.build *verilog_sources* parameter is deprecated. Use the language-agnostic *sources* parameter instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.verilog_sources: List[Path] = get_abs_paths(verilog_sources)
+        if vhdl_sources:
+            warnings.warn(
+                "Simulator.build *vhdl_sources* parameter is deprecated. Use the language-agnostic *sources* parameter instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.vhdl_sources: List[Path] = get_abs_paths(vhdl_sources)
         self.sources: List[Path] = get_abs_paths(sources)
         self.includes: List[Path] = get_abs_paths(includes)

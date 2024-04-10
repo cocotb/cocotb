@@ -19,9 +19,8 @@ from test_cocotb import (
     hdl_toplevel_lang,
     sim_args,
     sim_build,
+    sources,
     tests_dir,
-    verilog_sources,
-    vhdl_sources,
 )
 
 sys.path.insert(0, str(Path(tests_dir) / "pytest"))
@@ -41,8 +40,7 @@ def run_simulation(sim, log_dir):
     runner.build(
         always=True,
         clean=True,
-        verilog_sources=verilog_sources,
-        vhdl_sources=vhdl_sources,
+        sources=sources,
         hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
         build_args=compile_args,
