@@ -41,6 +41,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
 )
 
 import cocotb
@@ -976,6 +977,8 @@ async def with_timeout(
     res = await First(timeout_timer, trigger)
     if res is timeout_timer:
         if not shielded:
+            # shielded = False only when trigger is a Task
+            trigger = cast(cocotb.task.Task, trigger)
             trigger.kill()
         raise SimTimeoutError
     else:
