@@ -60,6 +60,14 @@ def shlex_join(split_command):
     return " ".join(shlex.quote(arg) for arg in split_command)
 
 
+class VHDL(str):
+    """Tags source files and build arguments to :meth:`~cocotb.runner.Simulator.build` as VHDL-specific."""
+
+
+class Verilog(str):
+    """Tags source files and build arguments to :meth:`~cocotb.runner.Simulator.build` as Verilog-specific."""
+
+
 class Simulator(abc.ABC):
 
     supported_gpi_interfaces: Dict[str, List[str]] = {}
@@ -94,10 +102,17 @@ class Simulator(abc.ABC):
             ValueError: *hdl_toplevel_lang* is not supported by the simulator.
         """
         if hdl_toplevel_lang is None:
-            if self.vhdl_sources and not self.verilog_sources:
+            if self.vhdl_sources and not self.verilog_sources and not self.sources:
                 lang = "vhdl"
-            elif self.verilog_sources and not self.vhdl_sources:
+            elif self.verilog_sources and not self.vhdl_sources and not self.sources:
                 lang = "verilog"
+            elif self.sources and not self.vhdl_sources and not self.verilog_sources:
+                if is_vhdl_source(self.sources[-1]):
+                    lang = "vhdl"
+                elif is_verilog_source(self.sources[-1]):
+                    lang = "verilog"
+                else:
+                    raise UnknownFileExtension(self.sources[-1])
             else:
                 raise ValueError(
                     f"{type(self).__qualname__}: Must specify a hdl_toplevel_lang in a mixed-language design"
@@ -145,10 +160,11 @@ class Simulator(abc.ABC):
         hdl_library: str = "top",
         verilog_sources: Sequence[PathLike] = [],
         vhdl_sources: Sequence[PathLike] = [],
+        sources: Sequence[Union[PathLike, VHDL, Verilog]] = [],
         includes: Sequence[PathLike] = [],
         defines: Mapping[str, object] = {},
         parameters: Mapping[str, object] = {},
-        build_args: Sequence[str] = [],
+        build_args: Sequence[Union[str, VHDL, Verilog]] = [],
         hdl_toplevel: Optional[str] = None,
         always: bool = False,
         build_dir: PathLike = "sim_build",
@@ -160,10 +176,42 @@ class Simulator(abc.ABC):
     ) -> None:
         """Build the HDL sources.
 
+        With mixed language simulators, *sources* will be built,
+        followed by *vhdl_sources*, then *verilog_sources*.
+        With simulators that only support either VHDL or Verilog, *sources* will be built,
+        followed by *vhdl_sources* and *verilog_sources*, respectively.
+
+        If your source files use an atypical file extension,
+        use :class:`VHDL` and :class:`Verilog` to tag the path as a VHDL or Verilog source file, respectively.
+        If the filepaths aren't tagged, the extension is used to determine if they are VHDL or Verilog files.
+
+        +----------+------------------------------------+
+        | Language | File Extensions                    |
+        +==========+====================================+
+        | VHDL     | ``.vhd``, ``.vhdl``                |
+        +----------+------------------------------------+
+        | Verilog  | ``.v``, ``.sv``, ``.vh``, ``.svh`` |
+        +----------+------------------------------------+
+
+
+        .. code-block:: python3
+
+            runner.build(
+                sources=[
+                    VHDL("/my/file.is_actually_vhdl"),
+                    Verilog("/other/file.verilog"),
+                ],
+            )
+
+        The same tagging works for *build_args*.
+        Tagged *build_args* only supply that option to the compiler when building the source file for the tagged language.
+        Non-tagged *build_args* are supplied when compiling any language.
+
         Args:
             hdl_library: The library name to compile into.
             verilog_sources: Verilog source files to build.
             vhdl_sources: VHDL source files to build.
+            sources: Language-agnostic list of source files to build.
             includes: Verilog include directories.
             defines: Defines to set.
             parameters: Verilog parameters or VHDL generics.
@@ -191,6 +239,7 @@ class Simulator(abc.ABC):
         self.hdl_library: str = hdl_library
         self.verilog_sources: List[Path] = get_abs_paths(verilog_sources)
         self.vhdl_sources: List[Path] = get_abs_paths(vhdl_sources)
+        self.sources: List[Path] = get_abs_paths(sources)
         self.includes: List[Path] = get_abs_paths(includes)
         self.defines = dict(defines)
         self.parameters = dict(parameters)
@@ -497,6 +546,40 @@ def get_abs_paths(paths: Sequence[PathLike]) -> List[Path]:
     return [get_abs_path(path) for path in paths]
 
 
+_verilog_extensions = (".v", ".sv", ".vh", ".svh")
+_vhdl_extensions = (".vhd", ".vhdl")
+
+_vhdl_extensions_s = ", ".join(f"`{c}`" for c in _vhdl_extensions)
+_verilog_extensions_s = ", ".join(f"`{c}`" for c in _verilog_extensions)
+
+
+class UnknownFileExtension(ValueError):
+    def __init__(self, source: PathLike) -> None:
+        super().__init__(
+            f"Can't determine if {source} is a VHDL or Verilog file. "
+            f"Use a standard file extension ({_vhdl_extensions_s} for VHDL files and {_verilog_extensions_s} for Verilog files) "
+            "or tag the source with `VHDL(source)` or `Verilog(source)`."
+        )
+
+
+def is_vhdl_source(source: PathLike) -> bool:
+    if isinstance(source, VHDL):
+        return True
+    source_as_path = Path(source)
+    if source_as_path.suffix in _vhdl_extensions:
+        return True
+    return False
+
+
+def is_verilog_source(source: PathLike) -> bool:
+    if isinstance(source, Verilog):
+        return True
+    source_as_path = Path(source)
+    if source_as_path.suffix in _verilog_extensions:
+        return True
+    return False
+
+
 class Icarus(Simulator):
     supported_gpi_interfaces = {"verilog": ["vpi"]}
 
@@ -568,11 +651,16 @@ class Icarus(Simulator):
         ]
 
     def _build_command(self) -> List[Command]:
-
-        if self.vhdl_sources:
-            raise ValueError(
-                f"{type(self).__qualname__}: Simulator does not support VHDL"
-            )
+        for source in self.sources:
+            if not is_verilog_source(source):
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports Verilog. {str(source)!r} cannot be compiled."
+                )
+        for arg in self.build_args:
+            if type(arg) not in (str, Verilog):
+                print(
+                    f"WARNING: {type(self).__qualname__} only supports Verilog. build_args {arg!r} will not be applied."
+                )
 
         build_args = list(self.build_args)
         if self.waves:
@@ -584,8 +672,10 @@ class Icarus(Simulator):
             build_args += ["-f", str(self.cmds_file)]
 
         cmds = []
-        if outdated(self.sim_file, self.verilog_sources) or self.always:
-
+        sources = [
+            source for source in self.sources if is_verilog_source(source)
+        ] + self.verilog_sources
+        if outdated(self.sim_file, sources) or self.always:
             cmds = [
                 [
                     "iverilog",
@@ -600,8 +690,8 @@ class Icarus(Simulator):
                 + self._get_define_options(self.defines)
                 + self._get_include_options(self.includes)
                 + self._get_parameter_options(self.parameters)
-                + build_args
-                + [str(source_file) for source_file in self.verilog_sources]
+                + [arg for arg in build_args if type(arg) in (str, Verilog)]
+                + [str(source_file) for source_file in sources]
                 + [
                     str(source_file)
                     for source_file in [self.iverilog_dump_file]
@@ -642,30 +732,40 @@ class Questa(Simulator):
 
         cmds = []
 
-        if self.vhdl_sources:
-            cmds.append(["vlib", as_tcl_value(self.hdl_library)])
-            cmds.append(
-                ["vcom"]
-                + ["-work", as_tcl_value(self.hdl_library)]
-                + [as_tcl_value(v) for v in self.build_args]
-                + [as_tcl_value(str(v)) for v in self.vhdl_sources]
-            )
-
-        if self.verilog_sources:
-            cmds.append(["vlib", as_tcl_value(self.hdl_library)])
-            cmds.append(
-                ["vlog"]
-                + ([] if self.always else ["-incr"])
-                + ["-work", as_tcl_value(self.hdl_library)]
-                + ["+define+COCOTB_SIM"]
-                + ["-sv"]
-                + self._get_define_options(self.defines)
-                + self._get_include_options(self.includes)
-                + [as_tcl_value(v) for v in self.build_args]
-                + [as_tcl_value(str(v)) for v in self.verilog_sources]
-            )
+        cmds.append(["vlib", as_tcl_value(self.hdl_library)])
+        for source in self.sources:
+            if is_vhdl_source(source):
+                cmds.append(self._build_vhdl_command(source))
+            elif is_verilog_source(source):
+                cmds.append(self._build_verilog_command(source))
+            else:
+                raise UnknownFileExtension(source)
+        for source in self.vhdl_sources:
+            cmds.append(self._build_vhdl_command(source))
+        for source in self.verilog_sources:
+            cmds.append(self._build_verilog_command(source))
 
         return cmds
+
+    def _build_vhdl_command(self, source: PathLike) -> Command:
+        return (
+            ["vcom"]
+            + ["-work", as_tcl_value(self.hdl_library)]
+            + [as_tcl_value(v) for v in self.build_args if type(v) in (str, VHDL)]
+            + [as_tcl_value(str(source))]
+        )
+
+    def _build_verilog_command(self, source: PathLike) -> Command:
+        return (
+            ["vlog"]
+            + ([] if self.always else ["-incr"])
+            + ["-work", as_tcl_value(self.hdl_library)]
+            + ["-sv"]
+            + self._get_define_options(self.defines)
+            + self._get_include_options(self.includes)
+            + [as_tcl_value(v) for v in self.build_args if type(v) in (str, Verilog)]
+            + [as_tcl_value(str(source))]
+        )
 
     def _test_command(self) -> List[Command]:
 
@@ -753,17 +853,23 @@ class Ghdl(Simulator):
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[Command]:
-
-        if self.verilog_sources:
-            raise ValueError(
-                f"{type(self).__qualname__}: Simulator does not support Verilog"
-            )
+        for source in self.sources:
+            if not is_vhdl_source(source):
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports VHDL. {str(source)!r} cannot be compiled."
+                )
+        for arg in self.build_args:
+            if type(arg) not in (str, VHDL):
+                print(
+                    f"WARNING: {type(self).__qualname__} only supports VHDL. build_args {arg!r} will not be applied."
+                )
 
         cmds = [
             ["ghdl", "-i"]
             + [f"--work={self.hdl_library}"]
-            + self.build_args
-            + [str(source_file) for source_file in self.vhdl_sources]
+            + [arg for arg in self.build_args if type(arg) in (str, VHDL)]
+            + [str(source) for source in self.sources if is_vhdl_source(source)]
+            + [str(source) for source in self.vhdl_sources]
         ]
 
         if self.hdl_toplevel is not None:
@@ -835,16 +941,23 @@ class Nvc(Simulator):
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[Command]:
-        if self.verilog_sources:
-            raise ValueError(
-                f"{type(self).__qualname__}: Simulator does not support Verilog"
-            )
+        for source in self.sources:
+            if not is_vhdl_source(source):
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports VHDL. {str(source)!r} cannot be compiled."
+                )
+        for arg in self.build_args:
+            if type(arg) not in (str, VHDL):
+                print(
+                    f"WARNING: {type(self).__qualname__} only supports VHDL. build_args {arg!r} will not be applied."
+                )
 
         cmds = [
             ["nvc", f"--work={self.hdl_library}"]
-            + self.build_args
+            + [arg for arg in self.build_args if type(arg) in (str, VHDL)]
             + ["-a"]
-            + [str(source_file) for source_file in self.vhdl_sources]
+            + [str(source) for source in self.sources if is_vhdl_source(source)]
+            + [str(source) for source in self.vhdl_sources]
         ]
 
         return cmds
@@ -888,62 +1001,64 @@ class Riviera(Simulator):
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[Command]:
-
-        do_script = "\nonerror {\n quit -code 1 \n} \n"
+        do_script: List[str] = ["onerror {\n quit -code 1 \n}"]
 
         out_file = self.build_dir / self.hdl_library / f"{self.hdl_library}.lib"
 
         if outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.always:
+            do_script.append(f"alib {as_tcl_value(self.hdl_library)}")
 
-            do_script += "alib {RTL_LIBRARY} \n".format(
-                RTL_LIBRARY=as_tcl_value(self.hdl_library)
-            )
-
-            if self.vhdl_sources:
-                do_script += (
-                    "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}\n".format(
-                        RTL_LIBRARY=as_tcl_value(self.hdl_library),
-                        VHDL_SOURCES=" ".join(
-                            as_tcl_value(str(v)) for v in self.vhdl_sources
-                        ),
-                        EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.build_args),
-                    )
-                )
-
-            if self.verilog_sources:
-                do_script += "alog -work {RTL_LIBRARY} +define+COCOTB_SIM -pli {EXT_NAME} -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES} \n".format(
-                    RTL_LIBRARY=as_tcl_value(self.hdl_library),
-                    EXT_NAME=as_tcl_value(
-                        cocotb.config.lib_name_path("vpi", "riviera")
-                    ),
-                    VERILOG_SOURCES=" ".join(
-                        as_tcl_value(str(v)) for v in self.verilog_sources
-                    ),
-                    DEFINES=" ".join(self._get_define_options(self.defines)),
-                    INCDIR=" ".join(self._get_include_options(self.includes)),
-                    EXTRA_ARGS=" ".join(as_tcl_value(v) for v in self.build_args),
-                )
-        else:
-            print("WARNING: Skipping compilation of", out_file)
+            for source in self.sources:
+                if is_verilog_source(source):
+                    do_script.append(self._build_verilog_source(source))
+                elif is_vhdl_source(source):
+                    do_script.append(self._build_vhdl_source(source))
+                else:
+                    raise UnknownFileExtension(source)
+            for source in self.vhdl_sources:
+                do_script.append(self._build_vhdl_source(source))
+            for source in self.verilog_sources:
+                do_script.append(self._build_verilog_source(source))
 
         # Explicitly exit the script at the end. In batch mode, which is invoked
         # implicitly by redirecting STDOUT/STDERR of the alog/acom commands,
         # the tool exits by itself even without this 'exit' command -- but not
         # when running from an interactive terminal. Be explicit for predictable
         # behavior.
-        do_script += "\nexit"
+        do_script.append("exit")
 
         do_file = tempfile.NamedTemporaryFile(delete=False)
-        do_file.write(do_script.encode())
+        do_file.write("\n".join(do_script).encode())
         do_file.close()
 
         return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
+
+    def _build_vhdl_source(self, source: PathLike) -> str:
+        return "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}".format(
+            RTL_LIBRARY=as_tcl_value(self.hdl_library),
+            VHDL_SOURCES=as_tcl_value(str(source)),
+            EXTRA_ARGS=" ".join(
+                as_tcl_value(v) for v in self.build_args if type(v) in (str, VHDL)
+            ),
+        )
+
+    def _build_verilog_source(self, source: PathLike) -> str:
+        return "alog -work {RTL_LIBRARY} -pli {EXT_NAME} -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}".format(
+            RTL_LIBRARY=as_tcl_value(self.hdl_library),
+            EXT_NAME=as_tcl_value(cocotb.config.lib_name_path("vpi", "riviera")),
+            VERILOG_SOURCES=as_tcl_value(str(source)),
+            DEFINES=" ".join(self._get_define_options(self.defines)),
+            INCDIR=" ".join(self._get_include_options(self.includes)),
+            EXTRA_ARGS=" ".join(
+                as_tcl_value(v) for v in self.build_args if type(v) in (str, Verilog)
+            ),
+        )
 
     def _test_command(self) -> List[Command]:
         if self.pre_cmd:
             print("WARNING: pre_cmd is not implemented for Riviera.")
 
-        do_script = "\nonerror {\n quit -code 1 \n} \n"
+        do_script: str = "\nonerror {\n quit -code 1 \n} \n"
 
         if self.hdl_toplevel_lang == "vhdl":
             do_script += "asim +access +w_nets -interceptcoutput -loadvhpi {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUSARGS}\n".format(
@@ -1023,14 +1138,20 @@ class Verilator(Simulator):
     def _build_command(self) -> List[Command]:
         self._simulator_in_path_build_only()
 
-        if self.vhdl_sources:
-            raise ValueError(
-                f"{type(self).__qualname__}: Simulator does not support VHDL"
-            )
+        for source in self.sources:
+            if not is_verilog_source(source):
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports Verilog. {str(source)!r} cannot be compiled."
+                )
+        for arg in self.build_args:
+            if type(arg) not in (str, Verilog):
+                print(
+                    f"WARNING: {type(self).__qualname__} only supports Verilog. build_args {arg!r} will not be applied."
+                )
 
         if self.hdl_toplevel is None:
             raise ValueError(
-                f"{type(self).__qualname__}: Simulator requires the hdl_toplevel parameter to be specified"
+                f"{type(self).__qualname__} requires the hdl_toplevel parameter to be specified"
             )
 
         # TODO: set "--debug" if self.verbose
@@ -1068,12 +1189,13 @@ class Verilator(Simulator):
                 ),
             ]
             + (["--trace"] if self.waves else [])
-            + self.build_args
+            + [arg for arg in self.build_args if type(arg) in (str, Verilog)]
             + self._get_define_options(self.defines)
             + self._get_include_options(self.includes)
             + self._get_parameter_options(self.parameters)
             + [verilator_cpp]
-            + [str(source_file) for source_file in self.verilog_sources]
+            + [str(source) for source in self.sources if is_verilog_source(source)]
+            + [str(source) for source in self.verilog_sources]
         )
 
         cmds.append(
@@ -1175,7 +1297,9 @@ class Xcelium(Simulator):
             + [f"-top {self.hdl_toplevel}"]
             + [
                 str(source_file)
-                for source_file in self.vhdl_sources + self.verilog_sources
+                for source_file in (
+                    self.sources + self.vhdl_sources + self.verilog_sources
+                )
             ]
         ]
 
