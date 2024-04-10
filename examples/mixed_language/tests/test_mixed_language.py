@@ -119,7 +119,7 @@ sim = os.getenv("SIM", "icarus")
 
 
 @pytest.mark.skipif(
-    sim in ["icarus", "ghdl", "verilator", "nvc"],
+    sim not in ["questa", "riviera", "xcelium"],
     reason=f"Skipping example mixed_language since {sim} doesn't support this",
 )
 def test_mixed_language_runner():
@@ -131,13 +131,15 @@ def test_mixed_language_runner():
 
     proj_path = Path(__file__).resolve().parent.parent
 
-    verilog_sources = [proj_path / "hdl" / "endian_swapper.sv"]
-    vhdl_sources = [proj_path / "hdl" / "endian_swapper.vhdl"]
+    sources = [
+        proj_path / "hdl" / "endian_swapper.sv",
+        proj_path / "hdl" / "endian_swapper.vhdl",
+    ]
 
     if hdl_toplevel_lang == "verilog":
-        verilog_sources += [proj_path / "hdl" / "toplevel.sv"]
+        sources += [proj_path / "hdl" / "toplevel.sv"]
     elif hdl_toplevel_lang == "vhdl":
-        vhdl_sources += [proj_path / "hdl" / "toplevel.vhdl"]
+        sources += [proj_path / "hdl" / "toplevel.vhdl"]
     else:
         raise ValueError(
             f"A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG={hdl_toplevel_lang}"
@@ -157,8 +159,7 @@ def test_mixed_language_runner():
 
     runner.build(
         hdl_toplevel="endian_swapper_mixed",
-        verilog_sources=verilog_sources,
-        vhdl_sources=vhdl_sources,
+        sources=sources,
         always=True,
         build_args=build_args,
     )
