@@ -16,7 +16,7 @@ clean::
 override: clean all
 	 @test -f $(SKIPPED_TEST_FILE) || (echo "ERROR: skip=True test was not ran!" >&2 && exit 1)
 
-# Set TESTCASE; run test_skipped even though skip=True is set.
-TESTCASE = test_skipped
+# Set COCOTB_TEST_FILTER; run test_skipped even though skip=True is set.
+COCOTB_TEST_FILTER = test_skipped
 
 MODULE = test_skipped

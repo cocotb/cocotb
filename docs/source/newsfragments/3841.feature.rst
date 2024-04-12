@@ -1,0 +1,1 @@
+Added :envvar:`COCOTB_TEST_FILTER` which filters tests like :envvar:`TESTCASE`, but is a regular expression to allow for more expressive test filtering.

@@ -295,6 +295,7 @@ class Simulator(abc.ABC):
         verbose: bool = False,
         timescale: Optional[Timescale] = None,
         log_file: Optional[PathLike] = None,
+        test_filter: Optional[str] = None,
     ) -> Path:
         """Run the tests.
 
@@ -326,6 +327,8 @@ class Simulator(abc.ABC):
                 Typically Tcl commands for simulators that support them.
             timescale: Tuple containing time unit and time precision for simulation.
             log_file: File to write the test log to.
+            test_filter: Regular expression which matches test names.
+                Only matched tests are run if this argument if given.
 
         Returns:
             The absolute location of the results XML file which can be
@@ -376,6 +379,9 @@ class Simulator(abc.ABC):
                 self.env["TESTCASE"] = testcase
             else:
                 self.env["TESTCASE"] = ",".join(testcase)
+
+        if test_filter is not None:
+            self.env["COCOTB_TEST_FILTER"] = test_filter
 
         if seed is not None:
             self.env["RANDOM_SEED"] = str(seed)

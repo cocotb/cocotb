@@ -2,9 +2,9 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-import cocotb
+# select only y_tests from all MODULEs
 
+include ../../designs/sample_module/Makefile
 
-@cocotb.test()
-async def x_test(dut):
-    assert False
+MODULE := x_tests
+export COCOTB_TEST_FILTER := y_test
