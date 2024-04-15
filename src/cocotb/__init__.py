@@ -225,39 +225,14 @@ def _initialise_testbench_(argv_):
         f"Running tests with cocotb v{__version__} from {os.path.dirname(__file__)}"
     )
 
-    # Create the base handle type
-
     _process_plusargs()
     _process_packages()
-
-    # Seed the Python random number generator to make this repeatable
     _setup_random_seed()
-
-    # Setup DUT object
     _setup_root_handle()
-
     _start_user_coverage()
+    _setup_regression_manager()
 
-    global regression_manager
-    regression_manager = RegressionManager()
-
-    # discover tests
-    module_str = os.getenv("MODULE", "").strip()
-    if not module_str:
-        raise RuntimeError(
-            "Environment variable MODULE, which defines the module(s) to execute, is not defined or empty."
-        )
-    modules = [s.strip() for s in module_str.split(",") if s.strip()]
-    regression_manager.setup_pytest_assertion_rewriting()
-    regression_manager.discover_tests(*modules)
-
-    # filter tests
-    test_str = os.getenv("TESTCASE", "").strip()
-    if test_str:
-        filters = [s.strip() for s in test_str.split(",") if s.strip()]
-        regression_manager.add_filters(*filters)
-        regression_manager.set_mode(RegressionMode.TESTCASE)
-
+    # setup global scheduler system
     global _scheduler
     _scheduler = Scheduler(test_complete_cb=regression_manager._test_complete)
 
@@ -432,3 +407,36 @@ def _setup_root_handle() -> None:
 
     global top
     top = cocotb.handle.SimHandle(handle)
+
+
+def _setup_regression_manager() -> None:
+    global regression_manager
+    regression_manager = RegressionManager()
+
+    # discover tests
+    module_str = os.getenv("MODULE", "").strip()
+    if not module_str:
+        raise RuntimeError(
+            "Environment variable MODULE, which defines the module(s) to execute, is not defined or empty."
+        )
+    modules = [s.strip() for s in module_str.split(",") if s.strip()]
+    regression_manager.setup_pytest_assertion_rewriting()
+    regression_manager.discover_tests(*modules)
+
+    # filter tests
+    testcase_str = os.getenv("TESTCASE", "").strip()
+    test_filter_str = os.getenv("COCOTB_TEST_FILTER", "").strip()
+    if testcase_str and test_filter_str:
+        raise RuntimeError("Specify only one of TESTCASE or COCOTB_TEST_FILTER")
+    elif testcase_str:
+        warnings.warn(
+            "TESTCASE is deprecated in favor of COCOTB_TEST_FILTER",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        filters = [f"{s.strip()}$" for s in testcase_str.split(",") if s.strip()]
+        regression_manager.add_filters(*filters)
+        regression_manager.set_mode(RegressionMode.TESTCASE)
+    elif test_filter_str:
+        regression_manager.add_filters(test_filter_str)
+        regression_manager.set_mode(RegressionMode.TESTCASE)

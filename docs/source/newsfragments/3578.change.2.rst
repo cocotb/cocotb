@@ -1,1 +1,1 @@
-The :envvar:`TESTCASE` variable has been changed to be a comma-separated list of regular expressions which match against test names to run. Each element of :envvar:`TESTCASE` can now match more than one test across all :envvar:`MODULE`\ s instead of just the first one found.
+Use of the :envvar:`TESTCASE` variable has been changed so that each element of :envvar:`TESTCASE` will now select all tests with a matching name across all :envvar:`MODULE`\ s instead of just the first one found.

@@ -93,7 +93,7 @@ $(SIM_BUILD)/cocotb_iverilog_dump.v: | $(SIM_BUILD)
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 
-	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	MODULE=$(MODULE) TESTCASE=$(TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         $(SIM_CMD_PREFIX) $(ICARUS_BIN_DIR)/vvp -M $(shell cocotb-config --lib-dir) -m $(shell cocotb-config --lib-name vpi icarus) $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(PLUSARGS) $(SIM_OUTPUT_REDIRECT)
 
 	$(call check_for_results_file)
@@ -101,7 +101,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 	$(RM) -r $(COCOTB_RESULTS_FILE)
 
-	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	MODULE=$(MODULE) TESTCASE=$(TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         $(SIM_CMD_PREFIX) gdb --args $(ICARUS_BIN_DIR)/vvp $(shell cocotb-config --lib-dir) -m $(shell cocotb-config --lib-name vpi icarus) $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS) $(SIM_OUTPUT_REDIRECT)
 
 	$(call check_for_results_file)

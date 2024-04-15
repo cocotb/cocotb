@@ -154,10 +154,39 @@ Regression Manager
 
 .. envvar:: TESTCASE
 
-    A regex matching names of test function(s) to run.
+    A comma-separated list of tests to run.
+    Does an exact match on the test name.
+
+    .. deprecated:: 2.0
+
+        Use :envvar:`COCOTB_TEST_FILTER` instead.
+
+        If matching only the exact test name is desired, use the regular expression anchor character ``$``.
+        For example, ``my_test$`` will match ``my_test``, but not ``my_test_2``.
+
+        To run multiple tests, use regular expression alternations.
+        For example, ``my_test|my_other_test``.
+
+    .. versionchanged:: 2.0
+
+        Previously, if more than one test matched a test name in the :envvar:`TESTCASE` list,
+        only the first test that matched that test name in the :envvar:`MODULE` list was run.
+        Now, all tests that match the test name across all :envvar:`MODULE`\ s are run.
+
+    .. warning::
+
+        Only one of :envvar:`TESTCASE` or :envvar:`COCOTB_TEST_FILTER` should be used.
+
+.. envvar:: COCOTB_TEST_FILTER
+
+    A regular expression matching names of test function(s) to run.
     If this variable is not defined cocotb discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied :envvar:`MODULE` list.
 
-    Multiple test function regexes can be specified using a comma-separated list.
+    .. versionadded:: 2.0
+
+    .. warning::
+
+        Only one of :envvar:`TESTCASE` or :envvar:`COCOTB_TEST_FILTER` should be used.
 
 .. envvar:: COCOTB_RESULTS_FILE
 
