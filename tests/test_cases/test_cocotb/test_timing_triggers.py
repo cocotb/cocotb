@@ -28,6 +28,7 @@ from cocotb.triggers import (
     ReadWrite,
     RisingEdge,
     Timer,
+    with_timeout,
 )
 from cocotb.triggers import _TriggerException as TriggerException
 from cocotb.utils import get_sim_time
@@ -322,3 +323,67 @@ async def test_timer_round_mode(_):
     await cocotb.triggers.with_timeout(
         Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="round"
     )
+
+
+@cocotb.test
+async def test_writes_on_timer_seen_on_edge(dut):
+    # steady state
+    dut.clk.value = 0
+    await Timer(10, "ns")
+
+    # inertial write on a signal
+    dut.clk.value = 1
+
+    # check we can register an edge trigger on the signal we just changed because it hasn't taken effect yet
+    await with_timeout(RisingEdge(dut.clk), 10, "ns")
+
+    # done here or will hang
+
+
+@cocotb.test
+async def test_read_back_in_readwrite(dut):
+    # steady state
+    dut.clk.value = 0
+    await Timer(10, "ns")
+
+    # write in the "normal" phase
+    dut.clk.value = 1
+
+    # assert we can read back what we wrote in the ReadWrite phase
+    await ReadWrite()
+    assert dut.clk.value == 1
+
+
+@cocotb.test
+async def test_writes_dont_update_hdl_this_delta(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+
+    # assert steady state
+    dut.stream_in_data.value = 0
+    await RisingEdge(dut.clk)
+    await ReadOnly()
+    assert dut.stream_out_data_registered.value == 0
+
+    # write on the clock edge
+    await RisingEdge(dut.clk)
+    dut.stream_in_data.value = 1
+
+    # ensure that the write data wasn't used on this clock cycle
+    await ReadOnly()
+    assert dut.stream_out_data_registered.value == 0
+
+    # ensure that the write data made it on the result of the next clock cycle
+    await RisingEdge(dut.clk)
+    await ReadOnly()
+    assert dut.stream_out_data_registered.value == 1
+
+
+@cocotb.test
+async def test_write_in_timer_seen_before_readwrite(dut):
+    dut.clk.value = 0
+    await Timer(1, "ns")
+    dut.clk.value = 1
+    t1 = RisingEdge(dut.clk)
+    t2 = ReadWrite()
+    t_res = await First(t1, t2)
+    assert t_res is t1

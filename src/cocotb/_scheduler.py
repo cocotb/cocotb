@@ -260,25 +260,6 @@ class Scheduler:
 
         self._current_task = None
 
-        self._is_reacting = False
-
-        self._write_task = None
-        self._writes_pending = Event()
-
-    async def _do_writes(self):
-        """An internal task that performs pending writes"""
-        while True:
-            await self._writes_pending.wait()
-            if self._mode != Scheduler._MODE_NORMAL:
-                await self._next_time_step
-
-            await self._read_write
-
-            while self._write_calls:
-                handle, (func, args) = self._write_calls.popitem(last=False)
-                func(*args)
-            self._writes_pending.clear()
-
     def _check_termination(self):
         """
         Handle a termination that causes us to move onto the next test.
@@ -286,10 +267,6 @@ class Scheduler:
         if self._terminate:
             if _debug:
                 self.log.debug("Test terminating, scheduling Timer")
-
-            if self._write_task is not None:
-                self._write_task.kill()
-                self._write_task = None
 
             for t in self._trigger2tasks:
                 t._unprime()
@@ -301,7 +278,6 @@ class Scheduler:
             self._trigger2tasks = _py_compat.insertion_ordered_dict()
             self._terminate = False
             self._write_calls = OrderedDict()
-            self._writes_pending.clear()
             self._mode = Scheduler._MODE_TERM
 
     def _test_completed(self, trigger=None):
@@ -338,29 +314,13 @@ class Scheduler:
             # if it did, make sure we handle the test completing
             self._check_termination()
 
-    def _react(self, trigger):
-        """
-        Called when a trigger fires.
+    def _react(self, trigger: Trigger) -> None:
+        self._event_loop(trigger)
 
-        We ensure that we only start the event loop once, rather than
-        letting it recurse.
-        """
-        if self._is_reacting:
-            # queue up the trigger, the event loop will get to it
-            self._pending_triggers.append(trigger)
-            return
-
-        if self._pending_triggers:
-            raise InternalError(
-                f"Expected all triggers to be handled but found {self._pending_triggers}"
-            )
-
-        # start the event loop
-        self._is_reacting = True
-        try:
-            self._event_loop(trigger)
-        finally:
-            self._is_reacting = False
+        if self._mode == self._MODE_NORMAL:
+            while self._write_calls:
+                handle, (func, args) = self._write_calls.popitem(last=False)
+                func(*args)
 
     def _event_loop(self, trigger):
         """
@@ -524,7 +484,7 @@ class Scheduler:
                 self._cleanup()
 
         elif Join(task) in self._trigger2tasks:
-            self._react(Join(task))
+            self._pending_triggers.append(Join(task))
         else:
             try:
                 # throws an error if the background task errored
@@ -551,29 +511,16 @@ class Scheduler:
                 f"Write to object {handle._name} was scheduled during a read-only sync phase."
             )
 
-        # TODO: we should be able to better keep track of when this needs to
-        # be scheduled
-        if self._write_task is None:
-            self._write_task = self.start_soon(self._do_writes())
-
         if handle in self._write_calls:
             del self._write_calls[handle]
         self._write_calls[handle] = (write_func, args)
-        self._writes_pending.set()
 
     def _resume_task_upon(self, task, trigger):
         """Schedule `task` to be resumed when `trigger` fires."""
         task._trigger = trigger
 
         trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
-        if task is self._write_task:
-            # Our internal write task always runs before any user tasks.
-            # This preserves the behavior prior to the refactoring of
-            # putting the writes in this task.
-            trigger_tasks.insert(0, task)
-        else:
-            # Everything else joins the back of the queue
-            trigger_tasks.append(task)
+        trigger_tasks.append(task)
 
         if not trigger.primed:
             if trigger_tasks != [task]:
@@ -581,7 +528,10 @@ class Scheduler:
                 raise InternalError("More than one task waiting on an unprimed trigger")
 
             try:
-                trigger._prime(self._react)
+                if isinstance(trigger, GPITrigger):
+                    trigger._prime(self._react)
+                else:
+                    trigger._prime(self._pending_triggers.append)
             except Exception as e:
                 # discard the trigger we associated, it will never fire
                 self._trigger2tasks.pop(trigger)
@@ -716,16 +666,26 @@ class Scheduler:
         self._queue(task)
         return task
 
-    def _add_test(self, test_task):
+    def _add_test(self, test_task: Task) -> None:
         """Called by the regression manager to queue the next test"""
+        if self._mode != self._MODE_NORMAL:
+            raise InternalError("Test was not started in Normal Mode.")
+
         if self._test is not None:
-            raise InternalError("Test was added while another was in progress")
+            raise InternalError("Test was added while another was in progress.")
 
         self._test = test_task
-        self._resume_task_upon(
-            test_task,
-            NullTrigger(name=f"Start {test_task!s}", outcome=_outcomes.Value(None)),
+        trigger = NullTrigger(
+            name=f"Start {test_task!s}", outcome=_outcomes.Value(None)
         )
+
+        test_task._trigger = trigger
+
+        trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
+        trigger_tasks.append(test_task)
+
+        # call into main entry point
+        trigger._prime(self._react)
 
     # This collection of functions parses a trigger out of the object
     # that was yielded by a task, converting `list` -> `Waitable`,
