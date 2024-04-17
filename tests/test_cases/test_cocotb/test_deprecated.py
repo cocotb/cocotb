@@ -27,13 +27,7 @@ async def test_returnvalue_deprecated(dut):
 
 
 # strings are not supported on Icarus (gh-2585) or GHDL (gh-2584)
-@cocotb.test(
-    expect_error=AttributeError
-    if cocotb.SIM_NAME.lower().startswith("icarus")
-    else TypeError
-    if cocotb.SIM_NAME.lower().startswith("ghdl")
-    else ()
-)
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
 async def test_unicode_handle_assignment_deprecated(dut):
     with pytest.warns(DeprecationWarning, match=".*bytes.*"):
         dut.stream_in_string.value = "Bad idea"
