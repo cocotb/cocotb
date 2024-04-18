@@ -139,19 +139,16 @@ jobs:
     - name: Set up Icarus (MacOS - homebrew --HEAD)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-HEAD'
       run: |
-        brew update
         brew install icarus-verilog --HEAD
     - name: Set up Icarus (MacOS - homebrew)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-stable'
       run: |
-        brew update
         brew install icarus-verilog
 
       # Install GHDL
     - name: Set up GHDL (Ubuntu)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl'
       run: |
-        sudo apt update
         sudo apt-get install -y --no-install-recommends gnat
         git clone https://github.com/ghdl/ghdl.git
         cd ghdl
@@ -194,7 +191,6 @@ jobs:
     - name: Set up Verilator (MacOS - source)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'verilator' && matrix.sim-version == 'stable'
       run: |
-        brew update
         brew install verilator
 
       # Windows Testing
