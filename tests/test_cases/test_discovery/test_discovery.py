@@ -28,7 +28,7 @@
 import pytest
 
 import cocotb
-from cocotb._sim_versions import IcarusVersion
+from cocotb._sim_versions import IcarusVersion, VerilatorVersion
 from cocotb.binary import BinaryValue
 from cocotb.handle import ConstantObject, HierarchyObject, IntegerObject, StringObject
 from cocotb.triggers import Timer
@@ -59,7 +59,12 @@ def verilog_test(**kwargs):
     return cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"], **kwargs)
 
 
-@verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+verilator_less_than_5024 = SIM_NAME.startswith("verilator") and VerilatorVersion(
+    cocotb.SIM_VERSION
+) < VerilatorVersion("5.024")
+
+
+@verilog_test(expect_error=AttributeError if verilator_less_than_5024 else ())
 async def test_cond_scope(dut):
     assert dut.cond_scope.scoped_sub._path == f"{dut._path}.cond_scope.scoped_sub"
 
@@ -69,7 +74,7 @@ async def test_arr_scope(dut):
     assert dut.arr[1].arr_sub._path == f"{dut._path}.arr[1].arr_sub"
 
 
-@verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+@verilog_test(expect_error=AttributeError if verilator_less_than_5024 else ())
 async def test_nested_scope(dut):
     assert (
         dut.outer_scope[1].inner_scope[1]._path
@@ -78,7 +83,7 @@ async def test_nested_scope(dut):
 
 
 @verilog_test(
-    expect_error=AttributeError if SIM_NAME.startswith("verilator") else (),
+    expect_error=AttributeError if verilator_less_than_5024 else (),
 )
 async def test_scoped_params(dut):
     assert dut.cond_scope.scoped_param.value == 1
