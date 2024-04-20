@@ -58,7 +58,7 @@ from typing import (
 )
 
 import cocotb
-from cocotb import ANSI, simulator
+from cocotb import _ANSI, simulator
 from cocotb._outcomes import Error, Outcome
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.result import SimFailure, TestSuccess
@@ -546,8 +546,8 @@ class RegressionManager:
 
     def _log_test_start(self, test: Test) -> None:
         """Called by :meth:`_execute` to log that a test is starting."""
-        hilight_start = ANSI.COLOR_TEST if want_color_output() else ""
-        hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ""
+        hilight_start = _ANSI.COLOR_TEST if want_color_output() else ""
+        hilight_end = _ANSI.COLOR_DEFAULT if want_color_output() else ""
         self.log.info(
             "%srunning%s %s (%d/%d)%s",
             hilight_start,
@@ -563,8 +563,8 @@ class RegressionManager:
     ) -> None:
         """Called by :meth:`_score_test` to log that the test passed with the given information."""
 
-        start_hilight = ANSI.COLOR_PASSED if want_color_output() else ""
-        stop_hilight = ANSI.COLOR_DEFAULT if want_color_output() else ""
+        start_hilight = _ANSI.COLOR_PASSED if want_color_output() else ""
+        stop_hilight = _ANSI.COLOR_DEFAULT if want_color_output() else ""
         if msg is None:
             rest = ""
         else:
@@ -587,8 +587,8 @@ class RegressionManager:
     ) -> None:
         """Called by :meth:`_score_test` to log that the test failed with the given information."""
 
-        start_hilight = ANSI.COLOR_FAILED if want_color_output() else ""
-        stop_hilight = ANSI.COLOR_DEFAULT if want_color_output() else ""
+        start_hilight = _ANSI.COLOR_FAILED if want_color_output() else ""
+        stop_hilight = _ANSI.COLOR_DEFAULT if want_color_output() else ""
         if msg is None:
             rest = ""
         else:
@@ -624,8 +624,8 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test is skipped."""
 
         # log test results
-        hilight_start = ANSI.COLOR_SKIPPED if want_color_output() else ""
-        hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ""
+        hilight_start = _ANSI.COLOR_SKIPPED if want_color_output() else ""
+        hilight_end = _ANSI.COLOR_DEFAULT if want_color_output() else ""
         self.log.info(
             "%sskipping%s %s (%d/%d)%s",
             hilight_start,
@@ -667,8 +667,8 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test initialization fails."""
 
         # log test results
-        hilight_start = ANSI.COLOR_FAILED if want_color_output() else ""
-        hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ""
+        hilight_start = _ANSI.COLOR_FAILED if want_color_output() else ""
+        hilight_end = _ANSI.COLOR_DEFAULT if want_color_output() else ""
         self.log.exception(
             "%sFailed to initialize%s %s! (%d/%d)%s",
             hilight_start,
@@ -831,20 +831,20 @@ class RegressionManager:
                 ratio = "-.--"
                 pass_fail_str = "SKIP"
                 if want_color_output():
-                    hilite = ANSI.COLOR_SKIPPED
-                    lolite = ANSI.COLOR_DEFAULT
+                    hilite = _ANSI.COLOR_SKIPPED
+                    lolite = _ANSI.COLOR_DEFAULT
             elif result["pass"]:
                 ratio = format(result["ratio"], "0.2f")
                 pass_fail_str = "PASS"
                 if want_color_output():
-                    hilite = ANSI.COLOR_PASSED
-                    lolite = ANSI.COLOR_DEFAULT
+                    hilite = _ANSI.COLOR_PASSED
+                    lolite = _ANSI.COLOR_DEFAULT
             else:
                 ratio = format(result["ratio"], "0.2f")
                 pass_fail_str = "FAIL"
                 if want_color_output():
-                    hilite = ANSI.COLOR_FAILED
-                    lolite = ANSI.COLOR_DEFAULT
+                    hilite = _ANSI.COLOR_FAILED
+                    lolite = _ANSI.COLOR_DEFAULT
 
             test_dict = dict(
                 a=result["test"],
