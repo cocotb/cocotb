@@ -27,31 +27,38 @@
 
 """A collections of triggers which a testbench can await."""
 
-import abc
-import inspect
 import logging
 import warnings
-from collections.abc import Awaitable
+from abc import abstractmethod
 from decimal import Decimal
-from numbers import Real
+from fractions import Fraction
 from typing import (
     Any,
+    AsyncContextManager,
+    Awaitable,
+    Callable,
     ClassVar,
     Coroutine,
+    Generator,
+    Generic,
+    List,
     Optional,
+    Type,
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
 import cocotb
 import cocotb.task
-from cocotb import _outcomes, simulator
+from cocotb import simulator
+from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb.handle import LogicObject, ValueObjectBase
 from cocotb.result import SimTimeoutError
 from cocotb.utils import (
-    ParametrizedSingleton,
+    _ParameterizedSingletonMetaclass,
     get_sim_steps,
     get_time_from_sim_steps,
     remove_traceback_frames,
@@ -60,7 +67,7 @@ from cocotb.utils import (
 T = TypeVar("T")
 
 
-def _pointer_str(obj):
+def _pointer_str(obj: object) -> str:
     """
     Get the memory address of *obj* as used in :meth:`object.__repr__`.
 
@@ -75,18 +82,18 @@ class _TriggerException(Exception):
     pass
 
 
-class Trigger(Awaitable):
+class Trigger(Awaitable[None]):
     """Base class to derive from."""
 
-    def __init__(self):
+    @abstractmethod
+    def __init__(self) -> None:
         self._primed = False
 
     @cached_property
-    def log(self):
+    def log(self) -> logging.Logger:
         return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
-    @abc.abstractmethod
-    def _prime(self, callback):
+    def _prime(self, callback: Callable[["Trigger"], None]) -> None:
         """Set a callback to be invoked when the trigger fires.
 
         The callback will be invoked with a single argument, `self`.
@@ -100,7 +107,7 @@ class Trigger(Awaitable):
         """
         self._primed = True
 
-    def _unprime(self):
+    def _unprime(self) -> None:
         """Remove the callback, and perform cleanup if necessary.
 
         After being un-primed, a Trigger may be re-primed again in the future.
@@ -116,20 +123,20 @@ class Trigger(Awaitable):
         """
         self._primed = False
 
-    def __del__(self):
+    def __del__(self) -> None:
         # Ensure if a trigger drops out of scope we remove any pending callbacks
         self._unprime()
 
     @property
-    def _outcome(self):
+    def _outcome(self) -> Optional[Outcome[Any]]:
         """The result that `await this_trigger` produces in a coroutine.
 
         The default is to produce the trigger itself, which is done for
         ease of use with :class:`~cocotb.triggers.First`.
         """
-        return _outcomes.Value(self)
+        return Value(self)
 
-    def __await__(self):
+    def __await__(self) -> Generator[Any, None, None]:
         # hand the trigger back to the scheduler trampoline
         return (yield self)
 
@@ -140,16 +147,16 @@ class GPITrigger(Trigger):
     Consumes simulation time.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Required to ensure documentation can build
         # if simulator is not None:
         #    self.cbhdl = simulator.create_callback(self)
         # else:
-        self._cbhdl = None
+        self._cbhdl: Optional[simulator.gpi_cb_hdl] = None
 
-    def _unprime(self):
+    def _unprime(self) -> None:
         """Disable a primed trigger, can be re-primed."""
         if self._cbhdl is not None:
             self._cbhdl.deregister()
@@ -164,7 +171,7 @@ class Timer(GPITrigger):
 
     def __init__(
         self,
-        time: Union[float, Real, Decimal],
+        time: Union[float, Fraction, Decimal],
         units: str = "step",
         *,
         round_mode: Optional[str] = None,
@@ -245,7 +252,7 @@ class Timer(GPITrigger):
             round_mode = type(self).round_mode
         self._sim_steps = get_sim_steps(time, units, round_mode=round_mode)
 
-    def _prime(self, callback):
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
         """Register for a timed callback."""
         if self._cbhdl is None:
             self._cbhdl = simulator.register_timed_callback(
@@ -255,7 +262,7 @@ class Timer(GPITrigger):
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<{} of {:1.2f}ps at {}>".format(
             type(self).__qualname__,
             get_time_from_sim_steps(self._sim_steps, units="ps"),
@@ -263,13 +270,14 @@ class Timer(GPITrigger):
         )
 
 
-# This is needed to make our custom metaclass work with abc.ABCMeta used in the
-# `Trigger` base class.
-class _ParameterizedSingletonAndABC(ParametrizedSingleton, abc.ABCMeta):
-    pass
+# TODO: In Python < 3.8 the metaclass of typing objects doesn't work well with other metaclasses.
+# TODO: This can be removed once Python 3.8 becomes standard.
+class _ParameterizedSingletonGPITriggerMetaclass(
+    _ParameterizedSingletonMetaclass, type(GPITrigger)
+): ...
 
 
-class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
+class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
     """Fires when the current simulation timestep moves to the read-only phase.
 
     The read-only phase is entered when the current timestep no longer has any further delta steps.
@@ -279,66 +287,66 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     """
 
     @classmethod
-    def __singleton_key__(cls):
+    def __singleton_key__(cls) -> None:
         return None
 
-    def _prime(self, callback):
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._cbhdl is None:
             self._cbhdl = simulator.register_readonly_callback(callback, self)
             if self._cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__qualname__}()"
 
 
-class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
+class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
     """Fires when the read-write portion of the simulation cycles is reached."""
 
     @classmethod
-    def __singleton_key__(cls):
+    def __singleton_key__(cls) -> None:
         return None
 
-    def _prime(self, callback):
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._cbhdl is None:
             self._cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self._cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__qualname__}()"
 
 
-class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
+class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
     """Fires when the next time step is started."""
 
     @classmethod
-    def __singleton_key__(cls):
+    def __singleton_key__(cls) -> None:
         return None
 
-    def _prime(self, callback):
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._cbhdl is None:
             self._cbhdl = simulator.register_nextstep_callback(callback, self)
             if self._cbhdl is None:
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__qualname__}()"
 
 
-class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
+class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
     """Internal base class that fires on a given edge of a signal."""
 
     _edge_type: ClassVar[int]
 
-    def __init__(self, signal):
+    def __init__(self, signal: ValueObjectBase[Any, Any]) -> None:
         super().__init__()
         self.signal = signal
 
-    def _prime(self, callback):
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
         """Register notification of a value change via a callback"""
         if self._cbhdl is None:
             self._cbhdl = simulator.register_value_change_callback(
@@ -348,7 +356,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
                 raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__qualname__}({self.signal!r})"
 
 
@@ -358,7 +366,7 @@ class RisingEdge(_EdgeBase):
     _edge_type = 1
 
     @classmethod
-    def __singleton_key__(cls, signal):
+    def __singleton_key__(cls, signal: LogicObject) -> LogicObject:
         if not (isinstance(signal, LogicObject) and len(signal) == 1):
             raise TypeError("")
         return signal
@@ -370,7 +378,7 @@ class FallingEdge(_EdgeBase):
     _edge_type = 2
 
     @classmethod
-    def __singleton_key__(cls, signal):
+    def __singleton_key__(cls, signal: LogicObject) -> LogicObject:
         if not (isinstance(signal, LogicObject) and len(signal) == 1):
             raise TypeError("")
         return signal
@@ -382,7 +390,9 @@ class Edge(_EdgeBase):
     _edge_type = 3
 
     @classmethod
-    def __singleton_key__(cls, signal):
+    def __singleton_key__(
+        cls, signal: ValueObjectBase[Any, Any]
+    ) -> ValueObjectBase[Any, Any]:
         if not isinstance(signal, ValueObjectBase):
             raise TypeError("")
         return signal
@@ -395,51 +405,47 @@ class _Event(Trigger):
     can maintain a dictionary of indexing each individual coroutine.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: "Event[Any]") -> None:
         super().__init__()
         self._parent = parent
 
-    def _prime(self, callback):
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
         self._callback = callback
         self._parent._prime_trigger(self, callback)
         super()._prime(callback)
 
-    def __call__(self):
-        self._callback(self)
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self._parent!r}.wait() at {_pointer_str(self)}>"
 
 
-class Event:
+class Event(Generic[T]):
     """Event to permit synchronization between two coroutines.
 
     Awaiting :meth:`wait()` from one coroutine will block the coroutine until
     :meth:`set()` is called somewhere else.
     """
 
-    def __init__(self, name=None):
-        self._pending = []
-        self.name = name
-        self._fired = False
-        self.data = None
+    def __init__(self, name: Optional[str] = None) -> None:
+        self._pending_events: List[_Event] = []
+        self.name: Optional[str] = name
+        self._fired: bool = False
+        self.data: Optional[T] = None
 
-    def _prime_trigger(self, trigger, callback):
-        self._pending.append(trigger)
+    def _prime_trigger(
+        self, trigger: _Event, callback: Callable[[Trigger], None]
+    ) -> None:
+        self._pending_events.append(trigger)
 
-    def set(self, data=None):
+    def set(self, data: Optional[T] = None) -> None:
         """Wake up all coroutines blocked on this event."""
         self._fired = True
         self.data = data
 
-        p = self._pending[:]
+        pending_events, self._pending_events = self._pending_events, []
+        for event in pending_events:
+            event._callback(event)
 
-        self._pending = []
-
-        for trigger in p:
-            trigger()
-
-    def wait(self):
+    def wait(self) -> Trigger:
         """Get a trigger which fires when another coroutine sets the event.
 
         If the event has already been set, the trigger will fire immediately.
@@ -451,7 +457,7 @@ class Event:
             return NullTrigger(name=f"{str(self)}.wait()")
         return _Event(self)
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear this event that has fired.
 
         Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until
@@ -462,7 +468,7 @@ class Event:
         """Return true if event has been set"""
         return self._fired
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.name is None:
             fmt = "<{0} at {2}>"
         else:
@@ -470,7 +476,7 @@ class Event:
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class _InternalEvent(Trigger):
+class _InternalEvent(Trigger, Generic[T]):
     """Event used internally for triggers that need cross-coroutine synchronization.
 
     This Event can only be waited on once, by a single coroutine.
@@ -479,14 +485,14 @@ class _InternalEvent(Trigger):
     providing a better debugging experience.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: object) -> None:
         super().__init__()
         self._parent = parent
-        self._callback = None
-        self.fired = False
-        self.data = None
+        self._callback: Optional[Callable[[Trigger], None]] = None
+        self.fired: bool = False
+        self.data: Optional[T] = None
 
-    def _prime(self, callback):
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._callback is not None:
             raise RuntimeError("This Trigger may only be awaited once")
         self._callback = callback
@@ -494,7 +500,7 @@ class _InternalEvent(Trigger):
         if self.fired:
             self._callback(self)
 
-    def set(self, data=None):
+    def set(self, data: Optional[T] = None) -> None:
         """Wake up coroutine blocked on this event."""
         self.fired = True
         self.data = data
@@ -506,13 +512,15 @@ class _InternalEvent(Trigger):
         """Return true if event has been set."""
         return self.fired
 
-    def __await__(self):
+    def __await__(
+        self,
+    ) -> Generator[Any, None, None]:
         if self._primed:
             raise RuntimeError("Only one coroutine may await this Trigger")
         # hand the trigger back to the scheduler trampoline
         return (yield self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self._parent)
 
 
@@ -523,23 +531,20 @@ class _Lock(Trigger):
     can maintain a dictionary of indexing each individual coroutine.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: "Lock") -> None:
         super().__init__()
         self._parent = parent
 
-    def _prime(self, callback):
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
         self._callback = callback
         self._parent._prime_trigger(self, callback)
         super()._prime(callback)
 
-    def __call__(self):
-        self._callback(self)
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self._parent!r}.acquire() at {_pointer_str(self)}>"
 
 
-class Lock:
+class Lock(AsyncContextManager[None]):
     """Lock primitive (not re-entrant).
 
     This can be used as::
@@ -559,11 +564,11 @@ class Lock:
                 # do some stuff
     """
 
-    def __init__(self, name=None):
-        self._pending_unprimed = []
-        self._pending_primed = []
-        self.name = name
-        self._locked = False
+    def __init__(self, name: Optional[str] = None) -> None:
+        self._pending_unprimed: List[_Lock] = []
+        self._pending_primed: List[_Lock] = []
+        self.name: Optional[str] = name
+        self._locked: bool = False
 
     def locked(self) -> bool:
         """Return True if the lock is locked.
@@ -573,7 +578,9 @@ class Lock:
         """
         return self._locked
 
-    def _prime_trigger(self, trigger, callback):
+    def _prime_trigger(
+        self, trigger: _Lock, callback: Callable[[Trigger], None]
+    ) -> None:
         self._pending_unprimed.remove(trigger)
 
         if not self._locked:
@@ -582,13 +589,13 @@ class Lock:
         else:
             self._pending_primed.append(trigger)
 
-    def acquire(self):
+    def acquire(self) -> Trigger:
         """Produce a trigger which fires when the lock is acquired."""
         trig = _Lock(self)
         self._pending_unprimed.append(trig)
         return trig
 
-    def release(self):
+    def release(self) -> None:
         """Release the lock."""
         if not self._locked:
             raise RuntimeError(f"Attempt to release an unacquired Lock {str(self)}")
@@ -599,11 +606,11 @@ class Lock:
         if not self._pending_primed:
             return
 
-        trigger = self._pending_primed.pop(0)
+        lock = self._pending_primed.pop(0)
         self._locked = True
-        trigger()
+        lock._callback(lock)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.name is None:
             fmt = "<{0} [{2} waiting] at {3}>"
         else:
@@ -615,35 +622,36 @@ class Lock:
             _pointer_str(self),
         )
 
-    async def __aenter__(self):
-        return await self.acquire()
+    async def __aenter__(self) -> None:
+        await self.acquire()
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, *args: Any) -> None:
         self.release()
 
 
-class NullTrigger(Trigger):
+class NullTrigger(Trigger, Generic[T]):
     """Fires immediately.
 
     Primarily for internal scheduler use.
     """
 
-    def __init__(self, name=None, outcome=None):
+    def __init__(
+        self, name: Optional[str] = None, outcome: Optional[Outcome[T]] = None
+    ) -> None:
         super().__init__()
-        self._callback = None
         self.name = name
         self.__outcome = outcome
 
     @property
-    def _outcome(self):
+    def _outcome(self) -> Optional[Outcome[T]]:
         if self.__outcome is not None:
             return self.__outcome
         return super()._outcome
 
-    def _prime(self, callback):
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
         callback(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.name is None:
             fmt = "<{0} at {2}>"
         else:
@@ -651,7 +659,7 @@ class NullTrigger(Trigger):
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class Join(Trigger, metaclass=_ParameterizedSingletonAndABC):
+class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetaclass):
     r"""Fires when a task completes.
 
     The result of blocking on the trigger can be used to get the coroutine
@@ -671,19 +679,19 @@ class Join(Trigger, metaclass=_ParameterizedSingletonAndABC):
     """
 
     @classmethod
-    def __singleton_key__(cls, coroutine):
-        return coroutine
+    def __singleton_key__(cls, task: cocotb.task.Task[T]) -> cocotb.task.Task[T]:
+        return task
 
-    def __init__(self, coroutine):
+    def __init__(self, task: cocotb.task.Task[T]) -> None:
         super().__init__()
-        self._coroutine = coroutine
+        self._task = task
 
     @property
-    def _outcome(self):
-        return self._coroutine._outcome
+    def _outcome(self) -> Optional[Outcome[T]]:
+        return self._task._outcome
 
     @property
-    def retval(self):
+    def retval(self) -> T:
         """The return value of the joined coroutine.
 
         .. note::
@@ -700,42 +708,44 @@ class Join(Trigger, metaclass=_ParameterizedSingletonAndABC):
                 task = cocotb.start_soon(mycoro())
                 result = await Join(task)
         """
-        return self._coroutine.result()
+        return self._task.result()
 
-    def _prime(self, callback):
-        if self._coroutine.done():
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+        if self._task.done():
             callback(self)
         else:
             super()._prime(callback)
 
-    def __repr__(self):
-        return f"{type(self).__qualname__}({self._coroutine!s})"
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}({self._task!s})"
 
 
-class Waitable(Awaitable):
+class Waitable(Awaitable[T]):
     """
     Base class for trigger-like objects implemented using coroutines.
 
     This converts a `_wait` abstract method into a suitable `__await__`.
     """
 
-    async def _wait(self):
+    @abstractmethod
+    async def _wait(self) -> T:
         """
         Should be implemented by the sub-class. Called by `await self` to
         convert the waitable object into a coroutine.
         """
-        raise NotImplementedError
 
-    def __await__(self):
+    def __await__(self) -> Generator[Any, Any, T]:
         return self._wait().__await__()
 
 
-class _AggregateWaitable(Waitable):
+class _AggregateWaitable(Waitable[T]):
     """
     Base class for Waitables that take mutiple triggers in their constructor
     """
 
-    def __init__(self, *triggers):
+    def __init__(
+        self, *triggers: Union[Trigger, Waitable[T], cocotb.task.Task[T]]
+    ) -> None:
         self._triggers = triggers
 
         # Do some basic type-checking up front, rather than waiting until we
@@ -747,7 +757,7 @@ class _AggregateWaitable(Waitable):
                     f"All triggers must be instances of Trigger! Got: {type(trigger).__qualname__}"
                 )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # no _pointer_str here, since this is not a trigger, so identity
         # doesn't matter.
         return "{}({})".format(
@@ -759,19 +769,23 @@ class _AggregateWaitable(Waitable):
         )
 
 
-async def _wait_callback(trigger, callback):
+async def _wait_callback(
+    trigger: Union[Trigger, Waitable[T], cocotb.task.Task[T]],
+    callback: Callable[[Outcome[T]], None],
+) -> None:
     """
     Wait for a trigger, and call `callback` with the outcome of the await.
     """
+    ret: Outcome[T]
     try:
-        ret = _outcomes.Value(await trigger)
+        ret = Value(await trigger)  # type: ignore # awaiting trigger has a complicated type
     except BaseException as exc:
         # hide this from the traceback
-        ret = _outcomes.Error(remove_traceback_frames(exc, ["_wait_callback"]))
+        ret = Error(remove_traceback_frames(exc, ["_wait_callback"]))
     callback(ret)
 
 
-class Combine(_AggregateWaitable):
+class Combine(_AggregateWaitable["Combine"]):
     """
     Fires when all of *triggers* have fired.
 
@@ -780,15 +794,18 @@ class Combine(_AggregateWaitable):
     This is similar to Verilog's ``join``.
     """
 
-    async def _wait(self):
-        waiters = []
-        e = _InternalEvent(self)
+    async def _wait(self) -> "Combine":
+        waiters: List[cocotb.task.Task[Any]] = []
+        e = _InternalEvent[Any](self)
         triggers = list(self._triggers)
 
         # start a parallel task for each trigger
         for t in triggers:
             # t=t is needed for the closure to bind correctly
-            def on_done(ret, t=t):
+            def on_done(
+                ret: Outcome["Combine"],
+                t: Union[Trigger, Waitable["Combine"], cocotb.task.Task["Combine"]] = t,
+            ) -> None:
                 triggers.remove(t)
                 if not triggers:
                     e.set()
@@ -801,7 +818,7 @@ class Combine(_AggregateWaitable):
         return self
 
 
-class First(_AggregateWaitable):
+class First(_AggregateWaitable[Any]):
     """
     Fires when the first trigger in *triggers* fires.
 
@@ -825,14 +842,14 @@ class First(_AggregateWaitable):
         coroutines.
     """
 
-    async def _wait(self):
-        waiters = []
-        e = _InternalEvent(self)
-        completed = []
+    async def _wait(self) -> Any:
+        waiters: List[cocotb.task.Task[Any]] = []
+        e = _InternalEvent[Any](self)
+        completed: List[Outcome[Any]] = []
         # start a parallel task for each trigger
         for t in self._triggers:
 
-            def on_done(ret):
+            def on_done(ret: Outcome[Any]) -> None:
                 completed.append(ret)
                 e.set()
 
@@ -853,13 +870,15 @@ class First(_AggregateWaitable):
         #  - Using `NullTrigger` here instead of `result = completed[0].get()`
         #    means we avoid inserting an `outcome.get` frame in the traceback
         first_trigger = NullTrigger(outcome=completed[0])
-        return await first_trigger  # the first of multiple triggers that fired
+        return await first_trigger
 
 
-class ClockCycles(Waitable):
+class ClockCycles(Waitable["ClockCycles"]):
     """Fires after *num_cycles* transitions of *signal* from ``0`` to ``1``."""
 
-    def __init__(self, signal, num_cycles, rising=True):
+    def __init__(
+        self, signal: LogicObject, num_cycles: int, rising: bool = True
+    ) -> None:
         """
         Args:
             signal: The signal to monitor.
@@ -869,18 +888,19 @@ class ClockCycles(Waitable):
         """
         self.signal = signal
         self.num_cycles = num_cycles
+        self._type: Union[Type[RisingEdge], Type[FallingEdge]]
         if rising is True:
             self._type = RisingEdge
         else:
             self._type = FallingEdge
 
-    async def _wait(self):
+    async def _wait(self) -> "ClockCycles":
         trigger = self._type(self.signal)
         for _ in range(self.num_cycles):
             await trigger
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # no _pointer_str here, since this is not a trigger, so identity
         # doesn't matter.
         if self._type is RisingEdge:
@@ -890,12 +910,50 @@ class ClockCycles(Waitable):
         return fmt.format(type(self).__qualname__, self.signal, self.num_cycles)
 
 
+@overload
 async def with_timeout(
-    trigger: Union[Trigger, Waitable, "cocotb.task.Task", Coroutine[Any, Any, T]],
+    trigger: Trigger,
     timeout_time: Union[float, Decimal],
     timeout_unit: str = "step",
     round_mode: Optional[str] = None,
-) -> T:
+) -> None: ...
+
+
+@overload
+async def with_timeout(
+    trigger: Waitable[T],
+    timeout_time: Union[float, Decimal],
+    timeout_unit: str = "step",
+    round_mode: Optional[str] = None,
+) -> T: ...
+
+
+@overload
+async def with_timeout(
+    trigger: cocotb.task.Task[T],
+    timeout_time: Union[float, Decimal],
+    timeout_unit: str = "step",
+    round_mode: Optional[str] = None,
+) -> T: ...
+
+
+@overload
+async def with_timeout(
+    trigger: Coroutine[Any, Any, T],
+    timeout_time: Union[float, Decimal],
+    timeout_unit: str = "step",
+    round_mode: Optional[str] = None,
+) -> T: ...
+
+
+async def with_timeout(
+    trigger: Union[
+        Trigger, Waitable[Any], cocotb.task.Task[Any], Coroutine[Any, Any, Any]
+    ],
+    timeout_time: Union[float, Decimal],
+    timeout_unit: str = "step",
+    round_mode: Optional[str] = None,
+) -> Any:
     r"""
     Waits on triggers or coroutines, throws an exception if it waits longer than the given time.
 
@@ -957,7 +1015,7 @@ async def with_timeout(
     .. versionchanged:: 2.0
         Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
     """
-    if inspect.iscoroutine(trigger):
+    if isinstance(trigger, Coroutine):
         trigger = cocotb.start_soon(trigger)
         shielded = False
     else:
@@ -967,7 +1025,7 @@ async def with_timeout(
     if res is timeout_timer:
         if not shielded:
             # shielded = False only when trigger is a Task
-            trigger = cast(cocotb.task.Task, trigger)
+            trigger = cast(cocotb.task.Task[Any], trigger)
             trigger.kill()
         raise SimTimeoutError
     else:

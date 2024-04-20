@@ -32,17 +32,34 @@ import math
 import os
 import sys
 import traceback
+import types
 import weakref
+from abc import ABCMeta
 from decimal import Decimal
 from enum import Enum
+from fractions import Fraction
 from functools import lru_cache
-from numbers import Real
-from typing import Any, Optional, Type, TypeVar, Union
+from types import TracebackType
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from cocotb import simulator
 
 
-def _get_simulator_precision():
+def _get_simulator_precision() -> int:
     # cache and replace this function
     precision = simulator.get_precision()
     global _get_simulator_precision
@@ -78,7 +95,19 @@ def get_sim_time(units: str = "step") -> int:
     return result
 
 
-def _ldexp10(frac, exp):
+@overload
+def _ldexp10(frac: int, exp: int) -> int: ...
+
+
+@overload
+def _ldexp10(frac: Union[float, Fraction], exp: int) -> float: ...
+
+
+@overload
+def _ldexp10(frac: Decimal, exp: int) -> Decimal: ...
+
+
+def _ldexp10(frac: Union[float, Fraction, Decimal], exp: int) -> Any:
     """Like math.ldexp, but base 10"""
     # using * or / separately prevents rounding errors if `frac` is a
     # high-precision type
@@ -104,7 +133,10 @@ def get_time_from_sim_steps(steps: int, units: str) -> int:
 
 
 def get_sim_steps(
-    time: Union[float, Real, Decimal], units: str = "step", *, round_mode: str = "error"
+    time: Union[float, Fraction, Decimal],
+    units: str = "step",
+    *,
+    round_mode: str = "error",
 ) -> int:
     """Calculates the number of simulation time steps for a given amount of *time*.
 
@@ -135,6 +167,7 @@ def get_sim_steps(
     .. versionchanged:: 1.6
         Support rounding modes.
     """
+    result: Union[float, Fraction, Decimal]
     if units != "step":
         result = _ldexp10(time, _get_log_time_scale(units) - _get_simulator_precision())
     else:
@@ -159,7 +192,8 @@ def get_sim_steps(
     return result_rounded
 
 
-def _get_log_time_scale(units):
+@lru_cache(maxsize=None)
+def _get_log_time_scale(units: str) -> int:
     """Retrieves the ``log10()`` of the scale factor for a given time unit.
 
     Args:
@@ -178,28 +212,26 @@ def _get_log_time_scale(units):
         return scale[units_lwr]
 
 
-class ParametrizedSingleton(type):
+class _ParameterizedSingletonMetaclass(ABCMeta):
     """A metaclass that allows class construction to reuse an existing instance.
 
     We use this so that :class:`RisingEdge(sig) <cocotb.triggers.RisingEdge>` and :class:`Join(coroutine) <cocotb.triggers.Join>` always return
     the same instance, rather than creating new copies.
     """
 
-    def __init__(cls, *args, **kwargs):
+    __singleton_key__: Callable[..., Any]
+
+    def __init__(
+        cls, name: str, bases: Sequence[Type[object]], dct: Dict[str, Any]
+    ) -> None:
         # Attach a lookup table to this class.
         # Weak such that if the instance is no longer referenced, it can be
         # collected.
-        cls.__instances = weakref.WeakValueDictionary()
+        cls.__instances: "weakref.WeakValueDictionary[Any, Any]" = (
+            weakref.WeakValueDictionary()
+        )
 
-    def __singleton_key__(cls, *args, **kwargs):
-        """Convert the construction arguments into a normalized representation that
-        uniquely identifies this singleton.
-        """
-        # Could default to something like this, but it would be slow
-        # return tuple(inspect.Signature(cls).bind(*args, **kwargs).arguments.items())
-        raise NotImplementedError
-
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         key = cls.__singleton_key__(*args, **kwargs)
         try:
             return cls.__instances[key]
@@ -210,12 +242,12 @@ class ParametrizedSingleton(type):
             return self
 
     @property
-    def __signature__(cls):
+    def __signature__(cls) -> inspect.Signature:
         return inspect.signature(cls.__singleton_key__)
 
 
 @lru_cache(maxsize=None)
-def want_color_output():
+def want_color_output() -> bool:
     """Return ``True`` if colored output is possible/requested and not running in GUI.
 
     Colored output can be explicitly requested by setting :envvar:`COCOTB_ANSI_OUTPUT` to  ``1``.
@@ -230,7 +262,33 @@ def want_color_output():
     return want_color
 
 
-def remove_traceback_frames(tb_or_exc, frame_names):
+ExceptionTuple = Tuple[
+    Type[BaseException], BaseException, TracebackType
+]  # TypeAlias in Python 3.10
+
+
+@overload
+def remove_traceback_frames(
+    tb_or_exc: ExceptionTuple, frame_names: List[str]
+) -> ExceptionTuple: ...
+
+
+@overload
+def remove_traceback_frames(
+    tb_or_exc: BaseException, frame_names: List[str]
+) -> BaseException: ...
+
+
+@overload
+def remove_traceback_frames(
+    tb_or_exc: TracebackType, frame_names: List[str]
+) -> TracebackType: ...
+
+
+def remove_traceback_frames(
+    tb_or_exc: Union[ExceptionTuple, BaseException, TracebackType],
+    frame_names: List[str],
+) -> Union[ExceptionTuple, BaseException, TracebackType]:
     """
     Strip leading frames from a traceback
 
@@ -245,37 +303,43 @@ def remove_traceback_frames(tb_or_exc, frame_names):
     """
     # self-invoking overloads
     if isinstance(tb_or_exc, BaseException):
-        exc = tb_or_exc
+        exc: BaseException = tb_or_exc
         return exc.with_traceback(
-            remove_traceback_frames(exc.__traceback__, frame_names)
+            remove_traceback_frames(cast(TracebackType, exc.__traceback__), frame_names)
         )
     elif isinstance(tb_or_exc, tuple):
-        exc_type, exc_value, exc_tb = tb_or_exc
+        exc_type, exc_value, exc_tb = cast(ExceptionTuple, tb_or_exc)
         exc_tb = remove_traceback_frames(exc_tb, frame_names)
         return exc_type, exc_value, exc_tb
     # base case
     else:
-        tb = tb_or_exc
+        tb: TracebackType = tb_or_exc
         for frame_name in frame_names:
+            # the assert and cast are there assuming the frame_names being removed are correct
             assert tb.tb_frame.f_code.co_name == frame_name
-            tb = tb.tb_next
+            tb = cast(TracebackType, tb.tb_next)
         return tb
 
 
-def walk_coro_stack(coro):
+def walk_coro_stack(
+    coro_: "types.CoroutineType[Any, Any, Any]",
+) -> Iterable[Tuple[types.FrameType, int]]:
     """Walk down the coroutine stack, starting at *coro*."""
+    coro: Optional["types.CoroutineType[Any, Any, Any]"] = coro_
     while coro is not None:
         try:
-            f = getattr(coro, "cr_frame")
-            coro = coro.cr_await
+            f = coro.cr_frame
         except AttributeError:
-            f = None
-            coro = None
+            break
+        else:
+            coro = coro.cr_await
         if f is not None:
             yield (f, f.f_lineno)
 
 
-def extract_coro_stack(coro, limit=None):
+def extract_coro_stack(
+    coro: "types.CoroutineType[Any, Any, Any]", limit: Optional[int] = None
+) -> traceback.StackSummary:
     """Create a list of pre-processed entries from the coroutine stack.
 
     This is based on :func:`traceback.extract_tb`.
@@ -291,7 +355,7 @@ def extract_coro_stack(coro, limit=None):
     return traceback.StackSummary.extract(walk_coro_stack(coro), limit=limit)
 
 
-Self = TypeVar("Self")
+EnumT = TypeVar("EnumT", bound=Enum)
 
 
 class DocEnum(Enum):
@@ -313,7 +377,7 @@ class DocEnum(Enum):
     as recommended by the ``enum_tools`` documentation.
     """
 
-    def __new__(cls: Type[Self], value: Any, doc: Optional[str] = None) -> Self:
+    def __new__(cls: Type[EnumT], value: Any, doc: Optional[str] = None) -> EnumT:
         # super().__new__() assumes the value is already an enum value
         # so we side step that and create a raw object and fill in _value_
         self = object.__new__(cls)
