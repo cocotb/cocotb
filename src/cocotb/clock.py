@@ -30,7 +30,7 @@
 import itertools
 import logging
 from decimal import Decimal
-from numbers import Real
+from fractions import Fraction
 from typing import Union
 
 from cocotb._py_compat import cached_property
@@ -108,7 +108,7 @@ class Clock:
     """
 
     def __init__(
-        self, signal, period: Union[float, Real, Decimal], units: str = "step"
+        self, signal, period: Union[float, Fraction, Decimal], units: str = "step"
     ):
         self.signal = signal
         self.period = get_sim_steps(period, units)

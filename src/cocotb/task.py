@@ -56,7 +56,7 @@ class Task(Coroutine[Any, Any, T]):
             raise TypeError(f"{inst} isn't a valid coroutine!")
         self._coro: Coroutine = inst
         self._started: bool = False
-        self._outcome: _outcomes.Outcome = None
+        self._outcome: Optional[_outcomes.Outcome[T]] = None
         self._trigger: Optional[cocotb.triggers.Trigger] = None
         self._cancelled: Optional[CancelledError] = None
 

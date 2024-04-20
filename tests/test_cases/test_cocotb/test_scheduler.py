@@ -164,6 +164,9 @@ async def test_trigger_with_failing_prime(dut):
     """Test that a trigger failing to prime throws"""
 
     class ABadTrigger(Trigger):
+        def __init__(self):
+            super().__init__()
+
         def _prime(self, callback):
             raise RuntimeError("oops")
 
