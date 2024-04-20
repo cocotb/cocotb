@@ -34,7 +34,7 @@ import os
 import sys
 import typing
 
-from cocotb import ANSI, simulator
+from cocotb import _ANSI, simulator
 from cocotb.utils import get_sim_time, get_time_from_sim_steps, want_color_output
 
 try:
@@ -240,9 +240,9 @@ class SimColourLogFormatter(SimLogFormatter):
         logging.TRACE: "%s",
         logging.DEBUG: "%s",
         logging.INFO: "%s",
-        logging.WARNING: ANSI.COLOR_WARNING + "%s" + ANSI.COLOR_DEFAULT,
-        logging.ERROR: ANSI.COLOR_ERROR + "%s" + ANSI.COLOR_DEFAULT,
-        logging.CRITICAL: ANSI.COLOR_CRITICAL + "%s" + ANSI.COLOR_DEFAULT,
+        logging.WARNING: _ANSI.COLOR_WARNING + "%s" + _ANSI.COLOR_DEFAULT,
+        logging.ERROR: _ANSI.COLOR_ERROR + "%s" + _ANSI.COLOR_DEFAULT,
+        logging.CRITICAL: _ANSI.COLOR_CRITICAL + "%s" + _ANSI.COLOR_DEFAULT,
     }
 
     def format(self, record):
