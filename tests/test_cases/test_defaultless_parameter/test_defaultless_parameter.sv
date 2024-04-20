@@ -5,15 +5,21 @@
 module foo #(
     parameter int has_default = 7,
     parameter int has_no_default
-) ();
+) (
+    input clk
+);
 
 endmodule
 
-module cocotb_defaultless_parameter;
+module cocotb_defaultless_parameter (
+    input clk
+);
 
     foo #(
         .has_default (2),
         .has_no_default (3))
-    the_foo ();
+    the_foo (
+        .clk(clk)
+    );
 
 endmodule
