@@ -393,8 +393,6 @@ class _Event(Trigger):
 
     One created for each attempt to wait on the event so that the scheduler
     can maintain a dictionary of indexing each individual coroutine.
-
-    FIXME: This will leak - need to use peers to ensure everything is removed
     """
 
     def __init__(self, parent):
@@ -523,8 +521,6 @@ class _Lock(Trigger):
 
     One created for each attempt to acquire the Lock so that the scheduler
     can maintain a dictionary of indexing each individual coroutine.
-
-    FIXME: This will leak - need to use peers to ensure everything is removed.
     """
 
     def __init__(self, parent):
