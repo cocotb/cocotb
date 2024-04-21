@@ -40,9 +40,9 @@ clean:
 
 .PHONY: do_tests
 do_tests::
-	$(MAKE) -k -C tests
+	$(MAKE) -C tests
 do_tests::
-	$(MAKE) -k -C examples
+	$(MAKE) -C examples
 
 # For Jenkins we use the exit code to detect compile errors or catastrophic
 # failures and the XML to track test results
