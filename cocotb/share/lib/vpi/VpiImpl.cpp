@@ -334,7 +334,8 @@ GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
         vpiHandle iter = vpi_iterate(vpiInternalScope, parent_hdl);
         if (iter != NULL) {
             for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
-                if (vpi_get(vpiType, rgn) == vpiGenScope) {
+                auto rgn_type = vpi_get(vpiType, rgn);
+                if (rgn_type == vpiGenScope || rgn_type == vpiModule) {
                     std::string rgn_name = vpi_get_str(vpiName, rgn);
                     if (VpiImpl::compare_generate_labels(rgn_name, name)) {
                         new_hdl = parent_hdl;
