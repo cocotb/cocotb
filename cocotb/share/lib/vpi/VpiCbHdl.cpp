@@ -763,7 +763,8 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
              * match the name of the generate block.
              */
             if (obj != NULL && obj_type == GPI_GENARRAY) {
-                if (vpi_get(vpiType, obj) == vpiGenScope) {
+                auto rgn_type = vpi_get(vpiType, obj);
+                if (rgn_type == vpiGenScope || rgn_type == vpiModule) {
                     std::string rgn_name = vpi_get_str(vpiName, obj);
                     if (!VpiImpl::compare_generate_labels(rgn_name,
                                                           parent_name)) {
