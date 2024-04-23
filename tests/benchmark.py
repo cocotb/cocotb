@@ -56,3 +56,7 @@ def test_matrix_multiplier_icarus(benchmark):
 
 def test_matrix_multiplier_nvc(benchmark):
     build_and_run_matrix_multiplier(benchmark, "nvc")
+
+
+def test_matrix_multiplier_verilator(benchmark):
+    build_and_run_matrix_multiplier(benchmark, "verilator")

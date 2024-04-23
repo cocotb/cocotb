@@ -123,22 +123,26 @@ int main(int argc, char** argv) {
         settle_value_callbacks();
 
         // We must evaluate whole design until we process all 'events'
-        bool again = true;
-        while (again) {
+        do {
             // Evaluate design
             top->eval_step();
+            // NOCOMMIT -- version guards (here and below)
+            VerilatedVpi::clearDirty();
 
             // Call Value Change callbacks triggered by eval()
             // These can modify signal values
-            again = settle_value_callbacks();
+            settle_value_callbacks();
 
             // Call registered ReadWrite callbacks
-            again |= VerilatedVpi::callCbs(cbReadWriteSynch);
+            VerilatedVpi::callCbs(cbReadWriteSynch);
 
             // Call Value Change callbacks triggered by ReadWrite callbacks
             // These can modify signal values
-            again |= settle_value_callbacks();
-        }
+            settle_value_callbacks();
+
+            // If Verilator is tracking VPI dirtiness, just use that to
+            // determine if we need to re-eval
+        } while (VerilatedVpi::isDirty());
         top->eval_end_step();
 
         // Call ReadOnly callbacks
