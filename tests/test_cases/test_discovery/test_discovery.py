@@ -78,6 +78,20 @@ async def test_cond_scope(dut):
     assert dut.cond_scope.scoped_sub._path == f"{dut._path}.cond_scope.scoped_sub"
 
 
+@verilog_test(expect_error=AttributeError)
+async def test_both_conds(dut):
+    assert dut.cond_scope.scoped_sub._path == f"{dut._path}.cond_scope.scoped_sub"
+
+    # Xcelium segfaults here
+    print(dut.cond_scope_else._path)
+
+
+@verilog_test(expect_error=AttributeError)
+async def test_bad_var(dut):
+    # Xcelium segfaults here
+    print(dut.cond_scope_else_asdf._path)
+
+
 @verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
 async def test_arr_scope(dut):
     assert dut.arr[1].arr_sub._path == f"{dut._path}.arr[1].arr_sub"
