@@ -42,10 +42,10 @@ async def test_struct_format(dut):
 async def test_struct_setting(dut):
     """Test getting and setting setting the value of an entire struct"""
 
-    assert dut.my_struct.value.binstr == "ZZZ"
+    assert str(dut.my_struct.value) == "ZZZ"
 
     # test struct write -> individual signals
     dut.my_struct.value = 0
     await Timer(1000, "ns")
 
-    assert dut.my_struct.value.binstr == "000"
+    assert str(dut.my_struct.value) == "000"
