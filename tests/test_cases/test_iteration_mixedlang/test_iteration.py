@@ -34,8 +34,6 @@ def recursive_dump(parent, log):
 
     Returns a count of the total number of objects found
     """
-    if isinstance(parent, cocotb.handle.PackedStructObject):
-        parent = parent.asHierarchyObject()
     if not isinstance(
         parent,
         (

@@ -19,8 +19,8 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
         and RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
         and LANGUAGE == "verilog"
     )
-    else ()
+    else (AttributeError)
 )
 async def test_packed_union(dut):
-    pbs = dut.t.asHierarchyObject()
+    pbs = dut.t
     pbs.a.value = 0
