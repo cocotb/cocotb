@@ -69,7 +69,7 @@ def _get_simulator_precision() -> int:
 
 # Simulator helper functions
 def get_sim_time(units: str = "step") -> int:
-    """Retrieves the simulation time from the simulator.
+    """Retrieve the simulation time from the simulator.
 
     Args:
         units: String specifying the units of the result
@@ -78,6 +78,9 @@ def get_sim_time(units: str = "step") -> int:
 
             .. versionchanged:: 2.0
                 Passing ``None`` as the *units* argument was removed, use ``'step'`` instead.
+
+    Raises:
+        ValueError: If *units* is not a valid unit (see Args section).
 
     Returns:
         The simulation time in the specified units.
@@ -108,7 +111,7 @@ def _ldexp10(frac: Decimal, exp: int) -> Decimal: ...
 
 
 def _ldexp10(frac: Union[float, Fraction, Decimal], exp: int) -> Any:
-    """Like math.ldexp, but base 10"""
+    """Like :func:`math.ldexp`, but base 10."""
     # using * or / separately prevents rounding errors if `frac` is a
     # high-precision type
     if exp > 0:
@@ -118,13 +121,16 @@ def _ldexp10(frac: Union[float, Fraction, Decimal], exp: int) -> Any:
 
 
 def get_time_from_sim_steps(steps: int, units: str) -> int:
-    """Calculates simulation time in the specified *units* from the *steps* based
+    """Calculate simulation time in the specified *units* from the *steps* based
     on the simulator precision.
 
     Args:
         steps: Number of simulation steps.
         units: String specifying the units of the result
             (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+
+    Raises:
+        ValueError: If *units* is not a valid unit (see Args section).
 
     Returns:
         The simulation time in the specified units.
@@ -197,8 +203,11 @@ def _get_log_time_scale(units: str) -> int:
     """Retrieves the ``log10()`` of the scale factor for a given time unit.
 
     Args:
-        units (str): String specifying the units
+        units: String specifying the units
             (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+
+    Raises:
+        ValueError: If *units* is not a valid unit (see Args section).
 
     Returns:
         The ``log10()`` of the scale factor for the time unit.
@@ -250,7 +259,10 @@ class _ParameterizedSingletonMetaclass(ABCMeta):
 def want_color_output() -> bool:
     """Return ``True`` if colored output is possible/requested and not running in GUI.
 
-    Colored output can be explicitly requested by setting :envvar:`COCOTB_ANSI_OUTPUT` to  ``1``.
+    Colored output can be explicitly requested in a cocotb-specific way
+    by setting :envvar:`COCOTB_ANSI_OUTPUT` to  ``1``.
+
+    Returns: Whether color output is wanted and supported.
     """
     want_color = sys.stdout.isatty()  # default to color for TTYs
     if os.getenv("NO_COLOR") is not None:
@@ -293,13 +305,16 @@ def remove_traceback_frames(
     Strip leading frames from a traceback
 
     Args:
-        tb_or_exc (Union[traceback, BaseException, exc_info]):
+        tb_or_exc:
             Object to strip frames from. If an exception is passed, creates
             a copy of the exception with a new shorter traceback. If a tuple
             from `sys.exc_info` is passed, returns the same tuple with the
             traceback shortened
-        frame_names (List[str]):
-            Names of the frames to strip, which must be present.
+        frame_names:
+            Names of the frames to strip, which must be present at the top of the Traceback or Exception.
+
+    Returns:
+        Traceback or Exception passed to the function with the *frame_names* stripped out.
     """
     # self-invoking overloads
     if isinstance(tb_or_exc, BaseException):
@@ -322,17 +337,24 @@ def remove_traceback_frames(
 
 
 def walk_coro_stack(
-    coro_: "types.CoroutineType[Any, Any, Any]",
+    coro: "types.CoroutineType[Any, Any, Any]",
 ) -> Iterable[Tuple[types.FrameType, int]]:
-    """Walk down the coroutine stack, starting at *coro*."""
-    coro: Optional["types.CoroutineType[Any, Any, Any]"] = coro_
-    while coro is not None:
+    """Walk down the coroutine stack, starting at *coro*.
+
+    Args:
+        coro: The :class:`coroutine` object to traverse.
+
+    Yields:
+        Frame and line number of each frame in the coroutine.
+    """
+    c: Optional["types.CoroutineType[Any, Any, Any]"] = coro
+    while c is not None:
         try:
-            f = coro.cr_frame
+            f = c.cr_frame
         except AttributeError:
             break
         else:
-            coro = coro.cr_await
+            c = c.cr_await
         if f is not None:
             yield (f, f.f_lineno)
 
@@ -349,8 +371,15 @@ def extract_coro_stack(
     each entry in the list is a :class:`traceback.FrameSummary` object
     containing attributes ``filename``, ``lineno``, ``name``, and ``line``
     representing the information that is usually printed for a stack
-    trace.  The line is a string with leading and trailing
+    trace. The line is a string with leading and trailing
     whitespace stripped; if the source is not available it is ``None``.
+
+    Args:
+        coro: The :class:`coroutine` object from which to extract a stack.
+        level: The maximum number of frames from *coro*s stack to extract.
+
+    Returns:
+        The stack of *coro*.
     """
     return traceback.StackSummary.extract(walk_coro_stack(coro), limit=limit)
 
