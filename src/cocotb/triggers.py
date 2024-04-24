@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A collections of triggers which a testbench can await."""
+"""A collection of triggers which a testbench can ``await``."""
 
 import logging
 import warnings
@@ -68,8 +68,7 @@ T = TypeVar("T")
 
 
 def _pointer_str(obj: object) -> str:
-    """
-    Get the memory address of *obj* as used in :meth:`object.__repr__`.
+    """Get the memory address of *obj* as used in :meth:`object.__repr__`.
 
     This is equivalent to ``sprintf("%p", id(obj))``, but python does not
     support ``%p``.
@@ -91,6 +90,7 @@ class Trigger(Awaitable[None]):
 
     @cached_property
     def log(self) -> logging.Logger:
+        """A :class:`logging.Logger` for the trigger."""
         return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
     def _prime(self, callback: Callable[["Trigger"], None]) -> None:
@@ -165,9 +165,71 @@ class GPITrigger(Trigger):
 
 
 class Timer(GPITrigger):
-    """Fire after the specified simulation time period has elapsed."""
+    """Fire after the specified simulation time period has elapsed.
+
+    Args:
+        time: The time value.
+
+            .. versionchanged:: 1.5.0
+                Previously this argument was misleadingly called `time_ps`.
+
+        units: The unit of the time value.
+
+            One of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
+            When *units* is ``'step'``,
+            the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
+
+        round_mode:
+
+            String specifying how to handle time values that sit between time steps
+            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
+
+    Raises:
+        ValueError: If a negative value is passed for Timer setup.
+
+    Usage:
+
+        >>> await Timer(100, units="ps")
+
+        The time can also be a ``float``:
+
+        >>> await Timer(100e-9, units="sec")
+
+        which is particularly convenient when working with frequencies:
+
+        >>> freq = 10e6  # 10 MHz
+        >>> await Timer(1 / freq, units="sec")
+
+        Other builtin exact numeric types can be used too:
+
+        >>> from fractions import Fraction
+        >>> await Timer(Fraction(1, 10), units="ns")
+
+        >>> from decimal import Decimal
+        >>> await Timer(Decimal("100e-9"), units="sec")
+
+        These are most useful when using computed durations while
+        avoiding floating point inaccuracies.
+
+    .. versionchanged:: 1.5
+        Raise an exception when Timer uses a negative value as it is undefined behavior.
+        Warn for 0 as this will cause erratic behavior in some simulators as well.
+
+    .. versionchanged:: 1.5
+        Support ``'step'`` as the *units* argument to mean "simulator time step".
+
+    .. versionchanged:: 1.6
+        Support rounding modes.
+
+    .. versionremoved:: 2.0
+        Passing ``None`` as the *units* argument was removed, use ``'step'`` instead.
+
+    .. versionremoved:: 2.0
+        The ``time_ps`` parameter was removed, use the ``time`` parameter instead.
+    """
 
     round_mode: str = "error"
+    """The default rounding mode."""
 
     def __init__(
         self,
@@ -176,68 +238,6 @@ class Timer(GPITrigger):
         *,
         round_mode: Optional[str] = None,
     ) -> None:
-        """
-        Args:
-           time: The time value.
-
-               .. versionchanged:: 1.5.0
-                  Previously this argument was misleadingly called `time_ps`.
-
-           units: One of
-               ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
-               When *units* is ``'step'``,
-               the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
-
-            round_mode (str, optional):
-                String specifying how to handle time values that sit between time steps
-                (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
-
-        Examples:
-
-            >>> await Timer(100, units="ps")
-
-            The time can also be a ``float``:
-
-            >>> await Timer(100e-9, units="sec")
-
-            which is particularly convenient when working with frequencies:
-
-            >>> freq = 10e6  # 10 MHz
-            >>> await Timer(1 / freq, units="sec")
-
-            Other builtin exact numeric types can be used too:
-
-            >>> from fractions import Fraction
-            >>> await Timer(Fraction(1, 10), units="ns")
-
-            >>> from decimal import Decimal
-            >>> await Timer(Decimal("100e-9"), units="sec")
-
-            These are most useful when using computed durations while
-            avoiding floating point inaccuracies.
-
-        See Also:
-            :func:`~cocotb.utils.get_sim_steps`
-
-        Raises:
-            ValueError: If a negative value is passed for Timer setup.
-
-        .. versionchanged:: 1.5
-            Raise an exception when Timer uses a negative value as it is undefined behavior.
-            Warn for 0 as this will cause erratic behavior in some simulators as well.
-
-        .. versionchanged:: 1.5
-            Support ``'step'`` as the *units* argument to mean "simulator time step".
-
-        .. versionchanged:: 1.6
-            Support rounding modes.
-
-        .. versionchanged:: 2.0
-            Passing ``None`` as the *units* argument was removed, use ``'step'`` instead.
-
-        .. versionchanged:: 2.0
-            The ``time_ps`` parameter was removed, use the ``time`` parameter instead.
-        """
         super().__init__()
         if time <= 0:
             if time == 0:
@@ -347,7 +347,6 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
         self.signal = signal
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        """Register notification of a value change via a callback"""
         if self._cbhdl is None:
             self._cbhdl = simulator.register_value_change_callback(
                 self.signal._handle, callback, type(self)._edge_type, self
@@ -361,7 +360,20 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
 
 
 class RisingEdge(_EdgeBase):
-    """Fires on the rising edge of *signal*, on a transition from ``0`` to ``1``."""
+    """Fires on the rising edge of *signal*, on a transition to ``1``.
+
+    Only valid for scalar ``logic`` or ``bit``-typed signals.
+
+    Args:
+        signal: The signal upon which to wait for a rising edge.
+
+    Raises:
+        TypeError: If *signal* is not a 1-bit ``logic`` or ``bit``-typed object.
+
+    .. warning::
+        On many simulators this will trigger on transitions from non-``0``/``1`` value to ``1``,
+        not just from ``0`` to ``1`` like the ``rising_edge`` function in VHDL.
+    """
 
     _edge_type = 1
 
@@ -373,7 +385,20 @@ class RisingEdge(_EdgeBase):
 
 
 class FallingEdge(_EdgeBase):
-    """Fires on the falling edge of *signal*, on a transition from ``1`` to ``0``."""
+    """Fires on the falling edge of *signal*, on a transition to ``0``.
+
+    Only valid for scalar ``logic`` or ``bit``-typed signals.
+
+    Args:
+        signal: The signal upon which to wait for a rising edge.
+
+    Raises:
+        TypeError: If *signal* is not a 1-bit ``logic`` or ``bit``-typed object.
+
+    .. warning::
+        On many simulators this will trigger on transitions from non-``0``/``1`` value to ``0``,
+        not just from ``1`` to ``0`` like the ``falling_edge`` function in VHDL.
+    """
 
     _edge_type = 2
 
@@ -385,7 +410,14 @@ class FallingEdge(_EdgeBase):
 
 
 class Edge(_EdgeBase):
-    """Fires on any value change of *signal*."""
+    """Fires on any value change of *signal*.
+
+    Args:
+        signal: The signal upon which to wait for a value change.
+
+    Raises:
+        TypeError: If the signal is not an object which can change value.
+    """
 
     _edge_type = 3
 
@@ -402,7 +434,7 @@ class _Event(Trigger):
     """Unique instance used by the Event object.
 
     One created for each attempt to wait on the event so that the scheduler
-    can maintain a dictionary of indexing each individual coroutine.
+    can maintain a unique mapping of triggers to tasks.
     """
 
     def __init__(self, parent: "Event[Any]") -> None:
@@ -419,10 +451,30 @@ class _Event(Trigger):
 
 
 class Event(Generic[T]):
-    """Event to permit synchronization between two coroutines.
+    r"""A way to signal an event across :class:`~cocotb.task.Task`\ s.
 
-    Awaiting :meth:`wait()` from one coroutine will block the coroutine until
-    :meth:`set()` is called somewhere else.
+    ``await``\ ing the result of :meth:`wait()` will block the ``await``\ ing :class:`~cocotb.task.Task`
+    until :meth:`set` is called.
+
+    Args:
+        name: Name for the Event.
+
+    Usage:
+        .. code-block:: python3
+
+            e = Event()
+
+
+            async def task1():
+                await e.wait()
+                print("resuming!")
+
+
+            cocotb.start_soon(task1())
+            # do stuff
+            e.set()
+            await NullTrigger()  # allows task1 to execute
+            # resuming!
     """
 
     def __init__(self, name: Optional[str] = None) -> None:
@@ -437,7 +489,7 @@ class Event(Generic[T]):
         self._pending_events.append(trigger)
 
     def set(self, data: Optional[T] = None) -> None:
-        """Wake up all coroutines blocked on this event."""
+        """Unblock all coroutines blocked on this event."""
         self._fired = True
         self.data = data
 
@@ -446,11 +498,11 @@ class Event(Generic[T]):
             event._callback(event)
 
     def wait(self) -> Trigger:
-        """Get a trigger which fires when another coroutine sets the event.
+        """Get a trigger which fires when the event is set.
 
         If the event has already been set, the trigger will fire immediately.
 
-        To reset the event (and enable the use of ``wait`` again),
+        To reset the event (and enable the use of :meth:`wait` again),
         :meth:`clear` should be called.
         """
         if self._fired:
@@ -461,11 +513,12 @@ class Event(Generic[T]):
         """Clear this event that has fired.
 
         Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until
-        :meth:`~cocotb.triggers.Event.set` is called again."""
+        :meth:`~cocotb.triggers.Event.set` is called again.
+        """
         self._fired = False
 
     def is_set(self) -> bool:
-        """Return true if event has been set"""
+        """Return ``True`` if event has been set."""
         return self._fired
 
     def __repr__(self) -> str:
@@ -477,11 +530,11 @@ class Event(Generic[T]):
 
 
 class _InternalEvent(Trigger, Generic[T]):
-    """Event used internally for triggers that need cross-coroutine synchronization.
+    """Event used internally for triggers that need cross-:class:`~cocotb.task.Task` synchronization.
 
-    This Event can only be waited on once, by a single coroutine.
+    This Event can only be waited on once, by a single :class:`~cocotb.task.Task`.
 
-    Provides transparent __repr__ pass-through to the Trigger using this event,
+    Provides transparent :func`repr` pass-through to the :class:`Trigger` using this event,
     providing a better debugging experience.
     """
 
@@ -516,7 +569,7 @@ class _InternalEvent(Trigger, Generic[T]):
         self,
     ) -> Generator[Any, None, None]:
         if self._primed:
-            raise RuntimeError("Only one coroutine may await this Trigger")
+            raise RuntimeError("Only one Task may await this Trigger")
         # hand the trigger back to the scheduler trampoline
         return (yield self)
 
@@ -528,7 +581,7 @@ class _Lock(Trigger):
     """Unique instance used by the Lock object.
 
     One created for each attempt to acquire the Lock so that the scheduler
-    can maintain a dictionary of indexing each individual coroutine.
+    can maintain a unique mapping of triggers to tasks.
     """
 
     def __init__(self, parent: "Lock") -> None:
@@ -545,23 +598,29 @@ class _Lock(Trigger):
 
 
 class Lock(AsyncContextManager[None]):
-    """Lock primitive (not re-entrant).
+    """A mutual exclusion lock (not re-entrant).
 
-    This can be used as::
+    Usage:
 
-        await lock.acquire()
-        try:
-            # do some stuff
-        finally:
-            lock.release()
+        By directly calling :meth:`acquire` and :meth:`release`.
+        .. code-block:: python3
+
+            await lock.acquire()
+            try:
+                # do some stuff
+            finally:
+                lock.release()
+
+        Or...
+        .. code-block:: python3
+
+            async with lock:
+                # do some stuff
 
     .. versionchanged:: 1.4
 
         The lock can be used as an asynchronous context manager in an
-        :keyword:`async with` statement::
-
-            async with lock:
-                # do some stuff
+        :keyword:`async with` statement
     """
 
     def __init__(self, name: Optional[str] = None) -> None:
@@ -571,7 +630,7 @@ class Lock(AsyncContextManager[None]):
         self._locked: bool = False
 
     def locked(self) -> bool:
-        """Return True if the lock is locked.
+        """Return ``True`` if the lock has been aquired.
 
         .. versionchanged:: 2.0
             This is now a method to match :meth:`asyncio.Lock.locked`, rather than an attribute.
@@ -662,8 +721,10 @@ class NullTrigger(Trigger, Generic[T]):
 class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetaclass):
     r"""Fires when a task completes.
 
-    The result of blocking on the trigger can be used to get the coroutine
-    result::
+    ``await``\ ing this trigger returns the result of the :class:`~cocotb.task.Task`.
+    If the task raised an exception, it will be re-raised.
+
+    .. code-block:: python3
 
         async def coro_inner():
             await Timer(1, units="ns")
@@ -674,8 +735,9 @@ class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetac
         result = await Join(task)
         assert result == "Hello world"
 
-    If the coroutine threw an exception, the :keyword:`await` will re-raise it.
-
+    .. note::
+        Typically there is no reason to directly use this trigger.
+        Simply ``await`` on a :class:`~cocotb.task.Task` for the same behavior.
     """
 
     @classmethod
@@ -692,21 +754,11 @@ class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetac
 
     @property
     def retval(self) -> T:
-        """The return value of the joined coroutine.
+        """The return value of the joined :class:`~cocotb.task.Task`.
 
         .. note::
-            Typically there is no need to use this attribute - the
-            following code samples are equivalent::
-
-                task = cocotb.start_soon(mycoro())
-                j = Join(task)
-                await j
-                result = j.retval
-
-            ::
-
-                task = cocotb.start_soon(mycoro())
-                result = await Join(task)
+            Typically there is no need to use this attribute.
+            Simply ``await`` on a :class:`~cocotb.task.Task` for the same behavior.
         """
         return self._task.result()
 
@@ -721,40 +773,34 @@ class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetac
 
 
 class Waitable(Awaitable[T]):
-    """
-    Base class for trigger-like objects implemented using coroutines.
+    """Base class for trigger-like objects implemented using coroutines.
 
-    This converts a `_wait` abstract method into a suitable `__await__`.
+    This converts a ``_wait`` abstract method into a suitable ``__await__``.
     """
 
     @abstractmethod
     async def _wait(self) -> T:
-        """
-        Should be implemented by the sub-class. Called by `await self` to
-        convert the waitable object into a coroutine.
-        """
+        """The coroutine function which implements the functionality of the Waitable."""
 
     def __await__(self) -> Generator[Any, Any, T]:
         return self._wait().__await__()
 
 
 class _AggregateWaitable(Waitable[T]):
-    """
-    Base class for Waitables that take mutiple triggers in their constructor
-    """
+    """Base class for :class:`Combine` and :class:`First`."""
 
     def __init__(
-        self, *triggers: Union[Trigger, Waitable[T], cocotb.task.Task[T]]
+        self, *trigger: Union[Trigger, Waitable[T], cocotb.task.Task[T]]
     ) -> None:
-        self._triggers = triggers
+        self._triggers = trigger
 
         # Do some basic type-checking up front, rather than waiting until we
         # await them.
         allowed_types = (Trigger, Waitable, cocotb.task.Task)
-        for trigger in self._triggers:
-            if not isinstance(trigger, allowed_types):
+        for t in self._triggers:
+            if not isinstance(t, allowed_types):
                 raise TypeError(
-                    f"All triggers must be instances of Trigger! Got: {type(trigger).__qualname__}"
+                    f"All triggers must be instances of Trigger! Got: {type(t).__qualname__}"
                 )
 
     def __repr__(self) -> str:
@@ -773,9 +819,7 @@ async def _wait_callback(
     trigger: Union[Trigger, Waitable[T], cocotb.task.Task[T]],
     callback: Callable[[Outcome[T]], None],
 ) -> None:
-    """
-    Wait for a trigger, and call `callback` with the outcome of the await.
-    """
+    """Wait for *trigger*, and call *callback* with the outcome of the await."""
     ret: Outcome[T]
     try:
         ret = Value(await trigger)  # type: ignore # awaiting trigger has a complicated type
@@ -786,12 +830,16 @@ async def _wait_callback(
 
 
 class Combine(_AggregateWaitable["Combine"]):
-    """
-    Fires when all of *triggers* have fired.
+    r"""Trigger that fires when all *triggers* have fired.
 
-    Like most triggers, this simply returns itself.
-
+    ``await``\ ing this returns the :class:`Combine` object.
     This is similar to Verilog's ``join``.
+
+    Args:
+        trigger: One or more ``await``\ able objects.
+
+    Raises:
+        TypeError: When an unsupported *trigger* object is passed.
     """
 
     async def _wait(self) -> "Combine":
@@ -819,12 +867,16 @@ class Combine(_AggregateWaitable["Combine"]):
 
 
 class First(_AggregateWaitable[Any]):
-    """
-    Fires when the first trigger in *triggers* fires.
+    r"""Fires when the first trigger in *triggers* fires.
 
-    Returns the result of the trigger that fired.
-
+    ``await``\ ing this object returns the result of the trigger that fired.
     This is similar to Verilog's ``join_any``.
+
+    Args:
+        trigger: One or more ``await``\ able objects.
+
+    Raises:
+        TypeError: When an unsupported *trigger* object is passed.
 
     .. note::
         The event loop is single threaded, so while events may be simultaneous
@@ -874,18 +926,26 @@ class First(_AggregateWaitable[Any]):
 
 
 class ClockCycles(Waitable["ClockCycles"]):
-    """Fires after *num_cycles* transitions of *signal* from ``0`` to ``1``."""
+    r"""Fires after *num_cycles* transitions of *signal*.
+
+    If *rising* is ``True``, it fires after *num_cycle* transitions of *signal* from non-``1`` to ``1``.
+    If *rising* is ``False``, it fires after *num_cycle* transitions of *signal* from non-``0`` to ``0``.
+
+    ``await``\ ing this Trigger returns the ClockCycle object.
+
+    Args:
+        signal: The signal to monitor.
+        num_cycles: The number of cycles to count.
+        rising: If ``True``, count rising edges; otherwise, count falling edges.
+
+    .. warning::
+        On many simulators transitions occur when the signal changes value from non-``0`` to ``0`` or non-``1`` to ``1``,
+        not just from ``1`` to ``0`` or ``0`` to ``1``.
+    """
 
     def __init__(
         self, signal: LogicObject, num_cycles: int, rising: bool = True
     ) -> None:
-        """
-        Args:
-            signal: The signal to monitor.
-            num_cycles (int): The number of cycles to count.
-            rising (bool, optional): If ``True``, the default, count rising edges.
-                Otherwise, count falling edges.
-        """
         self.signal = signal
         self.num_cycles = num_cycles
         self._type: Union[Type[RisingEdge], Type[FallingEdge]]
@@ -954,8 +1014,7 @@ async def with_timeout(
     timeout_unit: str = "step",
     round_mode: Optional[str] = None,
 ) -> Any:
-    r"""
-    Waits on triggers or coroutines, throws an exception if it waits longer than the given time.
+    r"""Wait on triggers or coroutines, throw an exception if it waits longer than the given time.
 
     When a :term:`python:coroutine` is passed,
     the callee coroutine is started,
@@ -1014,6 +1073,7 @@ async def with_timeout(
 
     .. versionchanged:: 2.0
         Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
+
     """
     if isinstance(trigger, Coroutine):
         trigger = cocotb.start_soon(trigger)
