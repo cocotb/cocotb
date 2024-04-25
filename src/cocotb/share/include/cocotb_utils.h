@@ -73,7 +73,7 @@ extern "C" COCOTBUTILS_EXPORT int is_python_context;
 template <typename F>
 class Deferable {
   public:
-    constexpr Deferable(F f) : f_(f){};
+    constexpr Deferable(F f) : f_(f) {};
     ~Deferable() { f_(); }
 
   private:
