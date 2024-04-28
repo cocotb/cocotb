@@ -27,7 +27,9 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+`ifndef NOTIMESCALE
 `timescale 1 ps / 1 ps
+`endif
 
 `ifndef __ICARUS__
 typedef struct packed
@@ -117,10 +119,12 @@ test_if struct_var;
 
 and test_and_gate(and_output, stream_in_ready, stream_in_valid);
 
+`ifndef NODUMPFILE
 initial begin
     $dumpfile("waveform.vcd");
     $dumpvars(0,sample_module);
 end
+`endif
 
 parameter NUM_OF_MODULES = 4;
 reg[NUM_OF_MODULES-1:0] temp;
