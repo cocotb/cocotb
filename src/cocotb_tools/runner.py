@@ -133,7 +133,10 @@ class Simulator(abc.ABC):
             self.env[e] = os.environ[e]
 
         if "LIBPYTHON_LOC" not in self.env:
-            self.env["LIBPYTHON_LOC"] = find_libpython.find_libpython()
+            libpython_path = find_libpython.find_libpython()
+            if not libpython_path:
+                raise ValueError("Unable to find libpython, please make sure the appropriate libpython is installed")
+            self.env["LIBPYTHON_LOC"] = libpython_path
 
         self.env["PATH"] += os.pathsep + str(cocotb_tools.config.libs_dir)
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
