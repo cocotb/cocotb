@@ -7,7 +7,7 @@ import cocotb
 
 @cocotb.test()
 async def test_sv_if(dut):
-    """Test that signals in an interface are discovered and iterable"""
+    """Test that signals in an interface are discovered"""
 
     dut.sv_if_i._discover_all()
     assert hasattr(dut.sv_if_i, "a")
@@ -17,7 +17,7 @@ async def test_sv_if(dut):
 
 @cocotb.test()
 async def test_sv_intf_arr_type(dut):
-    """Test that interface arrays are the correct type and iterable"""
+    """Test that interface arrays are the correct type"""
 
     print(dut.sv_if_arr)
 
@@ -30,11 +30,13 @@ async def test_sv_intf_arr_type(dut):
 
 @cocotb.test()
 async def test_sv_intf_arr_len(dut):
+    """Test that interface array length is correct"""
     assert len(dut.sv_if_arr) == 3
 
 
 @cocotb.test()
 async def test_sv_intf_arr_access(dut):
+    """Test that interface array objects can be accessed"""
     for i in range(3):
         assert hasattr(dut.sv_if_arr[i], "a")
         assert hasattr(dut.sv_if_arr[i], "b")
@@ -43,6 +45,7 @@ async def test_sv_intf_arr_access(dut):
 
 @cocotb.test()
 async def test_sv_intf_arr_iteration(dut):
+    """Test that interface arrays can be iterated"""
     count = 0
     for intf in dut.sv_if_arr:
         assert hasattr(intf, "a")
