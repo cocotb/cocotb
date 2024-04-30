@@ -180,10 +180,10 @@ def test_bit_and():
 
 def test_logic_bit_and():
     r = Logic(0) & Bit(1)
-    assert type(r) == Logic
+    assert type(r) is Logic
     assert r == Logic(0)
     r = Bit(1) & Logic(0)
-    assert type(r) == Logic
+    assert type(r) is Logic
     assert r == Logic(0)
 
 
@@ -209,10 +209,10 @@ def test_bit_or():
 
 def test_logic_bit_or():
     r = Logic(0) | Bit(1)
-    assert type(r) == Logic
+    assert type(r) is Logic
     assert r == Logic(1)
     r = Bit(1) | Logic(0)
-    assert type(r) == Logic
+    assert type(r) is Logic
     assert r == Logic(1)
 
 
@@ -238,10 +238,10 @@ def test_bit_xor():
 
 def test_logic_bit_xor():
     r = Logic(0) ^ Bit(1)
-    assert type(r) == Logic
+    assert type(r) is Logic
     assert r == Logic(1)
     r = Bit(0) ^ Logic(0)
-    assert type(r) == Logic
+    assert type(r) is Logic
     assert r == Logic(0)
 
 
