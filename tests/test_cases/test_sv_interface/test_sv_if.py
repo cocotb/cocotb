@@ -16,7 +16,7 @@ async def test_sv_if(dut):
 
 
 @cocotb.test()
-async def test_sv_if_arrays(dut):
+async def test_sv_intf_arr_type(dut):
     """Test that interface arrays are the correct type and iterable"""
 
     print(dut.sv_if_arr)
@@ -27,11 +27,27 @@ async def test_sv_if_arrays(dut):
         # This is correct
         assert isinstance(dut.sv_if_arr, cocotb.handle.HierarchyArrayObject)
 
-    dut.sv_if_arr._discover_all()
 
-    m = len(dut.sv_if_arr)
-    assert m == 3
-    for i in range(m):
+@cocotb.test()
+async def test_sv_intf_arr_len(dut):
+    assert len(dut.sv_if_arr) == 3
+
+
+@cocotb.test()
+async def test_sv_intf_arr_access(dut):
+    for i in range(3):
         assert hasattr(dut.sv_if_arr[i], "a")
         assert hasattr(dut.sv_if_arr[i], "b")
         assert hasattr(dut.sv_if_arr[i], "c")
+
+
+@cocotb.test()
+async def test_sv_intf_arr_iteration(dut):
+    count = 0
+    for intf in dut.sv_if_arr:
+        assert hasattr(intf, "a")
+        assert hasattr(intf, "b")
+        assert hasattr(intf, "c")
+        count += 1
+
+    assert count == 3
