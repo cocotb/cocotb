@@ -6,8 +6,8 @@ import os
 import sys
 
 import cocotb
-import pytest
 import find_libpython
+import pytest
 from cocotb.triggers import Timer
 from cocotb_tools.runner import get_runner
 
@@ -105,7 +105,6 @@ def test_missing_libpython(monkeypatch):
     else:
         hdl_sources = [os.path.join(tests_dir, "designs", "runner", "runner.vhdl")]
         gpi_interfaces = [os.getenv("VHDL_GPI_INTERFACE", None)]
-        
 
     sim_tool = os.getenv("SIM", "icarus")
     sim_runner = get_runner(sim_tool)
