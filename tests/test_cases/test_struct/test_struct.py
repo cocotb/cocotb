@@ -21,7 +21,7 @@ EXPECT_VAL = "000" if SIM_NAME.startswith("verilator") else "ZZZ"
     expect_error=AttributeError
     if SIM_NAME.startswith(("icarus", "ghdl", "nvc"))
     else (),
-    expect_fail=SIM_NAME.startswith(("modelsim", "riviera")),
+    expect_fail=SIM_NAME.startswith("modelsim"),
 )
 async def test_packed_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
