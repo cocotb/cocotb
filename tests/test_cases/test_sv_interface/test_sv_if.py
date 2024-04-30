@@ -15,14 +15,17 @@ async def test_sv_if(dut):
     assert hasattr(dut.sv_if_i, "c")
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("xmsim"))
+@cocotb.test()
 async def test_sv_if_arrays(dut):
     """Test that interface arrays are the correct type and iterable"""
 
-    # should be a HierarchyArrayObject, currently is a NonHierarchyIndexableObject in Xcelium
     print(dut.sv_if_arr)
 
-    assert isinstance(dut.sv_if_arr, cocotb.handle.HierarchyArrayObject)
+    if cocotb.SIM_NAME.lower().startswith("xmsim"):
+        assert isinstance(dut.sv_if_arr, cocotb.handle.ArrayObject)
+    else:
+        # This is correct
+        assert isinstance(dut.sv_if_arr, cocotb.handle.HierarchyArrayObject)
 
     dut.sv_if_arr._discover_all()
 
