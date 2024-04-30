@@ -11,7 +11,7 @@ from typing import Any, Coroutine, Generator, Optional, TypeVar
 
 import cocotb
 import cocotb.triggers
-from cocotb import _outcomes
+from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb.utils import extract_coro_stack, remove_traceback_frames
 
@@ -54,9 +54,10 @@ class Task(Coroutine[Any, Any, T]):
             )
         elif not isinstance(inst, collections.abc.Coroutine):
             raise TypeError(f"{inst} isn't a valid coroutine!")
+
         self._coro: Coroutine = inst
         self._started: bool = False
-        self._outcome: Optional[_outcomes.Outcome[T]] = None
+        self._outcome: Optional[Outcome[T]] = None
         self._trigger: Optional[cocotb.triggers.Trigger] = None
         self._cancelled: Optional[CancelledError] = None
 
@@ -119,7 +120,7 @@ class Task(Coroutine[Any, Any, T]):
         )
         return repr_string
 
-    def _advance(self, outcome: _outcomes.Outcome) -> Any:
+    def _advance(self, outcome: Outcome) -> Any:
         """Advance to the next yield in this coroutine.
 
         Args:
@@ -133,11 +134,9 @@ class Task(Coroutine[Any, Any, T]):
             self._started = True
             return outcome.send(self._coro)
         except StopIteration as e:
-            self._outcome = _outcomes.Value(e.value)
+            self._outcome = Value(e.value)
         except BaseException as e:
-            self._outcome = _outcomes.Error(
-                remove_traceback_frames(e, ["_advance", "send"])
-            )
+            self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
 
     def send(self, value: Any) -> Any:
         return self._coro.send(value)
@@ -157,7 +156,7 @@ class Task(Coroutine[Any, Any, T]):
         if _debug:
             self.log.debug("kill() called on coroutine")
         # todo: probably better to throw an exception for anyone waiting on the coroutine
-        self._outcome = _outcomes.Value(None)
+        self._outcome = Value(None)
         cocotb._scheduler._unschedule(self)
 
     def join(self) -> "cocotb.triggers.Join":
@@ -217,7 +216,7 @@ class Task(Coroutine[Any, Any, T]):
             raise InvalidStateError("result is not yet available")
         elif self.cancelled():
             raise self._cancelled
-        elif isinstance(self._outcome, _outcomes.Error):
+        elif isinstance(self._outcome, Error):
             return self._outcome.error
         else:
             return None
