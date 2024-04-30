@@ -451,7 +451,7 @@ async def test_task_repr(dut):
     log.info(repr(object_task))
     assert re.match(r"<Task \d+ created coro=CoroutineClass\(\)>", repr(object_task))
 
-    object_task.close()  # prevent RuntimeWarning of unwatched coroutine
+    object_task.kill()  # prevent RuntimeWarning of unwatched coroutine
 
 
 @cocotb.test()

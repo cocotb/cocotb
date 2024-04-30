@@ -500,7 +500,7 @@ class Scheduler:
             assert not task.has_started()
             self._pending_tasks.remove(task)
             # Close coroutine so there is no RuntimeWarning that it was never awaited
-            task.close()
+            task._coro.close()
             return
 
         # Unprime the trigger this task is waiting on
