@@ -7,7 +7,7 @@ import logging
 import os
 import warnings
 from asyncio import CancelledError, InvalidStateError
-from typing import Any, Coroutine, Generator, Optional, TypeVar
+from typing import Any, Coroutine, Generator, Generic, Optional, TypeVar
 
 import cocotb
 import cocotb.triggers
@@ -22,7 +22,7 @@ T = TypeVar("T")
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
-class Task(Coroutine[Any, Any, T]):
+class Task(Generic[T]):
     """Concurrently executing task.
 
     This class is not intended for users to directly instantiate.
@@ -137,15 +137,6 @@ class Task(Coroutine[Any, Any, T]):
             self._outcome = Value(e.value)
         except BaseException as e:
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
-
-    def send(self, value: Any) -> Any:
-        return self._coro.send(value)
-
-    def throw(self, exc: BaseException) -> Any:
-        return self._coro.throw(exc)
-
-    def close(self) -> None:
-        return self._coro.close()
 
     def kill(self) -> None:
         """Kill a coroutine."""
