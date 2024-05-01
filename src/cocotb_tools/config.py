@@ -75,40 +75,40 @@ def _help_vars_text() -> str:
         doclink = f"https://docs.cocotb.org/en/v{_get_version()}/building.html"
 
     # NOTE: make sure to keep "helpmsg" aligned with ../../docs/source/building.rst
-    # Also keep it at 80 chars.
     helpmsg = textwrap.dedent(
         """\
-    The following variables are environment variables:
+        The following variables are environment variables:
 
-    Cocotb
-    ------
-    TOPLEVEL                  Instance in the hierarchy to use as the DUT
-    RANDOM_SEED               Random seed, to recreate a previous test stimulus
-    COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
-    COCOTB_REDUCED_LOG_FMT    Display log lines shorter
-    COCOTB_ATTACH             Pause time value in seconds before the simulator start
-    COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
-    COCOTB_LOG_LEVEL          Default logging level (default INFO)
-    LIBPYTHON_LOC             Absolute path to libpython
+        Cocotb
+        ------
+        TOPLEVEL                        Instance in the hierarchy to use as the DUT
+        RANDOM_SEED                     Random seed, to recreate a previous test stimulus
+        COCOTB_ANSI_OUTPUT              Force cocotb to print or not print in color
+        COCOTB_REDUCED_LOG_FMT          Display log lines shorter
+        COCOTB_ATTACH                   Pause time value in seconds before the simulator start
+        COCOTB_ENABLE_PROFILING         Performance analysis of the Python portion of cocotb
+        COCOTB_LOG_LEVEL                Default logging level (default INFO)
+        LIBPYTHON_LOC                   Absolute path to libpython
 
-    Regression Manager
-    ------------------
-    COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
-    MODULE                    Modules to search for test functions (comma-separated)
-    TESTCASE                  Test function(s) to run (comma-separated list)
-    COCOTB_RESULTS_FILE       File name for xUnit XML tests results
-    COVERAGE                  Collect Python user coverage (HDL for some simulators)
-    COVERAGE_RCFILE           Configuration for user code coverage
+        Regression Manager
+        ------------------
+        COCOTB_PDB_ON_EXCEPTION         Drop into the Python debugger (pdb) on exception
+        MODULE                          Modules to search for test functions (comma-separated)
+        TESTCASE                        Test function(s) to run (comma-separated list)
+        COCOTB_RESULTS_FILE             File name for xUnit XML tests results
+        COVERAGE                        Collect Python user coverage (HDL for some simulators)
+        COVERAGE_RCFILE                 Configuration for user code coverage
 
-    GPI
-    ---
-    GPI_EXTRA                 Extra libraries to load at runtime (comma-separated)
+        GPI
+        ---
+        GPI_EXTRA                       Extra libraries to load at runtime (comma-separated)
 
-    Scheduler
-    ---------
-    COCOTB_SCHEDULER_DEBUG    Enable additional output of coroutine scheduler
+        Scheduler
+        ---------
+        COCOTB_SCHEDULER_DEBUG         Enable additional output of coroutine scheduler
+        COCOTB_TRUST_INERTIAL_WRITES   Trust inertial writes rather than mock them using scheduler
 
-    For details, see {}"""
+        For details, see {}"""
     ).format(doclink)
     return helpmsg
 

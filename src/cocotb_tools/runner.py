@@ -272,8 +272,7 @@ class Simulator(abc.ABC):
 
         self.waves = bool(waves)
 
-        for e in os.environ:
-            self.env[e] = os.environ[e]
+        self.env.update(os.environ)
 
         cmds: Sequence[Command] = self._build_command()
         self._execute(cmds, cwd=self.build_dir)
@@ -854,6 +853,11 @@ class Questa(Simulator):
 class Ghdl(Simulator):
     supported_gpi_interfaces = {"vhdl": ["vpi"]}
 
+    def _set_env(self) -> None:
+        super()._set_env()
+        if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
+            self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
+
     @staticmethod
     def _simulator_in_path() -> None:
         if shutil.which("ghdl") is None:
@@ -952,6 +956,11 @@ class Ghdl(Simulator):
 
 class Nvc(Simulator):
     supported_gpi_interfaces = {"vhdl": ["vhpi"]}
+
+    def _set_env(self) -> None:
+        super()._set_env()
+        if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
+            self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
 
     @staticmethod
     def _simulator_in_path() -> None:
