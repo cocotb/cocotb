@@ -15,15 +15,13 @@ async def test_sv_if(dut):
     assert hasattr(dut.sv_if_i, "c")
 
 
-@cocotb.test(
-    expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
-)
+@cocotb.test()
 async def test_sv_intf_arr_type(dut):
     """Test that interface arrays are the correct type"""
 
     print(dut.sv_if_arr)
 
-    if cocotb.SIM_NAME.lower().startswith(("xmsim", "modelsim")):
+    if cocotb.SIM_NAME.lower().startswith(("xmsim", "modelsim", "riviera")):
         assert isinstance(dut.sv_if_arr, cocotb.handle.ArrayObject)
     else:
         # This is correct
@@ -38,9 +36,7 @@ async def test_sv_intf_arr_len(dut):
     assert len(dut.sv_if_arr) == 3
 
 
-@cocotb.test(
-    expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
-)
+@cocotb.test()
 async def test_sv_intf_arr_access(dut):
     """Test that interface array objects can be accessed"""
     for i in range(3):
@@ -49,9 +45,6 @@ async def test_sv_intf_arr_access(dut):
         assert hasattr(dut.sv_if_arr[i], "c")
 
 
-@cocotb.test(
-    expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
-)
 @cocotb.test()
 async def test_sv_intf_arr_iteration(dut):
     """Test that interface arrays can be iterated"""
