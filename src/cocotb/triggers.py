@@ -263,7 +263,7 @@ class Timer(GPITrigger):
                 self.sim_steps, callback, self
             )
             if self.cbhdl is None:
-                raise _TriggerException("Unable set up %s Trigger" % (str(self)))
+                raise _TriggerException(f"Unable set up {str(self)} Trigger")
         GPITrigger._prime(self, callback)
 
     def __repr__(self):
@@ -302,7 +302,7 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
             if self.cbhdl is None:
-                raise _TriggerException("Unable set up %s Trigger" % (str(self)))
+                raise _TriggerException(f"Unable set up {str(self)} Trigger")
         GPITrigger._prime(self, callback)
 
     def __repr__(self):
@@ -325,7 +325,7 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl is None:
-                raise _TriggerException("Unable set up %s Trigger" % (str(self)))
+                raise _TriggerException(f"Unable set up {str(self)} Trigger")
         GPITrigger._prime(self, callback)
 
     def __repr__(self):
@@ -348,7 +348,7 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         if self.cbhdl is None:
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
             if self.cbhdl is None:
-                raise _TriggerException("Unable set up %s Trigger" % (str(self)))
+                raise _TriggerException(f"Unable set up {str(self)} Trigger")
         GPITrigger._prime(self, callback)
 
     def __repr__(self):
@@ -377,7 +377,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
                 self.signal._handle, callback, type(self)._edge_type, self
             )
             if self.cbhdl is None:
-                raise _TriggerException("Unable set up %s Trigger" % (str(self)))
+                raise _TriggerException(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self):
@@ -622,7 +622,7 @@ class Lock:
     def release(self):
         """Release the lock."""
         if not self.locked:
-            raise RuntimeError("Attempt to release an unacquired Lock %s" % (str(self)))
+            raise RuntimeError(f"Attempt to release an unacquired Lock {str(self)}")
 
         self.locked = False
 

@@ -59,7 +59,7 @@ async def issue_330_iteration(dut):
 
     count = 0
     for member in structure:
-        tlog.info("Found %s" % member._path)
+        tlog.info(f"Found {member._path}")
         count += 1
 
     # Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587)

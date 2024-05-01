@@ -27,7 +27,7 @@ async def mixed_language_accessing_test(dut):
     await Timer(100, units="ns")
 
     verilog = dut.i_swapper_sv
-    dut._log.info("Got: %s" % repr(verilog._name))
+    dut._log.info(f"Got: {repr(verilog._name)}")
 
     # discover all attributes of the SV component
     # This is a workaround since SV modules are not discovered automatically
@@ -35,7 +35,7 @@ async def mixed_language_accessing_test(dut):
     verilog._discover_all()
 
     vhdl = dut.i_swapper_vhdl
-    dut._log.info("Got: %s" % repr(vhdl._name))
+    dut._log.info(f"Got: {repr(vhdl._name)}")
 
     verilog.reset_n.value = 1
     await Timer(100, units="ns")
@@ -63,10 +63,10 @@ async def mixed_language_functional_test(dut):
     await Timer(100, units="ns")
 
     verilog = dut.i_swapper_sv
-    dut._log.info("Got: %s" % repr(verilog._name))
+    dut._log.info(f"Got: {repr(verilog._name)}")
 
     vhdl = dut.i_swapper_vhdl
-    dut._log.info("Got: %s" % repr(vhdl._name))
+    dut._log.info(f"Got: {repr(vhdl._name)}")
 
     # setup default values
     dut.reset_n.value = 0
