@@ -47,12 +47,29 @@ from typing import (
     cast,
 )
 
-import cocotb
+import cocotb._conf
 from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
 from cocotb.types import Logic, LogicArray
 from cocotb.types.range import Range
+
+
+def _write_now(
+    _: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
+) -> None:
+    f(*args)
+
+
+if cocotb._conf.trust_inertial:
+    _inertial_write = _write_now
+else:
+    import cocotb
+
+    def _inertial_write(
+        handle: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
+    ) -> None:
+        cocotb._scheduler._schedule_write(handle, f, args)
 
 
 class _Limits(enum.IntEnum):
@@ -665,7 +682,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
 
         value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
 
-        self._set_value(value_, action, cocotb._scheduler._schedule_write)
+        self._set_value(value_, action, _inertial_write)
 
     def setimmediatevalue(
         self,
@@ -682,14 +699,9 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
         if self.is_const:
             raise TypeError(f"{self._path} is constant")
 
-        def _call_now(
-            handle: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
-        ) -> None:
-            f(*args)
-
         value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
 
-        self._set_value(value_, action, _call_now)
+        self._set_value(value_, action, _write_now)
 
     @cached_property
     def is_const(self) -> bool:

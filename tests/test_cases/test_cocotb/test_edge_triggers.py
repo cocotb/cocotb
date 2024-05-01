@@ -293,7 +293,13 @@ async def test_edge_on_vector(dut):
         dut.stream_in_data.value = 0
         await RisingEdge(dut.clk)
 
-    expected_count = 2 * ((2 ** len(dut.stream_in_data) - 1) - 1) - 1
+    # We have to wait because we don't know the scheduling order of the above
+    # Edge(dut.stream_out_data_registered) and the above RisingEdge(dut.clk)
+    # Edge(dut.stream_out_data_registered) should occur strictly after RisingEdge(dut.clk),
+    # but NVC and Verilator behave differently.
+    await RisingEdge(dut.clk)
+
+    expected_count = 2 * ((2 ** len(dut.stream_in_data) - 1) - 1)
 
     assert edge_cnt == expected_count
 

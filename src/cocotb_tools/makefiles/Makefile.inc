@@ -160,3 +160,11 @@ endef
 else
     $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)
 endif # COCOTB_MAKEFILE_INC_INCLUDED
+
+ifneq ($(filter $(SIM),nvc ghdl),)
+  COCOTB_TRUST_INERTIAL_WRITES ?= 1
+else
+  COCOTB_TRUST_INERTIAL_WRITES ?= 0
+endif
+
+export COCOTB_TRUST_INERTIAL_WRITES

@@ -41,10 +41,11 @@ import threading
 import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
 import cocotb
 from cocotb import _outcomes, _py_compat
+from cocotb.handle import SimHandleBase
 from cocotb.result import SimFailure, TestSuccess
 from cocotb.task import Task
 from cocotb.triggers import (
@@ -246,7 +247,9 @@ class Scheduler:
         # A dictionary of pending (write_func, args), keyed by handle.
         # Writes are applied oldest to newest (least recently used).
         # Only the last scheduled write to a particular handle in a timestep is performed.
-        self._write_calls = OrderedDict()
+        self._write_calls: Dict[
+            SimHandleBase, Tuple[Callable[..., None], Sequence[Any]]
+        ] = OrderedDict()
 
         self._pending_tasks = []
         self._pending_triggers = []
@@ -275,7 +278,7 @@ class Scheduler:
             await self._read_write
 
             while self._write_calls:
-                handle, (func, args) = self._write_calls.popitem(last=False)
+                _, (func, args) = self._write_calls.popitem(last=False)
                 func(*args)
             self._writes_pending.clear()
 
@@ -300,7 +303,7 @@ class Scheduler:
             self._timer1._prime(self._test_completed)
             self._trigger2tasks = _py_compat.insertion_ordered_dict()
             self._terminate = False
-            self._write_calls = OrderedDict()
+            self._write_calls.clear()
             self._writes_pending.clear()
             self._mode = Scheduler._MODE_TERM
 
@@ -544,7 +547,12 @@ class Scheduler:
                 )
                 self._abort_test(e)
 
-    def _schedule_write(self, handle, write_func, args):
+    def _schedule_write(
+        self,
+        handle: SimHandleBase,
+        write_func: Callable[..., None],
+        args: Sequence[Any],
+    ) -> None:
         """Queue `write_func` to be called on the next ReadWrite trigger."""
         if self._mode == Scheduler._MODE_READONLY:
             raise Exception(

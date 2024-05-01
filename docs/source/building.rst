@@ -124,6 +124,33 @@ Cocotb
     This is determined with ``cocotb-config --libpython`` in cocotb's makefiles.
 
 
+.. envvar:: COCOTB_TRUST_INERTIAL_WRITES
+
+    Defining this variable enables a mode which allows cocotb to trust that VPI/VHPI/FLI inertial writes are applied properly according to the respective standards.
+    This mode can lead to noticable performance improvements,
+    and also includes some behavioral difference that are considered by the cocotb maintainers to be "better".
+    Not all simulators handle inertial writes properly, so use with caution.
+
+    This is achieved by *not* scheduling writes to occur at the beginning of the ``ReadWrite`` mode,
+    but instead trusting that the simulator's inertial write mechanism is correct.
+    This allows cocotb to avoid a VPI callback into Python to apply writes.
+
+    .. note::
+        This flag is enabled by default for GHDL and NVC simulators.
+        More simulators may enable this flag by default in the future as they are gradually updated to properly apply inertial writes according to the respective standard.
+
+    .. note::
+        To test if your simulator behaves correctly with your simulator and version,
+        first clone the cocotb github repo and run:
+
+        .. code-block::
+
+            cd tests/test_cases/test_inertial_writes
+            make simulator_test SIM=<your simulator here> TOPLEVEL_LANG=<vhdl or verilog>
+
+        If the tests pass, your simulator and version apply inertial writes as expected and you can turn on :envvar:`COCOTB_TRUST_INERTIAL_WRITES`.
+
+
 Regression Manager
 ~~~~~~~~~~~~~~~~~~
 

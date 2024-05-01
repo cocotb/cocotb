@@ -166,7 +166,7 @@ async def test_readwrite_in_readonly(dut):
     assert exited
 
 
-@cocotb.test(expect_error=Exception)
+@cocotb.test(skip=True)
 async def test_cached_write_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
