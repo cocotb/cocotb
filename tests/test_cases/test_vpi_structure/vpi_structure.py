@@ -8,6 +8,8 @@ from io import StringIO
 import cocotb
 from cocotb.handle import HierarchyArrayObject, HierarchyObjectBase
 
+SIM_NAME = cocotb.SIM_NAME.lower()
+
 
 def iter_module(mod, depth=0):
     yield mod, depth
@@ -88,9 +90,23 @@ async def test_structure(dut):
         )
 
 
+class DirectLenMismatch(Exception):
+    pass
+
+
+class NameMismatch(Exception):
+    pass
+
+
+class IteratedLenMismatch(Exception):
+    pass
+
+
 @cocotb.test(
-    skip=cocotb.SIM_NAME.lower().startswith("riviera"),
-    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("icarus") else (),
+    skip=SIM_NAME.startswith("riviera"),
+    expect_error=DirectLenMismatch
+    if SIM_NAME.startswith(("icarus", "verilator", "xmsim"))
+    else (),
 )
 async def test_name_matches_iter(dut):
     """
@@ -102,28 +118,26 @@ async def test_name_matches_iter(dut):
 
     t = cocotb.handle.HierarchyObject(dut._handle, dut._path)
 
-    # We need to ensure that these are different objects, so the iteration one (dut)
-    # doesn't fill in the _sub_handles for the name one (t)
+    # We need to ensure that these are different objects, so the iteration tree (dut)
+    # doesn't fill in the _sub_handles for the direct access tree (t)
     assert id(t) != id(dut)
 
     objs = [obj for obj, _depth in iter_module(dut)]
-
-    # this gives "RuntimeError: dictionary changed size during iteration" on verilator / intf_arr
-    # for obj, _depth in iter_module(dut):
 
     for obj in objs:
         cocotb.log.info(obj._path)
         objlen = get_len(obj)
 
         direct_obj = eval(obj._path)
-        assert obj == direct_obj
+        if obj != direct_obj:
+            raise NameMismatch(f"{obj._path} != {direct_obj._path}")
 
         if get_len(direct_obj) != objlen:
             d_obj = f"direct_obj={direct_obj}[{get_len(direct_obj)}]"
             o_obj = f"obj={obj}[{objlen}]"
-            raise Exception(
+            raise DirectLenMismatch(
                 f"len of direct object does not match iterated object {d_obj}, {o_obj}"
             )
 
         if get_len(obj) != objlen:
-            raise Exception("eval of copy changed underlying length")
+            raise IteratedLenMismatch("eval of copy changed underlying length")
