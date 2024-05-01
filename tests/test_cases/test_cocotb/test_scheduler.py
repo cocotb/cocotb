@@ -18,7 +18,7 @@ from typing import Any, Awaitable, Coroutine
 import cocotb
 import pytest
 from cocotb.clock import Clock
-from cocotb.task import Task
+from cocotb.task import CancellationError, Task
 from cocotb.triggers import (
     Combine,
     Event,
@@ -759,8 +759,8 @@ async def test_task_exception(_):
     assert str(task.exception()) == "msg1234"
 
 
-@cocotb.test()
-async def test_cancel_task(_):
+@cocotb.test
+async def test_cancel_task_methods(_):
     async def coro():
         return 0
 
@@ -771,14 +771,84 @@ async def test_cancel_task(_):
     assert not task.cancelled()
     assert task.done()
 
-    task = cocotb.start_soon(coro())
-    with pytest.warns(FutureWarning):
-        task.cancel("msg1234")
+
+@cocotb.test
+async def test_cancel_task_running(_):
+    async def coro2():
+        try:
+            await Timer(10, "ns")
+        except CancelledError:
+            raise
+        assert False
+
+    task = cocotb.start_soon(coro2())
+
+    # wait until it's blocking to cancel
+    await Timer(5, "ns")
+    task.cancel("msg1234")
+
+    # check output
     assert task.cancelled()
     with pytest.raises(CancelledError, match="msg1234"):
         task.result()
     with pytest.raises(CancelledError, match="msg1234"):
         task.exception()
+
+    await Timer(10, "ns")
+    # we'd get an error by now if the trigger weren't cleaned up
+
+
+@cocotb.test
+async def test_cancel_task_cancelled(_):
+    async def coro():
+        await Timer(10, "ns")
+        assert False
+
+    task = cocotb.start_soon(coro())
+
+    # cancel it during await
+    await Timer(5, "ns")
+    task.cancel()
+
+    assert task.done()
+    assert task.cancelled()
+
+    # try cancelling again to see if that hits the assert
+    task.cancel()
+
+
+@cocotb.test
+async def test_cancel_task_scheduled(_):
+    async def coro():
+        assert False
+
+    task = cocotb.start_soon(coro())
+
+    # cancel before it runs
+    task.cancel()
+
+    # see if it's unscheduled
+    await NullTrigger()
+
+
+@cocotb.test(expect_error=CancellationError)
+async def test_cancel_task_suppress(_):
+    async def coro():
+        try:
+            await Timer(10, "ns")
+        except CancelledError:
+            pass
+        # will yield this because we squashed
+        await Timer(1, "ns")
+
+    task = cocotb.start_soon(coro())
+
+    # cancel during first await
+    await Timer(5, "ns")
+    task.cancel()
+
+    # reschedule to ensure that scheduled failed after suppression
+    await NullTrigger()
 
 
 @cocotb.test()

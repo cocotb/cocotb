@@ -496,6 +496,7 @@ class Scheduler:
 
     def _unschedule(self, task):
         """Unschedule a task.  Unprime any pending triggers"""
+        cocotb.log.info("unscheduling task %r", task)
         if task in self._pending_tasks:
             assert not task.has_started()
             self._pending_tasks.remove(task)
@@ -800,8 +801,8 @@ class Scheduler:
             result = task._advance(send_outcome)
 
             if task.done():
-                if _debug:
-                    self.log.debug(f"{task} completed with {task._outcome}")
+                self.log.info(f"{task} had result {result}")
+                self.log.info(f"{task} completed with {task._outcome}")
                 assert result is None
                 self._unschedule(task)
 
@@ -892,6 +893,7 @@ class Scheduler:
                 if _debug:
                     self.log.debug(f"Killing {task}")
                 task.kill()
+        self.log.info("triggers2tasks: %r", self._trigger2tasks)
         assert not self._trigger2tasks
 
         # if there are coroutines being scheduled when the test ends, kill them (gh-1347)

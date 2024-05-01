@@ -4,8 +4,6 @@
 import collections.abc
 import inspect
 import logging
-import os
-import warnings
 from asyncio import CancelledError, InvalidStateError
 from typing import Any, Coroutine, Generator, Generic, Optional, TypeVar
 
@@ -17,9 +15,13 @@ from cocotb.utils import extract_coro_stack, remove_traceback_frames
 
 T = TypeVar("T")
 
-# Sadly the Python standard logging module is very slow so it's better not to
-# make any calls by testing a boolean flag first
-_debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
+
+class CancellationError(Exception):
+    """Result of a cancelled Task when cancellation exits abnormally."""
+
+    def __init__(self, msg: str, outcome: Outcome) -> None:
+        super().__init__(msg)
+        self.outcome = outcome
 
 
 class Task(Generic[T]):
@@ -120,7 +122,7 @@ class Task(Generic[T]):
         )
         return repr_string
 
-    def _advance(self, outcome: Outcome) -> Any:
+    def _advance(self, outcome: Outcome) -> Optional["cocotb.triggers.Trigger"]:
         """Advance to the next yield in this coroutine.
 
         Args:
@@ -139,14 +141,15 @@ class Task(Generic[T]):
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
 
     def kill(self) -> None:
-        """Kill a coroutine."""
-        if self._outcome is not None:
-            # already finished, nothing to kill
+        """Stop a Task without throwing a :exc:`asyncio.CancelledError`.
+
+        .. deprecated:: 2.0
+
+            Replaced by :meth:`cancel`.
+        """
+        if self.done():
             return
 
-        if _debug:
-            self.log.debug("kill() called on coroutine")
-        # todo: probably better to throw an exception for anyone waiting on the coroutine
         self._outcome = Value(None)
         cocotb._scheduler._unschedule(self)
 
@@ -163,14 +166,50 @@ class Task(Generic[T]):
 
         When a Task is cancelled, a :exc:`asyncio.CancelledError` is thrown into the Task.
         """
-        self._cancelled = CancelledError(msg)
-        warnings.warn(
-            "Calling this method will cause a CancelledError to be thrown in the "
-            "Task sometime in the future.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        self.kill()
+        if self.done():
+            return
+
+        if not self._started:
+            # don't throw CancelledError into unstarted task, there's no way to catch it
+            self._outcome = Value(None)
+            if self in cocotb._scheduler._pending_tasks:
+                # unschedule if scheduled
+                cocotb._scheduler._unschedule(self)
+        else:
+            self._cancelled = CancelledError(msg)
+            try:
+                self._coro.throw(self._cancelled)
+            except CancelledError as e:
+                if e is self._cancelled:
+                    self._outcome = Value(None)
+                else:
+                    self._outcome = Error(
+                        CancellationError(
+                            "Task was cancelled, but raised another exception.",
+                            Error(remove_traceback_frames(e, ["cancel", "send"])),
+                        )
+                    )
+            except StopIteration as e:
+                self._outcome = Error(
+                    CancellationError(
+                        "Task was cancelled, but exited normally.", Value(e.value)
+                    )
+                )
+            except BaseException as e:
+                self._outcome = Error(
+                    CancellationError(
+                        "Task was cancelled, but raised another exception.",
+                        Error(remove_traceback_frames(e, ["cancel", "send"])),
+                    )
+                )
+            else:
+                self._outcome = Error(
+                    CancellationError(
+                        "Task was cancelled, but continued running.", Value(None)
+                    )
+                )
+            finally:
+                cocotb._scheduler._unschedule(self)
 
     def cancelled(self) -> bool:
         """Return ``True`` if the Task was cancelled."""
