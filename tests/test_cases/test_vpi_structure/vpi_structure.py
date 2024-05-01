@@ -105,10 +105,10 @@ class IteratedLenMismatch(Exception):
 @cocotb.test(
     skip=SIM_NAME.startswith("riviera"),
     expect_error=DirectLenMismatch
-    if SIM_NAME.startswith(("icarus", "verilator", "xmsim"))
+    if SIM_NAME.startswith(("icarus", "verilator", "xmsim", "modelsim"))
     else (),
 )
-async def test_name_matches_iter(dut):
+async def test_direct_matches_iter(dut):
     """
     Test name accessibility and handle lengths.
 
