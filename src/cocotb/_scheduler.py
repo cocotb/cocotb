@@ -495,8 +495,10 @@ class Scheduler:
                 self.log.debug("All tasks scheduled, handing control back to simulator")
 
     def _unschedule(self, task):
-        """Unschedule a task.  Unprime any pending triggers"""
-        cocotb.log.info("unscheduling task %r", task)
+        """Unschedule a task. Unprime any pending triggers"""
+        if _debug:
+            self.log.debug(f"Unscheduling {task}")
+
         if task in self._pending_tasks:
             assert not task.has_started()
             self._pending_tasks.remove(task)
@@ -504,15 +506,16 @@ class Scheduler:
             task._coro.close()
             return
 
-        # Unprime the trigger this task is waiting on
-        trigger = task._trigger
-        if trigger is not None:
-            task._trigger = None
+        # Unprime the triggers this task is waiting on
+        for trigger in task._triggers:
+            if _debug:
+                self.log.info(f"Unpriming {trigger}")
             if task in self._trigger2tasks.setdefault(trigger, []):
                 self._trigger2tasks[trigger].remove(task)
             if not self._trigger2tasks[trigger]:
                 trigger._unprime()
                 del self._trigger2tasks[trigger]
+        task._triggers.clear()
 
         assert self._test is not None
 
@@ -564,7 +567,7 @@ class Scheduler:
 
     def _resume_task_upon(self, task, trigger):
         """Schedule `task` to be resumed when `trigger` fires."""
-        task._trigger = trigger
+        task._triggers.append(trigger)
 
         trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
         if task is self._write_task:
@@ -797,12 +800,13 @@ class Scheduler:
             if _debug:
                 self.log.debug(f"Scheduling with {send_outcome}")
 
-            task._trigger = None
-            result = task._advance(send_outcome)
+            if trigger is not None:
+                task._triggers.remove(trigger)
+            result = task._send(send_outcome)
 
             if task.done():
-                self.log.info(f"{task} had result {result}")
-                self.log.info(f"{task} completed with {task._outcome}")
+                if _debug:
+                    self.log.debug(f"{task} completed with {task._outcome}")
                 assert result is None
                 self._unschedule(task)
 
@@ -893,7 +897,6 @@ class Scheduler:
                 if _debug:
                     self.log.debug(f"Killing {task}")
                 task.kill()
-        self.log.info("triggers2tasks: %r", self._trigger2tasks)
         assert not self._trigger2tasks
 
         # if there are coroutines being scheduled when the test ends, kill them (gh-1347)
