@@ -16,14 +16,14 @@ async def test_sv_if(dut):
 
 
 @cocotb.test(
-    exepect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
+    expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
 )
 async def test_sv_intf_arr_type(dut):
     """Test that interface arrays are the correct type"""
 
     print(dut.sv_if_arr)
 
-    if cocotb.SIM_NAME.lower().startswith("xmsim", "modelsim"):
+    if cocotb.SIM_NAME.lower().startswith(("xmsim", "modelsim")):
         assert isinstance(dut.sv_if_arr, cocotb.handle.ArrayObject)
     else:
         # This is correct
@@ -31,7 +31,7 @@ async def test_sv_intf_arr_type(dut):
 
 
 @cocotb.test(
-    exepect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
+    expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
 )
 async def test_sv_intf_arr_len(dut):
     """Test that interface array length is correct"""
@@ -39,7 +39,7 @@ async def test_sv_intf_arr_len(dut):
 
 
 @cocotb.test(
-    exepect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
+    expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
 )
 async def test_sv_intf_arr_access(dut):
     """Test that interface array objects can be accessed"""
@@ -50,7 +50,7 @@ async def test_sv_intf_arr_access(dut):
 
 
 @cocotb.test(
-    exepect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
+    expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
 )
 @cocotb.test()
 async def test_sv_intf_arr_iteration(dut):
