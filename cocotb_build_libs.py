@@ -150,7 +150,7 @@ def create_rc_file(rc_filename, name, filename, libraries, runtime_libraries):
 
     # Escape double quotes and put every line between double quotes for embedding into rc file
     manifest = manifest.replace('"', '""')
-    manifest = "\n".join(['"%s\\r\\n"' % x for x in manifest.splitlines()])
+    manifest = "\n".join([f'"{x}\\r\\n"' for x in manifest.splitlines()])
 
     rc_body = (
         textwrap.dedent(
@@ -176,7 +176,7 @@ def create_rc_file(rc_filename, name, filename, libraries, runtime_libraries):
 
         # Escape double quotes and put every line between double quotes for embedding into rc file
         manifest = manifest.replace('"', '""')
-        manifest = "\n".join(['"%s\\r\\n"' % x for x in manifest.splitlines()])
+        manifest = "\n".join([f'"{x}\\r\\n"' for x in manifest.splitlines()])
 
         rc_body += (
             textwrap.dedent(
@@ -311,7 +311,7 @@ class build_ext(_build_ext):
                     ]
                     if install_name is not None:
                         ext.extra_link_args += [
-                            "-Wl,-install_name,@rpath/%s.so" % install_name
+                            f"-Wl,-install_name,@rpath/{install_name}.so"
                         ]
 
                 if sys.platform == "linux":
@@ -323,7 +323,7 @@ class build_ext(_build_ext):
                     # /path/to/libcocotbvhpi_modelsim.so)."
                     ext.extra_link_args += ["-static-libstdc++"]
 
-                ext.extra_link_args += ["-Wl,-rpath,%s" % rpath for rpath in rpaths]
+                ext.extra_link_args += [f"-Wl,-rpath,{rpath}" for rpath in rpaths]
 
         # vpi_user.h and vhpi_user.h require that WIN32 is defined
         if os.name == "nt":

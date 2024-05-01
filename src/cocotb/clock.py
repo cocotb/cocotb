@@ -154,7 +154,7 @@ class Clock:
                 await t
 
     def __str__(self):
-        return type(self).__qualname__ + "(%3.1f MHz)" % self.frequency
+        return type(self).__qualname__ + f"({self.frequency:3.1f} MHz)"
 
     @cached_property
     def log(self):

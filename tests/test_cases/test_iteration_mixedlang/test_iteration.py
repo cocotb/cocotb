@@ -74,7 +74,7 @@ async def recursive_discovery(dut):
         dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.LogicObject
     ), (
         "Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable"
-        " but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__
+        f" but it was {type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__}"
     )
 
 
