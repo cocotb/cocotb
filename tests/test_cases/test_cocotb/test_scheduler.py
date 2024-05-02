@@ -828,7 +828,8 @@ async def test_cancel_task_scheduled(_):
     task = cocotb.start_soon(coro())
 
     # cancel before it runs
-    task.cancel()
+    with pytest.warns(RuntimeWarning):
+        task.cancel()
     await NullTrigger()
 
     # will assert by now if not cancelled
@@ -874,3 +875,16 @@ async def test_multiple_concurrent_test_fails(_) -> None:
     cocotb.start_soon(call_error(thing))
     cocotb.start_soon(call_error(thing))
     await Timer(10, "ns")
+
+
+@cocotb.test
+async def test_shutdown_cancellation(dut):
+    async def lol():
+        e = Event()
+        try:
+            await e.wait()
+        except CancelledError:
+            raise MyException()
+
+    cocotb.start_soon(lol())
+    await NullTrigger()

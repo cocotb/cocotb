@@ -885,45 +885,37 @@ class Scheduler:
             self._abort_test(exc)
             self._test_complete_cb()
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         """Clear up all our state.
 
         Unprime all pending triggers and kill off any coroutines, stop all externals.
         """
-        # copy since we modify this in kill
-        items = list((k, list(v)) for k, v in self._trigger2tasks.items())
-
-        # reversing seems to fix gh-928, although the order is still somewhat
-        # arbitrary.
-        for trigger, waiting in items[::-1]:
+        for trigger, waiting in self._trigger2tasks.items():
             for task in waiting:
                 if _debug:
                     self.log.debug(f"Cancelling {task}")
-                task._cancel_now()
-        assert not self._trigger2tasks
+                task._shutdown()
+            trigger._unprime()
+        self._trigger2tasks.clear()
 
         # if there are coroutines being scheduled when the test ends, kill them (gh-1347)
         for task in self._scheduling:
             if _debug:
                 self.log.debug(f"Cancelling {task}")
-            task._cancel_now()
+            task._shutdown()
         self._scheduling = []
 
         # cancel outstanding triggers *before* queued coroutines (gh-3270)
-        while self._pending_triggers:
-            trigger = self._pending_triggers.pop(0)
+        for trigger in self._pending_triggers:
             if _debug:
                 self.log.debug(f"Unpriming {trigger}")
             trigger._unprime()
-        assert not self._pending_triggers
+        self._pending_triggers.clear()
 
         # Kill any queued coroutines.
-        # We use a while loop because task._cancel_now() calls _unschedule(), which will remove the task from _pending_tasks.
-        # If that happens a for loop will stop early and then the assert will fail.
-        while self._pending_tasks:
-            # Get first task but leave it in the list so that _unschedule() will correctly close the unstarted coroutine object.
-            task = self._pending_tasks[0]
-            task._cancel_now()
+        for task in self._pending_tasks:
+            task._shutdown()
+        self._pending_tasks.clear()
 
         if self._main_thread is not threading.current_thread():
             raise Exception("Cleanup() called outside of the main thread")

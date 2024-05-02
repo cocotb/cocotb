@@ -286,14 +286,13 @@ class Task(Generic[T]):
             ),
         )
 
-    def _cancel_now(self) -> None:
+    def _shutdown(self) -> None:
         """Variant of :meth:`cancel` called by the scheduler during test shutdown."""
         if self.done():
             return
 
         self._cancel_exc = CancelledError()
         self._cancel(Error(self._cancel_exc))
-        cocotb._scheduler._unschedule(self)
 
     def cancelled(self) -> bool:
         """Return ``True`` if the Task was cancelled."""
