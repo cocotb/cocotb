@@ -36,7 +36,7 @@ async def test_sv_intf_arr_len(dut):
     assert len(dut.sv_if_arr) == 3
 
 
-@cocotb.test()
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"))
 async def test_sv_intf_arr_access(dut):
     """Test that interface array objects can be accessed"""
     for i in range(3):
@@ -45,7 +45,7 @@ async def test_sv_intf_arr_access(dut):
         assert hasattr(dut.sv_if_arr[i], "c")
 
 
-@cocotb.test()
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"))
 async def test_sv_intf_arr_iteration(dut):
     """Test that interface arrays can be iterated"""
     count = 0
