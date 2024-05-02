@@ -4,6 +4,7 @@
 import collections.abc
 import inspect
 import logging
+import warnings
 from asyncio import CancelledError, InvalidStateError
 from typing import Any, Coroutine, Generator, Generic, List, Optional, TypeVar
 
@@ -128,7 +129,7 @@ class Task(Generic[T]):
         return repr_string
 
     def _send(self, outcome: Outcome) -> Optional["cocotb.triggers.Trigger"]:
-        if self._cancel_exc():
+        if self._cancel_exc is not None:
             return self._cancel(outcome)
         else:
             return self._advance(outcome)
@@ -142,8 +143,8 @@ class Task(Generic[T]):
         Returns:
             The object yielded from the coroutine or None if coroutine finished
         """
+        self._started = True
         try:
-            self._started = True
             return outcome.send(self._coro)
         except StopIteration as e:
             self._outcome = Value(e.value)
@@ -151,38 +152,31 @@ class Task(Generic[T]):
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
 
     def _cancel(self, outcome: Outcome) -> None:
-        if not self._started:
-            # You can't throw CancelledError into unstarted task, coroutines must start being sent `None`.
-            # Also, there's no way to catch it.
-            # So if it hasn't started, just immediately cancel it.
-            self._outcome = Value(None)
-        else:
-            try:
-                outcome.send(self._coro)
-            except CancelledError as e:
-                if e is self._cancel_exc:
-                    # only the exact CancelledError we threw will do.
-                    self._outcome = Value(None)
-                else:
-                    self._outcome = Error(
-                        remove_traceback_frames(e, ["_cancel", "send"])
-                    )
-            except StopIteration as e:
-                self._outcome = Error(
-                    CancellationError(
-                        "Task was cancelled, but exited normally. Did you forget to re-raise the CancelledError?",
-                        Value(e.value),
-                    )
-                )
-            except BaseException as e:
-                self._outcome = Error(remove_traceback_frames(e, ["_cancel", "send"]))
+        self._started = True
+        try:
+            outcome.send(self._coro)
+        except CancelledError as e:
+            if e is self._cancel_exc:
+                # only the exact CancelledError we threw will do.
+                self._outcome = Value(None)
             else:
-                self._outcome = Error(
-                    CancellationError(
-                        "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?",
-                        Value(None),
-                    )
+                self._outcome = Error(remove_traceback_frames(e, ["_cancel", "send"]))
+        except StopIteration as e:
+            self._outcome = Error(
+                CancellationError(
+                    "Task was cancelled, but exited normally. Did you forget to re-raise the CancelledError?",
+                    Value(e.value),
                 )
+            )
+        except BaseException as e:
+            self._outcome = Error(remove_traceback_frames(e, ["_cancel", "send"]))
+        else:
+            self._outcome = Error(
+                CancellationError(
+                    "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?",
+                    Value(None),
+                )
+            )
 
     def kill(self) -> None:
         """Stop a Task without throwing a :exc:`asyncio.CancelledError`.
@@ -206,17 +200,81 @@ class Task(Generic[T]):
         return self._started
 
     def cancel(self, msg: Optional[str] = None) -> None:
-        """Cancel a Task's further execution.
+        """Schedule a Task for cancellation.
 
         When a Task is cancelled, a :exc:`asyncio.CancelledError` is thrown into the Task.
+        This allows the user to catch the :exc:`asyncio.CancelledError`,
+        use :keyword:`finally` statements,
+        or use :term:`context managers`
+        to perform cleanup when a Task is cancelled.
+        This includes when all Tasks are cancelled at the end of the Test.
+
+        Args:
+            msg: A message for the :exc:`CancelledError`.
+
+        Usage:
+            .. code-block:: python3
+
+                async def driver(dut):
+                    # Drives 1 for 100 ns, then drives 2.
+                    # If the driver is cancelled, it returns the value back to 0.
+
+                    dut.signal.value = 1
+                    try:
+                        await Timer(100, "ns")
+                    except CancelledError:
+                        dut.signal.value = 0
+                    else:
+                        dut.signal.value = 2
+
+
+                task = cocotb.start_soon(driver(dut))
+
+                await Timer(10, "ns")
+                # At this point 'task' is blocking on the `Timer(100, 'ns')`.
+
+                task.cancel()
+                # Cancellation is scheduled here, but not performed yet.
+
+                # Force a rescheduling.
+                await NullTrigger()
+
+                # The Task is now cancelled.
+                assert task.done()
+                assert task.cancelled()
+
+                # Check if 'cleanup' statement run.
+                await Timer(1, "ns")
+                assert dut.signal.value == 0
+
+            .. warning::
+                Cancelling a Task which hasn't started will cancel the Task immediately and not raise a :exc:`CancelledError`.
+
+            .. warning::
+                If you catch a :exc:`CancelledError`, make sure to re-raise it using the bare :keyword:`raise` statement.
+                If you do not raise the same exception and the Task ends normally or reaches another ``await``,
+                cocotb will force the Task to end with a :exc:`CancellationError`.
+
+                This is a difference in behavior with `asyncio`, but one we consider to be beneficial to the user.
         """
         if self.done():
             return
 
-        cocotb.log.info(f"scheduling cancel {self}")
+        self._cancel_exc = CancelledError(msg)
+
+        if not self._started:
+            # You can't throw CancelledError into pending task, coroutines must start being sent `None`.
+            # Also, there's no way to catch it.
+            # So if it hasn't started, just immediately cancel it.
+            warnings.warn(
+                "Cancelling an unstarted Task; no `CancelledError` will be raised.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            self._outcome = Value(None)
+            return
 
         # Schedule a CancelledError on the next _send.
-        self._cancel_exc = CancelledError(msg)
         cocotb._scheduler._resume_task_upon(
             self,
             cocotb.triggers.NullTrigger(
