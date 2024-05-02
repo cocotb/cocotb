@@ -28,9 +28,7 @@ async def test_sv_intf_arr_type(dut):
         assert isinstance(dut.sv_if_arr, cocotb.handle.HierarchyArrayObject)
 
 
-@cocotb.test(
-    expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
-)
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"))
 async def test_sv_intf_arr_len(dut):
     """Test that interface array length is correct"""
     assert len(dut.sv_if_arr) == 3
