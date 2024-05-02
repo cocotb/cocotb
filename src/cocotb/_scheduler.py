@@ -494,7 +494,17 @@ class Scheduler:
             if _debug:
                 self.log.debug("All tasks scheduled, handing control back to simulator")
 
-    def _unschedule(self, task):
+    def _unprime_task_trigger(self, task: Task[Any]) -> None:
+        trigger = task._trigger
+        if trigger is not None:
+            task._trigger = None
+            if task in self._trigger2tasks.setdefault(trigger, []):
+                self._trigger2tasks[trigger].remove(task)
+            if not self._trigger2tasks[trigger]:
+                trigger._unprime()
+                del self._trigger2tasks[trigger]
+
+    def _unschedule(self, task: Task[Any]) -> None:
         """Unschedule a task. Unprime any pending triggers"""
         if _debug:
             self.log.debug(f"Unscheduling {task}")
@@ -506,16 +516,7 @@ class Scheduler:
             task._coro.close()
             return
 
-        # Unprime the triggers this task is waiting on
-        for trigger in task._triggers:
-            if _debug:
-                self.log.info(f"Unpriming {trigger}")
-            if task in self._trigger2tasks.setdefault(trigger, []):
-                self._trigger2tasks[trigger].remove(task)
-            if not self._trigger2tasks[trigger]:
-                trigger._unprime()
-                del self._trigger2tasks[trigger]
-        task._triggers.clear()
+        self._unprime_task_trigger(task)
 
         assert self._test is not None
 
@@ -567,7 +568,10 @@ class Scheduler:
 
     def _resume_task_upon(self, task, trigger):
         """Schedule `task` to be resumed when `trigger` fires."""
-        task._triggers.append(trigger)
+        if task._trigger is not None:
+            self._unprime_task_trigger(task)
+
+        task._trigger = trigger
 
         trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
         if task is self._write_task:
@@ -800,8 +804,7 @@ class Scheduler:
             if _debug:
                 self.log.debug(f"Scheduling with {send_outcome}")
 
-            if trigger is not None:
-                task._triggers.remove(trigger)
+            task._trigger = None
             result = task._send(send_outcome)
 
             if task.done():

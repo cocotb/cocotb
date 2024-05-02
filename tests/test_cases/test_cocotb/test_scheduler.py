@@ -382,7 +382,7 @@ async def test_task_repr(dut):
 
     log.info(repr(coro_task))
     assert re.match(
-        r"<Task \d+ pending coro=coroutine_inner\(\) triggers=\[Combine\(Join\(<Task \d+>\), Join\(<Task \d+>\)\)\]>",
+        r"<Task \d+ pending coro=coroutine_inner\(\) trigger=Combine\(Join\(<Task \d+>\), Join\(<Task \d+>\)\)>",
         repr(coro_task),
     )
 
@@ -403,7 +403,7 @@ async def test_task_repr(dut):
 
     log.info(repr(coro_task))
     assert re.match(
-        r"<Task \d+ pending coro=coroutine_first\(\) triggers=\[First\(Join\(<Task \d+>\), <Timer of 2000.00ps at \w+>\)\]>",
+        r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\(Join\(<Task \d+>\), <Timer of 2000.00ps at \w+>\)>",
         repr(coro_task),
     )
 
@@ -415,7 +415,7 @@ async def test_task_repr(dut):
     # Trigger.__await__ should be popped from the coroutine stack
     log.info(repr(coro_task))
     assert re.match(
-        r"<Task \d+ pending coro=coroutine_timer\(\) triggers=\[<Timer of 1000.00ps at \w+>\]>",
+        r"<Task \d+ pending coro=coroutine_timer\(\) trigger=<Timer of 1000.00ps at \w+>>",
         repr(coro_task),
     )
 
