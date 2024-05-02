@@ -30,6 +30,7 @@
 import logging
 import warnings
 from abc import abstractmethod
+from asyncio import CancelledError
 from decimal import Decimal
 from fractions import Fraction
 from typing import (
@@ -822,7 +823,9 @@ async def _wait_callback(
     """Wait for *trigger*, and call *callback* with the outcome of the await."""
     ret: Outcome[T]
     try:
-        ret = Value(await trigger)  # type: ignore # awaiting trigger has a complicated type
+        ret = Value(await trigger)
+    except CancelledError:
+        raise
     except BaseException as exc:
         # hide this from the traceback
         ret = Error(remove_traceback_frames(exc, ["_wait_callback"]))
