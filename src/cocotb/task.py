@@ -123,11 +123,12 @@ class Task(Generic[T]):
             coro=coro_name,
             triggers=self._triggers,
             outcome=self._outcome,
+            cancel_exc=self._cancel_exc,
         )
         return repr_string
 
     def _send(self, outcome: Outcome) -> Optional["cocotb.triggers.Trigger"]:
-        if self.cancelling():
+        if self._cancel_exc():
             return self._cancel(outcome)
         else:
             return self._advance(outcome)
@@ -164,28 +165,22 @@ class Task(Generic[T]):
                     self._outcome = Value(None)
                 else:
                     self._outcome = Error(
-                        CancellationError(
-                            "Task was cancelled, but raised another exception.",
-                            Error(remove_traceback_frames(e, ["_cancel", "send"])),
-                        )
+                        remove_traceback_frames(e, ["_cancel", "send"])
                     )
             except StopIteration as e:
                 self._outcome = Error(
                     CancellationError(
-                        "Task was cancelled, but exited normally.", Value(e.value)
+                        "Task was cancelled, but exited normally. Did you forget to re-raise the CancelledError?",
+                        Value(e.value),
                     )
                 )
             except BaseException as e:
-                self._outcome = Error(
-                    CancellationError(
-                        "Task was cancelled, but raised another exception.",
-                        Error(remove_traceback_frames(e, ["_cancel", "send"])),
-                    )
-                )
+                self._outcome = Error(remove_traceback_frames(e, ["_cancel", "send"]))
             else:
                 self._outcome = Error(
                     CancellationError(
-                        "Task was cancelled, but continued running.", Value(None)
+                        "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?",
+                        Value(None),
                     )
                 )
 
