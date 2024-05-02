@@ -34,7 +34,9 @@ async def test_sv_intf_arr_len(dut):
     assert len(dut.sv_if_arr) == 3
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"))
+@cocotb.test(
+    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("riviera") else ()
+)
 async def test_sv_intf_arr_access(dut):
     """Test that interface array objects can be accessed"""
     for i in range(3):
