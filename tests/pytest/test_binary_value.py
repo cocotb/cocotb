@@ -4,6 +4,8 @@
 import pytest
 
 from cocotb.binary import BinaryRepresentation, BinaryValue
+from cocotb.types.logic import Logic
+from cocotb.types.logic_array import LogicArray
 
 TRUNCATION_MATCH = r"\d+-bit value requested, truncating value"
 
@@ -495,3 +497,10 @@ def test_bad_binstr():
         ValueError, match=r"Attempting to assign character % to a BinaryValue"
     ):
         BinaryValue(value="Uu%")
+
+
+def test_comparisons():
+    assert BinaryValue("01XZ") == LogicArray("01XZ")
+    assert BinaryValue("0") == Logic("0")
+    assert 1 == BinaryValue(1)
+    assert "XZ" == BinaryValue("XZ")
