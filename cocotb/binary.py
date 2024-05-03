@@ -33,6 +33,8 @@ import re
 import warnings
 from enum import Enum
 
+from cocotb._deprecation import deprecated
+
 _RESOLVE_TO_0 = "-lL"
 _RESOLVE_TO_1 = "hH"
 _RESOLVE_TO_CHOICE = "xXzZuUwW"
@@ -399,11 +401,13 @@ class BinaryValue:
         self._str = self._convert_to(val)
 
     @property
+    @deprecated("Use `bv.integer` instead.")
     def value(self):
         """Integer access to the value. **deprecated**"""
         return self.integer
 
     @value.setter
+    @deprecated("Use `bv.integer` instead.")
     def value(self, val):
         self.integer = val
 
@@ -562,14 +566,16 @@ class BinaryValue:
         return False
 
     def __eq__(self, other):
-        if isinstance(other, BinaryValue):
-            other = other.value
-        return self.value == other
-
-    def __ne__(self, other):
-        if isinstance(other, BinaryValue):
-            other = other.value
-        return self.value != other
+        if isinstance(other, (BinaryValue, LogicArray)):
+            return self.binstr == other.binstr
+        elif isinstance(other, int):
+            return self.integer == other
+        elif isinstance(other, str):
+            return self.binstr == other
+        elif isinstance(other, Logic):
+            return self.binstr == str(other)
+        else:
+            return False
 
     def __int__(self):
         return self.integer
@@ -840,6 +846,8 @@ class BinaryValue:
                     + self.binstr[self._n_bits - index : self._n_bits]
                 )
 
+
+from cocotb.types import Logic, LogicArray  # noqa: E402
 
 if __name__ == "__main__":
     import doctest
