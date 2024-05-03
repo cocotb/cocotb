@@ -764,8 +764,9 @@ async def test_task_exception(_):
     task = cocotb.start_soon(coro())
     assert not task.cancelled()
     assert not task.done()
-    with pytest.raises(MyException, match="msg1234"):
-        await task
+    with pytest.warns(FutureWarning, match=".* will not propagate .*"):
+        with pytest.raises(MyException, match="msg1234"):
+            await task
     assert not task.cancelled()
     assert task.done()
     with pytest.raises(MyException, match="msg1234"):

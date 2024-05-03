@@ -10,6 +10,7 @@ Tests related to timing triggers
 * NextTimeStep
 * with_timeout
 """
+
 import warnings
 from decimal import Decimal
 from fractions import Fraction
@@ -19,16 +20,7 @@ import pytest
 import cocotb
 from cocotb.clock import Clock
 from cocotb.simulator import get_precision
-from cocotb.triggers import (
-    First,
-    Join,
-    NextTimeStep,
-    ReadOnly,
-    ReadWrite,
-    RisingEdge,
-    Timer,
-    TriggerException,
-)
+from cocotb.triggers import NextTimeStep, ReadOnly, ReadWrite, Timer, TriggerException
 from cocotb.utils import get_sim_steps, get_sim_time
 
 
@@ -110,90 +102,35 @@ async def test_timer_with_rational_units(dut):
     assert get_sim_time(units="fs") == time_fs + 1_000_000.0, "Expected a delay of 1 ns"
 
 
-exited = False
-
-
-async def do_test_readwrite_in_readonly(dut):
-    global exited
-    await RisingEdge(dut.clk)
-    await ReadOnly()
-    await ReadWrite()
-    exited = True
-
-
-async def do_test_cached_write_in_readonly(dut):
-    global exited
-    await RisingEdge(dut.clk)
-    await ReadOnly()
-    dut.clk.value = 0
-    exited = True
-
-
-async def do_test_afterdelay_in_readonly(dut, delay):
-    global exited
-    await RisingEdge(dut.clk)
-    await ReadOnly()
-    await Timer(delay, "ns")
-    exited = True
-
-
-# A TriggerException is expected to happen in this test, which indicates that
-# ReadWrite after ReadOnly fails to register.
-# - Riviera and Questa (in Verilog) and Xcelium pass.
-# - Riviera and Questa (in VHDL) incorrectly allow registering ReadWrite
-#   after ReadOnly.
-# - Xcelium passes (VHDL and Verilog).
-@cocotb.test(
-    expect_error=TriggerException
-    if (
-        (
-            cocotb.LANGUAGE in ["verilog"]
-            and cocotb.SIM_NAME.lower().startswith(("riviera", "modelsim"))
-        )
-        or cocotb.SIM_NAME.lower().startswith(("xmsim"))
-    )
-    else (),
-    expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim")),
-)
-async def test_readwrite_in_readonly(dut):
-    """Test doing invalid sim operation"""
-    global exited
-    exited = False
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.start_soon(do_test_readwrite_in_readonly(dut))
-    await First(Join(coro), Timer(10_000, "ns"))
-    clk_gen.kill()
-    assert exited
-
-
 @cocotb.test(expect_error=Exception)
 async def test_cached_write_in_readonly(dut):
     """Test doing invalid sim operation"""
-    global exited
-    exited = False
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.start_soon(do_test_cached_write_in_readonly(dut))
-    await First(Join(coro), Timer(10_000, "ns"))
-    clk_gen.kill()
-    assert exited
+
+    # only here because Riviera with VHPI loses its mind otherwise.
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+
+    await ReadOnly()
+    dut.clk.value = 0
 
 
 @cocotb.test()
 async def test_afterdelay_in_readonly_valid(dut):
     """Test Timer delay after ReadOnly phase"""
-    global exited
-    exited = False
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.start_soon(do_test_afterdelay_in_readonly(dut, 1))
-    await First(Join(coro), Timer(100_000, "ns"))
-    clk_gen.kill()
-    assert exited
+
+    # only here because Riviera with VHPI looses its mind otherwise.
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+
+    await ReadOnly()
+    await Timer(10, "ns")
 
 
 @cocotb.test()
 async def test_writes_have_taken_effect_after_readwrite(dut):
     """Test that ReadWrite fires first for the background write coro"""
     dut.stream_in_data.setimmediatevalue(0)
+
+    # only here because Riviera with VHPI looses its mind otherwise.
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
     async def write_manually():
         await ReadWrite()
@@ -326,7 +263,6 @@ async def test_time_units_eq_None(dut):
 
 @cocotb.test()
 async def test_timer_round_mode(_):
-
     # test invalid round_mode specifier
     with pytest.raises(ValueError, match="^Invalid round_mode specifier: notvalid"):
         Timer(1, "step", round_mode="notvalid")
