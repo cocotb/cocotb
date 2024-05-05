@@ -53,7 +53,7 @@ The installation instructions vary depending on your operating system:
 
       .. code-block:: bash
 
-          sudo apt-get install make python3 python3-pip
+          sudo apt-get install make python3 python3-pip libpython3-dev
 
    .. group-tab:: Linux - Red Hat
 
@@ -61,7 +61,7 @@ The installation instructions vary depending on your operating system:
 
       .. code-block:: bash
 
-          sudo yum install make python3 python3-pip
+          sudo yum install make python3 python3-pip python3-libs
 
    .. group-tab:: macOS
 
