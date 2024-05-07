@@ -64,8 +64,8 @@ async def pseudo_region_access(dut):
     dut.genblk1[0]
 
 
-def verilog_test(**kwargs):
-    return cocotb.test(skip=LANGUAGE in ["vhdl"], **kwargs)
+def verilog_test(skip=False, **kwargs):
+    return cocotb.test(skip=skip or LANGUAGE in ["vhdl"], **kwargs)
 
 
 verilator_less_than_5024 = SIM_NAME.startswith("verilator") and VerilatorVersion(
@@ -79,16 +79,7 @@ async def test_cond_scope(dut):
 
 
 @verilog_test(expect_error=AttributeError)
-async def test_both_conds(dut):
-    assert dut.cond_scope.scoped_sub._path == f"{dut._path}.cond_scope.scoped_sub"
-
-    # Xcelium segfaults here
-    print(dut.cond_scope_else._path)
-
-
-@verilog_test(expect_error=AttributeError)
 async def test_bad_var(dut):
-    # Xcelium segfaults here
     print(dut.cond_scope_else_asdf._path)
 
 
@@ -137,6 +128,40 @@ async def recursive_discover(dut):
             _discover(thing)
 
     _discover(dut)
+
+
+class ScopeMissingError(Exception):
+    pass
+
+
+class ScopeModuleMissingError(Exception):
+    pass
+
+
+@verilog_test(
+    expect_error=ScopeModuleMissingError
+    if SIM_NAME.startswith(("xmsim", "riviera"))
+    else ScopeMissingError,
+    skip=verilator_less_than_5024,
+)
+async def test_both_conds(dut):
+    """
+    There's a difference between simulators on whether negative conditional scopes are in the tree
+    This has to be placed after recursive_discover for Xcelium, because hitting cond_scope_else will allow iteration
+    to pick it up, and then segfault on the invalid scope
+    """
+    assert dut.cond_scope.scoped_sub._path == f"{dut._path}.cond_scope.scoped_sub"
+
+    try:
+        print(dut.cond_scope_else._path)
+    except AttributeError as e:
+        raise ScopeMissingError from e
+
+    # Xcelium and Riviera
+    try:
+        print(dut.cond_scope_else.scoped_sub_else._path)
+    except AttributeError as e:
+        raise ScopeModuleMissingError from e
 
 
 @cocotb.test()

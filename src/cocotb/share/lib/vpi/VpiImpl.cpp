@@ -317,6 +317,8 @@ GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
     vpiHandle new_hdl =
         vpi_handle_by_name(const_cast<char *>(fq_name.c_str()), NULL);
 
+// Xcelium will segfault on a scope that doesn't exist
+#ifndef IUS
     /* Some simulators do not support vpiGenScopeArray, only vpiGenScope:
      * - Icarus Verilog
      * - Verilator
@@ -361,6 +363,7 @@ GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
             }
         }
     }
+#endif
 
     if (new_hdl == NULL) {
         LOG_DEBUG("Unable to find '%s'", fq_name.c_str());
