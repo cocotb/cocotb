@@ -140,7 +140,7 @@ class ScopeModuleMissingError(Exception):
 
 @verilog_test(
     expect_error=ScopeModuleMissingError
-    if SIM_NAME.startswith(("xmsim", "riviera"))
+    if SIM_NAME.startswith("xmsim")
     else ScopeMissingError,
     skip=verilator_less_than_5024,
 )
