@@ -317,6 +317,30 @@ GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
     vpiHandle new_hdl =
         vpi_handle_by_name(const_cast<char *>(fq_name.c_str()), NULL);
 
+#ifdef IUS
+    if (new_hdl != NULL && vpi_get(vpiType, new_hdl) == vpiGenScope) {
+        // verify that this xcelium scope is valid, or else we segfault on the
+        // invalid scope Xcelium only returns vpiGenScope, no vpiGenScopeArray
+
+        vpiHandle iter = vpi_iterate(vpiInternalScope, parent_hdl);
+        bool is_valid = [&]() -> bool {
+            for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
+                if (VpiImpl::compare_generate_labels(vpi_get_str(vpiName, rgn),
+                                                     name)) {
+                    return true;
+                }
+            }
+            return false;
+        }();
+        vpi_free_object(iter);
+
+        if (!is_valid) {
+            vpi_free_object(new_hdl);
+            new_hdl = NULL;
+        }
+    }
+#endif
+
 // Xcelium will segfault on a scope that doesn't exist
 #ifndef IUS
     /* Some simulators do not support vpiGenScopeArray, only vpiGenScope:
