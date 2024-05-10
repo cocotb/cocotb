@@ -320,7 +320,7 @@ GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
 #ifdef IUS
     if (new_hdl != NULL && vpi_get(vpiType, new_hdl) == vpiGenScope) {
         // verify that this xcelium scope is valid, or else we segfault on the
-        // invalid scope Xcelium only returns vpiGenScope, no vpiGenScopeArray
+        // invalid scope. Xcelium only returns vpiGenScope, no vpiGenScopeArray
 
         vpiHandle iter = vpi_iterate(vpiInternalScope, parent_hdl);
         bool is_valid = [&]() -> bool {
