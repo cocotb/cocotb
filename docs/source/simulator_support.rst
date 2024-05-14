@@ -451,3 +451,48 @@ Issues for this simulator
 -------------------------
 
 * `All issues with label category:simulators:cvc <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Acvc>`_
+
+.. _sim-dsim:
+
+Altair DSim
+===========
+
+.. warning::
+
+    DSim support for cocotb is experimental.
+    Some features of cocotb may not work correctly or at all.
+    At least DSim version 2025 is required.
+
+In order to use this simulator, set :make:var:`SIM` to ``dsim``:
+
+.. code-block:: bash
+
+    make SIM=dsim
+
+.. note::
+
+    A working installation of `DSim <https://altair.com/dsim>`_ is required.
+    You can install DSim simulator from `Altair Marketplace <https://altairone.com/Marketplace?tab=Info&app=dsim>`_ and find information regarding getting a free license.
+
+.. _sim-dsim-waveforms:
+
+Waveforms
+---------
+
+DSim can produce waveform traces in the VCD format.
+They can be viewed with GTKWave or with `Surfer <https://surfer-project.org/>`_.
+
+To enable VCD tracing, set :make:var:`WAVES` to ``1``.
+
+.. code-block:: bash
+
+    make SIM=dsim WAVES=1
+
+.. _sim-dsim-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:dsim <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Adsim>`_
+
+.. versionadded:: 2.0
