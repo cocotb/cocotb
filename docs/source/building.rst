@@ -117,22 +117,6 @@ Cocotb
 
     ``TRACE`` is used for internal low-level logging and produces very verbose logs.
 
-.. envvar:: COCOTB_RESOLVE_X
-
-    Defines how to resolve bits with a value of ``X``, ``Z``, ``U`` or ``W`` when being converted to integer.
-    Valid settings are:
-
-    ``VALUE_ERROR``
-       raise a :exc:`ValueError` exception
-    ``ZEROS``
-       resolve to ``0``
-    ``ONES``
-       resolve to ``1``
-    ``RANDOM``
-       randomly resolve to a ``0`` or a ``1``
-
-    Set to ``VALUE_ERROR`` by default.
-
 .. envvar:: LIBPYTHON_LOC
 
     The absolute path to the Python library associated with the current Python installation;
