@@ -379,6 +379,14 @@ int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s,
 
     switch (action) {
         case GPI_DEPOSIT:
+#ifdef VERILATOR
+            // vpiNoDelay is the existing behavior in Verilator, as until
+            // verilator/verilator#5087 Verilator ignored the delay part of the
+            // put flag, treating all writes as no delay writes. This forces the
+            // behavior of writes to work the same for newer version of
+            // Verilator as it did for older versions.
+            vpi_put_flag = vpiNoDelay;
+#else
             if (vpiStringVar ==
                 vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>())) {
                 // assigning to a vpiStringVar only seems to work with
@@ -389,6 +397,7 @@ int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s,
                 // verilog testbench
                 vpi_put_flag = vpiInertialDelay;
             }
+#endif
             break;
         case GPI_FORCE:
             vpi_put_flag = vpiForceFlag;
