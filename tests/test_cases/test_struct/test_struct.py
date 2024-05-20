@@ -26,9 +26,6 @@ EXPECT_VAL = "000" if SIM_NAME.startswith("verilator") else "ZZZ"
 async def test_packed_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
     assert repr(dut.my_struct) == "LogicObject(sample_module.my_struct)"
-
-    # use value or value to access signal
-    cocotb.log.info("dut.my_struct.value=%s", dut.my_struct.value)
     assert (
         repr(dut.my_struct.value)
         == f"LogicArray('{EXPECT_VAL}', Range(2, 'downto', 0))"
