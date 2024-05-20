@@ -322,3 +322,9 @@ async def test_timer_round_mode(_):
     await cocotb.triggers.with_timeout(
         Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="round"
     )
+
+
+@cocotb.test
+async def test_read_write_keep_scheudling(dut):
+    for _ in range(100):
+        await ReadWrite()
