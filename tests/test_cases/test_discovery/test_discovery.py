@@ -139,16 +139,13 @@ class ScopeModuleMissingError(Exception):
 
 
 @verilog_test(
-    expect_error=ScopeModuleMissingError
-    if SIM_NAME.startswith("xmsim")
-    else ScopeMissingError,
+    expect_error=ScopeMissingError,
     skip=verilator_less_than_5024,
 )
 async def test_both_conds(dut):
     """
-    There's a difference between simulators on whether negative conditional scopes are in the tree
-    This has to be placed after recursive_discover for Xcelium, because hitting cond_scope_else will allow iteration
-    to pick it up, and then segfault on the invalid scope
+    Xcelium returns invalid scopes with vpi_handle_by_name(), which will segfault if iterated
+    This is now accounted for in VpiImpl.cpp
     """
     assert dut.cond_scope.scoped_sub._path == f"{dut._path}.cond_scope.scoped_sub"
 
@@ -157,7 +154,6 @@ async def test_both_conds(dut):
     except AttributeError as e:
         raise ScopeMissingError from e
 
-    # Xcelium and Riviera
     try:
         print(dut.cond_scope_else.scoped_sub_else._path)
     except AttributeError as e:
