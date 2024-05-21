@@ -15,9 +15,8 @@ from cocotb.handle import HierarchyObject, IntegerObject, LogicObject, StringObj
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
-# Package discovery not implemented for FLI yet
-questa_fli = (
-    SIM_NAME.startswith("modelsim") and os.getenv("VHDL_GPI_INTERFACE", "") == "fli"
+questa_vhpi = (
+    SIM_NAME.startswith("modelsim") and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
 )
 
 nvc_pre_1_13 = SIM_NAME.startswith("nvc") and (
@@ -95,7 +94,9 @@ async def test_package_access(_) -> None:
 
 
 @cocotb.test(
-    expect_fail=(SIM_NAME.startswith("ghdl") or nvc_pre_1_13 or questa_fli),
+    expect_fail=(
+        SIM_NAME.startswith(("ghdl", "riviera", "xmsim", "modelsim")) or nvc_pre_1_13
+    ),
     skip=(LANGUAGE in ["verilog"]),
 )
 async def test_package_access_vhdl(_) -> None:
@@ -130,8 +131,8 @@ async def test_dollar_unit(dut):
 
 
 @cocotb.test(
-    expect_fail=(SIM_NAME.startswith("ghdl") or nvc_pre_1_13 or questa_fli),
-    skip=(LANGUAGE in ["verilog"]),
+    expect_fail=(SIM_NAME.startswith(("ghdl", "riviera", "xmsim")) or nvc_pre_1_13),
+    skip=(LANGUAGE in ["verilog"]) or questa_vhpi,  # Questa crashes with VHPI
 )
 async def test_get_root_handle(dut):
     """Test VHDL workaround suggested in #1833"""
