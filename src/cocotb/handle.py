@@ -1261,6 +1261,30 @@ class StringObject(
         return self.value.decode("ascii")
 
 
+class PackedStructObject(LogicObject, HierarchyObject):
+    """
+    Incorperates the functionality of both HierarchyObject and LogicObject
+
+    For getting struct children with a name collision, use handle["name"]
+
+    Since this class lists LogicObject first for inheritance, conflicting methods will call LogicObject's method
+    """
+
+    def __init__(self, handle, path):
+        # Use HierarchyObject because _sub_handles contains SimHandleBase, which is a broader type
+        HierarchyObject.__init__(self, handle, path)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == "value":
+            return LogicObject.__setattr__(self, "value", value)
+
+        return HierarchyObject.__setattr__(self, name, value)
+
+    def __getitem__(self, index: str) -> SimHandleBase:
+        # we can't index into packed structs, so only support HierarchyObject's __getitem__
+        return HierarchyObject.__getitem__(self, index)
+
+
 _ConcreteHandleTypes = Union[
     HierarchyObject,
     HierarchyArrayObject,
@@ -1281,7 +1305,7 @@ _handle2obj: Dict[
 _type2cls: Dict[int, Type[_ConcreteHandleTypes]] = {
     simulator.MODULE: HierarchyObject,
     simulator.STRUCTURE: HierarchyObject,
-    simulator.PACKED_STRUCTURE: LogicObject,
+    simulator.PACKED_STRUCTURE: PackedStructObject,
     simulator.REG: LogicObject,
     simulator.NET: LogicObject,
     simulator.NETARRAY: ArrayObject[Any, ValueObjectBase[Any, Any]],
