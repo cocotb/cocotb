@@ -1292,6 +1292,7 @@ _handle2obj: Dict[
 _type2cls: Dict[int, Type[_ConcreteHandleTypes]] = {
     simulator.MODULE: HierarchyObject,
     simulator.STRUCTURE: HierarchyObject,
+    simulator.PACKED_STRUCTURE: LogicObject,
     simulator.REG: LogicObject,
     simulator.NET: LogicObject,
     simulator.NETARRAY: ArrayObject[Any, ValueObjectBase[Any, Any]],

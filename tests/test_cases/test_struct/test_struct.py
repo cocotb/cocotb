@@ -1,13 +1,53 @@
-# A set of regression tests for open issues
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
 
 import logging
 import os
 
 import cocotb
 from cocotb._sim_versions import RivieraVersion
+from cocotb.triggers import Timer
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+
+
+EXPECT_VAL = "000" if SIM_NAME.startswith("verilator") else "ZZZ"
+
+
+@cocotb.test(
+    expect_error=AttributeError
+    if SIM_NAME.startswith(("icarus", "ghdl", "nvc"))
+    else (),
+    expect_fail=SIM_NAME.startswith("modelsim"),
+)
+async def test_packed_struct_format(dut):
+    """Test that the correct objects are returned for a struct"""
+    assert repr(dut.my_struct) == "LogicObject(sample_module.my_struct)"
+    assert (
+        repr(dut.my_struct.value)
+        == f"LogicArray('{EXPECT_VAL}', Range(2, 'downto', 0))"
+    )
+
+
+@cocotb.test(
+    expect_error=AttributeError
+    if SIM_NAME.startswith(("icarus", "ghdl", "nvc"))
+    else (),
+    expect_fail=SIM_NAME.startswith(("modelsim", "riviera")),
+)
+async def test_packed_struct_setting(dut):
+    """Test getting and setting setting the value of an entire struct"""
+
+    assert str(dut.my_struct.value) == EXPECT_VAL
+
+    # test struct write -> individual signals
+    dut.my_struct.value = 0
+    await Timer(1000, "ns")
+
+    assert str(dut.my_struct.value) == "000"
 
 
 # GHDL unable to access record signals (gh-2591)
@@ -24,7 +64,7 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
     )
     else ()
 )
-async def issue_330_direct(dut):
+async def test_struct_format(dut):
     """
     Access a structure
     """
@@ -43,12 +83,10 @@ async def issue_330_direct(dut):
 # Verilator doesn't support structs (gh-1275)
 @cocotb.test(
     expect_error=AttributeError
-    if SIM_NAME.startswith(("icarus", "ghdl"))
-    else AssertionError
-    if SIM_NAME.startswith("verilator")
+    if SIM_NAME.startswith(("icarus", "ghdl", "verilator"))
     else ()
 )
-async def issue_330_iteration(dut):
+async def test_struct_iteration(dut):
     """
     Access a structure via issue_330_iteration
     """

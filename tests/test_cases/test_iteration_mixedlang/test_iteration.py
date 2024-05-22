@@ -58,9 +58,9 @@ async def recursive_discovery(dut):
         pass_total = 975
     elif cocotb.SIM_NAME.lower().startswith("xmsim"):
         # Xcelium sometimes doesn't find bits in a std_logic_vector
-        pass_total = 1257
+        pass_total = 1201
     elif cocotb.SIM_NAME.lower().startswith("modelsim"):
-        pass_total = 1332
+        pass_total = 1276
     else:
         pass_total = 1024
 
