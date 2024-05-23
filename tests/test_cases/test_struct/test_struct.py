@@ -52,9 +52,17 @@ async def test_packed_struct_setting(dut):
 
     assert str(dut.my_struct.value) == "000"
 
-    if SIM_NAME.startswith("verilator"):
-        return
+    # this should be logic length, not children length
+    assert len(dut.my_struct) == 3
 
+
+@cocotb.test(
+    expect_error=AttributeError
+    if SIM_NAME.startswith(("icarus", "ghdl", "nvc", "verilator"))
+    else (),
+    expect_fail=SIM_NAME.startswith(("modelsim", "riviera")),
+)
+async def test_packed_struct_internals(dut):
     assert dut.my_struct.val_a.value == 0
     assert dut.my_struct.val_b.value == 0
     assert dut.my_struct["value"].value == 0
@@ -75,8 +83,6 @@ async def test_packed_struct_setting(dut):
     assert dut.my_struct.val_a.value == 1
     assert dut.my_struct.val_b.value == 0
     assert dut.my_struct["value"].value == 1
-
-    assert len(dut.my_struct) == 3
 
 
 # GHDL unable to access record signals (gh-2591)
