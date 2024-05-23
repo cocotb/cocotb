@@ -20,6 +20,11 @@ EXPECT_VAL = "000" if SIM_NAME.startswith("verilator") else "ZZZ"
 @cocotb.test(
     expect_error=AttributeError
     if SIM_NAME.startswith(("icarus", "ghdl", "nvc"))
+    or (
+        SIM_NAME.startswith("riviera")
+        and RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
+        and LANGUAGE == "verilog"
+    )
     else (),
     expect_fail=SIM_NAME.startswith("modelsim"),
 )
@@ -58,7 +63,7 @@ async def test_packed_struct_setting(dut):
 
 @cocotb.test(
     expect_error=AttributeError
-    if SIM_NAME.startswith(("icarus", "ghdl", "nvc", "verilator"))
+    if SIM_NAME.startswith(("icarus", "ghdl", "nvc", "verilator", "riviera"))
     else (),
     expect_fail=SIM_NAME.startswith(("modelsim", "riviera")),
 )
