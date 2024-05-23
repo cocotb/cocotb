@@ -1285,12 +1285,6 @@ class PackedStructObject(LogicObject, HierarchyObject):
         # Use HierarchyObject because _sub_handles contains SimHandleBase, which is a broader type
         HierarchyObject.__init__(self, handle, path)
 
-    def __getattr__(self, name: str) -> Any:
-        if name in {"value", "set", "setimmediatevalue", "is_const"}:
-            return LogicObject.__getattribute__(self, name)
-        # private properties will be resolved in HierarchyObject
-        return HierarchyObject.__getattr__(self, name)
-
     def __setattr__(self, name: str, value: Any) -> None:
         if name == "value":
             return LogicObject.__setattr__(self, "value", value)
