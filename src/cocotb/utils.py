@@ -236,7 +236,7 @@ class _ParameterizedSingletonMetaclass(ABCMeta):
         # Attach a lookup table to this class.
         # Weak such that if the instance is no longer referenced, it can be
         # collected.
-        cls.__instances: "weakref.WeakValueDictionary[Any, Any]" = (
+        cls.__instances: weakref.WeakValueDictionary[Any, Any] = (
             weakref.WeakValueDictionary()
         )
 
@@ -347,7 +347,7 @@ def walk_coro_stack(
     Yields:
         Frame and line number of each frame in the coroutine.
     """
-    c: Optional["types.CoroutineType[Any, Any, Any]"] = coro
+    c: Optional[types.CoroutineType[Any, Any, Any]] = coro
     while c is not None:
         try:
             f = c.cr_frame
