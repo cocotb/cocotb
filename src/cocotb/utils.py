@@ -362,7 +362,7 @@ def walk_coro_stack(
 def extract_coro_stack(
     coro: "types.CoroutineType[Any, Any, Any]", limit: Optional[int] = None
 ) -> traceback.StackSummary:
-    """Create a list of pre-processed entries from the coroutine stack.
+    r"""Create a list of pre-processed entries from the coroutine stack.
 
     This is based on :func:`traceback.extract_tb`.
 
@@ -376,7 +376,7 @@ def extract_coro_stack(
 
     Args:
         coro: The :class:`coroutine` object from which to extract a stack.
-        level: The maximum number of frames from *coro*s stack to extract.
+        level: The maximum number of frames from *coro*\ s stack to extract.
 
     Returns:
         The stack of *coro*.
