@@ -31,7 +31,8 @@ import itertools
 import logging
 from decimal import Decimal
 from fractions import Fraction
-from typing import Union
+from logging import Logger
+from typing import Optional, Union
 
 from cocotb._py_compat import cached_property
 from cocotb.triggers import Timer
@@ -56,9 +57,9 @@ class Clock:
 
     Args:
         signal: The clock pin/signal to be driven.
-        period (int): The clock period. Must convert to an even number of
+        period: The clock period. Must convert to an even number of
             timesteps.
-        units (str, optional): One of
+        units: One of
             ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
             When *units* is ``'step'``,
             the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
@@ -119,15 +120,17 @@ class Clock:
         self.coro = None
         self.mcoro = None
 
-    async def start(self, cycles=None, start_high=True):
+    async def start(
+        self, cycles: Optional[int] = None, start_high: bool = True
+    ) -> None:
         r"""Clocking coroutine.  Start driving your clock by :func:`cocotb.start`\ ing a
         call to this.
 
         Args:
-            cycles (int, optional): Cycle the clock *cycles* number of times,
+            cycles: Cycle the clock *cycles* number of times,
                 or if ``None`` then cycle the clock forever.
                 Note: ``0`` is not the same as ``None``, as ``0`` will cycle no times.
-            start_high (bool, optional): Whether to start the clock with a ``1``
+            start_high: Whether to start the clock with a ``1``
                 for the first half of the period.
                 Default is ``True``.
 
@@ -153,11 +156,11 @@ class Clock:
                 self.signal.value = 1
                 await t
 
-    def __str__(self):
+    def __str__(self) -> str:
         return type(self).__qualname__ + f"({self.frequency:3.1f} MHz)"
 
     @cached_property
-    def log(self):
+    def log(self) -> Logger:
         return logging.getLogger(
             f"cocotb.{type(self).__qualname__}.{self.signal._name}"
         )
