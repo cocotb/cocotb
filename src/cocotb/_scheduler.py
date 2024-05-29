@@ -41,7 +41,7 @@ import threading
 import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Union
 
 import cocotb
 from cocotb import _outcomes, _py_compat
@@ -777,12 +777,12 @@ class Scheduler:
             f"handle: {result!r}\n"
         )
 
-    def _schedule(self, task, trigger=None):
+    def _schedule(self, task: Task, trigger: Optional[Trigger] = None) -> None:
         """Schedule a task to execute.
 
         Args:
-            task (cocotb.task.Task): The task to schedule.
-            trigger (cocotb.triggers.Trigger): The trigger that caused this
+            task: The task to schedule.
+            trigger: The trigger that caused this
                 task to be scheduled.
         """
         if self._current_task is not None:
