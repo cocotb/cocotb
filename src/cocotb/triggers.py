@@ -603,6 +603,7 @@ class Lock(AsyncContextManager[None]):
     Usage:
 
         By directly calling :meth:`acquire` and :meth:`release`.
+
         .. code-block:: python3
 
             await lock.acquire()
@@ -612,6 +613,7 @@ class Lock(AsyncContextManager[None]):
                 lock.release()
 
         Or...
+
         .. code-block:: python3
 
             async with lock:
