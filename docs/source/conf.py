@@ -84,6 +84,13 @@ release = cocotb.__version__
 # The short X.Y version.
 v_major, v_minor = LooseVersion(release).version[:2]
 version = "{}.{}".format(v_major, v_minor)
+# Cocotb commit ID
+try:
+    commit_id = (
+        subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("ascii")
+    )
+except subprocess.CalledProcessError:
+    commit_id = "master"
 
 autoclass_content = "both"
 
@@ -364,5 +371,8 @@ with open("master-notes.rst", "w") as f:
 extlinks = {
     "wikipedia": ("https://en.wikipedia.org/wiki/%s", None),
     "reposharp": ("https://github.com/cocotb/cocotb/issues/%s", "#"),
-    "reposrc": ("https://github.com/cocotb/cocotb/blob/master/%s", None),
+    "reposrc": (
+        f"https://github.com/cocotb/cocotb/blob/{commit_id}/%s",
+        None,
+    ),
 }
