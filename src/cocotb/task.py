@@ -101,7 +101,7 @@ class Task(Generic[T]):
             fmt = "<{name} cancelled coro={coro}() outcome={outcome} cancel_exc={cancel_exc}>"
         elif self.done():
             fmt = "<{name} finished coro={coro}() outcome={outcome}>"
-        elif self._trigger:
+        elif self._trigger is not None:
             fmt = "<{name} pending coro={coro}() trigger={trigger}>"
         elif not self._started:
             fmt = "<{name} created coro={coro}()>"
@@ -187,7 +187,7 @@ class Task(Generic[T]):
                 )
 
     def kill(self) -> None:
-        """Stop a Task without throwing a :exc:`asyncio.CancelledError`.
+        """Stop a Task immediately without throwing a :exc:`asyncio.CancelledError`.
 
         .. deprecated:: 2.0
 

@@ -568,7 +568,13 @@ class Scheduler:
 
     def _resume_task_upon(self, task, trigger):
         """Schedule `task` to be resumed when `trigger` fires."""
+
+        # unprime existing trigger
         if task._trigger is not None:
+            if _debug:
+                self.log.debug(
+                    f"Unpriming existing trigger ({task._trigger!r}) for task ({task!r}) to set a new trigger ({trigger!r})"
+                )
             self._unprime_task_trigger(task)
 
         task._trigger = trigger
