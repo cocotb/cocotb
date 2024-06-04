@@ -128,3 +128,105 @@ int GpiValueCbHdl::run_callback() {
 
     return 0;
 }
+
+void GpiEdgeCbScheduler::init(GpiEdgeCbHdl *cbh) {
+    cbh->it = tracker[cbh->edge-1].cbm.end();
+}
+
+int GpiEdgeCbScheduler::arm(GpiEdgeCbHdl *cbh) {
+    EdgeCbMap &cbmap = tracker[cbh->edge-1].cbm;
+    if (cbh->it != cbmap.end()) {
+        cbmap.erase(cbh->it);
+    }
+    cbh->it = cbmap.emplace(tracker[cbh->edge-1].ctr + cbh->count + 1, cbh);
+    total_cb_count++;
+    if (total_cb_count == 1) {
+        if (track_edges() != 0) {
+            cleanup(cbh);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+void GpiEdgeCbScheduler::cleanup(GpiEdgeCbHdl *cbh) {
+    EdgeCbMap &cbmap = tracker[cbh->edge-1].cbm;
+    if (cbh->it != cbmap.end()) {
+        cbmap.erase(cbh->it);
+        cbh->it = cbmap.end();
+        --total_cb_count;
+    }
+}
+
+bool GpiEdgeCbScheduler::process_edge(bool rising, bool falling) {
+    if (rising) {
+        tracker[0].on_edge();
+    }
+    if (falling) {
+        tracker[1].on_edge();
+    }
+    tracker[2].on_edge();
+
+    return (total_cb_count != 0);
+}
+
+GpiEdgeCbScheduler::EdgeCbTracker::~EdgeCbTracker() {
+    if (!cbm.empty()) {
+        LOG_WARN("EdgeCbTracker not empty on destruction")
+        for (std::pair<const uint64_t, GpiEdgeCbHdl*> &kv: cbm) {
+            kv.second->scheduler = nullptr;
+        }
+    }
+}
+
+void GpiEdgeCbScheduler::EdgeCbTracker::on_edge() {
+    if (cbm.empty()) {
+        return;
+    }
+
+    EdgeCbMap::iterator it = cbm.lower_bound(ctr);
+
+    while (it != cbm.end()) {
+        if (it->first != ctr)
+            break;
+        GpiEdgeCbHdl *cb = it->second;
+        // increment iterator here: deleting/cleaning up cb will remove from
+        // map and decrease counter.
+        ++it;
+        cb->run_callback();
+        delete cb;
+    }
+
+    ctr++;
+}
+
+
+GpiEdgeCbHdl::GpiEdgeCbHdl(GpiEdgeCbScheduler *_scheduler,
+                           GpiImplInterface *impl,
+                           int _edge, uint64_t _count):
+    GpiCbHdl(impl), GpiCommonCbHdl(impl),
+    edge(_edge), count(_count), scheduler(_scheduler)  {
+    scheduler->init(this);
+}
+
+GpiEdgeCbHdl::~GpiEdgeCbHdl() {
+    if (scheduler) {
+        scheduler->cleanup(this);
+    }
+}
+
+int GpiEdgeCbHdl::arm_callback() {
+    if (scheduler) {
+        return scheduler->arm(this);
+    } else {
+        return -1;
+    }
+}
+
+int GpiEdgeCbHdl::cleanup_callback() {
+    if (scheduler) {
+        scheduler->cleanup(this);
+    }
+    return 1;
+}

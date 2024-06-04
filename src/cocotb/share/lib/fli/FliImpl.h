@@ -171,6 +171,23 @@ class FliObjHdl : public GpiObjHdl, public FliObj {
                    const std::string &fq_name) override;
 };
 
+class FliEdgeCbScheduler: public GpiEdgeCbScheduler {
+  public:
+    FliEdgeCbScheduler(GpiSignalObjHdl *handle);
+    ~FliEdgeCbScheduler();
+
+    int track_edges() override;
+
+  private:
+    // If at least one edge callback is registered, we ask to be notified of
+    // value changes for this signal
+    void process_edge_cbs(char value);
+    static void value_change_cb(void *data);
+
+    mtiProcessIdT edge_cb_proc_hdl = nullptr;
+    bool sensitized = false;
+};
+
 class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
   public:
     FliSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype,
@@ -186,6 +203,9 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
                    const std::string &fq_name) override;
     GpiCbHdl *register_value_change_callback(int edge, int (*function)(void *),
                                              void *cb_data) override;
+    GpiCbHdl *register_edge_count_callback(int edge, uint64_t count,
+                                           int (*function)(void *),
+                                           void *cb_data) override;
 
     bool is_var() { return m_is_var; }
 
@@ -194,6 +214,8 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
     FliSignalCbHdl m_rising_cb;
     FliSignalCbHdl m_falling_cb;
     FliSignalCbHdl m_either_cb;
+
+   std::unique_ptr<FliEdgeCbScheduler> edge_cbs;
 };
 
 class FliValueObjHdl : public FliSignalObjHdl {

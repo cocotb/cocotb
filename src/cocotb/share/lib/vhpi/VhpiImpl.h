@@ -190,6 +190,20 @@ class VhpiObjHdl : public GpiObjHdl {
                    const std::string &fq_name) override;
 };
 
+class VhpiEdgeCbScheduler: public GpiEdgeCbScheduler {
+  public:
+    using GpiEdgeCbScheduler::GpiEdgeCbScheduler;
+    ~VhpiEdgeCbScheduler();
+
+    int track_edges() override;
+
+  private:
+    void process_edge_cbs(char value);
+    static void value_change_cb(const vhpiCbDataT *cb_data);
+
+    vhpiHandleT edge_cb_hdl = NULL;
+};
+
 class VhpiSignalObjHdl : public GpiSignalObjHdl {
   public:
     VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl,
@@ -218,6 +232,9 @@ class VhpiSignalObjHdl : public GpiSignalObjHdl {
                    const std::string &fq_name) override;
     GpiCbHdl *register_value_change_callback(int edge, int (*function)(void *),
                                              void *cb_data) override;
+    GpiCbHdl *register_edge_count_callback(int edge, uint64_t count,
+                                           int (*function)(void *),
+                                           void *cb_data) override;
 
   protected:
     vhpiEnumT chr2vhpi(char value);
@@ -226,6 +243,7 @@ class VhpiSignalObjHdl : public GpiSignalObjHdl {
     VhpiValueCbHdl m_rising_cb;
     VhpiValueCbHdl m_falling_cb;
     VhpiValueCbHdl m_either_cb;
+    std::unique_ptr<VhpiEdgeCbScheduler> edge_cbs;
 };
 
 class VhpiLogicSignalObjHdl : public VhpiSignalObjHdl {

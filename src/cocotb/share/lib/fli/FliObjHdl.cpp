@@ -65,6 +65,75 @@ GpiCbHdl *FliSignalObjHdl::register_value_change_callback(
     return (GpiCbHdl *)cb;
 }
 
+GpiCbHdl *FliSignalObjHdl::register_edge_count_callback(
+    int edge, uint64_t count, int (*function)(void *), void *cb_data) {
+    if ((edge == 0) || (edge & (GPI_RISING|GPI_FALLING)) != edge) {
+        return nullptr;
+    }
+    if (!edge_cbs) {
+        try {
+            edge_cbs = std::unique_ptr<FliEdgeCbScheduler>(
+                new FliEdgeCbScheduler(this));
+        } catch (...) {
+            return nullptr;
+        }
+    }
+    GpiEdgeCbHdl *ret = new GpiEdgeCbHdl(edge_cbs.get(), m_impl, edge, count);
+    ret->set_user_data(function, cb_data);
+    ret->arm_callback();
+    return ret;
+}
+
+FliEdgeCbScheduler::FliEdgeCbScheduler(GpiSignalObjHdl *handle):
+    GpiEdgeCbScheduler(handle) {
+    edge_cb_proc_hdl =
+        mti_CreateProcess(NULL, &FliEdgeCbScheduler::value_change_cb,
+                          (void*) this);
+}
+
+FliEdgeCbScheduler::~FliEdgeCbScheduler() {
+    if (sensitized) {
+        mti_Desensitize(edge_cb_proc_hdl);
+        sensitized = false;
+    }
+}
+
+void FliEdgeCbScheduler::process_edge_cbs(char value) {
+    bool rising = true, falling = true;
+    if (value == '1') {
+        falling = false;
+    } else if (value == '0') {
+        rising = false;
+    }
+    if (!process_edge(rising, falling)) {
+        mti_Desensitize(edge_cb_proc_hdl);
+        sensitized = false;
+    }
+}
+
+void FliEdgeCbScheduler::value_change_cb(void *data) {
+    FliEdgeCbScheduler *cb_sched =
+        reinterpret_cast<FliEdgeCbScheduler*>(data);
+    cb_sched->process_edge_cbs(
+        cb_sched->signal_obj->get_signal_value_binstr()[0]);
+}
+
+int FliEdgeCbScheduler::track_edges() {
+    if (sensitized) {
+        // we are already getting called back on edges. This can happen in
+        // edge cases of a callback being removed before being called, and
+        // before edge cbs are removed another callback is added, thinking
+        // it was the first one.
+        return 0;
+    }
+
+    mti_Sensitize(edge_cb_proc_hdl, signal_obj->get_handle<mtiSignalIdT>(),
+                  MTI_EVENT);
+    sensitized = true;
+
+    return 0;
+}
+
 int FliObjHdl::initialise(const std::string &name, const std::string &fq_name) {
     bool is_signal =
         (get_acc_type() == accSignal || get_acc_full_type() == accAliasSignal);

@@ -176,6 +176,22 @@ class VpiObjHdl : public GpiObjHdl {
     const char *get_definition_file() override;
 };
 
+class VpiEdgeCbScheduler: public GpiEdgeCbScheduler {
+  public:
+    using GpiEdgeCbScheduler::GpiEdgeCbScheduler;
+    ~VpiEdgeCbScheduler();
+
+    int track_edges() override;
+
+  private:
+    // If at least one edge callback is registered, we ask to be notified of
+    // value changes for this signal
+    int process_edge_cbs(char value);
+    static int value_change_cb(p_cb_data pcbd);
+
+    vpiHandle edge_cb_hdl = NULL;
+};
+
 class VpiSignalObjHdl : public GpiSignalObjHdl {
   public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl,
@@ -202,6 +218,9 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
                    const std::string &fq_name) override;
     GpiCbHdl *register_value_change_callback(int edge, int (*function)(void *),
                                              void *cb_data) override;
+    GpiCbHdl *register_edge_count_callback(int edge, uint64_t count,
+                                           int (*function)(void *),
+                                           void *cb_data) override;
 
   private:
     int set_signal_value(s_vpi_value value, gpi_set_action_t action);
@@ -209,6 +228,7 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
     VpiValueCbHdl m_rising_cb;
     VpiValueCbHdl m_falling_cb;
     VpiValueCbHdl m_either_cb;
+    std::unique_ptr<VpiEdgeCbScheduler> edge_cbs;
 };
 
 class VpiIterator : public GpiIterator {

@@ -277,6 +277,14 @@ static callback_data *callback_data_new(PyObject *func, PyObject *args,
     return data;
 }
 
+static void callback_data_delete(callback_data *cb_data) {
+    Py_XDECREF(cb_data->function);
+    Py_XDECREF(cb_data->args);
+    Py_XDECREF(cb_data->kwargs);
+
+    free(cb_data);
+}
+
 // Register a callback for read-only state of sim
 // First argument is the function to call
 // Remaining arguments are keyword arguments to be passed to the callback
@@ -534,6 +542,102 @@ static PyObject *register_value_change_callback(
 
     // Check success
     PyObject *rv = gpi_hdl_New(hdl);
+
+    return rv;
+}
+
+// Register edge_count callback. Arguments:
+// 1) the signal handle, 2) the function to call, 3) the edge (int),
+// and 4) the count of edges to skip before the callback.
+// Remaining arguments and keyword arguments are to be passed to the callback
+static PyObject *register_edge_count_callback(
+    PyObject *, PyObject *args)  //, PyObject *keywds)
+{
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
+
+    Py_ssize_t numargs = PyTuple_Size(args);
+
+    if (numargs < 4) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Attempt to register edge count callback without "
+                        "enough arguments!");
+        return NULL;
+    }
+
+    PyObject *pSigHdl = PyTuple_GetItem(args, 0);
+    if (Py_TYPE(pSigHdl) != &gpi_hdl_Object<gpi_sim_hdl>::py_type) {
+        PyErr_SetString(PyExc_TypeError,
+                        "First argument must be a gpi_sim_hdl");
+        return NULL;
+    }
+    gpi_sim_hdl sig_hdl = ((gpi_hdl_Object<gpi_sim_hdl> *)pSigHdl)->hdl;
+
+    // Extract the callback function
+    PyObject *function = PyTuple_GetItem(args, 1);
+    if (!PyCallable_Check(function)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Attempt to register edge count callback without "
+                        "passing a callable callback!");
+        return NULL;
+    }
+
+    long edge = PyLong_AsLong(PyTuple_GetItem(args, 2));
+    if ((edge == -1) && PyErr_Occurred()) {
+        return NULL;
+    }
+    if ((edge != GPI_RISING) && (edge != GPI_FALLING) &&
+        (edge != (GPI_RISING|GPI_FALLING))) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Attempt to register value change callback for an "
+                        "invalid edge!");
+        return NULL;
+    }
+    unsigned long long count =
+        PyLong_AsUnsignedLongLong(PyTuple_GetItem(args, 3));
+    if ((count == (unsigned long long)-1) && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    // Remaining args for function
+    PyObject *fArgs = PyTuple_GetSlice(args, 4, numargs);  // New reference
+    if (fArgs == NULL) {
+        return NULL;
+    }
+    Py_INCREF(function);
+
+    callback_data *cb_data = callback_data_new(function, fArgs, NULL);
+    if (cb_data == NULL) {
+        Py_DECREF(function);
+        Py_DECREF(fArgs);
+        return NULL;
+    }
+
+    GpiCbHdl *hdl = gpi_register_edge_count_callback(
+        (gpi_function_t)handle_gpi_callback,
+        cb_data, sig_hdl, int(edge), count);
+
+    if (!hdl) {
+        callback_data_delete(cb_data);
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Failed to create edge callback handle!");
+        return NULL;
+    }
+
+    PyObject *rv = gpi_hdl_New(hdl);
+
+    if (!rv) {
+        // cb_data won't get cleaned up elsewhere unless the cb is called
+        callback_data_delete(cb_data);
+        // Unfortunately here GpiCbHdl is only forward declared and cannot
+        // be deleted.
+        //delete hdl;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Failed to create python object "
+                        "for edge callback handle!");
+    }
 
     return rv;
 }
@@ -859,7 +963,9 @@ static int add_module_constants(PyObject *simulator) {
         PyModule_AddIntConstant(simulator, "PACKAGE", GPI_PACKAGE) < 0 ||
         PyModule_AddIntConstant(simulator, "OBJECTS", GPI_OBJECTS) < 0 ||
         PyModule_AddIntConstant(simulator, "DRIVERS", GPI_DRIVERS) < 0 ||
-        PyModule_AddIntConstant(simulator, "LOADS", GPI_LOADS) < 0 || false) {
+        PyModule_AddIntConstant(simulator, "LOADS", GPI_LOADS) < 0 ||
+        PyModule_AddIntConstant(simulator, "RISING_EDGE", GPI_RISING) < 0 ||
+        PyModule_AddIntConstant(simulator, "FALLING_EDGE", GPI_FALLING) < 0) {
         return -1;
     }
 
@@ -930,6 +1036,16 @@ static PyMethodDef SimulatorMethods[] = {
                "cocotb.simulator.gpi_sim_hdl, func: Callable[..., None], edge: "
                "int, *args: Any) -> cocotb.simulator.gpi_cb_hdl\n"
                "Register a signal change callback.")},
+    {"register_edge_count_callback", register_edge_count_callback,
+     METH_VARARGS,
+     PyDoc_STR("register_edge_count_callback(signal, func, edge, count, /, *args)\n"
+               "--\n\n"
+               "register_edge_count_callback(signal: "
+               "cocotb.simulator.gpi_sim_hdl, func: Callable[..., None], edge: "
+               "int, count: int, *args: Any) -> cocotb.simulator.gpi_cb_hdl\n"
+               "Register a callback to happen on the specified edge of the given "
+               "signal. Count indicates how many of the desired edges to ignore "
+               "before running the callback (so 0 is the next edge).")},
     {"register_readonly_callback", register_readonly_callback, METH_VARARGS,
      PyDoc_STR("register_readonly_callback(func, /, *args)\n"
                "--\n\n"

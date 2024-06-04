@@ -549,6 +549,26 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *),
     }
 }
 
+gpi_cb_hdl gpi_register_edge_count_callback(int (*gpi_function)(void *),
+                                            void *gpi_cb_data,
+                                            gpi_sim_hdl sig_hdl,
+                                            int edge, uint64_t count) {
+    GpiSignalObjHdl *signal_hdl = dynamic_cast<GpiSignalObjHdl *>(sig_hdl);
+    if (!signal_hdl) {
+        LOG_ERROR("Attempted to register an edge count callback on "
+                  "wrong object type.");
+        return NULL;
+    }
+    GpiCbHdl *gpi_hdl = signal_hdl->register_edge_count_callback(
+        edge, count, gpi_function, gpi_cb_data);
+    if (!gpi_hdl) {
+        LOG_ERROR("Failed to register an edge count callback");
+        return NULL;
+    } else {
+        return gpi_hdl;
+    }
+}
+
 gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
                                        void *gpi_cb_data, uint64_t time) {
     // It should not matter which implementation we use for this so just pick

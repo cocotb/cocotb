@@ -40,6 +40,7 @@
 #include <gpi.h>
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -53,7 +54,9 @@ typedef enum gpi_cb_state {
 class GpiCbHdl;
 class GpiImplInterface;
 class GpiIterator;
-class GpiCbHdl;
+class GpiSignalObjHdl;
+class GpiEdgeCbHdl;
+class GpiEdgeCbScheduler;
 
 /* Base GPI class others are derived from */
 class GPI_EXPORT GpiHdl {
@@ -167,6 +170,8 @@ class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
 
     virtual GpiCbHdl *register_value_change_callback(
         int edge, int (*gpi_function)(void *), void *gpi_cb_data) = 0;
+    virtual GpiCbHdl *register_edge_count_callback(
+        int edge, uint64_t count, int (*function)(void *), void *cb_data) = 0;
 };
 
 /* GPI Callback handle */
@@ -211,6 +216,88 @@ class GPI_EXPORT GpiValueCbHdl : public virtual GpiCommonCbHdl {
   protected:
     std::string required_value;
     GpiSignalObjHdl *m_signal;
+};
+
+/* GPI edge callback scheduler */
+//
+// Class implementing the logic to register multiple GpiEdgeCbHdl to the same
+// signal, with potentially different edge type or counter values. It works
+// by requesting the signal object to notify when the signal changes if any
+// callback is registered, and running + cleaning up the registered callbacks
+// at the appropriate time.
+class GPI_EXPORT GpiEdgeCbScheduler {
+  public:
+    GpiEdgeCbScheduler(GpiSignalObjHdl *handle): signal_obj(handle) {}
+    virtual ~GpiEdgeCbScheduler() = default;
+
+    void init(GpiEdgeCbHdl *cbh);
+    int arm(GpiEdgeCbHdl *cbh);
+    void cleanup(GpiEdgeCbHdl *cbh);
+
+    using EdgeCbMap = std::multimap<uint64_t, GpiEdgeCbHdl*>;
+
+  protected:
+    GpiSignalObjHdl *signal_obj = nullptr;
+
+    // This method is called by the signal object implementation when the
+    // signal value changes. If it returns true, the implementation should
+    // keep tracking value changes and calling process_edges.
+    // NOTE: if the new value for the signal is "1", call
+    // process_edge(true, false); if it's "0", call process_edge(false, true);
+    // if it's neither but it changed, call process_edge(true, true).
+    bool process_edge(bool rising, bool falling);
+
+    // This method must be implemented in the derived classes. When called,
+    // every time the signal changes the implementation must call
+    // edge_cbs->process_edge(rising, falling);
+    // and continue to do so until it returns false.
+    virtual int track_edges() = 0;
+
+  private:
+    // The way edge callbacks work is that we keep a counter of how many edges
+    // have occurred so far, together with a map of callbacks supposed to be
+    // run at a given edge count. Every time an edge occurs, run any callback
+    // registered for that counter value, and increment the counter.
+    // Note: the counter increments only when there is at least one registered
+    // callback.
+
+    struct GPI_EXPORT EdgeCbTracker {
+      ~EdgeCbTracker();
+      // Increment the counter and return the number of callbacks dispatched
+      void on_edge();
+      uint64_t ctr = 0;
+      EdgeCbMap cbm;
+    };
+
+    // There are three separate trackers for GPI_RISING, GPI_FALLING, and
+    // (GPI_RISING | GPI_FALLING). This is because in edge cases a signal
+    // does not necessarily only toggle with rising and falling edges, so
+    // in general the three counters do not stay in sync.
+    // (think e.g. 0->1->X->1->X->... or 0->X->1->X->0->...)
+    EdgeCbTracker tracker[3];
+    size_t total_cb_count = 0;
+};
+
+class GPI_EXPORT GpiEdgeCbHdl : public virtual GpiCommonCbHdl {
+  public:
+    GpiEdgeCbHdl(GpiEdgeCbScheduler *scheduler, GpiImplInterface *impl,
+                 int edge, uint64_t count);
+    ~GpiEdgeCbHdl();
+    int arm_callback() override;
+    int cleanup_callback() override;
+
+  protected:
+    friend class GpiEdgeCbScheduler;
+    int edge;
+    uint64_t count;
+    // Edge callbacks, when active, are kept in a multimap
+    // edge_n -> GpiEdgeCbHdl* (see GpiEdgeCbScheduler).
+    // This is an iterator to the multimap entry for this CB, or the map's
+    // end() iterator if this callback is not armed. Note that for a multimap,
+    // end() is not invalidated by insertions/removals, and can be used as
+    // a sentinel.
+    GpiEdgeCbScheduler::EdgeCbMap::iterator it;
+    GpiEdgeCbScheduler *scheduler;
 };
 
 class GPI_EXPORT GpiIterator : public GpiHdl {

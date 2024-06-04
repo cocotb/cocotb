@@ -265,3 +265,82 @@ GpiCbHdl *VpiSignalObjHdl::register_value_change_callback(
 
     return cb;
 }
+
+GpiCbHdl *VpiSignalObjHdl::register_edge_count_callback(
+    int edge, uint64_t count, int (*function)(void *), void *cb_data) {
+    if ((edge == 0) || (edge & (GPI_RISING|GPI_FALLING)) != edge) {
+        return nullptr;
+    }
+    if (!edge_cbs) {
+        try {
+            edge_cbs = std::unique_ptr<VpiEdgeCbScheduler>(
+                new VpiEdgeCbScheduler(this));
+        } catch (...) {
+            return nullptr;
+        }
+    }
+    GpiEdgeCbHdl *ret = new GpiEdgeCbHdl(edge_cbs.get(), m_impl, edge, count);
+    ret->set_user_data(function, cb_data);
+    ret->arm_callback();
+    return ret;
+}
+
+VpiEdgeCbScheduler::~VpiEdgeCbScheduler() {
+    if (edge_cb_hdl) {
+        vpi_remove_cb(edge_cb_hdl);
+        edge_cb_hdl = nullptr;
+    }
+}
+
+int VpiEdgeCbScheduler::process_edge_cbs(char value) {
+    bool rising = true, falling = true;
+    if (value == '1') {
+        falling = false;
+    } else if (value == '0') {
+        rising = false;
+    }
+    if (!process_edge(rising, falling)) {
+        vpi_remove_cb(edge_cb_hdl);
+        edge_cb_hdl = nullptr;
+    }
+    return 0;
+}
+
+int VpiEdgeCbScheduler::value_change_cb(p_cb_data pcbd) {
+    VpiEdgeCbScheduler *cb_sched =
+        reinterpret_cast<VpiEdgeCbScheduler*>(pcbd->user_data);
+    return cb_sched->process_edge_cbs(pcbd->value->value.str[0]);
+}
+
+int VpiEdgeCbScheduler::track_edges() {
+    if (edge_cb_hdl != nullptr) {
+        // we are already getting called back on edges. This can happen in
+        // edge cases of a callback being removed before being called, and
+        // before edge cbs are removed another callback is added, thinking
+        // it was the first one.
+        return 0;
+    }
+
+    s_vpi_time vpi_time;
+    s_vpi_value vpi_value;
+    vpi_time.type = vpiSuppressTime;
+    vpi_value.format = vpiBinStrVal;
+    s_cb_data edge_cb_data = {
+        .reason = cbValueChange,
+        .cb_rtn = &VpiEdgeCbScheduler::value_change_cb,
+        .obj = signal_obj->get_handle<vpiHandle>(),
+        .time = &vpi_time,
+        .value = &vpi_value,
+        .index = 0,
+        .user_data = (char *) this
+    };
+
+    edge_cb_hdl = vpi_register_cb(&edge_cb_data);
+
+    if (!edge_cb_hdl) {
+        LOG_ERROR("Failed to register edge tracking callback");
+        return -1;
+    } else {
+        return 0;
+    }
+}

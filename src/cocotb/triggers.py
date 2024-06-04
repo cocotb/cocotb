@@ -925,13 +925,11 @@ class First(_AggregateWaitable[Any]):
         return await first_trigger
 
 
-class ClockCycles(Waitable["ClockCycles"]):
+class ClockCycles(GPITrigger):
     r"""Fires after *num_cycles* transitions of *signal*.
 
     If *rising* is ``True``, it fires after *num_cycle* transitions of *signal* from non-``1`` to ``1``.
     If *rising* is ``False``, it fires after *num_cycle* transitions of *signal* from non-``0`` to ``0``.
-
-    ``await``\ ing this Trigger returns the ClockCycle object.
 
     Args:
         signal: The signal to monitor.
@@ -946,24 +944,24 @@ class ClockCycles(Waitable["ClockCycles"]):
     def __init__(
         self, signal: LogicObject, num_cycles: int, rising: bool = True
     ) -> None:
+        super().__init__()
         self.signal = signal
         self.num_cycles = num_cycles
-        self._type: Union[Type[RisingEdge], Type[FallingEdge]]
-        if rising is True:
-            self._type = RisingEdge
-        else:
-            self._type = FallingEdge
+        self.edge = simulator.RISING_EDGE if rising else simulator.FALLING_EDGE
 
-    async def _wait(self) -> "ClockCycles":
-        trigger = self._type(self.signal)
-        for _ in range(self.num_cycles):
-            await trigger
-        return self
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+        if self._cbhdl is None:
+            self._cbhdl = simulator.register_edge_count_callback(
+                self.signal._handle, callback, self.edge, self.num_cycles, self
+            )
+            if self._cbhdl is None:
+                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+        super()._prime(callback)
 
     def __repr__(self) -> str:
         # no _pointer_str here, since this is not a trigger, so identity
         # doesn't matter.
-        if self._type is RisingEdge:
+        if self.edge == simulator.RISING_EDGE:
             fmt = "{}({!r}, {!r})"
         else:
             fmt = "{}({!r}, {!r}, rising=False)"
