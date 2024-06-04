@@ -43,7 +43,6 @@ from typing import (
     Generic,
     List,
     Optional,
-    Type,
     TypeVar,
     Union,
     cast,
