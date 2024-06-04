@@ -589,7 +589,7 @@ static PyObject *register_edge_count_callback(
         return NULL;
     }
     if ((edge != GPI_RISING) && (edge != GPI_FALLING) &&
-        (edge != (GPI_RISING|GPI_FALLING))) {
+        (edge != (GPI_RISING | GPI_FALLING))) {
         PyErr_SetString(PyExc_TypeError,
                         "Attempt to register value change callback for an "
                         "invalid edge!");
@@ -615,9 +615,9 @@ static PyObject *register_edge_count_callback(
         return NULL;
     }
 
-    GpiCbHdl *hdl = gpi_register_edge_count_callback(
-        (gpi_function_t)handle_gpi_callback,
-        cb_data, sig_hdl, int(edge), count);
+    GpiCbHdl *hdl =
+        gpi_register_edge_count_callback((gpi_function_t)handle_gpi_callback,
+                                         cb_data, sig_hdl, int(edge), count);
 
     if (!hdl) {
         callback_data_delete(cb_data);
@@ -633,7 +633,7 @@ static PyObject *register_edge_count_callback(
         callback_data_delete(cb_data);
         // Unfortunately here GpiCbHdl is only forward declared and cannot
         // be deleted.
-        //delete hdl;
+        // delete hdl;
         PyErr_SetString(PyExc_RuntimeError,
                         "Failed to create python object "
                         "for edge callback handle!");
@@ -1036,16 +1036,16 @@ static PyMethodDef SimulatorMethods[] = {
                "cocotb.simulator.gpi_sim_hdl, func: Callable[..., None], edge: "
                "int, *args: Any) -> cocotb.simulator.gpi_cb_hdl\n"
                "Register a signal change callback.")},
-    {"register_edge_count_callback", register_edge_count_callback,
-     METH_VARARGS,
-     PyDoc_STR("register_edge_count_callback(signal, func, edge, count, /, *args)\n"
-               "--\n\n"
-               "register_edge_count_callback(signal: "
-               "cocotb.simulator.gpi_sim_hdl, func: Callable[..., None], edge: "
-               "int, count: int, *args: Any) -> cocotb.simulator.gpi_cb_hdl\n"
-               "Register a callback to happen on the specified edge of the given "
-               "signal. Count indicates how many of the desired edges to ignore "
-               "before running the callback (so 0 is the next edge).")},
+    {"register_edge_count_callback", register_edge_count_callback, METH_VARARGS,
+     PyDoc_STR(
+         "register_edge_count_callback(signal, func, edge, count, /, *args)\n"
+         "--\n\n"
+         "register_edge_count_callback(signal: "
+         "cocotb.simulator.gpi_sim_hdl, func: Callable[..., None], edge: "
+         "int, count: int, *args: Any) -> cocotb.simulator.gpi_cb_hdl\n"
+         "Register a callback to happen on the specified edge of the given "
+         "signal. Count indicates how many of the desired edges to ignore "
+         "before running the callback (so 0 is the next edge).")},
     {"register_readonly_callback", register_readonly_callback, METH_VARARGS,
      PyDoc_STR("register_readonly_callback(func, /, *args)\n"
                "--\n\n"

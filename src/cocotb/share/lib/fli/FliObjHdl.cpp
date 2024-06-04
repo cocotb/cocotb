@@ -65,9 +65,11 @@ GpiCbHdl *FliSignalObjHdl::register_value_change_callback(
     return (GpiCbHdl *)cb;
 }
 
-GpiCbHdl *FliSignalObjHdl::register_edge_count_callback(
-    int edge, uint64_t count, int (*function)(void *), void *cb_data) {
-    if ((edge == 0) || (edge & (GPI_RISING|GPI_FALLING)) != edge) {
+GpiCbHdl *FliSignalObjHdl::register_edge_count_callback(int edge,
+                                                        uint64_t count,
+                                                        int (*function)(void *),
+                                                        void *cb_data) {
+    if ((edge == 0) || (edge & (GPI_RISING | GPI_FALLING)) != edge) {
         return nullptr;
     }
     if (!edge_cbs) {
@@ -84,11 +86,10 @@ GpiCbHdl *FliSignalObjHdl::register_edge_count_callback(
     return ret;
 }
 
-FliEdgeCbScheduler::FliEdgeCbScheduler(GpiSignalObjHdl *handle):
-    GpiEdgeCbScheduler(handle) {
-    edge_cb_proc_hdl =
-        mti_CreateProcess(NULL, &FliEdgeCbScheduler::value_change_cb,
-                          (void*) this);
+FliEdgeCbScheduler::FliEdgeCbScheduler(GpiSignalObjHdl *handle)
+    : GpiEdgeCbScheduler(handle) {
+    edge_cb_proc_hdl = mti_CreateProcess(
+        NULL, &FliEdgeCbScheduler::value_change_cb, (void *)this);
 }
 
 FliEdgeCbScheduler::~FliEdgeCbScheduler() {
@@ -112,8 +113,7 @@ void FliEdgeCbScheduler::process_edge_cbs(char value) {
 }
 
 void FliEdgeCbScheduler::value_change_cb(void *data) {
-    FliEdgeCbScheduler *cb_sched =
-        reinterpret_cast<FliEdgeCbScheduler*>(data);
+    FliEdgeCbScheduler *cb_sched = reinterpret_cast<FliEdgeCbScheduler *>(data);
     cb_sched->process_edge_cbs(
         cb_sched->signal_obj->get_signal_value_binstr()[0]);
 }

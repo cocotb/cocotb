@@ -170,8 +170,9 @@ class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
 
     virtual GpiCbHdl *register_value_change_callback(
         int edge, int (*gpi_function)(void *), void *gpi_cb_data) = 0;
-    virtual GpiCbHdl *register_edge_count_callback(
-        int edge, uint64_t count, int (*function)(void *), void *cb_data) = 0;
+    virtual GpiCbHdl *register_edge_count_callback(int edge, uint64_t count,
+                                                   int (*function)(void *),
+                                                   void *cb_data) = 0;
 };
 
 /* GPI Callback handle */
@@ -227,14 +228,14 @@ class GPI_EXPORT GpiValueCbHdl : public virtual GpiCommonCbHdl {
 // at the appropriate time.
 class GPI_EXPORT GpiEdgeCbScheduler {
   public:
-    GpiEdgeCbScheduler(GpiSignalObjHdl *handle): signal_obj(handle) {}
+    GpiEdgeCbScheduler(GpiSignalObjHdl *handle) : signal_obj(handle) {}
     virtual ~GpiEdgeCbScheduler() = default;
 
     void init(GpiEdgeCbHdl *cbh);
     int arm(GpiEdgeCbHdl *cbh);
     void cleanup(GpiEdgeCbHdl *cbh);
 
-    using EdgeCbMap = std::multimap<uint64_t, GpiEdgeCbHdl*>;
+    using EdgeCbMap = std::multimap<uint64_t, GpiEdgeCbHdl *>;
 
   protected:
     GpiSignalObjHdl *signal_obj = nullptr;
@@ -262,11 +263,11 @@ class GPI_EXPORT GpiEdgeCbScheduler {
     // callback.
 
     struct GPI_EXPORT EdgeCbTracker {
-      ~EdgeCbTracker();
-      // Increment the counter and return the number of callbacks dispatched
-      void on_edge();
-      uint64_t ctr = 0;
-      EdgeCbMap cbm;
+        ~EdgeCbTracker();
+        // Increment the counter and return the number of callbacks dispatched
+        void on_edge();
+        uint64_t ctr = 0;
+        EdgeCbMap cbm;
     };
 
     // There are three separate trackers for GPI_RISING, GPI_FALLING, and

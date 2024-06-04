@@ -176,7 +176,7 @@ class VpiObjHdl : public GpiObjHdl {
     const char *get_definition_file() override;
 };
 
-class VpiEdgeCbScheduler: public GpiEdgeCbScheduler {
+class VpiEdgeCbScheduler : public GpiEdgeCbScheduler {
   public:
     using GpiEdgeCbScheduler::GpiEdgeCbScheduler;
     ~VpiEdgeCbScheduler();

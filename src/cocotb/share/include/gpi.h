@@ -243,9 +243,9 @@ GPI_EXPORT gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
 GPI_EXPORT gpi_cb_hdl gpi_register_value_change_callback(
     int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl,
     int edge);
-GPI_EXPORT gpi_cb_hdl gpi_register_edge_count_callback(
-    int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl,
-    int edge, uint64_t count);
+GPI_EXPORT gpi_cb_hdl
+gpi_register_edge_count_callback(int (*gpi_function)(void *), void *gpi_cb_data,
+                                 gpi_sim_hdl gpi_hdl, int edge, uint64_t count);
 GPI_EXPORT gpi_cb_hdl
 gpi_register_readonly_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 GPI_EXPORT gpi_cb_hdl

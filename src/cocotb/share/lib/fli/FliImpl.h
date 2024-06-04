@@ -171,7 +171,7 @@ class FliObjHdl : public GpiObjHdl, public FliObj {
                    const std::string &fq_name) override;
 };
 
-class FliEdgeCbScheduler: public GpiEdgeCbScheduler {
+class FliEdgeCbScheduler : public GpiEdgeCbScheduler {
   public:
     FliEdgeCbScheduler(GpiSignalObjHdl *handle);
     ~FliEdgeCbScheduler();
@@ -215,7 +215,7 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
     FliSignalCbHdl m_falling_cb;
     FliSignalCbHdl m_either_cb;
 
-   std::unique_ptr<FliEdgeCbScheduler> edge_cbs;
+    std::unique_ptr<FliEdgeCbScheduler> edge_cbs;
 };
 
 class FliValueObjHdl : public FliSignalObjHdl {

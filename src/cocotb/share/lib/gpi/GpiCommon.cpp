@@ -551,12 +551,13 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *),
 
 gpi_cb_hdl gpi_register_edge_count_callback(int (*gpi_function)(void *),
                                             void *gpi_cb_data,
-                                            gpi_sim_hdl sig_hdl,
-                                            int edge, uint64_t count) {
+                                            gpi_sim_hdl sig_hdl, int edge,
+                                            uint64_t count) {
     GpiSignalObjHdl *signal_hdl = dynamic_cast<GpiSignalObjHdl *>(sig_hdl);
     if (!signal_hdl) {
-        LOG_ERROR("Attempted to register an edge count callback on "
-                  "wrong object type.");
+        LOG_ERROR(
+            "Attempted to register an edge count callback on "
+            "wrong object type.");
         return NULL;
     }
     GpiCbHdl *gpi_hdl = signal_hdl->register_edge_count_callback(

@@ -190,7 +190,7 @@ class VhpiObjHdl : public GpiObjHdl {
                    const std::string &fq_name) override;
 };
 
-class VhpiEdgeCbScheduler: public GpiEdgeCbScheduler {
+class VhpiEdgeCbScheduler : public GpiEdgeCbScheduler {
   public:
     using GpiEdgeCbScheduler::GpiEdgeCbScheduler;
     ~VhpiEdgeCbScheduler();

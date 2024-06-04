@@ -130,15 +130,15 @@ int GpiValueCbHdl::run_callback() {
 }
 
 void GpiEdgeCbScheduler::init(GpiEdgeCbHdl *cbh) {
-    cbh->it = tracker[cbh->edge-1].cbm.end();
+    cbh->it = tracker[cbh->edge - 1].cbm.end();
 }
 
 int GpiEdgeCbScheduler::arm(GpiEdgeCbHdl *cbh) {
-    EdgeCbMap &cbmap = tracker[cbh->edge-1].cbm;
+    EdgeCbMap &cbmap = tracker[cbh->edge - 1].cbm;
     if (cbh->it != cbmap.end()) {
         cbmap.erase(cbh->it);
     }
-    cbh->it = cbmap.emplace(tracker[cbh->edge-1].ctr + cbh->count + 1, cbh);
+    cbh->it = cbmap.emplace(tracker[cbh->edge - 1].ctr + cbh->count + 1, cbh);
     total_cb_count++;
     if (total_cb_count == 1) {
         if (track_edges() != 0) {
@@ -151,7 +151,7 @@ int GpiEdgeCbScheduler::arm(GpiEdgeCbHdl *cbh) {
 }
 
 void GpiEdgeCbScheduler::cleanup(GpiEdgeCbHdl *cbh) {
-    EdgeCbMap &cbmap = tracker[cbh->edge-1].cbm;
+    EdgeCbMap &cbmap = tracker[cbh->edge - 1].cbm;
     if (cbh->it != cbmap.end()) {
         cbmap.erase(cbh->it);
         cbh->it = cbmap.end();
@@ -174,7 +174,7 @@ bool GpiEdgeCbScheduler::process_edge(bool rising, bool falling) {
 GpiEdgeCbScheduler::EdgeCbTracker::~EdgeCbTracker() {
     if (!cbm.empty()) {
         LOG_WARN("EdgeCbTracker not empty on destruction")
-        for (std::pair<const uint64_t, GpiEdgeCbHdl*> &kv: cbm) {
+        for (std::pair<const uint64_t, GpiEdgeCbHdl *> &kv : cbm) {
             kv.second->scheduler = nullptr;
         }
     }
@@ -188,8 +188,7 @@ void GpiEdgeCbScheduler::EdgeCbTracker::on_edge() {
     EdgeCbMap::iterator it = cbm.lower_bound(ctr);
 
     while (it != cbm.end()) {
-        if (it->first != ctr)
-            break;
+        if (it->first != ctr) break;
         GpiEdgeCbHdl *cb = it->second;
         // increment iterator here: deleting/cleaning up cb will remove from
         // map and decrease counter.
@@ -201,12 +200,13 @@ void GpiEdgeCbScheduler::EdgeCbTracker::on_edge() {
     ctr++;
 }
 
-
 GpiEdgeCbHdl::GpiEdgeCbHdl(GpiEdgeCbScheduler *_scheduler,
-                           GpiImplInterface *impl,
-                           int _edge, uint64_t _count):
-    GpiCbHdl(impl), GpiCommonCbHdl(impl),
-    edge(_edge), count(_count), scheduler(_scheduler)  {
+                           GpiImplInterface *impl, int _edge, uint64_t _count)
+    : GpiCbHdl(impl),
+      GpiCommonCbHdl(impl),
+      edge(_edge),
+      count(_count),
+      scheduler(_scheduler) {
     scheduler->init(this);
 }
 
