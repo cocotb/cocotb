@@ -18,6 +18,7 @@ in the cocotb sources.
 You can also download the files here:
 :download:`my_design.sv <../../examples/doc_examples/quickstart/my_design.sv>`,
 :download:`test_my_design.py <../../examples/doc_examples/quickstart/test_my_design.py>`,
+:download:`test_runner.py <../../examples/doc_examples/quickstart/test_runner.py>`,
 :download:`Makefile <../../examples/doc_examples/quickstart/Makefile>`.
 
 
@@ -129,6 +130,41 @@ all you would need to change is the command line:
 
     make SIM=questa
 
+
+.. _quickstart_using_runners:
+
+Using runners
+=============
+
+.. warning::
+    Python runners and associated APIs are an experimental feature and subject to change.
+
+An alternative to the ``Makefile`` is to use the Python Test Runners, or "runner" for short.
+Let's define a runner for ``test_my_design_runner``:
+
+.. literalinclude:: ../../examples/doc_examples/quickstart/test_runner.py
+   :language: python3
+   :start-at: # test_runner.py
+
+Running a test involves three steps:
+
+* first the runner is instantiated with ``get_runner`` based on the default simulator to use,
+* then the :term:`HDL` is built using the design sources and the toplevel with ``runner.build``,
+* finally, the module containing tests to run are passed to ``runner.test``
+
+The runner can be used with `pytest <https://pytest.org>`_:
+
+.. code-block:: bash
+
+   pytest
+
+Or it can be run directly:
+
+.. code-block:: bash
+
+   python test_runner.py
+
+See the section :ref:`howto-python-runner` for more details on how to use runners.
 
 This concludes our quick introduction to cocotb.
 You can now look through our Tutorials or check out the

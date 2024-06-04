@@ -321,7 +321,7 @@ Use ``python -m cocotb_tools.combine_results`` to call the script.
     :func: _get_parser
     :prog: combine_results
 
-.. _cocotb-config::
+.. _cocotb-config:
 
 The ``cocotb-config`` script
 ----------------------------
