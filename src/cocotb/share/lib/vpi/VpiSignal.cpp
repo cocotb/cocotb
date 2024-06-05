@@ -324,16 +324,18 @@ int VpiEdgeCbScheduler::track_edges() {
     }
 
     s_vpi_time vpi_time;
-    s_vpi_value vpi_value;
     vpi_time.type = vpiSuppressTime;
-    vpi_value.format = vpiBinStrVal;
-    s_cb_data edge_cb_data = {.reason = cbValueChange,
-                              .cb_rtn = &VpiEdgeCbScheduler::value_change_cb,
-                              .obj = signal_obj->get_handle<vpiHandle>(),
-                              .time = &vpi_time,
-                              .value = &vpi_value,
-                              .index = 0,
-                              .user_data = (char *)this};
+
+    s_vpi_value vpi_value = {vpiRealVal, {nullptr}};
+
+    s_cb_data edge_cb_data;
+    edge_cb_data.reason = cbValueChange;
+    edge_cb_data.cb_rtn = &VpiEdgeCbScheduler::value_change_cb;
+    edge_cb_data.obj = signal_obj->get_handle<vpiHandle>();
+    edge_cb_data.time = &vpi_time;
+    edge_cb_data.value = &vpi_value;
+    edge_cb_data.index = 0;
+    edge_cb_data.user_data = (char *)this;
 
     edge_cb_hdl = vpi_register_cb(&edge_cb_data);
 
