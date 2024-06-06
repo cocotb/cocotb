@@ -1,0 +1,1 @@
+Riviera-PRO now support compilation into (multiple) VHDL libraries ``lib`` using ``VHDL_SOURCES_<lib>``.
