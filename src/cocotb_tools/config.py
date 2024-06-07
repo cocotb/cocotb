@@ -244,7 +244,7 @@ def main() -> None:
     elif args.python_bin:
         print(Path(sys.executable).as_posix())
     elif args.help_vars:
-        print(_help_vars_text)
+        print(_help_vars_text())
     elif args.libpython:
         libpython_path = find_libpython.find_libpython()
         if libpython_path is None:
