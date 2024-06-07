@@ -127,6 +127,7 @@ $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) | $(SIM_BUILD)
 	@echo " set LICENSE_QUEUE $$::env(LICENSE_QUEUE)" >> $@
 	@echo "}" >> $@
 	@echo "alib $(RTL_LIBRARY)" >> $@
+	@echo "set worklib $(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)
 	@echo "acom -work $(RTL_LIBRARY) $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
 endif
