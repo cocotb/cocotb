@@ -497,16 +497,7 @@ class Scheduler:
             if _debug:
                 self.log.debug("All tasks scheduled, handing control back to simulator")
 
-    def _unschedule(self, task):
-        """Unschedule a task.  Unprime any pending triggers"""
-        if task in self._pending_tasks:
-            assert not task.has_started()
-            self._pending_tasks.remove(task)
-            # Close coroutine so there is no RuntimeWarning that it was never awaited
-            task.close()
-            return
-
-        # Unprime the trigger this task is waiting on
+    def _unprime_task_trigger(self, task: Task[Any]) -> None:
         trigger = task._trigger
         if trigger is not None:
             task._trigger = None
@@ -515,6 +506,20 @@ class Scheduler:
             if not self._trigger2tasks[trigger]:
                 trigger._unprime()
                 del self._trigger2tasks[trigger]
+
+    def _unschedule(self, task: Task[Any]) -> None:
+        """Unschedule a task. Unprime any pending triggers"""
+        if _debug:
+            self.log.debug(f"Unscheduling {task}")
+
+        if task in self._pending_tasks:
+            assert not task.has_started()
+            self._pending_tasks.remove(task)
+            # Close coroutine so there is no RuntimeWarning that it was never awaited
+            task._coro.close()
+            return
+
+        self._unprime_task_trigger(task)
 
         assert self._test is not None
 
@@ -571,6 +576,15 @@ class Scheduler:
 
     def _resume_task_upon(self, task, trigger):
         """Schedule `task` to be resumed when `trigger` fires."""
+
+        # unprime existing trigger
+        if task._trigger is not None:
+            if _debug:
+                self.log.debug(
+                    f"Unpriming existing trigger ({task._trigger!r}) for task ({task!r}) to set a new trigger ({trigger!r})"
+                )
+            self._unprime_task_trigger(task)
+
         task._trigger = trigger
 
         trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
@@ -805,7 +819,7 @@ class Scheduler:
                 self.log.debug(f"Scheduling with {send_outcome}")
 
             task._trigger = None
-            result = task._advance(send_outcome)
+            result = task._send(send_outcome)
 
             if task.done():
                 if _debug:
@@ -885,45 +899,37 @@ class Scheduler:
             self._abort_test(exc)
             self._test_complete_cb()
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         """Clear up all our state.
 
         Unprime all pending triggers and kill off any coroutines, stop all externals.
         """
-        # copy since we modify this in kill
-        items = list((k, list(v)) for k, v in self._trigger2tasks.items())
-
-        # reversing seems to fix gh-928, although the order is still somewhat
-        # arbitrary.
-        for trigger, waiting in items[::-1]:
+        for trigger, waiting in self._trigger2tasks.items():
             for task in waiting:
                 if _debug:
-                    self.log.debug(f"Killing {task}")
-                task.kill()
-        assert not self._trigger2tasks
+                    self.log.debug(f"Cancelling {task}")
+                task._shutdown()
+            trigger._unprime()
+        self._trigger2tasks.clear()
 
         # if there are coroutines being scheduled when the test ends, kill them (gh-1347)
         for task in self._scheduling:
             if _debug:
-                self.log.debug(f"Killing {task}")
-            task.kill()
+                self.log.debug(f"Cancelling {task}")
+            task._shutdown()
         self._scheduling = []
 
         # cancel outstanding triggers *before* queued coroutines (gh-3270)
-        while self._pending_triggers:
-            trigger = self._pending_triggers.pop(0)
+        for trigger in self._pending_triggers:
             if _debug:
                 self.log.debug(f"Unpriming {trigger}")
             trigger._unprime()
-        assert not self._pending_triggers
+        self._pending_triggers.clear()
 
         # Kill any queued coroutines.
-        # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_tasks.
-        # If that happens a for loop will stop early and then the assert will fail.
-        while self._pending_tasks:
-            # Get first task but leave it in the list so that _unschedule() will correctly close the unstarted coroutine object.
-            task = self._pending_tasks[0]
-            task.kill()
+        for task in self._pending_tasks:
+            task._shutdown()
+        self._pending_tasks.clear()
 
         if self._main_thread is not threading.current_thread():
             raise Exception("Cleanup() called outside of the main thread")

@@ -11,7 +11,6 @@ import os
 from math import isclose
 
 import cocotb
-import pytest
 from cocotb.clock import Clock
 from cocotb.simulator import get_precision
 from cocotb.triggers import RisingEdge, Timer
@@ -78,9 +77,7 @@ async def test_clocks_with_other_number_types(dut):
 
     clk1 = cocotb.start_soon(Clock(dut.clk, decimal.Decimal("1"), units="ns").start())
     await Timer(10, "ns")
-    with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):
-        clk1.cancel()
+    clk1.cancel()
     clk2 = cocotb.start_soon(Clock(dut.clk, fractions.Fraction(1), units="ns").start())
     await Timer(10, "ns")
-    with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):
-        clk2.cancel()
+    clk2.cancel()
