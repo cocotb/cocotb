@@ -10,13 +10,14 @@ from cocotb._sim_versions import RivieraVersion
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
-# Riviera-PRO 2022.10 (VPI) and newer does not discover dut.t correctly (gh-3587)
+# Riviera-PRO 2022.10-2023.10 (VPI) do not discover dut.t correctly (gh-3587)
 @cocotb.test(
     expect_error=Exception
     if cocotb.SIM_NAME.lower().startswith(("verilator", "icarus", "ghdl"))
     or (
         cocotb.SIM_NAME.lower().startswith("riviera")
         and RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
+        and RivieraVersion(cocotb.SIM_VERSION) < RivieraVersion("2024.04")
         and LANGUAGE == "verilog"
     )
     else (AttributeError)
