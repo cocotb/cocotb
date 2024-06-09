@@ -53,7 +53,7 @@ async def test_packed_struct_setting(dut):
 # GHDL unable to access record signals (gh-2591)
 # Icarus doesn't support structs (gh-2592)
 # Verilator doesn't support structs (gh-1275)
-# Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587)
+# Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587, gh-3933)
 @cocotb.test(
     expect_error=AttributeError
     if SIM_NAME.startswith(("icarus", "ghdl", "verilator"))
@@ -100,7 +100,7 @@ async def test_struct_iteration(dut):
         tlog.info(f"Found {member._path}")
         count += 1
 
-    # Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587)
+    # Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587, gh-3933)
     rv_2022_10_plus = RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
     if SIM_NAME.startswith("riviera") and rv_2022_10_plus and LANGUAGE == "verilog":
         assert count == 0

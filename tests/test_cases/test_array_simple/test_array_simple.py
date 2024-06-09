@@ -150,7 +150,7 @@ async def test_ndim_array_indexes(dut):
 # GHDL unable to access record signals (gh-2591)
 # Icarus doesn't support structs (gh-2592)
 # Verilator doesn't support structs (gh-1275)
-# Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587)
+# Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587, gh-3933)
 @cocotb.test(
     expect_error=AttributeError
     if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl", "verilator"))
