@@ -127,7 +127,7 @@ class Trigger(Awaitable[None]):
         self._unprime()
 
     @property
-    def _outcome(self) -> Optional[Outcome[Any]]:
+    def _outcome(self) -> Outcome[Any]:
         """The result that `await this_trigger` produces in a coroutine.
 
         The default is to produce the trigger itself, which is done for
@@ -706,7 +706,7 @@ class NullTrigger(Trigger, Generic[T]):
         self.__outcome = outcome
 
     @property
-    def _outcome(self) -> Optional[Outcome[T]]:
+    def _outcome(self) -> Outcome[T]:
         if self.__outcome is not None:
             return self.__outcome
         return super()._outcome
@@ -725,8 +725,8 @@ class NullTrigger(Trigger, Generic[T]):
 class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetaclass):
     r"""Fires when a task completes.
 
-    ``await``\ ing this trigger returns the result of the :class:`~cocotb.task.Task`.
-    If the task raised an exception, it will be re-raised.
+    Args:
+        task: The task upon which to wait for completion.
 
     .. code-block:: python3
 
@@ -736,12 +736,18 @@ class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetac
 
 
         task = cocotb.start_soon(coro_inner())
-        result = await Join(task)
-        assert result == "Hello world"
+        await Join(task)
+        assert task.result() == "Hello world"
+
+    .. versionchanged:: 2.0
+
+        :keyword:`await`\ ing this trigger no longer returns the result of the task, but returns the trigger.
+        To get the result, use :meth:`Task.result() <cocotb.task.Task.result>` of the completed task,
+        or simply ``await task`` to get the old behavior.
 
     .. note::
-        Typically there is no reason to directly use this trigger.
-        Simply ``await`` on a :class:`~cocotb.task.Task` for the same behavior.
+        Typically there is no reason to directly instantiate this trigger,
+        instead call ``task.join()``.
     """
 
     @classmethod
@@ -753,18 +759,12 @@ class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetac
         self._task = task
 
     @property
-    def _outcome(self) -> Optional[Outcome[T]]:
-        return self._task._outcome
+    def task(self) -> cocotb.task.Task[T]:
+        """Returns the :class:`~cocotb.task.Task` being joined.
 
-    @property
-    def retval(self) -> T:
-        """The return value of the joined :class:`~cocotb.task.Task`.
-
-        .. note::
-            Typically there is no need to use this attribute.
-            Simply ``await`` on a :class:`~cocotb.task.Task` for the same behavior.
+        .. versionadded:: 2.0
         """
-        return self._task.result()
+        return self._task
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._task.done():
@@ -812,10 +812,7 @@ class _AggregateWaitable(Waitable[T]):
         # doesn't matter.
         return "{}({})".format(
             type(self).__qualname__,
-            ", ".join(
-                repr(Join(t)) if isinstance(t, cocotb.task.Task) else repr(t)
-                for t in self._triggers
-            ),
+            ", ".join(repr(t) for t in self._triggers),
         )
 
 

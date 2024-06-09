@@ -154,8 +154,24 @@ class Task(Generic[T]):
         if not self.has_started():
             self._coro.close()
 
-    def join(self) -> "cocotb.triggers.Join":
-        """Return a trigger that will fire when the wrapped coroutine exits."""
+    def join(self) -> "cocotb.triggers.Join[T]":
+        """Wait for the task to complete.
+
+        Returns:
+            A :class:`~cocotb.triggers.Join` trigger which, if awaited, will block until the given Task completes.
+
+        .. code-block:: python3
+
+            my_task = cocotb.start_soon(my_coro())
+            await my_task.join()
+            # "my_task" is done here
+
+        .. versionchanged:: 2.0
+
+            :keyword:`await`\ ing a task using this no longer returns the result of the task, but returns the trigger.
+            To get the result, use :meth:`result` of the completed task,
+            or simply ``await task`` to get the old behavior.
+        """
         return cocotb.triggers.Join(self)
 
     def has_started(self) -> bool:
@@ -225,7 +241,8 @@ class Task(Generic[T]):
         # decorator from your `async` functions.
 
         # Hand the coroutine back to the scheduler trampoline.
-        return (yield self)
+        yield self
+        return self.result()
 
 
 class _RunningTest(Task[None]):

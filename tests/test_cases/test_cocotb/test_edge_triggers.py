@@ -125,7 +125,7 @@ async def test_fork_and_monitor(dut, period=1000, clocks=6):
     expect = clocks - 1
 
     while True:
-        result = await First(timer, task.join())
+        result = await First(timer, task)
         assert count <= expect, "Task didn't complete in expected time"
         if result is timer:
             dut._log.info("Count %d: Task still running" % count)

@@ -224,8 +224,7 @@ def _get_log_time_scale(units: str) -> int:
 class _ParameterizedSingletonMetaclass(ABCMeta):
     """A metaclass that allows class construction to reuse an existing instance.
 
-    We use this so that :class:`RisingEdge(sig) <cocotb.triggers.RisingEdge>` and :class:`Join(coroutine) <cocotb.triggers.Join>` always return
-    the same instance, rather than creating new copies.
+    We use this so that many triggers classes return the same object rather than make new ones.
     """
 
     __singleton_key__: Callable[..., Any]

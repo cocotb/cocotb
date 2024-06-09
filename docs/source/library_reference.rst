@@ -137,8 +137,8 @@ Python Triggers
 
 .. autoclass:: cocotb.triggers.First
 
-.. autoclass:: cocotb.triggers.Join(coroutine)
-    :members: retval
+.. autoclass:: cocotb.triggers.Join
+    :members:
 
 
 Synchronization
