@@ -254,7 +254,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "riviera",
-        "sim-version": "aldec/rivierapro/2023.10",
+        "sim-version": "aldec/rivierapro/2024.04",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -263,7 +263,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "riviera",
-        "sim-version": "aldec/rivierapro/2023.10",
+        "sim-version": "aldec/rivierapro/2024.04",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -329,7 +329,15 @@ for version in questa_versions_vhpi:
     ]
 
 # Riviera-PRO: test more versions as part of the extended tests.
-riviera_versions = ("2019.10", "2020.04", "2020.10", "2021.04", "2021.10", "2022.04")
+riviera_versions = (
+    "2019.10",
+    "2020.04",
+    "2020.10",
+    "2021.04",
+    "2021.10",
+    "2022.04",
+    "2023.10",
+)
 for version in riviera_versions:
     ENVS += [
         {
