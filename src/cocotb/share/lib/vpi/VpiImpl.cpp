@@ -235,6 +235,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiUnionVar:
         case vpiUnionNet:
             if (vpi_get(vpiPacked, new_hdl)) {
+                LOG_DEBUG("VPI: Found packed struct/union data type");
                 new_obj = new VpiSignalObjHdl(this, new_hdl,
                                               GPI_PACKED_STRUCTURE, false);
                 break;
