@@ -69,7 +69,7 @@ ASIM_ARGS += $(SIM_ARGS)
 # Plusargs need to be passed to ASIM command not vsimsa
 ASIM_ARGS += $(PLUSARGS)
 
-RTL_LIBRARY ?= $(SIM_BUILD)/work
+RTL_LIBRARY ?= work
 
 # Pass the VPI library to the Verilog compilation to get extended checking.
 ALOG_ARGS += -pli $(shell cocotb-config --lib-name-path vpi riviera)
