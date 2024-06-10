@@ -143,8 +143,8 @@ class Simulator(abc.ABC):
         self.env["PATH"] += os.pathsep + str(cocotb_tools.config.libs_dir)
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
         self.env["PYTHONHOME"] = sys.prefix
-        self.env["TOPLEVEL"] = self.sim_hdl_toplevel
-        self.env["MODULE"] = self.test_module
+        self.env["COCOTB_TOPLEVEL"] = self.sim_hdl_toplevel
+        self.env["COCOTB_TEST_MODULES"] = self.test_module
         self.env["TOPLEVEL_LANG"] = self.hdl_toplevel_lang
 
     @abc.abstractmethod
@@ -380,15 +380,15 @@ class Simulator(abc.ABC):
 
         if testcase is not None:
             if isinstance(testcase, str):
-                self.env["TESTCASE"] = testcase
+                self.env["COCOTB_TESTCASE"] = testcase
             else:
-                self.env["TESTCASE"] = ",".join(testcase)
+                self.env["COCOTB_TESTCASE"] = ",".join(testcase)
 
         if test_filter is not None:
             self.env["COCOTB_TEST_FILTER"] = test_filter
 
         if seed is not None:
-            self.env["RANDOM_SEED"] = str(seed)
+            self.env["COCOTB_RANDOM_SEED"] = str(seed)
 
         self.log_file = log_file
         self.waves = bool(waves)

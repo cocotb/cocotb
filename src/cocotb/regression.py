@@ -247,8 +247,8 @@ class RegressionManager:
         ###################
 
         results_filename = os.getenv("COCOTB_RESULTS_FILE", "results.xml")
-        suite_name = os.getenv("RESULT_TESTSUITE", "all")
-        package_name = os.getenv("RESULT_TESTPACKAGE", "all")
+        suite_name = os.getenv("COCOTB_RESULT_TESTSUITE", "all")
+        package_name = os.getenv("COCOTB_RESULT_TESTPACKAGE", "all")
 
         self.xunit = XUnitReporter(filename=results_filename)
         self.xunit.add_testsuite(name=suite_name, package=package_name)
@@ -413,7 +413,7 @@ class RegressionManager:
 
             self._log_test_start(self._test)
 
-            # seed random number generator based on test module, name, and RANDOM_SEED
+            # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
             hasher = hashlib.sha1()
             hasher.update(self._test.fullname.encode())
             seed = cocotb._random_seed + int(hasher.hexdigest(), 16)
@@ -737,7 +737,7 @@ class RegressionManager:
         )
         if not test_pass:
             self.xunit.add_failure(
-                message=f"Test failed with RANDOM_SEED={cocotb._random_seed}"
+                message=f"Test failed with COCOTB_RANDOM_SEED={cocotb._random_seed}"
             )
 
         # update running passed/failed/skipped counts

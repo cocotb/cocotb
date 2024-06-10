@@ -81,23 +81,23 @@ def _help_vars_text() -> str:
 
         Cocotb
         ------
-        TOPLEVEL                        Instance in the hierarchy to use as the DUT
-        RANDOM_SEED                     Random seed, to recreate a previous test stimulus
-        COCOTB_ANSI_OUTPUT              Force cocotb to print or not print in color
-        COCOTB_REDUCED_LOG_FMT          Display log lines shorter
-        COCOTB_ATTACH                   Pause time value in seconds before the simulator start
-        COCOTB_ENABLE_PROFILING         Performance analysis of the Python portion of cocotb
-        COCOTB_LOG_LEVEL                Default logging level (default INFO)
-        LIBPYTHON_LOC                   Absolute path to libpython
+        COCOTB_TOPLEVEL           Instance in the hierarchy to use as the DUT
+        COCOTB_RANDOM_SEED        Random seed, to recreate a previous test stimulus
+        COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
+        COCOTB_REDUCED_LOG_FMT    Display log lines shorter
+        COCOTB_ATTACH             Pause time value in seconds before the simulator start
+        COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
+        COCOTB_LOG_LEVEL          Default logging level (default INFO)
+        LIBPYTHON_LOC             Absolute path to libpython
 
         Regression Manager
         ------------------
-        COCOTB_PDB_ON_EXCEPTION         Drop into the Python debugger (pdb) on exception
-        MODULE                          Modules to search for test functions (comma-separated)
-        TESTCASE                        Test function(s) to run (comma-separated list)
-        COCOTB_RESULTS_FILE             File name for xUnit XML tests results
-        COVERAGE                        Collect Python user coverage (HDL for some simulators)
-        COVERAGE_RCFILE                 Configuration for user code coverage
+        COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
+        COCOTB_TEST_MODULES        Modules to search for test functions (comma-separated)
+        COCOTB_TESTCASE           Test function(s) to run (comma-separated list)
+        COCOTB_RESULTS_FILE       File name for xUnit XML tests results
+        COCOTB_USER_COVERAGE      Collect Python user coverage (HDL for some simulators)
+        COCOTB_COVERAGE_RCFILE    Configuration for user code coverage
 
         GPI
         ---

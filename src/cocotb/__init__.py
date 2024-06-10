@@ -323,7 +323,15 @@ def _process_packages() -> None:
 
 
 def _start_user_coverage() -> None:
-    if "COVERAGE" in os.environ:
+    coverage_envvar = os.getenv("COCOTB_USER_COVERAGE")
+    if coverage_envvar is None:
+        coverage_envvar = os.getenv("COVERAGE")
+        if coverage_envvar is not None:
+            warnings.warn(
+                "COVERAGE is deprecated in favor of COCOTB_USER_COVERAGE",
+                DeprecationWarning,
+            )
+    if coverage_envvar:
         try:
             import coverage
         except ImportError:
@@ -332,7 +340,14 @@ def _start_user_coverage() -> None:
             )
         else:
             global _user_coverage
-            config_filepath = os.getenv("COVERAGE_RCFILE")
+            config_filepath = os.getenv("COCOTB_COVERAGE_RCFILE")
+            if config_filepath is None:
+                config_filepath = os.getenv("COVERAGE_RCFILE")
+                if config_filepath is not None:
+                    warnings.warn(
+                        "COVERAGE_RCFILE is deprecated in favor of COCOTB_COVERAGE_RCFILE",
+                        DeprecationWarning,
+                    )
             if config_filepath is None:
                 # Exclude cocotb itself from coverage collection.
                 cocotb.log.info(
@@ -361,7 +376,14 @@ def _stop_user_coverage() -> None:
 def _setup_random_seed() -> None:
     global _random_seed
 
-    seed_envvar = os.getenv("RANDOM_SEED")
+    seed_envvar = os.getenv("COCOTB_RANDOM_SEED")
+    if seed_envvar is None:
+        seed_envvar = os.getenv("RANDOM_SEED")
+        if seed_envvar is not None:
+            warnings.warn(
+                "RANDOM_SEED is deprecated in favor of COCOTB_RANDOM_SEED",
+                DeprecationWarning,
+            )
     if seed_envvar is None:
         if "ntb_random_seed" in plusargs:
             plusarg_seed = plusargs["ntb_random_seed"]
@@ -390,7 +412,7 @@ def _setup_random_seed() -> None:
 
 
 def _setup_root_handle() -> None:
-    root_name = os.getenv("TOPLEVEL")
+    root_name = os.getenv("COCOTB_TOPLEVEL")
     if root_name is not None:
         root_name = root_name.strip()
         if root_name == "":
@@ -414,25 +436,24 @@ def _setup_regression_manager() -> None:
     regression_manager = RegressionManager()
 
     # discover tests
-    module_str = os.getenv("MODULE", "").strip()
+    module_str = os.getenv("COCOTB_TEST_MODULES", "")
     if not module_str:
         raise RuntimeError(
-            "Environment variable MODULE, which defines the module(s) to execute, is not defined or empty."
+            "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
         )
     modules = [s.strip() for s in module_str.split(",") if s.strip()]
     regression_manager.setup_pytest_assertion_rewriting()
     regression_manager.discover_tests(*modules)
 
     # filter tests
-    testcase_str = os.getenv("TESTCASE", "").strip()
+    testcase_str = os.getenv("COCOTB_TESTCASE", "").strip()
     test_filter_str = os.getenv("COCOTB_TEST_FILTER", "").strip()
     if testcase_str and test_filter_str:
-        raise RuntimeError("Specify only one of TESTCASE or COCOTB_TEST_FILTER")
+        raise RuntimeError("Specify only one of COCOTB_TESTCASE or COCOTB_TEST_FILTER")
     elif testcase_str:
         warnings.warn(
             "TESTCASE is deprecated in favor of COCOTB_TEST_FILTER",
             DeprecationWarning,
-            stacklevel=2,
         )
         filters = [f"{s.strip()}$" for s in testcase_str.split(",") if s.strip()]
         regression_manager.add_filters(*filters)
