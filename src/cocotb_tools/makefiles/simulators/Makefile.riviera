@@ -126,8 +126,9 @@ $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) | $(SIM_BUILD)
 	@echo "@if [string length [array get env LICENSE_QUEUE]] {" >> $@
 	@echo " set LICENSE_QUEUE $$::env(LICENSE_QUEUE)" >> $@
 	@echo "}" >> $@
-	@echo "alib $(RTL_LIBRARY)" >> $@
-	@echo "set worklib $(RTL_LIBRARY)" >> $@
+	@echo "if [file exists $(SIM_BUILD)/$(RTL_LIBRARY)] {adel -lib $(SIM_BUILD)/$(RTL_LIBRARY) -all}" >> $@;
+	@echo "alib $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
+	@echo "amap $(RTL_LIBRARY) $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@;
 ifneq ($(VHDL_SOURCES),)
 	@echo "acom -work $(RTL_LIBRARY) $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
 endif
