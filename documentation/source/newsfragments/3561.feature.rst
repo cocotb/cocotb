@@ -1,1 +1,1 @@
-Added :make:var:`SIM_OUTPUT_REDIRECT`, an environment variable to control how simulator output is redirected.
+Added :make:var:`SIM_CMD_SUFFIX` to allow users to redirect simulator output or otherwise suffix the simulation command invocation.
