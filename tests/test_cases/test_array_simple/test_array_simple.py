@@ -161,8 +161,8 @@ async def test_ndim_array_indexes(dut):
     )
     else ()
 )
-async def test_struct(dut):
-    """Test setting and getting values of structs."""
+async def test_struct_unpacked(dut):
+    """Test setting and getting values of unpacked structs."""
     cocotb.start_soon(Clock(dut.clk, 1000, "ns").start())
     dut.inout_if.a_in.value = 1
     await Timer(1000, "ns")

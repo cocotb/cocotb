@@ -35,7 +35,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library work;
-use work.sample_module_pack.all;
+use work.sample_module_package.all;
 
 entity sample_module is
     port (
@@ -53,7 +53,7 @@ entity sample_module is
         stream_in_string                : in    string(1 to 64);
         stream_in_bool                  : in    boolean;
 
-        inout_if                        : in    test_if;
+        inout_if                        : in    test_record;
 
         stream_out_data_comb            : out   std_ulogic_vector(7 downto 0);
         stream_out_data_registered      : out   std_ulogic_vector(7 downto 0);

@@ -38,7 +38,7 @@ typedef struct
 {
     logic a_in;
     logic b_out;
-} test_if;
+} test_struct_unpacked;
 `endif // `ifndef VERILATOR
 
 typedef struct packed
@@ -46,7 +46,7 @@ typedef struct packed
     logic val_a;
     logic val_b;
     logic value;
-} test_struct;
+} test_struct_packed;
 
 
 `endif
@@ -80,9 +80,9 @@ module sample_module #(
     output real                                 stream_out_real,
     output integer                              stream_out_int,
     `ifndef VERILATOR
-    input  test_if                              inout_if,
+    input  test_struct_unpacked                 inout_if,
     `endif
-    input  test_struct                          my_struct,
+    input  test_struct_packed                   my_struct,
     input  string                               stream_in_string,
 `endif
     input  [7:0]                                stream_in_data,
@@ -142,7 +142,7 @@ end
 `endif //  `ifndef _VCP
 
 `ifndef VERILATOR
-test_if struct_var;
+test_struct_unpacked struct_var;
 `endif
 `endif //  `ifndef __ICARUS__
 
