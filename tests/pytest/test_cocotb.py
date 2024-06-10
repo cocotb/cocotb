@@ -39,7 +39,9 @@ if hdl_toplevel_lang == "verilog":
     gpi_interfaces = ["vpi"]
 else:
     sources = [
-        os.path.join(tests_dir, "designs", "sample_module", "sample_module_pack.vhdl"),
+        os.path.join(
+            tests_dir, "designs", "sample_module", "sample_module_package.vhdl"
+        ),
         os.path.join(tests_dir, "designs", "sample_module", "sample_module_1.vhdl"),
         os.path.join(tests_dir, "designs", "sample_module", "sample_module.vhdl"),
     ]

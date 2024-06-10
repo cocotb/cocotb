@@ -32,14 +32,14 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-package sample_module_pack is
+package sample_module_package is
 
-    type test_if is record
+    type test_record is record
         a_in  : std_logic;
         b_out : std_logic;
-    end record test_if;
+    end record test_record;
 
-end package sample_module_pack;
+end package sample_module_package;
 
-package body sample_module_pack is
-end package body sample_module_pack;
+package body sample_module_package is
+end package body sample_module_package;
