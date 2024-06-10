@@ -347,6 +347,19 @@ The following variables are makefile variables, not environment variables.
 
       .. versionadded:: 1.6.0
 
+.. make:var:: SIM_CMD_SUFFIX
+
+    Suffix for simulation command invocations.
+    Typically used to redirect simulator ``stdout`` and ``stderr``:
+
+    .. code-block:: Makefile
+
+        # Prints simulator stdout and stderr to the terminal
+        # as well as capture it all in a log file "sim.log".
+        SIM_CMD_SUFFIX := 2>&1 | tee sim.log
+
+    .. versionadded:: 1.9
+
 .. make:var:: COCOTB_HDL_TIMEUNIT
 
       The default time unit that should be assumed for simulation when not specified by modules in the design.
@@ -377,14 +390,6 @@ The following variables are makefile variables, not environment variables.
 
       Use to define a scratch directory for use by the simulator. The path is relative to the location where ``make`` was invoked.
       If not provided, the default scratch directory is :file:`sim_build`.
-
-.. make:var:: SIM_OUTPUT_REDIRECT
-
-      Used to specify how to redirect simulator output.
-      Setting to the empty string will prevent redirection.
-      Defaults to sending both stdout and stderr to :file:`sim.log` under :make:var:`SIM_BUILD`.
-
-      .. versionadded:: 2.0
 
 .. envvar:: SCRIPT_FILE
 
