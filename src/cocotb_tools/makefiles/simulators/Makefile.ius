@@ -82,7 +82,7 @@ GPI_ARGS = -loadvpi $(shell cocotb-config --lib-name-path vpi ius):vlog_startup_
 ifeq ($(TOPLEVEL_LANG),verilog)
     EXTRA_ARGS += -v93
     HDL_SOURCES = $(VERILOG_SOURCES)
-    ROOT_LEVEL = $(TOPLEVEL)
+    ROOT_LEVEL = $(COCOTB_TOPLEVEL)
 ifneq ($(VHDL_SOURCES),)
     HDL_SOURCES += $(VHDL_SOURCES)
     GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi ius):cocotbvhpi_entry_point
@@ -90,8 +90,8 @@ endif
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi ius):cocotbvhpi_entry_point
     EXTRA_ARGS += -v93
-    EXTRA_ARGS += -top $(TOPLEVEL)
-    RTL_LIBRARY ?= $(TOPLEVEL)
+    EXTRA_ARGS += -top $(COCOTB_TOPLEVEL)
+    RTL_LIBRARY ?= $(COCOTB_TOPLEVEL)
     MAKE_LIB = -makelib $(RTL_LIBRARY)
     HDL_SOURCES = $(VHDL_SOURCES)
 ifneq ($(VERILOG_SOURCES),)
@@ -112,9 +112,9 @@ $(COCOTB_RESULTS_FILE): $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
 
 	set -o pipefail; \
-	MODULE=$(MODULE) TESTCASE=$(TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) TOPLEVEL=$(TOPLEVEL) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(SIM_CMD_PREFIX) $(CMD) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
-	$(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(LIBS) $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) $(SIM_CMD_SUFFIX)
+	$(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(LIBS) $(MAKE_LIB) $(HDL_SOURCES) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
 
 	$(call check_for_results_file)
 

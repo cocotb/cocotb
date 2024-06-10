@@ -63,7 +63,7 @@ SIM_CMD_PREFIX            Prefix for simulation command invocations
 COMPILE_ARGS              Arguments to pass to compile (analysis) stage of simulation
 SIM_ARGS                  Arguments to pass to execution of compiled simulation
 EXTRA_ARGS                Arguments for compile and execute phases
-PLUSARGS                  Plusargs to pass to the simulator
+COCOTB_PLUSARGS           Plusargs to pass to the simulator
 COCOTB_HDL_TIMEUNIT       Default time unit for simulation
 COCOTB_HDL_TIMEPRECISION  Default time precision for simulation
 CUSTOM_COMPILE_DEPS       Add additional dependencies to the compilation target
