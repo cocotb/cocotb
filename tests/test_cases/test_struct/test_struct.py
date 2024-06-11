@@ -32,11 +32,17 @@ async def test_packed_struct_format(dut):
     )
 
 
+# Riviera-PRO 2024.04 crashes on this testcase (gh-3936)
+sim_ver = RivieraVersion(cocotb.SIM_VERSION)
+is_riviera_2024_04 = sim_ver >= "2024.04" and sim_ver < "2024.05"
+
+
 @cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith(("icarus", "ghdl", "nvc"))
-    else (),
+    expect_error=(
+        AttributeError if SIM_NAME.startswith(("icarus", "ghdl", "nvc")) else ()
+    ),
     expect_fail=SIM_NAME.startswith(("modelsim", "riviera")),
+    skip=(SIM_NAME.startswith("riviera") and is_riviera_2024_04),
 )
 async def test_packed_struct_setting(dut):
     """Test getting and setting setting the value of an entire struct"""
