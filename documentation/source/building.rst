@@ -302,7 +302,7 @@ The following variables are makefile variables, not environment variables.
 
 .. make:var:: VHDL_SOURCES_<lib>
 
-      A list of the VHDL source files to include in the VHDL library *lib* (currently for GHDL/ModelSim/Questa/Xcelium/Incisive only).
+      A list of the VHDL source files to include in the VHDL library *lib* (currently for GHDL/ModelSim/Questa/Xcelium/Incisive/Riviera-PRO only).
 
 .. make:var:: VHDL_LIB_ORDER
 
