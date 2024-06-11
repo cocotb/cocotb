@@ -53,9 +53,7 @@ async def recursive_discovery(dut):
         pass_total = 265
 
     # Icarus doesn't support array indexes like get_handle_by_name("some_path[x]")
-    SKIP_HANDLE_ASSERT = cocotb.SIM_NAME.lower().startswith(
-        ("riviera", "icarus")
-    ) or cocotb.LANGUAGE in ["vhdl"]
+    SKIP_HANDLE_ASSERT = cocotb.SIM_NAME.lower().startswith(("riviera", "icarus"))
     # SKIP_HANDLE_ASSERT = cocotb.SIM_NAME.lower().startswith(("icarus")
 
     tlog = logging.getLogger("cocotb.test")
