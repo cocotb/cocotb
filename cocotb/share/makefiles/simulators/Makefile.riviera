@@ -69,7 +69,7 @@ ASIM_ARGS += $(SIM_ARGS)
 # Plusargs need to be passed to ASIM command not vsimsa
 ASIM_ARGS += $(PLUSARGS)
 
-RTL_LIBRARY ?= $(SIM_BUILD)/work
+RTL_LIBRARY ?= work
 ALOG_ARGS += +define+COCOTB_SIM
 
 # Pass the VPI library to the Verilog compilation to get extended checking.
@@ -109,22 +109,33 @@ else
    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
+define make_lib
+  echo "if [file exists $(SIM_BUILD)/$(LIB)] {adel -lib $(SIM_BUILD)/$(LIB) -all}" >> $@;
+  echo "alib $(SIM_BUILD)/$(LIB)" >> $@;
+  echo "amap $(LIB) $(SIM_BUILD)/$(LIB)" >> $@;
+  echo "acom -work $(LIB) $(VCOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES_$(LIB)))" >> $@;
+endef
+
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
 $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) | $(SIM_BUILD)
 	@echo "onerror {" > $@
 	@echo "	puts [read [open sim.log r]]" >> $@
 	@echo "	quit -code 1" >> $@
 	@echo "}" >> $@
+	@echo "amap -c" >> $@
+	$(foreach LIB, $(VHDL_LIB_ORDER), $(make_lib))
 	@echo "@if [string length [array get env LICENSE_QUEUE]] {" >> $@
 	@echo " set LICENSE_QUEUE $$::env(LICENSE_QUEUE)" >> $@
 	@echo "}" >> $@
-	@echo "alib $(RTL_LIBRARY)" >> $@
-	@echo "set worklib $(RTL_LIBRARY)" >> $@
+	@echo "if [file exists $(SIM_BUILD)/$(RTL_LIBRARY)] {adel -lib $(SIM_BUILD)/$(RTL_LIBRARY) -all}" >> $@;
+	@echo "alib $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
+	@echo "amap $(RTL_LIBRARY) $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@;
+	@echo "set worklib $(RTL_LIBRARY)" >> $@;
 ifneq ($(VHDL_SOURCES),)
-	@echo "acom $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
+	@echo "acom -work $(RTL_LIBRARY) $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
 endif
 ifneq ($(VERILOG_SOURCES),)
-	@echo "alog $(ALOG_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
+	@echo "alog -work $(RTL_LIBRARY) $(ALOG_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
 endif
 ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@
