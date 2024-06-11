@@ -76,11 +76,11 @@ int VpiArrayObjHdl::initialise(const std::string &name,
             }
         }
 #endif
-        vpi_free_object(iter);  // Need to free iterator since exited early
         if (rangeHdl == NULL) {
             LOG_ERROR("Unable to get range for indexable array");
             return -1;
         }
+        vpi_free_object(iter);  // Need to free iterator since exited early
     } else if (range_idx == 0) {
         rangeHdl = hdl;
     } else {
