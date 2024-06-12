@@ -46,7 +46,7 @@ from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 import cocotb
 from cocotb import _outcomes, _py_compat
 from cocotb.handle import SimHandleBase
-from cocotb.result import SimFailure, TestSuccess
+from cocotb.result import TestSuccess
 from cocotb.task import Task
 from cocotb.triggers import (
     Event,
@@ -533,7 +533,7 @@ class Scheduler:
                 # throws an error if the background task errored
                 # and no one was monitoring it
                 task._outcome.get()
-            except (TestSuccess, SimFailure, AssertionError) as e:
+            except (TestSuccess, AssertionError) as e:
                 task.log.info("Test stopped by this task")
                 e = remove_traceback_frames(e, ["_unschedule", "get"])
                 self._abort_test(e)
@@ -851,10 +851,6 @@ class Scheduler:
         finally:
             self._current_task = None
 
-    def _finish_test(self, exc):
-        self._abort_test(exc)
-        self._check_termination()
-
     def _abort_test(self, exc):
         """Force this test to end early, without executing any cleanup.
 
@@ -872,18 +868,6 @@ class Scheduler:
             self._test.log.debug(f"outcome forced to {outcome}")
         self._test._outcome = outcome
         self._unschedule(self._test)
-
-    def _finish_scheduler(self, exc):
-        """Directly call into the regression manager and end test
-        once we return the sim will close us so no cleanup is needed.
-        """
-        # If there is an error during cocotb initialization, self._test may not
-        # have been set yet. Don't cause another Python exception here.
-
-        if not self._test.done():
-            self.log.debug("Issue sim closedown result to regression object")
-            self._abort_test(exc)
-            self._test_complete_cb()
 
     def _cleanup(self):
         """Clear up all our state.
