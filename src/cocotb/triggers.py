@@ -28,7 +28,6 @@
 """A collection of triggers which a testbench can ``await``."""
 
 import logging
-import warnings
 from abc import abstractmethod
 from decimal import Decimal
 from fractions import Fraction
@@ -165,7 +164,10 @@ class GPITrigger(Trigger):
 
 
 class Timer(GPITrigger):
-    """Fire after the specified simulation time period has elapsed.
+    r"""Fire after the specified simulation time period has elapsed.
+
+    This trigger will *always* consume some simulation time
+    and will return control to the ``await``\ ing task at the beginning of the time step.
 
     Args:
         time: The time value.
@@ -185,7 +187,7 @@ class Timer(GPITrigger):
             (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
 
     Raises:
-        ValueError: If a negative value is passed for Timer setup.
+        ValueError: If a non-positive value is passed for Timer setup.
 
     Usage:
 
@@ -226,6 +228,9 @@ class Timer(GPITrigger):
 
     .. versionremoved:: 2.0
         The ``time_ps`` parameter was removed, use the ``time`` parameter instead.
+
+    .. versionchanged:: 2.0
+        Passing ``0`` as the *time* argument now raises a :exc:`ValueError`.
     """
 
     round_mode: str = "error"
@@ -240,17 +245,14 @@ class Timer(GPITrigger):
     ) -> None:
         super().__init__()
         if time <= 0:
-            if time == 0:
-                warnings.warn(
-                    "Timer setup with value 0, which might exhibit undefined behavior in some simulators",
-                    category=RuntimeWarning,
-                    stacklevel=2,
-                )
-            else:
-                raise ValueError("Timer argument time must not be negative")
+            raise ValueError("Timer argument time must be positive")
         if round_mode is None:
             round_mode = type(self).round_mode
         self._sim_steps = get_sim_steps(time, units, round_mode=round_mode)
+        # If we round to 0, we fix it up to 1 step as rounding is imprecise,
+        # and Timer(0) is invalid.
+        if self._sim_steps == 0:
+            self._sim_steps = 1
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         """Register for a timed callback."""
