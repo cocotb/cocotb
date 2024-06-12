@@ -6,7 +6,6 @@ import random
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.result import SimFailure
 from cocotb.triggers import RisingEdge
 
 
@@ -22,16 +21,11 @@ async def clk_in_coroutine(dut):
         await RisingEdge(dut.clk)
 
 
-@cocotb.test(expect_error=SimFailure)
+@cocotb.test(_expect_sim_failure=True)
 async def clk_in_hdl(dut):
-    try:
-        dut.d.value = 0
+    dut.d.value = 0
+    await RisingEdge(dut.clk)
+    for _ in range(3):
+        val = random.randint(0, 1)
+        dut.d.value = val
         await RisingEdge(dut.clk)
-        for _ in range(3):
-            val = random.randint(0, 1)
-            dut.d.value = val
-            await RisingEdge(dut.clk)
-    except SimFailure:
-        pass
-    else:
-        assert False, "Exception did not occur"

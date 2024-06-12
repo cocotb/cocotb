@@ -155,6 +155,7 @@ class _Parameterized(Generic[F]):
         expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
         skip: bool = False,
         stage: int = 0,
+        _expect_sim_failure: bool = False,
     ) -> Iterable[Test]:
         test_func_name = self.test_function.__qualname__ if name is None else name
 
@@ -201,6 +202,7 @@ class _Parameterized(Generic[F]):
                 expect_error=expect_error,
                 skip=skip,
                 stage=stage,
+                _expect_sim_failure=_expect_sim_failure,
             )
 
 
@@ -248,6 +250,7 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
+    _expect_sim_failure: bool = False,
 ) -> Callable[[Union[F, _Parameterized[F]]], F]: ...
 
 
@@ -261,6 +264,7 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
+    _expect_sim_failure: bool = False,
 ) -> Callable[[Union[F, _Parameterized[F]]], F]:
     """
     Decorator to register a Callable which returns a Coroutine as a test.
@@ -379,6 +383,7 @@ def test(
                     expect_error=expect_error,
                     skip=skip,
                     stage=stage,
+                    _expect_sim_failure=_expect_sim_failure,
                 ),
             )
             return test_func
@@ -394,6 +399,7 @@ def test(
                     expect_error=expect_error,
                     skip=skip,
                     stage=stage,
+                    _expect_sim_failure=_expect_sim_failure,
                 ),
             )
             return f
