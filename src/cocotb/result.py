@@ -28,11 +28,3 @@
 
 class TestSuccess(BaseException):
     """Exception to be thrown by the user to end a test early, forcing a PASS."""
-
-
-class SimFailure(BaseException):
-    """Exception showing that the simulator exited unsuccessfully.
-
-    Not intended to be thrown by the user.
-    Exists to be used to mark tests that are expected to error due to simulation failure.
-    """
