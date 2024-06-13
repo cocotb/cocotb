@@ -41,7 +41,8 @@ import threading
 import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
+from enum import Enum, auto
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 
 import cocotb
 from cocotb import _outcomes, _py_compat
@@ -172,6 +173,12 @@ class external_waiter:
         return self.state
 
 
+class GPIState(Enum):
+    NORMAL = auto()
+    READ_WRITE = auto()
+    READ_ONLY = auto()
+
+
 class Scheduler:
     """The main scheduler.
 
@@ -217,16 +224,12 @@ class Scheduler:
     "normal mode" i.e. where writes are permitted.
     """
 
-    _MODE_NORMAL = 1  # noqa
-    _MODE_READONLY = 2  # noqa
-    _MODE_WRITE = 3  # noqa
-    _MODE_TERM = 4  # noqa
-
     # Singleton events, recycled to avoid spurious object creation
     _next_time_step = NextTimeStep()
     _read_write = ReadWrite()
     _read_only = ReadOnly()
     _timer1 = Timer(1)
+    _none_outcome = _outcomes.Value(None)
 
     def __init__(self, test_complete_cb: Callable[[], None]) -> None:
         self._test_complete_cb = test_complete_cb
@@ -239,10 +242,12 @@ class Scheduler:
 
         # A dictionary of pending tasks for each trigger,
         # indexed by trigger
-        self._trigger2tasks = _py_compat.insertion_ordered_dict()
+        self._trigger2tasks: Dict[Trigger, list[Task]] = (
+            _py_compat.insertion_ordered_dict()
+        )
 
         # Our main state
-        self._mode = Scheduler._MODE_NORMAL
+        self._state = GPIState.NORMAL
 
         # A dictionary of pending (write_func, args), keyed by handle.
         # Writes are applied oldest to newest (least recently used).
@@ -251,19 +256,15 @@ class Scheduler:
             SimHandleBase, Tuple[Callable[..., None], Sequence[Any]]
         ] = OrderedDict()
 
-        self._pending_tasks = []
-        self._pending_triggers = []
+        self._pending_tasks: List[Tuple[Task[Any]], _outcomes.Outcome] = []
         self._pending_threads = []
         self._pending_events = []  # Events we need to call set on once we've unwound
-        self._scheduling = []
 
         self._terminate = False
         self._test = None
         self._main_thread = threading.current_thread()
 
         self._current_task = None
-
-        self._is_reacting = False
 
         self._write_task = None
         self._writes_pending = Event()
@@ -272,8 +273,6 @@ class Scheduler:
         """An internal task that performs pending writes"""
         while True:
             await self._writes_pending.wait()
-            if self._mode != Scheduler._MODE_NORMAL:
-                await self._next_time_step
 
             await self._read_write
 
@@ -305,7 +304,6 @@ class Scheduler:
             self._terminate = False
             self._write_calls.clear()
             self._writes_pending.clear()
-            self._mode = Scheduler._MODE_TERM
 
     def _test_completed(self, trigger=None):
         """Called after a test and its cleanup have completed"""
@@ -319,13 +317,13 @@ class Scheduler:
             ctx = _py_compat.nullcontext()
 
         with ctx:
-            self._mode = Scheduler._MODE_NORMAL
             if trigger is not None:
                 trigger._unprime()
 
             # extract the current test, and clear it
             test = self._test
             self._test = None
+            self._state = GPIState.NORMAL
             if test is None:
                 raise InternalError("_test_completed called with no active test")
             if test._outcome is None:
@@ -341,170 +339,110 @@ class Scheduler:
             # if it did, make sure we handle the test completing
             self._check_termination()
 
-    def _react(self, trigger):
-        """
-        Called when a trigger fires.
-
-        We ensure that we only start the event loop once, rather than
-        letting it recurse.
-        """
-        if self._is_reacting:
-            # queue up the trigger, the event loop will get to it
-            self._pending_triggers.append(trigger)
-            return
-
-        if self._pending_triggers:
-            raise InternalError(
-                f"Expected all triggers to be handled but found {self._pending_triggers}"
-            )
-
-        # start the event loop
-        self._is_reacting = True
-        try:
-            self._event_loop(trigger)
-        finally:
-            self._is_reacting = False
-
-    def _event_loop(self, trigger):
-        """
-        Run an event loop triggered by the given trigger.
-
-        The loop will keep running until no further triggers fire.
-
-        This should be triggered by only:
-        * The beginning of a test, when there is no trigger to react to
-        * A GPI trigger
-        """
+    def _gpi_react(self, trigger: Trigger) -> None:
         if _profiling:
             ctx = profiling_context()
         else:
             ctx = _py_compat.nullcontext()
 
         with ctx:
-            # When a trigger fires it is unprimed internally
-            if _debug:
-                self.log.debug(f"Trigger fired: {trigger}")
-            # trigger._unprime()
-
-            if self._mode == Scheduler._MODE_TERM:
-                if _debug:
-                    self.log.debug(
-                        f"Ignoring trigger {trigger} since we're terminating"
-                    )
-                return
-
+            # TODO: move state tracking to global variable
+            # and handle this via some kind of trigger-specific Python callback
+            if trigger is self._read_write:
+                self._state = GPIState.READ_WRITE
             if trigger is self._read_only:
-                self._mode = Scheduler._MODE_READONLY
-            # Only GPI triggers affect the simulator scheduling mode
+                self._state = GPIState.READ_ONLY
             elif isinstance(trigger, GPITrigger):
-                self._mode = Scheduler._MODE_NORMAL
+                self._state = GPIState.NORMAL
 
-            # work through triggers one by one
-            is_first = True
-            self._pending_triggers.append(trigger)
-            while self._pending_triggers:
-                trigger = self._pending_triggers.pop(0)
+            self._react(trigger)
+            self._event_loop()
 
-                if not is_first and isinstance(trigger, GPITrigger):
-                    self.log.warning(
-                        "A GPI trigger occurred after entering react - this "
-                        "should not happen."
-                    )
-                    assert False
+    def _react(self, trigger: Trigger) -> None:
+        """Called when a trigger fires."""
+        if _debug:
+            self.log.debug(f"Trigger fired: {trigger}")
 
-                # this only exists to enable the warning above
-                is_first = False
-
-                # When tasks run, they may append to our waiting list so the first
-                # thing to do is pop all tasks currently waiting on this trigger.
-                try:
-                    self._scheduling = self._trigger2tasks.pop(trigger)
-                except KeyError:
-                    # GPI triggers should only be ever pending if there is an
-                    # associated task waiting on that trigger, otherwise it would
-                    # have been unprimed already
-                    if isinstance(trigger, GPITrigger):
-                        self.log.critical(
-                            f"No tasks waiting on trigger that fired: {trigger}"
-                        )
-
-                        trigger.log.info("I'm the culprit")
-                    # For Python triggers this isn't actually an error - we might do
-                    # event.set() without knowing whether any tasks are actually
-                    # waiting on this event, for example
-                    elif _debug:
-                        self.log.debug(
-                            f"No tasks waiting on trigger that fired: {trigger}"
-                        )
-
-                    del trigger
-                    continue
-
-                if _debug:
-                    debugstr = "\n\t".join([str(task) for task in self._scheduling])
-                    if len(self._scheduling) > 0:
-                        debugstr = "\n\t" + debugstr
-                    self.log.debug(
-                        f"{len(self._scheduling)} pending tasks for trigger {trigger}{debugstr}"
-                    )
-
-                # This trigger isn't needed any more
-                trigger._unprime()
-
-                for task in self._scheduling:
-                    if task._outcome is not None:
-                        # Task was killed by another task waiting on the same trigger
-                        continue
-                    if _debug:
-                        self.log.debug(f"Scheduling task {task}")
-                    self._schedule(task, trigger=trigger)
-                    if _debug:
-                        self.log.debug(f"Scheduled task {task}")
-
-                    # remove our reference to the objects at the end of each loop,
-                    # to try and avoid them being destroyed at a weird time (as
-                    # happened in gh-957)
-                    del task
-
-                self._scheduling = []
-
-                # Handle any newly queued tasks that need to be scheduled
-                while self._pending_tasks:
-                    task = self._pending_tasks.pop(0)
-                    if _debug:
-                        self.log.debug(f"Scheduling queued task {task}")
-                    self._schedule(task)
-                    if _debug:
-                        self.log.debug(f"Scheduled queued task {task}")
-
-                    del task
-
-                # Schedule may have queued up some events so we'll burn through those
-                while self._pending_events:
-                    if _debug:
-                        self.log.debug(
-                            f"Scheduling pending event {self._pending_events[0]}"
-                        )
-                    self._pending_events.pop(0).set()
-
-                # remove our reference to the objects at the end of each loop,
-                # to try and avoid them being destroyed at a weird time (as
-                # happened in gh-957)
-                del trigger
-
-            # no more pending triggers
-            self._check_termination()
-            if _debug:
-                self.log.debug("All tasks scheduled, handing control back to simulator")
-
-    def _unschedule(self, task):
-        """Unschedule a task.  Unprime any pending triggers"""
-        if task in self._pending_tasks:
-            assert not task.has_started()
-            self._pending_tasks.remove(task)
-            # Close coroutine so there is no RuntimeWarning that it was never awaited
-            task._coro.close()
+        # find all tasks waiting on trigger that fired
+        try:
+            scheduling = self._trigger2tasks.pop(trigger)
+        except KeyError:
+            # GPI triggers should only be ever pending if there is an
+            # associated task waiting on that trigger, otherwise it would
+            # have been unprimed already
+            if isinstance(trigger, GPITrigger):
+                self.log.critical(f"No tasks waiting on trigger that fired: {trigger}")
+                trigger.log.info("I'm the culprit")
+            # For Python triggers this isn't actually an error - we might do
+            # event.set() without knowing whether any tasks are actually
+            # waiting on this event, for example
+            elif _debug:
+                self.log.debug(f"No tasks waiting on trigger that fired: {trigger}")
             return
+
+        if _debug:
+            debugstr = "\n\t".join([str(task) for task in scheduling])
+            if len(scheduling) > 0:
+                debugstr = "\n\t" + debugstr
+            self.log.debug(
+                f"{len(scheduling)} pending tasks for trigger {trigger}{debugstr}"
+            )
+
+        # queue all tasks to wake up
+        for task in scheduling:
+            # unset trigger
+            task._trigger = None
+            self._queue(task, outcome=trigger._outcome)
+
+        # This trigger isn't needed any more
+        trigger._unprime()
+
+    def _event_loop(self) -> None:
+        """Run the main event loop
+
+        This should be triggered by only:
+        * The beginning of a test, when there is no trigger to react to
+        * A GPI trigger
+        """
+
+        while self._pending_tasks and not self._terminate:
+            task, outcome = self._pending_tasks.pop(0)
+
+            if _debug:
+                self.log.debug(f"Scheduling task {task}")
+            self._schedule(task, outcome)
+            if _debug:
+                self.log.debug(f"Scheduled task {task}")
+
+            # remove our reference to the objects at the end of each loop,
+            # to try and avoid them being destroyed at a weird time (as
+            # happened in gh-957)
+            del task
+
+            # Schedule may have queued up some events so we'll burn through those
+            while self._pending_events:
+                if _debug:
+                    self.log.debug(
+                        f"Scheduling pending event {self._pending_events[0]}"
+                    )
+                self._pending_events.pop(0).set()
+
+        # no more pending triggers
+        self._check_termination()
+        if _debug:
+            self.log.debug("All tasks scheduled, handing control back to simulator")
+
+    def _unschedule(self, task: Task[Any]) -> None:
+        """Unschedule a task.  Unprime any pending triggers"""
+
+        # remove task from queue
+        # TODO: replace slow search with something faster
+        for i, (t, _) in enumerate(self._pending_tasks):
+            if t == task:
+                self._pending_tasks.pop(i)
+                # Close coroutine so there is no RuntimeWarning that it was never awaited
+                if not task.has_started():
+                    task._coro.close()
 
         # Unprime the trigger this task is waiting on
         trigger = task._trigger
@@ -554,7 +492,7 @@ class Scheduler:
         args: Sequence[Any],
     ) -> None:
         """Queue `write_func` to be called on the next ReadWrite trigger."""
-        if self._mode == Scheduler._MODE_READONLY:
+        if self._state == GPIState.READ_ONLY:
             raise Exception(
                 f"Write to object {handle._name} was scheduled during a read-only sync phase."
             )
@@ -569,7 +507,7 @@ class Scheduler:
         self._write_calls[handle] = (write_func, args)
         self._writes_pending.set()
 
-    def _resume_task_upon(self, task, trigger):
+    def _resume_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
         """Schedule `task` to be resumed when `trigger` fires."""
         task._trigger = trigger
 
@@ -589,24 +527,34 @@ class Scheduler:
                 raise InternalError("More than one task waiting on an unprimed trigger")
 
             try:
-                trigger._prime(self._react)
+                if isinstance(trigger, GPITrigger):
+                    trigger._prime(self._gpi_react)
+                else:
+                    trigger._prime(self._react)
             except Exception as e:
                 # discard the trigger we associated, it will never fire
                 self._trigger2tasks.pop(trigger)
 
                 # replace it with a new trigger that throws back the exception
-                self._resume_task_upon(
-                    task,
-                    NullTrigger(
-                        name="Trigger._prime() Error", outcome=_outcomes.Error(e)
-                    ),
-                )
+                self._queue(task, outcome=_outcomes.Error(e))
 
-    def _queue(self, task):
+    def _queue(
+        self, task: Task[Any], outcome: _outcomes.Outcome[Any] = _none_outcome
+    ) -> None:
         """Queue a task for execution"""
         # Don't queue the same task more than once (gh-2503)
-        if task not in self._pending_tasks:
-            self._pending_tasks.append(task)
+        # TODO: replace slow search with something faster
+        for queued_task, queued_outcome in self._pending_tasks:
+            if queued_task == task:
+                if queued_outcome != outcome:
+                    raise InternalError(
+                        f"Attempted rescheduling {task!r} with different outcome!"
+                    )
+                elif _debug:
+                    self.log.debug(f"Not rescheduling already scheduled {task!r}")
+                break
+        else:
+            self._pending_tasks.append((task, outcome))
 
     def _queue_function(self, task):
         """Queue a task for execution and move the containing thread
@@ -640,7 +588,7 @@ class Scheduler:
             event.set()
 
         event = threading.Event()
-        self._pending_tasks.append(Task(wrapper()))
+        self._queue(Task(wrapper()))
         # The scheduler thread blocks in `thread_wait`, and is woken when we
         # call `thread_suspend` - so we need to make sure the task is
         # queued before that.
@@ -724,16 +672,14 @@ class Scheduler:
         self._queue(task)
         return task
 
-    def _add_test(self, test_task):
+    def _add_test(self, test_task: Task[None]) -> None:
         """Called by the regression manager to queue the next test"""
         if self._test is not None:
             raise InternalError("Test was added while another was in progress")
 
         self._test = test_task
-        self._resume_task_upon(
-            test_task,
-            NullTrigger(name=f"Start {test_task!s}", outcome=_outcomes.Value(None)),
-        )
+        self._queue(test_task)
+        self._event_loop()
 
     # This collection of functions parses a trigger out of the object
     # that was yielded by a task, converting `list` -> `Waitable`,
@@ -785,7 +731,7 @@ class Scheduler:
             f"handle: {result!r}\n"
         )
 
-    def _schedule(self, task: Task, trigger: Optional[Trigger] = None) -> None:
+    def _schedule(self, task: Task, outcome: _outcomes.Outcome[Any]) -> None:
         """Schedule a task to execute.
 
         Args:
@@ -797,15 +743,8 @@ class Scheduler:
             raise InternalError("_schedule() called while another Task is executing")
         try:
             self._current_task = task
-            if trigger is None:
-                send_outcome = _outcomes.Value(None)
-            else:
-                send_outcome = trigger._outcome
-            if _debug:
-                self.log.debug(f"Scheduling with {send_outcome}")
 
-            task._trigger = None
-            result = task._advance(send_outcome)
+            result = task._advance(outcome=outcome)
 
             if task.done():
                 if _debug:
@@ -819,7 +758,7 @@ class Scheduler:
 
             if not task.done():
                 if _debug:
-                    self.log.debug(f"{task!r} yielded {result} (mode {self._mode})")
+                    self.log.debug(f"{task!r} yielded {result} (mode {self._state})")
                 try:
                     result = self._trigger_from_any(result)
                 except TypeError as exc:
@@ -885,7 +824,7 @@ class Scheduler:
             self._abort_test(exc)
             self._test_complete_cb()
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         """Clear up all our state.
 
         Unprime all pending triggers and kill off any coroutines, stop all externals.
@@ -902,27 +841,12 @@ class Scheduler:
                 task.kill()
         assert not self._trigger2tasks
 
-        # if there are coroutines being scheduled when the test ends, kill them (gh-1347)
-        for task in self._scheduling:
-            if _debug:
-                self.log.debug(f"Killing {task}")
-            task.kill()
-        self._scheduling = []
-
-        # cancel outstanding triggers *before* queued coroutines (gh-3270)
-        while self._pending_triggers:
-            trigger = self._pending_triggers.pop(0)
-            if _debug:
-                self.log.debug(f"Unpriming {trigger}")
-            trigger._unprime()
-        assert not self._pending_triggers
-
         # Kill any queued coroutines.
         # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_tasks.
         # If that happens a for loop will stop early and then the assert will fail.
         while self._pending_tasks:
             # Get first task but leave it in the list so that _unschedule() will correctly close the unstarted coroutine object.
-            task = self._pending_tasks[0]
+            task, _ = self._pending_tasks[0]
             task.kill()
 
         if self._main_thread is not threading.current_thread():
