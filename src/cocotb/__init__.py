@@ -280,16 +280,12 @@ def _stop_library_coverage() -> None:
         _library_coverage.save()  # pragma: no cover
 
 
-def _sim_event(message: str) -> None:
+def _sim_event(msg: str) -> None:
     """Function that can be called externally to signal an event."""
-    from cocotb.result import SimFailure
-
     # We simply return here as the simulator will exit
     # so no cleanup is needed
-    msg = f"Failing test at simulator request before test run completion: {message}"
-    if _scheduler_inst is not None:
-        _scheduler_inst.log.error(msg)
-        _scheduler_inst._finish_scheduler(SimFailure(msg))
+    if regression_manager is not None:
+        regression_manager._fail_simulation(msg)
     else:
         log.error(msg)
         _stop_user_coverage()

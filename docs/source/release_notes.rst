@@ -398,7 +398,7 @@ Bugfixes
 --------
 
 - Tests which fail at initialization, for instance due to no ``yield`` being present, are no longer silently ignored. (:pr:`1253`)
-- Tests that were not run because predecessors threw :class:`cocotb.result.SimFailure`, and caused the simulator to exit, are now recorded with an outcome of :class:`cocotb.result.SimFailure`.
+- Tests that were not run because predecessors threw ``cocotb.result.SimFailure``, and caused the simulator to exit, are now recorded with an outcome of ``cocotb.result.SimFailure``.
   Previously, these tests were ignored. (:pr:`1279`)
 - Makefiles now correctly fail if the simulation crashes before a ``results.xml`` file can be written. (:pr:`1314`)
 - Logging of non-string messages with colored log output is now working. (:pr:`1410`)
