@@ -65,7 +65,6 @@ from cocotb.utils import remove_traceback_frames
 _profiling = "COCOTB_ENABLE_PROFILING" in os.environ
 if _profiling:
     import cProfile
-    import pstats
 
     _profile = cProfile.Profile()
 
@@ -282,64 +281,39 @@ class Scheduler:
                 func(*args)
             self._writes_pending.clear()
 
-    def _check_termination(self):
+    def _check_termination(self) -> None:
         """
         Handle a termination that causes us to move onto the next test.
         """
-        if self._terminate:
-            if _debug:
-                self.log.debug("Test terminating, scheduling Timer")
+        if not self._terminate:
+            return
 
-            if self._write_task is not None:
-                self._write_task.kill()
-                self._write_task = None
-
-            for t in self._trigger2tasks:
-                t._unprime()
-
-            if self._timer1._primed:
-                self._timer1._unprime()
-
-            self._timer1._prime(self._test_completed)
-            self._trigger2tasks = _py_compat.insertion_ordered_dict()
-            self._terminate = False
-            self._write_calls.clear()
-            self._writes_pending.clear()
-            self._mode = Scheduler._MODE_TERM
-
-    def _test_completed(self, trigger=None):
-        """Called after a test and its cleanup have completed"""
         if _debug:
-            self.log.debug(f"_test_completed called with trigger: {trigger}")
-        if _profiling:
-            ps = pstats.Stats(_profile).sort_stats("cumulative")
-            ps.dump_stats("test_profile.pstat")
-            ctx = profiling_context()
-        else:
-            ctx = _py_compat.nullcontext()
+            self.log.debug("Test terminating, scheduling Timer")
 
-        with ctx:
-            self._mode = Scheduler._MODE_NORMAL
-            if trigger is not None:
-                trigger._unprime()
+        if self._write_task is not None:
+            self._write_task.kill()
+            self._write_task = None
 
-            # extract the current test, and clear it
-            test = self._test
-            self._test = None
-            if test is None:
-                raise InternalError("_test_completed called with no active test")
-            if test._outcome is None:
-                raise InternalError("_test_completed called with an incomplete test")
+        for t in self._trigger2tasks:
+            t._unprime()
 
-            # Issue previous test result
-            if _debug:
-                self.log.debug("Issue test result to regression object")
+        self._trigger2tasks = _py_compat.insertion_ordered_dict()
+        self._terminate = False
+        self._write_calls.clear()
+        self._writes_pending.clear()
+        self._mode = Scheduler._MODE_NORMAL
 
-            # this may schedule another test
-            self._test_complete_cb()
+        # extract the current test, and clear it
+        test = self._test
+        self._test = None
+        if test is None:
+            raise InternalError("_test_completed called with no active test")
+        if test._outcome is None:
+            raise InternalError("_test_completed called with an incomplete test")
 
-            # if it did, make sure we handle the test completing
-            self._check_termination()
+        # this may schedule another test
+        self._test_complete_cb()
 
     def _react(self, trigger):
         """
@@ -724,15 +698,17 @@ class Scheduler:
         self._queue(task)
         return task
 
-    def _add_test(self, test_task):
+    def _add_test(self, test_task: Task[None]) -> None:
         """Called by the regression manager to queue the next test"""
         if self._test is not None:
             raise InternalError("Test was added while another was in progress")
 
+        breakpoint()
+
         self._test = test_task
         self._resume_task_upon(
             test_task,
-            NullTrigger(name=f"Start {test_task!s}", outcome=_outcomes.Value(None)),
+            self._timer1,
         )
 
     # This collection of functions parses a trigger out of the object
