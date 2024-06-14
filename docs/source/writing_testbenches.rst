@@ -230,6 +230,10 @@ the various actions described in :ref:`assignment-methods` can be used.
     # Freeze action
     dut.my_signal.value = Freeze()     # my_signal stays at current value until released
 
+.. warning::
+
+    Not all simulators support these features; refer to the :ref:`simulator-support` section for details or to `issues with label "upstream" <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Aupstream>`_
+
 
 .. _writing_tbs_accessing_underscore_identifiers:
 
