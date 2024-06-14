@@ -93,7 +93,7 @@ def _help_vars_text() -> str:
         Regression Manager
         ------------------
         COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
-        COCOTB_TEST_MODULES        Modules to search for test functions (comma-separated)
+        COCOTB_TEST_MODULES       Module(s) to search for test functions (comma-separated)
         COCOTB_TESTCASE           Test function(s) to run (comma-separated list)
         COCOTB_RESULTS_FILE       File name for xUnit XML tests results
         COCOTB_USER_COVERAGE      Collect Python user coverage (HDL for some simulators)

@@ -125,7 +125,7 @@ class Test:
 
         skip:
             Don't execute this test as part of the regression.
-            The test can still be run manually by setting :envvar:`TESTCASE`.
+            The test can still be run manually by setting :envvar:`COCOTB_TESTCASE`.
 
         stage:
             Order tests logically into stages.

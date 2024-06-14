@@ -100,8 +100,8 @@ In the ``Makefile`` shown below we specify:
 * the default simulator to use (:make:var:`SIM`),
 * the default language of the toplevel module or entity (:make:var:`TOPLEVEL_LANG`, ``verilog`` in our case),
 * the design source files (:make:var:`VERILOG_SOURCES` and :make:var:`VHDL_SOURCES`),
-* the toplevel module or entity to instantiate (:envvar:`TOPLEVEL`, ``my_design`` in our case),
-* and a Python module that contains our cocotb tests (:envvar:`MODULE`.
+* the toplevel module or entity to instantiate (:envvar:`COCOTB_TOPLEVEL`, ``my_design`` in our case),
+* and Python modules that contain our cocotb tests (:envvar:`COCOTB_TEST_MODULES`.
   The file containing the test without the `.py` extension, ``test_my_design`` in our case).
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/Makefile
