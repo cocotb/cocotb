@@ -34,7 +34,7 @@ Variables
 
 The following sections document environment variables and makefile variables according to their owner/consumer.
 
-Of the environment variables, only :envvar:`MODULE` is mandatory to be set
+Of the environment variables, only :envvar:`COCOTB_TEST_MODULES` is mandatory to be set
 (typically done in a makefile or run script), all others are optional.
 
 ..
@@ -43,7 +43,7 @@ Of the environment variables, only :envvar:`MODULE` is mandatory to be set
 Cocotb
 ------
 
-.. envvar:: TOPLEVEL
+.. envvar:: COCOTB_TOPLEVEL
 
     Use this to indicate the instance in the hierarchy to use as the :term:`DUT`.
     If this isn't defined then the first root instance is used.
@@ -54,7 +54,15 @@ Cocotb
 
     .. versionchanged:: 1.6.0 Strip leading and trailing whitespace
 
-.. envvar:: RANDOM_SEED
+    .. versionchanged:: 2.0
+
+        :envvar:`TOPLEVEL` is renamed to :envvar:`COCOTB_TOPLEVEL`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`TOPLEVEL` is a deprecated alias and will be removed.
+
+.. envvar:: COCOTB_RANDOM_SEED
 
     Seed the Python random module to recreate a previous test stimulus.
     At the beginning of every test a message is displayed with the seed used for that execution:
@@ -68,9 +76,17 @@ Cocotb
 
     .. code-block:: bash
 
-       make RANDOM_SEED=1377424946
+       make COCOTB_RANDOM_SEED=1377424946
 
-    See also: :make:var:`PLUSARGS`
+    See also: :make:var:`COCOTB_PLUSARGS`
+
+    .. versionchanged:: 2.0
+
+        :envvar:`RANDOM_SEED` is renamed to :envvar:`COCOTB_RANDOM_SEED`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`RANDOM_SEED` is a deprecated alias and will be removed.
 
 .. envvar:: COCOTB_ANSI_OUTPUT
 
@@ -154,19 +170,35 @@ Cocotb
 Regression Manager
 ~~~~~~~~~~~~~~~~~~
 
-.. envvar:: MODULE
+.. envvar:: COCOTB_TEST_MODULES
 
     The name of the Python module(s) to search for test functions -
-    if your tests are in a file called ``test_mydesign.py``, ``MODULE`` would be set to ``test_mydesign``.
+    if your tests are in a file called ``test_mydesign.py``, ``COCOTB_TEST_MODULES`` would be set to ``test_mydesign``.
     Multiple modules can be specified using a comma-separated list.
     All tests will be run from each specified module in order of the module's appearance in this list.
 
     The is the only environment variable that is **required** for cocotb, all others are optional.
 
-.. envvar:: TESTCASE
+    .. versionchanged:: 2.0
+
+        :envvar:`MODULE` is renamed to :envvar:`COCOTB_TEST_MODULES`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`MODULE` is a deprecated alias and will be removed.
+
+.. envvar:: COCOTB_TESTCASE
 
     A comma-separated list of tests to run.
     Does an exact match on the test name.
+
+    .. versionchanged:: 2.0
+
+        :envvar:`TESTCASE` is renamed to :envvar:`COCOTB_TESTCASE`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`TESTCASE` is a deprecated alias and will be removed.
 
     .. deprecated:: 2.0
 
@@ -181,23 +213,24 @@ Regression Manager
     .. versionchanged:: 2.0
 
         Previously, if more than one test matched a test name in the :envvar:`TESTCASE` list,
-        only the first test that matched that test name in the :envvar:`MODULE` list was run.
-        Now, all tests that match the test name across all :envvar:`MODULE`\ s are run.
+        only the first test that matched that test name in the :envvar:`COCOTB_TEST_MODULES` list was run.
+        Now, all tests that match the test name across all :envvar:`COCOTB_TEST_MODULES`\ s are run.
 
     .. warning::
 
-        Only one of :envvar:`TESTCASE` or :envvar:`COCOTB_TEST_FILTER` should be used.
+        Only one of :envvar:`COCOTB_TESTCASE` or :envvar:`COCOTB_TEST_FILTER` should be used.
+
 
 .. envvar:: COCOTB_TEST_FILTER
 
     A regular expression matching names of test function(s) to run.
-    If this variable is not defined cocotb discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied :envvar:`MODULE` list.
+    If this variable is not defined cocotb discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied :envvar:`COCOTB_TEST_MODULES` list.
 
     .. versionadded:: 2.0
 
     .. warning::
 
-        Only one of :envvar:`TESTCASE` or :envvar:`COCOTB_TEST_FILTER` should be used.
+        Only one of :envvar:`COCOTB_TESTCASE` or :envvar:`COCOTB_TEST_FILTER` should be used.
 
 .. envvar:: COCOTB_RESULTS_FILE
 
@@ -205,17 +238,25 @@ Regression Manager
 
     .. versionadded:: 1.3
 
-.. envvar:: COVERAGE
+.. envvar:: COCOTB_USER_COVERAGE
 
     Enable to collect Python coverage data for user code.
     For some simulators, this will also report :term:`HDL` coverage.
-    If :envvar:`COVERAGE_RCFILE` is not set,
+    If :envvar:`COCOTB_COVERAGE_RCFILE` is not set,
     branch coverage is collected
     and files in the cocotb package directory are excluded.
 
     This needs the :mod:`coverage` Python module to be installed.
 
-.. envvar:: COVERAGE_RCFILE
+    .. versionchanged:: 2.0
+
+        :envvar:`COVERAGE` is renamed to :envvar:`COCOTB_USER_COVERAGE`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`COVERAGE` is a deprecated alias and will be removed.
+
+.. envvar:: COCOTB_COVERAGE_RCFILE
 
     Location of a configuration file for coverage collection of Python user code
     using the the :mod:`coverage` module.
@@ -226,6 +267,14 @@ Regression Manager
     like enabling branch coverage and excluding files in the cocotb package directory.
 
     .. versionadded:: 1.7
+
+    .. versionchanged:: 2.0
+
+        :envvar:`COVERAGE_RCFILE` is renamed to :envvar:`COCOTB_COVERAGE_RCFILE`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`COVERAGE_RCFILE` is a deprecated alias and will be removed.
 
 .. envvar:: COCOTB_PDB_ON_EXCEPTION
 
@@ -373,7 +422,7 @@ The following variables are makefile variables, not environment variables.
 
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
 
-.. make:var:: PLUSARGS
+.. make:var:: COCOTB_PLUSARGS
 
       "Plusargs" are options that are starting with a plus (``+``) sign.
       They are passed to the simulator and are also available within cocotb as :data:`cocotb.plusargs`.
@@ -381,8 +430,16 @@ The following variables are makefile variables, not environment variables.
       ``$test$plusargs`` and ``$value$plusargs``.
 
       The special plusargs ``+ntb_random_seed`` and ``+seed``, if present, are evaluated
-      to set the random seed value if :envvar:`RANDOM_SEED` is not set.
+      to set the random seed value if :envvar:`COCOTB_RANDOM_SEED` is not set.
       If both ``+ntb_random_seed`` and ``+seed`` are set, ``+ntb_random_seed`` is used.
+
+    .. versionchanged:: 2.0
+
+        :envvar:`PLUSARGS` is renamed to :envvar:`COCOTB_PLUSARGS`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`PLUSARGS` is a deprecated alias and will be removed.
 
 .. make:var:: SIM_CMD_PREFIX
 
@@ -446,7 +503,7 @@ The following variables are makefile variables, not environment variables.
 
 .. make:var:: TOPLEVEL_LIBRARY
 
-    The name of the library that contains the :envvar:`TOPLEVEL` module/entity.
+    The name of the library that contains the :envvar:`COCOTB_TOPLEVEL` module/entity.
     Defaults to the :make:var:`RTL_LIBRARY`.
     Only supported by the Siemens EDA Questa simulator.
 

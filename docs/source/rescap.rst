@@ -80,7 +80,7 @@ To run it, call:
 
 .. code-block:: bash
 
-    make SIM=xcelium TOPLEVEL=tb_rescap MODULE=test_rescap_minimalist
+    make SIM=xcelium COCOTB_TOPLEVEL=tb_rescap COCOTB_TEST_MODULES=test_rescap_minimalist
 
 
 The testcase supplies ``vdd``,
@@ -127,4 +127,4 @@ To run this testcase, call:
 
 .. code-block:: bash
 
-    make SIM=xcelium TOPLEVEL=tb_rescap MODULE=test_rescap
+    make SIM=xcelium COCOTB_TOPLEVEL=tb_rescap COCOTB_TEST_MODULES=test_rescap

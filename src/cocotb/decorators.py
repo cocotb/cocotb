@@ -335,7 +335,7 @@ def test(
 
         skip:
             Don't execute this test as part of the regression. Test can still be run
-            manually by setting :make:var:`TESTCASE`.
+            manually by setting :make:var:`COCOTB_TESTCASE`.
 
         stage:
             Order tests logically into stages, where multiple tests can share a stage.

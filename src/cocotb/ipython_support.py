@@ -85,7 +85,7 @@ async def embed(user_ns: dict = {}):
 async def run_ipython(dut):
     """A test that launches an interactive Python shell.
 
-    Do not call this directly - use this as ``make MODULE=cocotb.ipython_support``.
+    Do not call this directly - use this as ``make COCOTB_TEST_MODULES=cocotb.ipython_support``.
 
     Within the shell, a global ``dut`` variable pointing to the design will be present.
     """

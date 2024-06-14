@@ -70,7 +70,7 @@ argv: List[str]
 plusargs: Dict[str, Union[bool, str]]
 """A dictionary of "plusargs" handed to the simulation.
 
-See :make:var:`PLUSARGS` for details.
+See :make:var:`COCOTB_PLUSARGS` for details.
 """
 
 packages: SimpleNamespace
@@ -92,7 +92,7 @@ _random_seed: int
 """
 The value passed to the Python default random number generator.
 
-See :envvar:`RANDOM_SEED` for details on how the value is computed.
+See :envvar:`COCOTB_RANDOM_SEED` for details on how the value is computed.
 This is guaranteed to hold a value at test time.
 """
 
@@ -104,7 +104,7 @@ _user_coverage: Any = None
 
 top: cocotb.handle.SimHandleBase
 r"""
-A handle to the :envvar:`TOPLEVEL` entity/module.
+A handle to the :envvar:`COCOTB_TOPLEVEL` entity/module.
 
 This is equivalent to the :term:`DUT` parameter given to cocotb tests, so it can be used wherever that variable can be used.
 It is particularly useful for extracting information about the :term:`DUT` in module-level class and function definitions;
@@ -351,7 +351,7 @@ def _start_user_coverage() -> None:
             if config_filepath is None:
                 # Exclude cocotb itself from coverage collection.
                 cocotb.log.info(
-                    "Collecting coverage of user code. No coverage config file supplied via COVERAGE_RCFILE."
+                    "Collecting coverage of user code. No coverage config file supplied via COCOTB_COVERAGE_RCFILE."
                 )
                 cocotb_package_dir = os.path.dirname(__file__)
                 _user_coverage = coverage.coverage(

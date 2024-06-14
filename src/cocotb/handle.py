@@ -343,7 +343,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
     This class is used for named hierarchical structures, such as "generate blocks" or "module"/"entity" instantiations.
 
     Children under this structure are found by using the name of the child with either the attribute syntax or index syntax.
-    For example, if in your :envvar:`TOPLEVEL` entity/module you have a signal/net named ``count``, you could do either of the following.
+    For example, if in your :envvar:`COCOTB_TOPLEVEL` entity/module you have a signal/net named ``count``, you could do either of the following.
 
     .. code-block:: python3
 

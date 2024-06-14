@@ -94,7 +94,7 @@ To run this testcase, call:
 
 .. code-block:: bash
 
-    make SIM=xcelium TOPLEVEL=tb_regulator MODULE=test_regulator_plot
+    make SIM=xcelium COCOTB_TOPLEVEL=tb_regulator COCOTB_TEST_MODULES=test_regulator_plot
 
 
 test_regulator_trim
@@ -117,4 +117,4 @@ To run this testcase, call:
 
 .. code-block:: bash
 
-    make SIM=xcelium TOPLEVEL=tb_regulator MODULE=test_regulator_trim
+    make SIM=xcelium COCOTB_TOPLEVEL=tb_regulator COCOTB_TEST_MODULES=test_regulator_trim
