@@ -42,7 +42,7 @@ import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Sequence, Tuple, Union
 
 import cocotb
 from cocotb import _outcomes, _py_compat
@@ -256,7 +256,7 @@ class Scheduler:
             SimHandleBase, Tuple[Callable[..., None], Sequence[Any]]
         ] = OrderedDict()
 
-        self._pending_tasks: List[Tuple[Task[Any]], _outcomes.Outcome] = []
+        self._pending_tasks: OrderedDict[Task[Any], _outcomes.Outcome] = OrderedDict()
         self._pending_threads = []
         self._pending_events = []  # Events we need to call set on once we've unwound
 
@@ -317,13 +317,13 @@ class Scheduler:
             ctx = _py_compat.nullcontext()
 
         with ctx:
+            self._state = GPIState.NORMAL
             if trigger is not None:
                 trigger._unprime()
 
             # extract the current test, and clear it
             test = self._test
             self._test = None
-            self._state = GPIState.NORMAL
             if test is None:
                 raise InternalError("_test_completed called with no active test")
             if test._outcome is None:
@@ -406,7 +406,7 @@ class Scheduler:
         """
 
         while self._pending_tasks and not self._terminate:
-            task, outcome = self._pending_tasks.pop(0)
+            task, outcome = self._pending_tasks.popitem(last=False)
 
             if _debug:
                 self.log.debug(f"Scheduling task {task}")
@@ -436,13 +436,8 @@ class Scheduler:
         """Unschedule a task.  Unprime any pending triggers"""
 
         # remove task from queue
-        # TODO: replace slow search with something faster
-        for i, (t, _) in enumerate(self._pending_tasks):
-            if t == task:
-                self._pending_tasks.pop(i)
-                # Close coroutine so there is no RuntimeWarning that it was never awaited
-                if not task.has_started():
-                    task._coro.close()
+        if task in self._pending_tasks:
+            self._pending_tasks.pop(task)
 
         # Unprime the trigger this task is waiting on
         trigger = task._trigger
@@ -527,10 +522,7 @@ class Scheduler:
                 raise InternalError("More than one task waiting on an unprimed trigger")
 
             try:
-                if isinstance(trigger, GPITrigger):
-                    trigger._prime(self._gpi_react)
-                else:
-                    trigger._prime(self._react)
+                trigger._prime(self._react)
             except Exception as e:
                 # discard the trigger we associated, it will never fire
                 self._trigger2tasks.pop(trigger)
@@ -543,18 +535,15 @@ class Scheduler:
     ) -> None:
         """Queue a task for execution"""
         # Don't queue the same task more than once (gh-2503)
-        # TODO: replace slow search with something faster
-        for queued_task, queued_outcome in self._pending_tasks:
-            if queued_task == task:
-                if queued_outcome != outcome:
-                    raise InternalError(
-                        f"Attempted rescheduling {task!r} with different outcome!"
-                    )
-                elif _debug:
-                    self.log.debug(f"Not rescheduling already scheduled {task!r}")
-                break
+        if task in self._pending_tasks:
+            if self._pending_tasks[task] != outcome:
+                raise InternalError(
+                    f"Attempted rescheduling {task!r} with different outcome!"
+                )
+            elif _debug:
+                self.log.debug(f"Not rescheduling already scheduled {task!r}")
         else:
-            self._pending_tasks.append((task, outcome))
+            self._pending_tasks[task] = outcome
 
     def _queue_function(self, task):
         """Queue a task for execution and move the containing thread
@@ -846,7 +835,7 @@ class Scheduler:
         # If that happens a for loop will stop early and then the assert will fail.
         while self._pending_tasks:
             # Get first task but leave it in the list so that _unschedule() will correctly close the unstarted coroutine object.
-            task, _ = self._pending_tasks[0]
+            task, _ = self._pending_tasks.popitem(last=False)
             task.kill()
 
         if self._main_thread is not threading.current_thread():
