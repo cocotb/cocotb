@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
 import warnings
+from math import ceil
 
 from cocotb._deprecation import deprecated
 from cocotb.types import ArrayLike
@@ -346,6 +347,23 @@ class LogicArray(ArrayLike[Logic]):
         .. deprecated:: 2.0
         """
         return self.to_signed()
+
+    @property
+    @deprecated(
+        '`.buff` property is deprecated. Use `v.to_unsigned().to_bytes(ceil(len(v) / 8), byteorder="big")` instead.'
+    )
+    def buff(self) -> bytes:
+        """Converts the value to :class:`bytes` by interpreting it as an unsigned integer in big-endian byteorder.
+
+        The object is first converted to an :class:`int` as in :meth:`to_unsigned`.
+        Then the object is converted to :class:`bytes` by converting the resulting integer value as in :meth:`int.to_bytes`.
+        This assumes big-endian byteorder and the minimal number of bytes necessary to hold any value of the current object.
+
+        Returns: A :class:`bytes` object equivalent to the value.
+
+        .. deprecated:: 2.0
+        """
+        return self.to_unsigned().to_bytes(ceil(len(self) / 8), byteorder="big")
 
     def to_unsigned(self) -> int:
         """Convert the value to an :class:`int` by interpreting it using unsigned representation.
