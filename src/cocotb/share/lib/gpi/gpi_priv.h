@@ -53,7 +53,6 @@ typedef enum gpi_cb_state {
 class GpiCbHdl;
 class GpiImplInterface;
 class GpiIterator;
-class GpiCbHdl;
 
 /* Base GPI class others are derived from */
 class GPI_EXPORT GpiHdl {
@@ -167,6 +166,32 @@ class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
 
     virtual GpiCbHdl *register_value_change_callback(
         int edge, int (*gpi_function)(void *), void *gpi_cb_data) = 0;
+};
+
+/* GPI Clock */
+// This object implements a simulator-side clock using GPI.
+class GPI_EXPORT GpiClk : public GpiHdl {
+  public:
+    GpiClk(GpiSignalObjHdl *clk_sig) : GpiHdl(clk_sig->m_impl, clk_sig) {}
+
+    ~GpiClk();
+
+    int start(uint64_t period_steps, uint64_t high_steps, uint64_t phase_steps);
+
+    int stop();
+
+    bool is_running() const { return clk_toggle_cb_hdl != nullptr; }
+
+  protected:
+    GpiCbHdl *clk_toggle_cb_hdl = nullptr;
+
+    uint64_t period = 0;
+    uint64_t t_high = 0;
+
+    int clk_val = 0;
+
+    int toggle();
+    static int toggle_cb(void *gpi_clk);
 };
 
 /* GPI Callback handle */

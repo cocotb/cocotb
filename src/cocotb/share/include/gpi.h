@@ -81,9 +81,11 @@ imitate a callback.
 class GpiObjHdl;
 class GpiCbHdl;
 class GpiIterator;
+class GpiClk;
 typedef GpiObjHdl *gpi_sim_hdl;
 typedef GpiCbHdl *gpi_cb_hdl;
 typedef GpiIterator *gpi_iterator_hdl;
+typedef GpiClk *gpi_clk_hdl;
 #else
 /* In C, we declare some incomplete struct types that we never complete.
  * The names of these are irrelevant, but for simplicity they match the C++
@@ -92,9 +94,11 @@ typedef GpiIterator *gpi_iterator_hdl;
 struct GpiObjHdl;
 struct GpiCbHdl;
 struct GpiIterator;
+struct GpiClk;
 typedef struct GpiObjHdl *gpi_sim_hdl;
 typedef struct GpiCbHdl *gpi_cb_hdl;
 typedef struct GpiIterator *gpi_iterator_hdl;
+typedef struct GpiClk *gpi_clk_hdl;
 #endif
 
 #ifdef __cplusplus
@@ -258,6 +262,13 @@ GPI_EXPORT void gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
 // implementations of GPI we provide a convenience function to extract the
 // callback data
 GPI_EXPORT void *gpi_get_callback_data(gpi_cb_hdl gpi_hdl);
+
+// Simulation clock functions
+GPI_EXPORT gpi_clk_hdl gpi_clock_create(gpi_sim_hdl clk_signal_hdl);
+GPI_EXPORT int gpi_clock_start(gpi_clk_hdl clk, uint64_t period_steps,
+                               uint64_t high_steps, uint64_t phase_steps);
+GPI_EXPORT int gpi_clock_stop(gpi_clk_hdl clk);
+GPI_EXPORT void gpi_clock_delete(gpi_clk_hdl clk);
 
 #ifdef __cplusplus
 }

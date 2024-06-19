@@ -609,6 +609,91 @@ void gpi_deregister_callback(gpi_cb_hdl cb_hdl) {
     cb_hdl->m_impl->deregister_callback(cb_hdl);
 }
 
+gpi_clk_hdl gpi_clock_create(gpi_sim_hdl clk_signal_hdl) {
+    GpiSignalObjHdl *clk = dynamic_cast<GpiSignalObjHdl *>(clk_signal_hdl);
+    if (!clk) {
+        LOG_ERROR("Failed to create clock: wrong type for clk signal handle");
+        return NULL;
+    }
+    return new GpiClk(clk);
+}
+
+int gpi_clock_start(gpi_clk_hdl clk, uint64_t period_steps, uint64_t high_steps,
+                    uint64_t phase_steps) {
+    return clk->start(period_steps, high_steps, phase_steps);
+}
+
+int gpi_clock_stop(gpi_clk_hdl clk) { return clk->stop(); }
+
+void gpi_clock_delete(gpi_clk_hdl clk) { delete clk; }
+
+GpiClk::~GpiClk() { stop(); }
+
+int GpiClk::start(uint64_t period_steps, uint64_t high_steps,
+                  uint64_t phase_steps) {
+    if (clk_toggle_cb_hdl) {
+        LOG_ERROR("Failed to start clock: already started -- stop first");
+        return -1;
+    }
+    if ((period_steps < 2) || (high_steps < 1) ||
+        (high_steps >= period_steps)) {
+        LOG_ERROR("Failed to start clock: invalid parameters");
+        return -1;
+    }
+
+    period = period_steps;
+    t_high = high_steps;
+    uint64_t phase = phase_steps % period;
+
+    clk_val = phase < t_high ? 1 : 0;
+
+    uint64_t to_next_edge = clk_val ? (t_high - phase) : (period - phase);
+
+    clk_toggle_cb_hdl =
+        gpi_register_timed_callback(&GpiClk::toggle_cb, this, to_next_edge);
+    if (!clk_toggle_cb_hdl) {
+        LOG_ERROR("Failed to start clock: failed to register toggle cb");
+        return -1;
+    }
+
+    // Set the initial value only after successfully registering the callback
+    get_handle<GpiSignalObjHdl *>()->set_signal_value(clk_val, GPI_DEPOSIT);
+
+    return 0;
+}
+
+int GpiClk::stop() {
+    if (!clk_toggle_cb_hdl) {
+        return -1;
+    }
+    if (clk_toggle_cb_hdl->m_impl->deregister_callback(clk_toggle_cb_hdl)) {
+        delete clk_toggle_cb_hdl;
+    }
+    clk_toggle_cb_hdl = nullptr;
+    return 0;
+}
+
+int GpiClk::toggle() {
+    clk_val = !clk_val;
+    get_handle<GpiSignalObjHdl *>()->set_signal_value(clk_val, GPI_DEPOSIT);
+
+    uint64_t to_next_edge = clk_val ? t_high : (period - t_high);
+
+    clk_toggle_cb_hdl =
+        gpi_register_timed_callback(&GpiClk::toggle_cb, this, to_next_edge);
+    if (!clk_toggle_cb_hdl) {
+        LOG_ERROR("Clock will be stopped: failed to register toggle cb");
+        return -1;
+    }
+
+    return 0;
+}
+
+int GpiClk::toggle_cb(void *gpi_clk) {
+    GpiClk *clk_obj = (GpiClk *)gpi_clk;
+    return clk_obj->toggle();
+}
+
 const char *GpiImplInterface::get_name_c() { return m_name.c_str(); }
 
 const string &GpiImplInterface::get_name_s() { return m_name; }
