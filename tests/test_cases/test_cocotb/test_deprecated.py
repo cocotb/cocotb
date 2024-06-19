@@ -164,10 +164,12 @@ icarus_under_11 = cocotb.SIM_NAME.lower().startswith("icarus") and (
 )
 
 
-# indexing packed arrays is not supported in iverilog < 11 (gh-2586) or GHDL (gh-2587)
+# indexing packed arrays is not supported in iverilog < 11 (gh-2586), GHDL (gh-2587), or Verilator
 @cocotb.test(
     expect_error=IndexError
-    if icarus_under_11 or cocotb.SIM_NAME.lower().startswith("ghdl")
+    if icarus_under_11
+    or cocotb.SIM_NAME.lower().startswith("ghdl")
+    or cocotb.SIM_NAME.lower().startswith("verilator")
     else ()
 )
 async def test_assigning_setitem_syntax_deprecated(dut):
