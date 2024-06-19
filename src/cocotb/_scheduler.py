@@ -310,27 +310,31 @@ class Scheduler:
                 func(*args)
             self._writes_pending.clear()
 
-    def _check_termination(self):
-        """Handle a termination that causes us to move onto the next test."""
-        if self._terminate:
-            if _debug:
-                self.log.debug("Test terminating, scheduling Timer")
+    def _check_termination(self) -> None:
+        """
+        Handle a termination that causes us to move onto the next test.
+        """
+        if not self._terminate:
+            return
 
-            if self._write_task is not None:
-                self._write_task.kill()
-                self._write_task = None
+        if _debug:
+            self.log.debug("Test terminating, scheduling Timer")
 
-            for t in self._trigger2tasks:
-                t._unprime()
+        if self._write_task is not None:
+            self._write_task.kill()
+            self._write_task = None
 
-            if self._timer1._primed:
-                self._timer1._unprime()
+        for t in self._trigger2tasks:
+            t._unprime()
 
-            self._timer1._prime(self._test_completed)
-            self._trigger2tasks = _py_compat.insertion_ordered_dict()
-            self._terminate = False
-            self._write_calls.clear()
-            self._writes_pending.clear()
+        if self._timer1._primed:
+            self._timer1._unprime()
+
+        self._timer1._prime(self._test_completed)
+        self._trigger2tasks = _py_compat.insertion_ordered_dict()
+        self._terminate = False
+        self._write_calls.clear()
+        self._writes_pending.clear()
 
     def _test_completed(self, trigger=None):
         """Called after a test and its cleanup have completed."""
