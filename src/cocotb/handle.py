@@ -583,7 +583,7 @@ class Deposit(Generic[ValueT]):
 
 
 class Force(Generic[ValueT]):
-    """Action used to force a handle to a given value until a :class:`Release` is applied.
+    r"""Action used to force a handle to a given value until a :class:`Release` is applied.
 
     :class:`Deposit` writes from cocotb or drives from HDL processes
     do not cause the value to change until the handle is :class:`Release`\ d.
@@ -596,7 +596,7 @@ class Force(Generic[ValueT]):
 
 
 class Freeze:
-    """Action used to make a handle keep its current value until a :class:`Release` is applied.
+    r"""Action used to make a handle keep its current value until a :class:`Release` is applied.
 
     :class:`Deposit` writes from cocotb or drives from HDL processes
     do not cause the value to change until the handle is :class:`Release`\ d.
