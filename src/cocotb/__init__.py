@@ -362,7 +362,7 @@ def _start_user_coverage() -> None:
                     "Collecting coverage of user code. Coverage config file supplied."
                 )
                 # Allow the config file to handle all configuration
-                _user_coverage = coverage.coverage()
+                _user_coverage = coverage.coverage(config_file=config_filepath)
             _user_coverage.start()
 
 
