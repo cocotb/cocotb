@@ -29,12 +29,11 @@ import os
 
 import cocotb
 import pytest
-from cocotb._sim_versions import IcarusVersion, VerilatorVersion
+from cocotb._sim_versions import VerilatorVersion
 from cocotb.handle import (
     ArrayObject,
     HierarchyObject,
     HierarchyObjectBase,
-    IndexableValueObjectBase,
     IntegerObject,
     StringObject,
 )
@@ -229,36 +228,6 @@ async def access_type_bit_verilog_metavalues(dut):
         assert dut.mybits.value == "01"
     else:
         assert dut.mybits.value == "00"
-
-
-@cocotb.test(
-    # Icarus up to (and including) 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
-    # Verilator does not support net bits
-    expect_error=IndexError
-    if (
-        (
-            SIM_NAME.startswith("icarus")
-            and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))
-        )
-        or SIM_NAME.startswith("verilator")
-    )
-    else (),
-    skip=LANGUAGE in ["vhdl"],
-)
-async def access_single_bit(dut):
-    """Access a single bit in a vector of the DUT"""
-    dut.stream_in_data.value = 0
-    await Timer(1, "ns")
-    dut.stream_in_data[2].value = 1
-    await Timer(1, "ns")
-    assert dut.stream_out_data_comb.value == (1 << 2)
-
-
-@cocotb.test()
-async def access_single_bit_erroneous(dut):
-    """Access a non-existent single bit"""
-    with pytest.raises(IndexError):
-        dut.stream_in_data[100000]
 
 
 # Riviera discovers integers as nets (gh-2597)
@@ -468,7 +437,7 @@ async def custom_type(dut):
     count = 0
 
     def _discover(obj):
-        if not isinstance(obj, (HierarchyObjectBase, IndexableValueObjectBase)):
+        if not isinstance(obj, (HierarchyObjectBase, ArrayObject)):
             return 0
         iter_count = 0
         for elem in obj:
@@ -547,7 +516,7 @@ async def discover_all_in_component_vhdl(dut):
         if questa_vhpi and isinstance(obj, StringObject):
             # Iterating over the elements of a string with Questa's VHPI causes a stacktrace
             return 0
-        if not isinstance(obj, (HierarchyObjectBase, IndexableValueObjectBase)):
+        if not isinstance(obj, (HierarchyObjectBase, ArrayObject)):
             return 0
         count = 0
         for thing in obj:
