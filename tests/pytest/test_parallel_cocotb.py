@@ -6,7 +6,6 @@ import os
 import sys
 
 import pytest
-from cocotb_tools.runner import get_runner
 from test_cocotb import (
     compile_args,
     gpi_interfaces,
@@ -19,6 +18,8 @@ from test_cocotb import (
     sources,
     tests_dir,
 )
+
+from cocotb_tools.runner import get_runner
 
 pytestmark = pytest.mark.simulator_required
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))

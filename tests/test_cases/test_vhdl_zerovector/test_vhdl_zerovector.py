@@ -4,8 +4,9 @@
 
 import os
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb.triggers import Timer
 
 is_questa_vhpi = (

@@ -9,8 +9,9 @@ import logging
 import os
 import random
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb.handle import _Limits
 from cocotb.triggers import Timer
 from cocotb.types import Logic, LogicArray

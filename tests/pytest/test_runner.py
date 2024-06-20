@@ -5,9 +5,10 @@
 import os
 import sys
 
-import cocotb
 import find_libpython
 import pytest
+
+import cocotb
 from cocotb.triggers import Timer
 from cocotb_tools.runner import get_runner
 

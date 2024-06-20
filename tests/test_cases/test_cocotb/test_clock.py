@@ -10,8 +10,9 @@ import fractions
 import os
 from math import isclose
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb.clock import Clock
 from cocotb.simulator import get_precision
 from cocotb.triggers import RisingEdge, Timer

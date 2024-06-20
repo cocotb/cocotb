@@ -78,6 +78,16 @@ ignore = [
     "F811",
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = [
+    "cocotb",
+    "cocotb_tools",
+    "pygpi",
+]
+known-third-party = [
+    "pytest",
+]
+
 [tool.cibuildwheel]
 # Build for supported platforms only.
 # Even though we only support 64 bit operating systems, we still support 32 bit

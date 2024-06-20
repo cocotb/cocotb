@@ -4,8 +4,9 @@
 from collections import defaultdict, namedtuple
 from itertools import cycle
 
-import cocotb
 import matplotlib.pyplot as plt
+
+import cocotb
 from cocotb.triggers import Timer
 from cocotb.utils import get_sim_time
 

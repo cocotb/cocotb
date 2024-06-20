@@ -16,8 +16,9 @@ import warnings
 from decimal import Decimal
 from fractions import Fraction
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb.clock import Clock
 from cocotb.simulator import get_precision
 from cocotb.triggers import (

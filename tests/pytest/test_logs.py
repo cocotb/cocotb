@@ -7,11 +7,7 @@ import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import cocotb
 import pytest
-from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
-from cocotb_tools.runner import get_runner
 from test_cocotb import (
     compile_args,
     gpi_interfaces,
@@ -22,6 +18,11 @@ from test_cocotb import (
     sources,
     tests_dir,
 )
+
+import cocotb
+from cocotb.clock import Clock
+from cocotb.triggers import ClockCycles
+from cocotb_tools.runner import get_runner
 
 sys.path.insert(0, str(Path(tests_dir) / "pytest"))
 test_module = Path(__file__).stem

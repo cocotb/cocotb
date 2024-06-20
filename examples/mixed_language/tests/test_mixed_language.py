@@ -5,8 +5,9 @@ import os
 import sys
 from pathlib import Path
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 from cocotb_tools.runner import get_runner
