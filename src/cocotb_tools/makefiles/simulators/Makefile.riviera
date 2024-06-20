@@ -156,6 +156,7 @@ ifeq ($(COCOTB_USER_COVERAGE),1)
 	@echo "acdb report -cov $(COVERAGE_TYPES) -db $(RTL_LIBRARY).acdb -html -o coverage/acdb_report.html" >> $@
 	@echo "acdb report -cov $(COVERAGE_TYPES) -db $(RTL_LIBRARY).acdb -txt -o coverage/acdb_report.txt" >> $@
 endif
+	@echo "exit" >> $@
 endif
 
 # Note it's the redirection of the output rather than the 'do' command
