@@ -182,7 +182,7 @@ ENVS = [
         "sim-version": "stable",
         "os": "macos-13",
         "python-version": "3.8",
-        "group": "ci",
+        "group": "experimental",
     },
     # Icarus windows from source
     {
