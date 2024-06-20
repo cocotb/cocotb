@@ -12,8 +12,9 @@ Tests for edge triggers
 
 import os
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb._sim_versions import RivieraVersion
 from cocotb.clock import Clock
 from cocotb.result import SimTimeoutError

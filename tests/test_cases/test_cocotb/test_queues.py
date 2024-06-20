@@ -5,8 +5,9 @@
 Tests relating to cocotb.queue.Queue, cocotb.queue.LifoQueue, cocotb.queue.PriorityQueue
 """
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb.queue import LifoQueue, PriorityQueue, Queue, QueueEmpty, QueueFull
 from cocotb.triggers import Combine, NullTrigger
 

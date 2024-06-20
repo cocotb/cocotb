@@ -4,8 +4,9 @@
 import os
 import warnings
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb.regression import TestFactory
 from cocotb.triggers import Timer
 

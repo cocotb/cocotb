@@ -3,8 +3,6 @@ import sys
 import tempfile
 
 import pytest
-from cocotb.utils import _get_log_time_scale
-from cocotb_tools.runner import get_runner
 from test_cocotb import (
     compile_args,
     gpi_interfaces,
@@ -16,6 +14,9 @@ from test_cocotb import (
     sources,
     tests_dir,
 )
+
+from cocotb.utils import _get_log_time_scale
+from cocotb_tools.runner import get_runner
 
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 

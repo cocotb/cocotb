@@ -27,8 +27,9 @@
 
 import os
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb._sim_versions import IcarusVersion, VerilatorVersion
 from cocotb.handle import (
     ArrayObject,

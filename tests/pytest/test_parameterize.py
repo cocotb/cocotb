@@ -4,8 +4,9 @@
 
 from enum import Enum
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb.decorators import _repr, _reprs
 
 

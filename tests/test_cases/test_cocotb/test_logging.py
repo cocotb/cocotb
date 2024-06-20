@@ -8,9 +8,10 @@ Tests for the cocotb logger
 import logging
 import os
 
+import pytest
+
 import cocotb
 import cocotb.logging
-import pytest
 
 
 class StrCallCounter:

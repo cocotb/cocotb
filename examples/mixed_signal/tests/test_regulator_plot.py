@@ -3,8 +3,9 @@
 
 import math
 
-import cocotb
 import matplotlib.pyplot as plt
+
+import cocotb
 from cocotb.triggers import Timer
 
 

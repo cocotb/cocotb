@@ -8,8 +8,9 @@ from pathlib import Path
 from random import getrandbits
 from typing import Any, Dict, List
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import SimHandleBase
 from cocotb.queue import Queue

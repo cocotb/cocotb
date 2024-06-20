@@ -25,8 +25,9 @@
 
 import logging
 
-import cocotb
 import pytest
+
+import cocotb
 from cocotb.handle import EnumObject, HierarchyObject, IntegerObject, LogicObject
 
 

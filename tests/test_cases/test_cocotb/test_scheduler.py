@@ -15,8 +15,10 @@ import re
 from asyncio import CancelledError, InvalidStateError
 from typing import Any, Awaitable, Coroutine
 
-import cocotb
 import pytest
+from common import MyException
+
+import cocotb
 from cocotb.clock import Clock
 from cocotb.task import Task
 from cocotb.triggers import (
@@ -30,7 +32,6 @@ from cocotb.triggers import (
     Timer,
     Trigger,
 )
-from common import MyException
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 

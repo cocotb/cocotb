@@ -6,6 +6,7 @@ import os
 import sys
 
 import pytest
+
 from cocotb_tools.runner import get_runner
 
 pytestmark = pytest.mark.simulator_required
