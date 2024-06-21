@@ -173,7 +173,7 @@ class external_waiter:
         return self.state
 
 
-class GPIState(Enum):
+class SimPhase(Enum):
     NORMAL = auto()
     READ_WRITE = auto()
     READ_ONLY = auto()
@@ -192,7 +192,7 @@ class Scheduler:
         The Task's body will run until it finishes or reaches the next ``await`` statement.
         If a Task reaches an ``await``, :meth:`_schedule` will convert the value yielded from the Task into a Trigger with :meth:`_trigger_from_any` and its friend methods.
         Triggers are then `primed` (with :meth:`~cocotb.triggers.Trigger._prime`)
-        with a `react` function (:meth:`_gpi_react` or :meth:`_react)
+        with a `react` function (:meth:`_sim_react` or :meth:`_react)
         so as to wake up Tasks waiting for that Trigger to `fire` (when the event encoded by the Trigger occurs).
         This is accomplished by :meth:`_resume_task_upon`.
         :meth:`_resume_task_upon` also associates the Trigger with the Task waiting on it to fire by adding them to the :attr:`_triggers2tasks` map.
@@ -205,7 +205,7 @@ class Scheduler:
         If the cancelled Task is the last Task waiting on a Trigger, that Trigger is `unprimed` to prevent it from firing.
 
     Simulator Phase:
-        All GPITriggers (triggers that are fired by the simulator) go through :meth:`_gpi_react`
+        All GPITriggers (triggers that are fired by the simulator) go through :meth:`_sim_react`
         which looks at the fired GPITriggers to determine and track the current simulator phase cocotb is executing in.
 
         Normal phase:
@@ -237,7 +237,7 @@ class Scheduler:
         The scheduler also is responsible for starting the next Test in the Normal phase by priming a ``Timer(1)`` with the second half of test completion handling.
 
         Because many simulators do not handle inertial writes in a consistent or useful way,
-        this scheduler also has a special support for scheduling writes into the ReadWrite GPI phase.
+        this scheduler also has a special support for scheduling writes into the ReadWrite phase.
         This is built into the scheduler using :attr:`_write_calls`, :attr:`_write_task`, and :attr:`_writes_pending` attributes,
         and the :meth:`_do_writes` and :meth:`_schedule_writes` methods.
         This is necessary since we require the task that applies the writes
@@ -245,7 +245,7 @@ class Scheduler:
         to be scheduled before all other tasks in the ReadWrite phase.
 
         The scheduler is currently where simulator time phase is tracked.
-        This is mostly because this is where :meth:`_gpi_react` is most conveniently located.
+        This is mostly because this is where :meth:`_sim_react` is most conveniently located.
         The scheduler can't currently be made independent of simulator-specific code because of the above special cases which have to respect simulator phasing.
 
         Currently Task cancellation is accomplished with :meth:`Task.kill() <cocotb.task.Task.kill>`.
@@ -278,7 +278,7 @@ class Scheduler:
         )
 
         # Our main state
-        self._gpi_state = GPIState.NORMAL
+        self._sim_phase = SimPhase.NORMAL
 
         # A dictionary of pending (write_func, args), keyed by handle.
         # Writes are applied oldest to newest (least recently used).
@@ -346,7 +346,7 @@ class Scheduler:
             ctx = _py_compat.nullcontext()
 
         with ctx:
-            self._gpi_state = GPIState.NORMAL
+            self._sim_phase = SimPhase.NORMAL
             if trigger is not None:
                 trigger._unprime()
 
@@ -368,7 +368,7 @@ class Scheduler:
             # if it did, make sure we handle the test completing
             self._check_termination()
 
-    def _gpi_react(self, trigger: Trigger) -> None:
+    def _sim_react(self, trigger: Trigger) -> None:
         """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
 
         This is often the entry point into Python from the simulator,
@@ -385,11 +385,11 @@ class Scheduler:
             # TODO: move state tracking to global variable
             # and handle this via some kind of trigger-specific Python callback
             if trigger is self._read_write:
-                self._gpi_state = GPIState.READ_WRITE
+                self._sim_phase = SimPhase.READ_WRITE
             if trigger is self._read_only:
-                self._gpi_state = GPIState.READ_ONLY
+                self._sim_phase = SimPhase.READ_ONLY
             elif isinstance(trigger, GPITrigger):
-                self._gpi_state = GPIState.NORMAL
+                self._sim_phase = SimPhase.NORMAL
 
             self._react(trigger)
             self._event_loop()
@@ -532,7 +532,7 @@ class Scheduler:
         args: Sequence[Any],
     ) -> None:
         """Queue `write_func` to be called on the next ReadWrite trigger."""
-        if self._gpi_state == GPIState.READ_ONLY:
+        if self._sim_phase == SimPhase.READ_ONLY:
             raise Exception(
                 f"Write to object {handle._name} was scheduled during a read-only sync phase."
             )
@@ -570,7 +570,7 @@ class Scheduler:
                 # TODO maybe associate the react method with the trigger object so
                 # we don't have to do a type check here.
                 if isinstance(trigger, GPITrigger):
-                    trigger._prime(self._gpi_react)
+                    trigger._prime(self._sim_react)
                 else:
                     trigger._prime(self._react)
             except Exception as e:
@@ -807,7 +807,7 @@ class Scheduler:
 
             if not task.done():
                 if _debug:
-                    self.log.debug(f"{task!r} yielded {result} ({self._gpi_state})")
+                    self.log.debug(f"{task!r} yielded {result} ({self._sim_phase})")
                 try:
                     result = self._trigger_from_any(result)
                 except TypeError as exc:
