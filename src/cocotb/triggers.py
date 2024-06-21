@@ -722,7 +722,11 @@ class NullTrigger(Trigger, Generic[T]):
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetaclass):
+class Join(
+    Trigger,
+    Generic[cocotb.task.ResultType],
+    metaclass=_ParameterizedSingletonGPITriggerMetaclass,
+):
     r"""Fires when a task completes.
 
     Args:
@@ -751,15 +755,17 @@ class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetac
     """
 
     @classmethod
-    def __singleton_key__(cls, task: cocotb.task.Task[T]) -> cocotb.task.Task[T]:
+    def __singleton_key__(
+        cls, task: cocotb.task.Task[cocotb.task.ResultType]
+    ) -> cocotb.task.Task[cocotb.task.ResultType]:
         return task
 
-    def __init__(self, task: cocotb.task.Task[T]) -> None:
+    def __init__(self, task: cocotb.task.Task[cocotb.task.ResultType]) -> None:
         super().__init__()
         self._task = task
 
     @property
-    def task(self) -> cocotb.task.Task[T]:
+    def task(self) -> cocotb.task.Task[cocotb.task.ResultType]:
         """Return the :class:`~cocotb.task.Task` being joined.
 
         .. versionadded:: 2.0
