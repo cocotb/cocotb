@@ -522,7 +522,12 @@ class Scheduler:
                 raise InternalError("More than one task waiting on an unprimed trigger")
 
             try:
-                trigger._prime(self._react)
+                # TODO maybe associate the react method with the trigger object so
+                # we don't have to do a type check here.
+                if isinstance(trigger, GPITrigger):
+                    trigger._prime(self._gpi_react)
+                else:
+                    trigger._prime(self._react)
             except Exception as e:
                 # discard the trigger we associated, it will never fire
                 self._trigger2tasks.pop(trigger)
