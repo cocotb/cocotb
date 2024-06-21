@@ -311,7 +311,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "xcelium",
-        "sim-version": "cadence/xcelium/2309",
+        "sim-version": "cadence/xcelium/2403",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -320,7 +320,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "xcelium",
-        "sim-version": "cadence/xcelium/2309",
+        "sim-version": "cadence/xcelium/2403",
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.8",
@@ -391,6 +391,30 @@ for version in riviera_versions:
             "lang": "vhdl",
             "sim": "riviera",
             "sim-version": f"aldec/rivierapro/{version}",
+            "os": "ubuntu-20.04",
+            "self-hosted": True,
+            "python-version": "3.8",
+            "group": "extended",
+        },
+    ]
+
+# Xcelium: test more versions as part of the extended tests.
+xcelium_versions = ("2309",)
+for version in xcelium_versions:
+    ENVS += [
+        {
+            "lang": "verilog",
+            "sim": "xcelium",
+            "sim-version": f"cadence/xcelium/{version}",
+            "os": "ubuntu-20.04",
+            "self-hosted": True,
+            "python-version": "3.8",
+            "group": "extended",
+        },
+        {
+            "lang": "vhdl",
+            "sim": "xcelium",
+            "sim-version": f"cadence/xcelium/{version}",
             "os": "ubuntu-20.04",
             "self-hosted": True,
             "python-version": "3.8",
