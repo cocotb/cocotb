@@ -184,7 +184,7 @@ ENVS = [
         "python-version": "3.8",
         "group": "experimental",
     },
-    # Verilator macOS
+    # Verilator macOS latest release
     {
         "lang": "verilog",
         "sim": "verilator",
