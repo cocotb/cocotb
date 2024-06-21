@@ -247,7 +247,7 @@ class Scheduler:
         )
 
         # Our main state
-        self._state = GPIState.NORMAL
+        self._gpi_state = GPIState.NORMAL
 
         # A dictionary of pending (write_func, args), keyed by handle.
         # Writes are applied oldest to newest (least recently used).
@@ -317,7 +317,7 @@ class Scheduler:
             ctx = _py_compat.nullcontext()
 
         with ctx:
-            self._state = GPIState.NORMAL
+            self._gpi_state = GPIState.NORMAL
             if trigger is not None:
                 trigger._unprime()
 
@@ -349,11 +349,11 @@ class Scheduler:
             # TODO: move state tracking to global variable
             # and handle this via some kind of trigger-specific Python callback
             if trigger is self._read_write:
-                self._state = GPIState.READ_WRITE
+                self._gpi_state = GPIState.READ_WRITE
             if trigger is self._read_only:
-                self._state = GPIState.READ_ONLY
+                self._gpi_state = GPIState.READ_ONLY
             elif isinstance(trigger, GPITrigger):
-                self._state = GPIState.NORMAL
+                self._gpi_state = GPIState.NORMAL
 
             self._react(trigger)
             self._event_loop()
@@ -398,7 +398,7 @@ class Scheduler:
         trigger._unprime()
 
     def _event_loop(self) -> None:
-        """Run the main event loop
+        """Run the main event loop.
 
         This should be triggered by only:
         * The beginning of a test, when there is no trigger to react to
@@ -487,7 +487,7 @@ class Scheduler:
         args: Sequence[Any],
     ) -> None:
         """Queue `write_func` to be called on the next ReadWrite trigger."""
-        if self._state == GPIState.READ_ONLY:
+        if self._gpi_state == GPIState.READ_ONLY:
             raise Exception(
                 f"Write to object {handle._name} was scheduled during a read-only sync phase."
             )
@@ -747,7 +747,7 @@ class Scheduler:
 
             if not task.done():
                 if _debug:
-                    self.log.debug(f"{task!r} yielded {result} (mode {self._state})")
+                    self.log.debug(f"{task!r} yielded {result} ({self._gpi_state})")
                 try:
                     result = self._trigger_from_any(result)
                 except TypeError as exc:
@@ -823,18 +823,19 @@ class Scheduler:
 
         # reversing seems to fix gh-928, although the order is still somewhat
         # arbitrary.
-        for trigger, waiting in items[::-1]:
+        for _, waiting in items[::-1]:
             for task in waiting:
                 if _debug:
                     self.log.debug(f"Killing {task}")
                 task.kill()
+            # we don't unprime trigger here since removing all tasks waiting on
+            # the trigger should cause it to be unprimed in _unschedule
         assert not self._trigger2tasks
 
         # Kill any queued coroutines.
         # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_tasks.
         # If that happens a for loop will stop early and then the assert will fail.
         while self._pending_tasks:
-            # Get first task but leave it in the list so that _unschedule() will correctly close the unstarted coroutine object.
             task, _ = self._pending_tasks.popitem(last=False)
             task.kill()
 
