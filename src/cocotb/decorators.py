@@ -86,7 +86,7 @@ def function(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., 
 
 
 def external(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Result]]:
-    """Decorator that turns a blocking function into a :term:`coroutine function`.
+    r"""Decorator that turns a blocking function into a :term:`coroutine function`.
 
     When the returned :keyword:`async` function is called, it creates a coroutine object
     that can be directly :keyword:`await`\ ed or constructed into a :class:`~cocotb.task.Task`.
