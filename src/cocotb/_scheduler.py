@@ -195,16 +195,16 @@ class Scheduler:
         with a `react` function (:meth:`_sim_react` or :meth:`_react)
         so as to wake up Tasks waiting for that Trigger to `fire` (when the event encoded by the Trigger occurs).
         This is accomplished by :meth:`_resume_task_upon`.
-        :meth:`_resume_task_upon` also associates the Trigger with the Task waiting on it to fire by adding them to the :attr:`_triggers2tasks` map.
-        If instead, a Task finishes, :meth:`_schedule` will cause the :class:`~cocotb.triggers.Join` trigger to fire.
+        :meth:`_resume_task_upon` also associates the Trigger with the Task waiting on it to fire by adding them to the :attr:`_trigger2tasks` map.
+        If, instead of reaching an ``await``, a Task finishes, :meth:`_schedule` will cause the :class:`~cocotb.triggers.Join` trigger to fire.
         Once a Trigger fires it calls the react function which queues all Tasks waiting for that Trigger to fire.
         Then the process repeats.
 
         When a Task is cancelled (:meth:`_unschedule`), it is removed from the Task queue if it is currently queued.
-        Also, the Task and Trigger are deassociated in the :attr:`_triggers2tasks` map.
+        Also, the Task and Trigger are deassociated in the :attr:`_trigger2tasks` map.
         If the cancelled Task is the last Task waiting on a Trigger, that Trigger is `unprimed` to prevent it from firing.
 
-    Simulator Phase:
+    Simulator Phases:
         All GPITriggers (triggers that are fired by the simulator) go through :meth:`_sim_react`
         which looks at the fired GPITriggers to determine and track the current simulator phase cocotb is executing in.
 
@@ -229,7 +229,7 @@ class Scheduler:
             Scheduling :class:`~cocotb.triggers.ReadWrite` and :class:`~cocotb.triggers.ReadOnly` are *not* valid.
 
     Caveats and Special Cases:
-        Tests are treated specially in the scheduler.
+        The scheduler treats Tests specially.
         If a Test finishes or a Task ends with an Exception, the scheduler is put into a `terminating` state.
         All currently queued Tasks are cancelled and all pending Triggers are unprimed.
         This is currently spread out between :meth:`_check_termination`, :meth:`_test_completed`, and :meth:`_cleanup`.
@@ -439,7 +439,7 @@ class Scheduler:
     def _event_loop(self) -> None:
         """Run the main event loop.
 
-        This should be triggered by only:
+        This should only be started by:
         * The beginning of a test, when there is no trigger to react to
         * A GPI trigger
         """
@@ -466,7 +466,7 @@ class Scheduler:
                     )
                 self._pending_events.pop(0).set()
 
-        # no more pending triggers
+        # no more pending tasks
         self._check_termination()
         if _debug:
             self.log.debug("All tasks scheduled, handing control back to simulator")
@@ -474,7 +474,7 @@ class Scheduler:
     def _unschedule(self, task: Task[Any]) -> None:
         """Unschedule a task and unprime dangling pending triggers.
 
-        Also...
+        Also:
           * enters the scheduler termination state if the Test Task is unscheduled.
           * creates and fires a :class:`~cocotb.triggers.Join` trigger.
           * forcefully ends the Test if a Task ends with an exception.
@@ -587,7 +587,7 @@ class Scheduler:
 
         If the task is already scheduled and you are attempting to reschedule it with a different outcome,
         we assume that is a mistake and raise an Exception.
-        That behavior may change in the future.
+        This behavior may change in the future.
         """
         # Don't queue the same task more than once (gh-2503)
         if task in self._pending_tasks:
@@ -783,10 +783,10 @@ class Scheduler:
             outcome: The outcome to inject into the *task*.
 
         Scheduling runs *task* until it either finishes or reaches the next ``await`` statement.
-        If the *task* completes, it is unscheduled, a Join trigger fires, and test completion is inspected.
+        If *task* completes, it is unscheduled, a Join trigger fires, and test completion is inspected.
         Otherwise, it reached an ``await`` and we have a result object which is converted to a trigger,
         that trigger is primed,
-        then that trigger and the *task* are registered with the :attr:`_triggers2tasks` map.
+        then that trigger and the *task* are registered with the :attr:`_trigger2tasks` map.
         """
         if self._current_task is not None:
             raise InternalError("_schedule() called while another Task is executing")
