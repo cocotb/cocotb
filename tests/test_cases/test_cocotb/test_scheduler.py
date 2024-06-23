@@ -525,7 +525,7 @@ async def test_start_soon_scheduling(dut):
         log = logging.getLogger("cocotb.test")
         log.debug("react_wrapper start")
         assert coro_scheduled is False
-        cocotb._scheduler._react(trigger)
+        cocotb._scheduler._sim_react(trigger)
         assert coro_scheduled is True
         log.debug("react_wrapper end")
 
@@ -655,7 +655,7 @@ async def test_start_scheduling(dut):
         log = logging.getLogger("cocotb.test")
         log.debug("react_wrapper start")
         sim_resumed = False
-        cocotb._scheduler._react(trigger)
+        cocotb._scheduler._sim_react(trigger)
         sim_resumed = True
         log.debug("react_wrapper end")
 

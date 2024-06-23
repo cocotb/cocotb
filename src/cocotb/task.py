@@ -150,6 +150,10 @@ class Task(Generic[T]):
         self._outcome = Value(None)
         cocotb._scheduler._unschedule(self)
 
+        # Close coroutine so there is no RuntimeWarning that it was never awaited
+        if not self.has_started():
+            self._coro.close()
+
     def join(self) -> "cocotb.triggers.Join":
         """Return a trigger that will fire when the wrapped coroutine exits."""
         return cocotb.triggers.Join(self)
