@@ -1,0 +1,1 @@
+Added :meth:`~cocotb.handle.HierarchyObjectBase._keys`, :meth:`~cocotb.handle.HierarchyObjectBase._values`, and :meth:`~cocotb.handle.HierarchyObjectBase._items` to help users dynamically interact with the DUT object model.

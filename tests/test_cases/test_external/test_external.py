@@ -30,6 +30,7 @@ A set of tests that demonstrate cocotb functionality
 
 Also used a regression test of cocotb capabilities
 """
+
 import threading
 
 import pytest
@@ -87,12 +88,7 @@ async def test_time_in_external(dut):
     assert time == time_now
 
 
-# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(
-    expect_error=cocotb.triggers.TriggerException
-    if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
-    else ()
-)
+@cocotb.test()
 async def test_time_in_function(dut):
     """
     Test that an @external function calling back into a cocotb @function
@@ -100,9 +96,9 @@ async def test_time_in_function(dut):
     """
 
     @cocotb.function
-    def wait_cycles(dut, n):
+    async def wait_cycles(dut, n):
         for _ in range(n):
-            yield RisingEdge(dut.clk)
+            await RisingEdge(dut.clk)
 
     @external
     def wait_cycles_wrapper(dut, n):
@@ -120,12 +116,7 @@ async def test_time_in_function(dut):
             assert expected_after == time_after
 
 
-# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(
-    expect_error=cocotb.triggers.TriggerException
-    if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
-    else ()
-)
+@cocotb.test()
 async def test_external_call_return(dut):
     """
     Test ability to await an external function that is not a coroutine using @external
@@ -184,12 +175,7 @@ async def test_function_from_readonly(dut):
     assert value == 2
 
 
-# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(
-    expect_error=cocotb.triggers.TriggerException
-    if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
-    else ()
-)
+@cocotb.test()
 async def test_function_that_awaits(dut):
     """
     Test that @external functions can call @function coroutines that
@@ -202,12 +188,7 @@ async def test_function_that_awaits(dut):
     assert value == 2
 
 
-# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(
-    expect_error=cocotb.triggers.TriggerException
-    if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
-    else ()
-)
+@cocotb.test()
 async def test_await_after_function(dut):
     """
     Test that awaiting a Trigger works after returning
@@ -223,12 +204,7 @@ async def test_await_after_function(dut):
     await RisingEdge(dut.clk)
 
 
-# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(
-    expect_error=cocotb.triggers.TriggerException
-    if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"]
-    else ()
-)
+@cocotb.test()
 async def test_external_from_start_soon(dut):
     """
     Test that @external functions work when awaited from a forked
@@ -311,9 +287,8 @@ async def test_function_returns_exception(dut):
     """
 
     @cocotb.function
-    def gen_func():
+    async def gen_func():
         return ValueError()
-        yield
 
     @external
     def ext():

@@ -1,4 +1,15 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# select only y_tests from all MODULEs
+
 include ../../designs/sample_module/Makefile
 
 MODULE := x_tests,y_tests,y_tests_again
-TESTCASE := y_test,y_test
+TESTCASE := y_test
+
+# override PYTHONWARNINGS to prevent DeprecationWarning causing an error with use of TESTCASE
+ifdef PYTHONWARNINGS
+override PYTHONWARNINGS = error,ignore::DeprecationWarning:site,always::FutureWarning:cocotb._scheduler,ignore::DeprecationWarning:attr,ignore::DeprecationWarning:cocotb
+endif

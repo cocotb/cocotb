@@ -1,0 +1,1 @@
+When constructing a :class:`~cocotb.types.LogicArray`, if the given value cannot fit in the given range, an :exc:`OverflowError` is now thrown, instead of a :exc:`ValueError`.

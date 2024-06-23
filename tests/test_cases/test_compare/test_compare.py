@@ -2,12 +2,11 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Test for comparing handle classes
-"""
+"""Test for comparing handle classes"""
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.handle import NonHierarchyObject, SimHandleBase
+from cocotb.handle import SimHandleBase, ValueObjectBase
 from cocotb.triggers import FallingEdge, RisingEdge
 
 
@@ -36,11 +35,11 @@ async def test_compare_simhandlebase(dut):
         await tb.clkedge
 
     # Want to check the __eq__ comparator in SimHandleBase
-    # (overridden in NonHierarchyObject)
+    # (overridden in ValueObjectBase)
     assert isinstance(dut.i_module_a, SimHandleBase)
-    assert not isinstance(dut.i_module_a, NonHierarchyObject)
+    assert not isinstance(dut.i_module_a, ValueObjectBase)
     assert isinstance(dut.i_module_b, SimHandleBase)
-    assert not isinstance(dut.i_module_b, NonHierarchyObject)
+    assert not isinstance(dut.i_module_b, ValueObjectBase)
 
     # Same handle
     assert dut.i_module_a == dut.i_module_a
@@ -54,18 +53,18 @@ async def test_compare_simhandlebase(dut):
 
 
 @cocotb.test()
-async def test_compare_nonhierarchy(dut):
-    """Test for NonHierarchyObject comparisons"""
+async def test_compare_valueobject(dut):
+    """Test for ValueObjectBase comparisons."""
     tb = Testbench(dut)
     await tb.initialise()
     for _ in range(3):
         await tb.clkedge
 
-    # Check that all these signals are NonHierarchyObject children
-    assert isinstance(dut.counter_plus_two, NonHierarchyObject)
-    assert isinstance(dut.counter_plus_five, NonHierarchyObject)
-    assert isinstance(dut.clk, NonHierarchyObject)
-    assert isinstance(dut.i_module_a.clk, NonHierarchyObject)
+    # Check that all these signals are ValueObjectBase children
+    assert isinstance(dut.counter_plus_two, ValueObjectBase)
+    assert isinstance(dut.counter_plus_five, ValueObjectBase)
+    assert isinstance(dut.clk, ValueObjectBase)
+    assert isinstance(dut.i_module_a.clk, ValueObjectBase)
 
     # Two different handles
     assert not dut.counter_plus_two == dut.counter_plus_five
@@ -77,8 +76,8 @@ async def test_compare_nonhierarchy(dut):
     # A handle and a value
     # Because one is a value, it is compared against the value of the handle
     await tb.clkedge
-    assert dut.clk == 1
-    assert dut.clk != 0
+    assert dut.clk.value == 1
+    assert dut.clk.value != 0
     await FallingEdge(tb.dut.clk)
-    assert dut.clk == 0
-    assert dut.clk != 1
+    assert dut.clk.value == 0
+    assert dut.clk.value != 1

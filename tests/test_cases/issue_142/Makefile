@@ -29,5 +29,3 @@
 include ../../designs/sample_module/Makefile
 
 MODULE = issue_142
-
-export COCOTB_RESOLVE_X=ZEROS

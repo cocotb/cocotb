@@ -6,11 +6,11 @@ no more tests can be added to this file.
 """
 
 import cocotb
-from cocotb.binary import BinaryValue
 from cocotb.triggers import ReadOnly, Timer
+from cocotb.types import LogicArray, Range
 
 # this line is different between the two files
-value = BinaryValue(0, n_bits=8)
+value = LogicArray.from_unsigned(0, Range(7, "downto", 0))
 
 
 @cocotb.test()

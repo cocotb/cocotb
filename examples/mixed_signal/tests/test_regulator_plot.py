@@ -22,14 +22,13 @@ async def test_trim_vals(tb_hdl):
         tb_hdl.trim_val.value = trim_val
         await Timer(1, units="ns")
         trimmed_volt = await get_voltage(tb_hdl, probed_node)
+        actual_trim_val = tb_hdl.trim_val.value.to_signed()
         tb_hdl._log.info(
-            "trim_val={} results in {}={:.4} V".format(
-                tb_hdl.trim_val.value.signed_integer, probed_node, trimmed_volt
-            )
+            f"trim_val={actual_trim_val} results in {probed_node}={trimmed_volt:.4} V"
         )
         # sanity check: output voltage can not exceed supply
         assert tb_hdl.vss_val.value <= trimmed_volt <= tb_hdl.vdd_val.value
-        probedata.append((tb_hdl.trim_val.value.signed_integer, trimmed_volt))
+        probedata.append((actual_trim_val, trimmed_volt))
 
     plot_data(tb_hdl, datasets=probedata, graphfile="regulator.png")
 
@@ -45,9 +44,7 @@ async def get_voltage(tb_hdl, node):
         1, units="ps"
     )  # waiting time needed for the analog values to be updated
     tb_hdl._log.debug(
-        "Voltage on node {} is {:.4} V".format(
-            node, tb_hdl.i_analog_probe.voltage.value
-        )
+        f"Voltage on node {node} is {tb_hdl.i_analog_probe.voltage.value:.4} V"
     )
     return tb_hdl.i_analog_probe.voltage.value
 

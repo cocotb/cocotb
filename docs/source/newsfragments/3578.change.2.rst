@@ -1,0 +1,1 @@
+Use of the :envvar:`TESTCASE` variable has been changed so that each element of :envvar:`TESTCASE` will now select all tests with a matching name across all :envvar:`MODULE`\ s instead of just the first one found.

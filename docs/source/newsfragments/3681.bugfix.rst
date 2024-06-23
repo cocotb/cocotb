@@ -1,0 +1,1 @@
+Support ``waves`` argument to :meth:`cocotb_tools.runner.Simulator.build` for Verilator.

@@ -1,0 +1,72 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Common Makefile for the Aldec Active-HDL simulator
+
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
+CMD_BIN := vsimsa
+
+ifdef ACTIVEHDL_BIN_DIR
+    CMD := $(shell :; command -v $(ACTIVEHDL_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ALOG_ARGS += -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
+
+# below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
+ALOG_ARGS += $(COMPILE_ARGS)
+ACOM_ARGS += $(COMPILE_ARGS)
+ASIM_ARGS += $(SIM_ARGS)
+
+RTL_LIBRARY ?= work
+ALOG_ARGS += -dbg
+ACOM_ARGS += -dbg
+
+GPI_EXTRA:=
+ifeq ($(TOPLEVEL_LANG),verilog)
+    # backslashes needed because we embed in `echo` below
+    GPI_ARGS = -pli \"$(shell cocotb-config --lib-name-path vpi activehdl)\"
+ifneq ($(VHDL_SOURCES),)
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi activehdl):cocotbvhpi_entry_point
+endif
+
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+    # backslashes needed because we embed in `echo` below
+    GPI_ARGS = -loadvhpi \"$(shell cocotb-config --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap\"
+ifneq ($(VERILOG_SOURCES),)
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vpi activehdl):cocotbvpi_entry_point
+endif
+else
+   $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
+endif
+
+# Create a DO script (Tcl-like but not fully compatible) based on the list of $(VERILOG_SOURCES)
+$(SIM_BUILD)/runsim.do : $(VERILOG_SOURCES) $(VHDL_SOURCES) | $(SIM_BUILD)
+	@echo "alib $(RTL_LIBRARY)" > $@
+	@echo "set worklib $(RTL_LIBRARY)" >> $@
+ifneq ($(VHDL_SOURCES),)
+	@echo "acom $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
+endif
+ifneq ($(VERILOG_SOURCES),)
+	@echo "alog $(ALOG_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
+endif
+	@echo "asim $(ASIM_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) +access +w_nets -interceptcoutput $(GPI_ARGS) $(COCOTB_TOPLEVEL) $(EXTRA_TOPS)" >> $@
+	@echo "run -all" >> $@
+	@echo "endsim" >> $@
+
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	set -o pipefail; GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) $(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.do $(SIM_CMD_SUFFIX)
+
+	$(call check_for_results_file)
+
+clean::
+	$(RM) -r $(SIM_BUILD)
+	$(RM) -r work
+	$(RM) -r wave.asdb

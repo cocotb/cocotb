@@ -1,0 +1,1 @@
+``cocotb.LANGUAGE`` was removed, use ``os.environ["TOPLEVEL_LANG"]`` if you need that information.

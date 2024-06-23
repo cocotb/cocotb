@@ -1,0 +1,1 @@
+Added :make:var:`SIM_CMD_SUFFIX` to allow users to redirect simulator output or otherwise suffix the simulation command invocation.

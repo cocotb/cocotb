@@ -18,7 +18,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
     # Set module parameters
     ifeq ($(SIM),icarus)
         COMPILE_ARGS += -Pmatrix_multiplier.DATA_WIDTH=$(DATA_WIDTH) -Pmatrix_multiplier.A_ROWS=$(A_ROWS) -Pmatrix_multiplier.B_COLUMNS=$(B_COLUMNS) -Pmatrix_multiplier.A_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
-    else ifneq ($(filter $(SIM),questa modelsim riviera activehdl),)
+    else ifneq ($(filter $(SIM),questa modelsim riviera activehdl nvc),)
         SIM_ARGS += -gDATA_WIDTH=$(DATA_WIDTH) -gA_ROWS=$(A_ROWS) -gB_COLUMNS=$(B_COLUMNS) -gA_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
     else ifeq ($(SIM),vcs)
         COMPILE_ARGS += -pvalue+matrix_multiplier/DATA_WIDTH=$(DATA_WIDTH) -pvalue+matrix_multiplier/A_ROWS=$(A_ROWS) -pvalue+matrix_multiplier/B_COLUMNS=$(B_COLUMNS) -pvalue+matrix_multiplier/A_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
@@ -35,7 +35,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES = $(PWD)/../hdl/matrix_multiplier_pkg.vhd $(PWD)/../hdl/matrix_multiplier.vhd
 
-    ifneq ($(filter $(SIM),ghdl questa modelsim riviera activehdl),)
+    ifneq ($(filter $(SIM),ghdl questa modelsim riviera activehdl nvc),)
         # ghdl, questa, and aldec all use SIM_ARGS with '-g' for setting generics
         SIM_ARGS += -gDATA_WIDTH=$(DATA_WIDTH) -gA_ROWS=$(A_ROWS) -gB_COLUMNS=$(B_COLUMNS) -gA_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
     else ifneq ($(filter $(SIM),ius xcelium),)
@@ -45,11 +45,16 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     ifeq ($(SIM),ghdl)
         EXTRA_ARGS += --std=08
         SIM_ARGS += --wave=wave.ghw
+    else ifeq ($(SIM),nvc)
+        EXTRA_ARGS += --std=08
+        SIM_ARGS += --wave=wave.fst
+    else ifneq ($(filter $(SIM),ius xcelium),)
+        COMPILE_ARGS += -v200x
     else ifneq ($(filter $(SIM),questa modelsim riviera activehdl),)
         COMPILE_ARGS += -2008
     endif
 else
-    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
 # Fix the seed to ensure deterministic tests
@@ -58,8 +63,18 @@ export RANDOM_SEED := 123456789
 TOPLEVEL    := matrix_multiplier
 MODULE      := test_matrix_multiplier
 
+ifeq ($(SIM),ghdl)
+
+all:
+	@echo "Skipping since GHDL doesn't support constants effectively"
+
+clean::
+
+else
+
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
+endif
 
 # Profiling
 

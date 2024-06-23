@@ -62,7 +62,7 @@ VHDL_SOURCES = $(SRC_BASE)/packages/pkg_helper.vhd \
 	       $(SRC_BASE)/src/dec_viterbi.vhd
 
 ifneq ($(filter $(SIM),ius xcelium),)
-    SIM_ARGS += -v93
+    COMPILE_ARGS += -v93
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

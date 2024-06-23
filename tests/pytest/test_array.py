@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import pytest
 
-from cocotb.types import Array, Range, concat
+from cocotb.types import Array, Range
 
 
 def test_value_only_construction():
@@ -52,8 +52,8 @@ def test_equality():
     assert Array("1234", Range(1, 4)) == Array("1234", Range(0, -3))
     assert Array("1234", Range(1, 4)) != Array("4321", Range(1, 4))
     assert Array("1234") != Array("12")
-    assert Array("1234") != "1234"
     assert Array("1234") != 8
+    assert Array([1, 2, 3, 4]) == [1, 2, 3, 4]
 
 
 def test_repr_eval():
@@ -80,7 +80,7 @@ def test_contains():
 
 
 def test_index():
-    r = Array((i for j in range(10) for i in range(10)))  # 0-9 repeated 10 times
+    r = Array(i for j in range(10) for i in range(10))  # 0-9 repeated 10 times
     assert r.index(5) == 5
     assert r.index(5, 10, 20) == 15
     with pytest.raises(IndexError):
@@ -156,28 +156,6 @@ def test_slice_correct_infered():
     a = Array("1234")
     b = a[:0]
     assert b.right == 0
-
-
-def test_array_concat():
-    l = Array("01ZX", Range(0, "to", 3))
-    p = Array("1101")
-    r = concat(l, p)
-    assert r == Array("01ZX1101")
-
-    with pytest.raises(TypeError):
-        concat(l, "nope")
-    with pytest.raises(TypeError):
-        concat("nope", l)
-
-
-def test_array_concat_promotion():
-    class MyArray(Array[int]):
-        ...
-
-    assert type(concat(Array([]), Array([]))) is Array
-    assert type(concat(MyArray([]), Array([]))) is Array
-    assert type(concat(Array([]), MyArray([]))) is Array
-    assert type(concat(MyArray([]), MyArray([]))) is MyArray
 
 
 def test_changing_range():

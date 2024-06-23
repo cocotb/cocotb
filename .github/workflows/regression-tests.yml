@@ -4,39 +4,55 @@
 name: Regression Tests
 
 on:
-  push:
-    branches:
-      - master
-      - 'stable/**'
-  pull_request:
-    branches:
-      - master
-      - 'stable/**'
+  workflow_call:
+    inputs:
+      nox_session_test_sim:
+        required: true
+        type: string
+        default: dev_test_sim
+      nox_session_test_nosim:
+        required: true
+        type: string
+        default: dev_test_nosim
+      collect_coverage:
+        required: false
+        type: boolean
+        default: false
+      download_artifacts:
+        required: false
+        type: boolean
+        default: false
+      group:
+        required: false
+        type: string
+        default: "ci"
+        description: Group of environments to run the tests against. Leave empty to run them all.
+      max_parallel:
+        required: false
+        type: number
+        default: 0
+        description: Maximum number of parallel matrix jobs
 
 jobs:
 
-  lint-pre-commit:
+  generate_envs:
     runs-on: ubuntu-latest
-    name: pre-commit
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10"]
+    name: Generate a list of environments to run tests against
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{matrix.python-version}}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{matrix.python-version}}
-    - name: pre-commit
-      run: |
-        pip install pre-commit
-        pre-commit run -a
+    - uses: actions/checkout@v4
+    - run: ./.github/generate-envs.py --output-format=gha --gha-output-file="$GITHUB_OUTPUT" --group="${{inputs.group}}"
+      id: run_generate_script
+    outputs:
+      envs: ${{ steps.run_generate_script.outputs.envs }}
 
   tests:
 
-    name: ${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}} ${{matrix.may_fail && '| May Fail' || ''}}
-    runs-on: ${{matrix.os}}
+    needs: generate_envs
+
+    name: ${{matrix.name}}
+    runs-on: ${{matrix.runs-on}}
+    timeout-minutes: 40
+
     env:
       SIM: ${{matrix.sim}}
       TOPLEVEL_LANG: ${{matrix.lang}}
@@ -44,143 +60,66 @@ jobs:
       CC: ${{matrix.cc || 'gcc'}}
       OS: ${{matrix.os}}
       PYTHON_VERSION: ${{matrix.python-version}}
-      TOX_TESTENV_PASSENV: GITHUB_ACTIONS
 
     strategy:
       fail-fast: false
       matrix:
-        include:
-
-            # Test different Python versions with package managed Icarus on Ubuntu
-
-          - sim: icarus
-            sim-version: apt
-            lang: verilog
-            # lowest version according to https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
-            python-version: "3.6.7"
-            os: ubuntu-20.04
-
-          - sim: icarus
-            sim-version: apt
-            lang: verilog
-            # lowest version according to https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
-            python-version: "3.7.1"
-            os: ubuntu-20.04
-
-          - sim: icarus
-            sim-version: apt
-            lang: verilog
-            python-version: "3.8"
-            os: ubuntu-20.04
-
-          - sim: icarus
-            sim-version: apt
-            lang: verilog
-            python-version: "3.9"
-            os: ubuntu-20.04
-
-          - sim: icarus
-            sim-version: apt
-            lang: verilog
-            python-version: "3.10"
-            os: ubuntu-20.04
-
-          # A single test for the upcoming Python version.
-          - sim: icarus
-            sim-version: apt
-            lang: verilog
-            python-version: "3.11.0-alpha - 3.11.0"
-            os: ubuntu-20.04
-
-            # Test Icarus dev on Ubuntu
-
-          - sim: icarus
-            sim-version: master
-            lang: verilog
-            python-version: "3.8"
-            os: ubuntu-20.04
-
-            # Test GHDL on Ubuntu
-
-          - sim: ghdl
-            sim-version: nightly
-            lang: vhdl
-            python-version: "3.8"
-            os: ubuntu-latest
-
-            # Test Verilator on Ubuntu
-
-          - sim: verilator
-            sim-version: master
-            lang: verilog
-            python-version: "3.8"
-            os: ubuntu-20.04
-            may_fail: true
-
-            # Test other OSes
-
-          - sim: icarus             # Icarus homebrew --HEAD
-            sim-version: homebrew-HEAD
-            lang: verilog
-            python-version: "3.8"
-            os: macos-latest
-
-          - sim: icarus             # Icarus windows master from source
-            sim-version: master
-            lang: verilog
-            python-version: "3.8"
-            os: windows-latest
-            toolchain: mingw
-            extra_name: "mingw | "
-
-          - sim: icarus             # use msvc instead of mingw
-            sim-version: master
-            lang: verilog
-            python-version: 3.8
-            os: windows-latest
-            toolchain: msvc
-            extra_name: "msvc | "
-
-            # Other
-
-          - sim: icarus             # use clang instead of gcc
-            sim-version: v11_0
-            lang: verilog
-            python-version: "3.8"
-            os: ubuntu-20.04
-            cxx: clang++
-            cc: clang
-            extra_name: "clang | "
+        include: ${{ fromJson(needs.generate_envs.outputs.envs) }}
+      max-parallel: ${{ inputs.max_parallel }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        # GitHub PR's create a merge commit, and Actions are run on that commit.
+        # Codecov's uploader needs the previous commit (tip of PR branch) to associate coverage correctly.
+        # A fetch depth of 2 provides enough information without fetching the entire history.
+        fetch-depth: 2
+
+     # Download distribution artifacts (if any).
+    - uses: actions/download-artifact@v4
+      with:
+        path: dist
+        pattern: cocotb-dist-*
+        merge-multiple: true
+      if: ${{ inputs.download_artifacts }}
 
       # Install Python
     - name: Set up Python ${{matrix.python-version}}
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{matrix.python-version}}
     - name: Set up Anaconda ${{matrix.python-version}} (Windows)
       if: startsWith(matrix.os, 'windows')
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
-        python-version: ${{matrix.python-version}}
+        # Use base environment to properly import _sqlite3 DLL - see gh-3166
+        activate-environment: ""
+    - name: Set up python version for Anaconda (base) ${{matrix.python-version}} (Windows)
+      if: startsWith(matrix.os, 'windows')
+      run: conda install --yes python=${{matrix.python-version}}
+
+      # Run tests that don't need a simulator.
+    - name: Install Python testing dependencies
+      run: |
+        pip install nox
+    - name: Run tests without simulators
+      run: nox -s "${{ inputs.nox_session_test_nosim }}"
+      continue-on-error: ${{matrix.may-fail || false}}
 
       # Install Icarus
     - name: Set up Icarus (Ubuntu - apt)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version == 'apt'
       run: |
-        sudo apt install -y --no-install-recommends iverilog
+        sudo apt-get install -y --no-install-recommends iverilog
     - name: Set up Icarus (Ubuntu - source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version != 'apt'
       run: |
-        sudo apt install -y --no-install-recommends g++ gperf flex bison make autoconf
-        git clone https://github.com/steveicarus/iverilog.git -b ${{matrix.sim-version}}
+        sudo apt-get install -y --no-install-recommends g++ gperf flex bison make autoconf
+        git clone https://github.com/steveicarus/iverilog.git
         cd iverilog
+        git reset --hard ${{matrix.sim-version}}
         bash ./autoconf.sh
         bash ./configure
         make -j $(nproc)
@@ -189,8 +128,9 @@ jobs:
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
       run: |
         conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain
-        git clone https://github.com/steveicarus/iverilog.git -b ${{matrix.sim-version}}
+        git clone https://github.com/steveicarus/iverilog.git
         cd iverilog
+        git reset --hard ${{matrix.sim-version}}
         bash ./autoconf.sh
         bash ./configure --host=x86_64-w64-mingw32 --prefix=/c/iverilog
         make -j $(nproc)
@@ -201,158 +141,119 @@ jobs:
       run: |
         brew install icarus-verilog --HEAD
     - name: Set up Icarus (MacOS - homebrew)
-      if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew'
+      if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-stable'
       run: |
         brew install icarus-verilog
 
       # Install GHDL
-    - name: Set up GHDL (Ubuntu - apt)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl' && matrix.sim-version == 'apt'
+    - name: Set up GHDL (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl'
       run: |
-        sudo apt install -y --no-install-recommends ghdl-mcode ghdl
-    - name : Set up GHDL (Ubunutu - nightly)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl' && matrix.sim-version == 'nightly'
-      uses: ghdl/setup-ghdl-ci@c4e457b6596ee2872274c3b7d2615ad8ddacd70c
-      with:
-        backend: mcode
+        sudo apt-get install -y --no-install-recommends gnat
+        git clone https://github.com/ghdl/ghdl.git
+        cd ghdl
+        git reset --hard ${{matrix.sim-version}}
+        mkdir build
+        cd build
+        ../configure
+        make -j $(nproc)
+        sudo make install
 
-      # Install Verilator
-    - name: Set up Verilator (Ubuntu - apt)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator' && matrix.sim-version == 'apt'
+      # Install NVC
+    - name: Set up NVC (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'nvc'
       run: |
-        sudo apt install -y --no-install-recommends verilator
-    - name: Set up Verilator (Ubunutu - source)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator' && matrix.sim-version != 'apt'
+        sudo apt-get install -y --no-install-recommends llvm-dev libdw-dev flex
+        git clone --depth=1 --no-single-branch https://github.com/nickg/nvc.git
+        cd nvc
+        git reset --hard ${{matrix.sim-version}}
+        ./autogen.sh
+        mkdir build
+        cd build
+        ../configure
+        make -j $(nproc)
+        sudo make install
+
+      # Install Verilator (Linux)
+    - name: Set up Verilator (Ubuntu - source)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator'
       run: |
-        sudo apt install -y --no-install-recommends make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlibc zlib1g zlib1g-dev
-        git clone https://github.com/verilator/verilator.git -b ${{matrix.sim-version}}
+        sudo apt-get install -y --no-install-recommends help2man make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlib1g zlib1g-dev
+        git clone https://github.com/verilator/verilator.git
         cd verilator
+        git reset --hard ${{matrix.sim-version}}
+        autoconf
+        ./configure
+        make -j $(nproc)
+        sudo make install
+
+      # Install Verilator (MacOS)
+    - name: Set up Verilator (MacOS - source)
+      if: startsWith(matrix.os, 'macos') && matrix.sim == 'verilator'
+      run: |
+        brew install autoconf automake help2man
+        git clone https://github.com/verilator/verilator.git
+        cd verilator
+        git reset --hard ${{matrix.sim-version}}
         autoconf
         ./configure
         make -j $(nproc)
         sudo make install
 
       # Windows Testing
-    - name: Install Python testing dependencies (Windows)
-      if: startsWith(matrix.os, 'windows')
-      run: pip install coverage pytest pytest-cov
     - name: Install cocotb build dependencies (Windows, mingw)
       if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
       run: conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython
-    - name: Install cocotb (Windows, mingw)
-      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
-      run: |
-        python ./setup.py build_ext --compiler=mingw32 develop
-        pip install cocotb-bus
-      continue-on-error: ${{matrix.may_fail || false}}
-    - name: Install cocotb (Windows, msvc)
-      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
-      run: python -m pip install -v -e .[bus]
-      continue-on-error: ${{matrix.may_fail || false}}
     - name: Install cocotb runtime dependencies (Windows, msvc)
       if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
       run: conda install --yes -c msys2 m2-base m2-make
-    - name: SxS trace test (Windows)
-      if: startsWith(matrix.os, 'windows')
-      run: .\tests\sxs.ps1
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
-      continue-on-error: ${{matrix.may_fail || false}}
-      timeout-minutes: 15
-      # Keep the commands and environment variables below in sync with tox.ini.
+      continue-on-error: ${{matrix.may-fail || false}}
+      timeout-minutes: 20
+      # Virtual environments don't work on Windows with cocotb. Avoid using them
+      # in nox testing.
       run: |
-        pytest
-        make test
-        bash -c 'find . -type f -name ".coverage.cocotb" -print -exec coverage combine --append {} \;'
-      env:
-        COCOTB_LIBRARY_COVERAGE: "1"
+        nox --no-venv -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
 
       # Ubuntu / MacOS Testing
     - name: Install cocotb build dependencies (Ubuntu - g++)
       if: startsWith(matrix.os, 'ubuntu') && (!matrix.cxx || matrix.cxx == 'g++')
       run: |
-        sudo apt install g++
+        sudo apt-get install g++
     - name: Install cocotb build dependencies (Ubuntu - clang++)
       if: startsWith(matrix.os, 'ubuntu') && matrix.cxx == 'clang++'
       run: |
-        sudo apt install clang
+        sudo apt-get install clang
     - name: Install cocotb build dependencies (MacOS)
       if: startsWith(matrix.os, 'macos')
       run: |
         g++ --version
-    - name: Install Python testing dependencies (Ubuntu, MacOS)
-      if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
-      run: |
-        pip install nox
     - name: Test (Ubuntu, MacOS)
       id: unixtesting
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
-      continue-on-error: ${{matrix.may_fail || false}}
-      timeout-minutes: 15
+      continue-on-error: ${{matrix.may-fail || false}}
+      timeout-minutes: 30
       run: |
-        nox -s dev_test
+        if [ "${{matrix.self-hosted}}" == "true" ]; then
+          module load "${{ matrix.sim-version }}"
+        fi
+        nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
 
     # codecov
-    - name: Upload to codecov
-      # Notes:
-      # - The "--relative/-r" argument is not available on macOS gcov, skip
-      #   coverage upload there.
-      # - Clang builds must use llvm-cov instead of gcov, which isn't picked
-      #   currently by the codecov uploader. Hence we do not upload coverage
-      #   from clang builds currently, which don't add much anyways.
-      # - When changing how many builds are uploaded to codecov also update
-      #   `codecov.notify.after_n_builds` in `.codecov.yml`.
-      if: >
-        (steps.windowstesting.outcome == 'success'
-         || steps.unixtesting.outcome == 'success')
-        && !startsWith(matrix.os, 'macos')
-        && matrix.cxx != 'clang++'
-      # There seems to be no way (as of Feb 2021) to get the job name in a
-      # variable; we hence have to re-assemble it here.
-      shell: bash
-      run: |
-        pip install coverage
-        bash <(curl -s https://codecov.io/bash) \
-          -n "${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}}" \
-          -e SIM,TOPLEVEL_LANG,CXX,OS,PYTHON_VERSION \
-          -a "-rl"
+    - name: Combine and report coverage
+      if: inputs.collect_coverage
+      run: nox -s dev_coverage_combine
 
-  mingw-env:
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - sim: verilator
-            lang: verilog
-            pkg: verilator
-            may_fail: true
-          - sim: icarus
-            lang: verilog
-            pkg: iverilog
-          - sim: ghdl
-            lang: vhdl
-            pkg: ghdl-llvm
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-    - uses: msys2/setup-msys2@v2.4.2
+    - name: Upload to codecov
+      if: inputs.collect_coverage
+      uses: codecov/codecov-action@v4
+      env:
+        # https://community.codecov.com/t/upload-issues-unable-to-locate-build-via-github-actions-api/3954
+        CODECOV_TOKEN: 669f2048-851e-479e-a618-8fa64f3736cc
       with:
-        msystem: MINGW64
-        update: true
-        install: |
-            git
-            make
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-python-pip
-            mingw-w64-x86_64-python-pytest
-            mingw-w64-x86_64-python-wheel
-            mingw-w64-x86_64-${{ matrix.pkg }}
-    - uses: actions/checkout@v2
-    - name: install cocotb
-      run: pip install --no-build-isolation .
-    - name: run regressions
-      run: make SIM=${{ matrix.sim }} TOPLEVEL_LANG=${{ matrix.lang }}
-      continue-on-error: ${{matrix.may_fail || false}}
+        files: .python_coverage.xml,.cpp_coverage.xml
+        name: ${{ matrix.name }}
+        env_vars: SIM,TOPLEVEL_LANG,CXX,OS,PYTHON_VERSION
+        verbose: true

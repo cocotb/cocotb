@@ -40,11 +40,15 @@ ifeq ($(TOPLEVEL_LANG),verilog)
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES =  $(COCOTB)/tests/designs/plusargs_module/tb_top.vhd
 else
-    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
 ifneq ($(filter $(SIM),ius xcelium),)
-    SIM_ARGS += -v93
+    COMPILE_ARGS += -v93
+endif
+
+ifeq ($(shell echo $(SIM) | tr A-Z a-z),verilator)
+    COMPILE_ARGS += --timing
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

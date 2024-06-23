@@ -1,0 +1,1 @@
+Added ``--trace-file`` command line argument to Verilator simulation binaries which specifies the trace file name. This can be passed to the binary by using the ``test_args`` argument to :meth:`cocotb_tools.runner.Simulator.test`.

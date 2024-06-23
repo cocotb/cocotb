@@ -1,0 +1,27 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+ifdef VERILATOR_TRACE
+    $(warning VERILATOR_TRACE is deprecated, see the "Simulator Support" section in the documentation.)
+endif
+
+ifeq ($(SIM_LOWERCASE),aldec)
+    $(warning Using SIM=aldec is deprecated, please use SIM=riviera instead.)
+    SIM_LOWERCASE := riviera
+endif
+
+# Use this function to warn users about deprecated environment variables
+deprecate = $(if $($(1)),$(if $(filter $($(2)),$($(1))),$($(2)),$(warning Using $(1) is deprecated, please use $(2) instead.)$($(1))),$($(2)))
+
+ifneq ($(COCOTB_TOPLEVEL),$(TOPLEVEL))
+ifneq ($(TOPLEVEL),)
+    COCOTB_TOPLEVEL := $(TOPLEVEL)
+endif
+endif
+
+ifneq ($(COCOTB_USER_COVERAGE),$(COVERAGE))
+ifneq ($(COVERAGE),)
+    COCOTB_USER_COVERAGE := $(COVERAGE)
+endif
+endif

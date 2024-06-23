@@ -27,6 +27,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+# Icarus doesn't support structs (gh-2592)
+# Verilator doesn't support structs (gh-1275)
+
 ifeq ($(SIM),)
 all:
 	@echo "Skipping test_array since icarus doesn't support structs"
@@ -34,9 +37,9 @@ all:
 clean::
 # nothing to clean, just define target in this branch
 
-else ifeq ($(shell echo $(SIM) | tr A-Z a-z),icarus)
+else ifneq ($(filter $(shell echo $(SIM) | tr A-Z a-z),icarus verilator),)
 all:
-	@echo "Skipping test_array since icarus doesn't support structs"
+	@echo "Skipping test_array since $(SIM) doesn't support structs"
 
 clean::
 # nothing to clean, just define target in this branch

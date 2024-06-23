@@ -1,0 +1,1 @@
+Not using parentheses on ``@cocotb.test`` decorator is now supported.

@@ -9,7 +9,13 @@ Tests for edge triggers
 * FallingEdge
 * ClockCycles
 """
+
+import os
+
+import pytest
+
 import cocotb
+from cocotb._sim_versions import RivieraVersion
 from cocotb.clock import Clock
 from cocotb.result import SimTimeoutError
 from cocotb.triggers import (
@@ -21,7 +27,10 @@ from cocotb.triggers import (
     ReadOnly,
     RisingEdge,
     Timer,
+    with_timeout,
 )
+
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 async def count_edges_cycles(signal, edges):
@@ -35,14 +44,14 @@ async def count_edges_cycles(signal, edges):
 
 async def do_single_edge_check(dut, level):
     """Do test for rising edge"""
-    old_value = dut.clk.value.integer
+    old_value = dut.clk.value
     dut._log.info("Value of %s is %d" % (dut.clk._path, old_value))
-    assert old_value != level, "%s not to %d start with" % (dut.clk._path, not level)
+    assert old_value != level
     if level == 1:
         await RisingEdge(dut.clk)
     else:
         await FallingEdge(dut.clk)
-    new_value = dut.clk.value.integer
+    new_value = dut.clk.value
     dut._log.info("Value of %s is %d" % (dut.clk._path, new_value))
     assert new_value == level, "%s not %d at end" % (dut.clk._path, level)
 
@@ -80,27 +89,27 @@ async def test_either_edge(dut):
     await Timer(1, "ns")
     dut.clk.value = 1
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 1
+    assert dut.clk.value == 1
     await Timer(10, "ns")
     dut.clk.value = 0
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 0
+    assert dut.clk.value == 0
     await Timer(10, "ns")
     dut.clk.value = 1
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 1
+    assert dut.clk.value == 1
     await Timer(10, "ns")
     dut.clk.value = 0
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 0
+    assert dut.clk.value == 0
     await Timer(10, "ns")
     dut.clk.value = 1
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 1
+    assert dut.clk.value == 1
     await Timer(10, "ns")
     dut.clk.value = 0
     await Edge(dut.clk)
-    assert dut.clk.value.integer == 0
+    assert dut.clk.value == 0
 
 
 @cocotb.test()
@@ -232,11 +241,12 @@ async def test_clock_cycles_forked(dut):
 @cocotb.test(
     timeout_time=100,
     timeout_unit="ns",
-    expect_error=(
+    expect_error=(  # gh-2344
         SimTimeoutError
         if (
-            cocotb.LANGUAGE in ["verilog"]
-            and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))  # gh-2344
+            LANGUAGE in ["verilog"]
+            and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
+            and RivieraVersion(cocotb.SIM_VERSION) < RivieraVersion("2023.04")
         )
         else ()
     ),
@@ -270,10 +280,11 @@ async def test_edge_on_vector(dut):
                 await ReadOnly()  # not needed for other simulators
             edge_cnt = edge_cnt + 1
 
-    cocotb.start_soon(wait_edge())
-
     dut.stream_in_data.value = 0
     await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+
+    cocotb.start_soon(wait_edge())
 
     for val in range(1, 2 ** len(dut.stream_in_data) - 1):
         # produce an edge by setting a value != 0:
@@ -283,4 +294,57 @@ async def test_edge_on_vector(dut):
         dut.stream_in_data.value = 0
         await RisingEdge(dut.clk)
 
-    assert edge_cnt == 2 * ((2 ** len(dut.stream_in_data) - 1) - 1)
+    # We have to wait because we don't know the scheduling order of the above
+    # Edge(dut.stream_out_data_registered) and the above RisingEdge(dut.clk)
+    # Edge(dut.stream_out_data_registered) should occur strictly after RisingEdge(dut.clk),
+    # but NVC and Verilator behave differently.
+    await RisingEdge(dut.clk)
+
+    expected_count = 2 * ((2 ** len(dut.stream_in_data) - 1) - 1)
+
+    assert edge_cnt == expected_count
+
+
+@cocotb.test()
+async def test_edge_bad_handles(dut):
+    with pytest.raises(TypeError):
+        RisingEdge(dut)
+
+    with pytest.raises(TypeError):
+        FallingEdge(dut)
+
+    with pytest.raises(TypeError):
+        Edge(dut)
+
+    with pytest.raises(TypeError):
+        RisingEdge(dut.stream_in_data)
+
+    with pytest.raises(TypeError):
+        FallingEdge(dut.stream_in_data)
+
+
+@cocotb.test()
+async def test_edge_logic_vector(dut):
+    dut.stream_in_data.value = 0
+
+    async def change_stream_in_data():
+        await Timer(10, "ns")
+        dut.stream_in_data.value = 10
+
+    cocotb.start_soon(change_stream_in_data())
+
+    await with_timeout(Edge(dut.stream_in_data), 20, "ns")
+
+
+# icarus doesn't support integer inputs/outputs
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+async def test_edge_non_logic_handles(dut):
+    dut.stream_in_int.value = 0
+
+    async def change_stream_in_int():
+        await Timer(10, "ns")
+        dut.stream_in_int.value = 10
+
+    cocotb.start_soon(change_stream_in_int())
+
+    await with_timeout(Edge(dut.stream_in_int), 20, "ns")

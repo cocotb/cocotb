@@ -4,9 +4,17 @@ TOPLEVEL_LANG ?= verilog
 TOPLEVEL ?= tb_rescap
 
 ifeq ($(TOPLEVEL),tb_rescap)
-    MODULE ?= test_rescap,test_rescap_minimalist
+    ifdef CI
+        MODULE ?= test_rescap_minimalist
+    else
+        MODULE ?= test_rescap_minimalist,test_rescap
+    endif
 else ifeq ($(TOPLEVEL),tb_regulator)
-    MODULE ?= test_regulator_plot,test_regulator_trim
+    ifdef CI
+        MODULE ?= test_regulator_trim
+    else
+        MODULE ?= test_regulator_trim,test_regulator_plot
+    endif
 else
     $(error Given TOPLEVEL '$(TOPLEVEL)' not supported)
 endif
@@ -33,11 +41,11 @@ ifeq ($(SIM),$(filter $(SIM),ius xcelium))
         VERILOG_SOURCES += $(WPWD)/../hdl/tb_rescap.sv
         VERILOG_SOURCES += $(WPWD)/../hdl/tb_regulator.sv
     else ifeq ($(TOPLEVEL_LANG),vhdl)
-        $(error "VHDL toplevel not yet implemented")
+        $(error VHDL toplevel not yet implemented)
         VHDL_SOURCES += $(WPWD)/../hdl/rescap.vhdl
         VHDL_SOURCES += $(WPWD)/../hdl/regulator.vhdl
     else
-        $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+        $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
     endif
 else ifeq ($(SIM),vcs)
     VERILOG_SOURCES += $(WPWD)/../hdl/analog_probe_synopsys.sv
@@ -48,14 +56,14 @@ else ifeq ($(SIM),vcs)
         VERILOG_SOURCES += $(WPWD)/../hdl/tb_rescap.sv
         VERILOG_SOURCES += $(WPWD)/../hdl/tb_regulator.sv
     else ifeq ($(TOPLEVEL_LANG),vhdl)
-        $(error "VHDL toplevel not yet implemented")
+        $(error VHDL toplevel not yet implemented)
         VHDL_SOURCES += $(WPWD)/../hdl/rescap.vhdl
         VHDL_SOURCES += $(WPWD)/../hdl/regulator.vhdl
     else
-        $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+        $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
     endif
 else
-    $(error "This example does not have support for SIM=$(SIM)")
+    $(error This example does not have support for SIM=$(SIM))
 endif
 
 
@@ -82,7 +90,7 @@ else ifeq ($(SIM),vcs)
 #    COMPILE_ARGS += -ams_discipline <discipline_name>
     SIM_ARGS += $(EXTRA_SIM_ARGS)
 else
-    $(error "This example does not have support for SIM=$(SIM)")
+    $(error This example does not have support for SIM=$(SIM))
 endif
 
 

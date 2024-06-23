@@ -1,1 +1,0 @@
-:func:`cocotb.fork` has been deprecated in favor of :func:`cocotb.start_soon` or :func:`cocotb.start`.

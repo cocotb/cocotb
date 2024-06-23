@@ -1,0 +1,64 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
+ifneq ($(VERILOG_SOURCES),)
+
+$(COCOTB_RESULTS_FILE):
+	@echo "Skipping simulation as Verilog is not supported on simulator=$(SIM)"
+clean::
+
+else
+
+CMD_BIN := nvc
+
+ifdef NVC_BIN_DIR
+    CMD := $(shell :; command -v $(NVC_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error "Unable to locate command >$(CMD_BIN)<")
+else
+    NVC_BIN_DIR := $(shell dirname $(CMD))
+    export NVC_BIN_DIR
+endif
+
+RTL_LIBRARY ?= work
+
+.PHONY: analyse
+
+# Split SIM_ARGS into those options that need to be passed to -e and
+# those that need to be passed to -r
+NVC_E_FILTER := -g% --cover --cover=%
+
+NVC_E_ARGS := $(filter $(NVC_E_FILTER),$(SIM_ARGS))
+NVC_R_ARGS := $(filter-out $(NVC_E_FILTER),$(SIM_ARGS))
+
+# Compilation phase
+analyse: $(VHDL_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
+	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
+	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
+	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
+
+	$(foreach LIB_VAR,$(VHDL_LIB_ORDER), \
+		$(CMD) $(EXTRA_ARGS) --work=$(LIB_VAR):$(SIM_BUILD)/$(LIB_VAR) -L $(SIM_BUILD) -a $(VHDL_SOURCES_$(LIB_VAR)) $(COMPILE_ARGS) && ) \
+	$(CMD) $(EXTRA_ARGS) --work=$(RTL_LIBRARY):$(SIM_BUILD)/$(RTL_LIBRARY) -L $(SIM_BUILD) -a $(VHDL_SOURCES) $(COMPILE_ARGS)
+
+$(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	  $(SIM_CMD_PREFIX) $(CMD) $(EXTRA_ARGS) --work=$(RTL_LIBRARY):$(SIM_BUILD)/$(RTL_LIBRARY) -L $(SIM_BUILD) \
+	  -e $(COCOTB_TOPLEVEL) --no-save $(NVC_E_ARGS) \
+	  -r --load $(shell cocotb-config --lib-name-path vhpi nvc) $(TRACE) $(NVC_R_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
+
+	$(call check_for_results_file)
+
+clean::
+	$(RM) -r $(SIM_BUILD)
+endif

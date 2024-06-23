@@ -11,7 +11,7 @@ import os
 import pytest
 
 import cocotb
-import cocotb.log
+import cocotb.logging
 
 
 class StrCallCounter:
@@ -44,7 +44,7 @@ async def test_logging_with_args(dut):
 async def test_logging_default_config(dut):
     # The cocotb.log module is shadowed by an instance of
     # cocotb.log.SimBaseLog()
-    from cocotb.log import default_config as log_default_config
+    from cocotb.logging import default_config as log_default_config
 
     cocotb_log = logging.getLogger("cocotb")
 

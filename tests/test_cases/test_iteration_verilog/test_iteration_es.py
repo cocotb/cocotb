@@ -26,15 +26,25 @@
 import logging
 
 import cocotb
+from cocotb._sim_versions import IcarusVersion
 from cocotb.triggers import First
 
+SIM_NAME = cocotb.SIM_NAME.lower()
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME in ["Icarus Verilog"])
+
+@cocotb.test()
 async def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME.lower().startswith(
+    if SIM_NAME.startswith("verilator"):
+        pass_total = 26
+    elif SIM_NAME.startswith("icarus"):
+        if IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"):
+            pass_total = 27
+        else:
+            pass_total = 259
+    elif SIM_NAME.startswith(
         ("modelsim", "ncsim", "xmsim", "chronologic simulation vcs")
     ):
         # vpiAlways does not show up
@@ -45,10 +55,18 @@ async def recursive_discovery(dut):
     tlog = logging.getLogger("cocotb.test")
 
     def dump_all_the_things(parent):
+        if not isinstance(
+            parent,
+            (
+                cocotb.handle.HierarchyObjectBase,
+                cocotb.handle.IndexableValueObjectBase,
+            ),
+        ):
+            return 0
         count = 0
         for thing in parent:
             count += 1
-            tlog.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+            tlog.info("Found %s (%s)", thing._path, type(thing))
             count += dump_all_the_things(thing)
         return count
 
@@ -59,7 +77,7 @@ async def recursive_discovery(dut):
 
 async def iteration_loop(dut):
     for thing in dut:
-        thing._log.info("Found something: %s" % thing._fullname)
+        thing._log.info("Found something: %s", thing._path)
 
 
 @cocotb.test()

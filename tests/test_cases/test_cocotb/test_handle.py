@@ -4,7 +4,9 @@
 """
 Tests for handles
 """
+
 import logging
+import os
 import random
 
 import pytest
@@ -15,11 +17,11 @@ from cocotb.triggers import Timer
 from cocotb.types import Logic, LogicArray
 
 SIM_NAME = cocotb.SIM_NAME.lower()
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 @cocotb.test()
 async def test_bad_attr(dut):
-
     with pytest.raises(AttributeError):
         dut.fake_signal
 
@@ -56,7 +58,7 @@ async def test_string_handle_takes_bytes(dut):
     else TypeError
     if SIM_NAME.startswith("ghdl")
     else (),
-    skip=cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
+    skip=LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
 )
 async def test_string_ansi_color(dut):
     """Check how different simulators treat ANSI-colored strings, see gh-2328"""
@@ -67,14 +69,14 @@ async def test_string_ansi_color(dut):
     await cocotb.triggers.Timer(10, "ns")
     val = dut.stream_in_string.value
     assert isinstance(val, bytes)
-    if cocotb.LANGUAGE in ["vhdl"] and SIM_NAME.startswith("riviera"):
+    if LANGUAGE in ["vhdl"] and SIM_NAME.startswith("riviera"):
         # Riviera-PRO doesn't return anything with VHDL:
         assert val == b""
         # ...and the value shows up differently in the HDL:
         assert dut.stream_in_string_asciival_sum.value == sum(
             ord(char) for char in teststr.replace("\x1b", "\0")
         )
-    elif cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith(("ncsim", "xmsim")):
+    elif LANGUAGE in ["verilog"] and SIM_NAME.startswith(("ncsim", "xmsim")):
         # Xcelium with VPI strips the escape char when reading:
         assert val == bytes(teststr.replace("\x1b", "").encode("ascii"))
         # the HDL gets the correct value though:
@@ -86,8 +88,6 @@ async def test_string_ansi_color(dut):
 
 async def test_delayed_assignment_still_errors(dut):
     """Writing a bad value should fail even if the write is scheduled to happen later"""
-
-    # note: all these fail because BinaryValue.assign rejects them
 
     with pytest.raises(ValueError):
         dut.stream_in_int.setimmediatevalue("1010 not a real binary string")
@@ -109,9 +109,9 @@ async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
 
         if limits == _Limits.VECTOR_NBIT:
             if val < 0:
-                got = signal.value.signed_integer
+                got = signal.value.to_signed()
             else:
-                got = signal.value.integer
+                got = signal.value.to_unsigned()
         else:
             got = signal.value
 
@@ -280,13 +280,14 @@ async def test_int_128bit_underflow(dut):
 async def test_integer(dut):
     """Test access to integers."""
     if (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and SIM_NAME.startswith("riviera")
         or SIM_NAME.startswith("ghdl")
+        or SIM_NAME.startswith("verilator")
     ):
         limits = (
             _Limits.VECTOR_NBIT
-        )  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
+        )  # stream_in_int is LogicObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -297,13 +298,14 @@ async def test_integer(dut):
 async def test_integer_overflow(dut):
     """Test integer overflow."""
     if (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and SIM_NAME.startswith("riviera")
         or SIM_NAME.startswith("ghdl")
+        or SIM_NAME.startswith("verilator")
     ):
         limits = (
             _Limits.VECTOR_NBIT
-        )  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
+        )  # stream_in_int is LogicObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -314,13 +316,13 @@ async def test_integer_overflow(dut):
 async def test_integer_underflow(dut):
     """Test integer underflow."""
     if (
-        cocotb.LANGUAGE in ["verilog"]
+        LANGUAGE in ["verilog"]
         and SIM_NAME.startswith("riviera")
         or SIM_NAME.startswith("ghdl")
     ):
         limits = (
             _Limits.VECTOR_NBIT
-        )  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
+        )  # stream_in_int is LogicObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -345,12 +347,12 @@ async def test_real_assign_double(dut):
     log = logging.getLogger("cocotb.test")
     timer_shortest = Timer(1, "step")
     await timer_shortest
-    log.info("Setting the value %g" % val)
+    log.info(f"Setting the value {val:g}")
     dut.stream_in_real.value = val
     await timer_shortest
     await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
-    got = float(dut.stream_out_real)
-    log.info("Read back value %g" % got)
+    got = dut.stream_out_real.value
+    log.info(f"Read back value {got:g}")
     assert got == val, "Values didn't match!"
 
 
@@ -375,13 +377,13 @@ async def test_real_assign_int(dut):
     dut.stream_in_real.value = val
     await timer_shortest
     await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
-    got = dut.stream_out_real
+    got = dut.stream_out_real.value
     log.info("Read back value %d" % got)
-    assert got == float(val), "Values didn't match!"
+    assert got == val, "Values didn't match!"
 
 
 # identifiers starting with `_` are illegal in VHDL
-@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
+@cocotb.test(skip=LANGUAGE in ("vhdl"))
 async def test_access_underscore_name(dut):
     """Test accessing HDL name starting with an underscore"""
     # direct access does not work because we consider such names cocotb-internal
@@ -389,15 +391,15 @@ async def test_access_underscore_name(dut):
         dut._underscore_name
 
     # indirect access works
-    dut._id("_underscore_name", extended=False).value = 0
+    dut["_underscore_name"].value = 0
     await Timer(1, "ns")
-    assert dut._id("_underscore_name", extended=False).value == 0
-    dut._id("_underscore_name", extended=False).value = 1
+    assert dut["_underscore_name"].value == 0
+    dut["_underscore_name"].value = 1
     await Timer(1, "ns")
-    assert dut._id("_underscore_name", extended=False).value == 1
-    dut._id("_underscore_name", extended=False).value = 0
+    assert dut["_underscore_name"].value == 1
+    dut["_underscore_name"].value = 0
     await Timer(1, "ns")
-    assert dut._id("_underscore_name", extended=False).value == 0
+    assert dut["_underscore_name"].value == 0
 
 
 @cocotb.test()
@@ -409,10 +411,12 @@ async def test_assign_LogicArray(dut):
         dut.stream_in_data.value = LogicArray("010")  # not the correct size
 
 
-@cocotb.test()
+# verilator does not support 4-state signals
+# see https://veripool.org/guide/latest/languages.html#unknown-states
+@cocotb.test(expect_error=AssertionError if SIM_NAME.startswith("verilator") else ())
 async def test_assign_Logic(dut):
     dut.stream_in_ready.value = Logic("X")
     await Timer(1, "ns")
-    assert dut.stream_in_ready.value.binstr.lower() == "x"
+    assert dut.stream_in_ready.value == "x"
     with pytest.raises(ValueError):
         dut.stream_in_data.value = Logic("U")  # not the correct size

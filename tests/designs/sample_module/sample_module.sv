@@ -27,15 +27,43 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+`ifndef NOTIMESCALE
 `timescale 1 ps / 1 ps
+`endif
 
 `ifndef __ICARUS__
-typedef struct packed
+
+`ifndef VERILATOR
+typedef struct
 {
     logic a_in;
     logic b_out;
-} test_if;
+} test_struct_unpacked;
+`endif // `ifndef VERILATOR
+
+typedef struct packed
+{
+    logic val_a;
+    logic val_b;
+    logic value;
+} test_struct_packed;
+
+
 `endif
+
+interface TestInterface ();
+
+   logic [31:0] addr;
+   modport source(input addr);
+
+endinterface
+
+module sub;
+   reg subsig1;
+   reg subsig2;
+   // stop icarus optimizing signals away
+   wire redundant = subsig1 | subsig2;
+endmodule : sub
 
 module sample_module #(
     parameter INT_PARAM = 12,
@@ -51,7 +79,10 @@ module sample_module #(
     input  integer                              stream_in_int,
     output real                                 stream_out_real,
     output integer                              stream_out_int,
-    input  test_if                              inout_if,
+    `ifndef VERILATOR
+    input  test_struct_unpacked                 inout_if,
+    `endif
+    input  test_struct_packed                   my_struct,
     input  string                               stream_in_string,
 `endif
     input  [7:0]                                stream_in_data,
@@ -97,7 +128,6 @@ var int stream_in_string_asciival_sum;
 `ifndef _VCP  // Aldec Riviera-PRO and Active-HDL
   // workaround for
   // # ELAB2: Fatal Error: ELAB2_0036 Unresolved hierarchical reference to "stream_in_string.len.len" from module "sample_module" (module not found).
-`ifndef VERILATOR
 always @(stream_in_string) begin
     $display("%m: stream_in_string has been updated, new value is '%s'", stream_in_string);
     stream_in_string_asciival_sum = 0;
@@ -109,26 +139,56 @@ always @(stream_in_string) begin
                  idx, stream_in_string_asciival, stream_in_string_asciival_sum);
     end
 end
-`endif //  `ifndef VERILATOR
 `endif //  `ifndef _VCP
 
-test_if struct_var;
+`ifndef VERILATOR
+test_struct_unpacked struct_var;
+`endif
 `endif //  `ifndef __ICARUS__
 
 and test_and_gate(and_output, stream_in_ready, stream_in_valid);
 
+`ifndef NODUMPFILE
 initial begin
     $dumpfile("waveform.vcd");
     $dumpvars(0,sample_module);
 end
+`endif
 
-parameter NUM_OF_MODULES = 4;
+parameter NUM_OF_MODULES /*verilator public_flat_rd*/ = 4;
 reg[NUM_OF_MODULES-1:0] temp;
 genvar idx;
 generate
     for (idx = 0; idx < NUM_OF_MODULES; idx=idx+1) begin
         always @(posedge clk) begin
             temp[idx] <= 1'b0;
+        end
+    end
+endgenerate
+
+TestInterface intf_arr[2] ();
+
+generate
+    if (INT_PARAM == 12) begin : cond_scope
+        localparam int scoped_param = 1;
+        sub scoped_sub ();
+    end else begin : cond_scope_else
+        sub scoped_sub_else ();
+    end
+endgenerate
+
+genvar i;
+generate
+    for (i = 1; i <= 2; i = i + 1) begin : arr
+        sub arr_sub();
+    end
+
+    for (i = 1; i <= 2; i = i + 1) begin : outer_scope
+        localparam int outer_param = i * 2;
+        genvar j;
+        for (j = 1; j <= 2; j = j + 1) begin : inner_scope
+            localparam int inner_param = outer_param + 1;
+            sub inner_sub();
         end
     end
 endgenerate
@@ -176,16 +236,14 @@ initial begin
     mybits = '1;
 end
 
-`ifndef VERILATOR
-always @(*) begin
+always @(mybit) begin
     $display("%m: mybit has been updated, new value is %b", mybit);
 end
-always @(*) begin
+always @(mybits) begin
     $display("%m: mybits has been updated, new value is %b", mybits);
 end
-always @(*) begin
+always @(mybits_uninitialized) begin
     $display("%m: mybits_uninitialized has been updated, new value is %b", mybits_uninitialized);
 end
-`endif
 
 endmodule

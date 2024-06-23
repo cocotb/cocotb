@@ -4,16 +4,20 @@
 
 version: 2
 
-# Use conda because default Python is not compiled with --enable-shared
-conda:
-  environment: documentation/conda.yml
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+  apt_packages:
+    - graphviz
 
 python:
   install:
+    - requirements: docs/requirements.txt
     - method: pip
       path: .
       extra_requirements:
         - bus
 
 sphinx:
-  configuration: documentation/source/conf.py
+  configuration: docs/source/conf.py

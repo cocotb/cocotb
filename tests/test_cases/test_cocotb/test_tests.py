@@ -8,12 +8,14 @@ Tests of cocotb.test functionality
 * expect_fail
 * timeout
 """
+
 from collections.abc import Coroutine
 
-from common import MyException
+import pytest
+from common import MyBaseException, MyException
 
 import cocotb
-from cocotb.triggers import Timer
+from cocotb.triggers import NullTrigger, Timer
 
 
 @cocotb.test(expect_error=NameError)
@@ -21,14 +23,6 @@ async def test_error(dut):
     """Error in the test"""
     await Timer(100, "ns")
     fail  # noqa
-
-
-@cocotb.test()
-async def test_tests_are_tests(dut):
-    """
-    Test that things annotated with cocotb.test are tests
-    """
-    assert isinstance(test_tests_are_tests, cocotb.test)
 
 
 # just to be sure...
@@ -126,3 +120,96 @@ class TestClass(Coroutine):
 
     def __await__(self):
         yield from self._coro.__await__()
+
+
+@cocotb.test()
+async def test_empty_docstring(dut) -> None:
+    """"""
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_raises_fail(dut):
+    with pytest.raises(AssertionError):
+        assert True
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_warns_fail(dut):
+    def test_func():
+        pass
+
+    with pytest.warns(RuntimeWarning):
+        test_func()
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_deprecated_call_fail(dut):
+    def test_func():
+        pass
+
+    with pytest.deprecated_call():
+        test_func()
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_raises_fail_in_task(dut):
+    async def test_func():
+        with pytest.raises(AssertionError):
+            assert True
+
+    cocotb.start_soon(test_func())
+    await NullTrigger()
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_warns_fail_in_task(dut):
+    def inner_func():
+        pass
+
+    async def test_func():
+        with pytest.warns(RuntimeWarning):
+            inner_func()
+
+    cocotb.start_soon(test_func())
+    await NullTrigger()
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_deprecated_call_fail_in_task(dut):
+    def inner_func():
+        pass
+
+    async def test_func():
+        with pytest.deprecated_call():
+            inner_func()
+
+    cocotb.start_soon(test_func())
+    await NullTrigger()
+
+
+@cocotb.test(expect_error=MyBaseException)
+async def test_base_exception_expect_fail(dut):
+    raise MyBaseException
+
+
+@cocotb.test(expect_error=MyBaseException)
+async def test_base_exception_in_task_expect_fail(dut):
+    async def test_func():
+        raise MyBaseException
+
+    cocotb.start_soon(test_func())
+    await NullTrigger()
+
+
+a = 0
+
+
+@cocotb.test
+async def test_without_parenthesis(dut):
+    global a
+    a = 1
+
+
+@cocotb.test()
+async def test_test_without_parenthesis_ran(dut):
+    assert a == 1

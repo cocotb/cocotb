@@ -1,10 +1,7 @@
-![cocotb logo](/../../../../cocotb/cocotb-web/blob/master/assets/img/cocotb-logo.svg#gh-light-mode-only)
-![cocotb logo](/../../../../cocotb/cocotb-web/blob/master/assets/img/cocotb-logo-dark.svg#gh-dark-mode-only)
-
 **cocotb** is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
 
 [![Documentation Status](https://readthedocs.org/projects/cocotb/badge/?version=latest)](https://docs.cocotb.org/en/latest/)
-[![Build Status](https://github.com/cocotb/cocotb/workflows/Regression%20Tests/badge.svg)](https://github.com/cocotb/cocotb/actions?query=workflow%3A%22Regression+Tests%22)
+[![CI](https://github.com/cocotb/cocotb/actions/workflows/build-test-dev.yml/badge.svg?branch=master)](https://github.com/cocotb/cocotb/actions/workflows/build-test-dev.yml)
 [![PyPI](https://img.shields.io/pypi/dm/cocotb.svg?label=PyPI%20downloads)](https://pypi.org/project/cocotb/)
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/cocotb/cocotb)
 [![codecov](https://codecov.io/gh/cocotb/cocotb/branch/master/graph/badge.svg)](https://codecov.io/gh/cocotb/cocotb)
@@ -12,16 +9,15 @@
 * Read the [documentation](https://docs.cocotb.org)
 * Get involved:
   * [Raise a bug / request an enhancement](https://github.com/cocotb/cocotb/issues/new) (Requires a GitHub account)
-  * [Join the mailing list](https://lists.librecores.org/listinfo/cocotb)
-  * [Join the Gitter chat room](https://gitter.im/cocotb)
+  * [Join the Gitter chat room](https://gitter.im/cocotb/Lobby)
+
+**Note: The current `master` branch of the cocotb repository is expected to be released as cocotb 2.0, which contains API-breaking changes from previous 1.x releases. Please use the `stable/1.8` branch if you're building cocotb from source, or just [install it from PyPi](https://pypi.org/project/cocotb/).**
 
 ## Installation
 
 The current stable version of cocotb requires:
 
 - Python 3.6+
-- Python development packages (Python/C API headers and embedding library)
-- GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
 - GNU Make 3+
 - An HDL simulator (such as [Icarus Verilog](https://docs.cocotb.org/en/stable/simulator_support.html#icarus-verilog),
 [Verilator](https://docs.cocotb.org/en/stable/simulator_support.html#verilator),
@@ -39,10 +35,6 @@ see [the documentation](https://docs.cocotb.org/en/stable/install.html).
 
 For details on how to install the *development* version of cocotb,
 see [the preliminary documentation of the future release](https://docs.cocotb.org/en/latest/install_devel.html#install-devel).
-
-**!!! Bus and Testbenching Components !!!**
-The reusable bus interfaces and testbenching components have recently been moved to the [cocotb-bus](https://github.com/cocotb/cocotb-bus) package.
-You can easily install these at the same time as cocotb by adding the `bus` extra install: `pip install cocotb[bus]`.
 
 ## Usage
 
@@ -73,22 +65,38 @@ An example of a simple randomized cocotb testbench:
 # test_dff.py
 
 import random
+
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import FallingEdge
+from cocotb.triggers import RisingEdge
+from cocotb.types import LogicArray
 
 @cocotb.test()
-async def test_dff_simple(dut):
-    """ Test that d propagates to q """
+async def dff_simple_test(dut):
+    """Test that d propagates to q"""
+
+    # Assert initial output is unknown
+    assert LogicArray(dut.q.value) == LogicArray("X")
+    # Set initial input value to prevent it from floating
+    dut.d.value = 0
 
     clock = Clock(dut.clk, 10, units="us")  # Create a 10us period clock on port clk
-    cocotb.start_soon(clock.start())  # Start the clock
+    # Start the clock. Start it low to avoid issues on the first RisingEdge
+    cocotb.start_soon(clock.start(start_high=False))
 
+    # Synchronize with the clock. This will regisiter the initial `d` value
+    await RisingEdge(dut.clk)
+    expected_val = 0  # Matches initial input value
     for i in range(10):
         val = random.randint(0, 1)
         dut.d.value = val  # Assign the random value val to the input port d
-        await FallingEdge(dut.clk)
-        assert dut.q.value == val, "output q was incorrect on the {}th cycle".format(i)
+        await RisingEdge(dut.clk)
+        assert dut.q.value == expected_val, f"output q was incorrect on the {i}th cycle"
+        expected_val = val # Save random value for next RisingEdge
+
+    # Check the final input on the next clock
+    await RisingEdge(dut.clk)
+    assert dut.q.value == expected_val, "output q was incorrect on the last cycle"
 ```
 
 A simple Makefile:

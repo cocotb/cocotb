@@ -1,0 +1,25 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+#!/bin/bash
+
+VERSION=`cocotb-config --version`
+MIN_VERSION="1.8.0"
+echo "----------------------------------------"
+echo "cocotb-config       : $VERSION"
+echo "Minimum requirement : $MIN_VERSION"
+echo "----------------------------------------"
+
+# If set {MIN_VERSION, VERSION} is sorted in ascending order, then returns 0
+printf '%s\n' "$MIN_VERSION" "$VERSION" | sort --version-sort --check=silent
+RES=$?
+if [ $RES -eq 0 ]; then
+    echo "Minimum requirement is met"
+    echo "----------------------------------------"
+    exit 0
+else
+    echo "Minimum requirement not met"
+    echo "----------------------------------------"
+    exit 1
+fi

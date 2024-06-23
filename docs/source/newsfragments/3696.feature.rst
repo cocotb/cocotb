@@ -1,0 +1,1 @@
+Support comparing :class:`~cocotb.types.LogicArray` with :class:`str`, :class:`list`, and :class:`tuple`.

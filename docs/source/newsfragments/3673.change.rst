@@ -1,0 +1,1 @@
+The module ``cocotb.log`` was renamed to :mod:`cocotb.logging` to prevent clashing with :attr:`cocotb.log`.

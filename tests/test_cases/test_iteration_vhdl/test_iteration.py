@@ -24,8 +24,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import logging
+import os
 
 import cocotb
+from cocotb._sim_versions import QuestaVersion
 from cocotb.triggers import Combine, Timer
 
 
@@ -34,22 +36,33 @@ def total_object_count():
     SIM_NAME = cocotb.SIM_NAME.lower()
     SIM_VERSION = cocotb.SIM_VERSION.lower()
 
+    # Questa with VHPI
+    # TODO: Why do we get massively different numbers for Questa/VHPI than for Questa/FLI or VPI?
+    if SIM_NAME.startswith("modelsim") and os.environ["VHDL_GPI_INTERFACE"] == "vhpi":
+        return 68127
+
+    # Questa 2023.1 onwards (FLI) do not discover the following objects, which
+    # are instantiated four times:
+    # - inst_generic_sp_ram.clk (<class 'cocotb.handle.LogicObject'>)
+    # - inst_generic_sp_ram.rst (<class 'cocotb.handle.LogicObject'>)
+    # - inst_generic_sp_ram.wen (<class 'cocotb.handle.LogicObject'>)
+    # - inst_generic_sp_ram.en (<class 'cocotb.handle.LogicObject'>)
+    if (
+        SIM_NAME.startswith("modelsim")
+        and QuestaVersion(SIM_VERSION) >= QuestaVersion("2023.1")
+        and os.environ["VHDL_GPI_INTERFACE"] == "fli"
+    ):
+        return 35153 - 4 * 4
+
     if SIM_NAME.startswith(
         (
             "ncsim",
             "xmsim",
             "modelsim",
+            "riviera",
         )
     ):
-        return 34569
-
-    # Riviera-PRO
-    if SIM_NAME.startswith("riviera"):
-        if SIM_VERSION.startswith(("2019.10", "2020.", "2021.")):
-            return 27359
-        if SIM_VERSION.startswith("2016.02"):
-            return 32393
-        return 34569
+        return 35153
 
     # Active-HDL
     if SIM_NAME.startswith("aldec"):
@@ -73,10 +86,18 @@ async def recursive_discovery(dut):
     await Timer(100)
 
     def dump_all_the_things(parent):
+        if not isinstance(
+            parent,
+            (
+                cocotb.handle.HierarchyObjectBase,
+                cocotb.handle.IndexableValueObjectBase,
+            ),
+        ):
+            return 0
         count = 0
         for thing in parent:
             count += 1
-            tlog.debug("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+            tlog.info("Found %s (%s)", thing._path, type(thing))
             count += dump_all_the_things(thing)
         return count
 
@@ -93,7 +114,7 @@ async def discovery_all(dut):
     """Discover everything on top-level."""
     dut._log.info("Iterating over top-level to discover objects")
     for thing in dut:
-        thing._log.info("Found something: %s", thing._fullname)
+        thing._log.info("Found something: %s", thing._path)
 
     dut._log.info("length of dut.inst_acs is %d", len(dut.gen_acs))
     item = dut.gen_acs[3]
@@ -106,7 +127,7 @@ async def dual_iteration(dut):
 
     async def iteration_loop():
         for thing in dut:
-            thing._log.info("Found something: %s", thing._fullname)
+            thing._log.info("Found something: %s", thing._path)
             await Timer(1)
 
     loop_one = cocotb.start_soon(iteration_loop())
@@ -117,11 +138,7 @@ async def dual_iteration(dut):
 
 # GHDL unable to access record types (gh-2591)
 @cocotb.test(
-    expect_fail=(
-        cocotb.SIM_NAME.lower().startswith("riviera")
-        and cocotb.SIM_VERSION.startswith(("2019.10", "2020.", "2021."))
-    )
-    or cocotb.SIM_NAME.lower().startswith("aldec"),
+    expect_fail=cocotb.SIM_NAME.lower().startswith("aldec"),
     expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
 )
 async def test_n_dimension_array(dut):

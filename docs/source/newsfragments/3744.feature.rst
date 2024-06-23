@@ -1,0 +1,1 @@
+The :meth:`cocotb_tools.runner.Simulator.test` method now accepts a ``pre_cmd`` argument to run given commands before the simulation starts. These are typically Tcl commands for simulators that support them. Only support for the Questa simulator has been implemented.

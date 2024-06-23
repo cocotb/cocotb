@@ -4,29 +4,22 @@
 """
 Tests of cocotb.regression.TestFactory functionality
 """
-import random
-import string
+
 from collections.abc import Coroutine
 
 import cocotb
-from cocotb.regression import TestFactory
-from cocotb.triggers import NullTrigger
 
 testfactory_test_names = set()
 testfactory_test_args = set()
-prefix = "".join(random.choices(string.ascii_letters, k=4))
-postfix = "".join(random.choices(string.ascii_letters, k=4))
 
 
+@cocotb.test
+@cocotb.parameterize(
+    ("arg1", ["a1v1", "a1v2"]), (("arg2", "arg3"), [("a2v1", "a3v1"), ("a2v2", "a3v2")])
+)
 async def run_testfactory_test(dut, arg1, arg2, arg3):
-    testfactory_test_names.add(cocotb.regression_manager._test.__qualname__)
+    testfactory_test_names.add(cocotb.regression_manager._test.name)
     testfactory_test_args.add((arg1, arg2, arg3))
-
-
-factory = TestFactory(run_testfactory_test)
-factory.add_option("arg1", ["a1v1", "a1v2"])
-factory.add_option(("arg2", "arg3"), [("a2v1", "a3v1"), ("a2v2", "a3v2")])
-factory.generate_tests(prefix=prefix, postfix=postfix)
 
 
 @cocotb.test()
@@ -37,11 +30,20 @@ async def test_testfactory_verify_args(dut):
         ("a1v1", "a2v2", "a3v2"),
         ("a1v2", "a2v2", "a3v2"),
     }
+
+
+@cocotb.test
+async def test_testfactory_verify_names(dut):
     assert testfactory_test_names == {
-        f"{prefix}run_testfactory_test{postfix}_{i:03}" for i in range(1, 5)
+        "run_testfactory_test/arg1=a1v1/arg2=a2v1/arg3=a3v1",
+        "run_testfactory_test/arg1=a1v1/arg2=a2v2/arg3=a3v2",
+        "run_testfactory_test/arg1=a1v2/arg2=a2v1/arg3=a3v1",
+        "run_testfactory_test/arg1=a1v2/arg2=a2v2/arg3=a3v2",
     }
 
 
+@cocotb.test
+@cocotb.parameterize(myarg=[1])
 class TestClass(Coroutine):
     def __init__(self, dut, myarg):
         self._coro = self.run(dut, myarg)
@@ -59,25 +61,57 @@ class TestClass(Coroutine):
         yield from self._coro.__await__()
 
 
-tf = TestFactory(TestClass)
-tf.add_option("myarg", [1])
-tf.generate_tests()
-
-
-generator_testfactory_args = set()
-
-
-@cocotb.coroutine
-def generator_test(dut, arg):
-    generator_testfactory_args.add(arg)
-    yield NullTrigger()
-
-
-generator_testfactory = TestFactory(generator_test)
-generator_testfactory.add_option("arg", [1, 2, 3, 4])
-generator_testfactory.generate_tests()
+p_testfactory_test_names = set()
+p_testfactory_test_args = set()
 
 
 @cocotb.test()
-async def test_generator_testfactory(_):
-    assert generator_testfactory_args == {1, 2, 3, 4}
+@cocotb.parameterize(
+    arg1=["a1v1", "a1v2"],
+    arg2=["a2v1", "a2v2"],
+)
+async def p_run_testfactory_test(dut, arg1, arg2):
+    p_testfactory_test_names.add(cocotb.regression_manager._test.name)
+    p_testfactory_test_args.add((arg1, arg2))
+
+
+@cocotb.test()
+async def test_params_verify_args(dut):
+    assert p_testfactory_test_args == {
+        ("a1v1", "a2v1"),
+        ("a1v2", "a2v1"),
+        ("a1v1", "a2v2"),
+        ("a1v2", "a2v2"),
+    }
+
+
+@cocotb.test
+async def test_params_verify_names(dut):
+    assert p_testfactory_test_names == {
+        "p_run_testfactory_test/arg1=a1v1/arg2=a2v1",
+        "p_run_testfactory_test/arg1=a1v1/arg2=a2v2",
+        "p_run_testfactory_test/arg1=a1v2/arg2=a2v1",
+        "p_run_testfactory_test/arg1=a1v2/arg2=a2v2",
+    }
+
+
+testfactory_no_empty_call_test_args = set()
+
+
+@cocotb.test
+@cocotb.parameterize(
+    arg1=["a1v1", "a1v2"],
+    arg2=["a2v1", "a2v2"],
+)
+async def test_testfactory_no_empty_call(dut, arg1, arg2):
+    testfactory_no_empty_call_test_args.add((arg1, arg2))
+
+
+@cocotb.test()
+async def test_testfactory_no_empty_call_verify_args(dut):
+    assert testfactory_no_empty_call_test_args == {
+        ("a1v1", "a2v1"),
+        ("a1v2", "a2v1"),
+        ("a1v1", "a2v2"),
+        ("a1v2", "a2v2"),
+    }

@@ -1,6 +1,7 @@
 """
 Test that once a SimFailure occurs, no further tests are run
 """
+
 import cocotb
 
 

@@ -4,14 +4,16 @@
 """
 Tests relating to cocotb.queue.Queue, cocotb.queue.LifoQueue, cocotb.queue.PriorityQueue
 """
+
 import pytest
 
 import cocotb
 from cocotb.queue import LifoQueue, PriorityQueue, Queue, QueueEmpty, QueueFull
-from cocotb.regression import TestFactory
 from cocotb.triggers import Combine, NullTrigger
 
 
+@cocotb.test
+@cocotb.parameterize(queue_type=[Queue, PriorityQueue, LifoQueue])
 async def run_queue_nonblocking_test(dut, queue_type):
     QUEUE_SIZE = 10
 
@@ -61,11 +63,6 @@ async def run_queue_nonblocking_test(dut, queue_type):
     # underflow
     with pytest.raises(QueueEmpty):
         q.get_nowait()
-
-
-factory = TestFactory(run_queue_nonblocking_test)
-factory.add_option("queue_type", [Queue, PriorityQueue, LifoQueue])
-factory.generate_tests()
 
 
 @cocotb.test()
@@ -168,6 +165,8 @@ async def test_fair_scheduling(dut):
     assert all(p.done() for p in putters), "Not all putters finished?"
 
 
+@cocotb.test
+@cocotb.parameterize(queue_type=[Queue, PriorityQueue, LifoQueue])
 async def run_queue_blocking_test(dut, queue_type):
     NUM_PUTTERS = 20
     QUEUE_SIZE = 10
@@ -224,11 +223,6 @@ async def run_queue_blocking_test(dut, queue_type):
 
     assert q.qsize() == 0
     assert ref_q.qsize() == 0
-
-
-factory = TestFactory(run_queue_blocking_test)
-factory.add_option("queue_type", [Queue, PriorityQueue, LifoQueue])
-factory.generate_tests()
 
 
 @cocotb.test()

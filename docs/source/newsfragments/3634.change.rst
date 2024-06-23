@@ -1,0 +1,1 @@
+Getting a value with :attr:`LogicObject.value <cocotb.handle.LogicObject.value>` now returns a :class:`~cocotb.types.LogicArray` with the appropriate :class:`~cocotb.types.Range` set.

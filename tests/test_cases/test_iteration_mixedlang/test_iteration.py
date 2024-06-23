@@ -34,48 +34,33 @@ def recursive_dump(parent, log):
 
     Returns a count of the total number of objects found
     """
+    if not isinstance(
+        parent,
+        (
+            cocotb.handle.HierarchyObjectBase,
+            cocotb.handle.IndexableValueObjectBase,
+        ),
+    ):
+        return 0
     count = 0
     for thing in parent:
         count += 1
-        log.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+        log.info("Found %s (%s)", thing._path, type(thing))
         count += recursive_dump(thing, log)
     return count
 
 
-@cocotb.test(expect_fail=True)
-async def test_drivers(dut):
-    """Try iterating over drivers of a signal.
-
-    Seems that few simulators implement ``vpiDriver``.
-    """
-    tlog = logging.getLogger("cocotb.test")
-    drivers = list(dut.i_verilog.uart1.uart_rx_1.rx_data.drivers())
-    assert drivers, "No drivers found for dut.i_verilog.uart1.uart_rx_1.rx_data"
-    for driver in drivers:
-        tlog.info("Found %s" % repr(driver))
-
-
-@cocotb.test(expect_fail=True)
-async def test_loads(dut):
-    """Try iterating over loads of a signal.
-
-    Seems that few simulators implement ``vpiLoad``.
-    """
-    tlog = logging.getLogger("cocotb.test")
-    loads = list(dut.i_verilog.uart1.ser_in.loads())
-    assert loads, "No loads found for dut.i_verilog.uart1.ser_in"
-    for load in loads:
-        tlog.info("Found %s" % repr(load))
-
-
-@cocotb.test()
+@cocotb.test
 async def recursive_discovery(dut):
     """Recursively discover every single object in the design."""
-    if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
+    if cocotb.SIM_NAME.lower().startswith("ncsim"):
         # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS/Xcelium
         pass_total = 975
+    elif cocotb.SIM_NAME.lower().startswith("xmsim"):
+        # Xcelium sometimes doesn't find bits in a std_logic_vector
+        pass_total = 1201
     elif cocotb.SIM_NAME.lower().startswith("modelsim"):
-        pass_total = 991
+        pass_total = 1276
     else:
         pass_total = 1024
 
@@ -86,20 +71,23 @@ async def recursive_discovery(dut):
     tlog.info("Found a total of %d things", total)
 
     assert isinstance(
-        dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject
+        dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.LogicObject
     ), (
         "Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable"
-        " but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__
+        f" but it was {type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__}"
     )
 
 
-@cocotb.test()
+@cocotb.test
 async def recursive_discovery_boundary(dut):
     """Iteration through the boundary works but this just double checks."""
-    if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
+    if cocotb.SIM_NAME.lower().startswith("ncsim"):
         pass_total = 462
+    elif cocotb.SIM_NAME.lower().startswith("xmsim"):
+        # Xcelium sometimes doesn't find bits in a std_logic_vector
+        pass_total = 744
     else:
-        pass_total = 478
+        pass_total = 819
 
     tlog = logging.getLogger("cocotb.test")
     total = recursive_dump(dut.i_vhdl, tlog)

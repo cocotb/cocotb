@@ -1,0 +1,136 @@
+###############################################################################
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
+
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
+# Common Makefile for Cadence Xcelium
+
+CMD_BIN := xrun
+
+ifdef XCELIUM_BIN_DIR
+    CMD := $(shell :; command -v $(XCELIUM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error Unable to locate command >$(CMD_BIN)<)
+else
+    XCELIUM_BIN_DIR := $(shell dirname $(CMD))
+    export XCELIUM_BIN_DIR
+endif
+
+ifdef VERILOG_INCLUDE_DIRS
+    COMPILE_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+endif
+
+EXTRA_ARGS += $(COMPILE_ARGS)
+EXTRA_ARGS += $(SIM_ARGS)
+EXTRA_ARGS += -licqueue
+
+ifeq ($(PYTHON_ARCH),64bit)
+    EXTRA_ARGS += -64
+endif
+
+EXTRA_ARGS += -xmlibdirpath $(SIM_BUILD)
+ifeq ($(DEBUG),1)
+    EXTRA_ARGS += -pliverbose
+    EXTRA_ARGS += -messages
+    EXTRA_ARGS += -plidebug             # Enhance the profile output with PLI info
+    EXTRA_ARGS += -plierr_verbose       # Expand handle info in PLI/VPI/VHPI messages
+    EXTRA_ARGS += -vpicompat 1800v2005  #  <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
+else
+    EXTRA_ARGS += -plinowarn
+endif
+
+ifeq ($(GUI),1)
+    EXTRA_ARGS += -gui
+else
+    EXTRA_ARGS +=
+endif
+
+# Xcelium errors out if multiple timescales are specified on the command line.
+ifneq (,$(filter -timescale%,$(EXTRA_ARGS)))
+    $(error Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.)
+endif
+
+# Loading the VHPI library causes an error, so we always load the VPI library and supply
+# GPI_EXTRA=$(shell cocotb-config --lib-name-path vhpi xcelium) if needed.
+
+# Xcelium will use default vlog_startup_routines symbol only if VPI library name is libvpi.so
+GPI_ARGS = -loadvpi $(shell cocotb-config --lib-name-path vpi xcelium):vlog_startup_routines_bootstrap
+ifeq ($(TOPLEVEL_LANG),verilog)
+    HDL_SOURCES = $(VERILOG_SOURCES)
+    ROOT_LEVEL = $(COCOTB_TOPLEVEL)
+    EXTRA_ARGS += -top $(COCOTB_TOPLEVEL)
+    ifneq ($(VHDL_SOURCES),)
+        HDL_SOURCES += $(VHDL_SOURCES)
+        GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point
+    endif
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point
+    EXTRA_ARGS += -top $(COCOTB_TOPLEVEL)
+    # Xcelium 23.09.004 fixes cocotb issue #1076 as long as the following define
+    # is set.
+    EXTRA_ARGS += -NEW_VHPI_PROPAGATE_DELAY
+    RTL_LIBRARY ?= $(COCOTB_TOPLEVEL)
+    MAKE_LIB = -makelib $(RTL_LIBRARY)
+    END_LIB = -endlib
+    HDL_SOURCES = $(VHDL_SOURCES)
+    ifneq ($(VERILOG_SOURCES),)
+        HDL_SOURCES += $(VERILOG_SOURCES)
+    endif
+else
+    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
+endif
+
+# Builds a list of arguments to support VHDL libraries specified in VHDL_SOURCES_*:
+LIBS := $(foreach LIB, $(VHDL_LIB_ORDER),-makelib $(LIB) $(VHDL_SOURCES_$(LIB)) -endlib)
+
+$(COCOTB_RESULTS_FILE): $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
+	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
+	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
+
+	set -o pipefail; \
+	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	$(SIM_CMD_PREFIX) $(CMD) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
+	-vhdl_time_precision "$(COCOTB_HDL_TIMEPRECISION)" \
+	$(EXTRA_ARGS) $(GPI_ARGS) $(INCDIRS) -access +rwc -createdebugdb $(LIBS) $(MAKE_LIB) $(HDL_SOURCES) $(END_LIB) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
+
+	$(call check_for_results_file)
+
+clean::
+	$(RM) -r $(SIM_BUILD)
+	$(RM) -r xrun.*
+	$(RM) -r xmsim.*
+	$(RM) -r gdb_cmd_xmsim

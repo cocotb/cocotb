@@ -1,0 +1,87 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+TOPLEVEL_LANG ?= verilog
+
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
+ifneq ($(or $(filter-out $(TOPLEVEL_LANG),verilog),$(VHDL_SOURCES)),)
+
+results.xml:
+	@echo "Skipping simulation as only Verilog is supported on simulator=$(SIM)"
+debug: results.xml
+clean::
+
+else
+
+CMD_BIN := verilator
+
+ifdef VERILATOR_BIN_DIR
+  CMD := $(shell :; command -v $(VERILATOR_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+  # auto-detect bin dir from system path
+  CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+  $(error Unable to locate command >$(CMD_BIN)<)
+endif
+
+VLT_MIN := 4.106
+VLT_VERSION := $(shell $(CMD) --version | cut -d " " -f 2)
+MIN_VERSION := $(shell printf "%s\n%s\n" "$(VLT_MIN)" "$(VLT_VERSION)" | sort -g | head -1)
+ifneq ($(MIN_VERSION),$(VLT_MIN))
+  $(error cocotb requires Verilator $(VLT_MIN) or later, but using $(VLT_VERSION))
+endif
+
+ifdef COCOTB_TOPLEVEL
+  TOPMODULE_ARG := --top-module $(COCOTB_TOPLEVEL)
+else
+  TOPMODULE_ARG :=
+endif
+
+ifeq ($(VERILATOR_SIM_DEBUG), 1)
+  COMPILE_ARGS += --debug -CFLAGS "-DVL_DEBUG -DVERILATOR_SIM_DEBUG -g"
+  DEBUG = +verilator+debug
+  BUILD_ARGS += OPT_FAST=-Og OPT_SLOW=-Og OPT_GLOBAL=-Og
+endif
+
+ifeq ($(VERILATOR_TRACE),1)
+  EXTRA_ARGS += --trace --trace-structs
+endif
+
+EXTRA_ARGS += --timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
+
+COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o Vtop -LDFLAGS "-Wl,-rpath,$(shell cocotb-config --lib-dir) -L$(shell cocotb-config --lib-dir) -lcocotbvpi_verilator"
+
+ifdef VERILOG_INCLUDE_DIRS
+  COMPILE_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+endif
+
+VERILATOR_CPP := $(shell cocotb-config --share)/lib/verilator/verilator.cpp
+
+$(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(VERILATOR_CPP) | $(SIM_BUILD)
+	$(CMD) -cc --exe -Mdir $(SIM_BUILD) $(TOPMODULE_ARG) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(VERILATOR_CPP)
+
+# Compilation phase
+$(SIM_BUILD)/Vtop: $(SIM_BUILD)/Vtop.mk
+	$(MAKE) -C $(SIM_BUILD) $(BUILD_ARGS) -f Vtop.mk
+
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/Vtop $(CUSTOM_SIM_DEPS)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+        $(SIM_CMD_PREFIX) $< $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(DEBUG) $(SIM_CMD_SUFFIX)
+
+	$(call check_for_results_file)
+
+debug:
+	$(MAKE) VERILATOR_SIM_DEBUG=1 SIM_CMD_PREFIX="gdb --args" $(COCOTB_RESULTS_FILE)
+
+clean::
+	$(RM) -r $(SIM_BUILD)
+	$(RM) dump.vcd
+	$(RM) dump.fst
+
+endif

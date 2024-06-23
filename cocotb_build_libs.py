@@ -11,7 +11,6 @@ import sysconfig
 import textwrap
 from distutils.ccompiler import get_default_compiler
 from distutils.file_util import copy_file
-from distutils.spawn import find_executable
 from typing import List
 
 from setuptools import Extension
@@ -19,7 +18,7 @@ from setuptools.command.build_ext import build_ext as _build_ext
 
 logger = logging.getLogger(__name__)
 cocotb_share_dir = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "cocotb", "share")
+    os.path.join(os.path.dirname(__file__), "src", "cocotb", "share")
 )
 _base_warns = [
     "-Wall",
@@ -84,9 +83,8 @@ def create_sxs_assembly_manifest(
         )
 
     if not dependency_only:
-        manifest_body = (
-            textwrap.dedent(
-                """\
+        manifest_body = textwrap.dedent(
+            """\
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
             <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
                 <assemblyIdentity name="%s" version="1.0.0.0" type="win32" processorArchitecture="%s" />
@@ -94,26 +92,21 @@ def create_sxs_assembly_manifest(
                 %s
             </assembly>
             """
-            )
-            % (
-                name,
-                architecture,
-                filename,
-                textwrap.indent("".join(dependencies), "    ").strip(),
-            )
+        ) % (
+            name,
+            architecture,
+            filename,
+            textwrap.indent("".join(dependencies), "    ").strip(),
         )
     else:
-        manifest_body = (
-            textwrap.dedent(
-                """\
+        manifest_body = textwrap.dedent(
+            """\
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
             <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
                 %s
             </assembly>
             """
-            )
-            % (textwrap.indent("".join(dependencies), "    ").strip())
-        )
+        ) % (textwrap.indent("".join(dependencies), "    ").strip())
 
     return manifest_body
 
@@ -157,7 +150,7 @@ def create_rc_file(rc_filename, name, filename, libraries, runtime_libraries):
 
     # Escape double quotes and put every line between double quotes for embedding into rc file
     manifest = manifest.replace('"', '""')
-    manifest = "\n".join(['"%s\\r\\n"' % x for x in manifest.splitlines()])
+    manifest = "\n".join([f'"{x}\\r\\n"' for x in manifest.splitlines()])
 
     rc_body = (
         textwrap.dedent(
@@ -183,7 +176,7 @@ def create_rc_file(rc_filename, name, filename, libraries, runtime_libraries):
 
         # Escape double quotes and put every line between double quotes for embedding into rc file
         manifest = manifest.replace('"', '""')
-        manifest = "\n".join(['"%s\\r\\n"' % x for x in manifest.splitlines()])
+        manifest = "\n".join([f'"{x}\\r\\n"' for x in manifest.splitlines()])
 
         rc_body += (
             textwrap.dedent(
@@ -238,7 +231,7 @@ class build_ext(_build_ext):
 
                 # Setuptools defaults to activate automatic manifest generation for msvc,
                 # disable it here as we manually generate it to also support mingw on windows
-                for (k, ldflags) in self.compiler._ldflags.items():
+                for k, ldflags in self.compiler._ldflags.items():
                     self.compiler._ldflags[k] = [
                         x for x in ldflags if not x.startswith("/MANIFEST")
                     ] + ["/MANIFEST:NO"]
@@ -318,10 +311,19 @@ class build_ext(_build_ext):
                     ]
                     if install_name is not None:
                         ext.extra_link_args += [
-                            "-Wl,-install_name,@rpath/%s.so" % install_name
+                            f"-Wl,-install_name,@rpath/{install_name}.so"
                         ]
 
-                ext.extra_link_args += ["-Wl,-rpath,%s" % rpath for rpath in rpaths]
+                if sys.platform == "linux":
+                    # Avoid a runtime dependency on libstdc++. Some simulators
+                    # ship a version of libstdc++6.so which is older than the
+                    # one cocotb has been compiled with, which will then lead to
+                    # load-time errors like "libstdc++.so.6: version
+                    # `GLIBCXX_3.4.29' not found (required by
+                    # /path/to/libcocotbvhpi_modelsim.so)."
+                    ext.extra_link_args += ["-static-libstdc++"]
+
+                ext.extra_link_args += [f"-Wl,-rpath,{rpath}" for rpath in rpaths]
 
         # vpi_user.h and vhpi_user.h require that WIN32 is defined
         if os.name == "nt":
@@ -428,7 +430,8 @@ class build_ext(_build_ext):
                         "/def:" + os.path.join(def_dir, sim + ".def"),
                         "/out:" + os.path.join(def_dir, sim + ".lib"),
                         "/machine:" + ("X64" if sys.maxsize > 2**32 else "X86"),
-                    ]
+                    ],
+                    check=True,
                 )
             else:
                 subprocess.run(
@@ -438,7 +441,8 @@ class build_ext(_build_ext):
                         os.path.join(def_dir, sim + ".def"),
                         "-l",
                         os.path.join(def_dir, "lib" + sim + ".a"),
-                    ]
+                    ],
+                    check=True,
                 )
 
 
@@ -478,12 +482,11 @@ def _get_python_lib():
     return python_lib
 
 
-def _get_common_lib_ext(include_dir, share_lib_dir):
+def _get_common_lib_ext(include_dirs, share_lib_dir):
     """
     Defines common libraries.
 
     All libraries go into the same directory to enable loading without modifying the library path (e.g. LD_LIBRARY_PATH).
-    In Makefile `LIB_DIR` (s) is used to point to this directory.
     """
 
     #
@@ -493,12 +496,12 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     if os.name == "nt":
         libcocotbutils_sources += ["libcocotbutils.rc"]
     libcocotbutils_libraries = ["gpilog"]
-    if os.name != "nt":
+    if sys.platform.startswith(("linux", "darwin", "cygwin", "msys")):
         libcocotbutils_libraries.append("dl")  # dlopen, dlerror, dlsym
     libcocotbutils = Extension(
         os.path.join("cocotb", "libs", "libcocotbutils"),
         define_macros=[("COCOTBUTILS_EXPORTS", "")] + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=libcocotbutils_libraries,
         sources=libcocotbutils_sources,
     )
@@ -516,7 +519,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libgpilog = Extension(
         os.path.join("cocotb", "libs", "libgpilog"),
         define_macros=[("GPILOG_EXPORTS", "")] + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         sources=libgpilog_sources,
     )
 
@@ -531,7 +534,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libpygpilog = Extension(
         os.path.join("cocotb", "libs", "libpygpilog"),
         define_macros=[("PYGPILOG_EXPORTS", "")] + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["gpilog"],
         sources=libpygpilog_sources,
     )
@@ -546,7 +549,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         os.path.join("cocotb", "libs", "libembed"),
         define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_LIB", _get_python_lib())]
         + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["gpilog", "cocotbutils"],
         sources=libembed_sources,
     )
@@ -560,7 +563,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libcocotb = Extension(
         os.path.join("cocotb", "libs", "libcocotb"),
         define_macros=_extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["gpilog", "cocotbutils", "pygpilog"],
         sources=libcocotb_sources,
     )
@@ -582,7 +585,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
             ("SINGLETON_HANDLES", ""),
         ]
         + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["cocotbutils", "gpilog", "embed"],
         sources=libgpi_sources,
     )
@@ -598,7 +601,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libsim = Extension(
         os.path.join("cocotb", "simulator"),
         define_macros=_extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["cocotbutils", "gpilog", "gpi", "pygpilog"],
         library_dirs=python_lib_dirs,
         sources=simulator_sources,
@@ -611,12 +614,15 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
 
 
 def _get_vpi_lib_ext(
-    include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
+    include_dirs, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
     lib_name = "libcocotbvpi_" + sim_define.lower()
     libcocotbvpi_sources = [
         os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
         os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
+        os.path.join(share_lib_dir, "vpi", "VpiObj.cpp"),
+        os.path.join(share_lib_dir, "vpi", "VpiIterator.cpp"),
+        os.path.join(share_lib_dir, "vpi", "VpiSignal.cpp"),
     ]
     if os.name == "nt":
         libcocotbvpi_sources += [lib_name + ".rc"]
@@ -625,7 +631,7 @@ def _get_vpi_lib_ext(
         define_macros=[("COCOTBVPI_EXPORTS", ""), ("VPI_CHECKING", "1")]
         + [(sim_define, "")]
         + _extra_defines,
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=extra_lib_dir,
         sources=libcocotbvpi_sources,
@@ -635,7 +641,7 @@ def _get_vpi_lib_ext(
 
 
 def _get_vhpi_lib_ext(
-    include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
+    include_dirs, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
     lib_name = "libcocotbvhpi_" + sim_define.lower()
     libcocotbvhpi_sources = [
@@ -646,7 +652,7 @@ def _get_vhpi_lib_ext(
         libcocotbvhpi_sources += [lib_name + ".rc"]
     libcocotbvhpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
-        include_dirs=[include_dir],
+        include_dirs=include_dirs,
         define_macros=[("COCOTBVHPI_EXPORTS", ""), ("VHPI_CHECKING", 1)]
         + [(sim_define, "")]
         + _extra_defines,
@@ -659,20 +665,22 @@ def _get_vhpi_lib_ext(
 
 
 def get_ext():
-
     cfg_vars = distutils.sysconfig.get_config_vars()
 
     if sys.platform == "darwin":
         cfg_vars["LDSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
 
     share_lib_dir = os.path.relpath(os.path.join(cocotb_share_dir, "lib"))
-    include_dir = os.path.relpath(os.path.join(cocotb_share_dir, "include"))
+    include_dirs = [
+        os.path.relpath(os.path.join(cocotb_share_dir, "include")),
+        os.path.relpath(os.path.join(os.path.dirname(__file__), "src", "cocotb")),
+    ]
 
     ext = []
 
     logger.info("Compiling interface libraries for cocotb ...")
 
-    ext += _get_common_lib_ext(include_dir, share_lib_dir)
+    ext += _get_common_lib_ext(include_dirs, share_lib_dir)
 
     #
     #  Icarus Verilog
@@ -683,7 +691,7 @@ def get_ext():
         icarus_extra_lib = ["icarus"]
 
     icarus_vpi_ext = _get_vpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="ICARUS",
         extra_lib=icarus_extra_lib,
@@ -699,7 +707,7 @@ def get_ext():
         modelsim_extra_lib = ["modelsim"]
 
     modelsim_vpi_ext = _get_vpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="MODELSIM",
         extra_lib=modelsim_extra_lib,
@@ -707,48 +715,30 @@ def get_ext():
     ext.append(modelsim_vpi_ext)
 
     modelsim_vhpi_ext = _get_vhpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="MODELSIM",
         extra_lib=modelsim_extra_lib,
     )
     ext.append(modelsim_vhpi_ext)
 
-    vsim_path = find_executable("vopt")
-    if vsim_path is None:
-        logger.warning(
-            "Modelsim/Questa installation not found: did not find the 'vopt' executable. No FLI interface will be available."
-        )
-    else:
-        modelsim_dir = os.path.dirname(os.path.dirname(vsim_path))
-        modelsim_include_dir = os.path.join(modelsim_dir, "include")
-        mti_path = os.path.join(modelsim_include_dir, "mti.h")
-        if os.path.isfile(mti_path):
-            lib_name = "libcocotbfli_modelsim"
-            fli_sources = [
-                os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
-                os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
-                os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
-            ]
-            if os.name == "nt":
-                fli_sources += [lib_name + ".rc"]
-            fli_ext = Extension(
-                os.path.join("cocotb", "libs", lib_name),
-                define_macros=[("COCOTBFLI_EXPORTS", "")] + _extra_defines,
-                include_dirs=[include_dir, modelsim_include_dir],
-                libraries=["gpi", "gpilog"] + modelsim_extra_lib,
-                sources=fli_sources,
-            )
+    lib_name = "libcocotbfli_modelsim"
+    fli_sources = [
+        os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
+        os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
+        os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
+    ]
+    if os.name == "nt":
+        fli_sources += [lib_name + ".rc"]
+    fli_ext = Extension(
+        os.path.join("cocotb", "libs", lib_name),
+        define_macros=[("COCOTBFLI_EXPORTS", "")] + _extra_defines,
+        include_dirs=include_dirs,
+        libraries=["gpi", "gpilog"] + modelsim_extra_lib,
+        sources=fli_sources,
+    )
 
-            ext.append(fli_ext)
-
-        else:
-            logger.warning(
-                "Cannot build FLI interface for Modelsim/Questa: "
-                "the mti.h header for '{}' was not found at '{}'.".format(
-                    vsim_path, mti_path
-                )
-            )  # some Modelsim version does not include FLI.
+    ext.append(fli_ext)
 
     #
     # GHDL
@@ -759,7 +749,7 @@ def get_ext():
         ghdl_extra_lib = ["ghdl"]
 
     ghdl_vpi_ext = _get_vpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="GHDL",
         extra_lib=ghdl_extra_lib,
@@ -772,12 +762,12 @@ def get_ext():
     if os.name == "posix":
         logger.info("Compiling libraries for Incisive/Xcelium")
         ius_vpi_ext = _get_vpi_lib_ext(
-            include_dir=include_dir, share_lib_dir=share_lib_dir, sim_define="IUS"
+            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="IUS"
         )
         ext.append(ius_vpi_ext)
 
         ius_vhpi_ext = _get_vhpi_lib_ext(
-            include_dir=include_dir, share_lib_dir=share_lib_dir, sim_define="IUS"
+            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="IUS"
         )
         ext.append(ius_vhpi_ext)
 
@@ -787,7 +777,7 @@ def get_ext():
     if os.name == "posix":
         logger.info("Compiling libraries for VCS")
         vcs_vpi_ext = _get_vpi_lib_ext(
-            include_dir=include_dir, share_lib_dir=share_lib_dir, sim_define="VCS"
+            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="VCS"
         )
         ext.append(vcs_vpi_ext)
 
@@ -800,7 +790,7 @@ def get_ext():
         aldec_extra_lib = ["aldec"]
 
     aldec_vpi_ext = _get_vpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="ALDEC",
         extra_lib=aldec_extra_lib,
@@ -808,7 +798,7 @@ def get_ext():
     ext.append(aldec_vpi_ext)
 
     aldec_vhpi_ext = _get_vhpi_lib_ext(
-        include_dir=include_dir,
+        include_dirs=include_dirs,
         share_lib_dir=share_lib_dir,
         sim_define="ALDEC",
         extra_lib=aldec_extra_lib,
@@ -821,8 +811,20 @@ def get_ext():
     if os.name == "posix":
         logger.info("Compiling libraries for Verilator")
         verilator_vpi_ext = _get_vpi_lib_ext(
-            include_dir=include_dir, share_lib_dir=share_lib_dir, sim_define="VERILATOR"
+            include_dirs=include_dirs,
+            share_lib_dir=share_lib_dir,
+            sim_define="VERILATOR",
         )
         ext.append(verilator_vpi_ext)
+
+    #
+    # NVC
+    #
+    if os.name == "posix":
+        logger.info("Compiling libraries for NVC")
+        nvc_vhpi_ext = _get_vhpi_lib_ext(
+            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="NVC"
+        )
+        ext.append(nvc_vhpi_ext)
 
     return ext

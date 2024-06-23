@@ -1,0 +1,98 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: Release
+
+on:
+  # Run this workflow on every push to master or to a stable branch.
+  push:
+    branches:
+      - master
+      - "stable/**"
+    tags:
+      - 'v*'
+
+jobs:
+  build_release:
+    name: Build distribution on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # Keep going even if one matrix build fails.
+      matrix:
+        os:
+          - ubuntu-22.04
+          - windows-2022
+          - macos-12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install nox
+        run: python3 -m pip install nox
+
+      # Use the cibuildwheel configuration inside nox, instead of the
+      # cibuildwheel GitHub Action, to make the process easy to reproduce
+      # locally.
+      - name: Build cocotb release
+        run: nox -s release_build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cocotb-dist-${{ matrix.os }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+
+  test_sdist:
+    name: Test the source distribution (sdist)
+    needs: build_release
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - uses: actions/download-artifact@v4
+      with:
+        path: dist
+        pattern: cocotb-dist-*
+        merge-multiple: true
+    - name: Install nox
+      run: python3 -m pip install nox
+    - name: Smoke-test the sdist
+      run: nox -s release_test_sdist
+
+  test_release:
+    name: Regression Tests
+    needs: build_release
+    uses: ./.github/workflows/regression-tests.yml
+    with:
+      nox_session_test_sim: release_test_sim
+      nox_session_test_nosim: release_test_nosim
+      download_artifacts: true
+      group: ci
+
+  deploy_pypi:
+    name: Deploy to pypi.org
+    needs:
+    - test_release
+    - test_sdist
+    runs-on: ubuntu-22.04
+    # Only upload tagged releases.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - uses: actions/download-artifact@v4
+      with:
+        path: dist
+        pattern: cocotb-dist-*
+        merge-multiple: true
+    - name: Publish distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}

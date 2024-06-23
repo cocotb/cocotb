@@ -1,0 +1,1 @@
+The :meth:`cocotb_tools.runner.Simulator.build` method now accepts a ``clean`` argument to remove ``build_dir`` completely during build stage.

@@ -1,0 +1,79 @@
+name: Performance Benchmark
+# adapted from https://github.com/benchmark-action/github-action-benchmark#charts-on-github-pages-1
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+
+  tests:
+
+    name: Python ${{matrix.python-version}}
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: 3.8
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{matrix.python-version}}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{matrix.python-version}}
+
+    - name: Install Icarus Verilog
+      run: |
+        sudo apt-get install -y --no-install-recommends iverilog
+
+    - name: Set up NVC (Ubuntu)
+      run: |
+        sudo apt-get install -y --no-install-recommends llvm-dev libdw-dev flex libzstd-dev pkg-config
+        git clone https://github.com/nickg/nvc.git
+        cd nvc
+        git reset --hard r1.11.3
+        ./autogen.sh
+        mkdir build
+        cd build
+        ../configure
+        make -j $(nproc)
+        sudo make install
+
+    - name: Run benchmark
+      run: |
+        pip install pytest pytest-benchmark
+        pip install .
+        pytest -c /dev/null tests/benchmark.py --benchmark-json output.json
+
+    # Pushing the benchmark requires elevated permissions to the
+    # cocotb/cocotb-benchmark-results repository, which we only grant for
+    # master builds, not for PR builds.
+    - name: Generate a token to access cocotb/cocotb-benchmark-results
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      id: generate_token
+      uses: actions/create-github-app-token@v1
+      with:
+        app-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+        private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}
+        repositories: cocotb-benchmark-results
+
+    - name: Store benchmark result
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      uses: benchmark-action/github-action-benchmark@v1
+      continue-on-error: true
+      with:
+        tool: 'pytest'
+        output-file-path: output.json
+        alert-threshold: '120%'
+        fail-on-alert: true
+        github-token: ${{ steps.generate_token.outputs.token }}
+        auto-push: true
+        gh-repository: 'github.com/cocotb/cocotb-benchmark-results'

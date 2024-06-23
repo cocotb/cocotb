@@ -20,6 +20,10 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
 VHDL_SOURCES := $(PROJ_DIR)/test.vhd
 endif
 
+ifneq ($(filter $(SIM),ius xcelium),)
+COMPILE_ARGS += -v93
+endif
+
 TOPLEVEL := test
 
 export MODULE := test_long_log_msg

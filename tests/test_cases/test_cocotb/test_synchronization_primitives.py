@@ -4,6 +4,7 @@
 """
 Tests for synchronization primitives like Lock and Event
 """
+
 import pytest
 
 import cocotb

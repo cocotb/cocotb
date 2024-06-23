@@ -2,42 +2,50 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+exclude: "^.*/_vendor/"
 repos:
-- repo: "https://github.com/psf/black"
-  rev: "22.3.0"
+# ruff with --fix should run before other formatting tools
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: "v0.4.9"
   hooks:
-  - id: "black"
-    exclude: "^cocotb/_vendor"
-    args:
-    - "."
-
-- repo: "https://github.com/pycqa/isort"
-  rev: "5.10.1"
-  hooks:
-  - id: "isort"
-    exclude: "^cocotb/_vendor"
-    args:
-    - "--profile=black"
-    - "."
-
-- repo: "https://github.com/pycqa/flake8"
-  rev: "3.9.2"
-  hooks:
-  - id: "flake8"
-    exclude: "^cocotb/_vendor"
+    # Run the linter.
+    - id: "ruff"
+      args:
+      - "--fix"
+      - "--exit-non-zero-on-fix"
+    # Run the formatter.
+    - id: ruff-format
 
 - repo: "https://github.com/pre-commit/mirrors-clang-format"
-  rev: "v13.0.0"
+  rev: "v18.1.6"
   hooks:
   - id: "clang-format"
-    exclude: "^cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
+    exclude: "^src/cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
+    types_or: [c, c++]
 
 - repo: "https://github.com/pre-commit/pre-commit-hooks"
-  rev: "v4.1.0"
+  rev: "v4.6.0"
   hooks:
   - id: "trailing-whitespace"
   - id: "mixed-line-ending"
     args:
     - "--fix=lf"
   - id: "end-of-file-fixer"
-    exclude: "^documentation/source/diagrams/(svg|xml)/"
+    exclude: "^docs/source/diagrams/(svg|xml)/"
+
+- repo: https://github.com/henryiii/validate-pyproject-schema-store
+  rev: "2024.06.10"
+  hooks:
+    - id: validate-pyproject
+
+- repo: local
+  hooks:
+  - id: "git-diff"
+    name: git diff
+    entry: git diff --exit-code
+    language: system
+    pass_filenames: false
+    always_run: true
+
+ci:
+  autofix_prs: false

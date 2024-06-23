@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.towncrier]
     package = "cocotb"
-    directory = "documentation/source/newsfragments"
-    filename = "documentation/source/release_notes.rst"
+    directory = "docs/source/newsfragments"
+    filename = "docs/source/release_notes.rst"
     issue_format = ":pr:`{issue}`"
     # The first underline is used for the version/date header,
     # the second underline for the subcategories (like 'Features')
@@ -37,13 +37,111 @@ build-backend = "setuptools.build_meta"
         name = "Changes"
         showcontent = true
 
-[tool.isort]
-profile = "black"
-extend_skip_glob = [
-    "cocotb/_vendor/*"
+[tool.ruff]
+extend-exclude = [
+    "docs/source/conf.py",
+    "makefiles",
+    "venv",
+    "_vendor",
+    ".nox/",
+]
+target-version = "py37"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+extend-select = [
+    "I",  # isort
+    "UP", # pyupgrade
+    "PL", # pylint
+]
+ignore = [
+    # ambiguous variable name (preference)
+    "E741",
+    # line too long (preference)
+    "E501",
+    # whitespace before ':' (black)
+    "E203",
+    "PLR0912", # Too many branches (>12) (preference)
+    "PLR0913", # Too many arguments to function call (>5) (preference)
+    "PLR0915", # Too many statements (>50) (preference)
+    "PLR2004", # Magic value used in comparison (preference)
+    "PLW0603", # Using the global statement (preference)
+    "PLR0911", # Too many return statements (preference)
 ]
 
-[tool.black]
-extend_exclude = '''
-_vendor
-'''
+[tool.ruff.lint.per-file-ignores]
+# necessary because of how file is included into documentation
+"examples/doc_examples/quickstart/test_my_design.py" = [
+    "E402",
+    "F811",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "cocotb",
+    "cocotb_tools",
+    "pygpi",
+]
+known-third-party = [
+    "pytest",
+]
+
+[tool.cibuildwheel]
+# Build for supported platforms only.
+# Even though we only support 64 bit operating systems, we still support 32 bit
+# userspace applications (Python and simulators) on Windows and Linux.
+#
+# - CPython on Linux i686 and x86_64 with glibc
+# - CPython on Windows i686 and x86_64
+# - CPython on macOS x86_64
+build = "cp*-manylinux_x86_64 cp*-manylinux_i686 cp*-win_amd64 cp*-win32 cp*-macosx_x86_64"
+
+# By default, build on manylinux2014 for compatibility with CentOS/RHEL 7+ (once
+# the user updates Python) and Ubuntu 20.04+ (with system Python).
+manylinux-x86_64-image = "manylinux2014"
+manylinux-i686-image = "manylinux2014"
+
+[[tool.cibuildwheel.overrides]]
+# Build CPython 3.6 wheels on manylinux1 to support Ubuntu 18.04, CentOS/RHEL 7
+# and CentOS/RHEL 8 with their default Python 3.6/pip 9 installation.
+select = "cp36-*"
+manylinux-x86_64-image = "manylinux1"
+manylinux-i686-image = "manylinux1"
+
+[tool.pytest.ini_options]
+# Note: Do *not* add files within the cocotb/ tree here. Add them to the
+# noxfile instead.
+testpaths = [
+    "tests/pytest",
+]
+
+# Ensure that all markers used in pytests are declared (in here).
+addopts = "--strict-markers"
+
+markers = [
+    "simulator_required: mark tests as needing a simulator",
+    "compile: the compile step in runner-based tests",
+]
+# log_cli = true
+# log_cli_level = DEBUG
+
+[tool.coverage.paths]
+source = [
+    "src/cocotb/",
+    ".nox/**/cocotb/",
+]
+
+[tool.coverage.report]
+omit = [
+    "*/cocotb_tools/*",
+    "*/_vendor/*",
+]
+exclude_lines = [
+    "pragma: no cover",
+    # for excluding typing stubs
+    "\\.\\.\\.",
+    # for excluding abstractmethods
+    "raise\\s+NotImplementedError",
+]

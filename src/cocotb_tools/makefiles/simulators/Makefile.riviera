@@ -1,0 +1,176 @@
+###############################################################################
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
+
+# Common Makefile for Aldec Riviera-PRO simulator
+
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
+ifeq ($(GUI),1)
+    CMD_BIN := riviera
+else
+    CMD_BIN := vsimsa
+endif
+
+ifdef ALDEC_BIN_DIR
+    CMD := $(shell :; command -v $(ALDEC_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error Unable to locate command >$(CMD_BIN)<)
+else
+    ALDEC_BIN_DIR := $(shell dirname $(CMD))
+    export ALDEC_BIN_DIR
+endif
+
+ifeq ($(GUI),1)
+    CMD += -nosplash
+endif
+
+ALOG_ARGS += -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
+
+ifdef VERILOG_INCLUDE_DIRS
+    ALOG_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+endif
+
+# below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
+ALOG_ARGS += $(COMPILE_ARGS)
+ACOM_ARGS += $(COMPILE_ARGS)
+ASIM_ARGS += $(SIM_ARGS)
+
+# Plusargs need to be passed to ASIM command not vsimsa
+ASIM_ARGS += $(call deprecate,PLUSARGS,COCOTB_PLUSARGS)
+
+RTL_LIBRARY ?= work
+
+# Pass the VPI library to the Verilog compilation to get extended checking.
+ALOG_ARGS += -pli $(shell cocotb-config --lib-name-path vpi riviera)
+
+# Aldec-specific coverage types:
+# - (s)tatement
+# - (b)ranch
+# - (e)xpression
+# - (c)ondition
+# - (a)ssertion
+# - (p)ath
+# - finite state (m)achine
+# Documentation: Riviera Pro 2017.02 Documentation - Page 359
+COVERAGE_TYPES ?= sb
+ifeq ($(COCOTB_USER_COVERAGE),1)
+    ALOG_ARGS += -dbg -coverage $(COVERAGE_TYPES)
+    ACOM_ARGS += -dbg -coverage $(COVERAGE_TYPES)
+
+    ASIM_ARGS += -dbg -acdb -acdb_cov $(COVERAGE_TYPES)
+endif
+
+GPI_EXTRA:=
+ifeq ($(TOPLEVEL_LANG),verilog)
+    GPI_ARGS = -pli $(shell cocotb-config --lib-name-path vpi riviera)
+ifneq ($(VHDL_SOURCES),)
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi riviera):cocotbvhpi_entry_point
+endif
+
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+    GPI_ARGS = -loadvhpi $(shell cocotb-config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap
+ifneq ($(VERILOG_SOURCES),)
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vpi riviera):cocotbvpi_entry_point
+endif
+
+else
+   $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
+endif
+
+define make_lib
+  echo "if [file exists $(SIM_BUILD)/$(LIB)] {adel -lib $(SIM_BUILD)/$(LIB) -all}" >> $@;
+  echo "alib $(SIM_BUILD)/$(LIB)" >> $@;
+  echo "amap $(LIB) $(SIM_BUILD)/$(LIB)" >> $@;
+  echo "acom -work $(LIB) $(VCOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES_$(LIB)))" >> $@;
+endef
+
+# Create a TCL script based on the list of $(VERILOG_SOURCES)
+$(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) | $(SIM_BUILD)
+	@echo "onerror {" > $@
+	@echo "	puts [read [open sim.log r]]" >> $@
+	@echo "	quit -code 1" >> $@
+	@echo "}" >> $@
+	@echo "amap -c" >> $@
+	$(foreach LIB, $(VHDL_LIB_ORDER), $(make_lib))
+	@echo "@if [string length [array get env LICENSE_QUEUE]] {" >> $@
+	@echo " set LICENSE_QUEUE $$::env(LICENSE_QUEUE)" >> $@
+	@echo "}" >> $@
+	@echo "if [file exists $(SIM_BUILD)/$(RTL_LIBRARY)] {adel -lib $(SIM_BUILD)/$(RTL_LIBRARY) -all}" >> $@;
+	@echo "alib $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
+	@echo "amap $(RTL_LIBRARY) $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@;
+	@echo "set worklib $(RTL_LIBRARY)" >> $@;
+ifneq ($(VHDL_SOURCES),)
+	@echo "acom -work $(RTL_LIBRARY) $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
+endif
+ifneq ($(VERILOG_SOURCES),)
+	@echo "alog -work $(RTL_LIBRARY) $(ALOG_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
+endif
+ifdef SCRIPT_FILE
+	@echo "do $(SCRIPT_FILE)" >> $@
+endif
+ifneq ($(CFG_TOPLEVEL),)
+	@echo "asim $(ASIM_ARGS) +access +w_nets -interceptcoutput $(GPI_ARGS) $(CFG_TOPLEVEL) $(EXTRA_TOPS)" >> $@
+else
+	@echo "asim $(ASIM_ARGS) +access +w_nets -interceptcoutput $(GPI_ARGS) $(COCOTB_TOPLEVEL) $(EXTRA_TOPS)" >> $@
+endif
+ifeq ($(WAVES),1)
+	@echo "log -recursive *" >> $@
+endif
+ifeq ($(GUI),1)
+	@echo "wave -rec *" >> $@
+else
+	@echo "run -all" >> $@
+	@echo "endsim" >> $@
+ifeq ($(COCOTB_USER_COVERAGE),1)
+	@echo "acdb report -cov $(COVERAGE_TYPES) -db $(RTL_LIBRARY).acdb -html -o coverage/acdb_report.html" >> $@
+	@echo "acdb report -cov $(COVERAGE_TYPES) -db $(RTL_LIBRARY).acdb -txt -o coverage/acdb_report.txt" >> $@
+endif
+	@echo "exit" >> $@
+endif
+
+# Note it's the redirection of the output rather than the 'do' command
+# that turns on batch mode (i.e. exit on completion/error)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	set -o pipefail; GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) $(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.tcl $(SIM_CMD_SUFFIX)
+
+	$(call check_for_results_file)
+
+clean::
+	$(RM) -r $(SIM_BUILD)
+	$(RM) -r compile
+	$(RM) -r library.cfg
+	$(RM) -r dataset.asdb

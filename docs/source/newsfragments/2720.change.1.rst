@@ -1,0 +1,1 @@
+Testing equality of :class:`simulator value object <cocotb.handle.ValueObjectBase>` subtypes no longer does a value equality, but an identity equality. All simulator objects can now be used in hashable collections like :class:`dict` and :class:`set`.

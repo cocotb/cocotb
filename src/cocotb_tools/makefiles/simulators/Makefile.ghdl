@@ -1,0 +1,113 @@
+###############################################################################
+# Copyright (c) 2014 Potential Ventures Ltd
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
+
+TOPLEVEL_LANG ?= vhdl
+
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
+ifneq ($(or $(filter-out $(TOPLEVEL_LANG),vhdl),$(VERILOG_SOURCES)),)
+
+$(COCOTB_RESULTS_FILE):
+	@echo "Skipping simulation as only VHDL is supported on simulator=$(SIM)"
+clean::
+
+else
+
+CMD_BIN := ghdl
+
+ifdef GHDL_BIN_DIR
+    CMD := $(shell :; command -v $(GHDL_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error Unable to locate command >$(CMD_BIN)<)
+else
+    GHDL_BIN_DIR := $(shell dirname $(CMD))
+    export GHDL_BIN_DIR
+endif
+
+RTL_LIBRARY ?= work
+GHDL_ARGS ?=
+GHDL_ARGS += $(EXTRA_ARGS)
+
+# On Windows add GHDL lib folder to PATH to find libraries
+ifeq ($(OS),Msys)
+    export PATH := $(GHDL_BIN_DIR)/../lib:$(PATH)
+endif
+
+GHDL_RUN_ARGS ?=
+
+ifeq ($(shell $(CMD) --version | grep -q mcode; echo $$?),0)
+    ifneq ($(COCOTB_HDL_TIMEPRECISION),)
+        # Convert the time precision to a format string supported by GHDL, if
+        # possible.
+        # GHDL only supports setting the time precision if the mcode backend is
+        # used, using the --time-resolution argument causes GHDL to error out
+        # otherwise.
+        # https://ghdl.github.io/ghdl/using/InvokingGHDL.html#cmdoption-ghdl-time-resolution
+        ifeq ($(COCOTB_HDL_TIMEPRECISION),1fs)
+            GHDL_TIME_RESOLUTION=fs
+        else ifeq ($(COCOTB_HDL_TIMEPRECISION),1ps)
+            GHDL_TIME_RESOLUTION=ps
+        else ifeq ($(COCOTB_HDL_TIMEPRECISION),1us)
+            GHDL_TIME_RESOLUTION=us
+        else ifeq ($(COCOTB_HDL_TIMEPRECISION),1ms)
+            GHDL_TIME_RESOLUTION=ms
+        else ifeq ($(COCOTB_HDL_TIMEPRECISION),1s)
+            GHDL_TIME_RESOLUTION=sec
+        else
+            $(error GHDL only supports the following values for COCOTB_HDL_TIMEPRECISION: 1fs, 1ps, 1us, 1ms, 1s)
+        endif
+
+        GHDL_RUN_ARGS += --time-resolution=$(GHDL_TIME_RESOLUTION)
+    endif
+endif
+
+.PHONY: analyse
+
+# Compilation phase
+analyse: $(VHDL_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
+	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), \
+		$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) --work=$(SOURCES_VAR:VHDL_SOURCES_%=%) $($(SOURCES_VAR)) && ) \
+	$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && \
+	$(CMD) -m $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(COCOTB_TOPLEVEL) $(ARCH)
+
+$(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	$(SIM_CMD_PREFIX) $(CMD) -r $(GHDL_ARGS) $(GHDL_RUN_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(COCOTB_TOPLEVEL) $(ARCH) --vpi=$(shell cocotb-config --lib-name-path vpi ghdl) $(SIM_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
+
+	$(call check_for_results_file)
+
+clean::
+	$(RM) -r $(SIM_BUILD)
+endif

@@ -6,6 +6,7 @@ This passed before the bug fix, and should continue to pass
 Note that the bug only occurred if the test in question runs first - so
 no more tests can be added to this file.
 """
+
 import cocotb
 from cocotb.triggers import ReadOnly, Timer
 

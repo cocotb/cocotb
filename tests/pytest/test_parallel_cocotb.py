@@ -2,51 +2,59 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
+import sys
+
 import pytest
 from test_cocotb import (
     compile_args,
+    gpi_interfaces,
+    hdl_toplevel,
+    hdl_toplevel_lang,
     module_name,
-    python_search,
     sim,
     sim_args,
     sim_build,
-    toplevel,
-    toplevel_lang,
-    verilog_sources,
-    vhdl_sources,
+    sources,
+    tests_dir,
 )
 
-from cocotb.runner import get_runner
+from cocotb_tools.runner import get_runner
 
 pytestmark = pytest.mark.simulator_required
+sys.path.insert(0, os.path.join(tests_dir, "pytest"))
+
+# test_timing_triggers.py requires a 1ps time precision.
+timescale = ("1ps", "1ps")
 
 
 @pytest.mark.compile
 def test_cocotb_parallel_compile():
-
-    runner = get_runner(sim)()
+    runner = get_runner(sim)
 
     runner.build(
         always=True,
-        verilog_sources=verilog_sources,
-        vhdl_sources=vhdl_sources,
-        toplevel=toplevel,
+        sources=sources,
+        hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
-        extra_args=compile_args,
+        build_args=compile_args,
+        timescale=timescale,
     )
 
 
 @pytest.mark.parametrize("seed", list(range(4)))
 def test_cocotb_parallel(seed):
+    runner = get_runner(sim)
 
-    runner = get_runner(sim)()
+    runner.build_args = compile_args
 
     runner.test(
         seed=seed,
-        toplevel_lang=toplevel_lang,
-        python_search=python_search,
-        toplevel=toplevel,
-        py_module=module_name,
-        extra_args=sim_args,
+        hdl_toplevel_lang=hdl_toplevel_lang,
+        hdl_toplevel=hdl_toplevel,
+        gpi_interfaces=gpi_interfaces,
+        test_module=module_name,
+        test_args=sim_args,
         build_dir=sim_build,
+        timescale=timescale,
     )
