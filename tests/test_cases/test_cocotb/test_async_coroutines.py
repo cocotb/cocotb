@@ -4,6 +4,7 @@
 """
 Test function and substitutability of async coroutines
 """
+
 import pytest
 from common import MyException
 
@@ -119,7 +120,7 @@ def test_undecorated_coroutine_start_soon(dut):
         await cocotb.triggers.Timer(1, "ns")
         ran = True
 
-    yield cocotb.start_soon(example()).join()
+    yield cocotb.start_soon(example())
     assert ran
 
 

@@ -8,6 +8,7 @@ Test for scheduler and coroutine behavior
 * join
 * kill
 """
+
 import logging
 import re
 import warnings
@@ -37,7 +38,7 @@ test_flag = False
 
 async def clock_yield(generator):
     global test_flag
-    await Join(generator)
+    await generator
     test_flag = True
 
 
@@ -79,8 +80,8 @@ async def test_coroutine_close_down(dut):
     coro_one = cocotb.start_soon(clock_one(dut))
     coro_two = cocotb.start_soon(clock_two(dut))
 
-    await Join(coro_one)
-    await Join(coro_two)
+    await coro_one
+    await coro_two
 
     log.info("Back from joins")
 
@@ -101,13 +102,13 @@ async def join_finished(dut):
     coro = cocotb.start_soon(some_coro())
 
     retval = 1
-    x = await coro.join()
+    x = await coro
     assert x == 1
 
     # joining the second time should give the same result.
     # we change retval here to prove it does not run again
     retval = 2
-    x = await coro.join()
+    x = await coro
     assert x == 1
 
 
@@ -129,8 +130,8 @@ async def consistent_join(dut):
     long_wait = cocotb.start_soon(wait_for(dut.clk, 30))
 
     await wait_for(dut.clk, 20)
-    a = await short_wait.join()
-    b = await long_wait.join()
+    a = await short_wait
+    b = await long_wait
     assert a == b == 3
 
 
@@ -181,6 +182,7 @@ async def test_stack_overflow(dut):
     Test against stack overflows when starting many coroutines that terminate
     before passing control to the simulator.
     """
+
     # gh-637
     async def null_coroutine():
         await NullTrigger()
@@ -197,6 +199,7 @@ async def test_stack_overflow_pending_coros(dut):
     Test against stack overflow when queueing many pending coroutines
     before yielding to scheduler.
     """
+
     # gh-2489
     async def simple_coroutine():
         await Timer(10, "step")
@@ -388,10 +391,11 @@ async def test_task_repr(dut):
         repr(gen_task),
     )
 
-    try:
-        await Join(gen_task)
-    except ValueError:
-        pass
+    with pytest.warns(FutureWarning):
+        try:
+            await Join(gen_task)
+        except ValueError:
+            pass
 
     log.info(repr(gen_task))
     assert re.match(
@@ -691,7 +695,6 @@ async def test_start_scheduling(dut):
 
 @cocotb.test()
 async def test_create_task(_):
-
     # proper construction from coroutines
     async def coro():
         pass

@@ -47,8 +47,8 @@ async def test_unfired_first_triggers(dut):
     await wait_for_firsts()
 
     # make sure the other tasks finish
-    await fire_task.join()
-    await e1_task.join()
+    await fire_task
+    await e1_task
 
 
 @cocotb.test()
@@ -73,7 +73,7 @@ async def test_nested_first(dut):
 
     fire_task = cocotb.start_soon(fire_events())
     await wait_for_nested_first()
-    await fire_task.join()
+    await fire_task
 
 
 @cocotb.test()
@@ -127,7 +127,7 @@ async def test_combine(dut):
 
     tasks = [await cocotb.start(coro(dly)) for dly in [10, 30, 20]]
 
-    await Combine(*(t.join() for t in tasks))
+    await Combine(*tasks)
 
 
 @cocotb.test()
@@ -140,7 +140,7 @@ async def test_fork_combine(dut):
 
     tasks = [cocotb.start_soon(coro(dly)) for dly in [10, 30, 20]]
 
-    await Combine(*(t.join() for t in tasks))
+    await Combine(*tasks)
 
 
 @cocotb.test()
