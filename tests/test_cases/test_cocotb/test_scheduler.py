@@ -46,7 +46,7 @@ async def clock_yield(task):
 
 @cocotb.test()
 async def test_task_kill(dut):
-    """Test that killing a task causes pending task continue"""
+    """Test that killing a task causes pending task to continue"""
     clk_task = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(100, "ns")
     cocotb.start_soon(clock_yield(clk_task))
@@ -366,7 +366,7 @@ async def test_task_repr(dut):
 
     coro_task = await cocotb.start(coroutine_outer())
 
-    # let coroutine_inner run up to the await COmbine
+    # let coroutine_inner run up to the await Combine
     coro_e.set(coro_task)
     await NullTrigger()
 

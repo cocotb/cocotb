@@ -128,7 +128,7 @@ class Trigger(Awaitable[None]):
 
     @property
     def _outcome(self) -> Outcome[Any]:
-        """The result that `await this_trigger` produces in a coroutine.
+        """The result that ``await this_trigger`` produces in a coroutine.
 
         The default is to produce the trigger itself, which is done for
         ease of use with :class:`~cocotb.triggers.First`.
@@ -760,7 +760,7 @@ class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetac
 
     @property
     def task(self) -> cocotb.task.Task[T]:
-        """Returns the :class:`~cocotb.task.Task` being joined.
+        """Return the :class:`~cocotb.task.Task` being joined.
 
         .. versionadded:: 2.0
         """
