@@ -500,12 +500,13 @@ class Event(Generic[T]):
             event._callback(event)
 
     def wait(self) -> Trigger:
-        """Get a trigger which fires when the event is set.
+        """Block the current Task until the Event is set.
 
         If the event has already been set, the trigger will fire immediately.
 
-        To reset the event (and enable the use of :meth:`wait` again),
-        :meth:`clear` should be called.
+        To set the Event call :meth:`set`.
+        To reset the Event (and enable the use of :meth:`wait` again),
+        call :meth:`clear`.
         """
         if self._fired:
             return NullTrigger(name=f"{str(self)}.wait()")
@@ -692,24 +693,18 @@ class Lock(AsyncContextManager[None]):
         self.release()
 
 
-class NullTrigger(Trigger, Generic[T]):
+class NullTrigger(Trigger):
     """Fires immediately.
 
-    Primarily for internal scheduler use.
+    This is primarily for forcing the current Task to be rescheduled after all currently pending Tasks.
+
+    .. versionremoved:: 2.0
+        The *outcome* parameter was removed. There is no alternative.
     """
 
-    def __init__(
-        self, name: Optional[str] = None, outcome: Optional[Outcome[T]] = None
-    ) -> None:
+    def __init__(self, name: Optional[str] = None) -> None:
         super().__init__()
         self.name = name
-        self.__outcome = outcome
-
-    @property
-    def _outcome(self) -> Outcome[T]:
-        if self.__outcome is not None:
-            return self.__outcome
-        return super()._outcome
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         callback(self)
@@ -917,13 +912,7 @@ class First(_AggregateWaitable[Any]):
         for w in waiters:
             w.kill()
 
-        # These lines are the way they are to make tracebacks readable:
-        #  - The comment helps the user understand why they are seeing the
-        #    traceback, even if it is obvious top cocotb maintainers.
-        #  - Using `NullTrigger` here instead of `result = completed[0].get()`
-        #    means we avoid inserting an `outcome.get` frame in the traceback
-        first_trigger = NullTrigger(outcome=completed[0])
-        return await first_trigger
+        return completed[0].get()
 
 
 class ClockCycles(Waitable["ClockCycles"]):

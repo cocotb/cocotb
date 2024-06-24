@@ -54,7 +54,6 @@ from cocotb.triggers import (
     GPITrigger,
     Join,
     NextTimeStep,
-    NullTrigger,
     ReadOnly,
     ReadWrite,
     Timer,
@@ -805,9 +804,9 @@ class Scheduler:
                 except TypeError as exc:
                     # restart this task with an exception object telling it that
                     # it wasn't allowed to yield that
-                    result = NullTrigger(outcome=_outcomes.Error(exc))
-
-                self._resume_task_upon(task, result)
+                    self._queue(task, _outcomes.Error(exc))
+                else:
+                    self._resume_task_upon(task, result)
 
             # We do not return from here until pending threads have completed, but only
             # from the main thread, this seems like it could be problematic in cases
