@@ -1,0 +1,1 @@
+``await``\ ing a :class:`~cocotb.triggers.Join` trigger will yield the Join trigger and not the result of the task in the 2.0 release.
