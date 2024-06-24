@@ -280,6 +280,13 @@ async def test_neg_timer(_):
         Timer(0)
 
 
+@cocotb.test
+async def test_timer_rounds_to_0(_) -> None:
+    steps = get_sim_time("step")
+    await Timer(0.1, "step", round_mode="round")
+    assert get_sim_time("step") == steps + 1
+
+
 @cocotb.test()
 async def test_timer_round_mode(_):
     # test invalid round_mode specifier
