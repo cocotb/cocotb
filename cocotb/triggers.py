@@ -817,6 +817,14 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
     def __repr__(self):
         return "{}({!s})".format(type(self).__qualname__, self._coroutine)
 
+    def __await__(self):
+        warnings.warn(
+            "`await`ing a Join trigger will return the Join trigger and not the result of the joined Task in 2.0.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return (yield self)
+
 
 class Waitable(Awaitable):
     """

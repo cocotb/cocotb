@@ -9,6 +9,7 @@ Tests for edge triggers
 * FallingEdge
 * ClockCycles
 """
+
 import cocotb
 from cocotb._sim_versions import RivieraVersion
 from cocotb.clock import Clock
@@ -57,7 +58,7 @@ async def test_rising_edge(dut):
     await Timer(10, "ns")
     dut.clk.value = 1
     fail_timer = Timer(1000, "ns")
-    result = await First(fail_timer, test.join())
+    result = await First(fail_timer, test)
     assert result is not fail_timer, "Test timed out"
 
 
@@ -70,7 +71,7 @@ async def test_falling_edge(dut):
     await Timer(10, "ns")
     dut.clk.value = 0
     fail_timer = Timer(1000, "ns")
-    result = await First(fail_timer, test.join())
+    result = await First(fail_timer, test)
     assert result is not fail_timer, "Test timed out"
 
 
@@ -117,7 +118,7 @@ async def test_fork_and_monitor(dut, period=1000, clocks=6):
     expect = clocks - 1
 
     while True:
-        result = await First(timer, task.join())
+        result = await First(timer, task)
         assert count <= expect, "Task didn't complete in expected time"
         if result is timer:
             dut._log.info("Count %d: Task still running" % count)
@@ -226,8 +227,8 @@ async def test_clock_cycles_forked(dut):
 
     a = cocotb.start_soon(wait_ten())
     b = cocotb.start_soon(wait_ten())
-    await a.join()
-    await b.join()
+    await a
+    await b
 
 
 @cocotb.test(

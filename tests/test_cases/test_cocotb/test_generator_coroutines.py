@@ -183,7 +183,7 @@ def test_exceptions_forked(dut):
     def raise_soon():
         yield Timer(1)
         coro = cocotb.start_soon(raise_inner())
-        yield coro.join()
+        yield coro
 
     yield _check_traceback(
         raise_soon(), ValueError, r".*in raise_soon.*in raise_inner", re.DOTALL
