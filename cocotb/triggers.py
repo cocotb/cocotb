@@ -786,22 +786,19 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
         return outcome
 
     @property
+    @deprecated("Use `task.result()` to get the result of a joined Task.")
     def retval(self):
         """The return value of the joined coroutine.
 
-        .. note::
-            Typically there is no need to use this attribute - the
-            following code samples are equivalent::
+        .. deprecated:: 1.9
+
+            Use :meth:`Task.result() <cocotb.task.Task.result` to get the result of a joined Task.
+
+            .. code-block: python3
 
                 forked = cocotb.start_soon(mycoro())
-                j = Join(forked)
-                await j
-                result = j.retval
-
-            ::
-
-                forked = cocotb.start_soon(mycoro())
-                result = await Join(forked)
+                await forked.join()
+                result = forked.result()
         """
         return self._coroutine.result()
 
