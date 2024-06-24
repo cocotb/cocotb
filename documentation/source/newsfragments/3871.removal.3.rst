@@ -1,0 +1,1 @@
+Passing the *outcome* argument to :class:`~cocotb.triggers.NullTrigger` - which allowed the user to inject arbitrary outcomes when the trigger was ``await``\ ed - is deprecated. There is no alternative.

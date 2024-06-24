@@ -722,11 +722,17 @@ class NullTrigger(Trigger):
     Primarily for internal scheduler use.
     """
 
-    def __init__(self, name=None, outcome=None):
+    def __init__(self, name=None, outcome=None, _outcome=None):
         super().__init__()
         self._callback = None
         self.name = name
-        self.__outcome = outcome
+        if outcome is not None:
+            warnings.warn(
+                "Passing the `outcome` argument and having that be the result of the `await` expression on this Trigger is deprecated.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        self.__outcome = _outcome if _outcome is not None else outcome
 
     @property
     def _outcome(self):
@@ -961,7 +967,7 @@ class First(_AggregateWaitable):
         #    traceback, even if it is obvious top cocotb maintainers.
         #  - Using `NullTrigger` here instead of `result = completed[0].get()`
         #    means we avoid inserting an `outcome.get` frame in the traceback
-        first_trigger = NullTrigger(outcome=completed[0])
+        first_trigger = NullTrigger(_outcome=completed[0])
         return await first_trigger  # the first of multiple triggers that fired
 
 
