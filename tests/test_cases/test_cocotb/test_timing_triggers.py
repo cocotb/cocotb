@@ -12,7 +12,6 @@ Tests related to timing triggers
 """
 
 import os
-import warnings
 from decimal import Decimal
 from fractions import Fraction
 
@@ -272,20 +271,20 @@ async def test_singleton_isinstance(dut):
     assert isinstance(ReadWrite(), ReadWrite)
 
 
-@cocotb.test()
-async def test_neg_timer(dut):
+@cocotb.test
+async def test_neg_timer(_):
     """Test negative timer values are forbidden"""
     with pytest.raises(ValueError):
         Timer(-42)  # no need to even `await`, constructing it is an error
-    # handle 0 special case
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
+    with pytest.raises(ValueError):
         Timer(0)
-        assert (
-            "Timer setup with value 0, which might exhibit undefined behavior in some simulators"
-            in str(w[-1].message)
-        )
-        assert issubclass(w[-1].category, RuntimeWarning)
+
+
+@cocotb.test
+async def test_timer_rounds_to_0(_) -> None:
+    steps = get_sim_time("step")
+    await Timer(0.1, "step", round_mode="round")
+    assert get_sim_time("step") == steps + 1
 
 
 @cocotb.test()
