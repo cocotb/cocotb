@@ -747,7 +747,7 @@ class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetac
 
     .. note::
         Typically there is no reason to directly instantiate this trigger,
-        instead call ``task.join()``.
+        instead call :meth:`Task.join() <cocotb.task.Task.join>` on the task.
     """
 
     @classmethod
