@@ -33,6 +33,7 @@ FIXME: We have a problem here.  If a coroutine schedules a read-only but we
 also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
+
 import inspect
 import logging
 import os
@@ -634,7 +635,7 @@ class Scheduler:
                 self._resume_coro_upon(
                     coro,
                     NullTrigger(
-                        name="Trigger.prime() Error", outcome=outcomes.Error(e)
+                        name="Trigger.prime() Error", _outcome=outcomes.Error(e)
                     ),
                 )
 
@@ -836,7 +837,7 @@ class Scheduler:
         self._test = test_coro
         self._resume_coro_upon(
             test_coro,
-            NullTrigger(name=f"Start {test_coro!s}", outcome=outcomes.Value(None)),
+            NullTrigger(name=f"Start {test_coro!s}", _outcome=outcomes.Value(None)),
         )
 
     # This collection of functions parses a trigger out of the object
@@ -966,7 +967,7 @@ class Scheduler:
                 except TypeError as exc:
                     # restart this coroutine with an exception object telling it that
                     # it wasn't allowed to yield that
-                    result = NullTrigger(outcome=outcomes.Error(exc))
+                    result = NullTrigger(_outcome=outcomes.Error(exc))
 
                 self._resume_coro_upon(coroutine, result)
 
