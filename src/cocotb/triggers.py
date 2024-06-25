@@ -80,7 +80,10 @@ class _TriggerException(Exception):
     pass
 
 
-class Trigger(Awaitable[None]):
+Self = TypeVar("Self", bound="Trigger")
+
+
+class Trigger(Awaitable["Trigger"]):
     """Base class to derive from."""
 
     @abstractmethod
@@ -126,18 +129,9 @@ class Trigger(Awaitable[None]):
         # Ensure if a trigger drops out of scope we remove any pending callbacks
         self._unprime()
 
-    @property
-    def _outcome(self) -> Outcome[Any]:
-        """The result that ``await this_trigger`` produces in a coroutine.
-
-        The default is to produce the trigger itself, which is done for
-        ease of use with :class:`~cocotb.triggers.First`.
-        """
-        return Value(self)
-
-    def __await__(self) -> Generator[Any, None, None]:
-        # hand the trigger back to the scheduler trampoline
-        return (yield self)
+    def __await__(self: Self) -> Generator[Self, None, Self]:
+        yield self
+        return self
 
 
 class GPITrigger(Trigger):
@@ -569,12 +563,12 @@ class _InternalEvent(Trigger, Generic[T]):
         return self.fired
 
     def __await__(
-        self,
-    ) -> Generator[Any, None, None]:
+        self: Self,
+    ) -> Generator[Self, None, Self]:
         if self._primed:
             raise RuntimeError("Only one Task may await this Trigger")
-        # hand the trigger back to the scheduler trampoline
-        return (yield self)
+        yield self
+        return self
 
     def __repr__(self) -> str:
         return repr(self._parent)
