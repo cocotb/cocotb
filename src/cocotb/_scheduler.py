@@ -429,7 +429,7 @@ class Scheduler:
         for task in scheduling:
             # unset trigger
             task._trigger = None
-            self._queue(task, outcome=trigger._outcome)
+            self._queue(task)
 
         # This trigger isn't needed any more
         trigger._unprime()
