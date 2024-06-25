@@ -44,7 +44,6 @@ from collections.abc import Coroutine
 from enum import Enum, auto
 from typing import Any, Callable, Dict, Sequence, Tuple, Union
 
-import cocotb
 from cocotb import _outcomes, _py_compat
 from cocotb.handle import SimHandleBase
 from cocotb.result import SimFailure, TestSuccess
@@ -742,9 +741,6 @@ class Scheduler:
             self.log.debug(f"Scheduling unstarted task: {result!r}")
         return result.join()
 
-    def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
-        return self._trigger_from_unstarted_task(Task(result._wait()))
-
     def _trigger_from_any(self, result) -> Trigger:
         """Convert a yielded object into a Trigger instance"""
         # note: the order of these can significantly impact performance
@@ -757,18 +753,6 @@ class Scheduler:
                 return self._trigger_from_unstarted_task(result)
             else:
                 return self._trigger_from_started_task(result)
-
-        if inspect.iscoroutine(result):
-            return self._trigger_from_unstarted_task(Task(result))
-
-        if isinstance(result, cocotb.triggers.Waitable):
-            return self._trigger_from_waitable(result)
-
-        if inspect.isasyncgen(result):
-            raise TypeError(
-                f"{result.__qualname__} is an async generator, not a coroutine. "
-                "You likely used the yield keyword instead of await."
-            )
 
         raise TypeError(
             f"Coroutine yielded an object of type {type(result)}, which the scheduler can't "
