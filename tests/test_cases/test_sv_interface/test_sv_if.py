@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import cocotb
+from cocotb._sim_versions import VerilatorVersion
 
 
 @cocotb.test()
@@ -15,7 +16,14 @@ async def test_sv_if(dut):
     assert hasattr(dut.sv_if_i, "c")
 
 
-@cocotb.test()
+SIM_NAME = cocotb.SIM_NAME.lower()
+verilator_less_than_5024 = SIM_NAME.startswith("verilator") and VerilatorVersion(
+    cocotb.SIM_VERSION
+) < VerilatorVersion("5.024")
+
+
+# Verilator before 5.024 doesn't support interface arrays (gh-3824)
+@cocotb.test(expect_error=AttributeError if verilator_less_than_5024 else ())
 async def test_sv_intf_arr_type(dut):
     """Test that interface arrays are the correct type"""
 
@@ -28,14 +36,23 @@ async def test_sv_intf_arr_type(dut):
         assert isinstance(dut.sv_if_arr, cocotb.handle.HierarchyArrayObject)
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"))
+# Verilator before 5.024 doesn't support interface arrays (gh-3824)
+@cocotb.test(
+    expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
+    expect_error=AttributeError if verilator_less_than_5024 else (),
+)
 async def test_sv_intf_arr_len(dut):
     """Test that interface array length is correct"""
     assert len(dut.sv_if_arr) == 3
 
 
+# Verilator before 5.024 doesn't support interface arrays (gh-3824)
 @cocotb.test(
-    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("riviera") else ()
+    expect_error=IndexError
+    if cocotb.SIM_NAME.lower().startswith("riviera")
+    else AttributeError
+    if verilator_less_than_5024
+    else ()
 )
 async def test_sv_intf_arr_access(dut):
     """Test that interface array objects can be accessed"""
@@ -45,7 +62,11 @@ async def test_sv_intf_arr_access(dut):
         assert hasattr(dut.sv_if_arr[i], "c")
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"))
+# Verilator before 5.024 doesn't support interface arrays (gh-3824)
+@cocotb.test(
+    expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
+    expect_error=AttributeError if verilator_less_than_5024 else (),
+)
 async def test_sv_intf_arr_iteration(dut):
     """Test that interface arrays can be iterated"""
     count = 0
