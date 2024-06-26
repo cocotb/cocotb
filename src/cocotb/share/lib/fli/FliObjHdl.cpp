@@ -245,6 +245,7 @@ int FliEnumObjHdl::set_signal_value(const int32_t value,
     if (m_is_var) {
         switch (action) {
             case GPI_DEPOSIT:
+            case GPI_NO_DELAY:
                 mti_SetVarValue(get_handle<mtiVariableIdT>(),
                                 static_cast<mtiLongT>(value));
                 return 0;
