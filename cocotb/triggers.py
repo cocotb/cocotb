@@ -721,7 +721,15 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
 
     @property
     def _outcome(self):
-        return self._coroutine._outcome
+        outcome = self._coroutine._outcome
+        if type(self._coroutine) is Task and isinstance(outcome, outcomes.Error):
+            warnings.warn(
+                "Tasks started with `cocotb.start_soon()` that raise Exceptions will not propagate those Exceptions in 2.0. "
+                "Instead such Tasks will *always* fail the test. "
+                "An alternative for `cocotb.start_soon()` that *always* propagates Exceptions will be added in 2.0.",
+                FutureWarning,
+            )
+        return outcome
 
     @property
     def retval(self):
