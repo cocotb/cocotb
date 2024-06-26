@@ -27,15 +27,15 @@
 
 """A clock class."""
 
-import itertools
 import logging
 from decimal import Decimal
 from fractions import Fraction
 from logging import Logger
-from typing import Optional, Union
+from typing import Union
 
 from cocotb._py_compat import cached_property
-from cocotb.triggers import Timer
+from cocotb.simulator import clock_create
+from cocotb.triggers import Event
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 
@@ -63,6 +63,20 @@ class Clock:
             ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
             When *units* is ``'step'``,
             the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
+
+    This is functionally almost equivalent to something like this (but faster):
+
+    .. code-block:: python
+
+        async def clock():
+            while True:
+                dut.clk.value = 1
+                await Timer(half_period)
+                dut.clk.value = 0
+                await Timer(half_period)
+
+    The difference is that the clock toggling is implemented on the simulator side, and will
+    toggle during the timed callbacks phase and not during ReadWrite.
 
     If you need more features like a phase shift and an asymmetric duty cycle,
     it is simple to create your own clock generator (that you then :func:`~cocotb.start`):
@@ -113,48 +127,34 @@ class Clock:
     ):
         self.signal = signal
         self.period = get_sim_steps(period, units)
-        self.half_period = get_sim_steps(period / 2, units)
         self.frequency = 1 / get_time_from_sim_steps(self.period, units="us")
-        self.hdl = None
-        self.signal = signal
-        self.coro = None
-        self.mcoro = None
+        self.t_high = self.period // 2
+        self.clkobj = clock_create(self.signal._handle)
 
-    async def start(
-        self, cycles: Optional[int] = None, start_high: bool = True
-    ) -> None:
+    async def start(self, start_high: bool = True) -> None:
         r"""Clocking coroutine.  Start driving your clock by :func:`cocotb.start`\ ing a
         call to this.
 
         Args:
-            cycles: Cycle the clock *cycles* number of times,
-                or if ``None`` then cycle the clock forever.
-                Note: ``0`` is not the same as ``None``, as ``0`` will cycle no times.
             start_high: Whether to start the clock with a ``1``
                 for the first half of the period.
                 Default is ``True``.
 
                 .. versionadded:: 1.3
         """
-        t = Timer(self.half_period)
-        if cycles is None:
-            it = itertools.count()
-        else:
-            it = range(cycles)
+        phase = 0 if start_high else self.t_high
+        self.clkobj.start(self.period, self.t_high, phase)
 
-        # branch outside for loop for performance (decision has to be taken only once)
-        if start_high:
-            for _ in it:
-                self.signal.value = 1
-                await t
-                self.signal.value = 0
-                await t
-        else:
-            for _ in it:
-                self.signal.value = 0
-                await t
-                self.signal.value = 1
-                await t
+        # The GPI clock will toggle for a given number of cycles, or forever,
+        # unless interrupted early (likely due to CancelledError)
+        try:
+            # The clock is meant to go on indefinitely, so if awaiting this
+            # should never complete. Await on an event that's never set.
+            e = Event()
+            await e.wait()
+        except Exception as e:
+            self.clkobj.stop()
+            raise e
 
     def __str__(self) -> str:
         return type(self).__qualname__ + f"({self.frequency:3.1f} MHz)"
