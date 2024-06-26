@@ -28,15 +28,17 @@
 """A collections of triggers which a testbench can await."""
 
 import abc
+import functools
 import inspect
 import warnings
 from collections.abc import Awaitable
 from decimal import Decimal
 from numbers import Real
-from typing import Any, Coroutine, Optional, TypeVar, Union
+from typing import Any, Callable, Coroutine, Optional, TypeVar, Union
 
 import cocotb
 from cocotb import outcomes, simulator
+from cocotb._deprecation import deprecated
 from cocotb.log import SimLog
 from cocotb.task import Task
 from cocotb.utils import (
@@ -178,7 +180,7 @@ class Timer(GPITrigger):
         units: str = "step",
         *,
         round_mode: Optional[str] = None,
-        time_ps: Union[Real, Decimal] = None
+        time_ps: Union[Real, Decimal] = None,
     ) -> None:
         """
         Args:
@@ -462,15 +464,20 @@ class Event:
     def __init__(self, name=None):
         self._pending = []
         self.name = name
-        self.fired = False
+        self._fired = False
         self.data = None
+
+    @property
+    @deprecated("The `.fired` attribute is deprecated, use `.is_set()` instead.")
+    def fired(self) -> bool:
+        return self._fired
 
     def _prime_trigger(self, trigger, callback):
         self._pending.append(trigger)
 
     def set(self, data=None):
         """Wake up all coroutines blocked on this event."""
-        self.fired = True
+        self._fired = True
         self.data = data
 
         p = self._pending[:]
@@ -488,8 +495,8 @@ class Event:
         To reset the event (and enable the use of ``wait`` again),
         :meth:`clear` should be called.
         """
-        if self.fired:
-            return NullTrigger(name="{}.wait()".format(str(self)))
+        if self._fired:
+            return NullTrigger(name=f"{str(self)}.wait()")
         return _Event(self)
 
     def clear(self):
@@ -497,11 +504,11 @@ class Event:
 
         Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until
         :meth:`~cocotb.triggers.Event.set` is called again."""
-        self.fired = False
+        self._fired = False
 
     def is_set(self) -> bool:
-        """Return true if event has been set"""
-        return self.fired
+        """Return ``True`` if event has been set"""
+        return self._fired
 
     def __repr__(self):
         if self.name is None:
@@ -582,6 +589,42 @@ class _Lock(PythonTrigger):
         return "<{!r}.acquire() at {}>".format(self.parent, _pointer_str(self))
 
 
+_FT = TypeVar("_FT", bound=Callable)
+
+
+def _locked_back_compat_dec(func: _FT) -> _FT:
+    # this hack is implemented this way so that it is easy to delete later
+
+    def get(inst, _=None):
+        method = _LockBackCompat(inst, func)
+        # cache bound method on object to override the descriptor
+        setattr(inst, func.__name__, method)
+        return method
+
+    # Override the default function descriptor with one that returns a _LockBackCompat object that *acts* like a bound method,
+    # but also defines the __bool__ overload that provides the deprecation warning.
+    func.__get__ = get
+    return func
+
+
+class _LockBackCompat:
+    def __init__(self, inst, func):
+        self._inst = inst
+        self._func = func
+        functools.update_wrapper(self, func)
+
+    def __call__(self):
+        return self._func(self._inst)
+
+    def __bool__(self):
+        warnings.warn(
+            f"Using `{self._func.__qualname__}` as a boolean attribute is deprecated. Call it as if it were a method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._func(self._inst)
+
+
 class Lock:
     """Lock primitive (not re-entrant).
 
@@ -606,13 +649,22 @@ class Lock:
         self._pending_unprimed = []
         self._pending_primed = []
         self.name = name
-        self.locked = False  #: ``True`` if the lock is held.
+        self._locked = False
+
+    @_locked_back_compat_dec
+    def locked(self) -> bool:
+        """Return ``True`` if the lock has been acquired.
+
+        .. versionchanged:: 2.0
+            This is now a method rather than an attribute, to match :meth:`asyncio.Lock.locked`.
+        """
+        return self._locked
 
     def _prime_trigger(self, trigger, callback):
         self._pending_unprimed.remove(trigger)
 
-        if not self.locked:
-            self.locked = True
+        if not self._locked:
+            self._locked = True
             callback(trigger)
         else:
             self._pending_primed.append(trigger)
@@ -625,19 +677,19 @@ class Lock:
 
     def release(self):
         """Release the lock."""
-        if not self.locked:
+        if not self._locked:
             raise TriggerException(
                 "Attempt to release an unacquired Lock %s" % (str(self))
             )
 
-        self.locked = False
+        self._locked = False
 
         # nobody waiting for this lock
         if not self._pending_primed:
             return
 
         trigger = self._pending_primed.pop(0)
-        self.locked = True
+        self._locked = True
         trigger()
 
     def __repr__(self):
@@ -652,9 +704,10 @@ class Lock:
             _pointer_str(self),
         )
 
+    @deprecated("`bool(lock)` is deprecated. Use `.locked()` method instead.")
     def __bool__(self):
         """Provide boolean of a Lock"""
-        return self.locked
+        return self._locked
 
     async def __aenter__(self):
         return await self.acquire()
@@ -669,11 +722,17 @@ class NullTrigger(Trigger):
     Primarily for internal scheduler use.
     """
 
-    def __init__(self, name=None, outcome=None):
+    def __init__(self, name=None, outcome=None, _outcome=None):
         super().__init__()
         self._callback = None
         self.name = name
-        self.__outcome = outcome
+        if outcome is not None:
+            warnings.warn(
+                "Passing the `outcome` argument and having that be the result of the ``await`` expression on this Trigger is deprecated.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        self.__outcome = _outcome if _outcome is not None else outcome
 
     @property
     def _outcome(self):
@@ -709,6 +768,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
     If the coroutine threw an exception, the :keyword:`await` will re-raise it.
 
     """
+
     __slots__ = ("_coroutine",)
 
     @classmethod
@@ -724,22 +784,19 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
         return self._coroutine._outcome
 
     @property
+    @deprecated("Use `task.result()` to get the result of a joined Task.")
     def retval(self):
         """The return value of the joined coroutine.
 
-        .. note::
-            Typically there is no need to use this attribute - the
-            following code samples are equivalent::
+        .. deprecated:: 1.9
+
+            Use :meth:`Task.result() <cocotb.task.Task.result` to get the result of a joined Task.
+
+            .. code-block: python3
 
                 forked = cocotb.start_soon(mycoro())
-                j = Join(forked)
-                await j
-                result = j.retval
-
-            ::
-
-                forked = cocotb.start_soon(mycoro())
-                result = await Join(forked)
+                await forked.join()
+                result = forked.result()
         """
         return self._coroutine.result()
 
@@ -751,6 +808,14 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
 
     def __repr__(self):
         return "{}({!s})".format(type(self).__qualname__, self._coroutine)
+
+    def __await__(self):
+        warnings.warn(
+            "`await`ing a Join trigger will return the Join trigger and not the result of the joined Task in 2.0.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return (yield self)
 
 
 class Waitable(Awaitable):
@@ -902,7 +967,7 @@ class First(_AggregateWaitable):
         #    traceback, even if it is obvious top cocotb maintainers.
         #  - Using `NullTrigger` here instead of `result = completed[0].get()`
         #    means we avoid inserting an `outcome.get` frame in the traceback
-        first_trigger = NullTrigger(outcome=completed[0])
+        first_trigger = NullTrigger(_outcome=completed[0])
         return await first_trigger  # the first of multiple triggers that fired
 
 
