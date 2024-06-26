@@ -587,7 +587,7 @@ class _Lock(Trigger):
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         self._callback = callback
-        self._parent._prime_trigger(self, callback)
+        self._parent._prime_lock(self)
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -629,23 +629,24 @@ class Lock(AsyncContextManager[None]):
         self._locked: bool = False
 
     def locked(self) -> bool:
-        """Return ``True`` if the lock has been aquired.
+        """Return ``True`` if the lock has been acquired.
 
         .. versionchanged:: 2.0
             This is now a method to match :meth:`asyncio.Lock.locked`, rather than an attribute.
         """
         return self._locked
 
-    def _prime_trigger(
-        self, trigger: _Lock, callback: Callable[[Trigger], None]
-    ) -> None:
-        self._pending_unprimed.remove(trigger)
+    def _acquire_and_fire(self, lock: _Lock):
+        self._locked = True
+        lock._callback(lock)
+
+    def _prime_lock(self, lock: _Lock) -> None:
+        self._pending_unprimed.remove(lock)
 
         if not self._locked:
-            self._locked = True
-            callback(trigger)
+            self._acquire_and_fire(lock)
         else:
-            self._pending_primed.append(trigger)
+            self._pending_primed.append(lock)
 
     def acquire(self) -> Trigger:
         """Produce a trigger which fires when the lock is acquired."""
@@ -665,8 +666,7 @@ class Lock(AsyncContextManager[None]):
             return
 
         lock = self._pending_primed.pop(0)
-        self._locked = True
-        lock._callback(lock)
+        self._acquire_and_fire(lock)
 
     def __repr__(self) -> str:
         if self.name is None:
