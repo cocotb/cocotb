@@ -65,23 +65,19 @@ def test_logic_array_properties():
 
 def test_logic_array_properties_deprecated():
     with pytest.warns(DeprecationWarning):
-        assert LogicArray(0).integer == 0
+        assert LogicArray("0").integer == 0
     with pytest.warns(DeprecationWarning):
-        assert LogicArray(0).signed_integer == 0
+        assert LogicArray("0").signed_integer == 0
     with pytest.warns(DeprecationWarning):
-        assert LogicArray(0).binstr == "0"
+        assert LogicArray("0").binstr == "0"
     with pytest.warns(DeprecationWarning):
-        assert LogicArray(10).integer == 10
+        assert LogicArray("1010").integer == 10
     with pytest.warns(DeprecationWarning):
-        assert LogicArray(10).signed_integer == -6
+        assert LogicArray("1010").signed_integer == -6
     with pytest.warns(DeprecationWarning):
-        assert LogicArray(10).binstr == "1010"
+        assert LogicArray("1010").binstr == "1010"
     with pytest.warns(DeprecationWarning):
-        assert LogicArray(-6).integer == 10
-    with pytest.warns(DeprecationWarning):
-        assert LogicArray(-6).signed_integer == -6
-    with pytest.warns(DeprecationWarning):
-        assert LogicArray(-6).binstr == "1010"
+        assert LogicArray("01000001" + "00101111").buff == b"\x41\x2f"
 
 
 def test_logic_array_setattr():
