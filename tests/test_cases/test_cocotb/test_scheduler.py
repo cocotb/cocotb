@@ -262,6 +262,14 @@ async def test_nulltrigger_reschedule(dut):
 
 
 @cocotb.test()
+async def test_nulltrigger_repr(_):
+    n = NullTrigger()
+    assert re.match(r"<NullTrigger at \w+>", repr(n))
+    n = NullTrigger(name="my_nulltrigger")
+    assert re.match(r"<NullTrigger for my_nulltrigger at \w+>", repr(n))
+
+
+@cocotb.test()
 async def test_event_set_schedule(dut):
     """
     Test that Event.set() doesn't cause an immediate reschedule.
@@ -843,6 +851,7 @@ async def test_get_task_from_join(_) -> None:
     j = await t.join()
     assert isinstance(j, Join)
     assert j.task is t
+    assert re.match(r"Join\(<Task \d+>\)", repr(j))
 
     t = cocotb.start_soon(noop())
     j = await Join(t)

@@ -11,6 +11,7 @@ Tests for edge triggers
 """
 
 import os
+import re
 
 import pytest
 
@@ -218,8 +219,20 @@ async def test_clock_cycles(dut):
     cocotb.start_soon(Clock(clk, 100, "ns").start())
     await RisingEdge(clk)
     dut._log.info("After one edge")
-    await ClockCycles(clk, 10)
-    dut._log.info("After 10 edges")
+    t = ClockCycles(clk, 10)
+    # NVC gives upper-case identifiers for some things. See gh-3985
+    assert re.match(
+        r"ClockCycles\(LogicObject\((sample_module|SAMPLE_MODULE).clk\), 10\)", repr(t)
+    )
+    await t
+    dut._log.info("After 10 rising edges")
+    t = ClockCycles(clk, 10, rising=False)
+    assert re.match(
+        r"ClockCycles\(LogicObject\((sample_module|SAMPLE_MODULE).clk\), 10, rising=False\)",
+        repr(t),
+    )
+    await t
+    dut._log.info("After 10 falling edges")
 
 
 @cocotb.test()
@@ -348,3 +361,22 @@ async def test_edge_non_logic_handles(dut):
     cocotb.start_soon(change_stream_in_int())
 
     await with_timeout(Edge(dut.stream_in_int), 20, "ns")
+
+
+@cocotb.test()
+async def test_edge_trigger_repr(dut):
+    e = Edge(dut.clk)
+    # NVC gives upper-case identifiers for some things. See gh-3985
+    assert re.match(
+        r"Edge\(LogicObject\((sample_module|SAMPLE_MODULE).clk\)\)", repr(e)
+    )
+    e = RisingEdge(dut.stream_in_ready)
+    assert re.match(
+        r"RisingEdge\(LogicObject\((sample_module|SAMPLE_MODULE).stream_in_ready\)\)",
+        repr(e),
+    )
+    e = FallingEdge(dut.stream_in_valid)
+    assert re.match(
+        r"FallingEdge\(LogicObject\((sample_module|SAMPLE_MODULE).stream_in_valid\)\)",
+        repr(e),
+    )

@@ -12,6 +12,7 @@ Tests related to timing triggers
 """
 
 import os
+import re
 from decimal import Decimal
 from fractions import Fraction
 
@@ -32,6 +33,7 @@ from cocotb.triggers import _TriggerException as TriggerException
 from cocotb.utils import get_sim_time
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+SIM_NAME = cocotb.SIM_NAME.lower()
 
 
 @cocotb.test()
@@ -50,9 +52,7 @@ async def test_function_reentrant_clock(dut):
 # See also https://github.com/cocotb/cocotb/issues/3419
 # NVC does not support setting precision and always uses 1 fs
 # (https://github.com/nickg/nvc/issues/607).
-@cocotb.test(
-    skip=(LANGUAGE == "vhdl" and cocotb.SIM_NAME.lower().startswith(("xmsim", "nvc")))
-)
+@cocotb.test(skip=(LANGUAGE == "vhdl" and SIM_NAME.startswith(("xmsim", "nvc"))))
 async def test_timer_with_units(dut):
     # The following test assumes a time precision of 1ps. Update the simulator
     # invocation if this assert hits!
@@ -145,14 +145,11 @@ async def do_test_afterdelay_in_readonly(dut, delay):
 @cocotb.test(
     expect_error=TriggerException
     if (
-        (
-            LANGUAGE in ["verilog"]
-            and cocotb.SIM_NAME.lower().startswith(("riviera", "modelsim"))
-        )
-        or cocotb.SIM_NAME.lower().startswith("xmsim")
+        (LANGUAGE in ["verilog"] and SIM_NAME.startswith(("riviera", "modelsim")))
+        or SIM_NAME.startswith("xmsim")
     )
     else (),
-    expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim")),
+    expect_fail=SIM_NAME.startswith(("icarus", "ncsim")),
 )
 async def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
@@ -257,7 +254,10 @@ async def test_readwrite(dut):
     # gh-759
     await Timer(1, "ns")
     dut.clk.value = 1
-    await ReadWrite()
+    t = ReadWrite()
+    result = await t
+    assert isinstance(result, ReadWrite)
+    assert result is t
 
 
 @cocotb.test()
@@ -268,6 +268,21 @@ async def test_singleton_isinstance(dut):
     assert isinstance(NextTimeStep(), NextTimeStep)
     assert isinstance(ReadOnly(), ReadOnly)
     assert isinstance(ReadWrite(), ReadWrite)
+
+
+@cocotb.test()
+async def test_timing_trigger_repr(_):
+    nts = NextTimeStep()
+    assert repr(nts) == "NextTimeStep()"
+    ro = ReadOnly()
+    assert repr(ro) == "ReadOnly()"
+    rw = ReadWrite()
+    assert repr(rw) == "ReadWrite()"
+    t = Timer(1)
+    assert re.match(
+        r"<Timer of \d+\.\d+ps at \w+>",
+        repr(t),
+    )
 
 
 @cocotb.test
