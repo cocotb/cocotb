@@ -5,10 +5,12 @@
 Tests for synchronization primitives like Lock and Event
 """
 
+import re
+
 import pytest
 
 import cocotb
-from cocotb.triggers import Lock, Timer, _InternalEvent
+from cocotb.triggers import Lock, NullTrigger, Timer, _InternalEvent
 from cocotb.utils import get_sim_time
 
 
@@ -55,6 +57,46 @@ async def test_except_lock(dut):
         pass
     async with lock:
         pass
+
+
+@cocotb.test()
+async def test_lock_release_without_acquire(_):
+    """Test that Lock will error when released without first being acquired."""
+    lock = Lock()
+    with pytest.raises(RuntimeError):
+        lock.release()
+
+
+@cocotb.test()
+async def test_lock_repr(_):
+    lock = Lock()
+
+    assert re.match(r"<Lock \[0 waiting\] at \w+>", repr(lock))
+
+    lock = Lock(name="my_lock")
+
+    async def task():
+        async with lock:
+            await Timer(1, "ns")
+
+    for _ in range(3):
+        cocotb.start_soon(task())
+
+    assert not lock.locked()
+
+    await NullTrigger()
+
+    assert re.match(r"<Lock for my_lock \[2 waiting\] at \w+>", repr(lock))
+
+    assert lock.locked()
+
+    l = lock.acquire()
+
+    assert re.match(
+        r"<<Lock for my_lock \[2 waiting\] at \w+>\.acquire\(\) at \w+>", repr(l)
+    )
+
+    await l
 
 
 @cocotb.test()
