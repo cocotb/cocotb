@@ -353,11 +353,11 @@ class LogicArray(ArrayLike[Logic]):
         '`.buff` property is deprecated. Use `v.to_unsigned().to_bytes(ceil(len(v) / 8), byteorder="big")` instead.'
     )
     def buff(self) -> bytes:
-        """Convert the value to :class:`bytes` by interpreting it as an unsigned integer in big-endian byteorder.
+        """Convert the value to :class:`bytes` by interpreting it as an unsigned integer in big-endian byte order.
 
         The object is first converted to an :class:`int` as in :meth:`to_unsigned`.
         Then the object is converted to :class:`bytes` by converting the resulting integer value as in :meth:`int.to_bytes`.
-        This assumes big-endian byteorder and the minimal number of bytes necessary to hold any value of the current object.
+        This assumes big-endian byte order and the minimal number of bytes necessary to hold any value of the current object.
 
         Returns: A :class:`bytes` object equivalent to the value.
 
