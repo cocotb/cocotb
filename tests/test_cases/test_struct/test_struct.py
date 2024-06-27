@@ -21,11 +21,14 @@ EXPECT_VAL = "000" if SIM_NAME.startswith("verilator") else "ZZZ"
     expect_error=AttributeError
     if SIM_NAME.startswith(("icarus", "ghdl", "nvc"))
     else (),
-    expect_fail=SIM_NAME.startswith("modelsim"),
+    expect_fail=SIM_NAME.startswith(("modelsim", "riviera")),
 )
 async def test_packed_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
-    assert repr(dut.my_struct) == "LogicObject(sample_module.my_struct)"
+    if SIM_NAME.startswith("verilator"):
+        assert repr(dut.my_struct) == "LogicObject(sample_module.my_struct)"
+    else:
+        assert repr(dut.my_struct) == "PackedStructObject(sample_module.my_struct)"
     assert (
         repr(dut.my_struct.value)
         == f"LogicArray('{EXPECT_VAL}', Range(2, 'downto', 0))"
@@ -54,6 +57,38 @@ async def test_packed_struct_setting(dut):
     await Timer(1000, "ns")
 
     assert str(dut.my_struct.value) == "000"
+
+    # this should be logic length, not children length
+    assert len(dut.my_struct) == 3
+
+
+@cocotb.test(
+    expect_error=AttributeError
+    if SIM_NAME.startswith(("icarus", "ghdl", "nvc", "verilator", "riviera"))
+    else (),
+    expect_fail=SIM_NAME.startswith(("modelsim", "riviera")),
+)
+async def test_packed_struct_internals(dut):
+    assert dut.my_struct.val_a.value == 0
+    assert dut.my_struct.val_b.value == 0
+    assert dut.my_struct["value"].value == 0
+
+    # test logic object fields
+    dut.my_struct.set(0)
+    dut.my_struct.setimmediatevalue(0)
+    assert dut.my_struct.is_const is False
+
+    # test individual signals -> struct
+
+    dut.my_struct.val_a.value = 1
+    dut.my_struct["value"].value = 1
+
+    await Timer(1000, "ns")
+
+    assert str(dut.my_struct.value) == "101"
+    assert dut.my_struct.val_a.value == 1
+    assert dut.my_struct.val_b.value == 0
+    assert dut.my_struct["value"].value == 1
 
 
 # GHDL unable to access record signals (gh-2591)

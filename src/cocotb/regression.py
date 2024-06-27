@@ -734,6 +734,7 @@ class RegressionManager:
             time=repr(wall_time_s),
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
+            error=str(outcome),
         )
         if not test_pass:
             self.xunit.add_failure(
