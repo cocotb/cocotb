@@ -296,6 +296,16 @@ def _process_plusargs() -> None:
                 plusargs[option[1:]] = True
 
 
+class PackageNamespace(SimpleNamespace):
+    def __getattr__(self, name):
+        if SIM_NAME == "nvc":
+            # NVC does not preserve the case of identifiers so make
+            # lookups in this container case-insensitive
+            name = name.upper()
+
+        return super().__getattribute__(name)
+
+
 def _process_packages() -> None:
     global packages
 
@@ -305,7 +315,7 @@ def _process_packages() -> None:
 
     pkgs = simulator.package_iterate()
     if pkgs is None:
-        packages = SimpleNamespace()
+        packages = PackageNamespace()
         return
 
     for pkg in pkgs:
@@ -319,7 +329,7 @@ def _process_packages() -> None:
             handle._discover_all()
         pkg_dict[name] = handle
 
-    packages = SimpleNamespace(**pkg_dict)
+    packages = PackageNamespace(**pkg_dict)
 
 
 def _start_user_coverage() -> None:

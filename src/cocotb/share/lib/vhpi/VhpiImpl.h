@@ -261,6 +261,19 @@ class VhpiIterator : public GpiIterator {
     std::vector<vhpiOneToManyT>::iterator one2many;
 };
 
+class VhpiPackageIterator : public GpiIterator {
+  public:
+    VhpiPackageIterator(GpiImplInterface *impl);
+
+    ~VhpiPackageIterator() override;
+
+    Status next_handle(std::string &name, GpiObjHdl **hdl,
+                       void **raw_hdl) override;
+
+  private:
+    vhpiHandleT m_iterator;
+};
+
 class VhpiImpl : public GpiImplInterface {
   public:
     VhpiImpl(const std::string &name)
