@@ -376,7 +376,9 @@ class RisingEdge(_EdgeBase):
     @classmethod
     def __singleton_key__(cls, signal: LogicObject) -> LogicObject:
         if not (isinstance(signal, LogicObject) and len(signal) == 1):
-            raise TypeError("")
+            raise TypeError(
+                f"{cls.__qualname__} requires a 1-bit LogicObject. Got {signal!r} of length {len(signal)}"
+            )
         return signal
 
 
@@ -401,7 +403,9 @@ class FallingEdge(_EdgeBase):
     @classmethod
     def __singleton_key__(cls, signal: LogicObject) -> LogicObject:
         if not (isinstance(signal, LogicObject) and len(signal) == 1):
-            raise TypeError("")
+            raise TypeError(
+                f"{cls.__qualname__} requires a 1-bit LogicObject. Got {signal!r} of length {len(signal)}"
+            )
         return signal
 
 
@@ -422,7 +426,9 @@ class Edge(_EdgeBase):
         cls, signal: ValueObjectBase[Any, Any]
     ) -> ValueObjectBase[Any, Any]:
         if not isinstance(signal, ValueObjectBase):
-            raise TypeError("")
+            raise TypeError(
+                f"{cls.__qualname__} requires an object derived from ValueObjectBase which can change value. Got {signal!r} of length {len(signal)}"
+            )
         return signal
 
 
