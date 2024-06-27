@@ -220,16 +220,19 @@ async def test_clock_cycles(dut):
     await RisingEdge(clk)
     dut._log.info("After one edge")
     t = ClockCycles(clk, 10)
-    # NVC gives upper-case identifiers for some things. See gh-3985
+    # NVC gives upper-case identifiers for some things, so do case-insensitive match. See gh-3985
     assert re.match(
-        r"ClockCycles\(LogicObject\((sample_module|SAMPLE_MODULE).clk\), 10\)", repr(t)
+        r"ClockCycles\(LogicObject\(sample_module.clk\), 10\)",
+        repr(t),
+        flags=re.IGNORECASE,
     )
     await t
     dut._log.info("After 10 rising edges")
     t = ClockCycles(clk, 10, rising=False)
     assert re.match(
-        r"ClockCycles\(LogicObject\((sample_module|SAMPLE_MODULE).clk\), 10, rising=False\)",
+        r"ClockCycles\(LogicObject\(sample_module.clk\), 10, rising=False\)",
         repr(t),
+        flags=re.IGNORECASE,
     )
     await t
     dut._log.info("After 10 falling edges")
@@ -366,17 +369,19 @@ async def test_edge_non_logic_handles(dut):
 @cocotb.test()
 async def test_edge_trigger_repr(dut):
     e = Edge(dut.clk)
-    # NVC gives upper-case identifiers for some things. See gh-3985
+    # NVC gives upper-case identifiers for some things, so do case-insensitive match. See gh-3985
     assert re.match(
-        r"Edge\(LogicObject\((sample_module|SAMPLE_MODULE).clk\)\)", repr(e)
+        r"Edge\(LogicObject\(sample_module\.clk\)\)", repr(e), flags=re.IGNORECASE
     )
     e = RisingEdge(dut.stream_in_ready)
     assert re.match(
-        r"RisingEdge\(LogicObject\((sample_module|SAMPLE_MODULE).stream_in_ready\)\)",
+        r"RisingEdge\(LogicObject\(sample_module\.stream_in_ready\)\)",
         repr(e),
+        flags=re.IGNORECASE,
     )
     e = FallingEdge(dut.stream_in_valid)
     assert re.match(
-        r"FallingEdge\(LogicObject\((sample_module|SAMPLE_MODULE).stream_in_valid\)\)",
+        r"FallingEdge\(LogicObject\(sample_module\.stream_in_valid\)\)",
         repr(e),
+        flags=re.IGNORECASE,
     )
