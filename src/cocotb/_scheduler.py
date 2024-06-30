@@ -818,10 +818,6 @@ class Scheduler:
         finally:
             self._current_task = None
 
-    def _finish_test(self, exc):
-        self._abort_test(exc)
-        self._check_termination()
-
     def _abort_test(self, exc):
         """Force this test to end early, without executing any cleanup.
 
