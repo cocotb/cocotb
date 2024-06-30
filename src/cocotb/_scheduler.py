@@ -230,7 +230,7 @@ class Scheduler:
         The scheduler treats Tests specially.
         If a Test finishes or a Task ends with an Exception, the scheduler is put into a `terminating` state.
         All currently queued Tasks are cancelled and all pending Triggers are unprimed.
-        This is currently spread out between :meth:`_check_termination`, :meth:`_test_completed`, and :meth:`_cleanup`.
+        This is currently spread out between :meth:`_handle_termination`, :meth:`_test_completed`, and :meth:`_cleanup`.
         In that mix of functions, the :attr:`_test_complete_cb` callback is called to inform whomever (the regression_manager) the test finished.
         The scheduler also is responsible for starting the next Test in the Normal phase by priming a ``Timer(1)`` with the second half of test completion handling.
 
@@ -310,7 +310,7 @@ class Scheduler:
                 func(*args)
             self._writes_pending.clear()
 
-    def _check_termination(self) -> None:
+    def _handle_termination(self) -> None:
         """
         Handle a termination that causes us to move onto the next test.
         """
@@ -368,7 +368,7 @@ class Scheduler:
             self._test_complete_cb()
 
             # if it did, make sure we handle the test completing
-            self._check_termination()
+            self._handle_termination()
 
     def _sim_react(self, trigger: Trigger) -> None:
         """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
@@ -469,7 +469,7 @@ class Scheduler:
                 self._pending_events.pop(0).set()
 
         # no more pending tasks
-        self._check_termination()
+        self._handle_termination()
         if _debug:
             self.log.debug("All tasks scheduled, handing control back to simulator")
 
