@@ -15,14 +15,15 @@ from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb.utils import extract_coro_stack, remove_traceback_frames
 
-T = TypeVar("T")
+#: Task result type
+ResultType = TypeVar("ResultType")
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
-class Task(Generic[T]):
+class Task(Generic[ResultType]):
     """Concurrently executing task.
 
     This class is not intended for users to directly instantiate.
@@ -57,7 +58,7 @@ class Task(Generic[T]):
 
         self._coro: Coroutine = inst
         self._started: bool = False
-        self._outcome: Optional[Outcome[T]] = None
+        self._outcome: Optional[Outcome[ResultType]] = None
         self._trigger: Optional[cocotb.triggers.Trigger] = None
         self._cancelled: Optional[CancelledError] = None
 
@@ -154,8 +155,24 @@ class Task(Generic[T]):
         if not self.has_started():
             self._coro.close()
 
-    def join(self) -> "cocotb.triggers.Join":
-        """Return a trigger that will fire when the wrapped coroutine exits."""
+    def join(self) -> "cocotb.triggers.Join[ResultType]":
+        """Wait for the task to complete.
+
+        Returns:
+            A :class:`~cocotb.triggers.Join` trigger which, if awaited, will block until the given Task completes.
+
+        .. code-block:: python3
+
+            my_task = cocotb.start_soon(my_coro())
+            await my_task.join()
+            # "my_task" is done here
+
+        .. versionchanged:: 2.0
+
+            :keyword:`await`\ ing a task using this no longer returns the result of the task, but returns the trigger.
+            To get the result, use :meth:`result` of the completed task,
+            or simply ``await task`` to get the old behavior.
+        """
         return cocotb.triggers.Join(self)
 
     def has_started(self) -> bool:
@@ -184,7 +201,7 @@ class Task(Generic[T]):
         """Return ``True`` if the Task has finished executing."""
         return self._outcome is not None or self.cancelled()
 
-    def result(self) -> T:
+    def result(self) -> ResultType:
         """Return the result of the Task.
 
         If the Task ran to completion, the result is returned.
@@ -216,7 +233,7 @@ class Task(Generic[T]):
         else:
             return None
 
-    def __await__(self) -> Generator[Any, Any, T]:
+    def __await__(self) -> Generator[Any, Any, ResultType]:
         # It's tempting to use `return (yield from self._coro)` here,
         # which bypasses the scheduler. Unfortunately, this means that
         # we can't keep track of the result or state of the coroutine,
@@ -225,7 +242,8 @@ class Task(Generic[T]):
         # decorator from your `async` functions.
 
         # Hand the coroutine back to the scheduler trampoline.
-        return (yield self)
+        yield self
+        return self.result()
 
 
 class _RunningTest(Task[None]):

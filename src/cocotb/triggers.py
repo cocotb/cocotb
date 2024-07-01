@@ -28,7 +28,6 @@
 """A collection of triggers which a testbench can ``await``."""
 
 import logging
-import warnings
 from abc import abstractmethod
 from decimal import Decimal
 from fractions import Fraction
@@ -81,7 +80,10 @@ class _TriggerException(Exception):
     pass
 
 
-class Trigger(Awaitable[None]):
+Self = TypeVar("Self", bound="Trigger")
+
+
+class Trigger(Awaitable["Trigger"]):
     """Base class to derive from."""
 
     @abstractmethod
@@ -127,18 +129,9 @@ class Trigger(Awaitable[None]):
         # Ensure if a trigger drops out of scope we remove any pending callbacks
         self._unprime()
 
-    @property
-    def _outcome(self) -> Optional[Outcome[Any]]:
-        """The result that `await this_trigger` produces in a coroutine.
-
-        The default is to produce the trigger itself, which is done for
-        ease of use with :class:`~cocotb.triggers.First`.
-        """
-        return Value(self)
-
-    def __await__(self) -> Generator[Any, None, None]:
-        # hand the trigger back to the scheduler trampoline
-        return (yield self)
+    def __await__(self: Self) -> Generator[Self, None, Self]:
+        yield self
+        return self
 
 
 class GPITrigger(Trigger):
@@ -165,7 +158,10 @@ class GPITrigger(Trigger):
 
 
 class Timer(GPITrigger):
-    """Fire after the specified simulation time period has elapsed.
+    r"""Fire after the specified simulation time period has elapsed.
+
+    This trigger will *always* consume some simulation time
+    and will return control to the ``await``\ ing task at the beginning of the time step.
 
     Args:
         time: The time value.
@@ -185,7 +181,7 @@ class Timer(GPITrigger):
             (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
 
     Raises:
-        ValueError: If a negative value is passed for Timer setup.
+        ValueError: If a non-positive value is passed for Timer setup.
 
     Usage:
 
@@ -226,6 +222,9 @@ class Timer(GPITrigger):
 
     .. versionremoved:: 2.0
         The ``time_ps`` parameter was removed, use the ``time`` parameter instead.
+
+    .. versionchanged:: 2.0
+        Passing ``0`` as the *time* argument now raises a :exc:`ValueError`.
     """
 
     round_mode: str = "error"
@@ -240,17 +239,14 @@ class Timer(GPITrigger):
     ) -> None:
         super().__init__()
         if time <= 0:
-            if time == 0:
-                warnings.warn(
-                    "Timer setup with value 0, which might exhibit undefined behavior in some simulators",
-                    category=RuntimeWarning,
-                    stacklevel=2,
-                )
-            else:
-                raise ValueError("Timer argument time must not be negative")
+            raise ValueError("Timer argument time must be positive")
         if round_mode is None:
             round_mode = type(self).round_mode
         self._sim_steps = get_sim_steps(time, units, round_mode=round_mode)
+        # If we round to 0, we fix it up to 1 step as rounding is imprecise,
+        # and Timer(0) is invalid.
+        if self._sim_steps == 0:
+            self._sim_steps = 1
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         """Register for a timed callback."""
@@ -380,7 +376,9 @@ class RisingEdge(_EdgeBase):
     @classmethod
     def __singleton_key__(cls, signal: LogicObject) -> LogicObject:
         if not (isinstance(signal, LogicObject) and len(signal) == 1):
-            raise TypeError("")
+            raise TypeError(
+                f"{cls.__qualname__} requires a 1-bit LogicObject. Got {signal!r} of length {len(signal)}"
+            )
         return signal
 
 
@@ -405,7 +403,9 @@ class FallingEdge(_EdgeBase):
     @classmethod
     def __singleton_key__(cls, signal: LogicObject) -> LogicObject:
         if not (isinstance(signal, LogicObject) and len(signal) == 1):
-            raise TypeError("")
+            raise TypeError(
+                f"{cls.__qualname__} requires a 1-bit LogicObject. Got {signal!r} of length {len(signal)}"
+            )
         return signal
 
 
@@ -426,7 +426,9 @@ class Edge(_EdgeBase):
         cls, signal: ValueObjectBase[Any, Any]
     ) -> ValueObjectBase[Any, Any]:
         if not isinstance(signal, ValueObjectBase):
-            raise TypeError("")
+            raise TypeError(
+                f"{cls.__qualname__} requires an object derived from ValueObjectBase which can change value. Got {signal!r} of length {len(signal)}"
+            )
         return signal
 
 
@@ -498,12 +500,13 @@ class Event(Generic[T]):
             event._callback(event)
 
     def wait(self) -> Trigger:
-        """Get a trigger which fires when the event is set.
+        """Block the current Task until the Event is set.
 
         If the event has already been set, the trigger will fire immediately.
 
-        To reset the event (and enable the use of :meth:`wait` again),
-        :meth:`clear` should be called.
+        To set the Event call :meth:`set`.
+        To reset the Event (and enable the use of :meth:`wait` again),
+        call :meth:`clear`.
         """
         if self._fired:
             return NullTrigger(name=f"{str(self)}.wait()")
@@ -566,12 +569,12 @@ class _InternalEvent(Trigger, Generic[T]):
         return self.fired
 
     def __await__(
-        self,
-    ) -> Generator[Any, None, None]:
+        self: Self,
+    ) -> Generator[Self, None, Self]:
         if self._primed:
             raise RuntimeError("Only one Task may await this Trigger")
-        # hand the trigger back to the scheduler trampoline
-        return (yield self)
+        yield self
+        return self
 
     def __repr__(self) -> str:
         return repr(self._parent)
@@ -590,7 +593,7 @@ class _Lock(Trigger):
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         self._callback = callback
-        self._parent._prime_trigger(self, callback)
+        self._parent._prime_lock(self)
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -632,23 +635,24 @@ class Lock(AsyncContextManager[None]):
         self._locked: bool = False
 
     def locked(self) -> bool:
-        """Return ``True`` if the lock has been aquired.
+        """Return ``True`` if the lock has been acquired.
 
         .. versionchanged:: 2.0
             This is now a method to match :meth:`asyncio.Lock.locked`, rather than an attribute.
         """
         return self._locked
 
-    def _prime_trigger(
-        self, trigger: _Lock, callback: Callable[[Trigger], None]
-    ) -> None:
-        self._pending_unprimed.remove(trigger)
+    def _acquire_and_fire(self, lock: _Lock):
+        self._locked = True
+        lock._callback(lock)
+
+    def _prime_lock(self, lock: _Lock) -> None:
+        self._pending_unprimed.remove(lock)
 
         if not self._locked:
-            self._locked = True
-            callback(trigger)
+            self._acquire_and_fire(lock)
         else:
-            self._pending_primed.append(trigger)
+            self._pending_primed.append(lock)
 
     def acquire(self) -> Trigger:
         """Produce a trigger which fires when the lock is acquired."""
@@ -668,8 +672,7 @@ class Lock(AsyncContextManager[None]):
             return
 
         lock = self._pending_primed.pop(0)
-        self._locked = True
-        lock._callback(lock)
+        self._acquire_and_fire(lock)
 
     def __repr__(self) -> str:
         if self.name is None:
@@ -690,24 +693,18 @@ class Lock(AsyncContextManager[None]):
         self.release()
 
 
-class NullTrigger(Trigger, Generic[T]):
+class NullTrigger(Trigger):
     """Fires immediately.
 
-    Primarily for internal scheduler use.
+    This is primarily for forcing the current Task to be rescheduled after all currently pending Tasks.
+
+    .. versionremoved:: 2.0
+        The *outcome* parameter was removed. There is no alternative.
     """
 
-    def __init__(
-        self, name: Optional[str] = None, outcome: Optional[Outcome[T]] = None
-    ) -> None:
+    def __init__(self, name: Optional[str] = None) -> None:
         super().__init__()
         self.name = name
-        self.__outcome = outcome
-
-    @property
-    def _outcome(self) -> Optional[Outcome[T]]:
-        if self.__outcome is not None:
-            return self.__outcome
-        return super()._outcome
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         callback(self)
@@ -720,11 +717,15 @@ class NullTrigger(Trigger, Generic[T]):
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetaclass):
+class Join(
+    Trigger,
+    Generic[cocotb.task.ResultType],
+    metaclass=_ParameterizedSingletonGPITriggerMetaclass,
+):
     r"""Fires when a task completes.
 
-    ``await``\ ing this trigger returns the result of the :class:`~cocotb.task.Task`.
-    If the task raised an exception, it will be re-raised.
+    Args:
+        task: The task upon which to wait for completion.
 
     .. code-block:: python3
 
@@ -734,35 +735,37 @@ class Join(Trigger, Generic[T], metaclass=_ParameterizedSingletonGPITriggerMetac
 
 
         task = cocotb.start_soon(coro_inner())
-        result = await Join(task)
-        assert result == "Hello world"
+        await Join(task)
+        assert task.result() == "Hello world"
+
+    .. versionchanged:: 2.0
+
+        :keyword:`await`\ ing this trigger no longer returns the result of the task, but returns the trigger.
+        To get the result, use :meth:`Task.result() <cocotb.task.Task.result>` of the completed task,
+        or simply ``await task`` to get the old behavior.
 
     .. note::
-        Typically there is no reason to directly use this trigger.
-        Simply ``await`` on a :class:`~cocotb.task.Task` for the same behavior.
+        Typically there is no reason to directly instantiate this trigger,
+        instead call :meth:`Task.join() <cocotb.task.Task.join>` on the task.
     """
 
     @classmethod
-    def __singleton_key__(cls, task: cocotb.task.Task[T]) -> cocotb.task.Task[T]:
+    def __singleton_key__(
+        cls, task: cocotb.task.Task[cocotb.task.ResultType]
+    ) -> cocotb.task.Task[cocotb.task.ResultType]:
         return task
 
-    def __init__(self, task: cocotb.task.Task[T]) -> None:
+    def __init__(self, task: cocotb.task.Task[cocotb.task.ResultType]) -> None:
         super().__init__()
         self._task = task
 
     @property
-    def _outcome(self) -> Optional[Outcome[T]]:
-        return self._task._outcome
+    def task(self) -> cocotb.task.Task[cocotb.task.ResultType]:
+        """Return the :class:`~cocotb.task.Task` being joined.
 
-    @property
-    def retval(self) -> T:
-        """The return value of the joined :class:`~cocotb.task.Task`.
-
-        .. note::
-            Typically there is no need to use this attribute.
-            Simply ``await`` on a :class:`~cocotb.task.Task` for the same behavior.
+        .. versionadded:: 2.0
         """
-        return self._task.result()
+        return self._task
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._task.done():
@@ -810,10 +813,7 @@ class _AggregateWaitable(Waitable[T]):
         # doesn't matter.
         return "{}({})".format(
             type(self).__qualname__,
-            ", ".join(
-                repr(Join(t)) if isinstance(t, cocotb.task.Task) else repr(t)
-                for t in self._triggers
-            ),
+            ", ".join(repr(t) for t in self._triggers),
         )
 
 
@@ -918,13 +918,7 @@ class First(_AggregateWaitable[Any]):
         for w in waiters:
             w.kill()
 
-        # These lines are the way they are to make tracebacks readable:
-        #  - The comment helps the user understand why they are seeing the
-        #    traceback, even if it is obvious top cocotb maintainers.
-        #  - Using `NullTrigger` here instead of `result = completed[0].get()`
-        #    means we avoid inserting an `outcome.get` frame in the traceback
-        first_trigger = NullTrigger(outcome=completed[0])
-        return await first_trigger
+        return completed[0].get()
 
 
 class ClockCycles(Waitable["ClockCycles"]):

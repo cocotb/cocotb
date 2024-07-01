@@ -12,7 +12,7 @@ Tests related to timing triggers
 """
 
 import os
-import warnings
+import re
 from decimal import Decimal
 from fractions import Fraction
 
@@ -23,7 +23,6 @@ from cocotb.clock import Clock
 from cocotb.simulator import get_precision
 from cocotb.triggers import (
     First,
-    Join,
     NextTimeStep,
     ReadOnly,
     ReadWrite,
@@ -34,6 +33,7 @@ from cocotb.triggers import _TriggerException as TriggerException
 from cocotb.utils import get_sim_time
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+SIM_NAME = cocotb.SIM_NAME.lower()
 
 
 @cocotb.test()
@@ -52,9 +52,7 @@ async def test_function_reentrant_clock(dut):
 # See also https://github.com/cocotb/cocotb/issues/3419
 # NVC does not support setting precision and always uses 1 fs
 # (https://github.com/nickg/nvc/issues/607).
-@cocotb.test(
-    skip=(LANGUAGE == "vhdl" and cocotb.SIM_NAME.lower().startswith(("xmsim", "nvc")))
-)
+@cocotb.test(skip=(LANGUAGE == "vhdl" and SIM_NAME.startswith(("xmsim", "nvc"))))
 async def test_timer_with_units(dut):
     # The following test assumes a time precision of 1ps. Update the simulator
     # invocation if this assert hits!
@@ -147,22 +145,19 @@ async def do_test_afterdelay_in_readonly(dut, delay):
 @cocotb.test(
     expect_error=TriggerException
     if (
-        (
-            LANGUAGE in ["verilog"]
-            and cocotb.SIM_NAME.lower().startswith(("riviera", "modelsim"))
-        )
-        or cocotb.SIM_NAME.lower().startswith("xmsim")
+        (LANGUAGE in ["verilog"] and SIM_NAME.startswith(("riviera", "modelsim")))
+        or SIM_NAME.startswith("xmsim")
     )
     else (),
-    expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim")),
+    expect_fail=SIM_NAME.startswith(("icarus", "ncsim")),
 )
 async def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
     exited = False
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.start_soon(do_test_readwrite_in_readonly(dut))
-    await First(Join(coro), Timer(10_000, "ns"))
+    task = cocotb.start_soon(do_test_readwrite_in_readonly(dut))
+    await First(task, Timer(10_000, "ns"))
     clk_gen.kill()
     assert exited
 
@@ -173,8 +168,8 @@ async def test_cached_write_in_readonly(dut):
     global exited
     exited = False
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.start_soon(do_test_cached_write_in_readonly(dut))
-    await First(Join(coro), Timer(10_000, "ns"))
+    task = cocotb.start_soon(do_test_cached_write_in_readonly(dut))
+    await First(task, Timer(10_000, "ns"))
     clk_gen.kill()
     assert exited
 
@@ -185,8 +180,8 @@ async def test_afterdelay_in_readonly_valid(dut):
     global exited
     exited = False
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.start_soon(do_test_afterdelay_in_readonly(dut, 1))
-    await First(Join(coro), Timer(100_000, "ns"))
+    task = cocotb.start_soon(do_test_afterdelay_in_readonly(dut, 1))
+    await First(task, Timer(100_000, "ns"))
     clk_gen.kill()
     assert exited
 
@@ -259,7 +254,10 @@ async def test_readwrite(dut):
     # gh-759
     await Timer(1, "ns")
     dut.clk.value = 1
-    await ReadWrite()
+    t = ReadWrite()
+    result = await t
+    assert isinstance(result, ReadWrite)
+    assert result is t
 
 
 @cocotb.test()
@@ -273,19 +271,34 @@ async def test_singleton_isinstance(dut):
 
 
 @cocotb.test()
-async def test_neg_timer(dut):
+async def test_timing_trigger_repr(_):
+    nts = NextTimeStep()
+    assert repr(nts) == "NextTimeStep()"
+    ro = ReadOnly()
+    assert repr(ro) == "ReadOnly()"
+    rw = ReadWrite()
+    assert repr(rw) == "ReadWrite()"
+    t = Timer(1)
+    assert re.match(
+        r"<Timer of \d+\.\d+ps at \w+>",
+        repr(t),
+    )
+
+
+@cocotb.test
+async def test_neg_timer(_):
     """Test negative timer values are forbidden"""
     with pytest.raises(ValueError):
         Timer(-42)  # no need to even `await`, constructing it is an error
-    # handle 0 special case
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
+    with pytest.raises(ValueError):
         Timer(0)
-        assert (
-            "Timer setup with value 0, which might exhibit undefined behavior in some simulators"
-            in str(w[-1].message)
-        )
-        assert issubclass(w[-1].category, RuntimeWarning)
+
+
+@cocotb.test
+async def test_timer_rounds_to_0(_) -> None:
+    steps = get_sim_time("step")
+    await Timer(0.1, "step", round_mode="round")
+    assert get_sim_time("step") == steps + 1
 
 
 @cocotb.test()

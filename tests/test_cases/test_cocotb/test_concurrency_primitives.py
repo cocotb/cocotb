@@ -9,6 +9,7 @@ import re
 from collections import deque
 from random import randint
 
+import pytest
 from common import _check_traceback
 
 import cocotb
@@ -217,3 +218,24 @@ async def test_recursive_combine(_):
 
     assert end_time - start_time == 30
     assert done == {10, 20, 30}
+
+
+@cocotb.test
+async def test_concurrency_trigger_repr(_):
+    e = Event()
+    assert re.match(r"<Event at \w+>", repr(e))
+    e = Event(name="my_event")
+    assert re.match(r"<Event for my_event at \w+>", repr(e))
+    w = e.wait()
+    assert re.match(r"<<Event for my_event at \w+>\.wait\(\) at \w+>", repr(w))
+
+
+@cocotb.test()
+async def test_invalid_trigger_types(dut):
+    o = object()
+
+    with pytest.raises(TypeError):
+        await First(Timer(1), o)
+
+    with pytest.raises(TypeError):
+        await Combine(Timer(1), o)

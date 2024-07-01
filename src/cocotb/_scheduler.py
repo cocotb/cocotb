@@ -44,7 +44,6 @@ from collections.abc import Coroutine
 from enum import Enum, auto
 from typing import Any, Callable, Dict, Sequence, Tuple, Union
 
-import cocotb
 from cocotb import _outcomes, _py_compat
 from cocotb.handle import SimHandleBase
 from cocotb.result import SimFailure, TestSuccess
@@ -54,7 +53,6 @@ from cocotb.triggers import (
     GPITrigger,
     Join,
     NextTimeStep,
-    NullTrigger,
     ReadOnly,
     ReadWrite,
     Timer,
@@ -431,7 +429,7 @@ class Scheduler:
         for task in scheduling:
             # unset trigger
             task._trigger = None
-            self._queue(task, outcome=trigger._outcome)
+            self._queue(task)
 
         # This trigger isn't needed any more
         trigger._unprime()
@@ -585,20 +583,12 @@ class Scheduler:
     ) -> None:
         """Queue *task* for scheduling.
 
-        If the task is already scheduled and you are attempting to reschedule it with a different outcome,
-        we assume that is a mistake and raise an Exception.
-        This behavior may change in the future.
+        It is an error to attempt to queue a task that has already been queued.
         """
         # Don't queue the same task more than once (gh-2503)
         if task in self._pending_tasks:
-            if self._pending_tasks[task] != outcome:
-                raise InternalError(
-                    f"Attempted rescheduling {task!r} with different outcome!"
-                )
-            elif _debug:
-                self.log.debug(f"Not rescheduling already scheduled {task!r}")
-        else:
-            self._pending_tasks[task] = outcome
+            raise InternalError("Task was queued more than once.")
+        self._pending_tasks[task] = outcome
 
     def _queue_function(self, task):
         """Queue a task for execution and move the containing thread
@@ -742,9 +732,6 @@ class Scheduler:
             self.log.debug(f"Scheduling unstarted task: {result!r}")
         return result.join()
 
-    def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
-        return self._trigger_from_unstarted_task(Task(result._wait()))
-
     def _trigger_from_any(self, result) -> Trigger:
         """Convert a yielded object into a Trigger instance"""
         # note: the order of these can significantly impact performance
@@ -753,22 +740,10 @@ class Scheduler:
             return result
 
         if isinstance(result, Task):
-            if not result.has_started():
+            if not result.has_started() and result not in self._pending_tasks:
                 return self._trigger_from_unstarted_task(result)
             else:
                 return self._trigger_from_started_task(result)
-
-        if inspect.iscoroutine(result):
-            return self._trigger_from_unstarted_task(Task(result))
-
-        if isinstance(result, cocotb.triggers.Waitable):
-            return self._trigger_from_waitable(result)
-
-        if inspect.isasyncgen(result):
-            raise TypeError(
-                f"{result.__qualname__} is an async generator, not a coroutine. "
-                "You likely used the yield keyword instead of await."
-            )
 
         raise TypeError(
             f"Coroutine yielded an object of type {type(result)}, which the scheduler can't "
@@ -813,9 +788,9 @@ class Scheduler:
                 except TypeError as exc:
                     # restart this task with an exception object telling it that
                     # it wasn't allowed to yield that
-                    result = NullTrigger(outcome=_outcomes.Error(exc))
-
-                self._resume_task_upon(task, result)
+                    self._queue(task, _outcomes.Error(exc))
+                else:
+                    self._resume_task_upon(task, result)
 
             # We do not return from here until pending threads have completed, but only
             # from the main thread, this seems like it could be problematic in cases

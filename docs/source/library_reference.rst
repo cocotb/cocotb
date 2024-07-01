@@ -71,6 +71,8 @@ Task Management
 
 .. autofunction:: cocotb.create_task
 
+.. autoclass:: cocotb.task.ResultType
+
 .. autoclass:: cocotb.task.Task
     :members:
 
@@ -133,12 +135,14 @@ Timing
 Python Triggers
 ---------------
 
+.. autoclass:: cocotb.triggers.NullTrigger
+
 .. autoclass:: cocotb.triggers.Combine
 
 .. autoclass:: cocotb.triggers.First
 
-.. autoclass:: cocotb.triggers.Join(coroutine)
-    :members: retval
+.. autoclass:: cocotb.triggers.Join
+    :members:
 
 
 Synchronization

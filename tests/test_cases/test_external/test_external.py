@@ -222,13 +222,13 @@ async def test_external_from_start_soon(dut):
     cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
     coro1 = cocotb.start_soon(run_function(dut))
-    value = await coro1.join()
+    value = await coro1
     assert value == 2
     dut._log.info("Back from join 1")
 
     value = 0
     coro2 = cocotb.start_soon(run_external(dut))
-    value = await coro2.join()
+    value = await coro2
     assert value == 2
     dut._log.info("Back from join 2")
 

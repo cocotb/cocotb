@@ -38,20 +38,20 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 test_flag = False
 
 
-async def clock_yield(generator):
+async def clock_yield(task):
     global test_flag
-    await Join(generator)
+    await task.join()
     test_flag = True
 
 
 @cocotb.test()
-async def test_coroutine_kill(dut):
-    """Test that killing a coroutine causes pending routine continue"""
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
+async def test_task_kill(dut):
+    """Test that killing a task causes pending task to continue"""
+    clk_task = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(100, "ns")
-    cocotb.start_soon(clock_yield(clk_gen))
+    cocotb.start_soon(clock_yield(clk_task))
     await Timer(100, "ns")
-    clk_gen.kill()
+    clk_task.kill()
     assert not test_flag
     await Timer(1000, "ns")
     assert test_flag
@@ -74,15 +74,16 @@ async def clock_two(dut):
 
 
 @cocotb.test()
-async def test_coroutine_close_down(dut):
+async def test_task_close_down(dut):
+    """Test tasks completing allows awaiting task to continue."""
     log = logging.getLogger("cocotb.test")
     cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
 
-    coro_one = cocotb.start_soon(clock_one(dut))
-    coro_two = cocotb.start_soon(clock_two(dut))
+    task_one = cocotb.start_soon(clock_one(dut))
+    task_two = cocotb.start_soon(clock_two(dut))
 
-    await Join(coro_one)
-    await Join(coro_two)
+    await task_one
+    await task_two
 
     log.info("Back from joins")
 
@@ -100,16 +101,16 @@ async def join_finished(dut):
         await Timer(1, "ns")
         return retval
 
-    coro = cocotb.start_soon(some_coro())
+    task = cocotb.start_soon(some_coro())
 
     retval = 1
-    x = await coro.join()
+    x = await task
     assert x == 1
 
     # joining the second time should give the same result.
     # we change retval here to prove it does not run again
     retval = 2
-    x = await coro.join()
+    x = await task
     assert x == 1
 
 
@@ -131,8 +132,8 @@ async def consistent_join(dut):
     long_wait = cocotb.start_soon(wait_for(dut.clk, 30))
 
     await wait_for(dut.clk, 20)
-    a = await short_wait.join()
-    b = await long_wait.join()
+    a = await short_wait
+    b = await long_wait
     assert a == b == 3
 
 
@@ -144,18 +145,6 @@ async def test_kill_twice(dut):
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(1, "ns")
     clk_gen.kill()
-    await Timer(1, "ns")
-    clk_gen.kill()
-
-
-@cocotb.test()
-async def test_join_identity(dut):
-    """
-    Test that Join() returns the same object each time
-    """
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-
-    assert Join(clk_gen) is Join(clk_gen)
     await Timer(1, "ns")
     clk_gen.kill()
 
@@ -273,6 +262,14 @@ async def test_nulltrigger_reschedule(dut):
 
 
 @cocotb.test()
+async def test_nulltrigger_repr(_):
+    n = NullTrigger()
+    assert re.match(r"<NullTrigger at \w+>", repr(n))
+    n = NullTrigger(name="my_nulltrigger")
+    assert re.match(r"<NullTrigger for my_nulltrigger at \w+>", repr(n))
+
+
+@cocotb.test()
 async def test_event_set_schedule(dut):
     """
     Test that Event.set() doesn't cause an immediate reschedule.
@@ -377,13 +374,32 @@ async def test_task_repr(dut):
 
     coro_task = await cocotb.start(coroutine_outer())
 
+    # let coroutine_inner run up to the await Combine
     coro_e.set(coro_task)
-
     await NullTrigger()
 
     log.info(repr(coro_task))
     assert re.match(
-        r"<Task \d+ pending coro=coroutine_inner\(\) trigger=Combine\(Join\(<Task \d+>\), Join\(<Task \d+>\)\)>",
+        (
+            r"<Task \d+ pending coro=coroutine_inner\(\) trigger=Combine\("
+            r"<Task \d+ created coro=coroutine_wait\(\)>, "
+            r"<Task \d+ created coro=coroutine_wait\(\)>"
+            r"\)>"
+        ),
+        repr(coro_task),
+    )
+
+    # wait for coroutine_waits to start
+    await NullTrigger()
+
+    log.info(repr(coro_task))
+    assert re.match(
+        (
+            r"<Task \d+ pending coro=coroutine_inner\(\) trigger=Combine\("
+            r"<Task \d+ pending coro=coroutine_wait\(\) trigger=<Timer of 1000.00ps at \w+>>, "
+            r"<Task \d+ pending coro=coroutine_wait\(\) trigger=<Timer of 1000.00ps at \w+>>"
+            r"\)>"
+        ),
         repr(coro_task),
     )
 
@@ -404,7 +420,27 @@ async def test_task_repr(dut):
 
     log.info(repr(coro_task))
     assert re.match(
-        r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\(Join\(<Task \d+>\), <Timer of 2000.00ps at \w+>\)>",
+        (
+            r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\("
+            r"<Task \d+ created coro=coroutine_wait\(\)>, "
+            r"<Timer of 2000.00ps at \w+>"
+            r"\)>"
+        ),
+        repr(coro_task),
+    )
+
+    # wait for coroutine_wait to start
+    await NullTrigger()  # start_soon on _wait_callback
+    await NullTrigger()  # awaiting Task in _wait_callback
+
+    log.info(repr(coro_task))
+    assert re.match(
+        (
+            r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\("
+            r"<Task \d+ pending coro=coroutine_wait\(\) trigger=<Timer of 1000.00ps at \w+>>, "
+            r"<Timer of 2000.00ps at \w+>"
+            r"\)>"
+        ),
         repr(coro_task),
     )
 
@@ -804,3 +840,20 @@ async def test_multiple_concurrent_test_fails(_) -> None:
     cocotb.start_soon(call_error(thing))
     cocotb.start_soon(call_error(thing))
     await Timer(10, "ns")
+
+
+@cocotb.test
+async def test_get_task_from_join(_) -> None:
+    async def noop():
+        pass
+
+    t = cocotb.start_soon(noop())
+    j = await t.join()
+    assert isinstance(j, Join)
+    assert j.task is t
+    assert re.match(r"Join\(<Task \d+>\)", repr(j))
+
+    t = cocotb.start_soon(noop())
+    j = await Join(t)
+    assert isinstance(j, Join)
+    assert j.task is t
