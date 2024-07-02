@@ -24,10 +24,10 @@ The current stable version of cocotb requires:
 [GHDL](https://docs.cocotb.org/en/stable/simulator_support.html#ghdl) or
 [other simulator](https://docs.cocotb.org/en/stable/simulator_support.html))
 
-After installing these dependencies, the latest stable version of cocotb can be installed with pip.
+After installing these dependencies, the latest stable 1.x-backwards-compatible version of cocotb can be installed with pip.
 
 ```command
-pip install cocotb
+pip install 'cocotb<2.0'
 ```
 
 For more details on installation, including prerequisites,
