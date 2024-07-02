@@ -13,6 +13,9 @@ import nox
 # Sessions run by default if nox is called without further arguments.
 nox.options.sessions = ["dev_test"]
 
+# Try to use "uv" to build venvs, with the nox default "virtualenv" as fallback
+nox.options.default_venv_backend = "uv|virtualenv"
+
 test_deps = ["pytest>=6"]
 coverage_deps = ["coverage[toml]>=5.0", "pytest-cov"]
 # gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See
@@ -30,6 +33,7 @@ dev_deps = [
     "nox",
     "ruff",
     "clang-format",
+    "uv",
 ]
 
 # Version of the cibuildwheel package used to build wheels.
