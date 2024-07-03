@@ -80,7 +80,7 @@ def function(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., 
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        return cocotb._scheduler._queue_function(func(*args, **kwargs))
+        return cocotb._scheduler_inst._queue_function(func(*args, **kwargs))
 
     return wrapper
 
@@ -107,7 +107,7 @@ def external(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, R
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        return cocotb._scheduler._run_in_executor(func, *args, **kwargs)
+        return cocotb._scheduler_inst._run_in_executor(func, *args, **kwargs)
 
     return wrapper
 

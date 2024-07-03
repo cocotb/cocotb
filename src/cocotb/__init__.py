@@ -58,7 +58,7 @@ from cocotb.logging import _filter_from_c, _log_from_c  # isort: skip # noqa: F4
 log: py_logging.Logger
 """The default cocotb logger."""
 
-_scheduler: Scheduler
+_scheduler_inst: Scheduler
 """The global scheduler instance."""
 
 regression_manager: RegressionManager
@@ -136,7 +136,7 @@ def start_soon(coro: Union[Task, Coroutine]) -> Task:
 
     .. versionadded:: 1.6.0
     """
-    return _scheduler.start_soon(coro)
+    return _scheduler_inst.start_soon(coro)
 
 
 async def start(coro: Union[Task, Coroutine]) -> Task:
@@ -156,7 +156,7 @@ async def start(coro: Union[Task, Coroutine]) -> Task:
 
     .. versionadded:: 1.6.0
     """
-    task = _scheduler.start_soon(coro)
+    task = _scheduler_inst.start_soon(coro)
     await cocotb.triggers.NullTrigger()
     return task
 
@@ -175,7 +175,7 @@ def create_task(coro: Union[Task, Coroutine]) -> Task:
 
     .. versionadded:: 1.6.0
     """
-    return cocotb._scheduler.create_task(coro)
+    return cocotb._scheduler_inst.create_task(coro)
 
 
 def _initialise_testbench(argv_):  # pragma: no cover
@@ -233,8 +233,8 @@ def _initialise_testbench_(argv_):
     _setup_regression_manager()
 
     # setup global scheduler system
-    global _scheduler
-    _scheduler = Scheduler(test_complete_cb=regression_manager._test_complete)
+    global _scheduler_inst
+    _scheduler_inst = Scheduler(test_complete_cb=regression_manager._test_complete)
 
     # start Regression Manager
     regression_manager.start_regression()
@@ -273,9 +273,9 @@ def _sim_event(message: str) -> None:
     # We simply return here as the simulator will exit
     # so no cleanup is needed
     msg = f"Failing test at simulator request before test run completion: {message}"
-    if _scheduler is not None:
-        _scheduler.log.error(msg)
-        _scheduler._finish_scheduler(SimFailure(msg))
+    if _scheduler_inst is not None:
+        _scheduler_inst.log.error(msg)
+        _scheduler_inst._finish_scheduler(SimFailure(msg))
     else:
         log.error(msg)
         _stop_user_coverage()
