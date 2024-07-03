@@ -158,7 +158,7 @@ class Clock:
                 # should never complete. Await on an event that's never set.
                 e = Event()
                 await e.wait()
-             finally:
+            finally:
                 self.clkobj.stop()
         else:
             if start_high:
