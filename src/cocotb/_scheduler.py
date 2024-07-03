@@ -53,7 +53,6 @@ from cocotb.triggers import (
     GPITrigger,
     Join,
     NextTimeStep,
-    NullTrigger,
     ReadOnly,
     ReadWrite,
     Timer,
@@ -430,7 +429,7 @@ class Scheduler:
         for task in scheduling:
             # unset trigger
             task._trigger = None
-            self._queue(task, outcome=trigger._outcome)
+            self._queue(task)
 
         # This trigger isn't needed any more
         trigger._unprime()
@@ -584,20 +583,12 @@ class Scheduler:
     ) -> None:
         """Queue *task* for scheduling.
 
-        If the task is already scheduled and you are attempting to reschedule it with a different outcome,
-        we assume that is a mistake and raise an Exception.
-        This behavior may change in the future.
+        It is an error to attempt to queue a task that has already been queued.
         """
         # Don't queue the same task more than once (gh-2503)
         if task in self._pending_tasks:
-            if self._pending_tasks[task] != outcome:
-                raise InternalError(
-                    f"Attempted rescheduling {task!r} with different outcome!"
-                )
-            elif _debug:
-                self.log.debug(f"Not rescheduling already scheduled {task!r}")
-        else:
-            self._pending_tasks[task] = outcome
+            raise InternalError("Task was queued more than once.")
+        self._pending_tasks[task] = outcome
 
     def _queue_function(self, task):
         """Queue a task for execution and move the containing thread
@@ -749,7 +740,7 @@ class Scheduler:
             return result
 
         if isinstance(result, Task):
-            if not result.has_started():
+            if not result.has_started() and result not in self._pending_tasks:
                 return self._trigger_from_unstarted_task(result)
             else:
                 return self._trigger_from_started_task(result)
@@ -797,9 +788,9 @@ class Scheduler:
                 except TypeError as exc:
                     # restart this task with an exception object telling it that
                     # it wasn't allowed to yield that
-                    result = NullTrigger(outcome=_outcomes.Error(exc))
-
-                self._resume_task_upon(task, result)
+                    self._queue(task, _outcomes.Error(exc))
+                else:
+                    self._resume_task_upon(task, result)
 
             # We do not return from here until pending threads have completed, but only
             # from the main thread, this seems like it could be problematic in cases

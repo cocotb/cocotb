@@ -135,6 +135,8 @@ Timing
 Python Triggers
 ---------------
 
+.. autoclass:: cocotb.triggers.NullTrigger
+
 .. autoclass:: cocotb.triggers.Combine
 
 .. autoclass:: cocotb.triggers.First
