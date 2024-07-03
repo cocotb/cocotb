@@ -13,5 +13,6 @@ begin
     begin
         wait for 10 ns;
         dummy_sig <= '1';
+        wait;
     end process;
 end architecture;
