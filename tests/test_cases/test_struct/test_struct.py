@@ -5,6 +5,7 @@
 
 import logging
 import os
+import re
 
 import cocotb
 from cocotb._sim_versions import RivieraVersion
@@ -14,21 +15,20 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
-EXPECT_VAL = "000" if SIM_NAME.startswith("verilator") else "ZZZ"
-
-
 @cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith(("icarus", "ghdl", "nvc"))
-    else (),
-    expect_fail=SIM_NAME.startswith("modelsim"),
+    expect_error=(
+        AttributeError if SIM_NAME.startswith(("icarus", "ghdl", "nvc")) else ()
+    ),
 )
 async def test_packed_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
     assert repr(dut.my_struct) == "LogicObject(sample_module.my_struct)"
-    assert (
-        repr(dut.my_struct.value)
-        == f"LogicArray('{EXPECT_VAL}', Range(2, 'downto', 0))"
+
+    # Riviera-PRO initializes the struct with X, Verilator with 0, and others
+    # with Z. Since we don't want to explicitly set dut.my_struct (write tests
+    # are below) we accept any initialization the simulator might choose.
+    assert re.fullmatch(
+        r"LogicArray\('[0XZ]{3}', Range\(2, 'downto', 0\)\)", repr(dut.my_struct.value)
     )
 
 
@@ -37,17 +37,19 @@ sim_ver = RivieraVersion(cocotb.SIM_VERSION)
 is_riviera_2024_04 = sim_ver >= "2024.04" and sim_ver < "2024.05"
 
 
+# Riviera-PRO 2022.10+ ignores writes to the packed struct.
 @cocotb.test(
     expect_error=(
         AttributeError if SIM_NAME.startswith(("icarus", "ghdl", "nvc")) else ()
     ),
-    expect_fail=SIM_NAME.startswith(("modelsim", "riviera")),
+    expect_fail=(
+        SIM_NAME.startswith("riviera")
+        and RivieraVersion(cocotb.SIM_VERSION) >= "2022.10"
+    ),
     skip=(SIM_NAME.startswith("riviera") and is_riviera_2024_04),
 )
 async def test_packed_struct_setting(dut):
-    """Test getting and setting setting the value of an entire struct"""
-
-    assert str(dut.my_struct.value) == EXPECT_VAL
+    """Test setting the value of an entire struct"""
 
     # test struct write -> individual signals
     dut.my_struct.value = 0
@@ -59,16 +61,14 @@ async def test_packed_struct_setting(dut):
 # GHDL unable to access record signals (gh-2591)
 # Icarus doesn't support structs (gh-2592)
 # Verilator doesn't support structs (gh-1275)
-# Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587, gh-3933)
+# Riviera-PRO does not discover inout_if correctly over VPI (gh-3587, gh-3933)
 @cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith(("icarus", "ghdl", "verilator"))
-    or (
-        SIM_NAME.startswith("riviera")
-        and RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
-        and LANGUAGE == "verilog"
+    expect_error=(
+        AttributeError
+        if SIM_NAME.startswith(("icarus", "ghdl", "verilator"))
+        or (SIM_NAME.startswith("riviera") and LANGUAGE == "verilog")
+        else ()
     )
-    else ()
 )
 async def test_struct_format(dut):
     """
@@ -88,9 +88,9 @@ async def test_struct_format(dut):
 # Icarus doesn't support structs (gh-2592)
 # Verilator doesn't support structs (gh-1275)
 @cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith(("icarus", "ghdl", "verilator"))
-    else ()
+    expect_error=(
+        AttributeError if SIM_NAME.startswith(("icarus", "ghdl", "verilator")) else ()
+    )
 )
 async def test_struct_iteration(dut):
     """
@@ -106,9 +106,8 @@ async def test_struct_iteration(dut):
         tlog.info(f"Found {member._path}")
         count += 1
 
-    # Riviera-PRO 2022.10 and newer does not discover inout_if correctly over VPI (gh-3587, gh-3933)
-    rv_2022_10_plus = RivieraVersion(cocotb.SIM_VERSION) >= RivieraVersion("2022.10")
-    if SIM_NAME.startswith("riviera") and rv_2022_10_plus and LANGUAGE == "verilog":
+    # Riviera-PRO does not discover inout_if correctly over VPI (gh-3587, gh-3933)
+    if SIM_NAME.startswith("riviera") and LANGUAGE == "verilog":
         assert count == 0
     else:
         assert count == 2, "There should have been two members of the structure"
