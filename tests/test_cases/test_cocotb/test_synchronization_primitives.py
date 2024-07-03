@@ -68,7 +68,7 @@ async def test_lock_release_without_acquire(_):
 
 
 @cocotb.test()
-async def test_lock_repr(_):
+async def test_lock_repr(dut):
     lock = Lock()
 
     assert re.match(r"<Lock \[0 waiting\] at \w+>", repr(lock))

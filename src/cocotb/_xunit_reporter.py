@@ -67,10 +67,10 @@ class XUnitReporter:
                 elem.text = i + "  "
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
-            for elem in elem:
-                self.indent(elem, level + 1)
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
+            for sub_elem in elem:
+                self.indent(sub_elem, level + 1)
+            if not sub_elem.tail or not sub_elem.tail.strip():
+                sub_elem.tail = i
         elif level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
