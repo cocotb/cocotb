@@ -58,11 +58,13 @@ from typing import (
 )
 
 import cocotb
+import cocotb._scheduler
 from cocotb import _ANSI, simulator
 from cocotb._outcomes import Error, Outcome
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.result import SimFailure, TestSuccess
 from cocotb.task import Task, _RunningTest
+from cocotb.triggers import Timer, Trigger
 from cocotb.utils import (
     DocEnum,
     get_sim_time,
@@ -218,6 +220,8 @@ class RegressionManager:
     Until the regression is started, :attr:`total_tests`, :attr:`count`, :attr:`passed`,
     :attr:`skipped`, and :attr:`failures` hold placeholder values.
     """
+
+    _timer1 = Timer(1)
 
     def __init__(self) -> None:
         self._test: Test
@@ -375,6 +379,7 @@ class RegressionManager:
 
         # start test loop
         self._regression_start_time = time.time()
+        self._first_test = True
         self._execute()
 
     def _execute(self, *, sim_failed: bool = False) -> None:
@@ -430,9 +435,20 @@ class RegressionManager:
             else:
                 self._test_start_sim_time = get_sim_time("ns")
                 self._test_start_time = time.time()
-                return cocotb._scheduler_inst._add_test(self._test_task)
+
+                if self._first_test:
+                    self._first_test = False
+                    return self._schedule_next_test()
+                else:
+                    return self._timer1._prime(self._schedule_next_test)
 
         return self._tear_down()
+
+    def _schedule_next_test(self, trigger: Optional[Trigger] = None) -> None:
+        if trigger is not None:
+            cocotb._scheduler_inst._sim_phase = cocotb._scheduler.SimPhase.NORMAL
+            trigger._unprime()
+        cocotb._scheduler_inst._add_test(self._test_task)
 
     def _tear_down(self) -> None:
         """Called by :meth:`_execute` when there are no more tests to run to finalize the regression."""

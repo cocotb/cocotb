@@ -55,7 +55,6 @@ from cocotb.triggers import (
     NextTimeStep,
     ReadOnly,
     ReadWrite,
-    Timer,
     Trigger,
 )
 from cocotb.utils import remove_traceback_frames
@@ -257,7 +256,6 @@ class Scheduler:
     _next_time_step = NextTimeStep()
     _read_write = ReadWrite()
     _read_only = ReadOnly()
-    _timer1 = Timer(1)
     _none_outcome = _outcomes.Value(None)
 
     def __init__(self, test_complete_cb: Callable[[], None]) -> None:
@@ -314,61 +312,34 @@ class Scheduler:
         """
         Handle a termination that causes us to move onto the next test.
         """
-        if not self._terminate:
-            return
+        if self._test is None:
+            raise InternalError("_test_completed called with no active test")
+        elif self._test._outcome is None:
+            raise InternalError("_test_completed called with an incomplete test")
+        elif _debug:
+            self.log.debug("Test terminating...")
 
-        if _debug:
-            self.log.debug("Test terminating, scheduling Timer")
-
+        # clean up write scheduler
         if self._write_task is not None:
             self._write_task.kill()
             self._write_task = None
-
-        for t in self._trigger2tasks:
-            t._unprime()
-
-        if self._timer1._primed:
-            self._timer1._unprime()
-
-        self._timer1._prime(self._test_completed)
-        self._trigger2tasks = _py_compat.insertion_ordered_dict()
-        self._terminate = False
         self._write_calls.clear()
         self._writes_pending.clear()
 
-    def _test_completed(self, trigger=None):
-        """Called after a test and its cleanup have completed."""
-        if _debug:
-            self.log.debug(f"_test_completed called with trigger: {trigger}")
+        # cleanup triggers and tasks
+        self._cleanup()
+
+        # clear state
+        self._terminate = False
+        self._test = None
+
+        # dump profiling
         if _profiling:
             ps = pstats.Stats(_profile).sort_stats("cumulative")
             ps.dump_stats("test_profile.pstat")
-            ctx = profiling_context()
-        else:
-            ctx = _py_compat.nullcontext()
 
-        with ctx:
-            self._sim_phase = SimPhase.NORMAL
-            if trigger is not None:
-                trigger._unprime()
-
-            # extract the current test, and clear it
-            test = self._test
-            self._test = None
-            if test is None:
-                raise InternalError("_test_completed called with no active test")
-            if test._outcome is None:
-                raise InternalError("_test_completed called with an incomplete test")
-
-            # Issue previous test result
-            if _debug:
-                self.log.debug("Issue test result to regression object")
-
-            # this may schedule another test
-            self._test_complete_cb()
-
-            # if it did, make sure we handle the test completing
-            self._handle_termination()
+        # call complete cb, may schedule another test
+        self._test_complete_cb()
 
     def _sim_react(self, trigger: Trigger) -> None:
         """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
@@ -469,8 +440,9 @@ class Scheduler:
                 self._pending_events.pop(0).set()
 
         # no more pending tasks
-        self._handle_termination()
-        if _debug:
+        if self._terminate:
+            self._handle_termination()
+        elif _debug:
             self.log.debug("All tasks scheduled, handing control back to simulator")
 
     def _unschedule(self, task: Task[Any]) -> None:
@@ -502,9 +474,7 @@ class Scheduler:
             if _debug:
                 self.log.debug(f"Unscheduling test {task}")
 
-            if not self._terminate:
-                self._terminate = True
-                self._cleanup()
+            self._terminate = True
 
         elif Join(task) in self._trigger2tasks:
             self._react(Join(task))
