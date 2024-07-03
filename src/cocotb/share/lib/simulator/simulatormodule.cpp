@@ -66,8 +66,8 @@ struct callback_data {
     gpi_sim_hdl cb_hdl;
 };
 
-class SimClk;
-using sim_clk_hdl = SimClk *;
+class GpiClock;
+using gpi_clk_hdl = GpiClock *;
 
 /* define the extension types as templates */
 namespace {
@@ -157,7 +157,7 @@ PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type;
 template <>
 PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type;
 template <>
-PyTypeObject gpi_hdl_Object<sim_clk_hdl>::py_type;
+PyTypeObject gpi_hdl_Object<gpi_clk_hdl>::py_type;
 }  // namespace
 
 typedef int (*gpi_function_t)(void *);
@@ -843,11 +843,11 @@ static PyObject *log_level(PyObject *, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-class SimClk {
+class GpiClock {
   public:
-    SimClk(GpiObjHdl *clk_sig) : clk_signal(clk_sig) {}
+    GpiClock(GpiObjHdl *clk_sig) : clk_signal(clk_sig) {}
 
-    ~SimClk() { stop(); }
+    ~GpiClock() { stop(); }
 
     int start(uint64_t period_steps, uint64_t high_steps, uint64_t phase_steps);
 
@@ -865,11 +865,11 @@ class SimClk {
     int clk_val = 0;
 
     int toggle();
-    static int toggle_cb(void *sim_clk);
+    static int toggle_cb(void *gpi_clk);
 };
 
-int SimClk::start(uint64_t period_steps, uint64_t high_steps,
-                  uint64_t phase_steps) {
+int GpiClock::start(uint64_t period_steps, uint64_t high_steps,
+                    uint64_t phase_steps) {
     if (clk_toggle_cb_hdl) {
         LOG_ERROR("Failed to start clock: already started -- stop first");
         return -1;
@@ -889,7 +889,7 @@ int SimClk::start(uint64_t period_steps, uint64_t high_steps,
     uint64_t to_next_edge = clk_val ? (t_high - phase) : (period - phase);
 
     clk_toggle_cb_hdl =
-        gpi_register_timed_callback(&SimClk::toggle_cb, this, to_next_edge);
+        gpi_register_timed_callback(&GpiClock::toggle_cb, this, to_next_edge);
     if (!clk_toggle_cb_hdl) {
         LOG_ERROR("Failed to start clock: failed to register toggle cb");
         return -1;
@@ -901,7 +901,7 @@ int SimClk::start(uint64_t period_steps, uint64_t high_steps,
     return 0;
 }
 
-int SimClk::stop() {
+int GpiClock::stop() {
     if (!clk_toggle_cb_hdl) {
         return -1;
     }
@@ -910,14 +910,14 @@ int SimClk::stop() {
     return 0;
 }
 
-int SimClk::toggle() {
+int GpiClock::toggle() {
     clk_val = !clk_val;
     gpi_set_signal_value_int(clk_signal, clk_val, GPI_DEPOSIT);
 
     uint64_t to_next_edge = clk_val ? t_high : (period - t_high);
 
     clk_toggle_cb_hdl =
-        gpi_register_timed_callback(&SimClk::toggle_cb, this, to_next_edge);
+        gpi_register_timed_callback(&GpiClock::toggle_cb, this, to_next_edge);
     if (!clk_toggle_cb_hdl) {
         LOG_ERROR("Clock will be stopped: failed to register toggle cb");
         return -1;
@@ -926,8 +926,8 @@ int SimClk::toggle() {
     return 0;
 }
 
-int SimClk::toggle_cb(void *sim_clk) {
-    SimClk *clk_obj = (SimClk *)sim_clk;
+int GpiClock::toggle_cb(void *gpi_clk) {
+    GpiClock *clk_obj = (GpiClock *)gpi_clk;
     return clk_obj->toggle();
 }
 
@@ -955,10 +955,10 @@ static PyObject *clock_create(PyObject *, PyObject *args) {
     }
     gpi_sim_hdl sim_hdl = ((gpi_hdl_Object<gpi_sim_hdl> *)pSigHdl)->hdl;
 
-    SimClk *sim_clk = new SimClk(sim_hdl);
+    GpiClock *gpi_clk = new GpiClock(sim_hdl);
 
-    if (sim_clk) {
-        return gpi_hdl_New(sim_clk);
+    if (gpi_clk) {
+        return gpi_hdl_New(gpi_clk);
     } else {
         PyErr_SetString(PyExc_RuntimeError, "Failed to create clock!");
         return NULL;
@@ -971,19 +971,19 @@ static void clock_dealloc(PyObject *self) {
         return;
     }
 
-    if (Py_TYPE(self) != &gpi_hdl_Object<sim_clk_hdl>::py_type) {
+    if (Py_TYPE(self) != &gpi_hdl_Object<gpi_clk_hdl>::py_type) {
         PyErr_SetString(PyExc_TypeError, "Wrong type for clock_dealloc!");
         return;
     }
 
-    SimClk *sim_clk = ((gpi_hdl_Object<sim_clk_hdl> *)self)->hdl;
+    GpiClock *gpi_clk = ((gpi_hdl_Object<gpi_clk_hdl> *)self)->hdl;
 
-    delete sim_clk;
+    delete gpi_clk;
 
     PyMem_Free(self);
 }
 
-static PyObject *clk_start(gpi_hdl_Object<sim_clk_hdl> *self, PyObject *args) {
+static PyObject *clk_start(gpi_hdl_Object<gpi_clk_hdl> *self, PyObject *args) {
     unsigned long long period, t_high, phase;
 
     if (!PyArg_ParseTuple(args, "KKK:clk_start", &period, &t_high, &phase)) {
@@ -997,7 +997,7 @@ static PyObject *clk_start(gpi_hdl_Object<sim_clk_hdl> *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyObject *clk_stop(gpi_hdl_Object<sim_clk_hdl> *self, PyObject *) {
+static PyObject *clk_stop(gpi_hdl_Object<gpi_clk_hdl> *self, PyObject *) {
     self->hdl->stop();
 
     Py_RETURN_NONE;
@@ -1056,9 +1056,9 @@ static int add_module_types(PyObject *simulator) {
         return -1;
     }
 
-    typ = (PyObject *)&gpi_hdl_Object<sim_clk_hdl>::py_type;
+    typ = (PyObject *)&gpi_hdl_Object<gpi_clk_hdl>::py_type;
     Py_INCREF(typ);
-    if (PyModule_AddObject(simulator, "SimClk", typ) < 0) {
+    if (PyModule_AddObject(simulator, "GpiClock", typ) < 0) {
         Py_DECREF(typ);
         return -1;
     }
@@ -1168,7 +1168,7 @@ static PyMethodDef SimulatorMethods[] = {
      PyDoc_STR("clock_create(signal, /)\n"
                "--\n\n"
                "clock_create(signal: cocotb.simulator.gpi_sim_hdl"
-               ") -> cocotb.simulator.SimClk\n"
+               ") -> cocotb.simulator.GpiClock\n"
                "Create a new clock driver on a signal.")},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
@@ -1201,7 +1201,7 @@ PyMODINIT_FUNC PyInit_simulator(void) {
     if (PyType_Ready(&gpi_hdl_Object<gpi_iterator_hdl>::py_type) < 0) {
         return NULL;
     }
-    if (PyType_Ready(&gpi_hdl_Object<sim_clk_hdl>::py_type) < 0) {
+    if (PyType_Ready(&gpi_hdl_Object<gpi_clk_hdl>::py_type) < 0) {
         return NULL;
     }
 
@@ -1378,7 +1378,7 @@ PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
     return type;
 }();
 
-static PyMethodDef sim_clk_methods[] = {
+static PyMethodDef gpi_clk_methods[] = {
     {"start", (PyCFunction)clk_start, METH_VARARGS,
      PyDoc_STR("start($self, t_period, t_high, phase)\n"
                "--\n\n"
@@ -1397,11 +1397,11 @@ static PyMethodDef sim_clk_methods[] = {
 };
 
 template <>
-PyTypeObject gpi_hdl_Object<sim_clk_hdl>::py_type = []() -> PyTypeObject {
-    auto type = fill_common_slots<sim_clk_hdl>();
-    type.tp_name = "cocotb.simulator.SimClk";
-    type.tp_doc = "Sim-side clock";
-    type.tp_methods = sim_clk_methods;
+PyTypeObject gpi_hdl_Object<gpi_clk_hdl>::py_type = []() -> PyTypeObject {
+    auto type = fill_common_slots<gpi_clk_hdl>();
+    type.tp_name = "cocotb.simulator.GpiClock";
+    type.tp_doc = "C++ Clock using the GPI.";
+    type.tp_methods = gpi_clk_methods;
     type.tp_dealloc = clock_dealloc;
     return type;
 }();

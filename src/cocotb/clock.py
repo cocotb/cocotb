@@ -33,9 +33,10 @@ from fractions import Fraction
 from logging import Logger
 from typing import Union
 
+import cocotb._conf
 from cocotb._py_compat import cached_property
 from cocotb.simulator import clock_create
-from cocotb.triggers import Event
+from cocotb.triggers import Event, Timer
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 
@@ -63,20 +64,11 @@ class Clock:
             ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
             When *units* is ``'step'``,
             the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
-
-    This is functionally almost equivalent to something like this (but faster):
-
-    .. code-block:: python
-
-        async def clock():
-            while True:
-                dut.clk.value = 1
-                await Timer(half_period)
-                dut.clk.value = 0
-                await Timer(half_period)
-
-    The difference is that the clock toggling is implemented on the simulator side, and will
-    toggle during the timed callbacks phase and not during ReadWrite.
+        impl: One of
+            ``'auto'``, ``'gpi'``, ``'py'``.
+            Specify whether the clock is toggled via a GpiClock (faster), or in python.
+            When ``'auto'`` is used (default), it will pick GpiClock when trusting inertial
+            writes (see :envvar:`COCOTB_TRUST_INERTIAL_WRITES`).
 
     If you need more features like a phase shift and an asymmetric duty cycle,
     it is simple to create your own clock generator (that you then :func:`~cocotb.start`):
@@ -123,13 +115,26 @@ class Clock:
     """
 
     def __init__(
-        self, signal, period: Union[float, Fraction, Decimal], units: str = "step"
+        self,
+        signal,
+        period: Union[float, Fraction, Decimal],
+        units: str = "step",
+        impl: str = "auto",
     ):
         self.signal = signal
         self.period = get_sim_steps(period, units)
         self.frequency = 1 / get_time_from_sim_steps(self.period, units="us")
         self.t_high = self.period // 2
-        self.clkobj = clock_create(self.signal._handle)
+
+        # If not using GpiClock, clkobj is None
+        if impl == "auto":
+            impl = "gpi" if cocotb._conf.trust_inertial else "py"
+        if impl == "gpi":
+            self.clkobj = clock_create(self.signal._handle)
+        elif impl == "py":
+            self.clkobj = None
+        else:
+            raise ValueError(f"Invalid clock impl '{impl}'")
 
     async def start(self, start_high: bool = True) -> None:
         r"""Clocking coroutine.  Start driving your clock by :func:`cocotb.start`\ ing a
@@ -142,19 +147,29 @@ class Clock:
 
                 .. versionadded:: 1.3
         """
-        phase = 0 if start_high else self.t_high
-        self.clkobj.start(self.period, self.t_high, phase)
+        if self.clkobj:
+            phase = 0 if start_high else self.t_high
+            self.clkobj.start(self.period, self.t_high, phase)
 
-        # The GPI clock will toggle for a given number of cycles, or forever,
-        # unless interrupted early (likely due to CancelledError)
-        try:
-            # The clock is meant to go on indefinitely, so if awaiting this
-            # should never complete. Await on an event that's never set.
-            e = Event()
-            await e.wait()
-        except Exception as e:
-            self.clkobj.stop()
-            raise e
+            # The GPI clock will toggle for a given number of cycles, or forever,
+            # unless interrupted early (likely due to CancelledError)
+            try:
+                # The clock is meant to go on indefinitely, so if awaiting this
+                # should never complete. Await on an event that's never set.
+                e = Event()
+                await e.wait()
+            except Exception as e:
+                self.clkobj.stop()
+                raise e
+        else:
+            if start_high:
+                self.signal.value = 1
+                await Timer(self.t_high)
+            while True:
+                self.signal.value = 0
+                await Timer(self.period - self.t_high)
+                self.signal.value = 1
+                await Timer(self.t_high)
 
     def __str__(self) -> str:
         return type(self).__qualname__ + f"({self.frequency:3.1f} MHz)"
