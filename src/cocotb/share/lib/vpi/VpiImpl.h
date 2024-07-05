@@ -185,6 +185,8 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
           m_falling_cb(impl, this, GPI_FALLING),
           m_either_cb(impl, this, GPI_FALLING | GPI_RISING) {}
 
+    int get_signal_value_bytes(char *buffer, size_t size,
+                               gpi_resolve_x_t resolve_x) override;
     const char *get_signal_value_binstr() override;
     const char *get_signal_value_str() override;
     double get_signal_value_real() override;
@@ -196,6 +198,8 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
                                 gpi_set_action_t action) override;
     int set_signal_value_str(std::string &value,
                              gpi_set_action_t action) override;
+    int set_signal_value_bytes(const char *buffer, size_t size,
+                               gpi_set_action_t action) override;
 
     /* Value change callback accessor */
     int initialise(const std::string &name,

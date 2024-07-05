@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <map>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -91,6 +92,12 @@ static GpiHandleStore unique_handles;
 #define CLEAR_STORE() (void)0  // No-op
 
 #endif
+
+static std::mt19937 prng;
+
+void gpi_set_seed(uint32_t seed) { prng.seed(seed); }
+
+uint64_t gpi_rand() { return prng(); }
 
 static bool sim_ending = false;
 
@@ -453,6 +460,12 @@ const char *gpi_get_definition_file(gpi_sim_hdl obj_hdl) {
     return obj_hdl->get_definition_file();
 }
 
+int gpi_get_signal_value_bytes(gpi_sim_hdl sig_hdl, char *buffer, size_t size,
+                               gpi_resolve_x_t resolve_x) {
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
+    return obj_hdl->get_signal_value_bytes(buffer, size, resolve_x);
+}
+
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl) {
     GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
     return obj_hdl->get_signal_value_binstr();
@@ -501,6 +514,12 @@ void gpi_set_signal_value_int(gpi_sim_hdl sig_hdl, int32_t value,
     GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
 
     obj_hdl->set_signal_value(value, action);
+}
+
+void gpi_set_signal_value_bytes(gpi_sim_hdl sig_hdl, const char *buffer,
+                                size_t size, gpi_set_action_t action) {
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
+    obj_hdl->set_signal_value_bytes(buffer, size, action);
 }
 
 void gpi_set_signal_value_binstr(gpi_sim_hdl sig_hdl, const char *binstr,

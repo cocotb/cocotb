@@ -420,6 +420,10 @@ def _setup_random_seed() -> None:
 
     random.seed(_random_seed)
 
+    from cocotb import simulator
+
+    simulator.set_gpi_seed(_random_seed)
+
 
 def _setup_root_handle() -> None:
     root_name = os.getenv("COCOTB_TOPLEVEL")

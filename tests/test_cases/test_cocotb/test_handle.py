@@ -8,11 +8,14 @@ Tests for handles
 import logging
 import os
 import random
+import sys
+from enum import Enum, auto
 
 import pytest
 
 import cocotb
-from cocotb.handle import StringObject, _Limits
+from cocotb.handle import StringObject, _GPIResolveX, _Limits
+from cocotb.result import TestSuccess
 from cocotb.triggers import Timer
 from cocotb.types import Logic, LogicArray
 
@@ -96,15 +99,38 @@ async def test_delayed_assignment_still_errors(dut):
         dut.stream_in_int.value = []
 
 
-async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
+async def int_values_test(
+    signal, n_bits, limits=_Limits.VECTOR_NBIT, from_bytes=False, to_bytes=False
+):
     """Test integer access to a signal."""
+    if (from_bytes or to_bytes) and SIM_NAME.startswith("ghdl"):
+        raise TestSuccess("ghdl appears to have problems with vpiVectorValue")
     values = gen_int_test_values(n_bits, limits)
     for val in values:
-        signal.value = val
+        negative = val < 0
+        if from_bytes:
+            num_bytes = (n_bits + 7) // 8
+            bytes_val = val.to_bytes(
+                length=num_bytes, byteorder=sys.byteorder, signed=negative
+            )
+            signal.value = bytes_val
+        else:
+            signal.value = val
         await Timer(1, "ns")
 
-        if limits == _Limits.VECTOR_NBIT:
-            if val < 0:
+        if to_bytes:
+            bytes_val = signal.value_as_bytes()
+            msb = bytes_val[-1 if sys.byteorder == "little" else 0]
+            if negative and n_bits % 8 != 0 and msb >> (n_bits % 8 - 1):
+                msb_extended = msb | (0xFF << (n_bits % 8)) & 0xFF
+                new_msb = msb_extended.to_bytes(length=1, byteorder=sys.byteorder)
+                if sys.byteorder == "little":
+                    bytes_val = bytes_val[:-1] + new_msb
+                else:
+                    bytes_val = new_msb + bytes_val[1:]
+            got = int.from_bytes(bytes_val, byteorder=sys.byteorder, signed=negative)
+        elif limits == _Limits.VECTOR_NBIT:
+            if negative:
                 got = signal.value.to_signed()
             else:
                 got = signal.value.to_unsigned()
@@ -166,110 +192,86 @@ def gen_int_unfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
         return signed_min - 1
 
 
-@cocotb.test()
-async def test_int_8bit(dut):
-    """Test int access to 8-bit vector."""
-    await int_values_test(dut.stream_in_data, len(dut.stream_in_data))
+signals = [
+    "stream_in_data",
+    "stream_in_data_dqword",
+    "stream_in_data_39bit",
+    "stream_in_data_wide",
+    "stream_in_data_dqword",
+]
 
 
-@cocotb.test()
-async def test_int_8bit_overflow(dut):
-    """Test 8-bit vector overflow."""
-    await int_overflow_test(dut.stream_in_data, len(dut.stream_in_data), "ovfl")
+class IntTest(Enum):
+    INT = auto()
+    FROM_BYTES = auto()
+    TO_BYTES = auto()
 
 
-@cocotb.test()
-async def test_int_8bit_underflow(dut):
-    """Test 8-bit vector underflow."""
-    await int_overflow_test(dut.stream_in_data, len(dut.stream_in_data), "unfl")
-
-
-@cocotb.test()
-async def test_int_32bit(dut):
-    """Test int access to 32-bit vector."""
-    await int_values_test(dut.stream_in_data_dword, len(dut.stream_in_data_dword))
-
-
-@cocotb.test()
-async def test_int_32bit_overflow(dut):
-    """Test 32-bit vector overflow."""
-    await int_overflow_test(
-        dut.stream_in_data_dword, len(dut.stream_in_data_dword), "ovfl"
+@cocotb.test
+@cocotb.parameterize(
+    signal=signals,
+    test=list(IntTest),
+)
+async def test_int(dut, signal, test):
+    """Test int access to bit vector."""
+    handle = getattr(dut, signal)
+    await int_values_test(
+        handle,
+        len(handle),
+        from_bytes=(test == IntTest.FROM_BYTES),
+        to_bytes=(test == IntTest.TO_BYTES),
     )
 
 
 @cocotb.test()
-async def test_int_32bit_underflow(dut):
-    """Test 32-bit vector underflow."""
-    await int_overflow_test(
-        dut.stream_in_data_dword, len(dut.stream_in_data_dword), "unfl"
-    )
+@cocotb.parameterize(signal=signals, test=["ovfl", "unfl"])
+async def test_int_8bit_overflow(dut, signal, test):
+    """Test bit vector overflow / underflow."""
+    handle = getattr(dut, signal)
+    await int_overflow_test(handle, len(handle), test)
 
 
-@cocotb.test()
-async def test_int_39bit(dut):
-    """Test int access to 39-bit vector."""
-    await int_values_test(dut.stream_in_data_39bit, len(dut.stream_in_data_39bit))
+@cocotb.test
+@cocotb.parameterize(signal=signals, too_big=[True, False])
+async def test_bytes_bad_size(dut, signal, too_big):
+    """Test incorrect buffer sizes when setting via bytes."""
+    handle = getattr(dut, signal)
+    n_bytes = (len(handle) + 7) // 8
+    buffer = bytes(n_bytes + (1 if too_big else -1))
+
+    with pytest.raises(ValueError):
+        handle.value = buffer
 
 
-@cocotb.test()
-async def test_int_39bit_overflow(dut):
-    """Test 39-bit vector overflow."""
-    await int_overflow_test(
-        dut.stream_in_data_39bit, len(dut.stream_in_data_39bit), "ovfl"
-    )
+# verilator does not support 4-state signals
+# ghdl appears to have problems with vpiVectorVal
+@cocotb.test(skip=SIM_NAME.startswith(("verilator", "ghdl")))
+@cocotb.parameterize(
+    signal=signals,
+    resolve_x=list(_GPIResolveX),
+)
+async def test_bytes_resolve_x(dut, signal, resolve_x):
+    """Test resolving non 0 / 1 values when getting bytes."""
+    handle = getattr(dut, signal)
+    n_bits = len(handle)
+    xs = LogicArray("x" * n_bits)
+    handle.value = xs
+    await Timer(1, "ns")
 
-
-@cocotb.test()
-async def test_int_39bit_underflow(dut):
-    """Test 39-bit vector underflow."""
-    await int_overflow_test(
-        dut.stream_in_data_39bit, len(dut.stream_in_data_39bit), "unfl"
-    )
-
-
-@cocotb.test()
-async def test_int_64bit(dut):
-    """Test int access to 64-bit vector."""
-    await int_values_test(dut.stream_in_data_wide, len(dut.stream_in_data_wide))
-
-
-@cocotb.test()
-async def test_int_64bit_overflow(dut):
-    """Test 64-bit vector overflow."""
-    await int_overflow_test(
-        dut.stream_in_data_wide, len(dut.stream_in_data_wide), "ovfl"
-    )
-
-
-@cocotb.test()
-async def test_int_64bit_underflow(dut):
-    """Test 64-bit vector underflow."""
-    await int_overflow_test(
-        dut.stream_in_data_wide, len(dut.stream_in_data_wide), "unfl"
-    )
-
-
-@cocotb.test()
-async def test_int_128bit(dut):
-    """Test int access to 128-bit vector."""
-    await int_values_test(dut.stream_in_data_dqword, len(dut.stream_in_data_dqword))
-
-
-@cocotb.test()
-async def test_int_128bit_overflow(dut):
-    """Test 128-bit vector overflow."""
-    await int_overflow_test(
-        dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "ovfl"
-    )
-
-
-@cocotb.test()
-async def test_int_128bit_underflow(dut):
-    """Test 128-bit vector underflow."""
-    await int_overflow_test(
-        dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "unfl"
-    )
+    if resolve_x == _GPIResolveX.ERROR:
+        with pytest.raises(ValueError):
+            handle.value_as_bytes(resolve_x)
+    else:
+        bytes_value = handle.value_as_bytes(resolve_x)
+        bytes_int = int.from_bytes(bytes_value, byteorder=sys.byteorder)
+        if resolve_x == _GPIResolveX.ZEROS:
+            assert bytes_int == 0
+        elif resolve_x == _GPIResolveX.ONES:
+            assert bytes_int == 2**n_bits - 1
+        elif resolve_x == _GPIResolveX.RANDOM:
+            assert bytes_value != handle.value_as_bytes(resolve_x)
+        else:
+            raise RuntimeError(f"Test needs to support resolve_x={resolve_x}")
 
 
 @cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
