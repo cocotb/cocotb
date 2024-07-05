@@ -34,7 +34,7 @@ EXAMPLES := adder/tests \
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     ifeq ($(SIM),$(filter $(SIM),ius xcelium))
-        ifeq (, $(shell which spectre))
+        ifeq (,$(shell which spectre))
             $(info Skipping example mixed_signal since Spectre is not available)
         else
             EXAMPLES += mixed_signal/tests
