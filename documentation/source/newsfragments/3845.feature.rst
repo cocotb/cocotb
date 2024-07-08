@@ -1,1 +1,0 @@
-Add support for comparing :class:`~cocotb.binary.BinaryValue` with :class:`~cocotb.types.Logic`, :class:`~cocotb.types.LogicArray`, and :class:`str`.

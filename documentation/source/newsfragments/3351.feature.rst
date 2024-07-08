@@ -1,1 +1,0 @@
-Add `clean` argument to :ref:`Python Test Runner <howto-python-runner>` to remove build_dir completely during runner.build() stage

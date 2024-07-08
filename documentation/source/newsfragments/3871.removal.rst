@@ -1,1 +1,0 @@
-:meth:`Event.fired <cocotb.triggers.Event.fired>` is deprecated. Use :meth:`~cocotb.triggers.Event.is_set` instead.
