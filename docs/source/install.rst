@@ -78,11 +78,22 @@ The installation instructions vary depending on your operating system:
 Installation of cocotb
 ======================
 
-The **stable version** of cocotb can be installed by running
+.. only:: is_release_build
 
-.. code-block:: bash
+    You are reading the documentation for cocotb |version|.
+    To install this version, or any later compatible version, run
 
-    pip install cocotb
+    .. parsed-literal::
+
+        pip install cocotb =~ |version|
+
+.. only:: not is_release_build
+
+    The latest **stable version** of cocotb can be installed by running
+
+    .. code-block:: bash
+
+        pip install cocotb
 
 .. note::
 
