@@ -141,7 +141,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.024",  # Latest release version.
+        "sim-version": "v5.026",  # Latest release version.
         # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
         "python-version": "3.8",
@@ -155,6 +155,15 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.8",
         "group": "experimental",
+    },
+    {
+        "lang": "verilog",
+        "sim": "verilator",
+        "sim-version": "v5.024",
+        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
+        "os": "ubuntu-22.04",
+        "python-version": "3.8",
+        "group": "extended",
     },
     {
         "lang": "verilog",
@@ -194,6 +203,8 @@ ENVS = [
         "group": "experimental",
     },
     # Verilator macOS latest release
+    # Only test v5.024 on macOS since in 5.026 coroutine support isn't working
+    # on macOS. See https://github.com/verilator/verilator/issues/5190.
     {
         "lang": "verilog",
         "sim": "verilator",
