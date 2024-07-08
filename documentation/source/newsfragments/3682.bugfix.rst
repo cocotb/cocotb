@@ -1,1 +1,0 @@
-Pass ``test_args`` to test command when using :ref:`Python Test Runner <howto-python-runner>` for Verilator, which was previously missing.

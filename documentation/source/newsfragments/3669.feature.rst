@@ -1,1 +1,0 @@
-Allow `results_xml` argument to :ref:`Python Test Runner <howto-python-runner>` to be an absolute path

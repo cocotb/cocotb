@@ -7,9 +7,55 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
-.. include:: master-notes.rst
 
-.. towncrier release notes start
+Cocotb 1.9.0 (2024-07-DD)
+=========================
+
+Features
+--------
+
+- Support not using parenthesis on ``@cocotb.test`` decorator (:pr:`2731`)
+- Add `clean` argument to :ref:`Python Test Runner <howto-python-runner>` to remove build_dir completely during runner.build() stage (:pr:`3351`)
+- Add support for the `NVC <https://github.com/nickg/nvc>`_ VHDL simulator. (:pr:`3427`)
+- Added :make:var:`SIM_CMD_SUFFIX` to allow users to redirect simulator output or otherwise suffix the simulation command invocation. (:pr:`3561`)
+- Add `--trace` to Verilator binaries for run-time trace generation and integrate with :ref:`Python Test Runner <howto-python-runner>`. (:pr:`3667`)
+- Add `log_file` argument to :ref:`Python Test Runner <howto-python-runner>` to redirect stdout and stderr to the specified file. (:pr:`3668`)
+- Allow `results_xml` argument to :ref:`Python Test Runner <howto-python-runner>` to be an absolute path (:pr:`3669`)
+- Add ``--trace-file`` to Verilator binaries which specifies the trace file name. (:pr:`3683`)
+- Add `pre_cmd` in :ref:`Python Test Runner <howto-python-runner>` for Questa simulator to run given commands before simulation start (:pr:`3744`)
+- The ``sources`` option was added to :meth:`cocotb.runner.Simulator.build` to better support building mixed-language designs. (:pr:`3796`)
+- Enable use of VPI fallback in all simulators when attempting to access generate blocks directly via lookup. This enables better support for simulators that don't support ``vpiGenScopeArray``, allowing discovery of generate blocks without having to iterate over the parent handle. (:pr:`3817`)
+- Add support for comparing :class:`~cocotb.binary.BinaryValue` with :class:`~cocotb.types.Logic`, :class:`~cocotb.types.LogicArray`, and :class:`str`. (:pr:`3845`)
+- Riviera-PRO now supports compilation into (multiple) VHDL libraries using :make:var:`VHDL_SOURCES_<lib>`. (:pr:`3922`)
+
+
+Bugfixes
+--------
+
+- Xcelium 23.09.004 and newer can now be used to test designs with a VHDL toplevel. (:pr:`1076`)
+- Fix a potential issue where pseudo-region lookup may find the wrong
+generate block if the name of one generate block starts with the name of
+another generate block. (:pr:`2255`)
+- Support :ref:`Python Test Runner <howto-python-runner>` `waves` parameter for Verilator. (:pr:`3681`)
+- Pass ``test_args`` to test command when using :ref:`Python Test Runner <howto-python-runner>` for Verilator, which was previously missing. (:pr:`3682`)
+
+
+Deprecations and Removals
+-------------------------
+
+- ``bool(Lock())`` is deprecated. Use :meth:`~cocotb.triggers.Lock.locked` instead. (:pr:`3871`)
+- :attr:`Join.retval <cocotb.triggers.Join.retval>` is deprecated. Use :meth:`Task.result() <cocotb.task.Task.result>` to get the result of a joined Task. (:pr:`3871`)
+- Passing the *outcome* argument to :class:`~cocotb.triggers.NullTrigger` - which allowed the user to inject arbitrary outcomes when the trigger was ``await``\ ed - is deprecated. There is no alternative. (:pr:`3871`)
+- :meth:`Event.fired <cocotb.triggers.Event.fired>` is deprecated. Use :meth:`~cocotb.triggers.Event.is_set` instead. (:pr:`3871`)
+
+
+Changes
+-------
+
+- For Aldec simulators, the `-dbg` and `-O2` options are no longer passed by default, as they reduce simulation speed. Pass these options in ``COMPILE_ARGS`` and ``SIM_ARGS`` if you need them for increased observability. (:pr:`3490`)
+- ``await``\ ing a :class:`~cocotb.triggers.Join` trigger will yield the Join trigger and not the result of the task in the 2.0 release. (:pr:`3871`)
+- :meth:`Lock.locked <cocotb.triggers.Lock.locked>` is now a method rather than an attribute to mirror :meth:`asyncio.Lock.locked`. (:pr:`3871`)
+
 
 cocotb 1.8.1 (2023-10-06)
 =========================

@@ -1,1 +1,0 @@
-Add ``--trace-file`` to Verilator binaries which specifies the trace file name.
