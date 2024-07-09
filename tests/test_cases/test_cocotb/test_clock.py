@@ -14,7 +14,7 @@ import pytest
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.simulator import get_precision
+from cocotb.simulator import clock_create, get_precision
 from cocotb.triggers import RisingEdge, Timer
 from cocotb.utils import get_sim_time
 
@@ -76,6 +76,36 @@ async def test_clock_with_units_py(dut):
 @cocotb.test()
 async def test_clock_with_units_gpi(dut):
     await test_clock_with_units(dut, "gpi")
+
+
+@cocotb.test(expect_error=TypeError)
+async def test_gpi_clock_error_signal_type(dut):
+    clock_create(None)
+
+
+@cocotb.test(expect_error=TypeError)
+async def test_gpi_clock_error_params(dut):
+    clk = clock_create(dut.clk._handle)
+    clk.start(2, 1)
+
+
+@cocotb.test(expect_error=RuntimeError)
+async def test_gpi_clock_error_timing(dut):
+    clk = clock_create(dut.clk._handle)
+    clk.start(2, 3, True)
+
+
+@cocotb.test(expect_error=RuntimeError)
+async def test_gpi_clock_error_start(dut):
+    clk = Clock(dut.clk, 1.0, units="step", impl="gpi")
+    await cocotb.start(clk.start())
+
+
+@cocotb.test(expect_error=RuntimeError)
+async def test_gpi_clock_error_already_started(dut):
+    clk = clock_create(dut.clk._handle)
+    clk.start(2, 1, True)
+    clk.start(2, 1, True)
 
 
 # Xcelium/VHDL does not correctly report the simulator precision.

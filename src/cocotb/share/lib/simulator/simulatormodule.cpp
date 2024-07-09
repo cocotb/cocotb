@@ -906,8 +906,10 @@ int GpiClock::toggle() {
     clk_toggle_cb_hdl =
         gpi_register_timed_callback(&GpiClock::toggle_cb, this, to_next_edge);
     if (!clk_toggle_cb_hdl) {
+        // LCOV_EXCL_START
         LOG_ERROR("Clock will be stopped: failed to register toggle cb");
         return -1;
+        // LCOV_EXCL_STOP
     }
 
     return 0;
@@ -921,8 +923,10 @@ int GpiClock::toggle_cb(void *gpi_clk) {
 // Create a new clock object
 static PyObject *clock_create(PyObject *, PyObject *args) {
     if (!gpi_has_registered_impl()) {
+        // LCOV_EXCL_START
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
+        // LCOV_EXCL_STOP
     }
 
     Py_ssize_t numargs = PyTuple_Size(args);
@@ -947,20 +951,26 @@ static PyObject *clock_create(PyObject *, PyObject *args) {
     if (gpi_clk) {
         return gpi_hdl_New(gpi_clk);
     } else {
+        // LCOV_EXCL_START
         PyErr_SetString(PyExc_RuntimeError, "Failed to create clock!");
         return NULL;
+        // LCOV_EXCL_STOP
     }
 }
 
 static void clock_dealloc(PyObject *self) {
     if (!gpi_has_registered_impl()) {
+        // LCOV_EXCL_START
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return;
+        // LCOV_EXCL_STOP
     }
 
     if (Py_TYPE(self) != &gpi_hdl_Object<gpi_clk_hdl>::py_type) {
+        // LCOV_EXCL_START
         PyErr_SetString(PyExc_TypeError, "Wrong type for clock_dealloc!");
         return;
+        // LCOV_EXCL_STOP
     }
 
     GpiClock *gpi_clk = ((gpi_hdl_Object<gpi_clk_hdl> *)self)->hdl;
@@ -1048,8 +1058,10 @@ static int add_module_types(PyObject *simulator) {
     typ = (PyObject *)&gpi_hdl_Object<gpi_clk_hdl>::py_type;
     Py_INCREF(typ);
     if (PyModule_AddObject(simulator, "GpiClock", typ) < 0) {
+        // LCOV_EXCL_START
         Py_DECREF(typ);
         return -1;
+        // LCOV_EXCL_STOP
     }
 
     return 0;
@@ -1191,7 +1203,9 @@ PyMODINIT_FUNC PyInit_simulator(void) {
         return NULL;
     }
     if (PyType_Ready(&gpi_hdl_Object<gpi_clk_hdl>::py_type) < 0) {
+        // LCOV_EXCL_START
         return NULL;
+        // LCOV_EXCL_STOP
     }
 
     PyObject *simulator = PyModule_Create(&moduledef);
