@@ -849,7 +849,7 @@ class GpiClock {
 
     ~GpiClock() { stop(); }
 
-    int start(uint64_t period_steps, uint64_t high_steps, uint64_t phase_steps);
+    int start(uint64_t period_steps, uint64_t high_steps, bool start_high);
 
     int stop();
 
@@ -869,7 +869,7 @@ class GpiClock {
 };
 
 int GpiClock::start(uint64_t period_steps, uint64_t high_steps,
-                    uint64_t phase_steps) {
+                    bool start_high) {
     if (clk_toggle_cb_hdl) {
         LOG_ERROR("Failed to start clock: already started -- stop first");
         return -1;
@@ -882,23 +882,10 @@ int GpiClock::start(uint64_t period_steps, uint64_t high_steps,
 
     period = period_steps;
     t_high = high_steps;
-    uint64_t phase = phase_steps % period;
 
-    clk_val = phase < t_high ? 1 : 0;
-
-    uint64_t to_next_edge = clk_val ? (t_high - phase) : (period - phase);
-
-    clk_toggle_cb_hdl =
-        gpi_register_timed_callback(&GpiClock::toggle_cb, this, to_next_edge);
-    if (!clk_toggle_cb_hdl) {
-        LOG_ERROR("Failed to start clock: failed to register toggle cb");
-        return -1;
-    }
-
-    // Set the initial value only after successfully registering the callback
-    gpi_set_signal_value_int(clk_signal, clk_val, GPI_DEPOSIT);
-
-    return 0;
+    // Call toggle to start the clock, so set to the opposite value here.
+    clk_val = start_high ? 0 : 1;
+    return toggle();
 }
 
 int GpiClock::stop() {
@@ -984,12 +971,14 @@ static void clock_dealloc(PyObject *self) {
 }
 
 static PyObject *clk_start(gpi_hdl_Object<gpi_clk_hdl> *self, PyObject *args) {
-    unsigned long long period, t_high, phase;
+    unsigned long long period, t_high;
+    int start_high;
 
-    if (!PyArg_ParseTuple(args, "KKK:clk_start", &period, &t_high, &phase)) {
+    if (!PyArg_ParseTuple(args, "KKp:clk_start", &period, &t_high,
+                          &start_high)) {
         return NULL;
     }
-    if (self->hdl->start(period, t_high, phase) != 0) {
+    if (self->hdl->start(period, t_high, start_high) != 0) {
         PyErr_SetString(PyExc_RuntimeError, "Failed to start clock!\n");
         return NULL;
     }

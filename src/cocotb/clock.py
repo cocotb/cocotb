@@ -148,14 +148,12 @@ class Clock:
                 .. versionadded:: 1.3
         """
         if self.clkobj:
-            phase = 0 if start_high else self.t_high
-            self.clkobj.start(self.period, self.t_high, phase)
+            self.clkobj.start(self.period, self.t_high, start_high)
 
-            # The GPI clock will toggle for a given number of cycles, or forever,
-            # unless interrupted early (likely due to CancelledError)
             try:
-                # The clock is meant to go on indefinitely, so if awaiting this
-                # should never complete. Await on an event that's never set.
+                # The clock is meant to toggle forever, so awaiting this should
+                # never return (except in case of CancelledError).
+                # Await on an event that's never set.
                 e = Event()
                 await e.wait()
             finally:

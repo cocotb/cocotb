@@ -21,10 +21,9 @@ from cocotb.utils import get_sim_time
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
-@cocotb.test()
-async def test_clock_with_units(dut):
-    clk_1mhz = Clock(dut.clk, 1.0, units="us")
-    clk_250mhz = Clock(dut.clk, 4.0, units="ns")
+async def test_clock_with_units(dut, impl):
+    clk_1mhz = Clock(dut.clk, 1.0, units="us", impl=impl)
+    clk_250mhz = Clock(dut.clk, 4.0, units="ns", impl=impl)
 
     assert str(clk_1mhz) == "Clock(1.0 MHz)"
     dut._log.info(f"Created clock >{str(clk_1mhz)}<")
@@ -67,6 +66,16 @@ async def test_clock_with_units(dut):
     assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
 
     clk_gen.kill()
+
+
+@cocotb.test()
+async def test_clock_with_units_py(dut):
+    await test_clock_with_units(dut, "py")
+
+
+@cocotb.test()
+async def test_clock_with_units_gpi(dut):
+    await test_clock_with_units(dut, "gpi")
 
 
 # Xcelium/VHDL does not correctly report the simulator precision.
