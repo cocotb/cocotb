@@ -569,13 +569,16 @@ class BinaryValue:
         if isinstance(other, (BinaryValue, LogicArray)):
             return self.binstr == other.binstr
         elif isinstance(other, int):
-            return self.integer == other
+            try:
+                return self.integer == other
+            except ValueError:
+                return False
         elif isinstance(other, str):
             return self.binstr == other
         elif isinstance(other, Logic):
             return self.binstr == str(other)
         else:
-            return False
+            return NotImplemented
 
     def __int__(self):
         return self.integer
