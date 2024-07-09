@@ -92,6 +92,15 @@ try:
 except subprocess.CalledProcessError:
     commit_id = "master"
 
+# Is this documentation build a ReadTheDocs build for a git tag, i.e., a
+# release? Set the 'is_release_build' tag then, which can be used by the
+# '.. only::' directive.
+# https://docs.readthedocs.io/en/stable/reference/environment-variables.html
+is_rtd_tag = 'READTHEDOCS' in os.environ and os.environ.get('READTHEDOCS_VERSION_TYPE', 'unknown') == 'tag'
+
+if is_rtd_tag:
+    tags.add('is_release_build')
+
 autoclass_content = "both"
 
 autodoc_typehints = "description"  # show type hints in the list of parameters

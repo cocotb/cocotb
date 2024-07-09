@@ -7,7 +7,7 @@ import cocotb
 
 
 @cocotb.test()
-async def test_first(_):
+async def test_first(dut):
     # move generator to test that it doesn't affect the next test
     for _ in range(100):
         random.getrandbits(64)

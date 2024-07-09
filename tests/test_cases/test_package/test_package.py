@@ -10,7 +10,19 @@ import cocotb
 from cocotb.handle import HierarchyObject, LogicObject
 
 
-@cocotb.test()
+# Riviera-PRO 2019.10 does not detect packages over GPI:
+#   AttributeError: 'types.SimpleNamespace' object has no attribute
+#   'cocotb_package_pkg_1'
+@cocotb.test(
+    expect_error=(
+        AttributeError
+        if (
+            cocotb.SIM_NAME.lower().startswith("riviera")
+            and cocotb.SIM_VERSION.startswith("2019.10")
+        )
+        else ()
+    )
+)
 async def test_package_access(_) -> None:
     """Test package parameter access"""
 

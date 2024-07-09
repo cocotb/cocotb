@@ -7,11 +7,14 @@
 import os
 
 import cocotb
+from cocotb._sim_versions import RivieraVersion
 from cocotb.clock import Clock
 from cocotb.handle import Force, Release
 from cocotb.triggers import ClockCycles, Timer
 
 SIM_NAME = cocotb.SIM_NAME.lower()
+SIM_VERSION = cocotb.SIM_VERSION
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 # Release doesn't work on GHDL (gh-3830)
@@ -37,8 +40,16 @@ async def test_hdl_writes_dont_overwrite_force_combo(dut):
 
 
 # Release doesn't work on GHDL (gh-3830)
+# Release doesn't work on Riviera-PRO (VHPI) until version 2022.10.
 # Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(expect_fail=SIM_NAME.startswith(("ghdl", "verilator")))
+@cocotb.test(
+    expect_fail=SIM_NAME.startswith(("ghdl", "verilator"))
+    or (
+        SIM_NAME.startswith("riviera")
+        and LANGUAGE == "vhdl"
+        and RivieraVersion(SIM_VERSION) < RivieraVersion("2022.10")
+    )
+)
 async def test_hdl_writes_dont_overwrite_force_registered(dut):
     """Test Forcing then Releasing a registered output."""
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())

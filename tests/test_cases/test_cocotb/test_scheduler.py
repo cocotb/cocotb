@@ -718,7 +718,7 @@ async def test_create_task(_):
     async def coro():
         pass
 
-    assert type(cocotb.create_task(coro())) == Task
+    assert type(cocotb.create_task(coro())) is Task
 
     # proper construction from Coroutine objects
     class CoroType(Coroutine):
@@ -737,7 +737,7 @@ async def test_create_task(_):
         def __await__(self):
             yield from self._coro.__await__()
 
-    assert type(cocotb.create_task(CoroType())) == Task
+    assert type(cocotb.create_task(CoroType())) is Task
 
     # fail if given async generators
     async def agen():
