@@ -124,17 +124,11 @@ class Clock:
         self.signal = signal
         self.period = get_sim_steps(period, units)
         self.frequency = 1 / get_time_from_sim_steps(self.period, units="us")
-        self.t_high = self.period // 2
-
-        # If not using GpiClock, clkobj is None
         if impl == "auto":
             impl = "gpi" if cocotb._conf.trust_inertial else "py"
-        if impl == "gpi":
-            self.clkobj = clock_create(self.signal._handle)
-        elif impl == "py":
-            self.clkobj = None
-        else:
+        elif impl not in ["gpi", "py"]:
             raise ValueError(f"Invalid clock impl '{impl}'")
+        self.impl = impl
 
     async def start(self, start_high: bool = True) -> None:
         r"""Clocking coroutine.  Start driving your clock by :func:`cocotb.start`\ ing a
@@ -147,8 +141,12 @@ class Clock:
 
                 .. versionadded:: 1.3
         """
-        if self.clkobj:
-            self.clkobj.start(self.period, self.t_high, start_high)
+
+        t_high = self.period // 2
+
+        if self.impl == "gpi":
+            clkobj = clock_create(self.signal._handle)
+            clkobj.start(self.period, t_high, start_high)
 
             try:
                 # The clock is meant to toggle forever, so awaiting this should
@@ -157,16 +155,16 @@ class Clock:
                 e = Event()
                 await e.wait()
             finally:
-                self.clkobj.stop()
+                clkobj.stop()
         else:
             if start_high:
                 self.signal.value = 1
-                await Timer(self.t_high)
+                await Timer(t_high)
             while True:
                 self.signal.value = 0
-                await Timer(self.period - self.t_high)
+                await Timer(self.period - t_high)
                 self.signal.value = 1
-                await Timer(self.t_high)
+                await Timer(t_high)
 
     def __str__(self) -> str:
         return type(self).__qualname__ + f"({self.frequency:3.1f} MHz)"
