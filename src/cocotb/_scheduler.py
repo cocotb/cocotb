@@ -41,9 +41,9 @@ import threading
 import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
-from enum import Enum, auto
 from typing import Any, Callable, Dict, Sequence, Tuple, Union
 
+import cocotb
 from cocotb import _outcomes, _py_compat
 from cocotb.handle import SimHandleBase
 from cocotb.result import SimFailure, TestSuccess
@@ -170,12 +170,6 @@ class external_waiter:
         return self.state
 
 
-class SimPhase(Enum):
-    NORMAL = auto()
-    READ_WRITE = auto()
-    READ_ONLY = auto()
-
-
 class Scheduler:
     """The main Task scheduler.
 
@@ -273,9 +267,6 @@ class Scheduler:
             _py_compat.insertion_ordered_dict()
         )
 
-        # Our main state
-        self._sim_phase = SimPhase.NORMAL
-
         # A dictionary of pending (write_func, args), keyed by handle.
         # Writes are applied oldest to newest (least recently used).
         # Only the last scheduled write to a particular handle in a timestep is performed.
@@ -358,11 +349,11 @@ class Scheduler:
             # TODO: move state tracking to global variable
             # and handle this via some kind of trigger-specific Python callback
             if trigger is self._read_write:
-                self._sim_phase = SimPhase.READ_WRITE
+                cocotb.sim_phase = cocotb.SimPhase.READ_WRITE
             if trigger is self._read_only:
-                self._sim_phase = SimPhase.READ_ONLY
+                cocotb.sim_phase = cocotb.SimPhase.READ_ONLY
             elif isinstance(trigger, GPITrigger):
-                self._sim_phase = SimPhase.NORMAL
+                cocotb.sim_phase = cocotb.SimPhase.NORMAL
 
             self._react(trigger)
             self._event_loop()
@@ -504,7 +495,7 @@ class Scheduler:
         args: Sequence[Any],
     ) -> None:
         """Queue `write_func` to be called on the next ReadWrite trigger."""
-        if self._sim_phase == SimPhase.READ_ONLY:
+        if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
             raise Exception(
                 f"Write to object {handle._name} was scheduled during a read-only sync phase."
             )
@@ -756,7 +747,7 @@ class Scheduler:
 
             if not task.done():
                 if _debug:
-                    self.log.debug(f"{task!r} yielded {result} ({self._sim_phase})")
+                    self.log.debug(f"{task!r} yielded {result} ({cocotb.sim_phase})")
                 try:
                     result = self._trigger_from_any(result)
                 except TypeError as exc:

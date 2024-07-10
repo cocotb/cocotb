@@ -313,6 +313,8 @@ Other Runtime Information
 
 .. autodata:: cocotb.is_simulation
 
+.. autodata:: cocotb.sim_phase
+
 .. _combine-results:
 
 The ``combine_results`` script

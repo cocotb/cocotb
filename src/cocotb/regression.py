@@ -446,7 +446,8 @@ class RegressionManager:
 
     def _schedule_next_test(self, trigger: Optional[Trigger] = None) -> None:
         if trigger is not None:
-            cocotb._scheduler_inst._sim_phase = cocotb._scheduler.SimPhase.NORMAL
+            # TODO move to Trigger object
+            cocotb.sim_phase = cocotb.SimPhase.NORMAL
             trigger._unprime()
         cocotb._scheduler_inst._add_test(self._test_task)
 
