@@ -977,14 +977,14 @@ static void clock_dealloc(PyObject *self) {
 
     delete gpi_clk;
 
-    PyMem_Free(self);
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 static PyObject *clk_start(gpi_hdl_Object<gpi_clk_hdl> *self, PyObject *args) {
     unsigned long long period, t_high;
     int start_high;
 
-    if (!PyArg_ParseTuple(args, "KKp:clk_start", &period, &t_high,
+    if (!PyArg_ParseTuple(args, "KKp:start", &period, &t_high,
                           &start_high)) {
         return NULL;
     }
@@ -1170,7 +1170,9 @@ static PyMethodDef SimulatorMethods[] = {
                "--\n\n"
                "clock_create(signal: cocotb.simulator.gpi_sim_hdl"
                ") -> cocotb.simulator.GpiClock\n"
-               "Create a new clock driver on a signal.")},
+               "Create a clock driver on a signal."
+               "\n"
+               ".. versionadded:: 2.0")},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
