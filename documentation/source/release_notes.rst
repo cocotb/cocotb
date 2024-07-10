@@ -14,18 +14,18 @@ Cocotb 1.9.0 (2024-07-DD)
 Features
 --------
 
-- Support not using parenthesis on ``@cocotb.test`` decorator (:pr:`2731`)
-- Add `clean` argument to :ref:`Python Test Runner <howto-python-runner>` to remove build_dir completely during runner.build() stage (:pr:`3351`)
-- Add support for the `NVC <https://github.com/nickg/nvc>`_ VHDL simulator. (:pr:`3427`)
+- Not using parentheses on ``@cocotb.test`` decorator is now supported. (:pr:`2731`)
+- The :meth:`cocotb.runner.Simulator.build` method now accepts a ``clean`` argument to remove ``build_dir`` completely during build stage. (:pr:`3351`)
+- Added support for the `NVC <https://github.com/nickg/nvc>`_ VHDL simulator. (:pr:`3427`)
 - Added :make:var:`SIM_CMD_SUFFIX` to allow users to redirect simulator output or otherwise suffix the simulation command invocation. (:pr:`3561`)
-- Add `--trace` to Verilator binaries for run-time trace generation and integrate with :ref:`Python Test Runner <howto-python-runner>`. (:pr:`3667`)
-- Add `log_file` argument to :ref:`Python Test Runner <howto-python-runner>` to redirect stdout and stderr to the specified file. (:pr:`3668`)
-- Allow `results_xml` argument to :ref:`Python Test Runner <howto-python-runner>` to be an absolute path (:pr:`3669`)
-- Add ``--trace-file`` to Verilator binaries which specifies the trace file name. (:pr:`3683`)
-- Add `pre_cmd` in :ref:`Python Test Runner <howto-python-runner>` for Questa simulator to run given commands before simulation start (:pr:`3744`)
+- Added ``--trace`` command line argument to Verilator simulation binaries for run-time trace generation. This new argument is passed to the binary when the ``waves`` argument to :meth:`cocotb.runner.Simulator.test` is ``True``. (:pr:`3667`)
+- The :meth:`cocotb.runner.Simulator.build` and :meth:`cocotb.runner.Simulator.test` methods now accept a ``log_file`` argument to redirect stdout and stderr to the specified file. (:pr:`3668`)
+- The ``results_xml`` argument to :meth:`cocotb.runner.Simulator.test` can now be an absolute path. (:pr:`3669`)
+- Added ``--trace-file`` command line argument to Verilator simulation binaries which specifies the trace file name. This can be passed to the binary by using the ``test_args`` argument to :meth:`cocotb.runner.Simulator.test`. (:pr:`3683`)
+- The :meth:`cocotb.runner.Simulator.test` method now accepts a ``pre_cmd`` argument to run given commands before the simulation starts. These are typically Tcl commands for simulators that support them. Only support for the Questa simulator has been implemented. (:pr:`3744`)
 - The ``sources`` option was added to :meth:`cocotb.runner.Simulator.build` to better support building mixed-language designs. (:pr:`3796`)
 - Enable use of VPI fallback in all simulators when attempting to access generate blocks directly via lookup. This enables better support for simulators that don't support ``vpiGenScopeArray``, allowing discovery of generate blocks without having to iterate over the parent handle. (:pr:`3817`)
-- Add support for comparing :class:`~cocotb.binary.BinaryValue` with :class:`~cocotb.types.Logic`, :class:`~cocotb.types.LogicArray`, and :class:`str`. (:pr:`3845`)
+- Added support for comparing :class:`~cocotb.binary.BinaryValue` with :class:`~cocotb.types.Logic`, :class:`~cocotb.types.LogicArray`, and :class:`str`. (:pr:`3845`)
 - Riviera-PRO now supports compilation into (multiple) VHDL libraries using :make:var:`VHDL_SOURCES_<lib>`. (:pr:`3922`)
 
 
@@ -33,11 +33,9 @@ Bugfixes
 --------
 
 - Xcelium 23.09.004 and newer can now be used to test designs with a VHDL toplevel. (:pr:`1076`)
-- Fix a potential issue where pseudo-region lookup may find the wrong
-generate block if the name of one generate block starts with the name of
-another generate block. (:pr:`2255`)
-- Support :ref:`Python Test Runner <howto-python-runner>` `waves` parameter for Verilator. (:pr:`3681`)
-- Pass ``test_args`` to test command when using :ref:`Python Test Runner <howto-python-runner>` for Verilator, which was previously missing. (:pr:`3682`)
+- Fixed a potential issue where pseudo-region lookup may find the wrong generate block if the name of one generate block starts with the name of another generate block. (:pr:`2255`)
+- Support ``waves`` argument to :meth:`cocotb.runner.Simulator.build` for Verilator. (:pr:`3681`)
+- The ``test_args`` argument to :meth:`cocotb.runner.Simulator.test` is now passed to the Verilator simulation binary when running the simulation, which was previously missing. (:pr:`3682`)
 
 
 Deprecations and Removals
@@ -204,7 +202,7 @@ Features
 - Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions. (:pr:`2660`)
 - Add :func:`cocotb.create_task` API for creating a Task from a Coroutine without scheduling. (:pr:`2665`)
 - Support rounding modes in :class:`~cocotb.triggers.Timer`. (:pr:`2684`)
-- Support rounding modes in :class:`cocotb.utils.get_sim_steps`. (:pr:`2684`)
+- Support rounding modes in :func:`cocotb.utils.get_sim_steps`. (:pr:`2684`)
 - Support passing ``'step'`` as a time unit in :func:`cocotb.utils.get_sim_time`. (:pr:`2691`)
 
 
@@ -255,8 +253,8 @@ cocotb 1.5.2 (2021-05-03)
 Bugfixes
 --------
 
-- Change some makefile syntax to support GNU Make 3 (:pr:`2496`)
-- Fix behavior of ``cocotb-config --libpython`` when finding libpython fails (:pr:`2522`)
+- Changed some makefile syntax to support GNU Make 3. (:pr:`2496`)
+- Fixed behavior of ``cocotb-config --libpython`` when finding libpython fails. (:pr:`2522`)
 
 
 cocotb 1.5.1 (2021-03-20)
@@ -265,7 +263,7 @@ cocotb 1.5.1 (2021-03-20)
 Bugfixes
 --------
 
-- Prevent pytest assertion rewriting (:pr:`2028`) from capturing stdin, which causes problems with IPython support (:pr:`1649`). (:pr:`2462`)
+- Prevent pytest assertion rewriting (:pr:`2028`) from capturing stdin, which causes problems with IPython support. (:pr:`1649`) (:pr:`2462`)
 - Add dependency on `cocotb_bus <https://github.com/cocotb/cocotb-bus>`_ to prevent breaking users that were previously using the bus and testbenching objects. (:pr:`2477`)
 - Add back functionality to :class:`cocotb.binary.BinaryValue` that allows the user to change ``binaryRepresentation`` after object creation. (:pr:`2480`)
 
@@ -286,14 +284,14 @@ Features
 - If ``pytest`` is installed, its assertion-rewriting framework will be used to
   produce more informative tracebacks from the :keyword:`assert` statement. (:pr:`2028`)
 - The handle to :envvar:`TOPLEVEL`, typically seen as the first argument to a cocotb test function, is now available globally as :data:`cocotb.top`. (:pr:`2134`)
-- The ``units`` argument to :class:`cocotb.triggers.Timer`,
-  :class:`cocotb.clock.Clock` and :func:`cocotb.utils.get_sim_steps`,
+- The ``units`` argument to :class:`~cocotb.triggers.Timer`,
+  :class:`~cocotb.clock.Clock` and :func:`~cocotb.utils.get_sim_steps`,
   and the ``timeout_unit`` argument to
-  :func:`cocotb.triggers.with_timeout` and :class:`cocotb.test`
+  :func:`~cocotb.triggers.with_timeout` and :class:`cocotb.test`
   now accepts ``'step'`` to mean the simulator time step.
   This used to be expressed using ``None``, which is now deprecated. (:pr:`2171`)
-- :func:`cocotb.regression.TestFactory.add_option` now supports groups of options when a full Cartesian product is not desired (:pr:`2175`)
-- Added asyncio-style queues, :class:`cocotb.queue.Queue`, :class:`cocotb.queue.PriorityQueue`, and :class:`cocotb.queue.LifoQueue`. (:pr:`2297`)
+- :meth:`TestFactory.add_option() <cocotb.regression.TestFactory.add_option>` now supports groups of options when a full Cartesian product is not desired. (:pr:`2175`)
+- Added asyncio-style queues, :class:`~cocotb.queue.Queue`, :class:`~cocotb.queue.PriorityQueue`, and :class:`~cocotb.queue.LifoQueue`. (:pr:`2297`)
 - Support for the SystemVerilog type ``bit`` has been added. (:pr:`2322`)
 - Added the ``--lib-dir``,  ``--lib-name`` and ``--lib-name-path`` options to the ``cocotb-config`` command to make cocotb integration into existing flows easier. (:pr:`2387`)
 - Support for using Questa's VHPI has been added.
@@ -377,7 +375,7 @@ Features
 
 - :class:`~cocotb.triggers.Lock` can now be used in :keyword:`async with` statements. (:pr:`1031`)
 - Add support for distinguishing between ``net`` (``vpiNet``) and ``reg`` (``vpiReg``) type when using the VPI interface. (:pr:`1107`)
-- Support for dropping into :mod:`pdb` upon failure, via the new :envvar:`COCOTB_PDB_ON_EXCEPTION` environment variable (:pr:`1180`)
+- Support for dropping into :mod:`pdb` upon failure, via the new :envvar:`COCOTB_PDB_ON_EXCEPTION` environment variable. (:pr:`1180`)
 - Simulators run through a Tcl script (Aldec Riviera Pro and Mentor simulators) now support a new :make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime. (:pr:`1244`)
 - Cocotb now supports the following example of forking a *non-decorated* :ref:`async coroutine <async_functions>`.
 
@@ -407,7 +405,7 @@ Features
       logging.basicConfig()
 
   .. consume the towncrier issue number on this line. (:pr:`1266`)
-- Support for ``vpiRealNet`` (:pr:`1282`)
+- Support for ``vpiRealNet``. (:pr:`1282`)
 - The colored output can now be disabled by the :envvar:`NO_COLOR` environment variable. (:pr:`1309`)
 - Cocotb now supports deposit/force/release/freeze actions on simulator handles, exposing functionality similar to the respective Verilog/VHDL assignments.
 
@@ -457,7 +455,7 @@ Features
 Bugfixes
 --------
 
-- Tests which fail at initialization, for instance due to no ``yield`` being present, are no longer silently ignored (:pr:`1253`)
+- Tests which fail at initialization, for instance due to no ``yield`` being present, are no longer silently ignored. (:pr:`1253`)
 - Tests that were not run because predecessors threw :class:`cocotb.result.SimFailure`, and caused the simulator to exit, are now recorded with an outcome of :class:`cocotb.result.SimFailure`.
   Previously, these tests were ignored. (:pr:`1279`)
 - Makefiles now correctly fail if the simulation crashes before a ``results.xml`` file can be written. (:pr:`1314`)
@@ -564,9 +562,9 @@ New features
   Please use the latest version of Verilator, and `report bugs <https://github.com/cocotb/cocotb/issues/new>`_ if you experience problems.
 - New makefile variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` for setting the default time unit and precision that should be assumed for simulation when not specified by modules in the design. (:pr:`1113`)
 - New ``timeout_time`` and ``timeout_unit`` arguments to :func:`cocotb.test`, for adding test timeouts. (:pr:`1119`)
-- :func:`cocotb.triggers.with_timeout`, for a shorthand for waiting for a trigger with a timeout. (:pr:`1119`)
+- :func:`~cocotb.triggers.with_timeout`, for a shorthand for waiting for a trigger with a timeout. (:pr:`1119`)
 - The ``expect_error`` argument to :func:`cocotb.test` now accepts a specific exception type. (:pr:`1116`)
-- New environment variable :envvar:`COCOTB_RESULTS_FILE`, to allow configuration of the xUnit XML output filename.  (:pr:`1053`)
+- New environment variable :envvar:`COCOTB_RESULTS_FILE`, to allow configuration of the xUnit XML output filename. (:pr:`1053`)
 - A new ``bus_separator`` argument to :class:`cocotb.drivers.BusDriver`. (:pr:`1160`)
 - A new ``start_high`` argument to :meth:`cocotb.clock.Clock.start`. (:pr:`1036`)
 - A new :data:`cocotb.__version__` constant, which contains the version number of the running cocotb. (:pr:`1196`)
@@ -580,7 +578,7 @@ Notable changes and bug fixes
 - :func:`cocotb.external` and :func:`cocotb.function` now work more reliably and with fewer race conditions.
 - A failing ``assert`` will be considered a test failure. Previously, it was considered a test *error*.
 - :meth:`~cocotb.handle.NonConstantObject.drivers` and :meth:`~cocotb.handle.NonConstantObject.loads` now also work correctly in Python 3.7 onwards.
-- :class:`cocotb.triggers.Timer` can now be used with :class:`decimal.Decimal` instances, allowing constructs like ``Timer(Decimal('1e-9'), units='sec')`` as an alternate spelling for ``Timer(100, units='us')``. (:pr:`1114`)
+- :class:`~cocotb.triggers.Timer` can now be used with :class:`decimal.Decimal` instances, allowing constructs like ``Timer(Decimal("1e-9"), units="sec")`` as an alternate spelling for ``Timer(100, units="us")``. (:pr:`1114`)
 - Many (editorial) documentation improvements.
 
 Deprecations
