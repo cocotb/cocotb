@@ -89,13 +89,13 @@ async def test_gpi_clock_error_params(dut):
     clk.start(2, 1)
 
 
-@cocotb.test(expect_error=RuntimeError)
+@cocotb.test(expect_error=ValueError)
 async def test_gpi_clock_error_timing(dut):
     clk = clock_create(dut.clk._handle)
     clk.start(2, 3, True)
 
 
-@cocotb.test(expect_error=RuntimeError)
+@cocotb.test(expect_error=ValueError)
 async def test_gpi_clock_error_start(dut):
     clk = Clock(dut.clk, 1.0, units="step", impl="gpi")
     await cocotb.start(clk.start())
@@ -105,7 +105,10 @@ async def test_gpi_clock_error_start(dut):
 async def test_gpi_clock_error_already_started(dut):
     clk = clock_create(dut.clk._handle)
     clk.start(2, 1, True)
-    clk.start(2, 1, True)
+    try:
+        clk.start(2, 1, True)
+    finally:
+        clk.stop()
 
 
 # Xcelium/VHDL does not correctly report the simulator precision.

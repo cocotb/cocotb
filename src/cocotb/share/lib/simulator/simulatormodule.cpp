@@ -41,6 +41,7 @@ static int releases = 0;
 #include <cocotb_utils.h>    // to_python to_simulator
 #include <py_gpi_logging.h>  // py_gpi_logger_set_level
 
+#include <cerrno>
 #include <limits>
 #include <type_traits>
 
@@ -849,11 +850,13 @@ class GpiClock {
 
     ~GpiClock() { stop(); }
 
+    // Start the clock. Returns nonzero in case of failure:
+    //  - EBUSY if the clock was already started (stop first)
+    //  - EINVAL if the parameters are invalid
+    //  - EAGAIN if registering the toggle callback failed
     int start(uint64_t period_steps, uint64_t high_steps, bool start_high);
 
     int stop();
-
-    bool is_running() const { return clk_toggle_cb_hdl != nullptr; }
 
   private:
     GpiObjHdl *clk_signal = nullptr;
@@ -872,12 +875,12 @@ int GpiClock::start(uint64_t period_steps, uint64_t high_steps,
                     bool start_high) {
     if (clk_toggle_cb_hdl) {
         LOG_ERROR("Failed to start clock: already started -- stop first");
-        return -1;
+        return EBUSY;
     }
     if ((period_steps < 2) || (high_steps < 1) ||
         (high_steps >= period_steps)) {
         LOG_ERROR("Failed to start clock: invalid parameters");
-        return -1;
+        return EINVAL;
     }
 
     period = period_steps;
@@ -908,7 +911,7 @@ int GpiClock::toggle() {
     if (!clk_toggle_cb_hdl) {
         // LCOV_EXCL_START
         LOG_ERROR("Clock will be stopped: failed to register toggle cb");
-        return -1;
+        return EAGAIN;
         // LCOV_EXCL_STOP
     }
 
@@ -929,19 +932,10 @@ static PyObject *clock_create(PyObject *, PyObject *args) {
         // LCOV_EXCL_STOP
     }
 
-    Py_ssize_t numargs = PyTuple_Size(args);
-
-    if (numargs != 1) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Attempt to create Clock with wrong arguments!");
-        return NULL;
-    }
-
     // Extract the clock signal sim object
-    PyObject *pSigHdl = PyTuple_GetItem(args, 0);
-    if (Py_TYPE(pSigHdl) != &gpi_hdl_Object<gpi_sim_hdl>::py_type) {
-        PyErr_SetString(PyExc_TypeError,
-                        "First argument must be a gpi_sim_hdl!");
+    PyObject *pSigHdl;
+    if (!PyArg_ParseTuple(args, "O!:clock_create",
+                          &gpi_hdl_Object<gpi_sim_hdl>::py_type, &pSigHdl)) {
         return NULL;
     }
     gpi_sim_hdl sim_hdl = ((gpi_hdl_Object<gpi_sim_hdl> *)pSigHdl)->hdl;
@@ -977,19 +971,29 @@ static void clock_dealloc(PyObject *self) {
 
     delete gpi_clk;
 
-    Py_TYPE(self)->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *clk_start(gpi_hdl_Object<gpi_clk_hdl> *self, PyObject *args) {
     unsigned long long period, t_high;
     int start_high;
 
-    if (!PyArg_ParseTuple(args, "KKp:start", &period, &t_high,
-                          &start_high)) {
+    if (!PyArg_ParseTuple(args, "KKp:start", &period, &t_high, &start_high)) {
         return NULL;
     }
-    if (self->hdl->start(period, t_high, start_high) != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to start clock!\n");
+
+    int ret = self->hdl->start(period, t_high, start_high);
+
+    if (ret != 0) {
+        if (ret == EINVAL) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Failed to start clock: invalid arguments!\n");
+        } else if (ret == EBUSY) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "Failed to start clock: already started!\n");
+        } else {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to start clock!\n");
+        }
         return NULL;
     }
 
@@ -1385,14 +1389,22 @@ PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
 
 static PyMethodDef gpi_clk_methods[] = {
     {"start", (PyCFunction)clk_start, METH_VARARGS,
-     PyDoc_STR("start($self, t_period, t_high, phase)\n"
+     PyDoc_STR("start($self, t_period, t_high, start_high)\n"
                "--\n\n"
-               "start(t_period: int, t_high: int, phase: int) -> None\n"
+               "start(t_period: int, t_high: int, start_high: bool) -> None\n"
                "Start this clock now. The clock will have a period of "
-               "`t_period` steps, nominally starting off high at the start of "
-               "the period and transitioning to low after `t_high` steps. "
-               "`phase` controls how far into the period the clock actually "
-               "starts up (e.g. phase == t_high will start off low).")},
+               "`t_period` steps, and out of that period it will be high "
+               "`t_high` steps. If `start_high` is True, start a the beginning "
+               "of the high state, otherwise start at the beginning of the "
+               "low state.\n"
+               "Raises:\n"
+               "    TypeError: wrong arguments type.\n"
+               "    ValueError: t_period and t_high are such that in one "
+               "period the duration of the low or high state would be less "
+               "than one step.\n"
+               "    RuntimeError: the clock was already started, or the "
+               "underlying callback could not be registered.\n"
+               "\n")},
     {"stop", (PyCFunction)clk_stop, METH_NOARGS,
      PyDoc_STR("stop($self)\n"
                "--\n\n"

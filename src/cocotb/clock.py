@@ -140,6 +140,10 @@ class Clock:
                 Default is ``True``.
 
                 .. versionadded:: 1.3
+
+        .. versionchanged:: 2.0
+            Removed ``cycles`` arguments for toggling for a finite amount of cyles.
+            Use ``kill()`` on the clock task instead, or implement manually.
         """
 
         t_high = self.period // 2
@@ -157,14 +161,16 @@ class Clock:
             finally:
                 clkobj.stop()
         else:
+            timer_high = Timer(t_high)
+            timer_low = Timer(self.period - t_high)
             if start_high:
                 self.signal.value = 1
-                await Timer(t_high)
+                await timer_high
             while True:
                 self.signal.value = 0
-                await Timer(self.period - t_high)
+                await timer_low
                 self.signal.value = 1
-                await Timer(t_high)
+                await timer_high
 
     def __str__(self) -> str:
         return type(self).__qualname__ + f"({self.frequency:3.1f} MHz)"
