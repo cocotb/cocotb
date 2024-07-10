@@ -992,7 +992,9 @@ static PyObject *clk_start(gpi_hdl_Object<gpi_clk_hdl> *self, PyObject *args) {
             PyErr_SetString(PyExc_RuntimeError,
                             "Failed to start clock: already started!\n");
         } else {
+            // LCOV_EXCL_START
             PyErr_SetString(PyExc_RuntimeError, "Failed to start clock!\n");
+            // LCOV_EXCL_STOP
         }
         return NULL;
     }

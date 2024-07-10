@@ -83,6 +83,11 @@ async def test_gpi_clock_error_signal_type(dut):
     clock_create(None)
 
 
+@cocotb.test(expect_error=ValueError)
+async def test_gpi_clock_error_impl(dut):
+    Clock(dut.clk, 1.0, units="step", impl="invalid")
+
+
 @cocotb.test(expect_error=TypeError)
 async def test_gpi_clock_error_params(dut):
     clk = clock_create(dut.clk._handle)

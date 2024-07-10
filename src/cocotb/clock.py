@@ -70,6 +70,8 @@ class Clock:
             When ``'auto'`` is used (default), it will pick GpiClock when trusting inertial
             writes (see :envvar:`COCOTB_TRUST_INERTIAL_WRITES`).
 
+            .. versionadded:: 2.0
+
     If you need more features like a phase shift and an asymmetric duty cycle,
     it is simple to create your own clock generator (that you then :func:`~cocotb.start`):
 
