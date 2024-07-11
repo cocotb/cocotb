@@ -315,6 +315,8 @@ Other Runtime Information
 
 .. autodata:: cocotb.sim_phase
 
+.. autoenum:: cocotb.SimPhase
+
 .. _combine-results:
 
 The ``combine_results`` script
