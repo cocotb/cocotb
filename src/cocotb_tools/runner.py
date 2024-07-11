@@ -9,6 +9,7 @@
 # TODO: support timescale on all simulators
 # TODO: support custom dependencies
 
+import logging
 import os
 import re
 import shlex
@@ -85,6 +86,8 @@ class Runner(ABC):
         # for running test() independently of build()
         self.build_dir: Path = get_abs_path("sim_build")
         self.parameters: Mapping[str, object] = {}
+
+        self.log = logging.getLogger(type(self).__qualname__)
 
     @abstractmethod
     def _simulator_in_path(self) -> None:
@@ -436,7 +439,7 @@ class Runner(ABC):
         if pytest_current_test:
             check_results_file(results_xml_file)
 
-        print(f"INFO: Results file: {results_xml_file}")
+        self.log.info("Results file: %s", results_xml_file)
         return results_xml_file
 
     @abstractmethod
@@ -466,7 +469,7 @@ class Runner(ABC):
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
         for cmd in cmds:
-            print(f"INFO: Running command {_shlex_join(cmd)} in directory {cwd}")
+            self.log.info("Running command %s in directory %s", _shlex_join(cmd), cwd)
 
             # TODO: create a thread to handle stderr and log as error?
             # TODO: log forwarding
@@ -478,7 +481,7 @@ class Runner(ABC):
 
     def rm_build_folder(self, build_dir: Path) -> None:
         if os.path.isdir(build_dir):
-            print("Removing:", build_dir)
+            self.log.info("Removing: %s", build_dir)
             shutil.rmtree(build_dir, ignore_errors=True)
 
 
@@ -688,8 +691,8 @@ class Icarus(Runner):
                 )
         for arg in self.build_args:
             if type(arg) not in (str, Verilog):
-                print(
-                    f"WARNING: {type(self).__qualname__} only supports Verilog. build_args {arg!r} will not be applied."
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports Verilog. build_args {arg!r} cannot be applied."
                 )
 
         build_args = list(self.build_args)
@@ -728,7 +731,7 @@ class Icarus(Runner):
             ]
 
         else:
-            print("WARNING: Skipping compilation of", self.sim_file)
+            self.log.warning("Skipping compilation of %s", self.sim_file)
 
         return cmds
 
@@ -859,7 +862,7 @@ class Questa(Runner):
                     gpi_if_lib_path.as_posix() + f":cocotb{gpi_if}_entry_point"
                 )
             else:
-                print("WARNING: {gpi_if_lib_path} library not found.")
+                raise RuntimeError(f"{gpi_if_lib_path} library not found.")
         self.env["GPI_EXTRA"] = ",".join(gpi_extra_list)
 
         return cmds
@@ -916,8 +919,8 @@ class Ghdl(Runner):
                 )
         for arg in self.build_args:
             if type(arg) not in (str, VHDL):
-                print(
-                    f"WARNING: {type(self).__qualname__} only supports VHDL. build_args {arg!r} will not be applied."
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports VHDL. build_args {arg!r} will not be applied."
                 )
 
         cmds = [
@@ -940,7 +943,7 @@ class Ghdl(Runner):
 
     def _test_command(self) -> List[_Command]:
         if self.pre_cmd is not None:
-            print("WARNING: pre_cmd is not implemented for GHDL.")
+            raise RuntimeError("pre_cmd is not implemented for GHDL.")
 
         ghdl_run_args = self.test_args
 
@@ -1025,8 +1028,8 @@ class Nvc(Runner):
                 )
         for arg in self.build_args:
             if type(arg) not in (str, VHDL):
-                print(
-                    f"WARNING: {type(self).__qualname__} only supports VHDL. build_args {arg!r} will not be applied."
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports VHDL. build_args {arg!r} will not be applied."
                 )
 
         cmds = [
@@ -1142,7 +1145,7 @@ class Riviera(Runner):
 
     def _test_command(self) -> List[_Command]:
         if self.pre_cmd is not None:
-            print("WARNING: pre_cmd is not implemented for Riviera.")
+            raise RuntimeError("pre_cmd is not implemented for Riviera.")
 
         do_script: str = "\nonerror {\n quit -code 1 \n} \n"
 
@@ -1242,8 +1245,8 @@ class Verilator(Runner):
                 )
         for arg in self.build_args:
             if type(arg) not in (str, Verilog):
-                print(
-                    f"WARNING: {type(self).__qualname__} only supports Verilog. build_args {arg!r} will not be applied."
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports Verilog. build_args {arg!r} will not be applied."
                 )
 
         if self.hdl_toplevel is None:
@@ -1303,7 +1306,7 @@ class Verilator(Runner):
 
     def _test_command(self) -> List[_Command]:
         if self.pre_cmd is not None:
-            print("WARNING: pre_cmd is not implemented for Verilator.")
+            raise RuntimeError("pre_cmd is not implemented for Verilator.")
 
         out_file = self.build_dir / self.sim_hdl_toplevel
         return [
@@ -1402,7 +1405,7 @@ class Xcelium(Runner):
 
     def _test_command(self) -> List[_Command]:
         if self.pre_cmd is not None:
-            print("WARNING: pre_cmd is not implemented for Xcelium.")
+            raise RuntimeError("pre_cmd is not implemented for Xcelium.")
 
         self.env["CDS_AUTO_64BIT"] = "all"
 
