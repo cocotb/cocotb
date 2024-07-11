@@ -80,7 +80,7 @@ class Verilog(str):
     """Tags source files and build arguments to :meth:`~cocotb_tools.runner.Simulator.build` as Verilog-specific."""
 
 
-class Simulator(ABC):
+class Runner(ABC):
     supported_gpi_interfaces: Dict[str, List[str]] = {}
 
     def __init__(self) -> None:
@@ -604,7 +604,7 @@ def is_verilog_source(source: PathLike) -> bool:
     return False
 
 
-class Icarus(Simulator):
+class Icarus(Runner):
     supported_gpi_interfaces = {"verilog": ["vpi"]}
 
     @staticmethod
@@ -730,7 +730,7 @@ class Icarus(Simulator):
         return cmds
 
 
-class Questa(Simulator):
+class Questa(Runner):
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["fli", "vhpi"]}
 
     @staticmethod
@@ -857,7 +857,7 @@ class Questa(Simulator):
         return cmds
 
 
-class Ghdl(Simulator):
+class Ghdl(Runner):
     supported_gpi_interfaces = {"vhdl": ["vpi"]}
 
     def _set_env(self) -> None:
@@ -969,7 +969,7 @@ class Ghdl(Simulator):
         return cmds
 
 
-class Nvc(Simulator):
+class Nvc(Runner):
     supported_gpi_interfaces = {"vhdl": ["vhpi"]}
 
     def _set_env(self) -> None:
@@ -1031,7 +1031,7 @@ class Nvc(Simulator):
         return cmds
 
 
-class Riviera(Simulator):
+class Riviera(Runner):
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
 
     @staticmethod
@@ -1171,7 +1171,7 @@ class Riviera(Simulator):
         return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
 
 
-class Verilator(Simulator):
+class Verilator(Runner):
     supported_gpi_interfaces = {"verilog": ["vpi"]}
 
     def _simulator_in_path(self) -> None:
@@ -1278,7 +1278,7 @@ class Verilator(Simulator):
         ]
 
 
-class Xcelium(Simulator):
+class Xcelium(Runner):
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
 
     @staticmethod
@@ -1427,7 +1427,7 @@ class Xcelium(Simulator):
         return cmds
 
 
-def get_runner(simulator_name: str) -> Simulator:
+def get_runner(simulator_name: str) -> Runner:
     """Return an instance of a runner for *simulator_name*.
 
     Args:
@@ -1437,7 +1437,7 @@ def get_runner(simulator_name: str) -> Simulator:
         ValueError: If *simulator_name* is not one of the supported simulators or an alias of one.
     """
 
-    supported_sims: Dict[str, Type[Simulator]] = {
+    supported_sims: Dict[str, Type[Runner]] = {
         "icarus": Icarus,
         "questa": Questa,
         "ghdl": Ghdl,
