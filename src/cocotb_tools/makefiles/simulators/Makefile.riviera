@@ -112,7 +112,7 @@ define make_lib
   echo "if [file exists $(SIM_BUILD)/$(LIB)] {adel -lib $(SIM_BUILD)/$(LIB) -all}" >> $@;
   echo "alib $(SIM_BUILD)/$(LIB)" >> $@;
   echo "amap $(LIB) $(SIM_BUILD)/$(LIB)" >> $@;
-  echo "acom -work $(LIB) $(VCOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES_$(LIB)))" >> $@;
+  echo "acom -work $(LIB) $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES_$(LIB)))" >> $@;
 endef
 
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
