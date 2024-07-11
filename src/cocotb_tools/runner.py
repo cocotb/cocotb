@@ -605,6 +605,15 @@ def is_verilog_source(source: PathLike) -> bool:
 
 
 class Icarus(Runner):
+    """Implementation of :class:`Runner` for Icarus.
+
+    * ``hdl_toplevel`` argument to :meth:`build` is *required*.
+    * ``waves`` argument *must* be given to :meth:`build` if used.
+    * ``timescale`` argument to :meth:`build` must be given to support dumping the command file.
+    * Does not support the ``gui`` argument to :meth:`test`.
+    * Does not support the ``pre_cmd`` argument to :meth:`test`.
+    """
+
     supported_gpi_interfaces = {"verilog": ["vpi"]}
 
     @staticmethod
@@ -731,6 +740,11 @@ class Icarus(Runner):
 
 
 class Questa(Runner):
+    """Implementation of :class:`Runner` for Questa.
+
+    * Does not support the ``timescale`` argument to :meth:`build` or :meth:`test`.
+    """
+
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["fli", "vhpi"]}
 
     @staticmethod
@@ -858,6 +872,13 @@ class Questa(Runner):
 
 
 class Ghdl(Runner):
+    """Implementation of :class:`Runner` for GHDL.
+
+    * Does not support the ``pre_cmd`` argument to :meth:`test`.
+    * Does not support the ``gui`` argument to :meth:`test`.
+    * Does not support the ``waves`` argument to :meth:`build` or :meth:`test`.
+    """
+
     supported_gpi_interfaces = {"vhdl": ["vpi"]}
 
     def _set_env(self) -> None:
@@ -970,6 +991,14 @@ class Ghdl(Runner):
 
 
 class Nvc(Runner):
+    """Implementation of :class:`Runner` for GHDL.
+
+    * Does not support the ``pre_cmd`` argument to :meth:`test`.
+    * Does not support the ``gui`` argument to :meth:`test`.
+    * Does not support the ``waves`` argument to :meth:`build` or :meth:`test`.
+    * Does not support the ``timescale`` argument to :meth:`build` or :meth:`test`.
+    """
+
     supported_gpi_interfaces = {"vhdl": ["vhpi"]}
 
     def _set_env(self) -> None:
@@ -1032,6 +1061,13 @@ class Nvc(Runner):
 
 
 class Riviera(Runner):
+    """Implementation of :class:`Runner` for GHDL.
+
+    * Does not support the ``pre_cmd`` argument to :meth:`test`.
+    * Does not support the ``gui`` argument to :meth:`test`.
+    * Does not support the ``timescale`` argument to :meth:`build` or :meth:`test`.
+    """
+
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
 
     @staticmethod
@@ -1172,6 +1208,12 @@ class Riviera(Runner):
 
 
 class Verilator(Runner):
+    """Implementation of :class:`Runner` for GHDL.
+
+    * Does not support the ``pre_cmd`` argument to :meth:`test`.
+    * Does not support the ``gui`` argument to :meth:`test`.
+    """
+
     supported_gpi_interfaces = {"verilog": ["vpi"]}
 
     def _simulator_in_path(self) -> None:
@@ -1279,6 +1321,12 @@ class Verilator(Runner):
 
 
 class Xcelium(Runner):
+    """Implementation of :class:`Runner` for GHDL.
+
+    * Does not support the ``pre_cmd`` argument to :meth:`test`.
+    * Does not support the ``timescale`` argument to :meth:`build` or :meth:`test`.
+    """
+
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
 
     @staticmethod
