@@ -9,7 +9,6 @@
 # TODO: support timescale on all simulators
 # TODO: support custom dependencies
 
-import abc
 import os
 import re
 import shlex
@@ -18,18 +17,31 @@ import subprocess
 import sys
 import tempfile
 import warnings
+from abc import ABC, abstractmethod
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, TextIO, Tuple, Type, Union
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    TextIO,
+    Tuple,
+    Type,
+    Union,
+)
 from xml.etree import ElementTree as ET
 
 import find_libpython
 
 import cocotb_tools.config
 
-PathLike = Union["os.PathLike[str]", str]
-Command = List[str]
-Timescale = Tuple[str, str]
+PathLike = Union["os.PathLike[str]", str]  # TODO use TypeAlias in Python 3.10
+"A path that can be passed to :class:`pathlib.Path` or :func:`open`"
+
+_Command = List[str]
 
 warnings.warn(
     "Python runners and associated APIs are an experimental feature and subject to change.",
@@ -41,7 +53,7 @@ _magic_re = re.compile(r"([\\{}])")
 _space_re = re.compile(r"([\s])", re.ASCII)
 
 
-def as_tcl_value(value: str) -> str:
+def _as_tcl_value(value: str) -> str:
     # add '\' before special characters and spaces
     value = _magic_re.sub(r"\\\1", value)
     value = value.replace("\n", r"\n")
@@ -52,7 +64,7 @@ def as_tcl_value(value: str) -> str:
     return value
 
 
-def shlex_join(split_command):
+def _shlex_join(split_command: Iterable[str]) -> str:
     """
     Return a shell-escaped string from *split_command*
     This is here more for compatibility purposes
@@ -68,7 +80,7 @@ class Verilog(str):
     """Tags source files and build arguments to :meth:`~cocotb_tools.runner.Simulator.build` as Verilog-specific."""
 
 
-class Simulator(abc.ABC):
+class Simulator(ABC):
     supported_gpi_interfaces: Dict[str, List[str]] = {}
 
     def __init__(self) -> None:
@@ -80,15 +92,13 @@ class Simulator(abc.ABC):
         self.build_dir: Path = get_abs_path("sim_build")
         self.parameters: Mapping[str, object] = {}
 
-    @abc.abstractmethod
+    @abstractmethod
     def _simulator_in_path(self) -> None:
         """Raise exception if the simulator executable does not exist in :envvar:`PATH`.
 
         Raises:
             SystemExit: Simulator executable does not exist in :envvar:`PATH`.
         """
-
-        raise NotImplementedError()
 
     def _check_hdl_toplevel_lang(self, hdl_toplevel_lang: Optional[str]) -> str:
         """Return *hdl_toplevel_lang* if supported by simulator, raise exception otherwise.
@@ -147,14 +157,14 @@ class Simulator(abc.ABC):
         self.env["COCOTB_TEST_MODULES"] = self.test_module
         self.env["TOPLEVEL_LANG"] = self.hdl_toplevel_lang
 
-    @abc.abstractmethod
-    def _build_command(self) -> Sequence[Command]:
+    @abstractmethod
+    def _build_command(self) -> Sequence[_Command]:
         """Return command to build the HDL sources."""
 
         raise NotImplementedError()
 
-    @abc.abstractmethod
-    def _test_command(self) -> Sequence[Command]:
+    @abstractmethod
+    def _test_command(self) -> Sequence[_Command]:
         """Return command to run a test."""
 
         raise NotImplementedError()
@@ -174,7 +184,7 @@ class Simulator(abc.ABC):
         build_dir: PathLike = "sim_build",
         clean: bool = False,
         verbose: bool = False,
-        timescale: Optional[Timescale] = None,
+        timescale: Optional[Tuple[str, str]] = None,
         waves: Optional[bool] = None,
         log_file: Optional[PathLike] = None,
     ) -> None:
@@ -267,14 +277,14 @@ class Simulator(abc.ABC):
         self.always: bool = always
         self.hdl_toplevel: Optional[str] = hdl_toplevel
         self.verbose: bool = verbose
-        self.timescale: Optional[Timescale] = timescale
+        self.timescale: Optional[Tuple[str, str]] = timescale
         self.log_file: Optional[PathLike] = log_file
 
         self.waves = bool(waves)
 
         self.env.update(os.environ)
 
-        cmds: Sequence[Command] = self._build_command()
+        cmds: Sequence[_Command] = self._build_command()
         self._execute(cmds, cwd=self.build_dir)
 
     def test(
@@ -291,13 +301,13 @@ class Simulator(abc.ABC):
         extra_env: Mapping[str, str] = {},
         waves: Optional[bool] = None,
         gui: Optional[bool] = None,
-        parameters: Mapping[str, object] = None,
+        parameters: Optional[Mapping[str, object]] = None,
         build_dir: Optional[PathLike] = None,
         test_dir: Optional[PathLike] = None,
         results_xml: Optional[str] = None,
         pre_cmd: List[str] = [],
         verbose: bool = False,
-        timescale: Optional[Timescale] = None,
+        timescale: Optional[Tuple[str, str]] = None,
         log_file: Optional[PathLike] = None,
         test_filter: Optional[str] = None,
     ) -> Path:
@@ -393,7 +403,7 @@ class Simulator(abc.ABC):
         self.log_file = log_file
         self.waves = bool(waves)
         self.gui = bool(gui)
-        self.timescale: Optional[Timescale] = timescale
+        self.timescale = timescale
 
         if verbose is not None:
             self.verbose = verbose
@@ -423,7 +433,7 @@ class Simulator(abc.ABC):
         self._set_env()
         self.env["COCOTB_RESULTS_FILE"] = str(results_xml_file)
 
-        cmds: Sequence[Command] = self._test_command()
+        cmds: Sequence[_Command] = self._test_command()
         self._execute(cmds, cwd=self.test_dir)
 
         # Only when running under pytest, check the results file here,
@@ -435,25 +445,19 @@ class Simulator(abc.ABC):
         print(f"INFO: Results file: {results_xml_file}")
         return results_xml_file
 
-    @staticmethod
-    def _get_include_options(self, includes: Sequence[PathLike]) -> Command:
+    @abstractmethod
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         """Return simulator-specific formatted option strings with *includes* directories."""
 
-        raise NotImplementedError()
-
-    @staticmethod
-    def _get_define_options(self, defines: Mapping[str, object]) -> Command:
+    @abstractmethod
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         """Return simulator-specific formatted option strings with *defines* macros."""
 
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _get_parameter_options(self, parameters: Mapping[str, object]) -> Command:
+    @abstractmethod
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         """Return simulator-specific formatted option strings with *parameters*/generics."""
 
-        raise NotImplementedError()
-
-    def _execute(self, cmds: Sequence[Command], cwd: PathLike) -> None:
+    def _execute(self, cmds: Sequence[_Command], cwd: PathLike) -> None:
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
         if self.log_file is None:
@@ -463,12 +467,12 @@ class Simulator(abc.ABC):
                 self._execute_cmds(cmds, cwd, f)
 
     def _execute_cmds(
-        self, cmds: Sequence[Command], cwd: PathLike, stdout: Optional[TextIO] = None
+        self, cmds: Sequence[_Command], cwd: PathLike, stdout: Optional[TextIO] = None
     ) -> None:
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
         for cmd in cmds:
-            print(f"INFO: Running command {shlex_join(cmd)} in directory {cwd}")
+            print(f"INFO: Running command {_shlex_join(cmd)} in directory {cwd}")
 
             # TODO: create a thread to handle stderr and log as error?
             # TODO: log forwarding
@@ -478,7 +482,7 @@ class Simulator(abc.ABC):
                 cmd, cwd=cwd, env=self.env, check=True, stdout=stdout, stderr=stderr
             )
 
-    def rm_build_folder(self, build_dir: Path):
+    def rm_build_folder(self, build_dir: Path) -> None:
         if os.path.isdir(build_dir):
             print("Removing:", build_dir)
             shutil.rmtree(build_dir, ignore_errors=True)
@@ -609,14 +613,14 @@ class Icarus(Simulator):
             raise SystemExit("ERROR: iverilog executable not found!")
 
     @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> Command:
+    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
         return [f"-I{include}" for include in includes]
 
     @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> Command:
+    def _get_define_options(defines: Mapping[str, object]) -> _Command:
         return [f"-D{name}={value}" for name, value in defines.items()]
 
-    def _get_parameter_options(self, parameters: Mapping[str, object]) -> Command:
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         assert self.hdl_toplevel is not None
         return [
             f"-P{self.hdl_toplevel}.{name}={value}"
@@ -624,6 +628,7 @@ class Icarus(Simulator):
         ]
 
     def _create_cmd_file(self) -> None:
+        assert self.timescale is not None
         with open(self.cmds_file, "w") as f:
             f.write("+timescale+{}/{}\n".format(*self.timescale))
 
@@ -649,7 +654,7 @@ class Icarus(Simulator):
     def cmds_file(self) -> Path:
         return self.build_dir / "cmds.f"
 
-    def _test_command(self) -> List[Command]:
+    def _test_command(self) -> List[_Command]:
         plusargs = self.plusargs
         if self.waves:
             plusargs += ["-fst"]
@@ -670,7 +675,9 @@ class Icarus(Simulator):
             + plusargs
         ]
 
-    def _build_command(self) -> List[Command]:
+    def _build_command(self) -> List[_Command]:
+        assert self.hdl_toplevel is not None
+
         for source in self.sources:
             if not is_verilog_source(source):
                 raise ValueError(
@@ -691,7 +698,7 @@ class Icarus(Simulator):
             self._create_cmd_file()
             build_args += ["-f", str(self.cmds_file)]
 
-        cmds = []
+        cmds: list[_Command] = []
         sources = [
             source for source in self.sources if is_verilog_source(source)
         ] + self.verilog_sources
@@ -732,24 +739,24 @@ class Questa(Simulator):
             raise SystemExit("ERROR: vsim executable not found!")
 
     @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> Command:
-        return [f"+incdir+{as_tcl_value(str(include))}" for include in includes]
+    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+        return [f"+incdir+{_as_tcl_value(str(include))}" for include in includes]
 
     @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> Command:
+    def _get_define_options(defines: Mapping[str, object]) -> _Command:
         return [
-            f"+define+{as_tcl_value(name)}={as_tcl_value(str(value))}"
+            f"+define+{_as_tcl_value(name)}={_as_tcl_value(str(value))}"
             for name, value in defines.items()
         ]
 
     @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
+    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[Command]:
+    def _build_command(self) -> List[_Command]:
         cmds = []
 
-        cmds.append(["vlib", as_tcl_value(self.hdl_library)])
+        cmds.append(["vlib", _as_tcl_value(self.hdl_library)])
         for source in self.sources:
             if is_vhdl_source(source):
                 cmds.append(self._build_vhdl_command(source))
@@ -764,27 +771,27 @@ class Questa(Simulator):
 
         return cmds
 
-    def _build_vhdl_command(self, source: PathLike) -> Command:
+    def _build_vhdl_command(self, source: PathLike) -> _Command:
         return (
             ["vcom"]
-            + ["-work", as_tcl_value(self.hdl_library)]
-            + [as_tcl_value(v) for v in self.build_args if type(v) in (str, VHDL)]
-            + [as_tcl_value(str(source))]
+            + ["-work", _as_tcl_value(self.hdl_library)]
+            + [_as_tcl_value(v) for v in self.build_args if type(v) in (str, VHDL)]
+            + [_as_tcl_value(str(source))]
         )
 
-    def _build_verilog_command(self, source: PathLike) -> Command:
+    def _build_verilog_command(self, source: PathLike) -> _Command:
         return (
             ["vlog"]
             + ([] if self.always else ["-incr"])
-            + ["-work", as_tcl_value(self.hdl_library)]
+            + ["-work", _as_tcl_value(self.hdl_library)]
             + ["-sv"]
             + self._get_define_options(self.defines)
             + self._get_include_options(self.includes)
-            + [as_tcl_value(v) for v in self.build_args if type(v) in (str, Verilog)]
-            + [as_tcl_value(str(source))]
+            + [_as_tcl_value(v) for v in self.build_args if type(v) in (str, Verilog)]
+            + [_as_tcl_value(str(source))]
         )
 
-    def _test_command(self) -> List[Command]:
+    def _test_command(self) -> List[_Command]:
         cmds = []
 
         if self.pre_cmd:
@@ -802,7 +809,7 @@ class Questa(Simulator):
             lib_opts = [
                 "-foreign",
                 "cocotb_init "
-                + as_tcl_value(
+                + _as_tcl_value(
                     cocotb_tools.config.lib_name_path("fli", "questa").as_posix()
                 ),
             ]
@@ -811,14 +818,14 @@ class Questa(Simulator):
             lib_opts += [
                 "-foreign",
                 "vhpi_startup_routines_bootstrap "
-                + as_tcl_value(
+                + _as_tcl_value(
                     cocotb_tools.config.lib_name_path("vhpi", "questa").as_posix()
                 ),
             ]
         else:
             lib_opts = [
                 "-pli",
-                as_tcl_value(
+                _as_tcl_value(
                     cocotb_tools.config.lib_name_path("vpi", "questa").as_posix()
                 ),
             ]
@@ -828,10 +835,10 @@ class Questa(Simulator):
             + ["-gui" if self.gui else "-c"]
             + ["-onfinish", "stop" if self.gui else "exit"]
             + lib_opts
-            + [as_tcl_value(v) for v in self.test_args]
-            + [as_tcl_value(v) for v in self._get_parameter_options(self.parameters)]
-            + [as_tcl_value(f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}")]
-            + [as_tcl_value(v) for v in self.plusargs]
+            + [_as_tcl_value(v) for v in self.test_args]
+            + [_as_tcl_value(v) for v in self._get_parameter_options(self.parameters)]
+            + [_as_tcl_value(f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}")]
+            + [_as_tcl_value(v) for v in self.plusargs]
             + self.pre_cmd
             + ["-do", do_script]
         )
@@ -875,10 +882,18 @@ class Ghdl(Simulator):
         return "mcode" in result.stdout
 
     @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
+    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+        raise RuntimeError
+
+    @staticmethod
+    def _get_define_options(defines: Mapping[str, object]) -> _Command:
+        raise RuntimeError
+
+    @staticmethod
+    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[Command]:
+    def _build_command(self) -> List[_Command]:
         for source in self.sources:
             if not is_vhdl_source(source):
                 raise ValueError(
@@ -908,7 +923,7 @@ class Ghdl(Simulator):
 
         return cmds
 
-    def _test_command(self) -> List[Command]:
+    def _test_command(self) -> List[_Command]:
         if self.pre_cmd:
             print("WARNING: pre_cmd is not implemented for GHDL.")
 
@@ -968,10 +983,18 @@ class Nvc(Simulator):
             raise SystemExit("ERROR: nvc executable not found!")
 
     @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
+    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+        raise RuntimeError
+
+    @staticmethod
+    def _get_define_options(defines: Mapping[str, object]) -> _Command:
+        raise RuntimeError
+
+    @staticmethod
+    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[Command]:
+    def _build_command(self) -> List[_Command]:
         for source in self.sources:
             if not is_vhdl_source(source):
                 raise ValueError(
@@ -993,7 +1016,7 @@ class Nvc(Simulator):
 
         return cmds
 
-    def _test_command(self) -> List[Command]:
+    def _test_command(self) -> List[_Command]:
         cmds = [
             ["nvc", f"--work={self.hdl_toplevel_library}"]
             + self.build_args
@@ -1017,27 +1040,27 @@ class Riviera(Simulator):
             raise SystemExit("ERROR: vsimsa executable not found!")
 
     @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> Command:
-        return [f"+incdir+{as_tcl_value(str(include))}" for include in includes]
+    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+        return [f"+incdir+{_as_tcl_value(str(include))}" for include in includes]
 
     @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> Command:
+    def _get_define_options(defines: Mapping[str, object]) -> _Command:
         return [
-            f"+define+{as_tcl_value(name)}={as_tcl_value(str(value))}"
+            f"+define+{_as_tcl_value(name)}={_as_tcl_value(str(value))}"
             for name, value in defines.items()
         ]
 
     @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
+    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[Command]:
+    def _build_command(self) -> List[_Command]:
         do_script: List[str] = ["onerror {\n quit -code 1 \n}"]
 
         out_file = self.build_dir / self.hdl_library / f"{self.hdl_library}.lib"
 
         if outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.always:
-            do_script.append(f"alib {as_tcl_value(self.hdl_library)}")
+            do_script.append(f"alib {_as_tcl_value(self.hdl_library)}")
 
             for source in self.sources:
                 if is_verilog_source(source):
@@ -1066,28 +1089,28 @@ class Riviera(Simulator):
 
     def _build_vhdl_source(self, source: PathLike) -> str:
         return "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}".format(
-            RTL_LIBRARY=as_tcl_value(self.hdl_library),
-            VHDL_SOURCES=as_tcl_value(str(source)),
+            RTL_LIBRARY=_as_tcl_value(self.hdl_library),
+            VHDL_SOURCES=_as_tcl_value(str(source)),
             EXTRA_ARGS=" ".join(
-                as_tcl_value(v) for v in self.build_args if type(v) in (str, VHDL)
+                _as_tcl_value(v) for v in self.build_args if type(v) in (str, VHDL)
             ),
         )
 
     def _build_verilog_source(self, source: PathLike) -> str:
         return "alog -work {RTL_LIBRARY} -pli {EXT_NAME} -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}".format(
-            RTL_LIBRARY=as_tcl_value(self.hdl_library),
-            EXT_NAME=as_tcl_value(
+            RTL_LIBRARY=_as_tcl_value(self.hdl_library),
+            EXT_NAME=_as_tcl_value(
                 cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
             ),
-            VERILOG_SOURCES=as_tcl_value(str(source)),
+            VERILOG_SOURCES=_as_tcl_value(str(source)),
             DEFINES=" ".join(self._get_define_options(self.defines)),
             INCDIR=" ".join(self._get_include_options(self.includes)),
             EXTRA_ARGS=" ".join(
-                as_tcl_value(v) for v in self.build_args if type(v) in (str, Verilog)
+                _as_tcl_value(v) for v in self.build_args if type(v) in (str, Verilog)
             ),
         )
 
-    def _test_command(self) -> List[Command]:
+    def _test_command(self) -> List[_Command]:
         if self.pre_cmd:
             print("WARNING: pre_cmd is not implemented for Riviera.")
 
@@ -1095,19 +1118,19 @@ class Riviera(Simulator):
 
         if self.hdl_toplevel_lang == "vhdl":
             do_script += "asim +access +w_nets -interceptcoutput -loadvhpi {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUSARGS}\n".format(
-                TOPLEVEL=as_tcl_value(
+                TOPLEVEL=_as_tcl_value(
                     f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
                 ),
-                EXT_NAME=as_tcl_value(
+                EXT_NAME=_as_tcl_value(
                     cocotb_tools.config.lib_name_path("vhpi", "riviera").as_posix()
                 ),
                 EXTRA_ARGS=" ".join(
-                    as_tcl_value(v)
+                    _as_tcl_value(v)
                     for v in (
                         self.test_args + self._get_parameter_options(self.parameters)
                     )
                 ),
-                PLUSARGS=" ".join(as_tcl_value(v) for v in self.plusargs),
+                PLUSARGS=" ".join(_as_tcl_value(v) for v in self.plusargs),
             )
 
             self.env["GPI_EXTRA"] = (
@@ -1116,19 +1139,19 @@ class Riviera(Simulator):
             )
         else:
             do_script += "asim +access +w_nets -interceptcoutput -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUSARGS} \n".format(
-                TOPLEVEL=as_tcl_value(
+                TOPLEVEL=_as_tcl_value(
                     f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
                 ),
-                EXT_NAME=as_tcl_value(
+                EXT_NAME=_as_tcl_value(
                     cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
                 ),
                 EXTRA_ARGS=" ".join(
-                    as_tcl_value(v)
+                    _as_tcl_value(v)
                     for v in (
                         self.test_args + self._get_parameter_options(self.parameters)
                     )
                 ),
-                PLUSARGS=" ".join(as_tcl_value(v) for v in self.plusargs),
+                PLUSARGS=" ".join(_as_tcl_value(v) for v in self.plusargs),
             )
 
             self.env["GPI_EXTRA"] = (
@@ -1162,18 +1185,18 @@ class Verilator(Simulator):
         self.executable: str = executable
 
     @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> Command:
+    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
         return [f"-I{include}" for include in includes]
 
     @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> Command:
+    def _get_define_options(defines: Mapping[str, object]) -> _Command:
         return [f"-D{name}={value}" for name, value in defines.items()]
 
     @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
+    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f"-G{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[Command]:
+    def _build_command(self) -> List[_Command]:
         self._simulator_in_path_build_only()
 
         for source in self.sources:
@@ -1242,7 +1265,7 @@ class Verilator(Simulator):
 
         return cmds
 
-    def _test_command(self) -> List[Command]:
+    def _test_command(self) -> List[_Command]:
         if self.pre_cmd:
             print("WARNING: pre_cmd is not implemented for Verilator.")
 
@@ -1264,18 +1287,18 @@ class Xcelium(Simulator):
             raise SystemExit("ERROR: xrun executable not found!")
 
     @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> Command:
+    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
         return [f"-incdir {include}" for include in includes]
 
     @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> Command:
+    def _get_define_options(defines: Mapping[str, object]) -> _Command:
         return [f"-define {name}={value}" for name, value in defines.items()]
 
     @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> Command:
+    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f'-gpg "{name} => {value}"' for name, value in parameters.items()]
 
-    def _build_command(self) -> List[Command]:
+    def _build_command(self) -> List[_Command]:
         self.env["CDS_AUTO_64BIT"] = "all"
 
         assert self.hdl_toplevel, "A HDL toplevel is required in all Xcelium compiles."
@@ -1335,7 +1358,7 @@ class Xcelium(Simulator):
 
         return cmds
 
-    def _test_command(self) -> List[Command]:
+    def _test_command(self) -> List[_Command]:
         if self.pre_cmd:
             print("WARNING: pre_cmd is not implemented for Xcelium.")
 
