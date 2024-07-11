@@ -61,16 +61,16 @@ import cocotb
 import cocotb._scheduler
 from cocotb import _ANSI, simulator
 from cocotb._outcomes import Error, Outcome
-from cocotb._xunit_reporter import XUnitReporter
-from cocotb.result import SimFailure, TestSuccess
-from cocotb.task import Task, _RunningTest
-from cocotb.triggers import Timer, Trigger
-from cocotb.utils import (
+from cocotb._utils import (
     DocEnum,
-    get_sim_time,
     remove_traceback_frames,
     want_color_output,
 )
+from cocotb._xunit_reporter import XUnitReporter
+from cocotb.result import SimFailure, TestSuccess
+from cocotb.sim_time_utils import get_sim_time
+from cocotb.task import Task, _RunningTest
+from cocotb.triggers import Timer, Trigger
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 

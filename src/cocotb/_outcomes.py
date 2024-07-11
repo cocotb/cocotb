@@ -8,7 +8,7 @@ or `asyncio.Future`, but without being tied to a particular task model.
 import abc
 from typing import Any, Callable, Coroutine, Generic, TypeVar
 
-from cocotb.utils import remove_traceback_frames
+from cocotb._utils import remove_traceback_frames
 
 T = TypeVar("T")
 

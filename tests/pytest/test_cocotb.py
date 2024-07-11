@@ -30,6 +30,7 @@ module_name = [
     "test_testfactory",
     "test_tests",
     "test_timing_triggers",
+    "test_sim_time_utils",
 ]
 
 hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")

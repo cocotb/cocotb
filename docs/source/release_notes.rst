@@ -144,8 +144,8 @@ Features
 - Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions. (:pr:`2660`)
 - Add :func:`cocotb.create_task` API for creating a Task from a Coroutine without scheduling. (:pr:`2665`)
 - Support rounding modes in :class:`~cocotb.triggers.Timer`. (:pr:`2684`)
-- Support rounding modes in :func:`~cocotb.utils.get_sim_steps`. (:pr:`2684`)
-- Support passing ``'step'`` as a time unit in :func:`cocotb.utils.get_sim_time`. (:pr:`2691`)
+- Support rounding modes in :func:`~cocotb.sim_time_utils.get_sim_steps`. (:pr:`2684`)
+- Support passing ``'step'`` as a time unit in :func:`cocotb.sim_time_utils.get_sim_time`. (:pr:`2691`)
 
 
 Bugfixes
@@ -171,9 +171,9 @@ Deprecations and Removals
 - Setting values on indexed handles using the ``handle[i] = value`` syntax is deprecated. Instead use the ``handle[i].value = value`` syntax. (:pr:`2490`)
 - Setting values on handles using the ``dut.handle = value`` syntax is deprecated. Instead use the ``handle.value = value`` syntax. (:pr:`2490`)
 - Setting values on handles using the ``signal <= newval`` syntax is deprecated. Instead, use the ``signal.value = newval`` syntax. (:pr:`2681`)
-- :func:`cocotb.utils.hexdump` is deprecated; use :func:`scapy.utils.hexdump` instead. (:pr:`2691`)
-- :func:`cocotb.utils.hexdiffs` is deprecated; use :func:`scapy.utils.hexdiff` instead. (:pr:`2691`)
-- Passing ``None`` to :func:`cocotb.utils.get_sim_time` is deprecated; use ``'step'`` as the time unit instead. (:pr:`2691`)
+- ``cocotb.utils.hexdump`` is deprecated; use :func:`scapy.utils.hexdump` instead. (:pr:`2691`)
+- ``cocotb.utils.hexdiffs`` is deprecated; use :func:`scapy.utils.hexdiff` instead. (:pr:`2691`)
+- Passing ``None`` to :func:`cocotb.sim_time_utils.get_sim_time` is deprecated; use ``'step'`` as the time unit instead. (:pr:`2691`)
 - The ``stdout`` and ``stderr`` attributes on :class:`cocotb.result.TestComplete` and subclasses are deprecated. (:pr:`2692`)
 - ``TestFailure`` is deprecated, use an ``assert`` statement instead. (:pr:`2692`)
 
@@ -227,7 +227,7 @@ Features
   produce more informative tracebacks from the :keyword:`assert` statement. (:pr:`2028`)
 - The handle to :envvar:`TOPLEVEL`, typically seen as the first argument to a cocotb test function, is now available globally as :data:`cocotb.top`. (:pr:`2134`)
 - The ``units`` argument to :class:`~cocotb.triggers.Timer`,
-  :class:`~cocotb.clock.Clock` and :func:`~cocotb.utils.get_sim_steps`,
+  :class:`~cocotb.clock.Clock` and :func:`~cocotb.sim_time_utils.get_sim_steps`,
   and the ``timeout_unit`` argument to
   :func:`~cocotb.triggers.with_timeout` and :class:`cocotb.test`
   now accepts ``'step'`` to mean the simulator time step.
@@ -281,7 +281,7 @@ Deprecations and Removals
 - The undocumented class ``cocotb.xunit_reporter.File`` has been removed. (:pr:`2200`)
 - Deprecated :class:`cocotb.hook` and :envvar:`COCOTB_HOOKS`.
   See the documentation for :class:`cocotb.hook` for suggestions on alternatives. (:pr:`2201`)
-- Deprecate :func:`~cocotb.utils.pack` and :func:`~cocotb.utils.unpack` and the use of :class:`python:ctypes.Structure` in signal assignments. (:pr:`2203`)
+- Deprecate ``cocotb.utils.pack`` and ``cocotb.utils.unpack`` and the use of :class:`python:ctypes.Structure` in signal assignments. (:pr:`2203`)
 - The outdated "ping" example has been removed from the documentation and repository. (:pr:`2232`)
 - Using the undocumented custom format :class:`dict` object in signal assignments has been deprecated. (:pr:`2240`)
 - The access modes of many interfaces in the cocotb core libraries were re-evaluated.
@@ -422,7 +422,7 @@ Improved Documentation
 Deprecations and Removals
 -------------------------
 
-- :func:`cocotb.utils.reject_remaining_kwargs` is deprecated, as it is no longer
+- ``cocotb.utils.reject_remaining_kwargs`` is deprecated, as it is no longer
   needed now that we only support Python 3.5 and newer. (:pr:`1339`)
 - The value of :class:`cocotb.handle.StringObject`\ s is now of type :class:`bytes`, instead of  :class:`str` with an implied ASCII encoding scheme. (:pr:`1381`)
 - ``ReturnValue`` is now deprecated. Use a :keyword:`return` statement instead; this works in all supported versions of Python. (:pr:`1489`)
@@ -431,7 +431,7 @@ Deprecations and Removals
   Using it prints a deprecation warning and points to the documentation section
   :ref:`simulator-support` explaining how to get the same effect by other means. (:pr:`1495`)
 - ``cocotb.binary.BinaryValue.get_hex_buff`` produced nonsense and has been removed. (:pr:`1511`)
-- Passing :class:`str` instances to :func:`cocotb.utils.hexdump` and :func:`cocotb.utils.hexdiffs` is deprecated. :class:`bytes` objects should be passed instead. (:pr:`1519`)
+- Passing :class:`str` instances to ``cocotb.utils.hexdump`` and ``cocotb.utils.hexdiffs`` is deprecated. :class:`bytes` objects should be passed instead. (:pr:`1519`)
 - ``Makefile.pylib``, which provided helpers for building C extension modules for Python, has been removed.
   Users of the ``PYTHON_LIBDIR`` and ``PYTHON_INCLUDEDIR`` variables will now have to compute these values themselves.
   See the ``endian_swapper`` example for how to do this. (:pr:`1632`)
@@ -531,7 +531,7 @@ Deprecations
 - The ``AvalonSTPktsWithChannel`` type is deprecated.
   Use the ``report_channel`` argument to :class:`~cocotb.monitors.avalon.AvalonSTPkts` instead.
 - The ``colour`` attribute of log objects like ``cocotb.log`` or ``some_coro.log`` is deprecated.
-  Use :func:`cocotb.utils.want_color_output` instead. (:pr:`1231`)
+  Use ``cocotb.utils.want_color_output`` instead. (:pr:`1231`)
 
 Other news
 ----------

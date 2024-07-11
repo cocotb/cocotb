@@ -45,6 +45,7 @@ from enum import Enum, auto
 from typing import Any, Callable, Dict, Sequence, Tuple, Union
 
 from cocotb import _outcomes, _py_compat
+from cocotb._utils import remove_traceback_frames
 from cocotb.handle import SimHandleBase
 from cocotb.result import SimFailure, TestSuccess
 from cocotb.task import Task
@@ -57,7 +58,6 @@ from cocotb.triggers import (
     ReadWrite,
     Trigger,
 )
-from cocotb.utils import remove_traceback_frames
 
 # Debug mode controlled by environment variables
 _profiling = "COCOTB_ENABLE_PROFILING" in os.environ

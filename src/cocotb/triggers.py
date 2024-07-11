@@ -54,14 +54,10 @@ import cocotb.task
 from cocotb import simulator
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
+from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
 from cocotb.handle import LogicObject, ValueObjectBase
 from cocotb.result import SimTimeoutError
-from cocotb.utils import (
-    _ParameterizedSingletonMetaclass,
-    get_sim_steps,
-    get_time_from_sim_steps,
-    remove_traceback_frames,
-)
+from cocotb.sim_time_utils import get_sim_steps, get_time_from_sim_steps
 
 T = TypeVar("T")
 
@@ -269,7 +265,7 @@ class Timer(GPITrigger):
 # TODO: In Python < 3.8 the metaclass of typing objects doesn't work well with other metaclasses.
 # TODO: This can be removed once Python 3.8 becomes standard.
 class _ParameterizedSingletonGPITriggerMetaclass(
-    _ParameterizedSingletonMetaclass, type(GPITrigger)
+    ParameterizedSingletonMetaclass, type(GPITrigger)
 ): ...
 
 

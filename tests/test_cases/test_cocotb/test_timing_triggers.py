@@ -20,6 +20,7 @@ import pytest
 
 import cocotb
 from cocotb.clock import Clock
+from cocotb.sim_time_utils import get_sim_time
 from cocotb.simulator import get_precision
 from cocotb.triggers import (
     First,
@@ -30,7 +31,6 @@ from cocotb.triggers import (
     Timer,
 )
 from cocotb.triggers import _TriggerException as TriggerException
-from cocotb.utils import get_sim_time
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 SIM_NAME = cocotb.SIM_NAME.lower()
