@@ -1,0 +1,1 @@
+``cocotb.triggers.TriggerException`` was removed. :exc:`RuntimeError` is thrown in its place.
