@@ -299,7 +299,7 @@ class Runner(ABC):
         build_dir: Optional[PathLike] = None,
         test_dir: Optional[PathLike] = None,
         results_xml: Optional[str] = None,
-        pre_cmd: List[str] = [],
+        pre_cmd: Optional[List[str]] = None,
         verbose: bool = False,
         timescale: Optional[Tuple[str, str]] = None,
         log_file: Optional[PathLike] = None,
@@ -662,8 +662,8 @@ class Icarus(Runner):
         if self.waves:
             plusargs += ["-fst"]
 
-        if self.pre_cmd:
-            print("WARNING: pre_cmd is not implemented for Icarus Verilog.")
+        if self.pre_cmd is not None:
+            raise ValueError("WARNING: pre_cmd is not implemented for Icarus Verilog.")
 
         return [
             [
@@ -802,7 +802,7 @@ class Questa(Runner):
     def _test_command(self) -> List[_Command]:
         cmds = []
 
-        if self.pre_cmd:
+        if self.pre_cmd is not None:
             self.pre_cmd = ["-do"] + self.pre_cmd
 
         do_script = ""
@@ -939,7 +939,7 @@ class Ghdl(Runner):
         return cmds
 
     def _test_command(self) -> List[_Command]:
-        if self.pre_cmd:
+        if self.pre_cmd is not None:
             print("WARNING: pre_cmd is not implemented for GHDL.")
 
         ghdl_run_args = self.test_args
@@ -1141,7 +1141,7 @@ class Riviera(Runner):
         )
 
     def _test_command(self) -> List[_Command]:
-        if self.pre_cmd:
+        if self.pre_cmd is not None:
             print("WARNING: pre_cmd is not implemented for Riviera.")
 
         do_script: str = "\nonerror {\n quit -code 1 \n} \n"
@@ -1302,7 +1302,7 @@ class Verilator(Runner):
         return cmds
 
     def _test_command(self) -> List[_Command]:
-        if self.pre_cmd:
+        if self.pre_cmd is not None:
             print("WARNING: pre_cmd is not implemented for Verilator.")
 
         out_file = self.build_dir / self.sim_hdl_toplevel
@@ -1401,7 +1401,7 @@ class Xcelium(Runner):
         return cmds
 
     def _test_command(self) -> List[_Command]:
-        if self.pre_cmd:
+        if self.pre_cmd is not None:
             print("WARNING: pre_cmd is not implemented for Xcelium.")
 
         self.env["CDS_AUTO_64BIT"] = "all"
