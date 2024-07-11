@@ -40,10 +40,10 @@ from typing import Any, Dict, List, Union, cast
 import cocotb.handle
 import cocotb.triggers
 from cocotb._scheduler import Scheduler
+from cocotb._utils import DocEnum
 from cocotb.logging import default_config
 from cocotb.regression import RegressionManager, RegressionMode
 from cocotb.task import Task
-from cocotb.utils import DocEnum
 
 from ._version import __version__
 
