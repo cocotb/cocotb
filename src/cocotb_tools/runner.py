@@ -43,12 +43,6 @@ PathLike = Union["os.PathLike[str]", str]  # TODO use TypeAlias in Python 3.10
 
 _Command = List[str]
 
-warnings.warn(
-    "Python runners and associated APIs are an experimental feature and subject to change.",
-    UserWarning,
-    stacklevel=2,
-)
-
 _magic_re = re.compile(r"([\\{}])")
 _space_re = re.compile(r"([\s])", re.ASCII)
 
