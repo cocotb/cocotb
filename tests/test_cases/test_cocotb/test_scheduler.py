@@ -19,6 +19,7 @@ import pytest
 from common import MyException
 
 import cocotb
+import cocotb.sim_time_utils
 from cocotb.clock import Clock
 from cocotb.task import Task
 from cocotb.triggers import (
@@ -496,7 +497,7 @@ async def test_test_repr(_):
     """Test RunningTest.__repr__"""
     log = logging.getLogger("cocotb.test")
 
-    current_test = cocotb._scheduler._test
+    current_test = cocotb._scheduler_inst._test
     log.info(repr(current_test))
     assert re.match(
         r"<Test test_test_repr running coro=test_test_repr\(\)>", repr(current_test)
@@ -514,7 +515,7 @@ class TestClassRepr(Coroutine):
     async def check_repr(self, dut):
         log = logging.getLogger("cocotb.test")
 
-        current_test = cocotb._scheduler._test
+        current_test = cocotb._scheduler_inst._test
         log.info(repr(current_test))
         assert re.match(
             r"<Test TestClassRepr running coro=TestClassRepr\(\)>", repr(current_test)
@@ -561,7 +562,7 @@ async def test_start_soon_scheduling(dut):
         log = logging.getLogger("cocotb.test")
         log.debug("react_wrapper start")
         assert coro_scheduled is False
-        cocotb._scheduler._sim_react(trigger)
+        cocotb._scheduler_inst._sim_react(trigger)
         assert coro_scheduled is True
         log.debug("react_wrapper end")
 
@@ -584,9 +585,9 @@ async def test_await_start_soon(_):
     """Test awaiting start_soon queued coroutine before it starts."""
 
     async def coro():
-        start_time = cocotb.utils.get_sim_time(units="ns")
+        start_time = cocotb.sim_time_utils.get_sim_time(units="ns")
         await Timer(1, "ns")
-        assert cocotb.utils.get_sim_time(units="ns") == start_time + 1
+        assert cocotb.sim_time_utils.get_sim_time(units="ns") == start_time + 1
 
     coro = cocotb.start_soon(coro())
 
@@ -691,7 +692,7 @@ async def test_start_scheduling(dut):
         log = logging.getLogger("cocotb.test")
         log.debug("react_wrapper start")
         sim_resumed = False
-        cocotb._scheduler._sim_react(trigger)
+        cocotb._scheduler_inst._sim_react(trigger)
         sim_resumed = True
         log.debug("react_wrapper end")
 

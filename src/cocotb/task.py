@@ -13,7 +13,7 @@ import cocotb
 import cocotb.triggers
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
-from cocotb.utils import extract_coro_stack, remove_traceback_frames
+from cocotb._utils import extract_coro_stack, remove_traceback_frames
 
 #: Task result type
 ResultType = TypeVar("ResultType")
@@ -91,7 +91,7 @@ class Task(Generic[ResultType]):
     def __repr__(self) -> str:
         coro_stack = self._get_coro_stack()
 
-        if cocotb._scheduler._current_task is self:
+        if cocotb._scheduler_inst._current_task is self:
             fmt = "<{name} running coro={coro}()>"
         elif self.done():
             fmt = "<{name} finished coro={coro}() outcome={outcome}>"
@@ -149,7 +149,7 @@ class Task(Generic[ResultType]):
             self.log.debug("kill() called on coroutine")
         # todo: probably better to throw an exception for anyone waiting on the coroutine
         self._outcome = Value(None)
-        cocotb._scheduler._unschedule(self)
+        cocotb._scheduler_inst._unschedule(self)
 
         # Close coroutine so there is no RuntimeWarning that it was never awaited
         if not self.has_started():

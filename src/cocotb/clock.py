@@ -36,8 +36,8 @@ from typing import Union
 import cocotb._conf
 from cocotb._py_compat import cached_property
 from cocotb.simulator import clock_create
-from cocotb.triggers import Event, Timer
-from cocotb.utils import get_sim_steps, get_time_from_sim_steps
+from cocotb.sim_time_utils import get_sim_steps, get_time_from_sim_steps
+from cocotb.triggers import Timer
 
 
 class Clock:

@@ -41,10 +41,11 @@ import threading
 import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
-from enum import Enum, auto
 from typing import Any, Callable, Dict, Sequence, Tuple, Union
 
+import cocotb
 from cocotb import _outcomes, _py_compat
+from cocotb._utils import remove_traceback_frames
 from cocotb.handle import SimHandleBase
 from cocotb.result import SimFailure, TestSuccess
 from cocotb.task import Task
@@ -55,10 +56,8 @@ from cocotb.triggers import (
     NextTimeStep,
     ReadOnly,
     ReadWrite,
-    Timer,
     Trigger,
 )
-from cocotb.utils import remove_traceback_frames
 
 # Debug mode controlled by environment variables
 _profiling = "COCOTB_ENABLE_PROFILING" in os.environ
@@ -171,12 +170,6 @@ class external_waiter:
         return self.state
 
 
-class SimPhase(Enum):
-    NORMAL = auto()
-    READ_WRITE = auto()
-    READ_ONLY = auto()
-
-
 class Scheduler:
     """The main Task scheduler.
 
@@ -230,7 +223,7 @@ class Scheduler:
         The scheduler treats Tests specially.
         If a Test finishes or a Task ends with an Exception, the scheduler is put into a `terminating` state.
         All currently queued Tasks are cancelled and all pending Triggers are unprimed.
-        This is currently spread out between :meth:`_check_termination`, :meth:`_test_completed`, and :meth:`_cleanup`.
+        This is currently spread out between :meth:`_handle_termination`, :meth:`_test_completed`, and :meth:`_cleanup`.
         In that mix of functions, the :attr:`_test_complete_cb` callback is called to inform whomever (the regression_manager) the test finished.
         The scheduler also is responsible for starting the next Test in the Normal phase by priming a ``Timer(1)`` with the second half of test completion handling.
 
@@ -257,7 +250,6 @@ class Scheduler:
     _next_time_step = NextTimeStep()
     _read_write = ReadWrite()
     _read_only = ReadOnly()
-    _timer1 = Timer(1)
     _none_outcome = _outcomes.Value(None)
 
     def __init__(self, test_complete_cb: Callable[[], None]) -> None:
@@ -274,9 +266,6 @@ class Scheduler:
         self._trigger2tasks: Dict[Trigger, list[Task]] = (
             _py_compat.insertion_ordered_dict()
         )
-
-        # Our main state
-        self._sim_phase = SimPhase.NORMAL
 
         # A dictionary of pending (write_func, args), keyed by handle.
         # Writes are applied oldest to newest (least recently used).
@@ -310,61 +299,38 @@ class Scheduler:
                 func(*args)
             self._writes_pending.clear()
 
-    def _check_termination(self):
-        """Handle a termination that causes us to move onto the next test."""
-        if self._terminate:
-            if _debug:
-                self.log.debug("Test terminating, scheduling Timer")
+    def _handle_termination(self) -> None:
+        """
+        Handle a termination that causes us to move onto the next test.
+        """
+        if self._test is None:
+            raise InternalError("_test_completed called with no active test")
+        elif self._test._outcome is None:
+            raise InternalError("_test_completed called with an incomplete test")
+        elif _debug:
+            self.log.debug("Test terminating...")
 
-            if self._write_task is not None:
-                self._write_task.kill()
-                self._write_task = None
+        # clean up write scheduler
+        if self._write_task is not None:
+            self._write_task.kill()
+            self._write_task = None
+        self._write_calls.clear()
+        self._writes_pending.clear()
 
-            for t in self._trigger2tasks:
-                t._unprime()
+        # cleanup triggers and tasks
+        self._cleanup()
 
-            if self._timer1._primed:
-                self._timer1._unprime()
+        # clear state
+        self._terminate = False
+        self._test = None
 
-            self._timer1._prime(self._test_completed)
-            self._trigger2tasks = _py_compat.insertion_ordered_dict()
-            self._terminate = False
-            self._write_calls.clear()
-            self._writes_pending.clear()
-
-    def _test_completed(self, trigger=None):
-        """Called after a test and its cleanup have completed."""
-        if _debug:
-            self.log.debug(f"_test_completed called with trigger: {trigger}")
+        # dump profiling
         if _profiling:
             ps = pstats.Stats(_profile).sort_stats("cumulative")
             ps.dump_stats("test_profile.pstat")
-            ctx = profiling_context()
-        else:
-            ctx = _py_compat.nullcontext()
 
-        with ctx:
-            self._sim_phase = SimPhase.NORMAL
-            if trigger is not None:
-                trigger._unprime()
-
-            # extract the current test, and clear it
-            test = self._test
-            self._test = None
-            if test is None:
-                raise InternalError("_test_completed called with no active test")
-            if test._outcome is None:
-                raise InternalError("_test_completed called with an incomplete test")
-
-            # Issue previous test result
-            if _debug:
-                self.log.debug("Issue test result to regression object")
-
-            # this may schedule another test
-            self._test_complete_cb()
-
-            # if it did, make sure we handle the test completing
-            self._check_termination()
+        # call complete cb, may schedule another test
+        self._test_complete_cb()
 
     def _sim_react(self, trigger: Trigger) -> None:
         """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
@@ -383,11 +349,11 @@ class Scheduler:
             # TODO: move state tracking to global variable
             # and handle this via some kind of trigger-specific Python callback
             if trigger is self._read_write:
-                self._sim_phase = SimPhase.READ_WRITE
+                cocotb.sim_phase = cocotb.SimPhase.READ_WRITE
             if trigger is self._read_only:
-                self._sim_phase = SimPhase.READ_ONLY
+                cocotb.sim_phase = cocotb.SimPhase.READ_ONLY
             elif isinstance(trigger, GPITrigger):
-                self._sim_phase = SimPhase.NORMAL
+                cocotb.sim_phase = cocotb.SimPhase.NORMAL
 
             self._react(trigger)
             self._event_loop()
@@ -465,8 +431,9 @@ class Scheduler:
                 self._pending_events.pop(0).set()
 
         # no more pending tasks
-        self._check_termination()
-        if _debug:
+        if self._terminate:
+            self._handle_termination()
+        elif _debug:
             self.log.debug("All tasks scheduled, handing control back to simulator")
 
     def _unschedule(self, task: Task[Any]) -> None:
@@ -498,9 +465,7 @@ class Scheduler:
             if _debug:
                 self.log.debug(f"Unscheduling test {task}")
 
-            if not self._terminate:
-                self._terminate = True
-                self._cleanup()
+            self._terminate = True
 
         elif Join(task) in self._trigger2tasks:
             self._react(Join(task))
@@ -530,7 +495,7 @@ class Scheduler:
         args: Sequence[Any],
     ) -> None:
         """Queue `write_func` to be called on the next ReadWrite trigger."""
-        if self._sim_phase == SimPhase.READ_ONLY:
+        if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
             raise Exception(
                 f"Write to object {handle._name} was scheduled during a read-only sync phase."
             )
@@ -782,7 +747,7 @@ class Scheduler:
 
             if not task.done():
                 if _debug:
-                    self.log.debug(f"{task!r} yielded {result} ({self._sim_phase})")
+                    self.log.debug(f"{task!r} yielded {result} ({cocotb.sim_phase})")
                 try:
                     result = self._trigger_from_any(result)
                 except TypeError as exc:
@@ -813,10 +778,6 @@ class Scheduler:
                         self._pending_events.append(ext.event)
         finally:
             self._current_task = None
-
-    def _finish_test(self, exc):
-        self._abort_test(exc)
-        self._check_termination()
 
     def _abort_test(self, exc):
         """Force this test to end early, without executing any cleanup.

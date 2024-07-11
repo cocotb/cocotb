@@ -54,14 +54,10 @@ import cocotb.task
 from cocotb import simulator
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
+from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
 from cocotb.handle import LogicObject, ValueObjectBase
 from cocotb.result import SimTimeoutError
-from cocotb.utils import (
-    _ParameterizedSingletonMetaclass,
-    get_sim_steps,
-    get_time_from_sim_steps,
-    remove_traceback_frames,
-)
+from cocotb.sim_time_utils import get_sim_steps, get_time_from_sim_steps
 
 T = TypeVar("T")
 
@@ -74,10 +70,6 @@ def _pointer_str(obj: object) -> str:
     """
     full_repr = object.__repr__(obj)  # gives "<{type} object at {address}>"
     return full_repr.rsplit(" ", 1)[1][:-1]
-
-
-class _TriggerException(Exception):
-    pass
 
 
 Self = TypeVar("Self", bound="Trigger")
@@ -255,7 +247,7 @@ class Timer(GPITrigger):
                 self._sim_steps, callback, self
             )
             if self._cbhdl is None:
-                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -269,7 +261,7 @@ class Timer(GPITrigger):
 # TODO: In Python < 3.8 the metaclass of typing objects doesn't work well with other metaclasses.
 # TODO: This can be removed once Python 3.8 becomes standard.
 class _ParameterizedSingletonGPITriggerMetaclass(
-    _ParameterizedSingletonMetaclass, type(GPITrigger)
+    ParameterizedSingletonMetaclass, type(GPITrigger)
 ): ...
 
 
@@ -290,7 +282,7 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass)
         if self._cbhdl is None:
             self._cbhdl = simulator.register_readonly_callback(callback, self)
             if self._cbhdl is None:
-                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -308,7 +300,7 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
         if self._cbhdl is None:
             self._cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self._cbhdl is None:
-                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -326,7 +318,7 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetacl
         if self._cbhdl is None:
             self._cbhdl = simulator.register_nextstep_callback(callback, self)
             if self._cbhdl is None:
-                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -348,7 +340,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
                 self.signal._handle, callback, type(self)._edge_type, self
             )
             if self._cbhdl is None:
-                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:

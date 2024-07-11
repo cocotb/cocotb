@@ -6,6 +6,7 @@ from IPython.terminal.ipapp import load_default_config
 from IPython.terminal.prompts import Prompts, Token
 
 import cocotb
+from cocotb.sim_time_utils import get_sim_time
 
 
 class SimTimePrompt(Prompts):
@@ -17,7 +18,7 @@ class SimTimePrompt(Prompts):
         tokens = super().in_prompt_tokens()
         if self._show_time == self.shell.execution_count:
             tokens = [
-                (Token.Comment, f"sim time: {cocotb.utils.get_sim_time()}"),
+                (Token.Comment, f"sim time: {get_sim_time()}"),
                 (Token.Text, "\n"),
             ] + tokens
         return tokens
@@ -25,7 +26,7 @@ class SimTimePrompt(Prompts):
 
 def _runner(shell, x):
     """Handler for async functions"""
-    ret = cocotb._scheduler._queue_function(x)
+    ret = cocotb._scheduler_inst._queue_function(x)
     shell.prompts._show_time = shell.execution_count
     return ret
 

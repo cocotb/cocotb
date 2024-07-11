@@ -69,7 +69,7 @@ else:
     def _inertial_write(
         handle: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
     ) -> None:
-        cocotb._scheduler._schedule_write(handle, f, args)
+        cocotb._scheduler_inst._schedule_write(handle, f, args)
 
 
 class _Limits(enum.IntEnum):

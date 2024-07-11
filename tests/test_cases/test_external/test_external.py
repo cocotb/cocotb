@@ -38,8 +38,8 @@ import pytest
 import cocotb
 from cocotb.clock import Clock
 from cocotb.decorators import external
+from cocotb.sim_time_utils import get_sim_time
 from cocotb.triggers import ReadOnly, RisingEdge, Timer
-from cocotb.utils import get_sim_time
 
 
 def return_two(dut):
