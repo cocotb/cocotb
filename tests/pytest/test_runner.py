@@ -18,6 +18,12 @@ tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sim_build = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sim_build")
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 
+sim = os.getenv("SIM", "icarus")
+
+pre_cmd_sims = {
+    "questa",
+}
+
 
 @cocotb.test()
 async def cocotb_runner_test(dut):
@@ -34,8 +40,11 @@ async def cocotb_runner_test(dut):
     "parameters", [{"WIDTH_IN": "8", "WIDTH_OUT": "16"}, {"WIDTH_IN": "16"}]
 )
 @pytest.mark.parametrize("clean_build", [False, True])
-@pytest.mark.parametrize("pre_cmd", [["touch pre_cmd_test_file;"], []])
+@pytest.mark.parametrize("pre_cmd", [["touch pre_cmd_test_file;"], None])
 def test_runner(parameters, pre_cmd, clean_build):
+    if sim not in pre_cmd_sims and pre_cmd is not None:
+        pytest.skip("This simulator does not support pre_cmd")
+
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
@@ -46,7 +55,6 @@ def test_runner(parameters, pre_cmd, clean_build):
         sources = [os.path.join(tests_dir, "designs", "runner", "runner.vhdl")]
         gpi_interfaces = [vhdl_gpi_interfaces]
 
-    sim = os.getenv("SIM", "icarus")
     runner = get_runner(sim)
     compile_args = []
     if sim == "xcelium":
@@ -57,8 +65,7 @@ def test_runner(parameters, pre_cmd, clean_build):
         sim_build
         + "/test_runner/"
         + "_".join("{}={}".format(*i) for i in parameters.items())
-        + "_pre_cmd"
-        + str(len(pre_cmd))
+        + ("_pre_cmd" if pre_cmd is not None else "")
         + ("_clean" if clean_build else "")
     )
     os.makedirs(build_dir, exist_ok=True)
@@ -85,7 +92,7 @@ def test_runner(parameters, pre_cmd, clean_build):
 
     # Assert pre_cmd result. Questa only, at the moment
     if sim == "questa":
-        if pre_cmd:
+        if pre_cmd is not None:
             assert os.path.isfile(build_dir + "/pre_cmd_test_file")
         else:
             assert not os.path.isfile(build_dir + "/pre_cmd_test_file")

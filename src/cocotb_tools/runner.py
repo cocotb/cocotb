@@ -806,7 +806,9 @@ class Questa(Runner):
         cmds = []
 
         if self.pre_cmd is not None:
-            self.pre_cmd = ["-do"] + self.pre_cmd
+            pre_cmd = ["-do"] + self.pre_cmd
+        else:
+            pre_cmd = []
 
         do_script = ""
         if self.waves:
@@ -850,7 +852,7 @@ class Questa(Runner):
             + [_as_tcl_value(v) for v in self._get_parameter_options(self.parameters)]
             + [_as_tcl_value(f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}")]
             + [_as_tcl_value(v) for v in self.plusargs]
-            + self.pre_cmd
+            + pre_cmd
             + ["-do", do_script]
         )
 
