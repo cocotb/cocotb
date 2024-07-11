@@ -33,6 +33,7 @@ import sys
 import time
 import warnings
 from collections.abc import Coroutine
+from enum import auto
 from types import SimpleNamespace
 from typing import Any, Dict, List, Union, cast
 
@@ -42,6 +43,7 @@ from cocotb._scheduler import Scheduler
 from cocotb.logging import default_config
 from cocotb.regression import RegressionManager, RegressionMode
 from cocotb.task import Task
+from cocotb.utils import DocEnum
 
 from ._version import __version__
 
@@ -113,6 +115,18 @@ and in parameters to :class:`.TestFactory`\ s.
 
 is_simulation: bool = False
 """``True`` if cocotb was loaded in a simulation."""
+
+
+class SimPhase(DocEnum):
+    """A phase of the time step."""
+
+    NORMAL = (auto(), "In the Beginning Of Time Step or a Value Change phase.")
+    READ_WRITE = (auto(), "In a ReadWrite phase.")
+    READ_ONLY = (auto(), "In a ReadOnly phase.")
+
+
+sim_phase: SimPhase = SimPhase.NORMAL
+"""The current phase of the time step."""
 
 
 def _setup_logging() -> None:
