@@ -185,7 +185,7 @@ class Runner(ABC):
         clean: bool = False,
         verbose: bool = False,
         timescale: Optional[Tuple[str, str]] = None,
-        waves: Optional[bool] = None,
+        waves: bool = False,
         log_file: Optional[PathLike] = None,
     ) -> None:
         """Build the HDL sources.
@@ -280,7 +280,7 @@ class Runner(ABC):
         self.timescale: Optional[Tuple[str, str]] = timescale
         self.log_file: Optional[PathLike] = log_file
 
-        self.waves = bool(waves)
+        self.waves = waves
 
         self.env.update(os.environ)
 
@@ -299,8 +299,8 @@ class Runner(ABC):
         test_args: Sequence[str] = [],
         plusargs: Sequence[str] = [],
         extra_env: Mapping[str, str] = {},
-        waves: Optional[bool] = None,
-        gui: Optional[bool] = None,
+        waves: bool = False,
+        gui: bool = False,
         parameters: Optional[Mapping[str, object]] = None,
         build_dir: Optional[PathLike] = None,
         test_dir: Optional[PathLike] = None,
@@ -401,8 +401,8 @@ class Runner(ABC):
             self.env["COCOTB_RANDOM_SEED"] = str(seed)
 
         self.log_file = log_file
-        self.waves = bool(waves)
-        self.gui = bool(gui)
+        self.waves = waves
+        self.gui = gui
         self.timescale = timescale
 
         if verbose is not None:
