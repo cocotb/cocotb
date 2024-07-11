@@ -1399,6 +1399,7 @@ static PyMethodDef gpi_clk_methods[] = {
                "`t_high` steps. If `start_high` is True, start a the beginning "
                "of the high state, otherwise start at the beginning of the "
                "low state.\n"
+               "\n"
                "Raises:\n"
                "    TypeError: wrong arguments type.\n"
                "    ValueError: t_period and t_high are such that in one "
@@ -1419,7 +1420,7 @@ template <>
 PyTypeObject gpi_hdl_Object<gpi_clk_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_clk_hdl>();
     type.tp_name = "cocotb.simulator.GpiClock";
-    type.tp_doc = "C++ Clock using the GPI.";
+    type.tp_doc = "C++ clock using the GPI.";
     type.tp_methods = gpi_clk_methods;
     type.tp_dealloc = clock_dealloc;
     return type;

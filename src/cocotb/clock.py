@@ -66,9 +66,8 @@ class Clock:
             the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
         impl: One of
             ``'auto'``, ``'gpi'``, ``'py'``.
-            Specify whether the clock is toggled via a GpiClock (faster), or in python.
-            When ``'auto'`` is used (default), it will pick GpiClock when trusting inertial
-            writes (see :envvar:`COCOTB_TRUST_INERTIAL_WRITES`).
+            Specify whether the clock is implemented with a :class:`~cocotb.simulator.GpiClock` (faster), or with a Python coroutine.
+            When ``'auto'`` is used (default), the fastest implementation that supports your environment and use case is picked.
 
             .. versionadded:: 2.0
 
@@ -129,7 +128,7 @@ class Clock:
         if impl == "auto":
             impl = "gpi" if cocotb._conf.trust_inertial else "py"
         elif impl not in ["gpi", "py"]:
-            raise ValueError(f"Invalid clock impl '{impl}'")
+            raise ValueError(f"Invalid clock impl {impl!r}")
         self.impl = impl
 
     async def start(self, start_high: bool = True) -> None:
