@@ -30,7 +30,6 @@ from cocotb.triggers import (
     RisingEdge,
     Timer,
 )
-from cocotb.triggers import _TriggerException as TriggerException
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -136,14 +135,14 @@ async def do_test_afterdelay_in_readonly(dut, delay):
     exited = True
 
 
-# A TriggerException is expected to happen in this test, which indicates that
+# A RuntimeError is expected to happen in this test, which indicates that
 # ReadWrite after ReadOnly fails to register.
 # - Riviera and Questa (in Verilog) and Xcelium pass.
 # - Riviera and Questa (in VHDL) incorrectly allow registering ReadWrite
 #   after ReadOnly.
 # - Xcelium passes (VHDL and Verilog).
 @cocotb.test(
-    expect_error=TriggerException
+    expect_error=RuntimeError
     if (
         (LANGUAGE in ["verilog"] and SIM_NAME.startswith(("riviera", "modelsim")))
         or SIM_NAME.startswith("xmsim")

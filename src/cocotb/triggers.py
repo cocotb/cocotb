@@ -72,10 +72,6 @@ def _pointer_str(obj: object) -> str:
     return full_repr.rsplit(" ", 1)[1][:-1]
 
 
-class _TriggerException(Exception):
-    pass
-
-
 Self = TypeVar("Self", bound="Trigger")
 
 
@@ -251,7 +247,7 @@ class Timer(GPITrigger):
                 self._sim_steps, callback, self
             )
             if self._cbhdl is None:
-                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -286,7 +282,7 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass)
         if self._cbhdl is None:
             self._cbhdl = simulator.register_readonly_callback(callback, self)
             if self._cbhdl is None:
-                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -304,7 +300,7 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
         if self._cbhdl is None:
             self._cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self._cbhdl is None:
-                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -322,7 +318,7 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetacl
         if self._cbhdl is None:
             self._cbhdl = simulator.register_nextstep_callback(callback, self)
             if self._cbhdl is None:
-                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -344,7 +340,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
                 self.signal._handle, callback, type(self)._edge_type, self
             )
             if self._cbhdl is None:
-                raise _TriggerException(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {str(self)} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
