@@ -23,7 +23,7 @@ MODULE := "\
 	test_logging,\
 	pytest_assertion_rewriting,\
 	test_queues,\
-	test_utils,\
+	test_sim_time_utils,\
 	test_start_soon,\
 	"
 

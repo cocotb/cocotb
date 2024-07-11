@@ -35,8 +35,8 @@ from logging import Logger
 from typing import Optional, Union
 
 from cocotb._py_compat import cached_property
+from cocotb.sim_time_utils import get_sim_steps, get_time_from_sim_steps
 from cocotb.triggers import Timer
-from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 
 class Clock:

@@ -13,8 +13,8 @@ import pytest
 from common import _check_traceback
 
 import cocotb
+from cocotb.sim_time_utils import get_sim_time
 from cocotb.triggers import Combine, Event, First, Timer
-from cocotb.utils import get_sim_time
 
 
 @cocotb.test()
@@ -156,17 +156,17 @@ async def test_event_is_set(dut):
 @cocotb.test()
 async def test_combine_start_soon(_):
     async def coro(delay):
-        start_time = cocotb.utils.get_sim_time(units="ns")
+        start_time = get_sim_time(units="ns")
         await Timer(delay, "ns")
-        assert cocotb.utils.get_sim_time(units="ns") == start_time + delay
+        assert get_sim_time(units="ns") == start_time + delay
 
     max_delay = 10
 
     tasks = [cocotb.start_soon(coro(d)) for d in range(1, max_delay + 1)]
 
-    test_start = cocotb.utils.get_sim_time(units="ns")
+    test_start = get_sim_time(units="ns")
     await Combine(*tasks)
-    assert cocotb.utils.get_sim_time(units="ns") == test_start + max_delay
+    assert get_sim_time(units="ns") == test_start + max_delay
 
 
 @cocotb.test()
