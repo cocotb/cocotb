@@ -35,9 +35,9 @@ from typing import Union
 
 import cocotb._conf
 from cocotb._py_compat import cached_property
-from cocotb.simulator import clock_create
 from cocotb.sim_time_utils import get_sim_steps, get_time_from_sim_steps
-from cocotb.triggers import Timer
+from cocotb.simulator import clock_create
+from cocotb.triggers import Event, Timer
 
 
 class Clock:
@@ -125,10 +125,14 @@ class Clock:
         self.signal = signal
         self.period = get_sim_steps(period, units)
         self.frequency = 1 / get_time_from_sim_steps(self.period, units="us")
+        valid_impls = ["auto", "gpi", "py"]
+        if impl not in valid_impls:
+            valid_impls_str = ", ".join([repr(i) for i in valid_impls])
+            raise ValueError(
+                f"Invalid clock impl {impl!r}, must be one of: {valid_impls_str}"
+            )
         if impl == "auto":
             impl = "gpi" if cocotb._conf.trust_inertial else "py"
-        elif impl not in ["gpi", "py"]:
-            raise ValueError(f"Invalid clock impl {impl!r}")
         self.impl = impl
 
     async def start(self, start_high: bool = True) -> None:

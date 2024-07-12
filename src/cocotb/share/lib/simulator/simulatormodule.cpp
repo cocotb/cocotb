@@ -867,28 +867,25 @@ class GpiClock {
 
     int clk_val = 0;
 
-    int toggle();
+    int toggle(bool initialSet);
     static int toggle_cb(void *gpi_clk);
 };
 
 int GpiClock::start(uint64_t period_steps, uint64_t high_steps,
                     bool start_high) {
     if (clk_toggle_cb_hdl) {
-        LOG_ERROR("Failed to start clock: already started -- stop first");
         return EBUSY;
     }
     if ((period_steps < 2) || (high_steps < 1) ||
         (high_steps >= period_steps)) {
-        LOG_ERROR("Failed to start clock: invalid parameters");
         return EINVAL;
     }
 
     period = period_steps;
     t_high = high_steps;
 
-    // Call toggle to start the clock, so set to the opposite value here.
-    clk_val = start_high ? 0 : 1;
-    return toggle();
+    clk_val = start_high;
+    return toggle(true);
 }
 
 int GpiClock::stop() {
@@ -900,8 +897,10 @@ int GpiClock::stop() {
     return 0;
 }
 
-int GpiClock::toggle() {
-    clk_val = !clk_val;
+int GpiClock::toggle(bool initialSet) {
+    if (!initialSet) {
+        clk_val = !clk_val;
+    }
     gpi_set_signal_value_int(clk_signal, clk_val, GPI_DEPOSIT);
 
     uint64_t to_next_edge = clk_val ? t_high : (period - t_high);
@@ -910,7 +909,12 @@ int GpiClock::toggle() {
         gpi_register_timed_callback(&GpiClock::toggle_cb, this, to_next_edge);
     if (!clk_toggle_cb_hdl) {
         // LCOV_EXCL_START
-        LOG_ERROR("Clock will be stopped: failed to register toggle cb");
+        if (!initialSet) {
+            // Failing when called from start() will be reported via
+            // exception, but log in case of later failure that would
+            // otherwise be silent.
+            LOG_ERROR("Clock will be stopped: failed to register toggle cb");
+        }
         return EAGAIN;
         // LCOV_EXCL_STOP
     }
@@ -920,7 +924,7 @@ int GpiClock::toggle() {
 
 int GpiClock::toggle_cb(void *gpi_clk) {
     GpiClock *clk_obj = (GpiClock *)gpi_clk;
-    return clk_obj->toggle();
+    return clk_obj->toggle(false);
 }
 
 // Create a new clock object
@@ -1176,7 +1180,7 @@ static PyMethodDef SimulatorMethods[] = {
                "--\n\n"
                "clock_create(signal: cocotb.simulator.gpi_sim_hdl"
                ") -> cocotb.simulator.GpiClock\n"
-               "Create a clock driver on a signal."
+               "Create a clock driver on a signal.\n"
                "\n"
                ".. versionadded:: 2.0")},
     {NULL, NULL, 0, NULL} /* Sentinel */
