@@ -36,20 +36,6 @@ extern "C" {
 void vlog_startup_routines_bootstrap(void);
 }
 
-static inline bool settle_value_callbacks() {
-    bool cbs_called, again;
-
-    // Call Value Change callbacks
-    // These can modify signal values so we loop
-    // until there are no more changes
-    cbs_called = again = VerilatedVpi::callValueCbs();
-    while (again) {
-        again = VerilatedVpi::callValueCbs();
-    }
-
-    return cbs_called;
-}
-
 int main(int argc, char** argv) {
     bool traceOn = false;
 #if VM_TRACE_FST
@@ -128,32 +114,27 @@ int main(int argc, char** argv) {
 #endif
 
     while (!Verilated::gotFinish()) {
-        // Call registered timed callbacks (e.g. clock timer)
-        // These are called at the beginning of the time step
-        // before the iterative regions (IEEE 1800-2012 4.4.1)
-        VerilatedVpi::callTimedCbs();
-
-        // Call Value Change callbacks triggered by Timer callbacks
-        // These can modify signal values
-        settle_value_callbacks();
-
-        // We must evaluate whole design until we process all 'events'
-        bool again = true;
-        while (again) {
-            // Evaluate design
+        // We must evaluate whole design until we process all 'events' for this
+        // time step
+        do {
             top->eval_step();
+            VerilatedVpi::clearEvalNeeded();
 
-            // Call Value Change callbacks triggered by eval()
-            // These can modify signal values
-            again = settle_value_callbacks();
+            // Call Value Change callbacks
+            // These can modify signal values so we loop
+            // until there are no more changes
+            bool again;
+            do {
+                VerilatedVpi::doInertialPuts();
+                again = VerilatedVpi::callValueCbs();
+            } while (again);
 
-            // Call registered ReadWrite callbacks
-            again |= VerilatedVpi::callCbs(cbReadWriteSynch);
+            // Run ReadWrite callback as we are done processing this eval step
+            VerilatedVpi::callCbs(cbReadWriteSynch);
+            VerilatedVpi::doInertialPuts();
 
-            // Call Value Change callbacks triggered by ReadWrite callbacks
-            // These can modify signal values
-            again |= settle_value_callbacks();
-        }
+        } while (VerilatedVpi::evalNeeded());
+
         top->eval_end_step();
 
         // Call ReadOnly callbacks
@@ -185,9 +166,10 @@ int main(int argc, char** argv) {
         // but not on first cycle
         VerilatedVpi::callCbs(cbNextSimTime);
 
-        // Call Value Change callbacks triggered by NextTimeStep callbacks
-        // These can modify signal values
-        settle_value_callbacks();
+        // Call registered timed callbacks (e.g. clock timer)
+        // These are called at the beginning of the time step
+        // before the iterative regions (IEEE 1800-2012 4.4.1)
+        VerilatedVpi::callTimedCbs();
     }
 
     VerilatedVpi::callCbs(cbEndOfSimulation);
