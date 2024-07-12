@@ -38,6 +38,7 @@ from typing import (
     Dict,
     Generic,
     Iterable,
+    Iterator,
     Optional,
     Sequence,
     Tuple,
@@ -323,7 +324,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
             ValueError: if unable to translate handle to a valid _sub_handle key.
         """
 
-    def __iter__(self) -> Iterable[SimHandleBase]:
+    def __iter__(self) -> Iterator[SimHandleBase]:
         return iter(self._values())
 
     def __len__(self) -> int:
@@ -552,7 +553,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int]):
 
     # ideally `__len__` could be implemented in terms of `range`
 
-    def __iter__(self) -> Iterable[SimHandleBase]:
+    def __iter__(self) -> Iterator[SimHandleBase]:
         # must use `sorted(self._keys())` instead of the range because `range` doesn't work universally.
         for i in sorted(self._keys()):
             yield self[i]
@@ -814,7 +815,7 @@ class IndexableValueObjectBase(
         self._sub_handles[index] = cast(ChildObjectT, SimHandle(new_handle, path))
         return self._sub_handles[index]
 
-    def __iter__(self) -> Iterable[ChildObjectT]:
+    def __iter__(self) -> Iterator[ChildObjectT]:
         if not self._is_indexable:
             return
         for i in self.range:
