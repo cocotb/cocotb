@@ -15,7 +15,7 @@ import pytest
 from common import MyBaseException, MyException
 
 import cocotb
-from cocotb.triggers import NullTrigger, Timer
+from cocotb.triggers import NullTrigger, SimTimeoutError, Timer
 
 
 @cocotb.test(expect_error=NameError)
@@ -52,9 +52,7 @@ async def test_expect_exception_list(dut):
     raise MyException()
 
 
-@cocotb.test(
-    expect_error=cocotb.result.SimTimeoutError, timeout_time=1, timeout_unit="ns"
-)
+@cocotb.test(expect_error=SimTimeoutError, timeout_time=1, timeout_unit="ns")
 async def test_timeout_testdec_fail(dut):
     await Timer(10, "ns")
 
@@ -70,7 +68,7 @@ async def test_timeout_testdec_simultaneous(dut):
         await cocotb.triggers.with_timeout(
             Timer(1, "ns"), timeout_time=1, timeout_unit="ns"
         )
-    except cocotb.result.SimTimeoutError:
+    except SimTimeoutError:
         pass
     else:
         assert False, "Expected a Timeout"
