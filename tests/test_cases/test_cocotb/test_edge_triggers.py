@@ -18,7 +18,6 @@ import pytest
 import cocotb
 from cocotb._sim_versions import RivieraVersion
 from cocotb.clock import Clock
-from cocotb.result import SimTimeoutError
 from cocotb.triggers import (
     ClockCycles,
     Combine,
@@ -27,6 +26,7 @@ from cocotb.triggers import (
     First,
     ReadOnly,
     RisingEdge,
+    SimTimeoutError,
     Timer,
     with_timeout,
 )

@@ -28,7 +28,9 @@ from cocotb.triggers import (
     ReadOnly,
     ReadWrite,
     RisingEdge,
+    SimTimeoutError,
     Timer,
+    with_timeout,
 )
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -214,17 +216,13 @@ async def example_coro():
 
 @cocotb.test()
 async def test_timeout_func_coro_fail(dut):
-    with pytest.raises(cocotb.result.SimTimeoutError):
-        await cocotb.triggers.with_timeout(
-            example_coro(), timeout_time=1, timeout_unit="ns"
-        )
+    with pytest.raises(SimTimeoutError):
+        await with_timeout(example_coro(), timeout_time=1, timeout_unit="ns")
 
 
 @cocotb.test()
 async def test_timeout_func_coro_pass(dut):
-    res = await cocotb.triggers.with_timeout(
-        example_coro(), timeout_time=100, timeout_unit="ns"
-    )
+    res = await with_timeout(example_coro(), timeout_time=100, timeout_unit="ns")
     assert res == 1
 
 
@@ -235,15 +233,13 @@ async def example():
 
 @cocotb.test()
 async def test_timeout_func_fail(dut):
-    with pytest.raises(cocotb.result.SimTimeoutError):
-        await cocotb.triggers.with_timeout(example(), timeout_time=1, timeout_unit="ns")
+    with pytest.raises(SimTimeoutError):
+        await with_timeout(example(), timeout_time=1, timeout_unit="ns")
 
 
 @cocotb.test()
 async def test_timeout_func_pass(dut):
-    res = await cocotb.triggers.with_timeout(
-        example(), timeout_time=100, timeout_unit="ns"
-    )
+    res = await with_timeout(example(), timeout_time=100, timeout_unit="ns")
     assert res == 1
 
 
@@ -320,18 +316,18 @@ async def test_timer_round_mode(_):
 
     # test with_timeout round_mode
     with pytest.raises(ValueError):
-        await cocotb.triggers.with_timeout(
+        await with_timeout(
             Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="error"
         )
-    await cocotb.triggers.with_timeout(
+    await with_timeout(
         Timer(1, "step"), timeout_time=2, timeout_unit="step", round_mode="error"
     )
-    await cocotb.triggers.with_timeout(
+    await with_timeout(
         Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="floor"
     )
-    await cocotb.triggers.with_timeout(
+    await with_timeout(
         Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="ceil"
     )
-    await cocotb.triggers.with_timeout(
+    await with_timeout(
         Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="round"
     )

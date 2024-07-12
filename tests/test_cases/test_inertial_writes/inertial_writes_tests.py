@@ -6,8 +6,14 @@ import os
 import cocotb
 from cocotb._conf import trust_inertial
 from cocotb.clock import Clock
-from cocotb.result import SimTimeoutError
-from cocotb.triggers import ReadOnly, ReadWrite, RisingEdge, Timer, with_timeout
+from cocotb.triggers import (
+    ReadOnly,
+    ReadWrite,
+    RisingEdge,
+    SimTimeoutError,
+    Timer,
+    with_timeout,
+)
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 vhdl = os.environ.get("TOPLEVEL_LANG", "verilog").lower() == "vhdl"
