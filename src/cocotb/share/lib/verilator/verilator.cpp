@@ -58,6 +58,8 @@ int main(int argc, char** argv) {
     const char* traceFile = "dump.vcd";
 #endif
 
+    int xInitial = -1;
+
     for (int i = 1; i < argc; i++) {
         std::string arg = std::string(argv[i]);
         if (arg == "--trace") {
@@ -67,6 +69,15 @@ int main(int argc, char** argv) {
                 traceFile = argv[i];
             } else {
                 fprintf(stderr, "Error: --trace-file requires a parameter\n");
+                return -1;
+            }
+        } else if (arg == "--x-initial") {
+            if (++i < argc) {
+                xInitial = std::stoi(argv[i]);
+            }
+            if (xInitial < 0 || xInitial > 2) {
+                fprintf(stderr,
+                        "Error: --x-initial requires a parameter in [0,1,2]\n");
                 return -1;
             }
         } else if (arg == "--help") {
@@ -82,6 +93,10 @@ int main(int argc, char** argv) {
                     basename(argv[0]), traceFile);
             return 0;
         }
+    }
+
+    if (xInitial != -1) {
+        Verilated::randReset(xInitial);
     }
 
     Verilated::commandArgs(argc, argv);
