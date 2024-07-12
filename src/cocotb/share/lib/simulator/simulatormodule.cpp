@@ -1395,23 +1395,24 @@ PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
 
 static PyMethodDef gpi_clk_methods[] = {
     {"start", (PyCFunction)clk_start, METH_VARARGS,
-     PyDoc_STR("start($self, t_period, t_high, start_high)\n"
+     PyDoc_STR("start($self, period_steps, high_steps, start_high)\n"
                "--\n\n"
-               "start(t_period: int, t_high: int, start_high: bool) -> None\n"
-               "Start this clock now. The clock will have a period of "
-               "`t_period` steps, and out of that period it will be high "
-               "`t_high` steps. If `start_high` is True, start a the beginning "
-               "of the high state, otherwise start at the beginning of the "
-               "low state.\n"
+               "start(period_steps: int, high_steps: int, start_high: bool) -> None\n"
+               "Start this clock now.\n"
+               "\n"
+               "The clock will have a period of *period_steps* time steps, "
+               "and out of that period it will be high for *high_steps* time steps. "
+               "If *start_high* is ``True``, start at the beginning of the high state, "
+               "otherwise start at the beginning of the low state.\n"
                "\n"
                "Raises:\n"
-               "    TypeError: wrong arguments type.\n"
-               "    ValueError: t_period and t_high are such that in one "
+               "    TypeError: If there are an incorrect number of arguments or "
+               "they are of the wrong type.\n"
+               "    ValueError: If *period_steps* and *high_steps* are such that in one "
                "period the duration of the low or high state would be less "
-               "than one step.\n"
-               "    RuntimeError: the clock was already started, or the "
-               "underlying callback could not be registered.\n"
-               "\n")},
+               "than one time step, or *high_steps* is greater than *period_steps*.\n"
+               "    RuntimeError: If the clock was already started, or the "
+               "GPI callback could not be registered.")},
     {"stop", (PyCFunction)clk_stop, METH_NOARGS,
      PyDoc_STR("stop($self)\n"
                "--\n\n"
