@@ -1,1 +1,1 @@
-The :meth:`cocotb_tools.runner.Simulator.build` and :meth:`cocotb_tools.runner.Simulator.test` methods now accept a ``log_file`` argument to redirect stdout and stderr to the specified file.
+The :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` and :meth:`Runner.test() <cocotb_tools.runner.Runner.test>` methods now accept a ``log_file`` argument to redirect stdout and stderr to the specified file.
