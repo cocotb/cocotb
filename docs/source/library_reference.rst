@@ -23,39 +23,69 @@ Python Test Runner
 .. warning::
     Python runners and associated APIs are an experimental feature and subject to change.
 
-.. automodule:: cocotb_tools.runner
-    :members:
-    :member-order: bysource
+.. currentmodule:: cocotb_tools.runner
+
+.. module:: cocotb_tools.runner
     :synopsis: Build HDL and run cocotb tests.
 
+.. autofunction:: get_runner
 
-Test Results
-============
-
-The exceptions in this module can be raised at any point by any code and will terminate the test.
-
-.. automodule:: cocotb.result
+.. autoclass:: Runner
     :members:
-    :member-order: bysource
-    :synopsis: Exceptions and functions for simulation result handling.
+
+.. autoclass:: VHDL
+
+.. autoclass:: Verilog
+
+Simulator Runners
+-----------------
+
+.. autoclass:: Icarus
+
+.. autoclass:: Verilator
+
+.. autoclass:: Riviera
+
+.. autoclass:: Questa
+
+.. autoclass:: Xcelium
+
+.. autoclass:: Ghdl
+
+.. autoclass:: Nvc
+
+Results
+-------
+
+.. autofunction:: get_results
+
+.. autofunction:: check_results_file
+
+File Utilities
+--------------
+
+.. autofunction:: get_abs_path
+
+.. autofunction:: get_abs_paths
+
+.. autofunction:: outdated
+
+.. autoclass:: UnknownFileExtension
 
 
 .. _writing-tests:
 
-Writing and Generating tests
+Writing and Generating Tests
 ============================
 
 .. autofunction:: cocotb.test
-
-.. autofunction:: cocotb.external
-
-.. autofunction:: cocotb.function
 
 .. autofunction:: cocotb.parameterize
 
 .. autoclass:: cocotb.regression.TestFactory
     :members:
     :member-order: bysource
+
 
 Interacting with the Simulator
 ==============================
@@ -182,15 +212,25 @@ The following are internal classes used within ``cocotb``.
     :member-order: bysource
     :private-members:
 
-Testbench Structure
-===================
 
-Clock
------
+Test Utilities
+==============
+
+Clock Driver
+------------
 
 .. autoclass:: cocotb.clock.Clock
     :members:
     :member-order: bysource
+
+
+Asynchronous Queues
+-------------------
+
+.. automodule:: cocotb.queue
+    :members:
+    :member-order: bysource
+    :synopsis: Asynchronous queues.
 
 
 Simulation Time Utilities
@@ -201,10 +241,11 @@ Simulation Time Utilities
     :member-order: bysource
     :synopsis: Various utilities for dealing with simulation time.
 
+
 .. _logging-reference-section:
 
 Logging
--------
+=======
 
 .. module:: cocotb.logging
     :synopsis: Classes for logging messages from cocotb during simulation.
@@ -269,6 +310,7 @@ Assignment Methods
 
 .. autoclass:: Release
 
+
 Other Handle Methods
 --------------------
 
@@ -285,16 +327,9 @@ Other Handle Methods
    Return a list of the sub-handles of *handle*,
    that is, the instances, signals, constants etc. of a certain hierarchy level in the DUT.
 
+
 Miscellaneous
 =============
-
-Asynchronous Queues
--------------------
-
-.. automodule:: cocotb.queue
-    :members:
-    :member-order: bysource
-    :synopsis: Asynchronous queues.
 
 Other Runtime Information
 -------------------------
@@ -319,6 +354,7 @@ Other Runtime Information
 
 .. _combine-results:
 
+
 The ``combine_results`` script
 ------------------------------
 
@@ -330,6 +366,7 @@ Use ``python -m cocotb_tools.combine_results`` to call the script.
     :prog: combine_results
 
 .. _cocotb-config:
+
 
 The ``cocotb-config`` script
 ----------------------------
@@ -365,8 +402,8 @@ The Regression Manager
     :members:
     :member-order: bysource
 
-The ``cocotb.simulator`` module
--------------------------------
+The ``cocotb.simulator`` module (Internals)
+-------------------------------------------
 
 This module is a Python wrapper to libgpi.
 It should not be considered public API, but is documented here for developers
