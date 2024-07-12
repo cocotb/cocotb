@@ -158,13 +158,9 @@ class Runner(ABC):
     def _build_command(self) -> Sequence[_Command]:
         """Return command to build the HDL sources."""
 
-        raise NotImplementedError()
-
     @abstractmethod
     def _test_command(self) -> Sequence[_Command]:
         """Return command to run a test."""
-
-        raise NotImplementedError()
 
     def build(
         self,
