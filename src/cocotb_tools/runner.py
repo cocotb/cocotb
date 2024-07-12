@@ -68,11 +68,11 @@ def _shlex_join(split_command: Iterable[str]) -> str:
 
 
 class VHDL(str):
-    """Tags source files and build arguments to :meth:`~cocotb_tools.runner.Simulator.build` as VHDL-specific."""
+    """Tags source files and build arguments to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` as VHDL-specific."""
 
 
 class Verilog(str):
-    """Tags source files and build arguments to :meth:`~cocotb_tools.runner.Simulator.build` as Verilog-specific."""
+    """Tags source files and build arguments to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` as Verilog-specific."""
 
 
 class Runner(ABC):
@@ -571,6 +571,10 @@ _verilog_extensions_s = ", ".join(f"`{c}`" for c in _verilog_extensions)
 
 
 class UnknownFileExtension(ValueError):
+    """Raised when a source file type cannot be determined from the file extension.
+
+    See :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` for details on supported standard file extensions and the use of :class:`VHDL` and :class:`Verilog` for specifying file type."""
+
     def __init__(self, source: PathLike) -> None:
         super().__init__(
             f"Can't determine if {source} is a VHDL or Verilog file. "
@@ -600,11 +604,11 @@ def is_verilog_source(source: PathLike) -> bool:
 class Icarus(Runner):
     """Implementation of :class:`Runner` for Icarus.
 
-    * ``hdl_toplevel`` argument to :meth:`build` is *required*.
-    * ``waves`` argument *must* be given to :meth:`build` if used.
-    * ``timescale`` argument to :meth:`build` must be given to support dumping the command file.
-    * Does not support the ``gui`` argument to :meth:`test`.
-    * Does not support the ``pre_cmd`` argument to :meth:`test`.
+    * ``hdl_toplevel`` argument to :meth:`.build` is *required*.
+    * ``waves`` argument *must* be given to :meth:`.build` if used.
+    * ``timescale`` argument to :meth:`.build` must be given to support dumping the command file.
+    * Does not support the ``gui`` argument to :meth:`.test`.
+    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
@@ -735,7 +739,7 @@ class Icarus(Runner):
 class Questa(Runner):
     """Implementation of :class:`Runner` for Questa.
 
-    * Does not support the ``timescale`` argument to :meth:`build` or :meth:`test`.
+    * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["fli", "vhpi"]}
@@ -869,9 +873,9 @@ class Questa(Runner):
 class Ghdl(Runner):
     """Implementation of :class:`Runner` for GHDL.
 
-    * Does not support the ``pre_cmd`` argument to :meth:`test`.
-    * Does not support the ``gui`` argument to :meth:`test`.
-    * Does not support the ``waves`` argument to :meth:`build` or :meth:`test`.
+    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    * Does not support the ``gui`` argument to :meth:`.test`.
+    * Does not support the ``waves`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"vhdl": ["vpi"]}
@@ -986,12 +990,12 @@ class Ghdl(Runner):
 
 
 class Nvc(Runner):
-    """Implementation of :class:`Runner` for GHDL.
+    """Implementation of :class:`Runner` for NVC.
 
-    * Does not support the ``pre_cmd`` argument to :meth:`test`.
-    * Does not support the ``gui`` argument to :meth:`test`.
-    * Does not support the ``waves`` argument to :meth:`build` or :meth:`test`.
-    * Does not support the ``timescale`` argument to :meth:`build` or :meth:`test`.
+    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    * Does not support the ``gui`` argument to :meth:`.test`.
+    * Does not support the ``waves`` argument to :meth:`.build` or :meth:`.test`.
+    * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"vhdl": ["vhpi"]}
@@ -1056,11 +1060,11 @@ class Nvc(Runner):
 
 
 class Riviera(Runner):
-    """Implementation of :class:`Runner` for GHDL.
+    """Implementation of :class:`Runner` for Riviera-PRO.
 
-    * Does not support the ``pre_cmd`` argument to :meth:`test`.
-    * Does not support the ``gui`` argument to :meth:`test`.
-    * Does not support the ``timescale`` argument to :meth:`build` or :meth:`test`.
+    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    * Does not support the ``gui`` argument to :meth:`.test`.
+    * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
@@ -1203,10 +1207,10 @@ class Riviera(Runner):
 
 
 class Verilator(Runner):
-    """Implementation of :class:`Runner` for GHDL.
+    """Implementation of :class:`Runner` for Verilator.
 
-    * Does not support the ``pre_cmd`` argument to :meth:`test`.
-    * Does not support the ``gui`` argument to :meth:`test`.
+    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    * Does not support the ``gui`` argument to :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
@@ -1316,10 +1320,10 @@ class Verilator(Runner):
 
 
 class Xcelium(Runner):
-    """Implementation of :class:`Runner` for GHDL.
+    """Implementation of :class:`Runner` for Xcelium.
 
-    * Does not support the ``pre_cmd`` argument to :meth:`test`.
-    * Does not support the ``timescale`` argument to :meth:`build` or :meth:`test`.
+    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
