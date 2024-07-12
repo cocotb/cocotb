@@ -10,7 +10,6 @@ from cocotb.triggers import (
     ReadOnly,
     ReadWrite,
     RisingEdge,
-    SimTimeoutError,
     Timer,
     with_timeout,
 )
@@ -28,9 +27,6 @@ riviera_vhpi_trust_inertial = SIM_NAME.startswith("riviera") and vhdl and trust_
 
 # Verilator < v5.026 only does vpiNoDelay writes.
 @cocotb.test(
-    expect_error=SimTimeoutError
-    if (SIM_NAME.startswith("verilator") and trust_inertial)
-    else (),
     skip=riviera_vhpi_trust_inertial and not simulator_test,
 )
 async def test_writes_on_timer_seen_on_edge(dut):
@@ -51,8 +47,6 @@ elif trust_inertial:
     expect_fail = False
 elif SIM_NAME.startswith(("riviera", "modelsim")) and vhdl:
     expect_fail = False
-elif SIM_NAME.startswith("verilator"):
-    expect_fail = False
 else:
     expect_fail = True
 
@@ -69,6 +63,7 @@ async def test_read_back_in_readwrite(dut):
     # steady state
     dut.clk.value = 0
     await Timer(10, "ns")
+    assert dut.clk.value == 0
 
     # write in the "normal" phase
     dut.clk.value = 1
