@@ -7,7 +7,7 @@ import logging
 import os
 import warnings
 from asyncio import CancelledError, InvalidStateError
-from typing import Any, Coroutine, Generator, Generic, Optional, TypeVar
+from typing import Any, Callable, Coroutine, Generator, Generic, List, Optional, TypeVar
 
 import cocotb
 import cocotb.triggers
@@ -61,6 +61,7 @@ class Task(Generic[ResultType]):
         self._outcome: Optional[Outcome[ResultType]] = None
         self._trigger: Optional[cocotb.triggers.Trigger] = None
         self._cancelled: Optional[CancelledError] = None
+        self._done_callbacks: List[Callable[[Task[Any]], Any]] = []
 
         self._task_id = self._id_count
         type(self)._id_count += 1
@@ -139,6 +140,10 @@ class Task(Generic[ResultType]):
         except BaseException as e:
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
 
+        if self.done():
+            for callback in self._done_callbacks:
+                callback(self)
+
     def kill(self) -> None:
         """Kill a coroutine."""
         if self._outcome is not None:
@@ -154,6 +159,10 @@ class Task(Generic[ResultType]):
         # Close coroutine so there is no RuntimeWarning that it was never awaited
         if not self.has_started():
             self._coro.close()
+
+        if self.done():
+            for callback in self._done_callbacks:
+                callback(self)
 
     def join(self) -> "cocotb.triggers.Join[ResultType]":
         """Wait for the task to complete.
@@ -232,6 +241,35 @@ class Task(Generic[ResultType]):
             return self._outcome.error
         else:
             return None
+
+    def add_done_callback(self, callback: Callable[["Task[ResultType]"], Any]) -> None:
+        """Add *callback* to the list of callbacks to be run once the Task becomes "done".
+
+        Args:
+            callback: The callback to run once "done".
+        """
+        self._done_callbacks.append(callback)
+
+    def remove_done_callback(
+        self, callback: Callable[["Task[ResultType]"], Any]
+    ) -> int:
+        """Remove a callback added by a call to :meth:`add_done_callback`.
+
+        Args:
+            callback: The callback to remove from the callback list.
+
+        Returns:
+            The number of callbacks removed.
+            Typically ``1``, unless a callback was added more than once or never added.
+        """
+        count = 0
+        while True:
+            try:
+                self._done_callbacks.remove(callback)
+            except ValueError:
+                return count
+            else:
+                count += 1
 
     def __await__(self) -> Generator[Any, Any, ResultType]:
         # It's tempting to use `return (yield from self._coro)` here,
