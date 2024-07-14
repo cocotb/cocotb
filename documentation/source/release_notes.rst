@@ -8,7 +8,7 @@ Release Notes
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
 
-Cocotb 1.9.0 (2024-07-DD)
+Cocotb 1.9.0 (2024-07-14)
 =========================
 
 Features
