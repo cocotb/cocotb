@@ -45,34 +45,25 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
     };
 
     std::vector<int32_t> module_options = {
+        vpiNet,       vpiNetArray,   vpiReg,       vpiRegArray,
+        vpiMemory,    vpiIntegerVar, vpiRealVar,   vpiRealNet,
+        vpiStructVar, vpiStructNet,  vpiVariables, vpiParameter,
         // vpiModule,            // Aldec SEGV on mixed language
         // vpiModuleArray,       // Aldec SEGV on mixed language
-        // vpiIODecl,            // Don't care about these
-        vpiMemory, vpiIntegerVar, vpiRealVar, vpiRealNet, vpiStructVar,
-        vpiStructNet, vpiVariables, vpiNamedEvent, vpiNamedEventArray,
-        vpiParameter,
-        // vpiSpecParam,         // Don't care
-        // vpiParamAssign,       // Aldec SEGV on mixed language
-        // vpiDefParam,          // Don't care
-        vpiPrimitive, vpiPrimitiveArray,
-        // vpiContAssign,        // Don't care
-        vpiProcess,  // Don't care
-        vpiModPath, vpiTchk, vpiAttribute, vpiPort, vpiInternalScope,
         // vpiInterface,         // Aldec SEGV on mixed language
         // vpiInterfaceArray,    // Aldec SEGV on mixed language
     };
 
-    // append base class vpiInstance members
-    module_options.insert(module_options.begin(), instance_options.begin(),
-                          instance_options.end());
-
     std::vector<int32_t> struct_options = {
         vpiNet,
 #ifndef IUS
+        // TODO: why does IUS not like this?
         vpiNetArray,
 #endif
-        vpiReg,       vpiRegArray,       vpiMemory,    vpiParameter,
-        vpiPrimitive, vpiPrimitiveArray, vpiAttribute, vpiMember,
+        vpiReg,
+        vpiRegArray,
+        vpiMemory,
+        vpiParameter,
     };
 
     return decltype(VpiIterator::iterate_over){
@@ -85,14 +76,6 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
 
         {vpiNet,
          {
-             // vpiContAssign,        // Driver and load handled separately
-             // vpiPrimTerm,
-             // vpiPathTerm,
-             // vpiTchkTerm,
-             // vpiDriver,
-             // vpiLocalDriver,
-             // vpiLoad,
-             // vpiLocalLoad,
              vpiNetBit,
          }},
         {vpiNetArray,
@@ -106,16 +89,6 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
         {vpiMemory,
          {
              vpiMemoryWord,
-         }},
-        {vpiPort,
-         {
-             vpiPortBit,
-         }},
-        {vpiGate,
-         {
-             vpiPrimTerm,
-             vpiTableEntry,
-             vpiUdpDefn,
          }},
         {vpiPackage,
          {

@@ -41,15 +41,15 @@ async def recursive_discovery(dut):
         pass_total = 26
     elif SIM_NAME.startswith("icarus"):
         if IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"):
-            pass_total = 27
+            pass_total = 26
         else:
-            pass_total = 259
+            pass_total = 258
     elif SIM_NAME.startswith(
         ("modelsim", "ncsim", "xmsim", "chronologic simulation vcs")
     ):
-        # vpiAlways does not show up
-        pass_total = 259
+        pass_total = 258
     else:
+        # TODO: where did this number come from?
         pass_total = 265
 
     tlog = logging.getLogger("cocotb.test")
