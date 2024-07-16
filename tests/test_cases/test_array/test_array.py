@@ -6,6 +6,7 @@ import logging
 import os
 
 import cocotb
+from cocotb._sim_versions import XceliumVersion
 from cocotb.clock import Clock
 from cocotb.handle import (
     ArrayObject,
@@ -118,7 +119,10 @@ async def test_read_write(dut):
     assert dut.port_logic_vec_out.value == 0xCC
     # Some writes to multi-dimensional arrays don't make it into the design.
     # https://github.com/cocotb/cocotb/issues/3372
-    if not cocotb.SIM_NAME.startswith("xmsim"):
+    if not (
+        cocotb.SIM_NAME.startswith("xmsim")
+        and XceliumVersion(cocotb.SIM_VERSION) < XceliumVersion("24.03-s004")
+    ):
         assert dut.sig_t2.value == [0xCC, 0xDD, 0xEE, 0xFF]
         assert dut.sig_t2[7].value == 0xCC
         assert dut.sig_t2[4].value == 0xFF
