@@ -31,6 +31,7 @@ import logging
 from abc import abstractmethod
 from decimal import Decimal
 from fractions import Fraction
+from functools import cached_property
 from typing import (
     Any,
     AsyncContextManager,
@@ -53,7 +54,6 @@ import cocotb
 import cocotb.task
 from cocotb import simulator
 from cocotb._outcomes import Error, Outcome, Value
-from cocotb._py_compat import cached_property
 from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
 from cocotb.handle import LogicObject, ValueObjectBase
 from cocotb.sim_time_utils import get_sim_steps, get_time_from_sim_steps

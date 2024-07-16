@@ -7,12 +7,12 @@ import logging
 import os
 import warnings
 from asyncio import CancelledError, InvalidStateError
+from functools import cached_property
 from typing import Any, Callable, Coroutine, Generator, Generic, List, Optional, TypeVar
 
 import cocotb
 import cocotb.triggers
 from cocotb._outcomes import Error, Outcome, Value
-from cocotb._py_compat import cached_property
 from cocotb._utils import extract_coro_stack, remove_traceback_frames
 
 #: Task result type

@@ -45,7 +45,7 @@ extend-exclude = [
     "_vendor",
     ".nox/",
 ]
-target-version = "py37"
+target-version = "py38"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -102,13 +102,6 @@ build = "cp*-manylinux_x86_64 cp*-manylinux_i686 cp*-win_amd64 cp*-win32 cp*-mac
 # the user updates Python) and Ubuntu 20.04+ (with system Python).
 manylinux-x86_64-image = "manylinux2014"
 manylinux-i686-image = "manylinux2014"
-
-[[tool.cibuildwheel.overrides]]
-# Build CPython 3.6 wheels on manylinux1 to support Ubuntu 18.04, CentOS/RHEL 7
-# and CentOS/RHEL 8 with their default Python 3.6/pip 9 installation.
-select = "cp36-*"
-manylinux-x86_64-image = "manylinux1"
-manylinux-i686-image = "manylinux1"
 
 [tool.pytest.ini_options]
 # Note: Do *not* add files within the cocotb/ tree here. Add them to the

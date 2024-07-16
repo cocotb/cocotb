@@ -28,23 +28,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-import sys
-
-if sys.version_info[:2] < (3, 6):  # noqa: UP036 | bug in ruff
-    msg = [
-        "This version of cocotb requires at least Python 3.6,",
-        "you are running Python %d.%d.%d."
-        % (sys.version_info[0], sys.version_info[1], sys.version_info[2]),
-    ]
-    msg += [
-        "For more information please refer to the documentation at ",
-        "https://cocotb.readthedocs.io.",
-    ]
-
-    raise SystemExit("\n".join(msg))
-
 import logging
 import subprocess
+import sys
 from io import StringIO
 from os import path, walk
 
@@ -114,7 +100,7 @@ setup(
     install_requires=[
         "find_libpython",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     package_data={
@@ -134,12 +120,11 @@ setup(
     platforms="any",
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: BSD License",
         "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
         "Framework :: cocotb",

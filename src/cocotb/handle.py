@@ -30,7 +30,7 @@ import enum
 import logging
 import re
 from abc import ABC, abstractmethod
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from logging import Logger
 from typing import (
     Any,
@@ -51,7 +51,6 @@ from typing import (
 import cocotb._conf
 from cocotb import simulator
 from cocotb._deprecation import deprecated
-from cocotb._py_compat import cached_property
 from cocotb.types import Array, Logic, LogicArray, Range
 
 

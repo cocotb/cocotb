@@ -41,10 +41,11 @@ import threading
 import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
+from contextlib import nullcontext
 from typing import Any, Callable, Dict, Sequence, Tuple, Union
 
 import cocotb
-from cocotb import _outcomes, _py_compat
+from cocotb import _outcomes
 from cocotb._utils import remove_traceback_frames
 from cocotb.handle import SimHandleBase
 from cocotb.result import TestSuccess
@@ -261,9 +262,7 @@ class Scheduler:
 
         # A dictionary of pending tasks for each trigger,
         # indexed by trigger
-        self._trigger2tasks: Dict[Trigger, list[Task]] = (
-            _py_compat.insertion_ordered_dict()
-        )
+        self._trigger2tasks: Dict[Trigger, list[Task]] = {}
 
         # A dictionary of pending (write_func, args), keyed by handle.
         # Writes are applied oldest to newest (least recently used).
@@ -341,7 +340,7 @@ class Scheduler:
         if _profiling:
             ctx = profiling_context()
         else:
-            ctx = _py_compat.nullcontext()
+            ctx = nullcontext()
 
         with ctx:
             # TODO: move state tracking to global variable
