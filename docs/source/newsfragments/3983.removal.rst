@@ -1,0 +1,1 @@
+Removed the ``cycles`` argument to :meth:`Clock.start() <cocotb.clock.Clock.start>`. Use ``kill()`` on the clock task instead, or implement manually.
