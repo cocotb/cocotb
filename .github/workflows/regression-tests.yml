@@ -273,7 +273,7 @@ jobs:
     - name: Install cocotb build dependencies (Ubuntu - clang++)
       if: startsWith(matrix.os, 'ubuntu') && matrix.cxx == 'clang++'
       run: |
-        sudo apt-get install clang
+        sudo apt-get install clang llvm
     - name: Install cocotb build dependencies (MacOS)
       if: startsWith(matrix.os, 'macos')
       run: |
@@ -293,8 +293,11 @@ jobs:
 
     # codecov
     - name: Combine and report coverage
-      if: inputs.collect_coverage
+      if: inputs.collect_coverage && matrix.cxx != 'clang++'
       run: nox -s dev_coverage_combine
+    - name: Combine and report coverage (clang)
+      if: inputs.collect_coverage && matrix.cxx == 'clang++'
+      run: nox -s dev_coverage_combine -- 'llvm-cov gcov'
 
     - name: Upload to codecov
       if: inputs.collect_coverage

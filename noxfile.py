@@ -321,7 +321,7 @@ def dev_coverage_combine(session: nox.Session) -> None:
 
     session.log("Wrote combined coverage database for all tests to '.coverage'.")
 
-    session.notify("dev_coverage_report")
+    session.notify("dev_coverage_report", session.posargs)
 
 
 @nox.session
@@ -336,13 +336,21 @@ def dev_coverage_report(session: nox.Session) -> None:
     session.run("coverage", "xml", "-o", str(coverage_python_xml))
     assert coverage_python_xml.is_file()
 
+    if session.posargs:
+        gcov_executable_args = [
+            "--gcov-executable",
+            session.posargs[0],
+        ]
+    else:
+        gcov_executable_args = []
     coverage_cpp_xml = Path(".cpp_coverage.xml")
     session.run(
         "gcovr",
-        "--xml",
+        "--cobertura",
         "--output",
         str(coverage_cpp_xml),
         ".",
+        *gcov_executable_args,
     )
     assert coverage_cpp_xml.is_file()
 
@@ -355,7 +363,12 @@ def dev_coverage_report(session: nox.Session) -> None:
     session.run("coverage", "report")
 
     session.log("Library coverage")
-    session.run("gcovr", "--print-summary", "--txt")
+    session.run(
+        "gcovr",
+        "--print-summary",
+        "--txt",
+        *gcov_executable_args,
+    )
 
 
 #
