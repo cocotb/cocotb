@@ -61,7 +61,7 @@ __version__ = "2.0.0.dev0"
 if "dev" in __version__:
     try:
         rev = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], universal_newlines=True
+            ["git", "rev-parse", "--short", "HEAD"], text=True
         ).strip()
         __version__ += f"+{rev}"
     except Exception as e:

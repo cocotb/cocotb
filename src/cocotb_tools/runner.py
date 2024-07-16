@@ -64,7 +64,7 @@ def _shlex_join(split_command: Iterable[str]) -> str:
     Return a shell-escaped string from *split_command*
     This is here more for compatibility purposes
     """
-    return " ".join(shlex.quote(arg) for arg in split_command)
+    return shlex.join(split_command)
 
 
 class VHDL(str):

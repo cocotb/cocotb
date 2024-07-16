@@ -13,6 +13,6 @@ def test_version():
         assert "+" in cocotb.__version__
         parts = cocotb.__version__.split("+")
         rev = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], universal_newlines=True
+            ["git", "rev-parse", "--short", "HEAD"], text=True
         ).strip()
         assert parts[1] == rev

@@ -165,7 +165,7 @@ class Task(Generic[ResultType]):
                 callback(self)
 
     def join(self) -> "cocotb.triggers.Join[ResultType]":
-        """Wait for the task to complete.
+        r"""Wait for the task to complete.
 
         Returns:
             A :class:`~cocotb.triggers.Join` trigger which, if awaited, will block until the given Task completes.
