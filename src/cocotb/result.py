@@ -36,7 +36,3 @@ class SimFailure(BaseException):
     Not intended to be thrown by the user.
     Exists to be used to mark tests that are expected to error due to simulation failure.
     """
-
-
-class SimTimeoutError(TimeoutError):
-    """Exception thrown when a timeout, in terms of simulation time, occurs."""

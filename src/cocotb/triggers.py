@@ -56,7 +56,6 @@ from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
 from cocotb.handle import LogicObject, ValueObjectBase
-from cocotb.result import SimTimeoutError
 from cocotb.sim_time_utils import get_sim_steps, get_time_from_sim_steps
 
 T = TypeVar("T")
@@ -994,6 +993,10 @@ async def with_timeout(
 ) -> T: ...
 
 
+class SimTimeoutError(TimeoutError):
+    """Exception thrown when a timeout, in terms of simulation time, occurs."""
+
+
 async def with_timeout(
     trigger: Union[
         Trigger, Waitable[Any], cocotb.task.Task[Any], Coroutine[Any, Any, Any]
@@ -1009,26 +1012,26 @@ async def with_timeout(
     the caller blocks until the callee completes,
     and the callee's result is returned to the caller.
     If timeout occurs, the callee is killed
-    and :exc:`~cocotb.result.SimTimeoutError` is raised.
+    and :exc:`SimTimeoutError` is raised.
 
     When an unstarted :class:`~cocotb.coroutine`\ is passed,
     the callee coroutine is started,
     the caller blocks until the callee completes,
     and the callee's result is returned to the caller.
     If timeout occurs, the callee `continues to run`
-    and :exc:`~cocotb.result.SimTimeoutError` is raised.
+    and :exc:`SimTimeoutError` is raised.
 
     When a :term:`task` is passed,
     the caller blocks until the callee completes
     and the callee's result is returned to the caller.
     If timeout occurs, the callee `continues to run`
-    and :exc:`~cocotb.result.SimTimeoutError` is raised.
+    and :exc:`SimTimeoutError` is raised.
 
     If a :class:`~cocotb.triggers.Trigger` or :class:`~cocotb.triggers.Waitable` is passed,
     the caller blocks until the trigger fires,
     and the trigger is returned to the caller.
     If timeout occurs, the trigger is cancelled
-    and :exc:`~cocotb.result.SimTimeoutError` is raised.
+    and :exc:`SimTimeoutError` is raised.
 
     Usage:
 
@@ -1052,7 +1055,7 @@ async def with_timeout(
         First trigger that completed if timeout did not occur.
 
     Raises:
-        :exc:`~cocotb.result.SimTimeoutError`: If timeout occurs.
+        :exc:`SimTimeoutError`: If timeout occurs.
 
     .. versionadded:: 1.3
 

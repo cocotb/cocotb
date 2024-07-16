@@ -188,7 +188,8 @@ int main(int argc, char** argv) {
 // VM_COVERAGE is a define which is set if Verilator is
 // instructed to collect coverage (when compiling the simulation)
 #if VM_COVERAGE
-    VerilatedCov::write("coverage.dat");
+    VerilatedCov::write();  // Uses +verilator+coverage+file+<filename>,
+                            // defaults to coverage.dat
 #endif
 
     return 0;

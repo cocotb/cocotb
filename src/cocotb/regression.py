@@ -70,7 +70,7 @@ from cocotb._xunit_reporter import XUnitReporter
 from cocotb.result import SimFailure, TestSuccess
 from cocotb.sim_time_utils import get_sim_time
 from cocotb.task import Task, _RunningTest
-from cocotb.triggers import Timer, Trigger
+from cocotb.triggers import SimTimeoutError, Timer, Trigger
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
@@ -112,7 +112,7 @@ class Test:
             Defaults to ``func.__doc__`` (the docstring of the test function).
 
         timeout_time:
-            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.result. SimTimeoutError`.
+            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
 
         timeout_unit:
             Units of ``timeout_time``, accepts any units that :class:`~cocotb.triggers.Timer` does.
@@ -159,7 +159,7 @@ class Test:
                     res = await cocotb.triggers.with_timeout(
                         running_co, self.timeout_time, self.timeout_unit
                     )
-                except cocotb.result.SimTimeoutError:
+                except SimTimeoutError:
                     running_co.kill()
                     raise
                 else:

@@ -223,7 +223,7 @@ class Scheduler:
         The scheduler treats Tests specially.
         If a Test finishes or a Task ends with an Exception, the scheduler is put into a `terminating` state.
         All currently queued Tasks are cancelled and all pending Triggers are unprimed.
-        This is currently spread out between :meth:`_handle_termination`, :meth:`_test_completed`, and :meth:`_cleanup`.
+        This is currently spread out between :meth:`_handle_termination` and :meth:`_cleanup`.
         In that mix of functions, the :attr:`_test_complete_cb` callback is called to inform whomever (the regression_manager) the test finished.
         The scheduler also is responsible for starting the next Test in the Normal phase by priming a ``Timer(1)`` with the second half of test completion handling.
 
@@ -304,9 +304,9 @@ class Scheduler:
         Handle a termination that causes us to move onto the next test.
         """
         if self._test is None:
-            raise InternalError("_test_completed called with no active test")
+            raise InternalError("_handle_termination called with no active test")
         elif self._test._outcome is None:
-            raise InternalError("_test_completed called with an incomplete test")
+            raise InternalError("_handle_termination called with an incomplete test")
         elif _debug:
             self.log.debug("Test terminating...")
 
