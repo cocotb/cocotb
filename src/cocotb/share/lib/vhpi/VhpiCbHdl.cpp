@@ -28,7 +28,8 @@
 #include <assert.h>
 
 #include <cinttypes>  // fixed-size int types and format strings
-#include <limits>     // numeric_limits
+#include <cstddef>
+#include <limits>  // numeric_limits
 #include <stdexcept>
 
 #include "VhpiImpl.h"
@@ -303,7 +304,8 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
         case vhpiStrVal: {
             m_indexable = true;
             m_num_elems = static_cast<int>(vhpi_get(vhpiSizeP, handle));
-            int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
+            size_t bufSize =
+                static_cast<size_t>(m_num_elems) * sizeof(vhpiCharT) + 1;
             m_value.bufSize = static_cast<bufSize_type>(bufSize);
             m_value.value.str = new vhpiCharT[bufSize];
             m_value.numElems = m_num_elems;
@@ -326,7 +328,8 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
     }
 
     if (m_num_elems) {
-        int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
+        size_t bufSize =
+            static_cast<size_t>(m_num_elems) * sizeof(vhpiCharT) + 1;
         m_binvalue.bufSize = static_cast<bufSize_type>(bufSize);
         m_binvalue.value.str = new vhpiCharT[bufSize];
     }
@@ -372,7 +375,7 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
     if (vhpi_get(vhpiKindP, query_hdl) == vhpiArrayTypeDeclK) {
         m_indexable = true;
         m_value.format = vhpiLogicVecVal;
-        int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiEnumT));
+        size_t bufSize = static_cast<size_t>(m_num_elems) * sizeof(vhpiEnumT);
         m_value.bufSize = static_cast<bufSize_type>(bufSize);
         m_value.value.enumvs = new vhpiEnumT[bufSize];
     }
@@ -382,7 +385,8 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
     }
 
     if (m_num_elems) {
-        int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
+        size_t bufSize =
+            static_cast<size_t>(m_num_elems) * sizeof(vhpiCharT) + 1;
         m_binvalue.bufSize = static_cast<bufSize_type>(bufSize);
         m_binvalue.value.str = new vhpiCharT[bufSize];
     }
@@ -870,7 +874,7 @@ int VhpiStartupCbHdl::run_callback() {
     tool = vhpi_handle(vhpiTool, NULL);
     if (tool) {
         tool_argc = static_cast<int>(vhpi_get(vhpiArgcP, tool));
-        tool_argv = new char *[tool_argc];
+        tool_argv = new char *[static_cast<size_t>(tool_argc)];
         assert(tool_argv);
 
         argv_iter = vhpi_iterator(vhpiArgvs, tool);

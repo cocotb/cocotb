@@ -26,16 +26,10 @@ _base_warns = [
     "-Wcast-qual",
     "-Wwrite-strings",
     "-Wconversion",
-    # -Wno-missing-field-initializers is required on GCC 4.x to prevent a
-    # spurious warning `error: missing initializer for member ...` when
-    # compiling `PyTypeObject type = {};` in `simulatormodule.cpp`.
-    # (See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=36750.) This flag can be
-    # removed once we require later GCC versions.
-    "-Wno-missing-field-initializers",
 ]
 _ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
 _extra_cxx_compile_args = [
-    "-std=c++11",
+    "-std=c++14",
     "-fvisibility=hidden",
     "-fvisibility-inlines-hidden",
 ] + _ccx_warns
@@ -44,8 +38,7 @@ if os.name != "nt":
 
 _extra_cxx_compile_args_msvc = ["/permissive-"]
 
-# Make PRI* format macros available with C++11 compiler but older libc, e.g. on RHEL6.
-_extra_defines = [("__STDC_FORMAT_MACROS", "")]
+_extra_defines = []
 
 
 def create_sxs_assembly_manifest(

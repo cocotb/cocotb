@@ -300,7 +300,7 @@ int FliLogicObjHdl::initialise(const std::string &name,
             m_value_enum = mti_GetEnumValues(elemType);
             m_num_enum = mti_TickLength(elemType);
 
-            m_mti_buff = new char[m_num_elems + 1];
+            m_mti_buff = new char[static_cast<size_t>(m_num_elems) + 1];
         } break;
         default:
             LOG_ERROR("Object type is not 'logic' for %s (%d)", name.c_str(),
@@ -313,7 +313,7 @@ int FliLogicObjHdl::initialise(const std::string &name,
             i;  // enum is of the format 'U' or '0', etc.
     }
 
-    m_val_buff = new char[m_num_elems + 1];
+    m_val_buff = new char[static_cast<size_t>(m_num_elems) + 1];
     m_val_buff[m_num_elems] = '\0';
 
     return FliValueObjHdl::initialise(name, fq_name);
@@ -711,9 +711,9 @@ int FliStringObjHdl::initialise(const std::string &name,
     m_num_elems = mti_TickLength(m_val_type);
     m_indexable = true;
 
-    m_mti_buff = new char[m_num_elems];
+    m_mti_buff = new char[static_cast<size_t>(m_num_elems)];
 
-    m_val_buff = new char[m_num_elems + 1];
+    m_val_buff = new char[static_cast<size_t>(m_num_elems) + 1];
     m_val_buff[m_num_elems] = '\0';
 
     return FliValueObjHdl::initialise(name, fq_name);

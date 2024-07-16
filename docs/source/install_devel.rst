@@ -20,7 +20,7 @@ Namely, it requires the Python development headers and a C/C++ compiler.
 
 * Python 3.8+
 * Python development packages
-* GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
+* GCC 5+, Clang 3.4+ or Microsoft Visual C++ 15.3+ and associated development packages
 * On Linux: A static build of the C++ standard library ``libstdc++``.
   Some distributions include the static library in their default packages (e.g. Debian/Ubuntu),
   others (e.g. Red Hat) require the installation of a package typically named ``libstdc++-static``.
