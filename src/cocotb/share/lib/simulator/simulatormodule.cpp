@@ -41,6 +41,7 @@ static int releases = 0;
 #include <cocotb_utils.h>    // to_python to_simulator
 #include <py_gpi_logging.h>  // py_gpi_logger_set_level
 
+#include <cerrno>
 #include <limits>
 #include <type_traits>
 
@@ -65,6 +66,9 @@ struct callback_data {
     PyObject *kwargs;    // Keyword arguments to call the function with
     gpi_sim_hdl cb_hdl;
 };
+
+class GpiClock;
+using gpi_clk_hdl = GpiClock *;
 
 /* define the extension types as templates */
 namespace {
@@ -153,6 +157,8 @@ template <>
 PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type;
 template <>
 PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type;
+template <>
+PyTypeObject gpi_hdl_Object<gpi_clk_hdl>::py_type;
 }  // namespace
 
 typedef int (*gpi_function_t)(void *);
@@ -839,6 +845,174 @@ static PyObject *log_level(PyObject *, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+class GpiClock {
+  public:
+    GpiClock(GpiObjHdl *clk_sig) : clk_signal(clk_sig) {}
+
+    ~GpiClock() { stop(); }
+
+    // Start the clock. Returns nonzero in case of failure:
+    //  - EBUSY if the clock was already started (stop first)
+    //  - EINVAL if the parameters are invalid
+    //  - EAGAIN if registering the toggle callback failed
+    int start(uint64_t period_steps, uint64_t high_steps, bool start_high);
+
+    int stop();
+
+  private:
+    GpiObjHdl *clk_signal = nullptr;
+    GpiCbHdl *clk_toggle_cb_hdl = nullptr;
+
+    uint64_t period = 0;
+    uint64_t t_high = 0;
+
+    int clk_val = 0;
+
+    int toggle(bool initialSet);
+    static int toggle_cb(void *gpi_clk);
+};
+
+int GpiClock::start(uint64_t period_steps, uint64_t high_steps,
+                    bool start_high) {
+    if (clk_toggle_cb_hdl) {
+        return EBUSY;
+    }
+    if ((period_steps < 2) || (high_steps < 1) ||
+        (high_steps >= period_steps)) {
+        return EINVAL;
+    }
+
+    period = period_steps;
+    t_high = high_steps;
+
+    clk_val = start_high;
+    return toggle(true);
+}
+
+int GpiClock::stop() {
+    if (!clk_toggle_cb_hdl) {
+        return -1;
+    }
+    gpi_deregister_callback(clk_toggle_cb_hdl);
+    clk_toggle_cb_hdl = nullptr;
+    return 0;
+}
+
+int GpiClock::toggle(bool initialSet) {
+    if (!initialSet) {
+        clk_val = !clk_val;
+    }
+    gpi_set_signal_value_int(clk_signal, clk_val, GPI_DEPOSIT);
+
+    uint64_t to_next_edge = clk_val ? t_high : (period - t_high);
+
+    clk_toggle_cb_hdl =
+        gpi_register_timed_callback(&GpiClock::toggle_cb, this, to_next_edge);
+    if (!clk_toggle_cb_hdl) {
+        // LCOV_EXCL_START
+        if (!initialSet) {
+            // Failing when called from start() will be reported via
+            // exception, but log in case of later failure that would
+            // otherwise be silent.
+            LOG_ERROR("Clock will be stopped: failed to register toggle cb");
+        }
+        return EAGAIN;
+        // LCOV_EXCL_STOP
+    }
+
+    return 0;
+}
+
+int GpiClock::toggle_cb(void *gpi_clk) {
+    GpiClock *clk_obj = (GpiClock *)gpi_clk;
+    return clk_obj->toggle(false);
+}
+
+// Create a new clock object
+static PyObject *clock_create(PyObject *, PyObject *args) {
+    if (!gpi_has_registered_impl()) {
+        // LCOV_EXCL_START
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+        // LCOV_EXCL_STOP
+    }
+
+    // Extract the clock signal sim object
+    PyObject *pSigHdl;
+    if (!PyArg_ParseTuple(args, "O!:clock_create",
+                          &gpi_hdl_Object<gpi_sim_hdl>::py_type, &pSigHdl)) {
+        return NULL;
+    }
+    gpi_sim_hdl sim_hdl = ((gpi_hdl_Object<gpi_sim_hdl> *)pSigHdl)->hdl;
+
+    GpiClock *gpi_clk = new GpiClock(sim_hdl);
+
+    if (gpi_clk) {
+        return gpi_hdl_New(gpi_clk);
+    } else {
+        // LCOV_EXCL_START
+        PyErr_SetString(PyExc_RuntimeError, "Failed to create clock!");
+        return NULL;
+        // LCOV_EXCL_STOP
+    }
+}
+
+static void clock_dealloc(PyObject *self) {
+    if (!gpi_has_registered_impl()) {
+        // LCOV_EXCL_START
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return;
+        // LCOV_EXCL_STOP
+    }
+
+    if (Py_TYPE(self) != &gpi_hdl_Object<gpi_clk_hdl>::py_type) {
+        // LCOV_EXCL_START
+        PyErr_SetString(PyExc_TypeError, "Wrong type for clock_dealloc!");
+        return;
+        // LCOV_EXCL_STOP
+    }
+
+    GpiClock *gpi_clk = ((gpi_hdl_Object<gpi_clk_hdl> *)self)->hdl;
+
+    delete gpi_clk;
+
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static PyObject *clk_start(gpi_hdl_Object<gpi_clk_hdl> *self, PyObject *args) {
+    unsigned long long period, t_high;
+    int start_high;
+
+    if (!PyArg_ParseTuple(args, "KKp:start", &period, &t_high, &start_high)) {
+        return NULL;
+    }
+
+    int ret = self->hdl->start(period, t_high, start_high);
+
+    if (ret != 0) {
+        if (ret == EINVAL) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Failed to start clock: invalid arguments!\n");
+        } else if (ret == EBUSY) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "Failed to start clock: already started!\n");
+        } else {
+            // LCOV_EXCL_START
+            PyErr_SetString(PyExc_RuntimeError, "Failed to start clock!\n");
+            // LCOV_EXCL_STOP
+        }
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *clk_stop(gpi_hdl_Object<gpi_clk_hdl> *self, PyObject *) {
+    self->hdl->stop();
+
+    Py_RETURN_NONE;
+}
+
 static int add_module_constants(PyObject *simulator) {
     // Make the GPI constants accessible from the C world
     if (PyModule_AddIntConstant(simulator, "UNKNOWN", GPI_UNKNOWN) < 0 ||
@@ -890,6 +1064,15 @@ static int add_module_types(PyObject *simulator) {
     if (PyModule_AddObject(simulator, "gpi_iterator_hdl", typ) < 0) {
         Py_DECREF(typ);
         return -1;
+    }
+
+    typ = (PyObject *)&gpi_hdl_Object<gpi_clk_hdl>::py_type;
+    Py_INCREF(typ);
+    if (PyModule_AddObject(simulator, "GpiClock", typ) < 0) {
+        // LCOV_EXCL_START
+        Py_DECREF(typ);
+        return -1;
+        // LCOV_EXCL_STOP
     }
 
     return 0;
@@ -993,6 +1176,14 @@ static PyMethodDef SimulatorMethods[] = {
                "--\n\n"
                "get_simulator_version() -> str\n"
                "Get the simulator's product version string.")},
+    {"clock_create", clock_create, METH_VARARGS,
+     PyDoc_STR("clock_create(signal, /)\n"
+               "--\n\n"
+               "clock_create(signal: cocotb.simulator.gpi_sim_hdl"
+               ") -> cocotb.simulator.GpiClock\n"
+               "Create a clock driver on a signal.\n"
+               "\n"
+               ".. versionadded:: 2.0")},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
@@ -1023,6 +1214,11 @@ PyMODINIT_FUNC PyInit_simulator(void) {
     }
     if (PyType_Ready(&gpi_hdl_Object<gpi_iterator_hdl>::py_type) < 0) {
         return NULL;
+    }
+    if (PyType_Ready(&gpi_hdl_Object<gpi_clk_hdl>::py_type) < 0) {
+        // LCOV_EXCL_START
+        return NULL;
+        // LCOV_EXCL_STOP
     }
 
     PyObject *simulator = PyModule_Create(&moduledef);
@@ -1199,5 +1395,46 @@ PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
     type.tp_name = "cocotb.simulator.gpi_cb_hdl";
     type.tp_doc = "GPI callback handle";
     type.tp_methods = gpi_cb_hdl_methods;
+    return type;
+}();
+
+static PyMethodDef gpi_clk_methods[] = {
+    {"start", (PyCFunction)clk_start, METH_VARARGS,
+     PyDoc_STR(
+         "start($self, period_steps, high_steps, start_high)\n"
+         "--\n\n"
+         "start(period_steps: int, high_steps: int, start_high: bool) -> None\n"
+         "Start this clock now.\n"
+         "\n"
+         "The clock will have a period of *period_steps* time steps, "
+         "and out of that period it will be high for *high_steps* time steps. "
+         "If *start_high* is ``True``, start at the beginning of the high "
+         "state, "
+         "otherwise start at the beginning of the low state.\n"
+         "\n"
+         "Raises:\n"
+         "    TypeError: If there are an incorrect number of arguments or "
+         "they are of the wrong type.\n"
+         "    ValueError: If *period_steps* and *high_steps* are such that in "
+         "one "
+         "period the duration of the low or high state would be less "
+         "than one time step, or *high_steps* is greater than *period_steps*.\n"
+         "    RuntimeError: If the clock was already started, or the "
+         "GPI callback could not be registered.")},
+    {"stop", (PyCFunction)clk_stop, METH_NOARGS,
+     PyDoc_STR("stop($self)\n"
+               "--\n\n"
+               "stop() -> None\n"
+               "Stop this clock now.")},
+    {NULL, NULL, 0, NULL} /* Sentinel */
+};
+
+template <>
+PyTypeObject gpi_hdl_Object<gpi_clk_hdl>::py_type = []() -> PyTypeObject {
+    auto type = fill_common_slots<gpi_clk_hdl>();
+    type.tp_name = "cocotb.simulator.GpiClock";
+    type.tp_doc = "C++ clock using the GPI.";
+    type.tp_methods = gpi_clk_methods;
+    type.tp_dealloc = clock_dealloc;
     return type;
 }();
