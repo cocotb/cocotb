@@ -872,7 +872,7 @@ async def test_task_done_callback_passing(_) -> None:
         pass
 
     passing_task = cocotb.start_soon(passing_coro())
-    passing_task.add_done_callback(done_callback)
+    passing_task._add_done_callback(done_callback)
     await passing_task
     assert callback_ran
 
@@ -890,7 +890,7 @@ async def test_task_done_callback_erroring(_) -> None:
 
     erroring_task = cocotb.start_soon(erroring_coro())
     callback_ran = False
-    erroring_task.add_done_callback(done_callback)
+    erroring_task._add_done_callback(done_callback)
     try:
         await erroring_task
     except Exception:
@@ -912,7 +912,7 @@ async def test_task_done_callback_cancelled(_) -> None:
 
     cancelled_task = cocotb.start_soon(cancelled_coro())
     callback_ran = False
-    cancelled_task.add_done_callback(done_callback)
+    cancelled_task._add_done_callback(done_callback)
     await Timer(1, "ns")
     with pytest.warns(FutureWarning):
         cancelled_task.cancel()
@@ -921,23 +921,18 @@ async def test_task_done_callback_cancelled(_) -> None:
 
 
 @cocotb.test
-async def test_task_done_callback_removed(_) -> None:
+async def test_task_done_callback_added_after_done(_) -> None:
+    async def noop() -> None:
+        pass
+
     callback_ran = False
 
     def done_callback(_: Task) -> None:
         nonlocal callback_ran
         callback_ran = True
 
-    async def passing_coro() -> None:
-        await Timer(10, "ns")
-
-    passing_task = cocotb.start_soon(passing_coro())
-    passing_task.add_done_callback(done_callback)
-    await Timer(1, "ns")
-    assert not callback_ran
-    num_removed = passing_task.remove_done_callback(done_callback)
-    assert num_removed == 1
-    await passing_task
-    assert not callback_ran
-    num_removed = passing_task.remove_done_callback(done_callback)
-    assert num_removed == 0
+    task = cocotb.start_soon(noop())
+    await task
+    task._add_done_callback(done_callback)
+    await NullTrigger()
+    assert callback_ran

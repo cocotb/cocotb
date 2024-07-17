@@ -1,1 +1,0 @@
-Added :meth:`.Task.add_done_callback` and :meth:`.Task.remove_done_callback` to support running user-supplied callbacks when :class:`~cocotb.task.Task`\ s become "done".
