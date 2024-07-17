@@ -242,34 +242,18 @@ class Task(Generic[ResultType]):
         else:
             return None
 
-    def add_done_callback(self, callback: Callable[["Task[ResultType]"], Any]) -> None:
+    def _add_done_callback(self, callback: Callable[["Task[ResultType]"], Any]) -> None:
         """Add *callback* to the list of callbacks to be run once the Task becomes "done".
 
         Args:
             callback: The callback to run once "done".
+
+        .. note::
+            If the task is already done, calling this function will call the callback immediately.
         """
+        if self.done():
+            callback(self)
         self._done_callbacks.append(callback)
-
-    def remove_done_callback(
-        self, callback: Callable[["Task[ResultType]"], Any]
-    ) -> int:
-        """Remove a callback added by a call to :meth:`add_done_callback`.
-
-        Args:
-            callback: The callback to remove from the callback list.
-
-        Returns:
-            The number of callbacks removed.
-            Typically ``1``, unless a callback was added more than once or never added.
-        """
-        count = 0
-        while True:
-            try:
-                self._done_callbacks.remove(callback)
-            except ValueError:
-                return count
-            else:
-                count += 1
 
     def __await__(self) -> Generator[Any, Any, ResultType]:
         # It's tempting to use `return (yield from self._coro)` here,
