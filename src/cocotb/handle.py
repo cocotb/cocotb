@@ -64,12 +64,13 @@ def _write_now(
 if cocotb._conf.trust_inertial:
     _inertial_write = _write_now
 else:
-    import cocotb
 
     def _inertial_write(
         handle: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
     ) -> None:
-        cocotb._scheduler_inst._schedule_write(handle, f, args)
+        import cocotb._write_scheduler
+
+        cocotb._write_scheduler.schedule_write(handle, f, args)
 
 
 class _Limits(enum.IntEnum):

@@ -49,13 +49,12 @@ from typing import (
     overload,
 )
 
-import cocotb
+import cocotb.handle
 import cocotb.task
 from cocotb import simulator
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
-from cocotb.handle import LogicObject, ValueObjectBase
 from cocotb.sim_time_utils import get_sim_steps, get_time_from_sim_steps
 
 T = TypeVar("T")
@@ -329,7 +328,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
 
     _edge_type: ClassVar[int]
 
-    def __init__(self, signal: ValueObjectBase[Any, Any]) -> None:
+    def __init__(self, signal: cocotb.handle.ValueObjectBase[Any, Any]) -> None:
         super().__init__()
         self.signal = signal
 
@@ -365,8 +364,10 @@ class RisingEdge(_EdgeBase):
     _edge_type = 1
 
     @classmethod
-    def __singleton_key__(cls, signal: LogicObject) -> LogicObject:
-        if not (isinstance(signal, LogicObject) and len(signal) == 1):
+    def __singleton_key__(
+        cls, signal: cocotb.handle.LogicObject
+    ) -> cocotb.handle.LogicObject:
+        if not (isinstance(signal, cocotb.handle.LogicObject) and len(signal) == 1):
             raise TypeError(
                 f"{cls.__qualname__} requires a 1-bit LogicObject. Got {signal!r} of length {len(signal)}"
             )
@@ -392,8 +393,10 @@ class FallingEdge(_EdgeBase):
     _edge_type = 2
 
     @classmethod
-    def __singleton_key__(cls, signal: LogicObject) -> LogicObject:
-        if not (isinstance(signal, LogicObject) and len(signal) == 1):
+    def __singleton_key__(
+        cls, signal: cocotb.handle.LogicObject
+    ) -> cocotb.handle.LogicObject:
+        if not (isinstance(signal, cocotb.handle.LogicObject) and len(signal) == 1):
             raise TypeError(
                 f"{cls.__qualname__} requires a 1-bit LogicObject. Got {signal!r} of length {len(signal)}"
             )
@@ -414,9 +417,9 @@ class Edge(_EdgeBase):
 
     @classmethod
     def __singleton_key__(
-        cls, signal: ValueObjectBase[Any, Any]
-    ) -> ValueObjectBase[Any, Any]:
-        if not isinstance(signal, ValueObjectBase):
+        cls, signal: cocotb.handle.ValueObjectBase[Any, Any]
+    ) -> cocotb.handle.ValueObjectBase[Any, Any]:
+        if not isinstance(signal, cocotb.handle.ValueObjectBase):
             raise TypeError(
                 f"{cls.__qualname__} requires an object derived from ValueObjectBase which can change value. Got {signal!r} of length {len(signal)}"
             )
@@ -710,7 +713,7 @@ class NullTrigger(Trigger):
 
 class Join(
     Trigger,
-    Generic[cocotb.task.ResultType],
+    Generic[T],
     metaclass=_ParameterizedSingletonGPITriggerMetaclass,
 ):
     r"""Fires when a task completes.
@@ -741,17 +744,15 @@ class Join(
     """
 
     @classmethod
-    def __singleton_key__(
-        cls, task: cocotb.task.Task[cocotb.task.ResultType]
-    ) -> cocotb.task.Task[cocotb.task.ResultType]:
+    def __singleton_key__(cls, task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
         return task
 
-    def __init__(self, task: cocotb.task.Task[cocotb.task.ResultType]) -> None:
+    def __init__(self, task: "cocotb.task.Task[T]") -> None:
         super().__init__()
         self._task = task
 
     @property
-    def task(self) -> cocotb.task.Task[cocotb.task.ResultType]:
+    def task(self) -> "cocotb.task.Task[T]":
         """Return the :class:`~cocotb.task.Task` being joined.
 
         .. versionadded:: 2.0
@@ -786,7 +787,7 @@ class _AggregateWaitable(Waitable[T]):
     """Base class for :class:`Combine` and :class:`First`."""
 
     def __init__(
-        self, *trigger: Union[Trigger, Waitable[T], cocotb.task.Task[T]]
+        self, *trigger: Union[Trigger, Waitable[T], "cocotb.task.Task[T]"]
     ) -> None:
         self._triggers = trigger
 
@@ -809,7 +810,7 @@ class _AggregateWaitable(Waitable[T]):
 
 
 async def _wait_callback(
-    trigger: Union[Trigger, Waitable[T], cocotb.task.Task[T]],
+    trigger: Union[Trigger, Waitable[T], "cocotb.task.Task[T]"],
     callback: Callable[[Outcome[T]], None],
 ) -> None:
     """Wait for *trigger*, and call *callback* with the outcome of the await."""
@@ -931,7 +932,7 @@ class ClockCycles(Waitable["ClockCycles"]):
     """
 
     def __init__(
-        self, signal: LogicObject, num_cycles: int, rising: bool = True
+        self, signal: cocotb.handle.LogicObject, num_cycles: int, rising: bool = True
     ) -> None:
         self.signal = signal
         self.num_cycles = num_cycles
@@ -977,7 +978,7 @@ async def with_timeout(
 
 @overload
 async def with_timeout(
-    trigger: cocotb.task.Task[T],
+    trigger: "cocotb.task.Task[T]",
     timeout_time: Union[float, Decimal],
     timeout_unit: str = "step",
     round_mode: Optional[str] = None,
@@ -999,7 +1000,7 @@ class SimTimeoutError(TimeoutError):
 
 async def with_timeout(
     trigger: Union[
-        Trigger, Waitable[Any], cocotb.task.Task[Any], Coroutine[Any, Any, Any]
+        Trigger, Waitable[Any], "cocotb.task.Task[Any]", Coroutine[Any, Any, Any]
     ],
     timeout_time: Union[float, Decimal],
     timeout_unit: str = "step",

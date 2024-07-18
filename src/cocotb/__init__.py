@@ -38,12 +38,12 @@ from types import SimpleNamespace
 from typing import Any, Dict, List, Union, cast
 
 import cocotb.handle
+import cocotb.task
 import cocotb.triggers
 from cocotb._scheduler import Scheduler
 from cocotb._utils import DocEnum
 from cocotb.logging import default_config
 from cocotb.regression import RegressionManager, RegressionMode
-from cocotb.task import Task
 
 from ._version import __version__
 
@@ -135,7 +135,9 @@ def _setup_logging() -> None:
     log = py_logging.getLogger(__name__)
 
 
-def start_soon(coro: Union[Task, Coroutine]) -> Task:
+def start_soon(
+    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
+) -> "cocotb.task.Task[cocotb.task.ResultType]":
     """
     Schedule a coroutine to be run concurrently.
 
@@ -153,7 +155,9 @@ def start_soon(coro: Union[Task, Coroutine]) -> Task:
     return _scheduler_inst.start_soon(coro)
 
 
-async def start(coro: Union[Task, Coroutine]) -> Task:
+async def start(
+    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
+) -> "cocotb.task.Task[cocotb.task.ResultType]":
     """
     Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
 
@@ -175,7 +179,9 @@ async def start(coro: Union[Task, Coroutine]) -> Task:
     return task
 
 
-def create_task(coro: Union[Task, Coroutine]) -> Task:
+def create_task(
+    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
+) -> "cocotb.task.Task[cocotb.task.ResultType]":
     """
     Construct a coroutine into a :class:`~cocotb.task.Task` without scheduling the task.
 

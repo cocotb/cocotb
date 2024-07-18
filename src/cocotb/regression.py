@@ -58,6 +58,7 @@ from typing import (
 
 import cocotb
 import cocotb._scheduler
+import cocotb._write_scheduler
 from cocotb import _ANSI, simulator
 from cocotb._utils import (
     DocEnum,
@@ -452,6 +453,7 @@ class RegressionManager:
             # TODO move to Trigger object
             cocotb.sim_phase = cocotb.SimPhase.NORMAL
             trigger._unprime()
+        cocotb._write_scheduler.start_write_scheduler()
         cocotb._scheduler_inst._add_test(self._test_task)
 
     def _tear_down(self) -> None:
@@ -487,6 +489,10 @@ class RegressionManager:
         sim_time_ns = get_sim_time("ns") - self._test_start_sim_time
         test = self._test
 
+        # clean up write scheduler
+        cocotb._write_scheduler.stop_write_scheduler()
+
+        # score test
         try:
             self._test_task._outcome.get()
         except (KeyboardInterrupt, SystemExit):
