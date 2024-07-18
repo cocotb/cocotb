@@ -8,6 +8,12 @@ Glossary
    BFM
       Bus Functional Model
 
+   blocking function
+      A function that blocks the caller until the function finishes.
+      This is typical a regular function,
+      but sometimes involves calls to threaded code which blocks execution for an indeterminite amount of time.
+      See also the :term:`Python glossary <python:function>`.
+
    coroutine function
       The definition of a function that, when called, returns a coroutine object.
       Implemented using :keyword:`async` functions.

@@ -54,27 +54,30 @@ Result = TypeVar("Result")
 
 
 def resume(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., Result]:
-    """Decorator that turns a :term:`coroutine function` into a blocking function.
+    """Converts a coroutine function into a blocking function.
 
-    This allows an :keyword:`async` function that yields to the simulator and consumes simulation time
-    to be called by a thread started with :class:`cocotb.bridge`.
-    When the returned blocking function is called, a new :class:`~cocotb.task.Task` is constructed
-    from the :keyword:`async` function, passing through any arguments provided by the caller,
-    and scheduled on the main thread.
-    The external caller thread will block until the task finishes,
-    and the result will be returned to the caller of the blocking function.
+    This allows a :term:`coroutine function` that awaits cocotb triggers to be
+    called from a :term:`blocking function` converted by :func:`cocotb.bridge`.
+    This completes the bridge through non-:keyword:`async` code.
+
+    When a converted coroutine function is called the current function blocks until the
+    converted function exits.
+
+    Results of the converted function are returned from the function call.
 
     Args:
-        func: The :term:`coroutine function` to wrap/convert.
+        func: The :term:`coroutine function` to convert into a :term:`blocking function`.
 
     Returns:
-        The function to be called.
+        *func* as a :term:`blocking function`.
 
     Raises:
-        RuntimeError: If the blocking function that is returned is subsequently called from a thread that was not started with :class:`cocotb.bridge`.
+        RuntimeError:
+            If the function that is returned is subsequently called from a
+            thread that was not started with :class:`cocotb.bridge`.
 
     .. versionchanged:: 2.0
-        No longer implemented as a unique type.
+        No longer implemented as a type.
         The ``log`` attribute is no longer available.
     """
 
@@ -86,22 +89,37 @@ def resume(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., Re
 
 
 def bridge(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Result]]:
-    r"""Decorator that turns a blocking function into a :term:`coroutine function`.
+    r"""Converts a blocking function into a coroutine function.
 
-    When the returned :keyword:`async` function is called, it creates a coroutine object
-    that can be directly :keyword:`await`\ ed or constructed into a :class:`~cocotb.task.Task`.
-    The coroutine will suspend the awaiting task until the wrapped function completes in its thread,
-    and the result of the function will be returned from the coroutine.
-    Currently, this creates a new execution thread for each function that is called.
+    This function converts a :term:`blocking function` into a :term:`coroutine function`
+    with the expectation that the function being converted is intended to call a
+    :func:`cocotb.resume` converted function. This creates a bridge through
+    non-:keyword:`async` code for code wanting to eventually :keyword:`await` on cocotb
+    triggers.
+
+    When a converted function call is used in an :keyword:`await` statement, the current
+    Task blocks until the converted function finishes.
+
+    Results of the converted function are returned from the :keyword:`await` expression.
+
+    .. warning::
+        Each bridge is implemented with a distint thread, meaning that all bridges and
+        the main thread that runs all :keyword:`async` code are susceptible to races
+        when sharing data.
+
+    .. note::
+        Bridge threads *must* either finish or block on a :func:`cocotb.resume`
+        converted function before control is given back to the simulator.
+        This is done to prevent any code from executing in parallel with the simulation.
 
     Args:
-        func: The function to run externally.
+        func: The :term:`blocking function` to convert into a :term:`coroutine function`.
 
     Returns:
-        The :term:`coroutine function`.
+        *func* as a :term:`coroutine function`.
 
     .. versionchanged:: 2.0
-        No longer implemented as a unique type.
+        No longer implemented as a type.
         The ``log`` attribute is no longer available.
     """
 
