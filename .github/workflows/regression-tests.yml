@@ -216,6 +216,8 @@ jobs:
       # in nox testing.
       run: |
         nox --no-venv -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+      env:
+        COCOTB_ANSI_OUTPUT: 1
 
       # Ubuntu / MacOS Testing
     - name: Install cocotb build dependencies (Ubuntu - g++)
@@ -240,6 +242,8 @@ jobs:
           module load "${{ matrix.sim-version }}"
         fi
         nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+      env:
+        COCOTB_ANSI_OUTPUT: 1
 
     # codecov
     - name: Combine and report coverage
