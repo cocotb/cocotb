@@ -53,11 +53,11 @@ from cocotb.regression import Test
 Result = TypeVar("Result")
 
 
-def function(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., Result]:
+def resume(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., Result]:
     """Decorator that turns a :term:`coroutine function` into a blocking function.
 
     This allows an :keyword:`async` function that yields to the simulator and consumes simulation time
-    to be called by a thread started with :class:`cocotb.external`.
+    to be called by a thread started with :class:`cocotb.bridge`.
     When the returned blocking function is called, a new :class:`~cocotb.task.Task` is constructed
     from the :keyword:`async` function, passing through any arguments provided by the caller,
     and scheduled on the main thread.
@@ -71,7 +71,7 @@ def function(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., 
         The function to be called.
 
     Raises:
-        RuntimeError: If the blocking function that is returned is subsequently called from a thread that was not started with :class:`cocotb.external`.
+        RuntimeError: If the blocking function that is returned is subsequently called from a thread that was not started with :class:`cocotb.bridge`.
 
     .. versionchanged:: 2.0
         No longer implemented as a unique type.
@@ -85,7 +85,7 @@ def function(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., 
     return wrapper
 
 
-def external(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Result]]:
+def bridge(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Result]]:
     r"""Decorator that turns a blocking function into a :term:`coroutine function`.
 
     When the returned :keyword:`async` function is called, it creates a coroutine object

@@ -79,7 +79,7 @@ async def embed(user_ns: Dict[str, Any] = {}) -> None:
     shell.prompts = SimTimePrompt(shell)
 
     # start the shell in a background thread
-    @cocotb.external
+    @cocotb.bridge
     def run_shell() -> None:
         shell()
 

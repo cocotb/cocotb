@@ -24,20 +24,13 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""
-A set of tests that demonstrate cocotb functionality
-
-Also used a regression test of cocotb capabilities
-"""
-
 import threading
 
 import pytest
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.decorators import external
+from cocotb.decorators import bridge
 from cocotb.sim_time_utils import get_sim_time
 from cocotb.triggers import ReadOnly, RisingEdge, Timer
 
@@ -46,7 +39,7 @@ def return_two(dut):
     return 2
 
 
-@cocotb.function
+@cocotb.resume
 async def await_two_clock_edges(dut):
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
@@ -55,7 +48,7 @@ async def await_two_clock_edges(dut):
     return 2
 
 
-def calls_cocotb_function(dut):
+def calls_cocotb_resume(dut):
     return await_two_clock_edges(dut)
 
 
@@ -66,21 +59,21 @@ def print_sim_time(dut, base_time):
         _t = get_sim_time("ns")
         dut._log.info("Time reported = %d", _t)
         assert _t == base_time
-    dut._log.info("external function has ended")
+    dut._log.info("bridge function has ended")
 
 
 @cocotb.test()
-async def test_time_in_external(dut):
+async def test_time_in_bridge(dut):
     """
-    Test that the simulation time does not advance if the wrapped external
-    routine does not call @function
+    Test that the simulation time does not advance if the wrapped blocking
+    routine does not call @cocotb.resume
     """
     await Timer(10, units="ns")
     time = get_sim_time("ns")
     dut._log.info("Time at start of test = %d" % time)
     for i in range(100):
         dut._log.info("Loop call %d" % i)
-        await external(print_sim_time)(dut, time)
+        await bridge(print_sim_time)(dut, time)
 
     time_now = get_sim_time("ns")
     await Timer(10, units="ns")
@@ -89,18 +82,18 @@ async def test_time_in_external(dut):
 
 
 @cocotb.test()
-async def test_time_in_function(dut):
+async def test_time_in_resume(dut):
     """
-    Test that an @external function calling back into a cocotb @function
+    Test that an @cocotb.bridge function calling back into a cocotb @cocotb.resume
     takes the expected amount of time
     """
 
-    @cocotb.function
+    @cocotb.resume
     async def wait_cycles(dut, n):
         for _ in range(n):
             await RisingEdge(dut.clk)
 
-    @external
+    @bridge
     def wait_cycles_wrapper(dut, n):
         return wait_cycles(dut, n)
 
@@ -117,9 +110,9 @@ async def test_time_in_function(dut):
 
 
 @cocotb.test()
-async def test_external_call_return(dut):
+async def test_blocking_function_call_return(dut):
     """
-    Test ability to await an external function that is not a coroutine using @external
+    Test ability to await a blocking function that is not a coroutine using @cocotb.bridge
     """
 
     async def clock_monitor(dut):
@@ -131,73 +124,73 @@ async def test_external_call_return(dut):
 
     cocotb.start_soon(clock_monitor(dut))
     cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
-    value = await external(return_two)(dut)
+    value = await bridge(return_two)(dut)
     assert value == 2
 
 
 @cocotb.test()
-async def test_consecutive_externals(dut):
+async def test_consecutive_bridges(dut):
     """
-    Test that multiple @external functions can be called in the same test
+    Test that multiple @cocotb.bridge functions can be called in the same test
     """
-    value = await external(return_two)(dut)
+    value = await bridge(return_two)(dut)
     dut._log.info("First one completed")
     assert value == 2
 
-    value = await external(return_two)(dut)
+    value = await bridge(return_two)(dut)
     dut._log.info("Second one completed")
     assert value == 2
 
 
 @cocotb.test()
-async def test_external_from_readonly(dut):
+async def test_bridge_from_readonly(dut):
     """
-    Test that @external functions that don't consume simulation time
+    Test that @cocotb.bridge functions that don't consume simulation time
     can be called from ReadOnly state
     """
     await ReadOnly()
     dut._log.info("In readonly")
-    value = await external(return_two)(dut)
+    value = await bridge(return_two)(dut)
     assert value == 2
 
 
 @cocotb.test()
-async def test_function_from_readonly(dut):
+async def test_resume_from_readonly(dut):
     """
-    Test that @external functions that call @functions that await Triggers
+    Test that @cocotb.bridge functions that call @cocotb.resumes that await Triggers
     can be called from ReadOnly state
     """
     cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
     await ReadOnly()
     dut._log.info("In readonly")
-    value = await external(calls_cocotb_function)(dut)
+    value = await bridge(calls_cocotb_resume)(dut)
     assert value == 2
 
 
 @cocotb.test()
-async def test_function_that_awaits(dut):
+async def test_resume_that_awaits(dut):
     """
-    Test that @external functions can call @function coroutines that
+    Test that @cocotb.bridge functions can call @cocotb.resume coroutines that
     awaits Triggers and return values back through to
     the test
     """
     cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
-    value = await external(calls_cocotb_function)(dut)
+    value = await bridge(calls_cocotb_resume)(dut)
     assert value == 2
 
 
 @cocotb.test()
-async def test_await_after_function(dut):
+async def test_await_after_bridge(dut):
     """
     Test that awaiting a Trigger works after returning
-    from @external functions that call @functions that consume
+    from @cocotb.bridge functions that call @cocotb.resumes that consume
     simulation time
     """
     cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
-    value = await external(calls_cocotb_function)(dut)
+    value = await bridge(calls_cocotb_resume)(dut)
     assert value == 2
 
     await Timer(10, units="ns")
@@ -205,18 +198,18 @@ async def test_await_after_function(dut):
 
 
 @cocotb.test()
-async def test_external_from_start_soon(dut):
+async def test_bridge_from_start_soon(dut):
     """
-    Test that @external functions work when awaited from a forked
+    Test that @cocotb.bridge functions work when awaited from a forked
     task
     """
 
     async def run_function(dut):
-        value = await external(calls_cocotb_function)(dut)
+        value = await bridge(calls_cocotb_resume)(dut)
         return value
 
-    async def run_external(dut):
-        value = await external(return_two)(dut)
+    async def run_bridge(dut):
+        value = await bridge(return_two)(dut)
         return value
 
     cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
@@ -227,19 +220,19 @@ async def test_external_from_start_soon(dut):
     dut._log.info("Back from join 1")
 
     value = 0
-    coro2 = cocotb.start_soon(run_external(dut))
+    coro2 = cocotb.start_soon(run_bridge(dut))
     value = await coro2
     assert value == 2
     dut._log.info("Back from join 2")
 
 
 @cocotb.test()
-async def test_external_raised_exception(dut):
+async def test_bridge_raised_exception(dut):
     """
-    Test that exceptions thrown by @external functions can be caught
+    Test that exceptions thrown by @cocotb.bridge functions can be caught
     """
 
-    @external
+    @bridge
     def func():
         raise ValueError()
 
@@ -248,12 +241,12 @@ async def test_external_raised_exception(dut):
 
 
 @cocotb.test()
-async def test_external_returns_exception(dut):
+async def test_bridge_returns_exception(dut):
     """
-    Test that exceptions can be returned by @external functions
+    Test that exceptions can be returned by @cocotb.bridge functions
     """
 
-    @external
+    @bridge
     def func():
         return ValueError()
 
@@ -263,16 +256,16 @@ async def test_external_returns_exception(dut):
 
 
 @cocotb.test()
-async def test_function_raised_exception(dut):
+async def test_resume_raised_exception(dut):
     """
-    Test that exceptions thrown by @function coroutines can be caught
+    Test that exceptions thrown by @cocotb.resume coroutines can be caught
     """
 
-    @cocotb.function
+    @cocotb.resume
     async def func():
         raise ValueError()
 
-    @external
+    @bridge
     def ext():
         return func()
 
@@ -281,16 +274,16 @@ async def test_function_raised_exception(dut):
 
 
 @cocotb.test()
-async def test_function_returns_exception(dut):
+async def test_resume_returns_exception(dut):
     """
-    Test that exceptions can be returned by @function coroutines
+    Test that exceptions can be returned by @cocotb.resume coroutines
     """
 
-    @cocotb.function
+    @cocotb.resume
     async def gen_func():
         return ValueError()
 
-    @external
+    @bridge
     def ext():
         return gen_func()
 
@@ -300,15 +293,15 @@ async def test_function_returns_exception(dut):
 
 
 @cocotb.test()
-async def test_function_from_weird_thread_fails(dut):
+async def test_resume_from_weird_thread_fails(dut):
     """
-    Test that background threads caling a @function do not hang forever
+    Test that background threads caling a @cocotb.resume do not hang forever
     """
     func_started = False
     caller_resumed = False
     raised = False
 
-    @cocotb.function
+    @cocotb.resume
     async def func():
         nonlocal func_started
         func_started = True
@@ -324,7 +317,7 @@ async def test_function_from_weird_thread_fails(dut):
         finally:
             caller_resumed = True
 
-    @external
+    @bridge
     def ext():
         t = threading.Thread(target=function_caller)
         t.start()
@@ -342,18 +335,18 @@ async def test_function_from_weird_thread_fails(dut):
 
 
 @cocotb.test()
-async def test_function_called_in_parallel(dut):
+async def test_resume_called_in_parallel(dut):
     """
-    Test that the same `@function` can be called from two parallel background
+    Test that the same `@cocotb.resume` can be called from two parallel background
     threads.
     """
 
-    @cocotb.function
+    @cocotb.resume
     async def function(x):
         await Timer(1, units="ns")
         return x
 
-    @cocotb.external
+    @cocotb.bridge
     def call_function(x):
         return function(x)
 

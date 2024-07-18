@@ -100,9 +100,7 @@ class external_waiter:
         self.event = Event()
         self.state = external_state.INIT
         self.cond = threading.Condition()
-        self._log = logging.getLogger(
-            f"cocotb.external.thread.{self.thread}.0x{id(self):x}"
-        )
+        self._log = logging.getLogger(f"cocotb.bridge.{self.thread}.0x{id(self):x}")
 
     @property
     def result(self):
