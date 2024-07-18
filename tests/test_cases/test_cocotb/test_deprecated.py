@@ -44,18 +44,6 @@ async def test_testfactory_deprecated(dut):
     assert tf_warns[0].category is DeprecationWarning
 
 
-@cocotb.test
-async def test_runner_deprecated(_):
-    with pytest.warns(DeprecationWarning):
-        import cocotb.runner  # noqa: F401
-
-
-@cocotb.test
-async def test_config_deprecated(_):
-    with pytest.warns(DeprecationWarning):
-        import cocotb.config  # noqa: F401
-
-
 @cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
 async def test_real_handle_casts_deprecated(dut):
     dut.stream_in_real.value = 5.03
