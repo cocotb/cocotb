@@ -1,12 +1,17 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from typing import Any, Dict, TypeVar
+
 import IPython
 from IPython.terminal.ipapp import load_default_config
-from IPython.terminal.prompts import Prompts, Token
+from IPython.terminal.prompts import Prompts
+from pygments.token import Token
 
 import cocotb
 from cocotb.sim_time_utils import get_sim_time
+
+T = TypeVar("T")
 
 
 class SimTimePrompt(Prompts):
@@ -14,7 +19,7 @@ class SimTimePrompt(Prompts):
 
     _show_time = 1
 
-    def in_prompt_tokens(self, cli=None):
+    def in_prompt_tokens(self):
         tokens = super().in_prompt_tokens()
         if self._show_time == self.shell.execution_count:
             tokens = [
@@ -24,14 +29,7 @@ class SimTimePrompt(Prompts):
         return tokens
 
 
-def _runner(shell, x):
-    """Handler for async functions"""
-    ret = cocotb._scheduler_inst._queue_function(x)
-    shell.prompts._show_time = shell.execution_count
-    return ret
-
-
-async def embed(user_ns: dict = {}):
+async def embed(user_ns: Dict[str, Any] = {}) -> None:
     """
     Start an IPython shell in the current coroutine.
 
@@ -47,8 +45,7 @@ async def embed(user_ns: dict = {}):
             Passing ``locals()`` is often a good idea.
             ``cocotb`` will automatically be included.
 
-    Notes:
-
+    .. note::
         If your simulator does not provide an appropriate ``stdin``, you may
         find you cannot type in the resulting shell. Using simulators in batch
         or non-GUI mode may resolve this. This feature is experimental, and
@@ -58,9 +55,16 @@ async def embed(user_ns: dict = {}):
     default_ns = dict(cocotb=cocotb)
     default_ns.update(user_ns)
 
+    def _runner(x):
+        """Handler for async functions"""
+        nonlocal shell
+        ret = cocotb._scheduler_inst._queue_function(x)
+        shell.prompts._show_time = shell.execution_count
+        return ret
+
     # build the config to enable `await`
     c = load_default_config()
-    c.TerminalInteractiveShell.loop_runner = lambda x: _runner(shell, x)
+    c.TerminalInteractiveShell.loop_runner = _runner
     c.TerminalInteractiveShell.autoawait = True
     # Python3 checks SQLite DB accesses to ensure process ID matches the one that opened the DB and is not propogated
     # because we launch IPython in a different process, this will cause unnecessary warnings, so disable the PID check
@@ -76,14 +80,14 @@ async def embed(user_ns: dict = {}):
 
     # start the shell in a background thread
     @cocotb.external
-    def run_shell():
+    def run_shell() -> None:
         shell()
 
     await run_shell()
 
 
 @cocotb.test()
-async def run_ipython(dut):
+async def run_ipython(dut: Any) -> None:
     """A test that launches an interactive Python shell.
 
     Do not call this directly - use this as ``make COCOTB_TEST_MODULES=cocotb.ipython_support``.
