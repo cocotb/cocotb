@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import typing
 
 from cocotb.types import ArrayLike
@@ -127,7 +129,7 @@ class Array(ArrayLike[T]):
         "_range",
     )
 
-    def __init__(self, value: typing.Iterable[T], range: typing.Optional[Range] = None):
+    def __init__(self, value: typing.Iterable[T], range: Range | None = None):
         self._value = list(value)
         if range is None:
             self._range = Range(0, "to", len(self._value) - 1)
@@ -175,11 +177,9 @@ class Array(ArrayLike[T]):
     def __getitem__(self, item: int) -> T: ...
 
     @typing.overload
-    def __getitem__(self, item: slice) -> "Array[T]": ...
+    def __getitem__(self, item: slice) -> Array[T]: ...
 
-    def __getitem__(
-        self, item: typing.Union[int, slice]
-    ) -> typing.Union[T, "Array[T]"]:
+    def __getitem__(self, item: int | slice) -> T | Array[T]:
         if isinstance(item, int):
             idx = self._translate_index(item)
             return self._value[idx]
@@ -205,9 +205,7 @@ class Array(ArrayLike[T]):
     @typing.overload
     def __setitem__(self, item: slice, value: typing.Iterable[T]) -> None: ...
 
-    def __setitem__(
-        self, item: typing.Union[int, slice], value: typing.Union[T, typing.Iterable[T]]
-    ) -> None:
+    def __setitem__(self, item: int | slice, value: T | typing.Iterable[T]) -> None:
         if isinstance(item, int):
             idx = self._translate_index(item)
             self._value[idx] = typing.cast(T, value)

@@ -30,6 +30,8 @@ Some constants for doing ANSI stuff.
 """
 
 # flake8: noqa (skip this file for flake8: pypi.python.org/pypi/flake8)
+from __future__ import annotations
+
 _ESCAPE = "\033["
 
 # see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors

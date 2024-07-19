@@ -29,10 +29,11 @@
 Everything related to logging
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import sys
-import typing
 
 from cocotb import _ANSI, simulator
 from cocotb._utils import want_color_output
@@ -116,7 +117,7 @@ def default_config():
 class SimBaseLog(logging.getLoggerClass()):
     """This class only exists for backwards compatibility"""
 
-    def setLevel(self, level: typing.Union[int, str]) -> None:
+    def setLevel(self, level: int | str) -> None:
         super().setLevel(level)
         if self.name == "gpi":
             simulator.log_level(self.getEffectiveLevel())

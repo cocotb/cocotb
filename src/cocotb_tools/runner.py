@@ -8,6 +8,7 @@
 # TODO: create a short README and a .gitignore (content: "*") in both build_dir and test_dir? (Some other tools do this.)
 # TODO: support timescale on all simulators
 # TODO: support custom dependencies
+from __future__ import annotations
 
 import logging
 import os
@@ -22,15 +23,11 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from pathlib import Path
 from typing import (
-    Dict,
     Iterable,
     List,
     Mapping,
-    Optional,
     Sequence,
     TextIO,
-    Tuple,
-    Type,
     Union,
 )
 from xml.etree import ElementTree as ET
@@ -76,12 +73,12 @@ class Verilog(str):
 
 
 class Runner(ABC):
-    supported_gpi_interfaces: Dict[str, List[str]] = {}
+    supported_gpi_interfaces: dict[str, list[str]] = {}
 
     def __init__(self) -> None:
         self._simulator_in_path()
 
-        self.env: Dict[str, str] = {}
+        self.env: dict[str, str] = {}
 
         # for running test() independently of build()
         self.build_dir: Path = get_abs_path("sim_build")
@@ -97,7 +94,7 @@ class Runner(ABC):
             SystemExit: Simulator executable does not exist in :envvar:`PATH`.
         """
 
-    def _check_hdl_toplevel_lang(self, hdl_toplevel_lang: Optional[str]) -> str:
+    def _check_hdl_toplevel_lang(self, hdl_toplevel_lang: str | None) -> str:
         """Return *hdl_toplevel_lang* if supported by simulator, raise exception otherwise.
 
         Returns:
@@ -167,19 +164,19 @@ class Runner(ABC):
         hdl_library: str = "top",
         verilog_sources: Sequence[PathLike] = [],
         vhdl_sources: Sequence[PathLike] = [],
-        sources: Sequence[Union[PathLike, VHDL, Verilog]] = [],
+        sources: Sequence[PathLike | VHDL | Verilog] = [],
         includes: Sequence[PathLike] = [],
         defines: Mapping[str, object] = {},
         parameters: Mapping[str, object] = {},
-        build_args: Sequence[Union[str, VHDL, Verilog]] = [],
-        hdl_toplevel: Optional[str] = None,
+        build_args: Sequence[str | VHDL | Verilog] = [],
+        hdl_toplevel: str | None = None,
         always: bool = False,
         build_dir: PathLike = "sim_build",
         clean: bool = False,
         verbose: bool = False,
-        timescale: Optional[Tuple[str, str]] = None,
+        timescale: tuple[str, str] | None = None,
         waves: bool = False,
-        log_file: Optional[PathLike] = None,
+        log_file: PathLike | None = None,
     ) -> None:
         """Build the HDL sources.
 
@@ -254,24 +251,24 @@ class Runner(ABC):
                 DeprecationWarning,
                 stacklevel=2,
             )
-        self.verilog_sources: List[Path] = get_abs_paths(verilog_sources)
+        self.verilog_sources: list[Path] = get_abs_paths(verilog_sources)
         if vhdl_sources:
             warnings.warn(
                 "Simulator.build *vhdl_sources* parameter is deprecated. Use the language-agnostic *sources* parameter instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-        self.vhdl_sources: List[Path] = get_abs_paths(vhdl_sources)
-        self.sources: List[Path] = get_abs_paths(sources)
-        self.includes: List[Path] = get_abs_paths(includes)
+        self.vhdl_sources: list[Path] = get_abs_paths(vhdl_sources)
+        self.sources: list[Path] = get_abs_paths(sources)
+        self.includes: list[Path] = get_abs_paths(includes)
         self.defines = dict(defines)
         self.parameters = dict(parameters)
         self.build_args = list(build_args)
         self.always: bool = always
-        self.hdl_toplevel: Optional[str] = hdl_toplevel
+        self.hdl_toplevel: str | None = hdl_toplevel
         self.verbose: bool = verbose
-        self.timescale: Optional[Tuple[str, str]] = timescale
-        self.log_file: Optional[PathLike] = log_file
+        self.timescale: tuple[str, str] | None = timescale
+        self.log_file: PathLike | None = log_file
 
         self.waves = waves
 
@@ -282,27 +279,27 @@ class Runner(ABC):
 
     def test(
         self,
-        test_module: Union[str, Sequence[str]],
+        test_module: str | Sequence[str],
         hdl_toplevel: str,
         hdl_toplevel_library: str = "top",
-        hdl_toplevel_lang: Optional[str] = None,
-        gpi_interfaces: Optional[List[str]] = None,
-        testcase: Optional[Union[str, Sequence[str]]] = None,
-        seed: Optional[Union[str, int]] = None,
+        hdl_toplevel_lang: str | None = None,
+        gpi_interfaces: list[str] | None = None,
+        testcase: str | Sequence[str] | None = None,
+        seed: str | int | None = None,
         test_args: Sequence[str] = [],
         plusargs: Sequence[str] = [],
         extra_env: Mapping[str, str] = {},
         waves: bool = False,
         gui: bool = False,
-        parameters: Optional[Mapping[str, object]] = None,
-        build_dir: Optional[PathLike] = None,
-        test_dir: Optional[PathLike] = None,
-        results_xml: Optional[str] = None,
-        pre_cmd: Optional[List[str]] = None,
+        parameters: Mapping[str, object] | None = None,
+        build_dir: PathLike | None = None,
+        test_dir: PathLike | None = None,
+        results_xml: str | None = None,
+        pre_cmd: list[str] | None = None,
         verbose: bool = False,
-        timescale: Optional[Tuple[str, str]] = None,
-        log_file: Optional[PathLike] = None,
-        test_filter: Optional[str] = None,
+        timescale: tuple[str, str] | None = None,
+        log_file: PathLike | None = None,
+        test_filter: str | None = None,
     ) -> Path:
         """Run the tests.
 
@@ -460,7 +457,7 @@ class Runner(ABC):
                 self._execute_cmds(cmds, cwd, f)
 
     def _execute_cmds(
-        self, cmds: Sequence[_Command], cwd: PathLike, stdout: Optional[TextIO] = None
+        self, cmds: Sequence[_Command], cwd: PathLike, stdout: TextIO | None = None
     ) -> None:
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
@@ -481,7 +478,7 @@ class Runner(ABC):
             shutil.rmtree(build_dir, ignore_errors=True)
 
 
-def get_results(results_xml_file: Path) -> Tuple[int, int]:
+def get_results(results_xml_file: Path) -> tuple[int, int]:
     """Return number of tests and fails in *results_xml_file*.
 
     Returns:
@@ -557,7 +554,7 @@ def get_abs_path(path: PathLike) -> Path:
         return Path(Path.cwd() / path).resolve()
 
 
-def get_abs_paths(paths: Sequence[PathLike]) -> List[Path]:
+def get_abs_paths(paths: Sequence[PathLike]) -> list[Path]:
     """Return list of *paths* in absolute form."""
 
     return [get_abs_path(path) for path in paths]
@@ -660,7 +657,7 @@ class Icarus(Runner):
     def cmds_file(self) -> Path:
         return self.build_dir / "cmds.f"
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         plusargs = self.plusargs
         if self.waves:
             plusargs += ["-fst"]
@@ -681,7 +678,7 @@ class Icarus(Runner):
             + plusargs
         ]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         assert self.hdl_toplevel is not None
 
         for source in self.sources:
@@ -764,7 +761,7 @@ class Questa(Runner):
     def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         cmds = []
 
         cmds.append(["vlib", _as_tcl_value(self.hdl_library)])
@@ -802,7 +799,7 @@ class Questa(Runner):
             + [_as_tcl_value(str(source))]
         )
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         cmds = []
 
         if self.pre_cmd is not None:
@@ -913,7 +910,7 @@ class Ghdl(Runner):
     def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         for source in self.sources:
             if not is_vhdl_source(source):
                 raise ValueError(
@@ -943,7 +940,7 @@ class Ghdl(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for GHDL.")
 
@@ -1022,7 +1019,7 @@ class Nvc(Runner):
     def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         for source in self.sources:
             if not is_vhdl_source(source):
                 raise ValueError(
@@ -1044,7 +1041,7 @@ class Nvc(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         cmds = [
             ["nvc", f"--work={self.hdl_toplevel_library}"]
             + self.build_args
@@ -1089,8 +1086,8 @@ class Riviera(Runner):
     def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
-        do_script: List[str] = ["onerror {\n quit -code 1 \n}"]
+    def _build_command(self) -> list[_Command]:
+        do_script: list[str] = ["onerror {\n quit -code 1 \n}"]
 
         out_file = self.build_dir / self.hdl_library / f"{self.hdl_library}.lib"
 
@@ -1145,7 +1142,7 @@ class Riviera(Runner):
             ),
         )
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Riviera.")
 
@@ -1237,7 +1234,7 @@ class Verilator(Runner):
     def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f"-G{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         self._simulator_in_path_build_only()
 
         for source in self.sources:
@@ -1306,7 +1303,7 @@ class Verilator(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Verilator.")
 
@@ -1345,7 +1342,7 @@ class Xcelium(Runner):
     def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
         return [f'-gpg "{name} => {value}"' for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         self.env["CDS_AUTO_64BIT"] = "all"
 
         assert self.hdl_toplevel, "A HDL toplevel is required in all Xcelium compiles."
@@ -1405,7 +1402,7 @@ class Xcelium(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Xcelium.")
 
@@ -1484,7 +1481,7 @@ def get_runner(simulator_name: str) -> Runner:
         ValueError: If *simulator_name* is not one of the supported simulators or an alias of one.
     """
 
-    supported_sims: Dict[str, Type[Runner]] = {
+    supported_sims: dict[str, type[Runner]] = {
         "icarus": Icarus,
         "questa": Questa,
         "ghdl": Ghdl,

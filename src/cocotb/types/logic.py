@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import typing
 from functools import lru_cache
 
@@ -18,7 +20,7 @@ _L = 6
 _H = 7
 _D = 8
 
-_literal_repr: typing.Dict[LogicLiteralT, int] = {
+_literal_repr: dict[LogicLiteralT, int] = {
     # unassigned
     "U": _U,
     "u": _U,
@@ -113,7 +115,7 @@ class Logic:
 
     @classmethod
     @lru_cache(maxsize=None)
-    def _get_object(cls: typing.Type["Logic"], _repr: int) -> "Logic":
+    def _get_object(cls: type[Logic], _repr: int) -> Logic:
         """Return the Logic object associated with the repr, enforcing singleton."""
         self = object.__new__(cls)
         self._repr = _repr
@@ -122,9 +124,9 @@ class Logic:
     @classmethod
     @lru_cache(maxsize=None)
     def _map_literal(
-        cls: typing.Type["Logic"],
-        value: typing.Optional[LogicLiteralT] = None,
-    ) -> "Logic":
+        cls: type[Logic],
+        value: LogicLiteralT | None = None,
+    ) -> Logic:
         """Convert and cache all literals."""
         if value is None:
             _repr = _X
@@ -140,14 +142,14 @@ class Logic:
         return obj
 
     def __new__(
-        cls: typing.Type["Logic"],
-        value: typing.Optional[LogicConstructibleT] = None,
-    ) -> "Logic":
+        cls: type[Logic],
+        value: LogicConstructibleT | None = None,
+    ) -> Logic:
         if isinstance(value, Logic):
             return value
         return cls._map_literal(value)
 
-    def __and__(self, other: "Logic") -> "Logic":
+    def __and__(self, other: Logic) -> Logic:
         if not isinstance(other, Logic):
             return NotImplemented
         return Logic(
@@ -167,7 +169,7 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __or__(self: "Logic", other: "Logic") -> "Logic":
+    def __or__(self: Logic, other: Logic) -> Logic:
         if not isinstance(other, Logic):
             return NotImplemented
         return Logic(
@@ -187,7 +189,7 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __xor__(self: "Logic", other: "Logic") -> "Logic":
+    def __xor__(self: Logic, other: Logic) -> Logic:
         if not isinstance(other, Logic):
             return NotImplemented
         return Logic(
@@ -207,7 +209,7 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __invert__(self: "Logic") -> "Logic":
+    def __invert__(self: Logic) -> Logic:
         return Logic(("U", "X", "1", "0", "X", "X", "1", "0", "X")[self._repr])
 
     def __eq__(self, other: object) -> bool:

@@ -27,12 +27,13 @@
 
 """A clock class."""
 
+from __future__ import annotations
+
 import logging
 from decimal import Decimal
 from fractions import Fraction
 from functools import cached_property
 from logging import Logger
-from typing import Union
 
 import cocotb._conf
 from cocotb.sim_time_utils import get_sim_steps, get_time_from_sim_steps
@@ -124,7 +125,7 @@ class Clock:
     def __init__(
         self,
         signal,
-        period: Union[float, Fraction, Decimal],
+        period: float | Fraction | Decimal,
         units: str = "step",
         impl: str = "auto",
     ):

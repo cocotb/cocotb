@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import typing
 import warnings
 from math import ceil
@@ -116,29 +118,29 @@ class LogicArray(ArrayLike[Logic]):
         TypeError: When invalid argument types are used.
     """
 
-    _value: typing.List[Logic]
+    _value: list[Logic]
     _range: Range
 
     @typing.overload
     def __new__(
         cls,
-        value: typing.Union[int, typing.Iterable[LogicConstructibleT]],
-        range: typing.Optional[Range] = None,
-    ) -> "LogicArray": ...
+        value: int | typing.Iterable[LogicConstructibleT],
+        range: Range | None = None,
+    ) -> LogicArray: ...
 
     @typing.overload
     def __new__(
         cls,
-        value: typing.Union[int, typing.Iterable[LogicConstructibleT], None] = None,
+        value: int | typing.Iterable[LogicConstructibleT] | None = None,
         *,
         range: Range,
-    ) -> "LogicArray": ...
+    ) -> LogicArray: ...
 
     def __new__(
         cls,
-        value: typing.Union[int, typing.Iterable[LogicConstructibleT], None] = None,
-        range: typing.Optional[Range] = None,
-    ) -> "LogicArray":
+        value: int | typing.Iterable[LogicConstructibleT] | None = None,
+        range: Range | None = None,
+    ) -> LogicArray:
         if isinstance(value, int):
             warnings.warn(
                 "Constructing a LogicArray from an integer is deprecated. "
@@ -179,9 +181,7 @@ class LogicArray(ArrayLike[Logic]):
         return self
 
     @classmethod
-    def from_unsigned(
-        cls, value: int, range: typing.Optional[Range] = None
-    ) -> "LogicArray":
+    def from_unsigned(cls, value: int, range: Range | None = None) -> LogicArray:
         """Construct a :class:`LogicArray` from an :class:`int` by interpreting it as a bit vector with unsigned representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with unsigned representation where the left-most bit is the most significant bit.
@@ -218,9 +218,7 @@ class LogicArray(ArrayLike[Logic]):
         return LogicArray(_int_to_bitstr(value, len(range)), range=range)
 
     @classmethod
-    def from_signed(
-        cls, value: int, range: typing.Optional[Range] = None
-    ) -> "LogicArray":
+    def from_signed(cls, value: int, range: Range | None = None) -> LogicArray:
         """Construct a :class:`LogicArray` from an :class:`int` by interpreting it as a bit vector with two's complement representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with two's complement representation where the left-most bit is the most significant bit.
@@ -397,11 +395,9 @@ class LogicArray(ArrayLike[Logic]):
     def __getitem__(self, item: int) -> Logic: ...
 
     @typing.overload
-    def __getitem__(self, item: slice) -> "LogicArray": ...
+    def __getitem__(self, item: slice) -> LogicArray: ...
 
-    def __getitem__(
-        self, item: typing.Union[int, slice]
-    ) -> typing.Union[Logic, "LogicArray"]:
+    def __getitem__(self, item: int | slice) -> Logic | LogicArray:
         if isinstance(item, int):
             idx = self._translate_index(item)
             return self._value[idx]
@@ -431,8 +427,8 @@ class LogicArray(ArrayLike[Logic]):
 
     def __setitem__(
         self,
-        item: typing.Union[int, slice],
-        value: typing.Union[LogicConstructibleT, typing.Iterable[LogicConstructibleT]],
+        item: int | slice,
+        value: LogicConstructibleT | typing.Iterable[LogicConstructibleT],
     ) -> None:
         if isinstance(item, int):
             idx = self._translate_index(item)
@@ -477,7 +473,7 @@ class LogicArray(ArrayLike[Logic]):
     def __int__(self) -> int:
         return self.to_unsigned()
 
-    def __and__(self, other: "LogicArray") -> "LogicArray":
+    def __and__(self, other: LogicArray) -> LogicArray:
         if isinstance(other, LogicArray):
             if len(self) != len(other):
                 raise ValueError(
@@ -488,7 +484,7 @@ class LogicArray(ArrayLike[Logic]):
             return LogicArray(a & b for a, b in zip(self, other))
         return NotImplemented
 
-    def __or__(self, other: "LogicArray") -> "LogicArray":
+    def __or__(self, other: LogicArray) -> LogicArray:
         if isinstance(other, LogicArray):
             if len(self) != len(other):
                 raise ValueError(
@@ -499,7 +495,7 @@ class LogicArray(ArrayLike[Logic]):
             return LogicArray(a | b for a, b in zip(self, other))
         return NotImplemented
 
-    def __xor__(self, other: "LogicArray") -> "LogicArray":
+    def __xor__(self, other: LogicArray) -> LogicArray:
         if isinstance(other, LogicArray):
             if len(self) != len(other):
                 raise ValueError(
@@ -510,7 +506,7 @@ class LogicArray(ArrayLike[Logic]):
             return LogicArray(a ^ b for a, b in zip(self, other))
         return NotImplemented
 
-    def __invert__(self) -> "LogicArray":
+    def __invert__(self) -> LogicArray:
         return LogicArray(~v for v in self)
 
 

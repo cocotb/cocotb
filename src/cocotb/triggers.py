@@ -27,6 +27,8 @@
 
 """A collection of triggers which a testbench can ``await``."""
 
+from __future__ import annotations
+
 import logging
 from abc import abstractmethod
 from decimal import Decimal
@@ -41,11 +43,7 @@ from typing import (
     Coroutine,
     Generator,
     Generic,
-    List,
-    Optional,
-    Type,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -86,7 +84,7 @@ class Trigger(Awaitable["Trigger"]):
         """A :class:`logging.Logger` for the trigger."""
         return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
-    def _prime(self, callback: Callable[["Trigger"], None]) -> None:
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
         """Set a callback to be invoked when the trigger fires.
 
         The callback will be invoked with a single argument, `self`.
@@ -138,7 +136,7 @@ class GPITrigger(Trigger):
         # if simulator is not None:
         #    self.cbhdl = simulator.create_callback(self)
         # else:
-        self._cbhdl: Optional[simulator.gpi_cb_hdl] = None
+        self._cbhdl: simulator.gpi_cb_hdl | None = None
 
     def _unprime(self) -> None:
         """Disable a primed trigger, can be re-primed."""
@@ -223,10 +221,10 @@ class Timer(GPITrigger):
 
     def __init__(
         self,
-        time: Union[float, Fraction, Decimal],
+        time: float | Fraction | Decimal,
         units: str = "step",
         *,
-        round_mode: Optional[str] = None,
+        round_mode: str | None = None,
     ) -> None:
         super().__init__()
         if time <= 0:
@@ -430,7 +428,7 @@ class _Event(Trigger):
     can maintain a unique mapping of triggers to tasks.
     """
 
-    def __init__(self, parent: "Event[Any]") -> None:
+    def __init__(self, parent: Event[Any]) -> None:
         super().__init__()
         self._parent = parent
 
@@ -470,18 +468,18 @@ class Event(Generic[T]):
             # resuming!
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
-        self._pending_events: List[_Event] = []
-        self.name: Optional[str] = name
+    def __init__(self, name: str | None = None) -> None:
+        self._pending_events: list[_Event] = []
+        self.name: str | None = name
         self._fired: bool = False
-        self.data: Optional[T] = None
+        self.data: T | None = None
 
     def _prime_trigger(
         self, trigger: _Event, callback: Callable[[Trigger], None]
     ) -> None:
         self._pending_events.append(trigger)
 
-    def set(self, data: Optional[T] = None) -> None:
+    def set(self, data: T | None = None) -> None:
         """Unblock all coroutines blocked on this event."""
         self._fired = True
         self.data = data
@@ -535,9 +533,9 @@ class _InternalEvent(Trigger, Generic[T]):
     def __init__(self, parent: object) -> None:
         super().__init__()
         self._parent = parent
-        self._callback: Optional[Callable[[Trigger], None]] = None
+        self._callback: Callable[[Trigger], None] | None = None
         self.fired: bool = False
-        self.data: Optional[T] = None
+        self.data: T | None = None
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._callback is not None:
@@ -547,7 +545,7 @@ class _InternalEvent(Trigger, Generic[T]):
         if self.fired:
             self._callback(self)
 
-    def set(self, data: Optional[T] = None) -> None:
+    def set(self, data: T | None = None) -> None:
         """Wake up coroutine blocked on this event."""
         self.fired = True
         self.data = data
@@ -578,7 +576,7 @@ class _Lock(Trigger):
     can maintain a unique mapping of triggers to tasks.
     """
 
-    def __init__(self, parent: "Lock") -> None:
+    def __init__(self, parent: Lock) -> None:
         super().__init__()
         self._parent = parent
 
@@ -619,10 +617,10 @@ class Lock(AsyncContextManager[None]):
         :keyword:`async with` statement
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
-        self._pending_unprimed: List[_Lock] = []
-        self._pending_primed: List[_Lock] = []
-        self.name: Optional[str] = name
+    def __init__(self, name: str | None = None) -> None:
+        self._pending_unprimed: list[_Lock] = []
+        self._pending_primed: list[_Lock] = []
+        self.name: str | None = name
         self._locked: bool = False
 
     def locked(self) -> bool:
@@ -693,7 +691,7 @@ class NullTrigger(Trigger):
         The *outcome* parameter was removed. There is no alternative.
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
+    def __init__(self, name: str | None = None) -> None:
         super().__init__()
         self.name = name
 
@@ -785,9 +783,7 @@ class Waitable(Awaitable[T]):
 class _AggregateWaitable(Waitable[T]):
     """Base class for :class:`Combine` and :class:`First`."""
 
-    def __init__(
-        self, *trigger: Union[Trigger, Waitable[T], cocotb.task.Task[T]]
-    ) -> None:
+    def __init__(self, *trigger: Trigger | Waitable[T] | cocotb.task.Task[T]) -> None:
         self._triggers = trigger
 
         # Do some basic type-checking up front, rather than waiting until we
@@ -809,7 +805,7 @@ class _AggregateWaitable(Waitable[T]):
 
 
 async def _wait_callback(
-    trigger: Union[Trigger, Waitable[T], cocotb.task.Task[T]],
+    trigger: Trigger | Waitable[T] | cocotb.task.Task[T],
     callback: Callable[[Outcome[T]], None],
 ) -> None:
     """Wait for *trigger*, and call *callback* with the outcome of the await."""
@@ -835,8 +831,8 @@ class Combine(_AggregateWaitable["Combine"]):
         TypeError: When an unsupported *trigger* object is passed.
     """
 
-    async def _wait(self) -> "Combine":
-        waiters: List[cocotb.task.Task[Any]] = []
+    async def _wait(self) -> Combine:
+        waiters: list[cocotb.task.Task[Any]] = []
         e = _InternalEvent[Any](self)
         triggers = list(self._triggers)
 
@@ -844,8 +840,8 @@ class Combine(_AggregateWaitable["Combine"]):
         for t in triggers:
             # t=t is needed for the closure to bind correctly
             def on_done(
-                ret: Outcome["Combine"],
-                t: Union[Trigger, Waitable["Combine"], cocotb.task.Task["Combine"]] = t,
+                ret: Outcome[Combine],
+                t: Trigger | Waitable[Combine] | cocotb.task.Task[Combine] = t,
             ) -> None:
                 triggers.remove(t)
                 if not triggers:
@@ -888,9 +884,9 @@ class First(_AggregateWaitable[Any]):
     """
 
     async def _wait(self) -> Any:
-        waiters: List[cocotb.task.Task[Any]] = []
+        waiters: list[cocotb.task.Task[Any]] = []
         e = _InternalEvent[Any](self)
-        completed: List[Outcome[Any]] = []
+        completed: list[Outcome[Any]] = []
         # start a parallel task for each trigger
         for t in self._triggers:
 
@@ -935,13 +931,13 @@ class ClockCycles(Waitable["ClockCycles"]):
     ) -> None:
         self.signal = signal
         self.num_cycles = num_cycles
-        self._type: Union[Type[RisingEdge], Type[FallingEdge]]
+        self._type: type[RisingEdge] | type[FallingEdge]
         if rising is True:
             self._type = RisingEdge
         else:
             self._type = FallingEdge
 
-    async def _wait(self) -> "ClockCycles":
+    async def _wait(self) -> ClockCycles:
         trigger = self._type(self.signal)
         for _ in range(self.num_cycles):
             await trigger
@@ -960,36 +956,36 @@ class ClockCycles(Waitable["ClockCycles"]):
 @overload
 async def with_timeout(
     trigger: Trigger,
-    timeout_time: Union[float, Decimal],
+    timeout_time: float | Decimal,
     timeout_unit: str = "step",
-    round_mode: Optional[str] = None,
+    round_mode: str | None = None,
 ) -> None: ...
 
 
 @overload
 async def with_timeout(
     trigger: Waitable[T],
-    timeout_time: Union[float, Decimal],
+    timeout_time: float | Decimal,
     timeout_unit: str = "step",
-    round_mode: Optional[str] = None,
+    round_mode: str | None = None,
 ) -> T: ...
 
 
 @overload
 async def with_timeout(
     trigger: cocotb.task.Task[T],
-    timeout_time: Union[float, Decimal],
+    timeout_time: float | Decimal,
     timeout_unit: str = "step",
-    round_mode: Optional[str] = None,
+    round_mode: str | None = None,
 ) -> T: ...
 
 
 @overload
 async def with_timeout(
     trigger: Coroutine[Any, Any, T],
-    timeout_time: Union[float, Decimal],
+    timeout_time: float | Decimal,
     timeout_unit: str = "step",
-    round_mode: Optional[str] = None,
+    round_mode: str | None = None,
 ) -> T: ...
 
 
@@ -998,12 +994,10 @@ class SimTimeoutError(TimeoutError):
 
 
 async def with_timeout(
-    trigger: Union[
-        Trigger, Waitable[Any], cocotb.task.Task[Any], Coroutine[Any, Any, Any]
-    ],
-    timeout_time: Union[float, Decimal],
+    trigger: Trigger | Waitable[Any] | cocotb.task.Task[Any] | Coroutine[Any, Any, Any],
+    timeout_time: float | Decimal,
     timeout_unit: str = "step",
-    round_mode: Optional[str] = None,
+    round_mode: str | None = None,
 ) -> Any:
     r"""Wait on triggers or coroutines, throw an exception if it waits longer than the given time.
 

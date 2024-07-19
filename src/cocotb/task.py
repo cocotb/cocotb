@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import collections.abc
 import inspect
 import logging
@@ -8,7 +10,7 @@ import os
 import warnings
 from asyncio import CancelledError, InvalidStateError
 from functools import cached_property
-from typing import Any, Callable, Coroutine, Generator, Generic, List, Optional, TypeVar
+from typing import Any, Callable, Coroutine, Generator, Generic, TypeVar
 
 import cocotb
 import cocotb.triggers
@@ -58,10 +60,10 @@ class Task(Generic[ResultType]):
 
         self._coro: Coroutine = inst
         self._started: bool = False
-        self._outcome: Optional[Outcome[ResultType]] = None
-        self._trigger: Optional[cocotb.triggers.Trigger] = None
-        self._cancelled: Optional[CancelledError] = None
-        self._done_callbacks: List[Callable[[Task[Any]], Any]] = []
+        self._outcome: Outcome[ResultType] | None = None
+        self._trigger: cocotb.triggers.Trigger | None = None
+        self._cancelled: CancelledError | None = None
+        self._done_callbacks: list[Callable[[Task[Any]], Any]] = []
 
         self._task_id = self._id_count
         type(self)._id_count += 1
@@ -164,7 +166,7 @@ class Task(Generic[ResultType]):
             for callback in self._done_callbacks:
                 callback(self)
 
-    def join(self) -> "cocotb.triggers.Join[ResultType]":
+    def join(self) -> cocotb.triggers.Join[ResultType]:
         r"""Wait for the task to complete.
 
         Returns:
@@ -188,7 +190,7 @@ class Task(Generic[ResultType]):
         """Return ``True`` if the Task has started executing."""
         return self._started
 
-    def cancel(self, msg: Optional[str] = None) -> None:
+    def cancel(self, msg: str | None = None) -> None:
         """Cancel a Task's further execution.
 
         When a Task is cancelled, a :exc:`asyncio.CancelledError` is thrown into the Task.
@@ -225,7 +227,7 @@ class Task(Generic[ResultType]):
         else:
             return self._outcome.get()
 
-    def exception(self) -> Optional[BaseException]:
+    def exception(self) -> BaseException | None:
         """Return the exception of the Task.
 
         If the Task ran to completion, ``None`` is returned.
@@ -242,7 +244,7 @@ class Task(Generic[ResultType]):
         else:
             return None
 
-    def _add_done_callback(self, callback: Callable[["Task[ResultType]"], Any]) -> None:
+    def _add_done_callback(self, callback: Callable[[Task[ResultType]], Any]) -> None:
         """Add *callback* to the list of callbacks to be run once the Task becomes "done".
 
         Args:

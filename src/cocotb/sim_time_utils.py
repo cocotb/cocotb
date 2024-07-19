@@ -27,13 +27,14 @@
 
 """Utility functions for dealing with simulation time."""
 
+from __future__ import annotations
+
 import math
 from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
 from typing import (
     Any,
-    Union,
     overload,
 )
 
@@ -84,14 +85,14 @@ def _ldexp10(frac: int, exp: int) -> int: ...
 
 
 @overload
-def _ldexp10(frac: Union[float, Fraction], exp: int) -> float: ...
+def _ldexp10(frac: float | Fraction, exp: int) -> float: ...
 
 
 @overload
 def _ldexp10(frac: Decimal, exp: int) -> Decimal: ...
 
 
-def _ldexp10(frac: Union[float, Fraction, Decimal], exp: int) -> Any:
+def _ldexp10(frac: float | Fraction | Decimal, exp: int) -> Any:
     """Like :func:`math.ldexp`, but base 10."""
     # using * or / separately prevents rounding errors if `frac` is a
     # high-precision type
@@ -120,7 +121,7 @@ def get_time_from_sim_steps(steps: int, units: str) -> int:
 
 
 def get_sim_steps(
-    time: Union[float, Fraction, Decimal],
+    time: float | Fraction | Decimal,
     units: str = "step",
     *,
     round_mode: str = "error",
@@ -154,7 +155,7 @@ def get_sim_steps(
     .. versionchanged:: 1.6
         Support rounding modes.
     """
-    result: Union[float, Fraction, Decimal]
+    result: float | Fraction | Decimal
     if units != "step":
         result = _ldexp10(time, _get_log_time_scale(units) - _get_simulator_precision())
     else:

@@ -24,6 +24,7 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from __future__ import annotations
 
 import ast
 import logging as py_logging
@@ -35,7 +36,7 @@ import warnings
 from collections.abc import Coroutine
 from enum import auto
 from types import SimpleNamespace
-from typing import Any, Dict, List, Union, cast
+from typing import Any, cast
 
 import cocotb.handle
 import cocotb.triggers
@@ -66,10 +67,10 @@ _scheduler_inst: Scheduler
 regression_manager: RegressionManager
 """The global regression manager instance."""
 
-argv: List[str]
+argv: list[str]
 """The argument list as seen by the simulator."""
 
-plusargs: Dict[str, Union[bool, str]]
+plusargs: dict[str, bool | str]
 """A dictionary of "plusargs" handed to the simulation.
 
 See :make:var:`COCOTB_PLUSARGS` for details.
@@ -135,7 +136,7 @@ def _setup_logging() -> None:
     log = py_logging.getLogger(__name__)
 
 
-def start_soon(coro: Union[Task, Coroutine]) -> Task:
+def start_soon(coro: Task | Coroutine) -> Task:
     """
     Schedule a coroutine to be run concurrently.
 
@@ -153,7 +154,7 @@ def start_soon(coro: Union[Task, Coroutine]) -> Task:
     return _scheduler_inst.start_soon(coro)
 
 
-async def start(coro: Union[Task, Coroutine]) -> Task:
+async def start(coro: Task | Coroutine) -> Task:
     """
     Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
 
@@ -175,7 +176,7 @@ async def start(coro: Union[Task, Coroutine]) -> Task:
     return task
 
 
-def create_task(coro: Union[Task, Coroutine]) -> Task:
+def create_task(coro: Task | Coroutine) -> Task:
     """
     Construct a coroutine into a :class:`~cocotb.task.Task` without scheduling the task.
 

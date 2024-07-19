@@ -34,6 +34,8 @@ also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
 
+from __future__ import annotations
+
 import inspect
 import logging
 import os
@@ -42,7 +44,7 @@ import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
 from contextlib import nullcontext
-from typing import Any, Callable, Dict, Sequence, Tuple, Union
+from typing import Any, Callable, Sequence
 
 import cocotb
 from cocotb import _outcomes
@@ -262,13 +264,13 @@ class Scheduler:
 
         # A dictionary of pending tasks for each trigger,
         # indexed by trigger
-        self._trigger2tasks: Dict[Trigger, list[Task]] = {}
+        self._trigger2tasks: dict[Trigger, list[Task]] = {}
 
         # A dictionary of pending (write_func, args), keyed by handle.
         # Writes are applied oldest to newest (least recently used).
         # Only the last scheduled write to a particular handle in a timestep is performed.
-        self._write_calls: Dict[
-            SimHandleBase, Tuple[Callable[..., None], Sequence[Any]]
+        self._write_calls: dict[
+            SimHandleBase, tuple[Callable[..., None], Sequence[Any]]
         ] = OrderedDict()
 
         self._pending_tasks: OrderedDict[Task[Any], _outcomes.Outcome] = OrderedDict()
@@ -653,7 +655,7 @@ class Scheduler:
             f"isn't a coroutine: {coroutine!r}\n"
         )
 
-    def start_soon(self, task: Union[Coroutine, Task]) -> Task:
+    def start_soon(self, task: Coroutine | Task) -> Task:
         """
         Schedule a task to be run concurrently, starting after the current task yields control.
 

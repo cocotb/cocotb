@@ -24,6 +24,7 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from __future__ import annotations
 
 import functools
 import sys
@@ -33,16 +34,10 @@ from typing import (
     Any,
     Callable,
     Coroutine,
-    Dict,
     Generic,
     Iterable,
-    List,
-    Optional,
     Sequence,
-    Tuple,
-    Type,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -119,24 +114,22 @@ class _Parameterized(Generic[F]):
     def __init__(
         self,
         test_function: F,
-        options: List[
-            Union[
-                Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
-            ]
+        options: list[
+            tuple[str, Sequence[Any]] | tuple[Sequence[str], Sequence[Sequence[Any]]]
         ],
     ) -> None:
         self.test_function = test_function
         self.options = options
         # we are assuming the input checking is done in parameterize()
 
-        self._option_reprs: Dict[str, List[str]] = {}
+        self._option_reprs: dict[str, list[str]] = {}
 
         for name, values in options:
             if isinstance(name, str):
                 self._option_reprs[name] = _reprs(values)
             else:
                 # transform to Dict[name, values]
-                transformed: Dict[str, List[Optional[str]]] = {}
+                transformed: dict[str, list[str | None]] = {}
                 for nam_idx, nam in enumerate(name):
                     transformed[nam] = []
                     for value_array in cast(Sequence[Sequence[Any]], values):
@@ -148,11 +141,11 @@ class _Parameterized(Generic[F]):
     def generate_tests(
         self,
         *,
-        name: Optional[str] = None,
-        timeout_time: Optional[float] = None,
+        name: str | None = None,
+        timeout_time: float | None = None,
         timeout_unit: str = "step",
         expect_fail: bool = False,
-        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+        expect_error: type[Exception] | Sequence[type[Exception]] = (),
         skip: bool = False,
         stage: int = 0,
         _expect_sim_failure: bool = False,
@@ -164,8 +157,8 @@ class _Parameterized(Generic[F]):
 
         # go through the cartesian product of all values of all options
         for selected_options in product(*option_indexes):
-            test_kwargs: Dict[str, Sequence[Any]] = {}
-            test_name_pieces: List[str] = [test_func_name]
+            test_kwargs: dict[str, Sequence[Any]] = {}
+            test_name_pieces: list[str] = [test_func_name]
             for option_idx, select_idx in enumerate(selected_options):
                 option_name, option_values = self.options[option_idx]
                 selected_value = option_values[select_idx]
@@ -190,7 +183,7 @@ class _Parameterized(Generic[F]):
 
             # create wrapper function to bind kwargs
             @functools.wraps(self.test_function)
-            async def _my_test(dut, kwargs: Dict[str, Any] = test_kwargs) -> None:
+            async def _my_test(dut, kwargs: dict[str, Any] = test_kwargs) -> None:
                 await self.test_function(dut, **kwargs)
 
             yield Test(
@@ -206,8 +199,8 @@ class _Parameterized(Generic[F]):
             )
 
 
-def _reprs(values: Sequence[Any]) -> List[str]:
-    result: List[str] = []
+def _reprs(values: Sequence[Any]) -> list[str]:
+    result: list[str] = []
     for value in values:
         value_repr = _repr(value)
         if value_repr is None:
@@ -218,7 +211,7 @@ def _reprs(values: Sequence[Any]) -> List[str]:
     return result
 
 
-def _repr(v: Any) -> Optional[str]:
+def _repr(v: Any) -> str | None:
     if isinstance(v, str):
         if len(v) <= 10 and v.isidentifier():
             return v
@@ -237,35 +230,35 @@ def _repr(v: Any) -> Optional[str]:
 
 
 @overload
-def test(_func: Union[F, _Parameterized[F]]) -> F: ...
+def test(_func: F | _Parameterized[F]) -> F: ...
 
 
 @overload
 def test(
     *,
-    timeout_time: Optional[float] = None,
+    timeout_time: float | None = None,
     timeout_unit: str = "step",
     expect_fail: bool = False,
-    expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+    expect_error: type[Exception] | Sequence[type[Exception]] = (),
     skip: bool = False,
     stage: int = 0,
-    name: Optional[str] = None,
+    name: str | None = None,
     _expect_sim_failure: bool = False,
-) -> Callable[[Union[F, _Parameterized[F]]], F]: ...
+) -> Callable[[F | _Parameterized[F]], F]: ...
 
 
 def test(
-    _func: Optional[Union[F, _Parameterized[F]]] = None,
+    _func: F | _Parameterized[F] | None = None,
     *,
-    timeout_time: Optional[float] = None,
+    timeout_time: float | None = None,
     timeout_unit: str = "step",
     expect_fail: bool = False,
-    expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+    expect_error: type[Exception] | Sequence[type[Exception]] = (),
     skip: bool = False,
     stage: int = 0,
-    name: Optional[str] = None,
+    name: str | None = None,
     _expect_sim_failure: bool = False,
-) -> Callable[[Union[F, _Parameterized[F]]], F]:
+) -> Callable[[F | _Parameterized[F]], F]:
     """
     Decorator to register a Callable which returns a Coroutine as a test.
 
@@ -370,7 +363,7 @@ def test(
             _add_tests(_func.__module__, Test(func=_func))
             return _func
 
-    def wrapper(f: Union[F, _Parameterized[F]]) -> F:
+    def wrapper(f: F | _Parameterized[F]) -> F:
         if isinstance(f, _Parameterized):
             test_func = f.test_function
             _add_tests(
@@ -408,9 +401,8 @@ def test(
 
 
 def parameterize(
-    *options_by_tuple: Union[
-        Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
-    ],
+    *options_by_tuple: tuple[str, Sequence[Any]]
+    | tuple[Sequence[str], Sequence[Sequence[Any]]],
     **options_by_name: Sequence[Any],
 ) -> Callable[[F], _Parameterized[F]]:
     """Decorator to generate parameterized tests from a single test function.

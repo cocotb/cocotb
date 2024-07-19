@@ -27,6 +27,8 @@
 
 """All things relating to regression capabilities."""
 
+from __future__ import annotations
+
 import functools
 import hashlib
 import inspect
@@ -44,14 +46,9 @@ from typing import (
     Any,
     Callable,
     Coroutine,
-    Dict,
     Generic,
-    List,
-    Optional,
     Sequence,
-    Type,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -75,7 +72,7 @@ _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
 _logger = logging.getLogger(__name__)
 
-_Failed: Type[BaseException]
+_Failed: type[BaseException]
 try:
     import pytest
 except ModuleNotFoundError:
@@ -142,13 +139,13 @@ class Test:
         self,
         *,
         func: Callable[..., Coroutine[Any, Any, None]],
-        name: Optional[str] = None,
-        module: Optional[str] = None,
-        doc: Optional[str] = None,
-        timeout_time: Optional[float] = None,
+        name: str | None = None,
+        module: str | None = None,
+        doc: str | None = None,
+        timeout_time: float | None = None,
         timeout_unit: str = "step",
         expect_fail: bool = False,
-        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+        expect_error: type[Exception] | Sequence[type[Exception]] = (),
         skip: bool = False,
         stage: int = 0,
         _expect_sim_failure: bool = False,
@@ -191,7 +188,7 @@ class Test:
         self.fullname = f"{self.module}.{self.name}"
 
 
-def _format_doc(docstring: Union[str, None]) -> str:
+def _format_doc(docstring: str | None) -> str:
     if docstring is None:
         return ""
     else:
@@ -240,7 +237,7 @@ class RegressionManager:
         self._test_start_sim_time: float
         self.log = _logger
         self._regression_start_time: float
-        self._test_results: List[Dict[str, Any]] = []
+        self._test_results: list[dict[str, Any]] = []
         self.total_tests = 0
         """Total number of tests that will be run or skipped."""
         self.count = 0
@@ -252,11 +249,11 @@ class RegressionManager:
         self.failures = 0
         """The current number of failed tests."""
         self._tearing_down = False
-        self._test_queue: List[Test] = []
-        self._filters: List[re.Pattern[str]] = []
+        self._test_queue: list[Test] = []
+        self._filters: list[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
-        self._included: List[bool]
-        self._sim_failure: Union[SimFailure, None] = None
+        self._included: list[bool]
+        self._sim_failure: SimFailure | None = None
 
         # Setup XUnit
         ###################
@@ -447,7 +444,7 @@ class RegressionManager:
 
         return self._tear_down()
 
-    def _schedule_next_test(self, trigger: Optional[Trigger] = None) -> None:
+    def _schedule_next_test(self, trigger: Trigger | None = None) -> None:
         if trigger is not None:
             # TODO move to Trigger object
             cocotb.sim_phase = cocotb.SimPhase.NORMAL
@@ -690,8 +687,8 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[Exception, None],
-        msg: Union[str, None],
+        result: Exception | None,
+        msg: str | None,
     ) -> None:
         start_hilight = _ANSI.COLOR_PASSED if want_color_output() else ""
         stop_hilight = _ANSI.COLOR_DEFAULT if want_color_output() else ""
@@ -744,8 +741,8 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[Exception, None],
-        msg: Union[str, None],
+        result: Exception | None,
+        msg: str | None,
     ) -> None:
         start_hilight = _ANSI.COLOR_FAILED if want_color_output() else ""
         stop_hilight = _ANSI.COLOR_DEFAULT if want_color_output() else ""
@@ -1026,8 +1023,8 @@ class TestFactory(Generic[F]):
         self.test_function = test_function
         self.args = args
         self.kwargs_constant = kwargs
-        self.kwargs: Dict[
-            Union[str, Sequence[str]], Union[Sequence[Any], Sequence[Sequence[Any]]]
+        self.kwargs: dict[
+            str | Sequence[str], Sequence[Any] | Sequence[Sequence[Any]]
         ] = {}
 
     @overload
@@ -1040,8 +1037,8 @@ class TestFactory(Generic[F]):
 
     def add_option(
         self,
-        name: Union[str, Sequence[str]],
-        optionlist: Union[Sequence[str], Sequence[Sequence[str]]],
+        name: str | Sequence[str],
+        optionlist: Sequence[str] | Sequence[Sequence[str]],
     ) -> None:
         """Add a named option to the test.
 
@@ -1069,13 +1066,13 @@ class TestFactory(Generic[F]):
     def generate_tests(
         self,
         *,
-        prefix: Optional[str] = None,
-        postfix: Optional[str] = None,
-        name: Optional[str] = None,
-        timeout_time: Optional[float] = None,
+        prefix: str | None = None,
+        postfix: str | None = None,
+        name: str | None = None,
+        timeout_time: float | None = None,
         timeout_unit: str = "steps",
         expect_fail: bool = False,
-        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+        expect_error: type[Exception] | Sequence[type[Exception]] = (),
         skip: bool = False,
         stage: int = 0,
         _expect_sim_failure: bool = False,
@@ -1173,7 +1170,7 @@ class TestFactory(Generic[F]):
             doc: str = "Automatically generated test\n\n"
 
             # preprocess testoptions to split tuples
-            testoptions_split: Dict[str, Sequence[Any]] = {}
+            testoptions_split: dict[str, Sequence[Any]] = {}
             for optname, optvalue in testoptions.items():
                 if isinstance(optname, str):
                     optvalue = cast(Sequence[Any], optvalue)
@@ -1195,12 +1192,12 @@ class TestFactory(Generic[F]):
                 else:
                     doc += f"\t{optname}: {repr(optvalue)}\n"
 
-            kwargs: Dict[str, Any] = {}
+            kwargs: dict[str, Any] = {}
             kwargs.update(self.kwargs_constant)
             kwargs.update(testoptions_split)
 
             @functools.wraps(self.test_function)
-            async def _my_test(dut, kwargs: Dict[str, Any] = kwargs) -> None:
+            async def _my_test(dut, kwargs: dict[str, Any] = kwargs) -> None:
                 await self.test_function(dut, *self.args, **kwargs)
 
             _my_test.__doc__ = doc

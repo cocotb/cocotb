@@ -27,6 +27,8 @@
 
 """Utilities for implementors."""
 
+from __future__ import annotations
+
 import inspect
 import os
 import sys
@@ -40,15 +42,11 @@ from types import TracebackType
 from typing import (
     Any,
     Callable,
-    Dict,
     Iterable,
-    List,
-    Optional,
     Sequence,
     Tuple,
     Type,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -63,7 +61,7 @@ class ParameterizedSingletonMetaclass(ABCMeta):
     __singleton_key__: Callable[..., Any]
 
     def __init__(
-        cls, name: str, bases: Sequence[Type[object]], dct: Dict[str, Any]
+        cls, name: str, bases: Sequence[type[object]], dct: dict[str, Any]
     ) -> None:
         # Attach a lookup table to this class.
         # Weak such that if the instance is no longer referenced, it can be
@@ -113,26 +111,26 @@ ExceptionTuple = Tuple[
 
 @overload
 def remove_traceback_frames(
-    tb_or_exc: ExceptionTuple, frame_names: List[str]
+    tb_or_exc: ExceptionTuple, frame_names: list[str]
 ) -> ExceptionTuple: ...
 
 
 @overload
 def remove_traceback_frames(
-    tb_or_exc: BaseException, frame_names: List[str]
+    tb_or_exc: BaseException, frame_names: list[str]
 ) -> BaseException: ...
 
 
 @overload
 def remove_traceback_frames(
-    tb_or_exc: TracebackType, frame_names: List[str]
+    tb_or_exc: TracebackType, frame_names: list[str]
 ) -> TracebackType: ...
 
 
 def remove_traceback_frames(
-    tb_or_exc: Union[ExceptionTuple, BaseException, TracebackType],
-    frame_names: List[str],
-) -> Union[ExceptionTuple, BaseException, TracebackType]:
+    tb_or_exc: ExceptionTuple | BaseException | TracebackType,
+    frame_names: list[str],
+) -> ExceptionTuple | BaseException | TracebackType:
     """
     Strip leading frames from a traceback
 
@@ -169,8 +167,8 @@ def remove_traceback_frames(
 
 
 def walk_coro_stack(
-    coro: "types.CoroutineType[Any, Any, Any]",
-) -> Iterable[Tuple[types.FrameType, int]]:
+    coro: types.CoroutineType[Any, Any, Any],
+) -> Iterable[tuple[types.FrameType, int]]:
     """Walk down the coroutine stack, starting at *coro*.
 
     Args:
@@ -179,7 +177,7 @@ def walk_coro_stack(
     Yields:
         Frame and line number of each frame in the coroutine.
     """
-    c: Optional[types.CoroutineType[Any, Any, Any]] = coro
+    c: types.CoroutineType[Any, Any, Any] | None = coro
     while c is not None:
         try:
             f = c.cr_frame
@@ -192,7 +190,7 @@ def walk_coro_stack(
 
 
 def extract_coro_stack(
-    coro: "types.CoroutineType[Any, Any, Any]", limit: Optional[int] = None
+    coro: types.CoroutineType[Any, Any, Any], limit: int | None = None
 ) -> traceback.StackSummary:
     r"""Create a list of pre-processed entries from the coroutine stack.
 
@@ -238,7 +236,7 @@ class DocEnum(Enum):
     as recommended by the ``enum_tools`` documentation.
     """
 
-    def __new__(cls: Type[EnumT], value: Any, doc: Optional[str] = None) -> EnumT:
+    def __new__(cls: type[EnumT], value: Any, doc: str | None = None) -> EnumT:
         # super().__new__() assumes the value is already an enum value
         # so we side step that and create a raw object and fill in _value_
         self = object.__new__(cls)

@@ -24,6 +24,7 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from __future__ import annotations
 
 import collections.abc
 import enum
@@ -35,14 +36,10 @@ from logging import Logger
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
     Iterable,
     Iterator,
-    Optional,
     Sequence,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -54,9 +51,7 @@ from cocotb._deprecation import deprecated
 from cocotb.types import Array, Logic, LogicArray, Range
 
 
-def _write_now(
-    _: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
-) -> None:
+def _write_now(_: ValueObjectBase[Any, Any], f: Callable[..., None], args: Any) -> None:
     f(*args)
 
 
@@ -66,7 +61,7 @@ else:
     import cocotb
 
     def _inertial_write(
-        handle: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
+        handle: ValueObjectBase[Any, Any], f: Callable[..., None], args: Any
     ) -> None:
         cocotb._scheduler_inst._schedule_write(handle, f, args)
 
@@ -78,7 +73,7 @@ class _Limits(enum.IntEnum):
 
 
 @lru_cache(maxsize=None)
-def _value_limits(n_bits: int, limits: _Limits) -> Tuple[int, int]:
+def _value_limits(n_bits: int, limits: _Limits) -> tuple[int, int]:
     """Calculate min/max for given number of bits and limits class"""
     if limits == _Limits.SIGNED_NBIT:
         min_val = -(2 ** (n_bits - 1))
@@ -109,7 +104,7 @@ class SimHandleBase(ABC):
     """
 
     @abstractmethod
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         self._handle = handle
         self._path: str = self._name if path is None else path
         """The path to this handle, or its name if this is the root handle.
@@ -245,9 +240,9 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     """
 
     @abstractmethod
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         super().__init__(handle, path)
-        self._sub_handles: Dict[KeyType, SimHandleBase] = {}
+        self._sub_handles: dict[KeyType, SimHandleBase] = {}
 
     def _keys(self) -> Iterable[KeyType]:
         """Iterate over the keys (name or index) of the child objects.
@@ -265,7 +260,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         self._discover_all()
         return self._sub_handles.values()
 
-    def _items(self) -> Iterable[Tuple[KeyType, SimHandleBase]]:
+    def _items(self) -> Iterable[tuple[KeyType, SimHandleBase]]:
         """Iterate over ``(key, object)`` tuples of child objects.
 
         :meta public:
@@ -327,7 +322,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         return sub_handle
 
     @abstractmethod
-    def _get_handle_by_key(self, key: KeyType) -> Optional[simulator.gpi_sim_hdl]:
+    def _get_handle_by_key(self, key: KeyType) -> simulator.gpi_sim_hdl | None:
         """Get child object by key from the simulator.
 
         Args:
@@ -428,7 +423,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
         assert len(dut.some_module) == total
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         super().__init__(handle, path)
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -488,7 +483,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
     def _sub_handle_key(self, name: str) -> str:
         return name.rsplit(".", 1)[-1]
 
-    def _get_handle_by_key(self, key: str) -> Optional[simulator.gpi_sim_hdl]:
+    def _get_handle_by_key(self, key: str) -> simulator.gpi_sim_hdl | None:
         return self._handle.get_handle_by_name(key)
 
 
@@ -528,7 +523,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
         assert len(dut.gen_pipe_stage) == len(dut.gen_pipe_stages.range)
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _sub_handle_key(self, name: str) -> int:
@@ -552,7 +547,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
     def _child_path(self, key: int) -> str:
         return f"{self._path}[{key}]"
 
-    def _get_handle_by_key(self, key: int) -> Optional[simulator.gpi_sim_hdl]:
+    def _get_handle_by_key(self, key: int) -> simulator.gpi_sim_hdl | None:
         return self._handle.get_handle_by_index(key)
 
     def __getitem__(self, key: int) -> SimHandleBase:
@@ -623,9 +618,9 @@ class Release:
 
 
 def _map_action_obj_to_value_action_enum_pair(
-    handle: "ValueObjectBase[Any, Any]",
-    value: Union[ValueT, Deposit[ValueT], Force[ValueT], Freeze, Release],
-) -> Tuple[ValueT, _GPISetAction]:
+    handle: ValueObjectBase[Any, Any],
+    value: ValueT | Deposit[ValueT] | Force[ValueT] | Freeze | Release,
+) -> tuple[ValueT, _GPISetAction]:
     if isinstance(value, Deposit):
         return value.value, _GPISetAction.DEPOSIT
     elif isinstance(value, Force):
@@ -672,7 +667,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
 
     def set(
         self,
-        value: Union[ValueSetT, Deposit[ValueSetT], Force[ValueSetT], Freeze, Release],
+        value: ValueSetT | Deposit[ValueSetT] | Force[ValueSetT] | Freeze | Release,
     ) -> None:
         """Assign the value to this simulation object at the end of the current delta cycle.
 
@@ -699,7 +694,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
 
     def setimmediatevalue(
         self,
-        value: Union[ValueSetT, Deposit[ValueSetT], Force[ValueSetT], Freeze, Release],
+        value: ValueSetT | Deposit[ValueSetT] | Force[ValueSetT] | Freeze | Release,
     ) -> None:
         """Assign a value to this simulation object immediately.
 
@@ -727,7 +722,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
         value: ValueSetT,
         action: _GPISetAction,
         schedule_write: Callable[
-            ["ValueObjectBase[Any, Any]", Callable[..., None], Sequence[Any]], None
+            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
     ) -> None:
         """Schedule a write of the given value to a simulator object.
@@ -779,9 +774,9 @@ class ArrayObject(
 
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         super().__init__(handle, path)
-        self._sub_handles: Dict[int, ChildObjectT] = {}
+        self._sub_handles: dict[int, ChildObjectT] = {}
 
     @property
     def value(self) -> Array[ElemValueT]:
@@ -828,7 +823,7 @@ class ArrayObject(
 
     def _set_value(
         self,
-        value: Union[Array[ElemValueT], Sequence[ElemValueT]],
+        value: Array[ElemValueT] | Sequence[ElemValueT],
         action: _GPISetAction,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
@@ -886,12 +881,12 @@ class LogicObject(
         * ``float``
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
         self,
-        value: Union[LogicArray, Logic, int, str],
+        value: LogicArray | Logic | int | str,
         action: _GPISetAction,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
@@ -1008,7 +1003,7 @@ class RealObject(ValueObjectBase[float, float]):
     This type is used when a ``real`` object in VHDL or ``float`` object in Verilog is seen.
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
@@ -1058,7 +1053,7 @@ class EnumObject(ValueObjectBase[int, int]):
     This type is used when an enumerated-type simulation object is seen that isn't a "logic" or similar type.
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
@@ -1131,7 +1126,7 @@ class IntegerObject(ValueObjectBase[int, int]):
     Objects that use this type are assumed to be two's complement 32-bit integers with 2-state (``0`` and ``1``) bits.
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
@@ -1192,7 +1187,7 @@ class StringObject(
     This type is used when a ``string`` (VHDL or Verilog) simulation object is seen.
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
@@ -1271,12 +1266,12 @@ _ConcreteHandleTypes = Union[
 ]
 
 
-_handle2obj: Dict[
+_handle2obj: dict[
     simulator.gpi_sim_hdl,
     _ConcreteHandleTypes,
 ] = {}
 
-_type2cls: Dict[int, Type[_ConcreteHandleTypes]] = {
+_type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     simulator.MODULE: HierarchyObject,
     simulator.STRUCTURE: HierarchyObject,
     simulator.PACKED_STRUCTURE: LogicObject,
@@ -1292,9 +1287,7 @@ _type2cls: Dict[int, Type[_ConcreteHandleTypes]] = {
 }
 
 
-def SimHandle(
-    handle: simulator.gpi_sim_hdl, path: Optional[str] = None
-) -> SimHandleBase:
+def SimHandle(handle: simulator.gpi_sim_hdl, path: str | None = None) -> SimHandleBase:
     """Factory function to create the correct type of `SimHandle` object.
 
     Args:

@@ -11,6 +11,8 @@ These are for cocotb-internal use only.
     These classes silently allow comparing versions of different simulators.
 """
 
+from __future__ import annotations
+
 from cocotb._vendor.distutils_version import LooseVersion
 
 

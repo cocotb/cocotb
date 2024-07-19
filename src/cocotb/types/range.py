@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import typing
 
 
@@ -80,8 +82,8 @@ class Range(typing.Sequence[int]):
     def __init__(
         self,
         left: int,
-        direction: typing.Union[int, str, None] = None,
-        right: typing.Union[int, None] = None,
+        direction: int | str | None = None,
+        right: int | None = None,
     ) -> None:
         start = left
         stop: int
@@ -100,7 +102,7 @@ class Range(typing.Sequence[int]):
         self._range = range(start, stop, step)
 
     @classmethod
-    def from_range(cls, range: range) -> "Range":
+    def from_range(cls, range: range) -> Range:
         """Convert :class:`range` to :class:`Range`."""
         return cls(
             left=range.start,
@@ -135,10 +137,10 @@ class Range(typing.Sequence[int]):
         pass  # pragma: no cover
 
     @typing.overload
-    def __getitem__(self, item: slice) -> "Range":
+    def __getitem__(self, item: slice) -> Range:
         pass  # pragma: no cover
 
-    def __getitem__(self, item: typing.Union[int, slice]) -> typing.Union[int, "Range"]:
+    def __getitem__(self, item: int | slice) -> int | Range:
         if isinstance(item, int):
             return self._range[item]
         elif isinstance(item, slice):

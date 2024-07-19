@@ -1,8 +1,10 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, Iterator, Optional, TypeVar, Union, overload
+from typing import Generic, Iterable, Iterator, TypeVar, overload
 
 T = TypeVar("T")
 
@@ -57,10 +59,10 @@ class ArrayLike(ABC, Generic[T]):
     def __getitem__(self, item: int) -> T: ...
 
     @overload
-    def __getitem__(self, item: slice) -> "ArrayLike[T]": ...
+    def __getitem__(self, item: slice) -> ArrayLike[T]: ...
 
     @abstractmethod
-    def __getitem__(self, item: Union[int, slice]) -> Union[T, "ArrayLike[T]"]: ...
+    def __getitem__(self, item: int | slice) -> T | ArrayLike[T]: ...
 
     @overload
     def __setitem__(self, item: int, value: T) -> None: ...
@@ -69,15 +71,13 @@ class ArrayLike(ABC, Generic[T]):
     def __setitem__(self, item: slice, value: Iterable[T]) -> None: ...
 
     @abstractmethod
-    def __setitem__(
-        self, item: Union[int, slice], value: Union[T, Iterable[T]]
-    ) -> None: ...
+    def __setitem__(self, item: int | slice, value: T | Iterable[T]) -> None: ...
 
     def index(
         self,
         value: T,
-        start: Optional[int] = None,
-        stop: Optional[int] = None,
+        start: int | None = None,
+        stop: int | None = None,
     ) -> int:
         """
         Return index of first occurrence of *value*.

@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import importlib
 import os
 from functools import reduce
 from types import ModuleType
-from typing import Callable, Tuple
+from typing import Callable
 
 
-def load_entry() -> Tuple[ModuleType, Callable]:
+def load_entry() -> tuple[ModuleType, Callable]:
     """Gather entry point information by parsing :envvar:`PYGPI_ENTRY_POINT`."""
     entry_point_str = os.environ.get(
         "PYGPI_ENTRY_POINT", "cocotb:_initialise_testbench"

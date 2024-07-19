@@ -3,6 +3,8 @@
 Simple script to combine JUnit test results into a single XML file.
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
