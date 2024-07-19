@@ -566,7 +566,7 @@ class _GPISetAction(enum.IntEnum):
     RELEASE = 2
 
 
-class _GPIResolveX(DocEnum):
+class GPIResolveX(DocEnum):
     """This specifies what to do with non-0/1 bits when retreiving :class:`bytes` from the simulator as 2-state data."""
 
     ERROR = (0, """Raise a ValueError.""")
@@ -1028,9 +1028,9 @@ class LogicObject(
 
         :setter:
             Assigns a value at the end of the current delta cycle.
-            A :class:`~cocotb.types.LogicArray`, :class:`str`, :class:`bytes, :class:`bytearray` or :class:`int` can be used to set the value.
+            A :class:`~cocotb.types.LogicArray`, :class:`str`, :class:`bytes`, :class:`bytearray` or :class:`int` can be used to set the value.
             When a :class:`str` or :class:`int` is given, it is as if it is first converted a :class:`~cocotb.types.LogicArray`.
-            When a :class:`bytes` or :class:`bytearray` is given it is treated as 2-state data and passed directly to the GPI as-is.
+            When a :class:`bytes` or :class:`bytearray` is given it is treated as 2-state data and passed directly to the GPI.
 
         Raises:
             TypeError: If assignment is given a type other than :class:`~cocotb.types.LogicArray`, :class:`int`, or :class:`str`.
@@ -1056,7 +1056,7 @@ class LogicObject(
     def value(self, value: LogicArray) -> None:
         self.set(value)
 
-    def value_as_bytes(self, resolve_x: _GPIResolveX = _GPIResolveX.ERROR) -> bytes:
+    def value_as_bytes(self, resolve_x: GPIResolveX = GPIResolveX.ERROR) -> bytes:
         """Returns 2-state data from the simulator encoded as :class:`bytes`.
 
         Args:

@@ -292,6 +292,8 @@ Simulation Object Handles
     :synopsis: Classes for simulation objects.
     :exclude-members: Deposit, Force, Freeze, Release
     :special-members: __len__
+
+.. autoclass:: GPIResolveX
 ..
    Excluding the Assignment Methods that are getting their own section below
 

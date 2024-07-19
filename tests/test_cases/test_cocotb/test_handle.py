@@ -14,7 +14,7 @@ from enum import Enum, auto
 import pytest
 
 import cocotb
-from cocotb.handle import StringObject, _GPIResolveX, _Limits
+from cocotb.handle import GPIResolveX, StringObject, _Limits
 from cocotb.result import TestSuccess
 from cocotb.triggers import Timer
 from cocotb.types import Logic, LogicArray
@@ -248,7 +248,7 @@ async def test_bytes_bad_size(dut, signal, too_big):
 @cocotb.test(skip=SIM_NAME.startswith(("verilator", "ghdl")))
 @cocotb.parameterize(
     signal=signals,
-    resolve_x=list(_GPIResolveX),
+    resolve_x=list(GPIResolveX),
 )
 async def test_bytes_resolve_x(dut, signal, resolve_x):
     """Test resolving non 0 / 1 values when getting bytes."""
@@ -258,17 +258,17 @@ async def test_bytes_resolve_x(dut, signal, resolve_x):
     handle.value = xs
     await Timer(1, "ns")
 
-    if resolve_x == _GPIResolveX.ERROR:
+    if resolve_x == GPIResolveX.ERROR:
         with pytest.raises(ValueError):
             handle.value_as_bytes(resolve_x)
     else:
         bytes_value = handle.value_as_bytes(resolve_x)
         bytes_int = int.from_bytes(bytes_value, byteorder=sys.byteorder)
-        if resolve_x == _GPIResolveX.ZEROS:
+        if resolve_x == GPIResolveX.ZEROS:
             assert bytes_int == 0
-        elif resolve_x == _GPIResolveX.ONES:
+        elif resolve_x == GPIResolveX.ONES:
             assert bytes_int == 2**n_bits - 1
-        elif resolve_x == _GPIResolveX.RANDOM:
+        elif resolve_x == GPIResolveX.RANDOM:
             assert bytes_value != handle.value_as_bytes(resolve_x)
         else:
             raise RuntimeError(f"Test needs to support resolve_x={resolve_x}")
