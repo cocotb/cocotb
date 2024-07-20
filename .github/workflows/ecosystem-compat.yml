@@ -82,7 +82,7 @@ jobs:
           uses: actions/checkout@v4
           with:
             repository: pyuvm/pyuvm
-            path: pyuvm
+
             
         - name: Install the release version of cocotb-coverage
           run: pip3 install pyuvm==3.0.0
