@@ -67,6 +67,9 @@ jobs:
           with:
             python-version: "3.11"
   
+        - name: Install GHDL
+          run: sudo apt-get install -y --no-install-recommends ghdl
+
         - name: Install Icarus Verilog
           run: sudo apt-get install -y --no-install-recommends iverilog
   
