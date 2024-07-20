@@ -126,6 +126,7 @@ jobs:
         sudo make install
     - name: Set up Icarus (Windows - source)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
+      timeout-minutes: 5
       run: |
         conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain
         git clone https://github.com/steveicarus/iverilog.git
@@ -211,7 +212,6 @@ jobs:
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
       continue-on-error: ${{matrix.may-fail || false}}
-      timeout-minutes: 20
       # Virtual environments don't work on Windows with cocotb. Avoid using them
       # in nox testing.
       run: |
@@ -236,7 +236,7 @@ jobs:
       id: unixtesting
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       continue-on-error: ${{matrix.may-fail || false}}
-      timeout-minutes: 30
+      timeout-minutes: 40
       run: |
         if [ "${{matrix.self-hosted}}" == "true" ]; then
           module load "${{ matrix.sim-version }}"
