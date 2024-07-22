@@ -86,7 +86,6 @@ jobs:
           with:
             repository: pyuvm/pyuvm
 
-            
         - name: Install the release version of cocotb-coverage
           run: pip3 install pyuvm==3.0.0
 
