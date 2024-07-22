@@ -41,12 +41,12 @@ import threading
 import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
-from typing import Any, Callable, Dict, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Union
 
 import cocotb
+import cocotb._write_scheduler
 from cocotb import _outcomes, _py_compat
 from cocotb._utils import remove_traceback_frames
-from cocotb.handle import SimHandleBase
 from cocotb.result import TestSuccess
 from cocotb.task import Task
 from cocotb.triggers import (
@@ -225,14 +225,6 @@ class Scheduler:
         In that mix of functions, the :attr:`_test_complete_cb` callback is called to inform whomever (the regression_manager) the test finished.
         The scheduler also is responsible for starting the next Test in the Normal phase by priming a ``Timer(1)`` with the second half of test completion handling.
 
-        Because many simulators do not handle inertial writes in a consistent or useful way,
-        this scheduler also has a special support for scheduling writes into the ReadWrite phase.
-        This is built into the scheduler using :attr:`_write_calls`, :attr:`_write_task`, and :attr:`_writes_pending` attributes,
-        and the :meth:`_do_writes` and :meth:`_schedule_writes` methods.
-        This is necessary since we require the task that applies the writes
-        (:attr:`_write_task` is the Task :meth:`_do_writes`)
-        to be scheduled before all other tasks in the ReadWrite phase.
-
         The scheduler is currently where simulator time phase is tracked.
         This is mostly because this is where :meth:`_sim_react` is most conveniently located.
         The scheduler can't currently be made independent of simulator-specific code because of the above special cases which have to respect simulator phasing.
@@ -257,20 +249,11 @@ class Scheduler:
         if _debug:
             self.log.setLevel(logging.DEBUG)
 
-        # Use OrderedDict here for deterministic behavior (gh-934)
-
         # A dictionary of pending tasks for each trigger,
         # indexed by trigger
         self._trigger2tasks: Dict[Trigger, list[Task]] = (
             _py_compat.insertion_ordered_dict()
         )
-
-        # A dictionary of pending (write_func, args), keyed by handle.
-        # Writes are applied oldest to newest (least recently used).
-        # Only the last scheduled write to a particular handle in a timestep is performed.
-        self._write_calls: Dict[
-            SimHandleBase, Tuple[Callable[..., None], Sequence[Any]]
-        ] = OrderedDict()
 
         self._pending_tasks: OrderedDict[Task[Any], _outcomes.Outcome] = OrderedDict()
         self._pending_threads = []
@@ -282,21 +265,6 @@ class Scheduler:
 
         self._current_task = None
 
-        self._write_task = None
-        self._writes_pending = Event()
-
-    async def _do_writes(self):
-        """An internal task that performs pending writes."""
-        while True:
-            await self._writes_pending.wait()
-
-            await self._read_write
-
-            while self._write_calls:
-                _, (func, args) = self._write_calls.popitem(last=False)
-                func(*args)
-            self._writes_pending.clear()
-
     def _handle_termination(self) -> None:
         """
         Handle a termination that causes us to move onto the next test.
@@ -307,13 +275,6 @@ class Scheduler:
             raise InternalError("_handle_termination called with an incomplete test")
         elif _debug:
             self.log.debug("Test terminating...")
-
-        # clean up write scheduler
-        if self._write_task is not None:
-            self._write_task.kill()
-            self._write_task = None
-        self._write_calls.clear()
-        self._writes_pending.clear()
 
         # cleanup triggers and tasks
         self._cleanup()
@@ -352,6 +313,10 @@ class Scheduler:
                 cocotb.sim_phase = cocotb.SimPhase.READ_ONLY
             elif isinstance(trigger, GPITrigger):
                 cocotb.sim_phase = cocotb.SimPhase.NORMAL
+
+            # apply inertial writes if ReadWrite
+            if trigger is self._read_write:
+                cocotb._write_scheduler.apply_scheduled_writes()
 
             self._react(trigger)
             self._event_loop()
@@ -486,41 +451,12 @@ class Scheduler:
                 )
                 self._abort_test(e)
 
-    def _schedule_write(
-        self,
-        handle: SimHandleBase,
-        write_func: Callable[..., None],
-        args: Sequence[Any],
-    ) -> None:
-        """Queue `write_func` to be called on the next ReadWrite trigger."""
-        if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
-            raise Exception(
-                f"Write to object {handle._name} was scheduled during a read-only sync phase."
-            )
-
-        # TODO: we should be able to better keep track of when this needs to
-        # be scheduled
-        if self._write_task is None:
-            self._write_task = self.start_soon(self._do_writes())
-
-        if handle in self._write_calls:
-            del self._write_calls[handle]
-        self._write_calls[handle] = (write_func, args)
-        self._writes_pending.set()
-
     def _resume_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
         """Schedule `task` to be resumed when `trigger` fires."""
         task._trigger = trigger
 
         trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
-        if task is self._write_task:
-            # Our internal write task always runs before any user tasks.
-            # This preserves the behavior prior to the refactoring of
-            # putting the writes in this task.
-            trigger_tasks.insert(0, task)
-        else:
-            # Everything else joins the back of the queue
-            trigger_tasks.append(task)
+        trigger_tasks.append(task)
 
         if not trigger._primed:
             if trigger_tasks != [task]:
