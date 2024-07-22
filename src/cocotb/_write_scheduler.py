@@ -57,7 +57,7 @@ def schedule_write(
     write_func: Callable[..., None],
     args: Sequence[Any],
 ) -> None:
-    """Queue `write_func` to be called on the next ReadWrite trigger."""
+    """Queue *write_func* to be called on the next ``ReadWrite`` trigger."""
     if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
         raise Exception(
             f"Write to object {handle._name} was scheduled during a read-only sync phase."
