@@ -59,7 +59,7 @@ jobs:
           make -k -C tests
 
   pyuvm:
-      name: Test pyuvm 3.0.0
+      name: Test pyuvm 3+
       runs-on: ubuntu-latest
       steps:
         - name: Set up Python
@@ -87,7 +87,7 @@ jobs:
             repository: pyuvm/pyuvm
 
         - name: Install the release version of cocotb-coverage
-          run: pip3 install pyuvm==3.0.0
+          run: pip3 install pyuvm>=3.0.0
 
         - name: Run tests
             # Don't run tests through tox (as present in cocotb-coverage) to be able
