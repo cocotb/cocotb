@@ -66,18 +66,18 @@ jobs:
           uses: actions/setup-python@v5
           with:
             python-version: "3.11"
-  
+
         - name: Install GHDL
           run: sudo apt-get install -y --no-install-recommends ghdl
 
         - name: Install Icarus Verilog
           run: sudo apt-get install -y --no-install-recommends iverilog
-  
+
         - name: Checkout cocotb repository
           uses: actions/checkout@v4
           with:
             path: cocotb
-  
+
         - name: Install the development version of cocotb
           run: pip3 install ./cocotb
 
