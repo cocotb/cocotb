@@ -77,6 +77,7 @@ def resume(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., Re
             thread that was not started with :class:`cocotb.bridge`.
 
     .. versionchanged:: 2.0
+        Renamed from ``function``.
         No longer implemented as a type.
         The ``log`` attribute is no longer available.
     """
@@ -119,6 +120,7 @@ def bridge(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Res
         *func* as a :term:`coroutine function`.
 
     .. versionchanged:: 2.0
+        Renamed from ``external``.
         No longer implemented as a type.
         The ``log`` attribute is no longer available.
     """
