@@ -475,9 +475,9 @@ class RegressionManager:
 
         # Setup simulator finalization
         simulator.stop_simulator()
+        cocotb._profiling.finalize()
         cocotb._stop_user_coverage()
         cocotb._stop_library_coverage()
-        cocotb._profiling.finalize()
 
     def _test_complete(self) -> None:
         """Callback given to the scheduler, to be called when the current test completes.
