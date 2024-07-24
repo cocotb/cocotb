@@ -149,7 +149,7 @@ class Runner(ABC):
 
         self.env["PATH"] += os.pathsep + str(cocotb_tools.config.libs_dir)
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
-        self.env["PYTHONHOME"] = sys.prefix
+        self.env["PYGPI_PYTHON_BIN"] = sys.executable
         self.env["COCOTB_TOPLEVEL"] = self.sim_hdl_toplevel
         self.env["COCOTB_TEST_MODULES"] = self.test_module
         self.env["TOPLEVEL_LANG"] = self.hdl_toplevel_lang
