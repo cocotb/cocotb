@@ -49,8 +49,8 @@ from ._version import __version__
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import (  # isort: skip # noqa: F401
-    external,
-    function,
+    bridge,
+    resume,
     test,
     parameterize,
 )

@@ -517,7 +517,7 @@ Notable changes and bug fixes
 - ``DeprecationWarning``\ s are now shown in the output by default.
 - Tracebacks are now preserved correctly for exceptions in Python 2.
   The tracebacks in all Python versions are now a little shorter.
-- :func:`cocotb.external` and :func:`cocotb.function` now work more reliably and with fewer race conditions.
+- :func:`cocotb.bridge` and :func:`cocotb.resume` now work more reliably and with fewer race conditions.
 - A failing ``assert`` will be considered a test failure. Previously, it was considered a test *error*.
 - :meth:`~cocotb.handle.NonConstantObject.drivers` and :meth:`~cocotb.handle.NonConstantObject.loads` now also work correctly in Python 3.7 onwards.
 - :class:`~cocotb.triggers.Timer` can now be used with :class:`decimal.Decimal` instances, allowing constructs like ``Timer(Decimal("1e-9"), units="sec")`` as an alternate spelling for ``Timer(100, units="us")``. (:pr:`1114`)

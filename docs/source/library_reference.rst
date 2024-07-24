@@ -106,6 +106,13 @@ Task Management
 .. autoclass:: cocotb.task.Task
     :members:
 
+Dealing with non-``async`` code
+-------------------------------
+
+.. autofunction:: cocotb.bridge
+
+.. autofunction:: cocotb.resume
+
 HDL Datatypes
 -------------
 

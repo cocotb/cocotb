@@ -30,4 +30,4 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE = test_external
+MODULE = test_async_bridge
