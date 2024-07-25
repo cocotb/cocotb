@@ -224,6 +224,7 @@ ENVS = [
         "os": "macos-13",
         "python-version": "3.8",
         "group": "ci",
+        "may-fail": True,  # TODO remove once this is bumped to v5.028
     },
     # Icarus windows from source
     {
