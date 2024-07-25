@@ -37,6 +37,7 @@ from enum import auto
 from types import SimpleNamespace
 from typing import Any, Dict, List, Union, cast
 
+import cocotb._profiling
 import cocotb.handle
 import cocotb.task
 import cocotb.triggers
@@ -294,6 +295,7 @@ def _sim_event(msg: str) -> None:
         regression_manager._fail_simulation(msg)
     else:
         log.error(msg)
+        cocotb._profiling.finalize()
         _stop_user_coverage()
         _stop_library_coverage()
 

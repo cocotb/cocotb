@@ -57,6 +57,7 @@ from typing import (
 )
 
 import cocotb
+import cocotb._profiling
 import cocotb._scheduler
 import cocotb._write_scheduler
 from cocotb import _ANSI, simulator
@@ -474,6 +475,7 @@ class RegressionManager:
 
         # Setup simulator finalization
         simulator.stop_simulator()
+        cocotb._profiling.finalize()
         cocotb._stop_user_coverage()
         cocotb._stop_library_coverage()
 

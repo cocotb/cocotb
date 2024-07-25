@@ -46,6 +46,7 @@ from typing import Any, Callable, Dict, Union
 import cocotb
 import cocotb._write_scheduler
 from cocotb import _outcomes, _py_compat
+from cocotb._profiling import profiling_context
 from cocotb._utils import remove_traceback_frames
 from cocotb.result import TestSuccess
 from cocotb.task import Task
@@ -59,14 +60,6 @@ from cocotb.triggers import (
     Trigger,
 )
 
-# Debug mode controlled by environment variables
-_profiling = "COCOTB_ENABLE_PROFILING" in os.environ
-if _profiling:
-    import cProfile
-    import pstats
-
-    _profile = cProfile.Profile()
-
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
@@ -74,16 +67,6 @@ _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 class InternalError(BaseException):
     """An error internal to scheduler. If you see this, report a bug!"""
-
-
-class profiling_context:
-    """Context manager that profiles its contents"""
-
-    def __enter__(self):
-        _profile.enable()
-
-    def __exit__(self, *excinfo):
-        _profile.disable()
 
 
 class external_state:
@@ -281,11 +264,6 @@ class Scheduler:
         self._terminate = False
         self._test = None
 
-        # dump profiling
-        if _profiling:
-            ps = pstats.Stats(_profile).sort_stats("cumulative")
-            ps.dump_stats("test_profile.pstat")
-
         # call complete cb, may schedule another test
         self._test_complete_cb()
 
@@ -297,12 +275,7 @@ class Scheduler:
         It must also track the current simulator time phase,
         and start the unstarted event loop.
         """
-        if _profiling:
-            ctx = profiling_context()
-        else:
-            ctx = _py_compat.nullcontext()
-
-        with ctx:
+        with profiling_context:
             # TODO: move state tracking to global variable
             # and handle this via some kind of trigger-specific Python callback
             if trigger is self._read_write:
