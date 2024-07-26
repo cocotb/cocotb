@@ -34,21 +34,17 @@ also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
 
-import inspect
 import logging
 import os
 import threading
 from collections import OrderedDict
-from collections.abc import Coroutine
-from typing import Any, Callable, Dict, Union
+from typing import Any, Callable, Dict
 
 import cocotb
 import cocotb._write_scheduler
 from cocotb import _outcomes, _py_compat
 from cocotb._exceptions import InternalError
 from cocotb._profiling import profiling_context
-from cocotb._utils import remove_traceback_frames
-from cocotb.result import TestSuccess
 from cocotb.task import Task
 from cocotb.triggers import (
     Event,
@@ -237,7 +233,6 @@ class Scheduler:
         self._pending_events = []  # Events we need to call set on once we've unwound
 
         self._terminate = False
-        self._test = None
         self._main_thread = threading.current_thread()
 
         self._current_task = None
@@ -246,19 +241,14 @@ class Scheduler:
         """
         Handle a termination that causes us to move onto the next test.
         """
-        if self._test is None:
-            raise InternalError("_handle_termination called with no active test")
-        elif self._test._outcome is None:
-            raise InternalError("_handle_termination called with an incomplete test")
-        elif _debug:
-            self.log.debug("Test terminating...")
+        if _debug:
+            self.log.debug("Scheduler terminating...")
 
         # cleanup triggers and tasks
         self._cleanup()
 
         # clear state
         self._terminate = False
-        self._test = None
 
         # call complete cb, may schedule another test
         self._test_complete_cb()
@@ -511,70 +501,6 @@ class Scheduler:
 
         return wrapper()
 
-    @staticmethod
-    def create_task(coroutine: Any) -> Task:
-        """Check to see if the given object is a Task or coroutine and if so, return it as a Task."""
-
-        if isinstance(coroutine, Task):
-            return coroutine
-        if isinstance(coroutine, Coroutine):
-            return Task(coroutine)
-        if inspect.iscoroutinefunction(coroutine):
-            raise TypeError(
-                f"Coroutine function {coroutine} should be called prior to being "
-                "scheduled."
-            )
-        if inspect.isasyncgen(coroutine):
-            raise TypeError(
-                f"{coroutine.__qualname__} is an async generator, not a coroutine. "
-                "You likely used the yield keyword instead of await."
-            )
-        raise TypeError(
-            f"Attempt to add an object of type {type(coroutine)} to the scheduler, which "
-            f"isn't a coroutine: {coroutine!r}\n"
-        )
-
-    def _task_done_callback(self, task: Task[Any]) -> None:
-        try:
-            # throws an error if the background task errored
-            # and no one was monitoring it
-            task._outcome.get()
-        except (TestSuccess, AssertionError) as e:
-            task.log.info("Test stopped by this task")
-            e = remove_traceback_frames(e, ["_task_done_callback", "get"])
-            self._abort_test(e)
-        except BaseException as e:
-            task.log.error("Exception raised by this task")
-            e = remove_traceback_frames(e, ["_task_done_callback", "get"])
-            self._abort_test(e)
-
-    def start_soon(self, task: Union[Coroutine, Task]) -> Task:
-        """
-        Schedule a task to be run concurrently, starting after the current task yields control.
-
-        .. versionadded:: 1.5
-        """
-
-        task = self.create_task(task)
-        task._add_done_callback(self._task_done_callback)
-
-        if _debug:
-            self.log.debug(f"Queueing a new task {task!r}")
-
-        self._queue(task)
-        return task
-
-    def _add_test(self, test_task: Task[None]) -> None:
-        """Called by the regression manager to queue the next test"""
-        if self._test is not None:
-            raise InternalError("Test was added while another was in progress")
-
-        test_task._add_done_callback(lambda task: self.shutdown_soon())
-
-        self._test = test_task
-        self._queue(test_task)
-        self._event_loop()
-
     # This collection of functions parses a trigger out of the object
     # that was yielded by a task, converting `list` -> `Waitable`,
     # `Waitable` -> `Task`, `Task` -> `Trigger`.
@@ -673,25 +599,6 @@ class Scheduler:
                         self._pending_events.append(ext.event)
         finally:
             self._current_task = None
-
-    def _abort_test(self, exc):
-        """Force this test to end early, without executing any cleanup.
-
-        This happens when a background task fails, and is consistent with
-        how the behavior has always been. In future, we may want to behave
-        more gracefully to allow the test body to clean up.
-
-        `exc` is the exception that the test should report as its reason for
-        aborting.
-        """
-        if self._test._outcome is not None:  # pragma: no cover
-            raise InternalError("Outcome already has a value, but is being set again.")
-        outcome = _outcomes.Error(exc)
-        if _debug:
-            self._test.log.debug(f"outcome forced to {outcome}")
-        self._test._outcome = outcome
-        self._test._do_done_callbacks()
-        self._unschedule(self._test)
 
     def _cleanup(self) -> None:
         """Clear up all our state.
