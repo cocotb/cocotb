@@ -38,7 +38,6 @@ import inspect
 import logging
 import os
 import threading
-import warnings
 from collections import OrderedDict
 from collections.abc import Coroutine
 from typing import Any, Callable, Dict, Union
@@ -398,24 +397,6 @@ class Scheduler:
 
         elif _Join(task) in self._trigger2tasks:
             self._react(_Join(task))
-        else:
-            try:
-                # throws an error if the background task errored
-                # and no one was monitoring it
-                task._outcome.get()
-            except (TestSuccess, AssertionError) as e:
-                task.log.info("Test stopped by this task")
-                e = remove_traceback_frames(e, ["_unschedule", "get"])
-                self._abort_test(e)
-            except BaseException as e:
-                task.log.error("Exception raised by this task")
-                e = remove_traceback_frames(e, ["_unschedule", "get"])
-                warnings.warn(
-                    '"Unwatched" tasks that throw exceptions will not cause the test to fail. '
-                    "See issue #2664 for more details.",
-                    FutureWarning,
-                )
-                self._abort_test(e)
 
     def _resume_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
         """Schedule `task` to be resumed when `trigger` fires."""
@@ -556,6 +537,20 @@ class Scheduler:
             f"isn't a coroutine: {coroutine!r}\n"
         )
 
+    def _task_done_callback(self, task: Task[Any]) -> None:
+        try:
+            # throws an error if the background task errored
+            # and no one was monitoring it
+            task._outcome.get()
+        except (TestSuccess, AssertionError) as e:
+            task.log.info("Test stopped by this task")
+            e = remove_traceback_frames(e, ["_task_done_callback", "get"])
+            self._abort_test(e)
+        except BaseException as e:
+            task.log.error("Exception raised by this task")
+            e = remove_traceback_frames(e, ["_task_done_callback", "get"])
+            self._abort_test(e)
+
     def start_soon(self, task: Union[Coroutine, Task]) -> Task:
         """
         Schedule a task to be run concurrently, starting after the current task yields control.
@@ -564,6 +559,7 @@ class Scheduler:
         """
 
         task = self.create_task(task)
+        task._add_done_callback(self._task_done_callback)
 
         if _debug:
             self.log.debug(f"Queueing a new task {task!r}")
