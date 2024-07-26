@@ -45,6 +45,7 @@ from typing import Any, Callable, Dict, Union
 import cocotb
 import cocotb._write_scheduler
 from cocotb import _outcomes, _py_compat
+from cocotb._exceptions import InternalError
 from cocotb._profiling import profiling_context
 from cocotb._utils import remove_traceback_frames
 from cocotb.result import TestSuccess
@@ -62,10 +63,6 @@ from cocotb.triggers import (
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
-
-
-class InternalError(BaseException):
-    """An error internal to scheduler. If you see this, report a bug!"""
 
 
 class external_state:
