@@ -43,7 +43,7 @@ import cocotb.handle
 import cocotb.task
 import cocotb.triggers
 from cocotb._scheduler import Scheduler
-from cocotb._utils import DocEnum, remove_traceback_frames
+from cocotb._utils import DocEnum
 from cocotb.logging import default_config
 from cocotb.regression import RegressionManager, RegressionMode
 from cocotb.result import TestSuccess
@@ -138,81 +138,105 @@ def _setup_logging() -> None:
     log = py_logging.getLogger(__name__)
 
 
-def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:
-    join = cocotb.triggers._Join(task)
-    if join in cocotb._scheduler_inst._trigger2tasks:
-        return
-    try:
-        # throws an error if the background task errored
-        # and no one was monitoring it
-        task._outcome.get()
-    except (TestSuccess, AssertionError) as e:
-        task.log.info("Test stopped by this task")
-        e = remove_traceback_frames(e, ["_task_done_callback", "get"])
-        cocotb.regression_manager._abort_test(e)
-    except BaseException as e:
-        task.log.error("Exception raised by this task")
-        e = remove_traceback_frames(e, ["_task_done_callback", "get"])
-        cocotb.regression_manager._abort_test(e)
+class FailOnException(DocEnum):
+    """Behavior when a :class:`~cocotb.task.Task` finishes with an Exception."""
+
+    ALWAYS = (auto(), "Always fail the test if a Task finishes with an Exception.")
+    NEVER = (auto(), "Never fail the test if a Task finishes with an Exception.")
+    LEGACY = (
+        auto(),
+        r"Only fail the test if a Task finishes with an Exception if there are no other Tasks ``await``\ ing on it to finish.",
+    )
 
 
 def start_soon(
     coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
+    fail_on_exception: FailOnException = FailOnException.LEGACY,
 ) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Schedule a coroutine to be run concurrently.
+    """Schedule a coroutine to be run concurrently.
 
     Note that this is not an ``async`` function,
-    and the new task will not execute until the calling task yields control.
+    and the new Task will not execute until the calling Task yields control.
 
     Args:
-        coro: A task or coroutine to be run.
+        coro: A Task or coroutine to be run concurrently.
+        fail_on_exception: Selects behavior when the Task finishes with an Exception.
 
     Returns:
         The :class:`~cocotb.task.Task` that is scheduled to be run.
 
     .. versionadded:: 1.6.0
+
+    .. versionadded:: 2.0
+        Added the *fail_on_exception* argument.
     """
-    task = create_task(coro)
-    task._add_done_callback(_task_done_callback)
+    task = create_task(coro, fail_on_exception=fail_on_exception)
     cocotb._scheduler_inst._queue(task)
     return task
 
 
 async def start(
     coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
+    fail_on_exception: FailOnException = FailOnException.LEGACY,
 ) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
+    """Schedule a coroutine to be run concurrently, then yield control to allow pending Tasks to execute.
 
-    The calling task will resume execution before control is returned to the simulator.
+    The calling Task will resume execution before control is returned to the simulator,
+    but after *coro* has started.
 
-    When the calling task resumes, the newly scheduled task may have completed,
-    raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
+    .. note::
+        When the calling Task resumes, the newly scheduled Task may have completed,
+        raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
 
     Args:
-        coro: A task or coroutine to be run.
+        coro: A Task or coroutine to be run concurrently.
+        fail_on_exception: Selects behavior when the Task finishes with an Exception.
 
     Returns:
         The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
 
     .. versionadded:: 1.6.0
+
+    .. versionadded:: 2.0
+        Added the *fail_on_exception* argument.
     """
-    task = start_soon(coro)
+    task = start_soon(coro, fail_on_exception=fail_on_exception)
     await cocotb.triggers.NullTrigger()
     return task
 
 
+def _legacy_callback(task: "cocotb.task.Task[Any]") -> None:
+    join = cocotb.triggers._Join(task)
+    if join in cocotb._scheduler_inst._trigger2tasks:
+        return
+    return _always_fail_callback(task)
+
+
+def _always_fail_callback(task: "cocotb.task.Task[Any]") -> None:
+    if task.cancelled():
+        return
+    e = task.exception()
+    if e is None:
+        return
+    elif isinstance(e, (TestSuccess, AssertionError)):
+        task.log.info("Test stopped by this task")
+        cocotb.regression_manager._abort_test(e)
+    else:
+        task.log.error("Exception raised by this task")
+        cocotb.regression_manager._abort_test(e)
+
+
 def create_task(
     coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
+    fail_on_exception: FailOnException = FailOnException.LEGACY,
 ) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Construct a coroutine into a :class:`~cocotb.task.Task` without scheduling the task.
+    """Create a :class:`~cocotb.task.Task` for the given coroutine without scheduling the Task.
 
-    The task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
+    The Task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
 
     Args:
-        coro: An existing task or a coroutine to be wrapped.
+        coro: An existing Task or a coroutine to be wrapped.
+        fail_on_exception: Selects behavior when the Task finishes with an Exception.
 
     Returns:
         Either the provided :class:`~cocotb.task.Task` or a new Task wrapping the coroutine.
@@ -222,7 +246,12 @@ def create_task(
     if isinstance(coro, cocotb.task.Task):
         return coro
     elif isinstance(coro, Coroutine):
-        return cocotb.task.Task(coro)
+        task = cocotb.task.Task(coro)
+        if fail_on_exception is FailOnException.LEGACY:
+            task._add_done_callback(_legacy_callback)
+        elif fail_on_exception is FailOnException.ALWAYS:
+            task._add_done_callback(_always_fail_callback)
+        return task
     elif inspect.iscoroutinefunction(coro):
         raise TypeError(
             f"Coroutine function {coro} should be called prior to being scheduled."
@@ -234,8 +263,7 @@ def create_task(
         )
     else:
         raise TypeError(
-            f"Attempt to add an object of type {type(coro)} to the scheduler, "
-            f"which isn't a coroutine: {coro!r}\n"
+            f"Expected a coroutine, collections.abc.Coroutine, or Task object, not {type(coro).__qualname__}"
         )
 
 

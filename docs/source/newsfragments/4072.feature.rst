@@ -1,0 +1,1 @@
+Added *fail_on_exception* parameter to :func:`cocotb.start_soon`, :func:`cocotb.start`, and :func:`cocotb.create_task` to control the behavior when a :class:`~cocotb.task.Task` finishes with an Exception.
