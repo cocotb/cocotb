@@ -61,6 +61,8 @@ import cocotb._profiling
 import cocotb._scheduler
 import cocotb._write_scheduler
 from cocotb import _ANSI, simulator
+from cocotb._exceptions import InternalError
+from cocotb._outcomes import Error
 from cocotb._utils import (
     DocEnum,
     remove_traceback_frames,
@@ -455,7 +457,12 @@ class RegressionManager:
             cocotb.sim_phase = cocotb.SimPhase.NORMAL
             trigger._unprime()
         cocotb._write_scheduler.start_write_scheduler()
-        cocotb._scheduler_inst._add_test(self._test_task)
+
+        self._test_task._add_done_callback(
+            lambda _: cocotb._scheduler_inst.shutdown_soon()
+        )
+        cocotb._scheduler_inst._queue(self._test_task)
+        cocotb._scheduler_inst._event_loop()
 
     def _tear_down(self) -> None:
         """Called by :meth:`_execute` when there are no more tests to run to finalize the regression."""
@@ -943,8 +950,25 @@ class RegressionManager:
 
     def _fail_simulation(self, msg: str) -> None:
         self._sim_failure = SimFailure(msg)
-        cocotb._scheduler_inst._abort_test(self._sim_failure)
+        self._abort_test(self._sim_failure)
         cocotb._scheduler_inst._handle_termination()
+
+    def _abort_test(self, exc: Exception) -> None:
+        """Force this test to end early, without executing any cleanup.
+
+        This happens when a background task fails, and is consistent with
+        how the behavior has always been. In future, we may want to behave
+        more gracefully to allow the test body to clean up.
+
+        `exc` is the exception that the test should report as its reason for
+        aborting.
+        """
+        if self._test_task._outcome is not None:  # pragma: no cover
+            raise InternalError("Outcome already has a value, but is being set again.")
+        outcome = Error(exc)
+        self._test_task._outcome = outcome
+        self._test_task._do_done_callbacks()
+        cocotb._scheduler_inst._unschedule(self._test_task)
 
     @staticmethod
     def _safe_divide(a: float, b: float) -> float:
