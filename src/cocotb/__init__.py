@@ -138,40 +138,33 @@ def _setup_logging() -> None:
     log = py_logging.getLogger(__name__)
 
 
-def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:
-    join = cocotb.triggers.Join(task)
-    if join in cocotb._scheduler_inst._trigger2tasks:
-        return
+def _test_fail_callback(task: "cocotb.task.Task[Any]") -> None:
     try:
-        # throws an error if the background task errored
-        # and no one was monitoring it
         task._outcome.get()
     except (TestSuccess, AssertionError) as e:
         task.log.info("Test stopped by this task")
-        e = remove_traceback_frames(e, ["_task_done_callback", "get"])
+        e = remove_traceback_frames(e, ["_test_fail_callback", "get"])
         cocotb.regression_manager._abort_test(e)
     except BaseException as e:
         task.log.error("Exception raised by this task")
-        e = remove_traceback_frames(e, ["_task_done_callback", "get"])
-        warnings.warn(
-            '"Unwatched" tasks that throw exceptions will not cause the test to fail. '
-            "See issue #2664 for more details.",
-            FutureWarning,
-        )
+        e = remove_traceback_frames(e, ["_test_fail_callback", "get"])
         cocotb.regression_manager._abort_test(e)
 
 
 def start_soon(
     coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
+    propagate: bool = False,
 ) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Schedule a coroutine to be run concurrently.
+    r"""Schedule a coroutine to be run concurrently.
 
     Note that this is not an ``async`` function,
-    and the new task will not execute until the calling task yields control.
+    and the new :class:`cocotb.task.Task` will not execute until the calling task yields control.
 
     Args:
-        coro: A task or coroutine to be run.
+        coro: A task or coroutine to be run concurrently.
+        propagate:
+            If ``True``, if *coro* finishes due to an exception, it will be propagated to any task waiting on the return task object.
+            If ``False``, if *coro* finishes due to an exception, it will end the test with a failure.
 
     Returns:
         The :class:`~cocotb.task.Task` that is scheduled to be run.
@@ -179,13 +172,15 @@ def start_soon(
     .. versionadded:: 1.6.0
     """
     task = create_task(coro)
-    task._add_done_callback(_task_done_callback)
+    if not propagate:
+        task._add_done_callback(_test_fail_callback)
     cocotb._scheduler_inst._queue(task)
     return task
 
 
 async def start(
     coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
+    propagate: bool = False,
 ) -> "cocotb.task.Task[cocotb.task.ResultType]":
     """
     Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
@@ -196,14 +191,17 @@ async def start(
     raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
 
     Args:
-        coro: A task or coroutine to be run.
+        coro: A task or coroutine to be run concurrently.
+        propagate:
+            If ``True``, if *coro* finishes due to an exception, it will be propagated to any task waiting on the return task object.
+            If ``False``, if *coro* finishes due to an exception, it will end the test with a failure.
 
     Returns:
         The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
 
     .. versionadded:: 1.6.0
     """
-    task = start_soon(coro)
+    task = start_soon(coro, propagate=propagate)
     await cocotb.triggers.NullTrigger()
     return task
 
