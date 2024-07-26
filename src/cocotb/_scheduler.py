@@ -393,15 +393,10 @@ class Scheduler:
                 trigger._unprime()
                 del self._trigger2tasks[trigger]
 
-        assert self._test is not None
+        if self._terminate:
+            return
 
-        if task is self._test:
-            if _debug:
-                self.log.debug(f"Unscheduling test {task}")
-
-            self._terminate = True
-
-        elif Join(task) in self._trigger2tasks:
+        if Join(task) in self._trigger2tasks:
             self._react(Join(task))
         else:
             try:
@@ -581,6 +576,8 @@ class Scheduler:
         if self._test is not None:
             raise InternalError("Test was added while another was in progress")
 
+        test_task._add_done_callback(lambda task: self.shutdown_soon())
+
         self._test = test_task
         self._queue(test_task)
         self._event_loop()
@@ -700,6 +697,7 @@ class Scheduler:
         if _debug:
             self._test.log.debug(f"outcome forced to {outcome}")
         self._test._outcome = outcome
+        self._test._do_done_callbacks()
         self._unschedule(self._test)
 
     def _cleanup(self) -> None:
@@ -733,3 +731,6 @@ class Scheduler:
 
         for ext in self._pending_threads:
             self.log.warning(f"Waiting for {ext.thread} to exit")
+
+    def shutdown_soon(self) -> None:
+        self._terminate = True

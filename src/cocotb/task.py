@@ -141,8 +141,7 @@ class Task(Generic[ResultType]):
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
 
         if self.done():
-            for callback in self._done_callbacks:
-                callback(self)
+            self._do_done_callbacks()
 
     def kill(self) -> None:
         """Kill a coroutine."""
@@ -161,8 +160,11 @@ class Task(Generic[ResultType]):
             self._coro.close()
 
         if self.done():
-            for callback in self._done_callbacks:
-                callback(self)
+            self._do_done_callbacks()
+
+    def _do_done_callbacks(self) -> None:
+        for callback in self._done_callbacks:
+            callback(self)
 
     def join(self) -> "cocotb.triggers.Join[ResultType]":
         """Wait for the task to complete.
