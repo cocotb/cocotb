@@ -433,7 +433,7 @@ class _Event(Trigger):
     can maintain a unique mapping of triggers to tasks.
     """
 
-    def __init__(self, parent: "Event[Any]") -> None:
+    def __init__(self, parent: "Event") -> None:
         super().__init__()
         self._parent = parent
 
@@ -446,7 +446,7 @@ class _Event(Trigger):
         return f"<{self._parent!r}.wait() at {_pointer_str(self)}>"
 
 
-class Event(Generic[T]):
+class Event:
     r"""A way to signal an event across :class:`~cocotb.task.Task`\ s.
 
     ``await``\ ing the result of :meth:`wait()` will block the ``await``\ ing :class:`~cocotb.task.Task`
@@ -471,23 +471,25 @@ class Event(Generic[T]):
             e.set()
             await NullTrigger()  # allows task1 to execute
             # resuming!
+
+    .. versionremoved:: 2.0
+
+        Removed the undocumented *data* attribute and argument to :meth:set.
     """
 
     def __init__(self, name: Optional[str] = None) -> None:
         self._pending_events: List[_Event] = []
         self.name: Optional[str] = name
         self._fired: bool = False
-        self.data: Optional[T] = None
 
     def _prime_trigger(
         self, trigger: _Event, callback: Callable[[Trigger], None]
     ) -> None:
         self._pending_events.append(trigger)
 
-    def set(self, data: Optional[T] = None) -> None:
-        """Unblock all coroutines blocked on this event."""
+    def set(self) -> None:
+        """Sets the Event and unblock all Tasks blocked on this Event."""
         self._fired = True
-        self.data = data
 
         pending_events, self._pending_events = self._pending_events, []
         for event in pending_events:
@@ -507,7 +509,7 @@ class Event(Generic[T]):
         return _Event(self)
 
     def clear(self) -> None:
-        """Clear this event that has fired.
+        """Clear this event that has been set.
 
         Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until
         :meth:`~cocotb.triggers.Event.set` is called again.
@@ -526,7 +528,7 @@ class Event(Generic[T]):
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class _InternalEvent(Trigger, Generic[T]):
+class _InternalEvent(Trigger):
     """Event used internally for triggers that need cross-:class:`~cocotb.task.Task` synchronization.
 
     This Event can only be waited on once, by a single :class:`~cocotb.task.Task`.
@@ -540,7 +542,6 @@ class _InternalEvent(Trigger, Generic[T]):
         self._parent = parent
         self._callback: Optional[Callable[[Trigger], None]] = None
         self.fired: bool = False
-        self.data: Optional[T] = None
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._callback is not None:
@@ -550,10 +551,9 @@ class _InternalEvent(Trigger, Generic[T]):
         if self.fired:
             self._callback(self)
 
-    def set(self, data: Optional[T] = None) -> None:
+    def set(self) -> None:
         """Wake up coroutine blocked on this event."""
         self.fired = True
-        self.data = data
 
         if self._callback is not None:
             self._callback(self)
@@ -838,7 +838,7 @@ class Combine(_AggregateWaitable["Combine"]):
 
     async def _wait(self) -> "Combine":
         waiters: List[cocotb.task.Task[Any]] = []
-        e = _InternalEvent[Any](self)
+        e = _InternalEvent(self)
         triggers = list(self._triggers)
 
         # start a parallel task for each trigger
@@ -890,7 +890,7 @@ class First(_AggregateWaitable[Any]):
 
     async def _wait(self) -> Any:
         waiters: List[cocotb.task.Task[Any]] = []
-        e = _InternalEvent[Any](self)
+        e = _InternalEvent(self)
         completed: List[Outcome[Any]] = []
         # start a parallel task for each trigger
         for t in self._triggers:
