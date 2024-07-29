@@ -175,7 +175,11 @@ async def test_cocotb_writes_dont_overwrite_force_registered(dut):
 
 
 # Release and Freeze read current simulator values, not scheduled values (gh-3829)
-@cocotb.test(expect_fail=True)
+@cocotb.test(
+    expect_fail=SIM_NAME.startswith(
+        ("icarus", "ghdl", "nvc", "modelsim", "riviera", "xmsim")
+    )
+)
 async def test_force_followed_by_release_correct_value(dut):
     """Test if Forcing then immediately Releasing a signal yields the correct value.
 

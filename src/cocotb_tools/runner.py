@@ -1214,6 +1214,11 @@ class Verilator(Runner):
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
 
+    def _set_env(self) -> None:
+        super()._set_env()
+        if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
+            self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
+
     def _simulator_in_path(self) -> None:
         # the verilator binary is only needed for building
         return

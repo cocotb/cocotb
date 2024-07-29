@@ -82,7 +82,7 @@ if simulator_test:
     expect_fail = False
 elif not trust_inertial:
     expect_fail = False
-elif SIM_NAME.startswith(("icarus", "verilator")):
+elif SIM_NAME.startswith("icarus"):
     expect_fail = True
 elif SIM_NAME.startswith("modelsim") and verilog:
     expect_fail = True
