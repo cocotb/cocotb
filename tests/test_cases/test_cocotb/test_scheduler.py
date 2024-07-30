@@ -341,10 +341,9 @@ async def test_task_repr(dut):
 
     async def coroutine_inner():
         await coro_e.wait()
-        this_task = coro_e.data
         # cr_await is None while the coroutine is running, so we can't get the stack...
-        log.info(repr(this_task))
-        assert re.match(r"<Task \d+ running coro=coroutine_outer\(\)>", repr(this_task))
+        log.info(repr(coro_task))
+        assert re.match(r"<Task \d+ running coro=coroutine_outer\(\)>", repr(coro_task))
 
         await Combine(*(cocotb.start_soon(coroutine_wait()) for _ in range(2)))
 
@@ -359,7 +358,7 @@ async def test_task_repr(dut):
     coro_task = await cocotb.start(coroutine_outer())
 
     # let coroutine_inner run up to the await Combine
-    coro_e.set(coro_task)
+    coro_e.set()
     await NullTrigger()
 
     log.info(repr(coro_task))

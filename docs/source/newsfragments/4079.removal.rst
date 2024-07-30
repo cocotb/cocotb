@@ -1,0 +1,1 @@
+Removed the undocumented *data* attribute on :class:`~cocotb.triggers.Event` and on the corresponding :meth:`.Event.set`.

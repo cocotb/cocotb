@@ -107,14 +107,13 @@ async def test_internalevent(dut):
 
     async def set_internalevent():
         await Timer(1, units="ns")
-        e.set("data")
+        e.set()
 
     # Test waiting more than once
     cocotb.start_soon(set_internalevent())
     time_ns = get_sim_time(units="ns")
     await e
     assert e.is_set()
-    assert e.data == "data"
     assert get_sim_time(units="ns") == time_ns + 1
     # _InternalEvent can only be awaited once
     with pytest.raises(RuntimeError):
