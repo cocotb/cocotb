@@ -114,25 +114,25 @@ int main(int argc, char** argv) {
 #endif
 
     while (!Verilated::gotFinish()) {
-        // We must evaluate whole design until we process all 'events' for this
-        // time step
-        do {
-            top->eval_step();
-            VerilatedVpi::clearEvalNeeded();
+#if VM_TIMING
+#else
+        goto skip_first_eval;
+#endif
 
-            // Call Value Change callbacks
-            // These can modify signal values so we loop
-            // until there are no more changes
-            bool again;
+        do {
+            // We must evaluate whole design until we process all 'events' for
+            // this time step
             do {
+                top->eval_step();
+                VerilatedVpi::clearEvalNeeded();
+            skip_first_eval:
                 VerilatedVpi::doInertialPuts();
-                again = VerilatedVpi::callValueCbs();
-            } while (again);
+                VerilatedVpi::callValueCbs();
+            } while (VerilatedVpi::evalNeeded());
 
             // Run ReadWrite callback as we are done processing this eval step
             VerilatedVpi::callCbs(cbReadWriteSynch);
             VerilatedVpi::doInertialPuts();
-
         } while (VerilatedVpi::evalNeeded());
 
         top->eval_end_step();
