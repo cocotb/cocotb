@@ -474,7 +474,7 @@ class Event:
 
     .. versionremoved:: 2.0
 
-        Removed the undocumented *data* attribute and argument to :meth:set.
+        Removed the undocumented *data* attribute and argument to :meth:`set`.
     """
 
     def __init__(self, name: Optional[str] = None) -> None:
@@ -488,7 +488,7 @@ class Event:
         self._pending_events.append(trigger)
 
     def set(self) -> None:
-        """Sets the Event and unblock all Tasks blocked on this Event."""
+        """Set the Event and unblock all Tasks blocked on this Event."""
         self._fired = True
 
         pending_events, self._pending_events = self._pending_events, []
