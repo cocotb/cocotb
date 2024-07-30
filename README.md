@@ -131,6 +131,5 @@ and [our wiki](https://github.com/cocotb/cocotb/wiki).
 * [`cocotb-coverage`](https://github.com/mciepluc/cocotb-coverage), an extension for Functional Coverage and Constrained Randomization
 * [`uvm-python`](https://github.com/tpoikela/uvm-python), an almost 1:1 port of UVM 1.2 to Python
 * [`pyuvm`](https://github.com/pyuvm/pyuvm), The UVM IEEE 1800.2 specification built upon cocotb and implemented from scratch in Python.
-* [`pythonverification.com`](http://pythonverification.com), Resources for learning Python, cocotb, and pyuvm. Includes pointers to examples on GitHub.
 * our wiki [on extension modules](https://github.com/cocotb/cocotb/wiki/Further-Resources#extension-modules-cocotbext)
 * the list of [GitHub projects depending on cocotb](https://github.com/cocotb/cocotb/network/dependents)
