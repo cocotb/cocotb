@@ -47,6 +47,7 @@ def test_cocotb_parallel(seed):
     runner = get_runner(sim)
 
     runner.build_args = compile_args
+    runner.sources = sources
 
     runner.test(
         seed=seed,
