@@ -1,1 +1,1 @@
-``cocotb.triggers.Join.retval`` was removed. Use :attr:`Join.task <cocotb.triggers.Join.task>` to get the joined task and :meth:`Task.result() <cocotb.task.Task.result>` to get its result.
+``cocotb.triggers.Join.retval`` was removed.

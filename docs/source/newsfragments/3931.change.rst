@@ -1,1 +1,0 @@
-Awaiting :meth:`Task.join() <cocotb.task.Task.join>` now returns the :class:`~cocotb.triggers.Join` trigger, not the result of the :class:`~cocotb.task.Task`. To wait for the task to complete and yield the result of the task, await the task directly: ``await task``.

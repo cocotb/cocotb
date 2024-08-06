@@ -53,11 +53,11 @@ from cocotb.task import Task
 from cocotb.triggers import (
     Event,
     GPITrigger,
-    Join,
     NextTimeStep,
     ReadOnly,
     ReadWrite,
     Trigger,
+    _Join,
 )
 
 # Sadly the Python standard logging module is very slow so it's better not to
@@ -401,8 +401,8 @@ class Scheduler:
 
             self._terminate = True
 
-        elif Join(task) in self._trigger2tasks:
-            self._react(Join(task))
+        elif _Join(task) in self._trigger2tasks:
+            self._react(_Join(task))
         else:
             try:
                 # throws an error if the background task errored
@@ -594,13 +594,13 @@ class Scheduler:
     def _trigger_from_started_task(self, result: Task) -> Trigger:
         if _debug:
             self.log.debug(f"Joining to already running task: {result}")
-        return result.join()
+        return _Join(result)
 
     def _trigger_from_unstarted_task(self, result: Task) -> Trigger:
         self._queue(result)
         if _debug:
             self.log.debug(f"Scheduling unstarted task: {result!r}")
-        return result.join()
+        return _Join(result)
 
     def _trigger_from_any(self, result) -> Trigger:
         """Convert a yielded object into a Trigger instance"""
