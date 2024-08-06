@@ -59,55 +59,45 @@ static PyThreadState *gtstate = NULL;
 static wchar_t progname[] = L"cocotb";
 static wchar_t *argv[] = {progname};
 
-#if defined(_WIN32)
-#if defined(__MINGW32__) || defined(__CYGWIN32__)
-constexpr char const *PYTHON_INTERPRETER_PATH = "/Scripts/python";
-#else
-constexpr char const *PYTHON_INTERPRETER_PATH = "\\Scripts\\python";
-#endif
-#else
-constexpr char const *PYTHON_INTERPRETER_PATH = "/bin/python";
-#endif
-
 static PyObject *pEventFn = NULL;
 
 static void set_program_name_in_venv(void) {
-    static wchar_t venv_path_w[PATH_MAX];
+    static wchar_t
+        python_bin_path_w[PATH_MAX];  // must be static as Py_SetProgramName
+                                      // does not copy
 
-    const char *venv_path_home = getenv("VIRTUAL_ENV");
-    if (!venv_path_home) {
-        LOG_INFO(
-            "Did not detect Python virtual environment. "
-            "Using system-wide Python interpreter");
+    const char *python_bin_path = getenv("PYGPI_PYTHON_BIN");
+    if (!python_bin_path) {
+        LOG_INFO("Using default Python interpreter");
         return;
     }
 
-    std::string venv_path = venv_path_home;
-    venv_path.append(PYTHON_INTERPRETER_PATH);
-
-    auto venv_path_w_temp = Py_DecodeLocale(venv_path.c_str(), NULL);
-    if (venv_path_w_temp == NULL) {
+    auto python_bin_path_w_temp = Py_DecodeLocale(python_bin_path, NULL);
+    if (python_bin_path_w_temp == NULL) {
+        // LCOV_EXCL_START
         LOG_ERROR(
-            "Unable to set Python Program Name using virtual environment. "
+            "Unable to set Python Program Name. "
             "Decoding error in virtual environment path.");
-        LOG_INFO("Virtual environment path: %s", venv_path.c_str());
+        LOG_INFO("Python interpreter: %s", python_bin_path);
         return;
+        // LCOV_EXCL_STOP
     }
-    DEFER(PyMem_RawFree(venv_path_w_temp));
+    DEFER(PyMem_RawFree(python_bin_path_w_temp));
 
-    wcsncpy(venv_path_w, venv_path_w_temp,
-            sizeof(venv_path_w) / sizeof(wchar_t));
-    if (venv_path_w[(sizeof(venv_path_w) / sizeof(wchar_t)) - 1]) {
+    wcsncpy(python_bin_path_w, python_bin_path_w_temp,
+            sizeof(python_bin_path_w) / sizeof(wchar_t));
+    if (python_bin_path_w[(sizeof(python_bin_path_w) / sizeof(wchar_t)) - 1]) {
+        // LCOV_EXCL_START
         LOG_ERROR(
             "Unable to set Python Program Name using virtual environment. "
-            "Path to interpreter too long");
-        LOG_INFO("Virtual environment path: %s", venv_path.c_str());
+            "Path to interpreter too long.");
+        LOG_INFO("Python interpreter: %s", python_bin_path);
         return;
+        // LCOV_EXCL_STOP
     }
 
-    LOG_INFO("Using Python virtual environment interpreter at %ls",
-             venv_path_w);
-    Py_SetProgramName(venv_path_w);
+    LOG_INFO("Using Python interpreter at %ls", python_bin_path_w);
+    Py_SetProgramName(python_bin_path_w);
 }
 
 /**
