@@ -173,7 +173,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.024",  # Latest release version.
+        "sim-version": "v5.026",  # Latest release version.
         # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
         "python-version": "3.8",
@@ -229,7 +229,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.024",
+        "sim-version": "v5.026",
         "os": "macos-13",
         "python-version": "3.8",
         "group": "ci",
