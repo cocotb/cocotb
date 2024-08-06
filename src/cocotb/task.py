@@ -11,6 +11,7 @@ from typing import Any, Callable, Coroutine, Generator, Generic, List, Optional,
 
 import cocotb
 import cocotb.triggers
+from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb._utils import extract_coro_stack, remove_traceback_frames
@@ -164,7 +165,10 @@ class Task(Generic[ResultType]):
             for callback in self._done_callbacks:
                 callback(self)
 
-    def join(self) -> "cocotb.triggers.Join[ResultType]":
+    @deprecated(
+        "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used.`"
+    )
+    def join(self) -> "cocotb.triggers._Join[ResultType]":
         """Wait for the task to complete.
 
         Returns:
@@ -176,13 +180,11 @@ class Task(Generic[ResultType]):
             await my_task.join()
             # "my_task" is done here
 
-        .. versionchanged:: 2.0
+        .. deprecated:: 2.0
 
-            :keyword:`await`\ ing a task using this no longer returns the result of the task, but returns the trigger.
-            To get the result, use :meth:`result` of the completed task,
-            or simply ``await task`` to get the old behavior.
+            Using ``task`` directly is prefered to ``task.join()`` in all situations where the latter could be used.
         """
-        return cocotb.triggers.Join(self)
+        return cocotb.triggers._Join(self)
 
     def has_started(self) -> bool:
         """Return ``True`` if the Task has started executing."""

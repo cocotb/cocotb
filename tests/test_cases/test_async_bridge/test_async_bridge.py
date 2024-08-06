@@ -331,7 +331,7 @@ async def test_resume_from_weird_thread_fails(dut):
     assert not func_started, "Function should never have started"
     assert raised, "No exception was raised to warn the user"
 
-    await task.join()
+    await task
 
 
 @cocotb.test()
