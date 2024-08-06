@@ -52,6 +52,7 @@ from typing import (
 import cocotb.handle
 import cocotb.task
 from cocotb import simulator
+from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
@@ -119,7 +120,7 @@ class Trigger(Awaitable["Trigger"]):
         # Ensure if a trigger drops out of scope we remove any pending callbacks
         self._unprime()
 
-    def __await__(self: Self) -> Generator[Self, None, Self]:
+    def __await__(self: Self) -> Generator[Any, Any, Self]:
         yield self
         return self
 
@@ -564,7 +565,7 @@ class _InternalEvent(Trigger):
 
     def __await__(
         self: Self,
-    ) -> Generator[Self, None, Self]:
+    ) -> Generator[Any, Any, Self]:
         if self._primed:
             raise RuntimeError("Only one Task may await this Trigger")
         yield self
@@ -711,12 +712,40 @@ class NullTrigger(Trigger):
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class Join(
+class _Join(
     Trigger,
     Generic[T],
     metaclass=_ParameterizedSingletonGPITriggerMetaclass,
 ):
-    r"""Fires when a task completes.
+    """Fires when a :class:`~cocotb.task.Task` completes."""
+
+    @classmethod
+    def __singleton_key__(cls, task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
+        return task
+
+    def __init__(self, task: "cocotb.task.Task[T]") -> None:
+        super().__init__()
+        self._task = task
+
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+        if self._task.done():
+            callback(self)
+        else:
+            super()._prime(callback)
+
+    def __repr__(self) -> str:
+        return f"Join({self._task!s})"
+
+    def __await__(self) -> Generator[Any, Any, T]:
+        yield from super().__await__()
+        return self._task.result()
+
+
+@deprecated(
+    "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
+)
+def Join(task: "cocotb.task.Task[T]") -> "_Join[T]":
+    r"""Fires when a :class:`~cocotb.task.Task` completes.
 
     Args:
         task: The task upon which to wait for completion.
@@ -729,44 +758,15 @@ class Join(
 
 
         task = cocotb.start_soon(coro_inner())
-        await Join(task)
+        result = await Join(task)
         assert task.result() == "Hello world"
+        assert task.result() == result
 
-    .. versionchanged:: 2.0
+    .. deprecated:: 2.0
 
-        :keyword:`await`\ ing this trigger no longer returns the result of the task, but returns the trigger.
-        To get the result, use :meth:`Task.result() <cocotb.task.Task.result>` of the completed task,
-        or simply ``await task`` to get the old behavior.
-
-    .. note::
-        Typically there is no reason to directly instantiate this trigger,
-        instead call :meth:`Task.join() <cocotb.task.Task.join>` on the task.
+        Using ``task`` directly is prefered to ``Join(task)`` in all situations where the latter could be used.
     """
-
-    @classmethod
-    def __singleton_key__(cls, task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
-        return task
-
-    def __init__(self, task: "cocotb.task.Task[T]") -> None:
-        super().__init__()
-        self._task = task
-
-    @property
-    def task(self) -> "cocotb.task.Task[T]":
-        """Return the :class:`~cocotb.task.Task` being joined.
-
-        .. versionadded:: 2.0
-        """
-        return self._task
-
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        if self._task.done():
-            callback(self)
-        else:
-            super()._prime(callback)
-
-    def __repr__(self) -> str:
-        return f"{type(self).__qualname__}({self._task!s})"
+    return _Join(task)
 
 
 class Waitable(Awaitable[T]):

@@ -78,4 +78,4 @@ async def dual_iteration(dut):
     loop_one = cocotb.start_soon(iteration_loop(dut))
     loop_two = cocotb.start_soon(iteration_loop(dut))
 
-    await First(loop_one.join(), loop_two.join())
+    await First(loop_one, loop_two)

@@ -1,1 +1,0 @@
-Added :attr:`Join.task <cocotb.triggers.Join.task>` to get the joined task.

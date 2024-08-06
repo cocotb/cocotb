@@ -26,7 +26,6 @@ from cocotb.triggers import (
     Combine,
     Event,
     First,
-    Join,
     NullTrigger,
     ReadOnly,
     RisingEdge,
@@ -41,7 +40,7 @@ test_flag = False
 
 async def clock_yield(task):
     global test_flag
-    await task.join()
+    await task
     test_flag = True
 
 
@@ -823,23 +822,6 @@ async def test_multiple_concurrent_test_fails(_) -> None:
     cocotb.start_soon(call_error(thing))
     cocotb.start_soon(call_error(thing))
     await Timer(10, "ns")
-
-
-@cocotb.test
-async def test_get_task_from_join(_) -> None:
-    async def noop():
-        pass
-
-    t = cocotb.start_soon(noop())
-    j = await t.join()
-    assert isinstance(j, Join)
-    assert j.task is t
-    assert re.match(r"Join\(<Task \d+>\)", repr(j))
-
-    t = cocotb.start_soon(noop())
-    j = await Join(t)
-    assert isinstance(j, Join)
-    assert j.task is t
 
 
 @cocotb.test
