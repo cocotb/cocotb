@@ -63,20 +63,16 @@ An example of a simple randomized cocotb testbench:
 
 ```python
 # test_dff.py
-
 import random
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge
-from cocotb.types import LogicArray
+from cocotb.triggers import ReadOnly, RisingEdge
 
-@cocotb.test()
+@cocotb.test
 async def dff_simple_test(dut):
     """Test that d propagates to q"""
 
-    # Assert initial output is unknown
-    assert LogicArray(dut.q.value) == LogicArray("X")
     # Set initial input value to prevent it from floating
     dut.d.value = 0
 
@@ -84,19 +80,29 @@ async def dff_simple_test(dut):
     # Start the clock. Start it low to avoid issues on the first RisingEdge
     cocotb.start_soon(clock.start(start_high=False))
 
-    # Synchronize with the clock. This will regisiter the initial `d` value
-    await RisingEdge(dut.clk)
-    expected_val = 0  # Matches initial input value
-    for i in range(10):
-        val = random.randint(0, 1)
-        dut.d.value = val  # Assign the random value val to the input port d
-        await RisingEdge(dut.clk)
-        assert dut.q.value == expected_val, f"output q was incorrect on the {i}th cycle"
-        expected_val = val # Save random value for next RisingEdge
+    # generate stimulus
+    stimulus = [random.randint(0, 1) for _ in range(10)]
 
-    # Check the final input on the next clock
+    # calculated expected outputs
+    expecteds = [val for val in stimulus]
+
+    async def drive_input():
+        for val in stimulus:
+            await RisingEdge(dut.clk)  # Synchronize with clock before driving.
+            dut.d.value = val  # Assign the stimulus value to the input port 'd'.
+
+    # Run the driver coroutine concurrently to the monitoring and checking logic below.
+    cocotb.start_soon(drive_input())
+
+    # Wait 1 clock cycle for input to propagate to output.
     await RisingEdge(dut.clk)
-    assert dut.q.value == expected_val, "output q was incorrect on the last cycle"
+
+    for expected_val in expecteds:
+        await RisingEdge(dut.clk)  # Synchronize with clock, then...
+        await ReadOnly()  # Wait for all signal changes to settle.
+        assert (
+            dut.q.value == expected_val
+        )  # Check the actual output against the expected.
 ```
 
 A simple Makefile:
