@@ -27,6 +27,7 @@
 
 #include <assert.h>
 
+#include <algorithm>
 #include <cinttypes>  // fixed-size int types and format strings
 #include <limits>     // numeric_limits
 #include <stdexcept>

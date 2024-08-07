@@ -37,6 +37,7 @@
 static int takes = 0;
 static int releases = 0;
 
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <cocotb_utils.h>    // to_python to_simulator
 #include <py_gpi_logging.h>  // py_gpi_logger_set_level
@@ -574,6 +575,30 @@ static PyObject *next(gpi_hdl_Object<gpi_iterator_hdl> *self) {
     return gpi_hdl_New(result);
 }
 
+static PyObject *get_signal_val_bytes(gpi_hdl_Object<gpi_sim_hdl> *self,
+                                      PyObject *args) {
+    gpi_resolve_x_t resolve_x;
+    if (!PyArg_ParseTuple(args, "i:get_signal_val_bytes", &resolve_x)) {
+        return NULL;
+    }
+
+    size_t size =
+        (static_cast<size_t>(gpi_get_num_elems(self->hdl)) + CHAR_BIT - 1) /
+        CHAR_BIT;
+    PyObject *result =
+        PyBytes_FromStringAndSize(NULL, static_cast<Py_ssize_t>(size));
+    char *buffer = PyBytes_AsString(result);
+    if (buffer == NULL ||
+        gpi_get_signal_value_bytes(self->hdl, buffer, size, resolve_x)) {
+        PyErr_SetString(PyExc_ValueError, "Failed to get bytes from signal");
+        Py_CLEAR(result);
+        delete result;
+        return NULL;
+    }
+    buffer[size] = '\0';
+    return result;
+}
+
 // Raise an exception on failure
 // Return None if for example get bin_string on enum?
 
@@ -599,6 +624,23 @@ static PyObject *get_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self,
                                      PyObject *) {
     long result = gpi_get_signal_value_long(self->hdl);
     return PyLong_FromLong(result);
+}
+
+static PyObject *set_signal_val_bytes(gpi_hdl_Object<gpi_sim_hdl> *self,
+                                      PyObject *args) {
+    const char *buffer;
+    Py_ssize_t size;
+    gpi_set_action_t action;
+
+    if (!PyArg_ParseTuple(args, "iy#:set_signal_val_bytes", &action, &buffer,
+                          &size) ||
+        size < 0) {
+        return NULL;
+    }
+
+    gpi_set_signal_value_bytes(self->hdl, buffer, static_cast<size_t>(size),
+                               action);
+    Py_RETURN_NONE;
 }
 
 static PyObject *set_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self,
@@ -797,6 +839,18 @@ static PyObject *get_simulator_version(PyObject *, PyObject *) {
     }
 
     return PyUnicode_FromString(gpi_get_simulator_version());
+}
+
+static PyObject *set_gpi_seed(PyObject *, PyObject *args) {
+    uint32_t seed;
+
+    if (!PyArg_ParseTuple(args, "i:seed", &seed)) {
+        return NULL;
+    }
+
+    gpi_set_seed(seed);
+
+    Py_RETURN_NONE;
 }
 
 static PyObject *get_num_elems(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
@@ -1184,6 +1238,11 @@ static PyMethodDef SimulatorMethods[] = {
                "Create a clock driver on a signal.\n"
                "\n"
                ".. versionadded:: 2.0")},
+    {"set_gpi_seed", set_gpi_seed, METH_VARARGS,
+     PyDoc_STR("set_gpi_seed(seed, /)\n"
+               "--\n\n"
+               "set_gpi_seed(seed: int) -> None\n"
+               "Set the seed for GPI randomness.")},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
@@ -1259,6 +1318,11 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
                "--\n\n"
                "get_signal_val_str() -> bytes\n"
                "Get the value of a signal as a byte string.")},
+    {"get_signal_val_bytes", (PyCFunction)get_signal_val_bytes, METH_VARARGS,
+     PyDoc_STR("get_signal_val_bytes($self, resolve_x)\n"
+               "--\n\n"
+               "get_signal_val_bytes(resolve_x: int) -> bytes\n"
+               "Get the value of a logic vector signal as bytes object.")},
     {"get_signal_val_binstr", (PyCFunction)get_signal_val_binstr, METH_NOARGS,
      PyDoc_STR("get_signal_val_binstr($self)\n"
                "--\n\n"
@@ -1280,6 +1344,12 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
                "--\n\n"
                "set_signal_val_str(action: int, value: bytes) -> None\n"
                "Set the value of a signal using a user-encoded string.")},
+    {"set_signal_val_bytes", (PyCFunction)set_signal_val_bytes, METH_VARARGS,
+     PyDoc_STR("set_signal_val_bytes($self, action, value, /)\n"
+               "--\n\n"
+               "set_signal_val_bytes(action: int, value: bytes) -> None\n"
+               "Set the value of a logic vector signal using a bytes "
+               "object.")},
     {"set_signal_val_binstr", (PyCFunction)set_signal_val_binstr, METH_VARARGS,
      PyDoc_STR("set_signal_val_binstr($self, action, value, /)\n"
                "--\n\n"

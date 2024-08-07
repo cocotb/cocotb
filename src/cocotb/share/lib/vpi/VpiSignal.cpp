@@ -110,6 +110,47 @@ int VpiSignalObjHdl::initialise(const std::string &name,
     return GpiObjHdl::initialise(name, fq_name);
 }
 
+int VpiSignalObjHdl::get_signal_value_bytes(char *buffer, size_t size,
+                                            gpi_resolve_x_t resolve_x) {
+    s_vpi_value value_s = {vpiVectorVal, {NULL}};
+
+    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
+    check_vpi_error();
+
+    size_t word_size = sizeof(PLI_INT32);
+    size_t words = (size + word_size - 1) / word_size;
+    for (unsigned int word = 0; word < words; word++) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        unsigned int vals_word = word;
+#else
+        unsigned int vals_word = words - 1 - word;
+#endif
+        size_t word_bytes = word_size;
+        if (word + 1 == words) {
+            word_bytes = ((size - 1) % word_size) + 1;
+        }
+        PLI_INT32 val = value_s.value.vector[vals_word].aval;
+        PLI_INT32 bval = value_s.value.vector[vals_word].bval;
+
+        if (resolve_x == GPI_X_ZEROS) {
+            val &= ~bval;
+        } else if (resolve_x == GPI_X_ONES) {
+            val |= bval;
+        } else if (resolve_x == GPI_X_RANDOM) {
+            val &= ~bval;
+            val |= bval & static_cast<PLI_INT32>(gpi_rand());
+        } else if (bval) {  // GPI_X_ERROR
+            return -1;
+        }
+
+        char *abytes = reinterpret_cast<char *>(&val);
+        memcpy(buffer, abytes, word_bytes);
+        buffer += word_size;
+    }
+
+    return 0;
+}
+
 const char *VpiSignalObjHdl::get_signal_value_binstr() {
     s_vpi_value value_s = {vpiBinStrVal, {NULL}};
 
@@ -163,6 +204,35 @@ int VpiSignalObjHdl::set_signal_value(double value, gpi_set_action_t action) {
     value_s.format = vpiRealVal;
 
     return set_signal_value(value_s, action);
+}
+
+int VpiSignalObjHdl::set_signal_value_bytes(const char *buffer, size_t size,
+                                            gpi_set_action_t action) {
+    s_vpi_value value_s;
+    const PLI_INT32 *avals = reinterpret_cast<const PLI_INT32 *>(buffer);
+
+    size_t word_size = sizeof(PLI_INT32);
+    size_t words = (size + word_size - 1) / word_size;
+    std::vector<s_vpi_vecval> vecvals;
+    vecvals.resize(words);
+
+    // byte buffers must be packed in machine endianness in order to prevent
+    // per-word byte swapping (see 38.14)
+    for (unsigned int word = 0; word < words; word++) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        unsigned int vals_word = word;
+#else
+        unsigned int vals_word = words - 1 - word;
+#endif
+        vecvals[word].aval = avals[vals_word];
+        vecvals[word].bval = 0;
+    }
+
+    value_s.value.vector = vecvals.data();
+    value_s.format = vpiVectorVal;
+
+    int result = set_signal_value(value_s, action);
+    return result;
 }
 
 int VpiSignalObjHdl::set_signal_value_binstr(std::string &value,

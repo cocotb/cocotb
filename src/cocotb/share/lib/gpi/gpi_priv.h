@@ -146,6 +146,8 @@ class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
 
     virtual ~GpiSignalObjHdl() = default;
     // Provide public access to the implementation (composition vs inheritance)
+    virtual int get_signal_value_bytes(char *buffer, size_t size,
+                                       gpi_resolve_x_t resolve_x);
     virtual const char *get_signal_value_binstr() = 0;
     virtual const char *get_signal_value_str() = 0;
     virtual double get_signal_value_real() = 0;
@@ -161,6 +163,8 @@ class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
                                      gpi_set_action_t action) = 0;
     virtual int set_signal_value_binstr(std::string &value,
                                         gpi_set_action_t action) = 0;
+    virtual int set_signal_value_bytes(const char *buffer, size_t size,
+                                       gpi_set_action_t action);
     // virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the
     // triggers
     // but the explicit ones are probably better
@@ -295,6 +299,7 @@ GPI_EXPORT void gpi_embed_end();
 GPI_EXPORT void gpi_entry_point();
 GPI_EXPORT void gpi_to_user();
 GPI_EXPORT void gpi_to_simulator();
+GPI_EXPORT uint64_t gpi_rand();
 
 typedef void (*layer_entry_func)();
 

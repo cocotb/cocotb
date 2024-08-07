@@ -110,6 +110,8 @@ extern "C" {
  */
 GPI_EXPORT bool gpi_has_registered_impl(void);
 
+GPI_EXPORT void gpi_set_seed(uint32_t seed);
+
 // Stop the simulator
 GPI_EXPORT void gpi_sim_end(void);
 
@@ -174,6 +176,13 @@ typedef enum gpi_set_action_e {
     GPI_RELEASE = 2,
 } gpi_set_action_t;
 
+typedef enum gpi_resolve_x {
+    GPI_X_ERROR = 0,
+    GPI_X_ZEROS = 1,
+    GPI_X_ONES = 2,
+    GPI_X_RANDOM = 3,
+} gpi_resolve_x_t;
+
 // Functions for iterating over entries of a handle
 // Returns an iterator handle which can then be used in gpi_next calls
 //
@@ -199,6 +208,9 @@ GPI_EXPORT int gpi_get_range_right(gpi_sim_hdl gpi_sim_hdl);
 // Caller responsible for freeing the returned string.
 // This is all slightly verbose but it saves having to enumerate various value
 // types We only care about a limited subset of values.
+GPI_EXPORT int gpi_get_signal_value_bytes(gpi_sim_hdl gpi_hdl, char *buffer,
+                                          size_t size,
+                                          gpi_resolve_x_t resolve_x);
 GPI_EXPORT const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
 GPI_EXPORT const char *gpi_get_signal_value_str(gpi_sim_hdl gpi_hdl);
 GPI_EXPORT double gpi_get_signal_value_real(gpi_sim_hdl gpi_hdl);
@@ -224,6 +236,9 @@ GPI_EXPORT void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value,
                                           gpi_set_action_t action);
 GPI_EXPORT void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int32_t value,
                                          gpi_set_action_t action);
+GPI_EXPORT void gpi_set_signal_value_bytes(
+    gpi_sim_hdl gpi_hdl, const char *buffer, size_t size,
+    gpi_set_action_t action);  // Raw byte buffer
 GPI_EXPORT void gpi_set_signal_value_binstr(
     gpi_sim_hdl gpi_hdl, const char *str,
     gpi_set_action_t action);  // String of binary char(s) [1, 0, x, z]

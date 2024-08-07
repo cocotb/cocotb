@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
+#include <climits>
+
 #include "gpi_priv.h"
 
 const char *GpiObjHdl::get_name_str() { return m_name.c_str(); }
@@ -127,4 +129,55 @@ int GpiValueCbHdl::run_callback() {
     }
 
     return 0;
+}
+
+// TODO -- VHPI specialization possibly using vhpiInVecVal or vhpiPtrVal
+int GpiSignalObjHdl::get_signal_value_bytes(char *buffer, size_t size,
+                                            gpi_resolve_x_t resolve_x) {
+    const char *binstr = get_signal_value_binstr();
+    size_t binstr_len = strlen(binstr);
+    size_t len = std::min(binstr_len, size * 8);
+
+    unsigned char curr = 0x0;
+    for (unsigned int bit = 0; bit < len; bit++) {
+        int offset = bit % 8;
+        unsigned char bit_val;
+        char bit_char = binstr[binstr_len - 1 - bit];
+        if (bit_char == '0') {
+            bit_val = 0;
+        } else if (bit_char == '1') {
+            bit_val = 1;
+        } else if (resolve_x == GPI_X_ONES) {
+            bit_val = 1;
+        } else if (resolve_x == GPI_X_ZEROS) {
+            bit_val = 0;
+        } else if (resolve_x == GPI_X_RANDOM) {
+            bit_val = gpi_rand() & 0x1;
+        } else {  // GPI_X_ERROR
+            return -1;
+        }
+        curr |= static_cast<unsigned char>(bit_val << offset);
+        if (bit % 8 == 7 || bit + 1 == len) {
+            int byte = bit / 8;
+            buffer[byte] = static_cast<char>(curr);
+            curr = 0x0;
+        }
+    }
+
+    return 0;
+}
+
+int GpiSignalObjHdl::set_signal_value_bytes(const char *buffer, size_t,
+                                            gpi_set_action_t action) {
+    std::string str;
+    size_t chars = static_cast<size_t>(m_num_elems);
+    str.resize(chars);
+
+    for (unsigned int bit = 0; bit < chars; bit++) {
+        int byte = bit / 8;
+        int offset = bit % 8;
+        str[chars - 1 - bit] = (buffer[byte] >> offset) & 0x1 ? '1' : '0';
+    }
+
+    return set_signal_value_binstr(str, action);
 }

@@ -52,6 +52,7 @@ import cocotb._conf
 from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
+from cocotb._utils import DocEnum
 from cocotb.types import Array, Logic, LogicArray, Range
 
 
@@ -580,6 +581,18 @@ class _GPISetAction(enum.IntEnum):
     RELEASE = 2
 
 
+class GPIResolveX(DocEnum):
+    """This specifies what to do with non-0/1 bits when retreiving :class:`bytes` from the simulator as 2-state data."""
+
+    ERROR = (0, """Raise a ValueError.""")
+    ZEROS = (1, """Set non-0/1 bits to 0.""")
+    ONES = (2, """Set non-0/1 bits to 1.""")
+    RANDOM = (
+        3,
+        """Randomize non-0/1 bits.  Randomization is controlled by COCOTB_RANDOM_SEED.""",
+    )
+
+
 #: The type of the value a :class:`Deposit` or :class:`Force` action contains.
 ValueT = TypeVar("ValueT")
 
@@ -893,7 +906,7 @@ class LogicObject(
 
     def _set_value(
         self,
-        value: Union[LogicArray, Logic, int, str],
+        value: Union[LogicArray, Logic, int, str, bytes, bytearray],
         action: _GPISetAction,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
@@ -923,6 +936,13 @@ class LogicObject(
                 raise OverflowError(
                     f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
                 )
+        elif isinstance(value, (bytes, bytearray)):
+            if (self._handle.get_num_elems() + 7) // 8 != len(value):
+                raise ValueError(
+                    f"Incorrect bytes size ({len(value)}) for signal of size {self._handle.get_num_elems()}"
+                )
+            schedule_write(self, self._handle.set_signal_val_bytes, (action, value))
+            return
 
         elif isinstance(value, str):
             value_ = LogicArray(value, self.range)
@@ -958,8 +978,9 @@ class LogicObject(
 
         :setter:
             Assigns a value at the end of the current delta cycle.
-            A :class:`~cocotb.types.LogicArray`, :class:`str`, or :class:`int` can be used to set the value.
+            A :class:`~cocotb.types.LogicArray`, :class:`str`, :class:`bytes`, :class:`bytearray` or :class:`int` can be used to set the value.
             When a :class:`str` or :class:`int` is given, it is as if it is first converted a :class:`~cocotb.types.LogicArray`.
+            When a :class:`bytes` or :class:`bytearray` is given it is treated as 2-state data and passed directly to the GPI.
 
         Raises:
             TypeError: If assignment is given a type other than :class:`~cocotb.types.LogicArray`, :class:`int`, or :class:`str`.
@@ -984,6 +1005,14 @@ class LogicObject(
     @value.setter
     def value(self, value: LogicArray) -> None:
         self.set(value)
+
+    def value_as_bytes(self, resolve_x: GPIResolveX = GPIResolveX.ERROR) -> bytes:
+        """Returns 2-state data from the simulator encoded as :class:`bytes`.
+
+        Args:
+            resolve_x: Specifies how to handle non 0/1 data.
+        """
+        return self._handle.get_signal_val_bytes(resolve_x.value)
 
     @deprecated(
         "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
