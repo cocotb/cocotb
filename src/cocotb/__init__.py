@@ -26,6 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import ast
+import inspect
 import logging as py_logging
 import os
 import random
@@ -42,9 +43,10 @@ import cocotb.handle
 import cocotb.task
 import cocotb.triggers
 from cocotb._scheduler import Scheduler
-from cocotb._utils import DocEnum
+from cocotb._utils import DocEnum, remove_traceback_frames
 from cocotb.logging import default_config
 from cocotb.regression import RegressionManager, RegressionMode
+from cocotb.result import TestSuccess
 
 from ._version import __version__
 
@@ -136,28 +138,49 @@ def _setup_logging() -> None:
     log = py_logging.getLogger(__name__)
 
 
+def _test_fail_callback(task: "cocotb.task.Task[Any]") -> None:
+    try:
+        task._outcome.get()
+    except (TestSuccess, AssertionError) as e:
+        task.log.info("Test stopped by this task")
+        e = remove_traceback_frames(e, ["_test_fail_callback", "get"])
+        cocotb.regression_manager._abort_test(e)
+    except BaseException as e:
+        task.log.error("Exception raised by this task")
+        e = remove_traceback_frames(e, ["_test_fail_callback", "get"])
+        cocotb.regression_manager._abort_test(e)
+
+
 def start_soon(
     coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
+    propagate: bool = False,
 ) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Schedule a coroutine to be run concurrently.
+    r"""Schedule a coroutine to be run concurrently.
 
     Note that this is not an ``async`` function,
-    and the new task will not execute until the calling task yields control.
+    and the new :class:`cocotb.task.Task` will not execute until the calling task yields control.
 
     Args:
-        coro: A task or coroutine to be run.
+        coro: A task or coroutine to be run concurrently.
+        propagate:
+            If ``True``, if *coro* finishes due to an exception, it will be propagated to any task waiting on the return task object.
+            If ``False``, if *coro* finishes due to an exception, it will end the test with a failure.
 
     Returns:
         The :class:`~cocotb.task.Task` that is scheduled to be run.
 
     .. versionadded:: 1.6.0
     """
-    return _scheduler_inst.start_soon(coro)
+    task = create_task(coro)
+    if not propagate:
+        task._add_done_callback(_test_fail_callback)
+    cocotb._scheduler_inst._queue(task)
+    return task
 
 
 async def start(
     coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
+    propagate: bool = False,
 ) -> "cocotb.task.Task[cocotb.task.ResultType]":
     """
     Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
@@ -168,14 +191,17 @@ async def start(
     raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
 
     Args:
-        coro: A task or coroutine to be run.
+        coro: A task or coroutine to be run concurrently.
+        propagate:
+            If ``True``, if *coro* finishes due to an exception, it will be propagated to any task waiting on the return task object.
+            If ``False``, if *coro* finishes due to an exception, it will end the test with a failure.
 
     Returns:
         The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
 
     .. versionadded:: 1.6.0
     """
-    task = _scheduler_inst.start_soon(coro)
+    task = start_soon(coro, propagate=propagate)
     await cocotb.triggers.NullTrigger()
     return task
 
@@ -196,7 +222,24 @@ def create_task(
 
     .. versionadded:: 1.6.0
     """
-    return cocotb._scheduler_inst.create_task(coro)
+    if isinstance(coro, cocotb.task.Task):
+        return coro
+    elif isinstance(coro, Coroutine):
+        return cocotb.task.Task(coro)
+    elif inspect.iscoroutinefunction(coro):
+        raise TypeError(
+            f"Coroutine function {coro} should be called prior to being " "scheduled."
+        )
+    elif inspect.isasyncgen(coro):
+        raise TypeError(
+            f"{coro.__qualname__} is an async generator, not a coroutine. "
+            "You likely used the yield keyword instead of await."
+        )
+    else:
+        raise TypeError(
+            f"Attempt to add an object of type {type(coro)} to the scheduler, which "
+            f"isn't a coroutine: {coro!r}\n"
+        )
 
 
 def _initialise_testbench(argv_):  # pragma: no cover
