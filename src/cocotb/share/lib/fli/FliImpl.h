@@ -79,13 +79,10 @@ class FliSignalCbHdl : public FliProcessCbHdl, public GpiValueCbHdl {
 };
 
 // All other callbacks are related to the simulation phasing
-class FliSimPhaseCbHdl : public FliProcessCbHdl, public GpiCommonCbHdl {
+class FliSimPhaseCbHdl : public FliProcessCbHdl {
   public:
     FliSimPhaseCbHdl(GpiImplInterface *impl, mtiProcessPriorityT priority)
-        : GpiCbHdl(impl),
-          FliProcessCbHdl(impl),
-          GpiCommonCbHdl(impl),
-          m_priority(priority) {}
+        : GpiCbHdl(impl), FliProcessCbHdl(impl), m_priority(priority) {}
 
     int arm_callback() override;
 
@@ -132,7 +129,7 @@ class FliShutdownCbHdl : public FliProcessCbHdl {
     int cleanup_callback() override;
 };
 
-class FliTimedCbHdl : public FliProcessCbHdl, public GpiCommonCbHdl {
+class FliTimedCbHdl : public FliProcessCbHdl {
   public:
     FliTimedCbHdl(GpiImplInterface *impl, uint64_t time);
 

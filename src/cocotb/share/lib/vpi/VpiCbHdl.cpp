@@ -121,10 +121,7 @@ int VpiCbHdl::cleanup_callback() {
 
 VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig,
                              int edge)
-    : GpiCbHdl(impl),
-      GpiCommonCbHdl(impl),
-      VpiCbHdl(impl),
-      GpiValueCbHdl(impl, sig, edge) {
+    : GpiCbHdl(impl), VpiCbHdl(impl), GpiValueCbHdl(impl, sig, edge) {
     vpi_time.type = vpiSuppressTime;
     m_vpi_value.format = vpiIntVal;
 
@@ -186,7 +183,7 @@ int VpiShutdownCbHdl::run_callback() {
 }
 
 VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time)
-    : GpiCbHdl(impl), VpiCommonCbHdl(impl) {
+    : GpiCbHdl(impl), VpiCbHdl(impl) {
     vpi_time.high = (uint32_t)(time >> 32);
     vpi_time.low = (uint32_t)(time);
     vpi_time.type = vpiSimTime;
@@ -214,16 +211,16 @@ int VpiTimedCbHdl::cleanup_callback() {
 }
 
 VpiReadWriteCbHdl::VpiReadWriteCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VpiCommonCbHdl(impl) {
+    : GpiCbHdl(impl), VpiCbHdl(impl) {
     cb_data.reason = cbReadWriteSynch;
 }
 
 VpiReadOnlyCbHdl::VpiReadOnlyCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VpiCommonCbHdl(impl) {
+    : GpiCbHdl(impl), VpiCbHdl(impl) {
     cb_data.reason = cbReadOnlySynch;
 }
 
 VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VpiCommonCbHdl(impl) {
+    : GpiCbHdl(impl), VpiCbHdl(impl) {
     cb_data.reason = cbNextSimTime;
 }

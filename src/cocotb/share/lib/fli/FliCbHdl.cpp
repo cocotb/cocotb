@@ -55,10 +55,7 @@ int FliProcessCbHdl::cleanup_callback() {
 }
 
 FliTimedCbHdl::FliTimedCbHdl(GpiImplInterface* impl, uint64_t time)
-    : GpiCbHdl(impl),
-      FliProcessCbHdl(impl),
-      GpiCommonCbHdl(impl),
-      m_time(time) {
+    : GpiCbHdl(impl), FliProcessCbHdl(impl), m_time(time) {
     m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback,
                                                (void*)this, MTI_PROC_IMMEDIATE);
 }
@@ -134,7 +131,6 @@ int FliSimPhaseCbHdl::arm_callback() {
 FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface* impl, FliSignalObjHdl* sig_hdl,
                                int edge)
     : GpiCbHdl(impl),
-      GpiCommonCbHdl(impl),
       FliProcessCbHdl(impl),
       GpiValueCbHdl(impl, sig_hdl, edge) {
     m_sig_hdl = m_signal->get_handle<mtiSignalIdT>();

@@ -111,29 +111,23 @@ class VpiValueCbHdl : public VpiCbHdl, public GpiValueCbHdl {
     s_vpi_value m_vpi_value;
 };
 
-class VpiCommonCbHdl : public VpiCbHdl, public GpiCommonCbHdl {
-  public:
-    VpiCommonCbHdl(GpiImplInterface *impl)
-        : GpiCbHdl(impl), VpiCbHdl(impl), GpiCommonCbHdl(impl) {}
-};
-
-class VpiTimedCbHdl : public VpiCommonCbHdl {
+class VpiTimedCbHdl : public VpiCbHdl {
   public:
     VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time);
     int cleanup_callback() override;
 };
 
-class VpiReadOnlyCbHdl : public VpiCommonCbHdl {
+class VpiReadOnlyCbHdl : public VpiCbHdl {
   public:
     VpiReadOnlyCbHdl(GpiImplInterface *impl);
 };
 
-class VpiNextPhaseCbHdl : public VpiCommonCbHdl {
+class VpiNextPhaseCbHdl : public VpiCbHdl {
   public:
     VpiNextPhaseCbHdl(GpiImplInterface *impl);
 };
 
-class VpiReadWriteCbHdl : public VpiCommonCbHdl {
+class VpiReadWriteCbHdl : public VpiCbHdl {
   public:
     VpiReadWriteCbHdl(GpiImplInterface *impl);
 };

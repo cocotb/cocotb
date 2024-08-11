@@ -83,12 +83,12 @@ gpi_cb_state_e GpiCbHdl::get_call_state() { return m_state; }
 
 GpiCbHdl::~GpiCbHdl() {}
 
-int GpiCommonCbHdl::run_callback() {
+int GpiCbHdl::run_callback() {
     this->gpi_function(m_cb_data);
     return 0;
 }
 
-int GpiCommonCbHdl::set_user_data(int (*gpi_function)(void *), void *data) {
+int GpiCbHdl::set_user_data(int (*gpi_function)(void *), void *data) {
     if (!gpi_function) {
         LOG_ERROR("gpi_function to set_user_data is NULL");
     }
@@ -99,7 +99,7 @@ int GpiCommonCbHdl::set_user_data(int (*gpi_function)(void *), void *data) {
 
 GpiValueCbHdl::GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal,
                              int edge)
-    : GpiCbHdl(impl), GpiCommonCbHdl(impl), m_signal(signal) {
+    : GpiCbHdl(impl), m_signal(signal) {
     if (edge == (GPI_RISING | GPI_FALLING))
         required_value = "X";
     else if (edge & GPI_RISING)
