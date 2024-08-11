@@ -98,3 +98,11 @@ extern "C" void *utils_dyn_sym(void *handle, const char *sym_name) {
 #endif
     return entry_point;
 }
+
+#if __cplusplus < 202302L
+extern "C" [[noreturn]] void unreachable() {
+    LOG_CRITICAL("Reached unreachable code!");
+    // TODO platform-specific stacktrace?
+    exit(1);
+}
+#endif
