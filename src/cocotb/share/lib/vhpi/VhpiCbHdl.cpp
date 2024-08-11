@@ -847,10 +847,7 @@ GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
 
 VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig,
                                int edge)
-    : GpiCbHdl(impl),
-      GpiCommonCbHdl(impl),
-      VhpiCbHdl(impl),
-      GpiValueCbHdl(impl, sig, edge) {
+    : GpiCbHdl(impl), VhpiCbHdl(impl), GpiValueCbHdl(impl, sig, edge) {
     cb_data.reason = vhpiCbValueChange;
     cb_data.time = &vhpi_time;
     cb_data.obj = m_signal->get_handle<vhpiHandleT>();
@@ -903,7 +900,7 @@ int VhpiShutdownCbHdl::run_callback() {
 }
 
 VhpiTimedCbHdl::VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time)
-    : GpiCbHdl(impl), VhpiCommonCbHdl(impl) {
+    : GpiCbHdl(impl), VhpiCbHdl(impl) {
     vhpi_time.high = (uint32_t)(time >> 32);
     vhpi_time.low = (uint32_t)(time);
 
@@ -922,19 +919,19 @@ int VhpiTimedCbHdl::cleanup_callback() {
 }
 
 VhpiReadWriteCbHdl::VhpiReadWriteCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCommonCbHdl(impl) {
+    : GpiCbHdl(impl), VhpiCbHdl(impl) {
     cb_data.reason = vhpiCbRepLastKnownDeltaCycle;
     cb_data.time = &vhpi_time;
 }
 
 VhpiReadOnlyCbHdl::VhpiReadOnlyCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCommonCbHdl(impl) {
+    : GpiCbHdl(impl), VhpiCbHdl(impl) {
     cb_data.reason = vhpiCbRepEndOfTimeStep;
     cb_data.time = &vhpi_time;
 }
 
 VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCommonCbHdl(impl) {
+    : GpiCbHdl(impl), VhpiCbHdl(impl) {
     cb_data.reason = vhpiCbRepNextTimeStep;
     cb_data.time = &vhpi_time;
 }

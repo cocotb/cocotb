@@ -120,24 +120,18 @@ class VhpiValueCbHdl : public VhpiCbHdl, public GpiValueCbHdl {
     std::string initial_value;
 };
 
-class VhpiCommonCbHdl : public VhpiCbHdl, public GpiCommonCbHdl {
-  public:
-    VhpiCommonCbHdl(GpiImplInterface *impl)
-        : GpiCbHdl(impl), VhpiCbHdl(impl), GpiCommonCbHdl(impl) {}
-};
-
-class VhpiTimedCbHdl : public VhpiCommonCbHdl {
+class VhpiTimedCbHdl : public VhpiCbHdl {
   public:
     VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time);
     int cleanup_callback() override;
 };
 
-class VhpiReadOnlyCbHdl : public VhpiCommonCbHdl {
+class VhpiReadOnlyCbHdl : public VhpiCbHdl {
   public:
     VhpiReadOnlyCbHdl(GpiImplInterface *impl);
 };
 
-class VhpiNextPhaseCbHdl : public VhpiCommonCbHdl {
+class VhpiNextPhaseCbHdl : public VhpiCbHdl {
   public:
     VhpiNextPhaseCbHdl(GpiImplInterface *impl);
 };
@@ -164,7 +158,7 @@ class VhpiShutdownCbHdl : public VhpiCbHdl {
     }
 };
 
-class VhpiReadWriteCbHdl : public VhpiCommonCbHdl {
+class VhpiReadWriteCbHdl : public VhpiCbHdl {
   public:
     VhpiReadWriteCbHdl(GpiImplInterface *impl);
 };
