@@ -90,4 +90,11 @@ constexpr Deferable<F> make_deferable(F f) {
 #define DEFER(statement) \
     auto DEFER0(_defer, __COUNTER__) = make_deferable([&]() { statement; });
 
+#if __cplusplus >= 202302L
+#include <utility>
+using unreachable = std::unreachable;
+#else
+extern "C" [[noreturn]] void unreachable();
+#endif
+
 #endif /* COCOTB_UTILS_H_ */
