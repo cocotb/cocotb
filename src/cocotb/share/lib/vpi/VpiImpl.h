@@ -177,10 +177,7 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
   public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl,
                     gpi_objtype_t objtype, bool is_const)
-        : GpiSignalObjHdl(impl, hdl, objtype, is_const),
-          m_rising_cb(impl, this, GPI_RISING),
-          m_falling_cb(impl, this, GPI_FALLING),
-          m_either_cb(impl, this, GPI_VALUE_CHANGE) {}
+        : GpiSignalObjHdl(impl, hdl, objtype, is_const) {}
 
     const char *get_signal_value_binstr() override;
     const char *get_signal_value_str() override;
@@ -203,10 +200,6 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
 
   private:
     int set_signal_value(s_vpi_value value, gpi_set_action_t action);
-
-    VpiValueCbHdl m_rising_cb;
-    VpiValueCbHdl m_falling_cb;
-    VpiValueCbHdl m_either_cb;
 };
 
 class VpiIterator : public GpiIterator {
