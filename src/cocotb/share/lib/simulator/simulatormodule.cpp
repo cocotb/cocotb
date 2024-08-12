@@ -34,9 +34,6 @@
  * Uses GPI calls to interface to the simulator.
  */
 
-static int takes = 0;
-static int releases = 0;
-
 #include <Python.h>
 #include <cocotb_utils.h>    // to_python to_simulator
 #include <py_gpi_logging.h>  // py_gpi_logger_set_level
@@ -171,17 +168,6 @@ PyTypeObject gpi_hdl_Object<gpi_clk_hdl>::py_type;
 
 typedef int (*gpi_function_t)(void *);
 
-PyGILState_STATE TAKE_GIL(void) {
-    PyGILState_STATE state = PyGILState_Ensure();
-    takes++;
-    return state;
-}
-
-void DROP_GIL(PyGILState_STATE state) {
-    PyGILState_Release(state);
-    releases++;
-}
-
 struct sim_time {
     uint32_t high;
     uint32_t low;
@@ -192,12 +178,6 @@ struct sim_time {
  * @brief   Handle a callback coming from GPI
  * @ingroup python_c_api
  *
- * GILState before calling: Unknown
- *
- * GILState after calling: Unknown
- *
- * Makes one call to TAKE_GIL and one call to DROP_GIL
- *
  * Returns 0 on success or 1 on a failure.
  *
  * Handles a callback from the simulator, all of which call this function.
@@ -207,67 +187,51 @@ struct sim_time {
  * fired. The scheduler can then call next() on all the coroutines that
  * are waiting on that particular trigger.
  *
- * TODO:
- *  - Tidy up return values
- *  - Ensure cleanup correctly in exception cases
- *
  */
 int handle_gpi_callback(void *user_data) {
-    int ret = 0;
     to_python();
+    DEFER(to_simulator());
+
     PythonCallback *cb_data = (PythonCallback *)user_data;
 
     if (cb_data->id_value != COCOTB_ACTIVE_ID) {
         fprintf(stderr, "Userdata corrupted!\n");
-        ret = 1;
-        goto err;
+        return 1;
     }
     cb_data->id_value = COCOTB_INACTIVE_ID;
 
-    PyGILState_STATE gstate;
-    gstate = TAKE_GIL();
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    DEFER(PyGILState_Release(gstate));
 
     // Python allowed
 
     if (!PyCallable_Check(cb_data->function)) {
         fprintf(stderr, "Callback fired but function isn't callable?!\n");
-        ret = 1;
-        goto out;
+        return 1;
     }
 
-    {
-        // Call the callback
-        PyObject *pValue =
-            PyObject_Call(cb_data->function, cb_data->args, cb_data->kwargs);
+    // Call the callback
+    PyObject *pValue =
+        PyObject_Call(cb_data->function, cb_data->args, cb_data->kwargs);
 
-        // If the return value is NULL a Python exception has occurred
-        // The best thing to do here is shutdown as any subsequent
-        // calls will go back to Python which is now in an unknown state
-        if (pValue == NULL) {
-            fprintf(stderr,
-                    "ERROR: called callback function threw exception\n");
-            PyErr_Print();
-
-            gpi_sim_end();
-            ret = 0;
-            goto out;
-        }
-
-        // Free up our mess
-        Py_DECREF(pValue);
+    // If the return value is NULL a Python exception has occurred
+    // The best thing to do here is shutdown as any subsequent
+    // calls will go back to Python which is now in an unknown state
+    if (pValue == NULL) {
+        PyErr_Print();
+        gpi_sim_end();
+        return 0;
     }
+
+    // We don't care about the result
+    Py_DECREF(pValue);
 
     // Remove callback data if no longer active
     if (cb_data->id_value == COCOTB_INACTIVE_ID) {
         delete cb_data;
     }
 
-out:
-    DROP_GIL(gstate);
-
-err:
-    to_simulator();
-    return ret;
+    return 0;
 }
 
 // Register a callback for read-only state of sim
