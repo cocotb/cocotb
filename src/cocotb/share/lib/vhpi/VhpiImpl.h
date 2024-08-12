@@ -191,10 +191,7 @@ class VhpiSignalObjHdl : public GpiSignalObjHdl {
   public:
     VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl,
                      gpi_objtype_t objtype, bool is_const)
-        : GpiSignalObjHdl(impl, hdl, objtype, is_const),
-          m_rising_cb(impl, this, GPI_RISING),
-          m_falling_cb(impl, this, GPI_FALLING),
-          m_either_cb(impl, this, GPI_VALUE_CHANGE) {}
+        : GpiSignalObjHdl(impl, hdl, objtype, is_const) {}
     ~VhpiSignalObjHdl() override;
 
     const char *get_signal_value_binstr() override;
@@ -221,9 +218,6 @@ class VhpiSignalObjHdl : public GpiSignalObjHdl {
     vhpiEnumT chr2vhpi(char value);
     vhpiValueT m_value;
     vhpiValueT m_binvalue;
-    VhpiValueCbHdl m_rising_cb;
-    VhpiValueCbHdl m_falling_cb;
-    VhpiValueCbHdl m_either_cb;
 };
 
 class VhpiLogicSignalObjHdl : public VhpiSignalObjHdl {

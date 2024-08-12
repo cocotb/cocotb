@@ -177,10 +177,7 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
                     bool is_const, int acc_type, int acc_full_type, bool is_var)
         : GpiSignalObjHdl(impl, hdl, objtype, is_const),
           FliObj(acc_type, acc_full_type),
-          m_is_var(is_var),
-          m_rising_cb(impl, this, GPI_RISING),
-          m_falling_cb(impl, this, GPI_FALLING),
-          m_either_cb(impl, this, GPI_VALUE_CHANGE) {}
+          m_is_var(is_var) {}
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
@@ -192,9 +189,6 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
 
   protected:
     bool m_is_var;
-    FliSignalCbHdl m_rising_cb;
-    FliSignalCbHdl m_falling_cb;
-    FliSignalCbHdl m_either_cb;
 };
 
 class FliValueObjHdl : public FliSignalObjHdl {
