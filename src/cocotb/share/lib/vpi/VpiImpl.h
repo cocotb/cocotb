@@ -29,6 +29,8 @@
 #define COCOTB_VPI_IMPL_H_
 
 #include <exports.h>
+
+#include "gpi.h"
 #ifdef COCOTBVPI_EXPORTS
 #define COCOTBVPI_EXPORT COCOTB_EXPORT
 #else
@@ -104,7 +106,8 @@ class VpiSignalObjHdl;
 
 class VpiValueCbHdl : public VpiCbHdl, public GpiValueCbHdl {
   public:
-    VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig, int edge);
+    VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig,
+                  gpi_edge_e edge);
     int cleanup_callback() override;
 
   private:
@@ -177,7 +180,7 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
         : GpiSignalObjHdl(impl, hdl, objtype, is_const),
           m_rising_cb(impl, this, GPI_RISING),
           m_falling_cb(impl, this, GPI_FALLING),
-          m_either_cb(impl, this, GPI_FALLING | GPI_RISING) {}
+          m_either_cb(impl, this, GPI_VALUE_CHANGE) {}
 
     const char *get_signal_value_binstr() override;
     const char *get_signal_value_str() override;
@@ -194,7 +197,8 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
     /* Value change callback accessor */
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
-    GpiCbHdl *register_value_change_callback(int edge, int (*function)(void *),
+    GpiCbHdl *register_value_change_callback(gpi_edge_e edge,
+                                             int (*function)(void *),
                                              void *cb_data) override;
 
   private:

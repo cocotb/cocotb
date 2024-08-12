@@ -23,6 +23,9 @@ STRING: int
 STRUCTURE: int
 PACKED_STRUCTURE: int
 UNKNOWN: int
+RISING: int
+FALLING: int
+VALUE_CHANGE: int
 
 class gpi_cb_hdl:
     def deregister(self) -> None: ...

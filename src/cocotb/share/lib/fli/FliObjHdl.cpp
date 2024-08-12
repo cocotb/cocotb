@@ -32,12 +32,13 @@
 
 #include "FliImpl.h"
 #include "_vendor/fli/acc_vhdl.h"
+#include "gpi.h"
 
 using std::abs;
 using std::to_string;
 
 GpiCbHdl *FliSignalObjHdl::register_value_change_callback(
-    int edge, int (*function)(void *), void *cb_data) {
+    gpi_edge_e edge, int (*function)(void *), void *cb_data) {
     FliSignalCbHdl *cb = NULL;
 
     if (m_is_var) {
@@ -45,13 +46,13 @@ GpiCbHdl *FliSignalObjHdl::register_value_change_callback(
     }
 
     switch (edge) {
-        case 1:
+        case GPI_RISING:
             cb = &m_rising_cb;
             break;
-        case 2:
+        case GPI_FALLING:
             cb = &m_falling_cb;
             break;
-        case 3:
+        case GPI_VALUE_CHANGE:
             cb = &m_either_cb;
             break;
         default:

@@ -232,8 +232,9 @@ GPI_EXPORT void gpi_set_signal_value_str(
     gpi_set_action_t action);  // String of ASCII char(s)
 
 typedef enum gpi_edge {
-    GPI_RISING = 1,
-    GPI_FALLING = 2,
+    GPI_RISING,
+    GPI_FALLING,
+    GPI_VALUE_CHANGE,
 } gpi_edge_e;
 
 // The callback registering functions
@@ -242,7 +243,7 @@ GPI_EXPORT gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
                                                   uint64_t time);
 GPI_EXPORT gpi_cb_hdl gpi_register_value_change_callback(
     int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl,
-    int edge);
+    gpi_edge_e edge);
 GPI_EXPORT gpi_cb_hdl
 gpi_register_readonly_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 GPI_EXPORT gpi_cb_hdl
