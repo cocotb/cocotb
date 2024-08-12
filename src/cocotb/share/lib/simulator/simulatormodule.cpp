@@ -67,6 +67,23 @@ struct callback_data {
     gpi_sim_hdl cb_hdl;
 };
 
+static callback_data *callback_data_new(PyObject *func, PyObject *args,
+                                        PyObject *kwargs) {
+    callback_data *data = (callback_data *)malloc(sizeof(callback_data));
+    if (data == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    data->_saved_thread_state = PyThreadState_Get();
+    data->id_value = COCOTB_ACTIVE_ID;
+    data->function = func;
+    data->args = args;
+    data->kwargs = kwargs;
+
+    return data;
+}
+
 class GpiClock;
 using gpi_clk_hdl = GpiClock *;
 
@@ -264,23 +281,6 @@ out:
 err:
     to_simulator();
     return ret;
-}
-
-static callback_data *callback_data_new(PyObject *func, PyObject *args,
-                                        PyObject *kwargs) {
-    callback_data *data = (callback_data *)malloc(sizeof(callback_data));
-    if (data == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    data->_saved_thread_state = PyThreadState_Get();
-    data->id_value = COCOTB_ACTIVE_ID;
-    data->function = func;
-    data->args = args;
-    data->kwargs = kwargs;
-
-    return data;
 }
 
 // Register a callback for read-only state of sim
