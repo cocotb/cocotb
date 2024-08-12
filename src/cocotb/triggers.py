@@ -362,7 +362,7 @@ class RisingEdge(_EdgeBase):
         not just from ``0`` to ``1`` like the ``rising_edge`` function in VHDL.
     """
 
-    _edge_type = 1
+    _edge_type = simulator.RISING
 
     @classmethod
     def __singleton_key__(
@@ -391,7 +391,7 @@ class FallingEdge(_EdgeBase):
         not just from ``1`` to ``0`` like the ``falling_edge`` function in VHDL.
     """
 
-    _edge_type = 2
+    _edge_type = simulator.FALLING
 
     @classmethod
     def __singleton_key__(
@@ -414,7 +414,7 @@ class Edge(_EdgeBase):
         TypeError: If the signal is not an object which can change value.
     """
 
-    _edge_type = 3
+    _edge_type = simulator.VALUE_CHANGE
 
     @classmethod
     def __singleton_key__(

@@ -461,7 +461,7 @@ static PyObject *register_value_change_callback(
     Py_INCREF(function);
 
     PyObject *pedge = PyTuple_GetItem(args, 2);
-    int edge = (int)PyLong_AsLong(pedge);
+    gpi_edge_e edge = (gpi_edge_e)PyLong_AsLong(pedge);
 
     // Remaining args for function
     PyObject *fArgs = PyTuple_GetSlice(args, 3, numargs);  // New reference
@@ -955,8 +955,6 @@ static int add_module_constants(PyObject *simulator) {
         PyModule_AddIntConstant(simulator, "MEMORY", GPI_MEMORY) < 0 ||
         PyModule_AddIntConstant(simulator, "MODULE", GPI_MODULE) < 0 ||
         PyModule_AddIntConstant(simulator, "NET", GPI_NET) < 0 ||
-        // PyModule_AddIntConstant(simulator, "PARAMETER", GPI_PARAMETER ) < 0
-        // ||  // Deprecated
         PyModule_AddIntConstant(simulator, "REG", GPI_REGISTER) < 0 ||
         PyModule_AddIntConstant(simulator, "NETARRAY", GPI_ARRAY) < 0 ||
         PyModule_AddIntConstant(simulator, "ENUM", GPI_ENUM) < 0 ||
@@ -970,7 +968,12 @@ static int add_module_constants(PyObject *simulator) {
         PyModule_AddIntConstant(simulator, "PACKAGE", GPI_PACKAGE) < 0 ||
         PyModule_AddIntConstant(simulator, "OBJECTS", GPI_OBJECTS) < 0 ||
         PyModule_AddIntConstant(simulator, "DRIVERS", GPI_DRIVERS) < 0 ||
-        PyModule_AddIntConstant(simulator, "LOADS", GPI_LOADS) < 0 || false) {
+        PyModule_AddIntConstant(simulator, "LOADS", GPI_LOADS) < 0 ||
+        PyModule_AddIntConstant(simulator, "RISING", GPI_RISING) < 0 ||
+        PyModule_AddIntConstant(simulator, "FALLING", GPI_FALLING) < 0 ||
+        PyModule_AddIntConstant(simulator, "VALUE_CHANGE", GPI_VALUE_CHANGE) <
+            0 ||
+        false) {
         return -1;
     }
 

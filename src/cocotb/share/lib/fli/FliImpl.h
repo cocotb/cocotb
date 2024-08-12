@@ -29,6 +29,8 @@
 #define COCOTB_FLI_IMPL_H_
 
 #include <exports.h>
+
+#include "gpi.h"
 #ifdef COCOTBFLI_EXPORTS
 #define COCOTBFLI_EXPORT COCOTB_EXPORT
 #else
@@ -67,7 +69,8 @@ class FliProcessCbHdl : public virtual GpiCbHdl {
 // One class of callbacks uses mti_Sensitize to react to a signal
 class FliSignalCbHdl : public FliProcessCbHdl, public GpiValueCbHdl {
   public:
-    FliSignalCbHdl(GpiImplInterface *impl, FliSignalObjHdl *sig_hdl, int edge);
+    FliSignalCbHdl(GpiImplInterface *impl, FliSignalObjHdl *sig_hdl,
+                   gpi_edge_e edge);
 
     int arm_callback() override;
     int cleanup_callback() override {
@@ -177,11 +180,12 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
           m_is_var(is_var),
           m_rising_cb(impl, this, GPI_RISING),
           m_falling_cb(impl, this, GPI_FALLING),
-          m_either_cb(impl, this, GPI_FALLING | GPI_RISING) {}
+          m_either_cb(impl, this, GPI_VALUE_CHANGE) {}
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
-    GpiCbHdl *register_value_change_callback(int edge, int (*function)(void *),
+    GpiCbHdl *register_value_change_callback(gpi_edge_e edge,
+                                             int (*function)(void *),
                                              void *cb_data) override;
 
     bool is_var() { return m_is_var; }

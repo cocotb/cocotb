@@ -32,6 +32,7 @@
 #include <stdexcept>
 
 #include "VhpiImpl.h"
+#include "gpi.h"
 
 namespace {
 using bufSize_type = decltype(vhpiValueT::bufSize);
@@ -820,17 +821,17 @@ long VhpiSignalObjHdl::get_signal_value_long() {
 }
 
 GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
-    int edge, int (*function)(void *), void *cb_data) {
+    gpi_edge_e edge, int (*function)(void *), void *cb_data) {
     VhpiValueCbHdl *cb = NULL;
 
     switch (edge) {
-        case 1:
+        case GPI_RISING:
             cb = &m_rising_cb;
             break;
-        case 2:
+        case GPI_FALLING:
             cb = &m_falling_cb;
             break;
-        case 3:
+        case GPI_VALUE_CHANGE:
             cb = &m_either_cb;
             break;
         default:
@@ -846,7 +847,7 @@ GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
 }
 
 VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig,
-                               int edge)
+                               gpi_edge_e edge)
     : GpiCbHdl(impl), VhpiCbHdl(impl), GpiValueCbHdl(impl, sig, edge) {
     cb_data.reason = vhpiCbValueChange;
     cb_data.time = &vhpi_time;

@@ -32,6 +32,7 @@
 #include <stdexcept>
 
 #include "VpiImpl.h"
+#include "gpi.h"
 
 int VpiSignalObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {
@@ -241,17 +242,17 @@ int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s,
 }
 
 GpiCbHdl *VpiSignalObjHdl::register_value_change_callback(
-    int edge, int (*function)(void *), void *cb_data) {
+    gpi_edge_e edge, int (*function)(void *), void *cb_data) {
     VpiValueCbHdl *cb = NULL;
 
     switch (edge) {
-        case 1:
+        case GPI_RISING:
             cb = &m_rising_cb;
             break;
-        case 2:
+        case GPI_FALLING:
             cb = &m_falling_cb;
             break;
-        case 3:
+        case GPI_VALUE_CHANGE:
             cb = &m_either_cb;
             break;
         default:
