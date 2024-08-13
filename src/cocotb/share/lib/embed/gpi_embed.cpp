@@ -71,7 +71,11 @@ constexpr char const *PYTHON_INTERPRETER_PATH = "/bin/python";
 
 static PyObject *pEventFn = NULL;
 
-static void set_program_name_in_venv(void) {
+#define GET_LIBPYTHON_FN(fn_name)           \
+    (reinterpret_cast<decltype(fn_name) *>( \
+        utils_dyn_sym(libpython_handle, (#fn_name))))
+
+static void set_program_name_in_venv(void *libpython_handle) {
     static wchar_t venv_path_w[PATH_MAX];
 
     const char *venv_path_home = getenv("VIRTUAL_ENV");
@@ -85,7 +89,8 @@ static void set_program_name_in_venv(void) {
     std::string venv_path = venv_path_home;
     venv_path.append(PYTHON_INTERPRETER_PATH);
 
-    auto venv_path_w_temp = Py_DecodeLocale(venv_path.c_str(), NULL);
+    auto venv_path_w_temp =
+        GET_LIBPYTHON_FN(Py_DecodeLocale)(venv_path.c_str(), NULL);
     if (venv_path_w_temp == NULL) {
         LOG_ERROR(
             "Unable to set Python Program Name using virtual environment. "
@@ -93,7 +98,7 @@ static void set_program_name_in_venv(void) {
         LOG_INFO("Virtual environment path: %s", venv_path.c_str());
         return;
     }
-    DEFER(PyMem_RawFree(venv_path_w_temp));
+    DEFER(GET_LIBPYTHON_FN(PyMem_RawFree)(venv_path_w_temp));
 
     wcsncpy(venv_path_w, venv_path_w_temp,
             sizeof(venv_path_w) / sizeof(wchar_t));
@@ -107,7 +112,8 @@ static void set_program_name_in_venv(void) {
 
     LOG_INFO("Using Python virtual environment interpreter at %ls",
              venv_path_w);
-    Py_SetProgramName(venv_path_w);
+
+    GET_LIBPYTHON_FN(Py_SetProgramName)(venv_path_w);
 }
 
 /**
@@ -122,7 +128,7 @@ static void set_program_name_in_venv(void) {
  * Stores the thread state for cocotb in static variable gtstate
  */
 
-extern "C" COCOTB_EXPORT void _embed_init_python(void) {
+extern "C" COCOTB_EXPORT void _embed_init_python(void *libpython_handle) {
     assert(!gtstate);  // this function should not be called twice
 
     const char *log_level = getenv("COCOTB_LOG_LEVEL");
@@ -142,12 +148,12 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     to_python();
     // must set program name to Python executable before initialization, so
     // initialization can determine path from executable
-    set_program_name_in_venv();
-    Py_Initialize(); /* Initialize the interpreter */
-    PySys_SetArgvEx(1, argv, 0);
+    set_program_name_in_venv(libpython_handle);
+    GET_LIBPYTHON_FN(Py_Initialize)(); /* Initialize the interpreter */
+    GET_LIBPYTHON_FN(PySys_SetArgvEx)(1, argv, 0);
 
     /* Swap out and return current thread state and release the GIL */
-    gtstate = PyEval_SaveThread();
+    gtstate = GET_LIBPYTHON_FN(PyEval_SaveThread)();
     to_simulator();
 
     /* Before returning we check if the user wants pause the simulator thread
@@ -188,22 +194,23 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
  *
  * Cleans up reference counts for Python objects and calls Py_Finalize function.
  */
-extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void) {
+extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void *libpython_handle) {
     // If initialization fails, this may be called twice:
     // Before the initial callback returns and in the final callback.
     // So we check if Python is still initialized before doing cleanup.
-    if (Py_IsInitialized()) {
+    if (GET_LIBPYTHON_FN(Py_IsInitialized)()) {
         to_python();
-        PyGILState_Ensure();  // Don't save state as we are calling Py_Finalize
-        Py_DecRef(pEventFn);
+        GET_LIBPYTHON_FN(PyGILState_Ensure)
+        ();  // Don't save state as we are calling Py_Finalize
+        GET_LIBPYTHON_FN(Py_DecRef)(pEventFn);
         pEventFn = NULL;
         py_gpi_logger_finalize();
-        Py_Finalize();
+        GET_LIBPYTHON_FN(Py_Finalize)();
         to_simulator();
     }
 }
 
-extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
+extern "C" COCOTB_EXPORT int _embed_sim_init(void *libpython_handle, int argc,
                                              char const *const *argv) {
     // Check that we are not already initialized
     if (pEventFn) {
@@ -211,125 +218,132 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     }
 
     // Ensure that the current thread is ready to call the Python C API
-    auto gstate = PyGILState_Ensure();
-    DEFER(PyGILState_Release(gstate));
+    auto gstate = GET_LIBPYTHON_FN(PyGILState_Ensure)();
+    DEFER(GET_LIBPYTHON_FN(PyGILState_Release)(gstate));
 
     to_python();
     DEFER(to_simulator());
 
-    auto entry_utility_module = PyImport_ImportModule("pygpi.entry");
+    auto entry_utility_module =
+        GET_LIBPYTHON_FN(PyImport_ImportModule)("pygpi.entry");
     if (!entry_utility_module) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        GET_LIBPYTHON_FN(PyErr_Print)();
         return -1;
         // LCOV_EXCL_STOP
     }
-    DEFER(Py_DECREF(entry_utility_module));
+    DEFER(GET_LIBPYTHON_FN(Py_DECREF)(entry_utility_module));
 
-    auto entry_info_tuple =
-        PyObject_CallMethod(entry_utility_module, "load_entry", NULL);
+    auto entry_info_tuple = GET_LIBPYTHON_FN(PyObject_CallMethod)(
+        entry_utility_module, "load_entry", NULL);
     if (!entry_info_tuple) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        GET_LIBPYTHON_FN(PyErr_Print)();
         return -1;
         // LCOV_EXCL_STOP
     }
-    DEFER(Py_DECREF(entry_info_tuple));
+    DEFER(GET_LIBPYTHON_FN(Py_DECREF)(entry_info_tuple));
 
     PyObject *entry_module;
     PyObject *entry_point;
-    if (!PyArg_ParseTuple(entry_info_tuple, "OO", &entry_module,
-                          &entry_point)) {
+    if (!GET_LIBPYTHON_FN(PyArg_ParseTuple)(entry_info_tuple, "OO",
+                                            &entry_module, &entry_point)) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        GET_LIBPYTHON_FN(PyErr_Print)();
         return -1;
         // LCOV_EXCL_STOP
     }
     // Objects returned from ParseTuple are borrowed from tuple
 
-    auto log_func = PyObject_GetAttrString(entry_module, "_log_from_c");
+    auto log_func =
+        GET_LIBPYTHON_FN(PyObject_GetAttrString)(entry_module, "_log_from_c");
     if (!log_func) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        GET_LIBPYTHON_FN(PyErr_Print)();
         return -1;
         // LCOV_EXCL_STOP
     }
-    DEFER(Py_DECREF(log_func));
+    DEFER(GET_LIBPYTHON_FN(Py_DECREF)(log_func));
 
-    auto filter_func = PyObject_GetAttrString(entry_module, "_filter_from_c");
+    auto filter_func = GET_LIBPYTHON_FN(PyObject_GetAttrString)(
+        entry_module, "_filter_from_c");
     if (!filter_func) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        GET_LIBPYTHON_FN(PyErr_Print)();
         return -1;
         // LCOV_EXCL_STOP
     }
-    DEFER(Py_DECREF(filter_func));
+    DEFER(GET_LIBPYTHON_FN(Py_DECREF)(filter_func));
 
     py_gpi_logger_initialize(log_func, filter_func);
 
-    pEventFn = PyObject_GetAttrString(entry_module, "_sim_event");
+    pEventFn =
+        GET_LIBPYTHON_FN(PyObject_GetAttrString)(entry_module, "_sim_event");
     if (!pEventFn) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        GET_LIBPYTHON_FN(PyErr_Print)();
         return -1;
         // LCOV_EXCL_STOP
     }
     // cocotb must hold _sim_event until _embed_sim_cleanup runs
 
     // Build argv for cocotb module
-    auto argv_list = PyList_New(argc);
+    auto argv_list = GET_LIBPYTHON_FN(PyList_New)(argc);
     if (argv_list == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        GET_LIBPYTHON_FN(PyErr_Print)();
         return -1;
         // LCOV_EXCL_STOP
     }
     for (int i = 0; i < argc; i++) {
         // Decode, embedding non-decodable bytes using PEP-383. This can only
         // fail with MemoryError or similar.
-        auto argv_item = PyUnicode_DecodeLocale(argv[i], "surrogateescape");
+        auto argv_item = GET_LIBPYTHON_FN(PyUnicode_DecodeLocale)(
+            argv[i], "surrogateescape");
         if (!argv_item) {
             // LCOV_EXCL_START
-            PyErr_Print();
+            GET_LIBPYTHON_FN(PyErr_Print)();
             return -1;
             // LCOV_EXCL_STOP
         }
-        PyList_SetItem(argv_list, i, argv_item);
+        GET_LIBPYTHON_FN(PyList_SetItem)(argv_list, i, argv_item);
     }
-    DEFER(Py_DECREF(argv_list))
+    DEFER(GET_LIBPYTHON_FN(Py_DECREF)(argv_list))
 
-    auto cocotb_retval =
-        PyObject_CallFunctionObjArgs(entry_point, argv_list, NULL);
+    auto cocotb_retval = GET_LIBPYTHON_FN(PyObject_CallFunctionObjArgs)(
+        entry_point, argv_list, NULL);
     if (!cocotb_retval) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        GET_LIBPYTHON_FN(PyErr_Print)();
         return -1;
         // LCOV_EXCL_STOP
     }
-    Py_DECREF(cocotb_retval);
+    GET_LIBPYTHON_FN(Py_DECREF)(cocotb_retval);
 
     return 0;
 }
 
-extern "C" COCOTB_EXPORT void _embed_sim_event(const char *msg) {
+extern "C" COCOTB_EXPORT void _embed_sim_event(void *libpython_handle,
+                                               const char *msg) {
     /* Indicate to the upper layer that a sim event occurred */
 
     if (pEventFn) {
         PyGILState_STATE gstate;
         to_python();
-        gstate = PyGILState_Ensure();
+        gstate = GET_LIBPYTHON_FN(PyGILState_Ensure)();
 
         if (msg == NULL) {
             msg = "No message provided";
         }
 
-        PyObject *pValue = PyObject_CallFunction(pEventFn, "s", msg);
+        PyObject *pValue =
+            GET_LIBPYTHON_FN(PyObject_CallFunction)(pEventFn, "s", msg);
         if (pValue == NULL) {
-            PyErr_Print();
+            GET_LIBPYTHON_FN(PyErr_Print)();
             LOG_ERROR("Passing event to upper layer failed");
         }
-        Py_XDECREF(pValue);
-        PyGILState_Release(gstate);
+        GET_LIBPYTHON_FN(Py_XDECREF)(pValue);
+        GET_LIBPYTHON_FN(PyGILState_Release)(gstate);
         to_simulator();
     }
 }

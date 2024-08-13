@@ -25,10 +25,11 @@
 #define EMBED_IMPL_LIB_STR xstr(EMBED_IMPL_LIB)
 #endif
 
-static void (*_embed_init_python)();
-static void (*_embed_sim_cleanup)();
-static int (*_embed_sim_init)(int argc, char const *const *argv);
-static void (*_embed_sim_event)(const char *msg);
+static void (*_embed_init_python)(void *libpython_handle);
+static void (*_embed_sim_cleanup)(void *libpython_handle);
+static int (*_embed_sim_init)(void *libpython_handle, int argc,
+                              char const *const *argv);
+static void (*_embed_sim_event)(void *libpython_handle, const char *msg);
 
 static bool init_failed = false;
 
@@ -53,6 +54,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID) {
 }
 #endif
 
+static void *libpython_handle = NULL;
+
 extern "C" void embed_init_python(void) {
     // preload python library
     char const *libpython_path = getenv("LIBPYTHON_LOC");
@@ -60,8 +63,8 @@ extern "C" void embed_init_python(void) {
         // default to libpythonX.X.so
         libpython_path = PYTHON_LIB_STR;
     }
-    auto loaded = utils_dyn_open(libpython_path);
-    if (!loaded) {
+    auto libpython_handle = utils_dyn_open(libpython_path);
+    if (!libpython_handle) {
         // LCOV_EXCL_START
         init_failed = true;
         return;
@@ -142,12 +145,12 @@ extern "C" void embed_init_python(void) {
 #endif
 
     // call to embed library impl
-    _embed_init_python();
+    _embed_init_python(libpython_handle);
 }
 
 extern "C" void embed_sim_cleanup(void) {
     if (!init_failed) {
-        _embed_sim_cleanup();
+        _embed_sim_cleanup(libpython_handle);
     }
 }
 
@@ -157,12 +160,12 @@ extern "C" int embed_sim_init(int argc, char const *const *argv) {
         return -1;
         // LCOV_EXCL_STOP
     } else {
-        return _embed_sim_init(argc, argv);
+        return _embed_sim_init(libpython_handle, argc, argv);
     }
 }
 
 extern "C" void embed_sim_event(const char *msg) {
     if (!init_failed) {
-        _embed_sim_event(msg);
+        _embed_sim_event(libpython_handle, msg);
     }
 }

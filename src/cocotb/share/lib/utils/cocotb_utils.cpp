@@ -63,7 +63,7 @@ extern "C" void *utils_dyn_open(const char *lib_name) {
     /* Clear status */
     dlerror();
 
-    ret = dlopen(lib_name, RTLD_LAZY | RTLD_GLOBAL);
+    ret = dlopen(lib_name, RTLD_LAZY | RTLD_GLOBAL | RTLD_DEEPBIND);
     if (!ret) {
         LOG_ERROR("Unable to open lib %s: %s", lib_name, dlerror());
     }
