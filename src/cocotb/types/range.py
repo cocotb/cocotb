@@ -90,11 +90,11 @@ class Range(Sequence[int]):
         if isinstance(direction, int) and right is None:
             step = _guess_step(left, direction)
             stop = direction + step
-        elif direction is None and isinstance(right, int):
-            step = _guess_step(left, right)
-            stop = right + step
         elif isinstance(direction, str) and isinstance(right, int):
             step = _direction_to_step(direction)
+            stop = right + step
+        elif direction is None and isinstance(right, int):
+            step = _guess_step(left, right)
             stop = right + step
         else:
             raise TypeError("invalid arguments")
