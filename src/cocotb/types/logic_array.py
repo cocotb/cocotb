@@ -167,7 +167,7 @@ class LogicArray(ArrayLike[Logic]):
         self._value_as_int = None
         self._value_as_str = None
         if isinstance(value, str):
-            if any(v not in _str_literals for v in value):
+            if not (set(value) <= _str_literals):
                 raise ValueError("Invalid str literal")
             self._value_as_str = value.upper()
             if range is not None:
