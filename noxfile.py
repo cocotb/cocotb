@@ -125,9 +125,9 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
     env["LDFLAGS"] = "--coverage"
 
     if editable:
-        session.run("pip", "install", "-e", ".", env=env)
+        session.run("pip", "install", "-v", "-e", ".", env=env)
     else:
-        session.run("pip", "install", ".", env=env)
+        session.run("pip", "install", "-v", ".", env=env)
 
 
 #
