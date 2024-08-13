@@ -1,11 +1,11 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import typing
 from functools import lru_cache
+from typing import Dict, Optional, Set, Type, Union
 
-LogicLiteralT = typing.Union[str, int, bool]
-LogicConstructibleT = typing.Union[LogicLiteralT, "Logic"]
+LogicLiteralT = Union[str, int, bool]
+LogicConstructibleT = Union[LogicLiteralT, "Logic"]
 
 
 _U = 0
@@ -18,7 +18,7 @@ _L = 6
 _H = 7
 _D = 8
 
-_literal_repr: typing.Dict[LogicLiteralT, int] = {
+_literal_repr: Dict[LogicLiteralT, int] = {
     # unassigned
     "U": _U,
     "u": _U,
@@ -49,7 +49,7 @@ _literal_repr: typing.Dict[LogicLiteralT, int] = {
     "-": _D,
 }
 
-_str_literals: typing.Set[str] = {k for k in _literal_repr.keys() if isinstance(k, str)}
+_str_literals: Set[str] = {k for k in _literal_repr.keys() if isinstance(k, str)}
 
 
 class Logic:
@@ -94,7 +94,7 @@ class Logic:
 
     .. code-block:: python3
 
-        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> typing.Tuple[Logic, Logic]:
+        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> Tuple[Logic, Logic]:
         ...     res = a ^ b ^ carry
         ...     carry_out = (a & b) | (b & carry) | (a & carry)
         ...     return res, carry_out
@@ -115,7 +115,7 @@ class Logic:
 
     @classmethod
     @lru_cache(maxsize=None)
-    def _get_object(cls: typing.Type["Logic"], _repr: int) -> "Logic":
+    def _get_object(cls: Type["Logic"], _repr: int) -> "Logic":
         """Return the Logic object associated with the repr, enforcing singleton."""
         self = object.__new__(cls)
         self._repr = _repr
@@ -124,8 +124,8 @@ class Logic:
     @classmethod
     @lru_cache(maxsize=None)
     def _map_literal(
-        cls: typing.Type["Logic"],
-        value: typing.Optional[LogicLiteralT] = None,
+        cls: Type["Logic"],
+        value: Optional[LogicLiteralT] = None,
     ) -> "Logic":
         """Convert and cache all literals."""
         if value is None:
@@ -142,8 +142,8 @@ class Logic:
         return obj
 
     def __new__(
-        cls: typing.Type["Logic"],
-        value: typing.Optional[LogicConstructibleT] = None,
+        cls: Type["Logic"],
+        value: Optional[LogicConstructibleT] = None,
     ) -> "Logic":
         if isinstance(value, Logic):
             return value

@@ -1,8 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import typing
 from math import ceil
+from typing import Iterable, Iterator, List, Optional, Union, cast, overload
 
 from cocotb._deprecation import deprecated
 from cocotb.types import ArrayLike
@@ -123,33 +123,33 @@ class LogicArray(ArrayLike[Logic]):
     # implementations are faster for particular operations.
     # Each implementation can be present, or None if the implementation has not been
     # computed or has been invalidated by a mutating operation.
-    _value_as_array: typing.Union[typing.List[Logic], None]
-    _value_as_int: typing.Union[int, None]
-    _value_as_str: typing.Union[str, None]
+    _value_as_array: Union[List[Logic], None]
+    _value_as_int: Union[int, None]
+    _value_as_str: Union[str, None]
     _range: Range
 
-    @typing.overload
+    @overload
     def __init__(
         self,
         value: str,
-        range: typing.Optional[Range] = None,
+        range: Optional[Range] = None,
     ) -> None: ...
 
-    @typing.overload
+    @overload
     def __init__(
         self,
-        value: typing.Iterable[LogicConstructibleT],
-        range: typing.Optional[Range] = None,
+        value: Iterable[LogicConstructibleT],
+        range: Optional[Range] = None,
     ) -> None: ...
 
-    @typing.overload
+    @overload
     def __init__(
         self,
         value: int,
         range: Range,
     ) -> None: ...
 
-    @typing.overload
+    @overload
     def __init__(
         self,
         value: None,
@@ -158,10 +158,8 @@ class LogicArray(ArrayLike[Logic]):
 
     def __init__(
         self,
-        value: typing.Union[
-            int, str, typing.Iterable[LogicConstructibleT], None
-        ] = None,
-        range: typing.Optional[Range] = None,
+        value: Union[int, str, Iterable[LogicConstructibleT], None] = None,
+        range: Optional[Range] = None,
     ) -> None:
         self._value_as_array = None
         self._value_as_int = None
@@ -206,7 +204,7 @@ class LogicArray(ArrayLike[Logic]):
             else:
                 self._range = Range(len(self._value_as_array) - 1, "downto", 0)
 
-    def _get_array(self) -> typing.List[Logic]:
+    def _get_array(self) -> List[Logic]:
         if self._value_as_array is None:
             # May convert int to str before to converting to array.
             self._value_as_array = [Logic(v) for v in self._get_str()]
@@ -218,8 +216,7 @@ class LogicArray(ArrayLike[Logic]):
                 self._value_as_str = format(self._value_as_int, f"0{len(self)}b")
             else:
                 self._value_as_str = "".join(
-                    str(v)
-                    for v in typing.cast(typing.List[Logic], self._value_as_array)
+                    str(v) for v in cast(List[Logic], self._value_as_array)
                 )
         return self._value_as_str
 
@@ -291,10 +288,10 @@ class LogicArray(ArrayLike[Logic]):
             )
         self._range = new_range
 
-    def __iter__(self) -> typing.Iterator[Logic]:
+    def __iter__(self) -> Iterator[Logic]:
         return iter(self._get_array())
 
-    def __reversed__(self) -> typing.Iterator[Logic]:
+    def __reversed__(self) -> Iterator[Logic]:
         return reversed(self._get_array())
 
     def __contains__(self, item: object) -> bool:
@@ -443,15 +440,13 @@ class LogicArray(ArrayLike[Logic]):
             value -= 1 << len(self)
         return value
 
-    @typing.overload
+    @overload
     def __getitem__(self, item: int) -> Logic: ...
 
-    @typing.overload
+    @overload
     def __getitem__(self, item: slice) -> "LogicArray": ...
 
-    def __getitem__(
-        self, item: typing.Union[int, slice]
-    ) -> typing.Union[Logic, "LogicArray"]:
+    def __getitem__(self, item: Union[int, slice]) -> Union[Logic, "LogicArray"]:
         array = self._get_array()
         if isinstance(item, int):
             idx = self._translate_index(item)
@@ -472,18 +467,18 @@ class LogicArray(ArrayLike[Logic]):
             return LogicArray(value=value, range=range)
         raise TypeError(f"indexes must be ints or slices, not {type(item).__name__}")
 
-    @typing.overload
+    @overload
     def __setitem__(self, item: int, value: LogicConstructibleT) -> None: ...
 
-    @typing.overload
+    @overload
     def __setitem__(
-        self, item: slice, value: typing.Iterable[LogicConstructibleT]
+        self, item: slice, value: Iterable[LogicConstructibleT]
     ) -> None: ...
 
     def __setitem__(
         self,
-        item: typing.Union[int, slice],
-        value: typing.Union[LogicConstructibleT, typing.Iterable[LogicConstructibleT]],
+        item: Union[int, slice],
+        value: Union[LogicConstructibleT, Iterable[LogicConstructibleT]],
     ) -> None:
         array = self._get_array()
         # invalid other impls
@@ -491,7 +486,7 @@ class LogicArray(ArrayLike[Logic]):
         self._value_as_int = None
         if isinstance(item, int):
             idx = self._translate_index(item)
-            array[idx] = Logic(typing.cast(LogicConstructibleT, value))
+            array[idx] = Logic(cast(LogicConstructibleT, value))
         elif isinstance(item, slice):
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
@@ -504,8 +499,7 @@ class LogicArray(ArrayLike[Logic]):
                     f"slice [{start}:{stop}] direction does not match array direction [{self.left}:{self.right}]"
                 )
             value_as_logics = [
-                Logic(v)
-                for v in typing.cast(typing.Iterable[LogicConstructibleT], value)
+                Logic(v) for v in cast(Iterable[LogicConstructibleT], value)
             ]
             if len(value_as_logics) != (stop_i - start_i + 1):
                 raise ValueError(
