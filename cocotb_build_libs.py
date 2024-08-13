@@ -669,6 +669,7 @@ def get_ext():
 
     if sys.platform == "darwin":
         cfg_vars["LDSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
+        cfg_vars["LDCXXSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
 
     share_lib_dir = os.path.relpath(os.path.join(cocotb_share_dir, "lib"))
     include_dirs = [
