@@ -21,7 +21,7 @@ def test_logic_array_constructor():
     with pytest.raises(OverflowError):
         LogicArray("101010", Range(0, "to", 0))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         LogicArray()
 
     assert LogicArray(10, Range(5, "downto", 0)) == LogicArray("001010")
