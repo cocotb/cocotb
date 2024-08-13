@@ -111,16 +111,17 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
     """
 
     env = session.env.copy()
-    env["CFLAGS"] = " ".join(
+    flags = " ".join(
         [
             "-Werror",
-            "-Wno-deprecated-declarations",
+            "-Wno-error=deprecated-declarations",
             "-Wsuggest-override",
             "-g",
             "--coverage",
         ]
     )
-    env["CXXFLAGS"] = "-Werror"
+    env["CFLAGS"] = flags
+    env["CXXFLAGS"] = flags
     env["LDFLAGS"] = "--coverage"
 
     if editable:
