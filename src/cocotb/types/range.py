@@ -1,6 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from functools import lru_cache
 from typing import Iterator, Sequence, Union, overload
 
 
@@ -177,6 +178,7 @@ def _guess_step(left: int, right: int) -> int:
     return -1
 
 
+@lru_cache(maxsize=None)
 def _direction_to_step(direction: str) -> int:
     direction = direction.lower()
     if direction == "to":
