@@ -49,6 +49,8 @@ _literal_repr: typing.Dict[LogicLiteralT, int] = {
     "-": _D,
 }
 
+_str_literals: typing.Set[str] = {k for k in _literal_repr.keys() if isinstance(k, str)}
+
 
 class Logic:
     r"""

@@ -6,7 +6,7 @@ from math import ceil
 
 from cocotb._deprecation import deprecated
 from cocotb.types import ArrayLike
-from cocotb.types.logic import Logic, LogicConstructibleT
+from cocotb.types.logic import Logic, LogicConstructibleT, _str_literals
 from cocotb.types.range import Range
 
 
@@ -118,59 +118,116 @@ class LogicArray(ArrayLike[Logic]):
         TypeError: When invalid argument types are used.
     """
 
-    _value: typing.List[Logic]
+    # These three attribute contain the current value of the array in one or more of
+    # three different implementations. This is done for performance reasons, as certain
+    # implementations are faster for particular operations.
+    # Each implementation can be present, or None if the implementation has not been
+    # computed or has been invalidated by a mutating operation.
+    _value_as_array: typing.Union[typing.List[Logic], None]
+    _value_as_int: typing.Union[int, None]
+    _value_as_str: typing.Union[str, None]
     _range: Range
 
     @typing.overload
-    def __new__(
-        cls,
-        value: typing.Iterable[LogicConstructibleT],
+    def __init__(
+        self,
+        value: str,
         range: typing.Optional[Range] = None,
-    ) -> "LogicArray": ...
+    ) -> None: ...
 
     @typing.overload
-    def __new__(
-        cls,
+    def __init__(
+        self,
+        value: typing.Iterable[LogicConstructibleT],
+        range: typing.Optional[Range] = None,
+    ) -> None: ...
+
+    @typing.overload
+    def __init__(
+        self,
         value: int,
         range: Range,
-    ) -> "LogicArray": ...
+    ) -> None: ...
 
-    def __new__(
-        cls,
-        value: typing.Union[int, typing.Iterable[LogicConstructibleT], None] = None,
+    @typing.overload
+    def __init__(
+        self,
+        value: None,
+        range: Range,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        value: typing.Union[
+            int, str, typing.Iterable[LogicConstructibleT], None
+        ] = None,
         range: typing.Optional[Range] = None,
-    ) -> "LogicArray":
-        if isinstance(value, int):
+    ) -> None:
+        self._value_as_array = None
+        self._value_as_int = None
+        self._value_as_str = None
+        if isinstance(value, str):
+            if any(v not in _str_literals for v in value):
+                raise ValueError("Invalid str literal")
+            self._value_as_str = value.upper()
+            if range is not None:
+                if len(value) != len(range):
+                    raise OverflowError(
+                        f"Value of length {len(self._value_as_str)} will not fit in {range}"
+                    )
+                self._range = range
+            else:
+                self._range = Range(len(self._value_as_str) - 1, "downto", 0)
+        elif isinstance(value, int):
+            if value < 0:
+                raise ValueError("Invalid int literal")
             if range is None:
-                raise TypeError("Missing required argument 'range'")
-            return cls.from_unsigned(value, range=range)
-
-        self = super().__new__(cls)
-
-        # construct _value representation
-        if value is None:
-            if range is None:
-                raise ValueError(
-                    "at least one of the value and range input parameters must be given"
+                raise TypeError("Missing required argument: 'range'")
+            bitlen = max(1, int.bit_length(value))
+            if bitlen > len(range):
+                raise OverflowError(
+                    f"{value} will not fit in a LogicArray with bounds: {range!r}."
                 )
-            self._value = [Logic() for _ in range]
-        else:
-            value_iter = iter(value)
-            self._value = [Logic(v) for v in value_iter]
-
-        # construct _range representation
-        if range is None:
-            self._range = Range(len(self._value) - 1, "downto", 0)
-        else:
+            self._value_as_int = value
             self._range = range
+        elif value is None:
+            if range is None:
+                raise TypeError("Missing required argument: 'range'")
+            self._value_as_str = "X" * len(range)
+            self._range = range
+        else:
+            self._value_as_array = [Logic(v) for v in value]
+            if range is not None:
+                if len(self._value_as_array) != len(range):
+                    raise OverflowError(
+                        f"Value of length {len(self._value_as_array)} will not fit in {range}"
+                    )
+                self._range = range
+            else:
+                self._range = Range(len(self._value_as_array) - 1, "downto", 0)
 
-        # check that _value and _range align
-        if len(self._value) != len(self._range):
-            raise OverflowError(
-                f"value of length {len(self._value)} will not fit in {self._range}"
-            )
+    def _get_array(self) -> typing.List[Logic]:
+        if self._value_as_array is None:
+            # May convert int to str before to converting to array.
+            self._value_as_array = [Logic(v) for v in self._get_str()]
+        return self._value_as_array
 
-        return self
+    def _get_str(self) -> str:
+        if self._value_as_str is None:
+            if self._value_as_int is not None:
+                self._value_as_str = format(self._value_as_int, f"0{len(self)}b")
+            else:
+                self._value_as_str = "".join(
+                    str(v)
+                    for v in typing.cast(typing.List[Logic], self._value_as_array)
+                )
+        return self._value_as_str
+
+    def _get_int(self) -> int:
+        if self._value_as_int is None:
+            # May convert list to str before converting to int.
+            self._value_as_int = int(self._get_str(), 2)
+        return self._value_as_int
 
     @classmethod
     def from_unsigned(cls, value: int, range: Range) -> "LogicArray":
@@ -189,16 +246,7 @@ class LogicArray(ArrayLike[Logic]):
         Raises:
             OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
-        if value < 0:
-            raise ValueError(f"{value} not in bounds for an unsigned integer.")
-
-        bitlen = max(1, int.bit_length(value))
-        if bitlen > len(range):
-            raise OverflowError(
-                f"{value} will not fit in a LogicArray with bounds: {range!r}."
-            )
-
-        return LogicArray(_int_to_bitstr(value, len(range)), range=range)
+        return LogicArray(value, range=range)
 
     @classmethod
     def from_signed(cls, value: int, range: Range) -> "LogicArray":
@@ -217,13 +265,15 @@ class LogicArray(ArrayLike[Logic]):
         Raises:
             OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
-        bitlen = _signed_bit_length(value)
-        if bitlen > len(range):
+        if value < 0:
+            value += 2 ** len(range)
+        # If value doesn't fit in range, it will still be negative and will blow the
+        # constructor up in a bad way.
+        if value < 0:
             raise OverflowError(
                 f"{value} will not fit in a LogicArray with bounds: {range!r}."
             )
-
-        return LogicArray(_int_to_bitstr(value, len(range)), range=range)
+        return LogicArray(value, range=range)
 
     @property
     def range(self) -> Range:
@@ -242,26 +292,57 @@ class LogicArray(ArrayLike[Logic]):
         self._range = new_range
 
     def __iter__(self) -> typing.Iterator[Logic]:
-        return iter(self._value)
+        return iter(self._get_array())
 
     def __reversed__(self) -> typing.Iterator[Logic]:
-        return reversed(self._value)
+        return reversed(self._get_array())
 
     def __contains__(self, item: object) -> bool:
-        return item in self._value
+        return item in self._get_array()
 
     def __eq__(
         self,
         other: object,
     ) -> bool:
-        if isinstance(other, LogicArray):
-            return self._value == other._value
-        elif isinstance(other, int):
+        if isinstance(other, int):
             try:
                 return self.to_unsigned() == other
             except ValueError:
                 return False
-        elif isinstance(other, (str, list, tuple)):
+        elif isinstance(other, str):
+            return str(self) == other.upper()
+        elif isinstance(other, LogicArray):
+            if len(self) != len(other):
+                return False
+            # Complex, but efficient chain of checking logic.
+            # Avoid conversions if it can help it at first.
+            # Prefers checking against str vs any type since that is going to be the
+            #   most common type and also the "middle" type for conversions.
+            # Always converts away from ints to prevent issues with non-0/1 data.
+            if self._value_as_str is not None and other._value_as_str is not None:
+                # (STR, STR)
+                return self._value_as_str == other._value_as_str
+            elif self._value_as_array is not None and other._value_as_array is not None:
+                # (ARRAY, ARRAY)
+                return self._value_as_array == other._value_as_array
+            elif self._value_as_int is not None and other._value_as_int is not None:
+                # (INT, INT)
+                return self._value_as_int == other._value_as_int
+            elif self._value_as_str is not None:
+                # (STR, INT)
+                # (STR, ARRAY)
+                return self._value_as_str == other._get_str()
+            elif other._value_as_str is not None:
+                # (INT, STR)
+                # (ARRAY, STR)
+                return self._get_str() == other._value_as_str
+            elif self._value_as_array is not None:
+                # (ARRAY, INT)
+                return self._value_as_array == other._get_array()
+            else:
+                # (INT, ARRAY)
+                return self._get_array() == other._value_as_array
+        elif isinstance(other, (list, tuple)):
             try:
                 other = LogicArray(other)
             except ValueError:
@@ -272,7 +353,7 @@ class LogicArray(ArrayLike[Logic]):
 
     def count(self, value: Logic) -> int:
         """Return number of occurrences of *value*."""
-        return self._value.count(value)
+        return self._get_array().count(value)
 
     @property
     @deprecated("`.binstr` property is deprecated. Use `str(value)` instead.")
@@ -346,10 +427,7 @@ class LogicArray(ArrayLike[Logic]):
 
         Returns: An :class:`int` equivalent to the value by interpreting it using unsigned representation.
         """
-        value = 0
-        for bit in self:
-            value = value << 1 | int(bit)
-        return value
+        return self._get_int()
 
     def to_signed(self) -> int:
         """Convert the value to an :class:`int` by interpreting it using two's complement representation.
@@ -360,7 +438,7 @@ class LogicArray(ArrayLike[Logic]):
 
         Returns: An :class:`int` equivalent to the value by interpreting it using two's complement representation.
         """
-        value = self.to_unsigned()
+        value = self._get_int()
         if value >= (1 << (len(self) - 1)):
             value -= 1 << len(self)
         return value
@@ -374,9 +452,10 @@ class LogicArray(ArrayLike[Logic]):
     def __getitem__(
         self, item: typing.Union[int, slice]
     ) -> typing.Union[Logic, "LogicArray"]:
+        array = self._get_array()
         if isinstance(item, int):
             idx = self._translate_index(item)
-            return self._value[idx]
+            return array[idx]
         elif isinstance(item, slice):
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
@@ -388,7 +467,7 @@ class LogicArray(ArrayLike[Logic]):
                 raise IndexError(
                     f"slice [{start}:{stop}] direction does not match array direction [{self.left}:{self.right}]"
                 )
-            value = self._value[start_i : stop_i + 1]
+            value = array[start_i : stop_i + 1]
             range = Range(start, self.direction, stop)
             return LogicArray(value=value, range=range)
         raise TypeError(f"indexes must be ints or slices, not {type(item).__name__}")
@@ -406,9 +485,13 @@ class LogicArray(ArrayLike[Logic]):
         item: typing.Union[int, slice],
         value: typing.Union[LogicConstructibleT, typing.Iterable[LogicConstructibleT]],
     ) -> None:
+        array = self._get_array()
+        # invalid other impls
+        self._value_as_str = None
+        self._value_as_int = None
         if isinstance(item, int):
             idx = self._translate_index(item)
-            self._value[idx] = Logic(typing.cast(LogicConstructibleT, value))
+            array[idx] = Logic(typing.cast(LogicConstructibleT, value))
         elif isinstance(item, slice):
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
@@ -428,7 +511,7 @@ class LogicArray(ArrayLike[Logic]):
                 raise ValueError(
                     f"value of length {len(value_as_logics)!r} will not fit in slice [{start}:{stop}]"
                 )
-            self._value[start_i : stop_i + 1] = value_as_logics
+            array[start_i : stop_i + 1] = value_as_logics
         else:
             raise TypeError(
                 f"indexes must be ints or slices, not {type(item).__name__}"
@@ -444,43 +527,43 @@ class LogicArray(ArrayLike[Logic]):
         return f"{type(self).__qualname__}({str(self)!r}, {self.range!r})"
 
     def __str__(self) -> str:
-        return "".join(str(bit) for bit in self)
+        return self._get_str()
 
     def __int__(self) -> int:
-        return self.to_unsigned()
+        return self._get_int()
 
     def __and__(self, other: "LogicArray") -> "LogicArray":
-        if isinstance(other, LogicArray):
-            if len(self) != len(other):
-                raise ValueError(
-                    f"cannot perform bitwise & "
-                    f"between {type(self).__qualname__} of length {len(self)} "
-                    f"and {type(other).__qualname__} of length {len(other)}"
-                )
-            return LogicArray(a & b for a, b in zip(self, other))
-        return NotImplemented
+        if not isinstance(other, LogicArray):
+            return NotImplemented
+        if len(self) != len(other):
+            raise ValueError(
+                f"cannot perform bitwise & "
+                f"between {type(self).__qualname__} of length {len(self)} "
+                f"and {type(other).__qualname__} of length {len(other)}"
+            )
+        return LogicArray(a & b for a, b in zip(self, other))
 
     def __or__(self, other: "LogicArray") -> "LogicArray":
-        if isinstance(other, LogicArray):
-            if len(self) != len(other):
-                raise ValueError(
-                    f"cannot perform bitwise | "
-                    f"between {type(self).__qualname__} of length {len(self)} "
-                    f"and {type(other).__qualname__} of length {len(other)}"
-                )
-            return LogicArray(a | b for a, b in zip(self, other))
-        return NotImplemented
+        if not isinstance(other, LogicArray):
+            return NotImplemented
+        if len(self) != len(other):
+            raise ValueError(
+                f"cannot perform bitwise | "
+                f"between {type(self).__qualname__} of length {len(self)} "
+                f"and {type(other).__qualname__} of length {len(other)}"
+            )
+        return LogicArray(a | b for a, b in zip(self, other))
 
     def __xor__(self, other: "LogicArray") -> "LogicArray":
-        if isinstance(other, LogicArray):
-            if len(self) != len(other):
-                raise ValueError(
-                    f"cannot perform bitwise ^ "
-                    f"between {type(self).__qualname__} of length {len(self)} "
-                    f"and {type(other).__qualname__} of length {len(other)}"
-                )
-            return LogicArray(a ^ b for a, b in zip(self, other))
-        return NotImplemented
+        if not isinstance(other, LogicArray):
+            return NotImplemented
+        if len(self) != len(other):
+            raise ValueError(
+                f"cannot perform bitwise ^ "
+                f"between {type(self).__qualname__} of length {len(self)} "
+                f"and {type(other).__qualname__} of length {len(other)}"
+            )
+        return LogicArray(a ^ b for a, b in zip(self, other))
 
     def __invert__(self) -> "LogicArray":
         return LogicArray(~v for v in self)
