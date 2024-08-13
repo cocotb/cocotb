@@ -1,0 +1,1 @@
+When constructing a :class:`~cocotb.types.LogicArray` from a :class:`int`, the *range* argument is now required.

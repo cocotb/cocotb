@@ -26,6 +26,9 @@ class LogicArray(ArrayLike[Logic]):
 
     .. code-block:: python3
 
+        >>> LogicArray(0b0111, Range(3, "downto", 0))
+        LogicArray('0111', Range(3, 'downto', 0))
+
         >>> LogicArray("01XZ")
         LogicArray('01XZ', Range(3, 'downto', 0))
 
@@ -39,7 +42,7 @@ class LogicArray(ArrayLike[Logic]):
 
     .. code-block:: python3
 
-        >>> LogicArray.from_unsigned(0xA)  # picks smallest range that can fit the value
+        >>> LogicArray.from_unsigned(0xA, Range(3, 'downto', 0))
         LogicArray('1010', Range(3, 'downto', 0))
 
         >>> LogicArray.from_signed(-4, Range(0, "to", 3))  # will sign-extend
@@ -122,15 +125,14 @@ class LogicArray(ArrayLike[Logic]):
     @typing.overload
     def __new__(
         cls,
-        value: typing.Union[int, typing.Iterable[LogicConstructibleT]],
+        value: typing.Iterable[LogicConstructibleT],
         range: typing.Optional[Range] = None,
     ) -> "LogicArray": ...
 
     @typing.overload
     def __new__(
         cls,
-        value: typing.Union[int, typing.Iterable[LogicConstructibleT], None] = None,
-        *,
+        value: int,
         range: Range,
     ) -> "LogicArray": ...
 
@@ -179,19 +181,11 @@ class LogicArray(ArrayLike[Logic]):
         return self
 
     @classmethod
-    def from_unsigned(
-        cls, value: int, range: typing.Optional[Range] = None
-    ) -> "LogicArray":
+    def from_unsigned(cls, value: int, range: Range) -> "LogicArray":
         """Construct a :class:`LogicArray` from an :class:`int` by interpreting it as a bit vector with unsigned representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with unsigned representation where the left-most bit is the most significant bit.
         This bit vector is then constructed into a :class:`LogicArray`.
-
-        If *range* is not given, it defaults to ``Range(n_bits-1, "downto", 0)``,
-        where ``n_bits`` is the minimum number of bits necessary to hold the value.
-
-        If *range* is given and the value cannot fit in a :class:`LogicArray` of that size,
-        an :exc:`OverflowError` is raised.
 
         Args:
             value: The integer to convert.
@@ -207,10 +201,7 @@ class LogicArray(ArrayLike[Logic]):
             raise OverflowError(f"{value} not in bounds for an unsigned integer.")
 
         bitlen = max(1, int.bit_length(value))
-
-        if range is None:
-            range = Range(bitlen - 1, "downto", 0)
-        elif bitlen > len(range):
+        if bitlen > len(range):
             raise OverflowError(
                 f"{value} will not fit in a LogicArray with bounds: {range!r}."
             )
@@ -218,19 +209,11 @@ class LogicArray(ArrayLike[Logic]):
         return LogicArray(_int_to_bitstr(value, len(range)), range=range)
 
     @classmethod
-    def from_signed(
-        cls, value: int, range: typing.Optional[Range] = None
-    ) -> "LogicArray":
+    def from_signed(cls, value: int, range: Range) -> "LogicArray":
         """Construct a :class:`LogicArray` from an :class:`int` by interpreting it as a bit vector with two's complement representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with two's complement representation where the left-most bit is the most significant bit.
         This bit vector is then constructed into a :class:`LogicArray`.
-
-        If *range* is not given, it defaults to ``Range(n_bits-1, "downto", 0)``,
-        where ``n_bits`` is the minimum number of bits necessary to hold the value.
-
-        If *range* is given and the value cannot fit in a :class:`LogicArray` of that size,
-        an :exc:`OverflowError` is raised.
 
         Args:
             value: The integer to convert.
@@ -242,11 +225,8 @@ class LogicArray(ArrayLike[Logic]):
         Raises:
             OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
-        bitlen = int.bit_length(value + 1) + 1
-
-        if range is None:
-            range = Range(bitlen - 1, "downto", 0)
-        elif bitlen > len(range):
+        bitlen = _signed_bit_length(value)
+        if bitlen > len(range):
             raise OverflowError(
                 f"{value} will not fit in a LogicArray with bounds: {range!r}."
             )
@@ -518,3 +498,12 @@ def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
         value += 1 << n_bits
     return format(value, f"0{n_bits}b")
+
+
+def _signed_bit_length(i: int) -> int:
+    if i < 0:
+        return int.bit_length(i + 1) + 1
+    elif i > 0:
+        return int.bit_length(i)
+    else:
+        return 1  # int.bit_length is dumb here
