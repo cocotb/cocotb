@@ -1,10 +1,10 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import typing
+from typing import Iterator, Sequence, Union, overload
 
 
-class Range(typing.Sequence[int]):
+class Range(Sequence[int]):
     r"""
     Variant of :class:`range` with inclusive right bound.
 
@@ -65,23 +65,23 @@ class Range(typing.Sequence[int]):
 
     __slots__ = ("_range",)
 
-    @typing.overload
+    @overload
     def __init__(self, left: int, direction: int) -> None:
         pass  # pragma: no cover
 
-    @typing.overload
+    @overload
     def __init__(self, left: int, direction: str, right: int) -> None:
         pass  # pragma: no cover
 
-    @typing.overload
+    @overload
     def __init__(self, left: int, *, right: int) -> None:
         pass  # pragma: no cover
 
     def __init__(
         self,
         left: int,
-        direction: typing.Union[int, str, None] = None,
-        right: typing.Union[int, None] = None,
+        direction: Union[int, str, None] = None,
+        right: Union[int, None] = None,
     ) -> None:
         start = left
         stop: int
@@ -130,15 +130,15 @@ class Range(typing.Sequence[int]):
     def __len__(self) -> int:
         return len(self._range)
 
-    @typing.overload
+    @overload
     def __getitem__(self, item: int) -> int:
         pass  # pragma: no cover
 
-    @typing.overload
+    @overload
     def __getitem__(self, item: slice) -> "Range":
         pass  # pragma: no cover
 
-    def __getitem__(self, item: typing.Union[int, slice]) -> typing.Union[int, "Range"]:
+    def __getitem__(self, item: Union[int, slice]) -> Union[int, "Range"]:
         if isinstance(item, int):
             return self._range[item]
         elif isinstance(item, slice):
@@ -150,10 +150,10 @@ class Range(typing.Sequence[int]):
     def __contains__(self, item: object) -> bool:
         return item in self._range
 
-    def __iter__(self) -> typing.Iterator[int]:
+    def __iter__(self) -> Iterator[int]:
         return iter(self._range)
 
-    def __reversed__(self) -> typing.Iterator[int]:
+    def __reversed__(self) -> Iterator[int]:
         return reversed(self._range)
 
     def __eq__(self, other: object) -> bool:
