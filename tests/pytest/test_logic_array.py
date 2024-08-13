@@ -24,20 +24,13 @@ def test_logic_array_constructor():
     with pytest.raises(ValueError):
         LogicArray()
 
-
-def test_logic_array_constructor_deprecated():
-    with pytest.warns(DeprecationWarning):
-        assert LogicArray(10, Range(5, "downto", 0)) == LogicArray("001010")
-
-    with pytest.warns(DeprecationWarning):
-        assert LogicArray(-2, Range(5, "downto", 0)) == LogicArray("111110")
+    assert LogicArray(10, Range(5, "downto", 0)) == LogicArray("001010")
 
     with pytest.raises(OverflowError):
-        with pytest.warns(DeprecationWarning):
-            LogicArray(10, Range(1, "to", 3))
-    with pytest.raises(OverflowError):
-        with pytest.warns(DeprecationWarning):
-            LogicArray(-45, Range(1, "to", 3))
+        LogicArray(10, Range(1, "to", 3))
+
+    with pytest.raises(ValueError):
+        LogicArray(-10, Range(7, "downto", 0))
 
 
 def test_logic_array_int_conversion():
@@ -45,6 +38,9 @@ def test_logic_array_int_conversion():
 
     with pytest.raises(OverflowError):
         LogicArray.from_unsigned(10, Range(1, "to", 3))
+
+    with pytest.raises(ValueError):
+        LogicArray.from_unsigned(-10, Range(7, "downto", 0))
 
     assert LogicArray.from_signed(-2, Range(5, "downto", 0)) == LogicArray("111110")
 

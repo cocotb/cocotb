@@ -2,7 +2,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
-import warnings
 from math import ceil
 
 from cocotb._deprecation import deprecated
@@ -142,16 +141,9 @@ class LogicArray(ArrayLike[Logic]):
         range: typing.Optional[Range] = None,
     ) -> "LogicArray":
         if isinstance(value, int):
-            warnings.warn(
-                "Constructing a LogicArray from an integer is deprecated. "
-                "Use `LogicArray.from_signed(value)` or `LogicArray.from_unsigned(value)` instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if value < 0:
-                return cls.from_signed(value, range=range)
-            else:
-                return cls.from_unsigned(value, range=range)
+            if range is None:
+                raise TypeError("Missing required argument 'range'")
+            return cls.from_unsigned(value, range=range)
 
         self = super().__new__(cls)
 
@@ -198,7 +190,7 @@ class LogicArray(ArrayLike[Logic]):
             OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
         if value < 0:
-            raise OverflowError(f"{value} not in bounds for an unsigned integer.")
+            raise ValueError(f"{value} not in bounds for an unsigned integer.")
 
         bitlen = max(1, int.bit_length(value))
         if bitlen > len(range):
