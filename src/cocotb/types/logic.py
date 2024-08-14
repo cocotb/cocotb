@@ -109,8 +109,6 @@ class Logic:
         ValueError: if the value cannot be constructed into a :class:`Logic`.
     """
 
-    __slots__ = ("_repr",)
-
     _repr: int
 
     @classmethod
