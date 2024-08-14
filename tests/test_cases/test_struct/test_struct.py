@@ -6,6 +6,8 @@
 import logging
 import os
 import re
+import struct
+import sys
 
 import cocotb
 from cocotb._sim_versions import RivieraVersion
@@ -56,6 +58,39 @@ async def test_packed_struct_setting(dut):
     await Timer(1000, "ns")
 
     assert str(dut.my_struct.value) == "000"
+
+
+@cocotb.test(
+    expect_error=AttributeError
+    if SIM_NAME.startswith(("icarus", "ghdl", "nvc"))
+    else (),
+    skip=SIM_NAME.startswith("riviera"),
+)
+async def test_packed_struct_bytes(dut):
+    """Test bytes access to / from a struct"""
+    val_longlong = 0xFACEFEEDDEADBEEF
+    val_short = 0x1234
+    val_int = 0xFEEDB0B0
+    val_byte = 0x42
+    if sys.byteorder == "little":
+        value = struct.pack("<QHIB", val_longlong, val_short, val_int, val_byte)
+    elif sys.byteorder == "big":
+        value = struct.pack(">BIHQ", val_byte, val_int, val_short, val_longlong)
+    else:
+        raise RuntimeError(f"Unknown system byte order: {sys.byteorder}")
+    dut.my_types_struct_in.value = value
+    dut.val_in_byte.value = val_byte
+    dut.val_in_int.value = val_int
+    dut.val_in_short.value = val_short
+    dut.val_in_longlong.value = val_longlong
+    await Timer(1000, "ns")
+
+    assert dut.my_types_struct_in.value_as_bytes() == value
+    assert int(dut.val_longlong.value) == val_longlong
+    assert int(dut.val_short.value) == val_short
+    assert int(dut.val_int.value) == val_int
+    assert int(dut.val_byte.value) == val_byte
+    assert dut.my_types_struct_out.value_as_bytes() == value
 
 
 # GHDL unable to access record signals (gh-2591)

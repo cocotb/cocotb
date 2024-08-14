@@ -48,6 +48,14 @@ typedef struct packed
     logic value;
 } test_struct_packed;
 
+typedef struct packed
+{
+    logic [7:0] val_byte;
+    logic [31:0] val_int;
+    logic [15:0] val_short;
+    logic [63:0] val_longlong;
+} test_struct_types_packed;
+
 
 `endif
 
@@ -83,6 +91,12 @@ module sample_module #(
     input  test_struct_unpacked                 inout_if,
     `endif
     input  test_struct_packed                   my_struct,
+    input  test_struct_types_packed             my_types_struct_in,
+    input  [7:0]                                val_in_byte,
+    input  [31:0]                               val_in_int,
+    input  [15:0]                               val_in_short,
+    input  [63:0]                               val_in_longlong,
+    output test_struct_types_packed             my_types_struct_out,
     input  string                               stream_in_string,
 `endif
     input  [7:0]                                stream_in_data,
@@ -144,6 +158,18 @@ end
 `ifndef VERILATOR
 test_struct_unpacked struct_var;
 `endif
+
+wire [7:0] val_byte = my_types_struct_in.val_byte;
+wire [31:0] val_int = my_types_struct_in.val_int;
+wire [15:0] val_short = my_types_struct_in.val_short;
+wire [63:0] val_longlong = my_types_struct_in.val_longlong;
+
+always_comb begin
+    my_types_struct_out.val_byte = val_in_byte;
+    my_types_struct_out.val_int = val_in_int;
+    my_types_struct_out.val_short = val_in_short;
+    my_types_struct_out.val_longlong = val_in_longlong;
+end
 `endif //  `ifndef __ICARUS__
 
 and test_and_gate(and_output, stream_in_ready, stream_in_valid);

@@ -1,0 +1,1 @@
+Added support for passing :class:`bytes` and :class:`bytearray` to :attr:`LogicObject.value`.  Also added :meth:`LogicObject.value_as_bytes()` for retrieving :class:`bytes` from the simulator.
