@@ -122,11 +122,6 @@ class Array(ArrayLike[T]):
         TypeError: When invalid argument types are used.
     """
 
-    __slots__ = (
-        "_value",
-        "_range",
-    )
-
     def __init__(self, value: Iterable[T], range: Optional[Range] = None):
         self._value = list(value)
         if range is None:

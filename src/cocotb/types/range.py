@@ -64,8 +64,6 @@ class Range(Sequence[int]):
         right: rightmost bound of range (inclusive)
     """
 
-    __slots__ = ("_range",)
-
     @overload
     def __init__(self, left: int, direction: int) -> None:
         pass  # pragma: no cover
