@@ -1,6 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import warnings
 from math import ceil
 from typing import Iterable, Iterator, List, Optional, Union, cast, overload
 
@@ -424,6 +425,9 @@ class LogicArray(ArrayLike[Logic]):
 
         Returns: An :class:`int` equivalent to the value by interpreting it using unsigned representation.
         """
+        if len(self) == 0:
+            warnings.warn("Converting a LogicArray of length 0 to integer")
+            return 0
         return self._get_int()
 
     def to_signed(self) -> int:
@@ -435,6 +439,9 @@ class LogicArray(ArrayLike[Logic]):
 
         Returns: An :class:`int` equivalent to the value by interpreting it using two's complement representation.
         """
+        if len(self) == 0:
+            warnings.warn("Converting a LogicArray of length 0 to integer")
+            return 0
         value = self._get_int()
         if value >= (1 << (len(self) - 1)):
             value -= 1 << len(self)
@@ -524,7 +531,7 @@ class LogicArray(ArrayLike[Logic]):
         return self._get_str()
 
     def __int__(self) -> int:
-        return self._get_int()
+        return self.to_unsigned()
 
     def __and__(self, other: "LogicArray") -> "LogicArray":
         if not isinstance(other, LogicArray):

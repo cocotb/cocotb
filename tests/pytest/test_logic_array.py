@@ -253,3 +253,45 @@ def test_changing_range():
         a.range = range(10)
     with pytest.raises(ValueError):
         a.range = Range(7, "downto", 0)
+
+
+def test_null_vector():
+    null_range = Range(-1, "downto", 0)
+    assert len(null_range) == 0
+
+    # test construction doesn't fail
+    LogicArray("")
+    LogicArray("", null_range)
+    LogicArray([])
+    LogicArray([], null_range)
+    with pytest.raises(OverflowError):
+        LogicArray(0, null_range)
+    LogicArray(range=null_range)
+    with pytest.raises(OverflowError):
+        LogicArray.from_unsigned(0, null_range)
+    with pytest.raises(OverflowError):
+        LogicArray.from_signed(0, null_range)
+
+    null_vector = LogicArray("")
+
+    # test attributes
+    assert len(null_vector) == 0
+    assert list(null_vector) == []
+    assert str(null_vector) == ""
+    with pytest.warns(UserWarning):
+        assert int(null_vector) == 0
+    with pytest.warns(UserWarning):
+        assert null_vector.to_signed() == 0
+    with pytest.warns(UserWarning):
+        assert null_vector.to_unsigned() == 0
+
+    # test comparison
+    assert null_vector == LogicArray("")
+    assert null_vector == LogicArray("", null_range)
+    assert null_vector == LogicArray([])
+    assert null_vector == LogicArray([], null_range)
+    assert null_vector == LogicArray(range=null_range)
+    with pytest.warns(UserWarning):
+        assert null_vector == 0
+    assert null_vector == ""
+    assert null_vector == []

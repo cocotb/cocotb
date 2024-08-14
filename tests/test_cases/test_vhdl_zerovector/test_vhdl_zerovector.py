@@ -32,8 +32,8 @@ async def test_long_signal(dut):
     else ()
 )
 async def test_read_zero_signal(dut):
-    """Read a zero vector. It should always read 0."""
-    assert dut.Cntrl_out.value == 0, "Failed to readback dut.Cntrl_out"
+    """Read a zero vector. It should always read an empty LogicArray."""
+    assert dut.Cntrl_out.value == "", "Failed to readback dut.Cntrl_out"
 
 
 @cocotb.test(
@@ -48,7 +48,7 @@ async def test_write_zero_signal_with_0(dut):
     """Write a zero vector with 0."""
     dut.Cntrl_out.value = 0x0
     await Timer(1, "ns")
-    assert dut.Cntrl_out.value == 0, "Failed to readback dut.Cntrl_out"
+    assert dut.Cntrl_out.value == "", "Failed to readback dut.Cntrl_out"
 
 
 @cocotb.test(
