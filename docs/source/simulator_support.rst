@@ -27,7 +27,7 @@ In order to use this simulator, set :make:var:`SIM` to ``icarus``:
 
 .. note::
 
-    A working installation of `Icarus Verilog <http://iverilog.icarus.com/>`_ is required.
+    A working installation of `Icarus Verilog <https://github.com/steveicarus/iverilog>`_ is required.
     You can find installation instructions `in the Icarus Verilog Installation Guide <https://iverilog.fandom.com/wiki/Installation_Guide>`_.
 
 .. _sim-icarus-accessing-bits:
