@@ -19,7 +19,7 @@ from cocotb.types import ArrayLike
 from cocotb.types.logic import Logic, LogicConstructibleT, _str_literals
 from cocotb.types.range import Range
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from typing import Literal
 
 
@@ -193,6 +193,10 @@ class LogicArray(ArrayLike[Logic]):
         self._value_as_array = None
         self._value_as_int = None
         self._value_as_str = None
+        if range is not None and not isinstance(range, Range):
+            raise TypeError(
+                f"Expected Range for parameter 'range', not {type(range).__qualname__}"
+            )
         if isinstance(value, str):
             if not (set(value) <= _str_literals):
                 raise ValueError("Invalid str literal")
@@ -643,18 +647,3 @@ class LogicArray(ArrayLike[Logic]):
 
     def __invert__(self) -> "LogicArray":
         return LogicArray(~v for v in self)
-
-
-def _int_to_bitstr(value: int, n_bits: int) -> str:
-    if value < 0:
-        value += 1 << n_bits
-    return format(value, f"0{n_bits}b")
-
-
-def _signed_bit_length(i: int) -> int:
-    if i < 0:
-        return int.bit_length(i + 1) + 1
-    elif i > 0:
-        return int.bit_length(i)
-    else:
-        return 1  # int.bit_length is dumb here
