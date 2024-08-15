@@ -74,7 +74,7 @@ Debug the test ``test_array_simple`` with Questa, using the VHDL toplevel and th
 
 2. Open a new terminal window or tab, and attach GDB to the running process.
 
-  .. code-block:: shell-session
+  .. code-block::
 
     $ gdb -p 9583
     ...
