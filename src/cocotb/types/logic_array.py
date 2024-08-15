@@ -24,15 +24,17 @@ if TYPE_CHECKING:
 
 
 class LogicArray(ArrayLike[Logic]):
-    r"""
-    Fixed-sized, arbitrarily-indexed, array of :class:`cocotb.types.Logic`.
+    r"""Fixed-sized, arbitrarily-indexed, array of :class:`cocotb.types.Logic`.
 
     .. currentmodule:: cocotb.types
 
-    :class:`LogicArray`\ s can be constructed from either iterables of values
-    constructible into :class:`Logic`: like :class:`bool`, :class:`str`, :class:`int`.
+    :class:`LogicArray`\ s can be constructed from iterables of values
+    constructible into :class:`Logic` like :class:`bool`, :class:`str`, :class:`int`,
+    or it can be constructed :class:`str` or :class:`int` literals syntaxes, as seen below.
+
     Like :class:`Array`, if no *range* argument is given, it is deduced from the length
     of the iterable used to initialize the variable.
+
     If a *range* argument is given, but no value,
     the array is filled with the default value of ``Logic()``.
 
