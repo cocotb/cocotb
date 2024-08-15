@@ -336,6 +336,18 @@ class LogicArray(ArrayLike[Logic]):
             int.from_bytes(value, byteorder=byteorder, signed=False), range=range
         )
 
+    @classmethod
+    def _from_handle(cls, value: str) -> "LogicArray":
+        # Used by cocotb.handle classes to make LogicArray from values gotten from the
+        # simulator which we expect to be well-formed.
+        # Values are required to be uppercase.
+        self = super().__new__(cls)
+        self._value_as_array = None
+        self._value_as_int = None
+        self._value_as_str = value
+        self._range = Range(len(value) - 1, "downto", 0)
+        return self
+
     @property
     def range(self) -> Range:
         """:class:`Range` of the indexes of the array."""
