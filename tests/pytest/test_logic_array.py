@@ -48,6 +48,15 @@ def test_logic_array_int_conversion():
         LogicArray.from_signed(-45, Range(1, "to", 3))
 
 
+def test_logic_array_bytes_conversion():
+    assert LogicArray.from_bytes(b"12") == LogicArray("0011000100110010")
+
+    with pytest.raises(OverflowError):
+        LogicArray.from_bytes(b"123", Range(6, "downto", 0))
+
+    assert LogicArray("00101010").to_bytes() == b"\x2a"
+
+
 def test_logic_array_properties():
     assert LogicArray("01").is_resolvable
     assert not LogicArray("1X1").is_resolvable
