@@ -3,12 +3,24 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import warnings
 from math import ceil
-from typing import Iterable, Iterator, List, Optional, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Union,
+    cast,
+    overload,
+)
 
 from cocotb._deprecation import deprecated
 from cocotb.types import ArrayLike
 from cocotb.types.logic import Logic, LogicConstructibleT, _str_literals
 from cocotb.types.range import Range
+
+if TYPE_CHECKING:
+    from typing import Literal
 
 
 class LogicArray(ArrayLike[Logic]):
@@ -48,6 +60,17 @@ class LogicArray(ArrayLike[Logic]):
         >>> LogicArray.from_signed(-4, Range(0, "to", 3))  # will sign-extend
         LogicArray('1100', Range(0, 'to', 3))
 
+    :class:`LogicArray`\ s can be constructed from :class:`bytes` or :class:`bytearray` using :meth:`from_bytes`.
+    Use the *byteorder* argument to control endianness; it defaults to ``"big"``.
+
+    .. code-block:: python3
+
+        >>> LogicArray.from_bytes(b"1n")
+        LogicArray('0011000101101110', Range(15, 'downto', 0))
+
+        >>> LogicArray.from_bytes(b"1n", byteorder="little")
+        LogicArray('0110111000110001', Range(15, 'downto', 0))
+
     :class:`LogicArray`\ s support the same operations as :class:`Array`;
     however, it enforces the condition that all elements must be a :class:`Logic`.
 
@@ -80,7 +103,7 @@ class LogicArray(ArrayLike[Logic]):
         >>> la
         LogicArray('ZX10', Range(3, 'downto', 0))
 
-    :class:`LogicArray`\ s can be converted into :class:`str`\ s or :class:`int`\ s.
+    :class:`LogicArray`\ s can be converted into :class:`str`\ s, :class:`int`\ s, or :class:`bytes`\ s.
 
     .. code-block:: python3
 
@@ -93,6 +116,9 @@ class LogicArray(ArrayLike[Logic]):
 
         >>> la.to_signed()
         -6
+
+        >>> la.to_bytes()
+        b"\n"
 
     :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
     ``^``, and ``~``.
@@ -273,6 +299,37 @@ class LogicArray(ArrayLike[Logic]):
             )
         return LogicArray(value, range=range)
 
+    @classmethod
+    def from_bytes(
+        cls,
+        value: Union[bytes, bytearray],
+        range: Optional[Range] = None,
+        byteorder: "Literal['big'] | Literal['little']" = "big",
+    ) -> "LogicArray":
+        """Construct a :class:`LogicArray` from :class:`bytes`.
+
+        The :class:`bytes` is first converted to an unsigned integer using *byteorder*-endian representation,
+        then is converted to a :class:`LogicArray` as in :meth:`from_unsigned`.
+
+        Args:
+            value: The bytes to convert.
+            range: A specific :class:`Range` to use as the bounds. Defaults to ``Range(len(value) * 8 - 1, "downto", 0)``.
+            byteorder: The endianness used to construct the intermediate integer, either ``"big"`` or ``"little"``.
+
+        Returns:
+            A :class:`LogicArray` equivalent to the *value* by interpreting it as an unsigned integer in big-endian representation.
+
+        Raises:
+            OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
+        """
+        if range is None:
+            range = Range(len(value) * 8 - 1, "downto", 0)
+        elif len(value) * 8 != len(range):
+            raise OverflowError(f"Value of length {len(value)} will not fit in {range}")
+        return cls.from_unsigned(
+            int.from_bytes(value, byteorder=byteorder, signed=False), range=range
+        )
+
     @property
     def range(self) -> Range:
         """:class:`Range` of the indexes of the array."""
@@ -400,9 +457,7 @@ class LogicArray(ArrayLike[Logic]):
         return self.to_signed()
 
     @property
-    @deprecated(
-        '`.buff` property is deprecated. Use `v.to_unsigned().to_bytes(ceil(len(v) / 8), byteorder="big")` instead.'
-    )
+    @deprecated("`.buff` property is deprecated. Use `v.to_bytes()` instead.")
     def buff(self) -> bytes:
         """Convert the value to :class:`bytes` by interpreting it as an unsigned integer in big-endian byte order.
 
@@ -414,7 +469,7 @@ class LogicArray(ArrayLike[Logic]):
 
         .. deprecated:: 2.0
         """
-        return self.to_unsigned().to_bytes(ceil(len(self) / 8), byteorder="big")
+        return self.to_bytes()
 
     def to_unsigned(self) -> int:
         """Convert the value to an :class:`int` by interpreting it using unsigned representation.
@@ -446,6 +501,24 @@ class LogicArray(ArrayLike[Logic]):
         if value >= (1 << (len(self) - 1)):
             value -= 1 << len(self)
         return value
+
+    def to_bytes(
+        self,
+        byteorder: "Literal['big'] | Literal['little']" = "big",
+    ) -> bytes:
+        """Convert the value to :class:`bytes`.
+
+        The :class:`LogicArray` is converted to an unsigned integer as in :meth:`to_unsigned`,
+        then is converted to :class:`bytes` using *byteorder*-endian representation
+        with the minimum number of bytes which can store all the bits in the original :class:`LogicArray`.
+
+        Args:
+            byteorder: The endianness used to construct the intermediate integer, either ``"big"`` or ``"little"``.
+
+        Returns:
+            :class:`bytes` equivalent to the value.
+        """
+        return self.to_unsigned().to_bytes(ceil(len(self) / 8), byteorder=byteorder)
 
     @overload
     def __getitem__(self, item: int) -> Logic: ...
