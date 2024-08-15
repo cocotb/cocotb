@@ -10,8 +10,7 @@ T = TypeVar("T")
 
 
 class Array(ArrayLike[T]):
-    r"""
-    Fixed-size, arbitrarily-indexed, homogeneous collection type.
+    r"""Fixed-size, arbitrarily-indexed, homogeneous collection type.
 
     Arrays are similar to, but different from Python :class:`list`\ s.
     An array can store values of any type or values of multiple types at a time, just like a :class:`list`.
@@ -20,6 +19,7 @@ class Array(ArrayLike[T]):
     The indexes of an array can start or end at any integer value, they are not limited to 0-based indexing.
     Indexing schemes can be either ascending or descending in value.
     An array's indexes are described using a :class:`~cocotb.types.Range` object.
+
     Initial values are treated as iterables, which are copied into an internal buffer.
 
     .. code-block:: python3
