@@ -9,6 +9,9 @@ from cocotb.types import Logic, LogicArray, Range
 def test_logic_array_str_construction():
     LogicArray("01XZ")
     assert LogicArray("1010", Range(0, "to", 3)) == LogicArray("1010")
+    assert LogicArray("1010", 4) == LogicArray("1010")
+    assert LogicArray("1010", range=Range(0, "to", 3)) == LogicArray("1010")
+    assert LogicArray("1010", width=4) == LogicArray("1010")
 
     with pytest.raises(OverflowError):
         LogicArray("101010", Range(0, "to", 0))
@@ -20,6 +23,9 @@ def test_logic_array_str_construction():
 def test_logic_array_iterable_construction():
     assert LogicArray([False, 1, "X", Logic("Z")]) == LogicArray("01XZ")
     assert LogicArray((1, 0, 1, 0), Range(0, "to", 3)) == LogicArray("1010")
+    assert LogicArray((1, 0, 1, 0), 4) == LogicArray("1010")
+    assert LogicArray((1, 0, 1, 0), range=Range(0, "to", 3)) == LogicArray("1010")
+    assert LogicArray((1, 0, 1, 0), width=4) == LogicArray("1010")
 
     def gen():
         yield True
@@ -41,6 +47,9 @@ def test_logic_array_int_construction():
     with pytest.raises(TypeError):
         LogicArray(10)  # refuse temptation to guess
     assert LogicArray(10, Range(5, "downto", 0)) == LogicArray("001010")
+    assert LogicArray(10, 6) == LogicArray("001010")
+    assert LogicArray(10, range=Range(5, "downto", 0)) == LogicArray("001010")
+    assert LogicArray(10, width=6) == LogicArray("001010")
 
     with pytest.raises(OverflowError):
         LogicArray(10, Range(1, "to", 3))
@@ -50,22 +59,38 @@ def test_logic_array_int_construction():
 
 def test_logic_array_default_construction():
     assert LogicArray(range=Range(0, "to", 3)) == LogicArray("XXXX")
+    assert LogicArray(width=4) == LogicArray("XXXX")
 
 
 def test_logic_array_bad_construction():
     with pytest.raises(TypeError):
         LogicArray(object())
     with pytest.raises(TypeError):
+        LogicArray("1010", dict())
+    with pytest.raises(TypeError):
         LogicArray(range=dict())
     with pytest.raises(TypeError):
+        LogicArray("1010", width=Range(0, 3))
+    with pytest.raises(TypeError):
         LogicArray()
+    with pytest.raises(TypeError):
+        LogicArray("1010", Range(3, 0), width=4)
 
 
 def test_logic_array_unsigned_conversion():
+    with pytest.raises(TypeError):
+        LogicArray.from_unsigned(10)  # refuse temptation to guess
     assert LogicArray.from_unsigned(10, Range(5, "downto", 0)) == LogicArray("001010")
+    assert LogicArray.from_unsigned(10, 6) == LogicArray("001010")
+    assert LogicArray.from_unsigned(10, range=Range(5, "downto", 0)) == LogicArray(
+        "001010"
+    )
+    assert LogicArray.from_unsigned(10, width=6) == LogicArray("001010")
 
     with pytest.raises(OverflowError):
         LogicArray.from_unsigned(10, Range(1, "to", 3))
+    with pytest.raises(OverflowError):
+        LogicArray.from_unsigned(10, 3)
 
     with pytest.raises(ValueError):
         LogicArray.from_unsigned(-10, Range(7, "downto", 0))
@@ -77,10 +102,19 @@ def test_logic_array_unsigned_conversion():
 
 
 def test_logic_array_signed_conversion():
+    with pytest.raises(TypeError):
+        LogicArray.from_signed(-2)  # refuse temptation to guess
     assert LogicArray.from_signed(-2, Range(5, "downto", 0)) == LogicArray("111110")
+    assert LogicArray.from_signed(-2, 6) == LogicArray("111110")
+    assert LogicArray.from_signed(-2, range=Range(5, "downto", 0)) == LogicArray(
+        "111110"
+    )
+    assert LogicArray.from_signed(-2, width=6) == LogicArray("111110")
 
     with pytest.raises(OverflowError):
         LogicArray.from_signed(-45, Range(1, "to", 3))
+    with pytest.raises(OverflowError):
+        LogicArray.from_signed(-45, 3)
 
     with pytest.raises(TypeError):
         LogicArray.from_signed(object(), Range(3, "downto", 0))
@@ -93,6 +127,12 @@ def test_logic_array_bytes_conversion():
 
     with pytest.raises(OverflowError):
         LogicArray.from_bytes(b"123", Range(6, "downto", 0))
+    with pytest.raises(OverflowError):
+        LogicArray.from_bytes(b"123", 10)
+
+    # b"1" would fit in a 7 bit LogicArray, but we do not guess if top bits are significant or not
+    with pytest.raises(OverflowError):
+        LogicArray.from_bytes(b"1", Range(6, "downto", 0))
 
     assert LogicArray("00101010").to_bytes() == b"\x2a"
 

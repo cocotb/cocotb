@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Iterable, Iterator, Optional, TypeVar, Union, cast, overload
+from typing import Iterable, Iterator, TypeVar, Union, cast, overload
 
 from cocotb.types import ArrayLike
 from cocotb.types.range import Range
@@ -19,6 +19,8 @@ class Array(ArrayLike[T]):
     The indexes of an array can start or end at any integer value, they are not limited to 0-based indexing.
     Indexing schemes can be either ascending or descending in value.
     An array's indexes are described using a :class:`~cocotb.types.Range` object.
+    Passing an :class:`int` as the second position argument, or as the *width* argument,
+    acts as shorthand for ``Range(0, "to", width-1)``.
 
     Initial values are treated as iterables, which are copied into an internal buffer.
 
@@ -116,22 +118,50 @@ class Array(ArrayLike[T]):
     Args:
         value: Initial value for the array.
         range: Indexing scheme of the array.
+        width: Shorthand for passing ``Range(0, "to", width - 1)`` to *range*.
 
     Raises:
         ValueError: When argument values cannot be used to construct an array.
         TypeError: When invalid argument types are used.
     """
 
-    def __init__(self, value: Iterable[T], range: Optional[Range] = None):
+    @overload
+    def __init__(self, value: Iterable[T]) -> None: ...
+
+    @overload
+    def __init__(self, value: Iterable[T], *, range: Range) -> None: ...
+
+    @overload
+    def __init__(self, value: Iterable[T], *, width: int) -> None: ...
+
+    @overload
+    def __init__(self, value: Iterable[T], range: Union[Range, int]) -> None: ...
+
+    def __init__(
+        self,
+        value: Iterable[T],
+        range: Union[Range, int, None] = None,
+        width: Union[int, None] = None,
+    ) -> None:
         self._value = list(value)
-        if range is None:
+        if width is not None:
+            if range is not None:
+                raise TypeError("Only provide argument to one of 'range' or 'width'")
+            self._range = Range(0, "to", width - 1)
+        elif range is None:
             self._range = Range(0, "to", len(self._value) - 1)
-        else:
+        elif isinstance(range, int):
+            self._range = Range(0, "to", range - 1)
+        elif isinstance(range, Range):
             self._range = range
-            if len(self._value) != len(self._range):
-                raise ValueError(
-                    f"init value of length {len(self._value)!r} does not fit in {self._range!r}"
-                )
+        else:
+            raise TypeError(
+                f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
+            )
+        if len(self._value) != len(self._range):
+            raise ValueError(
+                f"Value of length {len(self._value)!r} does not fit in {self._range!r}"
+            )
 
     @property
     def range(self) -> Range:

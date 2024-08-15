@@ -19,8 +19,13 @@ def test_both_construction():
     assert a.direction == "to"
     assert a.right == 1
 
-    with pytest.raises(ValueError):
-        Array("1234", Range(0, 1))
+    Array("1234", 4)
+    Array("1234", range=Range(-2, 1))
+    Array("1234", width=4)
+
+
+def test_range_int_construction():
+    assert Array("1234", 4)
 
 
 def test_bad_construction():
@@ -34,6 +39,10 @@ def test_bad_construction():
         Array(value="1234", range=Range(0, 1))
     with pytest.raises(TypeError):
         Array(value="1234", range=object())
+    with pytest.raises(TypeError):
+        Array("1234", range(4))
+    with pytest.raises(TypeError):
+        Array("1234", Range(0, 3), width=4)
 
 
 def test_length():
