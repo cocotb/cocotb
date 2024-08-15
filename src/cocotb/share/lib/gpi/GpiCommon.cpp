@@ -453,9 +453,13 @@ const char *gpi_get_definition_file(gpi_sim_hdl obj_hdl) {
     return obj_hdl->get_definition_file();
 }
 
+static std::string binstr;
+
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl) {
     GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
-    return obj_hdl->get_signal_value_binstr();
+    binstr = obj_hdl->get_signal_value_binstr();
+    std::transform(binstr.begin(), binstr.end(), binstr.begin(), ::toupper);
+    return binstr.c_str();
 }
 
 const char *gpi_get_signal_value_str(gpi_sim_hdl sig_hdl) {

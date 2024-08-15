@@ -899,7 +899,7 @@ class LogicObject(
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
     ) -> None:
-        value_: LogicArray
+        value_: str
         if isinstance(value, int):
             min_val, max_val = _value_limits(len(self), _Limits.VECTOR_NBIT)
             if min_val <= value <= max_val:
@@ -909,15 +909,20 @@ class LogicObject(
                     )
                     return
 
+                # LogicArray used for checking
                 if value < 0:
-                    value_ = LogicArray.from_signed(
-                        value,
-                        Range(len(self) - 1, "downto", 0),
+                    value_ = str(
+                        LogicArray.from_signed(
+                            value,
+                            Range(len(self) - 1, "downto", 0),
+                        )
                     )
                 else:
-                    value_ = LogicArray.from_unsigned(
-                        value,
-                        Range(len(self) - 1, "downto", 0),
+                    value_ = str(
+                        LogicArray.from_unsigned(
+                            value,
+                            Range(len(self) - 1, "downto", 0),
+                        )
                     )
             else:
                 raise OverflowError(
@@ -925,28 +930,29 @@ class LogicObject(
                 )
 
         elif isinstance(value, str):
-            value_ = LogicArray(value, self.range)
+            # LogicArray used for checking
+            value_ = str(LogicArray(value, self.range))
 
         elif isinstance(value, LogicArray):
             if len(self) != len(value):
                 raise ValueError(
                     f"cannot assign value of length {len(value)} to handle of length {len(self)}"
                 )
-            value_ = value
+            value_ = str(value)
 
         elif isinstance(value, Logic):
             if len(self) != 1:
                 raise ValueError(
                     f"cannot assign value of length 1 to handle of length {len(self)}"
                 )
-            value_ = LogicArray([value])
+            value_ = str(value)
 
         else:
             raise TypeError(
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_binstr, (action, str(value_)))
+        schedule_write(self, self._handle.set_signal_val_binstr, (action, value_))
 
     @property
     def value(self) -> LogicArray:
@@ -979,7 +985,7 @@ class LogicObject(
             ``sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))`` instead.
         """
         binstr = self._handle.get_signal_val_binstr()
-        return LogicArray(binstr)
+        return LogicArray._from_handle(binstr)
 
     @value.setter
     def value(self, value: LogicArray) -> None:
