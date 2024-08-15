@@ -68,7 +68,17 @@ else:
 if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
-    from functools import lru_cache
+    from functools import update_wrapper
+    from typing import Any, Callable
 
-    def cached_property(meth):
-        return property(lru_cache(maxsize=None)(meth))
+    class cached_property:
+        def __init__(self, method: Callable[..., Any]) -> None:
+            self._method = method
+            update_wrapper(self, method)
+
+        def __get__(self, inst: Any, typeobj: Any = None):
+            if inst is None:
+                return self
+            res = self._method(inst)
+            inst.__dict__[self._method.__name__] = res
+            return res
