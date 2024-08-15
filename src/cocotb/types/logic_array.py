@@ -8,7 +8,6 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    Optional,
     Union,
     cast,
     overload,
@@ -34,13 +33,14 @@ class LogicArray(ArrayLike[Logic]):
 
     Like :class:`Array`, if no *range* argument is given, it is deduced from the length
     of the iterable used to initialize the variable.
-
+    Passing an :class:`int` as the second position argument, or as the *width* argument,
+    acts as shorthand for ``Range(width-1, "downto", 0)``.
     If a *range* argument is given, but no value,
     the array is filled with the default value of ``Logic()``.
 
     .. code-block:: python3
 
-        >>> LogicArray(0b0111, Range(3, "downto", 0))
+        >>> LogicArray(0b0111, 4)
         LogicArray('0111', Range(3, 'downto', 0))
 
         >>> LogicArray("01XZ")
@@ -56,7 +56,7 @@ class LogicArray(ArrayLike[Logic]):
 
     .. code-block:: python3
 
-        >>> LogicArray.from_unsigned(0xA, Range(3, 'downto', 0))
+        >>> LogicArray.from_unsigned(0xA, 4)
         LogicArray('1010', Range(3, 'downto', 0))
 
         >>> LogicArray.from_signed(-4, Range(0, "to", 3))  # will sign-extend
@@ -140,6 +140,7 @@ class LogicArray(ArrayLike[Logic]):
     Args:
         value: Initial value for the array.
         range: Indexing scheme of the array.
+        width: Shorthand for passing ``Range(0, "to", width - 1)`` to *range*.
 
     Raises:
         OverflowError: When given *value* cannot fit in given *range*.
@@ -161,42 +162,108 @@ class LogicArray(ArrayLike[Logic]):
     def __init__(
         self,
         value: str,
-        range: Optional[Range] = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        value: str,
+        *,
+        range: Range,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        value: str,
+        *,
+        width: int,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        value: str,
+        range: Union[Range, int],
     ) -> None: ...
 
     @overload
     def __init__(
         self,
         value: Iterable[LogicConstructibleT],
-        range: Optional[Range] = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        value: Iterable[LogicConstructibleT],
+        *,
+        range: Range,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        value: Iterable[LogicConstructibleT],
+        *,
+        width: int,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        value: Iterable[LogicConstructibleT],
+        range: Union[Range, int],
     ) -> None: ...
 
     @overload
     def __init__(
         self,
         value: int,
+        *,
         range: Range,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        value: None,
+        value: int,
+        *,
+        width: int,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        value: int,
+        range: Union[Range, int],
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        *,
         range: Range,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        *,
+        width: int,
     ) -> None: ...
 
     def __init__(
         self,
         value: Union[int, str, Iterable[LogicConstructibleT], None] = None,
-        range: Optional[Range] = None,
+        range: Union[Range, int, None] = None,
+        *,
+        width: Union[int, None] = None,
     ) -> None:
         self._value_as_array = None
         self._value_as_int = None
         self._value_as_str = None
-        if range is not None and not isinstance(range, Range):
-            raise TypeError(
-                f"Expected Range for parameter 'range', not {type(range).__qualname__}"
-            )
+        range = _make_range(range, width)
         if isinstance(value, str):
             if not (set(value) <= _str_literals):
                 raise ValueError("Invalid str literal")
@@ -213,17 +280,17 @@ class LogicArray(ArrayLike[Logic]):
             if value < 0:
                 raise ValueError("Invalid int literal")
             if range is None:
-                raise TypeError("Missing required argument: 'range'")
+                raise TypeError("Missing required arguments: 'range' or 'width'")
             bitlen = max(1, int.bit_length(value))
             if bitlen > len(range):
                 raise OverflowError(
-                    f"{value} will not fit in a LogicArray with bounds: {range!r}."
+                    f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
                 )
             self._value_as_int = value
             self._range = range
         elif value is None:
             if range is None:
-                raise TypeError("Missing required argument: 'range'")
+                raise TypeError("Missing required arguments: 'range' or 'width'")
             self._value_as_str = "X" * len(range)
             self._range = range
         else:
@@ -259,8 +326,26 @@ class LogicArray(ArrayLike[Logic]):
             self._value_as_int = int(self._get_str(), 2)
         return self._value_as_int
 
+    @overload
     @classmethod
-    def from_unsigned(cls, value: int, range: Range) -> "LogicArray":
+    def from_unsigned(cls, value: int, *, range: Range) -> "LogicArray": ...
+
+    @overload
+    @classmethod
+    def from_unsigned(cls, value: int, *, width: int) -> "LogicArray": ...
+
+    @overload
+    @classmethod
+    def from_unsigned(cls, value: int, range: Union[Range, int]) -> "LogicArray": ...
+
+    @classmethod
+    def from_unsigned(
+        cls,
+        value: int,
+        range: Union[Range, int, None] = None,
+        *,
+        width: Union[int, None] = None,
+    ) -> "LogicArray":
         """Construct a :class:`LogicArray` from an :class:`int` by interpreting it as a bit vector with unsigned representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with unsigned representation where the left-most bit is the most significant bit.
@@ -268,7 +353,8 @@ class LogicArray(ArrayLike[Logic]):
 
         Args:
             value: The integer to convert.
-            range: A specific :class:`Range` to use as the bounds on the return :class:`LogicArray` object.
+            range: Indexing scheme for the LogicArray.
+            width: Shorthand for passing ``Range(width - 1, "downto", 0)`` to *range*.
 
         Returns:
             A :class:`LogicArray` equivalent to the *value* by interpreting it as a bit vector with unsigned representation.
@@ -276,10 +362,31 @@ class LogicArray(ArrayLike[Logic]):
         Raises:
             OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
-        return LogicArray(value, range=range)
+        range = _make_range(range, width)
+        if range is None:
+            raise TypeError("Missing required arguments: 'range' or 'width'")
+        return LogicArray(value, range)
+
+    @overload
+    @classmethod
+    def from_signed(cls, value: int, *, range: Range) -> "LogicArray": ...
+
+    @overload
+    @classmethod
+    def from_signed(cls, value: int, *, width: int) -> "LogicArray": ...
+
+    @overload
+    @classmethod
+    def from_signed(cls, value: int, range: Union[Range, int]) -> "LogicArray": ...
 
     @classmethod
-    def from_signed(cls, value: int, range: Range) -> "LogicArray":
+    def from_signed(
+        cls,
+        value: int,
+        range: Union[Range, int, None] = None,
+        *,
+        width: Union[int, None] = None,
+    ) -> "LogicArray":
         """Construct a :class:`LogicArray` from an :class:`int` by interpreting it as a bit vector with two's complement representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with two's complement representation where the left-most bit is the most significant bit.
@@ -287,7 +394,8 @@ class LogicArray(ArrayLike[Logic]):
 
         Args:
             value: The integer to convert.
-            range: A specific :class:`Range` to use as the bounds on the return :class:`LogicArray` object.
+            range: Indexing scheme for the LogicArray.
+            width: Shorthand for passing ``Range(width - 1, "downto", 0)`` to *range*.
 
         Returns:
             A :class:`LogicArray` equivalent to the *value* by interpreting it as a bit vector with two's complement representation.
@@ -295,21 +403,56 @@ class LogicArray(ArrayLike[Logic]):
         Raises:
             OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
+        range = _make_range(range, width)
+        if range is None:
+            raise TypeError("Missing required arguments: 'range' or 'width'")
         if value < 0:
             value += 2 ** len(range)
         # If value doesn't fit in range, it will still be negative and will blow the
         # constructor up in a bad way.
         if value < 0:
             raise OverflowError(
-                f"{value} will not fit in a LogicArray with bounds: {range!r}."
+                f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
             )
-        return LogicArray(value, range=range)
+        return LogicArray(value, range)
+
+    @overload
+    @classmethod
+    def from_bytes(
+        cls,
+        value: Union[bytes, bytearray],
+        *,
+        range: Range,
+        byteorder: "Literal['big'] | Literal['little']" = "big",
+    ) -> "LogicArray": ...
+
+    @overload
+    @classmethod
+    def from_bytes(
+        cls,
+        value: Union[bytes, bytearray],
+        *,
+        width: int,
+        byteorder: "Literal['big'] | Literal['little']" = "big",
+    ) -> "LogicArray": ...
+
+    @overload
+    @classmethod
+    def from_bytes(
+        cls,
+        value: Union[bytes, bytearray],
+        range: Union[Range, int, None] = None,
+        *,
+        byteorder: "Literal['big'] | Literal['little']" = "big",
+    ) -> "LogicArray": ...
 
     @classmethod
     def from_bytes(
         cls,
         value: Union[bytes, bytearray],
-        range: Optional[Range] = None,
+        range: Union[Range, int, None] = None,
+        *,
+        width: Union[int, None] = None,
         byteorder: "Literal['big'] | Literal['little']" = "big",
     ) -> "LogicArray":
         """Construct a :class:`LogicArray` from :class:`bytes`.
@@ -319,7 +462,8 @@ class LogicArray(ArrayLike[Logic]):
 
         Args:
             value: The bytes to convert.
-            range: A specific :class:`Range` to use as the bounds. Defaults to ``Range(len(value) * 8 - 1, "downto", 0)``.
+            range: Indexing scheme for the LogicArray. Defaults to ``Range(len(value) * 8 - 1, "downto", 0)``.
+            width: Shorthand for passing ``Range(width - 1, "downto", 0)`` to *range*.
             byteorder: The endianness used to construct the intermediate integer, either ``"big"`` or ``"little"``.
 
         Returns:
@@ -328,12 +472,15 @@ class LogicArray(ArrayLike[Logic]):
         Raises:
             OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
+        range = _make_range(range, width)
         if range is None:
             range = Range(len(value) * 8 - 1, "downto", 0)
         elif len(value) * 8 != len(range):
-            raise OverflowError(f"Value of length {len(value)} will not fit in {range}")
+            raise OverflowError(
+                f"Value of length {len(value)} will not fit in a LogicArray with bounds: {range!r}"
+            )
         return cls.from_unsigned(
-            int.from_bytes(value, byteorder=byteorder, signed=False), range=range
+            int.from_bytes(value, byteorder=byteorder, signed=False), range
         )
 
     @classmethod
@@ -659,3 +806,20 @@ class LogicArray(ArrayLike[Logic]):
 
     def __invert__(self) -> "LogicArray":
         return LogicArray(~v for v in self)
+
+
+def _make_range(
+    range: Union[Range, int, None], width: Union[int, None]
+) -> Union[Range, None]:
+    if width is not None:
+        if range is not None:
+            raise TypeError("Only provide argument to one of 'range' or 'width'")
+        return Range(width - 1, "downto", 0)
+    elif isinstance(range, int):
+        return Range(range - 1, "downto", 0)
+    elif range is None or isinstance(range, Range):
+        return range
+    else:
+        raise TypeError(
+            f"Expected Range for parameter 'range', not {type(range).__qualname__}"
+        )
