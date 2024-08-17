@@ -10,8 +10,8 @@ import re
 import pytest
 
 import cocotb
-from cocotb.sim_time_utils import get_sim_time
 from cocotb.triggers import Lock, NullTrigger, Timer, _InternalEvent
+from cocotb.utils import get_sim_time
 
 
 @cocotb.test()

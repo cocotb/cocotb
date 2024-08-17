@@ -243,7 +243,7 @@ Asynchronous Queues
 Simulation Time Utilities
 =========================
 
-.. automodule:: cocotb.sim_time_utils
+.. automodule:: cocotb.utils
     :members:
     :member-order: bysource
     :synopsis: Various utilities for dealing with simulation time.
@@ -277,9 +277,9 @@ Logging
 
 .. attribute:: logging.LogRecord.created_sim_time
 
-    The result of :func:`~cocotb.sim_time_utils.get_sim_time` at the point the log was created
+    The result of :func:`~cocotb.utils.get_sim_time` at the point the log was created
     (in simulator units). The formatter is responsible for converting this
-    to something like nanoseconds via :func:`~cocotb.sim_time_utils.get_time_from_sim_steps`.
+    to something like nanoseconds via :func:`~cocotb.utils.get_time_from_sim_steps`.
 
     This is added by :class:`cocotb.log.SimTimeContextFilter`.
 

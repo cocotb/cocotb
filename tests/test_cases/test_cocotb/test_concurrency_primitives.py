@@ -13,8 +13,8 @@ import pytest
 from common import _check_traceback
 
 import cocotb
-from cocotb.sim_time_utils import get_sim_time
 from cocotb.triggers import Combine, Event, First, Timer
+from cocotb.utils import get_sim_time
 
 
 @cocotb.test()

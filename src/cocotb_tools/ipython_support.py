@@ -9,7 +9,7 @@ from IPython.terminal.prompts import Prompts
 from pygments.token import Token
 
 import cocotb
-from cocotb.sim_time_utils import get_sim_time
+from cocotb.utils import get_sim_time
 
 T = TypeVar("T")
 

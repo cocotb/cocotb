@@ -1,1 +1,0 @@
-:func:`~cocotb.sim_time_utils.get_sim_time`, :func:`~cocotb.sim_time_utils.get_time_from_sim_steps`, and :func:`~cocotb.sim_time_utils.get_sim_steps` were moved from ``cocotb.utils`` to :mod:`cocotb.sim_time_utils`.

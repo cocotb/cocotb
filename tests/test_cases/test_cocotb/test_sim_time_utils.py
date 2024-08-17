@@ -4,7 +4,7 @@
 import pytest
 
 import cocotb
-import cocotb.sim_time_utils as utils
+from cocotb import utils
 
 
 @cocotb.test()

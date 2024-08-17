@@ -144,8 +144,8 @@ Features
 - Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions. (:pr:`2660`)
 - Add :func:`cocotb.create_task` API for creating a Task from a Coroutine without scheduling. (:pr:`2665`)
 - Support rounding modes in :class:`~cocotb.triggers.Timer`. (:pr:`2684`)
-- Support rounding modes in :func:`~cocotb.sim_time_utils.get_sim_steps`. (:pr:`2684`)
-- Support passing ``'step'`` as a time unit in :func:`cocotb.sim_time_utils.get_sim_time`. (:pr:`2691`)
+- Support rounding modes in :func:`~cocotb.utils.get_sim_steps`. (:pr:`2684`)
+- Support passing ``'step'`` as a time unit in :func:`cocotb.utils.get_sim_time`. (:pr:`2691`)
 
 
 Bugfixes
@@ -173,7 +173,7 @@ Deprecations and Removals
 - Setting values on handles using the ``signal <= newval`` syntax is deprecated. Instead, use the ``signal.value = newval`` syntax. (:pr:`2681`)
 - ``cocotb.utils.hexdump`` is deprecated; use :func:`scapy.utils.hexdump` instead. (:pr:`2691`)
 - ``cocotb.utils.hexdiffs`` is deprecated; use :func:`scapy.utils.hexdiff` instead. (:pr:`2691`)
-- Passing ``None`` to :func:`cocotb.sim_time_utils.get_sim_time` is deprecated; use ``'step'`` as the time unit instead. (:pr:`2691`)
+- Passing ``None`` to :func:`cocotb.utils.get_sim_time` is deprecated; use ``'step'`` as the time unit instead. (:pr:`2691`)
 - The ``stdout`` and ``stderr`` attributes on :class:`cocotb.result.TestComplete` and subclasses are deprecated. (:pr:`2692`)
 - ``TestFailure`` is deprecated, use an ``assert`` statement instead. (:pr:`2692`)
 
@@ -227,7 +227,7 @@ Features
   produce more informative tracebacks from the :keyword:`assert` statement. (:pr:`2028`)
 - The handle to :envvar:`TOPLEVEL`, typically seen as the first argument to a cocotb test function, is now available globally as :data:`cocotb.top`. (:pr:`2134`)
 - The ``units`` argument to :class:`~cocotb.triggers.Timer`,
-  :class:`~cocotb.clock.Clock` and :func:`~cocotb.sim_time_utils.get_sim_steps`,
+  :class:`~cocotb.clock.Clock` and :func:`~cocotb.utils.get_sim_steps`,
   and the ``timeout_unit`` argument to
   :func:`~cocotb.triggers.with_timeout` and :class:`cocotb.test`
   now accepts ``'step'`` to mean the simulator time step.

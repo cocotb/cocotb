@@ -56,7 +56,7 @@ from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
-from cocotb.sim_time_utils import get_sim_steps, get_time_from_sim_steps
+from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 T = TypeVar("T")
 
