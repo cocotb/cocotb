@@ -2,8 +2,8 @@
 # This is a very simple test; it just makes sure we can yield a list of both.
 
 import cocotb
-from cocotb.sim_time_utils import get_sim_time
 from cocotb.triggers import First, Timer
+from cocotb.utils import get_sim_time
 
 
 async def sample_coroutine(dut):

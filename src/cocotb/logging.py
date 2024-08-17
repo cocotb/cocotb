@@ -36,7 +36,7 @@ import typing
 
 from cocotb import _ANSI, simulator
 from cocotb._utils import want_color_output
-from cocotb.sim_time_utils import get_sim_time, get_time_from_sim_steps
+from cocotb.utils import get_sim_time, get_time_from_sim_steps
 
 try:
     _suppress = int(os.environ.get("COCOTB_REDUCED_LOG_FMT", "1"))

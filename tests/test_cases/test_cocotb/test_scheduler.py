@@ -19,7 +19,7 @@ import pytest
 from common import MyException
 
 import cocotb
-import cocotb.sim_time_utils
+import cocotb.utils
 from cocotb.clock import Clock
 from cocotb.task import Task
 from cocotb.triggers import (
@@ -566,9 +566,9 @@ async def test_await_start_soon(_):
     """Test awaiting start_soon queued coroutine before it starts."""
 
     async def coro():
-        start_time = cocotb.sim_time_utils.get_sim_time(units="ns")
+        start_time = cocotb.utils.get_sim_time(units="ns")
         await Timer(1, "ns")
-        assert cocotb.sim_time_utils.get_sim_time(units="ns") == start_time + 1
+        assert cocotb.utils.get_sim_time(units="ns") == start_time + 1
 
     coro = cocotb.start_soon(coro())
 

@@ -68,9 +68,9 @@ from cocotb._utils import (
 )
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.result import TestSuccess
-from cocotb.sim_time_utils import get_sim_time
 from cocotb.task import Task, _RunningTest
 from cocotb.triggers import SimTimeoutError, Timer, Trigger
+from cocotb.utils import get_sim_time
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
