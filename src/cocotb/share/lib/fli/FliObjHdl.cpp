@@ -248,6 +248,7 @@ int FliEnumObjHdl::set_signal_value(const int32_t value,
     } else {
         switch (action) {
             case GPI_DEPOSIT:
+            case GPI_NO_DELAY:
                 mti_SetSignalValue(get_handle<mtiSignalIdT>(),
                                    static_cast<mtiLongT>(value));
                 return 0;
@@ -349,6 +350,7 @@ int FliLogicObjHdl::set_signal_value(const int32_t value,
         if (m_is_var) {
             switch (action) {
                 case GPI_DEPOSIT:
+                case GPI_NO_DELAY:
                     mti_SetVarValue(get_handle<mtiVariableIdT>(), enumVal);
                     return 0;
                 case GPI_FORCE:
@@ -366,6 +368,7 @@ int FliLogicObjHdl::set_signal_value(const int32_t value,
         } else {
             switch (action) {
                 case GPI_DEPOSIT:
+                case GPI_NO_DELAY:
                     mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
                     return 0;
                 case GPI_FORCE: {
@@ -392,6 +395,7 @@ int FliLogicObjHdl::set_signal_value(const int32_t value,
         if (m_is_var) {
             switch (action) {
                 case GPI_DEPOSIT:
+                case GPI_NO_DELAY:
                     mti_SetVarValue(get_handle<mtiVariableIdT>(),
                                     (mtiLongT)m_mti_buff);
                     return 0;
@@ -410,6 +414,7 @@ int FliLogicObjHdl::set_signal_value(const int32_t value,
         } else {
             switch (action) {
                 case GPI_DEPOSIT:
+                case GPI_NO_DELAY:
                     mti_SetSignalValue(get_handle<mtiSignalIdT>(),
                                        (mtiLongT)m_mti_buff);
                     return 0;
@@ -448,6 +453,7 @@ int FliLogicObjHdl::set_signal_value_binstr(std::string &value,
         if (m_is_var) {
             switch (action) {
                 case GPI_DEPOSIT:
+                case GPI_NO_DELAY:
                     mti_SetVarValue(get_handle<mtiVariableIdT>(), enumVal);
                     return 0;
                 case GPI_FORCE:
@@ -465,6 +471,7 @@ int FliLogicObjHdl::set_signal_value_binstr(std::string &value,
         } else {
             switch (action) {
                 case GPI_DEPOSIT:
+                case GPI_NO_DELAY:
                     mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
                     return 0;
                 case GPI_FORCE: {
@@ -502,6 +509,7 @@ int FliLogicObjHdl::set_signal_value_binstr(std::string &value,
         if (m_is_var) {
             switch (action) {
                 case GPI_DEPOSIT:
+                case GPI_NO_DELAY:
                     mti_SetVarValue(get_handle<mtiVariableIdT>(),
                                     (mtiLongT)m_mti_buff);
                     return 0;
@@ -520,6 +528,7 @@ int FliLogicObjHdl::set_signal_value_binstr(std::string &value,
         } else {
             switch (action) {
                 case GPI_DEPOSIT:
+                case GPI_NO_DELAY:
                     mti_SetSignalValue(get_handle<mtiSignalIdT>(),
                                        (mtiLongT)m_mti_buff);
                     return 0;
@@ -587,6 +596,7 @@ int FliIntObjHdl::set_signal_value(const int32_t value,
     if (m_is_var) {
         switch (action) {
             case GPI_DEPOSIT:
+            case GPI_NO_DELAY:
                 mti_SetVarValue(get_handle<mtiVariableIdT>(),
                                 static_cast<mtiLongT>(value));
                 return 0;
@@ -604,6 +614,7 @@ int FliIntObjHdl::set_signal_value(const int32_t value,
     } else {
         switch (action) {
             case GPI_DEPOSIT:
+            case GPI_NO_DELAY:
                 mti_SetSignalValue(get_handle<mtiSignalIdT>(),
                                    static_cast<mtiLongT>(value));
                 return 0;
@@ -656,6 +667,7 @@ int FliRealObjHdl::set_signal_value(const double value,
     if (m_is_var) {
         switch (action) {
             case GPI_DEPOSIT:
+            case GPI_NO_DELAY:
                 mti_SetVarValue(get_handle<mtiVariableIdT>(),
                                 (mtiLongT)m_mti_buff);
                 return 0;
@@ -673,6 +685,7 @@ int FliRealObjHdl::set_signal_value(const double value,
     } else {
         switch (action) {
             case GPI_DEPOSIT:
+            case GPI_NO_DELAY:
                 mti_SetSignalValue(get_handle<mtiSignalIdT>(),
                                    (mtiLongT)m_mti_buff);
                 return 0;
@@ -727,6 +740,7 @@ int FliStringObjHdl::set_signal_value_str(std::string &value,
     if (m_is_var) {
         switch (action) {
             case GPI_DEPOSIT:
+            case GPI_NO_DELAY:
                 mti_SetVarValue(get_handle<mtiVariableIdT>(),
                                 (mtiLongT)m_mti_buff);
                 return 0;
@@ -744,6 +758,7 @@ int FliStringObjHdl::set_signal_value_str(std::string &value,
     } else {
         switch (action) {
             case GPI_DEPOSIT:
+            case GPI_NO_DELAY:
                 mti_SetSignalValue(get_handle<mtiSignalIdT>(),
                                    (mtiLongT)m_mti_buff);
                 return 0;
