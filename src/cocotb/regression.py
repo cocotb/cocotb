@@ -694,6 +694,7 @@ class RegressionManager:
                 "pass": False,
                 "sim": 0,
                 "real": 0,
+                "ratio": self._safe_divide(0, 0),
             }
         )
 
