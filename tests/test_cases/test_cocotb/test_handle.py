@@ -405,10 +405,8 @@ async def test_assign_immediate(dut):
     assert dut.mybits_uninitialized.value == LogicArray("11")
 
 
-# Icarus re-enters cocotb because it calls callbacks immediately on value change (gh-4067)
-# Xcelium re-enters cocotb because it calls callbacks immediately on value change (gh-4103)
 @cocotb.test(
-    skip=LANGUAGE in ["vhdl"] or SIM_NAME.startswith(("icarus", "xmsim")),
+    skip=LANGUAGE in ["vhdl"],
 )
 async def test_immediate_reentrace(dut):
     dut.mybits_uninitialized.value = 0
