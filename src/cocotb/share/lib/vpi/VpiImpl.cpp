@@ -28,6 +28,9 @@
 #include "VpiImpl.h"
 
 #include <cstring>
+#include <queue>
+
+#include "_vendor/vpi/vpi_user.h"
 
 extern "C" {
 
@@ -699,8 +702,7 @@ const char *VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
 
 extern "C" {
 
-// Main re-entry point for callbacks from simulator
-int32_t handle_vpi_callback(p_cb_data cb_data) {
+static int32_t handle_vpi_callback_(p_cb_data cb_data) {
     gpi_to_user();
 
     int rv = 0;
@@ -738,6 +740,34 @@ int32_t handle_vpi_callback(p_cb_data cb_data) {
 
     return rv;
 }
+
+#ifdef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
+int32_t handle_vpi_callback(p_cb_data cb_data) {
+    return handle_vpi_callback_(cb_data);
+}
+#else
+static std::queue<p_cb_data> cbs;
+static bool reacting = false;
+
+// Main re-entry point for callbacks from simulator
+int32_t handle_vpi_callback(p_cb_data cb_data) {
+    // must push things into a queue because Icaurus (gh-4067), Xcelium
+    // (gh-4013), and Questa (gh-4105) react to value changes on signals that
+    // are set with vpiNoDelay immediately, and not after the current callback
+    // has ended, causing re-entrancy.
+    cbs.push(cb_data);
+    if (reacting) {
+        return 0;
+    }
+    reacting = true;
+    while (!cbs.empty()) {
+        handle_vpi_callback_(cbs.front());
+        cbs.pop();
+    }
+    reacting = false;
+    return 0;
+}
+#endif
 
 static void register_impl() {
     vpi_table = new VpiImpl("VPI");
