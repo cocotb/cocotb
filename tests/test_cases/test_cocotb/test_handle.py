@@ -416,3 +416,16 @@ async def test_assign_Logic(dut):
     assert dut.stream_in_ready.value == "x"
     with pytest.raises(ValueError):
         dut.stream_in_data.value = Logic("U")  # not the correct size
+
+
+@cocotb.test
+async def test_assign_string(dut):
+    dut.stream_in_data.value = "10101010"
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == "10101010"
+    with pytest.raises(OverflowError):
+        dut.stream_in_data.value = "XXX"  # not the correct size
+    with pytest.raises(ValueError):
+        dut.stream_in_data.value = "lol"  # not the correct values
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == "10101010"
