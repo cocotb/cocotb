@@ -12,7 +12,7 @@ import random
 import pytest
 
 import cocotb
-from cocotb.handle import StringObject, _Limits
+from cocotb.handle import LogicObject, StringObject, _Limits
 from cocotb.triggers import Edge, Timer
 from cocotb.types import Logic, LogicArray
 
@@ -96,11 +96,46 @@ async def test_delayed_assignment_still_errors(dut):
         dut.stream_in_int.value = []
 
 
-async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
+signal_widths = {
+    len(sig): sig
+    for sig in (
+        cocotb.top.stream_in_data,
+        cocotb.top.stream_in_data_dword,
+        cocotb.top.stream_in_data_39bit,
+        cocotb.top.stream_in_data_wide,
+        cocotb.top.stream_in_data_dqword,
+    )
+}
+
+
+@cocotb.test
+@cocotb.parameterize(
+    ("width", tuple(signal_widths.keys())),
+    ("setimmediate", [True, False]),
+)
+async def test_int_values(
+    _, width: int, setimmediate: bool, limits=_Limits.VECTOR_NBIT
+) -> None:
+    """Test integer access to a signal."""
+    if LANGUAGE == "vhdl" and setimmediate:
+        return
+    signal = signal_widths[width]
+    int_values_test(signal, width, setimmediate, limits)
+
+
+async def int_values_test(
+    signal: LogicObject,
+    n_bits: int,
+    setimmediate: bool,
+    limits: _Limits = _Limits.VECTOR_NBIT,
+) -> None:
     """Test integer access to a signal."""
     values = gen_int_test_values(n_bits, limits)
     for val in values:
-        signal.value = val
+        if setimmediate:
+            signal.setimmediatevalue(val)
+        else:
+            signal.value = val
         await Timer(1, "ns")
 
         if limits == _Limits.VECTOR_NBIT:
@@ -129,17 +164,45 @@ def gen_int_test_values(n_bits, limits=_Limits.VECTOR_NBIT):
         return [1, -1, 4, -4, unsigned_min, unsigned_max]
 
 
-async def int_overflow_test(signal, n_bits, test_mode, limits=_Limits.VECTOR_NBIT):
+@cocotb.test
+@cocotb.parameterize(
+    ("width", tuple(signal_widths.keys())),
+    ("test_mode", ["ovfl", "unfl"]),
+    ("setimmediate", [True, False]),
+)
+async def test_vector_overflow(
+    _,
+    width: int,
+    test_mode: str,
+    setimmediate: bool,
+    limits=_Limits.VECTOR_NBIT,
+) -> None:
+    if LANGUAGE == "vhdl" and setimmediate:
+        return
+    signal = signal_widths[width]
+    int_overflow_test(signal, width, test_mode, setimmediate, limits)
+
+
+async def int_overflow_test(
+    signal: LogicObject,
+    n_bits: int,
+    test_mode: str,
+    setimmediate: bool,
+    limits: _Limits = _Limits.VECTOR_NBIT,
+) -> None:
     """Test integer overflow."""
     if test_mode == "ovfl":
         value = gen_int_ovfl_value(n_bits, limits)
     elif test_mode == "unfl":
         value = gen_int_unfl_value(n_bits, limits)
     else:
-        value = None
+        assert False, f"bad test_mode {test_mode}"
 
     with pytest.raises(OverflowError):
-        signal.value = value
+        if setimmediate:
+            signal.setimmediatevalue(value)
+        else:
+            signal.value = value
 
 
 def gen_int_ovfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
@@ -166,114 +229,9 @@ def gen_int_unfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
         return signed_min - 1
 
 
-@cocotb.test()
-async def test_int_8bit(dut):
-    """Test int access to 8-bit vector."""
-    await int_values_test(dut.stream_in_data, len(dut.stream_in_data))
-
-
-@cocotb.test()
-async def test_int_8bit_overflow(dut):
-    """Test 8-bit vector overflow."""
-    await int_overflow_test(dut.stream_in_data, len(dut.stream_in_data), "ovfl")
-
-
-@cocotb.test()
-async def test_int_8bit_underflow(dut):
-    """Test 8-bit vector underflow."""
-    await int_overflow_test(dut.stream_in_data, len(dut.stream_in_data), "unfl")
-
-
-@cocotb.test()
-async def test_int_32bit(dut):
-    """Test int access to 32-bit vector."""
-    await int_values_test(dut.stream_in_data_dword, len(dut.stream_in_data_dword))
-
-
-@cocotb.test()
-async def test_int_32bit_overflow(dut):
-    """Test 32-bit vector overflow."""
-    await int_overflow_test(
-        dut.stream_in_data_dword, len(dut.stream_in_data_dword), "ovfl"
-    )
-
-
-@cocotb.test()
-async def test_int_32bit_underflow(dut):
-    """Test 32-bit vector underflow."""
-    await int_overflow_test(
-        dut.stream_in_data_dword, len(dut.stream_in_data_dword), "unfl"
-    )
-
-
-@cocotb.test()
-async def test_int_39bit(dut):
-    """Test int access to 39-bit vector."""
-    await int_values_test(dut.stream_in_data_39bit, len(dut.stream_in_data_39bit))
-
-
-@cocotb.test()
-async def test_int_39bit_overflow(dut):
-    """Test 39-bit vector overflow."""
-    await int_overflow_test(
-        dut.stream_in_data_39bit, len(dut.stream_in_data_39bit), "ovfl"
-    )
-
-
-@cocotb.test()
-async def test_int_39bit_underflow(dut):
-    """Test 39-bit vector underflow."""
-    await int_overflow_test(
-        dut.stream_in_data_39bit, len(dut.stream_in_data_39bit), "unfl"
-    )
-
-
-@cocotb.test()
-async def test_int_64bit(dut):
-    """Test int access to 64-bit vector."""
-    await int_values_test(dut.stream_in_data_wide, len(dut.stream_in_data_wide))
-
-
-@cocotb.test()
-async def test_int_64bit_overflow(dut):
-    """Test 64-bit vector overflow."""
-    await int_overflow_test(
-        dut.stream_in_data_wide, len(dut.stream_in_data_wide), "ovfl"
-    )
-
-
-@cocotb.test()
-async def test_int_64bit_underflow(dut):
-    """Test 64-bit vector underflow."""
-    await int_overflow_test(
-        dut.stream_in_data_wide, len(dut.stream_in_data_wide), "unfl"
-    )
-
-
-@cocotb.test()
-async def test_int_128bit(dut):
-    """Test int access to 128-bit vector."""
-    await int_values_test(dut.stream_in_data_dqword, len(dut.stream_in_data_dqword))
-
-
-@cocotb.test()
-async def test_int_128bit_overflow(dut):
-    """Test 128-bit vector overflow."""
-    await int_overflow_test(
-        dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "ovfl"
-    )
-
-
-@cocotb.test()
-async def test_int_128bit_underflow(dut):
-    """Test 128-bit vector underflow."""
-    await int_overflow_test(
-        dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "unfl"
-    )
-
-
 @cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
-async def test_integer(dut):
+@cocotb.parameterize(("setimmediate", [True, False]))
+async def test_integer(dut, setimmediate: bool) -> None:
     """Test access to integers."""
     if (
         LANGUAGE in ["verilog"]
@@ -287,11 +245,12 @@ async def test_integer(dut):
     else:
         limits = _Limits.SIGNED_NBIT
 
-    await int_values_test(dut.stream_in_int, 32, limits)
+    await int_values_test(dut.stream_in_int, 32, setimmediate, limits)
 
 
 @cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
-async def test_integer_overflow(dut):
+@cocotb.parameterize(("setimmediate", [True, False]))
+async def test_integer_overflow(dut, setimmediate: bool) -> None:
     """Test integer overflow."""
     if (
         LANGUAGE in ["verilog"]
@@ -305,11 +264,12 @@ async def test_integer_overflow(dut):
     else:
         limits = _Limits.SIGNED_NBIT
 
-    await int_overflow_test(dut.stream_in_int, 32, "ovfl", limits)
+    await int_overflow_test(dut.stream_in_int, 32, "ovfl", setimmediate, limits)
 
 
 @cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
-async def test_integer_underflow(dut):
+@cocotb.parameterize(("setimmediate", [True, False]))
+async def test_integer_underflow(dut, setimmediate: bool) -> None:
     """Test integer underflow."""
     if (
         LANGUAGE in ["verilog"]
@@ -322,7 +282,7 @@ async def test_integer_underflow(dut):
     else:
         limits = _Limits.SIGNED_NBIT
 
-    await int_overflow_test(dut.stream_in_int, 32, "unfl", limits)
+    await int_overflow_test(dut.stream_in_int, 32, "unfl", setimmediate, limits)
 
 
 # GHDL unable to find real signals (gh-2589)
@@ -437,6 +397,12 @@ async def test_assign_string(dut):
 async def test_assign_immediate(dut):
     dut.mybits_uninitialized.setimmediatevalue(2)
     assert dut.mybits_uninitialized.value == 2
+
+    dut.mybits_uninitialized.setimmediatevalue("01")
+    assert dut.mybits_uninitialized.value == "01"
+
+    dut.mybits_uninitialized.setimmediatevalue(LogicArray("11"))
+    assert dut.mybits_uninitialized.value == LogicArray("11")
 
 
 # Icarus re-enters cocotb because it calls callbacks immediately on value change (gh-4067)
