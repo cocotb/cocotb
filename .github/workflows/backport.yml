@@ -1,0 +1,60 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# A workflow to automatically backport pull requests to a stable branch.
+#
+# This workflow uses the Backport CLI (https://github.com/sorenlouv/backport)
+# under the hood, which is configured in `.backportrc.json` in the repository
+# root.
+#
+# See https://github.com/sorenlouv/backport-github-action for documentation
+# on the used action.
+
+name: Backport PRs to stable branches
+
+on:
+  pull_request_target:
+    # Run this workflow when a label on a PR is added, or if it's closed.
+    types: ["labeled", "closed"]
+
+jobs:
+  backport:
+    name: Backport PR
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      # Run the backport action only on PRs with one of the `backport-to:`
+      # labels applied.
+      #
+      # Also update `branchLabelMapping` in `.backportrc.json` when changing the
+      # label here.
+      #
+      # Implementation note: GitHub's contains() is matching the full string
+      # when operating on an array (and startsWith() does not operate on arrays
+      # at all). Do the label matching with jq instead.
+      - name: Check for backport labels
+        id: check_labels
+        run: |-
+          labels='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+          matched=$(echo $labels | jq '.|map(select(startswith("backport-to:"))) | length')
+          echo "matched=$matched"
+          echo "matched=$matched" >> $GITHUB_OUTPUT
+
+      - name: Backport Action
+        if: fromJSON(steps.check_labels.outputs.matched) > 0
+        uses: sorenlouv/backport-github-action@v9.5.1
+        with:
+          # GITHUB_TOKEN is available by default, but the powers it has are
+          # configurable. Follow the GitHub documentation at
+          # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#setting-the-permissions-of-the-github_token-for-your-repository
+          # to "Allow GitHub Actions to create and approve pull requests".
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Info log
+        if: ${{ success() }}
+        run: cat ~/.backport/backport.info.log
+
+      - name: Debug log
+        if: ${{ failure() }}
+        run: cat ~/.backport/backport.debug.log
