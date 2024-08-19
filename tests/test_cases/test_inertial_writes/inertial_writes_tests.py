@@ -141,23 +141,7 @@ async def test_writes_in_read_write(dut):
     assert dut.stream_in_data.value == 1
 
 
-if simulator_test:
-    expect_fail = False
-elif not trust_inertial and (
-    SIM_NAME.startswith(("icarus", "xmsim"))
-    or (SIM_NAME.startswith("modelsim") and intf in ("vpi", "fli"))
-    or (SIM_NAME.startswith("riviera") and intf == "vpi")
-):
-    # Icarus, Xcelium, Questa VPI, Questa FLI, and Riviera VPI allow the user
-    # to keep scheduling ReadWrite phases.
-    expect_fail = False
-elif trust_inertial:
-    expect_fail = False
-else:
-    expect_fail = True
-
-
-@cocotb.test(expect_fail=expect_fail)
+@cocotb.test
 async def test_writes_in_last_read_write(dut):
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
     dut.stream_in_data.value = 0
