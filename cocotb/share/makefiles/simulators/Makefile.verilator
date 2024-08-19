@@ -48,11 +48,11 @@ ifeq ($(VERILATOR_SIM_DEBUG), 1)
 endif
 
 ifeq ($(VERILATOR_TRACE),1)
-  EXTRA_ARGS += --trace --trace-structs
+  COMPILE_ARGS += --trace --trace-structs
   SIM_ARGS += --trace
 endif
 
-EXTRA_ARGS += --timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
+COMPILE_ARGS += --timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
 COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o Vtop -LDFLAGS "-Wl,-rpath,$(shell cocotb-config --lib-dir) -L$(shell cocotb-config --lib-dir) -lcocotbvpi_verilator"
 
@@ -71,7 +71,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/Vtop $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        $(SIM_CMD_PREFIX) $< $(SIM_ARGS) $(PLUSARGS) $(SIM_CMD_SUFFIX)
+        $(SIM_CMD_PREFIX) $< $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS) $(SIM_CMD_SUFFIX)
 
 	$(call check_for_results_file)
 
