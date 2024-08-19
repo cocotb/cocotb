@@ -541,8 +541,7 @@ def outdated(output: Path, dependencies: Sequence[Path]) -> bool:
     dep_mtime = 0.0
     for dependency in dependencies:
         mtime = dependency.stat().st_mtime
-        if mtime > dep_mtime:
-            dep_mtime = mtime
+        dep_mtime = max(mtime, dep_mtime)
 
     return dep_mtime > output_mtime
 
