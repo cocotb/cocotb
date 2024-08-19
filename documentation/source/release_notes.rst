@@ -7,8 +7,21 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
+cocotb 1.9.1 (YYYY-MM-DD)
+=========================
 
-Cocotb 1.9.0 (2024-07-14)
+Bugfixes
+--------
+
+- Improve the Verilator Makefile to pass on ``--trace`` at runtime as well. (:issue:`4088`)
+- Pass ``EXTRA_ARGS`` in the Verilator Makefile to both the compilation and the simulation step.
+
+Changes
+-------
+
+- Support setuptools 72.2.0
+
+cocotb 1.9.0 (2024-07-14)
 =========================
 
 Features
