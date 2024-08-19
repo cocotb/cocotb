@@ -52,9 +52,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Info log
-        if: ${{ success() }}
+        if: ${{ fromJSON(steps.check_labels.outputs.matched) > 0 && success() }}
         run: cat ~/.backport/backport.info.log
 
       - name: Debug log
-        if: ${{ failure() }}
+        if: ${{ fromJSON(steps.check_labels.outputs.matched) > 0 && failure() }}
         run: cat ~/.backport/backport.debug.log
