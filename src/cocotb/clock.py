@@ -33,8 +33,8 @@ from fractions import Fraction
 from logging import Logger
 from typing import Union
 
-import cocotb._conf
 from cocotb._py_compat import cached_property
+from cocotb._write_scheduler import trust_inertial
 from cocotb.simulator import clock_create
 from cocotb.triggers import Event, Timer
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
@@ -138,7 +138,7 @@ class Clock:
                 f"Invalid clock impl {impl!r}, must be one of: {valid_impls_str}"
             )
         if impl == "auto":
-            impl = "gpi" if cocotb._conf.trust_inertial else "py"
+            impl = "gpi" if trust_inertial else "py"
         self.impl = impl
 
     async def start(self, start_high: bool = True) -> None:
