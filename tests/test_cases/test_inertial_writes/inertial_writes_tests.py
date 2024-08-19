@@ -4,7 +4,7 @@
 import os
 
 import cocotb
-from cocotb._conf import trust_inertial
+from cocotb._write_scheduler import trust_inertial
 from cocotb.clock import Clock
 from cocotb.triggers import (
     ReadOnly,

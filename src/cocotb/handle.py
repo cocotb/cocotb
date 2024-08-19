@@ -47,7 +47,6 @@ from typing import (
     cast,
 )
 
-import cocotb._conf
 from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
@@ -59,18 +58,6 @@ def _write_now(
     _: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
 ) -> None:
     f(*args)
-
-
-if cocotb._conf.trust_inertial:
-    _inertial_write = _write_now
-else:
-
-    def _inertial_write(
-        handle: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
-    ) -> None:
-        import cocotb._write_scheduler
-
-        cocotb._write_scheduler.schedule_write(handle, f, args)
 
 
 class _Limits(enum.IntEnum):
@@ -701,7 +688,9 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
 
         value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
 
-        self._set_value(value_, action, _inertial_write)
+        import cocotb._write_scheduler
+
+        self._set_value(value_, action, cocotb._write_scheduler.schedule_write)
 
     def setimmediatevalue(
         self,
