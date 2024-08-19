@@ -18,12 +18,20 @@ from cocotb.triggers import (
 SIM_NAME = cocotb.SIM_NAME.lower()
 vhdl = os.environ.get("TOPLEVEL_LANG", "verilog").lower() == "vhdl"
 verilog = os.environ.get("TOPLEVEL_LANG", "verilog").lower() == "verilog"
+if verilog:
+    intf = "vpi"
+elif SIM_NAME.startswith("modelsim"):
+    intf = os.environ.get("VHDL_GPI_INTERFACE", "fli").strip()
+else:
+    intf = "vhpi"
 
 simulator_test = "COCOTB_SIMULATOR_TEST" in os.environ
 
 # Riviera's VHPI is skipped in all tests when COCOTB_TRUST_INERTIAL_WRITES mode is enabled
 # because it behaves erratically.
-riviera_vhpi_trust_inertial = SIM_NAME.startswith("riviera") and vhdl and trust_inertial
+riviera_vhpi_trust_inertial = (
+    SIM_NAME.startswith("riviera") and intf == "vhpi" and trust_inertial
+)
 
 
 # Verilator < v5.026 only does vpiNoDelay writes.
@@ -49,7 +57,9 @@ if simulator_test:
     expect_fail = False
 elif trust_inertial:
     expect_fail = False
-elif SIM_NAME.startswith(("riviera", "modelsim")) and vhdl:
+elif SIM_NAME.startswith("riviera") and intf == "vhpi":
+    expect_fail = False
+elif SIM_NAME.startswith("modelsim") and intf in ("vhpi", "fli"):
     expect_fail = False
 elif SIM_NAME.startswith("verilator"):
     expect_fail = False
@@ -86,7 +96,7 @@ elif SIM_NAME.startswith(("icarus", "verilator")):
     expect_fail = True
 elif SIM_NAME.startswith("modelsim") and verilog:
     expect_fail = True
-elif SIM_NAME.startswith("xmsim") and vhdl:
+elif SIM_NAME.startswith("xmsim") and intf == "vhpi":
     expect_fail = True
 
 
@@ -117,3 +127,59 @@ async def test_writes_dont_update_hdl_this_delta(dut):
     await RisingEdge(dut.clk)
     await ReadOnly()
     assert dut.stream_out_data_registered.value == 1
+
+
+@cocotb.test
+async def test_writes_in_read_write(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+    dut.stream_in_data.value = 0
+    await RisingEdge(dut.clk)
+    assert dut.stream_in_data.value == 0
+
+    # Schedule a write now so the upcoming ReadWrite has a following ReadWrite phase
+    # due to writes being scheduled.
+    dut.stream_in_data.value = 5
+
+    await ReadWrite()
+    # Do a write in the ReadWrite phase to see if it causes issues.
+    dut.stream_in_data.value = 1
+
+    await ReadOnly()
+    # Was the write applied?
+    assert dut.stream_in_data.value == 1
+
+
+if simulator_test:
+    expect_fail = False
+elif not trust_inertial and (
+    SIM_NAME.startswith(("icarus", "xmsim", "verilator"))
+    or (SIM_NAME.startswith("modelsim") and intf in ("vpi", "fli"))
+    or (SIM_NAME.startswith("riviera") and intf == "vpi")
+):
+    # Icarus, Xcelium, Questa VPI, Questa FLI, Riviera VPI, and Verilator allow the user
+    # to keep scheduling ReadWrite phases.
+    expect_fail = False
+elif trust_inertial:
+    expect_fail = False
+else:
+    expect_fail = True
+
+
+@cocotb.test(expect_fail=expect_fail)
+async def test_writes_in_last_read_write(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+    dut.stream_in_data.value = 0
+    await RisingEdge(dut.clk)
+    assert dut.stream_in_data.value == 0
+
+    await ReadWrite()
+    dut.stream_in_data.value = 1
+    # We are now in a ReadWrite phase where no writes have been applied.
+    # The simulator may accurately assess that we are at the end of the evaluation loop,
+    # as there are no more writes scheduled that it can see (only in cocotb).
+    # The above write in COCOTB_TRUST_INERTIAL_WRITES=0 mode will be scheduled for the
+    # next ReadWrite phase, which may never come.
+
+    await ReadOnly()
+    # Was the write applied?
+    assert dut.stream_in_data.value == 1
