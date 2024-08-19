@@ -71,12 +71,14 @@ else:
         args: Sequence[Any],
     ) -> None:
         """Queue *write_func* to be called on the next ``ReadWrite`` trigger."""
-        if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
+        if cocotb.sim_phase == cocotb.SimPhase.READ_WRITE:
+            write_func(*args)
+        elif cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
             raise Exception(
                 f"Write to object {handle._name} was scheduled during a read-only sync phase."
             )
-
-        if handle in _write_calls:
-            del _write_calls[handle]
-        _write_calls[handle] = (write_func, args)
-        _writes_pending.set()
+        else:
+            if handle in _write_calls:
+                del _write_calls[handle]
+            _write_calls[handle] = (write_func, args)
+            _writes_pending.set()
