@@ -266,9 +266,9 @@ class Scheduler:
             # and handle this via some kind of trigger-specific Python callback
             if trigger is self._read_write:
                 cocotb.sim_phase = cocotb.SimPhase.READ_WRITE
-            if trigger is self._read_only:
+            elif trigger is self._read_only:
                 cocotb.sim_phase = cocotb.SimPhase.READ_ONLY
-            elif isinstance(trigger, GPITrigger):
+            else:
                 cocotb.sim_phase = cocotb.SimPhase.NORMAL
 
             # apply inertial writes if ReadWrite
