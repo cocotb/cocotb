@@ -4,8 +4,8 @@
 
 .PHONY: override_tests
 override_tests:
-	$(MAKE) COCOTB_TRUST_INERTIAL_WRITES=0 sim
-	$(MAKE) COCOTB_TRUST_INERTIAL_WRITES=1 sim
+	$(MAKE) COCOTB_TRUST_INERTIAL_WRITES=0 sim COCOTB_RESULTS_FILE=results_no_trust.xml
+	$(MAKE) COCOTB_TRUST_INERTIAL_WRITES=1 sim COCOTB_RESULTS_FILE=results_trust.xml
 
 MODULE := inertial_writes_tests
 

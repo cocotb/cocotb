@@ -32,7 +32,7 @@ def _get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-i",
         "--input-filename",
-        default="results.xml",
+        default=r"results.*\.xml",
         help="A regular expression to match input filenames.",
     )
     parser.add_argument(
