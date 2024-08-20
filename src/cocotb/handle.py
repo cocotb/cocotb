@@ -51,6 +51,7 @@ import cocotb._conf
 from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
+from cocotb._utils import cached_method
 from cocotb.types import Array, Logic, LogicArray, Range
 
 
@@ -249,6 +250,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
         self._sub_handles: Dict[KeyType, SimHandleBase] = {}
+        self._discovered = False
 
     def _keys(self) -> Iterable[KeyType]:
         """Iterate over the keys (name or index) of the child objects.
@@ -274,13 +276,15 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         self._discover_all()
         return self._sub_handles.items()
 
-    @lru_cache(maxsize=None)
     def _discover_all(self) -> None:
         """When iterating or performing IPython tab completion, we run through ahead of
         time and discover all possible children, populating the :any:`_sub_handles`
         mapping. Hierarchy can't change after elaboration so we only have to
         do this once.
         """
+        if self._discovered:
+            return
+
         for thing in self._handle.iterate(simulator.OBJECTS):
             name = thing.get_name_string()
 
@@ -308,6 +312,8 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
             # add to cache
             self._sub_handles[key] = hdl
+
+        self._discovered = True
 
     def __getitem__(self, key: KeyType) -> SimHandleBase:
         # try to use cached value
@@ -565,7 +571,6 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
             raise IndexError(str(e)) from None
 
     # ideally `__len__` could be implemented in terms of `range`, but `range` doesn't work universally.
-    __len__ = HierarchyObjectBase.__len__
 
     def __iter__(self) -> Iterator[SimHandleBase]:
         # must use `sorted(self._keys())` instead of the range because `range` doesn't work universally.
@@ -992,7 +997,7 @@ class LogicObject(
     def __str__(self) -> str:
         return str(self.value)
 
-    @lru_cache(maxsize=None)
+    @cached_method
     def __len__(self) -> int:
         # can't use `range` to get length because `range` is for outer-most dimension only
         # and this object needs to support multi-dimensional packed arrays.
