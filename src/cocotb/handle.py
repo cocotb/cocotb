@@ -25,7 +25,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import collections.abc
 import enum
 import logging
 import re
@@ -836,10 +835,6 @@ class ArrayObject(
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
     ) -> None:
-        if not isinstance(value, (collections.abc.Sequence, Array)):
-            raise TypeError(
-                f"Assigning non-list value to object {self._name} of type {type(self)}"
-            )
         if len(value) != len(self):
             raise ValueError(
                 "Assigning list of length %d to object %s of length %d"
