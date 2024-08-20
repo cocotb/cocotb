@@ -2,7 +2,9 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 from functools import lru_cache
-from typing import Iterator, Sequence, Union, overload
+from typing import Iterator, Optional, Sequence, Union, overload
+
+from cocotb._utils import cached_method
 
 
 class Range(Sequence[int]):
@@ -168,6 +170,14 @@ class Range(Sequence[int]):
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({self.left!r}, {self.direction!r}, {self.right!r})"
+
+    @cached_method
+    def index(self, value: int, start: int = 0, stop: Optional[int] = None) -> int:
+        # Using a cached version of collections.abc.Sequence.index because range.index
+        # doesn't support start and stop, and the version in Sequence is slow, but does
+        # support start and stop.
+        # Range is immutable, so caching this is fine.
+        return super().index(value, start, stop)
 
 
 def _guess_step(left: int, right: int) -> int:
