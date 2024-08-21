@@ -368,3 +368,17 @@ async def test_readonly_in_readwrite(dut):
     assert get_sim_time() == curr_time
     await ReadOnly()
     assert get_sim_time() == curr_time
+
+
+@cocotb.test
+async def test_sim_phase(dut) -> None:
+    assert cocotb.sim_phase is cocotb.SimPhase.NORMAL
+    await ReadWrite()
+    assert cocotb.sim_phase is cocotb.SimPhase.READ_WRITE
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+    await Timer(10, "ns")
+    assert cocotb.sim_phase is cocotb.SimPhase.NORMAL
+    await ReadOnly()
+    assert cocotb.sim_phase is cocotb.SimPhase.READ_ONLY
+    await RisingEdge(dut.clk)
+    assert cocotb.sim_phase is cocotb.SimPhase.NORMAL
