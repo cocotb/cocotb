@@ -35,6 +35,12 @@ from cocotb.utils import get_sim_time
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 SIM_NAME = cocotb.SIM_NAME.lower()
+if LANGUAGE == "verilog":
+    INTF = "vpi"
+elif SIM_NAME.startswith("modelsim"):
+    INTF = os.environ.get("VHDL_GPI_INTERFACE", "fli")
+else:
+    INTF = "vhpi"
 
 
 @cocotb.test()
@@ -331,3 +337,34 @@ async def test_timer_round_mode(_):
     await with_timeout(
         Timer(1, "step"), timeout_time=2.5, timeout_unit="step", round_mode="round"
     )
+
+
+# Riviera VHPI ReadOnly in ValueChange moves to next time step (gh-4119)
+@cocotb.test(expect_fail=SIM_NAME.startswith("riviera") and INTF == "vhpi")
+async def test_readonly_in_valuechange(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+    await RisingEdge(dut.clk)
+    curr_time = get_sim_time()
+    await ReadOnly()
+    assert get_sim_time() == curr_time
+
+
+@cocotb.test
+async def test_readonly_in_timer(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+    await Timer(3, "ns")
+    curr_time = get_sim_time()
+    await ReadOnly()
+    assert get_sim_time() == curr_time
+
+
+# Riviera VHPI ReadOnly in ReadWrite moves to next time step (gh-4120)
+@cocotb.test(expect_fail=SIM_NAME.startswith("riviera") and INTF == "vhpi")
+async def test_readonly_in_readwrite(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+    await RisingEdge(dut.clk)
+    curr_time = get_sim_time()
+    await ReadWrite()
+    assert get_sim_time() == curr_time
+    await ReadOnly()
+    assert get_sim_time() == curr_time
