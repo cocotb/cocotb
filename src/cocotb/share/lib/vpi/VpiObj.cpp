@@ -29,6 +29,7 @@
 
 #include <assert.h>
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "VpiImpl.h"
@@ -47,18 +48,15 @@ int VpiArrayObjHdl::initialise(const std::string &name,
 
     /* Removing the hdl_name from the name will leave the pseudo-indices */
     if (hdl_name.length() < name.length()) {
-        std::string idx_str = name.substr(hdl_name.length());
-
-        while (idx_str.length() > 0) {
-            std::size_t found = idx_str.find_first_of("]");
-
-            if (found != std::string::npos) {
-                ++range_idx;
-                idx_str = idx_str.substr(found + 1);
-            } else {
-                break;
-            }
+        // get the last index of hdl_name in name
+        std::size_t idx_str = name.rfind(hdl_name);
+        if (idx_str == std::string::npos) {
+            LOG_ERROR("Unable to find name %s in %s", hdl_name.c_str(),
+                      name.c_str());
+            return -1;
         }
+        // count occurences of [
+        range_idx = std::count(name.begin() + idx_str, name.end(), '[');
     }
 
     /* After determining the range_idx, get the range and set the limits */
@@ -68,14 +66,12 @@ int VpiArrayObjHdl::initialise(const std::string &name,
     if (iter != NULL) {
         rangeHdl = vpi_scan(iter);
 
-#ifdef MODELSIM
         for (int i = 0; i < range_idx; ++i) {
             rangeHdl = vpi_scan(iter);
             if (rangeHdl == NULL) {
                 break;
             }
         }
-#endif
         if (rangeHdl == NULL) {
             LOG_ERROR("Unable to get range for indexable array");
             return -1;
