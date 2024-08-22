@@ -106,7 +106,8 @@ class Logic:
         value: value to construct into a :class:`Logic`.
 
     Raises:
-        ValueError: if the value cannot be constructed into a :class:`Logic`.
+        ValueError: If the value if of the correct type, but cannot be constructed into a :class:`Logic`.
+        TypeError: If the value is of a type that can't be constructed into a :class:`Logic`.
     """
 
     _repr: int
@@ -145,6 +146,10 @@ class Logic:
     ) -> "Logic":
         if isinstance(value, Logic):
             return value
+        elif value is not None and not isinstance(value, (str, int)):
+            raise TypeError(
+                f"Expected str, bool, or int, not {type(value).__qualname__}"
+            )
         return cls._map_literal(value)
 
     def __and__(self, other: "Logic") -> "Logic":

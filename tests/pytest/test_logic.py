@@ -44,9 +44,12 @@ def test_logic_conversions():
     l = Logic("-")
     assert Logic(Logic("-")) == l
 
-    for value in ("j", 2, object()):
-        with pytest.raises(ValueError):
-            Logic(value)
+    with pytest.raises(ValueError):
+        Logic("j")
+    with pytest.raises(ValueError):
+        Logic(2)
+    with pytest.raises(TypeError):
+        Logic(object())
 
 
 def test_logic_equality():
