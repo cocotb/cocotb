@@ -32,6 +32,8 @@ def test_logic_array_iterable_construction():
     with pytest.raises(OverflowError):
         LogicArray([1, 0, 1, 0], Range(1, "downto", 0))
     with pytest.raises(ValueError):
+        LogicArray(["l", "o", "l"])
+    with pytest.raises(TypeError):
         LogicArray([object()])
 
 
