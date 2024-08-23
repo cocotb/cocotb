@@ -56,7 +56,9 @@ int VpiArrayObjHdl::initialise(const std::string &name,
             return -1;
         }
         // count occurences of [
-        range_idx = (int)std::count(&name.begin()[idx_str], name.end(), '[');
+        auto start =
+            name.begin() + static_cast<std::string::difference_type>(idx_str);
+        range_idx = std::count(start, name.end(), '[');
     }
 
     /* After determining the range_idx, get the range and set the limits */
