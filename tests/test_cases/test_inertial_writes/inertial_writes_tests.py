@@ -10,7 +10,6 @@ from cocotb.triggers import (
     ReadOnly,
     ReadWrite,
     RisingEdge,
-    SimTimeoutError,
     Timer,
     with_timeout,
 )
@@ -26,11 +25,7 @@ simulator_test = "COCOTB_SIMULATOR_TEST" in os.environ
 riviera_vhpi_trust_inertial = SIM_NAME.startswith("riviera") and vhdl and trust_inertial
 
 
-# Verilator < v5.026 only does vpiNoDelay writes.
 @cocotb.test(
-    expect_error=SimTimeoutError
-    if (SIM_NAME.startswith("verilator") and trust_inertial)
-    else (),
     skip=riviera_vhpi_trust_inertial and not simulator_test,
 )
 async def test_writes_on_timer_seen_on_edge(dut):
@@ -51,13 +46,10 @@ elif trust_inertial:
     expect_fail = False
 elif SIM_NAME.startswith(("riviera", "modelsim")) and vhdl:
     expect_fail = False
-elif SIM_NAME.startswith("verilator"):
-    expect_fail = False
 else:
     expect_fail = True
 
 
-# Verilator < v5.026 only does vpiNoDelay writes, so this works.
 # Riviera and Questa on VHDL designs seem to apply inertial writes in this state immediately,
 # presumably because it's the NBA application region.
 # This test will fail because the ReadWrite write applicator task does inertial writes of its own.
@@ -69,6 +61,7 @@ async def test_read_back_in_readwrite(dut):
     # steady state
     dut.clk.value = 0
     await Timer(10, "ns")
+    assert dut.clk.value == 0
 
     # write in the "normal" phase
     dut.clk.value = 1
@@ -90,7 +83,6 @@ elif SIM_NAME.startswith("xmsim") and vhdl:
     expect_fail = True
 
 
-# Verilator < v5.026 only does vpiNoDelay writes.
 # Icarus, Questa VPI, and Xcelium VHPI inertial writes aren't actually inertial.
 @cocotb.test(
     expect_fail=expect_fail,
