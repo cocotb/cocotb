@@ -72,7 +72,7 @@ Verilator
 
 .. warning::
 
-    **cocotb supports Verilator 5.022 and 5.024 (only).**
+    **cocotb supports Verilator 5.026+.**
 
     Verilator is in the process of adding more functionality to its VPI interface, which is used by cocotb to access the design.
     Therefore, Verilator support in cocotb is currently experimental, and some features of cocotb may not work correctly or at all.
