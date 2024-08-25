@@ -30,7 +30,6 @@ import pytest
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.decorators import bridge
 from cocotb.triggers import ReadOnly, RisingEdge, Timer
 from cocotb.utils import get_sim_time
 
@@ -73,7 +72,7 @@ async def test_time_in_bridge(dut):
     dut._log.info("Time at start of test = %d" % time)
     for i in range(100):
         dut._log.info("Loop call %d" % i)
-        await bridge(print_sim_time)(dut, time)
+        await cocotb.bridge(print_sim_time)(dut, time)
 
     time_now = get_sim_time("ns")
     await Timer(10, units="ns")
@@ -93,7 +92,7 @@ async def test_time_in_resume(dut):
         for _ in range(n):
             await RisingEdge(dut.clk)
 
-    @bridge
+    @cocotb.bridge
     def wait_cycles_wrapper(dut, n):
         return wait_cycles(dut, n)
 
@@ -124,7 +123,7 @@ async def test_blocking_function_call_return(dut):
 
     cocotb.start_soon(clock_monitor(dut))
     cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
-    value = await bridge(return_two)(dut)
+    value = await cocotb.bridge(return_two)(dut)
     assert value == 2
 
 
@@ -133,11 +132,11 @@ async def test_consecutive_bridges(dut):
     """
     Test that multiple @cocotb.bridge functions can be called in the same test
     """
-    value = await bridge(return_two)(dut)
+    value = await cocotb.bridge(return_two)(dut)
     dut._log.info("First one completed")
     assert value == 2
 
-    value = await bridge(return_two)(dut)
+    value = await cocotb.bridge(return_two)(dut)
     dut._log.info("Second one completed")
     assert value == 2
 
@@ -150,7 +149,7 @@ async def test_bridge_from_readonly(dut):
     """
     await ReadOnly()
     dut._log.info("In readonly")
-    value = await bridge(return_two)(dut)
+    value = await cocotb.bridge(return_two)(dut)
     assert value == 2
 
 
@@ -164,7 +163,7 @@ async def test_resume_from_readonly(dut):
 
     await ReadOnly()
     dut._log.info("In readonly")
-    value = await bridge(calls_cocotb_resume)(dut)
+    value = await cocotb.bridge(calls_cocotb_resume)(dut)
     assert value == 2
 
 
@@ -177,7 +176,7 @@ async def test_resume_that_awaits(dut):
     """
     cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
-    value = await bridge(calls_cocotb_resume)(dut)
+    value = await cocotb.bridge(calls_cocotb_resume)(dut)
     assert value == 2
 
 
@@ -190,7 +189,7 @@ async def test_await_after_bridge(dut):
     """
     cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
-    value = await bridge(calls_cocotb_resume)(dut)
+    value = await cocotb.bridge(calls_cocotb_resume)(dut)
     assert value == 2
 
     await Timer(10, units="ns")
@@ -205,11 +204,11 @@ async def test_bridge_from_start_soon(dut):
     """
 
     async def run_function(dut):
-        value = await bridge(calls_cocotb_resume)(dut)
+        value = await cocotb.bridge(calls_cocotb_resume)(dut)
         return value
 
     async def run_bridge(dut):
-        value = await bridge(return_two)(dut)
+        value = await cocotb.bridge(return_two)(dut)
         return value
 
     cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
@@ -232,7 +231,7 @@ async def test_bridge_raised_exception(dut):
     Test that exceptions thrown by @cocotb.bridge functions can be caught
     """
 
-    @bridge
+    @cocotb.bridge
     def func():
         raise ValueError()
 
@@ -246,7 +245,7 @@ async def test_bridge_returns_exception(dut):
     Test that exceptions can be returned by @cocotb.bridge functions
     """
 
-    @bridge
+    @cocotb.bridge
     def func():
         return ValueError()
 
@@ -265,7 +264,7 @@ async def test_resume_raised_exception(dut):
     async def func():
         raise ValueError()
 
-    @bridge
+    @cocotb.bridge
     def ext():
         return func()
 
@@ -283,7 +282,7 @@ async def test_resume_returns_exception(dut):
     async def gen_func():
         return ValueError()
 
-    @bridge
+    @cocotb.bridge
     def ext():
         return gen_func()
 
@@ -317,7 +316,7 @@ async def test_resume_from_weird_thread_fails(dut):
         finally:
             caller_resumed = True
 
-    @bridge
+    @cocotb.bridge
     def ext():
         t = threading.Thread(target=function_caller)
         t.start()
