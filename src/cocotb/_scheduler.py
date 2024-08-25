@@ -317,8 +317,8 @@ class Scheduler:
             task._trigger = None
             self._queue(task)
 
-        # This trigger isn't needed any more
-        trigger._unprime()
+        # cleanup trigger
+        trigger._cleanup()
 
     def _event_loop(self) -> None:
         """Run the main event loop.

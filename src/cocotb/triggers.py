@@ -114,6 +114,9 @@ class Trigger(Awaitable["Trigger"]):
             Do not call this directly within a :term:`task`. It is intended to be used
             only by the scheduler.
         """
+        self._cleanup()
+
+    def _cleanup(self) -> None:
         self._primed = False
 
     def __del__(self) -> None:
@@ -144,8 +147,11 @@ class GPITrigger(Trigger):
         """Disable a primed trigger, can be re-primed."""
         if self._cbhdl is not None:
             self._cbhdl.deregister()
+        return super()._unprime()
+
+    def _cleanup(self) -> None:
         self._cbhdl = None
-        super()._unprime()
+        return super()._cleanup()
 
 
 class Timer(GPITrigger):

@@ -614,6 +614,10 @@ void gpi_deregister_callback(gpi_cb_hdl cb_hdl) {
     cb_hdl->m_impl->deregister_callback(cb_hdl);
 }
 
+void *gpi_get_callback_data(gpi_cb_hdl cb_hdl) {
+    return cb_hdl->get_user_data();
+}
+
 const char *GpiImplInterface::get_name_c() { return m_name.c_str(); }
 
 const string &GpiImplInterface::get_name_s() { return m_name; }

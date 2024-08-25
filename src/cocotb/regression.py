@@ -455,7 +455,7 @@ class RegressionManager:
         if trigger is not None:
             # TODO move to Trigger object
             cocotb.sim_phase = cocotb.SimPhase.NORMAL
-            trigger._unprime()
+            trigger._cleanup()
         cocotb._write_scheduler.start_write_scheduler()
 
         self._test_task._add_done_callback(
