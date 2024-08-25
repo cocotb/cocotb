@@ -7,7 +7,7 @@ from enum import Enum
 import pytest
 
 import cocotb
-from cocotb.decorators import _repr, _reprs
+from cocotb._decorators import _repr, _reprs
 
 
 class MyEnum(Enum):
