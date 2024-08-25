@@ -764,6 +764,11 @@ static PyObject *stop_simulator(PyObject *, PyObject *) {
 }
 
 static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *) {
+    // cleanup uncalled callback
+    auto cb = static_cast<PythonCallback *>(gpi_get_callback_data(self->hdl));
+    delete cb;
+
+    // deregister from interface
     gpi_deregister_callback(self->hdl);
 
     Py_RETURN_NONE;

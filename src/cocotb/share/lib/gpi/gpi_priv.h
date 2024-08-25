@@ -186,6 +186,7 @@ class GPI_EXPORT GpiCbHdl : public GpiHdl {
     gpi_cb_state_e get_call_state();
 
     int set_user_data(int (*function)(void *), void *cb_data);
+    void *get_user_data() noexcept { return m_cb_data; };
 
     virtual ~GpiCbHdl();
 
