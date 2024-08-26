@@ -445,9 +445,17 @@ class _Event(Trigger):
         self._parent = parent
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
+        if self._primed:
+            return
         self._callback = callback
         self._parent._prime_trigger(self, callback)
-        super()._prime(callback)
+        return super()._prime(callback)
+
+    def _unprime(self) -> None:
+        if not self._primed:
+            return
+        self._parent._unprime_trigger(self)
+        return super()._unprime()
 
     def __repr__(self) -> str:
         return f"<{self._parent!r}.wait() at {_pointer_str(self)}>"
@@ -493,6 +501,9 @@ class Event:
         self, trigger: _Event, callback: Callable[[Trigger], None]
     ) -> None:
         self._pending_events.append(trigger)
+
+    def _unprime_trigger(self, trigger: _Event) -> None:
+        self._pending_events.remove(trigger)
 
     def set(self) -> None:
         """Set the Event and unblock all Tasks blocked on this Event."""
@@ -593,9 +604,17 @@ class _Lock(Trigger):
         self._parent = parent
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
+        if self._primed:
+            return
         self._callback = callback
         self._parent._prime_lock(self)
-        super()._prime(callback)
+        return super()._prime(callback)
+
+    def _unprime(self) -> None:
+        if not self._primed:
+            return
+        self._parent._unprime_lock(self)
+        return super()._unprime()
 
     def __repr__(self) -> str:
         return f"<{self._parent!r}.acquire() at {_pointer_str(self)}>"
@@ -630,7 +649,6 @@ class Lock(AsyncContextManager[None]):
     """
 
     def __init__(self, name: Optional[str] = None) -> None:
-        self._pending_unprimed: List[_Lock] = []
         self._pending_primed: List[_Lock] = []
         self.name: Optional[str] = name
         self._locked: bool = False
@@ -643,22 +661,22 @@ class Lock(AsyncContextManager[None]):
         """
         return self._locked
 
-    def _acquire_and_fire(self, lock: _Lock):
+    def _acquire_and_fire(self, lock: _Lock) -> None:
         self._locked = True
         lock._callback(lock)
 
     def _prime_lock(self, lock: _Lock) -> None:
-        self._pending_unprimed.remove(lock)
-
         if not self._locked:
             self._acquire_and_fire(lock)
         else:
             self._pending_primed.append(lock)
 
+    def _unprime_lock(self, lock: _Lock) -> None:
+        self._pending_primed.remove(lock)
+
     def acquire(self) -> Trigger:
         """Produce a trigger which fires when the lock is acquired."""
         trig = _Lock(self)
-        self._pending_unprimed.append(trig)
         return trig
 
     def release(self) -> None:
