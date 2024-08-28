@@ -29,6 +29,7 @@
 
 #include <assert.h>
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "VpiImpl.h"
@@ -47,63 +48,53 @@ int VpiArrayObjHdl::initialise(const std::string &name,
 
     /* Removing the hdl_name from the name will leave the pseudo-indices */
     if (hdl_name.length() < name.length()) {
-        std::string idx_str = name.substr(hdl_name.length());
-
-        while (idx_str.length() > 0) {
-            std::size_t found = idx_str.find_first_of("]");
-
-            if (found != std::string::npos) {
-                ++range_idx;
-                idx_str = idx_str.substr(found + 1);
-            } else {
-                break;
-            }
+        // get the last index of hdl_name in name
+        std::size_t idx_str = name.rfind(hdl_name);
+        if (idx_str == std::string::npos) {
+            LOG_ERROR("Unable to find name %s in %s", hdl_name.c_str(),
+                      name.c_str());
+            return -1;
         }
+        // count occurences of [
+        auto start =
+            name.begin() + static_cast<std::string::difference_type>(idx_str);
+        range_idx = static_cast<int>(std::count(start, name.end(), '['));
     }
 
     /* After determining the range_idx, get the range and set the limits */
     vpiHandle iter = vpi_iterate(vpiRange, hdl);
+    vpiHandle rangeHdl;
+
+    if (iter != NULL) {
+        rangeHdl = vpi_scan(iter);
+
+        for (int i = 0; i < range_idx; ++i) {
+            rangeHdl = vpi_scan(iter);
+            if (rangeHdl == NULL) {
+                break;
+            }
+        }
+        if (rangeHdl == NULL) {
+            LOG_ERROR("Unable to get range for indexable array");
+            return -1;
+        }
+        vpi_free_object(iter);  // Need to free iterator since exited early
+    } else if (range_idx == 0) {
+        rangeHdl = hdl;
+    } else {
+        LOG_ERROR("Unable to get range for indexable array or memory");
+        return -1;
+    }
 
     s_vpi_value val;
     val.format = vpiIntVal;
+    vpi_get_value(vpi_handle(vpiLeftRange, rangeHdl), &val);
+    check_vpi_error();
+    m_range_left = val.value.integer;
 
-    if (iter != NULL) {
-        vpiHandle rangeHdl;
-        int idx = 0;
-
-        while ((rangeHdl = vpi_scan(iter)) != NULL) {
-            if (idx == range_idx) {
-                break;
-            }
-            ++idx;
-        }
-
-        if (rangeHdl == NULL) {
-            LOG_ERROR("Unable to get range for indexable object");
-            return -1;
-        } else {
-            vpi_free_object(iter);  // Need to free iterator since exited early
-
-            vpi_get_value(vpi_handle(vpiLeftRange, rangeHdl), &val);
-            check_vpi_error();
-            m_range_left = val.value.integer;
-
-            vpi_get_value(vpi_handle(vpiRightRange, rangeHdl), &val);
-            check_vpi_error();
-            m_range_right = val.value.integer;
-        }
-    } else if (range_idx == 0) {
-        vpi_get_value(vpi_handle(vpiLeftRange, hdl), &val);
-        check_vpi_error();
-        m_range_left = val.value.integer;
-
-        vpi_get_value(vpi_handle(vpiRightRange, hdl), &val);
-        check_vpi_error();
-        m_range_right = val.value.integer;
-    } else {
-        LOG_ERROR("Unable to get range for indexable object");
-        return -1;
-    }
+    vpi_get_value(vpi_handle(vpiRightRange, rangeHdl), &val);
+    check_vpi_error();
+    m_range_right = val.value.integer;
 
     /* vpiSize will return a size that is incorrect for multi-dimensional arrays
      * so use the range to calculate the m_num_elems.
