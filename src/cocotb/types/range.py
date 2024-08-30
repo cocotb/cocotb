@@ -67,16 +67,13 @@ class Range(Sequence[int]):
     """
 
     @overload
-    def __init__(self, left: int, direction: int) -> None:
-        pass  # pragma: no cover
+    def __init__(self, left: int, direction: int) -> None: ...
 
     @overload
-    def __init__(self, left: int, direction: str, right: int) -> None:
-        pass  # pragma: no cover
+    def __init__(self, left: int, direction: str, right: int) -> None: ...
 
     @overload
-    def __init__(self, left: int, *, right: int) -> None:
-        pass  # pragma: no cover
+    def __init__(self, left: int, *, right: int) -> None: ...
 
     def __init__(
         self,
@@ -110,22 +107,22 @@ class Range(Sequence[int]):
         )
 
     def to_range(self) -> range:
-        """Convert :class:`Range` to :class:`range`."""
+        """Convert Range to :class:`range`."""
         return self._range
 
     @property
     def left(self) -> int:
-        """Leftmost value in a range."""
+        """Leftmost value in a Range."""
         return self._range.start
 
     @property
     def direction(self) -> str:
-        """``'to'`` if values are meant to be ascending, ``'downto'`` otherwise."""
+        """``'to'`` if Range is ascending, ``'downto'`` otherwise."""
         return _step_to_direction(self._range.step)
 
     @property
     def right(self) -> int:
-        """Rightmost value in a range."""
+        """Rightmost value in a Range."""
         return self._range.stop - self._range.step
 
     def __len__(self) -> int:
