@@ -803,6 +803,14 @@ class LogicArray(ArrayLike[Logic]):
     def __invert__(self) -> "LogicArray":
         return LogicArray(~v for v in self)
 
+    def __bool__(self) -> bool:
+        warnings.warn(
+            "The behavior of bool casts and using LogicArray in conditionals may change in the future. "
+            """Use explicit comparisons (e.g. `LogicArray() == "11"`) instead""",
+            FutureWarning,
+        )
+        return any(v in (Logic("H"), Logic("1")) for v in self)
+
 
 def _make_range(
     range: Union[Range, int, None], width: Union[int, None]
