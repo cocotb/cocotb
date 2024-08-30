@@ -38,6 +38,7 @@ from enum import Enum
 from functools import lru_cache, update_wrapper, wraps
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -248,28 +249,35 @@ class DocEnum(Enum):
         return self
 
 
-class cached_method:
-    def __init__(self, method):
-        self._method = method
-        update_wrapper(self, method)
+if TYPE_CHECKING:  # pragma: no cover
+    F = TypeVar("F")
 
-    def __get__(self, instance, objtype=None):
-        if instance is None:
-            return self
+    def cached_method(f: F) -> F: ...
 
-        cache = {}
+else:
 
-        @wraps(self._method)
-        def lookup(*args, **kwargs):
-            key = (args, tuple(kwargs.items()))
-            try:
-                return cache[key]
-            except KeyError:
-                res = self._method(instance, *args, **kwargs)
-                cache[key] = res
-                return res
+    class cached_method:
+        def __init__(self, method):
+            self._method = method
+            update_wrapper(self, method)
 
-        lookup.cache = cache
+        def __get__(self, instance, objtype=None):
+            if instance is None:
+                return self
 
-        setattr(instance, self._method.__name__, lookup)
-        return lookup
+            cache = {}
+
+            @wraps(self._method)
+            def lookup(*args, **kwargs):
+                key = (args, tuple(kwargs.items()))
+                try:
+                    return cache[key]
+                except KeyError:
+                    res = self._method(instance, *args, **kwargs)
+                    cache[key] = res
+                    return res
+
+            lookup.cache = cache
+
+            setattr(instance, self._method.__name__, lookup)
+            return lookup
