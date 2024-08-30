@@ -177,7 +177,7 @@ class Range(Sequence[int]):
         # doesn't support start and stop, and the version in Sequence is slow, but does
         # support start and stop.
         # Range is immutable, so caching this is fine.
-        return super().index(value, start, stop)
+        return super().index(value, start, stop)  # type: ignore[arg-type]  # Sequence.index can take None for stop
 
 
 def _guess_step(left: int, right: int) -> int:
