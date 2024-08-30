@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import warnings
+
 import pytest
 
 from cocotb.types import Logic, LogicArray, Range
@@ -396,3 +398,13 @@ def test_null_vector():
         assert null_vector == 0
     assert null_vector == ""
     assert null_vector == []
+
+
+def test_bool_cast():
+    with pytest.warns(FutureWarning):
+        assert LogicArray("0110")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action="ignore", category=FutureWarning)
+        assert not LogicArray("0000")
+        assert LogicArray("01XZ")
+        assert LogicArray("XZ01")
