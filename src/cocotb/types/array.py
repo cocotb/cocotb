@@ -259,10 +259,6 @@ class Array(ArrayLike[T]):
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._value!r}, {self._range!r})"
 
-    def count(self, value: T) -> int:
-        """Return number of occurrences of *value*."""
-        return self._value.count(value)
-
     def _translate_index(self, item: int) -> int:
         try:
             return self._range.index(item)
