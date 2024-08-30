@@ -34,7 +34,10 @@ class ArrayLike(ABC, Generic[T]):
     @range.setter
     @abstractmethod
     def range(self, new_range: Range) -> None:
-        """Set a new indexing scheme on the array. Must be the same size."""
+        """Set a new indexing scheme on the array.
+
+        Must be the same size.
+        """
 
     def __len__(self) -> int:
         return len(self.range)
@@ -79,11 +82,17 @@ class ArrayLike(ABC, Generic[T]):
         start: Optional[int] = None,
         stop: Optional[int] = None,
     ) -> int:
-        """
-        Return index of first occurrence of *value*.
+        """Find first occurence of value.
 
-        Raises :exc:`IndexError` if the value is not found.
-        Search only within *start* and *stop* if given.
+        Args:
+            value: Value to search for.
+            start: Index to start search at.
+            stop: Index to stop search at.
+
+        Returns: Index of first occurence of *value*.
+
+        Raises:
+            ValueError: If the value is not present.
         """
         if start is None:
             start = self.left
@@ -95,7 +104,13 @@ class ArrayLike(ABC, Generic[T]):
         raise IndexError(f"{value!r} not in array")
 
     def count(self, value: T) -> int:
-        """Return number of occurrences of *value*."""
+        """Return number of occurrences of value.
+
+        Args:
+            value: Value to search for.
+
+        Returns: Number of occurences of *value*.
+        """
         count: int = 0
         for v in self:
             if v == value:
