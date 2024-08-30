@@ -571,10 +571,6 @@ class LogicArray(ArrayLike[Logic]):
         else:
             return NotImplemented
 
-    def count(self, value: Logic) -> int:
-        """Return number of occurrences of *value*."""
-        return self._get_array().count(value)
-
     @property
     @deprecated("`.binstr` property is deprecated. Use `str(value)` instead.")
     def binstr(self) -> str:

@@ -115,7 +115,7 @@ class ArrayLike(ABC, Generic[T]):
         for v in self:
             if v == value:
                 count += 1
-        return 0
+        return count
 
 
 from .array import Array  # noqa: E402 F401
