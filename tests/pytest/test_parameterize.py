@@ -20,7 +20,7 @@ class A: ...
 def b(): ...
 
 
-def test_parameterize_repr():
+def test_parametrize_repr():
     assert _repr(1) == "1"
     assert _repr(False) == "False"
     assert _repr(0.14) == "0.14"
@@ -35,17 +35,17 @@ def test_parameterize_repr():
     assert _repr(object()) is None
 
 
-def test_parameterize_reprs():
+def test_parametrize_reprs():
     assert _reprs([1, 0.5, False]) == ["1", "0.5", "False"]
     assert _reprs([9, 9, object()]) == ["0", "1", "2"]
 
 
-def test_parameterize_bad_args():
+def test_parametrize_bad_args():
     with pytest.raises(ValueError):
-        cocotb.parameterize(("not valid", [1, 2, 3], "extra arg whoops"))
+        cocotb.parametrize(("not valid", [1, 2, 3], "extra arg whoops"))
     with pytest.raises(ValueError):
-        cocotb.parameterize(("not valid", [1, 2, 3]))
+        cocotb.parametrize(("not valid", [1, 2, 3]))
     with pytest.raises(ValueError):
-        cocotb.parameterize((("not valid", "valid"), [(1, 2), (3, 4)]))
+        cocotb.parametrize((("not valid", "valid"), [(1, 2), (3, 4)]))
     with pytest.raises(ValueError):
-        cocotb.parameterize((("a", "b"), [(1, 2, "too", "many", "args"), (3, 4)]))
+        cocotb.parametrize((("a", "b"), [(1, 2, "too", "many", "args"), (3, 4)]))

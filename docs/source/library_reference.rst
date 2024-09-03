@@ -80,7 +80,7 @@ Writing and Generating Tests
 
 .. autofunction:: cocotb.test
 
-.. autofunction:: cocotb.parameterize
+.. autofunction:: cocotb.parametrize
 
 .. autoclass:: cocotb.regression.TestFactory
     :members:
