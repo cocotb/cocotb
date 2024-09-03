@@ -55,7 +55,7 @@ from cocotb._decorators import (  # isort: skip # noqa: F401
     bridge,
     resume,
     test,
-    parameterize,
+    parametrize,
 )
 from cocotb.logging import _filter_from_c, _log_from_c  # isort: skip # noqa: F401
 

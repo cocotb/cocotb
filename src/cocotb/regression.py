@@ -1047,12 +1047,12 @@ class TestFactory(Generic[F]):
         You can now pass :func:`cocotb.test` decorator arguments when generating tests.
 
     .. deprecated:: 2.0
-        Use :func:`cocotb.parameterize` instead.
+        Use :func:`cocotb.parametrize` instead.
     """
 
     def __init__(self, test_function: F, *args: Any, **kwargs: Any) -> None:
         warnings.warn(
-            "TestFactory is deprecated, use `@cocotb.parameterize` instead",
+            "TestFactory is deprecated, use `@cocotb.parametrize` instead",
             DeprecationWarning,
             stacklevel=2,
         )

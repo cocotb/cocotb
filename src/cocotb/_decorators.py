@@ -147,7 +147,7 @@ class _Parameterized(Generic[F]):
     ) -> None:
         self.test_function = test_function
         self.options = options
-        # we are assuming the input checking is done in parameterize()
+        # we are assuming the input checking is done in parametrize()
 
         self._option_reprs: Dict[str, List[str]] = {}
 
@@ -206,7 +206,7 @@ class _Parameterized(Generic[F]):
                             f"/{n}={self._option_reprs[n][select_idx]}"
                         )
 
-            parameterized_test_name = "".join(test_name_pieces)
+            parametrized_test_name = "".join(test_name_pieces)
 
             # create wrapper function to bind kwargs
             @functools.wraps(self.test_function)
@@ -215,7 +215,7 @@ class _Parameterized(Generic[F]):
 
             yield Test(
                 func=_my_test,
-                name=parameterized_test_name,
+                name=parametrized_test_name,
                 timeout_time=timeout_time,
                 timeout_unit=timeout_unit,
                 expect_fail=expect_fail,
@@ -427,16 +427,16 @@ def test(
     return wrapper
 
 
-def parameterize(
+def parametrize(
     *options_by_tuple: Union[
         Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
     ],
     **options_by_name: Sequence[Any],
 ) -> Callable[[F], _Parameterized[F]]:
-    """Decorator to generate parameterized tests from a single test function.
+    """Decorator to generate parametrized tests from a single test function.
 
     Decorates a test function with named test parameters.
-    The call to ``parameterize`` should include the name of each test parameter and the possible values each parameter can hold.
+    The call to ``parametrize`` should include the name of each test parameter and the possible values each parameter can hold.
     This will generate a test for each of the Cartesian products of the parameters and their values.
 
     .. code-block:: python3
@@ -444,7 +444,7 @@ def parameterize(
         @cocotb.test(
             skip=False,
         )
-        @cocotb.parameterize(
+        @cocotb.parametrize(
             arg1=[0, 1],
             arg2=["a", "b"],
         )
@@ -483,7 +483,7 @@ def parameterize(
 
     .. code-block:: python3
 
-        @cocotb.parameterize(
+        @cocotb.parametrize(
             ("arg1", [0, 1]),
             (("arg2", arg3"), [(1, 2), (3, 4)])
         )

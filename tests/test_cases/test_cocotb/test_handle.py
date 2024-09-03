@@ -109,7 +109,7 @@ signal_widths = {
 
 
 @cocotb.test
-@cocotb.parameterize(
+@cocotb.parametrize(
     ("width", tuple(signal_widths.keys())),
     ("setimmediate", [True, False]),
 )
@@ -165,7 +165,7 @@ def gen_int_test_values(n_bits, limits=_Limits.VECTOR_NBIT):
 
 
 @cocotb.test
-@cocotb.parameterize(
+@cocotb.parametrize(
     ("width", tuple(signal_widths.keys())),
     ("test_mode", ["ovfl", "unfl"]),
     ("setimmediate", [True, False]),
@@ -230,7 +230,7 @@ def gen_int_unfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
 
 
 @cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
-@cocotb.parameterize(("setimmediate", [True, False]))
+@cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer(dut, setimmediate: bool) -> None:
     """Test access to integers."""
     if (
@@ -249,7 +249,7 @@ async def test_integer(dut, setimmediate: bool) -> None:
 
 
 @cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
-@cocotb.parameterize(("setimmediate", [True, False]))
+@cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer_overflow(dut, setimmediate: bool) -> None:
     """Test integer overflow."""
     if (
@@ -268,7 +268,7 @@ async def test_integer_overflow(dut, setimmediate: bool) -> None:
 
 
 @cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
-@cocotb.parameterize(("setimmediate", [True, False]))
+@cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer_underflow(dut, setimmediate: bool) -> None:
     """Test integer underflow."""
     if (
