@@ -964,10 +964,11 @@ class RegressionManager:
         `exc` is the exception that the test should report as its reason for
         aborting.
         """
+        # TODO Move this into Task
         if self._test_task._outcome is not None:  # pragma: no cover
             raise InternalError("Outcome already has a value, but is being set again.")
-        outcome = Error(exc)
-        self._test_task._outcome = outcome
+        self._test_task._outcome = Error(exc)
+        self._test_task._state = Task._State.FINISHED
         self._test_task._do_done_callbacks()
         cocotb._scheduler_inst._unschedule(self._test_task)
 
