@@ -1,0 +1,1 @@
+Removed ``Task.has_started()``.
