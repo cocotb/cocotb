@@ -364,8 +364,8 @@ async def test_task_repr(dut):
     assert re.match(
         (
             r"<Task \d+ pending coro=coroutine_inner\(\) trigger=Combine\("
-            r"<Task \d+ created coro=coroutine_wait\(\)>, "
-            r"<Task \d+ created coro=coroutine_wait\(\)>"
+            r"<Task \d+ scheduled coro=coroutine_wait\(\)>, "
+            r"<Task \d+ scheduled coro=coroutine_wait\(\)>"
             r"\)>"
         ),
         repr(coro_task),
@@ -413,6 +413,18 @@ async def test_task_repr(dut):
 
     # wait for coroutine_wait to start
     await NullTrigger()  # start_soon on _wait_callback
+
+    log.info(repr(coro_task))
+    assert re.match(
+        (
+            r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\("
+            r"<Task \d+ scheduled coro=coroutine_wait\(\)>, "
+            r"<Timer of 2000.00ps at \w+>"
+            r"\)>"
+        ),
+        repr(coro_task),
+    )
+
     await NullTrigger()  # awaiting Task in _wait_callback
 
     log.info(repr(coro_task))
@@ -438,11 +450,11 @@ async def test_task_repr(dut):
         repr(coro_task),
     )
 
-    # created but not scheduled yet
+    # start task
     coro_task = cocotb.start_soon(coroutine_outer())
 
     log.info(repr(coro_task))
-    assert re.match(r"<Task \d+ created coro=coroutine_outer\(\)>", repr(coro_task))
+    assert re.match(r"<Task \d+ scheduled coro=coroutine_outer\(\)>", repr(coro_task))
 
     log.info(str(coro_task))
     assert re.match(r"<Task \d+>", str(coro_task))
@@ -634,7 +646,6 @@ async def test_start(_):
 
     task1 = await cocotb.start(coro())
     assert type(task1) is Task
-    assert task1.has_started()
     assert not task1.done()
 
     await Timer(1, "step")
@@ -647,9 +658,7 @@ async def test_start(_):
     await Timer(1, "step")
 
     task4 = cocotb.start_soon(coro())
-    assert not task4.has_started()
     await cocotb.start(coro())
-    assert task4.has_started()
     await Timer(1, "step")
     assert task4.done()
 

@@ -387,7 +387,9 @@ class Scheduler:
 
     def _resume_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
         """Schedule `task` to be resumed when `trigger` fires."""
+        # TODO Move this all into Task
         task._trigger = trigger
+        task._state = Task._State.PENDING
 
         trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
         trigger_tasks.append(task)
@@ -421,6 +423,8 @@ class Scheduler:
         # Don't queue the same task more than once (gh-2503)
         if task in self._pending_tasks:
             raise InternalError("Task was queued more than once.")
+        # TODO Move state tracking into Task
+        task._state = Task._State.SCHEDULED
         self._pending_tasks[task] = outcome
 
     def _queue_function(self, task):
@@ -525,8 +529,9 @@ class Scheduler:
         if isinstance(result, Trigger):
             return result
 
+        # TODO move this into Task
         if isinstance(result, Task):
-            if not result.has_started() and result not in self._pending_tasks:
+            if result._state is Task._State.UNSTARTED:
                 return self._trigger_from_unstarted_task(result)
             else:
                 return self._trigger_from_started_task(result)
