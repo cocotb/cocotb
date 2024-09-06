@@ -10,8 +10,6 @@ import fractions
 import os
 from math import isclose
 
-import pytest
-
 import cocotb
 from cocotb.clock import Clock
 from cocotb.simulator import clock_create, get_precision
@@ -47,7 +45,7 @@ async def test_clock_with_units(dut, impl):
     edge_time_ns = get_sim_time(units="ns")
     assert isclose(edge_time_ns, start_time_ns + 1000.0), "Expected a period of 1 us"
 
-    clk_gen.kill()
+    clk_gen.cancel()
 
     clk_gen = await cocotb.start(clk_250mhz.start())
 
@@ -65,7 +63,7 @@ async def test_clock_with_units(dut, impl):
     edge_time_ns = get_sim_time(units="ns")
     assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
 
-    clk_gen.kill()
+    clk_gen.cancel()
 
 
 @cocotb.test()
@@ -126,9 +124,7 @@ async def test_clocks_with_other_number_types(dut):
 
     clk1 = cocotb.start_soon(Clock(dut.clk, decimal.Decimal("1"), units="ns").start())
     await Timer(10, "ns")
-    with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):
-        clk1.cancel()
+    clk1.cancel()
     clk2 = cocotb.start_soon(Clock(dut.clk, fractions.Fraction(1), units="ns").start())
     await Timer(10, "ns")
-    with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):
-        clk2.cancel()
+    clk2.cancel()

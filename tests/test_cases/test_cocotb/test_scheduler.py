@@ -6,7 +6,7 @@ Test for scheduler and coroutine behavior
 
 * fork
 * join
-* kill
+* cancel
 """
 
 import logging
@@ -45,16 +45,16 @@ async def clock_yield(task):
 
 
 @cocotb.test()
-async def test_task_kill(dut):
-    """Test that killing a task causes pending task to continue"""
+async def test_task_cancel(dut):
+    """Test that cancelling a task causes pending task to continue"""
     clk_task = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(100, "ns")
     cocotb.start_soon(clock_yield(clk_task))
     await Timer(100, "ns")
-    clk_task.kill()
+    clk_task.cancel()
     assert not test_flag
     await Timer(1000, "ns")
-    assert test_flag
+    assert not test_flag
 
 
 async def clock_one(dut):
@@ -138,15 +138,15 @@ async def consistent_join(dut):
 
 
 @cocotb.test()
-async def test_kill_twice(dut):
+async def test_cancel_twice(dut):
     """
-    Test that killing a coroutine that has already been killed does not crash
+    Test that cancelling a coroutine that has already been cancelled does not crash
     """
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     await Timer(1, "ns")
-    clk_gen.kill()
+    clk_gen.cancel()
     await Timer(1, "ns")
-    clk_gen.kill()
+    clk_gen.cancel()
 
 
 @cocotb.test()
@@ -203,7 +203,7 @@ async def test_stack_overflow_pending_coros(dut):
 
 
 @cocotb.test()
-async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
+async def test_cancel_coroutine_waiting_on_the_same_trigger(dut):
     # gh-1348
     # NOTE: this test depends on scheduling priority.
     # It assumes that the first task to wait on a trigger will be woken first.
@@ -213,22 +213,22 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
     victim_resumed = False
 
     async def victim():
-        await Timer(1, "step")  # prevent scheduling of RisingEdge before killer
+        await Timer(1, "step")  # prevent scheduling of RisingEdge before canceller
         await RisingEdge(dut.clk)
         nonlocal victim_resumed
         victim_resumed = True
 
     victim_task = cocotb.start_soon(victim())
 
-    async def killer():
+    async def canceller():
         await RisingEdge(dut.clk)
-        victim_task.kill()
+        victim_task.cancel()
 
-    cocotb.start_soon(killer())
+    cocotb.start_soon(canceller())
 
     await Timer(
         2, "step"
-    )  # allow Timer in victim to pass making it schedule RisingEdge after the killer
+    )  # allow Timer in victim to pass making it schedule RisingEdge after the canceller
     dut.clk.value = 1
     await Timer(1, "step")
     assert not victim_resumed
@@ -396,7 +396,7 @@ async def test_task_repr(dut):
     async def coroutine_first():
         task = Task(coroutine_wait())
         await First(task, Timer(2, units="ns"))
-        task.kill()
+        task.cancel()
 
     coro_task = await cocotb.start(coroutine_first())
 
@@ -482,7 +482,7 @@ async def test_task_repr(dut):
     log.info(repr(object_task))
     assert re.match(r"<Task \d+ created coro=CoroutineClass\(\)>", repr(object_task))
 
-    object_task.kill()  # prevent RuntimeWarning of unwatched coroutine
+    object_task.cancel()  # prevent RuntimeWarning of unwatched coroutine
 
 
 @cocotb.test()
@@ -588,8 +588,8 @@ async def test_await_start_soon(_):
 
 
 @cocotb.test()
-async def test_kill_start_soon_task(_):
-    """Test killing task queued by start_soon."""
+async def test_cancel_start_soon_task(_):
+    """Test cancelling task queued by start_soon."""
     coro_scheduled = False
 
     async def coro():
@@ -597,7 +597,7 @@ async def test_kill_start_soon_task(_):
         coro_scheduled = True
 
     task = cocotb.start_soon(coro())
-    task.kill()
+    task.cancel()
 
     await NullTrigger()
     assert coro_scheduled is False

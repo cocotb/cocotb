@@ -55,7 +55,7 @@ class DataValidMonitor:
         """Stop monitor"""
         if self._coro is None:
             raise RuntimeError("Monitor never started")
-        self._coro.kill()
+        self._coro.cancel()
         self._coro = None
 
     async def _run(self) -> None:
@@ -112,7 +112,7 @@ class MatrixMultiplierTester:
             raise RuntimeError("Monitor never started")
         self.input_mon.stop()
         self.output_mon.stop()
-        self._checker.kill()
+        self._checker.cancel()
         self._checker = None
 
     def model(

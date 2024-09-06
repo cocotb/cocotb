@@ -169,7 +169,7 @@ class Test:
                         running_co, self.timeout_time, self.timeout_unit
                     )
                 except SimTimeoutError:
-                    running_co.kill()
+                    running_co.cancel()  # TODO can't cancel at end of test
                     raise
                 else:
                     return res
@@ -974,7 +974,7 @@ class RegressionManager:
         if self._test_outcome is not None:  # pragma: no cover
             raise InternalError("Outcome already has a value, but is being set again.")
         self._test_outcome = Error(exc)
-        self._test_task.kill()
+        self._test_task.cancel()
 
     @staticmethod
     def _safe_divide(a: float, b: float) -> float:

@@ -38,6 +38,10 @@ class Task(Generic[ResultType]):
     .. versionchanged:: 2.0
         The ``retval``, ``_finished``, and ``__bool__`` methods were removed.
         Use :meth:`result`, :meth:`done`, and :meth:`done` methods instead, respectively.
+
+    .. versionremoved:: 2.0
+        The ``kill()`` method.
+        Use :meth:`cancel` instead.
     """
 
     class _State(DocEnum):
@@ -158,24 +162,6 @@ class Task(Generic[ResultType]):
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
             self._state = Task._State.FINISHED
 
-        self._do_done_callbacks()
-
-    def kill(self) -> None:
-        """Kill a coroutine."""
-        if self.done():
-            # already finished, nothing to kill
-            return
-
-        if _debug:
-            self.log.debug("kill() called on coroutine")
-        # todo: probably better to throw an exception for anyone waiting on the coroutine
-        self._outcome = Value(None)
-        cocotb._scheduler_inst._unschedule(self)
-
-        # Close coroutine so there is no RuntimeWarning that it was never awaited
-        self._coro.close()
-
-        self._state = Task._State.FINISHED
         self._do_done_callbacks()
 
     def _do_done_callbacks(self) -> None:

@@ -35,7 +35,7 @@ class MonitorChange:
 
     def stop_monitor(self):
         if self.monitor_process is not None:
-            self.monitor_process.kill()
+            self.monitor_process.cancel()
         self.monitor_process = None
 
     def start_monitor(self):
@@ -83,8 +83,8 @@ async def buggy(dut):
     dut.i_trg.value = 0
 
     await RisingEdge(dut.o_pulse)
-    clk.kill()
-    coro.kill()
+    clk.cancel()
+    coro.cancel()
     await Timer(1, "us")
 
 
@@ -105,4 +105,4 @@ async def basic_ok(dut):
         await Timer(10, "ns")
 
     await Timer(10, "ns")
-    clk.kill()
+    clk.cancel()

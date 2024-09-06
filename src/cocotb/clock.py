@@ -153,8 +153,8 @@ class Clock:
                 .. versionadded:: 1.3
 
         .. versionchanged:: 2.0
-            Removed ``cycles`` arguments for toggling for a finite amount of cyles.
-            Use ``kill()`` on the clock task instead, or implement manually.
+            Removed *cycles* arguments for toggling for a finite amount of cyles.
+            Use :meth:`.Task.cancel` on the clock task instead, or implement manually.
         """
 
         t_high = self.period // 2
