@@ -35,7 +35,7 @@ dev_deps = [
 ]
 
 # Version of the cibuildwheel package used to build wheels.
-cibuildwheel_version = "2.17.0"
+cibuildwheel_version = "2.20.0"
 
 #
 # Helpers for use within this file.
