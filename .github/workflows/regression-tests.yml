@@ -89,6 +89,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{matrix.python-version}}
+        allow-prereleases: true
     - name: Set up Anaconda ${{matrix.python-version}} (Windows)
       if: startsWith(matrix.os, 'windows')
       uses: conda-incubator/setup-miniconda@v3

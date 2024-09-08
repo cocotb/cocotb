@@ -93,15 +93,24 @@ ENVS = [
         "python-version": "3.12",
         "group": "ci",
     },
-    # A single test for the upcoming Python version.
     {
         "lang": "verilog",
         "sim": "icarus",
         "sim-version": "apt",
         "os": "ubuntu-20.04",
-        "python-version": "3.13.0-alpha - 3.13.0",
-        "group": "experimental",
+        "python-version": "3.13",
+        "group": "ci",
     },
+    # A single test for the upcoming Python version.
+    # TODO: Enable once Python 3.14 development starts.
+    # {
+    #     "lang": "verilog",
+    #     "sim": "icarus",
+    #     "sim-version": "apt",
+    #     "os": "ubuntu-20.04",
+    #     "python-version": "3.14.0-alpha - 3.14.0",
+    #     "group": "experimental",
+    # },
     # Test Icarus on Ubuntu
     {
         "lang": "verilog",
