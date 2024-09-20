@@ -381,6 +381,8 @@ def test(
 
         .. code-block:: python3
 
+            import functools
+
             def test_extender(**decorator_kwargs):
                 def decorator(obj):
                     @cocotb.test(**decorator_kwargs)
