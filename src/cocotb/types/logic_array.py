@@ -808,6 +808,7 @@ class LogicArray(ArrayLike[Logic]):
             "The behavior of bool casts and using LogicArray in conditionals may change in the future. "
             """Use explicit comparisons (e.g. `LogicArray() == "11"`) instead""",
             FutureWarning,
+            stacklevel=2,
         )
         return any(v in (Logic("H"), Logic("1")) for v in self)
 
