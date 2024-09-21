@@ -285,8 +285,8 @@ def test(
     stage: int = 0,
     name: Optional[str] = None,
     _expect_sim_failure: bool = False,
-) -> Callable[[Union[F, _Parameterized[F]]], F]:
-    """
+) -> Union[F, Callable[[Union[F, _Parameterized[F]]], F]]:
+    r"""
     Decorator to register a Callable which returns a Coroutine as a test.
 
     The test decorator provides a test timeout, and allows us to mark tests as skipped or expecting errors or failures.
@@ -373,6 +373,28 @@ def test(
 
     Returns:
         The test function to which the decorator is applied.
+
+    .. note::
+
+        To extend the test decorator, use the following template to create a new
+        ``cocotb.test``\-like wrapper.
+
+        .. code-block:: python3
+
+            import functools
+
+
+            def test_extender(**decorator_kwargs):
+                def decorator(obj):
+                    @cocotb.test(**decorator_kwargs)
+                    @functools.wraps(obj)
+                    async def test(dut, **test_kwargs):
+                        pass  # your code here
+
+                    return obj
+
+                return decorator
+
     """
 
     def _add_tests(module_name: str, *tests: Test) -> None:
