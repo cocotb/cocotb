@@ -11,7 +11,68 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
-Cocotb 1.8.0 (2023-06-15)
+cocotb 1.9.1 (2024-08-29)
+=========================
+
+Bugfixes
+--------
+
+- Improve the Verilator Makefile to pass on ``--trace`` at runtime as well. (:issue:`4088`)
+- Pass ``EXTRA_ARGS`` in the Verilator Makefile to both the compilation and the simulation step.
+
+Changes
+-------
+
+- Support setuptools 72.2.0
+
+cocotb 1.9.0 (2024-07-14)
+=========================
+
+Features
+--------
+
+- Not using parentheses on ``@cocotb.test`` decorator is now supported. (:pr:`2731`)
+- The :meth:`cocotb.runner.Simulator.build` method now accepts a ``clean`` argument to remove ``build_dir`` completely during build stage. (:pr:`3351`)
+- Added support for the `NVC <https://github.com/nickg/nvc>`_ VHDL simulator. (:pr:`3427`)
+- Added :make:var:`SIM_CMD_SUFFIX` to allow users to redirect simulator output or otherwise suffix the simulation command invocation. (:pr:`3561`)
+- Added ``--trace`` command line argument to Verilator simulation binaries for run-time trace generation. This new argument is passed to the binary when the ``waves`` argument to :meth:`cocotb.runner.Simulator.test` is ``True``. (:pr:`3667`)
+- The :meth:`cocotb.runner.Simulator.build` and :meth:`cocotb.runner.Simulator.test` methods now accept a ``log_file`` argument to redirect stdout and stderr to the specified file. (:pr:`3668`)
+- The ``results_xml`` argument to :meth:`cocotb.runner.Simulator.test` can now be an absolute path. (:pr:`3669`)
+- Added ``--trace-file`` command line argument to Verilator simulation binaries which specifies the trace file name. This can be passed to the binary by using the ``test_args`` argument to :meth:`cocotb.runner.Simulator.test`. (:pr:`3683`)
+- The :meth:`cocotb.runner.Simulator.test` method now accepts a ``pre_cmd`` argument to run given commands before the simulation starts. These are typically Tcl commands for simulators that support them. Only support for the Questa simulator has been implemented. (:pr:`3744`)
+- The ``sources`` option was added to :meth:`cocotb.runner.Simulator.build` to better support building mixed-language designs. (:pr:`3796`)
+- Enable use of VPI fallback in all simulators when attempting to access generate blocks directly via lookup. This enables better support for simulators that don't support ``vpiGenScopeArray``, allowing discovery of generate blocks without having to iterate over the parent handle. (:pr:`3817`)
+- Added support for comparing :class:`~cocotb.binary.BinaryValue` with :class:`~cocotb.types.Logic`, :class:`~cocotb.types.LogicArray`, and :class:`str`. (:pr:`3845`)
+- Riviera-PRO now supports compilation into (multiple) VHDL libraries using :make:var:`VHDL_SOURCES_<lib>`. (:pr:`3922`)
+
+
+Bugfixes
+--------
+
+- Xcelium 23.09.004 and newer can now be used to test designs with a VHDL toplevel. (:pr:`1076`)
+- Fixed a potential issue where pseudo-region lookup may find the wrong generate block if the name of one generate block starts with the name of another generate block. (:pr:`2255`)
+- Support ``waves`` argument to :meth:`cocotb.runner.Simulator.build` for Verilator. (:pr:`3681`)
+- The ``test_args`` argument to :meth:`cocotb.runner.Simulator.test` is now passed to the Verilator simulation binary when running the simulation, which was previously missing. (:pr:`3682`)
+
+
+Deprecations and Removals
+-------------------------
+
+- ``bool(Lock())`` is deprecated. Use :meth:`~cocotb.triggers.Lock.locked` instead. (:pr:`3871`)
+- :attr:`Join.retval <cocotb.triggers.Join.retval>` is deprecated. Use :meth:`Task.result() <cocotb.task.Task.result>` to get the result of a joined Task. (:pr:`3871`)
+- Passing the *outcome* argument to :class:`~cocotb.triggers.NullTrigger` - which allowed the user to inject arbitrary outcomes when the trigger was ``await``\ ed - is deprecated. There is no alternative. (:pr:`3871`)
+- :meth:`Event.fired <cocotb.triggers.Event.fired>` is deprecated. Use :meth:`~cocotb.triggers.Event.is_set` instead. (:pr:`3871`)
+
+
+Changes
+-------
+
+- For Aldec simulators, the `-dbg` and `-O2` options are no longer passed by default, as they reduce simulation speed. Pass these options in ``COMPILE_ARGS`` and ``SIM_ARGS`` if you need them for increased observability. (:pr:`3490`)
+- ``await``\ ing a :class:`~cocotb.triggers.Join` trigger will yield the Join trigger and not the result of the task in the 2.0 release. (:pr:`3871`)
+- :meth:`Lock.locked <cocotb.triggers.Lock.locked>` is now a method rather than an attribute to mirror :meth:`asyncio.Lock.locked`. (:pr:`3871`)
+
+
+cocotb 1.8.0 (2023-06-15)
 =========================
 
 Features
