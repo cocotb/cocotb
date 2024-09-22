@@ -367,7 +367,7 @@ def test(
 
         name:
             Override the default name of the test.
-            The default test name is the :any:`__qualname__` of the decorated test function.
+            The default test name is the :meth:`__qualname__` of the decorated test function.
 
             .. versionadded:: 2.0
 

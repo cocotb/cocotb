@@ -1227,7 +1227,7 @@ class StringObject(
 
         Strings in both Verilog and VHDL are byte arrays without any particular encoding.
         Encoding must be done to turn Python strings into byte arrays.
-        Because :ref:`there are many encodings <https://docs.python.org/3/library/codecs.html#standard-encodings>`,
+        Because `there are many encodings <https://docs.python.org/3/library/codecs.html#standard-encodings>`_,
         this step is left up to the user.
 
         An example of how encoding and decoding could be accomplished using an ASCII string.
