@@ -389,7 +389,7 @@ Features
   .. consume the towncrier issue number on this line. (:pr:`1507`)
 - Added support for Aldec's Active-HDL simulator. (:pr:`1601`)
 - Including ``Makefile.inc`` from user makefiles is now a no-op and deprecated. Lines like  ``include $(shell cocotb-config --makefiles)/Makefile.inc`` can be removed from user makefiles without loss in functionality. (:pr:`1629`)
-- Support for using ``await`` inside an embedded IPython terminal, using :mod:`cocotb.ipython_support`. (:pr:`1649`)
+- Support for using ``await`` inside an embedded IPython terminal, using ``cocotb.ipython_support``. (:pr:`1649`)
 - Added :meth:`~cocotb.triggers.Event.is_set`, so users may check if an :class:`~cocotb.triggers.Event` has fired. (:pr:`1723`)
 - The :func:`cocotb.simulator.is_running` function was added so a user of cocotb could determine if they are running within a simulator. (:pr:`1843`)
 

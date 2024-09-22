@@ -124,7 +124,7 @@ accessible via a TCP socket:
 Embedding an IPython shell
 ==========================
 
-.. module:: cocotb.ipython_support
+.. module:: cocotb_tools.ipython_support
     :synopsis: Support for embedding an IPython shell.
 
 .. versionadded:: 1.4
