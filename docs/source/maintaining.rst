@@ -1,0 +1,86 @@
+******************
+Maintaining cocotb
+******************
+
+This section describes how to maintain cocotb, i.e., the more or less frequent tasks performed by the :ref:`cocotb maintainers <maintainers>`.
+
+Managing of Issues and Pull Requests
+====================================
+
+The cocotb project makes use of GitHub labels attached to issues and pull requests to structure the development process.
+Each issue and pull request can have multiple labels assigned.
+
+The ``type`` labels define the type of issue or PR:
+
+-  ``type:bug``: a bug in existing functionality
+-  ``type:feature``: new functionality
+-  ``type:question``: a support question
+-  ``type:cleanup``: cleanup or refactoring on code, documentation, or other areas
+-  ``type:deprecation``: API that should warn and eventually be removed
+
+The ``status`` labels give a quick impression of the current status of the issue or PR:
+
+-  ``status:worksforme``: the issue it not reproducible, or intended behavior (i.e. not a bug)
+-  ``status:blocked``: further progress is blocked by a dependency, e.g. other code which must be commited first.
+-  ``status:needs-info``: feedback from someone is required. The issue/PR text gives more details.
+-  ``status:duplicate``: the same issue is already being handled in another issue/PR.
+-  ``status:close?``: issues which can probably be closed, but need a second pair of eyes
+-  ``status:needs-proprietary-testing``: Help needed testing on a proprietary tool
+-  ``status:out-of-scope``: An issue or PR that was closed because the feature or bug was deemed to be out of scope
+
+For the use in pull requests the following additional status labels are defined:
+
+-  ``status:needs-review``: this PR needs at least one review
+-  ``status:changes-requested``: changes are requested to the code
+-  ``status:ready-for-merge``: this PR is ready (according to the `Patch Requirements <#patch-requirements>`__) to be merged
+-  ``status:needs-rebase``: needs a git rebase
+-  ``status:needs-newsfragment``: Needs a towncrier newsfragment for the changelog
+
+The ``category`` labels help maintainers to filter issues which are relevant to their area of expertise:
+
+-  ``category:OS:MacOS``: Mac OS/OS X specific issues
+-  ``category:OS:Linux``: Linux specific issues
+-  ``category:OS:Windows``: Microsoft Windows-specific issues
+-  ``category:simulators``: simulator support, including VPI/GPI/etc.
+-  ``category:simulators:activehdl``: Aldec Active-HDL
+-  ``category:simulators:cvc``: Tachyon CVC
+-  ``category:simulators:ghdl``: GHDL
+-  ``category:simulators:icarus``: Icarus Verilog (iverilog)
+-  ``category:simulators:ius``: Cadence Incisive (IUS)
+-  ``category:simulators:modelsim``: Mentor Modelsim
+-  ``category:simulators:nvc``: NVC
+-  ``category:simulators:questa``: Mentor Questa
+-  ``category:simulators:riviera``: Aldec Riviera-PRO
+-  ``category:simulators:vcs``: Synopsys VCS
+-  ``category:simulators:verilator``: Verilator
+-  ``category:simulators:xcelium``: Cadence Xcelium
+-  ``category:codebase:gpi``: relating to the GPI or one of the implementation
+-  ``category:codebase:pygpi``: relating to the Python wrapper around the GPI (embed library and simulator module)
+-  ``category:codebase:scheduler``: relating to the coroutine scheduler, triggers, or coroutine objects
+-  ``category:codebase:test-runner``: relating to code for automating test runs (regression manager)
+-  ``category:codebase:handle``: relating to handles or handle types (BinaryValue)
+-  ``category:codebase:project-automation``: relating to included project automation (makefiles)
+-  ``category:codebase:testbenching``: relating to testbenching components (Drivers, Monitors, etc.)
+-  ``category:building``: relating to build C/C++ libraries and extension modules
+-  ``category:packaging``: issues related to (PyPi) packaging, etc.
+-  ``category:docs``: documentation issues and fixes
+-  ``category:hardware-in-the-loop``: relating to real-life hardware (HIL)
+-  ``category:performance``: performance topics
+-  ``category:tests-ci``: continuous integration and unit tests
+
+To help new contributors find a good issue to work on one more label is used (following `GitHub standard practices <#https://help.github.com/articles/helping-new-contributors-find-your-project-with-labels/>`__):
+
+-  ``good first issue``: this issue is a good starting point for new contributors.
+   The issue should give an actionable description of what to do to complete this task, along with contact information of a mentor for this task.
+
+cocotb explicitly uses no priority labels, as experience indicates that they provide little value.
+
+Issues and pull requests which are invalid, or where feedback is lacking for four weeks, should be closed.
+
+
+Cocotb Releases
+===============
+
+cocotb aims to keep the ``master`` branch always in a releasable state.
+At least four times a year an official release should be created.
+It is the job of the maintainers to find a suitable time for a release, to communicate it to the community, and to coordinate it.

@@ -185,14 +185,16 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    :name: development_community
    :hidden:
 
-   roadmap
+   support
+   contributing
+   developing
+   maintaining
    contributors
+   roadmap
    release_notes
    further_resources
 
 .. todo::
-   - Add "Join us online" and "Contributing"
-   - In Contributing, add explanation on how to provide a PR, how to test existing PRs, etc.
    - merge `further_resources` into Contributing
 
 .. toctree::
