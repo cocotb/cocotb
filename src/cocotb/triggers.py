@@ -672,7 +672,8 @@ class Lock(AsyncContextManager[None]):
             self._pending_primed.append(lock)
 
     def _unprime_lock(self, lock: _Lock) -> None:
-        self._pending_primed.remove(lock)
+        if lock in self._pending_primed:
+            self._pending_primed.remove(lock)
 
     def acquire(self) -> Trigger:
         """Produce a trigger which fires when the lock is acquired."""
