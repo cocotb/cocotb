@@ -62,7 +62,7 @@ import cocotb._scheduler
 import cocotb._write_scheduler
 from cocotb import _ANSI, simulator
 from cocotb._exceptions import InternalError
-from cocotb._outcomes import Error
+from cocotb._outcomes import Error, Outcome
 from cocotb._utils import (
     DocEnum,
     remove_traceback_frames,
@@ -240,6 +240,7 @@ class RegressionManager:
     def __init__(self) -> None:
         self._test: Test
         self._test_task: Task[None]
+        self._test_outcome: Union[None, Outcome[Any]]
         self._test_start_time: float
         self._test_start_sim_time: float
         self.log = _logger
@@ -440,6 +441,7 @@ class RegressionManager:
             seed = cocotb._random_seed + int(hasher.hexdigest(), 16)
             random.seed(seed)
 
+            self._test_outcome = None
             self._test_start_sim_time = get_sim_time("ns")
             self._test_start_time = time.time()
 
@@ -502,8 +504,13 @@ class RegressionManager:
         cocotb._write_scheduler.stop_write_scheduler()
 
         # score test
+        if self._test_outcome is not None:
+            outcome = self._test_outcome
+        else:
+            assert self._test_task._outcome is not None
+            outcome = self._test_task._outcome
         try:
-            self._test_task._outcome.get()
+            outcome.get()
         except (KeyboardInterrupt, SystemExit):
             raise
         except BaseException as e:
@@ -964,13 +971,10 @@ class RegressionManager:
         `exc` is the exception that the test should report as its reason for
         aborting.
         """
-        # TODO Move this into Task
-        if self._test_task._outcome is not None:  # pragma: no cover
+        if self._test_outcome is not None:  # pragma: no cover
             raise InternalError("Outcome already has a value, but is being set again.")
-        self._test_task._outcome = Error(exc)
-        self._test_task._state = Task._State.FINISHED
-        self._test_task._do_done_callbacks()
-        cocotb._scheduler_inst._unschedule(self._test_task)
+        self._test_outcome = Error(exc)
+        self._test_task.kill()
 
     @staticmethod
     def _safe_divide(a: float, b: float) -> float:
