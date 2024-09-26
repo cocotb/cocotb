@@ -119,10 +119,6 @@ class Trigger(Awaitable["Trigger"]):
     def _cleanup(self) -> None:
         self._primed = False
 
-    def __del__(self) -> None:
-        # Ensure if a trigger drops out of scope we remove any pending callbacks
-        self._unprime()
-
     def __await__(self: Self) -> Generator[Any, Any, Self]:
         yield self
         return self
