@@ -78,8 +78,8 @@ async def test_nested_first(dut):
 
 
 @cocotb.test()
-async def test_first_does_not_kill(dut):
-    """Test that `First` does not kill coroutines that did not finish first"""
+async def test_first_does_not_cancel(dut):
+    """Test that `First` does not cancel coroutines that did not finish first"""
     ran = False
 
     async def coro():

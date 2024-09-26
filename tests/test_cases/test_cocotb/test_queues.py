@@ -90,9 +90,9 @@ async def test_queue_contention(dut):
 
     assert q.qsize() == QUEUE_SIZE
 
-    # test killed putter
+    # test cancelled putter
     coro = cocotb.start_soon(putter(putter_list, 100))
-    coro.kill()
+    coro.cancel()
     coro_list.append(cocotb.start_soon(putter(putter_list, 101)))
 
     for k in range(NUM_PUTTERS):
@@ -115,9 +115,9 @@ async def test_queue_contention(dut):
     for k in range(NUM_PUTTERS):
         coro_list.append(cocotb.start_soon(getter(getter_list, k)))
 
-    # test killed getter
+    # test cancelled getter
     coro2 = cocotb.start_soon(getter(getter_list, 100))
-    coro2.kill()
+    coro2.cancel()
     coro_list.append(cocotb.start_soon(getter(getter_list, 101)))
 
     for k in range(NUM_PUTTERS):

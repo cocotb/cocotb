@@ -165,7 +165,7 @@ async def test_readwrite_in_readonly(dut):
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     task = cocotb.start_soon(do_test_readwrite_in_readonly(dut))
     await First(task, Timer(10_000, "ns"))
-    clk_gen.kill()
+    clk_gen.cancel()
     assert exited
 
 
@@ -177,7 +177,7 @@ async def test_cached_write_in_readonly(dut):
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     task = cocotb.start_soon(do_test_cached_write_in_readonly(dut))
     await First(task, Timer(10_000, "ns"))
-    clk_gen.kill()
+    clk_gen.cancel()
     assert exited
 
 
@@ -189,7 +189,7 @@ async def test_afterdelay_in_readonly_valid(dut):
     clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     task = cocotb.start_soon(do_test_afterdelay_in_readonly(dut, 1))
     await First(task, Timer(100_000, "ns"))
-    clk_gen.kill()
+    clk_gen.cancel()
     assert exited
 
 

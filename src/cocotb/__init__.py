@@ -43,7 +43,7 @@ import cocotb.handle
 import cocotb.task
 import cocotb.triggers
 from cocotb._scheduler import Scheduler
-from cocotb._utils import DocEnum, remove_traceback_frames
+from cocotb._utils import DocEnum
 from cocotb.logging import default_config
 from cocotb.regression import RegressionManager, RegressionMode
 from cocotb.result import TestSuccess
@@ -139,20 +139,23 @@ def _setup_logging() -> None:
 
 
 def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:
+    # if cancelled, do nothing
+    if task.cancelled():
+        return
+    # if there's a Task awaiting this one, don't fail
     join = cocotb.triggers._Join(task)
     if join in cocotb._scheduler_inst._trigger2tasks:
         return
-    try:
-        # throws an error if the background task errored
-        # and no one was monitoring it
-        task._outcome.get()
-    except (TestSuccess, AssertionError) as e:
+    # if no failure, do nothing
+    e = task.exception()
+    if e is None:
+        return
+    # there was a failure and no one is watching, fail test
+    elif isinstance(e, (TestSuccess, AssertionError)):
         task.log.info("Test stopped by this task")
-        e = remove_traceback_frames(e, ["_task_done_callback", "get"])
         cocotb.regression_manager._abort_test(e)
-    except BaseException as e:
+    else:
         task.log.error("Exception raised by this task")
-        e = remove_traceback_frames(e, ["_task_done_callback", "get"])
         cocotb.regression_manager._abort_test(e)
 
 

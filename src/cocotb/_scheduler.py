@@ -387,7 +387,9 @@ class Scheduler:
 
     def _resume_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
         """Schedule `task` to be resumed when `trigger` fires."""
+        # TODO Move this all into Task
         task._trigger = trigger
+        task._state = Task._State.PENDING
 
         trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
         trigger_tasks.append(task)
@@ -421,6 +423,8 @@ class Scheduler:
         # Don't queue the same task more than once (gh-2503)
         if task in self._pending_tasks:
             raise InternalError("Task was queued more than once.")
+        # TODO Move state tracking into Task
+        task._state = Task._State.SCHEDULED
         self._pending_tasks[task] = outcome
 
     def _queue_function(self, task):
@@ -525,8 +529,9 @@ class Scheduler:
         if isinstance(result, Trigger):
             return result
 
+        # TODO move this into Task
         if isinstance(result, Task):
-            if not result.has_started() and result not in self._pending_tasks:
+            if result._state is Task._State.UNSTARTED:
                 return self._trigger_from_unstarted_task(result)
             else:
                 return self._trigger_from_started_task(result)
@@ -603,9 +608,9 @@ class Scheduler:
     def _cleanup(self) -> None:
         """Clear up all our state.
 
-        Unprime all pending triggers and kill off any tasks, stop all externals.
+        Unprime all pending triggers and cancel any tasks, stop all externals.
         """
-        # copy since we modify this in kill
+        # copy since we modify this in cancel()
         items = list((k, list(v)) for k, v in self._trigger2tasks.items())
 
         # reversing seems to fix gh-928, although the order is still somewhat
@@ -614,17 +619,17 @@ class Scheduler:
             for task in waiting:
                 if _debug:
                     self.log.debug(f"Killing {task}")
-                task.kill()
+                task.cancel()  # TODO can't cancel at test end
             # we don't unprime trigger here since removing all tasks waiting on
             # the trigger should cause it to be unprimed in _unschedule
         assert not self._trigger2tasks
 
         # Kill any queued coroutines.
-        # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_tasks.
+        # We use a while loop because task.cancel() calls _unschedule(), which will remove the task from _pending_tasks.
         # If that happens a for loop will stop early and then the assert will fail.
         while self._pending_tasks:
             task, _ = self._pending_tasks.popitem(last=False)
-            task.kill()
+            task.cancel()  # TODO can't cancel at test end
 
         if self._main_thread is not threading.current_thread():
             raise Exception("Cleanup() called outside of the main thread")
