@@ -158,8 +158,7 @@ class Task(Generic[ResultType]):
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
             self._state = Task._State.FINISHED
 
-        if self.done():
-            self._do_done_callbacks()
+        self._do_done_callbacks()
 
     def kill(self) -> None:
         """Kill a coroutine."""
