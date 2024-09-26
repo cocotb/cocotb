@@ -5,7 +5,6 @@ import collections.abc
 import inspect
 import logging
 import os
-import warnings
 from asyncio import CancelledError, InvalidStateError
 from enum import auto
 from typing import Any, Callable, Coroutine, Generator, Generic, List, Optional, TypeVar
@@ -152,6 +151,9 @@ class Task(Generic[ResultType]):
         except StopIteration as e:
             self._outcome = Value(e.value)
             self._state = Task._State.FINISHED
+        except CancelledError as e:
+            self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
+            self._state = Task._State.CANCELLED
         except BaseException as e:
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
             self._state = Task._State.FINISHED
@@ -210,20 +212,17 @@ class Task(Generic[ResultType]):
         if self.done():
             return
 
-        self._cancelled_error = CancelledError(msg)
-        warnings.warn(
-            "Calling this method will cause a CancelledError to be thrown in the "
-            "Task sometime in the future.",
-            FutureWarning,
-            stacklevel=2,
-        )
+        if msg is not None:
+            self._cancelled_error = CancelledError(msg)
+        else:
+            self._cancelled_error = CancelledError()
+
+        # throw CancelledError and unschedule
+        self._advance(Error(self._cancelled_error))
         cocotb._scheduler_inst._unschedule(self)
 
         # Close coroutine so there is no RuntimeWarning that it was never awaited
         self._coro.close()
-
-        self._state = Task._State.CANCELLED
-        self._do_done_callbacks()
 
     def cancelled(self) -> bool:
         """Return ``True`` if the Task was cancelled."""

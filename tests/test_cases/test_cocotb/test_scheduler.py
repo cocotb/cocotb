@@ -800,8 +800,7 @@ async def test_cancel_task(_):
     assert task.done()
 
     task = cocotb.start_soon(coro())
-    with pytest.warns(FutureWarning):
-        task.cancel("msg1234")
+    task.cancel("msg1234")
     assert task.cancelled()
     with pytest.raises(CancelledError, match="msg1234"):
         task.result()
@@ -887,8 +886,7 @@ async def test_task_done_callback_cancelled(_) -> None:
     callback_ran = False
     cancelled_task._add_done_callback(done_callback)
     await Timer(1, "ns")
-    with pytest.warns(FutureWarning):
-        cancelled_task.cancel()
+    cancelled_task.cancel()
     await NullTrigger()
     assert callback_ran
 
