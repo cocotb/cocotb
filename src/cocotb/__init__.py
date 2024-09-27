@@ -178,7 +178,7 @@ def start_soon(
     """
     task = create_task(coro)
     task._add_done_callback(_task_done_callback)
-    cocotb._scheduler_inst._queue(task)
+    cocotb._scheduler_inst._schedule_task(task)
     return task
 
 

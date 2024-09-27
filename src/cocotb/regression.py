@@ -463,7 +463,7 @@ class RegressionManager:
         self._test_task._add_done_callback(
             lambda _: cocotb._scheduler_inst.shutdown_soon()
         )
-        cocotb._scheduler_inst._queue(self._test_task)
+        cocotb._scheduler_inst._schedule_task(self._test_task)
         cocotb._scheduler_inst._event_loop()
 
     def _tear_down(self) -> None:

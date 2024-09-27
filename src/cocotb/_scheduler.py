@@ -228,7 +228,7 @@ class Scheduler:
             _py_compat.insertion_ordered_dict()
         )
 
-        self._pending_tasks: OrderedDict[Task[Any], _outcomes.Outcome] = OrderedDict()
+        self._scheduled_tasks: OrderedDict[Task[Any], _outcomes.Outcome] = OrderedDict()
         self._pending_threads = []
         self._pending_events = []  # Events we need to call set on once we've unwound
 
@@ -315,7 +315,7 @@ class Scheduler:
         for task in scheduling:
             # unset trigger
             task._trigger = None
-            self._queue(task)
+            self._schedule_task(task)
 
         # cleanup trigger
         trigger._cleanup()
@@ -328,12 +328,12 @@ class Scheduler:
         * A GPI trigger
         """
 
-        while self._pending_tasks and not self._terminate:
-            task, outcome = self._pending_tasks.popitem(last=False)
+        while self._scheduled_tasks and not self._terminate:
+            task, outcome = self._scheduled_tasks.popitem(last=False)
 
             if _debug:
                 self.log.debug(f"Scheduling task {task}")
-            self._schedule(task, outcome)
+            self._resume_task(task, outcome)
             if _debug:
                 self.log.debug(f"Scheduled task {task}")
 
@@ -366,8 +366,8 @@ class Scheduler:
         """
 
         # remove task from queue
-        if task in self._pending_tasks:
-            self._pending_tasks.pop(task)
+        if task in self._scheduled_tasks:
+            self._scheduled_tasks.pop(task)
 
         # Unprime the trigger this task is waiting on
         trigger = task._trigger
@@ -385,7 +385,7 @@ class Scheduler:
         elif _Join(task) in self._trigger2tasks:
             self._react(_Join(task))
 
-    def _resume_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
+    def _schedule_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
         """Schedule `task` to be resumed when `trigger` fires."""
         # TODO Move this all into Task
         task._trigger = trigger
@@ -411,9 +411,9 @@ class Scheduler:
                 self._trigger2tasks.pop(trigger)
 
                 # replace it with a new trigger that throws back the exception
-                self._queue(task, outcome=_outcomes.Error(e))
+                self._schedule_task(task, outcome=_outcomes.Error(e))
 
-    def _queue(
+    def _schedule_task(
         self, task: Task[Any], outcome: _outcomes.Outcome[Any] = _none_outcome
     ) -> None:
         """Queue *task* for scheduling.
@@ -421,11 +421,11 @@ class Scheduler:
         It is an error to attempt to queue a task that has already been queued.
         """
         # Don't queue the same task more than once (gh-2503)
-        if task in self._pending_tasks:
+        if task in self._scheduled_tasks:
             raise InternalError("Task was queued more than once.")
         # TODO Move state tracking into Task
         task._state = Task._State.SCHEDULED
-        self._pending_tasks[task] = outcome
+        self._scheduled_tasks[task] = outcome
 
     def _queue_function(self, task):
         """Queue a task for execution and move the containing thread
@@ -459,7 +459,7 @@ class Scheduler:
             event.set()
 
         event = threading.Event()
-        self._queue(Task(wrapper()))
+        self._schedule_task(Task(wrapper()))
         # The scheduler thread blocks in `thread_wait`, and is woken when we
         # call `thread_suspend` - so we need to make sure the task is
         # queued before that.
@@ -517,7 +517,7 @@ class Scheduler:
         return _Join(result)
 
     def _trigger_from_unstarted_task(self, result: Task) -> Trigger:
-        self._queue(result)
+        self._schedule_task(result)
         if _debug:
             self.log.debug(f"Scheduling unstarted task: {result!r}")
         return _Join(result)
@@ -541,8 +541,8 @@ class Scheduler:
             f"handle: {result!r}\n"
         )
 
-    def _schedule(self, task: Task, outcome: _outcomes.Outcome[Any]) -> None:
-        """Schedule *task* with *outcome*.
+    def _resume_task(self, task: Task, outcome: _outcomes.Outcome[Any]) -> None:
+        """Resume *task* with *outcome*.
 
         Args:
             task: The task to schedule.
@@ -579,9 +579,9 @@ class Scheduler:
                 except TypeError as exc:
                     # restart this task with an exception object telling it that
                     # it wasn't allowed to yield that
-                    self._queue(task, _outcomes.Error(exc))
+                    self._schedule_task(task, _outcomes.Error(exc))
                 else:
-                    self._resume_task_upon(task, result)
+                    self._schedule_task_upon(task, result)
 
             # We do not return from here until pending threads have completed, but only
             # from the main thread, this seems like it could be problematic in cases
@@ -627,8 +627,8 @@ class Scheduler:
         # Kill any queued coroutines.
         # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_tasks.
         # If that happens a for loop will stop early and then the assert will fail.
-        while self._pending_tasks:
-            task, _ = self._pending_tasks.popitem(last=False)
+        while self._scheduled_tasks:
+            task, _ = self._scheduled_tasks.popitem(last=False)
             task.kill()
 
         if self._main_thread is not threading.current_thread():
