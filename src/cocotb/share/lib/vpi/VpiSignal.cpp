@@ -53,57 +53,64 @@ int VpiSignalObjHdl::initialise(const std::string &name,
             vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
             m_indexable = vpi_get(vpiVector, hdl);
 
-            s_vpi_value val;
-            vpiHandle iter;
+            if (m_indexable) {
+                s_vpi_value val;
+                vpiHandle iter;
 
-            val.format = vpiIntVal;
+                val.format = vpiIntVal;
 
-            iter = vpi_iterate(vpiRange, hdl);
+                iter = vpi_iterate(vpiRange, hdl);
 
-            /* Only ever need the first "range" */
-            if (iter != NULL) {
-                vpiHandle rangeHdl = vpi_scan(iter);
+                /* Only ever need the first "range" */
+                if (iter != NULL) {
+                    vpiHandle rangeHdl = vpi_scan(iter);
 
-                vpi_free_object(iter);
+                    vpi_free_object(iter);
 
-                if (rangeHdl != NULL) {
-                    vpi_get_value(vpi_handle(vpiLeftRange, rangeHdl), &val);
-                    check_vpi_error();
-                    m_range_left = val.value.integer;
+                    if (rangeHdl != NULL) {
+                        vpi_get_value(vpi_handle(vpiLeftRange, rangeHdl), &val);
+                        check_vpi_error();
+                        m_range_left = val.value.integer;
 
-                    vpi_get_value(vpi_handle(vpiRightRange, rangeHdl), &val);
-                    check_vpi_error();
-                    m_range_right = val.value.integer;
+                        vpi_get_value(vpi_handle(vpiRightRange, rangeHdl),
+                                      &val);
+                        check_vpi_error();
+                        m_range_right = val.value.integer;
+                    } else {
+                        LOG_ERROR(
+                            "VPI: Unable to get range for %s of type %s (%d)",
+                            name.c_str(), vpi_get_str(vpiType, hdl), type);
+                        return -1;
+                    }
                 } else {
-                    LOG_ERROR("VPI: Unable to get range for %s of type %s (%d)",
-                              name.c_str(), vpi_get_str(vpiType, hdl), type);
-                    return -1;
+                    vpiHandle leftRange = vpi_handle(vpiLeftRange, hdl);
+                    check_vpi_error();
+                    vpiHandle rightRange = vpi_handle(vpiRightRange, hdl);
+                    check_vpi_error();
+
+                    if (leftRange != NULL and rightRange != NULL) {
+                        vpi_get_value(leftRange, &val);
+                        m_range_left = val.value.integer;
+
+                        vpi_get_value(rightRange, &val);
+                        m_range_right = val.value.integer;
+                    } else {
+                        LOG_WARN(
+                            "VPI: Cannot discover range bounds, guessing based "
+                            "on elements");
+                        m_range_left = 0;
+                        m_range_right = m_num_elems - 1;
+                    }
                 }
+
+                LOG_DEBUG(
+                    "VPI: Indexable object initialized with range [%d:%d] and "
+                    "length >%d<",
+                    m_range_left, m_range_right, m_num_elems);
             } else {
-                vpiHandle leftRange = vpi_handle(vpiLeftRange, hdl);
-                check_vpi_error();
-                vpiHandle rightRange = vpi_handle(vpiRightRange, hdl);
-                check_vpi_error();
-
-                if (leftRange != NULL and rightRange != NULL) {
-                    vpi_get_value(leftRange, &val);
-                    m_range_left = val.value.integer;
-
-                    vpi_get_value(rightRange, &val);
-                    m_range_right = val.value.integer;
-                } else {
-                    LOG_WARN(
-                        "VPI: Cannot discover range bounds, guessing based "
-                        "on elements");
-                    m_range_left = 0;
-                    m_range_right = m_num_elems - 1;
-                }
+                m_range_left = 0;
+                m_range_right = m_num_elems - 1;
             }
-
-            LOG_DEBUG(
-                "VPI: Indexable object initialized with range [%d:%d] and "
-                "length >%d<",
-                m_range_left, m_range_right, m_num_elems);
         }
     }
     LOG_DEBUG("VPI: %s initialized with %d elements", name.c_str(),
