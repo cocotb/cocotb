@@ -42,9 +42,12 @@ ifeq (, $(CMD))
     $(error Unable to locate command >$(CMD_BIN)<)
 endif
 
-RTL_LIBRARY ?= work
-
-TOPLEVEL_LIBRARY ?= $(RTL_LIBRARY)
+ifdef RTL_LIBRARY
+    $(warning Using RTL_LIBRARY is deprecated, please use TOPLEVEL_LIBRARY instead.)
+    TOPLEVEL_LIBRARY ?= $(RTL_LIBRARY)
+else
+    TOPLEVEL_LIBRARY ?= work
+endif
 COCOTB_TOPLEVEL := "$(TOPLEVEL_LIBRARY).$(COCOTB_TOPLEVEL)"
 
 ifndef VLOG_ARGS
@@ -127,14 +130,14 @@ $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEP
 	@echo "}" >> $@
 	@echo "vmap -c" >> $@
 	$(foreach LIB, $(VHDL_LIB_ORDER), $(make_lib))
-	@echo "if [file exists $(SIM_BUILD)/$(RTL_LIBRARY)] {vdel -lib $(SIM_BUILD)/$(RTL_LIBRARY) -all}" >> $@
-	@echo "vlib $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
-	@echo "vmap $(RTL_LIBRARY) $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
+	@echo "if [file exists $(SIM_BUILD)/$(TOPLEVEL_LIBRARY)] {vdel -lib $(SIM_BUILD)/$(TOPLEVEL_LIBRARY) -all}" >> $@
+	@echo "vlib $(SIM_BUILD)/$(TOPLEVEL_LIBRARY)" >> $@
+	@echo "vmap $(TOPLEVEL_LIBRARY) $(SIM_BUILD)/$(TOPLEVEL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)
-	@echo "vcom -work $(RTL_LIBRARY) $(VCOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
+	@echo "vcom -work $(TOPLEVEL_LIBRARY) $(VCOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
 endif
 ifneq ($(VERILOG_SOURCES),)
-	@echo "vlog -work $(RTL_LIBRARY) -sv $(VLOG_ARGS) $(EXTRA_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
+	@echo "vlog -work $(TOPLEVEL_LIBRARY) -sv $(VLOG_ARGS) $(EXTRA_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
 endif
 ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@
