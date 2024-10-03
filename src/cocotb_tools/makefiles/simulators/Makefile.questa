@@ -142,7 +142,7 @@ endif
 ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@
 endif
-	@echo "vsim $(VSIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_BUILD)/$(COCOTB_TOPLEVEL)" >> $@
+	@echo "vsim $(VSIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(COCOTB_TOPLEVEL)" >> $@
 ifeq ($(WAVES),1)
 	@echo "log -recursive /*" >> $@
 endif
