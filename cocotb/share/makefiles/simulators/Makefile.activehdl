@@ -22,8 +22,15 @@ ALOG_ARGS += $(COMPILE_ARGS)
 ACOM_ARGS += $(COMPILE_ARGS)
 ASIM_ARGS += $(SIM_ARGS)
 
-RTL_LIBRARY ?= work
 ALOG_ARGS += +define+COCOTB_SIM -dbg
+
+ifdef RTL_LIBRARY
+    $(warning Using RTL_LIBRARY is deprecated, please use TOPLEVEL_LIBRARY instead.)
+    TOPLEVEL_LIBRARY ?= $(RTL_LIBRARY)
+else
+    TOPLEVEL_LIBRARY ?= work
+endif
+
 ACOM_ARGS += -dbg
 
 GPI_EXTRA:=
@@ -46,8 +53,8 @@ endif
 
 # Create a DO script (Tcl-like but not fully compatible) based on the list of $(VERILOG_SOURCES)
 $(SIM_BUILD)/runsim.do : $(VERILOG_SOURCES) $(VHDL_SOURCES) | $(SIM_BUILD)
-	@echo "alib $(RTL_LIBRARY)" > $@
-	@echo "set worklib $(RTL_LIBRARY)" >> $@
+	@echo "alib $(TOPLEVEL_LIBRARY)" > $@
+	@echo "set worklib $(TOPLEVEL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)
 	@echo "acom $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
 endif

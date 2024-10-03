@@ -399,14 +399,9 @@ The following variables are makefile variables, not environment variables.
 
 .. make:var:: TOPLEVEL_LIBRARY
 
-    The name of the library that contains the :make:var:`TOPLEVEL` module/entity.
-    Defaults to the :make:var:`RTL_LIBRARY`.
-    Only supported by the Siemens EDA Questa simulator.
-
-.. make:var:: RTL_LIBRARY
-
-    The name of the library that contains :make:var:`VHDL_SOURCES` and :make:var:`VERILOG_SOURCES`.
+    The name of the library that contains the :envvar:`TOPLEVEL` module/entity.
     Only supported by the Aldec Riviera-PRO, Aldec Active-HDL, and Siemens EDA Questa simulators.
+
 
 
 Library Build Process

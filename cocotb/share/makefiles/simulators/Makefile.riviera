@@ -69,8 +69,14 @@ ASIM_ARGS += $(SIM_ARGS)
 # Plusargs need to be passed to ASIM command not vsimsa
 ASIM_ARGS += $(PLUSARGS)
 
-RTL_LIBRARY ?= work
 ALOG_ARGS += +define+COCOTB_SIM
+
+ifdef RTL_LIBRARY
+    $(warning Using RTL_LIBRARY is deprecated, please use TOPLEVEL_LIBRARY instead.)
+    TOPLEVEL_LIBRARY ?= $(RTL_LIBRARY)
+else
+    TOPLEVEL_LIBRARY ?= work
+endif
 
 # Pass the VPI library to the Verilog compilation to get extended checking.
 ALOG_ARGS += -pli $(shell cocotb-config --lib-name-path vpi riviera)
@@ -127,15 +133,15 @@ $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) | $(SIM_BUILD)
 	@echo "@if [string length [array get env LICENSE_QUEUE]] {" >> $@
 	@echo " set LICENSE_QUEUE $$::env(LICENSE_QUEUE)" >> $@
 	@echo "}" >> $@
-	@echo "if [file exists $(SIM_BUILD)/$(RTL_LIBRARY)] {adel -lib $(SIM_BUILD)/$(RTL_LIBRARY) -all}" >> $@;
-	@echo "alib $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
-	@echo "amap $(RTL_LIBRARY) $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@;
-	@echo "set worklib $(RTL_LIBRARY)" >> $@;
+	@echo "if [file exists $(SIM_BUILD)/$(TOPLEVEL_LIBRARY)] {adel -lib $(SIM_BUILD)/$(TOPLEVEL_LIBRARY) -all}" >> $@;
+	@echo "alib $(SIM_BUILD)/$(TOPLEVEL_LIBRARY)" >> $@
+	@echo "amap $(TOPLEVEL_LIBRARY) $(SIM_BUILD)/$(TOPLEVEL_LIBRARY)" >> $@;
+	@echo "set worklib $(TOPLEVEL_LIBRARY)" >> $@;
 ifneq ($(VHDL_SOURCES),)
-	@echo "acom -work $(RTL_LIBRARY) $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
+	@echo "acom -work $(TOPLEVEL_LIBRARY) $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
 endif
 ifneq ($(VERILOG_SOURCES),)
-	@echo "alog -work $(RTL_LIBRARY) $(ALOG_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
+	@echo "alog -work $(TOPLEVEL_LIBRARY) $(ALOG_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
 endif
 ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@
@@ -154,8 +160,8 @@ else
 	@echo "run -all" >> $@
 	@echo "endsim" >> $@
 ifeq ($(COVERAGE),1)
-	@echo "acdb report -cov $(COVERAGE_TYPES) -db $(RTL_LIBRARY).acdb -html -o coverage/acdb_report.html" >> $@
-	@echo "acdb report -cov $(COVERAGE_TYPES) -db $(RTL_LIBRARY).acdb -txt -o coverage/acdb_report.txt" >> $@
+	@echo "acdb report -cov $(COVERAGE_TYPES) -db $(TOPLEVEL_LIBRARY).acdb -html -o coverage/acdb_report.html" >> $@
+	@echo "acdb report -cov $(COVERAGE_TYPES) -db $(TOPLEVEL_LIBRARY).acdb -txt -o coverage/acdb_report.txt" >> $@
 endif
 	@echo "exit" >> $@
 endif
