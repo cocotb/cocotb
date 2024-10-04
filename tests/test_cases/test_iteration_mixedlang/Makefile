@@ -33,5 +33,5 @@ clean::
 else
 
 include ../../designs/uart2bus/Makefile
-MODULE = test_iteration
+COCOTB_TEST_MODULES = test_iteration
 endif

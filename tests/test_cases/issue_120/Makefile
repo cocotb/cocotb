@@ -30,4 +30,4 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE = issue_120
+COCOTB_TEST_MODULES = issue_120

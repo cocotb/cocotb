@@ -30,4 +30,4 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE = test_async_bridge
+COCOTB_TEST_MODULES = test_async_bridge

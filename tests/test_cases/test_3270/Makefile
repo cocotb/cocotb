@@ -11,7 +11,7 @@ sim:
 
 else
 
-MODULE := test_3270
+COCOTB_TEST_MODULES := test_3270
 VERILOG_SOURCES := test_3270.sv
 TOPLEVEL := trigger_counter
 

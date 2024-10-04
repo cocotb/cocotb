@@ -5,7 +5,7 @@
 
 TOPLEVEL_LANG ?= verilog
 TOPLEVEL := fatal
-MODULE := test_fatal
+COCOTB_TEST_MODULES := test_fatal
 
 PWD=$(shell pwd)
 

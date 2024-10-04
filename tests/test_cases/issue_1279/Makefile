@@ -4,4 +4,4 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE = issue_1279
+COCOTB_TEST_MODULES = issue_1279

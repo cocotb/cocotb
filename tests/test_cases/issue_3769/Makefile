@@ -5,7 +5,7 @@
 TOPLEVEL_LANG ?= vhdl
 TOPLEVEL := test
 VHDL_SOURCES := test.vhdl
-MODULE := test_issue3769
+COCOTB_TEST_MODULES := test_issue3769
 
 ifneq ($(filter $(SIM),ius xcelium),)
 COMPILE_ARGS += -v93

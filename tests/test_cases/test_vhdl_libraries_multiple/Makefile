@@ -11,7 +11,7 @@ VHDL_SOURCES_elib := e.vhdl
 
 VHDL_SOURCES := a.vhdl
 TOPLEVEL := a
-MODULE := test_abcde
+COCOTB_TEST_MODULES := test_abcde
 
 ifneq ($(filter $(SIM),xcelium),)
     COMPILE_ARGS += -v93

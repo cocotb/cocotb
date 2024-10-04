@@ -31,7 +31,7 @@ ifeq ($(SKIP),)
 VERILOG_SOURCES = cocotb_package_pkg.sv \
                   cocotb_package.sv
 TOPLEVEL := cocotb_package
-MODULE = test_package
+COCOTB_TEST_MODULES = test_package
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 

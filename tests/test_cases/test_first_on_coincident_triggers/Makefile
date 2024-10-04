@@ -4,7 +4,7 @@
 
 TOPLEVEL_LANG ?= verilog
 TOPLEVEL := test
-MODULE := test_first_on_coincident_triggers
+COCOTB_TEST_MODULES := test_first_on_coincident_triggers
 
 PWD=$(shell pwd)
 

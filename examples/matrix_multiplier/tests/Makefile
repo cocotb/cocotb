@@ -60,8 +60,8 @@ endif
 # Fix the seed to ensure deterministic tests
 export RANDOM_SEED := 123456789
 
-TOPLEVEL    := matrix_multiplier
-MODULE      := test_matrix_multiplier
+COCOTB_TOPLEVEL     := matrix_multiplier
+COCOTB_TEST_MODULES := test_matrix_multiplier
 
 ifeq ($(SIM),ghdl)
 

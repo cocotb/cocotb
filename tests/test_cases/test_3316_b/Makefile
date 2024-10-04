@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 TOPLEVEL_LANG ?= verilog
 SIM ?= verilator
-MODULE := test_3316_b
+COCOTB_TEST_MODULES := test_3316_b
 VERILOG_SOURCES := ../test_3316/test_3316.sv
 TOPLEVEL := test_3316
 

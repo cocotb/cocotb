@@ -28,4 +28,4 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE = test_discovery
+COCOTB_TEST_MODULES = test_discovery

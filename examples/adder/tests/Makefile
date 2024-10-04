@@ -44,7 +44,7 @@ else
     $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
-TOPLEVEL := adder
-MODULE   := test_adder
+COCOTB_TOPLEVEL     := adder
+COCOTB_TEST_MODULES := test_adder
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

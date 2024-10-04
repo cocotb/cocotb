@@ -18,7 +18,7 @@ ifneq ($(filter $(SIM),ius xcelium),)
 COMPILE_ARGS += -v93
 endif
 
-export MODULE := test_issue2255
+export COCOTB_TEST_MODULES := test_issue2255
 export COCOTB_LOG_LEVEL := DEBUG
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

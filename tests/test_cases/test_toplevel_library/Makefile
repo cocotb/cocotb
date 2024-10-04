@@ -13,7 +13,7 @@ TOPLEVEL := myentity
 TOPLEVEL_LIBRARY := mylib
 TOPLEVEL_LANG := vhdl
 
-MODULE := test_myentity
+COCOTB_TEST_MODULES := test_myentity
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 

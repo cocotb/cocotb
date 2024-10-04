@@ -5,7 +5,7 @@
 # test MODULE is set
 # should cause regression initialization failure so no results.xml is written
 
-MODULE=test_nothing
+COCOTB_TEST_MODULES=test_nothing
 
 .PHONY: override_for_this_test
 override_for_this_test:

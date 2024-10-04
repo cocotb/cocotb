@@ -50,7 +50,7 @@ ifeq ($(SKIP),)
 
 include ../../designs/multi_dimension_array/Makefile
 
-MODULE = test_cocotb_array
+COCOTB_TEST_MODULES = test_cocotb_array
 
 else
 

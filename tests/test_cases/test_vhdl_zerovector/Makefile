@@ -9,7 +9,7 @@ ifneq ($(filter $(SIM),ius xcelium),)
 endif
 
 TOPLEVEL := vhdl_zerovector
-MODULE := test_vhdl_zerovector
+COCOTB_TEST_MODULES := test_vhdl_zerovector
 VHDL_SOURCES := vhdl_zerovector.vhdl
 
 # Cocotb inclusions

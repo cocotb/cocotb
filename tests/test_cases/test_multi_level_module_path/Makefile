@@ -4,7 +4,7 @@
 
 # test MODULE contains a multi-level Python module path, separated by period
 
-MODULE = test_package.test_module_path
+COCOTB_TEST_MODULES = test_package.test_module_path
 
 export PYTHONPATH := .
 

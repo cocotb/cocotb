@@ -14,6 +14,6 @@ clean::
 else
 
 include ../../designs/sample_module/Makefile
-MODULE:=test_struct
+COCOTB_TEST_MODULES:=test_struct
 
 endif

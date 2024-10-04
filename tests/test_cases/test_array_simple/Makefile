@@ -1,3 +1,3 @@
 include ../../designs/sample_module/Makefile
 
-MODULE = test_array_simple
+COCOTB_TEST_MODULES = test_array_simple

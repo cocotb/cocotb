@@ -26,4 +26,4 @@
 ###############################################################################
 
 include ../../designs/uart2bus/Makefile
-MODULE = test_verilog_access
+COCOTB_TEST_MODULES = test_verilog_access

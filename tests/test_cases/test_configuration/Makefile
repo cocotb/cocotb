@@ -26,4 +26,4 @@
 ###############################################################################
 
 include ../../designs/vhdl_configurations/Makefile
-MODULE = test_configurations
+COCOTB_TEST_MODULES = test_configurations

@@ -48,6 +48,6 @@ else
 
 include ../../designs/array_module/Makefile
 
-MODULE = test_array
+COCOTB_TEST_MODULES = test_array
 
 endif
