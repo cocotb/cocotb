@@ -16,7 +16,7 @@ VERILOG_INCLUDE_DIRS = \
 	./common \
 	./const_stream
 VERILOG_SOURCES = simple_and.sv
-TOPLEVEL = simple_and
+COCOTB_TOPLEVEL = simple_and
 COCOTB_TEST_MODULES = test_verilog_include_dirs
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

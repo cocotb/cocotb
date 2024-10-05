@@ -29,7 +29,7 @@
 
 TOPLEVEL_LANG ?= verilog
 
-TOPLEVEL := array_module
+COCOTB_TOPLEVEL := array_module
 
 PWD=$(shell pwd)
 

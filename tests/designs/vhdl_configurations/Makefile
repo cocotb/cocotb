@@ -14,7 +14,7 @@ clean::
 
 else
 
-TOPLEVEL = testbench
+COCOTB_TOPLEVEL = testbench
 
 PWD=$(shell pwd)
 

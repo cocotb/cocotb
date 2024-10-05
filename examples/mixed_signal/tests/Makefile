@@ -1,22 +1,22 @@
 # Override this variable to use a VHDL toplevel instead of (System)Verilog
 TOPLEVEL_LANG ?= verilog
 
-TOPLEVEL ?= tb_rescap
+COCOTB_TOPLEVEL ?= tb_rescap
 
-ifeq ($(TOPLEVEL),tb_rescap)
+ifeq ($(COCOTB_TOPLEVEL),tb_rescap)
     ifdef CI
-        MODULE ?= test_rescap_minimalist
+        COCOTB_TEST_MODULES ?= test_rescap_minimalist
     else
-        MODULE ?= test_rescap_minimalist,test_rescap
+        COCOTB_TEST_MODULES ?= test_rescap_minimalist,test_rescap
     endif
-else ifeq ($(TOPLEVEL),tb_regulator)
+else ifeq ($(COCOTB_TOPLEVEL),tb_regulator)
     ifdef CI
-        MODULE ?= test_regulator_trim
+        COCOTB_TEST_MODULES ?= test_regulator_trim
     else
-        MODULE ?= test_regulator_trim,test_regulator_plot
+        COCOTB_TEST_MODULES ?= test_regulator_trim,test_regulator_plot
     endif
 else
-    $(error Given TOPLEVEL '$(TOPLEVEL)' not supported)
+    $(error Given COCOTB_TOPLEVEL '$(COCOTB_TOPLEVEL)' not supported)
 endif
 
 ifeq ($(OS),Msys)

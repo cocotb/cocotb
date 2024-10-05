@@ -5,7 +5,7 @@ SIM ?= ghdl
 TOPLEVEL_LANG ?= vhdl
 VHDL_SOURCES_blib := b.vhdl
 VHDL_SOURCES := a.vhdl
-TOPLEVEL := a
+COCOTB_TOPLEVEL := a
 COCOTB_TEST_MODULES := test_ab
 
 ifneq ($(filter $(SIM),xcelium),)

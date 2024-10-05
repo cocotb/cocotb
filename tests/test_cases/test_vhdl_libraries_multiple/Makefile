@@ -10,7 +10,7 @@ VHDL_SOURCES_dlib := d.vhdl
 VHDL_SOURCES_elib := e.vhdl
 
 VHDL_SOURCES := a.vhdl
-TOPLEVEL := a
+COCOTB_TOPLEVEL := a
 COCOTB_TEST_MODULES := test_abcde
 
 ifneq ($(filter $(SIM),xcelium),)

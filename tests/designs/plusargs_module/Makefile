@@ -29,7 +29,7 @@
 
 TOPLEVEL_LANG ?= verilog
 
-TOPLEVEL := tb_top
+COCOTB_TOPLEVEL := tb_top
 
 PWD=$(shell pwd)
 

@@ -12,7 +12,7 @@ clean::
 
 else
 
-TOPLEVEL := basic_hierarchy_module
+COCOTB_TOPLEVEL := basic_hierarchy_module
 
 PWD=$(shell pwd)
 

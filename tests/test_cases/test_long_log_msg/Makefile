@@ -24,9 +24,9 @@ ifneq ($(filter $(SIM),ius xcelium),)
 COMPILE_ARGS += -v93
 endif
 
-TOPLEVEL := test
+COCOTB_TOPLEVEL := test
 
-export MODULE := test_long_log_msg
+export COCOTB_TEST_MODULES := test_long_log_msg
 export COCOTB_LOG_LEVEL := DEBUG
 
 .PHONY: override_for_this_test

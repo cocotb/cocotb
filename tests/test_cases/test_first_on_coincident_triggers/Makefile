@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 TOPLEVEL_LANG ?= verilog
-TOPLEVEL := test
+COCOTB_TOPLEVEL := test
 COCOTB_TEST_MODULES := test_first_on_coincident_triggers
 
 PWD=$(shell pwd)

@@ -3,7 +3,7 @@
 
 TOPLEVEL_LANG = verilog
 VERILOG_SOURCES = $(shell pwd)/digital.sv
-TOPLEVEL = digital
+COCOTB_TOPLEVEL = digital
 
 COCOTB_TEST_MODULES = test_analog_model
 

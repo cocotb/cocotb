@@ -35,7 +35,7 @@ clean::
 
 else
 
-TOPLEVEL = dec_viterbi_ent
+COCOTB_TOPLEVEL = dec_viterbi_ent
 
 PWD=$(shell pwd)
 

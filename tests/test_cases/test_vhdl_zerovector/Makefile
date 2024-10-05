@@ -8,7 +8,7 @@ ifneq ($(filter $(SIM),ius xcelium),)
     COMPILE_ARGS += -v93
 endif
 
-TOPLEVEL := vhdl_zerovector
+COCOTB_TOPLEVEL := vhdl_zerovector
 COCOTB_TEST_MODULES := test_vhdl_zerovector
 VHDL_SOURCES := vhdl_zerovector.vhdl
 

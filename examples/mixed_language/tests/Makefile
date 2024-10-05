@@ -11,7 +11,7 @@ all:
 clean::
 else
 
-TOPLEVEL = endian_swapper_mixed
+COCOTB_TOPLEVEL = endian_swapper_mixed
 
 PWD=$(shell pwd)
 

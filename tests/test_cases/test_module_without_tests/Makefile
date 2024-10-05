@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-# test MODULE is set
+# test COCOTB_TEST_MODULES is set
 # should cause regression initialization failure so no results.xml is written
 
 COCOTB_TEST_MODULES=test_nothing
