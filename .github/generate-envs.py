@@ -7,7 +7,7 @@
 
 Each environment must contain the following fields:
 - lang: The TOPLEVEL_LANG of the test. Must be one of "verilog" or "vhdl".
-- sim: The SIM of the test. Must be one of "icarus", "ghdl", "nvc", "verilator", "riviera", "questa", or "xcelium".
+- sim: The SIM of the test. Must be one of "icarus", "ghdl", "nvc", "verilator", "riviera", "questa", "xcelium", or "vcs".
 - sim-version: The version of the simulator to use. Valid values depend upon the simulator and build recipe.
 - os: The OS to operate on. Must be a valid value for the "jobs.<job_name>.runs-on" field for Github Actions.
 - python-version: The Python version to test with. Must be a valid value for the "python-version" field of the "actions/setup-python" Github Action.
@@ -344,6 +344,25 @@ ENVS = [
         "self-hosted": True,
         "python-version": "3.8",
         "group": "ci",
+    },
+    # Test Synopsys VCS on Ubuntu
+    {
+        "lang": "verilog",
+        "sim": "vcs",
+        "sim-version": "synopsys/vcs/W-2024.09",
+        "os": "ubuntu-20.04",
+        "self-hosted": True,
+        "python-version": "3.8",
+        "group": "experimental",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "vcs",
+        "sim-version": "synopsys/vcs/W-2024.09",
+        "os": "ubuntu-20.04",
+        "self-hosted": True,
+        "python-version": "3.8",
+        "group": "experimental",
     },
 ]
 
