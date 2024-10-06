@@ -84,3 +84,42 @@ Cocotb Releases
 cocotb aims to keep the ``master`` branch always in a releasable state.
 At least four times a year an official release should be created.
 It is the job of the maintainers to find a suitable time for a release, to communicate it to the community, and to coordinate it.
+
+
+Backport Changes
+================
+
+All changes should generally be merged into the ``master`` branch first.
+If those changes are also needed in a different branch, e.g., a stable branch, they need to be backported.
+PRs can be backported fully automated through GitHub, or semi-automated with the ability to resolve merge conflicts.
+Start with the automated backport process, and fall back to the manual one if necessary.
+
+Automated PR Backports
+----------------------
+
+The backporting process starts from an open or already merged PR, typically targeting the ``master`` branch.
+This PR can then be ported over to any of the ``stable/*`` branches.
+
+1. Open the *source PR* you'd like to backport on GitHub.
+2. Add the label ``backport-to:STABLE_BRANCH_NAME``, e.g. ``backport-to:1.9`` to backport a change to the branch ``stable/1.9``.
+3. If not done yet: Merge the source PR.
+
+Once the source PR is merged, backport automation (in GitHub Actions) will kick in.
+
+* If the backport can be performed automatically (i.e., there are no merge conflicts), a new PR is opened against the stable branch.
+* Otherwise, a comment is left in the source PR with instructions how to perform a manual backport. Follow the instructions below to continue.
+
+Manual PR Backport
+------------------
+
+The most convenient way to backport a PR is using the `Backport CLI Tool <https://github.com/sorenlouv/backport/>`_, which also powers the automated backport process.
+
+1. Install `npx` on your machine.
+2. Configure authentication for Backport, as described at `in their documentation <https://github.com/sorenlouv/backport/blob/main/docs/config-file-options.md#global-config-backportconfigjson>`_.
+3. In the *master* branch of the cocotb source tree run ``npx backport --pr MY_SOURCE_PR``.
+
+Answer questions as necessary.
+In case of a merge conflict, Backport will ask for a manual conflict resolution.
+This resolution needs to happen in the separate backport repository, typically located at ``~/.backport/repositories/cocotb/cocotb``.
+
+Backport will create a branch in your fork of the cocotb repository, and create a pull request to merge this branch into the selected stable branch, just like in the automated process.
