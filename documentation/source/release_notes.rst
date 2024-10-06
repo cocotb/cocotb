@@ -7,6 +7,19 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
+cocotb 1.9.2 (2024-10-XX)
+=========================
+
+Bugfixes
+--------
+
+- Better handle errors happening during the startup phase.
+
+Features
+--------
+
+- Python 3.13 is now supported.
+
 cocotb 1.9.1 (2024-08-29)
 =========================
 
