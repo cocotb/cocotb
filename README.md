@@ -11,7 +11,7 @@
   * [Raise a bug / request an enhancement](https://github.com/cocotb/cocotb/issues/new) (Requires a GitHub account)
   * [Join the Gitter chat room](https://gitter.im/cocotb/Lobby)
 
-**Note: The current `master` branch of the cocotb repository is expected to be released as cocotb 2.0, which contains API-breaking changes from previous 1.x releases. Please use the `stable/1.8` branch if you're building cocotb from source, or just [install it from PyPi](https://pypi.org/project/cocotb/).**
+**Note: The current `master` branch of the cocotb repository is expected to be released as cocotb 2.0, which contains API-breaking changes from previous 1.x releases. Please use the `stable/1.9` branch if you're building cocotb from source, or just [install it from PyPi](https://pypi.org/project/cocotb/).**
 
 ## Installation
 
