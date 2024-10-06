@@ -520,10 +520,11 @@ def release_test_nosim(session: nox.Session) -> None:
 
 
 def create_env_for_docs_build(session: nox.Session) -> None:
+    # Our fork of domaintools is not installed in requirements.txt due to the
+    # way relative paths are handled in that file (gh-pypa/pip#8765).
     session.run(
-        "pip", "install", "docs/_vendor/domaintools"
-    )  # not done in requirements.txt due to the way relative paths are handled in that file (gh-pypa/pip#8765)
-    session.run("pip", "install", "-r", "docs/requirements.txt")
+        "pip", "install", "docs/_vendor/domaintools", "-r", "docs/requirements.txt"
+    )
 
 
 @nox.session
