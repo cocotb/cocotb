@@ -106,8 +106,8 @@ A simple Makefile:
 
 TOPLEVEL_LANG = verilog
 VERILOG_SOURCES = $(shell pwd)/dff.sv
-COCOTB_TOPLEVEL = dff
-COCOTB_TEST_MODULES = test_dff
+TOPLEVEL = dff
+MODULE = test_dff
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 ```
