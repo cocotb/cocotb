@@ -63,10 +63,9 @@ issues_github_path = "cocotb/cocotb"
 templates_path = ["_templates"]
 
 # The suffix of source filenames.
-source_suffix = ".rst"
-
-# The encoding of source files.
-# source_encoding = 'utf-8-sig'
+source_suffix = {
+    '.rst': 'restructuredtext'
+}
 
 # The master toctree document.
 master_doc = "index"
