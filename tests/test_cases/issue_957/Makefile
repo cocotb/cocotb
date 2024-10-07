@@ -1,3 +1,3 @@
 include ../../designs/sample_module/Makefile
 
-MODULE = issue_957
+COCOTB_TEST_MODULES = issue_957

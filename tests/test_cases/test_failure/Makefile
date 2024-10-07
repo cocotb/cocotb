@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-MODULE := test_failure
+COCOTB_TEST_MODULES := test_failure
 
 # ensure the test runs, squash any error code, and ensure a failing test was reported
 .PHONY: override_for_this_test

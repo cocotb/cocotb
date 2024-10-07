@@ -19,4 +19,4 @@ override: clean all
 # Set COCOTB_TEST_FILTER; run test_skipped even though skip=True is set.
 COCOTB_TEST_FILTER = test_skipped
 
-MODULE = test_skipped
+COCOTB_TEST_MODULES = test_skipped

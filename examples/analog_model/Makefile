@@ -3,9 +3,9 @@
 
 TOPLEVEL_LANG = verilog
 VERILOG_SOURCES = $(shell pwd)/digital.sv
-TOPLEVEL = digital
+COCOTB_TOPLEVEL = digital
 
-MODULE = test_analog_model
+COCOTB_TEST_MODULES = test_analog_model
 
 ifneq ($(filter $(SIM),ius xcelium),)
     SIM_ARGS += -unbuffered

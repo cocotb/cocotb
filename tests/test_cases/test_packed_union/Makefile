@@ -13,8 +13,8 @@ clean::
 else
 
 VERILOG_SOURCES = test_packed_union.sv
-TOPLEVEL = test_packed_union
-MODULE = test_packed_union
+COCOTB_TOPLEVEL = test_packed_union
+COCOTB_TEST_MODULES = test_packed_union
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 

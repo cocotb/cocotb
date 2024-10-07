@@ -26,4 +26,4 @@
 ###############################################################################
 
 include ../../designs/viterbi_decoder_axi4s/Makefile
-MODULE = test_vhdl_access
+COCOTB_TEST_MODULES = test_vhdl_access

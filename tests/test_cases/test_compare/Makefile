@@ -4,4 +4,4 @@
 
 include ../../designs/basic_hierarchy_module/Makefile
 
-MODULE=test_compare
+COCOTB_TEST_MODULES=test_compare

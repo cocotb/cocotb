@@ -2,9 +2,9 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-# test MODULE contains a multi-level Python module path, separated by period
+# test COCOTB_TEST_MODULES contains a multi-level Python module path, separated by period
 
-MODULE = test_package.test_module_path
+COCOTB_TEST_MODULES = test_package.test_module_path
 
 export PYTHONPATH := .
 

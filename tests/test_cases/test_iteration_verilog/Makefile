@@ -36,8 +36,8 @@ clean::
 else
 
 VERILOG_SOURCES = endian_swapper.sv
-TOPLEVEL = endian_swapper_sv
-MODULE = test_iteration_es
+COCOTB_TOPLEVEL = endian_swapper_sv
+COCOTB_TEST_MODULES = test_iteration_es
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 

@@ -9,11 +9,11 @@ PROJ_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 VHDL_SOURCES_mylib := $(PROJ_DIR)/mylib.vhd
 VHDL_LIB_ORDER := mylib
 
-TOPLEVEL := myentity
+COCOTB_TOPLEVEL := myentity
 TOPLEVEL_LIBRARY := mylib
 TOPLEVEL_LANG := vhdl
 
-MODULE := test_myentity
+COCOTB_TEST_MODULES := test_myentity
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 

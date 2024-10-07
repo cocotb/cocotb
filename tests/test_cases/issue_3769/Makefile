@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 TOPLEVEL_LANG ?= vhdl
-TOPLEVEL := test
+COCOTB_TOPLEVEL := test
 VHDL_SOURCES := test.vhdl
-MODULE := test_issue3769
+COCOTB_TEST_MODULES := test_issue3769
 
 ifneq ($(filter $(SIM),ius xcelium),)
 COMPILE_ARGS += -v93

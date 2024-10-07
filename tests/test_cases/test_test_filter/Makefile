@@ -6,5 +6,5 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE := x_tests
+COCOTB_TEST_MODULES := x_tests
 export COCOTB_TEST_FILTER := y_test

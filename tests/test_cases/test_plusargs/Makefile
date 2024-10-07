@@ -29,6 +29,6 @@
 
 include ../../designs/plusargs_module/Makefile
 
-PLUSARGS=+foo=bar +test1 +test2 +options=fubar +lol=wow=4
+COCOTB_PLUSARGS=+foo=bar +test1 +test2 +options=fubar +lol=wow=4
 
-MODULE = plusargs
+COCOTB_TEST_MODULES = plusargs

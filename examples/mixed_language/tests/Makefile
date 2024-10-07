@@ -11,7 +11,7 @@ all:
 clean::
 else
 
-TOPLEVEL = endian_swapper_mixed
+COCOTB_TOPLEVEL = endian_swapper_mixed
 
 PWD=$(shell pwd)
 
@@ -27,7 +27,7 @@ else
 endif
 
 
-MODULE=test_mixed_language
+COCOTB_TEST_MODULES=test_mixed_language
 
 ifneq ($(filter $(SIM),ius xcelium),)
     COMPILE_ARGS += -v93

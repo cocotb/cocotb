@@ -4,8 +4,8 @@
 
 TOPLEVEL_LANG ?= verilog
 VERILOG_SOURCES = $(shell pwd)/top.sv
-MODULE = test_sv_if
-TOPLEVEL = top
+COCOTB_TEST_MODULES = test_sv_if
+COCOTB_TOPLEVEL = top
 
 # Simulator behavior:
 # Icarus Verilog sees SV interfaces as vpiModule but doesn't discover signals inside them

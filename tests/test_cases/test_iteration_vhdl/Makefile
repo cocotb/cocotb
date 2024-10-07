@@ -26,7 +26,7 @@
 ###############################################################################
 
 include ../../designs/viterbi_decoder_axi4s/Makefile
-MODULE = test_iteration
+COCOTB_TEST_MODULES = test_iteration
 
 ifneq ($(filter $(SIM),ius xcelium),)
     SIM_ARGS += -notimezeroasrtmsg

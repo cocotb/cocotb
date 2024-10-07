@@ -4,4 +4,4 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE ?= test_force_release
+COCOTB_TEST_MODULES ?= test_force_release

@@ -4,8 +4,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 TOPLEVEL_LANG ?= verilog
-TOPLEVEL := fatal
-MODULE := test_fatal
+COCOTB_TOPLEVEL := fatal
+COCOTB_TEST_MODULES := test_fatal
 
 PWD=$(shell pwd)
 

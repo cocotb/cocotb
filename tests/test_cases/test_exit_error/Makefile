@@ -32,4 +32,4 @@ override_for_this_test:
 
 include ../../designs/sample_module/Makefile
 
-MODULE = test_exit
+COCOTB_TEST_MODULES = test_exit

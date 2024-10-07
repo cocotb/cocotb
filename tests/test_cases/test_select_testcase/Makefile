@@ -6,7 +6,7 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE := x_tests,y_tests,y_tests_again
+COCOTB_TEST_MODULES := x_tests,y_tests,y_tests_again
 TESTCASE := y_test
 
 # override PYTHONWARNINGS to prevent DeprecationWarning causing an error with use of TESTCASE

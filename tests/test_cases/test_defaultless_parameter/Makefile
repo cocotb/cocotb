@@ -31,8 +31,8 @@ ifeq ($(SKIP),)
 VERILOG_SOURCES = test_defaultless_parameter.sv
 # Needed for defaultless parameter support in Xcelium
 export CADENCE_ENABLE_AVSREQ_44905_PHASE_1=1
-TOPLEVEL := cocotb_defaultless_parameter
-MODULE = test_defaultless_parameter
+COCOTB_TOPLEVEL := cocotb_defaultless_parameter
+COCOTB_TEST_MODULES = test_defaultless_parameter
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 

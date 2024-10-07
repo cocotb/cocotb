@@ -7,7 +7,7 @@ override_tests:
 	$(MAKE) COCOTB_TRUST_INERTIAL_WRITES=0 sim COCOTB_RESULTS_FILE=results_no_trust.xml
 	$(MAKE) COCOTB_TRUST_INERTIAL_WRITES=1 sim COCOTB_RESULTS_FILE=results_trust.xml
 
-MODULE := inertial_writes_tests
+COCOTB_TEST_MODULES := inertial_writes_tests
 
 include ../../designs/sample_module/Makefile
 

@@ -9,7 +9,7 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
   VHDL_SOURCES = $(shell pwd)/dff.vhdl
 endif
 
-MODULE = test_dff
-TOPLEVEL = dff
+COCOTB_TEST_MODULES = test_dff
+COCOTB_TOPLEVEL = dff
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

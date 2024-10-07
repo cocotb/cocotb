@@ -29,7 +29,7 @@
 
 TOPLEVEL_LANG ?= verilog
 
-TOPLEVEL := cocotb_array
+COCOTB_TOPLEVEL := cocotb_array
 
 ifneq ($(TOPLEVEL_LANG),verilog)
 

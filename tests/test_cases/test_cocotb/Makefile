@@ -6,8 +6,8 @@ include ../../designs/sample_module/Makefile
 
 # The pytest_assertion_rewriting test module deliberately does not follow the
 # test_* naming convention to test that pytest assertion rewriting is enabled
-# on all test modules declared in MODULE (gh-3011)
-MODULE := "\
+# on all test modules declared in COCOTB_TEST_MODULES (gh-3011)
+COCOTB_TEST_MODULES := "\
 	test_deprecated,\
 	test_synchronization_primitives,\
 	test_concurrency_primitives,\

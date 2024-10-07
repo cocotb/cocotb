@@ -30,7 +30,7 @@ VERILOG_SOURCES =   $(SRC_BASE)/verilog/baud_gen.v \
                     $(SRC_BASE)/verilog/uart2bus_top.v
 
 VERILOG_SOURCES += $(SRC_BASE)/top/verilog_toplevel.sv
-TOPLEVEL = verilog_toplevel
+COCOTB_TOPLEVEL = verilog_toplevel
 
 ifeq ($(SIM),$(filter $(SIM),ius xcelium))
     COMPILE_ARGS += -v93
