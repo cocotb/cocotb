@@ -808,7 +808,7 @@ class _AggregateWaitable(Waitable[T]):
     """Base class for :class:`Combine` and :class:`First`."""
 
     def __init__(
-        self, *trigger: Union[Trigger, Waitable[T], "cocotb.task.Task[T]"]
+        self, *trigger: Union[Trigger, Waitable[Any], "cocotb.task.Task[Any]"]
     ) -> None:
         self._triggers = trigger
 
