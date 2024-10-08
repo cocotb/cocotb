@@ -18,10 +18,18 @@ MAKE_ARGS = TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
             SIM=$(SIM) \
             COCOTB_TEST_MODULES=$(COCOTB_TEST_MODULES) \
             VERILOG_SOURCES="$(VERILOG_SOURCES)" \
-            COCOTB_TOPLEVEL=$(COCOTB_TOPLEVEL)
+            COCOTB_TOPLEVEL=$(COCOTB_TOPLEVEL) \
+            EXTRA_ARGS=$(EXTRA_ARGS) \
+            SIM_BUILD="$(SIM_BUILD)"
 # Verilator has two modes `--timing` and `--no-timing`, so test both
+MODES = timing no-timing
+
 .PHONY: all
-all:
-	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS) EXTRA_ARGS="--timing"
-	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS) EXTRA_ARGS="--no-timing"
+all: $(MODES)
+
+.PHONY: $(MODES)
+$(MODES): EXTRA_ARGS = "--$@"
+$(MODES): SIM_BUILD = sim_build/$@
+$(MODES):
+	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS) 
 endif
