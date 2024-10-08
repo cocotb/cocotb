@@ -14,20 +14,14 @@ else ifeq ($(filter verilator,$(shell echo $(SIM) | tr A-Z a-z)),)
 all:
 	@echo "Skipping test since only Verilator is supported"
 else
-all: timing no-timing
-endif
-
 MAKE_ARGS = TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
             SIM=$(SIM) \
             COCOTB_TEST_MODULES=$(COCOTB_TEST_MODULES) \
             VERILOG_SOURCES="$(VERILOG_SOURCES)" \
-            COCOTB_TOPLEVEL=$(COCOTB_TOPLEVEL) \
-            EXTRA_ARGS=$(EXTRA_ARGS)
-
-timing: EXTRA_ARGS="--timing"
-timing:
-	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS)
-
-no-timing: EXTRA_ARGS="--no-timing"
-no-timing:
-	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS)
+            COCOTB_TOPLEVEL=$(COCOTB_TOPLEVEL)
+# Verilator has two modes `--timing` and `--no-timing`, so test both
+.PHONY: all
+all:
+	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS) EXTRA_ARGS="--timing"
+	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS) EXTRA_ARGS="--no-timing"
+endif
