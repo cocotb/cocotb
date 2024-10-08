@@ -31,5 +31,5 @@ all: $(MODES)
 $(MODES): EXTRA_ARGS = "--$@"
 $(MODES): SIM_BUILD = sim_build/$@
 $(MODES):
-	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS) 
+	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS)
 endif
