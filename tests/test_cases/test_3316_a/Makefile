@@ -13,9 +13,21 @@ all:
 else ifeq ($(filter verilator,$(shell echo $(SIM) | tr A-Z a-z)),)
 all:
 	@echo "Skipping test since only Verilator is supported"
-else ifeq ($(filter $(EXTRA_ARGS),--no-timing --timing),)
-all:
-	@echo "Skipping test since Verilator requires --timing or --no-timing option."
 else
-include $(shell cocotb-config --makefiles)/Makefile.sim
+all: timing no-timing
 endif
+
+MAKE_ARGS = TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+			SIM=$(SIM) \
+			COCOTB_TEST_MODULES=$(COCOTB_TEST_MODULES) \
+			VERILOG_SOURCES="$(VERILOG_SOURCES)" \
+			COCOTB_TOPLEVEL=$(COCOTB_TOPLEVEL) \
+			EXTRA_ARGS=$(EXTRA_ARGS)
+
+timing: EXTRA_ARGS="--timing"
+timing:
+	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS)
+
+no-timing: EXTRA_ARGS="--no-timing"
+no-timing:
+	$(MAKE) -f $(shell cocotb-config --makefiles)/Makefile.sim $(MAKE_ARGS)
