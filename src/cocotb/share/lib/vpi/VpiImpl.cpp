@@ -720,9 +720,11 @@ static int32_t handle_vpi_callback_(GpiCbHdl *cb_hdl) {
     gpi_to_user();
 
     if (!cb_hdl) {
+        // LCOV_EXCL_START
         LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
         gpi_embed_end();
         return -1;
+        // LCOV_EXCL_STOP
     }
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
