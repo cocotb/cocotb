@@ -424,7 +424,8 @@ async def test_immediate_reentrace(dut):
         await Edge(dut.mybits_uninitialized)
         seen += 1
         dut.mybit.setimmediatevalue(0)
-        nested.cancel()
+        with pytest.warns(FutureWarning):
+            nested.cancel()
 
     cocotb.start_soon(watch())
     await Timer(1, "ns")
