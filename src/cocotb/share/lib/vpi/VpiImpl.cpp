@@ -28,7 +28,10 @@
 #include "VpiImpl.h"
 
 #include <cstring>
+#ifndef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
+#include <algorithm>
 #include <queue>
+#endif
 
 #include "_vendor/vpi/vpi_user.h"
 
@@ -37,6 +40,10 @@ extern "C" {
 static VpiCbHdl *sim_init_cb;
 static VpiCbHdl *sim_finish_cb;
 static VpiImpl *vpi_table;
+
+#ifndef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
+static std::deque<GpiCbHdl *> cb_queue;
+#endif
 }
 
 #define CASE_STR(_X) \
@@ -672,6 +679,13 @@ GpiCbHdl *VpiImpl::register_nexttime_callback(int (*function)(void *),
 }
 
 int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl) {
+#ifndef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
+    auto it = std::find(cb_queue.begin(), cb_queue.end(), gpi_hdl);
+    if (it != cb_queue.end()) {
+        cb_queue.erase(it);
+    }
+#endif
+
     return gpi_hdl->cleanup_callback();
 }
 
@@ -702,17 +716,15 @@ const char *VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
 
 extern "C" {
 
-static int32_t handle_vpi_callback_(p_cb_data cb_data) {
+static int32_t handle_vpi_callback_(GpiCbHdl *cb_hdl) {
     gpi_to_user();
 
-    int rv = 0;
-
-    VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
-
     if (!cb_hdl) {
+        // LCOV_EXCL_START
         LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
         gpi_embed_end();
         return -1;
+        // LCOV_EXCL_STOP
     }
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
@@ -738,36 +750,35 @@ static int32_t handle_vpi_callback_(p_cb_data cb_data) {
 
     gpi_to_simulator();
 
-    return rv;
+    return 0;
 }
-
-#ifdef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
-int32_t handle_vpi_callback(p_cb_data cb_data) {
-    return handle_vpi_callback_(cb_data);
-}
-#else
-static std::queue<p_cb_data> cbs;
-static bool reacting = false;
 
 // Main re-entry point for callbacks from simulator
 int32_t handle_vpi_callback(p_cb_data cb_data) {
+#ifdef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
+    VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
+    return handle_vpi_callback_(cb_hdl);
+#else
     // must push things into a queue because Icaurus (gh-4067), Xcelium
     // (gh-4013), and Questa (gh-4105) react to value changes on signals that
     // are set with vpiNoDelay immediately, and not after the current callback
     // has ended, causing re-entrancy.
-    cbs.push(cb_data);
+    static bool reacting = false;
+    VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
     if (reacting) {
+        cb_queue.push_back(cb_hdl);
         return 0;
     }
     reacting = true;
-    while (!cbs.empty()) {
-        handle_vpi_callback_(cbs.front());
-        cbs.pop();
+    int32_t ret = handle_vpi_callback_(cb_hdl);
+    while (!cb_queue.empty()) {
+        handle_vpi_callback_(cb_queue.front());
+        cb_queue.pop_front();
     }
     reacting = false;
-    return 0;
-}
+    return ret;
 #endif
+}
 
 static void register_impl() {
     vpi_table = new VpiImpl("VPI");

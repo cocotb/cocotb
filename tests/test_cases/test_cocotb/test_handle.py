@@ -13,7 +13,7 @@ import pytest
 
 import cocotb
 from cocotb.handle import LogicObject, StringObject, _Limits
-from cocotb.triggers import Edge, Timer
+from cocotb.triggers import Edge, FallingEdge, Timer
 from cocotb.types import Logic, LogicArray
 
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -413,10 +413,19 @@ async def test_immediate_reentrace(dut):
     await Timer(1, "ns")
     seen = 0
 
+    async def nested_watch():
+        await FallingEdge(dut.mybit)
+        raise RuntimeError("Should have been cancelled")
+
+    nested = cocotb.start_soon(nested_watch())
+
     async def watch():
-        nonlocal seen
+        nonlocal seen, nested
         await Edge(dut.mybits_uninitialized)
         seen += 1
+        dut.mybit.setimmediatevalue(0)
+        with pytest.warns(FutureWarning):
+            nested.cancel()
 
     cocotb.start_soon(watch())
     await Timer(1, "ns")
