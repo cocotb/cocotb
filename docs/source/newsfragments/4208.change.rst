@@ -1,0 +1,1 @@
+Attempting to await on either the :class:`~cocotb.triggers.ReadWrite` or :class:`~cocotb.triggers.ReadOnly` trigger while in the ReadOnly phase now raises a :exc:`RuntimeError`.
