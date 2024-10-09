@@ -282,7 +282,7 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass)
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
             raise RuntimeError(
-                "Attempted illegal transition: awaiting ReadOnly in ReadOnly state"
+                "Attempted illegal transition: awaiting ReadOnly in ReadOnly phase"
             )
         if self._cbhdl is None:
             self._cbhdl = simulator.register_readonly_callback(callback, self)
@@ -304,7 +304,7 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
             raise RuntimeError(
-                "Attempted illegal transition: awaiting ReadWrite in ReadOnly state"
+                "Attempted illegal transition: awaiting ReadWrite in ReadOnly phase"
             )
         if self._cbhdl is None:
             self._cbhdl = simulator.register_rwsynch_callback(callback, self)
