@@ -143,32 +143,6 @@ async def do_test_afterdelay_in_readonly(dut, delay):
     exited = True
 
 
-# A RuntimeError is expected to happen in this test, which indicates that
-# ReadWrite after ReadOnly fails to register.
-# - Riviera and Questa (in Verilog) and Xcelium pass.
-# - Riviera and Questa (in VHDL) incorrectly allow registering ReadWrite
-#   after ReadOnly.
-# - Xcelium passes (VHDL and Verilog).
-@cocotb.test(
-    expect_error=RuntimeError
-    if (
-        (LANGUAGE in ["verilog"] and SIM_NAME.startswith(("riviera", "modelsim")))
-        or SIM_NAME.startswith("xmsim")
-    )
-    else (),
-    expect_fail=SIM_NAME.startswith(("icarus", "ncsim")),
-)
-async def test_readwrite_in_readonly(dut):
-    """Test doing invalid sim operation"""
-    global exited
-    exited = False
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    task = cocotb.start_soon(do_test_readwrite_in_readonly(dut))
-    await First(task, Timer(10_000, "ns"))
-    clk_gen.kill()
-    assert exited
-
-
 @cocotb.test(skip=True)
 async def test_cached_write_in_readonly(dut):
     """Test doing invalid sim operation"""
@@ -382,3 +356,17 @@ async def test_sim_phase(dut) -> None:
     assert cocotb.sim_phase is cocotb.SimPhase.READ_ONLY
     await RisingEdge(dut.clk)
     assert cocotb.sim_phase is cocotb.SimPhase.NORMAL
+
+
+@cocotb.test
+async def test_readwrite_in_readonly(_) -> None:
+    await ReadOnly()
+    with pytest.raises(RuntimeError):
+        await ReadWrite()
+
+
+@cocotb.test
+async def test_readonly_in_readonly(_) -> None:
+    await ReadOnly()
+    with pytest.raises(RuntimeError):
+        await ReadOnly()
