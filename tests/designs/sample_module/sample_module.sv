@@ -90,6 +90,7 @@ module sample_module #(
     input  [38:0]                               stream_in_data_39bit,
     input  [63:0]                               stream_in_data_wide,
     input  [127:0]                              stream_in_data_dqword,
+    input  [0:7]                                stream_in_data_rev,
 
     input                                       stream_out_ready,
     output reg [7:0]                            stream_out_data_comb,

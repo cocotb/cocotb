@@ -230,10 +230,13 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
         return -1;
     }
 
-    if (m_range_left > m_range_right) {
-        m_num_elems = m_range_left - m_range_right + 1;
-    } else {
+    if (vhpi_get(vhpiIsUpP, type)) {
         m_num_elems = m_range_right - m_range_left + 1;
+    } else {
+        m_num_elems = m_range_left - m_range_right + 1;
+    }
+    if (m_num_elems < 0) {
+        m_num_elems = 0;
     }
 
     return GpiObjHdl::initialise(name, fq_name);

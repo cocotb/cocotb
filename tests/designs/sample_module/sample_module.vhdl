@@ -46,6 +46,7 @@ entity sample_module is
         stream_in_data_39bit            : in    std_ulogic_vector(38 downto 0);
         stream_in_data_wide             : in    std_ulogic_vector(63 downto 0);
         stream_in_data_dqword           : in    std_ulogic_vector(127 downto 0);
+        stream_in_data_rev              : in    std_ulogic_vector(0 downto 7);
         stream_in_valid                 : in    std_ulogic;
         stream_in_ready                 : out   std_ulogic;
         stream_in_real                  : in    real;
