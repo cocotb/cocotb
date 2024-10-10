@@ -437,7 +437,7 @@ async def test_immediate_reentrace(dut):
 
 @cocotb.test()
 async def test_null_range_width(_):
-    if LANGUAGE in ['vhdl']:
+    if LANGUAGE in ["vhdl"]:
         assert len(cocotb.top.stream_in_data) != len(cocotb.top.stream_in_data_rev)
     else:
         assert len(cocotb.top.stream_in_data) == len(cocotb.top.stream_in_data_rev)
