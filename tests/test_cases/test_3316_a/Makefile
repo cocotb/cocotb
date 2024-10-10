@@ -13,9 +13,10 @@ all:
 else ifeq ($(filter verilator,$(shell echo $(SIM) | tr A-Z a-z)),)
 all:
 	@echo "Skipping test since only Verilator is supported"
-else ifeq ($(filter $(EXTRA_ARGS),--no-timing --timing),)
-all:
-	@echo "Skipping test since Verilator requires --timing or --no-timing option."
 else
+.PHONY: override_for_this_test
+override_for_this_test:
+	# We cannot normally rely on the simulator return code, but this test is specific to Verilator
+	if $(MAKE) all; then echo "Expected test to fail without --timing flag"; false; else echo "Failed as expected"; fi
 include $(shell cocotb-config --makefiles)/Makefile.sim
 endif
