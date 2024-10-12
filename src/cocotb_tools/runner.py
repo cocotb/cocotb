@@ -1302,7 +1302,7 @@ class Verilator(Runner):
             [
                 "make",
                 "-j",
-                f"{multiprocessing.cpu_count()}"
+                f"{multiprocessing.cpu_count()}",
                 "-C",
                 str(self.build_dir),
                 "-f",
