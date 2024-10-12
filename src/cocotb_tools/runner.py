@@ -10,6 +10,7 @@
 # TODO: support custom dependencies
 
 import logging
+import multiprocessing
 import os
 import re
 import shlex
@@ -1300,6 +1301,8 @@ class Verilator(Runner):
         cmds.append(
             [
                 "make",
+                "-j",
+                f"{multiprocessing.cpu_count()}"
                 "-C",
                 str(self.build_dir),
                 "-f",
