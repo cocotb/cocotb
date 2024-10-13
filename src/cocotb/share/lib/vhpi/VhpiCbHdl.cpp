@@ -230,7 +230,7 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
         return -1;
     }
 
-    if (vhpi_get(vhpiIsUpP, type)) {
+    if (vhpi_get(vhpiIsUpP, handle)) {
         m_num_elems = m_range_right - m_range_left + 1;
     } else {
         m_num_elems = m_range_left - m_range_right + 1;

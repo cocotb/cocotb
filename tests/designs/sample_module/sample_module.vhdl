@@ -46,7 +46,6 @@ entity sample_module is
         stream_in_data_39bit            : in    std_ulogic_vector(38 downto 0);
         stream_in_data_wide             : in    std_ulogic_vector(63 downto 0);
         stream_in_data_dqword           : in    std_ulogic_vector(127 downto 0);
-        stream_in_data_rev              : in    std_ulogic_vector(0 downto 7);
         stream_in_valid                 : in    std_ulogic;
         stream_in_ready                 : out   std_ulogic;
         stream_in_real                  : in    real;
@@ -92,6 +91,7 @@ architecture impl of sample_module is
     type unsignedArrayType is array (natural range <>) of unsigned(7 downto 0);
     signal array_7_downto_4 : unsignedArrayType(7 downto 4);
     signal array_4_to_7     : unsignedArrayType(4 to 7);
+    signal array_4_downto_7 : unsignedArrayType(4 downto 7);
     signal array_3_downto_0 : unsignedArrayType(3 downto 0);
     signal array_0_to_3     : unsignedArrayType(0 to 3);
 

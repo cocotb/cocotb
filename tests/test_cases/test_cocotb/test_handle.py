@@ -436,8 +436,12 @@ async def test_immediate_reentrace(dut):
 
 
 @cocotb.test()
-async def test_null_range_width(_):
+async def test_null_range_width(dut):
+    # Normal arrays should have the same length regardless of language
+    assert len(dut.array_7_downto_4) == 4
     if LANGUAGE in ["vhdl"]:
-        assert len(cocotb.top.stream_in_data) != len(cocotb.top.stream_in_data_rev)
+        # But in VHDL, `4 downto 7` should result in a null range
+        assert len(dut.array_4_downto_7) == 0
     else:
-        assert len(cocotb.top.stream_in_data) == len(cocotb.top.stream_in_data_rev)
+        # Not so in (System)Verilog though
+        assert len(dut.array_4_downto_7) == 4

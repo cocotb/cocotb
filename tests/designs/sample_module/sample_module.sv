@@ -90,7 +90,6 @@ module sample_module #(
     input  [38:0]                               stream_in_data_39bit,
     input  [63:0]                               stream_in_data_wide,
     input  [127:0]                              stream_in_data_dqword,
-    input  [0:7]                                stream_in_data_rev,
 
     input                                       stream_out_ready,
     output reg [7:0]                            stream_out_data_comb,
@@ -203,6 +202,7 @@ end
 //For testing arrays
 reg [7:0]  array_7_downto_4[7:4];
 reg [7:0]  array_4_to_7[4:7];
+reg [7:0]  array_4_downto_7[4:7];
 reg [7:0]  array_3_downto_0[3:0];
 reg [7:0]  array_0_to_3[0:3];
 reg [7:0]  array_2d[0:1][31:28];
