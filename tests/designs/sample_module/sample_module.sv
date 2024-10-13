@@ -210,6 +210,7 @@ always @(posedge stream_in_valid) begin
     // Ensure internal array is not optimized out
     array_7_downto_4[4] <= 0;
     array_4_to_7[7] <= 0;
+    array_4_downto_7[7] <= 0;
     array_3_downto_0[0] <= 0;
     array_0_to_3[3] <= 0;
     array_2d[1][28] <= 0;
