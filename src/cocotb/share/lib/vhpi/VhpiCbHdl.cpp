@@ -73,7 +73,8 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl() {
     if (vhpi_release_handle(get_handle<vhpiHandleT>())) check_vhpi_error();
 }
 
-bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right, bool *is_up) {
+bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
+               bool *is_up) {
 #ifdef IUS
     /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP property. IUS
      * Docs say will return -1 if unconstrained, but with vhpiIntT being
@@ -226,7 +227,8 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
     }
 
     bool range_is_up;
-    bool error = get_range(handle, dim_idx, &m_range_left, &m_range_right, &range_is_up);
+    bool error =
+        get_range(handle, dim_idx, &m_range_left, &m_range_right, &range_is_up);
 
     if (error) {
         LOG_ERROR(
@@ -332,7 +334,8 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
     }
 
     bool range_is_up;
-    if (m_indexable && get_range(handle, 0, &m_range_left, &m_range_right, &range_is_up)) {
+    if (m_indexable &&
+        get_range(handle, 0, &m_range_left, &m_range_right, &range_is_up)) {
         m_indexable = false;
     }
 
@@ -389,7 +392,8 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
     }
 
     bool range_is_up;
-    if (m_indexable && get_range(handle, 0, &m_range_left, &m_range_right, &range_is_up)) {
+    if (m_indexable &&
+        get_range(handle, 0, &m_range_left, &m_range_right, &range_is_up)) {
         m_indexable = false;
     }
 
