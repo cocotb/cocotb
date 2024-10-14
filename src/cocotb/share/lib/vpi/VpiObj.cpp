@@ -104,10 +104,16 @@ int VpiArrayObjHdl::initialise(const std::string &name,
      *
      *    The size of "sig_t4" will be reported as 16 through the vpi interface.
      */
-    if (m_range_left > m_range_right) {
-        m_num_elems = m_range_left - m_range_right + 1;
+    iter = vpi_iterate(vpiReg, rangeHdl);
+    if (iter == NULL) {
+        m_num_elems = 0;
     } else {
-        m_num_elems = m_range_right - m_range_left + 1;
+        vpi_free_object(iter);
+        if (m_range_left > m_range_right) {
+            m_num_elems = m_range_left - m_range_right + 1;
+        } else {
+            m_num_elems = m_range_right - m_range_left + 1;
+        }
     }
 
     return GpiObjHdl::initialise(name, fq_name);
