@@ -109,6 +109,12 @@ int VpiArrayObjHdl::initialise(const std::string &name,
     } else {
         m_num_elems = m_range_right - m_range_left + 1;
     }
+    /* However, the above calculation will be incorrect for null ranges. In that
+     * case (and only that case), vpiSize will return the correct size of zero. 
+     */
+    if (vpi_get(vpiSize, hdl) < m_num_elems) {
+        m_num_elems = 0;
+    }
 
     return GpiObjHdl::initialise(name, fq_name);
 }
