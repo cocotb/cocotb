@@ -91,6 +91,7 @@ architecture impl of sample_module is
     type unsignedArrayType is array (natural range <>) of unsigned(7 downto 0);
     signal array_7_downto_4 : unsignedArrayType(7 downto 4);
     signal array_4_to_7     : unsignedArrayType(4 to 7);
+    signal array_4_downto_7 : unsignedArrayType(4 downto 7);
     signal array_3_downto_0 : unsignedArrayType(3 downto 0);
     signal array_0_to_3     : unsignedArrayType(0 to 3);
 
