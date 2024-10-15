@@ -74,7 +74,7 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl() {
 }
 
 bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
-               bool *is_up) {
+               bool *is_null) {
 #ifdef IUS
     /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP property. IUS
      * Docs say will return -1 if unconstrained, but with vhpiIntT being
@@ -107,7 +107,6 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
                     vhpi_release_handle(it);
                     vhpiIntT l_rng = vhpi_get(vhpiLeftBoundP, constraint);
                     vhpiIntT r_rng = vhpi_get(vhpiRightBoundP, constraint);
-                    vhpiIntT is_up_rng = vhpi_get(vhpiIsUpP, constraint);
 #ifdef IUS
                     if (l_rng != UNCONSTRAINED && r_rng != UNCONSTRAINED) {
 #else
@@ -116,7 +115,10 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
                         error = false;
                         *left = static_cast<int>(l_rng);
                         *right = static_cast<int>(r_rng);
-                        *is_up = static_cast<bool>(is_up_rng);
+                        if (is_null != nullptr) {
+                            *is_null = static_cast<bool>(
+                                vhpi_get(vhpiIsNullP, constraint));
+                        }
                     }
                     break;
                 }
@@ -147,8 +149,10 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
                                 vhpi_get(vhpiLeftBoundP, constraint));
                             *right = static_cast<int>(
                                 vhpi_get(vhpiRightBoundP, constraint));
-                            *is_up = static_cast<bool>(
-                                vhpi_get(vhpiIsUpP, constraint));
+                            if (is_null != nullptr) {
+                                *is_null = static_cast<bool>(
+                                    vhpi_get(vhpiIsNullP, constraint));
+                            }
                         }
                         break;
                     }
@@ -226,9 +230,9 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
         }
     }
 
-    bool range_is_up;
+    bool range_is_null;
     bool error =
-        get_range(handle, dim_idx, &m_range_left, &m_range_right, &range_is_up);
+        get_range(handle, dim_idx, &m_range_left, &m_range_right, &range_is_null);
 
     if (error) {
         LOG_ERROR(
@@ -237,13 +241,12 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
         return -1;
     }
 
-    if (!range_is_up) {
+    if (range_is_null) {
+        m_num_elems = 0;
+    } else if (m_range_left > m_range_right) {
         m_num_elems = m_range_left - m_range_right + 1;
     } else {
         m_num_elems = m_range_right - m_range_left + 1;
-    }
-    if (m_num_elems < 0) {
-        m_num_elems = 0;
     }
 
     return GpiObjHdl::initialise(name, fq_name);
@@ -333,9 +336,8 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
         }
     }
 
-    bool range_is_up;
     if (m_indexable &&
-        get_range(handle, 0, &m_range_left, &m_range_right, &range_is_up)) {
+        get_range(handle, 0, &m_range_left, &m_range_right, nullptr)) {
         m_indexable = false;
     }
 
@@ -391,9 +393,8 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
         m_value.value.enumvs = new vhpiEnumT[bufSize];
     }
 
-    bool range_is_up;
     if (m_indexable &&
-        get_range(handle, 0, &m_range_left, &m_range_right, &range_is_up)) {
+        get_range(handle, 0, &m_range_left, &m_range_right, nullptr)) {
         m_indexable = false;
     }
 
