@@ -112,9 +112,10 @@ int VpiArrayObjHdl::initialise(const std::string &name,
     /* However, the above calculation will be incorrect for null ranges. In that
      * case (and only that case), vpiSize will return the correct size of zero.
      */
-    LOG_INFO("%s bounds: [%d:%d] => size %d", name.c_str(), m_range_left, m_range_right, m_num_elems);
+    LOG_INFO("%s bounds: [%d:%d] => size %d", name.c_str(), m_range_left,
+        m_range_right, m_num_elems);
     LOG_INFO("Array %s has size %d", name.c_str(), vpi_get(vpiSize, hdl));
-    if (vpi_get(vpiSize, hdl) < m_num_elems) {
+    if (vpi_get(vpiSize, hdl) == 0) {
         m_num_elems = 0;
     }
 
