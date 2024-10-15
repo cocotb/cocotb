@@ -437,7 +437,7 @@ async def test_immediate_reentrace(dut):
 
 @cocotb.test(
     # GHDL uses the VPI, which does not have a way to infer null ranges
-    skip=SIM_NAME.startswith('ghdl'),
+    skip=SIM_NAME.startswith("ghdl"),
 )
 async def test_null_range_width(dut):
     # Normal arrays should have the same length regardless of language
