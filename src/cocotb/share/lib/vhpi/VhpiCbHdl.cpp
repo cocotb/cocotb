@@ -231,8 +231,8 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
     }
 
     bool range_is_up;
-    bool error = get_range(handle, dim_idx, &m_range_left, &m_range_right,
-                           &range_is_up);
+    bool error =
+        get_range(handle, dim_idx, &m_range_left, &m_range_right, &range_is_up);
 
     if (error) {
         LOG_ERROR(
