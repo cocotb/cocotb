@@ -74,7 +74,7 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl() {
 }
 
 bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
-               bool *is_null) {
+               bool *is_up) {
 #ifdef IUS
     /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP property. IUS
      * Docs say will return -1 if unconstrained, but with vhpiIntT being
@@ -115,9 +115,9 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
                         error = false;
                         *left = static_cast<int>(l_rng);
                         *right = static_cast<int>(r_rng);
-                        if (is_null != nullptr) {
-                            *is_null = static_cast<bool>(
-                                vhpi_get(vhpiIsNullP, constraint));
+                        if (is_up != nullptr) {
+                            *is_up = static_cast<bool>(
+                                vhpi_get(vhpiIsUpP, constraint));
                         }
                     }
                     break;
@@ -149,9 +149,9 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
                                 vhpi_get(vhpiLeftBoundP, constraint));
                             *right = static_cast<int>(
                                 vhpi_get(vhpiRightBoundP, constraint));
-                            if (is_null != nullptr) {
-                                *is_null = static_cast<bool>(
-                                    vhpi_get(vhpiIsNullP, constraint));
+                            if (is_up != nullptr) {
+                                *is_up = static_cast<bool>(
+                                    vhpi_get(vhpiIsUpP, constraint));
                             }
                         }
                         break;
@@ -230,9 +230,9 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
         }
     }
 
-    bool range_is_null;
-    bool error =
-        get_range(handle, dim_idx, &m_range_left, &m_range_right, &range_is_null);
+    bool range_is_up;
+    bool error = get_range(handle, dim_idx, &m_range_left, &m_range_right,
+                           &range_is_up);
 
     if (error) {
         LOG_ERROR(
@@ -241,12 +241,13 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
         return -1;
     }
 
-    if (range_is_null) {
-        m_num_elems = 0;
-    } else if (m_range_left > m_range_right) {
+    if (!range_is_up) {
         m_num_elems = m_range_left - m_range_right + 1;
     } else {
         m_num_elems = m_range_right - m_range_left + 1;
+    }
+    if (m_num_elems < 0) {
+        m_num_elems = 0;
     }
 
     return GpiObjHdl::initialise(name, fq_name);
