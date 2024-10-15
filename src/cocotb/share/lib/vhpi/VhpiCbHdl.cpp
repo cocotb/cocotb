@@ -247,7 +247,8 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
         m_num_elems = m_range_right - m_range_left + 1;
     }
     if (m_num_elems < 0) {
-        m_num_elems = 0;
+        LOG_DEBUG("VHPI: Null array... Delete object")
+        return -1;
     }
 
     return GpiObjHdl::initialise(name, fq_name);

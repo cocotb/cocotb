@@ -444,7 +444,11 @@ async def test_null_range_width(dut):
     assert len(dut.array_7_downto_4) == 4
     if LANGUAGE in ["vhdl"]:
         # But in VHDL, `4 downto 7` should result in a null range
-        assert len(dut.array_4_downto_7) == 0
+        try:
+            dut.array_4_downto_7
+        except AttributeError:
+            return
+        assert False, "Expected null array to be deleted"
     else:
         # Not so in (System)Verilog though
         assert len(dut.array_4_downto_7) == 4
