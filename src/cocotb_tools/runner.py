@@ -49,12 +49,13 @@ _space_re = re.compile(r"([\s])", re.ASCII)
 
 
 def _as_tcl_value(value: str) -> str:
-    # add '\' before special characters and spaces
-    value = _magic_re.sub(r"\\\1", value)
-    value = value.replace("\n", r"\n")
-    value = _space_re.sub(r"\\\1", value)
-    if value[0] == '"':
-        value = "\\" + value
+    if len(value):
+        # add '\' before special characters and spaces
+        value = _magic_re.sub(r"\\\1", value)
+        value = value.replace("\n", r"\n")
+        value = _space_re.sub(r"\\\1", value)
+        if value[0] == '"':
+            value = "\\" + value
 
     return value
 
