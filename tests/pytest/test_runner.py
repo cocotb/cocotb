@@ -11,6 +11,7 @@ import pytest
 import cocotb
 from cocotb.triggers import Timer
 from cocotb_tools.runner import get_runner
+from cocotb_tools.runner import as_tcl_value
 
 pytestmark = pytest.mark.simulator_required
 
@@ -23,6 +24,16 @@ sim = os.getenv("SIM", "icarus")
 pre_cmd_sims = {
     "questa",
 }
+
+
+# Testing function as_tcl_value
+@cocotb.test()
+async def test_empty_string(dut):
+  assert as_tcl_value("") == ""
+
+@cocotb.test()
+async def test_special_char(dut):
+  assert as_tcl_value("Test \n end\ttest\r") == "Test\\ \\n\\ end\\\ttest\\\r"
 
 
 @cocotb.test()
