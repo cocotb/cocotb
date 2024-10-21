@@ -196,6 +196,10 @@ GPI_EXPORT int gpi_get_range_left(gpi_sim_hdl gpi_sim_hdl);
 // Returns the right side of the range constraint
 GPI_EXPORT int gpi_get_range_right(gpi_sim_hdl gpi_sim_hdl);
 
+// Returns the direction of the range constraint
+// +1 for ascending, -1 for descending, 0 for no direction
+GPI_EXPORT int gpi_get_range_dir(gpi_sim_hdl gpi_sim_hdl);
+
 // Functions for querying the properties of a handle
 // Caller responsible for freeing the returned string.
 // This is all slightly verbose but it saves having to enumerate various value

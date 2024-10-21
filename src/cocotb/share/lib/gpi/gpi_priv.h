@@ -105,6 +105,10 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     }
     int get_range_left() { return m_range_left; }
     int get_range_right() { return m_range_right; }
+    int get_range_dir() {
+      LOG_DEBUG("%s has direction %d", m_name.c_str(), m_range_dir);
+      return m_range_dir;
+    }
     int get_indexable() { return m_indexable; }
 
     const std::string &get_name();
@@ -126,6 +130,7 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     bool m_indexable = false;
     int m_range_left = -1;
     int m_range_right = -1;
+    int m_range_dir = 0;
     std::string m_name = "unknown";
     std::string m_fullname = "unknown";
 

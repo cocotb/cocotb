@@ -106,8 +106,10 @@ int VpiArrayObjHdl::initialise(const std::string &name,
      */
     if (m_range_left > m_range_right) {
         m_num_elems = m_range_left - m_range_right + 1;
+        m_range_dir = -1;
     } else {
         m_num_elems = m_range_right - m_range_left + 1;
+        m_range_dir = 1;
     }
 
     return GpiObjHdl::initialise(name, fq_name);

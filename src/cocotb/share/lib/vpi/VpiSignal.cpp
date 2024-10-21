@@ -113,6 +113,7 @@ int VpiSignalObjHdl::initialise(const std::string &name,
             }
         }
     }
+    m_range_dir = m_range_left > m_range_right ? -1 : 1;
     LOG_DEBUG("VPI: %s initialized with %d elements", name.c_str(),
               m_num_elems);
     return GpiObjHdl::initialise(name, fq_name);

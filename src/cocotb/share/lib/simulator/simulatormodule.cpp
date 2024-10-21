@@ -743,8 +743,9 @@ static PyObject *get_num_elems(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
 static PyObject *get_range(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
     int rng_left = gpi_get_range_left(self->hdl);
     int rng_right = gpi_get_range_right(self->hdl);
+    int rng_dir = gpi_get_range_dir(self->hdl);
 
-    return Py_BuildValue("(i,i)", rng_left, rng_right);
+    return Py_BuildValue("(i,i,i)", rng_left, rng_right, rng_dir);
 }
 
 static PyObject *get_indexable(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
