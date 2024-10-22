@@ -21,7 +21,7 @@ endif
 ifeq ($(shell echo $(SIM) | tr A-Z a-z),verilator)
     COMPILE_ARGS += --timing
 
-# error if results file exists, because currently verilator cannot find root handle with an empty module containing $fatal (gh-2346)
+# Verilator does not call shutdown callback which cleanly ends the sim (gh-4231)
 .PHONY: verilator_override_for_this_test
 verilator_override_for_this_test:
 	-$(MAKE) all

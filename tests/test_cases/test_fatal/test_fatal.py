@@ -7,8 +7,6 @@ import cocotb
 from cocotb.triggers import Timer
 
 
-@cocotb.test(
-    _expect_sim_failure=True, skip=cocotb.SIM_NAME.lower().startswith("riviera")
-)
+@cocotb.test(_expect_sim_failure=True)
 async def test_fatal(_):
     await Timer(100, "ns")
