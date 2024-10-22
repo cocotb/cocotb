@@ -50,6 +50,8 @@ static inline bool settle_value_callbacks() {
     return cbs_called;
 }
 
+void clean_exit_cb(void*) { VerilatedVpi::callCbs(cbEndOfSimulation); }
+
 int main(int argc, char** argv) {
     bool traceOn = false;
 #if VM_TRACE_FST
@@ -96,6 +98,7 @@ int main(int argc, char** argv) {
 #endif
 
     vlog_startup_routines_bootstrap();
+    Verilated::addExitCb(clean_exit_cb, NULL);
     VerilatedVpi::callCbs(cbStartOfSimulation);
     settle_value_callbacks();
 

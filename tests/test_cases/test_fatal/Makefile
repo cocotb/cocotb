@@ -20,19 +20,13 @@ endif
 
 ifeq ($(shell echo $(SIM) | tr A-Z a-z),verilator)
     COMPILE_ARGS += --timing
+endif
 
-# Verilator does not call shutdown callback which cleanly ends the sim (gh-4231)
-.PHONY: verilator_override_for_this_test
-verilator_override_for_this_test:
-	-$(MAKE) all
-	@test ! -f $(COCOTB_RESULTS_FILE) || (echo "ERROR: $(COCOTB_RESULTS_FILE) was written by Verilator but not expected to" >&2 && exit 1)
-else
 # squash error code from simulator and ensure the cocotb test passed
 .PHONY: override_for_this_test
 override_for_this_test:
 	-$(MAKE) all
 	$(call check_for_results_file)
 	python -m cocotb_tools.combine_results &> /dev/null
-endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
