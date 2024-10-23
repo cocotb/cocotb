@@ -50,7 +50,7 @@ static inline bool settle_value_callbacks() {
     return cbs_called;
 }
 
-void clean_exit_cb(void*) { VerilatedVpi::callCbs(cbEndOfSimulation); }
+static void clean_exit_cb(void*) { VerilatedVpi::callCbs(cbEndOfSimulation); }
 
 int main(int argc, char** argv) {
     bool traceOn = false;
