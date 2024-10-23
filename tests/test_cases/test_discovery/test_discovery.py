@@ -116,7 +116,15 @@ async def test_intf_array(dut):
         assert intf._path == f"{dut._path}.intf_arr[{i}]"
 
 
-@cocotb.test()
+questa_vhpi = (
+    SIM_NAME.startswith("modelsim") and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
+)
+
+
+@cocotb.test(
+    # Questa VHPI reports vhpiIsUpP incorrectly (gh-4236)
+    expect_error=IndexError if questa_vhpi else ()
+)
 async def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
 

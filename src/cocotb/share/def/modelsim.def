@@ -100,6 +100,7 @@ mti_ScheduleWakeup64
 mti_Sensitize
 mti_SetSignalValue
 mti_SetVarValue
+mti_TickDir
 mti_TickLeft
 mti_TickLength
 mti_TickRight
