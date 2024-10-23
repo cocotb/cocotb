@@ -427,7 +427,14 @@ class Runner(ABC):
         self.env["COCOTB_RESULTS_FILE"] = str(results_xml_file)
 
         cmds: Sequence[_Command] = self._test_command()
-        self._execute(cmds, cwd=self.test_dir)
+        try:
+            self._execute(cmds, cwd=self.test_dir)
+        except subprocess.CalledProcessError as e:
+            if isinstance(self, Verilator):
+                # Verilator aborts on $fatal, but will still generate results.
+                self.log.info("Simulation failed: %d", e.returncode)
+            else:
+                raise
 
         # Only when running under pytest, check the results file here,
         # potentially raising an exception with failing testcases,
