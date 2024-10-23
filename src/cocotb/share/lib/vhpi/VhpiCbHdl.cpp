@@ -123,7 +123,7 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
                         if (left < right) {
 #else
                         if (vhpi_get(vhpiIsUpP, constraint) == 1) {
-# endif
+#endif
                             *dir = GPI_RANGE_UP;
                         } else {
                             *dir = GPI_RANGE_DOWN;

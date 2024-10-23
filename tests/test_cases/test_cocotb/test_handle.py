@@ -438,7 +438,8 @@ async def test_immediate_reentrace(dut):
 @cocotb.test(
     # GHDL uses the VPI, which does not have a way to infer null ranges
     # Questa's implementation of the VHPI sets vhpiIsUpP incorrectly
-    skip=SIM_NAME.startswith("ghdl") or (
+    skip=SIM_NAME.startswith("ghdl")
+    or (
         SIM_NAME.startswith("modelsim")
         and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
     ),
