@@ -117,8 +117,7 @@ async def test_intf_array(dut):
 
 
 questa_vhpi = (
-    SIM_NAME.startswith("modelsim")
-    and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
+    SIM_NAME.startswith("modelsim") and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
 )
 
 
