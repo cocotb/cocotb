@@ -120,7 +120,7 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
                          * so we must rely on the values of `left` and `right`
                          * to infer direction.
                          */
-                        if (left < right) {
+                        if (*left < *right) {
 #else
                         if (vhpi_get(vhpiIsUpP, constraint) == 1) {
 #endif
@@ -160,7 +160,7 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
                                 vhpi_get(vhpiRightBoundP, constraint));
 #ifdef MODELSIM
                             /* Issue #4236: See above */
-                            if (left < right) {
+                            if (*left < *right) {
 #else
                             if (vhpi_get(vhpiIsUpP, constraint) == 1) {
 #endif
