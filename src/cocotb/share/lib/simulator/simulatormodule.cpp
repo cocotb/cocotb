@@ -1285,8 +1285,11 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
     {"get_range", (PyCFunction)get_range, METH_NOARGS,
      PyDoc_STR("get_range($self)\n"
                "--\n\n"
-               "get_range() -> Tuple[int, int]\n"
-               "Get the range of elements (tuple) contained in the handle.")},
+               "get_range() -> Tuple[int, int, int]\n"
+               "Get the range of elements (tuple) contained in the handle. "
+               "The first two elements of the tuple specify the left and "
+               "right bounds, while the third specifies the direction (`1` "
+               "for ascending, `-1` for descending, and `0` for undefined).")},
     {"get_indexable", (PyCFunction)get_indexable, METH_NOARGS,
      PyDoc_STR("get_indexable($self)\n"
                "--\n\n"
