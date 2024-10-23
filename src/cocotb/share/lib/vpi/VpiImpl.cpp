@@ -474,7 +474,7 @@ GpiObjHdl *VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
         if (new_hdl == NULL) {
             int left = parent->get_range_left();
             int right = parent->get_range_right();
-            bool ascending = parent->get_range_dir() == 1;
+            bool ascending = parent->get_range_dir() == GPI_RANGE_UP;
 
             LOG_DEBUG(
                 "Unable to find handle through vpi_handle_by_index(), "

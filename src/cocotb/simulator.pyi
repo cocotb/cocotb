@@ -26,6 +26,9 @@ UNKNOWN: int
 RISING: int
 FALLING: int
 VALUE_CHANGE: int
+RANGE_UP: int
+RANGE_DOWN: int
+RANGE_NO_DIR: int
 
 class gpi_cb_hdl:
     def deregister(self) -> None: ...

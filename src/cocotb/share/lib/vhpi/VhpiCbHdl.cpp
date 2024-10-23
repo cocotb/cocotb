@@ -73,7 +73,8 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl() {
     if (vhpi_release_handle(get_handle<vhpiHandleT>())) check_vhpi_error();
 }
 
-bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right, int *dir) {
+bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
+               gpi_range_dir *dir) {
 #ifdef IUS
     /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP property. IUS
      * Docs say will return -1 if unconstrained, but with vhpiIntT being
@@ -123,9 +124,9 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right, int *dir) {
 #else
                         if (vhpi_get(vhpiIsUpP, constraint) == 1) {
 # endif
-                            *dir = 1;
+                            *dir = GPI_RANGE_UP;
                         } else {
-                            *dir = -1;
+                            *dir = GPI_RANGE_DOWN;
                         }
                     }
                     break;
@@ -163,9 +164,9 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right, int *dir) {
 #else
                             if (vhpi_get(vhpiIsUpP, constraint) == 1) {
 #endif
-                                *dir = 1;
+                                *dir = GPI_RANGE_UP;
                             } else {
-                                *dir = -1;
+                                *dir = GPI_RANGE_DOWN;
                             }
                         }
                         break;
@@ -254,7 +255,7 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
         return -1;
     }
 
-    if (m_range_dir != 1) {
+    if (m_range_dir == GPI_RANGE_DOWN) {
         m_num_elems = m_range_left - m_range_right + 1;
     } else {
         m_num_elems = m_range_right - m_range_left + 1;

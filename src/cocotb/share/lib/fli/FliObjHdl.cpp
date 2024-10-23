@@ -97,7 +97,7 @@ int FliValueObjHdl::initialise(const std::string &name,
     if (get_type() == GPI_ARRAY) {
         m_range_left = mti_TickLeft(m_val_type);
         m_range_right = mti_TickRight(m_val_type);
-        m_range_dir = mti_TickDir(m_val_type);
+        m_range_dir = (gpi_range_dir)mti_TickDir(m_val_type);
         m_num_elems = mti_TickLength(m_val_type);
         m_indexable = true;
     }
@@ -282,7 +282,7 @@ int FliLogicObjHdl::initialise(const std::string &name,
 
             m_range_left = mti_TickLeft(m_val_type);
             m_range_right = mti_TickRight(m_val_type);
-            m_range_dir = mti_TickDir(m_val_type);
+            m_range_dir = (gpi_range_dir)mti_TickDir(m_val_type);
             m_num_elems = mti_TickLength(m_val_type);
             m_indexable = true;
 
@@ -709,7 +709,7 @@ int FliStringObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {
     m_range_left = mti_TickLeft(m_val_type);
     m_range_right = mti_TickRight(m_val_type);
-    m_range_dir = mti_TickDir(m_val_type);
+    m_range_dir = (gpi_range_dir)mti_TickDir(m_val_type);
     m_num_elems = mti_TickLength(m_val_type);
     m_indexable = true;
 

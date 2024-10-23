@@ -979,6 +979,10 @@ static int add_module_constants(PyObject *simulator) {
         PyModule_AddIntConstant(simulator, "FALLING", GPI_FALLING) < 0 ||
         PyModule_AddIntConstant(simulator, "VALUE_CHANGE", GPI_VALUE_CHANGE) <
             0 ||
+        PyModule_AddIntConstant(simulator, "RANGE_UP", GPI_RANGE_UP) < 0 ||
+        PyModule_AddIntConstant(simulator, "RANGE_DOWN", GPI_RANGE_DOWN) < 0 ||
+        PyModule_AddIntConstant(simulator, "RANGE_NO_DIR", GPI_RANGE_NO_DIR) <
+            0 ||
         false) {
         return -1;
     }

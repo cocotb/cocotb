@@ -242,6 +242,12 @@ typedef enum gpi_edge {
     GPI_VALUE_CHANGE,
 } gpi_edge_e;
 
+typedef enum gpi_range_dir {
+    GPI_RANGE_DOWN = -1,
+    GPI_RANGE_NO_DIR = 0,
+    GPI_RANGE_UP = 1,
+} gpi_range_dir_e;
+
 // The callback registering functions
 GPI_EXPORT gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
                                                   void *gpi_cb_data,

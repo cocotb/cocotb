@@ -537,7 +537,9 @@ int gpi_get_range_right(gpi_sim_hdl obj_hdl) {
     return obj_hdl->get_range_right();
 }
 
-int gpi_get_range_dir(gpi_sim_hdl obj_hdl) { return obj_hdl->get_range_dir(); }
+int gpi_get_range_dir(gpi_sim_hdl obj_hdl) {
+    return static_cast<int>(obj_hdl->get_range_dir());
+}
 
 gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *),
                                               void *gpi_cb_data,
