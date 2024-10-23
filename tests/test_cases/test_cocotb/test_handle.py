@@ -437,7 +437,11 @@ async def test_immediate_reentrace(dut):
 
 @cocotb.test(
     # GHDL uses the VPI, which does not have a way to infer null ranges
-    skip=SIM_NAME.startswith("ghdl"),
+    # Questa's implementation of the VHPI sets vhpiIsUpP incorrectly
+    skip=SIM_NAME.startswith("ghdl") or (
+        SIM_NAME.startswith("modelsim")
+        and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
+    ),
 )
 async def test_null_range_width(dut):
     # Normal arrays should have the same length regardless of language
