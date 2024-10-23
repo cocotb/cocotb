@@ -114,7 +114,15 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right, int *dir) {
                         error = false;
                         *left = static_cast<int>(l_rng);
                         *right = static_cast<int>(r_rng);
+#ifdef MODELSIM
+                        /* Issue #4236: Questa's VHPI sets vhpiIsUpP incorrectly
+                         * so we must rely on the values of `left` and `right`
+                         * to infer direction.
+                         */
+                        if (left < right) {
+#else
                         if (vhpi_get(vhpiIsUpP, constraint) == 1) {
+# endif
                             *dir = 1;
                         } else {
                             *dir = -1;
@@ -149,7 +157,12 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right, int *dir) {
                                 vhpi_get(vhpiLeftBoundP, constraint));
                             *right = static_cast<int>(
                                 vhpi_get(vhpiRightBoundP, constraint));
+#ifdef MODELSIM
+                            /* Issue #4236: See above */
+                            if (left < right) {
+#else
                             if (vhpi_get(vhpiIsUpP, constraint) == 1) {
+#endif
                                 *dir = 1;
                             } else {
                                 *dir = -1;
