@@ -441,15 +441,15 @@ class Runner(ABC):
         if pytest_current_test:
             try:
                 (num_tests, num_failed) = get_results(results_xml_file)
+            except RuntimeError as e:
+                self.log.error("%s", e.args[0])
+                sys.exit(simulator_exit_code)
+            else:
                 if num_failed:
                     self.log.error(
                         "ERROR: Failed %d of %d tests.", num_failed, num_tests
                     )
-                    error_code = 1 if simulator_exit_code == 0 else simulator_exit_code
-                    sys.exit(error_code)
-            except RuntimeError as e:
-                self.log.error("%s", e.args[0])
-                sys.exit(simulator_exit_code)
+                    sys.exit(1 if simulator_exit_code == 0 else simulator_exit_code)
 
         if simulator_exit_code != 0:
             sys.exit(simulator_exit_code)
