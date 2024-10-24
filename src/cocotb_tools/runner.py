@@ -427,13 +427,32 @@ class Runner(ABC):
         self.env["COCOTB_RESULTS_FILE"] = str(results_xml_file)
 
         cmds: Sequence[_Command] = self._test_command()
-        self._execute(cmds, cwd=self.test_dir)
+        simulator_exit_code: int = 0
+        try:
+            self._execute(cmds, cwd=self.test_dir)
+        except subprocess.CalledProcessError as e:
+            # It is possible for the simulator to fail but still leave results.
+            self.log.error("Simulation failed: %d", e.returncode)
+            simulator_exit_code = e.returncode
 
         # Only when running under pytest, check the results file here,
         # potentially raising an exception with failing testcases,
         # otherwise return the results file for later analysis.
         if pytest_current_test:
-            check_results_file(results_xml_file)
+            try:
+                (num_tests, num_failed) = get_results(results_xml_file)
+            except RuntimeError as e:
+                self.log.error("%s", e.args[0])
+                sys.exit(simulator_exit_code)
+            else:
+                if num_failed:
+                    self.log.error(
+                        "ERROR: Failed %d of %d tests.", num_failed, num_tests
+                    )
+                    sys.exit(1 if simulator_exit_code == 0 else simulator_exit_code)
+
+        if simulator_exit_code != 0:
+            sys.exit(simulator_exit_code)
 
         self.log.info("Results file: %s", results_xml_file)
         return results_xml_file
@@ -488,13 +507,13 @@ def get_results(results_xml_file: Path) -> Tuple[int, int]:
         Tuple of number of tests and number of fails.
 
     Raises:
-        SystemExit: *results_xml_file* is non-existent.
+        RuntimeError: *results_xml_file* is non-existent.
     """
 
     __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
     if not results_xml_file.is_file():
-        raise SystemExit(
+        raise RuntimeError(
             f"ERROR: Simulation terminated abnormally. Results file {results_xml_file} not found."
         )
 
@@ -509,21 +528,6 @@ def get_results(results_xml_file: Path) -> Tuple[int, int]:
                 num_failed += 1
 
     return (num_tests, num_failed)
-
-
-def check_results_file(results_xml_file: Path) -> None:
-    """Raise exception if *results_xml_file* does not exist or contains failed tests.
-
-    Raises:
-        SystemExit: *results_xml_file* is non-existent or contains fails.
-    """
-
-    __tracebackhide__ = True  # Hide the traceback when using PyTest.
-
-    (num_tests, num_failed) = get_results(results_xml_file)
-
-    if num_failed:
-        raise SystemExit(f"ERROR: Failed {num_failed} of {num_tests} tests.")
 
 
 def outdated(output: Path, dependencies: Sequence[Path]) -> bool:
