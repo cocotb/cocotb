@@ -1109,7 +1109,7 @@ class TestFactory(Generic[F]):
         *,
         prefix: Optional[str] = None,
         postfix: Optional[str] = None,
-        stacklevel=1,
+        stacklevel: int = 0,
         name: Optional[str] = None,
         timeout_time: Optional[float] = None,
         timeout_unit: str = "steps",
