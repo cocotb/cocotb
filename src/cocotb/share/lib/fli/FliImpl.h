@@ -358,7 +358,7 @@ class FliStringObjHdl : public FliValueObjHdl {
  */
 class FliTimerCache {
   public:
-    FliTimerCache(FliImpl *impl) : impl(impl) {}
+    FliTimerCache(FliImpl *_impl) : impl(_impl) {}
 
     FliTimedCbHdl *get_timer(uint64_t time);
     void put_timer(FliTimedCbHdl *);

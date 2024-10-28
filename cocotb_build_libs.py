@@ -32,6 +32,7 @@ _base_warns = [
     # (See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=36750.) This flag can be
     # removed once we require later GCC versions.
     "-Wno-missing-field-initializers",
+    "-Werror=shadow",
 ]
 _ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
 _extra_cxx_compile_args = [

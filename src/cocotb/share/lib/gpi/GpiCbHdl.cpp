@@ -89,11 +89,11 @@ int GpiCbHdl::run_callback() {
     return 0;
 }
 
-int GpiCbHdl::set_user_data(int (*gpi_function)(void *), void *data) {
-    if (!gpi_function) {
+int GpiCbHdl::set_user_data(int (*_gpi_function)(void *), void *data) {
+    if (!_gpi_function) {
         LOG_ERROR("gpi_function to set_user_data is NULL");
     }
-    this->gpi_function = gpi_function;
+    this->gpi_function = _gpi_function;
     this->m_cb_data = data;
     return 0;
 }

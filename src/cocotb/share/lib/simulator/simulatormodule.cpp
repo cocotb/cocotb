@@ -55,8 +55,8 @@
 
 // callback user data
 struct PythonCallback {
-    PythonCallback(PyObject *func, PyObject *args, PyObject *kwargs)
-        : function(func), args(args), kwargs(kwargs) {
+    PythonCallback(PyObject *func, PyObject *_args, PyObject *_kwargs)
+        : function(func), args(_args), kwargs(_kwargs) {
         // All PyObject references are stolen.
         // Arguments may be NULL.
     }
