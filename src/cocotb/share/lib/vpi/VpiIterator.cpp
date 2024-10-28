@@ -35,7 +35,7 @@
 
 decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
     /* for reused lists */
-
+    // clang-format off
     // vpiInstance is the base class for module, program, interface, etc.
     std::vector<int32_t> instance_options = {
         vpiNet,
@@ -43,24 +43,36 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
         vpiReg,
         vpiRegArray,
     };
-
     std::vector<int32_t> module_options = {
         // vpiModule,            // Aldec SEGV on mixed language
         // vpiModuleArray,       // Aldec SEGV on mixed language
         // vpiIODecl,            // Don't care about these
-        vpiMemory, vpiIntegerVar, vpiRealVar, vpiRealNet, vpiStructVar,
-        vpiStructNet, vpiVariables, vpiNamedEvent, vpiNamedEventArray,
+        vpiMemory,
+        vpiIntegerVar,
+        vpiRealVar,
+        vpiRealNet,
+        vpiStructVar,
+        vpiStructNet,
+        vpiVariables,
+        vpiNamedEvent,
+        vpiNamedEventArray,
         vpiParameter,
         // vpiSpecParam,         // Don't care
         // vpiParamAssign,       // Aldec SEGV on mixed language
         // vpiDefParam,          // Don't care
-        vpiPrimitive, vpiPrimitiveArray,
+        vpiPrimitive,
+        vpiPrimitiveArray,
         // vpiContAssign,        // Don't care
-        vpiProcess,  // Don't care
-        vpiModPath, vpiTchk, vpiAttribute, vpiPort, vpiInternalScope,
+        vpiProcess,              // Don't care
+        vpiModPath,
+        vpiTchk,
+        vpiAttribute,
+        // vpiPort,              // Splits into high/lo signals; signals are still there under vpiReg/vpiNet
+        vpiInternalScope,
         // vpiInterface,         // Aldec SEGV on mixed language
         // vpiInterfaceArray,    // Aldec SEGV on mixed language
     };
+    // clang-format on
 
     // append base class vpiInstance members
     module_options.insert(module_options.begin(), instance_options.begin(),
@@ -106,10 +118,6 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
         {vpiMemory,
          {
              vpiMemoryWord,
-         }},
-        {vpiPort,
-         {
-             vpiPortBit,
          }},
         {vpiGate,
          {
