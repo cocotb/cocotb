@@ -204,7 +204,7 @@ extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void) {
 }
 
 extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
-                                             char const *const *argv) {
+                                             char const *const *_argv) {
     // Check that we are not already initialized
     if (pEventFn) {
         return 0;
@@ -287,7 +287,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     for (int i = 0; i < argc; i++) {
         // Decode, embedding non-decodable bytes using PEP-383. This can only
         // fail with MemoryError or similar.
-        auto argv_item = PyUnicode_DecodeLocale(argv[i], "surrogateescape");
+        auto argv_item = PyUnicode_DecodeLocale(_argv[i], "surrogateescape");
         if (!argv_item) {
             // LCOV_EXCL_START
             PyErr_Print();
