@@ -527,7 +527,6 @@ static PyObject *get_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self,
 static PyObject *get_signal_val_str(gpi_hdl_Object<gpi_sim_hdl> *self,
                                     PyObject *) {
     const char *result = gpi_get_signal_value_str(self->hdl);
-    // HRT local change. Xcelium does this on packages.
     if (result == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Simulator yielded a null pointer instead of string");
