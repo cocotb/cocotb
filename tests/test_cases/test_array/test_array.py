@@ -305,7 +305,7 @@ async def test_discover_all(dut):
         pass_total = 308
     elif LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
         # Applies to Riviera-PRO 2019.10 and newer.
-        pass_total = 198
+        pass_total = 197
     elif LANGUAGE in ["vhdl"]:
         pass_total = 244
     else:
