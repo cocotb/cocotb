@@ -767,6 +767,9 @@ class LogicArray(ArrayLike[Logic]):
     def __int__(self) -> int:
         return self.to_unsigned()
 
+    def __index__(self) -> int:
+        return int(self)
+
     def __and__(self, other: "LogicArray") -> "LogicArray":
         if not isinstance(other, LogicArray):
             return NotImplemented

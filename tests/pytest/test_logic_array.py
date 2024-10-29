@@ -219,6 +219,13 @@ def test_logic_array_literal_casts():
     assert int(LogicArray("0101010")) == 0b0101010
 
 
+def test_logic_array_index_casts():
+    assert bin(LogicArray("000101")) == "0b101"
+    assert hex(LogicArray("01111010")) == "0x7a"
+    with pytest.raises(ValueError):
+        bin(LogicArray("X010"))
+
+
 def test_equality():
     # fmt: off
     # cross product of all impls

@@ -246,3 +246,6 @@ class Logic:
         elif self._repr == _1:
             return 1
         raise ValueError(f"Cannot convert {self!r} to int")
+
+    def __index__(self) -> int:
+        return int(self)

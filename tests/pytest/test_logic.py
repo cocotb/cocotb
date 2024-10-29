@@ -82,6 +82,13 @@ def test_logic_str_conversions():
     assert str(Logic("Z")) == "Z"
 
 
+def test_logic_index_cast():
+    assert bin(Logic("0")) == "0b0"
+    assert bin(Logic("1")) == "0b1"
+    with pytest.raises(ValueError):
+        bin(Logic("X"))
+
+
 def test_logic_int_conversions():
     assert int(Logic("0")) == 0
     assert int(Logic("1")) == 1
