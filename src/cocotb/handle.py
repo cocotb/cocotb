@@ -180,9 +180,8 @@ class RangeableObjectMixin(SimHandleBase):
     def range(self) -> Range:
         """Return a :class:`~cocotb.types.Range` over the indexes of the array/vector."""
         left, right, direction = self._handle.get_range()
-        assert (
-            direction != simulator.RANGE_NO_DIR
-        ), "Expected range to have a direction but got none!"
+        if direction == simulator.RANGE_NO_DIR:
+            raise RuntimeError("Expected range to have a direction but got none!")
         return Range(left, "to" if direction == simulator.RANGE_UP else "downto", right)
 
     @property
