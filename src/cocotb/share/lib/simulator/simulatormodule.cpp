@@ -516,12 +516,26 @@ static PyObject *next(gpi_hdl_Object<gpi_iterator_hdl> *self) {
 static PyObject *get_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self,
                                        PyObject *) {
     const char *result = gpi_get_signal_value_binstr(self->hdl);
+    if (result == NULL) {
+        // LCOV_EXCL_START
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Simulator yielded a null pointer instead of binstr");
+        return NULL;
+        // LCOV_EXCL_STOP
+    }
     return PyUnicode_FromString(result);
 }
 
 static PyObject *get_signal_val_str(gpi_hdl_Object<gpi_sim_hdl> *self,
                                     PyObject *) {
     const char *result = gpi_get_signal_value_str(self->hdl);
+    if (result == NULL) {
+        // LCOV_EXCL_START
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Simulator yielded a null pointer instead of string");
+        return NULL;
+        // LCOV_EXCL_STOP
+    }
     return PyBytes_FromString(result);
 }
 
