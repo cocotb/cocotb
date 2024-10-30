@@ -179,19 +179,10 @@ class RangeableObjectMixin(SimHandleBase):
     @cached_property
     def range(self) -> Range:
         """Return a :class:`~cocotb.types.Range` over the indexes of the array/vector."""
-        left, right = self._handle.get_range()
-
-        # In VHDL ranges like "0 downto 10" represent "null ranges".
-        # Left is 0, right is 10, but the number of elements is 0.
-        # This logic is to detect null ranges and set the direction appropriately,
-        # at least until we can get this information directly from the GPI.
-        length = self._handle.get_num_elems()
-        if length == 0:
-            direction = "downto" if left <= right else "to"
-        else:
-            direction = "to" if left <= right else "downto"
-
-        return Range(left, direction, right)
+        left, right, direction = self._handle.get_range()
+        if direction == simulator.RANGE_NO_DIR:
+            raise RuntimeError("Expected range to have a direction but got none!")
+        return Range(left, "to" if direction == simulator.RANGE_UP else "downto", right)
 
     @property
     def left(self) -> int:

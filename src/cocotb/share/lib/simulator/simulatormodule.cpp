@@ -743,8 +743,9 @@ static PyObject *get_num_elems(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
 static PyObject *get_range(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
     int rng_left = gpi_get_range_left(self->hdl);
     int rng_right = gpi_get_range_right(self->hdl);
+    int rng_dir = gpi_get_range_dir(self->hdl);
 
-    return Py_BuildValue("(i,i)", rng_left, rng_right);
+    return Py_BuildValue("(i,i,i)", rng_left, rng_right, rng_dir);
 }
 
 static PyObject *get_indexable(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
@@ -977,6 +978,10 @@ static int add_module_constants(PyObject *simulator) {
         PyModule_AddIntConstant(simulator, "RISING", GPI_RISING) < 0 ||
         PyModule_AddIntConstant(simulator, "FALLING", GPI_FALLING) < 0 ||
         PyModule_AddIntConstant(simulator, "VALUE_CHANGE", GPI_VALUE_CHANGE) <
+            0 ||
+        PyModule_AddIntConstant(simulator, "RANGE_UP", GPI_RANGE_UP) < 0 ||
+        PyModule_AddIntConstant(simulator, "RANGE_DOWN", GPI_RANGE_DOWN) < 0 ||
+        PyModule_AddIntConstant(simulator, "RANGE_NO_DIR", GPI_RANGE_NO_DIR) <
             0 ||
         false) {
         return -1;
@@ -1284,8 +1289,11 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
     {"get_range", (PyCFunction)get_range, METH_NOARGS,
      PyDoc_STR("get_range($self)\n"
                "--\n\n"
-               "get_range() -> Tuple[int, int]\n"
-               "Get the range of elements (tuple) contained in the handle.")},
+               "get_range() -> Tuple[int, int, int]\n"
+               "Get the range of elements (tuple) contained in the handle. "
+               "The first two elements of the tuple specify the left and right "
+               "bounds, while the third specifies the direction (``1`` for "
+               "ascending, ``-1`` for descending, and ``0`` for undefined).")},
     {"get_indexable", (PyCFunction)get_indexable, METH_NOARGS,
      PyDoc_STR("get_indexable($self)\n"
                "--\n\n"

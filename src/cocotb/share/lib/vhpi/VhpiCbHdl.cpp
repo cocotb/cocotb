@@ -73,7 +73,8 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl() {
     if (vhpi_release_handle(get_handle<vhpiHandleT>())) check_vhpi_error();
 }
 
-bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
+bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
+               gpi_range_dir *dir) {
 #ifdef IUS
     /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP property. IUS
      * Docs say will return -1 if unconstrained, but with vhpiIntT being
@@ -114,6 +115,19 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
                         error = false;
                         *left = static_cast<int>(l_rng);
                         *right = static_cast<int>(r_rng);
+#ifdef MODELSIM
+                        /* Issue #4236: Questa's VHPI sets vhpiIsUpP incorrectly
+                         * so we must rely on the values of `left` and `right`
+                         * to infer direction.
+                         */
+                        if (*left < *right) {
+#else
+                        if (vhpi_get(vhpiIsUpP, constraint) == 1) {
+#endif
+                            *dir = GPI_RANGE_UP;
+                        } else {
+                            *dir = GPI_RANGE_DOWN;
+                        }
                     }
                     break;
                 }
@@ -144,6 +158,16 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
                                 vhpi_get(vhpiLeftBoundP, constraint));
                             *right = static_cast<int>(
                                 vhpi_get(vhpiRightBoundP, constraint));
+#ifdef MODELSIM
+                            /* Issue #4236: See above */
+                            if (*left < *right) {
+#else
+                            if (vhpi_get(vhpiIsUpP, constraint) == 1) {
+#endif
+                                *dir = GPI_RANGE_UP;
+                            } else {
+                                *dir = GPI_RANGE_DOWN;
+                            }
                         }
                         break;
                     }
@@ -221,7 +245,8 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
         }
     }
 
-    bool error = get_range(handle, dim_idx, &m_range_left, &m_range_right);
+    bool error =
+        get_range(handle, dim_idx, &m_range_left, &m_range_right, &m_range_dir);
 
     if (error) {
         LOG_ERROR(
@@ -230,10 +255,13 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
         return -1;
     }
 
-    if (m_range_left > m_range_right) {
+    if (m_range_dir == GPI_RANGE_DOWN) {
         m_num_elems = m_range_left - m_range_right + 1;
     } else {
         m_num_elems = m_range_right - m_range_left + 1;
+    }
+    if (m_num_elems < 0) {
+        m_num_elems = 0;
     }
 
     return GpiObjHdl::initialise(name, fq_name);
@@ -323,7 +351,8 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
         }
     }
 
-    if (m_indexable && get_range(handle, 0, &m_range_left, &m_range_right)) {
+    if (m_indexable &&
+        get_range(handle, 0, &m_range_left, &m_range_right, &m_range_dir)) {
         m_indexable = false;
     }
 
@@ -379,7 +408,8 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
         m_value.value.enumvs = new vhpiEnumT[bufSize];
     }
 
-    if (m_indexable && get_range(handle, 0, &m_range_left, &m_range_right)) {
+    if (m_indexable &&
+        get_range(handle, 0, &m_range_left, &m_range_right, &m_range_dir)) {
         m_indexable = false;
     }
 

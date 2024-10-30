@@ -433,3 +433,23 @@ async def test_immediate_reentrace(dut):
     dut.mybits_uninitialized.setimmediatevalue(2)
     await Timer(1, "ns")
     assert seen == 1
+
+
+@cocotb.test(
+    # GHDL uses the VPI, which does not have a way to infer null ranges
+    # Questa's implementation of the VHPI sets vhpiIsUpP incorrectly
+    skip=SIM_NAME.startswith("ghdl")
+    or (
+        SIM_NAME.startswith("modelsim")
+        and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
+    ),
+)
+async def test_null_range_width(dut):
+    # Normal arrays should have the same length regardless of language
+    assert len(dut.array_7_downto_4) == 4
+    if LANGUAGE in ["vhdl"]:
+        # But in VHDL, `4 downto 7` should result in a null range
+        assert len(dut.array_4_downto_7) == 0
+    else:
+        # Not so in (System)Verilog though
+        assert len(dut.array_4_downto_7) == 4

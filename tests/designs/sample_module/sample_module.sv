@@ -202,6 +202,7 @@ end
 //For testing arrays
 reg [7:0]  array_7_downto_4[7:4];
 reg [7:0]  array_4_to_7[4:7];
+reg [7:0]  array_4_downto_7[4:7];
 reg [7:0]  array_3_downto_0[3:0];
 reg [7:0]  array_0_to_3[0:3];
 reg [7:0]  array_2d[0:1][31:28];
@@ -209,6 +210,7 @@ always @(posedge stream_in_valid) begin
     // Ensure internal array is not optimized out
     array_7_downto_4[4] <= 0;
     array_4_to_7[7] <= 0;
+    array_4_downto_7[7] <= 0;
     array_3_downto_0[0] <= 0;
     array_0_to_3[3] <= 0;
     array_2d[1][28] <= 0;
