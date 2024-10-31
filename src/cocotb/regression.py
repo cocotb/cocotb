@@ -1109,6 +1109,7 @@ class TestFactory(Generic[F]):
         *,
         prefix: Optional[str] = None,
         postfix: Optional[str] = None,
+        stacklevel: int = 0,
         name: Optional[str] = None,
         timeout_time: Optional[float] = None,
         timeout_unit: str = "steps",
@@ -1139,6 +1140,8 @@ class TestFactory(Generic[F]):
 
                 .. deprecated:: 2.0
                     Use the more flexible ``name`` field instead.
+            stacklevel:
+                Which stack level to add the generated tests to. This can be used to make a custom TestFactory wrapper.
 
             name:
                 Passed as ``name`` argument to :func:`cocotb.test`.
@@ -1192,7 +1195,7 @@ class TestFactory(Generic[F]):
         else:
             postfix = ""
 
-        glbs = inspect.currentframe().f_back.f_globals
+        glbs = inspect.stack()[stacklevel][0].f_back.f_globals
 
         if "__cocotb_tests__" not in glbs:
             glbs["__cocotb_tests__"] = []
