@@ -1,6 +1,9 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import os
+import random
+import re
 import warnings
 from math import ceil
 from typing import (
@@ -20,6 +23,22 @@ from cocotb.types.range import Range
 
 if TYPE_CHECKING:  # pragma: no cover
     from typing import Literal
+
+COCOTB_RESOLVE_X: "Literal['error'] | Literal['low'] | Literal['high'] | Literal['random']" = {
+    "VALUE_ERROR": "error",
+    "ZEROS": "low",
+    "ONES": "high",
+    "RANDOM": "random",
+}[os.getenv("COCOTB_RESOLVE_X", "VALUE_ERROR")]  # type: ignore
+
+
+RE_UNRESOLVED = re.compile(r"[^01]")
+
+RESOLVE_MAP = {
+    "low": "0",
+    "high": "1",
+    "random": lambda _: random.choice("01"),
+}
 
 
 class LogicArray(ArrayLike[Logic]):
@@ -320,10 +339,23 @@ class LogicArray(ArrayLike[Logic]):
                 )
         return self._value_as_str
 
-    def _get_int(self) -> int:
+    def _get_int(
+        self,
+        resolve: "Literal['error'] | Literal['low'] | Literal['high'] | Literal['random']",
+    ) -> int:
         if self._value_as_int is None:
             # May convert list to str before converting to int.
-            self._value_as_int = int(self._get_str(), 2)
+            try:
+                self._value_as_int = int(self._get_str(), 2)
+            except ValueError as e:
+                if resolve == "error":
+                    raise e
+
+                self._value_as_int = int(
+                    RE_UNRESOLVED.sub(RESOLVE_MAP[resolve], self._get_str()),
+                    2,  # type: ignore
+                )
+
         return self._value_as_int
 
     @overload
@@ -632,7 +664,10 @@ class LogicArray(ArrayLike[Logic]):
         """
         return self.to_bytes()
 
-    def to_unsigned(self) -> int:
+    def to_unsigned(
+        self,
+        resolve: "Literal['error'] | Literal['low'] | Literal['high'] | Literal['random']" = COCOTB_RESOLVE_X,
+    ) -> int:
         """Convert the value to an :class:`int` by interpreting it using unsigned representation.
 
         The :class:`LogicArray` is treated as an arbitrary-length vector of bits
@@ -644,9 +679,12 @@ class LogicArray(ArrayLike[Logic]):
         if len(self) == 0:
             warnings.warn("Converting a LogicArray of length 0 to integer")
             return 0
-        return self._get_int()
+        return self._get_int(resolve)
 
-    def to_signed(self) -> int:
+    def to_signed(
+        self,
+        resolve: "Literal['error'] | Literal['low'] | Literal['high'] | Literal['random']" = COCOTB_RESOLVE_X,
+    ) -> int:
         """Convert the value to an :class:`int` by interpreting it using two's complement representation.
 
         The :class:`LogicArray` is treated as an arbitrary-length vector of bits
@@ -658,7 +696,7 @@ class LogicArray(ArrayLike[Logic]):
         if len(self) == 0:
             warnings.warn("Converting a LogicArray of length 0 to integer")
             return 0
-        value = self._get_int()
+        value = self._get_int(resolve)
         if value >= (1 << (len(self) - 1)):
             value -= 1 << len(self)
         return value
