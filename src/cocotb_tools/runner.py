@@ -302,6 +302,7 @@ class Runner(ABC):
         gpi_interfaces: Optional[List[str]] = None,
         testcase: Optional[Union[str, Sequence[str]]] = None,
         seed: Optional[Union[str, int]] = None,
+        elab_args: Sequence[str] = [],
         test_args: Sequence[str] = [],
         plusargs: Sequence[str] = [],
         extra_env: Mapping[str, str] = {},
@@ -390,6 +391,7 @@ class Runner(ABC):
 
         self.pre_cmd = pre_cmd
 
+        self.elab_args = list(elab_args)
         self.test_args = list(test_args)
         self.plusargs = list(plusargs)
         self.env = dict(extra_env)
@@ -1065,6 +1067,7 @@ class Nvc(Runner):
             ["nvc", f"--work={self.hdl_toplevel_library}", "-L", str(self.build_dir)]
             + self.build_args
             + ["-e", self.sim_hdl_toplevel, "--no-save", "--jit"]
+            + self.elab_args
             + self._get_parameter_options(self.parameters)
             + ["-r"]
             + self.test_args
