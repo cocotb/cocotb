@@ -49,6 +49,18 @@ _magic_re = re.compile(r"([\\{}])")
 _space_re = re.compile(r"([\s])", re.ASCII)
 
 
+MAX_PARALLEL_BUILD_JOBS: int = 4
+"""The maximum number of parallel build threads in calls to :meth:.Runner.build.
+
+If the number of CPU cores is less than this value, it uses the CPU core count.
+Set this variable to globally change the number of parallel build jobs.
+"""
+
+
+def _get_max_parallel_build_jobs() -> int:
+    return min(MAX_PARALLEL_BUILD_JOBS, multiprocessing.cpu_count())
+
+
 def _as_tcl_value(value: str) -> str:
     # add '\' before special characters and spaces
     value = _magic_re.sub(r"\\\1", value)
@@ -1302,7 +1314,7 @@ class Verilator(Runner):
             [
                 "make",
                 "-j",
-                f"{multiprocessing.cpu_count()}",
+                f"{_get_max_parallel_build_jobs()}",
                 "-C",
                 str(self.build_dir),
                 "-f",
