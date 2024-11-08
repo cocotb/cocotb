@@ -238,11 +238,10 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.028",
+        "sim-version": "v5.030",
         "os": "macos-13",
         "python-version": "3.8",
         "group": "ci",
-        "may-fail": True,  # verilator/verilator#5404
     },
     # Icarus windows from source
     {

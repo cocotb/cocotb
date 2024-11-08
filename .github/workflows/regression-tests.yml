@@ -192,8 +192,10 @@ jobs:
       # Install Verilator (MacOS)
     - name: Set up Verilator (MacOS - source)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'verilator'
+      # autoconf has a bug that unreleased master has fixed
       run: |
-        brew install autoconf automake help2man
+        brew install --HEAD autoconf
+        brew install automake help2man
         git clone https://github.com/verilator/verilator.git
         cd verilator
         git reset --hard ${{matrix.sim-version}}
