@@ -182,7 +182,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.028",  # Latest release version.
+        "sim-version": "v5.030",  # Latest release version.
         # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
         "python-version": "3.8",
@@ -242,6 +242,7 @@ ENVS = [
         "os": "macos-13",
         "python-version": "3.8",
         "group": "ci",
+        "may-fail": True,  # verilator/verilator#5404
     },
     # Icarus windows from source
     {
