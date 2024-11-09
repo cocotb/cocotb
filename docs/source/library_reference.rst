@@ -37,6 +37,8 @@ Python Test Runner
 
 .. autoclass:: Verilog
 
+.. attribute:: MAX_PARALLEL_BUILD_JOBS
+
 Simulator Runners
 -----------------
 
