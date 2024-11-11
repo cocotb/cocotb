@@ -122,6 +122,17 @@ class LogicArray(ArrayLike[Logic]):
         >>> la.to_bytes()
         b"\n"
 
+    You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
+    the builtins :func:`hex:` and :func:`bin`, respectively.
+
+    .. code-block:: python3
+
+        >>> la = LogicArray("01111010")
+        >>> hex(la)
+        0x7a
+        >>> bin(la)
+        0b1111010
+
     :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
     ``^``, and ``~``.
 
@@ -766,6 +777,9 @@ class LogicArray(ArrayLike[Logic]):
 
     def __int__(self) -> int:
         return self.to_unsigned()
+
+    def __index__(self) -> int:
+        return int(self)
 
     def __and__(self, other: "LogicArray") -> "LogicArray":
         if not isinstance(other, LogicArray):
