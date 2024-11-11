@@ -122,7 +122,7 @@ class LogicArray(ArrayLike[Logic]):
         >>> la.to_bytes()
         b"\n"
 
-    You can also convert :class:`LogicArray`\ s to hexidecimal or binary strings using
+    You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
     the builtins :func:`hex:` and :func:`bin`, respectively.
 
     .. code-block:: python3
