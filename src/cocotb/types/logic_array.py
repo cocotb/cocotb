@@ -351,7 +351,7 @@ class LogicArray(ArrayLike[Logic]):
                 if resolve == "error":
                     raise e
 
-                self._value_as_int = int(
+                return int(
                     RE_UNRESOLVED.sub(RESOLVE_MAP[resolve], self._get_str()),
                     2,  # type: ignore
                 )
