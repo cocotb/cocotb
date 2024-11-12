@@ -93,7 +93,7 @@ ENVS = [
         "sim": "icarus",
         "sim-version": "v12_0",  # The latest release version.
         "os": "ubuntu-20.04",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     {
@@ -101,7 +101,7 @@ ENVS = [
         "sim": "icarus",
         "sim-version": "master",
         "os": "ubuntu-20.04",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "experimental",
     },
     # Test GHDL on Ubuntu
@@ -110,7 +110,7 @@ ENVS = [
         "sim": "ghdl",
         "sim-version": "v2.0.0",  # GHDL 2.0 is the minimum supported version.
         "os": "ubuntu-latest",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "extended",
     },
     {
@@ -118,7 +118,7 @@ ENVS = [
         "sim": "ghdl",
         "sim-version": "v3.0.0",
         "os": "ubuntu-latest",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "extended",
     },
     {
@@ -126,7 +126,7 @@ ENVS = [
         "sim": "ghdl",
         "sim-version": "v4.1.0",  # The latest release version.
         "os": "ubuntu-latest",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     {
@@ -134,7 +134,7 @@ ENVS = [
         "sim": "ghdl",
         "sim-version": "master",
         "os": "ubuntu-latest",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "experimental",
     },
     # Test NVC on Ubuntu
@@ -143,7 +143,7 @@ ENVS = [
         "sim": "nvc",
         "sim-version": "r1.12.2",  # The latest release version.
         "os": "ubuntu-latest",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     # Test Verilator on Ubuntu
@@ -153,7 +153,7 @@ ENVS = [
         "sim-version": "v5.026",  # Latest release version.
         # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     {
@@ -162,7 +162,7 @@ ENVS = [
         "sim-version": "master",
         # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "experimental",
     },
     {
@@ -180,7 +180,7 @@ ENVS = [
         "sim-version": "v5.022",  # Minimum supported version.
         # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "extended",
     },
     # Test other OSes
@@ -190,7 +190,7 @@ ENVS = [
         "sim": "icarus",
         "sim-version": "homebrew-stable",
         "os": "macos-13",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     # Icarus homebrew (HEAD/master)
@@ -199,7 +199,7 @@ ENVS = [
         "sim": "icarus",
         "sim-version": "homebrew-HEAD",
         "os": "macos-13",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "experimental",
     },
     # Verilator macOS
@@ -208,7 +208,7 @@ ENVS = [
         "sim": "verilator",
         "sim-version": "master",
         "os": "macos-13",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "experimental",
     },
     # Verilator macOS latest release
@@ -219,7 +219,7 @@ ENVS = [
         "sim": "verilator",
         "sim-version": "v5.024",
         "os": "macos-13",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     # Icarus windows from source
@@ -254,7 +254,7 @@ ENVS = [
         "sim": "icarus",
         "sim-version": "v12_0",
         "os": "ubuntu-20.04",
-        "python-version": "3.8",
+        "python-version": "3.9",
         "cxx": "clang++",
         "cc": "clang",
         "extra-name": "clang",
@@ -267,7 +267,7 @@ ENVS = [
         "sim-version": "siemens/questa/2024.2",
         "os": "ubuntu-20.04",
         "self-hosted": True,
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     {
@@ -276,7 +276,7 @@ ENVS = [
         "sim-version": "siemens/questa/2024.2",
         "os": "ubuntu-20.04",
         "self-hosted": True,
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     {
@@ -285,7 +285,7 @@ ENVS = [
         "sim-version": "siemens/questa/2024.2",
         "os": "ubuntu-20.04",
         "self-hosted": True,
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     # Test Aldec Riviera-PRO on Ubuntu
@@ -295,7 +295,7 @@ ENVS = [
         "sim-version": "aldec/rivierapro/2024.04",
         "os": "ubuntu-20.04",
         "self-hosted": True,
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     {
@@ -304,7 +304,7 @@ ENVS = [
         "sim-version": "aldec/rivierapro/2024.04",
         "os": "ubuntu-20.04",
         "self-hosted": True,
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     # Test Cadence Xcelium on Ubuntu
@@ -314,7 +314,7 @@ ENVS = [
         "sim-version": "cadence/xcelium/2403",
         "os": "ubuntu-20.04",
         "self-hosted": True,
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
     {
@@ -323,7 +323,7 @@ ENVS = [
         "sim-version": "cadence/xcelium/2403",
         "os": "ubuntu-20.04",
         "self-hosted": True,
-        "python-version": "3.8",
+        "python-version": "3.9",
         "group": "ci",
     },
 ]
@@ -340,7 +340,7 @@ for version in questa_versions_novhpi + questa_versions_vhpi:
             "sim-version": f"siemens/questa/{version}",
             "os": "ubuntu-20.04",
             "self-hosted": True,
-            "python-version": "3.8",
+            "python-version": "3.9",
             "group": "extended",
         },
         {
@@ -349,7 +349,7 @@ for version in questa_versions_novhpi + questa_versions_vhpi:
             "sim-version": f"siemens/questa/{version}",
             "os": "ubuntu-20.04",
             "self-hosted": True,
-            "python-version": "3.8",
+            "python-version": "3.9",
             "group": "extended",
         },
     ]
@@ -361,7 +361,7 @@ for version in questa_versions_vhpi:
             "sim-version": f"siemens/questa/{version}",
             "os": "ubuntu-20.04",
             "self-hosted": True,
-            "python-version": "3.8",
+            "python-version": "3.9",
             "group": "extended",
         },
     ]
@@ -384,7 +384,7 @@ for version in riviera_versions:
             "sim-version": f"aldec/rivierapro/{version}",
             "os": "ubuntu-20.04",
             "self-hosted": True,
-            "python-version": "3.8",
+            "python-version": "3.9",
             "group": "extended",
         },
         {
@@ -393,7 +393,7 @@ for version in riviera_versions:
             "sim-version": f"aldec/rivierapro/{version}",
             "os": "ubuntu-20.04",
             "self-hosted": True,
-            "python-version": "3.8",
+            "python-version": "3.9",
             "group": "extended",
         },
     ]
@@ -408,7 +408,7 @@ for version in xcelium_versions:
             "sim-version": f"cadence/xcelium/{version}",
             "os": "ubuntu-20.04",
             "self-hosted": True,
-            "python-version": "3.8",
+            "python-version": "3.9",
             "group": "extended",
         },
         {
@@ -417,7 +417,7 @@ for version in xcelium_versions:
             "sim-version": f"cadence/xcelium/{version}",
             "os": "ubuntu-20.04",
             "self-hosted": True,
-            "python-version": "3.8",
+            "python-version": "3.9",
             "group": "extended",
         },
     ]
