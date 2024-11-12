@@ -347,9 +347,9 @@ class LogicArray(ArrayLike[Logic]):
             # May convert list to str before converting to int.
             try:
                 self._value_as_int = int(self._get_str(), 2)
-            except ValueError as e:
+            except ValueError:
                 if resolve == "error":
-                    raise e
+                    raise
 
                 return int(
                     RE_UNRESOLVED.sub(RESOLVE_MAP[resolve], self._get_str()),
