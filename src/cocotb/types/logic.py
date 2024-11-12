@@ -26,12 +26,10 @@ _literal_repr: Dict[LogicLiteralT, int] = {
     "X": _X,
     "x": _X,
     # 0
-    False: _0,
-    0: _0,
+    0: _0,  # Also `False`
     "0": _0,
     # 1
-    True: _1,
-    1: _1,
+    1: _1,  # Also `True`
     "1": _1,
     # high impedance
     "Z": _Z,
