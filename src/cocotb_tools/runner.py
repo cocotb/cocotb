@@ -84,11 +84,6 @@ def _as_sv_literal(value: str) -> str:
         raise TypeError("Can't serialize this type as an SV literal")
 
 
-def _as_tcl_string_literal(value: str) -> str:
-    """Applies proper escapes such that evaluating the output string as a TCL double quote literal will result in the input string"""
-    return value.replace("\\", "\\\\").replace('"', '\\"')
-
-
 def _shlex_join(split_command: Iterable[str]) -> str:
     """
     Return a shell-escaped string from *split_command*
@@ -1113,8 +1108,7 @@ class Riviera(Runner):
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> _Command:
         return [
-            f"+define+{name}={_as_tcl_string_literal(_as_sv_literal(value))}"
-            for name, value in defines.items()
+            f"+define+{name}={_as_sv_literal(value)}" for name, value in defines.items()
         ]
 
     @staticmethod
@@ -1377,7 +1371,8 @@ class Xcelium(Runner):
     @staticmethod
     def _get_define_options(defines: Mapping[str, object]) -> _Command:
         return [
-            f"-define {name}={_as_sv_literal(value)}" for name, value in defines.items()
+            f"-define {name}={_as_tcl_value(_as_sv_literal(value))}"
+            for name, value in defines.items()
         ]
 
     @staticmethod
