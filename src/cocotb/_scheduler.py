@@ -27,12 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Task scheduler.
-
-FIXME: We have a problem here. If a task schedules a read-only but we
-also have pending writes we have to schedule the ReadWrite callback before
-the ReadOnly (and this is invalid, at least in Modelsim).
-"""
 
 import logging
 import os
@@ -210,9 +204,6 @@ class Scheduler:
     """
 
     # Singleton events, recycled to avoid spurious object creation
-    _next_time_step = NextTimeStep()
-    _read_write = ReadWrite()
-    _read_only = ReadOnly()
     _none_outcome = _outcomes.Value(None)
 
     def __init__(self, test_complete_cb: Callable[[], None]) -> None:
@@ -221,12 +212,6 @@ class Scheduler:
         self.log = logging.getLogger("cocotb.scheduler")
         if _debug:
             self.log.setLevel(logging.DEBUG)
-
-        # A dictionary of pending tasks for each trigger,
-        # indexed by trigger
-        self._trigger2tasks: Dict[Trigger, list[Task]] = (
-            _py_compat.insertion_ordered_dict()
-        )
 
         self._scheduled_tasks: OrderedDict[Task[Any], _outcomes.Outcome] = OrderedDict()
         self._pending_threads = []
@@ -252,31 +237,6 @@ class Scheduler:
 
         # call complete cb, may schedule another test
         self._test_complete_cb()
-
-    def _sim_react(self, trigger: Trigger) -> None:
-        """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
-
-        This is often the entry point into Python from the simulator,
-        so this function is in charge of enabling profiling.
-        It must also track the current simulator time phase,
-        and start the unstarted event loop.
-        """
-        with profiling_context:
-            # TODO: move state tracking to global variable
-            # and handle this via some kind of trigger-specific Python callback
-            if trigger is self._read_write:
-                cocotb.sim_phase = cocotb.SimPhase.READ_WRITE
-            elif trigger is self._read_only:
-                cocotb.sim_phase = cocotb.SimPhase.READ_ONLY
-            else:
-                cocotb.sim_phase = cocotb.SimPhase.NORMAL
-
-            # apply inertial writes if ReadWrite
-            if trigger is self._read_write:
-                cocotb._write_scheduler.apply_scheduled_writes()
-
-            self._react(trigger)
-            self._event_loop()
 
     def _react(self, trigger: Trigger) -> None:
         """Called when a :class:`~cocotb.triggers.Trigger` fires.

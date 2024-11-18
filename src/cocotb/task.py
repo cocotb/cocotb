@@ -8,7 +8,18 @@ import os
 import warnings
 from asyncio import CancelledError, InvalidStateError
 from enum import auto
-from typing import Any, Callable, Coroutine, Generator, Generic, List, Optional, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Set,
+    TypeVar,
+    Union,
+)
 
 import cocotb
 import cocotb.triggers
@@ -285,31 +296,17 @@ class Task(Generic[ResultType]):
         self._done_callbacks.append(callback)
 
     def __await__(self) -> Generator[Any, Any, ResultType]:
-        # It's tempting to use `return (yield from self._coro)` here,
-        # which bypasses the scheduler. Unfortunately, this means that
-        # we can't keep track of the result or state of the coroutine,
-        # things which we expose in our public API. If you want the
-        # efficiency of bypassing the scheduler, remove the `@coroutine`
-        # decorator from your `async` functions.
-
-        # Hand the coroutine back to the scheduler trampoline.
         yield self
         return self.result()
 
 
-class _RunningTest(Task[None]):
-    """
-    The result of calling a :class:`cocotb.test` decorated object.
+_all_tasks: Set[Task[Any]] = set()
+_current_task: Union[Task[Any], None] = None
 
-    All this class does is change ``__name__`` to show "Test" instead of "Task".
 
-    .. versionchanged:: 1.8.0
-        Moved to the ``cocotb.task`` module.
-    """
+def all_tasks() -> Set[Task[Any]]:
+    return _all_tasks
 
-    _name: str = "Test"
 
-    def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
-        super().__init__(inst)
-        self.__name__ = f"{type(self)._name} {name}"
-        self.__qualname__ = self.__name__
+def current_task() -> Union[Task[Any], None]:
+    return _current_task
