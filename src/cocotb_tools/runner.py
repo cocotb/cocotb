@@ -331,6 +331,7 @@ class Runner(ABC):
                 If not set, run all testcases found in *test_module*.
                 Can be a comma-separated list.
             seed: A specific random seed to use.
+            elab_args: A list of elaboration arguments for the simulator.
             test_args: A list of extra arguments for the simulator.
             plusargs: 'plusargs' to set for the simulator.
             extra_env: Extra environment variables to set.
