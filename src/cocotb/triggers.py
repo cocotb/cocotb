@@ -29,6 +29,7 @@
 
 import logging
 from abc import abstractmethod
+from collections import OrderedDict
 from decimal import Decimal
 from fractions import Fraction
 from typing import (
@@ -74,50 +75,70 @@ def _pointer_str(obj: object) -> str:
 Self = TypeVar("Self", bound="Trigger")
 
 
-class Trigger(Awaitable["Trigger"]):
-    """Base class to derive from."""
+class _CallbackHandle:
+    """TODO"""
 
-    @abstractmethod
+    # TODO Add state tracking?
+
+    def __init__(self, func: Callable[[], None], trigger: "Trigger") -> None:
+        self._func = func
+        self._trigger = trigger
+
+    def cancel(self) -> None:
+        self._trigger._deregister(self)
+
+    def _run(self) -> None:
+        self._func()
+
+
+class Trigger(Awaitable["Trigger"]):
+    """TODO"""
+
     def __init__(self) -> None:
-        self._primed = False
+        self._cb_handles: OrderedDict[_CallbackHandle, None] = OrderedDict()
 
     @cached_property
     def log(self) -> logging.Logger:
         """A :class:`logging.Logger` for the trigger."""
         return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
-    def _prime(self, callback: Callable[["Trigger"], None]) -> None:
-        """Set a callback to be invoked when the trigger fires.
+    @abstractmethod
+    def _prime(self) -> None: ...
 
-        The callback will be invoked with a single argument, `self`.
+    @abstractmethod
+    def _unprime(self) -> None: ...
 
-        Sub-classes must override this, but should end by calling the base class
-        method.
+    def _register(self, cb: Callable[[], None]) -> _CallbackHandle:
+        """Registers the given callback to be called when the Trigger 'fires'.
 
-        .. warning::
-            Do not call this directly within a :term:`task`. It is intended to be used
-            only by the scheduler.
+        Calls :meth:`_prime` to register the underlying Trigger mechanism if a callback is added.
+
+        Returns:
+            A cancellable handle to the given callback.
         """
-        self._primed = True
+        res = _CallbackHandle(cb, self)
+        if not self._cb_handles:
+            self._prime()
+        self._cb_handles[res] = None
+        return res
 
-    def _unprime(self) -> None:
-        """Remove the callback, and perform cleanup if necessary.
+    def _deregister(self, cb_handle: _CallbackHandle) -> None:
+        """Prevents the given callback from being called once the Trigger fires.
 
-        After being un-primed, a Trigger may be re-primed again in the future.
-        Calling `_unprime` multiple times is allowed, subsequent calls should be
-        a no-op.
+        Calls :meth:`_unprime` to deregister the underlying Trigger mechanism if all callbacks are removed.
 
-        Sub-classes may override this, but should end by calling the base class
-        method.
-
-        .. warning::
-            Do not call this directly within a :term:`task`. It is intended to be used
-            only by the scheduler.
+        Args:
+            cb_handle: The Handle to the callback previously registered.
         """
-        self._cleanup()
+        self._cb_handles.pop(cb_handle)
+        if not self._cb_handles:
+            self._unprime()
 
-    def _cleanup(self) -> None:
-        self._primed = False
+    def _fire(self) -> None:
+        """Calls all registered callbacks when the Trigger 'fires'."""
+        while self._cb_handles:
+            cb_handle, _ = self._cb_handles.popitem(last=False)
+            cb_handle._run()
 
     def __await__(self: Self) -> Generator[Any, Any, Self]:
         yield self
@@ -125,29 +146,7 @@ class Trigger(Awaitable["Trigger"]):
 
 
 class GPITrigger(Trigger):
-    """Base Trigger class for GPI triggers.
-
-    Consumes simulation time.
-    """
-
-    def __init__(self) -> None:
-        super().__init__()
-
-        # Required to ensure documentation can build
-        # if simulator is not None:
-        #    self.cbhdl = simulator.create_callback(self)
-        # else:
-        self._cbhdl: Optional[simulator.gpi_cb_hdl] = None
-
-    def _unprime(self) -> None:
-        """Disable a primed trigger, can be re-primed."""
-        if self._cbhdl is not None:
-            self._cbhdl.deregister()
-        return super()._unprime()
-
-    def _cleanup(self) -> None:
-        self._cbhdl = None
-        return super()._cleanup()
+    """TODO"""
 
 
 class Timer(GPITrigger):
@@ -241,15 +240,27 @@ class Timer(GPITrigger):
         if self._sim_steps == 0:
             self._sim_steps = 1
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        """Register for a timed callback."""
+        self._cbhdl: Union[simulator.gpi_cb_hdl, None] = None
+
+    def _prime(self) -> None:
+        assert self._cbhdl is None
+        self._cbhdl = simulator.register_timed_callback(
+            self._sim_steps, self._fire, self
+        )
         if self._cbhdl is None:
-            self._cbhdl = simulator.register_timed_callback(
-                self._sim_steps, callback, self
-            )
-            if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {str(self)} Trigger")
-        super()._prime(callback)
+            raise RuntimeError(f"Unable set up {str(self)} Trigger")
+
+    def _unprime(self) -> None:
+        assert self._cbhdl is not None
+        self._cbhdl.deregister()
+        self._cbhdl = None
+
+    def _fire(self) -> None:
+        # start profiling
+        # set global state
+        super()._fire()
+        self._cbhdl = None
+        # end profiling
 
     def __repr__(self) -> str:
         return "<{} of {:1.2f}ps at {}>".format(
@@ -1111,3 +1122,35 @@ async def with_timeout(
         raise SimTimeoutError
     else:
         return res
+
+    # def _sim_react(self, trigger: Trigger) -> None:
+    #     """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
+
+    #     This is often the entry point into Python from the simulator,
+    #     so this function is in charge of enabling profiling.
+    #     It must also track the current simulator time phase,
+    #     and start the unstarted event loop.
+    #     """
+    #     with profiling_context:
+    #         # TODO: move state tracking to global variable
+    #         # and handle this via some kind of trigger-specific Python callback
+    #         if trigger is self._read_write:
+    #             cocotb.sim_phase = cocotb.SimPhase.READ_WRITE
+    #         elif trigger is self._read_only:
+    #             cocotb.sim_phase = cocotb.SimPhase.READ_ONLY
+    #         else:
+    #             cocotb.sim_phase = cocotb.SimPhase.NORMAL
+
+    #         # apply inertial writes if ReadWrite
+    #         if trigger is self._read_write:
+    #             cocotb._write_scheduler.apply_scheduled_writes()
+
+    #         self._react(trigger)
+    #         self._event_loop()
+
+
+_current_gpi_trigger: Union[GPITrigger, None] = None
+
+
+def current_gpi_trigger() -> Union[GPITrigger, None]:
+    return _current_gpi_trigger
