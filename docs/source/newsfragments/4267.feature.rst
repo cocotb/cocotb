@@ -1,1 +1,1 @@
-Allow user to specify elaboration arguments for NVC simulator(useful to do coverage).
+Allow user to specify elaboration arguments for NVC (e.g. to enable coverage collection).
