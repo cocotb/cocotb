@@ -26,13 +26,11 @@ pre_cmd_sims = {
 }
 
 
-# Testing function as_tcl_value
-@cocotb.test()
-async def test_empty_string(dut):
+def test_empty_string():
   assert _as_tcl_value("") == ""
 
-@cocotb.test()
-async def test_special_char(dut):
+
+def test_special_char():
   assert _as_tcl_value("Test \n end\ttest\r") == "Test\\ \\n\\ end\\\ttest\\\r"
 
 
