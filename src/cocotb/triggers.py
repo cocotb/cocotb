@@ -55,6 +55,7 @@ import cocotb.task
 from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
+from cocotb._profiling import profiling_context
 from cocotb._py_compat import cached_property
 from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
@@ -76,7 +77,7 @@ Self = TypeVar("Self", bound="Trigger")
 
 
 class _CallbackHandle:
-    """TODO"""
+    """A cancellable handle to a callback registered with a Trigger."""
 
     # TODO Add state tracking?
 
@@ -87,12 +88,12 @@ class _CallbackHandle:
     def cancel(self) -> None:
         self._trigger._deregister(self)
 
-    def _run(self) -> None:
-        self._func()
-
 
 class Trigger(Awaitable["Trigger"]):
-    """TODO"""
+    """Represents a future event which can fire.
+
+    :class:`~cocotb.task.Task` can wait on a Trigger which blocks that Task until the Trigger "fires."
+    """
 
     def __init__(self) -> None:
         self._cb_handles: OrderedDict[_CallbackHandle, None] = OrderedDict()
@@ -103,10 +104,19 @@ class Trigger(Awaitable["Trigger"]):
         return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
     @abstractmethod
-    def _prime(self) -> None: ...
+    def _prime(self) -> None:
+        """Setup the underlying trigger mechanism.
+
+        This should set ther underlying trigger mechanism to call :meth:`_fire`.
+        """
 
     @abstractmethod
-    def _unprime(self) -> None: ...
+    def _unprime(self) -> None:
+        """Disable and cleanup the underlying trigger mechanism before it fires."""
+
+    def _cleanup(self) -> None:
+        """Cleanup the underlying trigger mechanism after it fires."""
+        pass
 
     def _register(self, cb: Callable[[], None]) -> _CallbackHandle:
         """Registers the given callback to be called when the Trigger 'fires'.
@@ -117,9 +127,10 @@ class Trigger(Awaitable["Trigger"]):
             A cancellable handle to the given callback.
         """
         res = _CallbackHandle(cb, self)
+        self._cb_handles[res] = None
+        # _prime must come after adding to _cb_handles incase _prime calls _react
         if not self._cb_handles:
             self._prime()
-        self._cb_handles[res] = None
         return res
 
     def _deregister(self, cb_handle: _CallbackHandle) -> None:
@@ -134,11 +145,12 @@ class Trigger(Awaitable["Trigger"]):
         if not self._cb_handles:
             self._unprime()
 
-    def _fire(self) -> None:
+    def _react(self) -> None:
         """Calls all registered callbacks when the Trigger 'fires'."""
         while self._cb_handles:
             cb_handle, _ = self._cb_handles.popitem(last=False)
-            cb_handle._run()
+            cb_handle._func()
+        self._cleanup()
 
     def __await__(self: Self) -> Generator[Any, Any, Self]:
         yield self
@@ -147,6 +159,25 @@ class Trigger(Awaitable["Trigger"]):
 
 class GPITrigger(Trigger):
     """TODO"""
+
+    def __init__(self) -> None:
+        self._cbhdl: Union[simulator.gpi_cb_hdl, None] = None
+
+    def _react(self) -> None:
+        with profiling_context:
+            global _current_gpi_trigger
+            _current_gpi_trigger = self
+            Trigger._react()
+            cocotb._scheduler_inst._event_loop()
+
+    # _prime in subclasses should set up _cbhdl vaiable with GPI callback handle
+
+    def _unprime(self) -> None:
+        self._cbhdl.deregister()
+        self._cbhdl = None
+
+    def _cleanup(self) -> None:
+        self._cbhdl = None
 
 
 class Timer(GPITrigger):
@@ -240,27 +271,10 @@ class Timer(GPITrigger):
         if self._sim_steps == 0:
             self._sim_steps = 1
 
-        self._cbhdl: Union[simulator.gpi_cb_hdl, None] = None
-
     def _prime(self) -> None:
-        assert self._cbhdl is None
-        self._cbhdl = simulator.register_timed_callback(
-            self._sim_steps, self._fire, self
-        )
+        self._cbhdl = simulator.register_timed_callback(self._sim_steps, self._react)
         if self._cbhdl is None:
             raise RuntimeError(f"Unable set up {str(self)} Trigger")
-
-    def _unprime(self) -> None:
-        assert self._cbhdl is not None
-        self._cbhdl.deregister()
-        self._cbhdl = None
-
-    def _fire(self) -> None:
-        # start profiling
-        # set global state
-        super()._fire()
-        self._cbhdl = None
-        # end profiling
 
     def __repr__(self) -> str:
         return "<{} of {:1.2f}ps at {}>".format(
@@ -290,19 +304,20 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass)
     def __singleton_key__(cls) -> None:
         return None
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self) -> None:
+        self._cbhdl = simulator.register_readonly_callback(self._react)
+        if self._cbhdl is None:
+            raise RuntimeError(f"Unable set up {str(self)} Trigger")
+
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}()"
+
+    def __await__(self) -> Generator[Any, Any, Self]:
         if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadOnly in ReadOnly phase"
             )
-        if self._cbhdl is None:
-            self._cbhdl = simulator.register_readonly_callback(callback, self)
-            if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {str(self)} Trigger")
-        super()._prime(callback)
-
-    def __repr__(self) -> str:
-        return f"{type(self).__qualname__}()"
+        return (yield from super().__await__())
 
 
 class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
@@ -312,19 +327,28 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
     def __singleton_key__(cls) -> None:
         return None
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self) -> None:
+        self._cbhdl = simulator.register_rwsynch_callback(self._react)
+        if self._cbhdl is None:
+            raise RuntimeError(f"Unable set up {str(self)} Trigger")
+
+    def _react(self) -> None:
+        with profiling_context:
+            global _current_gpi_trigger
+            _current_gpi_trigger = self
+            cocotb._write_scheduler.apply_scheduled_writes()
+            Trigger._react()
+            cocotb._scheduler_inst._event_loop()
+
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}()"
+
+    def __await__(self) -> Generator[Any, Any, Self]:
         if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadWrite in ReadOnly phase"
             )
-        if self._cbhdl is None:
-            self._cbhdl = simulator.register_rwsynch_callback(callback, self)
-            if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {str(self)} Trigger")
-        super()._prime(callback)
-
-    def __repr__(self) -> str:
-        return f"{type(self).__qualname__}()"
+        return (yield from super().__await__())
 
 
 class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
@@ -334,12 +358,10 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetacl
     def __singleton_key__(cls) -> None:
         return None
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self) -> None:
+        self._cbhdl = simulator.register_nextstep_callback(self._react)
         if self._cbhdl is None:
-            self._cbhdl = simulator.register_nextstep_callback(callback, self)
-            if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {str(self)} Trigger")
-        super()._prime(callback)
+            raise RuntimeError(f"Unable set up {str(self)} Trigger")
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}()"
@@ -354,14 +376,12 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
         super().__init__()
         self.signal = signal
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self) -> None:
+        self._cbhdl = simulator.register_value_change_callback(
+            self.signal._handle, self._react, type(self)._edge_type
+        )
         if self._cbhdl is None:
-            self._cbhdl = simulator.register_value_change_callback(
-                self.signal._handle, callback, type(self)._edge_type, self
-            )
-            if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {str(self)} Trigger")
-        super()._prime(callback)
+            raise RuntimeError(f"Unable set up {str(self)} Trigger")
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({self.signal!r})"
@@ -459,18 +479,11 @@ class _Event(Trigger):
         super().__init__()
         self._parent = parent
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        if self._primed:
-            return
-        self._callback = callback
-        self._parent._prime_trigger(self, callback)
-        return super()._prime(callback)
+    def _prime(self) -> None:
+        self._parent._prime_trigger(self)
 
     def _unprime(self) -> None:
-        if not self._primed:
-            return
         self._parent._unprime_trigger(self)
-        return super()._unprime()
 
     def __repr__(self) -> str:
         return f"<{self._parent!r}.wait() at {_pointer_str(self)}>"
@@ -512,9 +525,7 @@ class Event:
         self.name: Optional[str] = name
         self._fired: bool = False
 
-    def _prime_trigger(
-        self, trigger: _Event, callback: Callable[[Trigger], None]
-    ) -> None:
+    def _prime_trigger(self, trigger: _Event) -> None:
         self._pending_events.append(trigger)
 
     def _unprime_trigger(self, trigger: _Event) -> None:
@@ -526,7 +537,7 @@ class Event:
 
         pending_events, self._pending_events = self._pending_events, []
         for event in pending_events:
-            event._callback(event)
+            event._react()
 
     def wait(self) -> Trigger:
         """Block the current Task until the Event is set.
@@ -573,32 +584,25 @@ class _InternalEvent(Trigger):
     def __init__(self, parent: object) -> None:
         super().__init__()
         self._parent = parent
-        self._callback: Optional[Callable[[Trigger], None]] = None
-        self.fired: bool = False
+        self._fired: bool = False
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        if self._callback is not None:
-            raise RuntimeError("This Trigger may only be awaited once")
-        self._callback = callback
-        super()._prime(callback)
-        if self.fired:
-            self._callback(self)
+    def _prime(self) -> None:
+        if self._fired:
+            self._react()
 
     def set(self) -> None:
         """Wake up coroutine blocked on this event."""
-        self.fired = True
-
-        if self._callback is not None:
-            self._callback(self)
+        self._fired = True
+        self._react()
 
     def is_set(self) -> bool:
         """Return true if event has been set."""
-        return self.fired
+        return self._fired
 
     def __await__(
         self: Self,
     ) -> Generator[Any, Any, Self]:
-        if self._primed:
+        if self._cb_handles:
             raise RuntimeError("Only one Task may await this Trigger")
         yield self
         return self
@@ -618,18 +622,11 @@ class _Lock(Trigger):
         super().__init__()
         self._parent = parent
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        if self._primed:
-            return
-        self._callback = callback
+    def _prime(self) -> None:
         self._parent._prime_lock(self)
-        return super()._prime(callback)
 
     def _unprime(self) -> None:
-        if not self._primed:
-            return
         self._parent._unprime_lock(self)
-        return super()._unprime()
 
     def __repr__(self) -> str:
         return f"<{self._parent!r}.acquire() at {_pointer_str(self)}>"
@@ -678,7 +675,7 @@ class Lock(AsyncContextManager[None]):
 
     def _acquire_and_fire(self, lock: _Lock) -> None:
         self._locked = True
-        lock._callback(lock)
+        lock._react()
 
     def _prime_lock(self, lock: _Lock) -> None:
         if not self._locked:
@@ -741,8 +738,11 @@ class NullTrigger(Trigger):
         super().__init__()
         self.name = name
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        callback(self)
+    def _prime(self) -> None:
+        self._react()
+
+    def _unprime(self) -> None:
+        pass
 
     def __repr__(self) -> str:
         if self.name is None:
@@ -767,11 +767,12 @@ class _Join(
         super().__init__()
         self._task = task
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self) -> None:
         if self._task.done():
-            callback(self)
-        else:
-            super()._prime(callback)
+            self._react()
+
+    def _unprime(self) -> None:
+        pass
 
     def __repr__(self) -> str:
         return f"Join({self._task!s})"
@@ -1122,31 +1123,6 @@ async def with_timeout(
         raise SimTimeoutError
     else:
         return res
-
-    # def _sim_react(self, trigger: Trigger) -> None:
-    #     """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
-
-    #     This is often the entry point into Python from the simulator,
-    #     so this function is in charge of enabling profiling.
-    #     It must also track the current simulator time phase,
-    #     and start the unstarted event loop.
-    #     """
-    #     with profiling_context:
-    #         # TODO: move state tracking to global variable
-    #         # and handle this via some kind of trigger-specific Python callback
-    #         if trigger is self._read_write:
-    #             cocotb.sim_phase = cocotb.SimPhase.READ_WRITE
-    #         elif trigger is self._read_only:
-    #             cocotb.sim_phase = cocotb.SimPhase.READ_ONLY
-    #         else:
-    #             cocotb.sim_phase = cocotb.SimPhase.NORMAL
-
-    #         # apply inertial writes if ReadWrite
-    #         if trigger is self._read_write:
-    #             cocotb._write_scheduler.apply_scheduled_writes()
-
-    #         self._react(trigger)
-    #         self._event_loop()
 
 
 _current_gpi_trigger: Union[GPITrigger, None] = None

@@ -4,4 +4,4 @@
 
 
 class InternalError(BaseException):
-    """An error internal to scheduler. If you see this, report a bug!"""
+    """An error in the cocotb runtime. If you see this, report a bug!"""
