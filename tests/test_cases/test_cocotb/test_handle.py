@@ -329,12 +329,12 @@ async def test_real_assign_int(dut):
     log = logging.getLogger("cocotb.test")
     timer_shortest = Timer(1, "step")
     await timer_shortest
-    log.info("Setting the value %i" % val)
+    log.info("Setting the value %i", val)
     dut.stream_in_real.value = val
     await timer_shortest
     await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = dut.stream_out_real.value
-    log.info("Read back value %d" % got)
+    log.info("Read back value %d", got)
     assert got == val, "Values didn't match!"
 
 

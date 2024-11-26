@@ -1205,12 +1205,7 @@ class TestFactory(Generic[F]):
         for index, testoptions in enumerate(
             dict(zip(self.kwargs, v)) for v in product(*self.kwargs.values())
         ):
-            name = "%s%s%s_%03d" % (
-                prefix,
-                test_func_name,
-                postfix,
-                index + 1,
-            )
+            name = f"{prefix}{test_func_name}{postfix}_{(index + 1):03d}"
             doc: str = "Automatically generated test\n\n"
 
             # preprocess testoptions to split tuples

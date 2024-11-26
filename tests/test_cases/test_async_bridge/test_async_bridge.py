@@ -69,9 +69,9 @@ async def test_time_in_bridge(dut):
     """
     await Timer(10, units="ns")
     time = get_sim_time("ns")
-    dut._log.info("Time at start of test = %d" % time)
+    dut._log.info("Time at start of test = %d", time)
     for i in range(100):
-        dut._log.info("Loop call %d" % i)
+        dut._log.info("Loop call %d", i)
         await cocotb.bridge(print_sim_time)(dut, time)
 
     time_now = get_sim_time("ns")
