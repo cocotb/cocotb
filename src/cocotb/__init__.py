@@ -464,10 +464,10 @@ def _setup_random_seed() -> None:
             _random_seed = seed
         else:
             _random_seed = int(time.time())
-        log.info("Seeding Python random module with %d" % (_random_seed))
+        log.info("Seeding Python random module with %d", _random_seed)
     else:
         _random_seed = ast.literal_eval(seed_envvar)
-        log.info("Seeding Python random module with supplied seed %d" % (_random_seed))
+        log.info("Seeding Python random module with supplied seed %d", _random_seed)
 
     random.seed(_random_seed)
 

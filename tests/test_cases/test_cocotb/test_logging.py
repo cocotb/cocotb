@@ -20,7 +20,7 @@ class StrCallCounter:
 
     def __str__(self):
         self.str_counter += 1
-        return "__str__ called %d time(s)" % self.str_counter
+        return f"__str__ called {self.str_counter} time(s)"
 
 
 @cocotb.test()

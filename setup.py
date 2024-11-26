@@ -31,12 +31,10 @@
 import sys
 
 if sys.version_info[:2] < (3, 6):  # noqa: UP036 | bug in ruff
+    version_str = ".".join(sys.version_info[:2])
     msg = [
         "This version of cocotb requires at least Python 3.6,",
-        "you are running Python %d.%d.%d."
-        % (sys.version_info[0], sys.version_info[1], sys.version_info[2]),
-    ]
-    msg += [
+        f"you are running Python {version_str}."
         "For more information please refer to the documentation at ",
         "https://cocotb.readthedocs.io.",
     ]

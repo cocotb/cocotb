@@ -38,23 +38,21 @@ async def count_edges_cycles(signal, edges):
     edge = RisingEdge(signal)
     for i in range(edges):
         await edge
-        signal._log.info("Rising edge %d detected" % i)
-    signal._log.info("Finished, returning %d" % edges)
+        signal._log.info("Rising edge %d detected", i)
+    signal._log.info("Finished, returning %d", edges)
     return edges
 
 
 async def do_single_edge_check(dut, level):
     """Do test for rising edge"""
     old_value = dut.clk.value
-    dut._log.info("Value of %s is %d" % (dut.clk._path, old_value))
+    dut._log.info("Value of %s is %d", dut.clk._path, old_value)
     assert old_value != level
     if level == 1:
         await RisingEdge(dut.clk)
     else:
         await FallingEdge(dut.clk)
-    new_value = dut.clk.value
-    dut._log.info("Value of %s is %d" % (dut.clk._path, new_value))
-    assert new_value == level, "%s not %d at end" % (dut.clk._path, level)
+    assert dut.clk.value == level
 
 
 @cocotb.test()
@@ -129,18 +127,12 @@ async def test_fork_and_monitor(dut, period=1000, clocks=6):
         result = await First(timer, task)
         assert count <= expect, "Task didn't complete in expected time"
         if result is timer:
-            dut._log.info("Count %d: Task still running" % count)
+            dut._log.info("Count %d: Task still running", count)
             count += 1
         else:
             break
-    assert count == expect, "Expected to monitor the task %d times but got %d" % (
-        expect,
-        count,
-    )
-    assert result == clocks, "Expected task to return %d but got %s" % (
-        clocks,
-        repr(result),
-    )
+    assert count == expect
+    assert result == clocks
 
 
 async def do_clock(dut, limit, period):
@@ -173,10 +165,7 @@ async def test_edge_count(dut):
     cocotb.start_soon(do_edge_count(dut, dut.clk))
 
     await Timer(clk_period * (edge_count + 1), "ns")
-    assert edge_count == edges_seen, "Correct edge count failed - saw %d, wanted %d" % (
-        edges_seen,
-        edge_count,
-    )
+    assert edge_count == edges_seen
 
 
 @cocotb.test()

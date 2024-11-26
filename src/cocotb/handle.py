@@ -825,8 +825,7 @@ class ArrayObject(
     ) -> None:
         if len(value) != len(self):
             raise ValueError(
-                "Assigning list of length %d to object %s of length %d"
-                % (len(value), self._name, len(self))
+                f"Assigning list of length {len(value)} to object {self._name} of length {len(self)}"
             )
         for elem, self_idx in zip(value, self.range):
             self[self_idx]._set_value(elem, action, schedule_write)

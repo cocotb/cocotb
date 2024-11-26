@@ -53,13 +53,13 @@ def recursive_dump(parent, log):
 @cocotb.test
 async def recursive_discovery(dut):
     """Recursively discover every single object in the design."""
-    pass_total = 275
+    expected = 275
 
     tlog = logging.getLogger("cocotb.test")
-    total = recursive_dump(dut, tlog)
+    actual = recursive_dump(dut, tlog)
 
-    assert pass_total == total, "Expected %d but found %d" % (pass_total, total)
-    tlog.info("Found a total of %d things", total)
+    assert expected == actual
+    tlog.info("Found a total of %d things", actual)
 
     assert isinstance(
         dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.LogicObject
@@ -72,9 +72,9 @@ async def recursive_discovery(dut):
 @cocotb.test
 async def recursive_discovery_boundary(dut):
     """Iteration through the boundary works but this just double checks."""
-    pass_total = 160
+    expected = 160
 
     tlog = logging.getLogger("cocotb.test")
-    total = recursive_dump(dut.i_vhdl, tlog)
-    tlog.info("Found a total of %d things", total)
-    assert total == pass_total, "Expected %d objects but found %d" % (pass_total, total)
+    actual = recursive_dump(dut.i_vhdl, tlog)
+    tlog.info("Found a total of %d things", actual)
+    assert actual == expected
