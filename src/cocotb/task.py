@@ -79,7 +79,7 @@ class Task(Generic[ResultType]):
         elif not isinstance(inst, collections.abc.Coroutine):
             raise TypeError(f"{inst} isn't a valid coroutine!")
 
-        self._coro: Coroutine = inst
+        self._coro: Coroutine[cocotb.triggers.Trigger, None, Any] = inst
         self._state: Task._State = Task._State.UNSTARTED
         self._outcome: Optional[Outcome[ResultType]] = None
         self._trigger: Optional[cocotb.triggers.Trigger] = None
@@ -154,7 +154,7 @@ class Task(Generic[ResultType]):
         )
         return repr_string
 
-    def _advance(self, outcome: Outcome) -> Any:
+    def _advance(self) -> None:
         """Advance to the next yield in this coroutine.
 
         Args:
@@ -166,13 +166,16 @@ class Task(Generic[ResultType]):
         """
         try:
             self._state = Task._State.RUNNING
-            return outcome.send(self._coro)
+            trigger = self._coro.send(None)
         except StopIteration as e:
             self._outcome = Value(e.value)
             self._state = Task._State.FINISHED
         except BaseException as e:
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
             self._state = Task._State.FINISHED
+        else:
+            # register scheduling this task to continue
+            handle = trigger._register()
 
         if self.done():
             self._do_done_callbacks()

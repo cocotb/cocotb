@@ -81,8 +81,7 @@ class _CallbackHandle:
 
     # TODO Add state tracking?
 
-    def __init__(self, func: Callable[[], None], trigger: "Trigger") -> None:
-        self._func = func
+    def __init__(self, trigger: "Trigger") -> None:
         self._trigger = trigger
 
     def cancel(self) -> None:
@@ -96,7 +95,7 @@ class Trigger(Awaitable["Trigger"]):
     """
 
     def __init__(self) -> None:
-        self._cb_handles: OrderedDict[_CallbackHandle, None] = OrderedDict()
+        self._callbacks: OrderedDict[_CallbackHandle, Callable[[], Any]] = OrderedDict()
 
     @cached_property
     def log(self) -> logging.Logger:
@@ -127,9 +126,9 @@ class Trigger(Awaitable["Trigger"]):
             A cancellable handle to the given callback.
         """
         res = _CallbackHandle(cb, self)
-        self._cb_handles[res] = None
+        self._callbacks[res] = None
         # _prime must come after adding to _cb_handles in case _prime calls _react
-        if not self._cb_handles:
+        if not self._callbacks:
             self._prime()
         return res
 
@@ -141,15 +140,15 @@ class Trigger(Awaitable["Trigger"]):
         Args:
             cb_handle: The Handle to the callback previously registered.
         """
-        self._cb_handles.pop(cb_handle)
-        if not self._cb_handles:
+        self._callbacks.pop(cb_handle)
+        if not self._callbacks:
             self._unprime()
 
     def _react(self) -> None:
         """Call all registered callbacks when the Trigger fires."""
-        while self._cb_handles:
-            cb_handle, _ = self._cb_handles.popitem(last=False)
-            cb_handle._func()
+        while self._callbacks:
+            cb_handle, _ = self._callbacks.popitem(last=False)
+            cocotb._scheduler_inst._queue(cb_handle._func)
         self._cleanup()
 
     def __await__(self: Self) -> Generator[Any, Any, Self]:
@@ -602,7 +601,7 @@ class _InternalEvent(Trigger):
     def __await__(
         self: Self,
     ) -> Generator[Any, Any, Self]:
-        if self._cb_handles:
+        if self._callbacks:
             raise RuntimeError("Only one Task may await this Trigger")
         yield self
         return self
