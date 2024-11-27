@@ -107,19 +107,19 @@ class Trigger(Awaitable["Trigger"]):
     def _prime(self) -> None:
         """Setup the underlying trigger mechanism.
 
-        This should set ther underlying trigger mechanism to call :meth:`_fire`.
+        This should set the underlying trigger mechanism to call :meth:`_fire`.
         """
 
     @abstractmethod
     def _unprime(self) -> None:
-        """Disable and cleanup the underlying trigger mechanism before it fires."""
+        """Disable and clean up the underlying trigger mechanism before it fires."""
 
     def _cleanup(self) -> None:
-        """Cleanup the underlying trigger mechanism after it fires."""
+        """Clean up the underlying trigger mechanism after it fires."""
         pass
 
     def _register(self, cb: Callable[[], None]) -> _CallbackHandle:
-        """Registers the given callback to be called when the Trigger 'fires'.
+        """Register the given callback to be called when the Trigger fires.
 
         Calls :meth:`_prime` to register the underlying Trigger mechanism if a callback is added.
 
@@ -128,13 +128,13 @@ class Trigger(Awaitable["Trigger"]):
         """
         res = _CallbackHandle(cb, self)
         self._cb_handles[res] = None
-        # _prime must come after adding to _cb_handles incase _prime calls _react
+        # _prime must come after adding to _cb_handles in case _prime calls _react
         if not self._cb_handles:
             self._prime()
         return res
 
     def _deregister(self, cb_handle: _CallbackHandle) -> None:
-        """Prevents the given callback from being called once the Trigger fires.
+        """Prevent the given callback from being called once the Trigger fires.
 
         Calls :meth:`_unprime` to deregister the underlying Trigger mechanism if all callbacks are removed.
 
@@ -146,7 +146,7 @@ class Trigger(Awaitable["Trigger"]):
             self._unprime()
 
     def _react(self) -> None:
-        """Calls all registered callbacks when the Trigger 'fires'."""
+        """Call all registered callbacks when the Trigger fires."""
         while self._cb_handles:
             cb_handle, _ = self._cb_handles.popitem(last=False)
             cb_handle._func()
@@ -170,7 +170,7 @@ class GPITrigger(Trigger):
             Trigger._react()
             cocotb._scheduler_inst._event_loop()
 
-    # _prime in subclasses should set up _cbhdl vaiable with GPI callback handle
+    # _prime in subclasses should set up _cbhdl variable with GPI callback handle
 
     def _unprime(self) -> None:
         self._cbhdl.deregister()
