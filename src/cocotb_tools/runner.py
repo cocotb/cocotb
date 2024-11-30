@@ -683,6 +683,9 @@ class Icarus(Runner):
         plusargs = self.plusargs
         if self.waves:
             plusargs += ["-fst"]
+        else:
+            # Disable waveform output
+            plusargs += ["-none"]
 
         if self.pre_cmd is not None:
             raise ValueError("WARNING: pre_cmd is not implemented for Icarus Verilog.")
