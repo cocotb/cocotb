@@ -62,12 +62,13 @@ def _get_max_parallel_build_jobs() -> int:
 
 
 def _as_tcl_value(value: str) -> str:
-    # add '\' before special characters and spaces
-    value = _magic_re.sub(r"\\\1", value)
-    value = value.replace("\n", r"\n")
-    value = _space_re.sub(r"\\\1", value)
-    if value[0] == '"':
-        value = "\\" + value
+    if len(value):
+        # add '\' before special characters and spaces
+        value = _magic_re.sub(r"\\\1", value)
+        value = value.replace("\n", r"\n")
+        value = _space_re.sub(r"\\\1", value)
+        if value[0] == '"':
+            value = "\\" + value
 
     return value
 
