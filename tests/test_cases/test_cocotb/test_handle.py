@@ -33,6 +33,35 @@ async def test_bad_attr(dut):
         assert False, "Expected AttributeError"
 
 
+# verilator extended identifier names are not regular (gh-3754)
+@cocotb.test(expect_fail=cocotb.SIM_NAME.startswith("verilator"))
+async def test_extended_identifiers(dut):
+    if cocotb.LANGUAGE == "vhdl":
+        # sample_module.vhdl
+        names = [
+            "\\weird.signal(1)\\",
+            "\\weird.signal(2)\\",
+            "\\(.*|this looks like a regex)\\",
+        ]
+    else:
+        # sample_module.sv
+        names = [
+            "weird.signal[1]",
+            "weird.signal[2]",
+            "(.*|this_looks_like_a_regex)",
+        ]
+
+    # icarus, NVC, and Xcelium can't find the signals by name unless we scan all signals
+    dut._discover_all()
+    for name in dut._keys():
+        cocotb.log.info("Found %r", name)
+
+    for name in names:
+        # extended does not do the right thing for verilog, so just put
+        # \\ in the vhdl strings above ourselves.
+        assert dut[name]._name == name
+
+
 # iverilog fails to discover string inputs (gh-2585)
 # GHDL fails to discover string input properly (gh-2584)
 @cocotb.test(

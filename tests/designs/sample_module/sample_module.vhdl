@@ -103,6 +103,11 @@ architecture impl of sample_module is
 
     signal stream_in_string_asciival_sum : natural;
 
+    -- for testing weird signal names
+    signal \weird.signal(1)\              : std_ulogic_vector(3 downto 0);
+    signal \weird.signal(2)\              : std_ulogic_vector(3 downto 0);
+    signal \(.*|this looks like a regex)\ : std_ulogic_vector(3 downto 0);
+
 begin
 
     genblk1: for i in NUM_OF_MODULES - 1 downto 0 generate
