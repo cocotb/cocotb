@@ -38,6 +38,7 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
+    NoReturn,
     Optional,
     Sequence,
     Tuple,
@@ -171,6 +172,11 @@ class SimHandleBase(ABC):
             if deffile:
                 desc += " (at " + deffile + ")"
         return type(self).__qualname__ + "(" + desc + ")"
+
+    def __bool__(self) -> NoReturn:
+        raise TypeError(
+            "This object cannot be cast to bool or used in conditionals. Use `obj is not None` check in conditionals."
+        )
 
 
 class RangeableObjectMixin(SimHandleBase):
