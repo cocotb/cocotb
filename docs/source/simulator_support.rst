@@ -48,8 +48,9 @@ See also https://github.com/steveicarus/iverilog/issues/323.
 Waveforms
 ---------
 
-Icarus Verilog can produce waveform traces in the FST format, the native format of GTKWave.
-FST traces are much smaller and more efficient to write than VCD, but requires the use of GTKWave.
+Icarus Verilog can produce waveform traces in the FST format.
+FST traces are much smaller and more efficient to write than VCD.
+They can be viewed with GTKWave or with `Surfer <https://surfer-project.org/>`_.
 
 To enable FST tracing, set :make:var:`WAVES` to ``1``.
 
@@ -127,8 +128,9 @@ To get waveforms in VCD format, add Verilator's trace option(s) to the
 To set the same options on the command line, use ``EXTRA_ARGS="--trace --trace-structs" make ...``.
 A VCD file named ``dump.vcd`` will be generated in the current directory.
 
-Verilator can produce waveform traces in the FST format, the native format of GTKWave.
-FST traces are much smaller and more efficient to write, but require the use of GTKWave.
+Verilator can produce waveform traces in the FST format.
+FST traces are much smaller and more efficient to write.
+They can be viewed with GTKWave or with `Surfer <https://surfer-project.org/>`_.
 
 To enable FST tracing, add ``--trace-fst`` to :make:var:`EXTRA_ARGS` as shown below.
 
