@@ -196,7 +196,7 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     } else if (wcscmp(interpreter_path, sys_executable) != 0) {
         // LCOV_EXCL_START
         LOG_ERROR("Unexpected sys.executable value (expected '%ls', got '%ls')",
-                  sys_executable, interpreter_path);
+                  interpreter_path, sys_executable);
         return;
         // LCOV_EXCL_STOP
     }
