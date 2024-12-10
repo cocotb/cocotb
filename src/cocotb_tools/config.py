@@ -88,6 +88,7 @@ def _help_vars_text() -> str:
         COCOTB_ATTACH             Pause time value in seconds before the simulator start
         COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
         COCOTB_LOG_LEVEL          Default logging level (default INFO)
+        COCOTB_RESOLVE_X          How to resolve X, Z, U, W, - on integer conversion
         LIBPYTHON_LOC             Absolute path to libpython
 
         Regression Manager
