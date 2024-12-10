@@ -71,43 +71,33 @@ constexpr char const *PYTHON_INTERPRETER_PATH = "/bin/python";
 
 static PyObject *pEventFn = NULL;
 
-static void set_program_name_in_venv(void) {
-    static wchar_t venv_path_w[PATH_MAX];
-
-    const char *venv_path_home = getenv("VIRTUAL_ENV");
-    if (!venv_path_home) {
+static int get_interpreter_path(wchar_t *path, size_t path_size) {
+    const char *path_c = getenv("PYTHON_BIN");
+    if (!path_c) {
         LOG_INFO(
             "Did not detect Python virtual environment. "
             "Using system-wide Python interpreter");
-        return;
+        return -1;
     }
 
-    std::string venv_path = venv_path_home;
-    venv_path.append(PYTHON_INTERPRETER_PATH);
-
-    auto venv_path_w_temp = Py_DecodeLocale(venv_path.c_str(), NULL);
-    if (venv_path_w_temp == NULL) {
+    auto path_temp = Py_DecodeLocale(path_c, NULL);
+    if (path_temp == NULL) {
         LOG_ERROR(
-            "Unable to set Python Program Name using virtual environment. "
-            "Decoding error in virtual environment path.");
-        LOG_INFO("Virtual environment path: %s", venv_path.c_str());
-        return;
+            "Unable to set Python Program Name. "
+            "Decoding error in Python executable path.");
+        LOG_INFO("Python executable path: %s", path_c);
+        return -1;
     }
-    DEFER(PyMem_RawFree(venv_path_w_temp));
+    DEFER(PyMem_RawFree(path_temp));
 
-    wcsncpy(venv_path_w, venv_path_w_temp,
-            sizeof(venv_path_w) / sizeof(wchar_t));
-    if (venv_path_w[(sizeof(venv_path_w) / sizeof(wchar_t)) - 1]) {
-        LOG_ERROR(
-            "Unable to set Python Program Name using virtual environment. "
-            "Path to interpreter too long");
-        LOG_INFO("Virtual environment path: %s", venv_path.c_str());
-        return;
+    wcsncpy(path, path_temp, path_size / sizeof(wchar_t));
+    if (path[(path_size / sizeof(wchar_t)) - 1]) {
+        LOG_ERROR("Unable to set Python Program Name. Path to interpreter too long");
+        LOG_INFO("Python executable path: %s", path_c);
+        return -1;
     }
 
-    LOG_INFO("Using Python virtual environment interpreter at %ls",
-             venv_path_w);
-    Py_SetProgramName(venv_path_w);
+    return 0;
 }
 
 /**
@@ -140,11 +130,71 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     }
 
     to_python();
+
     // must set program name to Python executable before initialization, so
     // initialization can determine path from executable
-    set_program_name_in_venv();
-    Py_Initialize(); /* Initialize the interpreter */
+
+    static wchar_t interpreter_path[PATH_MAX], sys_executable[PATH_MAX];
+
+    if (get_interpreter_path(interpreter_path, sizeof(interpreter_path))) {
+        return;
+    }
+    LOG_INFO("Using Python interpreter at %ls", interpreter_path);
+
+#if PY_VERSION_HEX >= 0x3080000
+    /* Use the new Python Initialization Configuration from Python 3.8. */
+    PyConfig config;
+    PyStatus status;
+
+    PyConfig_InitPythonConfig(&config);
+    PyConfig_SetString(&config, &config.program_name, interpreter_path);
+
+    status = PyConfig_SetArgv(&config, 1, argv);
+    if (PyStatus_Exception(status)) {
+        LOG_ERROR("Failed to set ARGV during the Python initialization");
+        if (status.err_msg != NULL) {
+            LOG_ERROR("\terror: %s", status.err_msg);
+        }
+        if (status.func != NULL) {
+            LOG_ERROR("\tfunction: %s", status.func);
+        }
+        PyConfig_Clear(&config);
+        return;
+    }
+
+    status = Py_InitializeFromConfig(&config);
+    if (PyStatus_Exception(status)) {
+        LOG_ERROR("Failed to initialize Python");
+        if (status.err_msg != NULL) {
+            LOG_ERROR("\terror: %s", status.err_msg);
+        }
+        if (status.func != NULL) {
+            LOG_ERROR("\tfunction: %s", status.func);
+        }
+        PyConfig_Clear(&config);
+        return;
+    }
+
+    PyConfig_Clear(&config);
+#else
+    /* Use the old API. */
+    Py_SetProgramName(interpreter_path);
+    Py_Initialize();
     PySys_SetArgvEx(1, argv, 0);
+#endif
+
+    /* Sanity check: make sure sys.executable was initialized to interpreter_path. */
+    PyObject *sys_executable_obj = PySys_GetObject("executable");
+    if (sys_executable_obj == NULL) {
+        LOG_ERROR("Failed to load sys.executable")
+    } else if (PyUnicode_AsWideChar(sys_executable_obj,
+                                    sys_executable,
+                                    sizeof(sys_executable)) == -1) {
+        LOG_ERROR("Failed to convert sys.executable to wide string");
+    } else if (wcscmp(interpreter_path, sys_executable) != 0) {
+        LOG_ERROR("Unexpected sys.executable value (expected '%ls', got '%ls')",
+                  sys_executable, interpreter_path);
+    }
 
     /* Swap out and return current thread state and release the GIL */
     gtstate = PyEval_SaveThread();
