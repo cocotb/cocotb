@@ -64,9 +64,9 @@ static PyObject *pEventFn = NULL;
 static int get_interpreter_path(wchar_t *path, size_t path_size) {
     const char *path_c = getenv("PYGPI_PYTHON_BIN");
     if (!path_c) {
-        LOG_INFO(
-            "Did not detect Python virtual environment. "
-            "Using system-wide Python interpreter");
+        LOG_ERROR(
+            "PYGPI_PYTHON_BIN variable not set. Can't initialize Python "
+            "interpreter!");
         return -1;
     }
 
