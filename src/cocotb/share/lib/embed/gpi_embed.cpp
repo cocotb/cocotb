@@ -185,19 +185,16 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     if (sys_executable_obj == NULL) {
         // LCOV_EXCL_START
         LOG_ERROR("Failed to load sys.executable");
-        return;
         // LCOV_EXCL_STOP
     } else if (PyUnicode_AsWideChar(sys_executable_obj, sys_executable,
                                     sizeof(sys_executable)) == -1) {
         // LCOV_EXCL_START
         LOG_ERROR("Failed to convert sys.executable to wide string");
-        return;
         // LCOV_EXCL_STOP
     } else if (wcscmp(interpreter_path, sys_executable) != 0) {
         // LCOV_EXCL_START
         LOG_ERROR("Unexpected sys.executable value (expected '%ls', got '%ls')",
                   interpreter_path, sys_executable);
-        return;
         // LCOV_EXCL_STOP
     }
 
