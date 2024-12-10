@@ -52,7 +52,7 @@ export OS
 
 # this ensures we use the same python as the one cocotb was installed into
 PYTHON_BIN ?= $(shell cocotb-config --python-bin)
-export PYTHON_BIN
+export PYGPI_PYTHON_BIN := $(PYTHON_BIN)
 
 include $(shell cocotb-config --makefiles)/Makefile.deprecations
 

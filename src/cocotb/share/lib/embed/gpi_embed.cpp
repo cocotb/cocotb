@@ -54,25 +54,15 @@
 #else
 #include <unistd.h>
 #endif
-static PyThreadState *gtstate = NULL;
+static bool python_init_called = 0;
 
 static wchar_t progname[] = L"cocotb";
 static wchar_t *argv[] = {progname};
 
-#if defined(_WIN32)
-#if defined(__MINGW32__) || defined(__CYGWIN32__)
-constexpr char const *PYTHON_INTERPRETER_PATH = "/Scripts/python";
-#else
-constexpr char const *PYTHON_INTERPRETER_PATH = "\\Scripts\\python";
-#endif
-#else
-constexpr char const *PYTHON_INTERPRETER_PATH = "/bin/python";
-#endif
-
 static PyObject *pEventFn = NULL;
 
 static int get_interpreter_path(wchar_t *path, size_t path_size) {
-    const char *path_c = getenv("PYTHON_BIN");
+    const char *path_c = getenv("PYGPI_PYTHON_BIN");
     if (!path_c) {
         LOG_INFO(
             "Did not detect Python virtual environment. "
@@ -92,7 +82,8 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
 
     wcsncpy(path, path_temp, path_size / sizeof(wchar_t));
     if (path[(path_size / sizeof(wchar_t)) - 1]) {
-        LOG_ERROR("Unable to set Python Program Name. Path to interpreter too long");
+        LOG_ERROR(
+            "Unable to set Python Program Name. Path to interpreter too long");
         LOG_INFO("Python executable path: %s", path_c);
         return -1;
     }
@@ -100,20 +91,13 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
     return 0;
 }
 
-/**
- * @name    Initialize the Python interpreter
- * @brief   Create and initialize the Python interpreter
- * @ingroup python_c_api
- *
- * GILState before calling: N/A
- *
- * GILState after calling: released
- *
- * Stores the thread state for cocotb in static variable gtstate
- */
-
+/** Initialize the Python interpreter */
 extern "C" COCOTB_EXPORT void _embed_init_python(void) {
-    assert(!gtstate);  // this function should not be called twice
+    if (python_init_called) {
+        LOG_ERROR("PyGPI library initialized again!");
+        return;
+    }
+    python_init_called = 1;
 
     const char *log_level = getenv("COCOTB_LOG_LEVEL");
     if (log_level) {
@@ -128,8 +112,6 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
             LOG_ERROR("Invalid log level: %s", log_level);
         }
     }
-
-    to_python();
 
     // must set program name to Python executable before initialization, so
     // initialization can determine path from executable
@@ -147,6 +129,8 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     PyStatus status;
 
     PyConfig_InitPythonConfig(&config);
+    DEFER(PyConfig_Clear(&config));
+
     PyConfig_SetString(&config, &config.program_name, interpreter_path);
 
     status = PyConfig_SetArgv(&config, 1, argv);
@@ -158,7 +142,6 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
         if (status.func != NULL) {
             LOG_ERROR("\tfunction: %s", status.func);
         }
-        PyConfig_Clear(&config);
         return;
     }
 
@@ -171,11 +154,8 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
         if (status.func != NULL) {
             LOG_ERROR("\tfunction: %s", status.func);
         }
-        PyConfig_Clear(&config);
         return;
     }
-
-    PyConfig_Clear(&config);
 #else
     /* Use the old API. */
     Py_SetProgramName(interpreter_path);
@@ -183,22 +163,18 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     PySys_SetArgvEx(1, argv, 0);
 #endif
 
-    /* Sanity check: make sure sys.executable was initialized to interpreter_path. */
+    /* Sanity check: make sure sys.executable was initialized to
+     * interpreter_path. */
     PyObject *sys_executable_obj = PySys_GetObject("executable");
     if (sys_executable_obj == NULL) {
         LOG_ERROR("Failed to load sys.executable")
-    } else if (PyUnicode_AsWideChar(sys_executable_obj,
-                                    sys_executable,
+    } else if (PyUnicode_AsWideChar(sys_executable_obj, sys_executable,
                                     sizeof(sys_executable)) == -1) {
         LOG_ERROR("Failed to convert sys.executable to wide string");
     } else if (wcscmp(interpreter_path, sys_executable) != 0) {
         LOG_ERROR("Unexpected sys.executable value (expected '%ls', got '%ls')",
                   sys_executable, interpreter_path);
     }
-
-    /* Swap out and return current thread state and release the GIL */
-    gtstate = PyEval_SaveThread();
-    to_simulator();
 
     /* Before returning we check if the user wants pause the simulator thread
        such that they can attach */
