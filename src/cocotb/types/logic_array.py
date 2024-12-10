@@ -26,7 +26,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class ResolveX(StrEnum):
-    """Resolution behaviors supported when converting a LogicArray to an integer.
+    """Resolution behaviors supported when converting a :class:`LogicArray` to an integer.
 
     The values ``L`` and ``H`` are always resolved to ``0`` and ``1`` respectively.
     These behaviors exist to resolve the Logic values ``X``, ``Z``, ``U``, ``W``, and ``-``
@@ -41,7 +41,7 @@ class ResolveX(StrEnum):
 
 # Must add documentation after the fact because Enum member creation is weird
 ResolveX.VALUE_ERROR.__doc__ = (
-    "Throws a ValueError if the LogicArray contains non-``0``/``1`` values."
+    "Throws a :exc:`ValueError` if the :class:`LogicArray` contains non-``0``/``1`` values."
 )
 ResolveX.ZEROS.__doc__ = "Resolves all non-``0``/``1`` values to ``0``."
 ResolveX.ONES.__doc__ = "Resolves all non-``0``/``1`` values to ``1``."
@@ -58,7 +58,7 @@ Defaults to :attr:`~ResolveX.VALUE_ERROR`.
 
 .. warning::
 
-    This exists for backwards-compatability reasons.
+    This exists for backwards-compatibility reasons.
     Using any value besides ``VALUE_ERROR`` is *not* recommended.
 """
 
