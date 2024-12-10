@@ -64,28 +64,34 @@ static PyObject *pEventFn = NULL;
 static int get_interpreter_path(wchar_t *path, size_t path_size) {
     const char *path_c = getenv("PYGPI_PYTHON_BIN");
     if (!path_c) {
+        // LCOV_EXCL_START
         LOG_ERROR(
             "PYGPI_PYTHON_BIN variable not set. Can't initialize Python "
             "interpreter!");
         return -1;
+        // LCOV_EXCL_STOP
     }
 
     auto path_temp = Py_DecodeLocale(path_c, NULL);
     if (path_temp == NULL) {
+        // LCOV_EXCL_START
         LOG_ERROR(
             "Unable to set Python Program Name. "
             "Decoding error in Python executable path.");
         LOG_INFO("Python executable path: %s", path_c);
         return -1;
+        // LCOV_EXCL_STOP
     }
     DEFER(PyMem_RawFree(path_temp));
 
     wcsncpy(path, path_temp, path_size / sizeof(wchar_t));
     if (path[(path_size / sizeof(wchar_t)) - 1]) {
+        // LCOV_EXCL_START
         LOG_ERROR(
             "Unable to set Python Program Name. Path to interpreter too long");
         LOG_INFO("Python executable path: %s", path_c);
         return -1;
+        // LCOV_EXCL_STOP
     }
 
     return 0;
@@ -94,8 +100,10 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
 /** Initialize the Python interpreter */
 extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     if (python_init_called) {
+        // LCOV_EXCL_START
         LOG_ERROR("PyGPI library initialized again!");
         return;
+        // LCOV_EXCL_STOP
     }
     python_init_called = 1;
 
@@ -109,7 +117,9 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
         if (it != logStrToLevel.end()) {
             py_gpi_logger_set_level(it->second);
         } else {
+            // LCOV_EXCL_START
             LOG_ERROR("Invalid log level: %s", log_level);
+            // LCOV_EXCL_STOP
         }
     }
 
@@ -119,7 +129,9 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     static wchar_t interpreter_path[PATH_MAX], sys_executable[PATH_MAX];
 
     if (get_interpreter_path(interpreter_path, sizeof(interpreter_path))) {
+        // LCOV_EXCL_START
         return;
+        // LCOV_EXCL_STOP
     }
     LOG_INFO("Using Python interpreter at %ls", interpreter_path);
 
@@ -135,6 +147,7 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
 
     status = PyConfig_SetArgv(&config, 1, argv);
     if (PyStatus_Exception(status)) {
+        // LCOV_EXCL_START
         LOG_ERROR("Failed to set ARGV during the Python initialization");
         if (status.err_msg != NULL) {
             LOG_ERROR("\terror: %s", status.err_msg);
@@ -143,10 +156,12 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
             LOG_ERROR("\tfunction: %s", status.func);
         }
         return;
+        // LCOV_EXCL_STOP
     }
 
     status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
+        // LCOV_EXCL_START
         LOG_ERROR("Failed to initialize Python");
         if (status.err_msg != NULL) {
             LOG_ERROR("\terror: %s", status.err_msg);
@@ -155,6 +170,7 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
             LOG_ERROR("\tfunction: %s", status.func);
         }
         return;
+        // LCOV_EXCL_STOP
     }
 #else
     /* Use the old API. */
@@ -167,13 +183,22 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
      * interpreter_path. */
     PyObject *sys_executable_obj = PySys_GetObject("executable");
     if (sys_executable_obj == NULL) {
-        LOG_ERROR("Failed to load sys.executable")
+        // LCOV_EXCL_START
+        LOG_ERROR("Failed to load sys.executable");
+        return;
+        // LCOV_EXCL_STOP
     } else if (PyUnicode_AsWideChar(sys_executable_obj, sys_executable,
                                     sizeof(sys_executable)) == -1) {
+        // LCOV_EXCL_START
         LOG_ERROR("Failed to convert sys.executable to wide string");
+        return;
+        // LCOV_EXCL_STOP
     } else if (wcscmp(interpreter_path, sys_executable) != 0) {
+        // LCOV_EXCL_START
         LOG_ERROR("Unexpected sys.executable value (expected '%ls', got '%ls')",
                   sys_executable, interpreter_path);
+        return;
+        // LCOV_EXCL_STOP
     }
 
     /* Before returning we check if the user wants pause the simulator thread
@@ -185,16 +210,20 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
            sets errno, as well as correct parses that would be sliced by the
            narrowing cast */
         if (errno == ERANGE || sleep_time >= UINT_MAX) {
+            // LCOV_EXCL_START
             LOG_ERROR("COCOTB_ATTACH only needs to be set to ~30 seconds");
             return;
+            // LCOV_EXCL_STOP
         }
         if ((errno != 0 && sleep_time == 0) || (sleep_time <= 0)) {
+            // LCOV_EXCL_START
             LOG_ERROR(
                 "COCOTB_ATTACH must be set to an integer base 10 or omitted");
             return;
+            // LCOV_EXCL_STOP
         }
 
-        LOG_ERROR(
+        LOG_INFO(
             "Waiting for %lu seconds - attach to PID %d with your debugger",
             sleep_time, getpid());
         sleep((unsigned int)sleep_time);
