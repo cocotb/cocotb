@@ -40,9 +40,7 @@ class ResolveX(StrEnum):
 
 
 # Must add documentation after the fact because Enum member creation is weird
-ResolveX.VALUE_ERROR.__doc__ = (
-    "Throws a :exc:`ValueError` if the :class:`LogicArray` contains non-``0``/``1`` values."
-)
+ResolveX.VALUE_ERROR.__doc__ = "Throws a :exc:`ValueError` if the :class:`LogicArray` contains non-``0``/``1`` values."
 ResolveX.ZEROS.__doc__ = "Resolves all non-``0``/``1`` values to ``0``."
 ResolveX.ONES.__doc__ = "Resolves all non-``0``/``1`` values to ``1``."
 ResolveX.RANDOM.__doc__ = (
