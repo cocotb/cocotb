@@ -54,76 +54,19 @@
 #else
 #include <unistd.h>
 #endif
-static PyThreadState *gtstate = NULL;
-
-static wchar_t progname[] = L"cocotb";
-static wchar_t *argv[] = {progname};
-
-#if defined(_WIN32)
-#if defined(__MINGW32__) || defined(__CYGWIN32__)
-constexpr char const *PYTHON_INTERPRETER_PATH = "/Scripts/python";
-#else
-constexpr char const *PYTHON_INTERPRETER_PATH = "\\Scripts\\python";
-#endif
-#else
-constexpr char const *PYTHON_INTERPRETER_PATH = "/bin/python";
-#endif
 
 static PyObject *pEventFn = NULL;
 
-static void set_program_name_in_venv(void) {
-    static wchar_t venv_path_w[PATH_MAX];
+static int python_init_called = 0;
 
-    const char *venv_path_home = getenv("VIRTUAL_ENV");
-    if (!venv_path_home) {
-        LOG_INFO(
-            "Did not detect Python virtual environment. "
-            "Using system-wide Python interpreter");
-        return;
-    }
-
-    std::string venv_path = venv_path_home;
-    venv_path.append(PYTHON_INTERPRETER_PATH);
-
-    auto venv_path_w_temp = Py_DecodeLocale(venv_path.c_str(), NULL);
-    if (venv_path_w_temp == NULL) {
-        LOG_ERROR(
-            "Unable to set Python Program Name using virtual environment. "
-            "Decoding error in virtual environment path.");
-        LOG_INFO("Virtual environment path: %s", venv_path.c_str());
-        return;
-    }
-    DEFER(PyMem_RawFree(venv_path_w_temp));
-
-    wcsncpy(venv_path_w, venv_path_w_temp,
-            sizeof(venv_path_w) / sizeof(wchar_t));
-    if (venv_path_w[(sizeof(venv_path_w) / sizeof(wchar_t)) - 1]) {
-        LOG_ERROR(
-            "Unable to set Python Program Name using virtual environment. "
-            "Path to interpreter too long");
-        LOG_INFO("Virtual environment path: %s", venv_path.c_str());
-        return;
-    }
-
-    LOG_INFO("Using Python virtual environment interpreter at %ls",
-             venv_path_w);
-    Py_SetProgramName(venv_path_w);
-}
-
-/**
- * @name    Initialize the Python interpreter
- * @brief   Create and initialize the Python interpreter
- * @ingroup python_c_api
- *
- * GILState before calling: N/A
- *
- * GILState after calling: released
- *
- * Stores the thread state for cocotb in static variable gtstate
+/** Initialize the Python interpreter
  */
-
 extern "C" COCOTB_EXPORT void _embed_init_python(void) {
-    assert(!gtstate);  // this function should not be called twice
+    if (python_init_called) {
+        LOG_ERROR("PyGPI library initialized again!");
+        return;
+    }
+    python_init_called = 1;
 
     const char *log_level = getenv("COCOTB_LOG_LEVEL");
     if (log_level) {
@@ -139,16 +82,41 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
         }
     }
 
-    to_python();
-    // must set program name to Python executable before initialization, so
-    // initialization can determine path from executable
-    set_program_name_in_venv();
-    Py_Initialize(); /* Initialize the interpreter */
-    PySys_SetArgvEx(1, argv, 0);
+    const char *python_bin_path = getenv("PYGPI_PYTHON_BIN");
+    if (!python_bin_path) {
+        LOG_ERROR(
+            "PYGPI_PYTHON_BIN variable not set, can't initialize Python.");
+        return;
+    }
+    LOG_INFO("Using Python interpreter at %s", python_bin_path);
 
-    /* Swap out and return current thread state and release the GIL */
-    gtstate = PyEval_SaveThread();
-    to_simulator();
+    // Intialize the Python initialization Config object.
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    DEFER(PyConfig_Clear(&config));
+
+    // Set program name to the Python interpreter at PYGPI_PYTHON_BIN.
+    // This is necessary to set up sys.path as if the PyGPI user was invoked as
+    // a Python script.
+    {
+        auto status = PyConfig_SetBytesString(&config, &config.program_name,
+                                              python_bin_path);
+        if (PyStatus_Exception(status)) {
+            LOG_ERROR("Failed to initialize Python interpreter");
+            Py_ExitStatusException(status);
+            return;
+        }
+    }
+
+    // Initialize Python from Config object.
+    {
+        auto status = Py_InitializeFromConfig(&config);
+        if (PyStatus_Exception(status)) {
+            LOG_ERROR("Failed to initialize Python interpreter");
+            Py_ExitStatusException(status);
+            return;
+        }
+    }
 
     /* Before returning we check if the user wants pause the simulator thread
        such that they can attach */
