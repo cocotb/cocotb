@@ -100,8 +100,8 @@ else:
             return res
 
 
-# inheriting from (str, Enum) was broken in 3.12 and StrEnum must be used
-if sys.version_info >= (3, 12):
+# inheriting from (str, Enum) was broken in 3.11 and StrEnum must be used
+if sys.version_info >= (3, 11):
     from enum import StrEnum
 else:
     from enum import Enum
