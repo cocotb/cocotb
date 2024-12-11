@@ -50,7 +50,21 @@ static inline bool settle_value_callbacks() {
     return cbs_called;
 }
 
-static void clean_exit_cb(void*) { VerilatedVpi::callCbs(cbEndOfSimulation); }
+static void clean_exit_cb(void* _tfp) {
+    VerilatedVpi::callCbs(cbEndOfSimulation);
+#if VM_TRACE
+#if VM_TRACE_FST
+    VerilatedFstC* tfp = (VerilatedFstC*)_tfp;
+#else
+    VerilatedVcdC* tfp = (VerilatedVcdC*)_tfp;
+#endif
+    if (tfp) {
+        tfp->close();
+    }
+#else
+    (void)_tfp;
+#endif
+}
 
 int main(int argc, char** argv) {
     bool traceOn = false;
@@ -103,11 +117,6 @@ int main(int argc, char** argv) {
     Verilated::internalsDump();
 #endif
 
-    vlog_startup_routines_bootstrap();
-    Verilated::addExitCb(clean_exit_cb, NULL);
-    VerilatedVpi::callCbs(cbStartOfSimulation);
-    settle_value_callbacks();
-
 #if VM_TRACE
 #if VM_TRACE_FST
     std::unique_ptr<VerilatedFstC> tfp(new VerilatedFstC);
@@ -121,6 +130,15 @@ int main(int argc, char** argv) {
         tfp->open(traceFile);
     }
 #endif
+
+    vlog_startup_routines_bootstrap();
+#if VM_TRACE
+    Verilated::addExitCb(clean_exit_cb, traceOn ? tfp.get() : NULL);
+#else
+    Verilated::addExitCb(clean_exit_cb, NULL);
+#endif
+    VerilatedVpi::callCbs(cbStartOfSimulation);
+    settle_value_callbacks();
 
     while (!Verilated::gotFinish()) {
         do {
