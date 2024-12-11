@@ -4,25 +4,30 @@
 import collections.abc
 import inspect
 import logging
-import os
 import warnings
 from asyncio import CancelledError, InvalidStateError
 from enum import auto
-from typing import Any, Callable, Coroutine, Generator, Generic, List, Optional, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Set,
+    TypeVar,
+    Union,
+)
 
 import cocotb
 import cocotb.triggers
-from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
 
 #: Task result type
 ResultType = TypeVar("ResultType")
-
-# Sadly the Python standard logging module is very slow so it's better not to
-# make any calls by testing a boolean flag first
-_debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
 class Task(Generic[ResultType]):
@@ -68,7 +73,7 @@ class Task(Generic[ResultType]):
         elif not isinstance(inst, collections.abc.Coroutine):
             raise TypeError(f"{inst} isn't a valid coroutine!")
 
-        self._coro: Coroutine = inst
+        self._coro: Coroutine[cocotb.triggers.Trigger, None, Any] = inst
         self._state: Task._State = Task._State.UNSTARTED
         self._outcome: Optional[Outcome[ResultType]] = None
         self._trigger: Optional[cocotb.triggers.Trigger] = None
@@ -77,6 +82,8 @@ class Task(Generic[ResultType]):
 
         self._task_id = self._id_count
         type(self)._id_count += 1
+        _all_tasks.add(self)
+
         self.__name__ = f"{type(self)._name} {self._task_id}"
         self.__qualname__ = self.__name__
 
@@ -141,7 +148,7 @@ class Task(Generic[ResultType]):
         )
         return repr_string
 
-    def _advance(self, outcome: Outcome) -> Any:
+    def _advance(self) -> None:
         """Advance to the next yield in this coroutine.
 
         Args:
@@ -153,58 +160,46 @@ class Task(Generic[ResultType]):
         """
         try:
             self._state = Task._State.RUNNING
-            return outcome.send(self._coro)
+            trigger = self._coro.send(None)
         except StopIteration as e:
             self._outcome = Value(e.value)
             self._state = Task._State.FINISHED
         except BaseException as e:
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
             self._state = Task._State.FINISHED
+        else:
+            # register scheduling this task to continue
+            handle = trigger._register()
 
         if self.done():
             self._do_done_callbacks()
-
-    def kill(self) -> None:
-        """Kill a coroutine."""
-        if self.done():
-            # already finished, nothing to kill
-            return
-
-        if _debug:
-            self.log.debug("kill() called on coroutine")
-        # todo: probably better to throw an exception for anyone waiting on the coroutine
-        self._outcome = Value(None)
-        cocotb._scheduler_inst._unschedule(self)
-
-        # Close coroutine so there is no RuntimeWarning that it was never awaited
-        self._coro.close()
-
-        self._state = Task._State.FINISHED
-        self._do_done_callbacks()
 
     def _do_done_callbacks(self) -> None:
         for callback in self._done_callbacks:
             callback(self)
 
-    @deprecated(
-        "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used.`"
-    )
-    def join(self) -> "cocotb.triggers._Join[ResultType]":
-        """Wait for the task to complete.
+    # @deprecated(
+    #     "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used.`"
+    # )
+    # def join(self) -> "cocotb.triggers._Join[ResultType]":
+    #     """Wait for the task to complete.
 
-        Returns:
-            A :class:`~cocotb.triggers.Join` trigger which, if awaited, will block until the given Task completes.
+    #     Returns:
+    #         A :class:`~cocotb.triggers.Join` trigger which, if awaited, will block until the given Task completes.
 
-        .. code-block:: python3
+    #     .. code-block:: python3
 
-            my_task = cocotb.start_soon(my_coro())
-            await my_task.join()
-            # "my_task" is done here
+    #         my_task = cocotb.start_soon(my_coro())
+    #         await my_task.join()
+    #         # "my_task" is done here
 
-        .. deprecated:: 2.0
+    #     .. deprecated:: 2.0
 
-            Using ``task`` directly is prefered to ``task.join()`` in all situations where the latter could be used.
-        """
+    #         Using ``task`` directly is prefered to ``task.join()`` in all situations where the latter could be used.
+    #     """
+
+    @cached_property
+    def _join(self) -> cocotb.triggers.Trigger:
         return cocotb.triggers._Join(self)
 
     def cancel(self, msg: Optional[str] = None) -> None:
@@ -285,31 +280,109 @@ class Task(Generic[ResultType]):
         self._done_callbacks.append(callback)
 
     def __await__(self) -> Generator[Any, Any, ResultType]:
-        # It's tempting to use `return (yield from self._coro)` here,
-        # which bypasses the scheduler. Unfortunately, this means that
-        # we can't keep track of the result or state of the coroutine,
-        # things which we expose in our public API. If you want the
-        # efficiency of bypassing the scheduler, remove the `@coroutine`
-        # decorator from your `async` functions.
-
-        # Hand the coroutine back to the scheduler trampoline.
-        yield self
+        yield self._join
         return self.result()
 
 
-class _RunningTest(Task[None]):
-    """
-    The result of calling a :class:`cocotb.test` decorated object.
+_all_tasks: Set[Task[Any]] = set()
+_current_task: Union[Task[Any], None] = None
 
-    All this class does is change ``__name__`` to show "Test" instead of "Task".
 
-    .. versionchanged:: 1.8.0
-        Moved to the ``cocotb.task`` module.
-    """
+def all_tasks() -> Set[Task[Any]]:
+    return _all_tasks
 
-    _name: str = "Test"
 
-    def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
-        super().__init__(inst)
-        self.__name__ = f"{type(self)._name} {name}"
-        self.__qualname__ = self.__name__
+def current_task() -> Union[Task[Any], None]:
+    return _current_task
+
+    # if task.done():
+    #     if _debug:
+    #         self.log.debug(f"{task} completed with {task._outcome}")
+    #     assert result is None
+    #     self._unschedule(task)
+
+    # # Don't handle the result if we're shutting down
+    # if self._terminate:
+    #     return
+
+    # if not task.done():
+    #     if _debug:
+    #         self.log.debug(f"{task!r} yielded {result} ({cocotb.sim_phase})")
+    #     try:
+    #         result = self._trigger_from_any(result)
+    #     except TypeError as exc:
+    #         # restart this task with an exception object telling it that
+    #         # it wasn't allowed to yield that
+    #         self._schedule_task(task, _outcomes.Error(exc))
+    #     else:
+    #         self._schedule_task_upon(task, result)
+
+    # def _react(self, trigger: Trigger) -> None:
+    #     """Called when a :class:`~cocotb.triggers.Trigger` fires.
+
+    #     Finds all Tasks waiting on the Trigger that fired and queues them.
+    #     """
+    #     if _debug:
+    #         self.log.debug(f"Trigger fired: {trigger}")
+
+    #     # find all tasks waiting on trigger that fired
+    #     try:
+    #         scheduling = self._trigger2tasks.pop(trigger)
+    #     except KeyError:
+    #         # GPI triggers should only be ever pending if there is an
+    #         # associated task waiting on that trigger, otherwise it would
+    #         # have been unprimed already
+    #         if isinstance(trigger, GPITrigger):
+    #             self.log.critical(f"No tasks waiting on trigger that fired: {trigger}")
+    #             trigger.log.info("I'm the culprit")
+    #         # For Python triggers this isn't actually an error - we might do
+    #         # event.set() without knowing whether any tasks are actually
+    #         # waiting on this event, for example
+    #         elif _debug:
+    #             self.log.debug(f"No tasks waiting on trigger that fired: {trigger}")
+    #         return
+
+    #     if _debug:
+    #         debugstr = "\n\t".join([str(task) for task in scheduling])
+    #         if len(scheduling) > 0:
+    #             debugstr = "\n\t" + debugstr
+    #         self.log.debug(
+    #             f"{len(scheduling)} pending tasks for trigger {trigger}{debugstr}"
+    #         )
+
+    #     # queue all tasks to wake up
+    #     for task in scheduling:
+    #         # unset trigger
+    #         task._trigger = None
+    #         self._schedule_task(task)
+
+    #     # cleanup trigger
+    #     trigger._cleanup()
+
+    # def _schedule_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
+    #     """Schedule `task` to be resumed when `trigger` fires."""
+    #     # TODO Move this all into Task
+    #     task._trigger = trigger
+    #     task._state = Task._State.PENDING
+
+    #     trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
+    #     trigger_tasks.append(task)
+
+    #     if not trigger._primed:
+    #         if trigger_tasks != [task]:
+    #             # should never happen
+    #             raise InternalError("More than one task waiting on an unprimed trigger")
+
+    #         try:
+    #             # TODO maybe associate the react method with the trigger object so
+    #             # we don't have to do a type check here.
+    #             if isinstance(trigger, GPITrigger):
+    #                 trigger._prime(self._sim_react)
+    #             else:
+    #                 trigger._prime(self._react)
+    #         except Exception as e:
+    #             # discard the trigger we associated, it will never fire
+    #             self._trigger2tasks.pop(trigger)
+
+    #             # replace it with a new trigger that throws back the exception
+    #             self._schedule_task(task, outcome=_outcomes.Error(e))
