@@ -4,7 +4,6 @@
 import collections.abc
 import inspect
 import logging
-import os
 import warnings
 from asyncio import CancelledError, InvalidStateError
 from enum import auto
@@ -23,17 +22,12 @@ from typing import (
 
 import cocotb
 import cocotb.triggers
-from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
 
 #: Task result type
 ResultType = TypeVar("ResultType")
-
-# Sadly the Python standard logging module is very slow so it's better not to
-# make any calls by testing a boolean flag first
-_debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
 class Task(Generic[ResultType]):
@@ -180,47 +174,32 @@ class Task(Generic[ResultType]):
         if self.done():
             self._do_done_callbacks()
 
-    def kill(self) -> None:
-        """Kill a coroutine."""
-        if self.done():
-            # already finished, nothing to kill
-            return
-
-        if _debug:
-            self.log.debug("kill() called on coroutine")
-        # todo: probably better to throw an exception for anyone waiting on the coroutine
-        self._outcome = Value(None)
-        cocotb._scheduler_inst._unschedule(self)
-
-        # Close coroutine so there is no RuntimeWarning that it was never awaited
-        self._coro.close()
-
-        self._state = Task._State.FINISHED
-        self._do_done_callbacks()
-
     def _do_done_callbacks(self) -> None:
         for callback in self._done_callbacks:
             callback(self)
 
-    @deprecated(
-        "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used.`"
-    )
-    def join(self) -> "cocotb.triggers._Join[ResultType]":
-        """Wait for the task to complete.
+    # @deprecated(
+    #     "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used.`"
+    # )
+    # def join(self) -> "cocotb.triggers._Join[ResultType]":
+    #     """Wait for the task to complete.
 
-        Returns:
-            A :class:`~cocotb.triggers.Join` trigger which, if awaited, will block until the given Task completes.
+    #     Returns:
+    #         A :class:`~cocotb.triggers.Join` trigger which, if awaited, will block until the given Task completes.
 
-        .. code-block:: python3
+    #     .. code-block:: python3
 
-            my_task = cocotb.start_soon(my_coro())
-            await my_task.join()
-            # "my_task" is done here
+    #         my_task = cocotb.start_soon(my_coro())
+    #         await my_task.join()
+    #         # "my_task" is done here
 
-        .. deprecated:: 2.0
+    #     .. deprecated:: 2.0
 
-            Using ``task`` directly is prefered to ``task.join()`` in all situations where the latter could be used.
-        """
+    #         Using ``task`` directly is prefered to ``task.join()`` in all situations where the latter could be used.
+    #     """
+
+    @cached_property
+    def _join(self) -> cocotb.triggers.Trigger:
         return cocotb.triggers._Join(self)
 
     def cancel(self, msg: Optional[str] = None) -> None:
@@ -301,7 +280,7 @@ class Task(Generic[ResultType]):
         self._done_callbacks.append(callback)
 
     def __await__(self) -> Generator[Any, Any, ResultType]:
-        yield self
+        yield self._join
         return self.result()
 
 

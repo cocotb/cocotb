@@ -40,7 +40,6 @@ from typing import (
     ClassVar,
     Coroutine,
     Generator,
-    Generic,
     List,
     Optional,
     Type,
@@ -50,10 +49,10 @@ from typing import (
     overload,
 )
 
+import cocotb._write_scheduler
 import cocotb.handle
 import cocotb.task
 from cocotb import simulator
-from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._profiling import profiling_context
 from cocotb._py_compat import cached_property
@@ -125,8 +124,8 @@ class Trigger(Awaitable["Trigger"]):
         Returns:
             A cancellable handle to the given callback.
         """
-        res = _CallbackHandle(cb, self)
-        self._callbacks[res] = None
+        res = _CallbackHandle(self)
+        self._callbacks[res] = cb
         # _prime must come after adding to _cb_handles in case _prime calls _react
         if not self._callbacks:
             self._prime()
@@ -147,8 +146,8 @@ class Trigger(Awaitable["Trigger"]):
     def _react(self) -> None:
         """Call all registered callbacks when the Trigger fires."""
         while self._callbacks:
-            cb_handle, _ = self._callbacks.popitem(last=False)
-            cocotb._scheduler_inst._queue(cb_handle._func)
+            _, cb = self._callbacks.popitem(last=False)
+            cb()
         self._cleanup()
 
     def __await__(self: Self) -> Generator[Any, Any, Self]:
@@ -166,12 +165,13 @@ class GPITrigger(Trigger):
         with profiling_context:
             global _current_gpi_trigger
             _current_gpi_trigger = self
-            Trigger._react()
+            super()._react()
             cocotb._scheduler_inst._event_loop()
 
     # _prime in subclasses should set up _cbhdl variable with GPI callback handle
 
     def _unprime(self) -> None:
+        assert self._cbhdl is not None
         self._cbhdl.deregister()
         self._cbhdl = None
 
@@ -311,10 +311,10 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass)
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}()"
 
-    def __await__(self) -> Generator[Any, Any, Self]:
-        if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
+    def __await__(self: Self) -> Generator[Any, Any, Self]:
+        if _current_gpi_trigger is ReadOnly():
             raise RuntimeError(
-                "Attempted illegal transition: awaiting ReadOnly in ReadOnly phase"
+                "Attempted illegal transition: ReadOnly in ReadOnly phase"
             )
         return (yield from super().__await__())
 
@@ -336,16 +336,16 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
             global _current_gpi_trigger
             _current_gpi_trigger = self
             cocotb._write_scheduler.apply_scheduled_writes()
-            Trigger._react()
+            Trigger._react(self)
             cocotb._scheduler_inst._event_loop()
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}()"
 
-    def __await__(self) -> Generator[Any, Any, Self]:
-        if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
+    def __await__(self: Self) -> Generator[Any, Any, Self]:
+        if _current_gpi_trigger is ReadOnly():
             raise RuntimeError(
-                "Attempted illegal transition: awaiting ReadWrite in ReadOnly phase"
+                "Attempted illegal transition: ReadWrite in ReadOnly phase"
             )
         return (yield from super().__await__())
 
@@ -751,18 +751,10 @@ class NullTrigger(Trigger):
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class _Join(
-    Trigger,
-    Generic[T],
-    metaclass=_ParameterizedSingletonGPITriggerMetaclass,
-):
+class _Join(Trigger):
     """Fires when a :class:`~cocotb.task.Task` completes."""
 
-    @classmethod
-    def __singleton_key__(cls, task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
-        return task
-
-    def __init__(self, task: "cocotb.task.Task[T]") -> None:
+    def __init__(self, task: "cocotb.task.Task[Any]") -> None:
         super().__init__()
         self._task = task
 
@@ -776,37 +768,36 @@ class _Join(
     def __repr__(self) -> str:
         return f"Join({self._task!s})"
 
-    def __await__(self) -> Generator[Any, Any, T]:
-        yield from super().__await__()
-        return self._task.result()
+
+# class Join(_Join[T]):
+#     r"""Fires when a :class:`~cocotb.task.Task` completes.
+
+#     Args:
+#         task: The task upon which to wait for completion.
+
+#     .. code-block:: python3
+
+#         async def coro_inner():
+#             await Timer(1, units="ns")
+#             return "Hello world"
 
 
-@deprecated(
-    "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
-)
-def Join(task: "cocotb.task.Task[T]") -> "_Join[T]":
-    r"""Fires when a :class:`~cocotb.task.Task` completes.
+#         task = cocotb.start_soon(coro_inner())
+#         result = await Join(task)
+#         assert task.result() == "Hello world"
+#         assert task.result() == result
 
-    Args:
-        task: The task upon which to wait for completion.
+#     .. deprecated:: 2.0
 
-    .. code-block:: python3
+#         Using ``task`` directly is prefered to ``Join(task)`` in all situations where the latter could be used.
+#     """
 
-        async def coro_inner():
-            await Timer(1, units="ns")
-            return "Hello world"
+#     def __new__(cls, task: "cocotb.task.Task[T]") -> "Join[T]":
 
 
-        task = cocotb.start_soon(coro_inner())
-        result = await Join(task)
-        assert task.result() == "Hello world"
-        assert task.result() == result
-
-    .. deprecated:: 2.0
-
-        Using ``task`` directly is prefered to ``Join(task)`` in all situations where the latter could be used.
-    """
-    return _Join(task)
+#     def __await__(self) -> Generator[Any, Any, T]:
+#         yield self
+#         return self._task.result()
 
 
 class Waitable(Awaitable[T]):
@@ -948,7 +939,7 @@ class First(_AggregateWaitable[Any]):
         # TODO: Should this kill the coroutines behind any Join triggers?
         # Right now it does not.
         for w in waiters:
-            w.kill()
+            w.cancel()
 
         return completed[0].get()
 
@@ -1118,7 +1109,7 @@ async def with_timeout(
         if not shielded:
             # shielded = False only when trigger is a Task
             trigger = cast(cocotb.task.Task[Any], trigger)
-            trigger.kill()
+            trigger.cancel()
         raise SimTimeoutError
     else:
         return res
