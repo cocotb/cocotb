@@ -523,7 +523,19 @@ vhpiEnumT VhpiSignalObjHdl::chr2vhpi(const char value) {
         case 'X':
         case 'x':
             return vhpiX;
+        case 'W':
+        case 'w':
+            return vhpiW;
+        case 'L':
+        case 'l':
+            return vhpiL;
+        case 'H':
+        case 'h':
+            return vhpiH;
+        case '-':
+            return vhpiDontCare;
         default:
+            LOG_ERROR("VHPI: Character '%c' is not a valid vhpiEnumT", value);
             return vhpiDontCare;
     }
 }

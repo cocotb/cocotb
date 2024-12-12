@@ -378,6 +378,44 @@ async def test_assign_Logic(dut):
         dut.stream_in_data.value = Logic("U")  # not the correct size
 
 
+# Run the test on GHDL, which uses VPI.
+# Skip the test on Verilator, which can only deal with 2-state values.
+@cocotb.test(
+    skip=(
+        (LANGUAGE != "verilog" and not SIM_NAME.startswith("ghdl"))
+        or SIM_NAME.startswith("verilator")
+    )
+)
+async def test_assign_Logic_4value(dut):
+    for value in ["X", "0", "1", "Z"]:
+        dut.stream_in_ready.value = Logic(value)
+        await Timer(1, "ns")
+        assert dut.stream_in_ready.value == value
+
+
+# GHDL uses VPI and hence can only deal with 4-state values.
+@cocotb.test(skip=LANGUAGE != "vhdl" or SIM_NAME.startswith("ghdl"))
+async def test_assign_Logic_9value(dut):
+    for value in ["U", "X", "0", "1", "Z", "W", "L", "H", "-"]:
+        dut.stream_in_ready.value = Logic(value)
+        await Timer(1, "ns")
+        assert dut.stream_in_ready.value == value
+
+
+# GHDL uses VPI and hence can only deal with 4-state values.
+@cocotb.test(skip=LANGUAGE != "vhdl" or SIM_NAME.startswith("ghdl"))
+async def test_assign_LogicArray_9value(dut):
+    # Reset to zero.
+    dut.stream_in_data.value = LogicArray(0, width=8)
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == 0
+
+    # Write 8 values (except 0) and check.
+    dut.stream_in_data.value = LogicArray("UX1ZWLH-")
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == LogicArray("UX1ZWLH-")
+
+
 @cocotb.test
 async def test_assign_string(dut):
     dut.stream_in_data.value = "10101010"
