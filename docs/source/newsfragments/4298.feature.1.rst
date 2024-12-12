@@ -1,0 +1,1 @@
+Added :attr:`cocotb.types.logic_array.RESOLVE_X` which controls the default resolution behavior of ``X``, ``Z``, ``U``, ``W``, and ``-`` values in :class:`.LogicArray`\ s whenever they are converted to integers using :class:`int` casts, :meth:`.LogicArray.to_unsigned` or :meth:`.LogicArray.to_signed` without pasing an argument for the ``resolve`` parameter.

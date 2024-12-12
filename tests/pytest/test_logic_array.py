@@ -415,3 +415,46 @@ def test_bool_cast():
         assert not LogicArray("0000")
         assert LogicArray("01XZ")
         assert LogicArray("XZ01")
+
+
+def test_resolve_x():
+    a = LogicArray("UX01ZWLH-")
+
+    with pytest.raises(ValueError):
+        a.to_unsigned("error")
+    with pytest.raises(ValueError):
+        a.to_signed("error")
+    assert LogicArray("01LH").to_unsigned("error") == 0b0101
+
+    assert a.to_unsigned("ones") == 0b110111011
+
+    assert a.to_unsigned("zeros") == 0b000100010
+
+    rand_val = a.to_unsigned("random")
+    # check known bits only
+    assert (rand_val >> 1) & 1 == 1
+    assert (rand_val >> 2) & 1 == 0
+    assert (rand_val >> 5) & 1 == 1
+    assert (rand_val >> 6) & 1 == 0
+
+
+def test_resolve_default_behavior():
+    import cocotb.types.logic_array
+
+    a = LogicArray("01X")
+
+    cocotb.types.logic_array.RESOLVE_X = "error"
+    with pytest.raises(ValueError):
+        a.to_unsigned()
+
+    cocotb.types.logic_array.RESOLVE_X = "zeros"
+    assert a.to_unsigned() == 0b010
+
+    cocotb.types.logic_array.RESOLVE_X = "ones"
+    assert a.to_unsigned() == 0b011
+
+    cocotb.types.logic_array.RESOLVE_X = "random"
+    rand_val = a.to_unsigned()
+    # check known bits only
+    assert (rand_val >> 1) & 1 == 1
+    assert (rand_val >> 2) & 1 == 0
