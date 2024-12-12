@@ -353,6 +353,7 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
     You can find installation instructions `in the GHDL documentation <https://ghdl.github.io/ghdl/getting.html>`_.
 
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the :term:`VPI` interface.
+This prevents cocotb from accessing some VHDL-specific constructs, like 9-value signals.
 
 To specify a VHDL architecture to simulate, set the ``ARCH`` make variable to the architecture name.
 
