@@ -61,8 +61,6 @@ Results
 
 .. autofunction:: get_results
 
-.. autofunction:: check_results_file
-
 File Utilities
 --------------
 
