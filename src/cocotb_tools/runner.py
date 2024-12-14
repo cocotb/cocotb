@@ -66,7 +66,7 @@ def _as_tcl_value(value: str) -> str:
     value = _magic_re.sub(r"\\\1", value)
     value = value.replace("\n", r"\n")
     value = _space_re.sub(r"\\\1", value)
-    if value[0] == '"':
+    if value[:1] == '"':
         value = "\\" + value
 
     return value
