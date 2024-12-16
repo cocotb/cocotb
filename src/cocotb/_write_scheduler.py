@@ -74,7 +74,7 @@ else:
         if cocotb.sim_phase == cocotb.SimPhase.READ_WRITE:
             write_func(*args)
         elif cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
-            raise Exception(
+            raise RuntimeError(
                 f"Write to object {handle._name} was scheduled during a read-only sync phase."
             )
         else:
