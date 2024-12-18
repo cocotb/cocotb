@@ -27,25 +27,19 @@
 
 """Utilities for implementors."""
 
-import inspect
 import os
 import sys
 import traceback
 import types
-import weakref
-from abc import ABCMeta
 from enum import Enum
 from functools import lru_cache, update_wrapper, wraps
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
     Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -53,39 +47,6 @@ from typing import (
     cast,
     overload,
 )
-
-
-class ParameterizedSingletonMetaclass(ABCMeta):
-    """A metaclass that allows class construction to reuse an existing instance.
-
-    We use this so that many triggers classes return the same object rather than make new ones.
-    """
-
-    __singleton_key__: Callable[..., Any]
-
-    def __init__(
-        cls, name: str, bases: Sequence[Type[object]], dct: Dict[str, Any]
-    ) -> None:
-        # Attach a lookup table to this class.
-        # Weak such that if the instance is no longer referenced, it can be
-        # collected.
-        cls.__instances: weakref.WeakValueDictionary[Any, Any] = (
-            weakref.WeakValueDictionary()
-        )
-
-    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
-        key = cls.__singleton_key__(*args, **kwargs)
-        try:
-            return cls.__instances[key]
-        except KeyError:
-            # construct the object as normal
-            self = super().__call__(*args, **kwargs)
-            cls.__instances[key] = self
-            return self
-
-    @property
-    def __signature__(cls) -> inspect.Signature:
-        return inspect.signature(cls.__singleton_key__)
 
 
 @lru_cache(maxsize=None)
@@ -281,3 +242,49 @@ else:
 
             setattr(instance, self._method.__name__, lookup)
             return lookup
+
+
+_T = TypeVar("_T", bound=type)
+_Value = TypeVar("_Value", bound=object)
+
+
+def singleton(orig_cls: _T) -> _T:
+    """Class decorator which turns a type into a Singleton type."""
+    orig_new = orig_cls.__new__
+    orig_init = orig_cls.__init__
+    instance = None
+
+    @wraps(orig_cls.__new__)
+    def __new__(cls: Type[_Value], *args: Any, **kwargs: Any) -> _Value:
+        nonlocal instance
+        if instance is None:
+            instance = orig_new(cls, *args, **kwargs)
+            orig_init(instance, *args, **kwargs)
+        return instance
+
+    @wraps(orig_cls.__init__)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+    orig_cls.__new__ = __new__
+    orig_cls.__init__ = __init__
+    return orig_cls
+
+
+def delegating_new(orig_cls: _T) -> _T:
+    """Class decorator that creates a private constructor and allows ``__new__`` to delegate."""
+    orig_init = orig_cls.__init__
+
+    @classmethod
+    def _make(cls: Type[_Value], *args: Any, **kwargs: Any) -> _Value:
+        instance = super(cls, cls).__new__(cls)
+        orig_init(instance, *args, **kwargs)
+        return instance
+
+    @wraps(orig_cls.__init__)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+    orig_cls._make = _make
+    orig_cls.__init__ = __init__
+    return orig_cls

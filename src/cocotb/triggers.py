@@ -55,7 +55,7 @@ from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
-from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
+from cocotb._utils import delegating_new, remove_traceback_frames, singleton
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 T = TypeVar("T")
@@ -77,7 +77,6 @@ Self = TypeVar("Self", bound="Trigger")
 class Trigger(Awaitable["Trigger"]):
     """Base class to derive from."""
 
-    @abstractmethod
     def __init__(self) -> None:
         self._primed = False
 
@@ -259,14 +258,8 @@ class Timer(GPITrigger):
         )
 
 
-# TODO: In Python < 3.8 the metaclass of typing objects doesn't work well with other metaclasses.
-# TODO: This can be removed once Python 3.8 becomes standard.
-class _ParameterizedSingletonGPITriggerMetaclass(
-    ParameterizedSingletonMetaclass, type(GPITrigger)
-): ...
-
-
-class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
+@singleton
+class ReadOnly(GPITrigger):
     """Fires when the current simulation timestep moves to the read-only phase.
 
     The read-only phase is entered when the current timestep no longer has any further delta steps.
@@ -274,10 +267,6 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass)
     The simulator will not allow scheduling of more events in this timestep.
     Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
     """
-
-    @classmethod
-    def __singleton_key__(cls) -> None:
-        return None
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
@@ -294,12 +283,9 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass)
         return f"{type(self).__qualname__}()"
 
 
-class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
-    """Fires when the read-write portion of the simulation cycles is reached."""
-
-    @classmethod
-    def __singleton_key__(cls) -> None:
-        return None
+@singleton
+class ReadWrite(GPITrigger):
+    """Fires when the read-write simulation phase is reached."""
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
@@ -316,12 +302,9 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
         return f"{type(self).__qualname__}()"
 
 
-class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
+@singleton
+class NextTimeStep(GPITrigger):
     """Fires when the next time step is started."""
-
-    @classmethod
-    def __singleton_key__(cls) -> None:
-        return None
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._cbhdl is None:
@@ -334,12 +317,15 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetacl
         return f"{type(self).__qualname__}()"
 
 
-class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
+_SignalT = TypeVar("_SignalT", bound="cocotb.handle.SimHandleBase")
+
+
+class _EdgeBase(GPITrigger, Generic[_SignalT]):
     """Internal base class that fires on a given edge of a signal."""
 
     _edge_type: ClassVar[int]
 
-    def __init__(self, signal: cocotb.handle.ValueObjectBase[Any, Any]) -> None:
+    def __init__(self, signal: _SignalT) -> None:
         super().__init__()
         self.signal = signal
 
@@ -356,7 +342,8 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
         return f"{type(self).__qualname__}({self.signal!r})"
 
 
-class RisingEdge(_EdgeBase):
+@delegating_new
+class RisingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
     """Fires on the rising edge of *signal*, on a transition to ``1``.
 
     Only valid for scalar ``logic`` or ``bit``-typed signals.
@@ -374,18 +361,17 @@ class RisingEdge(_EdgeBase):
 
     _edge_type = simulator.RISING
 
-    @classmethod
-    def __singleton_key__(
-        cls, signal: cocotb.handle.LogicObject
-    ) -> cocotb.handle.LogicObject:
-        if not (isinstance(signal, cocotb.handle.LogicObject) and len(signal) == 1):
+    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "RisingEdge":
+        try:
+            return signal.rising_edge
+        except AttributeError:
             raise TypeError(
-                f"{cls.__qualname__} requires a 1-bit LogicObject. Got {signal!r} of length {len(signal)}"
-            )
-        return signal
+                f"RisingEdge requires a 1-bit LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
+            ) from None
 
 
-class FallingEdge(_EdgeBase):
+@delegating_new
+class FallingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
     """Fires on the falling edge of *signal*, on a transition to ``0``.
 
     Only valid for scalar ``logic`` or ``bit``-typed signals.
@@ -403,18 +389,17 @@ class FallingEdge(_EdgeBase):
 
     _edge_type = simulator.FALLING
 
-    @classmethod
-    def __singleton_key__(
-        cls, signal: cocotb.handle.LogicObject
-    ) -> cocotb.handle.LogicObject:
-        if not (isinstance(signal, cocotb.handle.LogicObject) and len(signal) == 1):
+    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "FallingEdge":
+        try:
+            return signal.falling_edge
+        except AttributeError:
             raise TypeError(
-                f"{cls.__qualname__} requires a 1-bit LogicObject. Got {signal!r} of length {len(signal)}"
-            )
-        return signal
+                f"FallingEdge requires a 1-bit LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
+            ) from None
 
 
-class Edge(_EdgeBase):
+@delegating_new
+class Edge(_EdgeBase["cocotb.handle.NonArrayValueObjectBase[Any, Any]"]):
     """Fires on any value change of *signal*.
 
     Args:
@@ -426,15 +411,15 @@ class Edge(_EdgeBase):
 
     _edge_type = simulator.VALUE_CHANGE
 
-    @classmethod
-    def __singleton_key__(
-        cls, signal: cocotb.handle.ValueObjectBase[Any, Any]
-    ) -> cocotb.handle.ValueObjectBase[Any, Any]:
-        if not isinstance(signal, cocotb.handle.ValueObjectBase):
+    def __new__(
+        cls, signal: "cocotb.handle.NonArrayValueObjectBase[Any, Any]"
+    ) -> "Edge":
+        try:
+            return signal.value_change
+        except AttributeError:
             raise TypeError(
-                f"{cls.__qualname__} requires an object derived from ValueObjectBase which can change value. Got {signal!r} of length {len(signal)}"
-            )
-        return signal
+                f"Edge requires an object derived from ValueObjectBase which can change value. Got {signal!r} of type {type(signal).__qualname__}"
+            ) from None
 
 
 class _Event(Trigger):
@@ -741,39 +726,8 @@ class NullTrigger(Trigger):
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class _Join(
-    Trigger,
-    Generic[T],
-    metaclass=_ParameterizedSingletonGPITriggerMetaclass,
-):
-    """Fires when a :class:`~cocotb.task.Task` completes."""
-
-    @classmethod
-    def __singleton_key__(cls, task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
-        return task
-
-    def __init__(self, task: "cocotb.task.Task[T]") -> None:
-        super().__init__()
-        self._task = task
-
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        if self._task.done():
-            callback(self)
-        else:
-            super()._prime(callback)
-
-    def __repr__(self) -> str:
-        return f"Join({self._task!s})"
-
-    def __await__(self) -> Generator[Any, Any, T]:
-        yield from super().__await__()
-        return self._task.result()
-
-
-@deprecated(
-    "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
-)
-def Join(task: "cocotb.task.Task[T]") -> "_Join[T]":
+@delegating_new
+class Join(Trigger, Generic[T]):
     r"""Fires when a :class:`~cocotb.task.Task` completes.
 
     Args:
@@ -795,7 +749,31 @@ def Join(task: "cocotb.task.Task[T]") -> "_Join[T]":
 
         Using ``task`` directly is prefered to ``Join(task)`` in all situations where the latter could be used.
     """
-    return _Join(task)
+
+    _task: "cocotb.task.Task[T]"
+
+    @deprecated(
+        "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
+    )
+    def __new__(cls, task: "cocotb.task.Task[T]") -> "Join[T]":
+        return task._join
+
+    def __init__(self, task: "cocotb.task.Task[T]") -> None:
+        super().__init__()
+        self._task = task
+
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+        if self._task.done():
+            callback(self)
+        else:
+            super()._prime(callback)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}({self._task!s})"
+
+    def __await__(self) -> Generator[Any, Any, T]:
+        yield from super().__await__()
+        return self._task.result()
 
 
 class Waitable(Awaitable[T]):
@@ -961,7 +939,7 @@ class ClockCycles(Waitable["ClockCycles"]):
     """
 
     def __init__(
-        self, signal: cocotb.handle.LogicObject, num_cycles: int, rising: bool = True
+        self, signal: "cocotb.handle.LogicObject", num_cycles: int, rising: bool = True
     ) -> None:
         self.signal = signal
         self.num_cycles = num_cycles

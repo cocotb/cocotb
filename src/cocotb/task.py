@@ -189,7 +189,7 @@ class Task(Generic[ResultType]):
     @deprecated(
         "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used.`"
     )
-    def join(self) -> "cocotb.triggers._Join[ResultType]":
+    def join(self) -> "cocotb.triggers.Join[ResultType]":
         """Wait for the task to complete.
 
         Returns:
@@ -205,7 +205,11 @@ class Task(Generic[ResultType]):
 
             Using ``task`` directly is prefered to ``task.join()`` in all situations where the latter could be used.
         """
-        return cocotb.triggers._Join(self)
+        return self._join
+
+    @cached_property
+    def _join(self) -> "cocotb.triggers.Join[ResultType]":
+        return cocotb.triggers.Join._make(self)
 
     def cancel(self, msg: Optional[str] = None) -> None:
         """Cancel a Task's further execution.

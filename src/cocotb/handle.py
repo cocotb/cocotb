@@ -52,6 +52,7 @@ from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
 from cocotb._utils import cached_method
+from cocotb.triggers import Edge, FallingEdge, RisingEdge
 from cocotb.types import Array, Logic, LogicArray, Range
 
 
@@ -853,8 +854,15 @@ class ArrayObject(
             yield self[i]
 
 
+class NonArrayValueObjectBase(ValueObjectBase[ValuePropertyT, ValueSetT]):
+    @cached_property
+    def value_change(self) -> Edge:
+        """Return an :class:`~cocotb.triggers.Edge` trigger for this signal."""
+        return Edge._make(self)
+
+
 class LogicObject(
-    ValueObjectBase[LogicArray, Union[LogicArray, Logic, int]],
+    NonArrayValueObjectBase[LogicArray, Union[LogicArray, Logic, int]],
     RangeableObjectMixin,
 ):
     """A logic or logic array simulation object.
@@ -997,8 +1005,28 @@ class LogicObject(
         # and this object needs to support multi-dimensional packed arrays.
         return self._handle.get_num_elems()
 
+    @cached_property
+    def rising_edge(self) -> RisingEdge:
+        """Return a :class:`~cocotb.triggers.RisingEdge` trigger for this signal."""
+        # TODO segregate single bit logics from logic arrays and this check becomes moot
+        if len(self) != 1:
+            raise TypeError(
+                f"RisingEdge requires a 1-bit LogicObject. Got {self!r} of length {len(self)}"
+            ) from None
+        return RisingEdge._make(self)
 
-class RealObject(ValueObjectBase[float, float]):
+    @cached_property
+    def falling_edge(self) -> FallingEdge:
+        """Return a :class:`~cocotb.triggers.RisingEdge` trigger for this signal."""
+        # TODO segregate single bit logics from logic arrays and this check becomes moot
+        if len(self) != 1:
+            raise TypeError(
+                f"FallingEdge requires a 1-bit LogicObject. Got {self!r} of length {len(self)}"
+            ) from None
+        return FallingEdge._make(self)
+
+
+class RealObject(NonArrayValueObjectBase[float, float]):
     """A real/float simulation object.
 
     This type is used when a ``real`` object in VHDL or ``float`` object in Verilog is seen.
@@ -1048,7 +1076,7 @@ class RealObject(ValueObjectBase[float, float]):
         return self.value
 
 
-class EnumObject(ValueObjectBase[int, int]):
+class EnumObject(NonArrayValueObjectBase[int, int]):
     """An enumeration simulation object.
 
     This type is used when an enumerated-type simulation object is seen that isn't a "logic" or similar type.
@@ -1108,7 +1136,7 @@ class EnumObject(ValueObjectBase[int, int]):
         return int(self.value)
 
 
-class IntegerObject(ValueObjectBase[int, int]):
+class IntegerObject(NonArrayValueObjectBase[int, int]):
     """An integer simulation object.
 
     Verilog types that map to this object:
@@ -1180,7 +1208,7 @@ class IntegerObject(ValueObjectBase[int, int]):
 
 
 class StringObject(
-    ValueObjectBase[bytes, bytes],
+    NonArrayValueObjectBase[bytes, bytes],
     RangeableObjectMixin,
 ):
     """A string simulation object.
