@@ -22,7 +22,6 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.simulator import get_precision
 from cocotb.triggers import (
-    First,
     NextTimeStep,
     ReadOnly,
     ReadWrite,
@@ -31,7 +30,7 @@ from cocotb.triggers import (
     Timer,
     with_timeout,
 )
-from cocotb.utils import get_sim_time
+from cocotb.utils import get_sim_steps, get_sim_time
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -65,106 +64,74 @@ async def test_timer_with_units(dut):
     # invocation if this assert hits!
     assert get_precision() == -12
 
-    time_fs = get_sim_time(units="fs")
+    time_step = get_sim_time(units="step")
 
     # Await for one simulator time step
     await Timer(1)  # NOTE: explicitly no units argument here!
-    time_step = get_sim_time(units="fs") - time_fs
+    time_step = get_sim_time(units="step") - time_step
 
     pattern = "Unable to accurately represent .* with the simulator precision of .*"
     with pytest.raises(ValueError, match=pattern):
-        await Timer(2.5 * time_step, units="fs")
+        await Timer(2.5 * time_step, units="step")
     dut._log.info("As expected, unable to create a timer of 2.5 simulator time steps")
 
-    time_fs = get_sim_time(units="fs")
+    time_step = get_sim_time(units="step")
 
     await Timer(3, "ns")
 
-    assert get_sim_time(units="fs") == time_fs + 3_000_000.0, "Expected a delay of 3 ns"
+    assert get_sim_time(units="step") == time_step + get_sim_steps(3, "ns")
 
-    time_fs = get_sim_time(units="fs")
+    time_step = get_sim_time(units="step")
     await Timer(1.5, "ns")
 
-    assert (
-        get_sim_time(units="fs") == time_fs + 1_500_000.0
-    ), "Expected a delay of 1.5 ns"
+    assert get_sim_time(units="step") == time_step + get_sim_steps(1.5, "ns")
 
-    time_fs = get_sim_time(units="fs")
+    time_step = get_sim_time(units="step")
     await Timer(10.0, "ps")
 
-    assert get_sim_time(units="fs") == time_fs + 10_000.0, "Expected a delay of 10 ps"
+    assert get_sim_time(units="step") == time_step + get_sim_steps(10, "ps")
 
-    time_fs = get_sim_time(units="fs")
+    time_step = get_sim_time(units="step")
     await Timer(1.0, "us")
 
-    assert (
-        get_sim_time(units="fs") == time_fs + 1_000_000_000.0
-    ), "Expected a delay of 1 us"
+    assert get_sim_time(units="step") == time_step + get_sim_steps(1, "us")
 
 
 @cocotb.test()
 async def test_timer_with_rational_units(dut):
     """Test that rounding errors are not introduced in exact values"""
     # now with fractions
-    time_fs = get_sim_time(units="fs")
+    time_step = get_sim_time(units="step")
     await Timer(Fraction(1, int(1e9)), units="sec")
-    assert get_sim_time(units="fs") == time_fs + 1_000_000.0, "Expected a delay of 1 ns"
+    assert get_sim_time(units="step") == time_step + get_sim_steps(1, "ns")
 
     # now with decimals
-    time_fs = get_sim_time(units="fs")
+    time_step = get_sim_time(units="step")
     await Timer(Decimal("1e-9"), units="sec")
-    assert get_sim_time(units="fs") == time_fs + 1_000_000.0, "Expected a delay of 1 ns"
-
-
-exited = False
-
-
-async def do_test_readwrite_in_readonly(dut):
-    global exited
-    await RisingEdge(dut.clk)
-    await ReadOnly()
-    await ReadWrite()
-    exited = True
-
-
-async def do_test_cached_write_in_readonly(dut):
-    global exited
-    await RisingEdge(dut.clk)
-    await ReadOnly()
-    dut.clk.value = 0
-    exited = True
+    assert get_sim_time(units="step") == time_step + get_sim_steps(1, "ns")
 
 
 async def do_test_afterdelay_in_readonly(dut, delay):
     global exited
     await RisingEdge(dut.clk)
-    await ReadOnly()
-    await Timer(delay, "ns")
     exited = True
 
 
-@cocotb.test(skip=True)
+@cocotb.test
 async def test_cached_write_in_readonly(dut):
     """Test doing invalid sim operation"""
-    global exited
-    exited = False
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    task = cocotb.start_soon(do_test_cached_write_in_readonly(dut))
-    await First(task, Timer(10_000, "ns"))
-    clk_gen.kill()
-    assert exited
+    await ReadOnly()
+    with pytest.raises(RuntimeError):
+        dut.stream_in_data.value = 0
 
 
-@cocotb.test()
+@cocotb.test
 async def test_afterdelay_in_readonly_valid(dut):
     """Test Timer delay after ReadOnly phase"""
-    global exited
-    exited = False
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    task = cocotb.start_soon(do_test_afterdelay_in_readonly(dut, 1))
-    await First(task, Timer(100_000, "ns"))
-    clk_gen.kill()
-    assert exited
+    # This *should* fail on VHPI simulators as it is not a legal transition
+    # but apparently all simulators support it (gh-3967).
+    await ReadOnly()
+    await Timer(1, "ns")
 
 
 @cocotb.test()
