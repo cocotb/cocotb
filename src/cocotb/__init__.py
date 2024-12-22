@@ -24,6 +24,26 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import os  # pragma: no cover
+
+if "COCOTB_LIBRARY_COVERAGE" in os.environ:  # pragma: no cover
+    try:
+        import coverage
+    except ImportError:
+        import sys
+
+        print(
+            "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`.",
+            sys.stderr,
+        )
+    else:
+        _library_coverage = coverage.coverage(
+            data_file=".coverage.cocotb",
+            config_file=False,
+            branch=True,
+            include=[f"{os.path.dirname(__file__)}/*"],
+        )
+        _library_coverage.start()
 
 import ast
 import inspect
@@ -100,9 +120,6 @@ The value passed to the Python default random number generator.
 See :envvar:`COCOTB_RANDOM_SEED` for details on how the value is computed.
 This is guaranteed to hold a value at test time.
 """
-
-_library_coverage: Any = None
-""" used for cocotb library coverage """
 
 _user_coverage: Any = None
 """ used for user code coverage """
@@ -242,9 +259,8 @@ def create_task(
         )
 
 
-def _initialise_testbench(argv_):  # pragma: no cover
+def _initialise_testbench(argv_):
     try:
-        _start_library_coverage()
         _initialise_testbench_(argv_)
     except BaseException:
         log.exception("cocotb testbench initialization failed. Exiting.")
@@ -302,25 +318,6 @@ def _initialise_testbench_(argv_):
 
     # start Regression Manager
     regression_manager.start_regression()
-
-
-def _start_library_coverage() -> None:  # pragma: no cover
-    if "COCOTB_LIBRARY_COVERAGE" in os.environ:
-        try:
-            import coverage
-        except ImportError:
-            log.error(
-                "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`."
-            )
-        else:
-            global _library_coverage
-            _library_coverage = coverage.coverage(
-                data_file=".coverage.cocotb",
-                config_file=False,
-                branch=True,
-                include=[f"{os.path.dirname(__file__)}/*"],
-            )
-            _library_coverage.start()
 
 
 def _stop_library_coverage() -> None:
