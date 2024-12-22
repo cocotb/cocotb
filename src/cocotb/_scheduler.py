@@ -30,100 +30,24 @@
 
 import logging
 import os
-import threading
-from collections import OrderedDict
-from typing import Any, Callable
-
-from cocotb import _outcomes
-from cocotb._exceptions import InternalError
-from cocotb.task import Task
-from cocotb.triggers import (
-    Event,
-)
+from typing import Any, Callable, List
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
-class external_state:
-    INIT = 0
-    RUNNING = 1
-    PAUSED = 2
-    EXITED = 3
+class CallbackHandle:
 
+    def __init__(self, func: Callable[..., Any]) -> None:
+        self._func = func
+        # TODO determine if setting a cancelled flag is faster than removing the callback from the queue or not
+        # I suppose this depends on how fast an OrderedDict pop is versus how often this triggers
+        # which is probably unlikely.
+        self._cancelled = False
 
-class external_waiter:
-    def __init__(self):
-        self._outcome = None
-        self.thread = None
-        self.event = Event()
-        self.state = external_state.INIT
-        self.cond = threading.Condition()
-        self._log = logging.getLogger(f"cocotb.bridge.{self.thread}.0x{id(self):x}")
-
-    @property
-    def result(self):
-        return self._outcome.get()
-
-    def _propagate_state(self, new_state):
-        with self.cond:
-            if _debug:
-                self._log.debug(
-                    f"Changing state from {self.state} -> {new_state} from {threading.current_thread()}"
-                )
-            self.state = new_state
-            self.cond.notify()
-
-    def thread_done(self):
-        if _debug:
-            self._log.debug(f"Thread finished from {threading.current_thread()}")
-        self._propagate_state(external_state.EXITED)
-
-    def thread_suspend(self):
-        self._propagate_state(external_state.PAUSED)
-
-    def thread_start(self):
-        if self.state > external_state.INIT:
-            return
-
-        if not self.thread.is_alive():
-            self._propagate_state(external_state.RUNNING)
-            self.thread.start()
-
-    def thread_resume(self):
-        self._propagate_state(external_state.RUNNING)
-
-    def thread_wait(self):
-        if _debug:
-            self._log.debug(
-                f"Waiting for the condition lock {threading.current_thread()}"
-            )
-
-        with self.cond:
-            while self.state == external_state.RUNNING:
-                self.cond.wait()
-
-            if _debug:
-                if self.state == external_state.EXITED:
-                    self._log.debug(
-                        f"Thread {self.thread} has exited from {threading.current_thread()}"
-                    )
-                elif self.state == external_state.PAUSED:
-                    self._log.debug(
-                        f"Thread {self.thread} has called yield from {threading.current_thread()}"
-                    )
-                elif self.state == external_state.RUNNING:
-                    self._log.debug(
-                        f"Thread {self.thread} is in RUNNING from {threading.current_thread()}"
-                    )
-
-            if self.state == external_state.INIT:
-                raise Exception(
-                    f"Thread {self.thread} state was not allowed from {threading.current_thread()}"
-                )
-
-        return self.state
+    def cancel(self) -> None:
+        self._cancelled = True
 
 
 class Scheduler:
@@ -194,245 +118,18 @@ class Scheduler:
         TODO: There are attributes and methods for dealing with "externals", but I'm not quite sure how it all works yet.
     """
 
-    # Singleton events, recycled to avoid spurious object creation
-    _none_outcome = _outcomes.Value(None)
-
-    def __init__(self, test_complete_cb: Callable[[], None]) -> None:
-        self._test_complete_cb = test_complete_cb
-
-        self.log = logging.getLogger("cocotb.scheduler")
+    def __init__(self) -> None:
+        self._log = logging.getLogger("cocotb.scheduler")
         if _debug:
-            self.log.setLevel(logging.DEBUG)
+            self._log.setLevel(logging.DEBUG)
+        self._scheduled_tasks: List[CallbackHandle] = []
 
-        self._scheduled_tasks: OrderedDict[Task[Any], _outcomes.Outcome] = OrderedDict()
-        self._pending_threads = []
-        self._pending_events = []  # Events we need to call set on once we've unwound
-
-        self._terminate = False
-        self._main_thread = threading.current_thread()
-
-        self._current_task = None
-
-    def _handle_termination(self) -> None:
-        """
-        Handle a termination that causes us to move onto the next test.
-        """
-        if _debug:
-            self.log.debug("Scheduler terminating...")
-
-        # cleanup triggers and tasks
-        self._cleanup()
-
-        # clear state
-        self._terminate = False
-
-        # call complete cb, may schedule another test
-        self._test_complete_cb()
-
-    def _event_loop(self) -> None:
-        """Run the main event loop.
-
-        This should only be started by:
-        * The beginning of a test, when there is no trigger to react to
-        * A GPI trigger
-        """
-
-        while self._scheduled_tasks and not self._terminate:
-            task, outcome = self._scheduled_tasks.popitem(last=False)
-
-            if _debug:
-                self.log.debug(f"Scheduling task {task}")
-            self._resume_task(task, outcome)
-            if _debug:
-                self.log.debug(f"Scheduled task {task}")
-
-            # remove our reference to the objects at the end of each loop,
-            # to try and avoid them being destroyed at a weird time (as
-            # happened in gh-957)
-            del task
-
-            # Schedule may have queued up some events so we'll burn through those
-            while self._pending_events:
-                if _debug:
-                    self.log.debug(
-                        f"Scheduling pending event {self._pending_events[0]}"
-                    )
-                self._pending_events.pop(0).set()
-
-        # no more pending tasks
-        if self._terminate:
-            self._handle_termination()
-        elif _debug:
-            self.log.debug("All tasks scheduled, handing control back to simulator")
-
-    def _unschedule(self, task: Task[Any]) -> None:
-        """Unschedule a task and unprime dangling pending triggers.
-
-        Also:
-          * enters the scheduler termination state if the Test Task is unscheduled.
-          * creates and fires a :class:`~cocotb.triggers.Join` trigger.
-          * forcefully ends the Test if a Task ends with an exception.
-        """
-
-        # remove task from queue
-        if task in self._scheduled_tasks:
-            self._scheduled_tasks.pop(task)
-
-        if self._terminate:
-            return
-
-    def _schedule_task(
-        self, task: Task[Any], outcome: _outcomes.Outcome[Any] = _none_outcome
-    ) -> None:
-        """Queue *task* for scheduling.
-
-        It is an error to attempt to queue a task that has already been queued.
-        """
-        # Don't queue the same task more than once (gh-2503)
-        if task in self._scheduled_tasks:
-            raise InternalError("Task was queued more than once.")
-        # TODO Move state tracking into Task
-        task._state = Task._State.SCHEDULED
-        self._scheduled_tasks[task] = outcome
-
-    def _queue_function(self, task):
-        """Queue a task for execution and move the containing thread
-        so that it does not block execution of the main thread any longer.
-        """
-        # We should be able to find ourselves inside the _pending_threads list
-        matching_threads = [
-            t for t in self._pending_threads if t.thread == threading.current_thread()
-        ]
-        if len(matching_threads) == 0:
-            raise RuntimeError("queue_function called from unrecognized thread")
-
-        # Raises if there is more than one match. This can never happen, since
-        # each entry always has a unique thread.
-        (t,) = matching_threads
-
-        async def wrapper():
-            # This function runs in the scheduler thread
-            try:
-                _outcome = _outcomes.Value(await task)
-            except BaseException as e:
-                _outcome = _outcomes.Error(e)
-            event.outcome = _outcome
-            # Notify the current (scheduler) thread that we are about to wake
-            # up the background (`@external`) thread, making sure to do so
-            # before the background thread gets a chance to go back to sleep by
-            # calling thread_suspend.
-            # We need to do this here in the scheduler thread so that no more
-            # tasks run until the background thread goes back to sleep.
-            t.thread_resume()
-            event.set()
-
-        event = threading.Event()
-        self._schedule_task(Task(wrapper()))
-        # The scheduler thread blocks in `thread_wait`, and is woken when we
-        # call `thread_suspend` - so we need to make sure the task is
-        # queued before that.
-        t.thread_suspend()
-        # This blocks the calling `@external` thread until the task finishes
-        event.wait()
-        return event.outcome.get()
-
-    def _run_in_executor(self, func, *args, **kwargs):
-        """Run the task in a separate execution thread
-        and return an awaitable object for the caller.
-        """
-        # Create a thread
-        # Create a trigger that is called as a result of the thread finishing
-        # Create an Event object that the caller can await on
-        # Event object set when the thread finishes execution, this blocks the
-        # calling task (but not the thread) until the external completes
-
-        def execute_external(func, _waiter):
-            _waiter._outcome = _outcomes.capture(func, *args, **kwargs)
-            if _debug:
-                self.log.debug(
-                    f"Execution of external routine done {threading.current_thread()}"
-                )
-            _waiter.thread_done()
-
-        async def wrapper():
-            waiter = external_waiter()
-            thread = threading.Thread(
-                group=None,
-                target=execute_external,
-                name=func.__qualname__ + "_thread",
-                args=([func, waiter]),
-                kwargs={},
-            )
-
-            waiter.thread = thread
-            self._pending_threads.append(waiter)
-
-            await waiter.event.wait()
-
-            return waiter.result  # raises if there was an exception
-
-        return wrapper()
-
-    def _resume_task(self, task: Task, outcome: _outcomes.Outcome[Any]) -> None:
-        """Resume *task* with *outcome*.
-
-        Args:
-            task: The task to schedule.
-            outcome: The outcome to inject into the *task*.
-
-        Scheduling runs *task* until it either finishes or reaches the next ``await`` statement.
-        If *task* completes, it is unscheduled, a Join trigger fires, and test completion is inspected.
-        Otherwise, it reached an ``await`` and we have a result object which is converted to a trigger,
-        that trigger is primed,
-        then that trigger and the *task* are registered with the :attr:`_trigger2tasks` map.
-        """
-        if self._current_task is not None:
-            raise InternalError("_schedule() called while another Task is executing")
-        try:
-            self._current_task = task
-
-            result = task._advance(outcome=outcome)
-
-            # We do not return from here until pending threads have completed, but only
-            # from the main thread, this seems like it could be problematic in cases
-            # where a sim might change what this thread is.
-
-            if self._main_thread is threading.current_thread():
-                for ext in self._pending_threads:
-                    ext.thread_start()
-                    if _debug:
-                        self.log.debug(
-                            f"Blocking from {threading.current_thread()} on {ext.thread}"
-                        )
-                    state = ext.thread_wait()
-                    if _debug:
-                        self.log.debug(
-                            f"Back from wait on self {threading.current_thread()} with newstate {state}"
-                        )
-                    if state == external_state.EXITED:
-                        self._pending_threads.remove(ext)
-                        self._pending_events.append(ext.event)
-        finally:
-            self._current_task = None
-
-    def _cleanup(self) -> None:
-        """Clear up all our state.
-
-        Unprime all pending triggers and kill off any tasks, stop all externals.
-        """
-
-        # Kill any queued coroutines.
-        # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_tasks.
-        # If that happens a for loop will stop early and then the assert will fail.
+    def run(self) -> None:
+        """Run the main event loop."""
         while self._scheduled_tasks:
-            task, _ = self._scheduled_tasks.popitem(last=False)
-            task.kill()
+            handle = self._scheduled_tasks.pop(0)
+            if not handle._cancelled:
+                handle._func()
 
-        if self._main_thread is not threading.current_thread():
-            raise Exception("Cleanup() called outside of the main thread")
 
-        for ext in self._pending_threads:
-            self.log.warning(f"Waiting for {ext.thread} to exit")
-
-    def shutdown_soon(self) -> None:
-        self._terminate = True
+instance: Scheduler

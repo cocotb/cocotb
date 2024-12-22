@@ -1276,9 +1276,6 @@ class _RunningTest(Task[None]):
         Moved to the ``cocotb.task`` module.
     """
 
-    _name: str = "Test"
-
     def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
         super().__init__(inst)
-        self.__name__ = f"{type(self)._name} {name}"
-        self.__qualname__ = self.__name__
+        self.name = f"Test {name}"

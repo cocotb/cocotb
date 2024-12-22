@@ -94,6 +94,7 @@ class Trigger(Awaitable["Trigger"]):
     """
 
     def __init__(self) -> None:
+        # OrderedDict gives us O(1) append, pop, and random removal
         self._callbacks: OrderedDict[_CallbackHandle, Callable[[], Any]] = OrderedDict()
 
     @cached_property
@@ -589,6 +590,9 @@ class _InternalEvent(Trigger):
     def _prime(self) -> None:
         if self._fired:
             self._react()
+
+    def _unprime(self) -> None:
+        pass
 
     def set(self) -> None:
         """Wake up coroutine blocked on this event."""
