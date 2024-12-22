@@ -100,9 +100,6 @@ See :envvar:`COCOTB_RANDOM_SEED` for details on how the value is computed.
 This is guaranteed to hold a value at test time.
 """
 
-_library_coverage: Any = None
-""" used for cocotb library coverage """
-
 top: cocotb.handle.SimHandleBase
 r"""
 A handle to the :envvar:`COCOTB_TOPLEVEL` entity/module.
@@ -256,18 +253,7 @@ def _shutdown_testbench() -> None:
         cb()
 
 
-def _initialise_testbench(argv_: List[str]) -> None:  # pragma: no cover
-    # The body of this function is split in two because no coverage is collected on
-    # the function that starts the coverage. By splitting it in two we get coverage
-    # on most of the function.
-    try:
-        _start_library_coverage()
-        _initialise_testbench_(argv_)
-    except BaseException:
-        print("cocotb testbench initialization failed. Exiting.", file=sys.stderr)
-
-
-def _initialise_testbench_(argv_: List[str]) -> None:
+def _initialise_testbench(argv_: List[str]) -> None:
     from cocotb import simulator
 
     simulator.set_sim_event_callback(_sim_event)
@@ -317,32 +303,6 @@ def _initialise_testbench_(argv_: List[str]) -> None:
 
     # start Regression Manager
     regression_manager.start_regression()
-
-
-def _start_library_coverage() -> None:  # pragma: no cover
-    if "COCOTB_LIBRARY_COVERAGE" in os.environ:
-        try:
-            import coverage
-        except ImportError:
-            print(
-                "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`.",
-                file=sys.stderr,
-            )
-        else:
-            global _library_coverage
-            _library_coverage = coverage.coverage(
-                data_file=".coverage.cocotb",
-                config_file=False,
-                branch=True,
-                include=[f"{os.path.dirname(__file__)}/*"],
-            )
-            _library_coverage.start()
-
-            def _stop_library_coverage() -> None:
-                _library_coverage.stop()
-                _library_coverage.save()  # pragma: no cover
-
-            _register_shutdown_callback(_stop_library_coverage)
 
 
 def _sim_event(msg: str) -> None:
