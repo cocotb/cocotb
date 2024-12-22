@@ -62,6 +62,10 @@ if trust_inertial:
         write_func: Callable[..., None],
         args: Sequence[Any],
     ) -> None:
+        if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
+            raise RuntimeError(
+                f"Write to object {handle._name} was scheduled during a read-only simulation phase."
+            )
         write_func(*args)
 else:
 
@@ -75,7 +79,7 @@ else:
             write_func(*args)
         elif cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
             raise RuntimeError(
-                f"Write to object {handle._name} was scheduled during a read-only sync phase."
+                f"Write to object {handle._name} was scheduled during a read-only simulation phase."
             )
         else:
             if handle in _write_calls:
