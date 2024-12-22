@@ -565,7 +565,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         os.path.join("cocotb", "libs", "libcocotb"),
         define_macros=_extra_defines,
         include_dirs=include_dirs,
-        libraries=["gpilog", "cocotbutils", "pygpilog"],
+        libraries=["gpilog", "cocotbutils", "pygpilog", "gpi"],
         sources=libcocotb_sources,
     )
 
