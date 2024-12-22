@@ -308,6 +308,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     if (!cocotb_retval) {
         // LCOV_EXCL_START
         PyErr_Print();
+        gpi_sim_end();
         return -1;
         // LCOV_EXCL_STOP
     }

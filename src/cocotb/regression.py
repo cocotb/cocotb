@@ -59,7 +59,6 @@ from typing import (
 )
 
 import cocotb
-import cocotb._profiling
 import cocotb._scheduler
 import cocotb._write_scheduler
 from cocotb import _ANSI, simulator
@@ -487,9 +486,12 @@ class RegressionManager:
 
         # Setup simulator finalization
         simulator.stop_simulator()
-        cocotb._profiling.finalize()
-        cocotb._stop_user_coverage()
-        cocotb._stop_library_coverage()
+
+        # TODO refactor intialization and finalization into their own module
+        # to prevent circult imports requiring local imports
+        from cocotb import _shutdown_testbench
+
+        _shutdown_testbench()
 
     def _test_complete(self) -> None:
         """Callback given to the scheduler, to be called when the current test completes.
