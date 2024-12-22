@@ -801,6 +801,19 @@ static PyObject *log_level(PyObject *, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+static PyObject *initialize_logger(PyObject *, PyObject *args) {
+    PyObject *log_func;
+    PyObject *filter_func;
+    if (!PyArg_ParseTuple(args, "OO", &log_func, &filter_func)) {
+        // LCOV_EXCL_START
+        PyErr_Print();
+        return NULL;
+        // LCOV_EXCL_STOP
+    }
+    py_gpi_logger_initialize(log_func, filter_func);
+    Py_RETURN_NONE;
+}
+
 class GpiClock {
   public:
     GpiClock(GpiObjHdl *clk_sig) : clk_signal(clk_sig) {}
@@ -1148,6 +1161,14 @@ static PyMethodDef SimulatorMethods[] = {
                "Create a clock driver on a signal.\n"
                "\n"
                ".. versionadded:: 2.0")},
+    {"initialize_logger", initialize_logger, METH_VARARGS,
+     PyDoc_STR("initialize_logger(log_func, filter_func, /)\n"
+               "--\n\n"
+               "initialize_logger("
+               "log_func: Callable[[str, int, str, int, str, str], None], "
+               "filter_func: Callable[[str, int], bool]"
+               ") -> None\n"
+               "Initialize the GPI logger with Python logging functions.")},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
