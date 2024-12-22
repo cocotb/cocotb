@@ -55,7 +55,11 @@ from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
-from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
+from cocotb._utils import (
+    ParameterizedSingletonMetaclass,
+    remove_traceback_frames,
+    singleton,
+)
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 T = TypeVar("T")
@@ -77,7 +81,6 @@ Self = TypeVar("Self", bound="Trigger")
 class Trigger(Awaitable["Trigger"]):
     """Base class to derive from."""
 
-    @abstractmethod
     def __init__(self) -> None:
         self._primed = False
 
@@ -266,7 +269,8 @@ class _ParameterizedSingletonGPITriggerMetaclass(
 ): ...
 
 
-class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
+@singleton
+class ReadOnly(GPITrigger):
     """Fires when the current simulation timestep moves to the read-only phase.
 
     The read-only phase is entered when the current timestep no longer has any further delta steps.
@@ -274,10 +278,6 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass)
     The simulator will not allow scheduling of more events in this timestep.
     Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
     """
-
-    @classmethod
-    def __singleton_key__(cls) -> None:
-        return None
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
@@ -294,12 +294,9 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass)
         return f"{type(self).__qualname__}()"
 
 
-class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
-    """Fires when the read-write portion of the simulation cycles is reached."""
-
-    @classmethod
-    def __singleton_key__(cls) -> None:
-        return None
+@singleton
+class ReadWrite(GPITrigger):
+    """Fires when the read-write simulation phase is reached."""
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
@@ -316,12 +313,9 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
         return f"{type(self).__qualname__}()"
 
 
-class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
+@singleton
+class NextTimeStep(GPITrigger):
     """Fires when the next time step is started."""
-
-    @classmethod
-    def __singleton_key__(cls) -> None:
-        return None
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._cbhdl is None:
