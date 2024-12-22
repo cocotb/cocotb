@@ -48,12 +48,6 @@ def _get_simulator_precision() -> int:
     return _get_simulator_precision()
 
 
-@lru_cache(maxsize=None)
-def _get_sim_time() -> int:
-    timeh, timel = simulator.get_sim_time()
-    return timeh << 32 | timel
-
-
 # Simulator helper functions
 def get_sim_time(units: str = "step") -> int:
     """Retrieve the simulation time from the simulator.
@@ -75,12 +69,14 @@ def get_sim_time(units: str = "step") -> int:
     .. versionchanged:: 1.6.0
         Support ``'step'`` as the the *units* argument to mean "simulator time step".
     """
-    steps = _get_sim_time()
+    timeh, timel = simulator.get_sim_time()
 
-    if units == "step":
-        return steps
-    else:
-        return get_time_from_sim_steps(steps, units)
+    result = timeh << 32 | timel
+
+    if units != "step":
+        result = get_time_from_sim_steps(result, units)
+
+    return result
 
 
 @overload

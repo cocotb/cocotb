@@ -72,7 +72,7 @@ from cocotb._xunit_reporter import XUnitReporter
 from cocotb.result import TestSuccess
 from cocotb.task import Task, _RunningTest
 from cocotb.triggers import SimTimeoutError, Timer, Trigger
-from cocotb.utils import _get_sim_time, get_sim_time
+from cocotb.utils import get_sim_time
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
@@ -455,15 +455,9 @@ class RegressionManager:
 
     def _schedule_next_test(self, trigger: Optional[Trigger] = None) -> None:
         if trigger is not None:
-            # Invalidate get_sim_time cache
-            # Must be first as it affects all logging calls.
-            # TODO move to GPITrigger
-            _get_sim_time.cache_clear()
-
-            # TODO move to Timer object
+            # TODO move to Trigger object
             cocotb.sim_phase = cocotb.SimPhase.NORMAL
             trigger._cleanup()
-
         cocotb._write_scheduler.start_write_scheduler()
 
         self._test_task._add_done_callback(
