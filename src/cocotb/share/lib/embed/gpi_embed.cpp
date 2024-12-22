@@ -281,27 +281,6 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     }
     DEFER(Py_DECREF(entry_utility_module));
 
-    auto entry_info_tuple =
-        PyObject_CallMethod(entry_utility_module, "load_entry", NULL);
-    if (!entry_info_tuple) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return -1;
-        // LCOV_EXCL_STOP
-    }
-    DEFER(Py_DECREF(entry_info_tuple));
-
-    PyObject *entry_module;
-    PyObject *entry_point;
-    if (!PyArg_ParseTuple(entry_info_tuple, "OO", &entry_module,
-                          &entry_point)) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return -1;
-        // LCOV_EXCL_STOP
-    }
-    // Objects returned from ParseTuple are borrowed from tuple
-
     // Build argv for cocotb module
     auto argv_list = PyList_New(argc);
     if (argv_list == NULL) {
@@ -325,7 +304,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     DEFER(Py_DECREF(argv_list))
 
     auto cocotb_retval =
-        PyObject_CallFunctionObjArgs(entry_point, argv_list, NULL);
+        PyObject_CallMethod(entry_utility_module, "load_entry", "O", argv_list);
     if (!cocotb_retval) {
         // LCOV_EXCL_START
         PyErr_Print();

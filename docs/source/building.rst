@@ -352,23 +352,23 @@ PyGPI
     The Python module and callable that starts up the Python cosimulation environment.
     This defaults to :data:`cocotb:_initialise_testbench`, which is the cocotb standard entry point.
     User overloads can be used to enter alternative Python frameworks or to hook existing cocotb functionality.
-    The variable is formatted as ``path.to.entry.module:entry_point.function``.
+    The variable is formatted as ``path.to.entry.module:entry_point.function,other_module:other_func``.
     The string before the colon is the Python module to import
     and the string following the colon is the object to call as the entry function.
+    Multiple entry points can be specified by separating them with a comma.
 
     The entry function must be a callable matching this form:
 
     * ``entry_function(argv: List[str]) -> None``
 
-    The entry module must have the following additional functions defined.
-    These additional requirements on the entry module may be relaxed over time.
-
-    * ``_sim_event(message: str) -> None``
-    * ``_log_from_c(logger_name: str, level: int, filename: str, lineno: int, msg: str, function_name: str)) -> None``
-    * ``_filter_from_c(logger_name: str, level: int) -> bool``
-
     .. versionchanged:: 1.8
         ``level`` argument to ``_sim_event`` is no longer passed, it is assumed to be `SIM_FAIL` (2).
+
+    .. versionchanged:: 2.0
+        The entry-module-level functions ``_sim_event``, ``_log_from_c``, and ``_filter_from_c`` are no longer required.
+
+    .. versionchanged:: 2.0
+        Multiple entry points can be specified by separating them with a comma.
 
 
 Makefile-based Test Scripts
