@@ -449,21 +449,12 @@ class RegressionManager:
                 self._first_test = False
                 return self._schedule_next_test()
             else:
-                return self._timer1._prime(self._schedule_next_test)
+                _ = self._timer1._register(self._schedule_next_test)
+                return
 
         return self._tear_down()
 
-    def _schedule_next_test(self, trigger: Optional[Trigger] = None) -> None:
-        if trigger is not None:
-            # Invalidate get_sim_time cache
-            # Must be first as it affects all logging calls.
-            # TODO move to GPITrigger
-            _get_sim_time.cache_clear()
-
-            # TODO move to Timer object
-            cocotb.sim_phase = cocotb.SimPhase.NORMAL
-            trigger._cleanup()
-
+    def _schedule_next_test(self) -> None:
         cocotb._write_scheduler.start_write_scheduler()
 
         self._test_task._add_done_callback(
@@ -1273,3 +1264,18 @@ class TestFactory(Generic[F]):
 
             glbs["__cocotb_tests__"].append(test)
             glbs[test.name] = test
+
+
+class _RunningTest(Task[None]):
+    """
+    The result of calling a :class:`cocotb.test` decorated object.
+
+    All this class does is change ``__name__`` to show "Test" instead of "Task".
+
+    .. versionchanged:: 1.8.0
+        Moved to the ``cocotb.task`` module.
+    """
+
+    def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
+        super().__init__(inst)
+        self.name = f"Test {name}"
