@@ -257,6 +257,10 @@ def _initialise_testbench(argv_):  # pragma: no cover
 
 
 def _initialise_testbench_(argv_):
+    from cocotb import simulator
+
+    simulator.set_sim_event_callback(_sim_event)
+
     # The body of this function is split in two because no coverage is collected on
     # the function that starts the coverage. By splitting it in two we get coverage
     # on most of the function.
