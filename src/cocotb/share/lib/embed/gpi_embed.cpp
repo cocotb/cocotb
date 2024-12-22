@@ -299,26 +299,6 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     }
     // Objects returned from ParseTuple are borrowed from tuple
 
-    auto log_func = PyObject_GetAttrString(entry_module, "_log_from_c");
-    if (!log_func) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return -1;
-        // LCOV_EXCL_STOP
-    }
-    DEFER(Py_DECREF(log_func));
-
-    auto filter_func = PyObject_GetAttrString(entry_module, "_filter_from_c");
-    if (!filter_func) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return -1;
-        // LCOV_EXCL_STOP
-    }
-    DEFER(Py_DECREF(filter_func));
-
-    py_gpi_logger_initialize(log_func, filter_func);
-
     pEventFn = PyObject_GetAttrString(entry_module, "_sim_event");
     if (!pEventFn) {
         // LCOV_EXCL_START
