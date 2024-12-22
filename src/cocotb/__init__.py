@@ -57,7 +57,6 @@ from cocotb._decorators import (  # isort: skip # noqa: F401
     test,
     parametrize,
 )
-from cocotb.logging import _filter_from_c, _log_from_c  # isort: skip # noqa: F401
 
 
 log: py_logging.Logger
@@ -136,6 +135,10 @@ def _setup_logging() -> None:
     default_config()
     global log
     log = py_logging.getLogger(__name__)
+    import cocotb.simulator
+    from cocotb.logging import _filter_from_c, _log_from_c
+
+    cocotb.simulator.initialize_logger(_log_from_c, _filter_from_c)
 
 
 def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:

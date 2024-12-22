@@ -271,11 +271,18 @@ class SimColourLogFormatter(SimLogFormatter):
         return self._format(level, record, msg, coloured=True)
 
 
-def _filter_from_c(logger_name, level):
+def _filter_from_c(logger_name: str, level: int) -> bool:
     return logging.getLogger(logger_name).isEnabledFor(level)
 
 
-def _log_from_c(logger_name, level, filename, lineno, msg, function_name):
+def _log_from_c(
+    logger_name: str,
+    level: int,
+    filename: str,
+    lineno: int,
+    msg: str,
+    function_name: str,
+) -> None:
     """
     This is for use from the C world, and allows us to insert C stack
     information.
