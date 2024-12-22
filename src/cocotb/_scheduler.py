@@ -55,7 +55,6 @@ from cocotb.triggers import (
     Trigger,
     _Join,
 )
-from cocotb.utils import _get_sim_time
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
@@ -263,11 +262,6 @@ class Scheduler:
         and start the unstarted event loop.
         """
         with profiling_context:
-            # Invalidate get_sim_time cache
-            # Must be first as it affects all logging calls.
-            # TODO: move to GPITrigger
-            _get_sim_time.cache_clear()
-
             # TODO: move state tracking to global variable
             # and handle this via some kind of trigger-specific Python callback
             if trigger is self._read_write:
