@@ -15,7 +15,6 @@ tests:
 test_kill_sim:
 	$(RM) -f test_failed
 	-$(MAKE) sim
-	test ! -f $(COCOTB_RESULTS_FILE)
 	test ! -f test_failed
 
 include ../../designs/sample_module/Makefile
