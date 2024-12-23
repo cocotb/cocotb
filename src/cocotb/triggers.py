@@ -54,6 +54,7 @@ import cocotb._write_scheduler
 import cocotb.handle
 import cocotb.task
 from cocotb import simulator
+from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._profiling import profiling_context
 from cocotb._py_compat import cached_property
@@ -79,7 +80,9 @@ Self = TypeVar("Self", bound="Trigger")
 class _CallbackHandle:
     """A cancellable handle to a callback registered with a Trigger."""
 
-    def __init__(self, trigger: "Trigger", func: Callable[..., Any], *args: Any) -> None:
+    def __init__(
+        self, trigger: "Trigger", func: Callable[..., Any], *args: Any
+    ) -> None:
         self._func = func
         self._args = args
         self._trigger = trigger
@@ -777,7 +780,10 @@ class _Join(Trigger):
         return f"Join({self._task!s})"
 
 
-class Join(_Join[T]):
+@deprecated(
+    "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
+)
+def Join(task: "cocotb.task.Task[T]") -> "_Join[T]":
     r"""Fires when a :class:`~cocotb.task.Task` completes.
 
     Args:
@@ -799,13 +805,7 @@ class Join(_Join[T]):
 
         Using ``task`` directly is prefered to ``Join(task)`` in all situations where the latter could be used.
     """
-
-    def __new__(cls, task: "cocotb.task.Task[T]") -> "Join[T]":
-
-
-    def __await__(self) -> Generator[Any, Any, T]:
-        yield self
-        return self._task.result()
+    return _Join(task)
 
 
 class Waitable(Awaitable[T]):
