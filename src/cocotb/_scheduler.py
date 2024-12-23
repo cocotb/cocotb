@@ -38,16 +38,16 @@ _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
 class CallbackHandle:
-
-    def __init__(self, func: Callable[..., Any]) -> None:
+    def __init__(self, func: Callable[..., Any], args: Any) -> None:
         self._func = func
-        # TODO determine if setting a cancelled flag is faster than removing the callback from the queue or not
-        # I suppose this depends on how fast an OrderedDict pop is versus how often this triggers
-        # which is probably unlikely.
+        self._args = args
         self._cancelled = False
 
     def cancel(self) -> None:
         self._cancelled = True
+
+    def _run(self) -> None:
+        self._func(*self._args)
 
 
 class Scheduler:
@@ -129,7 +129,13 @@ class Scheduler:
         while self._scheduled_tasks:
             handle = self._scheduled_tasks.pop(0)
             if not handle._cancelled:
-                handle._func()
+                handle._run()
+
+    def schedule(self, func: Callable[..., Any], *args: Any) -> CallbackHandle:
+        """Schedule a function to run."""
+        handle = CallbackHandle(func, args)
+        self._scheduled_tasks.append(handle)
+        return handle
 
 
 instance: Scheduler

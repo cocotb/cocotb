@@ -49,6 +49,7 @@ from typing import (
     overload,
 )
 
+import cocotb._scheduler
 import cocotb._write_scheduler
 import cocotb.handle
 import cocotb.task
@@ -57,7 +58,7 @@ from cocotb._outcomes import Error, Outcome, Value
 from cocotb._profiling import profiling_context
 from cocotb._py_compat import cached_property
 from cocotb._utils import ParameterizedSingletonMetaclass, remove_traceback_frames
-from cocotb.utils import _get_sim_time, get_sim_steps, get_time_from_sim_steps
+from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 T = TypeVar("T")
 
@@ -78,13 +79,16 @@ Self = TypeVar("Self", bound="Trigger")
 class _CallbackHandle:
     """A cancellable handle to a callback registered with a Trigger."""
 
-    # TODO Add state tracking?
-
-    def __init__(self, trigger: "Trigger") -> None:
+    def __init__(self, trigger: "Trigger", func: Callable[..., Any], *args: Any) -> None:
+        self._func = func
+        self._args = args
         self._trigger = trigger
 
     def cancel(self) -> None:
         self._trigger._deregister(self)
+
+    def _run(self) -> None:
+        self._func(*self._args)
 
 
 class Trigger(Awaitable["Trigger"]):
@@ -95,7 +99,7 @@ class Trigger(Awaitable["Trigger"]):
 
     def __init__(self) -> None:
         # OrderedDict gives us O(1) append, pop, and random removal
-        self._callbacks: OrderedDict[_CallbackHandle, Callable[[], Any]] = OrderedDict()
+        self._callbacks: OrderedDict[_CallbackHandle, None] = OrderedDict()
 
     @cached_property
     def log(self) -> logging.Logger:
@@ -117,7 +121,7 @@ class Trigger(Awaitable["Trigger"]):
         """Clean up the underlying trigger mechanism after it fires."""
         pass
 
-    def _register(self, cb: Callable[[], None]) -> _CallbackHandle:
+    def _register(self, cb: Callable[..., None], *args: Any) -> _CallbackHandle:
         """Register the given callback to be called when the Trigger fires.
 
         Calls :meth:`_prime` to register the underlying Trigger mechanism if a callback is added.
@@ -125,8 +129,8 @@ class Trigger(Awaitable["Trigger"]):
         Returns:
             A cancellable handle to the given callback.
         """
-        res = _CallbackHandle(self)
-        self._callbacks[res] = cb
+        res = _CallbackHandle(self, cb, *args)
+        self._callbacks[res] = None
         # _prime must come after adding to _cb_handles in case _prime calls _react
         if not self._callbacks:
             self._prime()
@@ -147,8 +151,8 @@ class Trigger(Awaitable["Trigger"]):
     def _react(self) -> None:
         """Call all registered callbacks when the Trigger fires."""
         while self._callbacks:
-            _, cb = self._callbacks.popitem(last=False)
-            cb()
+            handle, _ = self._callbacks.popitem(last=False)
+            handle._run()
         self._cleanup()
 
     def __await__(self: Self) -> Generator[Any, Any, Self]:
@@ -164,11 +168,10 @@ class GPITrigger(Trigger):
 
     def _react(self) -> None:
         with profiling_context:
-            _get_sim_time.cache_clear()
             global _current_gpi_trigger
             _current_gpi_trigger = self
             super()._react()
-            cocotb._scheduler_inst._event_loop()
+            cocotb._scheduler.instance.run()
 
     # _prime in subclasses should set up _cbhdl variable with GPI callback handle
 
@@ -339,7 +342,7 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass
             _current_gpi_trigger = self
             cocotb._write_scheduler.apply_scheduled_writes()
             Trigger._react(self)
-            cocotb._scheduler_inst._event_loop()
+            cocotb._scheduler.instance.run()
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}()"
@@ -774,35 +777,35 @@ class _Join(Trigger):
         return f"Join({self._task!s})"
 
 
-# class Join(_Join[T]):
-#     r"""Fires when a :class:`~cocotb.task.Task` completes.
+class Join(_Join[T]):
+    r"""Fires when a :class:`~cocotb.task.Task` completes.
 
-#     Args:
-#         task: The task upon which to wait for completion.
+    Args:
+        task: The task upon which to wait for completion.
 
-#     .. code-block:: python3
+    .. code-block:: python3
 
-#         async def coro_inner():
-#             await Timer(1, units="ns")
-#             return "Hello world"
-
-
-#         task = cocotb.start_soon(coro_inner())
-#         result = await Join(task)
-#         assert task.result() == "Hello world"
-#         assert task.result() == result
-
-#     .. deprecated:: 2.0
-
-#         Using ``task`` directly is prefered to ``Join(task)`` in all situations where the latter could be used.
-#     """
-
-#     def __new__(cls, task: "cocotb.task.Task[T]") -> "Join[T]":
+        async def coro_inner():
+            await Timer(1, units="ns")
+            return "Hello world"
 
 
-#     def __await__(self) -> Generator[Any, Any, T]:
-#         yield self
-#         return self._task.result()
+        task = cocotb.start_soon(coro_inner())
+        result = await Join(task)
+        assert task.result() == "Hello world"
+        assert task.result() == result
+
+    .. deprecated:: 2.0
+
+        Using ``task`` directly is prefered to ``Join(task)`` in all situations where the latter could be used.
+    """
+
+    def __new__(cls, task: "cocotb.task.Task[T]") -> "Join[T]":
+
+
+    def __await__(self) -> Generator[Any, Any, T]:
+        yield self
+        return self._task.result()
 
 
 class Waitable(Awaitable[T]):
@@ -994,6 +997,10 @@ class ClockCycles(Waitable["ClockCycles"]):
         return fmt.format(type(self).__qualname__, self.signal, self.num_cycles)
 
 
+class SimTimeoutError(TimeoutError):
+    """Exception thrown when a timeout, in terms of simulation time, occurs."""
+
+
 @overload
 async def with_timeout(
     trigger: Trigger,
@@ -1028,10 +1035,6 @@ async def with_timeout(
     timeout_unit: str = "step",
     round_mode: Optional[str] = None,
 ) -> T: ...
-
-
-class SimTimeoutError(TimeoutError):
-    """Exception thrown when a timeout, in terms of simulation time, occurs."""
 
 
 async def with_timeout(

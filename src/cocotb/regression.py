@@ -71,8 +71,8 @@ from cocotb._utils import (
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.result import TestSuccess
 from cocotb.task import Task, _RunningTest
-from cocotb.triggers import SimTimeoutError, Timer, Trigger
-from cocotb.utils import _get_sim_time, get_sim_time
+from cocotb.triggers import SimTimeoutError, Timer
+from cocotb.utils import get_sim_time
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
@@ -504,8 +504,8 @@ class RegressionManager:
         if self._test_outcome is not None:
             outcome = self._test_outcome
         else:
-            assert self._test_task._outcome is not None
-            outcome = self._test_task._outcome
+            assert self._test_task._result is not None
+            outcome = self._test_task._result
         try:
             outcome.get()
         except (KeyboardInterrupt, SystemExit):
