@@ -22,11 +22,8 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-import logging
-
 import cocotb
-from cocotb.handle import HierarchyObject, LogicObject
+from cocotb.handle import HierarchyObject, LogicArrayObject, LogicObject
 
 
 @cocotb.test()
@@ -35,22 +32,11 @@ async def port_not_hierarchy(dut):
     Test for issue raised by Luke - iteration causes a toplevel port type to
     change from LogicObject to HierarchyObject
     """
-    fails = 0
-    tlog = logging.getLogger("cocotb.test")
 
-    def check_instance(obj, objtype):
-        if not isinstance(obj, objtype):
-            tlog.error(
-                f"Expected {obj._path} to be of type {objtype.__name__} but got {type(obj).__name__}"
-            )
-            return 1
-        tlog.info(f"{obj._path} is {type(obj).__name__}")
-        return 0
-
-    fails += check_instance(dut.clk, LogicObject)
-    fails += check_instance(dut.i_verilog, HierarchyObject)
-    fails += check_instance(dut.i_verilog.clock, LogicObject)
-    fails += check_instance(dut.i_verilog.tx_data, LogicObject)
+    assert isinstance(dut.clk, LogicObject)
+    assert isinstance(dut.i_verilog, HierarchyObject)
+    assert isinstance(dut.i_verilog.clock, LogicObject)
+    assert isinstance(dut.i_verilog.tx_data, LogicArrayObject)
 
     for _ in dut:
         pass
@@ -58,9 +44,7 @@ async def port_not_hierarchy(dut):
     for _ in dut.i_verilog:
         pass
 
-    fails += check_instance(dut.clk, LogicObject)
-    fails += check_instance(dut.i_verilog, HierarchyObject)
-    fails += check_instance(dut.i_verilog.clock, LogicObject)
-    fails += check_instance(dut.i_verilog.tx_data, LogicObject)
-
-    assert fails == 0
+    assert isinstance(dut.clk, LogicObject)
+    assert isinstance(dut.i_verilog, HierarchyObject)
+    assert isinstance(dut.i_verilog.clock, LogicObject)
+    assert isinstance(dut.i_verilog.tx_data, LogicArrayObject)

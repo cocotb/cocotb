@@ -62,10 +62,7 @@ async def recursive_discovery(dut):
     tlog.info("Found a total of %d things", actual)
 
     assert isinstance(
-        dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.LogicObject
-    ), (
-        "Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable"
-        f" but it was {type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__}"
+        dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.LogicArrayObject
     )
 
 

@@ -378,9 +378,9 @@ class RisingEdge(_EdgeBase):
     def __singleton_key__(
         cls, signal: cocotb.handle.LogicObject
     ) -> cocotb.handle.LogicObject:
-        if not (isinstance(signal, cocotb.handle.LogicObject) and len(signal) == 1):
+        if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
-                f"{cls.__qualname__} requires a 1-bit LogicObject. Got {signal!r} of length {len(signal)}"
+                f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
             )
         return signal
 
@@ -407,9 +407,9 @@ class FallingEdge(_EdgeBase):
     def __singleton_key__(
         cls, signal: cocotb.handle.LogicObject
     ) -> cocotb.handle.LogicObject:
-        if not (isinstance(signal, cocotb.handle.LogicObject) and len(signal) == 1):
+        if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
-                f"{cls.__qualname__} requires a 1-bit LogicObject. Got {signal!r} of length {len(signal)}"
+                f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
             )
         return signal
 
@@ -432,7 +432,7 @@ class Edge(_EdgeBase):
     ) -> cocotb.handle.ValueObjectBase[Any, Any]:
         if not isinstance(signal, cocotb.handle.ValueObjectBase):
             raise TypeError(
-                f"{cls.__qualname__} requires an object derived from ValueObjectBase which can change value. Got {signal!r} of length {len(signal)}"
+                f"{cls.__qualname__} requires an object derived from ValueObjectBase which can change value. Got {signal!r} of type {type(signal).__qualname__}"
             )
         return signal
 

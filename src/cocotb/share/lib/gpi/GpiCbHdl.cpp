@@ -47,9 +47,6 @@ const char *GpiObjHdl::get_type_str() {
         CASE_OPTION(GPI_UNKNOWN);
         CASE_OPTION(GPI_MEMORY);
         CASE_OPTION(GPI_MODULE);
-        CASE_OPTION(GPI_NET);
-        // CASE_OPTION(GPI_PARAMETER);  // Deprecated
-        CASE_OPTION(GPI_REGISTER);
         CASE_OPTION(GPI_ARRAY);
         CASE_OPTION(GPI_ENUM);
         CASE_OPTION(GPI_STRUCTURE);
@@ -58,6 +55,8 @@ const char *GpiObjHdl::get_type_str() {
         CASE_OPTION(GPI_STRING);
         CASE_OPTION(GPI_GENARRAY);
         CASE_OPTION(GPI_PACKAGE);
+        CASE_OPTION(GPI_LOGIC);
+        CASE_OPTION(GPI_LOGIC_ARRAY);
         default:
             ret = "unknown";
     }

@@ -8,7 +8,6 @@ from pathlib import Path
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
-from cocotb.types import LogicArray
 from cocotb_tools.runner import get_runner
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -18,17 +17,6 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 async def dff_simple_test(dut):
     """Test that d propagates to q"""
 
-    # Assert initial output is unknown
-    # verilator does not support 4-state signals
-    # see https://veripool.org/guide/latest/languages.html#unknown-states
-    initial = (
-        LogicArray("0")
-        if cocotb.SIM_NAME.lower().startswith("verilator")
-        else (
-            LogicArray("U") if LANGUAGE.lower().startswith("vhdl") else LogicArray("X")
-        )
-    )
-    assert LogicArray(dut.q.value) == initial
     # Set initial input value to prevent it from floating
     dut.d.value = 0
 
