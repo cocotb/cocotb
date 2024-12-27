@@ -171,7 +171,7 @@ void *FliValueObjHdl::get_sub_hdl(int index) {
     if (!m_indexable) return NULL;
 
     if (m_sub_hdls == NULL) {
-        if (is_var()) {
+        if (m_is_var) {
             m_sub_hdls = (void **)mti_GetVarSubelements(
                 get_handle<mtiVariableIdT>(), NULL);
         } else {
