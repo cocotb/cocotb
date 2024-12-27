@@ -185,7 +185,7 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
                                              int (*function)(void *),
                                              void *cb_data) override;
 
-    bool is_var() { return m_is_var; }
+    bool is_variable() { return m_is_var; }
 
   protected:
     bool m_is_var;
