@@ -27,7 +27,6 @@
 
 """All things relating to regression capabilities."""
 
-import functools
 import hashlib
 import inspect
 import logging
@@ -36,24 +35,13 @@ import pdb
 import random
 import re
 import time
-import warnings
 from enum import auto
 from importlib import import_module
-from itertools import product
 from typing import (
     Any,
-    Callable,
-    Coroutine,
     Dict,
-    Generic,
     List,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
     Union,
-    cast,
-    overload,
 )
 
 import cocotb
@@ -61,8 +49,7 @@ import cocotb._profiling
 import cocotb._scheduler
 import cocotb._write_scheduler
 from cocotb import _ANSI, simulator
-from cocotb._exceptions import InternalError
-from cocotb._outcomes import Error, Outcome
+from cocotb._outcomes import Outcome
 from cocotb._utils import (
     DocEnum,
     remove_traceback_frames,
@@ -71,128 +58,13 @@ from cocotb._utils import (
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.result import TestSuccess
 from cocotb.task import Task, _RunningTest
-from cocotb.triggers import SimTimeoutError, Timer
+from cocotb.triggers import Timer
 from cocotb.utils import get_sim_time
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
 
 _logger = logging.getLogger(__name__)
-
-_Failed: Type[BaseException]
-try:
-    import pytest
-except ModuleNotFoundError:
-    _Failed = AssertionError
-else:
-    try:
-        with pytest.raises(Exception):
-            pass
-    except BaseException as _raises_e:
-        _Failed = type(_raises_e)
-    else:
-        assert False, "pytest.raises doesn't raise an exception when it fails"
-
-
-# TODO remove SimFailure once we have functionality in place to abort the test without
-# having to set an exception.
-class SimFailure(Exception):
-    """A Test failure due to simulator failure."""
-
-
-class Test:
-    """A cocotb test in a regression.
-
-    Args:
-        func:
-            The test function object.
-
-        name:
-            The name of the test function.
-            Defaults to ``func.__qualname__`` (the dotted path to the test function in the module).
-
-        module:
-            The name of the module containing the test function.
-            Defaults to ``func.__module__`` (the name of the module containing the test function).
-
-        doc:
-            The docstring for the test.
-            Defaults to ``func.__doc__`` (the docstring of the test function).
-
-        timeout_time:
-            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
-
-        timeout_unit:
-            Units of ``timeout_time``, accepts any units that :class:`~cocotb.triggers.Timer` does.
-
-        expect_fail:
-            If ``True`` and the test fails a functional check via an ``assert`` statement, :func:`pytest.raises`,
-            :func:`pytest.warns`, or :func:`pytest.deprecated_call`, the test is considered to have passed.
-            If ``True`` and the test passes successfully, the test is considered to have failed.
-
-        expect_error:
-            Mark the result as a pass only if one of the given exception types is raised in the test.
-
-        skip:
-            Don't execute this test as part of the regression.
-            The test can still be run manually by setting :envvar:`COCOTB_TESTCASE`.
-
-        stage:
-            Order tests logically into stages.
-            Tests from earlier stages are run before tests from later stages.
-    """
-
-    def __init__(
-        self,
-        *,
-        func: Callable[..., Coroutine[Any, Any, None]],
-        name: Optional[str] = None,
-        module: Optional[str] = None,
-        doc: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: str = "step",
-        expect_fail: bool = False,
-        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
-        skip: bool = False,
-        stage: int = 0,
-        _expect_sim_failure: bool = False,
-    ) -> None:
-        if timeout_time is not None:
-            co = func  # must save ref because we overwrite variable "func"
-
-            @functools.wraps(func)
-            async def func(*args, **kwargs):
-                running_co = Task(co(*args, **kwargs))
-
-                try:
-                    res = await cocotb.triggers.with_timeout(
-                        running_co, self.timeout_time, self.timeout_unit
-                    )
-                except SimTimeoutError:
-                    running_co.kill()
-                    raise
-                else:
-                    return res
-
-        self.func = func
-        self.timeout_time = timeout_time
-        self.timeout_unit = timeout_unit
-        self.expect_fail = expect_fail
-        if isinstance(expect_error, BaseException):
-            expect_error = (expect_error,)
-        if _expect_sim_failure:
-            expect_error += (SimFailure,)
-        self.expect_error = expect_error
-        self._expect_sim_failure = _expect_sim_failure
-        self.skip = skip
-        self.stage = stage
-        self.name = self.func.__qualname__ if name is None else name
-        self.module = self.func.__module__ if module is None else module
-        self.doc = self.func.__doc__ if doc is None else doc
-        if self.doc is not None:
-            # cleanup docstring using `trim` function from PEP257
-            self.doc = inspect.cleandoc(self.doc)
-        self.fullname = f"{self.module}.{self.name}"
 
 
 def _format_doc(docstring: Union[str, None]) -> str:
@@ -958,21 +830,6 @@ class RegressionManager:
         self._abort_test(self._sim_failure)
         cocotb._scheduler_inst._handle_termination()
 
-    def _abort_test(self, exc: Exception) -> None:
-        """Force this test to end early, without executing any cleanup.
-
-        This happens when a background task fails, and is consistent with
-        how the behavior has always been. In future, we may want to behave
-        more gracefully to allow the test body to clean up.
-
-        `exc` is the exception that the test should report as its reason for
-        aborting.
-        """
-        if self._test_outcome is not None:  # pragma: no cover
-            raise InternalError("Outcome already has a value, but is being set again.")
-        self._test_outcome = Error(exc)
-        self._test_task.kill()
-
     @staticmethod
     def _safe_divide(a: float, b: float) -> float:
         """Used when computing time ratios to ensure no exception is raised if either time is 0."""
@@ -983,299 +840,3 @@ class RegressionManager:
                 return float("nan")
             else:
                 return float("inf")
-
-
-F = TypeVar("F", bound=Callable[..., Coroutine[Any, Any, None]])
-
-
-class TestFactory(Generic[F]):
-    """Factory to automatically generate tests.
-
-    Args:
-        test_function: A Callable that returns the test Coroutine.
-            Must take *dut* as the first argument.
-        *args: Remaining arguments are passed directly to the test function.
-            Note that these arguments are not varied. An argument that
-            varies with each test must be a keyword argument to the
-            test function.
-        **kwargs: Remaining keyword arguments are passed directly to the test function.
-            Note that these arguments are not varied. An argument that
-            varies with each test must be a keyword argument to the
-            test function.
-
-    Assuming we have a common test function that will run a test. This test
-    function will take keyword arguments (for example generators for each of
-    the input interfaces) and generate tests that call the supplied function.
-
-    This Factory allows us to generate sets of tests based on the different
-    permutations of the possible arguments to the test function.
-
-    For example, if we have a module that takes backpressure, has two configurable
-    features where enabling ``feature_b`` requires ``feature_a`` to be active, and
-    need to test against data generation routines ``gen_a`` and ``gen_b``:
-
-    >>> tf = TestFactory(test_function=run_test)
-    >>> tf.add_option(name="data_in", optionlist=[gen_a, gen_b])
-    >>> tf.add_option("backpressure", [None, random_backpressure])
-    >>> tf.add_option(
-    ...     ("feature_a", "feature_b"), [(False, False), (True, False), (True, True)]
-    ... )
-    >>> tf.generate_tests()
-
-    We would get the following tests:
-
-        * ``gen_a`` with no backpressure and both features disabled
-        * ``gen_a`` with no backpressure and only ``feature_a`` enabled
-        * ``gen_a`` with no backpressure and both features enabled
-        * ``gen_a`` with ``random_backpressure`` and both features disabled
-        * ``gen_a`` with ``random_backpressure`` and only ``feature_a`` enabled
-        * ``gen_a`` with ``random_backpressure`` and both features enabled
-        * ``gen_b`` with no backpressure and both features disabled
-        * ``gen_b`` with no backpressure and only ``feature_a`` enabled
-        * ``gen_b`` with no backpressure and both features enabled
-        * ``gen_b`` with ``random_backpressure`` and both features disabled
-        * ``gen_b`` with ``random_backpressure`` and only ``feature_a`` enabled
-        * ``gen_b`` with ``random_backpressure`` and both features enabled
-
-    The tests are appended to the calling module for auto-discovery.
-
-    Tests are simply named ``test_function_N``. The docstring for the test (hence
-    the test description) includes the name and description of each generator.
-
-    .. versionchanged:: 1.5
-        Groups of options are now supported
-
-    .. versionchanged:: 2.0
-        You can now pass :func:`cocotb.test` decorator arguments when generating tests.
-
-    .. deprecated:: 2.0
-        Use :func:`cocotb.parametrize` instead.
-    """
-
-    def __init__(self, test_function: F, *args: Any, **kwargs: Any) -> None:
-        warnings.warn(
-            "TestFactory is deprecated, use `@cocotb.parametrize` instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.test_function = test_function
-        self.args = args
-        self.kwargs_constant = kwargs
-        self.kwargs: Dict[
-            Union[str, Sequence[str]], Union[Sequence[Any], Sequence[Sequence[Any]]]
-        ] = {}
-
-    @overload
-    def add_option(self, name: str, optionlist: Sequence[Any]) -> None: ...
-
-    @overload
-    def add_option(
-        self, name: Sequence[str], optionlist: Sequence[Sequence[Any]]
-    ) -> None: ...
-
-    def add_option(
-        self,
-        name: Union[str, Sequence[str]],
-        optionlist: Union[Sequence[str], Sequence[Sequence[str]]],
-    ) -> None:
-        """Add a named option to the test.
-
-        Args:
-            name:
-                An option name, or an iterable of several option names. Passed to test as keyword arguments.
-
-            optionlist:
-                A list of possible options for this test knob.
-                If N names were specified, this must be a list of N-tuples or
-                lists, where each element specifies a value for its respective
-                option.
-
-        .. versionchanged:: 1.5
-            Groups of options are now supported
-        """
-        if not isinstance(name, str):
-            for opt in optionlist:
-                if len(name) != len(opt):
-                    raise ValueError(
-                        "Mismatch between number of options and number of option values in group"
-                    )
-        self.kwargs[name] = optionlist
-
-    def generate_tests(
-        self,
-        *,
-        prefix: Optional[str] = None,
-        postfix: Optional[str] = None,
-        stacklevel: int = 0,
-        name: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: str = "steps",
-        expect_fail: bool = False,
-        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
-        skip: bool = False,
-        stage: int = 0,
-        _expect_sim_failure: bool = False,
-    ) -> None:
-        """
-        Generate an exhaustive set of tests using the cartesian product of the
-        possible keyword arguments.
-
-        The generated tests are appended to the namespace of the calling
-        module.
-
-        Args:
-            prefix:
-                Text string to append to start of ``test_function`` name when naming generated test cases.
-                This allows reuse of a single ``test_function`` with multiple :class:`TestFactories <.TestFactory>` without name clashes.
-
-                .. deprecated:: 2.0
-                    Use the more flexible ``name`` field instead.
-
-            postfix:
-                Text string to append to end of ``test_function`` name when naming generated test cases.
-                This allows reuse of a single ``test_function`` with multiple :class:`TestFactories <.TestFactory>` without name clashes.
-
-                .. deprecated:: 2.0
-                    Use the more flexible ``name`` field instead.
-            stacklevel:
-                Which stack level to add the generated tests to. This can be used to make a custom TestFactory wrapper.
-
-            name:
-                Passed as ``name`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            timeout_time:
-                Passed as ``timeout_time`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            timeout_unit:
-                Passed as ``timeout_unit`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            expect_fail:
-                Passed as ``expect_fail`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            expect_error:
-                Passed as ``expect_error`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            skip:
-                Passed as ``skip`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            stage:
-                Passed as ``stage`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-        """
-
-        if prefix is not None:
-            warnings.warn(
-                "``prefix`` argument is deprecated. Use the more flexible ``name`` field instead.",
-                DeprecationWarning,
-            )
-        else:
-            prefix = ""
-
-        if postfix is not None:
-            warnings.warn(
-                "``postfix`` argument is deprecated. Use the more flexible ``name`` field instead.",
-                DeprecationWarning,
-            )
-        else:
-            postfix = ""
-
-        glbs = inspect.stack()[stacklevel][0].f_back.f_globals
-
-        if "__cocotb_tests__" not in glbs:
-            glbs["__cocotb_tests__"] = []
-
-        test_func_name = self.test_function.__qualname__ if name is None else name
-
-        for index, testoptions in enumerate(
-            dict(zip(self.kwargs, v)) for v in product(*self.kwargs.values())
-        ):
-            name = f"{prefix}{test_func_name}{postfix}_{(index + 1):03d}"
-            doc: str = "Automatically generated test\n\n"
-
-            # preprocess testoptions to split tuples
-            testoptions_split: Dict[str, Sequence[Any]] = {}
-            for optname, optvalue in testoptions.items():
-                if isinstance(optname, str):
-                    optvalue = cast(Sequence[Any], optvalue)
-                    testoptions_split[optname] = optvalue
-                else:
-                    # previously checked in add_option; ensure nothing has changed
-                    optvalue = cast(Sequence[Sequence[Any]], optvalue)
-                    assert len(optname) == len(optvalue)
-                    for n, v in zip(optname, optvalue):
-                        testoptions_split[n] = v
-
-            for optname, optvalue in testoptions_split.items():
-                if callable(optvalue):
-                    if not optvalue.__doc__:
-                        desc = "No docstring supplied"
-                    else:
-                        desc = optvalue.__doc__.split("\n")[0]
-                    doc += f"\t{optname}: {optvalue.__qualname__} ({desc})\n"
-                else:
-                    doc += f"\t{optname}: {repr(optvalue)}\n"
-
-            kwargs: Dict[str, Any] = {}
-            kwargs.update(self.kwargs_constant)
-            kwargs.update(testoptions_split)
-
-            @functools.wraps(self.test_function)
-            async def _my_test(dut, kwargs: Dict[str, Any] = kwargs) -> None:
-                await self.test_function(dut, *self.args, **kwargs)
-
-            _my_test.__doc__ = doc
-            _my_test.__name__ = name
-            _my_test.__qualname__ = name
-
-            if name in glbs:
-                _logger.error(
-                    "Overwriting %s in module %s. "
-                    "This causes a previously defined testcase not to be run. "
-                    "Consider using the `name`, `prefix`, or `postfix` arguments to augment the name.",
-                    name,
-                    glbs["__name__"],
-                )
-
-            test = Test(
-                func=_my_test,
-                name=name,
-                module=glbs["__name__"],
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
-                expect_fail=expect_fail,
-                expect_error=expect_error,
-                skip=skip,
-                stage=stage,
-                _expect_sim_failure=_expect_sim_failure,
-            )
-
-            glbs["__cocotb_tests__"].append(test)
-            glbs[test.name] = test
-
-
-class _RunningTest(Task[None]):
-    """
-    The result of calling a :class:`cocotb.test` decorated object.
-
-    All this class does is change ``__name__`` to show "Test" instead of "Task".
-
-    .. versionchanged:: 1.8.0
-        Moved to the ``cocotb.task`` module.
-    """
-
-    def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
-        super().__init__(inst)
-        self.name = f"Test {name}"

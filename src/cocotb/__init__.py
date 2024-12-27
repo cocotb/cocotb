@@ -26,7 +26,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import ast
-import inspect
 import logging as py_logging
 import os
 import random
@@ -124,27 +123,6 @@ def _setup_logging() -> None:
     log = py_logging.getLogger(__name__)
 
 
-def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:
-    # if cancelled, do nothing
-    if task.cancelled():
-        return
-    # if there's a Task awaiting this one, don't fail
-    join = cocotb.triggers._Join(task)
-    if join in cocotb._scheduler_inst._trigger2tasks:
-        return
-    # if no failure, do nothing
-    e = task.exception()
-    if e is None:
-        return
-    # there was a failure and no one is watching, fail test
-    elif isinstance(e, (TestSuccess, AssertionError)):
-        task.log.info("Test stopped by this task")
-        cocotb.regression_manager._abort_test(e)
-    else:
-        task.log.error("Exception raised by this task")
-        cocotb.regression_manager._abort_test(e)
-
-
 def start_soon(
     coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
 ) -> "cocotb.task.Task[cocotb.task.ResultType]":
@@ -163,7 +141,6 @@ def start_soon(
     .. versionadded:: 1.6.0
     """
     task = create_task(coro)
-    task._add_done_callback(_task_done_callback)
     cocotb._scheduler_inst._schedule_task(task)
     return task
 
@@ -210,22 +187,9 @@ def create_task(
     """
     if isinstance(coro, cocotb.task.Task):
         return coro
-    elif isinstance(coro, Coroutine):
-        return cocotb.task.Task(coro)
-    elif inspect.iscoroutinefunction(coro):
-        raise TypeError(
-            f"Coroutine function {coro} should be called prior to being scheduled."
-        )
-    elif inspect.isasyncgen(coro):
-        raise TypeError(
-            f"{coro.__qualname__} is an async generator, not a coroutine. "
-            "You likely used the yield keyword instead of await."
-        )
-    else:
-        raise TypeError(
-            f"Attempt to add an object of type {type(coro)} to the scheduler, "
-            f"which isn't a coroutine: {coro!r}\n"
-        )
+    task = cocotb.task.Task(coro)
+    task._add_done_callback(_task_done_callback)
+    return task
 
 
 def _initialise_testbench(argv_):  # pragma: no cover

@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import logging
 import threading
-from cocotb.triggers import Event
+
 from cocotb._scheduler import _debug
+from cocotb.triggers import Event
 
 
 class external_state:
@@ -86,9 +87,6 @@ class external_waiter:
 
         return self.state
 
-
-
-
     # def _queue_function(self, task):
     #     """Queue a task for execution and move the containing thread
     #     so that it does not block execution of the main thread any longer.
@@ -167,20 +165,104 @@ class external_waiter:
 
     #     return wrapper()
 
+    #     # Schedule may have queued up some events so we'll burn through those
+    #     while self._pending_events:
+    #         if _debug:
+    #             self.log.debug(
+    #                 f"Scheduling pending event {self._pending_events[0]}"
+    #             )
+    #         self._pending_events.pop(0).set()
 
-        #     # Schedule may have queued up some events so we'll burn through those
-        #     while self._pending_events:
-        #         if _debug:
-        #             self.log.debug(
-        #                 f"Scheduling pending event {self._pending_events[0]}"
-        #             )
-        #         self._pending_events.pop(0).set()
-
-        # # no more pending tasks
-        # if self._terminate:
-        #     self._handle_termination()
-        # elif _debug:
-        #     self.log.debug("All tasks scheduled, handing control back to simulator")
+    # # no more pending tasks
+    # if self._terminate:
+    #     self._handle_termination()
+    # elif _debug:
+    #     self.log.debug("All tasks scheduled, handing control back to simulator")
 
 
 main_thread = threading.current_thread()
+
+
+Result = TypeVar("Result")
+
+
+def resume(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., Result]:
+    """Converts a coroutine function into a blocking function.
+
+    This allows a :term:`coroutine function` that awaits cocotb triggers to be
+    called from a :term:`blocking function` converted by :func:`cocotb.bridge`.
+    This completes the bridge through non-:keyword:`async` code.
+
+    When a converted coroutine function is called the current function blocks until the
+    converted function exits.
+
+    Results of the converted function are returned from the function call.
+
+    Args:
+        func: The :term:`coroutine function` to convert into a :term:`blocking function`.
+
+    Returns:
+        *func* as a :term:`blocking function`.
+
+    Raises:
+        RuntimeError:
+            If the function that is returned is subsequently called from a
+            thread that was not started with :class:`cocotb.bridge`.
+
+    .. versionchanged:: 2.0
+        Renamed from ``function``.
+        No longer implemented as a type.
+        The ``log`` attribute is no longer available.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return cocotb._scheduler_inst._queue_function(func(*args, **kwargs))
+
+    return wrapper
+
+
+def bridge(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Result]]:
+    r"""Converts a blocking function into a coroutine function.
+
+    This function converts a :term:`blocking function` into a :term:`coroutine function`
+    with the expectation that the function being converted is intended to call a
+    :func:`cocotb.resume` converted function. This creates a bridge through
+    non-:keyword:`async` code for code wanting to eventually :keyword:`await` on cocotb
+    triggers.
+
+    When a converted function call is used in an :keyword:`await` statement, the current
+    Task blocks until the converted function finishes.
+
+    Results of the converted function are returned from the :keyword:`await` expression.
+
+    .. warning::
+        Each bridge is implemented with a distinct thread, meaning that all bridges and
+        the main thread that runs all :keyword:`async` code are susceptible to races
+        when sharing data.
+
+    .. note::
+        Bridge threads *must* either finish or block on a :func:`cocotb.resume`
+        converted function before control is given back to the simulator.
+        This is done to prevent any code from executing in parallel with the simulation.
+
+    Args:
+        func: The :term:`blocking function` to convert into a :term:`coroutine function`.
+
+    Returns:
+        *func* as a :term:`coroutine function`.
+
+    .. versionchanged:: 2.0
+        Renamed from ``external``.
+        No longer implemented as a type.
+        The ``log`` attribute is no longer available.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return cocotb._scheduler_inst._run_in_executor(func, *args, **kwargs)
+
+    return wrapper
+
+
+F = TypeVar("F", bound=Callable[..., Coroutine[Any, Any, None]])
