@@ -36,14 +36,7 @@ async def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if SIM_NAME.startswith("verilator"):
-        pass_total = 26
-    elif SIM_NAME.startswith("riviera"):
-        # finds always and initial blocks
-        pass_total = 33
-    else:
-        # everyone seems to find the byteswap() function besides verilator
-        pass_total = 27
+    pass_total = 26
 
     # Icarus doesn't support array indexes like get_handle_by_name("some_path[x]")
     SKIP_HANDLE_ASSERT = cocotb.SIM_NAME.lower().startswith(("riviera", "icarus"))

@@ -141,15 +141,11 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype) {
         case vpiUnionNet:
             return GPI_STRUCTURE;
 
-        case vpiModport:
         case vpiInterface:
         case vpiModule:
-        case vpiRefObj:
         case vpiPort:
-        case vpiAlways:
-        case vpiFunction:
-        case vpiInitial:
         case vpiGate:
+        case vpiSwitch:
         case vpiPrimTerm:
         case vpiGenScope:
             return GPI_MODULE;
@@ -254,13 +250,9 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             break;
         case vpiModule:
         case vpiInterface:
-        case vpiModport:
-        case vpiRefObj:
         case vpiPort:
-        case vpiAlways:
-        case vpiFunction:
-        case vpiInitial:
         case vpiGate:
+        case vpiSwitch:
         case vpiPrimTerm:
         case vpiGenScope:
         case vpiGenScopeArray: {

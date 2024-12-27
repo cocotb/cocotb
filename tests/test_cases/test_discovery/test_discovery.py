@@ -389,10 +389,8 @@ async def access_internal_register_array(dut):
     skip=LANGUAGE in ["vhdl"],
     expect_error=AttributeError if SIM_NAME.startswith(("icarus", "verilator")) else (),
 )
-async def access_gate(dut):
-    """
-    Test access to a gate Object
-    """
+async def access_gate(dut) -> None:
+    """Test access to a gate Object"""
     assert isinstance(dut.test_and_gate, HierarchyObject)
 
 
