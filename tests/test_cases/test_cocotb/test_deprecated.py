@@ -8,7 +8,7 @@ import pytest
 
 import cocotb
 from cocotb.regression import TestFactory
-from cocotb.triggers import Join, Timer
+from cocotb.triggers import Event, Join, Timer
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
@@ -96,3 +96,20 @@ async def test_task_join_deprecated(_) -> None:
     t = cocotb.start_soon(noop())
     with pytest.warns(DeprecationWarning, match=r"task.join\(\)"):
         await t.join()
+
+
+@cocotb.test
+async def test_event_data_deprecated(_) -> None:
+    e = Event()
+
+    with pytest.warns(DeprecationWarning):
+        e.data = 12
+
+    with pytest.warns(DeprecationWarning):
+        assert e.data == 12
+
+    with pytest.warns(DeprecationWarning):
+        e.set(42)
+
+    with pytest.warns(DeprecationWarning):
+        assert e.data == 42

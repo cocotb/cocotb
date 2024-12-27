@@ -28,6 +28,7 @@
 """A collection of triggers which a testbench can ``await``."""
 
 import logging
+import warnings
 from abc import abstractmethod
 from decimal import Decimal
 from fractions import Fraction
@@ -500,6 +501,23 @@ class Event:
         self._pending_events: List[_Event] = []
         self.name: Optional[str] = name
         self._fired: bool = False
+        self._data: Any = None
+
+    @property
+    @deprecated("The data field will be removed in a future release.")
+    def data(self) -> Any:
+        """The data associated with the Event.
+
+        .. deprecated:: 2.0
+            The data field will be removed in a future release.
+            Use a separate variable to store the data instead.
+        """
+        return self._data
+
+    @data.setter
+    @deprecated("The data field will be removed in a future release.")
+    def data(self, new_data: Any) -> None:
+        self._data = new_data
 
     def _prime_trigger(
         self, trigger: _Event, callback: Callable[[Trigger], None]
@@ -509,9 +527,15 @@ class Event:
     def _unprime_trigger(self, trigger: _Event) -> None:
         self._pending_events.remove(trigger)
 
-    def set(self) -> None:
+    def set(self, data: Optional[Any] = None) -> None:
         """Set the Event and unblock all Tasks blocked on this Event."""
         self._fired = True
+        if data is not None:
+            warnings.warn(
+                "The data field will be removed in a future release.",
+                DeprecationWarning,
+            )
+        self._data = data
 
         pending_events, self._pending_events = self._pending_events, []
         for event in pending_events:
