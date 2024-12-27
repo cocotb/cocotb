@@ -49,6 +49,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -152,7 +153,7 @@ class Test:
         timeout_time: Optional[float] = None,
         timeout_unit: str = "step",
         expect_fail: bool = False,
-        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
         skip: bool = False,
         stage: int = 0,
         _expect_sim_failure: bool = False,
@@ -178,7 +179,7 @@ class Test:
         self.timeout_time = timeout_time
         self.timeout_unit = timeout_unit
         self.expect_fail = expect_fail
-        if isinstance(expect_error, BaseException):
+        if isinstance(expect_error, type):
             expect_error = (expect_error,)
         if _expect_sim_failure:
             expect_error += (SimFailure,)
@@ -1114,7 +1115,7 @@ class TestFactory(Generic[F]):
         timeout_time: Optional[float] = None,
         timeout_unit: str = "steps",
         expect_fail: bool = False,
-        expect_error: Union[Type[Exception], Sequence[Type[Exception]]] = (),
+        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
         skip: bool = False,
         stage: int = 0,
         _expect_sim_failure: bool = False,
