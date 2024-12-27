@@ -255,13 +255,10 @@ async def test_discover_all(dut):
                      8 (asc_gen: signals)
                      8 (asc_gen: constant)
                      8 (asc_gen: variable)
-                     8 (asc_gen: process "always")                             (VPI - Aldec only)
                      9 (desc_gen[7:0])
                      8 (desc_gen: signals)
                      8 (desc_gen: constant)
                      8 (desc_gen: variable)
-                     8 (desc_gen: process "always")                            (VPI - Aldec only)
-          process:   1 ("always")                                              (VPI - Aldec only)
 
             TOTAL: 1032 (VHDL - Default)
                     818 (VHDL - Aldec)
@@ -272,17 +269,6 @@ async def test_discover_all(dut):
     tlog = logging.getLogger("cocotb.test")
 
     await Timer(10, "ns")
-
-    # Need to clear sub_handles so won't attempt to iterate over handles like sig_rec and sig_rec_array
-    #
-    # DO NOT REMOVE.  Aldec cannot iterate over the complex records due to bugs in the VPI interface.
-    if (
-        LANGUAGE in ["verilog"]
-        and cocotb.SIM_NAME.lower().startswith("riviera")
-        and cocotb.SIM_VERSION.startswith("2016.02")
-    ):
-        if len(dut._sub_handles) != 0:
-            dut._sub_handles = {}
 
     # Modelsim/Questa VPI will not find a vpiStructVar from vpiModule so we access them explicitly
     # to ensure the handle is in the dut "sub_handles" for iterating
@@ -305,7 +291,7 @@ async def test_discover_all(dut):
         pass_total = 308
     elif LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
         # Applies to Riviera-PRO 2019.10 and newer.
-        pass_total = 197
+        pass_total = 180
     elif LANGUAGE in ["vhdl"]:
         pass_total = 244
     else:
