@@ -103,10 +103,11 @@ def main() -> int:
             for failure in testcase.iter("failure"):
                 rc = 1
                 print(
-                    "Failure in testsuite: '{}' classname: '{}' testcase: '{}' with parameters '{}'".format(
+                    "Failure in testsuite: '{}' test: '{}.{}' = {} with parameters '{}'".format(
                         testsuite.get("name"),
                         testcase.get("classname"),
                         testcase.get("name"),
+                        testsuite.get("error"),
                         testsuite.get("package"),
                     )
                 )
