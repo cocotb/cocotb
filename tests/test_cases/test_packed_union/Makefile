@@ -12,7 +12,7 @@ clean::
 
 else
 
-VERILOG_SOURCES = test_packed_union.sv
+VERILOG_SOURCES = $(PWD)/test_packed_union.sv
 COCOTB_TOPLEVEL = test_packed_union
 COCOTB_TEST_MODULES = test_packed_union
 

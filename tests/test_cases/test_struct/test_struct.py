@@ -34,7 +34,11 @@ async def test_packed_struct_format(dut):
 
 # Riviera-PRO 2024.04 crashes on this testcase (gh-3936)
 sim_ver = RivieraVersion(cocotb.SIM_VERSION)
-is_riviera_2024_04 = sim_ver >= "2024.04" and sim_ver < "2024.05"
+is_riviera_2024_04 = (
+    sim_ver >= "2024.04" and sim_ver < "2024.05"
+    if SIM_NAME.startswith("riviera")
+    else None
+)
 
 
 # Riviera-PRO 2022.10+ ignores writes to the packed struct.
