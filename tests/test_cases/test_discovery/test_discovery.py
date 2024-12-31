@@ -48,11 +48,14 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 # GHDL is unable to access signals in generate loops (gh-2594)
 # Verilator doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)
+# VCS is unable to access signals in generate loops
 @cocotb.test(
     expect_error=IndexError
     if SIM_NAME.startswith("ghdl")
     else AttributeError
     if SIM_NAME.startswith("verilator")
+    else AttributeError
+    if "vcs" in SIM_NAME
     else ()
 )
 async def pseudo_region_access(dut):
@@ -74,7 +77,14 @@ verilator_less_than_5024 = SIM_NAME.startswith("verilator") and VerilatorVersion
 ) < VerilatorVersion("5.024")
 
 
-@verilog_test(expect_error=AttributeError if verilator_less_than_5024 else ())
+# VCS is unable to access signals in generate loops
+@verilog_test(
+    expect_error=AttributeError
+    if verilator_less_than_5024
+    else AttributeError
+    if "vcs" in SIM_NAME
+    else ()
+)
 async def test_cond_scope(dut):
     assert dut.cond_scope.scoped_sub._path == f"{dut._path}.cond_scope.scoped_sub"
 
@@ -84,12 +94,26 @@ async def test_bad_var(dut):
     print(dut.cond_scope_else_asdf._path)
 
 
-@verilog_test(expect_error=AttributeError if SIM_NAME.startswith("verilator") else ())
+# VCS is unable to access signals in generate loops
+@verilog_test(
+    expect_error=AttributeError
+    if SIM_NAME.startswith("verilator")
+    else IndexError
+    if "vcs" in SIM_NAME
+    else ()
+)
 async def test_arr_scope(dut):
     assert dut.arr[1].arr_sub._path == f"{dut._path}.arr[1].arr_sub"
 
 
-@verilog_test(expect_error=AttributeError if verilator_less_than_5024 else ())
+# VCS is unable to access signals in generate loops
+@verilog_test(
+    expect_error=AttributeError
+    if verilator_less_than_5024
+    else AttributeError
+    if "vcs" in SIM_NAME
+    else ()
+)
 async def test_nested_scope(dut):
     assert (
         dut.outer_scope[1].inner_scope[1]._path
@@ -97,8 +121,13 @@ async def test_nested_scope(dut):
     )
 
 
+# VCS is unable to access signals in generate loops
 @verilog_test(
-    expect_error=AttributeError if verilator_less_than_5024 else (),
+    expect_error=AttributeError
+    if verilator_less_than_5024
+    else AttributeError
+    if "vcs" in SIM_NAME
+    else (),
 )
 async def test_scoped_params(dut):
     assert dut.cond_scope.scoped_param.value == 1
@@ -107,7 +136,11 @@ async def test_scoped_params(dut):
 
 
 @verilog_test(
-    expect_error=AttributeError if verilator_less_than_5024 else (),
+    expect_error=AttributeError
+    if verilator_less_than_5024
+    else AttributeError
+    if "vcs" in SIM_NAME
+    else (),
     expect_fail=SIM_NAME.startswith("riviera"),
 )
 async def test_intf_array(dut):
@@ -147,8 +180,9 @@ class ScopeModuleMissingError(Exception):
     pass
 
 
+# VCS is unable to access signals in generate loops
 @verilog_test(
-    expect_error=ScopeMissingError,
+    expect_error=AttributeError if "vcs" in SIM_NAME else ScopeMissingError,
     skip=verilator_less_than_5024,
 )
 async def test_both_conds(dut):
@@ -244,13 +278,11 @@ async def access_type_bit_verilog_metavalues(dut):
 # GHDL discovers integers as nets (gh-2596)
 # Icarus does not support integer signals (gh-2598)
 @cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith(("icarus", "chronologic simulation vcs"))
-    else (),
+    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
     expect_fail=(
         SIM_NAME.startswith("riviera")
         and LANGUAGE in ["verilog"]
-        or SIM_NAME.startswith(("ghdl", "verilator"))
+        or SIM_NAME.startswith(("ghdl", "verilator") or "vcs" in SIM_NAME)
     ),
 )
 async def access_integer(dut):

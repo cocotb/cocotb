@@ -91,6 +91,8 @@ elif SIM_NAME.startswith("modelsim") and verilog:
     expect_fail = True
 elif SIM_NAME.startswith("xmsim") and intf == "vhpi":
     expect_fail = True
+elif "vcs" in SIM_NAME:
+    expect_fail = True
 
 
 # Icarus, Questa VPI, and Xcelium VHPI inertial writes aren't actually inertial.

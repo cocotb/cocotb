@@ -28,7 +28,7 @@ endif
 
 ifeq ($(SKIP),)
 
-VERILOG_SOURCES = test_defaultless_parameter.sv
+VERILOG_SOURCES = $(PWD)/test_defaultless_parameter.sv
 # Needed for defaultless parameter support in Xcelium
 export CADENCE_ENABLE_AVSREQ_44905_PHASE_1=1
 COCOTB_TOPLEVEL := cocotb_defaultless_parameter

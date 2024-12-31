@@ -151,7 +151,14 @@ async def test_read_write(dut):
 
 
 # GHDL unable to access signals in generate loops (gh-2594)
-@cocotb.test(expect_error=IndexError if SIM_NAME.startswith("ghdl") else ())
+# VCS unable to access signals in generate loops
+@cocotb.test(
+    expect_error=IndexError
+    if SIM_NAME.startswith("ghdl")
+    else AttributeError
+    if "vcs" in SIM_NAME
+    else ()
+)
 async def test_gen_loop(dut):
     """Test accessing Generate Loops"""
     tlog = logging.getLogger("cocotb.test")
@@ -293,6 +300,8 @@ async def test_discover_all(dut):
     elif LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
         # Applies to Riviera-PRO 2019.10 and newer.
         pass_total = 180
+    elif LANGUAGE in ["verilog"] and "vcs" in SIM_NAME:
+        pass_total = 142
     elif LANGUAGE in ["vhdl"]:
         pass_total = 244
     else:

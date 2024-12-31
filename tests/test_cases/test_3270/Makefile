@@ -12,7 +12,7 @@ sim:
 else
 
 COCOTB_TEST_MODULES := test_3270
-VERILOG_SOURCES := test_3270.sv
+VERILOG_SOURCES := $(PWD)/test_3270.sv
 COCOTB_TOPLEVEL := trigger_counter
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
