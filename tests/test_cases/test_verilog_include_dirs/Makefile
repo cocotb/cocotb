@@ -13,9 +13,9 @@ clean::
 else
 
 VERILOG_INCLUDE_DIRS = \
-	./common \
-	./const_stream
-VERILOG_SOURCES = simple_and.sv
+	$(PWD)/common \
+	$(PWD)/const_stream
+VERILOG_SOURCES = $(PWD)/simple_and.sv
 COCOTB_TOPLEVEL = simple_and
 COCOTB_TEST_MODULES = test_verilog_include_dirs
 

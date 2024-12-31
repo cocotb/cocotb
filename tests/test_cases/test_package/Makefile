@@ -28,8 +28,8 @@ endif
 
 ifeq ($(SKIP),)
 
-VERILOG_SOURCES = cocotb_package_pkg.sv \
-                  cocotb_package.sv
+VERILOG_SOURCES = $(PWD)/cocotb_package_pkg.sv \
+                  $(PWD)/cocotb_package.sv
 COCOTB_TOPLEVEL := cocotb_package
 COCOTB_TEST_MODULES = test_package
 

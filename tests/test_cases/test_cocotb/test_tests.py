@@ -62,7 +62,10 @@ async def test_timeout_testdec_pass(dut):
     await Timer(10, "ns")
 
 
-@cocotb.test(timeout_time=10, timeout_unit="ns")
+# VCS fails gh-4326
+@cocotb.test(
+    timeout_time=10, timeout_unit="ns", expect_fail="vcs" in cocotb.SIM_NAME.lower()
+)
 async def test_timeout_testdec_simultaneous(dut):
     try:
         await cocotb.triggers.with_timeout(
