@@ -1450,6 +1450,94 @@ class Xcelium(Runner):
         return cmds
 
 
+class Vcs(Runner):
+    """Implementation of :class:`Runner` for VCS.
+
+    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    * Does not support VHDL.
+    """
+
+    supported_gpi_interfaces = {"verilog": ["vpi"]}
+
+    def _simulator_in_path(self) -> None:
+        if shutil.which("vcs") is None:
+            raise SystemExit("ERROR: vcs executable not found!")
+
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
+        return [f"+incdir+{include}" for include in includes]
+
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
+        return [f"+define+{name}={value}" for name, value in defines.items()]
+
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
+        assert self.hdl_toplevel is not None
+        return [
+            f"-pvalue+{self.hdl_toplevel}.{name}={value}"
+            for name, value in parameters.items()
+        ]
+
+    @property
+    def sim_file(self) -> Path:
+        return self.build_dir / "simv"
+
+    @property
+    def _build_opts(self) -> List[str]:
+        opts = (
+            ["-full64"]
+            + ["-debug_access+all"]
+            + ["+acc+3"]
+            + ["-sverilog"]
+            + ["-LDFLAGS -Wl,--no-as-needed"]
+        )
+
+        if self.verbose:
+            opts += ["-diag all"]
+        else:
+            opts += ["-q"]
+            opts += ["-suppress=VPI-CT-NS"]
+
+        return opts
+
+    def _build_command(self) -> List[_Command]:
+        cmds: List[_Command] = []
+        sources = [
+            source
+            for source in (self.sources + self.vhdl_sources + self.verilog_sources)
+        ]
+
+        if outdated(self.sim_file, sources) or self.always:
+            cmds = [
+                ["vcs"]
+                + self._build_opts
+                + ["-load", cocotb_tools.config.lib_name_path("vpi", "vcs").as_posix()]
+                + self.build_args
+                + self._get_include_options(self.includes)
+                + self._get_define_options(self.defines)
+                + self._get_parameter_options(self.parameters)
+                + ["-top", f"{self.hdl_toplevel}"]
+                + [str(source) for source in sources]
+                + ["-o", str(self.sim_file)]
+            ]
+        else:
+            self.log.warning("Skipping compilation of %s", self.sim_file)
+
+        return cmds
+
+    def _test_command(self) -> List[_Command]:
+        if self.pre_cmd is not None:
+            raise RuntimeError("pre_cmd is not implemented for Vcs.")
+
+        verbosity_opts = []
+        if self.verbose:
+            verbosity_opts += ["-diag all"]
+        else:
+            verbosity_opts += ["-suppress=ASLR_DETECTED_INFO"]
+
+        cmds = [[str(self.sim_file)] + verbosity_opts + self.test_args + self.plusargs]
+
+        return cmds
+
+
 def get_runner(simulator_name: str) -> Runner:
     """Return an instance of a runner for *simulator_name*.
 
@@ -1468,7 +1556,7 @@ def get_runner(simulator_name: str) -> Runner:
         "verilator": Verilator,
         "xcelium": Xcelium,
         "nvc": Nvc,
-        # TODO: "vcs": Vcs,
+        "vcs": Vcs,
         # TODO: "activehdl": ActiveHdl,
     }
     try:
