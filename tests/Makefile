@@ -38,3 +38,9 @@ all: $(REGRESSIONS)
 $(REGRESSIONS):
 	@echo Running regression suite $@
 	@cd test_cases/$@ && $(MAKE); ret=$$?; if [ $$ret -ne 0 ]; then echo "::error ::Failed regression suite $@"; fi; exit $$ret;
+
+.PHONY: clean
+clean:
+	@for regression in $(REGRESSIONS); do \
+		( cd test_cases/$$regression && make clean ); \
+	done
