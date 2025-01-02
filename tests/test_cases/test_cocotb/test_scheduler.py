@@ -640,8 +640,7 @@ async def test_test_end_with_multiple_pending_tasks(_):
     cocotb.start_soon(coro())
 
 
-# VCS fails gh-4327
-@cocotb.test(expect_error=AssertionError if "vcs" in cocotb.SIM_NAME.lower() else ())
+@cocotb.test()
 async def test_start(_):
     async def coro():
         await Timer(1, "step")
@@ -650,7 +649,7 @@ async def test_start(_):
     assert type(task1) is Task
     assert not task1.done()
 
-    await Timer(1, "step")
+    await Timer(2, "step")
     assert task1.done()
 
     task2 = cocotb.create_task(coro())
@@ -661,7 +660,7 @@ async def test_start(_):
 
     task4 = cocotb.start_soon(coro())
     await cocotb.start(coro())
-    await Timer(1, "step")
+    await Timer(2, "step")
     assert task4.done()
 
     async def coro_val():

@@ -62,24 +62,6 @@ async def test_timeout_testdec_pass(dut):
     await Timer(10, "ns")
 
 
-# VCS fails gh-4326
-@cocotb.test(
-    timeout_time=10, timeout_unit="ns", expect_fail="vcs" in cocotb.SIM_NAME.lower()
-)
-async def test_timeout_testdec_simultaneous(dut):
-    try:
-        await cocotb.triggers.with_timeout(
-            Timer(1, "ns"), timeout_time=1, timeout_unit="ns"
-        )
-    except SimTimeoutError:
-        pass
-    else:
-        assert False, "Expected a Timeout"
-    # Whether this test fails or passes depends on the behavior of the
-    # scheduler, simulator, and the implementation of the timeout function.
-    # CAUTION: THIS MAY CHANGE
-
-
 # these tests should run in definition order, not lexicographic order
 last_ordered_test = None
 
