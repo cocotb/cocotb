@@ -446,6 +446,8 @@ class Scheduler:
             # This function runs in the scheduler thread
             try:
                 _outcome = _outcomes.Value(await task)
+            except (KeyboardInterrupt, SystemExit):
+                raise
             except BaseException as e:
                 _outcome = _outcomes.Error(e)
             event.outcome = _outcome
