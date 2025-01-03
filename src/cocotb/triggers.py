@@ -870,6 +870,8 @@ async def _wait_callback(
     ret: Outcome[T]
     try:
         ret = Value(await trigger)  # type: ignore # awaiting trigger has a complicated type
+    except (KeyboardInterrupt, SystemExit):
+        raise
     except BaseException as exc:
         # hide this from the traceback
         ret = Error(remove_traceback_frames(exc, ["_wait_callback"]))

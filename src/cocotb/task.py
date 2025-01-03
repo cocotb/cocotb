@@ -157,6 +157,8 @@ class Task(Generic[ResultType]):
         except StopIteration as e:
             self._outcome = Value(e.value)
             self._state = Task._State.FINISHED
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except BaseException as e:
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
             self._state = Task._State.FINISHED
