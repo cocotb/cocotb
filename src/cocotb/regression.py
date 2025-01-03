@@ -512,8 +512,6 @@ class RegressionManager:
             outcome = self._test_task._outcome
         try:
             outcome.get()
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except BaseException as e:
             result = remove_traceback_frames(e, ["_test_complete", "get"])
         else:
