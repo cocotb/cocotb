@@ -59,6 +59,11 @@ def main() -> int:
     args = parser.parse_args()
     rc = 0
 
+    if not os.path.isfile("results.xml"):
+        print(f"ERROR: results.xml was not written by the simulation!")
+        rc = 1
+        return rc
+
     result = ET.Element("testsuites", name=args.output_testsuites_name)
 
     input_pattern = re.compile(args.input_filename)
