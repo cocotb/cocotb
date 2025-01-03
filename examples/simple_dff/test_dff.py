@@ -10,7 +10,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
 from cocotb_tools.runner import get_runner
 
-LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+LANGUAGE = os.getenv("HDL_TOPLEVEL_LANG", "verilog").lower().strip()
 
 
 @cocotb.test()
@@ -40,12 +40,11 @@ async def dff_simple_test(dut):
 
 
 def test_simple_dff_runner():
-    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent
 
-    if hdl_toplevel_lang == "verilog":
+    if LANGUAGE == "verilog":
         sources = [proj_path / "dff.sv"]
     else:
         sources = [proj_path / "dff.vhdl"]

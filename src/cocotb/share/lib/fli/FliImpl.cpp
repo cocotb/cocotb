@@ -295,7 +295,7 @@ GpiObjHdl *FliImpl::native_check_create(const std::string &name,
 
         fq_name += "." + name;
         search_rgn = false;
-        search_var = fli_obj->is_var();
+        search_var = fli_obj->is_variable();
         search_sig = !search_var;
     } else {
         LOG_ERROR(
@@ -439,7 +439,7 @@ GpiObjHdl *FliImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
         std::string name = parent->get_name() + idx;
         std::string fq_name = parent->get_fullname() + idx;
 
-        if (!(fli_obj->is_var())) {
+        if (!(fli_obj->is_variable())) {
             accType = acc_fetch_type(hdl);
             accFullType = acc_fetch_fulltype(hdl);
             LOG_DEBUG("Found a signal %s -> %p", fq_name.c_str(), hdl);
