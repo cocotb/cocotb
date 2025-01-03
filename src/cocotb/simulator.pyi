@@ -4,7 +4,7 @@
 
 # generated with mypy's stubgen script
 
-from typing import Any
+from typing import Any, Callable
 
 DRIVERS: int
 ENUM: int
@@ -91,3 +91,8 @@ class cpp_clock:
     def stop(self) -> None: ...
 
 def clock_create(hdl: gpi_sim_hdl) -> cpp_clock: ...
+def initialize_logger(
+    log_func: Callable[[str, int, str, int, str, str], None],
+    filter_func: Callable[[str, int], bool],
+) -> None: ...
+def set_sim_event_callback(sim_event_callback: Callable[[str], None]) -> None: ...

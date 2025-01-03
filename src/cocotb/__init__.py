@@ -36,7 +36,7 @@ import warnings
 from collections.abc import Coroutine
 from enum import auto
 from types import SimpleNamespace
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Callable, Dict, List, Union, cast
 
 import cocotb._profiling
 import cocotb.handle
@@ -57,7 +57,6 @@ from cocotb._decorators import (  # isort: skip # noqa: F401
     test,
     parametrize,
 )
-from cocotb.logging import _filter_from_c, _log_from_c  # isort: skip # noqa: F401
 
 
 log: py_logging.Logger
@@ -101,12 +100,6 @@ See :envvar:`COCOTB_RANDOM_SEED` for details on how the value is computed.
 This is guaranteed to hold a value at test time.
 """
 
-_library_coverage: Any = None
-""" used for cocotb library coverage """
-
-_user_coverage: Any = None
-""" used for user code coverage """
-
 top: cocotb.handle.SimHandleBase
 r"""
 A handle to the :envvar:`COCOTB_TOPLEVEL` entity/module.
@@ -136,6 +129,10 @@ def _setup_logging() -> None:
     default_config()
     global log
     log = py_logging.getLogger(__name__)
+    import cocotb.simulator
+    from cocotb.logging import _filter_from_c, _log_from_c
+
+    cocotb.simulator.initialize_logger(_log_from_c, _filter_from_c)
 
 
 def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:
@@ -242,22 +239,37 @@ def create_task(
         )
 
 
-def _initialise_testbench(argv_):  # pragma: no cover
-    try:
-        _start_library_coverage()
-        _initialise_testbench_(argv_)
-    except BaseException:
-        log.exception("cocotb testbench initialization failed. Exiting.")
-        from cocotb import simulator
-
-        simulator.stop_simulator()
-        _stop_library_coverage()
+_shutdown_callbacks: List[Callable[[], None]] = []
+"""List of callbacks to be called when cocotb shuts down."""
 
 
-def _initialise_testbench_(argv_):
+def _register_shutdown_callback(cb: Callable[[], None]) -> None:
+    """Register a callback to be called when cocotb shuts down."""
+    _shutdown_callbacks.append(cb)
+
+
+def _shutdown_testbench() -> None:
+    """Call all registered shutdown callbacks."""
+    for cb in _shutdown_callbacks:
+        cb()
+
+
+def _initialise_testbench(argv_: List[str]) -> None:
     # The body of this function is split in two because no coverage is collected on
     # the function that starts the coverage. By splitting it in two we get coverage
     # on most of the function.
+    try:
+        _initialise_testbench_(argv_)
+    except BaseException:
+        print("cocotb testbench initialization failed. Exiting.", file=sys.stderr)
+        _shutdown_testbench()
+
+
+def _initialise_testbench_(argv_: List[str]) -> None:
+    from cocotb import simulator
+
+    simulator.set_sim_event_callback(_sim_event)
+
     global is_simulation
     is_simulation = True
 
@@ -277,8 +289,6 @@ def _initialise_testbench_(argv_):
     if not sys.warnoptions:
         warnings.simplefilter("default")
 
-    from cocotb import simulator
-
     global SIM_NAME, SIM_VERSION
     SIM_NAME = simulator.get_simulator_product().strip()
     SIM_VERSION = simulator.get_simulator_version().strip()
@@ -288,6 +298,9 @@ def _initialise_testbench_(argv_):
     log.info(
         f"Running tests with cocotb v{__version__} from {os.path.dirname(__file__)}"
     )
+
+    cocotb._profiling.initialize()
+    _register_shutdown_callback(cocotb._profiling.finalize)
 
     _process_plusargs()
     _process_packages()
@@ -304,32 +317,6 @@ def _initialise_testbench_(argv_):
     regression_manager.start_regression()
 
 
-def _start_library_coverage() -> None:  # pragma: no cover
-    if "COCOTB_LIBRARY_COVERAGE" in os.environ:
-        try:
-            import coverage
-        except ImportError:
-            log.error(
-                "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`."
-            )
-        else:
-            global _library_coverage
-            _library_coverage = coverage.coverage(
-                data_file=".coverage.cocotb",
-                config_file=False,
-                branch=True,
-                include=[f"{os.path.dirname(__file__)}/*"],
-            )
-            _library_coverage.start()
-
-
-def _stop_library_coverage() -> None:
-    if _library_coverage is not None:
-        # TODO: move this once we have normal shutdown behavior to _sim_event
-        _library_coverage.stop()
-        _library_coverage.save()  # pragma: no cover
-
-
 def _sim_event(msg: str) -> None:
     """Function that can be called externally to signal an event."""
     # We simply return here as the simulator will exit
@@ -338,9 +325,7 @@ def _sim_event(msg: str) -> None:
         regression_manager._fail_simulation(msg)
     else:
         log.error(msg)
-        cocotb._profiling.finalize()
-        _stop_user_coverage()
-        _stop_library_coverage()
+        _shutdown_testbench()
 
 
 def _process_plusargs() -> None:
@@ -400,7 +385,6 @@ def _start_user_coverage() -> None:
                 "Coverage collection requested but coverage module not available. Install it using `pip install coverage`."
             )
         else:
-            global _user_coverage
             config_filepath = os.getenv("COCOTB_COVERAGE_RCFILE")
             if config_filepath is None:
                 config_filepath = os.getenv("COVERAGE_RCFILE")
@@ -415,7 +399,7 @@ def _start_user_coverage() -> None:
                     "Collecting coverage of user code. No coverage config file supplied via COCOTB_COVERAGE_RCFILE."
                 )
                 cocotb_package_dir = os.path.dirname(__file__)
-                _user_coverage = coverage.coverage(
+                user_coverage = coverage.coverage(
                     branch=True, omit=[f"{cocotb_package_dir}/*"]
                 )
             else:
@@ -423,15 +407,15 @@ def _start_user_coverage() -> None:
                     "Collecting coverage of user code. Coverage config file supplied."
                 )
                 # Allow the config file to handle all configuration
-                _user_coverage = coverage.coverage(config_file=config_filepath)
-            _user_coverage.start()
+                user_coverage = coverage.coverage(config_file=config_filepath)
+            user_coverage.start()
 
+            def stop_user_coverage() -> None:
+                user_coverage.stop()
+                cocotb.log.debug("Writing user coverage data")
+                user_coverage.save()
 
-def _stop_user_coverage() -> None:
-    if _user_coverage is not None:
-        _user_coverage.stop()
-        cocotb.log.debug("Writing coverage data")
-        _user_coverage.save()
+            _register_shutdown_callback(stop_user_coverage)
 
 
 def _setup_random_seed() -> None:

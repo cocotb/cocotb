@@ -196,3 +196,5 @@ extern "C" void py_gpi_logger_finalize() {
     Py_XDECREF(pLogHandler);
     Py_XDECREF(pLogFilter);
 }
+
+PyObject *pEventFn = NULL;

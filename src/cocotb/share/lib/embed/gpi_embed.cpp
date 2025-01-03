@@ -55,11 +55,10 @@
 #include <unistd.h>
 #endif
 static bool python_init_called = 0;
+static bool embed_init_called = 0;
 
 static wchar_t progname[] = L"cocotb";
 static wchar_t *argv[] = {progname};
-
-static PyObject *pEventFn = NULL;
 
 static int get_interpreter_path(wchar_t *path, size_t path_size) {
     const char *path_c = getenv("PYGPI_PYTHON_BIN");
@@ -247,7 +246,7 @@ extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void) {
     if (Py_IsInitialized()) {
         to_python();
         PyGILState_Ensure();  // Don't save state as we are calling Py_Finalize
-        Py_DecRef(pEventFn);
+        Py_XDECREF(pEventFn);
         pEventFn = NULL;
         py_gpi_logger_finalize();
         Py_Finalize();
@@ -258,9 +257,13 @@ extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void) {
 extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
                                              char const *const *_argv) {
     // Check that we are not already initialized
-    if (pEventFn) {
-        return 0;
+    if (embed_init_called) {
+        // LCOV_EXCL_START
+        LOG_ERROR("PyGPI library initialized again!");
+        return -1;
+        // LCOV_EXCL_STOP
     }
+    embed_init_called = 1;
 
     // Ensure that the current thread is ready to call the Python C API
     auto gstate = PyGILState_Ensure();
@@ -277,56 +280,6 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
         // LCOV_EXCL_STOP
     }
     DEFER(Py_DECREF(entry_utility_module));
-
-    auto entry_info_tuple =
-        PyObject_CallMethod(entry_utility_module, "load_entry", NULL);
-    if (!entry_info_tuple) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return -1;
-        // LCOV_EXCL_STOP
-    }
-    DEFER(Py_DECREF(entry_info_tuple));
-
-    PyObject *entry_module;
-    PyObject *entry_point;
-    if (!PyArg_ParseTuple(entry_info_tuple, "OO", &entry_module,
-                          &entry_point)) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return -1;
-        // LCOV_EXCL_STOP
-    }
-    // Objects returned from ParseTuple are borrowed from tuple
-
-    auto log_func = PyObject_GetAttrString(entry_module, "_log_from_c");
-    if (!log_func) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return -1;
-        // LCOV_EXCL_STOP
-    }
-    DEFER(Py_DECREF(log_func));
-
-    auto filter_func = PyObject_GetAttrString(entry_module, "_filter_from_c");
-    if (!filter_func) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return -1;
-        // LCOV_EXCL_STOP
-    }
-    DEFER(Py_DECREF(filter_func));
-
-    py_gpi_logger_initialize(log_func, filter_func);
-
-    pEventFn = PyObject_GetAttrString(entry_module, "_sim_event");
-    if (!pEventFn) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return -1;
-        // LCOV_EXCL_STOP
-    }
-    // cocotb must hold _sim_event until _embed_sim_cleanup runs
 
     // Build argv for cocotb module
     auto argv_list = PyList_New(argc);
@@ -351,10 +304,11 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     DEFER(Py_DECREF(argv_list))
 
     auto cocotb_retval =
-        PyObject_CallFunctionObjArgs(entry_point, argv_list, NULL);
+        PyObject_CallMethod(entry_utility_module, "load_entry", "O", argv_list);
     if (!cocotb_retval) {
         // LCOV_EXCL_START
         PyErr_Print();
+        gpi_sim_end();
         return -1;
         // LCOV_EXCL_STOP
     }
@@ -377,8 +331,10 @@ extern "C" COCOTB_EXPORT void _embed_sim_event(const char *msg) {
 
         PyObject *pValue = PyObject_CallFunction(pEventFn, "s", msg);
         if (pValue == NULL) {
+            // LCOV_EXCL_START
             PyErr_Print();
             LOG_ERROR("Passing event to upper layer failed");
+            // LCOV_EXCL_STOP
         }
         Py_XDECREF(pValue);
         PyGILState_Release(gstate);
