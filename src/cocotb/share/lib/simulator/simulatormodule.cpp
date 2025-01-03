@@ -974,8 +974,6 @@ static int add_module_constants(PyObject *simulator) {
     if (PyModule_AddIntConstant(simulator, "UNKNOWN", GPI_UNKNOWN) < 0 ||
         PyModule_AddIntConstant(simulator, "MEMORY", GPI_MEMORY) < 0 ||
         PyModule_AddIntConstant(simulator, "MODULE", GPI_MODULE) < 0 ||
-        PyModule_AddIntConstant(simulator, "NET", GPI_NET) < 0 ||
-        PyModule_AddIntConstant(simulator, "REG", GPI_REGISTER) < 0 ||
         PyModule_AddIntConstant(simulator, "NETARRAY", GPI_ARRAY) < 0 ||
         PyModule_AddIntConstant(simulator, "ENUM", GPI_ENUM) < 0 ||
         PyModule_AddIntConstant(simulator, "STRUCTURE", GPI_STRUCTURE) < 0 ||
@@ -996,6 +994,9 @@ static int add_module_constants(PyObject *simulator) {
         PyModule_AddIntConstant(simulator, "RANGE_UP", GPI_RANGE_UP) < 0 ||
         PyModule_AddIntConstant(simulator, "RANGE_DOWN", GPI_RANGE_DOWN) < 0 ||
         PyModule_AddIntConstant(simulator, "RANGE_NO_DIR", GPI_RANGE_NO_DIR) <
+            0 ||
+        PyModule_AddIntConstant(simulator, "LOGIC", GPI_LOGIC) < 0 ||
+        PyModule_AddIntConstant(simulator, "LOGIC_ARRAY", GPI_LOGIC_ARRAY) <
             0 ||
         false) {
         return -1;

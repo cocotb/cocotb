@@ -11,14 +11,14 @@ ENUM: int
 GENARRAY: int
 INTEGER: int
 LOADS: int
+LOGIC: int
+LOGIC_ARRAY: int
 MEMORY: int
 MODULE: int
-NET: int
 NETARRAY: int
 OBJECTS: int
 PACKAGE: int
 REAL: int
-REG: int
 STRING: int
 STRUCTURE: int
 PACKED_STRUCTURE: int

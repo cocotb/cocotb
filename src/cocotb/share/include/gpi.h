@@ -146,9 +146,9 @@ typedef enum gpi_objtype_e {
     GPI_UNKNOWN = 0,
     GPI_MEMORY = 1,
     GPI_MODULE = 2,
-    GPI_NET = 3,
+    // GPI_NET = 3,  // Deprecated
     // GPI_PARAMETER = 4,  // Deprecated
-    GPI_REGISTER = 5,
+    // GPI_REGISTER = 5,  // Deprecated
     GPI_ARRAY = 6,
     GPI_ENUM = 7,
     GPI_STRUCTURE = 8,
@@ -158,6 +158,8 @@ typedef enum gpi_objtype_e {
     GPI_GENARRAY = 12,
     GPI_PACKAGE = 13,
     GPI_PACKED_STRUCTURE = 14,
+    GPI_LOGIC = 15,
+    GPI_LOGIC_ARRAY = 16,
 } gpi_objtype_t;
 
 // When iterating, we can chose to either get child objects, drivers or loads

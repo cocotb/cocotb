@@ -13,6 +13,7 @@ from cocotb.handle import (
     HierarchyArrayObject,
     HierarchyObject,
     HierarchyObjectBase,
+    LogicArrayObject,
     LogicObject,
 )
 from cocotb.triggers import Timer
@@ -330,24 +331,24 @@ async def test_direct_constant_indexing(dut):
     assert isinstance(dut.param_rec, HierarchyObject)
     assert isinstance(dut.param_rec.a, LogicObject)
     assert isinstance(dut.param_rec.b, ArrayObject)
-    assert isinstance(dut.param_rec.b[1], LogicObject)
+    assert isinstance(dut.param_rec.b[1], LogicArrayObject)
 
     assert isinstance(dut.param_cmplx, ArrayObject)
     assert isinstance(dut.param_cmplx[0], HierarchyObject)
     assert isinstance(dut.param_cmplx[0].a, LogicObject)
     assert isinstance(dut.param_cmplx[0].b, ArrayObject)
-    assert isinstance(dut.param_cmplx[0].b[1], LogicObject)
+    assert isinstance(dut.param_cmplx[0].b[1], LogicArrayObject)
 
     assert isinstance(dut.const_rec, HierarchyObject)
     assert isinstance(dut.const_rec.a, LogicObject)
     assert isinstance(dut.const_rec.b, ArrayObject)
-    assert isinstance(dut.const_rec.b[1], LogicObject)
+    assert isinstance(dut.const_rec.b[1], LogicArrayObject)
 
     assert isinstance(dut.const_cmplx, ArrayObject)
     assert isinstance(dut.const_cmplx[1], HierarchyObject)
     assert isinstance(dut.const_cmplx[1].a, LogicObject)
     assert isinstance(dut.const_cmplx[1].b, ArrayObject)
-    assert isinstance(dut.const_cmplx[1].b[1], LogicObject)
+    assert isinstance(dut.const_cmplx[1].b[1], LogicArrayObject)
 
 
 # GHDL unable to index multi-dimensional arrays (gh-2587)
@@ -355,64 +356,36 @@ async def test_direct_constant_indexing(dut):
 async def test_direct_signal_indexing(dut):
     """Test directly accessing signal/net data in arrays, i.e. not iterating"""
 
-    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
-
-    assert isinstance(dut.sig_t1, LogicObject)
+    assert isinstance(dut.sig_t1, LogicArrayObject)
     assert isinstance(dut.sig_t2, ArrayObject)
-    assert isinstance(dut.sig_t2[5], LogicObject)
-    assert isinstance(dut.sig_t3b[3], LogicObject)
+    assert isinstance(dut.sig_t2[5], LogicArrayObject)
+    assert isinstance(dut.sig_t3b[3], LogicArrayObject)
     assert isinstance(dut.sig_t3a, ArrayObject)
     assert isinstance(dut.sig_t4, ArrayObject)
     assert isinstance(dut.sig_t4[3], ArrayObject)
-    # the following version cannot index into those arrays and will error out
-    if not (
-        LANGUAGE in ["verilog"]
-        and cocotb.SIM_NAME.lower().startswith("riviera")
-        and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
-    ):
-        assert isinstance(dut.sig_t4[3][4], LogicObject)
+    assert isinstance(dut.sig_t4[3][4], LogicArrayObject)
     assert isinstance(dut.sig_t5, ArrayObject)
     assert isinstance(dut.sig_t5[1], ArrayObject)
-    assert isinstance(dut.sig_t5[1][0], LogicObject)
+    assert isinstance(dut.sig_t5[1][0], LogicArrayObject)
     assert isinstance(dut.sig_t6, ArrayObject)
     assert isinstance(dut.sig_t6[1], ArrayObject)
-    # the following version cannot index into those arrays and will error out
-    if not (
-        LANGUAGE in ["verilog"]
-        and cocotb.SIM_NAME.lower().startswith("riviera")
-        and cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))
-    ):
-        assert isinstance(dut.sig_t6[0][3], LogicObject)
-    assert isinstance(dut.sig_cmplx, ArrayObject)
+    assert isinstance(dut.sig_t6[0][3], LogicArrayObject)
 
     if LANGUAGE in ["verilog"]:
         assert isinstance(dut.sig_t7[1], ArrayObject)
-        assert isinstance(dut.sig_t7[0][3], LogicObject)
+        assert isinstance(dut.sig_t7[0][3], LogicArrayObject)
+        assert isinstance(dut.sig_t8, LogicArrayObject)
 
-    # Riviera has a bug and finds dut.sig_cmplx[1], but the type returned is a vpiBitVar
-    # only true for version 2016.02
-    if not (
-        LANGUAGE in ["verilog"]
-        and cocotb.SIM_NAME.lower().startswith("riviera")
-        and cocotb.SIM_VERSION.startswith("2016.02")
-    ):
-        assert isinstance(dut.sig_cmplx[1], HierarchyObject)
-        assert isinstance(dut.sig_cmplx[1].a, LogicObject)
-        assert isinstance(dut.sig_cmplx[1].b, ArrayObject)
-        assert isinstance(dut.sig_cmplx[1].b[1], LogicObject)
+    assert isinstance(dut.sig_cmplx, ArrayObject)
+    assert isinstance(dut.sig_cmplx[1], HierarchyObject)
+    assert isinstance(dut.sig_cmplx[1].a, LogicObject)
+    assert isinstance(dut.sig_cmplx[1].b, ArrayObject)
+    assert isinstance(dut.sig_cmplx[1].b[1], LogicArrayObject)
 
     assert isinstance(dut.sig_rec, HierarchyObject)
     assert isinstance(dut.sig_rec.a, LogicObject)
     assert isinstance(dut.sig_rec.b, ArrayObject)
-
-    # Riviera has a bug and finds dut.sig_rec.b[1], but the type returned is 0 which is unknown
-    # only true for version 2016.02
-    if not (
-        LANGUAGE in ["verilog"]
-        and cocotb.SIM_NAME.lower().startswith("riviera")
-        and cocotb.SIM_VERSION.startswith("2016.02")
-    ):
-        assert isinstance(dut.sig_rec.b[1], LogicObject)
+    assert isinstance(dut.sig_rec.b[1], LogicArrayObject)
 
 
 @cocotb.test(skip=(LANGUAGE in ["verilog"]))

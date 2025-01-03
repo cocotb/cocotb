@@ -165,9 +165,9 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl,
         switch (typeKind) {
             case MTI_TYPE_ENUM:
                 if (isValueLogic(valType)) {
-                    new_obj = new FliLogicObjHdl(this, hdl, GPI_REGISTER,
-                                                 is_const, accType, accFullType,
-                                                 is_var, valType, typeKind);
+                    new_obj = new FliLogicObjHdl(this, hdl, GPI_LOGIC, is_const,
+                                                 accType, accFullType, is_var,
+                                                 valType, typeKind);
                 } else if (isValueBoolean(valType) || isValueChar(valType)) {
                     new_obj = new FliIntObjHdl(this, hdl, GPI_INTEGER, is_const,
                                                accType, accFullType, is_var,
@@ -197,7 +197,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl,
                     case MTI_TYPE_ENUM:
                         if (isValueLogic(elemType)) {
                             new_obj = new FliLogicObjHdl(
-                                this, hdl, GPI_REGISTER, is_const, accType,
+                                this, hdl, GPI_LOGIC_ARRAY, is_const, accType,
                                 accFullType, is_var, valType,
                                 typeKind);  // std_logic_vector
                         } else if (isValueChar(elemType)) {
@@ -421,8 +421,8 @@ GpiObjHdl *FliImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
 
         return create_gpi_obj_from_handle(hdl, name, fq_name, accType,
                                           accFullType);
-    } else if (obj_type == GPI_REGISTER || obj_type == GPI_ARRAY ||
-               obj_type == GPI_STRING) {
+    } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
+               obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
         FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent);
 
         LOG_DEBUG("Looking for index %u from %s", index,
@@ -457,7 +457,7 @@ GpiObjHdl *FliImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
     } else {
         LOG_ERROR(
             "FLI: Parent of type %d must be of type GPI_GENARRAY, "
-            "GPI_REGISTER, GPI_ARRAY, or GPI_STRING to have an index.",
+            "GPI_LOGIC, GPI_ARRAY, or GPI_STRING to have an index.",
             obj_type);
         return NULL;
     }

@@ -12,7 +12,7 @@ import random
 import pytest
 
 import cocotb
-from cocotb.handle import LogicObject, StringObject, _Limits
+from cocotb.handle import LogicArrayObject, StringObject, _Limits
 from cocotb.triggers import Edge, FallingEdge, Timer
 from cocotb.types import Logic, LogicArray
 
@@ -124,7 +124,7 @@ async def test_int_values(
 
 
 async def int_values_test(
-    signal: LogicObject,
+    signal: LogicArrayObject,
     n_bits: int,
     setimmediate: bool,
     limits: _Limits = _Limits.VECTOR_NBIT,
@@ -184,7 +184,7 @@ async def test_vector_overflow(
 
 
 async def int_overflow_test(
-    signal: LogicObject,
+    signal: LogicArrayObject,
     n_bits: int,
     test_mode: str,
     setimmediate: bool,
@@ -241,7 +241,7 @@ async def test_integer(dut, setimmediate: bool) -> None:
     ):
         limits = (
             _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicObject in Riviera and GHDL, not IntegerObject
+        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -260,7 +260,7 @@ async def test_integer_overflow(dut, setimmediate: bool) -> None:
     ):
         limits = (
             _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicObject in Riviera and GHDL, not IntegerObject
+        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -278,7 +278,7 @@ async def test_integer_underflow(dut, setimmediate: bool) -> None:
     ):
         limits = (
             _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicObject in Riviera and GHDL, not IntegerObject
+        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -418,6 +418,8 @@ async def test_assign_LogicArray_9value(dut):
 
 @cocotb.test
 async def test_assign_string(dut):
+    assert len(dut.stream_in_data) == 8
+    cocotb.log.info("dut.stream_in_data type is %s", dut.stream_in_data._type)
     dut.stream_in_data.value = "10101010"
     await Timer(1, "ns")
     assert dut.stream_in_data.value == "10101010"
@@ -491,3 +493,42 @@ async def test_null_range_width(dut):
     else:
         # Not so in (System)Verilog though
         assert len(dut.array_4_downto_7) == 4
+
+
+@cocotb.test
+async def test_assign_str_logic_scalar(dut) -> None:
+    dut.stream_in_valid.value = 1
+    await Timer(1, "ns")
+    assert dut.stream_in_valid.value == "1"
+
+    dut.stream_in_valid.value = "0"
+    await Timer(1, "ns")
+    assert dut.stream_in_valid.value == "0"
+
+    dut.stream_in_valid.value = Logic("1")
+    await Timer(1, "ns")
+    assert dut.stream_in_valid.value == "1"
+
+    dut.stream_in_valid.value = LogicArray("0")
+    await Timer(1, "ns")
+    assert dut.stream_in_valid.value == "0"
+
+    with pytest.raises(TypeError):
+        dut.stream_in_valid.value = (1, 0)  # not the correct type
+
+    with pytest.raises(ValueError):
+        dut.stream_in_valid.value = LogicArray("0101")  # too long
+
+    with pytest.raises(ValueError):
+        dut.stream_in_valid.value = "1010"  # too long
+
+    # Veirlator doesn't support 4-state signals
+    if not SIM_NAME.startswith("verilator"):
+        dut.stream_in_valid.value = "Z"
+        await Timer(1, "ns")
+        assert dut.stream_in_valid.value == "Z"
+
+    if LANGUAGE in ["vhdl"]:
+        dut.stream_in_valid.value = "H"
+        await Timer(1, "ns")
+        assert dut.stream_in_valid.value == "H"
