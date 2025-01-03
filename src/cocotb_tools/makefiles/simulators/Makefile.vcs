@@ -58,8 +58,11 @@ ifdef VERILOG_INCLUDE_DIRS
 endif
 
 ifeq ($(PYTHON_ARCH),64bit)
-    EXTRA_ARGS += -full64
+    COMPILE_ARGS += -full64
 endif
+
+# link in libraries even if the linker thinks the library is not needed
+COMPILE_ARGS += -LDFLAGS -Wl,--no-as-needed
 
 ifeq ($(GUI),1)
     EXTRA_ARGS += -gui
@@ -71,15 +74,15 @@ endif
 # Can't do this using an argument, we have to create a PLI table file
 # enabling write access to the design
 $(SIM_BUILD)/pli.tab : | $(SIM_BUILD)
-	echo "acc+=rw,wn:*" > $@
+	echo "acc+=rw,wn,cbk:*" > $@
 
 # Compilation phase
 $(SIM_BUILD)/simv: $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	cd $(SIM_BUILD) && \
 	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
-	$(CMD) -top $(COCOTB_TOPLEVEL) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) -debug_access+all -debug_region+cell +vpi -P pli.tab -sverilog \
+	$(CMD) -top $(COCOTB_TOPLEVEL) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) -debug_access+all +vpi -P pli.tab -sverilog \
 	-timescale=$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
-	$(EXTRA_ARGS) -debug_acc+pp+f+dmptf -debug_region+cell+encrypt -load $(shell cocotb-config --lib-name-path vpi vcs) $(COMPILE_ARGS) $(VERILOG_SOURCES)
+	$(EXTRA_ARGS) -load $(shell cocotb-config --lib-name-path vpi vcs) $(COMPILE_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(CUSTOM_SIM_DEPS)

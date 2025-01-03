@@ -66,7 +66,7 @@ async def test_timeout_testdec_pass(dut):
 async def test_timeout_testdec_simultaneous(dut):
     try:
         await cocotb.triggers.with_timeout(
-            Timer(1, "ns"), timeout_time=1, timeout_unit="ns"
+            Timer(2, "ns"), timeout_time=1, timeout_unit="ns"
         )
     except SimTimeoutError:
         pass

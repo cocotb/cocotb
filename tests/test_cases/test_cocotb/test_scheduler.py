@@ -648,7 +648,7 @@ async def test_start(_):
     assert type(task1) is Task
     assert not task1.done()
 
-    await Timer(1, "step")
+    await Timer(2, "step")
     assert task1.done()
 
     task2 = cocotb.create_task(coro())
@@ -659,7 +659,7 @@ async def test_start(_):
 
     task4 = cocotb.start_soon(coro())
     await cocotb.start(coro())
-    await Timer(1, "step")
+    await Timer(2, "step")
     assert task4.done()
 
     async def coro_val():

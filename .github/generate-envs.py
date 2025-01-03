@@ -353,7 +353,7 @@ ENVS = [
         "os": "ubuntu-20.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "experimental",
+        "group": "ci",
     },
     {
         "lang": "vhdl",
