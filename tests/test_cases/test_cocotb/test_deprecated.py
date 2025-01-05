@@ -8,7 +8,7 @@ import pytest
 
 import cocotb
 from cocotb.regression import TestFactory
-from cocotb.triggers import Event, Join, Timer
+from cocotb.triggers import Event, First, Join, Timer
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
@@ -80,22 +80,48 @@ async def test_string_handle_casts_deprecated(dut):
 
 @cocotb.test
 async def test_join_trigger_deprecated(_) -> None:
-    async def noop():
-        pass
+    async def returns_1():
+        return 1
 
-    t = cocotb.start_soon(noop())
+    t = cocotb.start_soon(returns_1())
     with pytest.warns(DeprecationWarning, match=r"Join\(task\)"):
-        await Join(t)
+        j = Join(t)
+    assert (await j) == 1
+
+
+@cocotb.test
+async def test_join_trigger_in_first_backwards_compat(_) -> None:
+    async def returns_1():
+        return 1
+
+    t = cocotb.start_soon(returns_1())
+    with pytest.warns(DeprecationWarning, match=r"Join\(task\)"):
+        j = Join(t)
+    res = await First(j, Timer(1))
+    assert res == 1
 
 
 @cocotb.test
 async def test_task_join_deprecated(_) -> None:
-    async def noop():
-        pass
+    async def returns_1():
+        return 1
 
-    t = cocotb.start_soon(noop())
+    t = cocotb.start_soon(returns_1())
     with pytest.warns(DeprecationWarning, match=r"task.join\(\)"):
-        await t.join()
+        j = t.join()
+    assert (await j) == 1
+
+
+@cocotb.test
+async def test_task_join_in_first_backwards_compat(_) -> None:
+    async def returns_1():
+        return 1
+
+    t = cocotb.start_soon(returns_1())
+    with pytest.warns(DeprecationWarning, match=r"task.join\(\)"):
+        j = t.join()
+    res = await First(j, Timer(1))
+    assert res == 1
 
 
 @cocotb.test

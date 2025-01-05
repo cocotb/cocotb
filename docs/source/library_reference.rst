@@ -182,7 +182,9 @@ Python Triggers
 
 .. autoclass:: cocotb.triggers.First
 
-.. autoclass:: cocotb.triggers.Join
+.. autofunction:: cocotb.triggers.Join
+
+.. autoclass:: cocotb.triggers.TaskComplete
     :members:
 
 

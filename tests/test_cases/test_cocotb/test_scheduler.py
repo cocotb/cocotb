@@ -29,6 +29,7 @@ from cocotb.triggers import (
     NullTrigger,
     ReadOnly,
     RisingEdge,
+    TaskComplete,
     Timer,
     Trigger,
 )
@@ -328,8 +329,8 @@ async def test_last_scheduled_write_wins_array(dut):
     assert dut.array_7_downto_4.value == [10, 2, 3, 4]
 
 
-@cocotb.test()
-async def test_task_repr(dut):
+@cocotb.test
+async def test_task_repr(_) -> None:
     """Test Task.__repr__."""
     log = logging.getLogger("cocotb.test")
 
@@ -909,3 +910,33 @@ async def test_task_done_callback_added_after_done(_) -> None:
     task._add_done_callback(done_callback)
     await NullTrigger()
     assert callback_ran
+
+
+@cocotb.test
+async def test_task_complete(_) -> None:
+    async def noop() -> None:
+        pass
+
+    task = cocotb.start_soon(noop())
+    assert not task.done()
+    res = await task.complete
+    assert res is task.complete
+    assert task.done()
+
+    tc = TaskComplete(task)
+    assert tc is res
+
+    res = await tc
+    assert res is task.complete
+    assert task.done()
+
+
+@cocotb.test
+async def test_joins_in_first(_) -> None:
+    async def wait(ns: int) -> None:
+        await Timer(ns, "ns")
+
+    task1 = cocotb.start_soon(wait(10))
+    task2 = cocotb.start_soon(wait(20))
+    j = await First(task1.complete, task2.complete)
+    assert j is task1.complete
