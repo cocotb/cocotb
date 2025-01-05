@@ -116,7 +116,7 @@ $(COCOTB_RESULTS_FILE): $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	$(SIM_CMD_PREFIX) $(CMD) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
 	$(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(LIBS) $(MAKE_LIB) $(HDL_SOURCES) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
 
-	$(call check_for_results_file)
+	$(call check_results)
 
 clean::
 	$(RM) -r $(SIM_BUILD)
