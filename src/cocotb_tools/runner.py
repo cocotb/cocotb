@@ -34,11 +34,11 @@ from typing import (
     Type,
     Union,
 )
-from xml.etree import ElementTree as ET
 
 import find_libpython
 
 import cocotb_tools.config
+from cocotb_tools.check_results import get_results
 
 PathLike = Union["os.PathLike[str]", str]  # TODO use TypeAlias in Python 3.10
 "A path that can be passed to :class:`pathlib.Path` or :func:`open`"
@@ -514,36 +514,6 @@ class Runner(ABC):
         if os.path.isdir(build_dir):
             self.log.info("Removing: %s", build_dir)
             shutil.rmtree(build_dir, ignore_errors=True)
-
-
-def get_results(results_xml_file: Path) -> Tuple[int, int]:
-    """Return number of tests and fails in *results_xml_file*.
-
-    Returns:
-        Tuple of number of tests and number of fails.
-
-    Raises:
-        RuntimeError: *results_xml_file* is non-existent.
-    """
-
-    __tracebackhide__ = True  # Hide the traceback when using PyTest.
-
-    if not results_xml_file.is_file():
-        raise RuntimeError(
-            f"ERROR: Simulation terminated abnormally. Results file {results_xml_file} not found."
-        )
-
-    num_tests = 0
-    num_failed = 0
-
-    tree = ET.parse(results_xml_file)
-    for ts in tree.iter("testsuite"):
-        for tc in ts.iter("testcase"):
-            num_tests += 1
-            for _ in tc.iter("failure"):
-                num_failed += 1
-
-    return (num_tests, num_failed)
 
 
 def outdated(output: Path, dependencies: Sequence[Path]) -> bool:
