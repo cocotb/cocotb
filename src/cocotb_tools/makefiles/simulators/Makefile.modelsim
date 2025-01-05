@@ -29,4 +29,4 @@
 
 
 # Identical to Questa
-include $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)/simulators/Makefile.questa
+include $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.questa
