@@ -602,17 +602,14 @@ class Icarus(Runner):
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
 
-    @staticmethod
-    def _simulator_in_path() -> None:
+    def _simulator_in_path(self) -> None:
         if shutil.which("iverilog") is None:
             raise SystemExit("ERROR: iverilog executable not found!")
 
-    @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         return [f"-I{include}" for include in includes]
 
-    @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> _Command:
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         return [f"-D{name}={value}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
@@ -736,24 +733,20 @@ class Questa(Runner):
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["fli", "vhpi"]}
 
-    @staticmethod
-    def _simulator_in_path() -> None:
+    def _simulator_in_path(self) -> None:
         if shutil.which("vsim") is None:
             raise SystemExit("ERROR: vsim executable not found!")
 
-    @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         return [f"+incdir+{_as_tcl_value(str(include))}" for include in includes]
 
-    @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> _Command:
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         return [
             f"+define+{_as_tcl_value(name)}={_as_tcl_value(str(value))}"
             for name, value in defines.items()
         ]
 
-    @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[_Command]:
@@ -877,8 +870,7 @@ class Ghdl(Runner):
         if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
             self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
 
-    @staticmethod
-    def _simulator_in_path() -> None:
+    def _simulator_in_path(self) -> None:
         if shutil.which("ghdl") is None:
             raise SystemExit("ERROR: ghdl executable not found!")
 
@@ -893,16 +885,13 @@ class Ghdl(Runner):
         )
         return "mcode" in result.stdout
 
-    @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         raise RuntimeError
 
-    @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> _Command:
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         raise RuntimeError
 
-    @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[_Command]:
@@ -997,21 +986,17 @@ class Nvc(Runner):
         if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
             self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
 
-    @staticmethod
-    def _simulator_in_path() -> None:
+    def _simulator_in_path(self) -> None:
         if shutil.which("nvc") is None:
             raise SystemExit("ERROR: nvc executable not found!")
 
-    @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         raise RuntimeError
 
-    @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> _Command:
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         raise RuntimeError
 
-    @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[_Command]:
@@ -1062,24 +1047,20 @@ class Riviera(Runner):
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
 
-    @staticmethod
-    def _simulator_in_path() -> None:
+    def _simulator_in_path(self) -> None:
         if shutil.which("vsimsa") is None:
             raise SystemExit("ERROR: vsimsa executable not found!")
 
-    @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         return [f"+incdir+{_as_tcl_value(str(include))}" for include in includes]
 
-    @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> _Command:
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         return [
             f"+define+{_as_tcl_value(name)}={_as_tcl_value(str(value))}"
             for name, value in defines.items()
         ]
 
-    @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[_Command]:
@@ -1223,16 +1204,13 @@ class Verilator(Runner):
             raise SystemExit("ERROR: verilator executable not found!")
         self.executable: str = executable
 
-    @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         return [f"-I{include}" for include in includes]
 
-    @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> _Command:
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         return [f"-D{name}={value}" for name, value in defines.items()]
 
-    @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-G{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[_Command]:
@@ -1328,21 +1306,17 @@ class Xcelium(Runner):
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
 
-    @staticmethod
-    def _simulator_in_path() -> None:
+    def _simulator_in_path(self) -> None:
         if shutil.which("xrun") is None:
             raise SystemExit("ERROR: xrun executable not found!")
 
-    @staticmethod
-    def _get_include_options(includes: Sequence[PathLike]) -> _Command:
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         return [f"-incdir {include}" for include in includes]
 
-    @staticmethod
-    def _get_define_options(defines: Mapping[str, object]) -> _Command:
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         return [f"-define {name}={value}" for name, value in defines.items()]
 
-    @staticmethod
-    def _get_parameter_options(parameters: Mapping[str, object]) -> _Command:
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f'-gpg "{name} => {value}"' for name, value in parameters.items()]
 
     def _build_command(self) -> List[_Command]:
