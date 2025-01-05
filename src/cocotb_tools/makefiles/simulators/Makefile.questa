@@ -27,8 +27,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
-
 CMD_BIN := vsim
 
 ifdef MODELSIM_BIN_DIR
@@ -73,14 +71,14 @@ else
     VSIM_ARGS += -onfinish exit
 endif
 
-FLI_LIB := $(shell cocotb-config --lib-name-path fli questa)
+FLI_LIB := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path fli questa)
 # if this target is run, then cocotb did not build the library
 $(FLI_LIB):
 	@echo -e "ERROR: cocotb was not installed with an FLI library, as the mti.h header could not be located.\n\
 	If you installed an FLI-capable simulator after cocotb, you will need to reinstall cocotb.\n\
 	Please check the cocotb documentation on ModelSim support." >&2 && exit 1
 
-VHPI_LIB := $(shell cocotb-config --lib-name-path vhpi questa)
+VHPI_LIB := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vhpi questa)
 
 GPI_EXTRA :=
 
@@ -99,13 +97,13 @@ else
     VSIM_ARGS += -voptargs="-access=rw+/." -foreign \"vhpi_startup_routines_bootstrap $(call to_tcl_path,$(VHPI_LIB))\"
 endif
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA :=  $(shell cocotb-config --lib-name-path vpi questa):cocotbvpi_entry_point
+    GPI_EXTRA :=  $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi questa):cocotbvpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),verilog)
-    VSIM_ARGS += -pli $(shell cocotb-config --lib-name-path vpi questa)
+    VSIM_ARGS += -pli $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi questa)
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA := $(shell cocotb-config --lib-name-path $(VHDL_GPI_INTERFACE) questa):cocotb$(VHDL_GPI_INTERFACE)_entry_point
+    GPI_EXTRA := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path $(VHDL_GPI_INTERFACE) questa):cocotb$(VHDL_GPI_INTERFACE)_entry_point
 endif
 
 else

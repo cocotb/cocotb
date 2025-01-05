@@ -27,8 +27,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
-
 ifneq ($(VHDL_SOURCES),)
 
 $(COCOTB_RESULTS_FILE):
@@ -79,7 +77,7 @@ $(SIM_BUILD)/simv: $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(CUSTOM_COMPILE_DEPS
 	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
 	$(CMD) -top $(COCOTB_TOPLEVEL) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) -debug_access+all -debug_region+cell +vpi -P pli.tab -sverilog \
 	-timescale=$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
-	$(EXTRA_ARGS) -debug_acc+pp+f+dmptf -debug_region+cell+encrypt -load $(shell cocotb-config --lib-name-path vpi vcs) $(COMPILE_ARGS) $(VERILOG_SOURCES)
+	$(EXTRA_ARGS) -debug_acc+pp+f+dmptf -debug_region+cell+encrypt -load $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi vcs) $(COMPILE_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(CUSTOM_SIM_DEPS)

@@ -86,11 +86,14 @@ ifeq ($(MAKECMDGOALS),help)
     $(info $(help_makevars))
     # hack to get newlines in output, see https://stackoverflow.com/a/54539610
     # NOTE: the output of the command must not include a '%' sign, otherwise the formatting will break
-    help_envvars := $(subst %,${newline},$(shell cocotb-config --help-vars | tr \\n %))
+    help_envvars := $(subst %,${newline},$(shell $(PYTHON_BIN) -m cocotb.config --help-vars | tr \\n %))
     $(info ${help_envvars})
     # is there a cleaner way to exit here?
     $(error Stopping after printing help)
 endif
+
+PYTHON_BIN ?= python
+include $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)/Makefile.inc
 
 # Default to Icarus if no simulator is defined
 SIM ?= icarus
@@ -99,7 +102,7 @@ SIM ?= icarus
 SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
 
 # Directory containing the cocotb Makfiles
-COCOTB_MAKEFILES_DIR := $(shell cocotb-config --makefiles)
+COCOTB_MAKEFILES_DIR := $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)
 
 include $(COCOTB_MAKEFILES_DIR)/Makefile.deprecations
 
