@@ -51,10 +51,20 @@ endif
 export OS
 
 # this ensures we use the same python as the one cocotb was installed into
-PYTHON_BIN ?= $(shell cocotb-config --python-bin)
-export PYGPI_PYTHON_BIN := $(PYTHON_BIN)
+# attempts to use cocotb_config entry script to get that info, falls back to "python"
+PYTHON_BIN_RES := $(shell cocotb-config --python-bin 2>>/dev/null; echo $$?)
+PYTHON_BIN_RC := $(lastword $(PYTHON_BIN_RES))
+PYTHON_BIN := $(strip $(subst $(PYTHON_BIN_RC)QQQQ,,$(PYTHON_BIN_RES)QQQQ))
+ifneq ($(PYTHON_BIN_RC),0)
+  PYTHON_BIN := python
+  PYGPI_PYTHON_BIN := $(shell $(PYTHON_BIN) -m cocotb_tools.config --python-bin)
+else
+  PYGPI_PYTHON_BIN := $(PYTHON_BIN)
+endif
 
-include $(shell cocotb-config --makefiles)/Makefile.deprecations
+export PYGPI_PYTHON_BIN
+
+include $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)/Makefile.deprecations
 
 PYTHON_ARCH := $(shell $(PYTHON_BIN) -c 'from platform import architecture; print(architecture()[0])')
 ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)
@@ -124,7 +134,7 @@ ifndef LIBPYTHON_LOC
 
 # get the path to libpython and the return code from the script
 # adapted from https://stackoverflow.com/a/24658961/6614127
-FIND_LIBPYTHON_RES := $(shell cocotb-config --libpython; echo $$?)
+FIND_LIBPYTHON_RES := $(shell $(PYTHON_BIN) -m cocotb_tools.config --libpython; echo $$?)
 FIND_LIBPYTHON_RC := $(lastword $(FIND_LIBPYTHON_RES))
 LIBPYTHON_LOC := $(strip $(subst $(FIND_LIBPYTHON_RC)QQQQ,,$(FIND_LIBPYTHON_RES)QQQQ))
 
