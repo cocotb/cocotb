@@ -1066,7 +1066,7 @@ static PyMethodDef SimulatorMethods[] = {
     {"register_timed_callback", register_timed_callback, METH_VARARGS,
      PyDoc_STR("register_timed_callback(time, func, /, *args)\n"
                "--\n\n"
-               "register_timed_callback(time: int, func: Callable[..., None], "
+               "register_timed_callback(time: int, func: Callable[..., Any], "
                "*args: Any) -> cocotb.simulator.gpi_cb_hdl\n"
                "Register a timed callback.")},
     {"register_value_change_callback", register_value_change_callback,
@@ -1074,25 +1074,25 @@ static PyMethodDef SimulatorMethods[] = {
      PyDoc_STR("register_value_change_callback(signal, func, edge, /, *args)\n"
                "--\n\n"
                "register_value_change_callback(signal: "
-               "cocotb.simulator.gpi_sim_hdl, func: Callable[..., None], edge: "
+               "cocotb.simulator.gpi_sim_hdl, func: Callable[..., Any], edge: "
                "int, *args: Any) -> cocotb.simulator.gpi_cb_hdl\n"
                "Register a signal change callback.")},
     {"register_readonly_callback", register_readonly_callback, METH_VARARGS,
      PyDoc_STR("register_readonly_callback(func, /, *args)\n"
                "--\n\n"
-               "register_readonly_callback(func: Callable[..., None], *args: "
+               "register_readonly_callback(func: Callable[..., Any], *args: "
                "Any) -> cocotb.simulator.gpi_cb_hdl\n"
                "Register a callback for the read-only section.")},
     {"register_nextstep_callback", register_nextstep_callback, METH_VARARGS,
      PyDoc_STR("register_nextstep_callback(func, /, *args)\n"
                "--\n\n"
-               "register_nextstep_callback(func: Callable[..., None], *args: "
+               "register_nextstep_callback(func: Callable[..., Any], *args: "
                "Any) -> cocotb.simulator.gpi_cb_hdl\n"
                "Register a callback for the cbNextSimTime callback.")},
     {"register_rwsynch_callback", register_rwsynch_callback, METH_VARARGS,
      PyDoc_STR("register_rwsynch_callback(func, /, *args)\n"
                "--\n\n"
-               "register_rwsynch_callback(func: Callable[..., None], *args: "
+               "register_rwsynch_callback(func: Callable[..., Any], *args: "
                "Any) -> cocotb.simulator.gpi_cb_hdl\n"
                "Register a callback for the read-write section.")},
     {"stop_simulator", stop_simulator, METH_VARARGS,

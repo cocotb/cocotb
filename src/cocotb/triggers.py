@@ -33,6 +33,7 @@ from abc import abstractmethod
 from decimal import Decimal
 from fractions import Fraction
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncContextManager,
     Awaitable,
@@ -265,8 +266,14 @@ class Timer(GPITrigger):
 
 # TODO: In Python < 3.8 the metaclass of typing objects doesn't work well with other metaclasses.
 # TODO: This can be removed once Python 3.8 becomes standard.
+if TYPE_CHECKING:  # pragma: no cover
+    GPITriggerMetaclass = type
+else:
+    GPITriggerMetaclass = type(GPITrigger)
+
+
 class _ParameterizedSingletonGPITriggerMetaclass(
-    ParameterizedSingletonMetaclass, type(GPITrigger)
+    ParameterizedSingletonMetaclass, GPITriggerMetaclass
 ): ...
 
 
@@ -1005,6 +1012,10 @@ class ClockCycles(Waitable["ClockCycles"]):
         return fmt.format(type(self).__qualname__, self.signal, self.num_cycles)
 
 
+class SimTimeoutError(TimeoutError):
+    """Exception thrown when a timeout, in terms of simulation time, occurs."""
+
+
 @overload
 async def with_timeout(
     trigger: Trigger,
@@ -1039,10 +1050,6 @@ async def with_timeout(
     timeout_unit: str = "step",
     round_mode: Optional[str] = None,
 ) -> T: ...
-
-
-class SimTimeoutError(TimeoutError):
-    """Exception thrown when a timeout, in terms of simulation time, occurs."""
 
 
 async def with_timeout(

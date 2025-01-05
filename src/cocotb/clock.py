@@ -35,6 +35,7 @@ from typing import Union
 
 from cocotb._py_compat import cached_property
 from cocotb._write_scheduler import trust_inertial
+from cocotb.handle import LogicObject
 from cocotb.simulator import clock_create
 from cocotb.triggers import Event, Timer
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
@@ -123,7 +124,7 @@ class Clock:
 
     def __init__(
         self,
-        signal,
+        signal: LogicObject,
         period: Union[float, Fraction, Decimal],
         units: str = "step",
         impl: str = "auto",
@@ -175,12 +176,12 @@ class Clock:
             timer_high = Timer(t_high)
             timer_low = Timer(self.period - t_high)
             if start_high:
-                self.signal.value = 1
+                self.signal.set(1)
                 await timer_high
             while True:
-                self.signal.value = 0
+                self.signal.set(0)
                 await timer_low
-                self.signal.value = 1
+                self.signal.set(1)
                 await timer_high
 
     def __str__(self) -> str:

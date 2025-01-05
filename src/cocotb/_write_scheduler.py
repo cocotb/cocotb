@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import os
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Sequence, Tuple, Union
+from typing import Any, Callable, Sequence, Tuple, Union
 
 import cocotb
 import cocotb.handle
@@ -15,9 +15,7 @@ trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 # A dictionary of pending (write_func, args), keyed by handle.
 # Writes are applied oldest to newest (least recently used).
 # Only the last scheduled write to a particular handle in a timestep is performed.
-_write_calls: Dict[
-    cocotb.handle.SimHandleBase, Tuple[Callable[..., None], Sequence[Any]]
-] = OrderedDict()
+_write_calls: "OrderedDict[cocotb.handle.SimHandleBase, Tuple[Callable[..., None], Sequence[Any]]]" = OrderedDict()
 
 # TODO don't use a task to force ReadWrite, just prime an empty callback
 

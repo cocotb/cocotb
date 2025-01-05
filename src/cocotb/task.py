@@ -8,7 +8,16 @@ import os
 import warnings
 from asyncio import CancelledError, InvalidStateError
 from enum import auto
-from typing import Any, Callable, Coroutine, Generator, Generic, List, Optional, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    TypeVar,
+)
 
 import cocotb
 import cocotb.triggers
