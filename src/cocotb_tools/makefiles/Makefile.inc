@@ -56,13 +56,10 @@ PYTHON_BIN_RES := $(shell cocotb-config --python-bin 2>>/dev/null; echo $$?)
 PYTHON_BIN_RC := $(lastword $(PYTHON_BIN_RES))
 PYTHON_BIN := $(strip $(subst $(PYTHON_BIN_RC)QQQQ,,$(PYTHON_BIN_RES)QQQQ))
 ifneq ($(PYTHON_BIN_RC),0)
-  PYTHON_BIN := python
-  PYGPI_PYTHON_BIN := $(shell $(PYTHON_BIN) -m cocotb_tools.config --python-bin)
-else
-  PYGPI_PYTHON_BIN := $(PYTHON_BIN)
+    PYTHON_BIN := python
 endif
 
-export PYGPI_PYTHON_BIN
+export PYGPI_PYTHON_BIN := $(shell $(PYTHON_BIN) -m cocotb_tools.config --python-bin)
 
 # Directory containing the cocotb Makefiles
 COCOTB_MAKEFILES_DIR := $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)
@@ -164,10 +161,6 @@ define check_lib_order
   fi;
 endef
 
-else
-    $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)
-endif # COCOTB_MAKEFILE_INC_INCLUDED
-
 ifneq ($(filter $(SIM),nvc ghdl verilator),)
   COCOTB_TRUST_INERTIAL_WRITES ?= 1
 else
@@ -175,3 +168,7 @@ else
 endif
 
 export COCOTB_TRUST_INERTIAL_WRITES
+
+else
+    $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)
+endif # COCOTB_MAKEFILE_INC_INCLUDED
