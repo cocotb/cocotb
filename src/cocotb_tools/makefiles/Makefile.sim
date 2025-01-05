@@ -101,11 +101,6 @@ SIM ?= icarus
 # Maintain backwards compatibility by supporting upper and lower case SIM variable
 SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
 
-# Directory containing the cocotb Makfiles
-COCOTB_MAKEFILES_DIR := $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)
-
-include $(COCOTB_MAKEFILES_DIR)/Makefile.deprecations
-
 HAVE_SIMULATOR = $(shell if [ -f $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.$(SIM_LOWERCASE) ]; then echo 1; else echo 0; fi;)
 AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.*)))
 

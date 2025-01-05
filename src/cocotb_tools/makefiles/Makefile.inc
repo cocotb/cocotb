@@ -64,7 +64,10 @@ endif
 
 export PYGPI_PYTHON_BIN
 
-include $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)/Makefile.deprecations
+# Directory containing the cocotb Makefiles
+COCOTB_MAKEFILES_DIR := $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)
+
+include $(COCOTB_MAKEFILES_DIR)/Makefile.deprecations
 
 PYTHON_ARCH := $(shell $(PYTHON_BIN) -c 'from platform import architecture; print(architecture()[0])')
 ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)
