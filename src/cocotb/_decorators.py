@@ -400,8 +400,8 @@ def test(
     def _add_tests(module_name: str, *tests: Test) -> None:
         mod = sys.modules[module_name]
         if not hasattr(mod, "__cocotb_tests__"):
-            mod.__cocotb_tests__ = []
-        mod.__cocotb_tests__.extend(tests)
+            setattr(mod, "__cocotb_tests__", [])
+        cast(List[Test], mod.__cocotb_tests__).extend(tests)
 
     if _func is not None:
         if isinstance(_func, _Parameterized):

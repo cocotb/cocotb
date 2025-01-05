@@ -40,6 +40,7 @@ import warnings
 from enum import auto
 from importlib import import_module
 from itertools import product
+from types import FrameType
 from typing import (
     Any,
     Callable,
@@ -72,7 +73,7 @@ from cocotb._utils import (
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.result import TestSuccess
 from cocotb.task import Task, _RunningTest
-from cocotb.triggers import SimTimeoutError, Timer, Trigger
+from cocotb.triggers import SimTimeoutError, Timer, Trigger, with_timeout
 from cocotb.utils import get_sim_time
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
@@ -158,24 +159,25 @@ class Test:
         stage: int = 0,
         _expect_sim_failure: bool = False,
     ) -> None:
+        self.func: Callable[..., Coroutine[Any, Any, None]]
         if timeout_time is not None:
             co = func  # must save ref because we overwrite variable "func"
 
             @functools.wraps(func)
-            async def func(*args, **kwargs):
+            async def f(*args, **kwargs):
                 running_co = Task(co(*args, **kwargs))
 
                 try:
-                    res = await cocotb.triggers.with_timeout(
-                        running_co, self.timeout_time, self.timeout_unit
-                    )
+                    res = await with_timeout(running_co, timeout_time, timeout_unit)
                 except SimTimeoutError:
                     running_co.kill()
                     raise
                 else:
                     return res
 
-        self.func = func
+            self.func = f
+        else:
+            self.func = func
         self.timeout_time = timeout_time
         self.timeout_unit = timeout_unit
         self.expect_fail = expect_fail
@@ -585,7 +587,7 @@ class RegressionManager:
         # continue test loop, assuming sim failure or not
         return self._execute()
 
-    def _get_lineno(self, test: Test) -> None:
+    def _get_lineno(self, test: Test) -> int:
         try:
             return inspect.getsourcelines(test.func)[1]
         except OSError:
@@ -768,7 +770,7 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[Exception, None],
+        result: Union[BaseException, None],
         msg: Union[str, None],
     ) -> None:
         start_hilight = _ANSI.COLOR_FAILED if want_color_output() else ""
@@ -962,7 +964,7 @@ class RegressionManager:
         self._abort_test(self._sim_failure)
         cocotb._scheduler_inst._handle_termination()
 
-    def _abort_test(self, exc: Exception) -> None:
+    def _abort_test(self, exc: BaseException) -> None:
         """Force this test to end early, without executing any cleanup.
 
         This happens when a background task fails, and is consistent with
@@ -1196,7 +1198,8 @@ class TestFactory(Generic[F]):
         else:
             postfix = ""
 
-        glbs = inspect.stack()[stacklevel][0].f_back.f_globals
+        # trust the user puts a reasonable stacklevel in
+        glbs = cast(FrameType, inspect.stack()[stacklevel][0].f_back).f_globals
 
         if "__cocotb_tests__" not in glbs:
             glbs["__cocotb_tests__"] = []

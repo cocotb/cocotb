@@ -6,7 +6,7 @@ import functools
 import warnings
 from typing import Any, Callable, Type, TypeVar
 
-AnyCallableT = TypeVar("AnyCallableT", bound=Callable[..., object])
+AnyCallableT = TypeVar("AnyCallableT", bound=Callable[..., Any])
 
 
 def deprecated(
@@ -31,6 +31,6 @@ def deprecated(
             warnings.warn(msg, category=category, stacklevel=2)
             return f(*args, **kwargs)
 
-        return wrapper
+        return wrapper  # type: ignore[return-value]  # type checkers get confused about this
 
     return decorator

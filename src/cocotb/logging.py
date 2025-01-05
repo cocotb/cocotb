@@ -32,7 +32,7 @@ Everything related to logging
 import logging
 import os
 import sys
-import typing
+from typing import TYPE_CHECKING, Union
 
 from cocotb import _ANSI, simulator
 from cocotb._utils import want_color_output
@@ -51,7 +51,7 @@ _LINENO_CHARS = 4
 _FUNCNAME_CHARS = 31
 
 # Custom log level
-logging.TRACE = 5
+logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
 logging.addLevelName(5, "TRACE")
 
 # Default log level if not overwritten by the user.
@@ -113,10 +113,16 @@ def default_config():
     logging.getLogger("gpi").setLevel(level)
 
 
-class SimBaseLog(logging.getLoggerClass()):
+if TYPE_CHECKING:  # pragma: no cover
+    LoggerClass = logging.Logger
+else:
+    LoggerClass = logging.getLoggerClass()
+
+
+class SimBaseLog(LoggerClass):
     """This class only exists for backwards compatibility"""
 
-    def setLevel(self, level: typing.Union[int, str]) -> None:
+    def setLevel(self, level: Union[int, str]) -> None:
         super().setLevel(level)
         if self.name == "gpi":
             simulator.log_level(self.getEffectiveLevel())
@@ -238,7 +244,7 @@ class SimColourLogFormatter(SimLogFormatter):
     """Log formatter to provide consistent log message handling."""
 
     loglevel2colour = {
-        logging.TRACE: "%s",
+        logging.TRACE: "%s",  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
         logging.DEBUG: "%s",
         logging.INFO: "%s",
         logging.WARNING: _ANSI.COLOR_WARNING + "%s" + _ANSI.COLOR_DEFAULT,
@@ -277,6 +283,6 @@ def _log_from_c(logger_name, level, filename, lineno, msg, function_name):
     logger = logging.getLogger(logger_name)
     if logger.isEnabledFor(level):
         record = logger.makeRecord(
-            logger.name, level, filename, lineno, msg, None, None, function_name
+            logger.name, level, filename, lineno, msg, (), None, function_name
         )
         logger.handle(record)

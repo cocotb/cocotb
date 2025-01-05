@@ -4,9 +4,10 @@
 import asyncio.queues
 import collections
 import heapq
-from typing import Generic, TypeVar
+from typing import Any, Deque, Generic, Tuple, TypeVar, cast
 
 import cocotb
+from cocotb.task import Task
 from cocotb.triggers import Event, _pointer_str
 
 
@@ -29,40 +30,38 @@ class Queue(Generic[T]):
     reaches *maxsize*, until an item is removed by :meth:`get`.
     """
 
-    def __init__(self, maxsize: int = 0):
-        self._maxsize = maxsize
+    def __init__(self, maxsize: int = 0) -> None:
+        self._maxsize: int = maxsize
 
-        self._getters = collections.deque()
-        self._putters = collections.deque()
+        self._getters: Deque[Tuple[Event, Task[Any]]] = collections.deque()
+        self._putters: Deque[Tuple[Event, Task[Any]]] = collections.deque()
 
         self._init(maxsize)
 
-    def _init(self, maxsize):
-        self._queue = collections.deque()
+    def _init(self, maxsize: int) -> None:
+        # TODO A better typing strategy would use PIMPL
+        self._queue: Any = collections.deque()
 
-    def _put(self, item):
+    def _put(self, item: T) -> None:
         self._queue.append(item)
 
-    def _get(self):
+    def _get(self) -> T:
         return self._queue.popleft()
 
-    def _wakeup_next(self, waiters):
+    def _wakeup_next(self, waiters: Deque[Tuple[Event, Task[Any]]]) -> None:
         while waiters:
             event, task = waiters.popleft()
             if not task.done():
                 event.set()
                 break
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{type(self).__name__} {self._format()} at {_pointer_str(self)}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<{type(self).__name__} {self._format()}>"
 
-    def __class_getitem__(cls, type):
-        return cls
-
-    def _format(self):
+    def _format(self) -> str:
         result = f"maxsize={repr(self._maxsize)}"
         if getattr(self, "_queue", None):
             result += f" _queue={repr(list(self._queue))}"
@@ -105,7 +104,9 @@ class Queue(Generic[T]):
         """
         while self.full():
             event = Event(f"{type(self).__name__} put")
-            self._putters.append((event, cocotb._scheduler_inst._current_task))
+            self._putters.append(
+                (event, cast(Task[Any], cocotb._scheduler_inst._current_task))
+            )
             await event.wait()
         self.put_nowait(item)
 
@@ -126,7 +127,9 @@ class Queue(Generic[T]):
         """
         while self.empty():
             event = Event(f"{type(self).__name__} get")
-            self._getters.append((event, cocotb._scheduler_inst._current_task))
+            self._getters.append(
+                (event, cast(Task[Any], cocotb._scheduler_inst._current_task))
+            )
             await event.wait()
         return self.get_nowait()
 
@@ -143,30 +146,30 @@ class Queue(Generic[T]):
         return item
 
 
-class PriorityQueue(Queue):
+class PriorityQueue(Queue[T]):
     r"""A subclass of :class:`Queue`; retrieves entries in priority order (smallest item first).
 
     Entries are typically tuples of the form ``(priority number, data)``.
     """
 
-    def _init(self, maxsize):
+    def _init(self, maxsize: int) -> None:
         self._queue = []
 
-    def _put(self, item):
+    def _put(self, item: T) -> None:
         heapq.heappush(self._queue, item)
 
-    def _get(self):
+    def _get(self) -> T:
         return heapq.heappop(self._queue)
 
 
-class LifoQueue(Queue):
+class LifoQueue(Queue[T]):
     """A subclass of :class:`Queue`; retrieves most recently added entries first."""
 
-    def _init(self, maxsize):
+    def _init(self, maxsize: int) -> None:
         self._queue = collections.deque()
 
-    def _put(self, item):
+    def _put(self, item: T) -> None:
         self._queue.append(item)
 
-    def _get(self):
+    def _get(self) -> T:
         return self._queue.pop()

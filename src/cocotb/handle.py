@@ -431,7 +431,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
 
     def __getattr__(self, name: str) -> SimHandleBase:
         if name.startswith("_"):
-            return object.__getattribute__(self, name)  # type: ignore
+            return object.__getattribute__(self, name)  # type: ignore[no-any-return]  # this will always AttributeError
 
         try:
             return self[name]
