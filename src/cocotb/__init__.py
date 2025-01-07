@@ -24,40 +24,34 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import inspect
-import logging as py_logging
-from enum import auto
+from logging import Logger
 from types import SimpleNamespace
-from typing import Any, Coroutine, Dict, List, Union
+from typing import Dict, List, Union
 
-import cocotb._profiling
 import cocotb.handle
 import cocotb.task
 import cocotb.triggers
-from cocotb._decorators import (
-    bridge,
-    parametrize,
-    resume,
-    test,
+import cocotb.types
+from cocotb._bridge import bridge, resume
+from cocotb._test import create_task, start, start_soon
+from cocotb._test_generation import TestFactory, parametrize, test
+from cocotb._version import __version__
+
+__all__ = (
+    "test",
+    "parametrize",
+    "TestFactory",
+    "bridge",
+    "resume",
+    "start_soon",
+    "start",
+    "create_task",
+    "__version__",
 )
-from cocotb._scheduler import Scheduler
-from cocotb._utils import DocEnum
-from cocotb.regression import RegressionManager
-from cocotb.result import TestSuccess
-
-from ._version import __version__
-
-__all__ = ("bridge", "resume", "test", "parametrize", "__version__")
 
 
-log: py_logging.Logger
+log: Logger
 """The default cocotb logger."""
-
-_scheduler_inst: Scheduler
-"""The global scheduler instance."""
-
-regression_manager: RegressionManager
-"""The global regression manager instance."""
 
 argv: List[str]
 """The argument list as seen by the simulator."""
@@ -104,116 +98,92 @@ is_simulation: bool = False
 """``True`` if cocotb was loaded in a simulation."""
 
 
-class SimPhase(DocEnum):
-    """A phase of the time step."""
+# def start_soon(
+#     coro: "Union[Task[ResultType], Coroutine[Any, Any, ResultType]]",
+# ) -> "Task[ResultType]":
+#     """
+#     Schedule a coroutine to be run concurrently.
 
-    NORMAL = (auto(), "In the Beginning Of Time Step or a Value Change phase.")
-    READ_WRITE = (auto(), "In a ReadWrite phase.")
-    READ_ONLY = (auto(), "In a ReadOnly phase.")
+#     Note that this is not an ``async`` function,
+#     and the new task will not execute until the calling task yields control.
 
+#     Args:
+#         coro: A task or coroutine to be run.
 
-sim_phase: SimPhase = SimPhase.NORMAL
-"""The current phase of the time step."""
+#     Returns:
+#         The :class:`~cocotb.task.Task` that is scheduled to be run.
 
-
-def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:
-    # if cancelled, do nothing
-    if task.cancelled():
-        return
-    # if there's a Task awaiting this one, don't fail
-    if task.complete in cocotb._scheduler_inst._trigger2tasks:
-        return
-    # if no failure, do nothing
-    e = task.exception()
-    if e is None:
-        return
-    # there was a failure and no one is watching, fail test
-    elif isinstance(e, (TestSuccess, AssertionError)):
-        task.log.info("Test stopped by this task")
-        cocotb.regression_manager._abort_test(e)
-    else:
-        task.log.error("Exception raised by this task")
-        cocotb.regression_manager._abort_test(e)
+#     .. versionadded:: 1.6.0
+#     """
+#     task = create_task(coro)
+#     task._schedule_resume()
+#     return task
 
 
-def start_soon(
-    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
-) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Schedule a coroutine to be run concurrently in a :class:`~cocotb.task.Task`.
+# async def start(
+#     coro: "Union[Task[ResultType], Coroutine[Any, Any, ResultType]]",
+# ) -> "Task[ResultType]":
+#     """
+#     Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
 
-    Note that this is not an ``async`` function,
-    and the new task will not execute until the calling task yields control.
+#     The calling task will resume execution before control is returned to the simulator.
 
-    Args:
-        coro: A task or coroutine to be run.
+#     When the calling task resumes, the newly scheduled task may have completed,
+#     raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
 
-    Returns:
-        The :class:`~cocotb.task.Task` that is scheduled to be run.
+#     Args:
+#         coro: A task or coroutine to be run.
 
-    .. versionadded:: 1.6.0
-    """
-    task = create_task(coro)
-    task._add_done_callback(_task_done_callback)
-    cocotb._scheduler_inst._schedule_task(task)
-    return task
+#     Returns:
+#         The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
 
-
-async def start(
-    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
-) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
-
-    The calling task will resume execution before control is returned to the simulator.
-
-    When the calling task resumes, the newly scheduled task may have completed,
-    raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
-
-    Args:
-        coro: A task or coroutine to be run.
-
-    Returns:
-        The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
-
-    .. versionadded:: 1.6.0
-    """
-    task = start_soon(coro)
-    await cocotb.triggers.NullTrigger()
-    return task
+#     .. versionadded:: 1.6.0
+#     """
+#     task = start_soon(coro)
+#     await NullTrigger()
+#     return task
 
 
-def create_task(
-    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
-) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Construct a coroutine into a :class:`~cocotb.task.Task` without scheduling the task.
+# def _task_done_callback(task: Task[Any]) -> None:
+#     e = task.exception()
+#     # there was a failure and no one is watching, fail test
+#     if isinstance(e, (TestSuccess, AssertionError)):
+#         task.log.info("Test stopped by this task")
+#         current_test().abort(e)
+#     else:
+#         task.log.error("Exception raised by this task")
+#         current_test().abort(e)
 
-    The task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
 
-    Args:
-        coro: An existing task or a coroutine to be wrapped.
+# def create_task(
+#     coro: "Union[Task[ResultType], Coroutine[Any, Any, ResultType]]",
+# ) -> "Task[ResultType]":
+#     """
+#     Construct a coroutine into a :class:`~cocotb.task.Task` without scheduling the task.
 
-    Returns:
-        Either the provided :class:`~cocotb.task.Task` or a new Task wrapping the coroutine.
+#     The task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
 
-    .. versionadded:: 1.6.0
-    """
-    if isinstance(coro, cocotb.task.Task):
-        return coro
-    elif isinstance(coro, Coroutine):
-        return cocotb.task.Task(coro)
-    elif inspect.iscoroutinefunction(coro):
-        raise TypeError(
-            f"Coroutine function {coro} should be called prior to being scheduled."
-        )
-    elif inspect.isasyncgen(coro):
-        raise TypeError(
-            f"{coro.__qualname__} is an async generator, not a coroutine. "
-            "You likely used the yield keyword instead of await."
-        )
-    else:
-        raise TypeError(
-            f"Attempt to add an object of type {type(coro)} to the scheduler, "
-            f"which isn't a coroutine: {coro!r}\n"
-        )
+#     Args:
+#         coro: An existing task or a coroutine to be wrapped.
+
+#     Returns:
+#         Either the provided :class:`~cocotb.task.Task` or a new Task wrapping the coroutine.
+
+#     .. versionadded:: 1.6.0
+#     """
+#     if isinstance(coro, Task):
+#         return coro
+#     task = Task(coro)
+#     task._add_done_callback(_task_done_callback)
+#     return task
+
+
+# class TestTask(Task[None]):
+#     """The result of calling a :class:`cocotb.test` decorated object.
+
+#     All this class does is change ``__name__`` to show "Test" instead of "Task".
+#     """
+
+#     def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
+#         super().__init__(inst)
+#         self.name = f"Test {name}"

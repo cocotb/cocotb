@@ -36,7 +36,6 @@ from typing import Callable, List, cast
 
 import cocotb
 import cocotb._profiling
-import cocotb._scheduler
 import cocotb.handle
 import cocotb.logging
 import cocotb.regression
@@ -96,21 +95,16 @@ def initialise_testbench(argv: List[str]) -> None:
     start_user_coverage()
     setup_regression_manager()
 
-    # setup global scheduler system
-    cocotb._scheduler_inst = cocotb._scheduler.Scheduler(
-        test_complete_cb=cocotb.regression_manager._test_complete
-    )
-
     # start Regression Manager
-    cocotb.regression_manager.start_regression()
+    cocotb.regression._instance.start_regression()
 
 
 def sim_event(msg: str) -> None:
     """Function that can be called externally to signal an event."""
     # We simply return here as the simulator will exit
     # so no cleanup is needed
-    if cocotb.regression_manager is not None:
-        cocotb.regression_manager._fail_simulation(msg)
+    if cocotb.regression._instance is not None:
+        cocotb.regression._instance._fail_simulation(msg)
     else:
         cocotb.log.error(msg)
         shutdown_testbench()
@@ -264,8 +258,7 @@ def setup_root_handle() -> None:
 
 
 def setup_regression_manager() -> None:
-    cocotb.regression_manager = cocotb.regression.RegressionManager()
-    regression_manager = cocotb.regression_manager
+    regression_manager = cocotb.regression._instance
 
     # discover tests
     module_str = os.getenv("COCOTB_TEST_MODULES", "")
