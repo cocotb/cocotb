@@ -49,7 +49,7 @@ async def test_real_handle_casts_deprecated(dut):
     dut.stream_in_real.value = 5.03
     await Timer(1, "ns")
     with pytest.warns(DeprecationWarning):
-        float(dut.stream_in_real)
+        assert float(dut.stream_in_real) == 5.03
 
 
 @cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
@@ -57,17 +57,17 @@ async def test_int_handle_casts_deprecated(dut):
     dut.stream_in_int.value = 100
     await Timer(1, "ns")
     with pytest.warns(DeprecationWarning):
-        int(dut.stream_in_int)
+        assert int(dut.stream_in_int) == 100
 
 
 @cocotb.test
 async def test_logic_handle_casts_deprecated(dut):
-    dut.stream_in_data.value = 1
+    dut.stream_in_data.value = 0b1011_0011
     await Timer(1, "ns")
     with pytest.warns(DeprecationWarning):
-        int(dut.stream_in_data)
+        assert int(dut.stream_in_data) == 0b1011_0011
     with pytest.warns(DeprecationWarning):
-        str(dut.stream_in_data)
+        assert str(dut.stream_in_data) == "10110011"
 
 
 @cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
@@ -139,3 +139,15 @@ async def test_event_data_deprecated(_) -> None:
 
     with pytest.warns(DeprecationWarning):
         assert e.data == 42
+
+
+@cocotb.test
+async def test_logic_scalar_object_methods_deprecated(dut) -> None:
+    dut.stream_in_valid.value = 1
+    await Timer(1, "ns")
+    with pytest.warns(DeprecationWarning):
+        assert int(dut.stream_in_valid) == 1
+    with pytest.warns(DeprecationWarning):
+        assert str(dut.stream_in_valid) == "1"
+    with pytest.warns(DeprecationWarning):
+        assert len(dut.stream_in_valid) == 1

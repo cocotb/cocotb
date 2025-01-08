@@ -853,21 +853,105 @@ class ArrayObject(
             yield self[i]
 
 
-class LogicObject(
-    ValueObjectBase[LogicArray, Union[LogicArray, Logic, int]],
+class LogicObject(ValueObjectBase[Logic, Union[Logic, int, str]]):
+    """A scalar logic simulation object.
+
+    Verilog data types that map to this object:
+        * ``logic``
+        * ``bit``
+
+    VHDL types that map to this object:
+        * ``std_logic``
+        * ``std_ulogic``
+        * ``bit``
+    """
+
+    def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
+        super().__init__(handle, path)
+
+    def _set_value(
+        self,
+        value: Union[Logic, int, str],
+        action: _GPISetAction,
+        schedule_write: Callable[
+            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
+        ],
+    ) -> None:
+        value_: str
+        if isinstance(value, (int, str)):
+            value_ = str(Logic(value))
+
+        elif isinstance(value, LogicArray):
+            if len(value) != 1:
+                raise ValueError(
+                    f"cannot assign value of length {len(value)} to handle of length 1"
+                )
+            value_ = str(value)
+
+        elif isinstance(value, Logic):
+            value_ = str(value)
+
+        else:
+            raise TypeError(
+                f"Unsupported type for value assignment: {type(value)} ({value!r})"
+            )
+
+        schedule_write(self, self._handle.set_signal_val_binstr, (action, value_))
+
+    @property
+    def value(self) -> Logic:
+        """The value of the simulation object.
+
+        :getter:
+            Returns the current value of the simulation object as a :class:`~cocotb.types.Logic`.
+
+        :setter:
+            Assigns a value at the end of the current delta cycle.
+            A :class:`~cocotb.types.Logic`, :class:`~cocotb.types.LogicArray`, :class:`str`, or :class:`int` can be used to set the value.
+            When a :class:`str` or :class:`int` is given, it is as if it is first converted a :class:`~cocotb.types.Logic`.
+
+        Raises:
+            TypeError: If assignment is given a type other than :class:`~cocotb.types.Logic`, :class:`~cocotb.types.LogicArray`, :class:`int`, or :class:`str`.
+
+            ValueError: If value can't be converted to a :class:`~cocotb.types.Logic`.
+        """
+        binstr = self._handle.get_signal_val_binstr()
+        return Logic(binstr)
+
+    @value.setter
+    def value(self, value: Logic) -> None:
+        self.set(value)
+
+    @deprecated(
+        "`len(handle)` of scalar objects is redundant. This method will be removed."
+    )
+    def __len__(self) -> int:
+        return 1
+
+    @deprecated(
+        "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
+    )
+    def __int__(self) -> int:
+        return int(self.value)
+
+    @deprecated(
+        "`str(handle)` casts have been deprecated. Use `str(handle.value)` instead."
+    )
+    def __str__(self) -> str:
+        return str(self.value)
+
+
+class LogicArrayObject(
+    ValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
     RangeableObjectMixin,
 ):
-    """A logic or logic array simulation object.
+    """A logic array simulation object.
 
     Verilog types that map to this object:
-        * ``logic``
-        * ``reg``
-        * ``bit``
-        * packed any-dimensional vectors of ``logic``, ``reg``, or ``bit``
+        * packed any-dimensional vectors of ``logic`` or ``bit``
         * packed any-dimensional vectors of packed structures
 
     VHDL types that map to this object:
-        * ``std_logic`` and ``std_ulogic``
         * ``std_logic_vector`` and ``std_ulogic_vector``
         * ``unsigned``
         * ``signed``
@@ -947,16 +1031,15 @@ class LogicObject(
         """The value of the simulation object.
 
         :getter:
-            Returns the current value of the simulation object as a :class:`~cocotb.types.LogicArray`,
-            even when the object is a single logic object and not an array.
+            Returns the current value of the simulation object as a :class:`~cocotb.types.LogicArray`.
 
         :setter:
             Assigns a value at the end of the current delta cycle.
-            A :class:`~cocotb.types.LogicArray`, :class:`str`, or :class:`int` can be used to set the value.
+            A :class:`~cocotb.types.Logic`, :class:`~cocotb.types.LogicArray`, :class:`str`, or :class:`int` can be used to set the value.
             When a :class:`str` or :class:`int` is given, it is as if it is first converted a :class:`~cocotb.types.LogicArray`.
 
         Raises:
-            TypeError: If assignment is given a type other than :class:`~cocotb.types.LogicArray`, :class:`int`, or :class:`str`.
+            TypeError: If assignment is given a type other than :class:`~cocotb.types.Logic`, :class:`~cocotb.types.LogicArray`, :class:`int`, or :class:`str`.
 
             OverflowError:
                 If int value is out of the range that can be represented by the target:
@@ -1259,6 +1342,7 @@ _ConcreteHandleTypes = Union[
     HierarchyObject,
     HierarchyArrayObject,
     LogicObject,
+    LogicArrayObject,
     ArrayObject[Any, ValueObjectBase[Any, Any]],
     RealObject,
     IntegerObject,
@@ -1275,9 +1359,9 @@ _handle2obj: Dict[
 _type2cls: Dict[int, Type[_ConcreteHandleTypes]] = {
     simulator.MODULE: HierarchyObject,
     simulator.STRUCTURE: HierarchyObject,
-    simulator.PACKED_STRUCTURE: LogicObject,
-    simulator.REG: LogicObject,
-    simulator.NET: LogicObject,
+    simulator.PACKED_STRUCTURE: LogicArrayObject,
+    simulator.LOGIC: LogicObject,
+    simulator.LOGIC_ARRAY: LogicArrayObject,
     simulator.NETARRAY: ArrayObject[Any, ValueObjectBase[Any, Any]],
     simulator.REAL: RealObject,
     simulator.INTEGER: IntegerObject,

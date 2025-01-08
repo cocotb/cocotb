@@ -28,7 +28,13 @@ import logging
 import pytest
 
 import cocotb
-from cocotb.handle import EnumObject, HierarchyObject, IntegerObject, LogicObject
+from cocotb.handle import (
+    EnumObject,
+    HierarchyObject,
+    IntegerObject,
+    LogicArrayObject,
+    LogicObject,
+)
 
 
 # GHDL discovers enum as `vpiNet` (gh-2600)
@@ -62,9 +68,9 @@ async def check_objects(dut):
     check_instance(dut.inst_axi4s_buffer, HierarchyObject)
     check_instance(dut.gen_branch_distance[0], HierarchyObject)
     check_instance(dut.gen_branch_distance[0].inst_branch_distance, HierarchyObject)
-    check_instance(dut.gen_acs[0].inbranch_tdata_low, LogicObject)
+    check_instance(dut.gen_acs[0].inbranch_tdata_low, LogicArrayObject)
     check_instance(dut.aclk, LogicObject)
-    check_instance(dut.s_axis_input_tdata, LogicObject)
+    check_instance(dut.s_axis_input_tdata, LogicArrayObject)
     check_instance(dut.current_active, IntegerObject)
     check_instance(dut.inst_axi4s_buffer.DATA_WIDTH, IntegerObject)
     check_instance(dut.inst_ram_ctrl, HierarchyObject)
