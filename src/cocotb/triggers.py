@@ -124,7 +124,7 @@ class Trigger(Awaitable["Trigger"]):
     def _cleanup(self) -> None:
         self._primed = False
 
-    def __await__(self: Self) -> Generator[Any, Any, Self]:
+    def __await__(self: Self) -> Generator[Self, None, Self]:
         yield self
         return self
 
@@ -766,16 +766,39 @@ class NullTrigger(Trigger):
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
-class _Join(
-    Trigger,
-    Generic[T],
-    metaclass=_ParameterizedSingletonGPITriggerMetaclass,
-):
-    """Fires when a :class:`~cocotb.task.Task` completes."""
+class TaskComplete(Trigger, Generic[T]):
+    r"""Fires when a :class:`~cocotb.task.Task` completes.
+
+    Unlike :func:`~cocotb.triggers.Join`, this Trigger does not return the result of the Task when ``await``\ ed.
+
+    .. note::
+        It is preferable to use :attr:`.Task.complete` to get this object over calling the constructor.
+
+    .. code-block:: python3
+
+        async def coro_inner():
+            await Timer(1, units="ns")
+            raise ValueError("Oops")
+
+
+        task = cocotb.start_soon(coro_inner())
+        await task.complete  # no exception raised here
+        assert task.exception() == ValueError("Oops")
+
+    Args:
+        task: The Task upon which to wait for completion.
+
+    .. versionadded: 2.0
+    """
+
+    def __new__(cls, task: "cocotb.task.Task[T]") -> "TaskComplete[T]":
+        return task.complete
 
     @classmethod
-    def __singleton_key__(cls, task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
-        return task
+    def _make(cls, task: "cocotb.task.Task[T]") -> "TaskComplete[T]":
+        self = super().__new__(cls)
+        cls.__init__(self, task)
+        return self
 
     def __init__(self, task: "cocotb.task.Task[T]") -> None:
         super().__init__()
@@ -788,21 +811,21 @@ class _Join(
             super()._prime(callback)
 
     def __repr__(self) -> str:
-        return f"Join({self._task!s})"
+        return f"{type(self).__qualname__}({self._task!s})"
 
-    def __await__(self) -> Generator[Any, Any, T]:
-        yield from super().__await__()
-        return self._task.result()
+    @property
+    def task(self) -> "cocotb.task.Task[T]":
+        """The :class:`.Task` associated with this completion event."""
+        return self._task
 
 
 @deprecated(
     "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
 )
-def Join(task: "cocotb.task.Task[T]") -> "_Join[T]":
-    r"""Fires when a :class:`~cocotb.task.Task` completes.
+def Join(task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
+    r"""Fires when a :class:`~cocotb.task.Task` completes and returns the Task's result.
 
-    Args:
-        task: The task upon which to wait for completion.
+    Equivalent to calling :meth:`task.join() <cocotb.task.Task.join>`.
 
     .. code-block:: python3
 
@@ -813,14 +836,19 @@ def Join(task: "cocotb.task.Task[T]") -> "_Join[T]":
 
         task = cocotb.start_soon(coro_inner())
         result = await Join(task)
-        assert task.result() == "Hello world"
-        assert task.result() == result
+        assert result == "Hello world"
+
+    Args:
+        task: The Task upon which to wait for completion.
+
+    Returns:
+        Object that can be ``await``\ ed or passed into :class:`~cocotb.triggers.First` or :class:`~cocotb.triggers.Combine`;
+        the result of which will be the result of the Task.
 
     .. deprecated:: 2.0
-
         Using ``task`` directly is prefered to ``Join(task)`` in all situations where the latter could be used.
     """
-    return _Join(task)
+    return task
 
 
 class Waitable(Awaitable[T]):

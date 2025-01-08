@@ -59,7 +59,7 @@ Deprecations and Removals
 -------------------------
 
 - ``bool(Lock())`` is deprecated. Use :meth:`~cocotb.triggers.Lock.locked` instead. (:pr:`3871`)
-- :attr:`Join.retval <cocotb.triggers.Join.retval>` is deprecated. Use :meth:`Task.result() <cocotb.task.Task.result>` to get the result of a joined Task. (:pr:`3871`)
+- ``cocotb.triggers.Join.retval`` is deprecated. Use :meth:`.Task.result` to get the result of a finished Task. (:pr:`3871`)
 - Passing the *outcome* argument to :class:`~cocotb.triggers.NullTrigger` - which allowed the user to inject arbitrary outcomes when the trigger was ``await``\ ed - is deprecated. There is no alternative. (:pr:`3871`)
 - :meth:`Event.fired <cocotb.triggers.Event.fired>` is deprecated. Use :meth:`~cocotb.triggers.Event.is_set` instead. (:pr:`3871`)
 

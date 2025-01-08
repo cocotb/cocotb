@@ -199,26 +199,38 @@ class Task(Generic[ResultType]):
         for callback in self._done_callbacks:
             callback(self)
 
-    @deprecated(
-        "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used.`"
-    )
-    def join(self) -> "cocotb.triggers._Join[ResultType]":
-        """Wait for the task to complete.
+    @cached_property
+    def complete(self) -> "cocotb.triggers.TaskComplete[ResultType]":
+        r"""Trigger which fires when the Task completes."""
+        return cocotb.triggers.TaskComplete._make(self)
 
-        Returns:
-            A :class:`~cocotb.triggers.Join` trigger which, if awaited, will block until the given Task completes.
+    @deprecated(
+        "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used."
+    )
+    def join(self) -> "Task[ResultType]":
+        r"""Block until the Task completes and return the result.
+
+        Equivalent to calling :func:`Join(self) <cocotb.triggers.Join>`.
 
         .. code-block:: python3
 
-            my_task = cocotb.start_soon(my_coro())
-            await my_task.join()
-            # "my_task" is done here
+            async def coro_inner():
+                await Timer(1, units="ns")
+                return "Hello world"
+
+
+            task = cocotb.start_soon(coro_inner())
+            result = await task.join()
+            assert result == "Hello world"
+
+        Returns:
+            Object that can be ``await``\ ed or passed into :class:`~cocotb.triggers.First` or :class:`~cocotb.triggers.Combine`;
+            the result of which will be the result of the Task.
 
         .. deprecated:: 2.0
-
             Using ``task`` directly is prefered to ``task.join()`` in all situations where the latter could be used.
         """
-        return cocotb.triggers._Join(self)
+        return self
 
     def cancel(self, msg: Optional[str] = None) -> None:
         """Cancel a Task's further execution.
