@@ -925,6 +925,7 @@ async def test_task_complete(_) -> None:
 
     tc = TaskComplete(task)
     assert tc is res
+    assert tc.task is task
 
     res = await tc
     assert res is task.complete
