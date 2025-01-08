@@ -1,1 +1,1 @@
-Added ``range``, ``left``, ``direction``, and ``right`` properties to :class:`~cocotb.handle.ArrayObject`, :class:`~cocotb.handle.LogicObject`, and :class:`~cocotb.handle.StringObject`.
+Added :attr:`~cocotb.handle.RangeableObjectMixin.range`, :attr:`~cocotb.handle.RangeableObjectMixin.left`, :attr:`~cocotb.handle.RangeableObjectMixin.direction`, and :attr:`~cocotb.handle.RangeableObjectMixin.right` properties to :class:`~cocotb.handle.ArrayObject`, :class:`~cocotb.handle.LogicArrayObject`, and :class:`~cocotb.handle.StringObject`.

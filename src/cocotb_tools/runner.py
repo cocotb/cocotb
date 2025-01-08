@@ -50,7 +50,7 @@ _space_re = re.compile(r"([\s])", re.ASCII)
 
 
 MAX_PARALLEL_BUILD_JOBS: int = 4
-"""The maximum number of parallel build threads in calls to :meth:.Runner.build.
+"""The maximum number of parallel build threads in calls to :meth:`.Runner.build`.
 
 If the number of CPU cores is less than this value, it uses the CPU core count.
 Set this variable to globally change the number of parallel build jobs.

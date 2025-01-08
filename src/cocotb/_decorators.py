@@ -293,23 +293,11 @@ def test(
     Tests are evaluated in the order they are defined in a test module.
 
     Usage:
+
         .. code-block:: python3
 
             @cocotb.test(timeout_time=10, timeout_unit="ms")
             async def test_thing(dut): ...
-
-    .. versionchanged:: 2.0
-        Support using decorator on test function without supplying parameters first.
-
-        Assumes all default values for the test parameters.
-
-        .. code-block:: python3
-
-            @cocotb.test
-            async def test_thing(dut): ...
-
-    .. versionchanged:: 2.0
-        Decorated tests now return the decorated object.
 
     Args:
         timeout_time:
@@ -394,6 +382,20 @@ def test(
                     return obj
 
                 return decorator
+
+    .. versionchanged:: 2.0
+        Support using decorator on test function without supplying parameters first.
+
+        Assumes all default values for the test parameters.
+
+        .. code-block:: python3
+
+            @cocotb.test
+            async def test_thing(dut): ...
+
+
+    .. versionchanged:: 2.0
+        Decorated tests now return the decorated object.
 
     """
 

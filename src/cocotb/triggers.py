@@ -477,6 +477,7 @@ class Event:
         name: Name for the Event.
 
     Usage:
+
         .. code-block:: python3
 
             e = Event()
@@ -1097,13 +1098,6 @@ async def with_timeout(
     If timeout occurs, the callee is killed
     and :exc:`SimTimeoutError` is raised.
 
-    When an unstarted :class:`~cocotb.coroutine`\ is passed,
-    the callee coroutine is started,
-    the caller blocks until the callee completes,
-    and the callee's result is returned to the caller.
-    If timeout occurs, the callee `continues to run`
-    and :exc:`SimTimeoutError` is raised.
-
     When a :term:`task` is passed,
     the caller blocks until the callee completes
     and the callee's result is returned to the caller.
@@ -1158,7 +1152,7 @@ async def with_timeout(
     res = await First(timeout_timer, trigger)
     if res is timeout_timer:
         if not shielded:
-            # shielded = False only when trigger is a Task
+            # shielded = False only when trigger is a Task created to wrap a Coroutine
             trigger = cast(cocotb.task.Task[Any], trigger)
             trigger.kill()
         raise SimTimeoutError
