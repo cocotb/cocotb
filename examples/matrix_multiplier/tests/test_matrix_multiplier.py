@@ -30,7 +30,7 @@ class DataValidMonitor:
     """
     Reusable Monitor of one-way control flow (data/valid) streaming data interface
 
-    Args
+    Args:
         clk: clock signal
         valid: control signal noting a transaction occured
         datas: named handles to be sampled when transaction occurs
@@ -79,7 +79,7 @@ class MatrixMultiplierTester:
     """
     Reusable checker of a matrix_multiplier instance
 
-    Args
+    Args:
         matrix_multiplier_entity: handle to an instance of matrix_multiplier
     """
 
