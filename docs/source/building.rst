@@ -164,7 +164,7 @@ Cocotb
 .. envvar:: COCOTB_TRUST_INERTIAL_WRITES
 
     Defining this variable enables a mode which allows cocotb to trust that VPI/VHPI/FLI inertial writes are applied properly according to the respective standards.
-    This mode can lead to noticable performance improvements,
+    This mode can lead to noticeable performance improvements,
     and also includes some behavioral difference that are considered by the cocotb maintainers to be "better".
     Not all simulators handle inertial writes properly, so use with caution.
 
@@ -207,6 +207,8 @@ Regression Manager
     .. deprecated:: 2.0
 
         :envvar:`MODULE` is a deprecated alias and will be removed.
+
+.. _testcase:
 
 .. envvar:: COCOTB_TESTCASE
 

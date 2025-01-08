@@ -37,7 +37,7 @@ Python Test Runner
 
 .. autoclass:: Verilog
 
-.. attribute:: MAX_PARALLEL_BUILD_JOBS
+.. autodata:: MAX_PARALLEL_BUILD_JOBS
 
 Simulator Runners
 -----------------
@@ -201,6 +201,8 @@ These are used to synchronize coroutines with each other.
 .. autoclass:: cocotb.triggers.Lock
     :members:
     :member-order: bysource
+
+.. autoclass:: cocotb.triggers.SimTimeoutError
 
 .. autofunction:: cocotb.triggers.with_timeout
 

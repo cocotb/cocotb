@@ -162,7 +162,7 @@ def start_soon(
     coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
 ) -> "cocotb.task.Task[cocotb.task.ResultType]":
     """
-    Schedule a coroutine to be run concurrently.
+    Schedule a coroutine to be run concurrently in a :class:`~cocotb.task.Task`.
 
     Note that this is not an ``async`` function,
     and the new task will not execute until the calling task yields control.
