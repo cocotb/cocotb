@@ -65,20 +65,20 @@ ifeq ($(GUI),1)
     EXTRA_ARGS += -gui
 endif
 
-# Avoid linker "undefined reference to" error 
+# Avoid linker "undefined reference to" error
 COMPILE_ARGS += -LDFLAGS -Wl,--no-as-needed
 
-# Enables globally access for read, write, and callback capabilities. 
+# Enables globally access for read, write, and callback capabilities.
 COMPILE_ARGS += +acc+3
 
 # Enables globally debug capabilities.
-COMPILE_ARGS += -debug_access+all 
+COMPILE_ARGS += -debug_access+all
 
 # TODO:
 # investigate +vpi+1 option which reduces memory requirements
 
 # Compilation phase
-$(SIM_BUILD)/simv: $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
+$(SIM_BUILD)/simv: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	cd $(SIM_BUILD) && \
 	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
 	$(CMD) -top $(COCOTB_TOPLEVEL) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) -sverilog \
@@ -92,7 +92,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(CUSTOM_SIM_DEPS)
 	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(SIM_CMD_PREFIX) $(SIM_BUILD)/simv $(SIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
 
-	$(call check_for_results_file)
+	$(call check_results)
 
 clean::
 	$(RM) -r $(SIM_BUILD)

@@ -151,7 +151,7 @@ async def test_read_write(dut):
 
 
 # GHDL unable to access signals in generate loops (gh-2594)
-# VCS unable to access signals in generate loops
+# VCS is unable to access signals in generate loops through VPI (#4328).
 @cocotb.test(
     expect_error=IndexError
     if SIM_NAME.startswith("ghdl")
@@ -301,6 +301,7 @@ async def test_discover_all(dut):
         # Applies to Riviera-PRO 2019.10 and newer.
         pass_total = 180
     elif LANGUAGE in ["verilog"] and "vcs" in SIM_NAME:
+        # VCS is unable to access signals in generate loops through VPI (#4328).
         pass_total = 142
     elif LANGUAGE in ["vhdl"]:
         pass_total = 244

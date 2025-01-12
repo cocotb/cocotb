@@ -48,7 +48,7 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 # GHDL is unable to access signals in generate loops (gh-2594)
 # Verilator doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)
-# VCS is unable to access signals in generate loops
+# VCS is unable to access signals in generate loops (gh-4328)
 @cocotb.test(
     expect_error=IndexError
     if SIM_NAME.startswith("ghdl")
@@ -77,7 +77,7 @@ verilator_less_than_5024 = SIM_NAME.startswith("verilator") and VerilatorVersion
 ) < VerilatorVersion("5.024")
 
 
-# VCS is unable to access signals in generate loops
+# VCS is unable to access signals in generate loops (gh-4328)
 @verilog_test(
     expect_error=AttributeError
     if verilator_less_than_5024
@@ -94,7 +94,7 @@ async def test_bad_var(dut):
     print(dut.cond_scope_else_asdf._path)
 
 
-# VCS is unable to access signals in generate loops
+# VCS is unable to access signals in generate loops (gh-4328)
 @verilog_test(
     expect_error=AttributeError
     if SIM_NAME.startswith("verilator")
