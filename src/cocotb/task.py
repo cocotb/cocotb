@@ -66,8 +66,7 @@ class Task(Generic[ResultType]):
     def __init__(self, inst):
         if inspect.iscoroutinefunction(inst):
             raise TypeError(
-                f"Coroutine function {inst} should be called prior to being "
-                "scheduled."
+                f"Coroutine function {inst} should be called prior to being scheduled."
             )
         elif inspect.isasyncgen(inst):
             raise TypeError(

@@ -15,9 +15,9 @@ async def monitor(dut):
     for i in range(4):
         await RisingEdge(dut.clk)
     await ReadOnly()
-    assert (
-        dut.stream_in_valid.value == 1
-    ), "stream_in_valid should be high on the 5th cycle"
+    assert dut.stream_in_valid.value == 1, (
+        "stream_in_valid should be high on the 5th cycle"
+    )
 
 
 @cocotb.test()

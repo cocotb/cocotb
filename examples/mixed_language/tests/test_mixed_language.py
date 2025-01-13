@@ -111,9 +111,9 @@ async def mixed_language_functional_test(dut):
             await RisingEdge(dut.clk)
 
             # compare in and out data
-            assert (
-                previous_indata == dut.stream_out_data.value.to_unsigned()
-            ), f"stream in data and stream out data were different in round {i}"
+            assert previous_indata == dut.stream_out_data.value.to_unsigned(), (
+                f"stream in data and stream out data were different in round {i}"
+            )
 
 
 sim = os.getenv("SIM", "icarus")

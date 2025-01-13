@@ -28,9 +28,9 @@ class CvcVersion(LooseVersion):
     """Version numbering class for Tachyon DA CVC.
 
     Example:
-        >>> CvcVersion("OSS_CVC_7.00b-x86_64-rhel6x of 07/07/14 (Linux-elf)") > CvcVersion(
-        ...     "OSS_CVC_7.00a-x86_64-rhel6x of 07/07/14 (Linux-elf)"
-        ... )
+        >>> CvcVersion(
+        ...     "OSS_CVC_7.00b-x86_64-rhel6x of 07/07/14 (Linux-elf)"
+        ... ) > CvcVersion("OSS_CVC_7.00a-x86_64-rhel6x of 07/07/14 (Linux-elf)")
         True
     """
 
