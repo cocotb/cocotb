@@ -59,9 +59,9 @@ async def check_objects(dut):
     tlog = logging.getLogger("cocotb.test")
 
     def check_instance(obj, objtype):
-        assert isinstance(
-            obj, objtype
-        ), f"Expected {obj._path} to be of type {objtype.__name__} but got {type(obj).__name__}"
+        assert isinstance(obj, objtype), (
+            f"Expected {obj._path} to be of type {objtype.__name__} but got {type(obj).__name__}"
+        )
         tlog.info(f"{obj._path} is {type(obj).__name__}")
 
     # Hierarchy checks
@@ -75,9 +75,9 @@ async def check_objects(dut):
     check_instance(dut.inst_axi4s_buffer.DATA_WIDTH, IntegerObject)
     check_instance(dut.inst_ram_ctrl, HierarchyObject)
 
-    assert (
-        dut.inst_axi4s_buffer.DATA_WIDTH.value == 32
-    ), f"Expected dut.inst_axi4s_buffer.DATA_WIDTH to be 32 but got {dut.inst_axi4s_buffer.DATA_WIDTH.value}"
+    assert dut.inst_axi4s_buffer.DATA_WIDTH.value == 32, (
+        f"Expected dut.inst_axi4s_buffer.DATA_WIDTH to be 32 but got {dut.inst_axi4s_buffer.DATA_WIDTH.value}"
+    )
 
     with pytest.raises(TypeError):
         dut.inst_axi4s_buffer.DATA_WIDTH.value = 42
@@ -89,13 +89,13 @@ async def port_not_hierarchy(dut):
     Test for issue raised by Luke - iteration causes a toplevel port type to
     change from LogicObject to HierarchyObject
     """
-    assert isinstance(
-        dut.aclk, LogicObject
-    ), f"dut.aclk should be LogicObject but got {type(dut.aclk).__name__}"
+    assert isinstance(dut.aclk, LogicObject), (
+        f"dut.aclk should be LogicObject but got {type(dut.aclk).__name__}"
+    )
 
     for _ in dut:
         pass
 
-    assert isinstance(
-        dut.aclk, LogicObject
-    ), f"dut.aclk should be LogicObject but got {type(dut.aclk).__name__}"
+    assert isinstance(dut.aclk, LogicObject), (
+        f"dut.aclk should be LogicObject but got {type(dut.aclk).__name__}"
+    )
