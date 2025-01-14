@@ -47,7 +47,15 @@ The installation instructions vary depending on your operating system:
 
    .. group-tab:: Linux - Red Hat
 
-      In a terminal, run
+      If you are using RHEL9, it might be necessary to add the CodeReady Linux Builder repository
+      to be able to install ``libstdc++-static``.
+      To add this repo, run in a terminal
+
+      .. code-block:: bash
+
+          sudo subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
+
+      Then, run
 
       .. code-block:: bash
 
