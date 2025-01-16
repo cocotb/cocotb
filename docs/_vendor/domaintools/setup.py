@@ -1,7 +1,7 @@
 # from aptk.__version__ import release
-import sys, os
+import os
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 long_desc = '''
 This package contains tools for easy sphinx domain creation.
@@ -37,8 +37,7 @@ setup(
         'Topic :: Utilities',
     ],
     platforms='any',
-    packages=find_packages(),
+    packages=["sphinxcontrib.domaintools"],
     include_package_data=True,
     install_requires=requires,
-    namespace_packages=['sphinxcontrib'],
 )
