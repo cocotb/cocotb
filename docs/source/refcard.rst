@@ -18,7 +18,7 @@ Reference Card
    TestFactory
 
 
-*coro*: a coroutine; *task*: a running coroutine
+*coro*: a coroutine; *task*: a concurrently-running coroutine; *trigger*: a trigger
 
 +------------------------+-----------------------------------------------------------------+
 | Assign                 | ``dut.mysignal.value = 0xFF00``                                 |
@@ -31,11 +31,12 @@ Reference Card
 | Read                   | | ``val = dut.mysignal.value``                                  |
 |                        | | (``mysig = dut.mysignal`` *creates an alias/reference*)       |
 +------------------------+-----------------------------------------------------------------+
-| Bit slice              | | ``mybit = dut.myarray[0].value``                              |
-|                        | | ``mybits = dut.mysignal.value[0]``                            |
+| Bit slice              | | ``mybit = dut.mysignal.value[0]``                             |
+|                        | | ``mybits = dut.mysignal.value[3:1]``                          |
 +------------------------+-----------------------------------------------------------------+
 | Convert                | | ``val = dut.mysignal.value.to_unsigned()``                    |
 |                        | | ``val = dut.mysignal.value.to_signed()``                      |
+|                        | | ``val = dut.mysignal.value.to_bytes(byteorder="little")``     |
 |                        | | ``val = str(dut.mysignal.value)``                             |
 +------------------------+-----------------------------------------------------------------+
 | Vector length          | ``num_bits = len(dut.mysignal)``                                |
@@ -50,21 +51,29 @@ Reference Card
 +------------------------+-----------------------------------------------------------------+
 | Wait time              | ``await cocotb.triggers.Timer(12, "ns")``                       |
 +------------------------+-----------------------------------------------------------------+
-| Generate clock         | ``clk = await cocotb.start(Clock(dut.clk, 12, "ns").start())``  |
-+------------------------+-----------------------------------------------------------------+
 | Wait for signal edge   | | ``await cocotb.triggers.RisingEdge(dut.mysignal)``            |
 |                        | | ``await cocotb.triggers.FallingEdge(dut.mysignal)``           |
 |                        | | ``await cocotb.triggers.Edge(dut.mysignal)``                  |
++------------------------+-----------------------------------------------------------------+
+|                                                                                          |
 +------------------------+-----------------------------------------------------------------+
 | Run coros concurrently | | ``task_0 = await cocotb.start(coro_0())``  (start coro now)   |
 |                        | | ``task_1 = cocotb.start_soon(coro)``                          |
 |                        | | ``result = await task_0``                                     |
 +------------------------+-----------------------------------------------------------------+
-| Resume on Task 0 or 1  | ``await cocotb.triggers.First(task_0, task_1)``                 |
+| Cancel task            | ``task_0.cancel()``                                             |
++------------------------++----------------------------------------------------------------+
+| Wait for task to finish | ``await task_0.complete``                                      |
++------------------------++----------------------------------------------------------------+
+|                                                                                          |
++-------------------------------+----------------------------------------------------------+
+| Resume on any Task or Trigger | ``await cocotb.triggers.First(task_0, trigger_1)``       |
++-------------------------------+----------------------------------------------------------+
+| Resume on all Task or Trigger | ``await cocotb.triggers.Combine(task_0, trigger_1)``     |
++-------------------------------+----------------------------------------------------------+
+|                                                                                          |
 +------------------------+-----------------------------------------------------------------+
-| Resume on Task 0 and 1 | ``await cocotb.triggers.Combine(task_0, task_1)``               |
-+------------------------+-----------------------------------------------------------------+
-| Kill coro              | ``task_0.kill()``                                               |
+| Generate clock         | ``clk = await cocotb.start(Clock(dut.clk, 12, "ns").start())``  |
 +------------------------+-----------------------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+
@@ -107,10 +116,6 @@ Reference Card
 +------------------------+-----------------------------------------------------------------+
 | Mark as test           | ``@cocotb.test(skip, expect_fail, timeout_time, timeout_unit)`` |
 +------------------------+-----------+-----------------------------------------------------+
-| Call non-async function from async | ``@cocotb.bridge()``                                |
-+------------------------+-----------+-----------------------------------------------------+
-| Call async function from non-async | ``@cocotb.resume()``                                |
-+------------------------+-----------+-----------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+
 | Set up TestFactory     | ``tf = cocotb.regression.TestFactory(coro)``                    |
@@ -118,4 +123,7 @@ Reference Card
 | Add test option        | ``tf.add_option("arg", ["val0", "val1"])``                      |
 +------------------------+-----------------------------------------------------------------+
 | Generate tests         | ``tf.generate_tests()``                                         |
-+------------------------+-----------------------------------------------------------------+
++----------------------+-+-----------------------------------------------------------------+
+| Parametrize test     | | ``@cocotb.parametrize(arg1=[1, 2], arg2=["yes", "no"])``        |
+|                      | | ``@cocotb.parametrize(("arg1", "arg2"), [(1, "a"), (3, "b")])`` |
++----------------------+-------------------------------------------------------------------+
