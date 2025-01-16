@@ -145,6 +145,111 @@ forcing their completion before they would naturally end.
 .. versionchanged:: 2.0
     Removed ``cocotb.fork``.
 
+.. versionchanged:: 2.0
+    Removed ``cocotb.coroutine``.
+
+
+Waiting For Multiple Events Simultaneously
+==========================================
+
+Occasionally you'll need to wait for either one of many Tasks or Triggers to fire,
+or a collection of Tasks or Triggers to fire.
+This is what :class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combine` provide, respectively.
+
+
+.. _first-tutorial:
+
+Waiting For One Of Multiple Events
+----------------------------------
+
+:class:`~cocotb.triggers.First` is like ``await``\ ing multiple Triggers or Tasks at the same time,
+and resumes after one of the Triggers or Tasks fires.
+It returns the result of ``await``\ ing the Task or Trigger that fired first.
+Below we see it used to implement a timeout.
+
+.. code-block:: python3
+
+    @cocotb.test
+    async def test_quiesce_or_timeout(dut):
+
+        # generate stimulus and drive it to the design
+        for trans in generate_transactions():
+            await drive(dut.intf, trans)
+
+        # wait for the design to quiesce or timeout
+        timeout = Timer(10, "us")
+        result = await First(timeout, quiesce())
+        assert result is not timeout, "Design has hung!"
+
+Fortunately for users timeouts are a common operation and cocotb provides :func:`~cocotb.triggers.with_timeout`.
+The second section in the above code using it would be ``await with_timeout(quiesce(), 10, "us")``.
+
+.. note::
+
+    :class:`~cocotb.triggers.First` does *not* cancel Tasks that did not complete after it returns.
+    This means that Tasks passed to it are *still running*.
+    You may need to cancel those Tasks with :meth:`.Task.cancel`.
+
+
+Determining Which Task Finishes First
+-------------------------------------
+
+:class:`~cocotb.triggers.First` can be used to determine which of multiple Tasks :meth:`~cocotb.task.Task.complete` first using the following idiom.
+
+.. code-block:: python3
+
+    @cocotb.test
+    async def test_which_finished_first(dut):
+
+        task_A = cocotb.start_soon(drive_A())
+        task_B = cocotb.start_soon(drive_B())
+
+        # Pass Task.complete rather than the Task directly.
+        result = await First(task_A.complete, task_B.complete)
+
+        # Compare the result against the Task's "complete" object.
+        if result is task_A.complete:
+            cocotb.log.info("Input A finished first")
+        else:
+            cocotb.log.info("Input B finished first")
+
+
+.. _combine-tutorial:
+
+Waiting For Multiple Events
+---------------------------
+
+:class:`~cocotb.triggers.Combine` is like ``await``\ ing multiple Triggers or Tasks at the same time,
+but it resumes after *all* the listed Triggers or Tasks fire.
+Using the example from the previous section, we can use it to wait until both the driving and quiesce are done.
+
+.. code-block:: python3
+
+    @cocotb.test
+    async def test_wait_for_both(dut):
+
+        # generate stimulus and drive it to the design
+        async def drive_transactions():
+            for trans in generate_transactions():
+                await drive(dut.intf, trans)
+
+        # wait for both the driving and quiescing to complete before continuing
+        await Combine(drive_transactions(), quiesce())
+
+And of course, the sky is the limit when you compose the two.
+
+.. code-block:: python3
+
+    @cocotb.test
+    async def test_wait_for_both_with_timeout(dut):
+
+        # wait for both the driving and quiescing to complete before continuing
+        # but timeout if *either* the driving or settling take too long
+        await Combine(
+            with_timeout(drive_transactions(), 1, "us"),
+            with_timeout(quiesce(), 10, "us"),
+        )
+
 
 Async generators
 ================

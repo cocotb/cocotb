@@ -911,6 +911,7 @@ class Combine(_AggregateWaitable["Combine"]):
 
     ``await``\ ing this returns the :class:`Combine` object.
     This is similar to Verilog's ``join``.
+    See :ref:`combine-tutorial` for an example.
 
     Args:
         trigger: One or more ``await``\ able objects.
@@ -946,8 +947,9 @@ class Combine(_AggregateWaitable["Combine"]):
 class First(_AggregateWaitable[Any]):
     r"""Fires when the first trigger in *triggers* fires.
 
-    ``await``\ ing this object returns the result of the trigger that fired.
+    ``await``\ ing this object returns the result of the first trigger that fires.
     This is similar to Verilog's ``join_any``.
+    See :ref:`first-tutorial` for an example.
 
     Args:
         trigger: One or more ``await``\ able objects.
