@@ -489,9 +489,9 @@ class RegressionManager:
 
         # TODO refactor intialization and finalization into their own module
         # to prevent circult imports requiring local imports
-        from cocotb import _shutdown_testbench
+        from cocotb._init import shutdown_testbench
 
-        _shutdown_testbench()
+        shutdown_testbench()
 
     def _test_complete(self) -> None:
         """Callback given to the scheduler, to be called when the current test completes.
