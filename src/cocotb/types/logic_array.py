@@ -518,7 +518,7 @@ class LogicArray(ArrayLike[Logic]):
         value: Union[bytes, bytearray],
         *,
         range: Range,
-        byteorder: "Literal['big'] | Literal['little']" = "big",
+        byteorder: "Literal['big'] | Literal['little']",
     ) -> "LogicArray": ...
 
     @overload
@@ -528,7 +528,7 @@ class LogicArray(ArrayLike[Logic]):
         value: Union[bytes, bytearray],
         *,
         width: int,
-        byteorder: "Literal['big'] | Literal['little']" = "big",
+        byteorder: "Literal['big'] | Literal['little']",
     ) -> "LogicArray": ...
 
     @overload
@@ -538,7 +538,7 @@ class LogicArray(ArrayLike[Logic]):
         value: Union[bytes, bytearray],
         range: Union[Range, int, None] = None,
         *,
-        byteorder: "Literal['big'] | Literal['little']" = "big",
+        byteorder: "Literal['big'] | Literal['little']",
     ) -> "LogicArray": ...
 
     @classmethod
@@ -548,7 +548,7 @@ class LogicArray(ArrayLike[Logic]):
         range: Union[Range, int, None] = None,
         *,
         width: Union[int, None] = None,
-        byteorder: "Literal['big'] | Literal['little']" = "big",
+        byteorder: "Literal['big'] | Literal['little']",
     ) -> "LogicArray":
         """Construct a :class:`LogicArray` from :class:`bytes`.
 
@@ -725,7 +725,7 @@ class LogicArray(ArrayLike[Logic]):
 
         .. deprecated:: 2.0
         """
-        return self.to_bytes()
+        return self.to_bytes(byteorder="big")
 
     def to_unsigned(
         self,
@@ -780,7 +780,8 @@ class LogicArray(ArrayLike[Logic]):
 
     def to_bytes(
         self,
-        byteorder: "Literal['big'] | Literal['little']" = "big",
+        *,
+        byteorder: "Literal['big'] | Literal['little']",
     ) -> bytes:
         """Convert the value to bytes.
 

@@ -125,18 +125,20 @@ def test_logic_array_signed_conversion():
 
 
 def test_logic_array_bytes_conversion():
-    assert LogicArray.from_bytes(b"12") == LogicArray("0011000100110010")
+    assert LogicArray.from_bytes(b"12", byteorder="big") == LogicArray(
+        "0011000100110010"
+    )
 
     with pytest.raises(OverflowError):
-        LogicArray.from_bytes(b"123", Range(6, "downto", 0))
+        LogicArray.from_bytes(b"123", Range(6, "downto", 0), byteorder="big")
     with pytest.raises(OverflowError):
-        LogicArray.from_bytes(b"123", 10)
+        LogicArray.from_bytes(b"123", 10, byteorder="big")
 
     # b"1" would fit in a 7 bit LogicArray, but we do not guess if top bits are significant or not
     with pytest.raises(OverflowError):
-        LogicArray.from_bytes(b"1", Range(6, "downto", 0))
+        LogicArray.from_bytes(b"1", Range(6, "downto", 0), byteorder="big")
 
-    assert LogicArray("00101010").to_bytes() == b"\x2a"
+    assert LogicArray("00101010").to_bytes(byteorder="big") == b"\x2a"
 
 
 def test_logic_array_properties():
