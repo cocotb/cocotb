@@ -29,15 +29,15 @@ Namely, it requires the Python development headers and a C/C++ compiler.
 
 The installation instructions vary depending on your operating system:
 
-.. tabs::
+.. tab-set::
 
-   .. group-tab:: Windows + Conda
+   .. tab-item:: Windows + Conda
 
       .. code-block::
 
          conda install -c msys2 m2-base m2-make
 
-   .. group-tab:: Linux - Debian/Ubuntu
+   .. tab-item:: Linux - Debian/Ubuntu
 
       In a terminal, run
 
@@ -45,7 +45,7 @@ The installation instructions vary depending on your operating system:
 
           sudo apt-get install make gcc g++ python3 python3-dev python3-pip
 
-   .. group-tab:: Linux - Red Hat
+   .. tab-item:: Linux - Red Hat
 
       If you are using RHEL9, it might be necessary to add the CodeReady Linux Builder repository
       to be able to install ``libstdc++-static``.
@@ -61,7 +61,7 @@ The installation instructions vary depending on your operating system:
 
           sudo yum install make gcc gcc-c++ libstdc++-devel libstdc++-static python3 python3-devel python3-pip
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
       .. code-block:: bash
 

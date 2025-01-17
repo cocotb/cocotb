@@ -546,20 +546,25 @@ def docs_preview(session: nox.Session) -> None:
     session.run("pip", "install", "-e", ".")
     session.run("pip", "install", "sphinx-autobuild")
     outdir = session.cache_dir / "docs_out"
+    # fmt: off
     session.run(
         "sphinx-autobuild",
         # Ignore directories which cause a rebuild loop.
-        "--ignore",
-        "*/source/master-notes.rst",
-        "--ignore",
-        "*/doxygen/*",
+        "--ignore", "*/source/master-notes.rst",
+        "--ignore", "*/doxygen/*",
+        # Ignore emacs backup files.
+        "--ignore", "**/#*#",
+        "--ignore", "**/.#*",
+        # Ignore vi backup files.
+        "--ignore", "**/.*.sw[px]",
+        "--ignore", "**/*~",
         # Also watch the cocotb source directory to rebuild the API docs on
         # changes to cocotb code.
-        "--watch",
-        "src/cocotb",
+        "--watch", "src/cocotb",
         "./docs/source",
         str(outdir),
     )
+    # fmt: on
 
 
 @nox.session

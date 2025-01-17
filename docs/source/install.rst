@@ -30,9 +30,9 @@ The current stable version of cocotb requires:
 
 The installation instructions vary depending on your operating system:
 
-.. tabs::
+.. tab-set::
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       We recommend users who are running Windows and who are more comfortable with a Unix shell,
       or who have legacy Makefile-based projects,
@@ -47,7 +47,7 @@ The installation instructions vary depending on your operating system:
 
          conda install -c msys2 m2-base m2-make
 
-   .. group-tab:: Linux - Debian
+   .. tab-item:: Linux - Debian
 
       In a terminal, run
 
@@ -55,7 +55,7 @@ The installation instructions vary depending on your operating system:
 
           sudo apt-get install make python3 python3-pip libpython3-dev
 
-   .. group-tab:: Linux - Red Hat
+   .. tab-item:: Linux - Red Hat
 
       In a terminal, run
 
@@ -63,7 +63,7 @@ The installation instructions vary depending on your operating system:
 
           sudo yum install make python3 python3-pip python3-libs
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
       We recommend using the `Homebrew <https://brew.sh/>`_ package manager.
       After installing it, run the following line in a terminal:
