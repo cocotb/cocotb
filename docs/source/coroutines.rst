@@ -162,9 +162,9 @@ This is what :class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combin
 Waiting For One Of Multiple Events
 ----------------------------------
 
-:class:`~cocotb.triggers.First` is like ``await``\ ing multiple Triggers or Tasks at the same time,
+:class:`~cocotb.triggers.First` is like :keyword:`await`\ ing multiple Triggers or Tasks at the same time,
 and resumes after one of the Triggers or Tasks fires.
-It returns the result of ``await``\ ing the Task or Trigger that fired first.
+It returns the result of :keyword:`await`\ ing the Task or Trigger that fired first.
 Below we see it used to implement a timeout.
 
 .. code-block:: python3
@@ -194,7 +194,7 @@ The second section in the above code using it would be ``await with_timeout(quie
 Determining Which Task Finishes First
 -------------------------------------
 
-:class:`~cocotb.triggers.First` can be used to determine which of multiple Tasks :meth:`~cocotb.task.Task.complete` first using the following idiom.
+:class:`~cocotb.triggers.First` can be used to determine which of multiple Tasks :meth:`complete <~cocotb.task.Task.complete>` first using the following idiom.
 
 .. code-block:: python3
 
@@ -219,7 +219,7 @@ Determining Which Task Finishes First
 Waiting For Multiple Events
 ---------------------------
 
-:class:`~cocotb.triggers.Combine` is like ``await``\ ing multiple Triggers or Tasks at the same time,
+:class:`~cocotb.triggers.Combine` is like :keyword:`await`\ ing multiple Triggers or Tasks at the same time,
 but it resumes after *all* the listed Triggers or Tasks fire.
 Using the example from the previous section, we can use it to wait until both the driving and quiesce are done.
 
@@ -254,10 +254,13 @@ And of course, the sky is the limit when you compose the two.
 Async generators
 ================
 
-Starting with Python 3.6, a ``yield`` statement within an ``async`` function has a new
-meaning which matches the typical meaning
-of ``yield`` within regular Python code. It can be used to create a special
-type of generator function that can be iterated with ``async for``:
+Starting with Python 3.6,
+a :keyword:`yield` statement
+within an :keyword:`async` function
+has a new meaning which matches the typical meaning of :keyword:`yield`
+within regular Python code.
+It can be used to create a special type of generator function
+that can be iterated with :keyword:`async for`:
 
 .. code-block:: python3
 
