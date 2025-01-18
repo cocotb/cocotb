@@ -254,8 +254,8 @@ And of course, the sky is the limit when you compose the two.
 Async generators
 ================
 
-In Python 3.6, a ``yield`` statement within an ``async`` function has a new
-meaning (rather than being a ``SyntaxError``) which matches the typical meaning
+Starting with Python 3.6, a ``yield`` statement within an ``async`` function has a new
+meaning which matches the typical meaning
 of ``yield`` within regular Python code. It can be used to create a special
 type of generator function that can be iterated with ``async for``:
 
