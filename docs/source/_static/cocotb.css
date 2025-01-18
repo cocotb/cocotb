@@ -176,7 +176,8 @@ div.versionremoved > p {
 }
 
 span.versionmodified {
-    font-style: normal !important;
+    font-style: italic !important;
+    font-weight: normal !important;
 }
 
 a.headerlink {
