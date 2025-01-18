@@ -282,7 +282,7 @@ Passing and Failing Tests
 =========================
 
 A cocotb test is considered to have `failed` if the test coroutine or any running :class:`~cocotb.Task`
-fails an ``assert`` statement.
+fails an :keyword:`assert` statement.
 Below are examples of `failing` tests.
 
 .. code-block:: python3
@@ -299,8 +299,8 @@ Below are examples of `failing` tests.
         await Timer(10, 'ns')
 
 When a test fails, a stacktrace is printed.
-If :mod:`pytest` is installed and ``assert`` statements are used,
-a more informative stacktrace is printed which includes the values that caused the ``assert`` to fail.
+If :mod:`pytest` is installed and :keyword:`assert` statements are used,
+a more informative stacktrace is printed which includes the values that caused the :keyword:`assert` to fail.
 For example, see the output for the first test from above.
 
 .. code-block::

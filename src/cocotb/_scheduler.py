@@ -150,14 +150,14 @@ class Scheduler:
         :meth:`_schedule` schedules a Task -
         continuing its execution from where it previously yielded control -
         by injecting the Outcome value associated with the Task from the queue.
-        The Task's body will run until it finishes or reaches the next ``await`` statement.
-        If a Task reaches an ``await``, :meth:`_schedule` will convert the value yielded from the Task into a Trigger with :meth:`_trigger_from_any` and its friend methods.
+        The Task's body will run until it finishes or reaches the next :keyword:`await` statement.
+        If a Task reaches an :keyword:`await`, :meth:`_schedule` will convert the value yielded from the Task into a Trigger with :meth:`_trigger_from_any` and its friend methods.
         Triggers are then `primed` (with :meth:`~cocotb.triggers.Trigger._prime`)
         with a `react` function (:meth:`_sim_react` or :meth:`_react)
         so as to wake up Tasks waiting for that Trigger to `fire` (when the event encoded by the Trigger occurs).
         This is accomplished by :meth:`_resume_task_upon`.
         :meth:`_resume_task_upon` also associates the Trigger with the Task waiting on it to fire by adding them to the :attr:`_trigger2tasks` map.
-        If, instead of reaching an ``await``, a Task finishes, :meth:`_schedule` will cause the :class:`~cocotb.triggers.Join` trigger to fire.
+        If, instead of reaching an :keyword:`await`, a Task finishes, :meth:`_schedule` will cause the :class:`~cocotb.triggers.Join` trigger to fire.
         Once a Trigger fires it calls the react function which queues all Tasks waiting for that Trigger to fire.
         Then the process repeats.
 
@@ -551,9 +551,9 @@ class Scheduler:
             task: The task to schedule.
             outcome: The outcome to inject into the *task*.
 
-        Scheduling runs *task* until it either finishes or reaches the next ``await`` statement.
+        Scheduling runs *task* until it either finishes or reaches the next :keyword:`await` statement.
         If *task* completes, it is unscheduled, a Join trigger fires, and test completion is inspected.
-        Otherwise, it reached an ``await`` and we have a result object which is converted to a trigger,
+        Otherwise, it reached an :keyword:`await` and we have a result object which is converted to a trigger,
         that trigger is primed,
         then that trigger and the *task* are registered with the :attr:`_trigger2tasks` map.
         """

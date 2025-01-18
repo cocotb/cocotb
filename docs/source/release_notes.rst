@@ -60,7 +60,7 @@ Deprecations and Removals
 
 - ``bool(Lock())`` is deprecated. Use :meth:`~cocotb.triggers.Lock.locked` instead. (:pr:`3871`)
 - ``cocotb.triggers.Join.retval`` is deprecated. Use :meth:`.Task.result` to get the result of a finished Task. (:pr:`3871`)
-- Passing the *outcome* argument to :class:`~cocotb.triggers.NullTrigger` - which allowed the user to inject arbitrary outcomes when the trigger was ``await``\ ed - is deprecated. There is no alternative. (:pr:`3871`)
+- Passing the *outcome* argument to :class:`~cocotb.triggers.NullTrigger` - which allowed the user to inject arbitrary outcomes when the trigger was :keyword:`await`\ ed - is deprecated. There is no alternative. (:pr:`3871`)
 - :meth:`Event.fired <cocotb.triggers.Event.fired>` is deprecated. Use :meth:`~cocotb.triggers.Event.is_set` instead. (:pr:`3871`)
 
 
@@ -68,7 +68,7 @@ Changes
 -------
 
 - For Aldec simulators, the `-dbg` and `-O2` options are no longer passed by default, as they reduce simulation speed. Pass these options in ``COMPILE_ARGS`` and ``SIM_ARGS`` if you need them for increased observability. (:pr:`3490`)
-- ``await``\ ing a :class:`~cocotb.triggers.Join` trigger will yield the Join trigger and not the result of the task in the 2.0 release. (:pr:`3871`)
+- :keyword:`await`\ ing a :class:`~cocotb.triggers.Join` trigger will yield the Join trigger and not the result of the task in the 2.0 release. (:pr:`3871`)
 - :meth:`Lock.locked <cocotb.triggers.Lock.locked>` is now a method rather than an attribute to mirror :meth:`asyncio.Lock.locked`. (:pr:`3871`)
 
 
@@ -236,7 +236,7 @@ Deprecations and Removals
 - ``cocotb.utils.hexdiffs`` is deprecated; use :func:`scapy.utils.hexdiff` instead. (:pr:`2691`)
 - Passing ``None`` to :func:`cocotb.utils.get_sim_time` is deprecated; use ``'step'`` as the time unit instead. (:pr:`2691`)
 - The ``stdout`` and ``stderr`` attributes on :class:`cocotb.result.TestComplete` and subclasses are deprecated. (:pr:`2692`)
-- ``TestFailure`` is deprecated, use an ``assert`` statement instead. (:pr:`2692`)
+- ``TestFailure`` is deprecated, use an :keyword:`assert` statement instead. (:pr:`2692`)
 
 
 Changes
@@ -450,7 +450,7 @@ Features
   .. consume the towncrier issue number on this line. (:pr:`1507`)
 - Added support for Aldec's Active-HDL simulator. (:pr:`1601`)
 - Including ``Makefile.inc`` from user makefiles is now a no-op and deprecated. Lines like  ``include $(shell cocotb-config --makefiles)/Makefile.inc`` can be removed from user makefiles without loss in functionality. (:pr:`1629`)
-- Support for using ``await`` inside an embedded IPython terminal, using ``cocotb.ipython_support``. (:pr:`1649`)
+- Support for using :keyword:`await` inside an embedded IPython terminal, using ``cocotb.ipython_support``. (:pr:`1649`)
 - Added :meth:`~cocotb.triggers.Event.is_set`, so users may check if an :class:`~cocotb.triggers.Event` has fired. (:pr:`1723`)
 - The :func:`cocotb.simulator.is_running` function was added so a user of cocotb could determine if they are running within a simulator. (:pr:`1843`)
 
@@ -579,7 +579,7 @@ Notable changes and bug fixes
 - Tracebacks are now preserved correctly for exceptions in Python 2.
   The tracebacks in all Python versions are now a little shorter.
 - :func:`cocotb.bridge` and :func:`cocotb.resume` now work more reliably and with fewer race conditions.
-- A failing ``assert`` will be considered a test failure. Previously, it was considered a test *error*.
+- A failing :keyword:`assert` will be considered a test failure. Previously, it was considered a test *error*.
 - :meth:`~cocotb.handle.NonConstantObject.drivers` and :meth:`~cocotb.handle.NonConstantObject.loads` now also work correctly in Python 3.7 onwards.
 - :class:`~cocotb.triggers.Timer` can now be used with :class:`decimal.Decimal` instances, allowing constructs like ``Timer(Decimal("1e-9"), units="sec")`` as an alternate spelling for ``Timer(100, units="us")``. (:pr:`1114`)
 - Many (editorial) documentation improvements.
@@ -608,7 +608,7 @@ New features
 ------------
 
 - cocotb is now built as Python package and installable through pip. (:pr:`517`, :pr:`799`, :pr:`800`, :pr:`803`, :pr:`805`)
-- Support for ``async`` functions and generators was added (Python 3 only). Please have a look at :ref:`async_functions` for an example how to use this new feature.
+- Support for :keyword:`async` functions and generators was added (Python 3 only). Please have a look at :ref:`async_functions` for an example how to use this new feature.
 - VHDL block statements can be traversed. (:pr:`850`)
 - Support for Python 3.7 was added.
 

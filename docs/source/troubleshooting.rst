@@ -5,7 +5,7 @@ Troubleshooting
 Simulation Hangs
 ================
 
-Did you call an ``async def`` function or create a trigger without :keyword:`await`\ ing it?
+Did you call an :keyword:`async def` function or create a trigger without :keyword:`await`\ ing it?
 
 If you want to exit cocotb and the simulator using :kbd:`Control-C` (the Unix signal ``SIGINT``) but this doesn't work,
 you can try :kbd:`Control-\\` (the Unix signal ``SIGQUIT``).

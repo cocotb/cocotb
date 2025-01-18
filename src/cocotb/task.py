@@ -223,7 +223,7 @@ class Task(Generic[ResultType]):
             assert result == "Hello world"
 
         Returns:
-            Object that can be ``await``\ ed or passed into :class:`~cocotb.triggers.First` or :class:`~cocotb.triggers.Combine`;
+            Object that can be :keyword:`await`\ ed or passed into :class:`~cocotb.triggers.First` or :class:`~cocotb.triggers.Combine`;
             the result of which will be the result of the Task.
 
         .. deprecated:: 2.0
@@ -267,8 +267,8 @@ class Task(Generic[ResultType]):
 
         If the Task ran to completion, the result is returned.
         If the Task failed with an exception, the exception is re-raised.
-        If the Task was cancelled, the CancelledError is re-raised.
-        If the coroutine is not yet complete, a :exc:`asyncio.InvalidStateError` is raised.
+        If the Task was cancelled, the :exc:`asyncio.CancelledError` is re-raised.
+        If the coroutine is not yet complete, an :exc:`asyncio.InvalidStateError` is raised.
         """
         if self._state is Task._State.CANCELLED:
             raise self._cancelled_error
@@ -282,8 +282,8 @@ class Task(Generic[ResultType]):
 
         If the Task ran to completion, ``None`` is returned.
         If the Task failed with an exception, the exception is returned.
-        If the Task was cancelled, the CancelledError is re-raised.
-        If the coroutine is not yet complete, a :exc:`asyncio.InvalidStateError` is raised.
+        If the Task was cancelled, the :exc:`asyncio.CancelledError` is re-raised.
+        If the coroutine is not yet complete, an :exc:`asyncio.InvalidStateError` is raised.
         """
         if self._state is Task._State.CANCELLED:
             raise self._cancelled_error

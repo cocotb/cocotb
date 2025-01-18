@@ -127,7 +127,7 @@ class Test:
             Units of ``timeout_time``, accepts any units that :class:`~cocotb.triggers.Timer` does.
 
         expect_fail:
-            If ``True`` and the test fails a functional check via an ``assert`` statement, :func:`pytest.raises`,
+            If ``True`` and the test fails a functional check via an :keyword:`assert` statement, :func:`pytest.raises`,
             :func:`pytest.warns`, or :func:`pytest.deprecated_call`, the test is considered to have passed.
             If ``True`` and the test passes successfully, the test is considered to have failed.
 

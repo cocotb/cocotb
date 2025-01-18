@@ -132,8 +132,8 @@ forcing their completion before they would naturally end.
 
 
 .. versionchanged:: 1.4
-    The ``cocotb.coroutine`` decorator is no longer necessary for ``async def`` coroutines.
-    ``async def`` coroutines can be used, without the ``@cocotb.coroutine`` decorator, wherever decorated coroutines are accepted,
+    The ``cocotb.coroutine`` decorator is no longer necessary for :keyword:`async def` coroutines.
+    :keyword:`async def` coroutines can be used, without the ``@cocotb.coroutine`` decorator, wherever decorated coroutines are accepted,
     including :keyword:`yield` statements and ``cocotb.fork`` (since replaced with :func:`~cocotb.start` and :func:`~cocotb.start_soon`).
 
 .. versionchanged:: 1.6
@@ -254,13 +254,9 @@ And of course, the sky is the limit when you compose the two.
 Async generators
 ================
 
-Starting with Python 3.6,
-a :keyword:`yield` statement
-within an :keyword:`async` function
-has a new meaning which matches the typical meaning of :keyword:`yield`
-within regular Python code.
-It can be used to create a special type of generator function
-that can be iterated with :keyword:`async for`:
+Starting with Python 3.6, a :keyword:`yield` statement within an :keyword:`async` function
+has a new meaning which matches the typical meaning of :keyword:`yield` within regular Python code.
+It can be used to create a special type of generator function that can be iterated with :keyword:`async for`:
 
 .. code-block:: python3
 
@@ -283,4 +279,4 @@ Generator-based coroutines
 ==========================
 
 .. versionchanged:: 2.0
-    This style, which used the ``cocotb.coroutine`` decorator and the ``yield`` syntax, was removed.
+    This style, which used the ``cocotb.coroutine`` decorator and the :keyword:`yield` syntax, was removed.

@@ -319,7 +319,7 @@ def test(
                 Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
 
         expect_fail:
-            If ``True`` and the test fails a functional check via an ``assert`` statement, :class:`pytest.raises`,
+            If ``True`` and the test fails a functional check via an :keyword:`assert` statement, :class:`pytest.raises`,
             :class:`pytest.warns`, or :class:`pytest.deprecated_call` the test is considered to have passed.
             If ``True`` and the test passes successfully, the test is considered to have failed.
 

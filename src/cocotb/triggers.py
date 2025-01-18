@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A collection of triggers which a testbench can ``await``."""
+"""A collection of triggers which a testbench can :keyword:`await`."""
 
 import logging
 import warnings
@@ -159,7 +159,7 @@ class Timer(GPITrigger):
     r"""Fire after the specified simulation time period has elapsed.
 
     This trigger will *always* consume some simulation time
-    and will return control to the ``await``\ ing task at the beginning of the time step.
+    and will return control to the :keyword:`await`\ ing task at the beginning of the time step.
 
     Args:
         time: The time value.
@@ -470,7 +470,7 @@ class _Event(Trigger):
 class Event:
     r"""A way to signal an event across :class:`~cocotb.task.Task`\ s.
 
-    ``await``\ ing the result of :meth:`wait()` will block the ``await``\ ing :class:`~cocotb.task.Task`
+    :keyword:`await`\ ing the result of :meth:`wait()` will block the :keyword:`await`\ ing :class:`~cocotb.task.Task`
     until :meth:`set` is called.
 
     Args:
@@ -770,7 +770,7 @@ class NullTrigger(Trigger):
 class TaskComplete(Trigger, Generic[T]):
     r"""Fires when a :class:`~cocotb.task.Task` completes.
 
-    Unlike :func:`~cocotb.triggers.Join`, this Trigger does not return the result of the Task when ``await``\ ed.
+    Unlike :func:`~cocotb.triggers.Join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
 
     .. note::
         It is preferable to use :attr:`.Task.complete` to get this object over calling the constructor.
@@ -843,7 +843,7 @@ def Join(task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
         task: The Task upon which to wait for completion.
 
     Returns:
-        Object that can be ``await``\ ed or passed into :class:`~cocotb.triggers.First` or :class:`~cocotb.triggers.Combine`;
+        Object that can be :keyword:`await`\ ed or passed into :class:`~cocotb.triggers.First` or :class:`~cocotb.triggers.Combine`;
         the result of which will be the result of the Task.
 
     .. deprecated:: 2.0
@@ -909,12 +909,12 @@ async def _wait_callback(
 class Combine(_AggregateWaitable["Combine"]):
     r"""Trigger that fires when all *triggers* have fired.
 
-    ``await``\ ing this returns the :class:`Combine` object.
+    :keyword:`await`\ ing this returns the :class:`Combine` object.
     This is similar to Verilog's ``join``.
     See :ref:`combine-tutorial` for an example.
 
     Args:
-        trigger: One or more ``await``\ able objects.
+        trigger: One or more :keyword:`await`\ able objects.
 
     Raises:
         TypeError: When an unsupported *trigger* object is passed.
@@ -947,12 +947,12 @@ class Combine(_AggregateWaitable["Combine"]):
 class First(_AggregateWaitable[Any]):
     r"""Fires when the first trigger in *triggers* fires.
 
-    ``await``\ ing this object returns the result of the first trigger that fires.
+    :keyword:`await`\ ing this object returns the result of the first trigger that fires.
     This is similar to Verilog's ``join_any``.
     See :ref:`first-tutorial` for an example.
 
     Args:
-        trigger: One or more ``await``\ able objects.
+        trigger: One or more :keyword:`await`\ able objects.
 
     Raises:
         TypeError: When an unsupported *trigger* object is passed.
@@ -1004,7 +1004,7 @@ class ClockCycles(Waitable["ClockCycles"]):
     If *rising* is ``True``, it fires after *num_cycle* transitions of *signal* from non-``1`` to ``1``.
     If *rising* is ``False``, it fires after *num_cycle* transitions of *signal* from non-``0`` to ``0``.
 
-    ``await``\ ing this Trigger returns the ClockCycle object.
+    :keyword:`await`\ ing this Trigger returns the ClockCycle object.
 
     Args:
         signal: The signal to monitor.
