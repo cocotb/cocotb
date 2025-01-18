@@ -251,11 +251,20 @@ img + p {
 /* make left and right TOCs a bit tighter */
 nav.bd-links li > a,
 .toc-entry a.nav-link {
-    padding-top: .175rem !important;
-    padding-bottom: .175rem !important;
+    padding-top: 0.175rem !important;
+    padding-bottom: 0.175rem !important;
 }
 
 /* disable dark mode button (https://github.com/executablebooks/sphinx-book-theme/issues/750) */
 button.theme-switch-button {
     display: none !important;
+}
+
+/* "Usage:" in apidoc */
+/*
+NOTE: "Usage:" is not listed in https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#docstring-sections
+      but is apparently treated specially while e.g. the documented "Example(s):" leads to a 'p.rubric'
+*/
+dl > dd > dl:not(.field-list.simple) {
+    margin-left: 0.5rem !important;
 }

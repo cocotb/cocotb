@@ -50,12 +50,11 @@ class Clock:
     This will create a clocking task that drives the signal at the
     desired period/frequency.
 
-    Example:
+    Usage:
+        .. code-block:: python
 
-    .. code-block:: python
-
-        c = Clock(dut.clk, 10, "ns")
-        await cocotb.start(c.start())
+            c = Clock(dut.clk, 10, "ns")
+            await cocotb.start(c.start())
 
     Args:
         signal: The clock pin/signal to be driven.
