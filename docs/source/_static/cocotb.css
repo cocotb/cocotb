@@ -226,10 +226,11 @@ dl.field-list > dt {
     background-color: white !important;
 }
 
-/* anchor highlighted via URL */
+/* highlighted code */
+.highlight .hll,
 dt:target,
 span.highlighted {
-    background-color: var(--color-cocotb-yellow);
+    background-color: var(--color-cocotb-yellow) !important;
 }
 
 /* search bar */
