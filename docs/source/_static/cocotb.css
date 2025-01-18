@@ -253,3 +253,8 @@ nav.bd-links li > a,
     padding-top: .175rem !important;
     padding-bottom: .175rem !important;
 }
+
+/* disable dark mode button (https://github.com/executablebooks/sphinx-book-theme/issues/750) */
+button.theme-switch-button {
+    display: none !important;
+}
