@@ -162,7 +162,8 @@ Features should generally follow the following design principles:
 Bugfixes
 --------
 
-**!WARNING!** Bugfixing cocotb is not for the faint of heart!
+.. warning::
+   Bugfixing cocotb is not for the faint of heart!
 
 Bugs happen.
 cocotb supports many simulators that have inconsistent support for the procedural interfaces cocotb depends on, and it has a number of features that aren't wholly tested yet.

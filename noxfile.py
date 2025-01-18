@@ -552,17 +552,22 @@ def docs_preview(session: nox.Session) -> None:
         # Ignore directories which cause a rebuild loop.
         "--ignore", "*/source/master-notes.rst",
         "--ignore", "*/doxygen/*",
+        # Ignore nox's venv directory.
+        "--ignore", ".nox",
         # Ignore emacs backup files.
         "--ignore", "**/#*#",
         "--ignore", "**/.#*",
         # Ignore vi backup files.
         "--ignore", "**/.*.sw[px]",
         "--ignore", "**/*~",
+        # FIXME: local to cmarqu :)
+        "--ignore", "*@*:*",
         # Also watch the cocotb source directory to rebuild the API docs on
         # changes to cocotb code.
         "--watch", "src/cocotb",
         "./docs/source",
         str(outdir),
+        *session.posargs,
     )
     # fmt: on
 
