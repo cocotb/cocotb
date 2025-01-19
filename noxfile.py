@@ -533,7 +533,15 @@ def docs(session: nox.Session) -> None:
     create_env_for_docs_build(session)
     session.run("pip", "install", ".")
     outdir = session.cache_dir / "docs_out"
-    session.run("sphinx-build", "./docs/source", str(outdir), "--color", "-b", "html", *session.posargs)
+    session.run(
+        "sphinx-build",
+        "./docs/source",
+        str(outdir),
+        "--color",
+        "-b",
+        "html",
+        *session.posargs,
+    )
     index = (outdir / "index.html").resolve().as_uri()
     session.log(f"Documentation is available at {index}")
 
