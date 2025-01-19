@@ -857,10 +857,12 @@ class LogicObject(ValueObjectBase[Logic, Union[Logic, int, str]]):
     """A scalar logic simulation object.
 
     Verilog data types that map to this object:
+
         * ``logic``
         * ``bit``
 
     VHDL types that map to this object:
+
         * ``std_logic``
         * ``std_ulogic``
         * ``bit``
@@ -948,10 +950,12 @@ class LogicArrayObject(
     """A logic array simulation object.
 
     Verilog types that map to this object:
+
         * packed any-dimensional vectors of ``logic`` or ``bit``
         * packed any-dimensional vectors of packed structures
 
     VHDL types that map to this object:
+
         * ``std_logic_vector`` and ``std_ulogic_vector``
         * ``unsigned``
         * ``signed``
@@ -1195,6 +1199,7 @@ class IntegerObject(ValueObjectBase[int, int]):
     """An integer simulation object.
 
     Verilog types that map to this object:
+
         * ``byte``
         * ``shortint``
         * ``int``
@@ -1203,6 +1208,7 @@ class IntegerObject(ValueObjectBase[int, int]):
     This type should not be used for the 4-state integer types ``integer`` and ``time``.
 
     VHDL types that map to this object:
+
         * ``integer``
         * ``natural``
         * ``positive``
