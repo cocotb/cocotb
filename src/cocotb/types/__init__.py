@@ -82,14 +82,15 @@ class ArrayLike(ABC, Generic[T]):
         start: Optional[int] = None,
         stop: Optional[int] = None,
     ) -> int:
-        """Find first occurence of value.
+        """Find first occurrence of value.
 
         Args:
             value: Value to search for.
             start: Index to start search at.
             stop: Index to stop search at.
 
-        Returns: Index of first occurence of *value*.
+        Returns:
+            Index of first occurrence of *value*.
 
         Raises:
             ValueError: If the value is not present.
@@ -109,7 +110,8 @@ class ArrayLike(ABC, Generic[T]):
         Args:
             value: Value to search for.
 
-        Returns: Number of occurences of *value*.
+        Returns:
+            Number of occurrences of *value*.
         """
         count: int = 0
         for v in self:

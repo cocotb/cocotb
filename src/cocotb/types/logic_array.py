@@ -689,7 +689,8 @@ class LogicArray(ArrayLike[Logic]):
         with the left-most bit being the most significant bit in the integer value.
         The bit vector is then interpreted as an integer using unsigned representation.
 
-        Returns: An :class:`int` equivalent to the value by interpreting it using unsigned representation.
+        Returns:
+            An :class:`int` equivalent to the value by interpreting it using unsigned representation.
 
         .. deprecated:: 2.0
         """
@@ -706,7 +707,8 @@ class LogicArray(ArrayLike[Logic]):
         with the left-most bit being the most significant bit in the integer value.
         The bit vector is then interpreted as an integer using two's complement representation.
 
-        Returns: An :class:`int` equivalent to the value by interpreting it using two's complement representation.
+        Returns:
+            An :class:`int` equivalent to the value by interpreting it using two's complement representation.
 
         .. deprecated:: 2.0
         """
@@ -721,7 +723,8 @@ class LogicArray(ArrayLike[Logic]):
         Then the object is converted to :class:`bytes` by converting the resulting integer value as in :meth:`int.to_bytes`.
         This assumes big-endian byte order and the minimal number of bytes necessary to hold any value of the current object.
 
-        Returns: A :class:`bytes` object equivalent to the value.
+        Returns:
+            A :class:`bytes` object equivalent to the value.
 
         .. deprecated:: 2.0
         """
