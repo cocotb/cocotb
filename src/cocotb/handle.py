@@ -696,7 +696,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
     ) -> None:
         """Assign a value to this simulation object immediately.
 
-        This is known in Verilog as a "blocking" assignment and in VHDL as a variable assignment.
+        This is known in Verilog as a "blocking assignment" and in VHDL as a "variable assignment".
 
         See :class:`Deposit`, :class:`Force`, :class:`Freeze`, and :class:`Release` for additional actions that can be taken when setting a value.
         The default behavior is to :class:`Deposit` the value.
