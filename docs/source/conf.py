@@ -160,7 +160,6 @@ html_theme = "sphinx_book_theme"
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-
 html_theme_options = {
     "logo": {
         "image_light": "_static/cocotb-logo.svg",
@@ -170,8 +169,8 @@ html_theme_options = {
     # https://pydata-sphinx-theme.readthedocs.io/en/latest/user_guide/version-dropdown.html
     # https://pydata-sphinx-theme.readthedocs.io/en/latest/user_guide/readthedocs.html#version-switcher
     # "switcher": {
-    #     "json_url": f"FIXME/switcher.json",
-    #     "version_match": doc_switcher_version,
+    #     "json_url": f"<...>/switcher.json",
+    #     "version_match": ...,
     #     "check_switcher": False,
     #     "show_version_warning_banner": True,
     # },

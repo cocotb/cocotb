@@ -260,10 +260,32 @@ button.theme-switch-button {
     display: none !important;
 }
 
-/* "Usage:" in apidoc */
 /*
-NOTE: "Usage:" is not listed in https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#docstring-sections
-      but is apparently treated specially while e.g. the documented "Example(s):" leads to a 'p.rubric'
+"Usage:" etc. sections in docstrings
+
+This handles any sections that are *not* listed in
+https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#docstring-sections
+
+Sections that *are* listed in there likely have a different behaviour,
+e.g. the documented "Example(s):" leads to a '.. rubric::'
+(or an .. admonition::' if 'napoleon_use_admonition_for_examples = True').
+
+Such a rubric could be handled with code like the following,
+but it is likely not selecting all elements that it should
+and might mis-select elements that should be left alone.
+
+//// "dl and any subsequent siblings (but not .versionchanged etc.)" - for "Examples" in apidoc
+// dl.field-list.simple ~ *:not(.versionadded):not(.versionchanged):not(.deprecated):not(.versionremoved) {
+//     margin-left: 2.5rem;
+// }
+//
+//
+//// "dl and next p.rubric sibling..." - "Examples:" in apidoc
+// dl.field-list.simple + p.rubric {
+//     font-weight: bold;
+//     margin-left: 0.5rem !important;
+//     border-bottom: unset !important;
+// }
 */
 dl > dd > dl:not(.field-list.simple) {
     margin-left: 0.5rem !important;
