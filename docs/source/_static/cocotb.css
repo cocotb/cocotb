@@ -296,3 +296,8 @@ dl.field-list.simple > dd > p,
 dl.field-list.simple > dd > ul.simple > li > p {
     display: inline !important;
 }
+
+/* reduce distance after paragraphs a bit */
+p {
+    margin-bottom: 0.5rem !important;
+}
