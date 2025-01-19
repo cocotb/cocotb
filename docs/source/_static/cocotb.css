@@ -292,6 +292,7 @@ dl > dd > dl:not(.field-list.simple) {
 }
 
 /* fix for extra linebreak in apidoc (https://github.com/pydata/pydata-sphinx-theme/issues/2098) */
+dl.field-list.simple > dd > p,
 dl.field-list.simple > dd > ul.simple > li > p {
     display: inline !important;
 }
