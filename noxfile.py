@@ -533,7 +533,7 @@ def docs(session: nox.Session) -> None:
     create_env_for_docs_build(session)
     session.run("pip", "install", ".")
     outdir = session.cache_dir / "docs_out"
-    session.run("sphinx-build", "./docs/source", str(outdir), "--color", "-b", "html")
+    session.run("sphinx-build", "./docs/source", str(outdir), "--color", "-b", "html", *session.posargs)
     index = (outdir / "index.html").resolve().as_uri()
     session.log(f"Documentation is available at {index}")
 
@@ -585,6 +585,7 @@ def docs_linkcheck(session: nox.Session) -> None:
         "--color",
         "-b",
         "linkcheck",
+        *session.posargs,
     )
 
 
@@ -601,6 +602,7 @@ def docs_spelling(session: nox.Session) -> None:
         "--color",
         "-b",
         "spelling",
+        *session.posargs,
     )
 
 
