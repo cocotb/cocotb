@@ -375,7 +375,7 @@ A passing test will print the following output.
 Logging
 =======
 
-Cocotb uses the builtin :mod:`logging` library, with some configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
+Cocotb uses the built-in :mod:`logging` library, with some configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
 All :class:`~cocotb.Task`\ s have a :class:`logging.Logger`,
 and can be set to its own logging level.
 

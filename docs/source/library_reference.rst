@@ -191,8 +191,8 @@ Python Triggers
 Synchronization
 ^^^^^^^^^^^^^^^
 
-These are not :class:`Trigger`\ s themselves, but contain methods that can be used as triggers.
-These are used to synchronize coroutines with each other.
+The following objects are not :class:`Trigger`\ s themselves, but contain methods that can be used as triggers.
+They are used to synchronize coroutines with each other.
 
 .. autoclass:: cocotb.triggers.Event
     :members:

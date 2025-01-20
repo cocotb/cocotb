@@ -75,7 +75,7 @@ class Clock:
     When *impl* is ``'auto'``, if :envvar:`COCOTB_TRUST_INERTIAL_WRITES` is defined,
     the :class:`~cocotb.simulator.GpiClock` implementation will be used.
     Otherwise, the Python coroutine implementation will be used.
-    See the environment variable documentation for more information on the consequences
+    See the environment variable's documentation for more information on the consequences
     of using the simulator's inertial write mechanism.
 
     If you need more features like a phase shift and an asymmetric duty cycle,

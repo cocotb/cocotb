@@ -194,7 +194,7 @@ class Timer(GPITrigger):
         >>> freq = 10e6  # 10 MHz
         >>> await Timer(1 / freq, units="sec")
 
-        Other builtin exact numeric types can be used too:
+        Other built-in exact numeric types can be used too:
 
         >>> from fractions import Fraction
         >>> await Timer(Fraction(1, 10), units="ns")
