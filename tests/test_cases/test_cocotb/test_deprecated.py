@@ -8,7 +8,7 @@ import pytest
 
 import cocotb
 from cocotb.regression import TestFactory
-from cocotb.triggers import Event, First, Join, Timer
+from cocotb.triggers import Edge, Event, First, Join, Timer
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
@@ -151,3 +151,10 @@ async def test_logic_scalar_object_methods_deprecated(dut) -> None:
         assert str(dut.stream_in_valid) == "1"
     with pytest.warns(DeprecationWarning):
         assert len(dut.stream_in_valid) == 1
+
+
+@cocotb.test
+async def test_edge_trigger_deprecated(dut) -> None:
+    with pytest.warns(DeprecationWarning):
+        e = Edge(dut.stream_in_valid)
+    assert e is dut.stream_in_valid.value_change

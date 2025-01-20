@@ -48,6 +48,7 @@ from typing import (
     cast,
 )
 
+import cocotb.triggers
 from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
@@ -853,7 +854,19 @@ class ArrayObject(
             yield self[i]
 
 
-class LogicObject(ValueObjectBase[Logic, Union[Logic, int, str]]):
+class NonArrayValueObject(ValueObjectBase[ValuePropertyT, ValueSetT]):
+    """ValueObject that is treated as a single object in the GPI.
+
+    NonArrayValueObjects support :meth:`value_change` triggers.
+    """
+
+    @cached_property
+    def value_change(self) -> cocotb.triggers.ValueChange:
+        """A trigger which fires whenever the value changes."""
+        return cocotb.triggers.ValueChange._make(self)
+
+
+class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
     """A scalar logic simulation object.
 
     Verilog data types that map to this object:
@@ -924,6 +937,16 @@ class LogicObject(ValueObjectBase[Logic, Union[Logic, int, str]]):
     def value(self, value: Logic) -> None:
         self.set(value)
 
+    @cached_property
+    def rising_edge(self) -> cocotb.triggers.RisingEdge:
+        """A trigger which fires whenever the value changes to a ``1``."""
+        return cocotb.triggers.RisingEdge._make(self)
+
+    @cached_property
+    def falling_edge(self) -> cocotb.triggers.FallingEdge:
+        """A trigger which fires whenever the value changes to a ``0``."""
+        return cocotb.triggers.FallingEdge._make(self)
+
     @deprecated(
         "`len(handle)` of scalar objects is redundant. This method will be removed."
     )
@@ -944,7 +967,7 @@ class LogicObject(ValueObjectBase[Logic, Union[Logic, int, str]]):
 
 
 class LogicArrayObject(
-    ValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
+    NonArrayValueObject[LogicArray, Union[LogicArray, Logic, int, str]],
     RangeableObjectMixin,
 ):
     """A logic array simulation object.
@@ -1085,7 +1108,7 @@ class LogicArrayObject(
         return self._handle.get_num_elems()
 
 
-class RealObject(ValueObjectBase[float, float]):
+class RealObject(NonArrayValueObject[float, float]):
     """A real/float simulation object.
 
     This type is used when a ``real`` object in VHDL or ``float`` object in Verilog is seen.
@@ -1135,7 +1158,7 @@ class RealObject(ValueObjectBase[float, float]):
         return self.value
 
 
-class EnumObject(ValueObjectBase[int, int]):
+class EnumObject(NonArrayValueObject[int, int]):
     """An enumeration simulation object.
 
     This type is used when an enumerated-type simulation object is seen that isn't a "logic" or similar type.
@@ -1195,7 +1218,7 @@ class EnumObject(ValueObjectBase[int, int]):
         return int(self.value)
 
 
-class IntegerObject(ValueObjectBase[int, int]):
+class IntegerObject(NonArrayValueObject[int, int]):
     """An integer simulation object.
 
     Verilog types that map to this object:
@@ -1269,7 +1292,7 @@ class IntegerObject(ValueObjectBase[int, int]):
 
 
 class StringObject(
-    ValueObjectBase[bytes, bytes],
+    NonArrayValueObject[bytes, bytes],
     RangeableObjectMixin,
 ):
     """A string simulation object.
