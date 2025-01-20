@@ -18,7 +18,7 @@ The coroutine uses the :keyword:`await` keyword to
 block on another coroutine's execution or pass control of execution back to the
 simulator, allowing simulation time to advance.
 
-Typically coroutines :keyword:`await` a :class:`~cocotb.triggers.Trigger` object which
+Typically coroutines await a :class:`~cocotb.triggers.Trigger` object which
 pauses the task, and indicates to the simulator some event which will cause the task to resume execution.
 For example:
 
@@ -29,7 +29,7 @@ For example:
         await Timer(10, units='ns')
         cocotb.log.info("Simulation time has advanced by 10 ns")
 
-Coroutines may also :keyword:`await` on other coroutines:
+Coroutines may also await on other coroutines:
 
 .. code-block:: python3
 
@@ -56,7 +56,7 @@ Concurrent Execution
 Coroutines can be scheduled for concurrent execution with :func:`~cocotb.start` and :func:`~cocotb.start_soon`.
 These concurrently running coroutines are called :class:`~cocotb.task.Task`\ s.
 
-The *async* function :func:`~cocotb.start` schedules the coroutine to be executed concurrently,
+The :keyword:`async` function :func:`~cocotb.start` schedules the coroutine to be executed concurrently,
 then yields control to allow the new task (and any other pending tasks) to run,
 before resuming the calling task.
 
@@ -81,7 +81,7 @@ after the calling task yields control.
         await Timer(15, units='ns')
         print("Reset has gone inactive: %d" % dut.rstn)
 
-Other tasks can be used in an :keyword:`await` statement to suspend the current task until the other task finishes.
+Other tasks can be used in an await statement to suspend the current task until the other task finishes.
 
 .. code-block:: python3
 
@@ -132,8 +132,8 @@ forcing their completion before they would naturally end.
 
 
 .. versionchanged:: 1.4
-    The ``cocotb.coroutine`` decorator is no longer necessary for ``async def`` coroutines.
-    ``async def`` coroutines can be used, without the ``@cocotb.coroutine`` decorator, wherever decorated coroutines are accepted,
+    The ``cocotb.coroutine`` decorator is no longer necessary for :keyword:`async def` coroutines.
+    :keyword:`async def` coroutines can be used, without the ``@cocotb.coroutine`` decorator, wherever decorated coroutines are accepted,
     including :keyword:`yield` statements and ``cocotb.fork`` (since replaced with :func:`~cocotb.start` and :func:`~cocotb.start_soon`).
 
 .. versionchanged:: 1.6
@@ -162,9 +162,9 @@ This is what :class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combin
 Waiting For One Of Multiple Events
 ----------------------------------
 
-:class:`~cocotb.triggers.First` is like ``await``\ ing multiple Triggers or Tasks at the same time,
+:class:`~cocotb.triggers.First` is like awaiting multiple Triggers or Tasks at the same time,
 and resumes after one of the Triggers or Tasks fires.
-It returns the result of ``await``\ ing the Task or Trigger that fired first.
+It returns the result of awaiting the Task or Trigger that fired first.
 Below we see it used to implement a timeout.
 
 .. code-block:: python3
@@ -194,7 +194,7 @@ The second section in the above code using it would be ``await with_timeout(quie
 Determining Which Task Finishes First
 -------------------------------------
 
-:class:`~cocotb.triggers.First` can be used to determine which of multiple Tasks :meth:`~cocotb.task.Task.complete` first using the following idiom.
+:class:`~cocotb.triggers.First` can be used to determine which of multiple Tasks :meth:`complete <cocotb.task.Task.complete>` first using the following idiom.
 
 .. code-block:: python3
 
@@ -219,7 +219,7 @@ Determining Which Task Finishes First
 Waiting For Multiple Events
 ---------------------------
 
-:class:`~cocotb.triggers.Combine` is like ``await``\ ing multiple Triggers or Tasks at the same time,
+:class:`~cocotb.triggers.Combine` is like awaiting multiple Triggers or Tasks at the same time,
 but it resumes after *all* the listed Triggers or Tasks fire.
 Using the example from the previous section, we can use it to wait until both the driving and quiesce are done.
 
@@ -254,10 +254,9 @@ And of course, the sky is the limit when you compose the two.
 Async generators
 ================
 
-Starting with Python 3.6, a ``yield`` statement within an ``async`` function has a new
-meaning which matches the typical meaning
-of ``yield`` within regular Python code. It can be used to create a special
-type of generator function that can be iterated with ``async for``:
+Starting with Python 3.6, a :keyword:`yield` statement within an async function
+has a new meaning which matches the typical meaning of yield within regular Python code.
+It can be used to create a special type of generator function that can be iterated with :keyword:`async for`:
 
 .. code-block:: python3
 
@@ -280,4 +279,4 @@ Generator-based coroutines
 ==========================
 
 .. versionchanged:: 2.0
-    This style, which used the ``cocotb.coroutine`` decorator and the ``yield`` syntax, was removed.
+    This style, which used the ``cocotb.coroutine`` decorator and the yield syntax, was removed.

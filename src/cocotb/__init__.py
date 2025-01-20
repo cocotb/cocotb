@@ -161,7 +161,7 @@ def start_soon(
     """
     Schedule a coroutine to be run concurrently in a :class:`~cocotb.task.Task`.
 
-    Note that this is not an ``async`` function,
+    Note that this is not an :keyword:`async` function,
     and the new task will not execute until the calling task yields control.
 
     Args:
