@@ -12,11 +12,11 @@ from cocotb.triggers import Event, _pointer_str
 
 
 class QueueFull(asyncio.queues.QueueFull):
-    """Raised when the Queue.put_nowait() method is called on a full Queue."""
+    """Raised when the :meth:`Queue.put_nowait()` method is called on a full :class:`Queue`."""
 
 
 class QueueEmpty(asyncio.queues.QueueEmpty):
-    """Raised when the Queue.get_nowait() method is called on a empty Queue."""
+    """Raised when the :meth:`Queue.get_nowait()` method is called on an empty :class:`Queue`."""
 
 
 T = TypeVar("T")
@@ -113,7 +113,7 @@ class Queue(Generic[T]):
     def put_nowait(self, item: T) -> None:
         """Put an *item* into the queue without blocking.
 
-        If no free slot is immediately available, raise :exc:`asyncio.QueueFull`.
+        If no free slot is immediately available, raise :exc:`~cocotb.queue.QueueFull`.
         """
         if self.full():
             raise QueueFull()
@@ -137,7 +137,7 @@ class Queue(Generic[T]):
         """Remove and return an item from the queue.
 
         Return an item if one is immediately available, else raise
-        :exc:`asyncio.QueueEmpty`.
+        :exc:`~cocotb.queue.QueueEmpty`.
         """
         if self.empty():
             raise QueueEmpty()
