@@ -171,7 +171,7 @@ class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
     // but the explicit ones are probably better
 
     virtual GpiCbHdl *register_value_change_callback(
-        gpi_edge_e edge, int (*gpi_function)(void *), void *gpi_cb_data) = 0;
+        gpi_edge edge, int (*gpi_function)(void *), void *gpi_cb_data) = 0;
 };
 
 /* GPI Callback handle */
@@ -205,7 +205,7 @@ class GPI_EXPORT GpiCbHdl : public GpiHdl {
 class GPI_EXPORT GpiValueCbHdl : public virtual GpiCbHdl {
   public:
     GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal,
-                  gpi_edge_e edge);
+                  gpi_edge edge);
     int run_callback() override;
 
   protected:

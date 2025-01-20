@@ -70,7 +70,7 @@ class FliProcessCbHdl : public virtual GpiCbHdl {
 class FliSignalCbHdl : public FliProcessCbHdl, public GpiValueCbHdl {
   public:
     FliSignalCbHdl(GpiImplInterface *impl, FliSignalObjHdl *sig_hdl,
-                   gpi_edge_e edge);
+                   gpi_edge edge);
 
     int arm_callback() override;
     int cleanup_callback() override {
@@ -181,7 +181,7 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
-    GpiCbHdl *register_value_change_callback(gpi_edge_e edge,
+    GpiCbHdl *register_value_change_callback(gpi_edge edge,
                                              int (*function)(void *),
                                              void *cb_data) override;
 

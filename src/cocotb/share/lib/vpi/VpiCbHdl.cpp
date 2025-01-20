@@ -120,7 +120,7 @@ int VpiCbHdl::cleanup_callback() {
 }
 
 VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig,
-                             gpi_edge_e edge)
+                             gpi_edge edge)
     : GpiCbHdl(impl), VpiCbHdl(impl), GpiValueCbHdl(impl, sig, edge) {
     vpi_time.type = vpiSuppressTime;
     m_vpi_value.format = vpiIntVal;

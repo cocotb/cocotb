@@ -98,7 +98,7 @@ int GpiCbHdl::set_user_data(int (*_gpi_function)(void *), void *data) {
 }
 
 GpiValueCbHdl::GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal,
-                             gpi_edge_e edge)
+                             gpi_edge edge)
     : GpiCbHdl(impl), m_signal(signal) {
     switch (edge) {
         case GPI_RISING: {

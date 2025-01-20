@@ -38,7 +38,7 @@ using std::abs;
 using std::to_string;
 
 GpiCbHdl *FliSignalObjHdl::register_value_change_callback(
-    gpi_edge_e edge, int (*function)(void *), void *cb_data) {
+    gpi_edge edge, int (*function)(void *), void *cb_data) {
     if (m_is_var) {
         return NULL;
     }

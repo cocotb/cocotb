@@ -461,7 +461,7 @@ static PyObject *register_value_change_callback(
     Py_INCREF(function);
 
     PyObject *pedge = PyTuple_GetItem(args, 2);
-    gpi_edge_e edge = (gpi_edge_e)PyLong_AsLong(pedge);
+    gpi_edge edge = (gpi_edge)PyLong_AsLong(pedge);
 
     // Remaining args for function
     PyObject *fArgs = PyTuple_GetSlice(args, 3, numargs);  // New reference
