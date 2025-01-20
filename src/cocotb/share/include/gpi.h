@@ -177,6 +177,12 @@ typedef enum gpi_set_action_e {
     GPI_NO_DELAY = 3,
 } gpi_set_action_t;
 
+typedef enum gpi_range_dir_e {
+    GPI_RANGE_DOWN = -1,
+    GPI_RANGE_NO_DIR = 0,
+    GPI_RANGE_UP = 1,
+} gpi_range_dir;
+
 // Functions for iterating over entries of a handle
 // Returns an iterator handle which can then be used in gpi_next calls
 //
@@ -200,7 +206,7 @@ GPI_EXPORT int gpi_get_range_right(gpi_sim_hdl gpi_sim_hdl);
 
 // Returns the direction of the range constraint
 // +1 for ascending, -1 for descending, 0 for no direction
-GPI_EXPORT int gpi_get_range_dir(gpi_sim_hdl gpi_sim_hdl);
+GPI_EXPORT gpi_range_dir gpi_get_range_dir(gpi_sim_hdl gpi_sim_hdl);
 
 // Functions for querying the properties of a handle
 // Caller responsible for freeing the returned string.
@@ -243,12 +249,6 @@ typedef enum gpi_edge {
     GPI_FALLING,
     GPI_VALUE_CHANGE,
 } gpi_edge_e;
-
-typedef enum gpi_range_dir {
-    GPI_RANGE_DOWN = -1,
-    GPI_RANGE_NO_DIR = 0,
-    GPI_RANGE_UP = 1,
-} gpi_range_dir_e;
 
 // The callback registering functions
 GPI_EXPORT gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
