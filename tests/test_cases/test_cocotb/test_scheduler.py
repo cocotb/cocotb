@@ -58,35 +58,25 @@ async def test_task_kill(dut):
     assert test_flag
 
 
-async def clock_one(dut):
-    count = 0
-    while count != 50:
-        await RisingEdge(dut.clk)
-        await Timer(1000, "ns")
-        count += 1
-
-
-async def clock_two(dut):
-    count = 0
-    while count != 50:
-        await RisingEdge(dut.clk)
-        await Timer(10_000, "ns")
-        count += 1
-
-
-@cocotb.test()
-async def test_task_close_down(dut):
+# worst case wait is max(time of task_one, time of task_two)
+# worst case of task_one is 5*(clock+wait) = 5*(10+100) = 550
+# worst case of task_two is 5*(clock+wait) = 5*(10+1000) = 5050
+@cocotb.test(timeout_time=5100, timeout_unit="ns")
+async def test_task_close_down(dut) -> None:
     """Test tasks completing allows awaiting task to continue."""
-    log = logging.getLogger("cocotb.test")
-    cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
 
-    task_one = cocotb.start_soon(clock_one(dut))
-    task_two = cocotb.start_soon(clock_two(dut))
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+
+    async def wait_on_clock_and_timer(time_ns: int) -> None:
+        for _ in range(5):
+            await RisingEdge(dut.clk)
+            await Timer(time_ns, "ns")
+
+    task_one = cocotb.start_soon(wait_on_clock_and_timer(time_ns=100))
+    task_two = cocotb.start_soon(wait_on_clock_and_timer(time_ns=1000))
 
     await task_one
     await task_two
-
-    log.info("Back from joins")
 
 
 @cocotb.test()
