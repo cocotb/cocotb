@@ -248,24 +248,30 @@ _T = TypeVar("_T", bound=type)
 _Value = TypeVar("_Value", bound=object)
 
 
-def singleton(orig_cls: _T) -> _T:
-    """Class decorator which turns a type into a Singleton type."""
-    orig_new = orig_cls.__new__
-    orig_init = orig_cls.__init__
-    instance = None
+if TYPE_CHECKING:
 
-    @wraps(orig_cls.__new__)
-    def __new__(cls: Type[_Value], *args: Any, **kwargs: Any) -> _Value:
-        nonlocal instance
-        if instance is None:
-            instance = orig_new(cls, *args, **kwargs)
-            orig_init(instance, *args, **kwargs)
-        return instance
+    def singleton(orig_cls: _T) -> _T: ...
 
-    @wraps(orig_cls.__init__)
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        pass
+else:
 
-    orig_cls.__new__ = __new__
-    orig_cls.__init__ = __init__
-    return orig_cls
+    def singleton(orig_cls):
+        """Class decorator which turns a type into a Singleton type."""
+        orig_new = orig_cls.__new__
+        orig_init = orig_cls.__init__
+        instance = None
+
+        @wraps(orig_cls.__new__)
+        def __new__(cls: Type[_Value], *args: Any, **kwargs: Any) -> _Value:
+            nonlocal instance
+            if instance is None:
+                instance = orig_new(cls, *args, **kwargs)
+                orig_init(instance, *args, **kwargs)
+            return instance
+
+        @wraps(orig_cls.__init__)
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        orig_cls.__new__ = __new__
+        orig_cls.__init__ = __init__
+        return orig_cls
