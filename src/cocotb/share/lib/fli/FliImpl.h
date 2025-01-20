@@ -162,7 +162,7 @@ class FliObj {
 
 class FliObjHdl : public GpiObjHdl, public FliObj {
   public:
-    FliObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype,
+    FliObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype objtype,
               int acc_type, int acc_full_type, bool is_const = false)
         : GpiObjHdl(impl, hdl, objtype, is_const),
           FliObj(acc_type, acc_full_type) {}
@@ -173,7 +173,7 @@ class FliObjHdl : public GpiObjHdl, public FliObj {
 
 class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
   public:
-    FliSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype,
+    FliSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype objtype,
                     bool is_const, int acc_type, int acc_full_type, bool is_var)
         : GpiSignalObjHdl(impl, hdl, objtype, is_const),
           FliObj(acc_type, acc_full_type),
@@ -193,7 +193,7 @@ class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
 
 class FliValueObjHdl : public FliSignalObjHdl {
   public:
-    FliValueObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype,
+    FliValueObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype objtype,
                    bool is_const, int acc_type, int acc_full_type, bool is_var,
                    mtiTypeIdT valType, mtiTypeKindT typeKind)
         : FliSignalObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type,
@@ -211,12 +211,12 @@ class FliValueObjHdl : public FliSignalObjHdl {
     double get_signal_value_real() override;
     long get_signal_value_long() override;
 
-    int set_signal_value(int32_t value, gpi_set_action_t action) override;
-    int set_signal_value(double value, gpi_set_action_t action) override;
+    int set_signal_value(int32_t value, gpi_set_action action) override;
+    int set_signal_value(double value, gpi_set_action action) override;
     int set_signal_value_str(std::string &value,
-                             gpi_set_action_t action) override;
+                             gpi_set_action action) override;
     int set_signal_value_binstr(std::string &value,
-                                gpi_set_action_t action) override;
+                                gpi_set_action action) override;
 
     void *get_sub_hdl(int index);
 
@@ -235,7 +235,7 @@ class FliValueObjHdl : public FliSignalObjHdl {
 
 class FliEnumObjHdl : public FliValueObjHdl {
   public:
-    FliEnumObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype,
+    FliEnumObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype objtype,
                   bool is_const, int acc_type, int acc_full_type, bool is_var,
                   mtiTypeIdT valType, mtiTypeKindT typeKind)
         : FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type,
@@ -245,7 +245,7 @@ class FliEnumObjHdl : public FliValueObjHdl {
     long get_signal_value_long() override;
 
     using FliValueObjHdl::set_signal_value;
-    int set_signal_value(int32_t value, gpi_set_action_t action) override;
+    int set_signal_value(int32_t value, gpi_set_action action) override;
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
@@ -257,7 +257,7 @@ class FliEnumObjHdl : public FliValueObjHdl {
 
 class FliLogicObjHdl : public FliValueObjHdl {
   public:
-    FliLogicObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype,
+    FliLogicObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype objtype,
                    bool is_const, int acc_type, int acc_full_type, bool is_var,
                    mtiTypeIdT valType, mtiTypeKindT typeKind)
         : FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type,
@@ -270,9 +270,9 @@ class FliLogicObjHdl : public FliValueObjHdl {
     const char *get_signal_value_binstr() override;
 
     using FliValueObjHdl::set_signal_value;
-    int set_signal_value(int32_t value, gpi_set_action_t action) override;
+    int set_signal_value(int32_t value, gpi_set_action action) override;
     int set_signal_value_binstr(std::string &value,
-                                gpi_set_action_t action) override;
+                                gpi_set_action action) override;
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
@@ -286,7 +286,7 @@ class FliLogicObjHdl : public FliValueObjHdl {
 
 class FliIntObjHdl : public FliValueObjHdl {
   public:
-    FliIntObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype,
+    FliIntObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype objtype,
                  bool is_const, int acc_type, int acc_full_type, bool is_var,
                  mtiTypeIdT valType, mtiTypeKindT typeKind)
         : FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type,
@@ -296,7 +296,7 @@ class FliIntObjHdl : public FliValueObjHdl {
     long get_signal_value_long() override;
 
     using FliValueObjHdl::set_signal_value;
-    int set_signal_value(int32_t value, gpi_set_action_t action) override;
+    int set_signal_value(int32_t value, gpi_set_action action) override;
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
@@ -304,7 +304,7 @@ class FliIntObjHdl : public FliValueObjHdl {
 
 class FliRealObjHdl : public FliValueObjHdl {
   public:
-    FliRealObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype,
+    FliRealObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype objtype,
                   bool is_const, int acc_type, int acc_full_type, bool is_var,
                   mtiTypeIdT valType, mtiTypeKindT typeKind)
         : FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type,
@@ -317,7 +317,7 @@ class FliRealObjHdl : public FliValueObjHdl {
     double get_signal_value_real() override;
 
     using FliValueObjHdl::set_signal_value;
-    int set_signal_value(double value, gpi_set_action_t action) override;
+    int set_signal_value(double value, gpi_set_action action) override;
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
@@ -328,7 +328,7 @@ class FliRealObjHdl : public FliValueObjHdl {
 
 class FliStringObjHdl : public FliValueObjHdl {
   public:
-    FliStringObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype,
+    FliStringObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype objtype,
                     bool is_const, int acc_type, int acc_full_type, bool is_var,
                     mtiTypeIdT valType, mtiTypeKindT typeKind)
         : FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type,
@@ -342,7 +342,7 @@ class FliStringObjHdl : public FliValueObjHdl {
 
     using FliValueObjHdl::set_signal_value;
     int set_signal_value_str(std::string &value,
-                             gpi_set_action_t action) override;
+                             gpi_set_action action) override;
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
@@ -422,7 +422,7 @@ class FliImpl : public GpiImplInterface {
     GpiObjHdl *native_check_create(void *raw_hdl, GpiObjHdl *paret) override;
     GpiObjHdl *get_root_handle(const char *name) override;
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl,
-                                gpi_iterator_sel_t type) override;
+                                gpi_iterator_sel type) override;
 
     /* Callback related, these may (will) return the same handle*/
     GpiCbHdl *register_timed_callback(uint64_t time, int (*function)(void *),

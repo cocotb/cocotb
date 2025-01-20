@@ -101,8 +101,8 @@ const char *VpiImpl::get_simulator_version() {
     return m_version.c_str();
 }
 
-static gpi_objtype_t to_gpi_objtype(int32_t vpitype, int num_elements = 0,
-                                    bool is_vector = false) {
+static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
+                                  bool is_vector = false) {
     switch (vpitype) {
         case vpiNet:
         case vpiNetBit:
@@ -166,7 +166,7 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype, int num_elements = 0,
     }
 }
 
-static gpi_objtype_t const_type_to_gpi_objtype(int32_t const_type) {
+static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
     // Most simulators only return vpiDecConst or vpiBinaryConst
     switch (const_type) {
 #ifdef IUS
@@ -451,7 +451,7 @@ GpiObjHdl *VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
     char buff[14];  // needs to be large enough to hold -2^31 to 2^31-1 in
                     // string form ('['+'-'10+']'+'\0')
 
-    gpi_objtype_t obj_type = parent->get_type();
+    gpi_objtype obj_type = parent->get_type();
 
     if (obj_type == GPI_GENARRAY) {
         snprintf(buff, 14, "[%d]", index);
@@ -632,7 +632,7 @@ error:
 }
 
 GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
-                                     gpi_iterator_sel_t type) {
+                                     gpi_iterator_sel type) {
     GpiIterator *new_iter = NULL;
     switch (type) {
         case GPI_OBJECTS:

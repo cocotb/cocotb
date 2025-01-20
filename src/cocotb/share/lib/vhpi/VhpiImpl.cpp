@@ -283,7 +283,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                                                 const std::string &name,
                                                 const std::string &fq_name) {
     vhpiIntT type;
-    gpi_objtype_t gpi_type;
+    gpi_objtype gpi_type;
     GpiObjHdl *new_obj = NULL;
 
     if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
@@ -615,7 +615,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
     char buff[14];  // needs to be large enough to hold -2^31 to 2^31-1 in
                     // string form ('(''-'10+'')'\0')
 
-    gpi_objtype_t obj_type = parent->get_type();
+    gpi_objtype obj_type = parent->get_type();
 
     if (obj_type == GPI_GENARRAY) {
         LOG_DEBUG(
@@ -966,7 +966,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char *name) {
 }
 
 GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
-                                      gpi_iterator_sel_t type) {
+                                      gpi_iterator_sel type) {
     GpiIterator *new_iter = NULL;
 
     switch (type) {

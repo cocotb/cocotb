@@ -487,7 +487,7 @@ static PyObject *iterate(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args) {
         return NULL;
     }
 
-    gpi_iterator_hdl result = gpi_iterate(self->hdl, (gpi_iterator_sel_t)type);
+    gpi_iterator_hdl result = gpi_iterate(self->hdl, (gpi_iterator_sel)type);
 
     return gpi_hdl_New(result);
 }
@@ -554,7 +554,7 @@ static PyObject *get_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self,
 static PyObject *set_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self,
                                        PyObject *args) {
     const char *binstr;
-    gpi_set_action_t action;
+    gpi_set_action action;
 
     if (!PyArg_ParseTuple(args, "is:set_signal_val_binstr", &action, &binstr)) {
         return NULL;
@@ -566,7 +566,7 @@ static PyObject *set_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self,
 
 static PyObject *set_signal_val_str(gpi_hdl_Object<gpi_sim_hdl> *self,
                                     PyObject *args) {
-    gpi_set_action_t action;
+    gpi_set_action action;
     const char *str;
 
     if (!PyArg_ParseTuple(args, "iy:set_signal_val_str", &action, &str)) {
@@ -580,7 +580,7 @@ static PyObject *set_signal_val_str(gpi_hdl_Object<gpi_sim_hdl> *self,
 static PyObject *set_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self,
                                      PyObject *args) {
     double value;
-    gpi_set_action_t action;
+    gpi_set_action action;
 
     if (!PyArg_ParseTuple(args, "id:set_signal_val_real", &action, &value)) {
         return NULL;
@@ -593,7 +593,7 @@ static PyObject *set_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self,
 static PyObject *set_signal_val_int(gpi_hdl_Object<gpi_sim_hdl> *self,
                                     PyObject *args) {
     long long value;
-    gpi_set_action_t action;
+    gpi_set_action action;
 
     if (!PyArg_ParseTuple(args, "iL:set_signal_val_int", &action, &value)) {
         return NULL;
@@ -668,7 +668,7 @@ static PyObject *get_name_string(gpi_hdl_Object<gpi_sim_hdl> *self,
 }
 
 static PyObject *get_type(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
-    gpi_objtype_t result = gpi_get_object_type(self->hdl);
+    gpi_objtype result = gpi_get_object_type(self->hdl);
     return PyLong_FromLong(result);
 }
 

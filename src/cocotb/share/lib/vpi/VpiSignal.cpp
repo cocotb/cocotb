@@ -156,7 +156,7 @@ long VpiSignalObjHdl::get_signal_value_long() {
 }
 
 // Value related functions
-int VpiSignalObjHdl::set_signal_value(int32_t value, gpi_set_action_t action) {
+int VpiSignalObjHdl::set_signal_value(int32_t value, gpi_set_action action) {
     s_vpi_value value_s;
 
     value_s.value.integer = static_cast<PLI_INT32>(value);
@@ -165,7 +165,7 @@ int VpiSignalObjHdl::set_signal_value(int32_t value, gpi_set_action_t action) {
     return set_signal_value(value_s, action);
 }
 
-int VpiSignalObjHdl::set_signal_value(double value, gpi_set_action_t action) {
+int VpiSignalObjHdl::set_signal_value(double value, gpi_set_action action) {
     s_vpi_value value_s;
 
     value_s.value.real = value;
@@ -175,7 +175,7 @@ int VpiSignalObjHdl::set_signal_value(double value, gpi_set_action_t action) {
 }
 
 int VpiSignalObjHdl::set_signal_value_binstr(std::string &value,
-                                             gpi_set_action_t action) {
+                                             gpi_set_action action) {
     s_vpi_value value_s;
 
     std::vector<char> writable(value.begin(), value.end());
@@ -188,7 +188,7 @@ int VpiSignalObjHdl::set_signal_value_binstr(std::string &value,
 }
 
 int VpiSignalObjHdl::set_signal_value_str(std::string &value,
-                                          gpi_set_action_t action) {
+                                          gpi_set_action action) {
     s_vpi_value value_s;
 
     std::vector<char> writable(value.begin(), value.end());
@@ -201,7 +201,7 @@ int VpiSignalObjHdl::set_signal_value_str(std::string &value,
 }
 
 int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s,
-                                      gpi_set_action_t action) {
+                                      gpi_set_action action) {
     PLI_INT32 vpi_put_flag = -1;
     s_vpi_time vpi_time_s;
 

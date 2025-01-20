@@ -156,7 +156,7 @@ class VpiShutdownCbHdl : public VpiCbHdl {
 
 class VpiArrayObjHdl : public GpiObjHdl {
   public:
-    VpiArrayObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype)
+    VpiArrayObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype)
         : GpiObjHdl(impl, hdl, objtype) {}
 
     int initialise(const std::string &name,
@@ -165,7 +165,7 @@ class VpiArrayObjHdl : public GpiObjHdl {
 
 class VpiObjHdl : public GpiObjHdl {
   public:
-    VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype)
+    VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype)
         : GpiObjHdl(impl, hdl, objtype) {}
 
     const char *get_definition_name() override;
@@ -174,8 +174,8 @@ class VpiObjHdl : public GpiObjHdl {
 
 class VpiSignalObjHdl : public GpiSignalObjHdl {
   public:
-    VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl,
-                    gpi_objtype_t objtype, bool is_const)
+    VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype,
+                    bool is_const)
         : GpiSignalObjHdl(impl, hdl, objtype, is_const) {}
 
     const char *get_signal_value_binstr() override;
@@ -183,12 +183,12 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
     double get_signal_value_real() override;
     long get_signal_value_long() override;
 
-    int set_signal_value(const int32_t value, gpi_set_action_t action) override;
-    int set_signal_value(const double value, gpi_set_action_t action) override;
+    int set_signal_value(const int32_t value, gpi_set_action action) override;
+    int set_signal_value(const double value, gpi_set_action action) override;
     int set_signal_value_binstr(std::string &value,
-                                gpi_set_action_t action) override;
+                                gpi_set_action action) override;
     int set_signal_value_str(std::string &value,
-                             gpi_set_action_t action) override;
+                             gpi_set_action action) override;
 
     /* Value change callback accessor */
     int initialise(const std::string &name,
@@ -198,7 +198,7 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
                                              void *cb_data) override;
 
   private:
-    int set_signal_value(s_vpi_value value, gpi_set_action_t action);
+    int set_signal_value(s_vpi_value value, gpi_set_action action);
 };
 
 class VpiIterator : public GpiIterator {
@@ -284,7 +284,7 @@ class VpiImpl : public GpiImplInterface {
     /* Hierarchy related */
     GpiObjHdl *get_root_handle(const char *name) override;
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl,
-                                gpi_iterator_sel_t type) override;
+                                gpi_iterator_sel type) override;
     GpiObjHdl *next_handle(GpiIterator *iter);
 
     /* Callback related, these may (will) return the same handle*/

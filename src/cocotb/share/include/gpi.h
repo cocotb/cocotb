@@ -160,7 +160,7 @@ typedef enum gpi_objtype_e {
     GPI_PACKED_STRUCTURE = 14,
     GPI_LOGIC = 15,
     GPI_LOGIC_ARRAY = 16,
-} gpi_objtype_t;
+} gpi_objtype;
 
 // When iterating, we can chose to either get child objects, drivers or loads
 typedef enum gpi_iterator_sel_e {
@@ -168,14 +168,14 @@ typedef enum gpi_iterator_sel_e {
     GPI_DRIVERS = 2,
     GPI_LOADS = 3,
     GPI_PACKAGE_SCOPES = 4,
-} gpi_iterator_sel_t;
+} gpi_iterator_sel;
 
 typedef enum gpi_set_action_e {
     GPI_DEPOSIT = 0,
     GPI_FORCE = 1,
     GPI_RELEASE = 2,
     GPI_NO_DELAY = 3,
-} gpi_set_action_t;
+} gpi_set_action;
 
 typedef enum gpi_range_dir_e {
     GPI_RANGE_DOWN = -1,
@@ -196,7 +196,7 @@ typedef enum gpi_edge_e {
 // not supported, If no objects of the requested type are found, an empty
 // iterator is returned.
 GPI_EXPORT gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base,
-                                        gpi_iterator_sel_t type);
+                                        gpi_iterator_sel type);
 
 // Returns NULL when there are no more objects
 GPI_EXPORT gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
@@ -226,7 +226,7 @@ GPI_EXPORT const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
 GPI_EXPORT const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
 // Returns one of the types defined above e.g. gpiMemory etc.
-GPI_EXPORT gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT gpi_objtype gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 
 // Get information about the definition of a handle
 GPI_EXPORT const char *gpi_get_definition_name(gpi_sim_hdl gpi_hdl);
@@ -240,15 +240,15 @@ GPI_EXPORT int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
 
 // Functions for setting the properties of a handle
 GPI_EXPORT void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value,
-                                          gpi_set_action_t action);
+                                          gpi_set_action action);
 GPI_EXPORT void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int32_t value,
-                                         gpi_set_action_t action);
+                                         gpi_set_action action);
 GPI_EXPORT void gpi_set_signal_value_binstr(
     gpi_sim_hdl gpi_hdl, const char *str,
-    gpi_set_action_t action);  // String of binary char(s) [1, 0, x, z]
+    gpi_set_action action);  // String of binary char(s) [1, 0, x, z]
 GPI_EXPORT void gpi_set_signal_value_str(
     gpi_sim_hdl gpi_hdl, const char *str,
-    gpi_set_action_t action);  // String of ASCII char(s)
+    gpi_set_action action);  // String of ASCII char(s)
 
 // The callback registering functions
 GPI_EXPORT gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),

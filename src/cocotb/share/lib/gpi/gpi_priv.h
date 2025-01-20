@@ -89,7 +89,7 @@ class GPI_EXPORT GpiHdl {
 class GPI_EXPORT GpiObjHdl : public GpiHdl {
   public:
     GpiObjHdl(GpiImplInterface *impl, void *hdl = nullptr,
-              gpi_objtype_t objtype = GPI_UNKNOWN, bool is_const = false)
+              gpi_objtype objtype = GPI_UNKNOWN, bool is_const = false)
         : GpiHdl(impl, hdl), m_type(objtype), m_const(is_const) {}
 
     virtual ~GpiObjHdl() = default;
@@ -97,7 +97,7 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     virtual const char *get_name_str();
     virtual const char *get_fullname_str();
     virtual const char *get_type_str();
-    gpi_objtype_t get_type() { return m_type; };
+    gpi_objtype get_type() { return m_type; };
     bool get_const() { return m_const; };
     int get_num_elems() {
         LOG_DEBUG("%s has %d elements", m_name.c_str(), m_num_elems);
@@ -137,7 +137,7 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     std::string m_definition_name;
     std::string m_definition_file;
 
-    gpi_objtype_t m_type;
+    gpi_objtype m_type;
     bool m_const;
 };
 
@@ -159,13 +159,12 @@ class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
     int m_length = 0;
 
     virtual int set_signal_value(const int32_t value,
-                                 gpi_set_action_t action) = 0;
-    virtual int set_signal_value(const double value,
-                                 gpi_set_action_t action) = 0;
+                                 gpi_set_action action) = 0;
+    virtual int set_signal_value(const double value, gpi_set_action action) = 0;
     virtual int set_signal_value_str(std::string &value,
-                                     gpi_set_action_t action) = 0;
+                                     gpi_set_action action) = 0;
     virtual int set_signal_value_binstr(std::string &value,
-                                        gpi_set_action_t action) = 0;
+                                        gpi_set_action action) = 0;
     // virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the
     // triggers
     // but the explicit ones are probably better
@@ -262,7 +261,7 @@ class GPI_EXPORT GpiImplInterface {
                                            GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
     virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl,
-                                        gpi_iterator_sel_t type) = 0;
+                                        gpi_iterator_sel type) = 0;
 
     /* Callback related, these may (will) return the same handle */
     virtual GpiCbHdl *register_timed_callback(uint64_t time,

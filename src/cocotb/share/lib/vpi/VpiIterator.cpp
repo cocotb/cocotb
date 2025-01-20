@@ -246,7 +246,7 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
 
     if (!selected) return GpiIterator::END;
 
-    gpi_objtype_t obj_type = m_parent->get_type();
+    gpi_objtype obj_type = m_parent->get_type();
     std::string parent_name = m_parent->get_name();
 
     do {
