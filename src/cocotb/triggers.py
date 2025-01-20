@@ -33,7 +33,6 @@ from abc import abstractmethod
 from decimal import Decimal
 from fractions import Fraction
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncContextManager,
     Awaitable,
@@ -57,11 +56,7 @@ from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
-from cocotb._utils import (
-    ParameterizedSingletonMetaclass,
-    remove_traceback_frames,
-    singleton,
-)
+from cocotb._utils import remove_traceback_frames, singleton
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 T = TypeVar("T")
@@ -263,19 +258,6 @@ class Timer(GPITrigger):
         )
 
 
-# TODO: In Python < 3.8 the metaclass of typing objects doesn't work well with other metaclasses.
-# TODO: This can be removed once Python 3.8 becomes standard.
-if TYPE_CHECKING:  # pragma: no cover
-    GPITriggerMetaclass = type
-else:
-    GPITriggerMetaclass = type(GPITrigger)
-
-
-class _ParameterizedSingletonGPITriggerMetaclass(
-    ParameterizedSingletonMetaclass, GPITriggerMetaclass
-): ...
-
-
 @singleton
 class ReadOnly(GPITrigger):
     """Fires when the current simulation timestep moves to the read-only phase.
@@ -335,14 +317,25 @@ class NextTimeStep(GPITrigger):
         return f"{type(self).__qualname__}()"
 
 
-class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonGPITriggerMetaclass):
+_SignalType = TypeVar("_SignalType", bound="cocotb.handle.ValueObjectBase[Any, Any]")
+_EdgeBaseSelf = TypeVar("_EdgeBaseSelf", bound="_EdgeBase")
+
+
+class _EdgeBase(GPITrigger, Generic[_SignalType]):
     """Internal base class that fires on a given edge of a signal."""
 
     _edge_type: ClassVar[int]
+    signal: _SignalType
 
-    def __init__(self, signal: cocotb.handle.ValueObjectBase[Any, Any]) -> None:
-        super().__init__()
+    @classmethod
+    def _make(cls: Type[_EdgeBaseSelf], signal: _SignalType) -> _EdgeBaseSelf:
+        self = GPITrigger.__new__(cls)
+        GPITrigger.__init__(self)
         self.signal = signal
+        return self
+
+    def __init__(self, _: _SignalType) -> None:
+        pass
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._cbhdl is None:
@@ -368,6 +361,9 @@ class RisingEdge(_EdgeBase):
     Raises:
         TypeError: If *signal* is not a 1-bit ``logic`` or ``bit``-typed object.
 
+    .. note::
+        Prefer :attr:`await signal.rising_edge <cocotb.handle.LogicObject.rising_edge>` to ``await RisingEdge(signal)``.
+
     .. warning::
         On many simulators this will trigger on transitions from non-``0``/``1`` value to ``1``,
         not just from ``0`` to ``1`` like the ``rising_edge`` function in VHDL.
@@ -375,15 +371,12 @@ class RisingEdge(_EdgeBase):
 
     _edge_type = simulator.RISING
 
-    @classmethod
-    def __singleton_key__(
-        cls, signal: cocotb.handle.LogicObject
-    ) -> cocotb.handle.LogicObject:
+    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "RisingEdge":
         if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
                 f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
             )
-        return signal
+        return signal.rising_edge
 
 
 class FallingEdge(_EdgeBase):
@@ -397,6 +390,9 @@ class FallingEdge(_EdgeBase):
     Raises:
         TypeError: If *signal* is not a 1-bit ``logic`` or ``bit``-typed object.
 
+    .. note::
+        Prefer :attr:`await signal.falling_edge <cocotb.handle.LogicObject.falling_edge>` to ``await FallingEdge(signal)``.
+
     .. warning::
         On many simulators this will trigger on transitions from non-``0``/``1`` value to ``0``,
         not just from ``1`` to ``0`` like the ``falling_edge`` function in VHDL.
@@ -404,18 +400,15 @@ class FallingEdge(_EdgeBase):
 
     _edge_type = simulator.FALLING
 
-    @classmethod
-    def __singleton_key__(
-        cls, signal: cocotb.handle.LogicObject
-    ) -> cocotb.handle.LogicObject:
+    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "FallingEdge":
         if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
                 f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
             )
-        return signal
+        return signal.falling_edge
 
 
-class Edge(_EdgeBase):
+class ValueChange(_EdgeBase):
     """Fires on any value change of *signal*.
 
     Args:
@@ -423,19 +416,40 @@ class Edge(_EdgeBase):
 
     Raises:
         TypeError: If the signal is not an object which can change value.
+
+    .. note::
+        Prefer :attr:`await signal.value_change <cocotb.handle.NonArrayValueObject.rising_edge>` to ``await ValueChange(signal)``.
+
+    .. versionadded: 2.0
     """
 
     _edge_type = simulator.VALUE_CHANGE
 
-    @classmethod
-    def __singleton_key__(
-        cls, signal: cocotb.handle.ValueObjectBase[Any, Any]
-    ) -> cocotb.handle.ValueObjectBase[Any, Any]:
-        if not isinstance(signal, cocotb.handle.ValueObjectBase):
+    def __new__(
+        cls, signal: "cocotb.handle.NonArrayValueObject[Any, Any]"
+    ) -> "ValueChange":
+        if not isinstance(signal, cocotb.handle.NonArrayValueObject):
             raise TypeError(
-                f"{cls.__qualname__} requires an object derived from ValueObjectBase which can change value. Got {signal!r} of type {type(signal).__qualname__}"
+                f"{cls.__qualname__} requires an object derived from NonArrayValueObject which can change value. Got {signal!r} of type {type(signal).__qualname__}"
             )
-        return signal
+        return signal.value_change
+
+
+@deprecated("Use `signal.value_change` instead.")
+def Edge(signal: "cocotb.handle.NonArrayValueObject[Any, Any]") -> ValueChange:
+    """Fires on any value change of *signal*.
+
+    Args:
+        signal: The signal upon which to wait for a value change.
+
+    Raises:
+        TypeError: If the signal is not an object which can change value.
+
+    .. deprecated: 2.0
+
+        Use :attr:`signal.value_change <cocotb.handle.NonArrayValueObject.value_change>` instead.
+    """
+    return ValueChange(signal)
 
 
 class _Event(Trigger):
@@ -1030,51 +1044,55 @@ class ClockCycles(Waitable["ClockCycles"]):
         not just from ``1`` to ``0`` or ``0`` to ``1``.
 
     .. versionadded:: 2.0
-        Passing the edge trigger type: :class:`.RisingEdge`, :class:`.FallingEdge`, or :class:`.Edge`
+        Passing the edge trigger type: :class:`.RisingEdge`, :class:`.FallingEdge`, or :class:`.ValueChange`
         as the third positional argument or by the keyword *edge_type*.
     """
 
     @overload
     def __init__(
         self,
-        signal: cocotb.handle.LogicObject,
+        signal: "cocotb.handle.LogicObject",
         num_cycles: int,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        signal: cocotb.handle.LogicObject,
+        signal: "cocotb.handle.LogicObject",
         num_cycles: int,
-        _3: Union[bool, Type[RisingEdge], Type[FallingEdge], Type[Edge]],
+        _3: Union[bool, Type[RisingEdge], Type[FallingEdge], Type[ValueChange]],
     ) -> None: ...
 
     @overload
     def __init__(
-        self, signal: cocotb.handle.LogicObject, num_cycles: int, *, rising: bool
+        self, signal: "cocotb.handle.LogicObject", num_cycles: int, *, rising: bool
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        signal: cocotb.handle.LogicObject,
+        signal: "cocotb.handle.LogicObject",
         num_cycles: int,
         *,
-        edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[Edge]],
+        edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[ValueChange]],
     ) -> None: ...
 
     def __init__(
         self,
-        signal: cocotb.handle.LogicObject,
+        signal: "cocotb.handle.LogicObject",
         num_cycles: int,
-        _3: Union[bool, Type[RisingEdge], Type[FallingEdge], Type[Edge], None] = None,
+        _3: Union[
+            bool, Type[RisingEdge], Type[FallingEdge], Type[ValueChange], None
+        ] = None,
         *,
         rising: Union[bool, None] = None,
-        edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[Edge], None] = None,
+        edge_type: Union[
+            Type[RisingEdge], Type[FallingEdge], Type[ValueChange], None
+        ] = None,
     ) -> None:
         self._signal = signal
         self._num_cycles = num_cycles
-        self._edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[Edge]]
+        self._edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[ValueChange]]
         if _3 is not None:
             if rising is not None or edge_type is not None:
                 raise TypeError("Passed more than one edge selection argument.")
@@ -1095,7 +1113,7 @@ class ClockCycles(Waitable["ClockCycles"]):
             self._edge_type = RisingEdge
 
     @property
-    def signal(self) -> cocotb.handle.LogicObject:
+    def signal(self) -> "cocotb.handle.LogicObject":
         """The signal being monitored."""
         return self._signal
 
@@ -1105,7 +1123,9 @@ class ClockCycles(Waitable["ClockCycles"]):
         return self._num_cycles
 
     @property
-    def edge_type(self) -> Union[Type[RisingEdge], Type[FallingEdge], Type[Edge]]:
+    def edge_type(
+        self,
+    ) -> Union[Type[RisingEdge], Type[FallingEdge], Type[ValueChange]]:
         """The type of edge trigger used."""
         return self._edge_type
 

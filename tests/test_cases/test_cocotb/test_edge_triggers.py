@@ -4,7 +4,7 @@
 """
 Tests for edge triggers
 
-* Edge
+* ValueChange
 * RisingEdge
 * FallingEdge
 * ClockCycles
@@ -21,13 +21,13 @@ from cocotb.clock import Clock
 from cocotb.triggers import (
     ClockCycles,
     Combine,
-    Edge,
     FallingEdge,
     First,
     ReadOnly,
     RisingEdge,
     SimTimeoutError,
     Timer,
+    ValueChange,
     with_timeout,
 )
 from cocotb.utils import get_sim_time
@@ -88,27 +88,27 @@ async def test_either_edge(dut):
     dut.clk.value = 0
     await Timer(1, "ns")
     dut.clk.value = 1
-    await Edge(dut.clk)
+    await ValueChange(dut.clk)
     assert dut.clk.value == 1
     await Timer(10, "ns")
     dut.clk.value = 0
-    await Edge(dut.clk)
+    await ValueChange(dut.clk)
     assert dut.clk.value == 0
     await Timer(10, "ns")
     dut.clk.value = 1
-    await Edge(dut.clk)
+    await ValueChange(dut.clk)
     assert dut.clk.value == 1
     await Timer(10, "ns")
     dut.clk.value = 0
-    await Edge(dut.clk)
+    await ValueChange(dut.clk)
     assert dut.clk.value == 0
     await Timer(10, "ns")
     dut.clk.value = 1
-    await Edge(dut.clk)
+    await ValueChange(dut.clk)
     assert dut.clk.value == 1
     await Timer(10, "ns")
     dut.clk.value = 0
-    await Edge(dut.clk)
+    await ValueChange(dut.clk)
     assert dut.clk.value == 0
 
 
@@ -172,32 +172,43 @@ async def test_edge_count(dut):
 @cocotb.test()
 async def test_edge_identity(dut):
     """
-    Test that Edge triggers returns the same object each time
+    Test that ValueChange triggers returns the same object each time
     """
 
     re = RisingEdge(dut.clk)
     fe = FallingEdge(dut.clk)
-    e = Edge(dut.clk)
+    e = ValueChange(dut.clk)
 
     assert re is RisingEdge(dut.clk)
     assert fe is FallingEdge(dut.clk)
-    assert e is Edge(dut.clk)
+    assert e is ValueChange(dut.clk)
 
     # check they are all unique
     assert len({re, fe, e}) == 3
     await Timer(1, "ns")
 
 
-@cocotb.test()
-async def test_singleton_isinstance(dut):
+@cocotb.test
+async def test_trigger_result_type(dut) -> None:
     """
     Test that the result of trigger expression have a predictable type
     """
-    assert isinstance(RisingEdge(dut.clk), RisingEdge)
-    assert isinstance(FallingEdge(dut.clk), FallingEdge)
-    assert isinstance(Edge(dut.clk), Edge)
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
-    await Timer(1, "ns")
+    r = RisingEdge(dut.clk)
+    assert r is dut.clk.rising_edge
+    assert (await r) is r
+    assert (await dut.clk.rising_edge) is dut.clk.rising_edge
+
+    f = FallingEdge(dut.clk)
+    assert f is dut.clk.falling_edge
+    assert (await f) is f
+    assert (await dut.clk.falling_edge) is dut.clk.falling_edge
+
+    vc = ValueChange(dut.clk)
+    assert vc is dut.clk.value_change
+    assert (await vc) is vc
+    assert (await dut.clk.value_change) is dut.clk.value_change
 
 
 @cocotb.test()
@@ -248,7 +259,7 @@ async def test_clock_cycles(dut):
     # test other edge type construction
     assert ClockCycles(clk, cycles, True).edge_type is RisingEdge
     assert ClockCycles(clk, cycles, False).edge_type is FallingEdge
-    assert ClockCycles(clk, cycles, edge_type=Edge).edge_type is Edge
+    assert ClockCycles(clk, cycles, edge_type=ValueChange).edge_type is ValueChange
     assert ClockCycles(clk, cycles, rising=True).edge_type is RisingEdge
     assert ClockCycles(clk, cycles, rising=False).edge_type is FallingEdge
     assert ClockCycles(clk, cycles).edge_type is RisingEdge  # default
@@ -261,7 +272,7 @@ async def test_clock_cycles(dut):
     with pytest.raises(TypeError):
         ClockCycles(clk, cycles, rising=True, edge_type=RisingEdge)
     with pytest.raises(TypeError):
-        ClockCycles(clk, cycles, Edge, rising=True, edge_type=RisingEdge)
+        ClockCycles(clk, cycles, ValueChange, rising=True, edge_type=RisingEdge)
 
 
 @cocotb.test()
@@ -308,7 +319,7 @@ async def test_both_edge_triggers(dut):
 
 @cocotb.test()
 async def test_edge_on_vector(dut):
-    """Test that Edge() triggers on any 0/1 change in a vector"""
+    """Test that ValueChange() triggers on any 0/1 change in a vector"""
 
     cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
 
@@ -317,7 +328,7 @@ async def test_edge_on_vector(dut):
     async def wait_edge():
         nonlocal edge_cnt
         while True:
-            await Edge(dut.stream_out_data_registered)
+            await ValueChange(dut.stream_out_data_registered)
             if cocotb.SIM_NAME.lower().startswith("modelsim"):
                 await ReadOnly()  # not needed for other simulators
             edge_cnt = edge_cnt + 1
@@ -337,8 +348,8 @@ async def test_edge_on_vector(dut):
         await RisingEdge(dut.clk)
 
     # We have to wait because we don't know the scheduling order of the above
-    # Edge(dut.stream_out_data_registered) and the above RisingEdge(dut.clk)
-    # Edge(dut.stream_out_data_registered) should occur strictly after RisingEdge(dut.clk),
+    # ValueChange(dut.stream_out_data_registered) and the above RisingEdge(dut.clk)
+    # ValueChange(dut.stream_out_data_registered) should occur strictly after RisingEdge(dut.clk),
     # but NVC and Verilator behave differently.
     await RisingEdge(dut.clk)
 
@@ -356,7 +367,7 @@ async def test_edge_bad_handles(dut):
         FallingEdge(dut)
 
     with pytest.raises(TypeError):
-        Edge(dut)
+        ValueChange(dut)
 
     with pytest.raises(TypeError):
         RisingEdge(dut.stream_in_data)
@@ -375,7 +386,7 @@ async def test_edge_logic_vector(dut):
 
     cocotb.start_soon(change_stream_in_data())
 
-    await with_timeout(Edge(dut.stream_in_data), 20, "ns")
+    await with_timeout(ValueChange(dut.stream_in_data), 20, "ns")
 
 
 # icarus doesn't support integer inputs/outputs
@@ -389,25 +400,27 @@ async def test_edge_non_logic_handles(dut):
 
     cocotb.start_soon(change_stream_in_int())
 
-    await with_timeout(Edge(dut.stream_in_int), 20, "ns")
+    await with_timeout(ValueChange(dut.stream_in_int), 20, "ns")
 
 
-@cocotb.test()
-async def test_edge_trigger_repr(dut):
-    e = Edge(dut.clk)
+@cocotb.test
+async def test_edge_trigger_repr(dut) -> None:
+    e = ValueChange(dut.clk)
     # NVC gives upper-case identifiers for some things, so do case-insensitive match. See gh-3985
     assert re.match(
-        r"Edge\(LogicObject\(sample_module\.clk\)\)", repr(e), flags=re.IGNORECASE
-    )
-    e = RisingEdge(dut.stream_in_ready)
-    assert re.match(
-        r"RisingEdge\(LogicObject\(sample_module\.stream_in_ready\)\)",
+        r"ValueChange\(LogicObject\(sample_module\.clk\)\)",
         repr(e),
         flags=re.IGNORECASE,
     )
-    e = FallingEdge(dut.stream_in_valid)
+    f = RisingEdge(dut.stream_in_ready)
+    assert re.match(
+        r"RisingEdge\(LogicObject\(sample_module\.stream_in_ready\)\)",
+        repr(f),
+        flags=re.IGNORECASE,
+    )
+    g = FallingEdge(dut.stream_in_valid)
     assert re.match(
         r"FallingEdge\(LogicObject\(sample_module\.stream_in_valid\)\)",
-        repr(e),
+        repr(g),
         flags=re.IGNORECASE,
     )

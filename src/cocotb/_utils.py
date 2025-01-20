@@ -27,25 +27,19 @@
 
 """Utilities for implementors."""
 
-import inspect
 import os
 import sys
 import traceback
 import types
-import weakref
-from abc import ABCMeta
 from enum import Enum
 from functools import lru_cache, update_wrapper, wraps
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
     Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -53,39 +47,6 @@ from typing import (
     cast,
     overload,
 )
-
-
-class ParameterizedSingletonMetaclass(ABCMeta):
-    """A metaclass that allows class construction to reuse an existing instance.
-
-    We use this so that many triggers classes return the same object rather than make new ones.
-    """
-
-    __singleton_key__: Callable[..., Any]
-
-    def __init__(
-        cls, name: str, bases: Sequence[Type[object]], dct: Dict[str, Any]
-    ) -> None:
-        # Attach a lookup table to this class.
-        # Weak such that if the instance is no longer referenced, it can be
-        # collected.
-        cls.__instances: weakref.WeakValueDictionary[Any, Any] = (
-            weakref.WeakValueDictionary()
-        )
-
-    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
-        key = cls.__singleton_key__(*args, **kwargs)
-        try:
-            return cls.__instances[key]
-        except KeyError:
-            # construct the object as normal
-            self = super().__call__(*args, **kwargs)
-            cls.__instances[key] = self
-            return self
-
-    @property
-    def __signature__(cls) -> inspect.Signature:
-        return inspect.signature(cls.__singleton_key__)
 
 
 @lru_cache(maxsize=None)
