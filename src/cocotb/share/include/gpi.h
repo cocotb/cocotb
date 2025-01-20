@@ -183,6 +183,12 @@ typedef enum gpi_range_dir_e {
     GPI_RANGE_UP = 1,
 } gpi_range_dir;
 
+typedef enum gpi_edge_e {
+    GPI_RISING,
+    GPI_FALLING,
+    GPI_VALUE_CHANGE,
+} gpi_edge;
+
 // Functions for iterating over entries of a handle
 // Returns an iterator handle which can then be used in gpi_next calls
 //
@@ -244,19 +250,13 @@ GPI_EXPORT void gpi_set_signal_value_str(
     gpi_sim_hdl gpi_hdl, const char *str,
     gpi_set_action_t action);  // String of ASCII char(s)
 
-typedef enum gpi_edge {
-    GPI_RISING,
-    GPI_FALLING,
-    GPI_VALUE_CHANGE,
-} gpi_edge_e;
-
 // The callback registering functions
 GPI_EXPORT gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
                                                   void *gpi_cb_data,
                                                   uint64_t time);
 GPI_EXPORT gpi_cb_hdl gpi_register_value_change_callback(
     int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl,
-    gpi_edge_e edge);
+    gpi_edge edge);
 GPI_EXPORT gpi_cb_hdl
 gpi_register_readonly_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 GPI_EXPORT gpi_cb_hdl

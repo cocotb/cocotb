@@ -857,7 +857,7 @@ long VhpiSignalObjHdl::get_signal_value_long() {
 }
 
 GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
-    gpi_edge_e edge, int (*function)(void *), void *cb_data) {
+    gpi_edge edge, int (*function)(void *), void *cb_data) {
     VhpiValueCbHdl *cb = new VhpiValueCbHdl(m_impl, this, edge);
     cb->set_user_data(function, cb_data);
     if (cb->arm_callback()) {
@@ -867,7 +867,7 @@ GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
 }
 
 VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig,
-                               gpi_edge_e edge)
+                               gpi_edge edge)
     : GpiCbHdl(impl), VhpiCbHdl(impl), GpiValueCbHdl(impl, sig, edge) {
     cb_data.reason = vhpiCbValueChange;
     cb_data.time = &vhpi_time;

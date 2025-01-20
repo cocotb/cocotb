@@ -546,7 +546,7 @@ gpi_range_dir gpi_get_range_dir(gpi_sim_hdl obj_hdl) {
 gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *),
                                               void *gpi_cb_data,
                                               gpi_sim_hdl sig_hdl,
-                                              gpi_edge_e edge) {
+                                              gpi_edge edge) {
     GpiSignalObjHdl *signal_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
 
     /* Do something based on int & GPI_RISING | GPI_FALLING */

@@ -129,7 +129,7 @@ int FliSimPhaseCbHdl::arm_callback() {
 }
 
 FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface* impl, FliSignalObjHdl* sig_hdl,
-                               gpi_edge_e edge)
+                               gpi_edge edge)
     : GpiCbHdl(impl),
       FliProcessCbHdl(impl),
       GpiValueCbHdl(impl, sig_hdl, edge) {

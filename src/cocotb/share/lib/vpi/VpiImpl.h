@@ -106,8 +106,7 @@ class VpiSignalObjHdl;
 
 class VpiValueCbHdl : public VpiCbHdl, public GpiValueCbHdl {
   public:
-    VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig,
-                  gpi_edge_e edge);
+    VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig, gpi_edge edge);
     int cleanup_callback() override;
 
   private:
@@ -194,7 +193,7 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
     /* Value change callback accessor */
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
-    GpiCbHdl *register_value_change_callback(gpi_edge_e edge,
+    GpiCbHdl *register_value_change_callback(gpi_edge edge,
                                              int (*function)(void *),
                                              void *cb_data) override;
 

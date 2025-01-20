@@ -253,7 +253,7 @@ int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s,
 }
 
 GpiCbHdl *VpiSignalObjHdl::register_value_change_callback(
-    gpi_edge_e edge, int (*function)(void *), void *cb_data) {
+    gpi_edge edge, int (*function)(void *), void *cb_data) {
     VpiValueCbHdl *cb = new VpiValueCbHdl(this->m_impl, this, edge);
     cb->set_user_data(function, cb_data);
     if (cb->arm_callback()) {
