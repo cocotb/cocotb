@@ -58,7 +58,7 @@ logging.addLevelName(5, "TRACE")
 _COCOTB_LOG_LEVEL_DEFAULT = "INFO"
 
 
-def default_config():
+def default_config() -> None:
     """Apply the default cocotb log formatting to the root logger.
 
     This hooks up the logger to write to stdout, using either

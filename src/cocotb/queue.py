@@ -6,8 +6,7 @@ import collections
 import heapq
 from typing import Any, Deque, Generic, Tuple, TypeVar, cast
 
-import cocotb
-from cocotb.task import Task
+from cocotb.task import Task, current_task
 from cocotb.triggers import Event, _pointer_str
 
 
@@ -104,9 +103,7 @@ class Queue(Generic[T]):
         """
         while self.full():
             event = Event(f"{type(self).__name__} put")
-            self._putters.append(
-                (event, cast(Task[Any], cocotb._scheduler_inst._current_task))
-            )
+            self._putters.append((event, cast(Task[Any], current_task())))
             await event.wait()
         self.put_nowait(item)
 
@@ -127,9 +124,7 @@ class Queue(Generic[T]):
         """
         while self.empty():
             event = Event(f"{type(self).__name__} get")
-            self._getters.append(
-                (event, cast(Task[Any], cocotb._scheduler_inst._current_task))
-            )
+            self._getters.append((event, cast(Task[Any], current_task())))
             await event.wait()
         return self.get_nowait()
 
