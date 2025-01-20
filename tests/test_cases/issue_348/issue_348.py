@@ -1,5 +1,5 @@
 import cocotb
-from cocotb.triggers import Edge, FallingEdge, RisingEdge, Timer
+from cocotb.triggers import FallingEdge, RisingEdge, Timer, ValueChange
 
 
 async def clock_gen(signal, num):
@@ -48,5 +48,5 @@ async def issue_348_falling(dut):
 
 @cocotb.test()
 async def issue_348_either(dut):
-    """Start two monitors on Edge"""
-    await DualMonitor(Edge, dut.clk).start()
+    """Start two monitors on ValueChange"""
+    await DualMonitor(ValueChange, dut.clk).start()

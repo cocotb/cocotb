@@ -6,7 +6,7 @@ from afe import AFE
 import cocotb
 from cocotb.clock import Clock
 from cocotb.queue import Queue
-from cocotb.triggers import Edge, RisingEdge, Timer
+from cocotb.triggers import RisingEdge, Timer, ValueChange
 
 """
 This example uses the Python model of an Analog Front-End (AFE)
@@ -22,7 +22,7 @@ async def gain_select(digital, afe) -> None:
     """Set gain factor of PGA when gain select from the HDL changes."""
 
     while True:
-        await Edge(digital.pga_high_gain)
+        await ValueChange(digital.pga_high_gain)
         if digital.pga_high_gain.value == 0:
             afe.pga.gain = 5.0
         else:

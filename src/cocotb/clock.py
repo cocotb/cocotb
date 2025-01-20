@@ -40,7 +40,14 @@ from cocotb._write_scheduler import trust_inertial
 from cocotb.handle import LogicObject
 from cocotb.simulator import clock_create
 from cocotb.task import Task
-from cocotb.triggers import ClockCycles, Edge, Event, FallingEdge, RisingEdge, Timer
+from cocotb.triggers import (
+    ClockCycles,
+    Event,
+    FallingEdge,
+    RisingEdge,
+    Timer,
+    ValueChange,
+)
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -264,7 +271,9 @@ class Clock:
     async def cycles(
         self,
         num_cycles: int,
-        edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[Edge]] = RisingEdge,
+        edge_type: Union[
+            Type[RisingEdge], Type[FallingEdge], Type[ValueChange]
+        ] = RisingEdge,
     ) -> None:
         """Wait for a number of clock cycles."""
         # TODO Improve implementation to use a Timer to skip most of the cycles

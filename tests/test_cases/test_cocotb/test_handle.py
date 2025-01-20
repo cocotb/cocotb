@@ -14,7 +14,7 @@ import pytest
 import cocotb
 import cocotb.triggers
 from cocotb.handle import LogicArrayObject, StringObject, _Limits
-from cocotb.triggers import Edge, FallingEdge, Timer
+from cocotb.triggers import FallingEdge, Timer, ValueChange
 from cocotb.types import Logic, LogicArray
 
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -462,7 +462,7 @@ async def test_immediate_reentrace(dut):
 
     async def watch():
         nonlocal seen, nested
-        await Edge(dut.mybits_uninitialized)
+        await ValueChange(dut.mybits_uninitialized)
         seen += 1
         dut.mybit.setimmediatevalue(0)
         with pytest.warns(FutureWarning):
