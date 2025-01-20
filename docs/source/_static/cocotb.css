@@ -243,9 +243,9 @@ code.download {
     font-weight: normal !important;
 }
 
-/* "p preceded by img" - text after image was too close */
-img + p {
+img {
     margin-top: 1.15rem !important;
+    margin-bottom: 1.15rem !important;
 }
 
 /* make left and right TOCs a bit tighter */
@@ -300,4 +300,48 @@ dl.field-list.simple > dd > ul.simple > li > p {
 /* reduce distance after paragraphs a bit */
 p {
     margin-bottom: 0.5rem !important;
+}
+
+
+/* reduce big bottom margin in apidoc */
+/*
+// original from pydata-sphinx-theme:
+dl[class]:not(.option-list, .field-list, .footnote, .glossary, .simple) {
+    margin-bottom: 3rem;
+}
+*/
+dl.py.attribute,
+dl.py.class,
+dl.py.classmethod,
+dl.py.data,
+dl.py.decorator,
+dl.py.decoratormethod,
+dl.py.exception,
+dl.py.function,
+dl.py.method,
+dl.py.property,
+dl.py.property,
+dl.py.staticmethod,
+dl.py.type {
+    margin-bottom: 1rem;
+}
+
+/* dl.cpp.macro seems to be defined in breathe */
+dl.cpp.class,
+dl.cpp.concept,
+dl.cpp.enum,
+dl.cpp.enum-class,
+dl.cpp.enum-struct,
+dl.cpp.function,
+dl.cpp.member,
+dl.cpp.struct,
+dl.cpp.type,
+dl.cpp.union,
+dl.cpp.var,
+dl.cpp.macro {
+    margin-bottom: 1rem;
+}
+
+dl.cpp.enumerator {
+    margin-bottom: 0.25rem;
 }
