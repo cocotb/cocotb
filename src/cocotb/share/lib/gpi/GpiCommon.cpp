@@ -373,7 +373,7 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl base, int32_t index) {
     }
 }
 
-gpi_iterator_hdl gpi_iterate(gpi_sim_hdl obj_hdl, gpi_iterator_sel_t type) {
+gpi_iterator_hdl gpi_iterate(gpi_sim_hdl obj_hdl, gpi_iterator_sel type) {
     if (type == GPI_PACKAGE_SCOPES) {
         if (obj_hdl != NULL) {
             LOG_ERROR("Cannot iterate over package from non-NULL handles");
@@ -488,7 +488,7 @@ const char *gpi_get_signal_type_str(gpi_sim_hdl obj_hdl) {
     return obj_hdl->get_type_str();
 }
 
-gpi_objtype_t gpi_get_object_type(gpi_sim_hdl obj_hdl) {
+gpi_objtype gpi_get_object_type(gpi_sim_hdl obj_hdl) {
     return obj_hdl->get_type();
 }
 
@@ -503,28 +503,28 @@ int gpi_is_indexable(gpi_sim_hdl obj_hdl) {
 }
 
 void gpi_set_signal_value_int(gpi_sim_hdl sig_hdl, int32_t value,
-                              gpi_set_action_t action) {
+                              gpi_set_action action) {
     GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
 
     obj_hdl->set_signal_value(value, action);
 }
 
 void gpi_set_signal_value_binstr(gpi_sim_hdl sig_hdl, const char *binstr,
-                                 gpi_set_action_t action) {
+                                 gpi_set_action action) {
     std::string value = binstr;
     GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
     obj_hdl->set_signal_value_binstr(value, action);
 }
 
 void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str,
-                              gpi_set_action_t action) {
+                              gpi_set_action action) {
     std::string value = str;
     GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
     obj_hdl->set_signal_value_str(value, action);
 }
 
 void gpi_set_signal_value_real(gpi_sim_hdl sig_hdl, double value,
-                               gpi_set_action_t action) {
+                               gpi_set_action action) {
     GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl *>(sig_hdl);
     obj_hdl->set_signal_value(value, action);
 }

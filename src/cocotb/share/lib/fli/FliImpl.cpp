@@ -278,7 +278,7 @@ GpiObjHdl *FliImpl::native_check_create(const std::string &name,
     bool search_var = false;
 
     std::string fq_name = parent->get_fullname();
-    gpi_objtype_t obj_type = parent->get_type();
+    gpi_objtype obj_type = parent->get_type();
 
     if (fq_name == "/") {
         fq_name += name;
@@ -388,7 +388,7 @@ GpiObjHdl *FliImpl::native_check_create(const std::string &name,
  *          a handle if it is
  */
 GpiObjHdl *FliImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
-    gpi_objtype_t obj_type = parent->get_type();
+    gpi_objtype obj_type = parent->get_type();
 
     HANDLE hdl;
     PLI_INT32 accType;
@@ -610,7 +610,7 @@ int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl) {
 }
 
 GpiIterator *FliImpl::iterate_handle(GpiObjHdl *obj_hdl,
-                                     gpi_iterator_sel_t type) {
+                                     gpi_iterator_sel type) {
     GpiIterator *new_iter = NULL;
 
     switch (type) {
@@ -771,7 +771,7 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
 
     if (!selected) return GpiIterator::END;
 
-    gpi_objtype_t obj_type = m_parent->get_type();
+    gpi_objtype obj_type = m_parent->get_type();
     std::string parent_name = m_parent->get_name();
 
     /* We want the next object in the current mapping.

@@ -135,7 +135,7 @@ long FliValueObjHdl::get_signal_value_long() {
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value(int32_t, gpi_set_action_t) {
+int FliValueObjHdl::set_signal_value(int32_t, gpi_set_action) {
     LOG_ERROR(
         "Setting signal/variable value via int32_t not supported for %s of "
         "type %d",
@@ -143,7 +143,7 @@ int FliValueObjHdl::set_signal_value(int32_t, gpi_set_action_t) {
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value_binstr(std::string &, gpi_set_action_t) {
+int FliValueObjHdl::set_signal_value_binstr(std::string &, gpi_set_action) {
     LOG_ERROR(
         "Setting signal/variable value via string not supported for %s of type "
         "%d",
@@ -151,7 +151,7 @@ int FliValueObjHdl::set_signal_value_binstr(std::string &, gpi_set_action_t) {
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value_str(std::string &, gpi_set_action_t) {
+int FliValueObjHdl::set_signal_value_str(std::string &, gpi_set_action) {
     LOG_ERROR(
         "Setting signal/variable value via string not supported for %s of type "
         "%d",
@@ -159,7 +159,7 @@ int FliValueObjHdl::set_signal_value_str(std::string &, gpi_set_action_t) {
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value(double, gpi_set_action_t) {
+int FliValueObjHdl::set_signal_value(double, gpi_set_action) {
     LOG_ERROR(
         "Setting signal/variable value via double not supported for %s of type "
         "%d",
@@ -220,7 +220,7 @@ long FliEnumObjHdl::get_signal_value_long() {
 }
 
 int FliEnumObjHdl::set_signal_value(const int32_t value,
-                                    const gpi_set_action_t action) {
+                                    const gpi_set_action action) {
     if (value > m_num_enum || value < 0) {
         LOG_ERROR(
             "Attempted to set an enum with range [0,%d] with invalid value %d!",
@@ -345,7 +345,7 @@ const char *FliLogicObjHdl::get_signal_value_binstr() {
 }
 
 int FliLogicObjHdl::set_signal_value(const int32_t value,
-                                     const gpi_set_action_t action) {
+                                     const gpi_set_action action) {
     if (m_fli_type == MTI_TYPE_ENUM) {
         mtiInt32T enumVal = value ? m_enum_map['1'] : m_enum_map['0'];
 
@@ -441,7 +441,7 @@ int FliLogicObjHdl::set_signal_value(const int32_t value,
 }
 
 int FliLogicObjHdl::set_signal_value_binstr(std::string &value,
-                                            const gpi_set_action_t action) {
+                                            const gpi_set_action action) {
     if (m_fli_type == MTI_TYPE_ENUM) {
         if (value.length() != 1) {
             LOG_ERROR(
@@ -594,7 +594,7 @@ long FliIntObjHdl::get_signal_value_long() {
 }
 
 int FliIntObjHdl::set_signal_value(const int32_t value,
-                                   const gpi_set_action_t action) {
+                                   const gpi_set_action action) {
     if (m_is_var) {
         switch (action) {
             case GPI_DEPOSIT:
@@ -663,7 +663,7 @@ double FliRealObjHdl::get_signal_value_real() {
 }
 
 int FliRealObjHdl::set_signal_value(const double value,
-                                    const gpi_set_action_t action) {
+                                    const gpi_set_action action) {
     m_mti_buff[0] = value;
 
     if (m_is_var) {
@@ -737,7 +737,7 @@ const char *FliStringObjHdl::get_signal_value_str() {
 }
 
 int FliStringObjHdl::set_signal_value_str(std::string &value,
-                                          const gpi_set_action_t action) {
+                                          const gpi_set_action action) {
     strncpy(m_mti_buff, value.c_str(), static_cast<size_t>(m_num_elems));
 
     if (m_is_var) {

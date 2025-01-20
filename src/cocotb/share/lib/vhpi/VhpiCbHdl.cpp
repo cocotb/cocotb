@@ -181,7 +181,7 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
     return error;
 }
 
-vhpiPutValueModeT map_put_value_mode(gpi_set_action_t action) {
+vhpiPutValueModeT map_put_value_mode(gpi_set_action action) {
     vhpiPutValueModeT put_value_mode = vhpiDeposit;
     switch (action) {
         case GPI_DEPOSIT:
@@ -535,7 +535,7 @@ vhpiEnumT VhpiSignalObjHdl::chr2vhpi(const char value) {
 
 // Value related functions
 int VhpiLogicSignalObjHdl::set_signal_value(int32_t value,
-                                            gpi_set_action_t action) {
+                                            gpi_set_action action) {
     switch (m_value.format) {
         case vhpiEnumVal:
         case vhpiLogicVal: {
@@ -571,7 +571,7 @@ int VhpiLogicSignalObjHdl::set_signal_value(int32_t value,
 }
 
 int VhpiLogicSignalObjHdl::set_signal_value_binstr(std::string &value,
-                                                   gpi_set_action_t action) {
+                                                   gpi_set_action action) {
     switch (m_value.format) {
         case vhpiEnumVal:
         case vhpiLogicVal: {
@@ -619,7 +619,7 @@ int VhpiLogicSignalObjHdl::set_signal_value_binstr(std::string &value,
 }
 
 // Value related functions
-int VhpiSignalObjHdl::set_signal_value(int32_t value, gpi_set_action_t action) {
+int VhpiSignalObjHdl::set_signal_value(int32_t value, gpi_set_action action) {
     switch (m_value.format) {
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
@@ -677,7 +677,7 @@ int VhpiSignalObjHdl::set_signal_value(int32_t value, gpi_set_action_t action) {
     return 0;
 }
 
-int VhpiSignalObjHdl::set_signal_value(double value, gpi_set_action_t action) {
+int VhpiSignalObjHdl::set_signal_value(double value, gpi_set_action action) {
     switch (m_value.format) {
         case vhpiRealVal:
             m_value.numElems = 1;
@@ -703,7 +703,7 @@ int VhpiSignalObjHdl::set_signal_value(double value, gpi_set_action_t action) {
 }
 
 int VhpiSignalObjHdl::set_signal_value_binstr(std::string &value,
-                                              gpi_set_action_t action) {
+                                              gpi_set_action action) {
     switch (m_value.format) {
         case vhpiEnumVal:
         case vhpiLogicVal: {
@@ -752,7 +752,7 @@ int VhpiSignalObjHdl::set_signal_value_binstr(std::string &value,
 }
 
 int VhpiSignalObjHdl::set_signal_value_str(std::string &value,
-                                           gpi_set_action_t action) {
+                                           gpi_set_action action) {
     switch (m_value.format) {
         case vhpiStrVal: {
             std::vector<char> writable(value.begin(), value.end());
@@ -1085,7 +1085,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
 
     if (!selected) return GpiIterator::END;
 
-    gpi_objtype_t obj_type = m_parent->get_type();
+    gpi_objtype obj_type = m_parent->get_type();
     std::string parent_name = m_parent->get_name();
 
     /* We want the next object in the current mapping.
