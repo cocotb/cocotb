@@ -30,7 +30,6 @@ Creating a Test
 A typical cocotb testbench requires no additional :term:`HDL` code.
 The :term:`DUT` is instantiated as the toplevel in the simulator
 without any HDL wrapper code.
-
 The test is written in Python.
 
 In cocotb, you can access all internals of your design,
