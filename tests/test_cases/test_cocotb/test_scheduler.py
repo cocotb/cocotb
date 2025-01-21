@@ -27,7 +27,6 @@ from cocotb.triggers import (
     Event,
     First,
     NullTrigger,
-    ReadOnly,
     RisingEdge,
     TaskComplete,
     Timer,
@@ -115,17 +114,19 @@ async def consistent_join(dut):
         rising_edge = RisingEdge(clk)
         for _ in range(cycles):
             await rising_edge
-        return 3
+        return cycles
 
     cocotb.start_soon(Clock(dut.clk, 2000, "ps").start())
 
     short_wait = cocotb.start_soon(wait_for(dut.clk, 10))
     long_wait = cocotb.start_soon(wait_for(dut.clk, 30))
 
-    await wait_for(dut.clk, 20)
-    a = await short_wait
-    b = await long_wait
-    assert a == b == 3
+    a = await wait_for(dut.clk, 20)
+    assert a == 20
+    b = await short_wait
+    assert b == 10
+    c = await long_wait
+    assert c == 30
 
 
 @cocotb.test()
@@ -299,7 +300,7 @@ async def test_last_scheduled_write_wins(dut):
     assert dut.stream_in_data.value == 0
     dut.stream_in_data.value = 1
     dut.stream_in_data.value = 2
-    await ReadOnly()
+    await Timer(1, "ns")
     assert dut.stream_in_data.value == 2
 
 
@@ -314,7 +315,7 @@ async def test_last_scheduled_write_wins_array(dut):
     dut.array_7_downto_4.value = [1, 2, 3, 4]
     dut.array_7_downto_4[7].value = 10
 
-    await ReadOnly()
+    await Timer(1, "ns")
 
     assert dut.array_7_downto_4.value == [10, 2, 3, 4]
 
