@@ -157,6 +157,12 @@ pygments_style = "sphinx"
 # Install with ``pip install sphinx-book-theme``
 html_theme = "sphinx_book_theme"
 
+# A dictionary of values to pass into the template engine’s context for all pages.
+# https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/light-dark.html#configure-default-theme-mode
+html_context = {
+    "default_mode": "light",
+}
+
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
