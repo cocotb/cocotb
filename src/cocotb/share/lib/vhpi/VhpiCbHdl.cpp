@@ -435,19 +435,12 @@ VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {
 }
 
 int VhpiCbHdl::cleanup_callback() {
-    /* For non timer callbacks we disable rather than remove */
-    int ret = 0;
-    if (m_state == GPI_FREE) return 0;
+    if (m_state == GPI_FREE) return 1;
 
-    vhpiStateT cbState =
-        (vhpiStateT)vhpi_get(vhpiStateP, get_handle<vhpiHandleT>());
-    if (vhpiEnable == cbState) {
-        ret = vhpi_disable_cb(get_handle<vhpiHandleT>());
-        m_state = GPI_FREE;
-    }
+    vhpi_remove_cb(get_handle<vhpiHandleT>());
 
-    if (ret) check_vhpi_error();
-
+    m_obj_hdl = NULL;
+    m_state = GPI_FREE;
     return 0;
 }
 
@@ -943,7 +936,7 @@ int VhpiTimedCbHdl::cleanup_callback() {
 
     m_obj_hdl = NULL;
     m_state = GPI_FREE;
-    return 1;
+    return 0;
 }
 
 VhpiReadWriteCbHdl::VhpiReadWriteCbHdl(GpiImplInterface *impl)
