@@ -44,8 +44,7 @@ extensions = [
     "sphinx_issues",
     "sphinx_argparse_cli",
     "sphinxcontrib.spelling",
-    "sphinx_tabs.tabs",
-    "sphinxcontrib.details.directive",
+    "sphinx_design",
     "enum_tools.autoenum",
 ]
 
@@ -72,7 +71,9 @@ master_doc = "index"
 
 # General information about the project.
 project = "cocotb"
-copyright = "2014-{0}, cocotb contributors".format(datetime.datetime.now().year)
+author = ""  # prevent printing extra "By {author}" above copyright line in HTML footer
+years = f"2014-{datetime.datetime.now().year}"
+copyright = f"{years}, cocotb contributors"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -152,36 +153,42 @@ pygments_style = "sphinx"
 
 # -- Options for HTML output ---------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
+# We are using https://github.com/executablebooks/sphinx-book-theme
+# Install with ``pip install sphinx-book-theme``
+html_theme = "sphinx_book_theme"
 
-# The Read the Docs theme is available from
-# https://github.com/snide/sphinx_rtd_theme
-#
-# Install with
-# - pip install sphinx_rtd_theme
-# or
-# - apt-get install python-sphinx-rtd-theme
-
-try:
-    import sphinx_rtd_theme
-
-    html_theme = "sphinx_rtd_theme"
-except ImportError:
-    sys.stderr.write(
-        "Warning: The Sphinx 'sphinx_rtd_theme' HTML theme was "
-        + "not found. Make sure you have the theme installed to produce pretty "
-        + "HTML output. Falling back to the default theme.\n"
-    )
-
-    html_theme = "default"
+# A dictionary of values to pass into the template engine’s context for all pages.
+# https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/light-dark.html#configure-default-theme-mode
+html_context = {
+    "default_mode": "light",
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = dict(
-    logo_only=True,
-)
+html_theme_options = {
+    "logo": {
+        "image_light": "_static/cocotb-logo.svg",
+        "image_dark": "_static/cocotb-logo-dark.svg",
+        "link": "https://cocotb.org",
+    },
+    # https://pydata-sphinx-theme.readthedocs.io/en/latest/user_guide/version-dropdown.html
+    # https://pydata-sphinx-theme.readthedocs.io/en/latest/user_guide/readthedocs.html#version-switcher
+    # "switcher": {
+    #     "json_url": f"<...>/switcher.json",
+    #     "version_match": ...,
+    #     "check_switcher": False,
+    #     "show_version_warning_banner": True,
+    # },
+    "repository_provider": "github",  # "gitlab", "github", "bitbucket"
+    "repository_url": "https://github.com/cocotb/cocotb",
+    "use_repository_button": True,
+    # "use_edit_page_button": True,
+    "use_issues_button": True,
+    # "use_fullscreen_button": False,
+    "home_page_in_toc": True,
+    # "primary_sidebar_end": ["indices.html"],
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
@@ -193,19 +200,17 @@ html_theme_options = dict(
 # A shorter title for the navigation bar.  Default is the same as html_title.
 # html_short_title = None
 
-# The name of an image file (relative to this directory) to place at the top
-# of the sidebar.
-html_logo = "_static/cocotb-logo-white.svg"
-
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-# html_favicon = None
+# If given, this must be the name of an image file (path relative to the configuration directory)
+# that is the favicon of the documentation, or a URL that points an image file for the favicon.
+# Browsers use this as the icon for tabs, windows and bookmarks.
+# It should be a 16-by-16 pixel icon in the PNG, SVG, GIF, or ICO file formats.
+html_favicon = "_static/cocotb-favicon.svg"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['_static']
+html_static_path = ['_static']
+html_css_files = ["cocotb.css"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

@@ -182,7 +182,6 @@ class Timer(GPITrigger):
         ValueError: If a non-positive value is passed for Timer setup.
 
     Usage:
-
         >>> await Timer(100, units="ps")
 
         The time can also be a ``float``:
@@ -477,7 +476,6 @@ class Event:
         name: Name for the Event.
 
     Usage:
-
         .. code-block:: python3
 
             e = Event()
@@ -654,7 +652,6 @@ class Lock(AsyncContextManager[None]):
     """A mutual exclusion lock (not re-entrant).
 
     Usage:
-
         By directly calling :meth:`acquire` and :meth:`release`.
 
         .. code-block:: python3
@@ -1113,11 +1110,10 @@ async def with_timeout(
     and :exc:`SimTimeoutError` is raised.
 
     Usage:
+        .. code-block:: python
 
-    .. code-block:: python
-
-        await with_timeout(coro, 100, "ns")
-        await with_timeout(First(coro, event.wait()), 100, "ns")
+            await with_timeout(coro, 100, "ns")
+            await with_timeout(First(coro, event.wait()), 100, "ns")
 
     Args:
         trigger:

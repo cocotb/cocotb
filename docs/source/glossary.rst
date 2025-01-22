@@ -11,7 +11,7 @@ Glossary
    blocking function
       A function that blocks the caller until the function finishes.
       This is typically a regular function,
-      but sometimes involves calls to threaded code which blocks execution for an indeterminite amount of time.
+      but sometimes involves calls to threaded code which blocks execution for an indeterminate amount of time.
       See also the :term:`Python glossary <python:function>`.
 
    coroutine function
@@ -33,7 +33,7 @@ Glossary
       Design under Verification
 
    FLI
-      Foreign Language Interface. Mentor Graphics' equivalent to :term:`VHPI`
+      Foreign Language Interface. Mentor Graphics' equivalent to :term:`VHPI`.
 
    GPI
       Generic Procedural Interface, cocotb's abstraction over :term:`VPI`, :term:`VHPI`, and :term:`FLI`.

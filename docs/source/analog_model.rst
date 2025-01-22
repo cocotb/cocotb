@@ -51,22 +51,26 @@ When running the example, you will get the following output:
 
 You can view the source code of the example by clicking the file names below.
 
-.. details:: :file:`afe.py`
+.. dropdown:: :file:`afe.py`
+   :icon: file
 
    .. literalinclude:: ../../examples/analog_model/afe.py
       :language: python
 
-.. details:: :file:`digital.sv`
+.. dropdown:: :file:`digital.sv`
+   :icon: file
 
    .. literalinclude:: ../../examples/analog_model/digital.sv
       :language: systemverilog
 
-.. details:: :file:`test_analog_model.py`
+.. dropdown:: :file:`test_analog_model.py`
+   :icon: file
 
    .. literalinclude:: ../../examples/analog_model/test_analog_model.py
       :language: python
 
-.. details:: :file:`Makefile`
+.. dropdown:: :file:`Makefile`
+   :icon: file
 
    .. literalinclude:: ../../examples/analog_model/Makefile
       :language: make

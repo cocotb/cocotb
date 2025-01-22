@@ -1,0 +1,347 @@
+/*
+
+https://github.com/cocotb/cocotb-web/blob/master/_sass/_custom-styles.scss
+https://github.com/cocotb/cocotb-web/blob/master/_sass/_custom-variables.scss
+
+https://www.cocotb.org/assets/css/bootstrap-theme.css
+
+*/
+
+:root {
+    --color-cocotb-blue: #3776ab;
+    --color-cocotb-blue-darker: rgb(44, 94, 137);
+    --color-cocotb-yellow: #ffcd3c;
+    /* --color-cocotb-green: #578a77; */
+    --color-cocotb-green: #28b57f;
+    --color-cocotb-green-bg: #e7f6f1;
+    --bs-primary: var(--color-cocotb-blue) !important;
+    --bs-secondary: var(--color-cocotb-yellow) !important;
+}
+
+html {
+    --bs-border-radius: 0 !important;
+    --bs-border-radius-sm: 0 !important;
+    --bs-border-radius-ls: 0 !important;
+    --bs-border-radius-pill: 0 !important;
+
+    --pst-font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", var(--pst-font-family-base-system);
+    --pst-font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", var(--pst-font-family-monospace-system);
+
+    /* base font size - applied at body/html level */
+    --pst-font-size-base: 1.0rem;
+    --pst-sidebar-font-size: 1.0rem;
+    --pst-sidebar-header-font-size: unset;
+    --pst-sidebar-header-font-weight: bold;
+
+    /* heading font sizes based on bootstrap sizing */
+    --pst-font-size-h1: 2.0rem;
+    --pst-font-size-h2: 1.75rem;
+    --pst-font-size-h3: 1.5rem;
+    --pst-font-size-h4: 1.4rem;
+    --pst-font-size-h5: 1.3rem;
+    --pst-font-size-h6: 1.2rem;
+
+    --pst-font-size-milli: 0.75rem;
+
+    /* --pst-font-weight-caption: 300; */
+    --pst-font-weight-heading: 700;
+    --pst-admonition-font-weight-heading: 700;
+
+    --pst-icon-admonition-attention: none;
+    --pst-icon-admonition-caution: none;
+    --pst-icon-admonition-danger: none;
+    --pst-icon-admonition-default: none;
+    --pst-icon-admonition-error: none;
+    --pst-icon-admonition-hint: none;
+    --pst-icon-admonition-important: none;
+    --pst-icon-admonition-note: none;
+    --pst-icon-admonition-seealso: none;
+    --pst-icon-admonition-tip: none;
+    --pst-icon-admonition-todo: none;
+    --pst-icon-admonition-warning: none;
+
+    --pst-icon-versionmodified-default: none;
+    --pst-icon-versionmodified-added: none;
+    --pst-icon-versionmodified-changed: none;
+    --pst-icon-versionmodified-deprecated: none;
+
+    --pst-color-primary: var(--color-cocotb-blue) !important;
+    --pst-color-secondary: var(--color-cocotb-yellow) !important;
+    --pst-color-accent: var(--color-cocotb-yellow) !important;
+
+    --pst-color-link: var(--color-cocotb-blue) !important;
+    --pst-color-link-hover: var(--color-cocotb-blue-darker) !important;
+}
+
+h1 {
+    color: #3776ab !important;
+    font-size: 50px !important;
+    line-height: 60px !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: bold !important;
+}
+
+.admonition-title {
+    background-color: white !important;
+    font-style: normal !important;
+}
+
+div.admonition > p.admonition-title,
+div.admonition > p.admonition-title + p {
+    display: inline;
+}
+
+.admonition p.admonition-title ~ *,
+div.admonition p.admonition-title ~ * {
+    margin: 0;
+}
+
+.admonition > .admonition-title,
+div.admonition > .admonition-title {
+    display: inline;
+    margin: 0;
+    margin-right: 0.2rem;
+    padding: 0;
+}
+
+blockquote {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+}
+
+div.admonition {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding-bottom: 0 !important;
+}
+
+div.deprecated,
+div.versionadded,
+div.versionchanged,
+div.versionremoved {
+    background-color: white !important;
+    /* font-size: 0.75rem !important; */ /* TODO: decide on this */
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+.admonition.warning,
+div.deprecated,
+div.versionremoved {
+    border-color: var(--color-cocotb-yellow) !important;
+}
+
+div.versionadded {
+    border-color: var(--color-cocotb-green) !important;
+}
+
+blockquote,
+.admonition.note,
+div.versionchanged {
+    border-color: var(--color-cocotb-blue) !important;
+}
+
+div.deprecated > p,
+div.versionadded > p,
+div.versionchanged > p,
+div.versionremoved > p {
+    margin: 0 !important;
+}
+
+/* TODO: can be removed once https://github.com/pydata/pydata-sphinx-theme/pull/2087 is in a release */
+div.versionremoved {
+    vertical-align: middle;
+    margin: 1.5625em auto;
+    padding: 0 0.6rem;
+    overflow: hidden;
+    /* break-inside has replaced page-break-inside and is widely usable since 2019 */
+    page-break-inside: avoid;
+    break-inside: avoid;
+    border-left: 0.2rem solid;
+    border-color: var(--pst-color-info);
+    border-radius: $admonition-border-radius;
+    background-color: var(--pst-color-on-background);
+    /* @include box-shadow; */
+    position: relative;
+}
+
+/* TODO: can be removed once https://github.com/pydata/pydata-sphinx-theme/pull/2087 is in a release */
+div.versionremoved > p {
+    margin-bottom: 0.6rem;
+    margin-top: 0.6rem;
+}
+
+span.versionmodified {
+    font-style: italic !important;
+    font-weight: normal !important;
+}
+
+a.headerlink {
+    color: var(--pst-color-secondary) !important;
+}
+
+a {
+    color: var(--pst-color-primary) !important;
+    text-decoration-style: solid !important;
+}
+
+a:hover {
+    color: var(--color-cocotb-blue-darker) !important;
+    text-decoration-thickness: unset !important;
+}
+
+label.sd-tab-label:hover {
+    color: var(--color-cocotb-blue-darker) !important;
+    text-decoration-thickness: unset !important;
+}
+
+/* code.literal, */
+strong.command {
+    color: var(--color-cocotb-blue) !important;
+    background-color: var(--pst-color-surface) !important;
+    font-family: var(--pst-font-family-monospace) !important;
+    font-size: 0.875rem !important;
+    font-weight: normal !important;
+    border: 1px solid var(--pst-color-border) !important;
+    border-radius: 0 !important;
+    padding: .1rem .25rem !important;
+}
+
+.pre {
+    color: var(--color-cocotb-blue) !important;
+}
+
+/* apidoc "[source]" link */
+span.viewcode-link {
+    font-weight: normal !important;
+    font-size: 0.875rem !important;
+}
+
+/* apidoc "Parameters:", "Returns:" etc. */
+dl.field-list > dt {
+    background-color: white !important;
+}
+
+/* highlighted code */
+.highlight .hll,
+dt:target,
+span.highlighted {
+    background-color: var(--color-cocotb-yellow) !important;
+}
+
+/* search bar */
+.bd-search,
+.search-button-field {
+    border-radius: unset !important;
+}
+
+code.download {
+    font-weight: normal !important;
+}
+
+img {
+    margin-top: 1.15rem !important;
+    margin-bottom: 1.15rem !important;
+}
+
+/* make left and right TOCs a bit tighter */
+nav.bd-links li > a,
+.toc-entry a.nav-link {
+    padding-top: 0.175rem !important;
+    padding-bottom: 0.175rem !important;
+}
+
+/* disable dark mode button (https://github.com/executablebooks/sphinx-book-theme/issues/750) */
+button.theme-switch-button {
+    display: none !important;
+}
+
+/*
+"Usage:" etc. sections in docstrings
+
+This handles any sections that are *not* listed in
+https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#docstring-sections
+
+Sections that *are* listed in there likely have a different behaviour,
+e.g. the documented "Example(s):" leads to a '.. rubric::'
+(or an .. admonition::' if 'napoleon_use_admonition_for_examples = True').
+
+Such a rubric could be handled with code like the following,
+but it is likely not selecting all elements that it should
+and might mis-select elements that should be left alone.
+
+//// "dl and any subsequent siblings (but not .versionchanged etc.)" - for "Examples" in apidoc
+// dl.field-list.simple ~ *:not(.versionadded):not(.versionchanged):not(.deprecated):not(.versionremoved) {
+//     margin-left: 2.5rem;
+// }
+//
+//
+//// "dl and next p.rubric sibling..." - "Examples:" in apidoc
+// dl.field-list.simple + p.rubric {
+//     font-weight: bold;
+//     margin-left: 0.5rem !important;
+//     border-bottom: unset !important;
+// }
+*/
+dl > dd > dl:not(.field-list.simple) {
+    margin-left: 0.5rem !important;
+}
+
+/* fix for extra linebreak in apidoc (https://github.com/pydata/pydata-sphinx-theme/issues/2098) */
+dl.field-list.simple > dd > p,
+dl.field-list.simple > dd > ul.simple > li > p {
+    display: inline !important;
+}
+
+/* reduce distance after paragraphs a bit */
+p {
+    margin-bottom: 0.5rem !important;
+}
+
+
+/* reduce big bottom margin in apidoc */
+/*
+// original from pydata-sphinx-theme:
+dl[class]:not(.option-list, .field-list, .footnote, .glossary, .simple) {
+    margin-bottom: 3rem;
+}
+*/
+dl.py.attribute,
+dl.py.class,
+dl.py.classmethod,
+dl.py.data,
+dl.py.decorator,
+dl.py.decoratormethod,
+dl.py.exception,
+dl.py.function,
+dl.py.method,
+dl.py.property,
+dl.py.property,
+dl.py.staticmethod,
+dl.py.type {
+    margin-bottom: 1rem;
+}
+
+/* dl.cpp.macro seems to be defined in breathe */
+dl.cpp.class,
+dl.cpp.concept,
+dl.cpp.enum,
+dl.cpp.enum-class,
+dl.cpp.enum-struct,
+dl.cpp.function,
+dl.cpp.member,
+dl.cpp.struct,
+dl.cpp.type,
+dl.cpp.union,
+dl.cpp.var,
+dl.cpp.macro {
+    margin-bottom: 1rem;
+}
+
+dl.cpp.enumerator {
+    margin-bottom: 0.25rem;
+}

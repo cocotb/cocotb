@@ -293,7 +293,6 @@ def test(
     Tests are evaluated in the order they are defined in a test module.
 
     Usage:
-
         .. code-block:: python3
 
             @cocotb.test(timeout_time=10, timeout_unit="ms")

@@ -162,7 +162,8 @@ Features should generally follow the following design principles:
 Bugfixes
 --------
 
-**!WARNING!** Bugfixing cocotb is not for the faint of heart!
+.. warning::
+   Bugfixing cocotb is not for the faint of heart!
 
 Bugs happen.
 cocotb supports many simulators that have inconsistent support for the procedural interfaces cocotb depends on, and it has a number of features that aren't wholly tested yet.
@@ -221,7 +222,7 @@ Deprecations serve the following purposes:
 -  Remove potentially dangerous, broken, and misunderstood interfaces (usually accompanied with a superior alternative)
 
 Deprecations can be incorporated at any time.
-They are implemented in Python by issuing a :class:`DeprecationWarning` or using the ` ``@deprecated`` decorator.
+They are implemented in Python by issuing a :class:`DeprecationWarning` or using the ``@deprecated`` decorator.
 In C++ code, deprecations are implemented by `issuing a LOG_WARN <https://docs.cocotb.org/en/stable/generated/file/gpi__logging_8h.html?highlight=LOG_WARN#c.LOG_WARN>`__ with ``DEPRECATED`` in the message.
 
 Removals only occur on major version bumps.

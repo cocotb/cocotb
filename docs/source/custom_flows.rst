@@ -61,9 +61,9 @@ Aldec Riviera-PRO
 
 * The ``asim`` call needs the ``+access +w_nets`` option set to allow cocotb to access values in the design.
 
-.. tabs::
+.. tab-set::
 
-   .. group-tab:: Design with a VHDL Toplevel
+   .. tab-item:: Design with a VHDL Toplevel
 
       For a design with a VHDL toplevel, call ``asim`` with the option
       ``-loadvhpi $(cocotb-config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap``.
@@ -72,7 +72,7 @@ Aldec Riviera-PRO
       ``$(cocotb-config --lib-name-path vpi riviera):cocotbvpi_entry_point``
       if there are also (System)Verilog modules in the design.
 
-   .. group-tab:: Design with a (System)Verilog Toplevel
+   .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call ``alog`` and ``asim`` with the option
       ``-pli $(cocotb-config --lib-name-path vpi riviera)``.
@@ -88,9 +88,9 @@ Aldec Active-HDL
 
 * The ``asim`` call needs the ``+access +w_nets`` option set to allow cocotb to access values in the design.
 
-.. tabs::
+.. tab-set::
 
-   .. group-tab:: Design with a VHDL Toplevel
+   .. tab-item:: Design with a VHDL Toplevel
 
       For a design with a VHDL toplevel, call ``asim`` with the option
       ``-loadvhpi $(cocotb-config --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap``.
@@ -99,7 +99,7 @@ Aldec Active-HDL
       ``$(cocotb-config --lib-name-path vpi activehdl):cocotbvpi_entry_point``
       if there are also (System)Verilog modules in the design.
 
-   .. group-tab:: Design with a (System)Verilog Toplevel
+   .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call ``alog`` and ``asim`` with the option
       ``-pli $(cocotb-config --lib-name-path vpi activehdl)``.
@@ -113,9 +113,9 @@ Aldec Active-HDL
 Mentor/Siemens EDA Questa and Modelsim
 ======================================
 
-.. tabs::
+.. tab-set::
 
-   .. group-tab:: Design with a VHDL Toplevel
+   .. tab-item:: Design with a VHDL Toplevel
 
       For a design with a VHDL toplevel, call the ``vsim`` executable with the option
       ``-foreign "cocotb_init $(cocotb-config --lib-name-path fli questa)"``.
@@ -124,7 +124,7 @@ Mentor/Siemens EDA Questa and Modelsim
       ``$(cocotb-config --lib-name-path vpi questa):cocotbvpi_entry_point``
       if there are also (System)Verilog modules in the design.
 
-   .. group-tab:: Design with a (System)Verilog Toplevel
+   .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call the ``vsim`` executable with the option
       ``-pli $(cocotb-config --lib-name-path vpi questa)``.
@@ -141,9 +141,9 @@ Cadence Incisive and Xcelium
 * The ``xrun`` call (or ``xmelab`` in multi-step mode) needs the ``-access +rwc``
   (or equivalent, e.g. :samp:`-afile {afile}`) option set to allow cocotb to access values in the design.
 
-.. tabs::
+.. tab-set::
 
-   .. group-tab:: Design with a VHDL Toplevel
+   .. tab-item:: Design with a VHDL Toplevel
 
       For a design with a VHDL toplevel, call the ``xrun`` or ``xmelab`` executable with the options
       ``-NEW_VHPI_PROPAGATE_DELAY -loadvpi $(cocotb-config --lib-name-path vpi xcelium):vlog_startup_routines_bootstrap``.
@@ -153,7 +153,7 @@ Cadence Incisive and Xcelium
       This is because directly loading the VHPI library causes an error in Xcelium,
       so always load the VPI library and supply VHPI via ``GPI_EXTRA``.
 
-   .. group-tab:: Design with a (System)Verilog Toplevel
+   .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call the ``xrun`` or ``xmelab`` executable with the option
       ``-loadvpi $(cocotb-config --lib-name-path vpi xcelium):vlog_startup_routines_bootstrap``.

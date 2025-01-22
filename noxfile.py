@@ -533,7 +533,15 @@ def docs(session: nox.Session) -> None:
     create_env_for_docs_build(session)
     session.run("pip", "install", ".")
     outdir = session.cache_dir / "docs_out"
-    session.run("sphinx-build", "./docs/source", str(outdir), "--color", "-b", "html")
+    session.run(
+        "sphinx-build",
+        "./docs/source",
+        str(outdir),
+        "--color",
+        "-b",
+        "html",
+        *session.posargs,
+    )
     index = (outdir / "index.html").resolve().as_uri()
     session.log(f"Documentation is available at {index}")
 
@@ -546,20 +554,30 @@ def docs_preview(session: nox.Session) -> None:
     session.run("pip", "install", "-e", ".")
     session.run("pip", "install", "sphinx-autobuild")
     outdir = session.cache_dir / "docs_out"
+    # fmt: off
     session.run(
         "sphinx-autobuild",
         # Ignore directories which cause a rebuild loop.
-        "--ignore",
-        "*/source/master-notes.rst",
-        "--ignore",
-        "*/doxygen/*",
+        "--ignore", "*/source/master-notes.rst",
+        "--ignore", "*/doxygen/*",
+        # Ignore nox's venv directory.
+        "--ignore", ".nox",
+        # Ignore emacs backup files.
+        "--ignore", "**/#*#",
+        "--ignore", "**/.#*",
+        # Ignore vi backup files.
+        "--ignore", "**/.*.sw[px]",
+        "--ignore", "**/*~",
+        # FIXME: local to cmarqu :)
+        "--ignore", "*@*:*",
         # Also watch the cocotb source directory to rebuild the API docs on
         # changes to cocotb code.
-        "--watch",
-        "src/cocotb",
+        "--watch", "src/cocotb",
         "./docs/source",
         str(outdir),
+        *session.posargs,
     )
+    # fmt: on
 
 
 @nox.session
@@ -575,6 +593,7 @@ def docs_linkcheck(session: nox.Session) -> None:
         "--color",
         "-b",
         "linkcheck",
+        *session.posargs,
     )
 
 
@@ -591,6 +610,7 @@ def docs_spelling(session: nox.Session) -> None:
         "--color",
         "-b",
         "spelling",
+        *session.posargs,
     )
 
 
