@@ -618,12 +618,11 @@ gpi_cb_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *),
     }
 }
 
-void gpi_deregister_callback(gpi_cb_hdl cb_hdl) {
-    cb_hdl->m_impl->deregister_callback(cb_hdl);
-}
+int gpi_remove_cb(gpi_cb_hdl cb_hdl) { return cb_hdl->remove(); }
 
-void *gpi_get_callback_data(gpi_cb_hdl cb_hdl) {
-    return cb_hdl->get_user_data();
+void gpi_get_cb_info(gpi_cb_hdl cb_hdl, int (**cb_func)(void *),
+                     void **cb_data) {
+    cb_hdl->get_cb_info(cb_func, cb_data);
 }
 
 const char *GpiImplInterface::get_name_c() { return m_name.c_str(); }

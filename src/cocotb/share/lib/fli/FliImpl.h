@@ -28,120 +28,166 @@
 #ifndef COCOTB_FLI_IMPL_H_
 #define COCOTB_FLI_IMPL_H_
 
-#include <exports.h>
+#include <map>
+#include <vector>
 
+#include "../gpi/gpi_priv.h"
+#include "_vendor/fli/mti.h"
+#include "exports.h"
 #include "gpi.h"
+
 #ifdef COCOTBFLI_EXPORTS
 #define COCOTBFLI_EXPORT COCOTB_EXPORT
 #else
 #define COCOTBFLI_EXPORT COCOTB_IMPORT
 #endif
 
-#include <map>
-#include <queue>
-
-#include "../gpi/gpi_priv.h"
-#include "_vendor/fli/mti.h"
-
-extern "C" {
-COCOTBFLI_EXPORT void cocotb_init();
-void handle_fli_callback(void *data);
-}
-
 class FliImpl;
 class FliSignalObjHdl;
 
-// Callback handles
+class FliCbHdl : public GpiCbHdl {
+  public:
+    using GpiCbHdl::GpiCbHdl;
+};
 
 // In FLI some callbacks require us to register a process
 // We use a subclass to track the process state related to the callback
-class FliProcessCbHdl : public virtual GpiCbHdl {
+class FliProcessCbHdl : public FliCbHdl {
   public:
-    FliProcessCbHdl(GpiImplInterface *impl)
-        : GpiCbHdl(impl), m_proc_hdl(NULL) {}
+    FliProcessCbHdl(GpiImplInterface *impl) : FliCbHdl(impl) {}
 
-    int cleanup_callback() override;
+    void set_mti_proc(mtiProcessIdT mti_proc) noexcept {
+        m_proc_hdl = mti_proc;
+    }
+
+    virtual void release() = 0;
 
   protected:
     mtiProcessIdT m_proc_hdl;
 };
 
-// One class of callbacks uses mti_Sensitize to react to a signal
-class FliSignalCbHdl : public FliProcessCbHdl, public GpiValueCbHdl {
+/** Maintains a cache of FliProcessCbHdl objects which can be reused.
+ *
+ * MTI Processes cannot be destroyed. So we never delete FliProcessCbHdl objects
+ * and their MTI Processes and instead reuse them to prevent runaway leaks.
+ *
+ * We use the queue with LIFO behavior so recently used objects are reused first
+ * leveraging cache locality.
+ */
+template <typename FliProcessCbHdlType, int priority>
+class FliProcessCbHdlCache {
   public:
-    FliSignalCbHdl(GpiImplInterface *impl, FliSignalObjHdl *sig_hdl,
-                   gpi_edge edge);
+    FliProcessCbHdlCache(FliImpl *impl) : m_impl(impl) {}
 
-    int arm_callback() override;
-    int cleanup_callback() override {
-        return FliProcessCbHdl::cleanup_callback();
+    FliProcessCbHdlType *acquire() {
+        void handle_fli_callback(void *);
+
+        if (!free_list.empty()) {
+            FliProcessCbHdlType *cb_hdl = free_list.back();
+            free_list.pop_back();
+            return cb_hdl;
+        } else {
+            auto cb_hdl = new FliProcessCbHdlType(m_impl);
+            auto mti_proc = mti_CreateProcessWithPriority(
+                nullptr, handle_fli_callback, cb_hdl,
+                (mtiProcessPriorityT)priority);
+            cb_hdl->set_mti_proc(mti_proc);
+            return cb_hdl;
+        }
     }
+    void release(FliProcessCbHdlType *cb_hdl) { free_list.push_back(cb_hdl); }
 
   private:
-    mtiSignalIdT m_sig_hdl;
+    FliImpl *m_impl;
+    std::vector<FliProcessCbHdlType *> free_list;
 };
 
-// All other callbacks are related to the simulation phasing
+class FliSignalCbHdl : public FliProcessCbHdl {
+  public:
+    using FliProcessCbHdl::FliProcessCbHdl;
+
+    /** Set the signal and edge used by arm()
+     *
+     * MUST BE CALLED BEFORE arm()!
+     */
+    void set_signal_and_edge(FliSignalObjHdl *signal, gpi_edge edge) noexcept {
+        m_signal = signal;
+        m_edge = edge;
+    };
+    int arm() override;
+    int run() override;
+    int remove() override;
+    void release() override;
+
+  private:
+    FliSignalObjHdl *m_signal;
+    gpi_edge m_edge;
+};
+
 class FliSimPhaseCbHdl : public FliProcessCbHdl {
   public:
-    FliSimPhaseCbHdl(GpiImplInterface *impl, mtiProcessPriorityT priority)
-        : GpiCbHdl(impl), FliProcessCbHdl(impl), m_priority(priority) {}
+    using FliProcessCbHdl::FliProcessCbHdl;
+    int arm() override;
+    int run() override;
+    int remove() override;
 
-    int arm_callback() override;
-
-  protected:
-    mtiProcessPriorityT m_priority;
+  private:
+    bool m_removed;
 };
 
-// FIXME templates?
 class FliReadWriteCbHdl : public FliSimPhaseCbHdl {
   public:
-    FliReadWriteCbHdl(GpiImplInterface *impl)
-        : GpiCbHdl(impl), FliSimPhaseCbHdl(impl, MTI_PROC_SYNCH) {}
+    using FliSimPhaseCbHdl::FliSimPhaseCbHdl;
+    void release() override;
 };
 
 class FliNextPhaseCbHdl : public FliSimPhaseCbHdl {
   public:
-    FliNextPhaseCbHdl(GpiImplInterface *impl)
-        : GpiCbHdl(impl), FliSimPhaseCbHdl(impl, MTI_PROC_IMMEDIATE) {}
+    using FliSimPhaseCbHdl::FliSimPhaseCbHdl;
+    void release() override;
 };
 
 class FliReadOnlyCbHdl : public FliSimPhaseCbHdl {
   public:
-    FliReadOnlyCbHdl(GpiImplInterface *impl)
-        : GpiCbHdl(impl), FliSimPhaseCbHdl(impl, MTI_PROC_POSTPONED) {}
+    using FliSimPhaseCbHdl::FliSimPhaseCbHdl;
+    void release() override;
 };
 
-class FliStartupCbHdl : public FliProcessCbHdl {
+class FliStartupCbHdl : public FliCbHdl {
   public:
-    FliStartupCbHdl(GpiImplInterface *impl)
-        : GpiCbHdl(impl), FliProcessCbHdl(impl) {}
+    FliStartupCbHdl(GpiImplInterface *impl) : FliCbHdl(impl) {}
 
-    int arm_callback() override;
-    int run_callback() override;
-    int cleanup_callback() override;
+    int arm() override;
+    int run() override;
+    int remove() override;
 };
 
-class FliShutdownCbHdl : public FliProcessCbHdl {
+class FliShutdownCbHdl : public FliCbHdl {
   public:
-    FliShutdownCbHdl(GpiImplInterface *impl)
-        : GpiCbHdl(impl), FliProcessCbHdl(impl) {}
+    FliShutdownCbHdl(GpiImplInterface *impl) : FliCbHdl(impl) {}
 
-    int arm_callback() override;
-    int run_callback() override;
-    int cleanup_callback() override;
+    int arm() override;
+    int run() override;
+    int remove() override;
 };
 
 class FliTimedCbHdl : public FliProcessCbHdl {
   public:
-    FliTimedCbHdl(GpiImplInterface *impl, uint64_t time);
+    using FliProcessCbHdl::FliProcessCbHdl;
 
-    int arm_callback() override;
-    void reset_time(uint64_t new_time) { m_time = new_time; }
-    int cleanup_callback() override;
+    /** Set the time used by arm()
+     *
+     * MUST BE CALLED BEFORE arm()!
+     */
+    void set_time(uint64_t time) noexcept { m_time = time; }
+    int arm() override;
+    int run() override;
+    int remove() override;
+    void release() override;
 
   private:
     uint64_t m_time;
+    bool m_removed;
 };
 
 // Object Handles
@@ -351,23 +397,6 @@ class FliStringObjHdl : public FliValueObjHdl {
     char *m_mti_buff = nullptr;
 };
 
-/** Maintains a cache of FliTimedCbHdl objects which can be reused.
- *
- * Apparently allocating and freeing Timer callback objects is very expensive
- * compared to anything Python or the simulator are doing.
- */
-class FliTimerCache {
-  public:
-    FliTimerCache(FliImpl *_impl) : impl(_impl) {}
-
-    FliTimedCbHdl *get_timer(uint64_t time);
-    void put_timer(FliTimedCbHdl *);
-
-  private:
-    std::queue<FliTimedCbHdl *> free_list;
-    FliImpl *impl;
-};
-
 class FliIterator : public GpiIterator {
   public:
     enum OneToMany {
@@ -403,10 +432,11 @@ class FliImpl : public GpiImplInterface {
   public:
     FliImpl(const std::string &name)
         : GpiImplInterface(name),
-          cache(this),
-          m_readonly_cbhdl(this),
-          m_nexttime_cbhdl(this),
-          m_readwrite_cbhdl(this) {}
+          m_timer_cache(this),
+          m_value_change_cache(this),
+          m_read_write_cache(this),
+          m_read_only_cache(this),
+          m_next_phase_cache(this) {}
 
     /* Sim related */
     void sim_end() override;
@@ -433,7 +463,6 @@ class FliImpl : public GpiImplInterface {
                                          void *cb_data) override;
     GpiCbHdl *register_readwrite_callback(int (*function)(void *),
                                           void *cb_data) override;
-    int deregister_callback(GpiCbHdl *obj_hdl) override;
 
     /* Method to provide strings from operation types */
     const char *reason_to_string(int reason) override;
@@ -446,6 +475,8 @@ class FliImpl : public GpiImplInterface {
     static bool compare_generate_labels(const std::string &a,
                                         const std::string &b);
 
+    void main() noexcept;
+
   private:
     bool isValueConst(int kind);
     bool isValueLogic(mtiTypeIdT type);
@@ -454,13 +485,29 @@ class FliImpl : public GpiImplInterface {
     bool isTypeValue(int type);
     bool isTypeSignal(int type, int full_type);
 
-  public:
-    FliTimerCache cache;
-
   private:
-    FliReadOnlyCbHdl m_readonly_cbhdl;
-    FliNextPhaseCbHdl m_nexttime_cbhdl;
-    FliReadWriteCbHdl m_readwrite_cbhdl;
+    // We store the shutdown callback handle here so sim_end() can remove() it
+    // if it's called.
+    FliShutdownCbHdl *m_sim_finish_cb;
+
+    // Caches for each type of callback handle. This must be associated with the
+    // FliImpl rather than be static member of the callback handle type because
+    // each callback handle is associated with an FliImpl.
+    // TODO remove the FliImpl association from the callback handle types then
+    // move these to static fields in the callback handle types.
+    FliProcessCbHdlCache<FliTimedCbHdl, MTI_PROC_IMMEDIATE> m_timer_cache;
+    FliProcessCbHdlCache<FliSignalCbHdl, MTI_PROC_NORMAL> m_value_change_cache;
+    FliProcessCbHdlCache<FliReadWriteCbHdl, MTI_PROC_SYNCH> m_read_write_cache;
+    FliProcessCbHdlCache<FliReadOnlyCbHdl, MTI_PROC_POSTPONED>
+        m_read_only_cache;
+    FliProcessCbHdlCache<FliNextPhaseCbHdl, MTI_PROC_IMMEDIATE>
+        m_next_phase_cache;
+    friend FliSignalObjHdl;
+    friend FliTimedCbHdl;
+    friend FliSignalCbHdl;
+    friend FliReadWriteCbHdl;
+    friend FliReadOnlyCbHdl;
+    friend FliNextPhaseCbHdl;
 };
 
 #endif /*COCOTB_FLI_IMPL_H_ */
