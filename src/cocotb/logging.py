@@ -214,7 +214,7 @@ class SimLogFormatter(logging.Formatter):
                 + " "
             )
 
-        # these lines are copied from the builtin logger
+        # these lines are copied from the built-in logger
         if record.exc_info:
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)

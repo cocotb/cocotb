@@ -66,7 +66,7 @@ class Array(ArrayLike[T]):
         Array(['4', '3', '2', '1'], Range(0, 'downto', -3))
 
     .. warning::
-        Arrays behave differently in certain situations than Python's builtin sequence types (:class:`list`, :class:`tuple`, etc.).
+        Arrays behave differently in certain situations than Python's built-in sequence types (:class:`list`, :class:`tuple`, etc.).
 
         - Arrays are not necessarily 0-based and slices use inclusive right bounds,
           so many functions that work on Python sequences by index (like :mod:`bisect`) may not work on arrays.

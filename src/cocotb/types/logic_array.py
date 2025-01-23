@@ -191,7 +191,7 @@ class LogicArray(ArrayLike[Logic]):
         b"\n"
 
     You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
-    the builtins :func:`hex:` and :func:`bin`, respectively.
+    the built-ins :func:`hex:` and :func:`bin`, respectively.
 
     .. code-block:: python3
 

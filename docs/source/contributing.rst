@@ -1,6 +1,6 @@
-************
-Get Involved
-************
+****************
+Getting Involved
+****************
 
 Welcome to the cocotb development!
 We are an inclusive community with the common goal of improving the cocotb, a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
@@ -202,7 +202,7 @@ Fixing a bug follows the procedure:
 
 5. Determine the cause of the bug, and add that detail to the pull request
 
-   -  May require Python or C debugging, or the builtin cocotb debugging utilities
+   -  May require Python or C debugging, or the built-in cocotb debugging utilities
 
 6. Make a fix, and push it up on the PR branch
 

@@ -1,8 +1,8 @@
 """
 Inspired by https://github.com/python-trio/outcome
 
-An outcome is similar to the builtin `concurrent.futures.Future`
-or `asyncio.Future`, but without being tied to a particular task model.
+An outcome is similar to the built-in :any:`concurrent.futures.Future`
+or :any:`asyncio.Future`, but without being tied to a particular task model.
 """
 
 import abc
@@ -14,7 +14,7 @@ T = TypeVar("T")
 
 
 def capture(fn: Callable[..., T], *args: Any, **kwargs: Any) -> "Outcome[T]":
-    """Obtain an `Outcome` representing the result of a function call"""
+    """Obtain an `Outcome` representing the result of a function call."""
     try:
         return Value(fn(*args, **kwargs))
     except BaseException as e:
@@ -25,11 +25,11 @@ def capture(fn: Callable[..., T], *args: Any, **kwargs: Any) -> "Outcome[T]":
 class Outcome(Generic[T], metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def send(self, coro: Coroutine[Any, T, Any]) -> Any:
-        """Send or throw this outcome into a coroutine"""
+        """Send or throw this outcome into a coroutine."""
 
     @abc.abstractmethod
     def get(self) -> T:
-        """Get the value of this outcome, or throw its exception"""
+        """Get the value of this outcome, or throw its exception."""
 
 
 class Value(Outcome[T]):
