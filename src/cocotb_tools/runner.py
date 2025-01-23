@@ -832,6 +832,10 @@ class Questa(Runner):
             ["vsim"]
             + ["-gui" if self.gui else "-c"]
             + ["-onfinish", "stop" if self.gui else "exit"]
+            + ["-qwavedb=+signal+memory+assertion+cell+class"]
+            if self.gui
+            else []
+            + ["-voptargs=-access=rw+/."]
             + lib_opts
             + [_as_tcl_value(v) for v in self.test_args]
             + [_as_tcl_value(v) for v in self._get_parameter_options(self.parameters)]

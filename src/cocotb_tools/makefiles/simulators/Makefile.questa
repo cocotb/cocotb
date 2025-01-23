@@ -61,11 +61,11 @@ endif
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
 VLOG_ARGS += $(COMPILE_ARGS)
 VCOM_ARGS += $(COMPILE_ARGS)
-VSIM_ARGS += $(SIM_ARGS)
+VSIM_ARGS += $(SIM_ARGS) -voptargs=-access=rw+/.
 
 ifeq ($(GUI),1)
     CMD += -gui
-    VSIM_ARGS += -onfinish stop
+    VSIM_ARGS += -onfinish stop -qwavedb=+signal+memory+assertion+cell+class
 else
     CMD += -c
     VSIM_ARGS += -onfinish exit
