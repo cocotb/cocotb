@@ -489,7 +489,7 @@ class RegressionManager:
 
         # TODO refactor intialization and finalization into their own module
         # to prevent circult imports requiring local imports
-        from cocotb import _shutdown_testbench
+        from cocotb._init import _shutdown_testbench
 
         _shutdown_testbench()
 
