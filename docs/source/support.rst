@@ -1,6 +1,6 @@
-********
-Get Help
-********
+************
+Getting Help
+************
 
 Getting in Contact with a Maintainer
 ====================================
