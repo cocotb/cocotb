@@ -9,7 +9,7 @@ def load_entry(argv: List[str]) -> Any:
 
     entry_point_str = os.environ.get(
         "PYGPI_ENTRY_POINT",
-        "cocotb_tools._coverage:start_cocotb_library_coverage,cocotb:_initialise_testbench",
+        "cocotb_tools._coverage:start_cocotb_library_coverage,cocotb._init:_initialise_testbench",
     )
 
     # Parse the entry point string of the form "module:func,module:func,...".

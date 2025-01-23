@@ -29,6 +29,6 @@ def start_cocotb_library_coverage(_: Any) -> None:  # pragma: no cover
             library_coverage.stop()
             library_coverage.save()  # pragma: no cover
 
-        from cocotb import _register_shutdown_callback
+        from cocotb._init import _register_shutdown_callback
 
         _register_shutdown_callback(stop_library_coverage)
