@@ -27,24 +27,10 @@
 
 #include "VpiImpl.h"
 
-#include <cstring>
-#ifndef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
-#include <algorithm>
-#include <queue>
-#endif
-
 #include "_vendor/vpi/vpi_user.h"
-
-extern "C" {
-
-static VpiCbHdl *sim_init_cb;
-static VpiCbHdl *sim_finish_cb;
-static VpiImpl *vpi_table;
-
-#ifndef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
-static std::deque<GpiCbHdl *> cb_queue;
-#endif
-}
+#include "gpi.h"
+#include "gpi_logging.h"
+#include "vpi_user_ext.h"
 
 #define CASE_STR(_X) \
     case _X:         \
@@ -655,61 +641,79 @@ GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
 }
 
 GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time,
-                                           int (*function)(void *),
+                                           int (*cb_func)(void *),
                                            void *cb_data) {
-    VpiTimedCbHdl *hdl = new VpiTimedCbHdl(this, time);
-
-    if (hdl->arm_callback()) {
-        delete (hdl);
+    auto cb_hdl = new VpiTimedCbHdl(this, time);
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
         return NULL;
     }
-    hdl->set_user_data(function, cb_data);
-    return hdl;
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
-GpiCbHdl *VpiImpl::register_readwrite_callback(int (*function)(void *),
+GpiCbHdl *VpiImpl::register_readwrite_callback(int (*cb_func)(void *),
                                                void *cb_data) {
-    if (m_read_write.arm_callback()) return NULL;
-    m_read_write.set_user_data(function, cb_data);
-    return &m_read_write;
-}
-
-GpiCbHdl *VpiImpl::register_readonly_callback(int (*function)(void *),
-                                              void *cb_data) {
-    if (m_read_only.arm_callback()) return NULL;
-    m_read_only.set_user_data(function, cb_data);
-    return &m_read_only;
-}
-
-GpiCbHdl *VpiImpl::register_nexttime_callback(int (*function)(void *),
-                                              void *cb_data) {
-    if (m_next_phase.arm_callback()) return NULL;
-    m_next_phase.set_user_data(function, cb_data);
-    return &m_next_phase;
-}
-
-int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl) {
-#ifndef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
-    auto it = std::find(cb_queue.begin(), cb_queue.end(), gpi_hdl);
-    if (it != cb_queue.end()) {
-        cb_queue.erase(it);
+    auto cb_hdl = new VpiReadWriteCbHdl(this);
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
+        return NULL;
     }
-#endif
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
+}
 
-    return gpi_hdl->cleanup_callback();
+GpiCbHdl *VpiImpl::register_readonly_callback(int (*cb_func)(void *),
+                                              void *cb_data) {
+    auto cb_hdl = new VpiReadOnlyCbHdl(this);
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
+        return NULL;
+    }
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
+}
+
+GpiCbHdl *VpiImpl::register_nexttime_callback(int (*cb_func)(void *),
+                                              void *cb_data) {
+    auto cb_hdl = new VpiNextPhaseCbHdl(this);
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
+        return NULL;
+    }
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
 // If the Python world wants things to shut down then unregister
 // the callback for end of sim
 void VpiImpl::sim_end() {
-    /* Some sims do not seem to be able to deregister the end of sim callback
-     * so we need to make sure we have tracked this and not call the handler
-     */
-    if (GPI_DELETE != sim_finish_cb->get_call_state()) {
-        sim_finish_cb->set_call_state(GPI_DELETE);
-        vpi_control(vpiFinish, vpiDiagTimeLoc);
+    m_sim_finish_cb->remove();
+#ifdef ICARUS
+    // Must skip checking return value on Icarus because their version of
+    // vpi_control() returns void for some reason.
+    vpi_control(vpiFinish, vpiDiagTimeLoc);
+#else
+    int res = vpi_control(vpiFinish, vpiDiagTimeLoc);
+    // LCOV_EXCL_START
+    if (res) {
+        LOG_ERROR("VPI: Failed to end simulation");
         check_vpi_error();
     }
+    // LCOV_EXCL_STOP
+#endif
 }
 
 bool VpiImpl::compare_generate_labels(const std::string &a,
@@ -724,100 +728,87 @@ const char *VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
     return (obj_hdl->get_type() == GPI_PACKAGE) ? "" : ".";
 }
 
-extern "C" {
+static int startup_callback(void *) {
+    s_vpi_vlog_info info;
 
-static int32_t handle_vpi_callback_(GpiCbHdl *cb_hdl) {
-    gpi_to_user();
-
-    if (!cb_hdl) {
-        // LCOV_EXCL_START
-        LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
-        gpi_embed_end();
-        return -1;
-        // LCOV_EXCL_STOP
+    auto pass = vpi_get_vlog_info(&info);
+    // LCOV_EXCL_START
+    if (!pass) {
+        LOG_ERROR("Unable to get argv and argc from simulator");
+        info.argc = 0;
+        info.argv = nullptr;
     }
+    // LCOV_EXCL_STOP
 
-    gpi_cb_state_e old_state = cb_hdl->get_call_state();
-
-    if (old_state == GPI_PRIMED) {
-        cb_hdl->set_call_state(GPI_CALL);
-        cb_hdl->run_callback();
-
-        gpi_cb_state_e new_state = cb_hdl->get_call_state();
-
-        /* We have re-primed in the handler */
-        if (new_state != GPI_PRIMED)
-            if (cb_hdl->cleanup_callback()) {
-                delete cb_hdl;
-            }
-
-    } else {
-        /* Issue #188: This is a work around for a modelsim */
-        if (cb_hdl->cleanup_callback()) {
-            delete cb_hdl;
-        }
-    }
-
-    gpi_to_simulator();
+    gpi_embed_init(info.argc, info.argv);
 
     return 0;
 }
 
-// Main re-entry point for callbacks from simulator
-int32_t handle_vpi_callback(p_cb_data cb_data) {
-#ifdef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
-    VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
-    return handle_vpi_callback_(cb_hdl);
-#else
-    // must push things into a queue because Icaurus (gh-4067), Xcelium
-    // (gh-4013), and Questa (gh-4105) react to value changes on signals that
-    // are set with vpiNoDelay immediately, and not after the current callback
-    // has ended, causing re-entrancy.
-    static bool reacting = false;
-    VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
-    if (reacting) {
-        cb_queue.push_back(cb_hdl);
-        return 0;
+static int shutdown_callback(void *) {
+    gpi_embed_end();
+    return 0;
+}
+
+void VpiImpl::main() noexcept {
+    auto startup_cb = new VpiStartupCbHdl(this);
+    auto err = startup_cb->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        LOG_CRITICAL(
+            "VPI: Unable to register startup callback! Simulation will end.");
+        check_vpi_error();
+        delete startup_cb;
+        exit(1);
     }
-    reacting = true;
-    int32_t ret = handle_vpi_callback_(cb_hdl);
-    while (!cb_queue.empty()) {
-        handle_vpi_callback_(cb_queue.front());
-        cb_queue.pop_front();
+    // LCOV_EXCL_STOP
+    startup_cb->set_cb_info(startup_callback, nullptr);
+
+    auto shutdown_cb = new VpiShutdownCbHdl(this);
+    err = shutdown_cb->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        LOG_CRITICAL(
+            "VPI: Unable to register shutdown callback! Simulation will end.");
+        check_vpi_error();
+        startup_cb->remove();
+        delete shutdown_cb;
+        exit(1);
     }
-    reacting = false;
-    return ret;
+    // LCOV_EXCL_STOP
+    shutdown_cb->set_cb_info(shutdown_callback, nullptr);
+    m_sim_finish_cb = shutdown_cb;
+
+    gpi_register_impl(this);
+    gpi_entry_point();
+}
+
+static void vpi_main() {
+#ifdef VCS
+    // VCS loads the entry point both during compilation and again at
+    // simulation. Only during simulation are most of the VPI routines
+    // working. So we check if we are in compilation and exit early since we
+    // don't need to do anything for compilation currently.
+    s_vpi_vlog_info info;
+    if (!vpi_get_vlog_info(&info)) {
+        return;
+    }
 #endif
+    auto vpi_table = new VpiImpl("VPI");
+    vpi_table->main();
 }
 
 static void register_impl() {
-    vpi_table = new VpiImpl("VPI");
+    auto vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
 }
 
-static void register_initial_callback() {
-    sim_init_cb = new VpiStartupCbHdl(vpi_table);
-    sim_init_cb->arm_callback();
-}
-
-static void register_final_callback() {
-    sim_finish_cb = new VpiShutdownCbHdl(vpi_table);
-    sim_finish_cb->arm_callback();
-}
-
-COCOTBVPI_EXPORT void (*vlog_startup_routines[])() = {
-    register_impl, gpi_entry_point, register_initial_callback,
-    register_final_callback, nullptr};
+extern "C" {
+COCOTBVPI_EXPORT void (*vlog_startup_routines[])() = {vpi_main, nullptr};
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines
 // symbol
-COCOTBVPI_EXPORT void vlog_startup_routines_bootstrap() {
-    // call each routine in turn like VPI would
-    for (auto it = &vlog_startup_routines[0]; *it != nullptr; it++) {
-        auto routine = *it;
-        routine();
-    }
-}
+COCOTBVPI_EXPORT void vlog_startup_routines_bootstrap() { vpi_main(); }
 }
 
 GPI_ENTRY_POINT(cocotbvpi, register_impl)

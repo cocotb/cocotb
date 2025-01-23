@@ -27,12 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <assert.h>
-
-#include <stdexcept>
+#include <cassert>
 
 #include "VpiImpl.h"
 #include "gpi.h"
+#include "vpi_user_ext.h"
 
 int VpiSignalObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {
@@ -253,11 +252,12 @@ int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s,
 }
 
 GpiCbHdl *VpiSignalObjHdl::register_value_change_callback(
-    gpi_edge edge, int (*function)(void *), void *cb_data) {
-    VpiValueCbHdl *cb = new VpiValueCbHdl(this->m_impl, this, edge);
-    cb->set_user_data(function, cb_data);
-    if (cb->arm_callback()) {
+    gpi_edge edge, int (*cb_func)(void *), void *cb_data) {
+    VpiValueCbHdl *cb_hdl = new VpiValueCbHdl(this->m_impl, this, edge);
+    if (cb_hdl->arm()) {
+        delete this;
         return NULL;
     }
-    return cb;
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }

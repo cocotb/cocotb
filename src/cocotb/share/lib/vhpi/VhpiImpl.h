@@ -28,22 +28,19 @@
 #ifndef COCOTB_VHPI_IMPL_H_
 #define COCOTB_VHPI_IMPL_H_
 
-#include <exports.h>
-
-#include "gpi.h"
-#ifdef COCOTBVHPI_EXPORTS
-#define COCOTBVHPI_EXPORT COCOTB_EXPORT
-#else
-#define COCOTBVHPI_EXPORT COCOTB_IMPORT
-#endif
-
-#include <vhpi_user_ext.h>
-
 #include <map>
 #include <vector>
 
 #include "../gpi/gpi_priv.h"
 #include "_vendor/vhpi/vhpi_user.h"
+#include "exports.h"
+#include "gpi.h"
+
+#ifdef COCOTBVHPI_EXPORTS
+#define COCOTBVHPI_EXPORT COCOTB_EXPORT
+#else
+#define COCOTBVHPI_EXPORT COCOTB_IMPORT
+#endif
 
 // Define Index separator
 #ifdef ALDEC
@@ -99,34 +96,36 @@ static inline int __check_vhpi_error(const char *file, const char *func,
         __check_vhpi_error(__FILE__, __func__, __LINE__); \
     } while (0)
 
-class VhpiCbHdl : public virtual GpiCbHdl {
+class VhpiCbHdl : public GpiCbHdl {
   public:
     VhpiCbHdl(GpiImplInterface *impl);
 
-    int arm_callback() override;
-    int cleanup_callback() override;
+    int arm() override;
+    int remove() override;
+    int run() override;
 
   protected:
     vhpiCbDataT cb_data;
     vhpiTimeT vhpi_time;
+    bool m_removed = false;
 };
 
 class VhpiSignalObjHdl;
 
-class VhpiValueCbHdl : public VhpiCbHdl, public GpiValueCbHdl {
+class VhpiValueCbHdl : public VhpiCbHdl {
   public:
     VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig,
                    gpi_edge edge);
-    int cleanup_callback() override { return VhpiCbHdl::cleanup_callback(); }
+    int run() override;
 
   private:
-    std::string initial_value;
+    GpiSignalObjHdl *m_signal;
+    gpi_edge m_edge;
 };
 
 class VhpiTimedCbHdl : public VhpiCbHdl {
   public:
     VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time);
-    int cleanup_callback() override;
 };
 
 class VhpiReadOnlyCbHdl : public VhpiCbHdl {
@@ -142,10 +141,20 @@ class VhpiNextPhaseCbHdl : public VhpiCbHdl {
 class VhpiStartupCbHdl : public VhpiCbHdl {
   public:
     VhpiStartupCbHdl(GpiImplInterface *impl);
-    int run_callback() override;
-    int cleanup_callback() override {
-        /* Too many simulators get upset with this so we override to do nothing
-         */
+
+    // Too many sims get upset trying to remove startup callbacks so we just
+    // don't try. TODO Is this still accurate?
+
+    int run() override {
+        if (!m_removed) {
+            m_cb_func(m_cb_data);
+        }
+        delete this;
+        return 0;
+    }
+
+    int remove() override {
+        m_removed = true;
         return 0;
     }
 };
@@ -153,10 +162,20 @@ class VhpiStartupCbHdl : public VhpiCbHdl {
 class VhpiShutdownCbHdl : public VhpiCbHdl {
   public:
     VhpiShutdownCbHdl(GpiImplInterface *impl);
-    int run_callback() override;
-    int cleanup_callback() override {
-        /* Too many simulators get upset with this so we override to do nothing
-         */
+
+    // Too many sims get upset trying to remove startup callbacks so we just
+    // don't try. TODO Is this still accurate?
+
+    int run() override {
+        if (!m_removed) {
+            m_cb_func(m_cb_data);
+        }
+        delete this;
+        return 0;
+    }
+
+    int remove() override {
+        m_removed = true;
         return 0;
     }
 };
@@ -255,11 +274,7 @@ class VhpiIterator : public GpiIterator {
 
 class VhpiImpl : public GpiImplInterface {
   public:
-    VhpiImpl(const std::string &name)
-        : GpiImplInterface(name),
-          m_read_write(this),
-          m_next_phase(this),
-          m_read_only(this) {}
+    VhpiImpl(const std::string &name) : GpiImplInterface(name) {}
 
     /* Sim related */
     void sim_end() override;
@@ -282,7 +297,6 @@ class VhpiImpl : public GpiImplInterface {
                                          void *cb_data) override;
     GpiCbHdl *register_readwrite_callback(int (*function)(void *),
                                           void *cb_data) override;
-    int deregister_callback(GpiCbHdl *obj_hdl) override;
     GpiObjHdl *native_check_create(const std::string &name,
                                    GpiObjHdl *parent) override;
     GpiObjHdl *native_check_create(int32_t index, GpiObjHdl *parent) override;
@@ -298,10 +312,18 @@ class VhpiImpl : public GpiImplInterface {
     static bool compare_generate_labels(const std::string &a,
                                         const std::string &b);
 
+    /** Entry point for the simulator.
+     *
+     * Called if this GpiImpl will act as the main simulator entry point.
+     * Registers simulator startup and shutdown callbacks, and controls the
+     * behavior gpi_sim_end.
+     */
+    void main() noexcept;
+
   private:
-    VhpiReadWriteCbHdl m_read_write;
-    VhpiNextPhaseCbHdl m_next_phase;
-    VhpiReadOnlyCbHdl m_read_only;
+    // We store the shutdown callback handle here so sim_end() can remove() it
+    // if it's called.
+    VhpiShutdownCbHdl *m_sim_finish_cb;
 };
 
 #endif /*COCOTB_VHPI_IMPL_H_  */

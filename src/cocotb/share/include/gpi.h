@@ -63,9 +63,6 @@ imitate a callback.
 #include <gpi_logging.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*
  * Declare the handle types.
@@ -301,14 +298,26 @@ gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 GPI_EXPORT gpi_cb_hdl
 gpi_register_readwrite_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 
-GPI_EXPORT void gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
-
-/**
- * Because the internal structures may be different for different
- * implementations of GPI we provide a convenience function to extract the
- * callback data.
+/** Remove callback.
+ *
+ * The callback will not fire after this function is called.
+ * The argument is no longer valid if this function succeeds.
+ *
+ * @param cb_hdl The handle to the callback to remove.
+ * @returns `0` on successful removal, `1` otherwise.
  */
-GPI_EXPORT void *gpi_get_callback_data(gpi_cb_hdl gpi_hdl);
+GPI_EXPORT int gpi_remove_cb(gpi_cb_hdl cb_hdl);
+
+/** Retrieve user callback information from callback handle.
+ *
+ * This function cannot fail.
+ *
+ * @param cb_hdl The handle to the callback.
+ * @param cb_func Where the user callback function should be placed.
+ * @param cb_data Where the user callback function data should be placed.
+ */
+GPI_EXPORT void gpi_get_cb_info(gpi_cb_hdl cb_hdl, int (**cb_func)(void *),
+                                void **cb_data);
 
 #ifdef __cplusplus
 }
