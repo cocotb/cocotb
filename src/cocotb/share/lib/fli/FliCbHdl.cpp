@@ -25,42 +25,36 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <limits>
+#include <cstring>
 
 #include "FliImpl.h"
 #include "_vendor/fli/mti.h"
-#include "_vendor/tcl/tcl.h"
 
-/**
- * @name    cleanup callback
- * @brief   Called while unwinding after a GPI callback
- *
- * We keep the process but desensitize it
- *
- * NB: need a way to determine if should leave it sensitized...
- *
- */
-int FliProcessCbHdl::cleanup_callback() {
-    switch (get_call_state()) {
-        case GPI_PRIMED:
-        case GPI_CALL:
-            mti_Desensitize(m_proc_hdl);
-            set_call_state(GPI_DELETE);
-            break;
-        case GPI_DELETE:
-        case GPI_FREE:
-            break;
+// Main re-entry point for callbacks from simulator
+void handle_fli_callback(void* data) {
+    gpi_to_user();
+
+    // TODO Add why?
+    fflush(stderr);
+
+    FliCbHdl* cb_hdl = (FliCbHdl*)data;
+
+    // LCOV_EXCL_START
+    if (!cb_hdl) {
+        LOG_CRITICAL("FLI: Callback data corrupted: ABORTING");
+        gpi_embed_end();
+        return;
     }
-    return 0;
+    // LCOV_EXCL_STOP
+
+    cb_hdl->run();
+
+    gpi_to_simulator();
 }
 
-FliTimedCbHdl::FliTimedCbHdl(GpiImplInterface* impl, uint64_t time)
-    : GpiCbHdl(impl), FliProcessCbHdl(impl), m_time(time) {
-    m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback,
-                                               (void*)this, MTI_PROC_IMMEDIATE);
-}
-
-int FliTimedCbHdl::arm_callback() {
+int FliTimedCbHdl::arm() {
+    // These are reused, so we need to reset m_removed.
+    m_removed = false;
 #if defined(__LP64__) || defined(_WIN64)
     mti_ScheduleWakeup64(m_proc_hdl, static_cast<mtiTime64T>(m_time));
 #else
@@ -69,160 +63,145 @@ int FliTimedCbHdl::arm_callback() {
                     (mtiUInt32T)(m_time));
     mti_ScheduleWakeup64(m_proc_hdl, m_time_union_ps);
 #endif
-    set_call_state(GPI_PRIMED);
     return 0;
 }
 
-int FliTimedCbHdl::cleanup_callback() {
-    switch (get_call_state()) {
-        case GPI_PRIMED:
-            /* Issue #188: Work around for modelsim that is harmless to othes
-               too, we tag the time as delete, let it fire then do not pass up
-               */
-            LOG_DEBUG("Not removing PRIMED timer %p", m_time);
-            set_call_state(GPI_DELETE);
-            return 0;
-        case GPI_CALL:
-            LOG_DEBUG("Not removing CALL timer yet %p", m_time);
-            set_call_state(GPI_DELETE);
-            return 0;
-        case GPI_DELETE:
-            LOG_DEBUG("Removing Postponed DELETE timer %p", m_time);
+int FliTimedCbHdl::run() {
+    if (!m_removed) {
+        // Prevent the callback from calling up if it's been removed.
+        m_cb_func(m_cb_data);
+    }
+    // Don't delete, but release back to the appropriate cache to be reused.
+    release();
+    return 0;
+}
+
+int FliTimedCbHdl::remove() {
+    // mti_ScheduleWakeup callbacks can't be cancelled, so we mark the callback
+    // as removed and let it fire. When it fires, this flag prevents it from
+    // calling up and then releases the callback back to the appropriate cache
+    // to be reused.
+    m_removed = true;
+    return 0;
+}
+
+int FliSignalCbHdl::arm() {
+    mti_Sensitize(m_proc_hdl, m_signal->get_handle<mtiSignalIdT>(), MTI_EVENT);
+    return 0;
+}
+
+int FliSignalCbHdl::run() {
+    bool pass = false;
+    switch (m_edge) {
+        case GPI_RISING: {
+            pass = !strcmp(m_signal->get_signal_value_binstr(), "1");
             break;
-        default:
+        }
+        case GPI_FALLING: {
+            pass = !strcmp(m_signal->get_signal_value_binstr(), "0");
             break;
+        }
+        case GPI_VALUE_CHANGE: {
+            pass = true;
+            break;
+        }
     }
-    FliProcessCbHdl::cleanup_callback();
-    // put Timer back on cache instead of deleting
-    FliImpl* impl = (FliImpl*)m_impl;
-    impl->cache.put_timer(this);
+
+    if (pass) {
+        m_cb_func(m_cb_data);
+
+        // Don't delete, but desensitize the process from the signal change and
+        // release back to the appropriate cache to be reused.
+        mti_Desensitize(m_proc_hdl);
+        release();
+    }  // else don't remove and let it fire again.
+
     return 0;
 }
 
-int FliSignalCbHdl::arm_callback() {
-    if (NULL == m_proc_hdl) {
-        LOG_DEBUG("Creating a new process to sensitise to signal %s",
-                  mti_GetSignalName(m_sig_hdl));
-        m_proc_hdl = mti_CreateProcess(NULL, handle_fli_callback, (void*)this);
-    }
-
-    if (get_call_state() != GPI_PRIMED) {
-        mti_Sensitize(m_proc_hdl, m_sig_hdl, MTI_EVENT);
-        set_call_state(GPI_PRIMED);
-    }
+int FliSignalCbHdl::remove() {
+    // Don't delete, but desensitize the process from the signal change and
+    // release back to the appropriate cache to be reused.
+    mti_Desensitize(m_proc_hdl);
+    release();
     return 0;
 }
 
-int FliSimPhaseCbHdl::arm_callback() {
-    if (NULL == m_proc_hdl) {
-        LOG_DEBUG("Creating a new process to sensitise with priority %d",
-                  m_priority);
-        m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback,
-                                                   (void*)this, m_priority);
-    }
-
-    if (get_call_state() != GPI_PRIMED) {
-        mti_ScheduleWakeup(m_proc_hdl, 0);
-        set_call_state(GPI_PRIMED);
-    }
+int FliSimPhaseCbHdl::arm() {
+    mti_ScheduleWakeup(m_proc_hdl, 0);
+    m_removed = false;
     return 0;
 }
 
-FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface* impl, FliSignalObjHdl* sig_hdl,
-                               gpi_edge edge)
-    : GpiCbHdl(impl),
-      FliProcessCbHdl(impl),
-      GpiValueCbHdl(impl, sig_hdl, edge) {
-    m_sig_hdl = m_signal->get_handle<mtiSignalIdT>();
+int FliSimPhaseCbHdl::run() {
+    if (!m_removed) {
+        // Prevent the callback from calling up if it's been removed.
+        m_cb_func(m_cb_data);
+    }
+    // Don't delete, but release back to the appropriate cache to be reused.
+    release();
+    return 0;
 }
 
-int FliStartupCbHdl::arm_callback() {
+int FliSimPhaseCbHdl::remove() {
+    // mti_ScheduleWakeup callbacks can't be cancelled, so we mark the callback
+    // as removed and let it fire. When it fires, this flag prevents it from
+    // calling up and then releases the callback back to the appropriate cache
+    // to be reused.
+    m_removed = true;
+    return 0;
+}
+
+void FliSignalCbHdl::release() {
+    dynamic_cast<FliImpl*>(m_impl)->m_value_change_cache.release(this);
+}
+
+void FliTimedCbHdl::release() {
+    dynamic_cast<FliImpl*>(m_impl)->m_timer_cache.release(this);
+}
+
+void FliReadOnlyCbHdl::release() {
+    dynamic_cast<FliImpl*>(m_impl)->m_read_only_cache.release(this);
+}
+
+void FliReadWriteCbHdl::release() {
+    dynamic_cast<FliImpl*>(m_impl)->m_read_write_cache.release(this);
+}
+
+void FliNextPhaseCbHdl::release() {
+    dynamic_cast<FliImpl*>(m_impl)->m_next_phase_cache.release(this);
+}
+
+int FliStartupCbHdl::arm() {
     mti_AddLoadDoneCB(handle_fli_callback, (void*)this);
-    set_call_state(GPI_PRIMED);
-
     return 0;
 }
 
-static std::vector<std::string> get_argv() {
-    /* Necessary to implement PLUSARGS
-       There is no function available on the FLI to obtain argc+argv directly
-       from the simulator. To work around this we use the TCL interpreter that
-       ships with Questa, some TCL commands, and the TCL variable `argv` to
-       obtain the simulator argc+argv.
-    */
-    std::vector<std::string> argv;
-
-    // obtain a reference to TCL interpreter
-    Tcl_Interp* interp = reinterpret_cast<Tcl_Interp*>(mti_Interp());
-
-    // get argv TCL variable
-    if (mti_Cmd("return -level 0 $argv") != TCL_OK) {
-        const char* errmsg = Tcl_GetStringResult(interp);
-        LOG_WARN("Failed to get reference to argv: %s", errmsg);
-        Tcl_ResetResult(interp);
-        return argv;
-    }
-    Tcl_Obj* result = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(result);
-    Tcl_ResetResult(interp);
-
-    // split TCL list into length and element array
-    int argc;
-    Tcl_Obj** tcl_argv;
-    if (Tcl_ListObjGetElements(interp, result, &argc, &tcl_argv) != TCL_OK) {
-        const char* errmsg = Tcl_GetStringResult(interp);
-        LOG_WARN("Failed to get argv elements: %s", errmsg);
-        Tcl_DecrRefCount(result);
-        Tcl_ResetResult(interp);
-        return argv;
-    }
-    Tcl_ResetResult(interp);
-
-    // get each argv arg and copy into internal storage
-    for (int i = 0; i < argc; i++) {
-        const char* arg = Tcl_GetString(tcl_argv[i]);
-        argv.push_back(arg);
-    }
-    Tcl_DecrRefCount(result);
-
-    return argv;
-}
-
-int FliStartupCbHdl::run_callback() {
-    std::vector<std::string> const argv_storage = get_argv();
-    std::vector<const char*> argv_cstr;
-    for (const auto& arg : argv_storage) {
-        argv_cstr.push_back(arg.c_str());
-    }
-    int argc = static_cast<int>(argv_storage.size());
-    const char** argv = argv_cstr.data();
-
-    gpi_embed_init(argc, argv);
-
+int FliStartupCbHdl::run() {
+    m_cb_func(m_cb_data);
+    delete this;
     return 0;
 }
 
-int FliStartupCbHdl::cleanup_callback() {
+int FliStartupCbHdl::remove() {
     mti_RemoveLoadDoneCB(handle_fli_callback, (void*)this);
-    set_call_state(GPI_DELETE);
+    delete this;
     return 0;
 }
 
-int FliShutdownCbHdl::arm_callback() {
+int FliShutdownCbHdl::arm() {
     mti_AddQuitCB(handle_fli_callback, (void*)this);
-    set_call_state(GPI_PRIMED);
-
     return 0;
 }
 
-int FliShutdownCbHdl::run_callback() {
-    gpi_embed_end();
-
+int FliShutdownCbHdl::run() {
+    m_cb_func(m_cb_data);
+    delete this;
     return 0;
 }
 
-int FliShutdownCbHdl::cleanup_callback() {
+int FliShutdownCbHdl::remove() {
     mti_RemoveQuitCB(handle_fli_callback, (void*)this);
-    set_call_state(GPI_DELETE);
+    delete this;
     return 0;
 }

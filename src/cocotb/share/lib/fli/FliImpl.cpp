@@ -28,28 +28,22 @@
 #include "FliImpl.h"
 
 #include <cstddef>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "_vendor/fli/acc_user.h"
-#include "_vendor/fli/acc_vhdl.h"  // Messy :(
+#include "_vendor/fli/acc_vhdl.h"
 #include "_vendor/fli/mti.h"
-
-extern "C" {
-static FliProcessCbHdl *sim_init_cb;
-static FliProcessCbHdl *sim_finish_cb;
-static FliImpl *fli_table;
-}
+#include "_vendor/tcl/tcl.h"
 
 void FliImpl::sim_end() {
-    if (GPI_DELETE != sim_finish_cb->get_call_state()) {
-        sim_finish_cb->set_call_state(GPI_DELETE);
-        if (mti_NowUpper() == 0 && mti_Now() == 0 && mti_Delta() == 0) {
-            mti_Quit();
-        } else {
-            mti_Break();
-        }
+    m_sim_finish_cb->remove();
+    if (mti_NowUpper() == 0 && mti_Now() == 0 && mti_Delta() == 0) {
+        mti_Quit();
+    } else {
+        mti_Break();
     }
 }
 
@@ -338,7 +332,7 @@ GpiObjHdl *FliImpl::native_check_create(const std::string &name,
 
         // Looking for generates should only occur if the parent is from this
         // implementation
-        if (!parent->is_this_impl(fli_table)) {
+        if (!parent->is_this_impl(this)) {
             return NULL;
         }
 
@@ -565,48 +559,62 @@ error:
 }
 
 GpiCbHdl *FliImpl::register_timed_callback(uint64_t time,
-                                           int (*function)(void *),
+                                           int (*cb_func)(void *),
                                            void *cb_data) {
-    // get timer from cache instead of allocating
-    FliTimedCbHdl *hdl = cache.get_timer(time);
-
-    if (hdl->arm_callback()) {
-        delete (hdl);
+    // get timer from cache
+    auto cb_hdl = m_timer_cache.acquire();
+    cb_hdl->set_time(time);
+    int err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        m_timer_cache.release(cb_hdl);
         return NULL;
     }
-    hdl->set_user_data(function, cb_data);
-    return hdl;
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
-GpiCbHdl *FliImpl::register_readonly_callback(int (*function)(void *),
+GpiCbHdl *FliImpl::register_readonly_callback(int (*cb_func)(void *),
                                               void *cb_data) {
-    if (m_readonly_cbhdl.arm_callback()) {
+    auto cb_hdl = m_read_only_cache.acquire();
+    int err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        m_read_only_cache.release(cb_hdl);
         return NULL;
     }
-    m_readonly_cbhdl.set_user_data(function, cb_data);
-    return &m_readonly_cbhdl;
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
-GpiCbHdl *FliImpl::register_readwrite_callback(int (*function)(void *),
+GpiCbHdl *FliImpl::register_readwrite_callback(int (*cb_func)(void *),
                                                void *cb_data) {
-    if (m_readwrite_cbhdl.arm_callback()) {
+    auto cb_hdl = m_read_write_cache.acquire();
+    int err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        m_read_write_cache.release(cb_hdl);
         return NULL;
     }
-    m_readwrite_cbhdl.set_user_data(function, cb_data);
-    return &m_readwrite_cbhdl;
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
-GpiCbHdl *FliImpl::register_nexttime_callback(int (*function)(void *),
+GpiCbHdl *FliImpl::register_nexttime_callback(int (*cb_func)(void *),
                                               void *cb_data) {
-    if (m_nexttime_cbhdl.arm_callback()) {
+    auto cb_hdl = m_next_phase_cache.acquire();
+    int err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        m_next_phase_cache.release(cb_hdl);
         return NULL;
     }
-    m_nexttime_cbhdl.set_user_data(function, cb_data);
-    return &m_nexttime_cbhdl;
-}
-
-int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl) {
-    return gpi_hdl->cleanup_callback();
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
 GpiIterator *FliImpl::iterate_handle(GpiObjHdl *obj_hdl,
@@ -1063,97 +1071,117 @@ void FliIterator::populate_handle_list(FliIterator::OneToMany childType) {
     }
 }
 
-FliTimedCbHdl *FliTimerCache::get_timer(uint64_t time) {
-    FliTimedCbHdl *hdl;
+static std::vector<std::string> get_argv() {
+    /* Necessary to implement PLUSARGS
+       There is no function available on the FLI to obtain argc+argv directly
+       from the simulator. To work around this we use the TCL interpreter that
+       ships with Questa, some TCL commands, and the TCL variable `argv` to
+       obtain the simulator argc+argv.
+    */
+    std::vector<std::string> argv;
 
-    if (!free_list.empty()) {
-        hdl = free_list.front();
-        free_list.pop();
-        hdl->reset_time(time);
-    } else {
-        hdl = new FliTimedCbHdl(impl, time);
+    // obtain a reference to TCL interpreter
+    Tcl_Interp *interp = reinterpret_cast<Tcl_Interp *>(mti_Interp());
+
+    // get argv TCL variable
+    auto err = mti_Cmd("return -level 0 $argv") != TCL_OK;
+    // LCOV_EXCL_START
+    if (err) {
+        const char *errmsg = Tcl_GetStringResult(interp);
+        LOG_WARN("Failed to get reference to argv: %s", errmsg);
+        Tcl_ResetResult(interp);
+        return argv;
     }
+    // LCOV_EXCL_STOP
+    Tcl_Obj *result = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(result);
+    Tcl_ResetResult(interp);
 
-    return hdl;
+    // split TCL list into length and element array
+    int argc;
+    Tcl_Obj **tcl_argv;
+    err = Tcl_ListObjGetElements(interp, result, &argc, &tcl_argv) != TCL_OK;
+    // LCOV_EXCL_START
+    if (err) {
+        const char *errmsg = Tcl_GetStringResult(interp);
+        LOG_WARN("Failed to get argv elements: %s", errmsg);
+        Tcl_DecrRefCount(result);
+        Tcl_ResetResult(interp);
+        return argv;
+    }
+    // LCOV_EXCL_STOP
+    Tcl_ResetResult(interp);
+
+    // get each argv arg and copy into internal storage
+    for (int i = 0; i < argc; i++) {
+        const char *arg = Tcl_GetString(tcl_argv[i]);
+        argv.push_back(arg);
+    }
+    Tcl_DecrRefCount(result);
+
+    return argv;
 }
 
-static constexpr size_t FLI_TIMER_CACHE_SIZE =
-    256;  // Arbitrary large value, it's doubtful more than 256 simultaneous
-          // Timer triggers will be active at any time
-
-void FliTimerCache::put_timer(FliTimedCbHdl *hdl) {
-    // save FLI_TIMER_CACHE_SIZE Timer objects before deleting, this should
-    // prevent "live leaking"
-    if (free_list.size() < FLI_TIMER_CACHE_SIZE) {
-        free_list.push(hdl);
-    } else {
-        delete hdl;
+static int startup_callback(void *) {
+    std::vector<std::string> const argv_storage = get_argv();
+    std::vector<const char *> argv_cstr;
+    for (const auto &arg : argv_storage) {
+        argv_cstr.push_back(arg.c_str());
     }
+    int argc = static_cast<int>(argv_storage.size());
+    const char **argv = argv_cstr.data();
+
+    gpi_embed_init(argc, argv);
+
+    return 0;
 }
 
-extern "C" {
-
-// Main re-entry point for callbacks from simulator
-void handle_fli_callback(void *data) {
-    gpi_to_user();
-
-    fflush(stderr);
-
-    FliProcessCbHdl *cb_hdl = (FliProcessCbHdl *)data;
-
-    if (!cb_hdl) {
-        LOG_CRITICAL("FLI: Callback data corrupted: ABORTING");
-        gpi_embed_end();
-        return;
-    }
-
-    gpi_cb_state_e old_state = cb_hdl->get_call_state();
-
-    if (old_state == GPI_PRIMED) {
-        cb_hdl->set_call_state(GPI_CALL);
-
-        cb_hdl->run_callback();
-        gpi_cb_state_e new_state = cb_hdl->get_call_state();
-
-        /* We have re-primed in the handler */
-        if (new_state != GPI_PRIMED) {
-            if (cb_hdl->cleanup_callback()) {
-                delete cb_hdl;
-            }
-        }
-    } else {
-        /* Issue #188 seems to appear via FLI as well */
-        if (cb_hdl->cleanup_callback()) {
-            delete cb_hdl;
-        }
-    }
-
-    gpi_to_simulator();
-};
-
-static void register_initial_callback() {
-    sim_init_cb = new FliStartupCbHdl(fli_table);
-    sim_init_cb->arm_callback();
+static int shutdown_callback(void *) {
+    gpi_embed_end();
+    return 0;
 }
 
-static void register_final_callback() {
-    sim_finish_cb = new FliShutdownCbHdl(fli_table);
-    sim_finish_cb->arm_callback();
+void FliImpl::main() noexcept {
+    auto startup_cb = new FliStartupCbHdl(this);
+    auto err = startup_cb->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        LOG_CRITICAL(
+            "VHPI: Unable to register startup callback! Simulation will end.");
+        delete startup_cb;
+        exit(1);
+    }
+    // LCOV_EXCL_STOP
+    startup_cb->set_cb_info(startup_callback, nullptr);
+
+    auto shutdown_cb = new FliShutdownCbHdl(this);
+    err = shutdown_cb->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        LOG_CRITICAL(
+            "VHPI: Unable to register shutdown callback! Simulation will end.");
+        startup_cb->remove();
+        delete shutdown_cb;
+        exit(1);
+    }
+    // LCOV_EXCL_STOP
+    shutdown_cb->set_cb_info(shutdown_callback, nullptr);
+    m_sim_finish_cb = shutdown_cb;
+
+    gpi_register_impl(this);
+    gpi_entry_point();
 }
 
 static void register_impl() {
-    fli_table = new FliImpl("FLI");
+    auto fli_table = new FliImpl("FLI");
     gpi_register_impl(fli_table);
 }
 
-void cocotb_init() {
-    LOG_INFO("cocotb_init called");
-    register_impl();
-    gpi_entry_point();
-    register_initial_callback();
-    register_final_callback();
+extern "C" {
+COCOTBFLI_EXPORT void cocotb_init() {
+    auto fli_table = new FliImpl("FLI");
+    fli_table->main();
 }
-
-}  // extern "C"
+}
 
 GPI_ENTRY_POINT(cocotbfli, register_impl);
