@@ -239,15 +239,15 @@ def _reprs(values: Sequence[Any]) -> List[str]:
 
 
 def _repr(v: Any) -> Optional[str]:
-    if isinstance(v, str):
+    if isinstance(v, Enum):
+        return v.name
+    elif isinstance(v, str):
         if len(v) <= 10 and v.isidentifier():
             return v
         else:
             return None
     elif isinstance(v, (int, float, bool, type(None))):
         return repr(v)
-    elif isinstance(v, Enum):
-        return v.name
     elif isinstance(v, type):
         return v.__qualname__
     elif callable(v) and hasattr(v, "__qualname__"):
