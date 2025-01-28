@@ -130,7 +130,8 @@ async def test_internalevent(dut):
         ran = True
 
     # Test multiple coroutines waiting
-    await cocotb.start(await_internalevent())
+    cocotb.start_soon(await_internalevent())
+    await NullTrigger()
     assert not e.is_set()
     assert not ran
     # _InternalEvent can only be awaited by one coroutine

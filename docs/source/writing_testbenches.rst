@@ -168,7 +168,7 @@ Concurrent and sequential execution
 
 An :keyword:`await` will run an :keyword:`async` coroutine and wait for it to complete.
 The called coroutine "blocks" the execution of the current coroutine.
-Wrapping the call in :func:`~cocotb.start` or :func:`~cocotb.start_soon` runs the coroutine concurrently,
+Wrapping the call in :func:`~cocotb.start_soon` runs the coroutine concurrently,
 allowing the current coroutine to continue executing.
 At any time you can await the result of a :class:`~cocotb.task.Task`,
 which will block the current coroutine's execution until the task finishes.

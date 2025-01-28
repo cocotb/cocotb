@@ -278,7 +278,8 @@ async def test_event_set_schedule(dut):
         nonlocal waiter_scheduled
         waiter_scheduled = True
 
-    await cocotb.start(waiter(e))
+    cocotb.start_soon(waiter(e))
+    await NullTrigger()
 
     e.set()
 
@@ -346,7 +347,8 @@ async def test_task_repr(_) -> None:
     async def coroutine_outer():
         return await coroutine_middle()
 
-    coro_task = await cocotb.start(coroutine_outer())
+    coro_task = cocotb.start_soon(coroutine_outer())
+    await NullTrigger()
 
     # let coroutine_inner run up to the await Combine
     coro_e.set()
@@ -390,7 +392,10 @@ async def test_task_repr(_) -> None:
         await First(task, Timer(2, units="ns"))
         task.kill()
 
-    coro_task = await cocotb.start(coroutine_first())
+    coro_task = cocotb.start_soon(coroutine_first())
+    assert re.match(r"<Task \d+ scheduled coro=coroutine_first\(\)>", repr(coro_task))
+
+    await NullTrigger()
 
     log.info(repr(coro_task))
     assert re.match(
@@ -433,7 +438,8 @@ async def test_task_repr(_) -> None:
     async def coroutine_timer():
         await Timer(1, units="ns")
 
-    coro_task = await cocotb.start(coroutine_timer())
+    coro_task = cocotb.start_soon(coroutine_timer())
+    await NullTrigger()
 
     # Trigger.__await__ should be popped from the coroutine stack
     log.info(repr(coro_task))
@@ -631,12 +637,12 @@ async def test_test_end_with_multiple_pending_tasks(_):
     cocotb.start_soon(coro())
 
 
-@cocotb.test()
-async def test_start(_):
+@cocotb.test
+async def test_start(_) -> None:
     async def coro():
         await Timer(1, "step")
 
-    task1 = await cocotb.start(coro())
+    task1 = cocotb.start_soon(coro())
     assert type(task1) is Task
     assert not task1.done()
 
@@ -644,26 +650,20 @@ async def test_start(_):
     assert task1.done()
 
     task2 = cocotb.create_task(coro())
-    task3 = await cocotb.start(task2)
+    task3 = cocotb.start_soon(task2)
     assert task3 is task2
-
-    await Timer(1, "step")
-
-    task4 = cocotb.start_soon(coro())
-    await cocotb.start(coro())
-    await Timer(2, "step")
-    assert task4.done()
 
     async def coro_val():
         return 1
 
-    task6 = await cocotb.start(coro_val())
+    task6 = cocotb.start_soon(coro_val())
+    await NullTrigger()
     assert task6.done()
     assert await task6 == 1
 
 
-@cocotb.test()
-async def test_start_scheduling(dut):
+@cocotb.test
+async def test_start_scheduling(_) -> None:
     """Test that start resumes calling task before control is yielded to simulator."""
     sim_resumed = False
     coro_started = False
@@ -688,7 +688,9 @@ async def test_start_scheduling(dut):
     await t
     # react_wrapper is now on the stack
     assert sim_resumed is False
-    await cocotb.start(coro())
+    cocotb.start_soon(coro())
+    assert coro_started is False
+    await NullTrigger()
     assert sim_resumed is False
     assert coro_started is True
     await Timer(1, "step")  # await a GPITrigger to ensure control returns to simulator

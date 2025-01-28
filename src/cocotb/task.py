@@ -38,9 +38,8 @@ class Task(Generic[ResultType]):
     """Concurrently executing task.
 
     This class is not intended for users to directly instantiate.
-    Use :func:`cocotb.create_task` to create a Task object,
-    or use :func:`cocotb.start_soon` or :func:`cocotb.start` to
-    create a Task and schedule it to run.
+    Use :func:`cocotb.create_task` to create a Task object
+    or :func:`cocotb.start_soon` to create a Task and schedule it to run.
 
     .. versionchanged:: 1.8
         Moved to the ``cocotb.task`` module.

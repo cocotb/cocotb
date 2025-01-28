@@ -158,3 +158,17 @@ async def test_edge_trigger_deprecated(dut) -> None:
     with pytest.warns(DeprecationWarning):
         e = Edge(dut.stream_in_valid)
     assert e is dut.stream_in_valid.value_change
+
+
+@cocotb.test
+async def test_cocotb_start(_) -> None:
+    done = False
+
+    async def do_something():
+        nonlocal done
+        done = True
+
+    with pytest.warns(DeprecationWarning):
+        await cocotb.start(do_something())
+
+    assert done
