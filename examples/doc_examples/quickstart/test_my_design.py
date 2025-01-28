@@ -41,7 +41,7 @@ async def generate_clock(dut):
 async def my_second_test(dut):
     """Try accessing the design."""
 
-    await cocotb.start(generate_clock(dut))  # run the clock "in the background"
+    cocotb.start_soon(generate_clock(dut))  # run the clock "in the background"
 
     await Timer(5, units="ns")  # wait a bit
     await FallingEdge(dut.clk)  # wait for falling edge/"negedge"

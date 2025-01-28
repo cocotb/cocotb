@@ -53,7 +53,7 @@ async def test_clock_with_units(dut, impl: str) -> None:
 
     clk_gen.kill()
 
-    clk_gen = await cocotb.start(clk_250mhz.start())
+    clk_gen = cocotb.start_soon(clk_250mhz.start())
 
     start_time_ns = get_sim_time(units="ns")
 

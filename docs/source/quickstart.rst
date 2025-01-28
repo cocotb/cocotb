@@ -62,7 +62,7 @@ control back to cocotb (see :ref:`simulator-triggers`).
 It's most likely that you will want to do several things "at the same time" however -
 think multiple ``always`` blocks in Verilog or ``process`` statements in VHDL.
 In cocotb, you might move the clock generation part of the example above into its own
-:keyword:`async` function and :func:`~cocotb.start` it ("start it in the background")
+:keyword:`async` function and :func:`cocotb.start_soon` it ("start it in the background")
 from the test:
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/test_my_design.py

@@ -86,7 +86,8 @@ async def test_queue_contention(dut):
 
     # test put contention
     for k in range(NUM_PUTTERS):
-        coro_list.append(await cocotb.start(putter(putter_list, k)))
+        coro_list.append(cocotb.start_soon(putter(putter_list, k)))
+    await NullTrigger()
 
     assert q.qsize() == QUEUE_SIZE
 
@@ -148,7 +149,8 @@ async def test_fair_scheduling(dut):
     q.put_nowait(None)
 
     # create NUM_PUTTER contending putters
-    putters = [await cocotb.start(putter(i)) for i in range(NUM_PUTTERS)]
+    putters = [cocotb.start_soon(putter(i)) for i in range(NUM_PUTTERS)]
+    await NullTrigger()
 
     # remove value that forced contention
     assert q.get_nowait() is None, "Popped unexpected value"
@@ -190,12 +192,14 @@ async def run_queue_blocking_test(dut, queue_type):
 
     # test put contention
     for k in range(NUM_PUTTERS):
-        coro_list.append(await cocotb.start(putter(putter_list, k)))
+        coro_list.append(cocotb.start_soon(putter(putter_list, k)))
+    await NullTrigger()
 
     assert q.qsize() == QUEUE_SIZE
 
     for k in range(NUM_PUTTERS):
-        coro_list.append(await cocotb.start(getter(getter_list, k)))
+        coro_list.append(cocotb.start_soon(getter(getter_list, k)))
+    await NullTrigger()
 
     await Combine(*coro_list)
 
@@ -211,10 +215,12 @@ async def run_queue_blocking_test(dut, queue_type):
 
     # test get contention
     for k in range(NUM_PUTTERS):
-        coro_list.append(await cocotb.start(getter(getter_list, k)))
+        coro_list.append(cocotb.start_soon(getter(getter_list, k)))
+    await NullTrigger()
 
     for k in range(NUM_PUTTERS):
-        coro_list.append(await cocotb.start(putter(putter_list, k)))
+        coro_list.append(cocotb.start_soon(putter(putter_list, k)))
+    await NullTrigger()
 
     await Combine(*coro_list)
 
@@ -230,7 +236,8 @@ async def test_str_and_repr(_):
     q = Queue[int](maxsize=1)
 
     q.put_nowait(0)
-    await cocotb.start(q.put(1))
+    cocotb.start_soon(q.put(1))
+    await NullTrigger()
 
     s = repr(q)
     assert "maxsize" in s
@@ -248,7 +255,8 @@ async def test_str_and_repr(_):
     assert "_putters" not in s
 
     assert q.get_nowait() == 1
-    getter = await cocotb.start(q.get())
+    getter = cocotb.start_soon(q.get())
+    await NullTrigger()
 
     s = repr(q)
     assert "_putters" not in s

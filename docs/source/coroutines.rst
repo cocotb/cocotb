@@ -53,15 +53,11 @@ Coroutines can :keyword:`return` a value, so that they can be used by other coro
 Concurrent Execution
 ====================
 
-Coroutines can be scheduled for concurrent execution with :func:`~cocotb.start` and :func:`~cocotb.start_soon`.
+Coroutines can be scheduled for concurrent execution with :func:`~cocotb.start_soon`.
 These concurrently running coroutines are called :class:`~cocotb.task.Task`\ s.
 
-The :keyword:`async` function :func:`~cocotb.start` schedules the coroutine to be executed concurrently,
-then yields control to allow the new task (and any other pending tasks) to run,
-before resuming the calling task.
-
-:func:`~cocotb.start_soon` schedules the coroutine for future execution,
-after the calling task yields control.
+:func:`~cocotb.start_soon` schedules the coroutine for *future* execution,
+some time after the current Task yields control.
 
 .. code-block:: python
 
@@ -74,7 +70,7 @@ after the calling task yields control.
         # reset_dut is a function -
         # part of the user-generated "uart_tb" class
         # run reset_dut immediately before continuing
-        await cocotb.start(tb.reset_dut(dut.rstn, 20))
+        await tb.reset_dut(dut.rstn, 20)
 
         await Timer(10, units='ns')
         print("Reset is still active: %d" % dut.rstn)
@@ -134,7 +130,7 @@ forcing their completion before they would naturally end.
 .. versionchanged:: 1.4
     The ``cocotb.coroutine`` decorator is no longer necessary for :keyword:`async def` coroutines.
     :keyword:`async def` coroutines can be used, without the ``@cocotb.coroutine`` decorator, wherever decorated coroutines are accepted,
-    including :keyword:`yield` statements and ``cocotb.fork`` (since replaced with :func:`~cocotb.start` and :func:`~cocotb.start_soon`).
+    including :keyword:`yield` statements and ``cocotb.fork`` (since replaced with :func:`~cocotb.start_soon`).
 
 .. versionchanged:: 1.6
     Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions.
@@ -147,6 +143,9 @@ forcing their completion before they would naturally end.
 
 .. versionchanged:: 2.0
     Removed ``cocotb.coroutine``.
+
+.. versionremoved:: 2.0
+    Removed references to the deprecated :func:`cocotb.start`.
 
 
 Waiting For Multiple Events Simultaneously
