@@ -31,7 +31,7 @@ import logging
 from decimal import Decimal
 from fractions import Fraction
 from logging import Logger
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Type, Union
 
 import cocotb
 from cocotb._py_compat import cached_property
@@ -260,6 +260,15 @@ class Clock:
         if self._impl == "gpi":
             self._clkobj.stop()
         self._task = None
+
+    async def cycles(
+        self,
+        num_cycles: int,
+        edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[Edge]] = RisingEdge,
+    ) -> None:
+        """Wait for a number of clock cycles."""
+        # TODO Improve implementation to use a Timer to skip most of the cycles
+        await ClockCycles(self._signal, num_cycles, edge_type)
 
     @cached_method
     def __repr__(self) -> str:
