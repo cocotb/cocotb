@@ -151,3 +151,17 @@ async def test_logic_scalar_object_methods_deprecated(dut) -> None:
         assert str(dut.stream_in_valid) == "1"
     with pytest.warns(DeprecationWarning):
         assert len(dut.stream_in_valid) == 1
+
+
+@cocotb.test
+async def test_cocotb_start(_) -> None:
+    done = False
+
+    async def do_something():
+        nonlocal done
+        done = True
+
+    with pytest.warns(DeprecationWarning):
+        await cocotb.start(do_something())
+
+    assert done

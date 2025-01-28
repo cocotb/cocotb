@@ -40,6 +40,7 @@ from cocotb._decorators import (
     resume,
     test,
 )
+from cocotb._deprecation import deprecated
 from cocotb._scheduler import Scheduler
 from cocotb._utils import DocEnum
 from cocotb.regression import RegressionManager
@@ -151,7 +152,7 @@ def start_soon(
     Returns:
         The :class:`~cocotb.task.Task` that is scheduled to be run.
 
-    .. versionadded:: 1.6.0
+    .. versionadded:: 1.6
     """
     task = create_task(coro)
     task._add_done_callback(_task_done_callback)
@@ -159,6 +160,7 @@ def start_soon(
     return task
 
 
+@deprecated("Use ``cocotb.start_soon`` instead.")
 async def start(
     coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
 ) -> "cocotb.task.Task[cocotb.task.ResultType]":
@@ -176,7 +178,12 @@ async def start(
     Returns:
         The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
 
-    .. versionadded:: 1.6.0
+    .. versionadded:: 1.6
+
+    .. deprecated:: 2.0
+        Use :func:`cocotb.start_soon` instead.
+        If you need the scheduled Task to run before continuing the current Task,
+        follow the call to :func:`cocotb.start_soon` with an :class:`await NullTrigger() <cocotb.triggers.NullTrigger>`.
     """
     task = start_soon(coro)
     await cocotb.triggers.NullTrigger()
@@ -197,7 +204,7 @@ def create_task(
     Returns:
         Either the provided :class:`~cocotb.task.Task` or a new Task wrapping the coroutine.
 
-    .. versionadded:: 1.6.0
+    .. versionadded:: 1.6
     """
     if isinstance(coro, cocotb.task.Task):
         return coro
