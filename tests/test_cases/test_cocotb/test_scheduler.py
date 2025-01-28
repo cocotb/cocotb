@@ -941,3 +941,36 @@ async def test_joins_in_first(_) -> None:
     task2 = cocotb.start_soon(wait(20))
     j = await First(task1.complete, task2.complete)
     assert j is task1.complete
+
+
+@cocotb.test(expect_error=MyException)
+async def test_start_after_create(_) -> None:
+    async def fail():
+        raise MyException()
+
+    a = cocotb.create_task(fail())
+    cocotb.start_soon(a)
+    await a
+
+
+@cocotb.test
+async def test_start_again_while_scheduled(_) -> None:
+    async def noop() -> None:
+        pass
+
+    a = cocotb.start_soon(noop())
+    b = cocotb.start_soon(a)
+    assert b is a
+    await a
+
+
+@cocotb.test
+async def test_start_again_while_pending(_) -> None:
+    async def noop() -> None:
+        await Timer(1, "ns")
+
+    a = cocotb.start_soon(noop())
+    await NullTrigger()
+    b = cocotb.start_soon(a)
+    assert b is a
+    await a
