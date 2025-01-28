@@ -70,7 +70,7 @@ after the calling task yields control.
         """While reset is active, toggle signals"""
         tb = uart_tb(dut)
         # "Clock" is a built in class for toggling a clock signal
-        cocotb.start_soon(Clock(dut.clk, 1, units='ns').start())
+        Clock(dut.clk, 1, units='ns').start()
         # reset_dut is a function -
         # part of the user-generated "uart_tb" class
         # run reset_dut immediately before continuing
@@ -87,7 +87,7 @@ Other tasks can be used in an await statement to suspend the current task until 
 
     @cocotb.test()
     async def test_count_edge_cycles(dut, period_ns=1, clocks=6):
-        cocotb.start_soon(Clock(dut.clk, period_ns, units='ns').start())
+        Clock(dut.clk, period_ns, units='ns').start()
         await RisingEdge(dut.clk)
 
         timer = Timer(period_ns + 10, 'ns')
@@ -114,16 +114,16 @@ forcing their completion before they would naturally end.
         clk_1mhz   = Clock(dut.clk, 1.0, units='us')
         clk_250mhz = Clock(dut.clk, 4.0, units='ns')
 
-        clk_gen = cocotb.start_soon(clk_1mhz.start())
+        clk_1mhz.start()
         start_time_ns = get_sim_time(units='ns')
         await Timer(1, units='ns')
         await RisingEdge(dut.clk)
         edge_time_ns = get_sim_time(units='ns')
         assert isclose(edge_time_ns, start_time_ns + 1000.0), "Expected a period of 1 us"
 
-        clk_gen.kill()  # kill clock coroutine here
+        clk_1mhz.stop()  # stop 1MHz clock here
 
-        clk_gen = cocotb.start_soon(clk_250mhz.start())
+        clk_250mhz.start()
         start_time_ns = get_sim_time(units='ns')
         await Timer(1, units='ns')
         await RisingEdge(dut.clk)
