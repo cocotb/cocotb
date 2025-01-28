@@ -1015,48 +1015,108 @@ class First(_AggregateWaitable[Any]):
 
 
 class ClockCycles(Waitable["ClockCycles"]):
-    r"""Fires after *num_cycles* transitions of *signal*.
-
-    If *rising* is ``True``, it fires after *num_cycle* transitions of *signal* from non-``1`` to ``1``.
-    If *rising* is ``False``, it fires after *num_cycle* transitions of *signal* from non-``0`` to ``0``.
+    r"""Finishes after *num_cycles* transitions of *signal*.
 
     :keyword:`await`\ ing this Trigger returns the ClockCycle object.
 
     Args:
         signal: The signal to monitor.
         num_cycles: The number of cycles to count.
-        rising: If ``True``, count rising edges; otherwise, count falling edges.
+        rising: If ``True``, count rising edges; if ``False``, count falling edges.
+        edge: The kind of :ref:`edge-triggers` to count.
 
     .. warning::
         On many simulators transitions occur when the signal changes value from non-``0`` to ``0`` or non-``1`` to ``1``,
         not just from ``1`` to ``0`` or ``0`` to ``1``.
+
+    .. versionadded:: 2.0
+        Passing the edge trigger type: :class:`.RisingEdge`, :class:`.FallingEdge`, or :class:`.Edge`
+        as the third positional argument or by the keyword *edge_type*.
     """
 
+    @overload
     def __init__(
-        self, signal: cocotb.handle.LogicObject, num_cycles: int, rising: bool = True
+        self,
+        signal: cocotb.handle.LogicObject,
+        num_cycles: int,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        signal: cocotb.handle.LogicObject,
+        num_cycles: int,
+        _3: Union[bool, Type[RisingEdge], Type[FallingEdge], Type[Edge]],
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self, signal: cocotb.handle.LogicObject, num_cycles: int, *, rising: bool
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        signal: cocotb.handle.LogicObject,
+        num_cycles: int,
+        *,
+        edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[Edge]],
+    ) -> None: ...
+
+    def __init__(
+        self,
+        signal: cocotb.handle.LogicObject,
+        num_cycles: int,
+        _3: Union[bool, Type[RisingEdge], Type[FallingEdge], Type[Edge], None] = None,
+        *,
+        rising: Union[bool, None] = None,
+        edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[Edge], None] = None,
     ) -> None:
-        self.signal = signal
-        self.num_cycles = num_cycles
-        self._type: Union[Type[RisingEdge], Type[FallingEdge]]
-        if rising is True:
-            self._type = RisingEdge
+        self._signal = signal
+        self._num_cycles = num_cycles
+        self._edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[Edge]]
+        if _3 is not None:
+            if rising is not None or edge_type is not None:
+                raise TypeError("Passed more than one edge selection argument.")
+            if _3 is True:
+                self._edge_type = RisingEdge
+            elif _3 is False:
+                self._edge_type = FallingEdge
+            else:
+                self._edge_type = _3
+        elif rising is not None:
+            if edge_type is not None:
+                raise TypeError("Passed more than one edge selection argument.")
+            self._edge_type = RisingEdge if rising else FallingEdge
+        elif edge_type is not None:
+            self._edge_type = edge_type
         else:
-            self._type = FallingEdge
+            # default if no argument is passed
+            self._edge_type = RisingEdge
+
+    @property
+    def signal(self) -> cocotb.handle.LogicObject:
+        """The signal being monitored."""
+        return self._signal
+
+    @property
+    def num_cycles(self) -> int:
+        """The number of cycles to wait."""
+        return self._num_cycles
+
+    @property
+    def edge_type(self) -> Union[Type[RisingEdge], Type[FallingEdge], Type[Edge]]:
+        """The type of edge trigger used."""
+        return self._edge_type
 
     async def _wait(self) -> "ClockCycles":
-        trigger = self._type(self.signal)
-        for _ in range(self.num_cycles):
+        trigger = self._edge_type(self._signal)
+        for _ in range(self._num_cycles):
             await trigger
         return self
 
     def __repr__(self) -> str:
-        # no _pointer_str here, since this is not a trigger, so identity
-        # doesn't matter.
-        if self._type is RisingEdge:
-            fmt = "{}({!r}, {!r})"
-        else:
-            fmt = "{}({!r}, {!r}, rising=False)"
-        return fmt.format(type(self).__qualname__, self.signal, self.num_cycles)
+        return f"{type(self).__qualname__}({self._signal._path}, {self._num_cycles}, {self._edge_type.__qualname__})"
 
 
 class SimTimeoutError(TimeoutError):

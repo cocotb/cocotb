@@ -30,6 +30,7 @@ from cocotb.triggers import (
     Timer,
     with_timeout,
 )
+from cocotb.utils import get_sim_time
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
@@ -205,26 +206,62 @@ async def test_clock_cycles(dut):
     Test the ClockCycles Trigger
     """
     clk = dut.clk
-    cocotb.start_soon(Clock(clk, 100, "ns").start())
+    period = 100
+    cycles = 10
+    cocotb.start_soon(Clock(clk, period, "ns").start())
+
+    # necessary to put us in a consistent state for the cycle count math below
     await RisingEdge(clk)
-    dut._log.info("After one edge")
-    t = ClockCycles(clk, 10)
+
+    t = ClockCycles(clk, cycles, RisingEdge)
     # NVC gives upper-case identifiers for some things, so do case-insensitive match. See gh-3985
     assert re.match(
-        r"ClockCycles\(LogicObject\(sample_module.clk\), 10\)",
+        r"ClockCycles\(sample_module.clk, 10, RisingEdge\)",
         repr(t),
         flags=re.IGNORECASE,
     )
+    assert t.signal is clk
+    assert t.num_cycles == cycles
+    assert t.edge_type is RisingEdge
+
+    start_time = get_sim_time("ns")
     await t
-    dut._log.info("After 10 rising edges")
-    t = ClockCycles(clk, 10, rising=False)
+    end_time = get_sim_time("ns")
+    assert end_time == (start_time + (cycles * period))
+
+    t = ClockCycles(clk, 10, FallingEdge)
+    # NVC gives upper-case identifiers for some things, so do case-insensitive match. See gh-3985
     assert re.match(
-        r"ClockCycles\(LogicObject\(sample_module.clk\), 10, rising=False\)",
+        r"ClockCycles\(sample_module.clk, 10, FallingEdge\)",
         repr(t),
         flags=re.IGNORECASE,
     )
+    assert t.signal is clk
+    assert t.num_cycles == cycles
+    assert t.edge_type is FallingEdge
+
+    start_time = get_sim_time("ns")
     await t
-    dut._log.info("After 10 falling edges")
+    end_time = get_sim_time("ns")
+    assert end_time == (start_time + (cycles * period) - (period // 2))
+
+    # test other edge type construction
+    assert ClockCycles(clk, cycles, True).edge_type is RisingEdge
+    assert ClockCycles(clk, cycles, False).edge_type is FallingEdge
+    assert ClockCycles(clk, cycles, edge_type=Edge).edge_type is Edge
+    assert ClockCycles(clk, cycles, rising=True).edge_type is RisingEdge
+    assert ClockCycles(clk, cycles, rising=False).edge_type is FallingEdge
+    assert ClockCycles(clk, cycles).edge_type is RisingEdge  # default
+
+    # bad construction calls
+    with pytest.raises(TypeError):
+        ClockCycles(clk, cycles, True, edge_type=RisingEdge)
+    with pytest.raises(TypeError):
+        ClockCycles(clk, cycles, True, rising=True)
+    with pytest.raises(TypeError):
+        ClockCycles(clk, cycles, rising=True, edge_type=RisingEdge)
+    with pytest.raises(TypeError):
+        ClockCycles(clk, cycles, Edge, rising=True, edge_type=RisingEdge)
 
 
 @cocotb.test()
