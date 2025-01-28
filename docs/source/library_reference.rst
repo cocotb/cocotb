@@ -147,14 +147,16 @@ Triggers
 Simulator Triggers
 ------------------
 
-Signals
-^^^^^^^
+.. _edge-triggers:
 
-.. autoclass:: cocotb.triggers.Edge(signal)
+Edge Triggers
+^^^^^^^^^^^^^
 
-.. autoclass:: cocotb.triggers.RisingEdge(signal)
+.. autoclass:: cocotb.triggers.Edge
 
-.. autoclass:: cocotb.triggers.FallingEdge(signal)
+.. autoclass:: cocotb.triggers.RisingEdge
+
+.. autoclass:: cocotb.triggers.FallingEdge
 
 .. autoclass:: cocotb.triggers.ClockCycles
 
@@ -164,11 +166,11 @@ Timing
 
 .. autoclass:: cocotb.triggers.Timer
 
-.. autoclass:: cocotb.triggers.ReadOnly()
+.. autoclass:: cocotb.triggers.ReadOnly
 
-.. autoclass:: cocotb.triggers.ReadWrite()
+.. autoclass:: cocotb.triggers.ReadWrite
 
-.. autoclass:: cocotb.triggers.NextTimeStep()
+.. autoclass:: cocotb.triggers.NextTimeStep
 
 
 .. _python-triggers:
