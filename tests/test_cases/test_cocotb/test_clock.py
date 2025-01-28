@@ -15,7 +15,7 @@ import pytest
 import cocotb
 from cocotb.clock import Clock
 from cocotb.simulator import clock_create, get_precision
-from cocotb.triggers import NullTrigger, RisingEdge, Timer
+from cocotb.triggers import FallingEdge, NullTrigger, RisingEdge, Timer
 from cocotb.utils import get_sim_time
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -160,3 +160,24 @@ async def test_clock_stop_and_restart_by_killing(dut) -> None:
     c.start()
     for _ in range(10):
         await RisingEdge(dut.clk)
+
+
+@cocotb.test
+async def test_clock_cycles(dut) -> None:
+    period_ns = 10
+    cycles = 10
+    c = Clock(dut.clk, 10, "ns")
+    c.start()
+
+    # so we start at a consistent state for math below
+    await RisingEdge(dut.clk)
+
+    start_time = get_sim_time(units="ns")
+    await c.cycles(cycles)
+    end_time = get_sim_time(units="ns")
+    assert end_time == (start_time + (cycles * period_ns))
+
+    start_time = get_sim_time(units="ns")
+    await c.cycles(cycles, FallingEdge)
+    end_time = get_sim_time(units="ns")
+    assert end_time == (start_time + (cycles * period_ns) - (period_ns // 2))
