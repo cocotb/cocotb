@@ -419,9 +419,11 @@ class Scheduler:
 
         It is an error to attempt to queue a task that has already been queued.
         """
-        # Don't queue the same task more than once (gh-2503)
         if task in self._scheduled_tasks:
-            raise InternalError("Task was queued more than once.")
+            return
+        for tasks in self._trigger2tasks.values():
+            if task in tasks:
+                return
         # TODO Move state tracking into Task
         task._state = Task._State.SCHEDULED
         self._scheduled_tasks[task] = outcome
