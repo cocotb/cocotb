@@ -81,7 +81,7 @@ for more information on such concurrent processes.
    No need to write your own clock generator!
 
    You would start :class:`~cocotb.clock.Clock` with
-   ``cocotb.start_soon(Clock(dut.clk, 1, units="ns").start())`` near the top of your test,
+   ``Clock(dut.clk, 1, units="ns").start()`` near the top of your test,
    after importing it with ``from cocotb.clock import Clock``.
 
 

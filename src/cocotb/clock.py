@@ -31,30 +31,34 @@ import logging
 from decimal import Decimal
 from fractions import Fraction
 from logging import Logger
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
+import cocotb
 from cocotb._py_compat import cached_property
+from cocotb._utils import cached_method
 from cocotb._write_scheduler import trust_inertial
 from cocotb.handle import LogicObject
 from cocotb.simulator import clock_create
-from cocotb.triggers import Event, Timer
+from cocotb.task import Task
+from cocotb.triggers import ClockCycles, Edge, Event, FallingEdge, RisingEdge, Timer
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
+
+if TYPE_CHECKING:  # pragma: no cover
+    from typing import Literal, TypeAlias
+
+    Impl: TypeAlias = Literal["gpi"] | Literal["py"]
+
+
+_valid_impls = ("gpi", "py")
 
 
 class Clock:
     r"""Simple 50:50 duty cycle clock driver.
 
-    Instances of this class should call its :meth:`start` method
-    and pass the coroutine object to one of the functions in :ref:`task-management`.
+    .. code-block:: python
 
-    This will create a clocking task that drives the signal at the
-    desired period/frequency.
-
-    Usage:
-        .. code-block:: python
-
-            c = Clock(dut.clk, 10, "ns")
-            await cocotb.start(c.start())
+        c = Clock(dut.clk, 10, "ns")
+        c.start()
 
     Args:
         signal: The clock pin/signal to be driven.
@@ -78,7 +82,7 @@ class Clock:
     of using the simulator's inertial write mechanism.
 
     If you need more features like a phase shift and an asymmetric duty cycle,
-    it is simple to create your own clock generator (that you then :func:`~cocotb.start`):
+    it is simple to create your own clock generator (that you then :func:`cocotb.start_soon`):
 
     .. code-block:: python
 
@@ -109,7 +113,7 @@ class Clock:
 
 
         high_delay = low_delay = 100
-        await cocotb.start(custom_clock())
+        cocotb.start_soon(custom_clock())
         await Timer(1000, units="ns")
         high_delay = low_delay = 10  # change the clock speed
         await Timer(1000, units="ns")
@@ -119,6 +123,10 @@ class Clock:
 
     .. versionchanged:: 2.0
         Passing ``None`` as the *units* argument was removed, use ``'step'`` instead.
+
+    .. versionchanged:: 2.0
+        :meth:`start` now automatically calls :func:`cocotb.start_soon` and stores the Task
+        on the Clock object, so that it may later be :meth:`stop`\ ped.
     """
 
     def __init__(
@@ -126,24 +134,53 @@ class Clock:
         signal: LogicObject,
         period: Union[float, Fraction, Decimal],
         units: str = "step",
-        impl: str = "auto",
-    ):
-        self.signal = signal
-        self.period = get_sim_steps(period, units)
-        self.frequency = 1 / get_time_from_sim_steps(self.period, units="us")
-        valid_impls = ["auto", "gpi", "py"]
-        if impl not in valid_impls:
-            valid_impls_str = ", ".join([repr(i) for i in valid_impls])
+        impl: "Impl | None" = None,
+    ) -> None:
+        self._signal = signal
+        self._period = period
+        self._units = units
+        self._impl: "Impl"  # noqa: UP037  # ruff assumes we are at least using Python 3.7 and gives false positive.
+
+        if impl is None:
+            self._impl = "gpi" if trust_inertial else "py"
+        elif impl in _valid_impls:
+            self._impl = impl
+        else:
+            valid_impls_str = ", ".join([repr(i) for i in _valid_impls])
             raise ValueError(
                 f"Invalid clock impl {impl!r}, must be one of: {valid_impls_str}"
             )
-        if impl == "auto":
-            impl = "gpi" if trust_inertial else "py"
-        self.impl = impl
 
-    async def start(self, start_high: bool = True) -> None:
-        r"""Clocking coroutine.  Start driving your clock by :func:`cocotb.start`\ ing a
-        call to this.
+        self._task: Union[Task[None], None] = None
+
+    @property
+    def signal(self) -> LogicObject:
+        """The clock signal being driven."""
+        return self._signal
+
+    @property
+    def period(self) -> Union[float, Fraction, Decimal]:
+        """The clock period (unitless)."""
+        return self._period
+
+    @property
+    def units(self) -> str:
+        """The unit of the clock period."""
+        return self._units
+
+    @property
+    def impl(self) -> "Impl":
+        """The concrete implementation of the clock used.
+
+        ``"gpi"`` if the clock is implemented in C in the GPI layer,
+        or ``"py"`` if the clock is implemented in Python using cocotb Tasks.
+        """
+        return self._impl
+
+    def start(self, start_high: bool = True) -> Task[None]:
+        r"""Start driving the clock signal.
+
+        You can later stop the clock by calling :meth:`stop`.
 
         Args:
             start_high: Whether to start the clock with a ``1``
@@ -152,42 +189,87 @@ class Clock:
 
                 .. versionadded:: 1.3
 
+        Raises:
+            RuntimeError: If attempting to start a clock that has already been started.
+
+        Returns:
+            Object which can be passed to :func:`cocotb.start_soon` or ignored.
+
         .. versionchanged:: 2.0
             Removed ``cycles`` arguments for toggling for a finite amount of cyles.
-            Use ``kill()`` on the clock task instead, or implement manually.
+            Use :meth:`stop` to stop a clock from running.
+
+        .. versionchanged:: 2.0
+            Previously, this method returned a :term:`coroutine` which needed to be passed to :func:`cocotb.start_soon`.
+            Now the Clock object keeps track of its own driver Task, so this is no longer necessary.
+            Simply call ``clock.start()`` to start running the clock.
         """
+        if self._task is not None:
+            raise RuntimeError("Starting clock that has already been started.")
 
-        t_high = self.period // 2
+        period = get_sim_steps(self._period, self._units)
+        t_high = period // 2
 
-        if self.impl == "gpi":
-            clkobj = clock_create(self.signal._handle)
-            clkobj.start(self.period, t_high, start_high)
+        if self._impl == "gpi":
+            self._clkobj = clock_create(self._signal._handle)
+            self._clkobj.start(period, t_high, start_high)
 
-            try:
+            async def drive() -> None:
                 # The clock is meant to toggle forever, so awaiting this should
-                # never return (except in case of CancelledError).
-                # Await on an event that's never set.
+                # never return by awaiting on Event that's never set.
                 e = Event()
                 await e.wait()
-            finally:
-                clkobj.stop()
-        else:
-            timer_high = Timer(t_high)
-            timer_low = Timer(self.period - t_high)
-            if start_high:
-                self.signal.set(1)
-                await timer_high
-            while True:
-                self.signal.set(0)
-                await timer_low
-                self.signal.set(1)
-                await timer_high
 
-    def __str__(self) -> str:
-        return type(self).__qualname__ + f"({self.frequency:3.1f} MHz)"
+        else:
+
+            async def drive() -> None:
+                timer_high = Timer(t_high)
+                timer_low = Timer(period - t_high)
+                if start_high:
+                    self._signal.set(1)
+                    await timer_high
+                while True:
+                    self._signal.set(0)
+                    await timer_low
+                    self._signal.set(1)
+                    await timer_high
+
+        self._task = cocotb.start_soon(drive())
+
+        # So if a user calls `task.kill()` on the returned task the Clock object is stopped.
+        self._task._add_done_callback(lambda _: self._cleanup())
+
+        return self._task
+
+    def stop(self) -> None:
+        """Stop driving the clock signal.
+
+        You can later start the clock again by calling :meth:`start`.
+
+        Raises:
+            RuntimeError: If attempting to stop a clock that has never been started.
+
+        .. versionadded:: 2.0
+        """
+        if self._task is None:
+            raise RuntimeError("Stopping a clock that was never started.")
+        self._task.kill()
+        self._cleanup()
+
+    def _cleanup(self) -> None:
+        if self._impl == "gpi":
+            self._clkobj.stop()
+        self._task = None
+
+    @cached_method
+    def __repr__(self) -> str:
+        freq_mhz = 1 / get_time_from_sim_steps(
+            get_sim_steps(self._period, self._units), "us"
+        )
+        return f"<{type(self).__qualname__}, {self._signal._path} @ {freq_mhz} MHz>"
 
     @cached_property
     def log(self) -> Logger:
         return logging.getLogger(
-            f"cocotb.{type(self).__qualname__}.{self.signal._name}"
+            f"cocotb.{type(self).__qualname__}.{self._signal._name}"
         )
