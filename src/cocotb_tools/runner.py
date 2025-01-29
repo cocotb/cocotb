@@ -1509,7 +1509,6 @@ class Vcs(Runner):
             cmds = [
                 ["vcs"]
                 + self._build_opts
-                + ["-load", cocotb_tools.config.lib_name_path("vpi", "vcs").as_posix()]
                 + self.build_args
                 + self._get_include_options(self.includes)
                 + self._get_define_options(self.defines)
