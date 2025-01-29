@@ -125,13 +125,15 @@ void gpi_embed_init(int argc, char const *const *argv) {
 }
 
 void gpi_embed_end() {
-    embed_sim_event("Simulator shut down prematurely");
     sim_ending = true;
+    embed_sim_event("Simulator shut down prematurely");
 }
 
 void gpi_sim_end() {
-    registered_impls[0]->sim_end();
-    sim_ending = true;
+    if (!sim_ending) {
+        registered_impls[0]->sim_end();
+        sim_ending = true;
+    }
 }
 
 void gpi_cleanup(void) {
