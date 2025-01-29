@@ -1,0 +1,1 @@
+Passing no triggers to :class:`~cocotb.triggers.Combine` used to hang the simulation indefinitely. Now it behaves equivalently to :class:`await NullTrigger() <cocotb.triggers.NullTrigger>`.
