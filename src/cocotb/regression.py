@@ -485,14 +485,14 @@ class RegressionManager:
         # Generate output reports
         self.xunit.write()
 
-        # Setup simulator finalization
-        simulator.stop_simulator()
-
         # TODO refactor intialization and finalization into their own module
         # to prevent circult imports requiring local imports
         from cocotb._init import _shutdown_testbench
 
         _shutdown_testbench()
+
+        # Setup simulator finalization
+        simulator.stop_simulator()
 
     def _test_complete(self) -> None:
         """Callback given to the scheduler, to be called when the current test completes.
