@@ -734,6 +734,16 @@ static int shutdown_callback(void *) {
 }
 
 void VpiImpl::main() noexcept {
+#ifdef VCS
+    // VCS loads the entry point both during compilation and again at
+    // simulation. Only during simulation are most of the VPI routines
+    // available. So we check if we are in compilation and exit early since we
+    // don't need to do anything for compilation currently.
+    auto prod_str = get_simulator_product();
+    if (!strcmp(prod_str, "UNKNOWN")) {
+        return;
+    }
+#endif
     auto startup_cb = new VpiStartupCbHdl(this);
     if (startup_cb->arm()) {
         LOG_CRITICAL(
