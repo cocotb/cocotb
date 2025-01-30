@@ -918,26 +918,34 @@ class Combine(_AggregateWaitable["Combine"]):
     """
 
     async def _wait(self) -> "Combine":
-        waiters: List[cocotb.task.Task[Any]] = []
-        e = _InternalEvent(self)
-        triggers = list(self._triggers)
+        if len(self._triggers) == 0:
+            await NullTrigger()
+        elif len(self._triggers) == 1:
+            await self._triggers[0]
+        else:
+            waiters: List[cocotb.task.Task[Any]] = []
+            e = _InternalEvent(self)
+            triggers = list(self._triggers)
 
-        # start a parallel task for each trigger
-        for t in triggers:
-            # t=t is needed for the closure to bind correctly
-            def on_done(
-                ret: Outcome["Combine"],
-                t: Union[Trigger, Waitable["Combine"], cocotb.task.Task["Combine"]] = t,
-            ) -> None:
-                triggers.remove(t)
-                if not triggers:
-                    e.set()
-                ret.get()  # re-raise any exception
+            # start a parallel task for each trigger
+            for t in triggers:
+                # t=t is needed for the closure to bind correctly
+                def on_done(
+                    ret: Outcome["Combine"],
+                    t: Union[
+                        Trigger, Waitable["Combine"], cocotb.task.Task["Combine"]
+                    ] = t,
+                ) -> None:
+                    triggers.remove(t)
+                    if not triggers:
+                        e.set()
+                    ret.get()  # re-raise any exception
 
-            waiters.append(cocotb.start_soon(_wait_callback(t, on_done)))
+                waiters.append(cocotb.start_soon(_wait_callback(t, on_done)))
 
-        # wait for the last waiter to complete
-        await e
+            # wait for the last waiter to complete
+            await e
+
         return self
 
 
@@ -953,6 +961,7 @@ class First(_AggregateWaitable[Any]):
 
     Raises:
         TypeError: When an unsupported *trigger* object is passed.
+        ValueError: When no triggers are passed.
 
     .. note::
         The event loop is single threaded, so while events may be simultaneous
@@ -970,7 +979,17 @@ class First(_AggregateWaitable[Any]):
         coroutines.
     """
 
+    def __init__(
+        self, *trigger: Union[Trigger, Waitable[Any], "cocotb.task.Task[Any]"]
+    ) -> None:
+        if not trigger:
+            raise ValueError("First() requires at least one Trigger or Task argument")
+        super().__init__(*trigger)
+
     async def _wait(self) -> Any:
+        if len(self._triggers) == 1:
+            return await self._triggers[0]
+
         waiters: List[cocotb.task.Task[Any]] = []
         e = _InternalEvent(self)
         completed: List[Outcome[Any]] = []

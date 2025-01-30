@@ -10,7 +10,7 @@ import re
 import pytest
 
 import cocotb
-from cocotb.triggers import Lock, NullTrigger, Timer, _InternalEvent
+from cocotb.triggers import Combine, First, Lock, NullTrigger, Timer, _InternalEvent
 from cocotb.utils import get_sim_time
 
 
@@ -149,3 +149,19 @@ async def test_internalevent(dut):
     time_ns = get_sim_time(units="ns")
     await e
     assert get_sim_time(units="ns") == time_ns
+
+
+@cocotb.test
+async def test_empty_Combine(_) -> None:
+    """Test that a Combine with no triggers passes no time."""
+    start_time = get_sim_time(units="ns")
+    await Combine()
+    end_time = get_sim_time(units="ns")
+    assert end_time == start_time
+
+
+@cocotb.test
+async def test_empty_First(_) -> None:
+    """Test that a First with no triggers raises an error."""
+    with pytest.raises(ValueError):
+        await First()
