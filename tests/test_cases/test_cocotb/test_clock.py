@@ -15,7 +15,7 @@ import pytest
 import cocotb
 from cocotb.clock import Clock
 from cocotb.simulator import clock_create, get_precision
-from cocotb.triggers import RisingEdge, Timer
+from cocotb.triggers import NullTrigger, RisingEdge, Timer
 from cocotb.utils import get_sim_time
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -49,7 +49,7 @@ async def test_clock_with_units(dut, impl):
 
     clk_gen.kill()
 
-    clk_gen = await cocotb.start(clk_250mhz.start())
+    clk_gen = cocotb.start_soon(clk_250mhz.start())
 
     start_time_ns = get_sim_time(units="ns")
 
@@ -103,7 +103,8 @@ async def test_gpi_clock_error_timing(dut):
 @cocotb.test(expect_error=ValueError)
 async def test_gpi_clock_error_start(dut):
     clk = Clock(dut.clk, 1.0, units="step", impl="gpi")
-    await cocotb.start(clk.start())
+    cocotb.start_soon(clk.start())
+    await NullTrigger()
 
 
 @cocotb.test(expect_error=RuntimeError)

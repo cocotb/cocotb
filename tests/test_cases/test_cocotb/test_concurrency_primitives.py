@@ -124,7 +124,7 @@ async def test_combine(dut):
     async def coro(delay):
         await Timer(delay, "ns")
 
-    tasks = [await cocotb.start(coro(dly)) for dly in [10, 30, 20]]
+    tasks = [cocotb.start_soon(coro(dly)) for dly in [10, 30, 20]]
 
     await Combine(*tasks)
 
