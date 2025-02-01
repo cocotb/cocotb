@@ -27,11 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <assert.h>
-
 #include <stdexcept>
 
 #include "VpiImpl.h"
+#include "vpi_user_ext.h"
 
 decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
     /* for reused lists */

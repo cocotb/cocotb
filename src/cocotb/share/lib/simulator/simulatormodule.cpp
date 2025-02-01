@@ -780,11 +780,13 @@ static PyObject *stop_simulator(PyObject *, PyObject *) {
 
 static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *) {
     // cleanup uncalled callback
-    auto cb = static_cast<PythonCallback *>(gpi_get_callback_data(self->hdl));
+    void *cb_data;
+    gpi_get_cb_info(self->hdl, nullptr, &cb_data);
+    auto cb = static_cast<PythonCallback *>(cb_data);
     delete cb;
 
     // deregister from interface
-    gpi_deregister_callback(self->hdl);
+    gpi_remove_cb(self->hdl);
 
     Py_RETURN_NONE;
 }
@@ -881,7 +883,7 @@ int GpiClock::stop() {
     if (!clk_toggle_cb_hdl) {
         return -1;
     }
-    gpi_deregister_callback(clk_toggle_cb_hdl);
+    gpi_remove_cb(clk_toggle_cb_hdl);
     clk_toggle_cb_hdl = nullptr;
     return 0;
 }
