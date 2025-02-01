@@ -154,7 +154,6 @@ def start_soon(
     .. versionadded:: 1.6.0
     """
     task = create_task(coro)
-    task._add_done_callback(_task_done_callback)
     cocotb._scheduler_inst._schedule_task(task)
     return task
 
@@ -202,7 +201,9 @@ def create_task(
     if isinstance(coro, cocotb.task.Task):
         return coro
     elif isinstance(coro, Coroutine):
-        return cocotb.task.Task(coro)
+        task = cocotb.task.Task[cocotb.task.ResultType](coro)
+        task._add_done_callback(_task_done_callback)
+        return task
     elif inspect.iscoroutinefunction(coro):
         raise TypeError(
             f"Coroutine function {coro} should be called prior to being scheduled."
