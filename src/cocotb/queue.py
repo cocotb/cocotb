@@ -4,7 +4,20 @@
 import asyncio.queues
 import collections
 import heapq
-from typing import Any, Deque, Generic, Tuple, TypeVar, cast
+from abc import abstractmethod
+from typing import (
+    Any,
+    ClassVar,
+    Deque,
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+)
 
 import cocotb
 from cocotb.task import Task
@@ -22,7 +35,20 @@ class QueueEmpty(asyncio.queues.QueueEmpty):
 T = TypeVar("T")
 
 
-class Queue(Generic[T]):
+class _AbstractQueueImpl(Iterable[T]):
+    @abstractmethod
+    def __init__(self, maxsize: int) -> None: ...
+    @abstractmethod
+    def get(self) -> T: ...
+    @abstractmethod
+    def put(self, item: T) -> None: ...
+    @abstractmethod
+    def __len__(self) -> int: ...
+    @abstractmethod
+    def __iter__(self) -> Iterator[T]: ...
+
+
+class AbstractQueue(Generic[T]):
     """A queue, useful for coordinating producer and consumer coroutines.
 
     If *maxsize* is less than or equal to 0, the queue size is infinite. If it
@@ -30,23 +56,14 @@ class Queue(Generic[T]):
     reaches *maxsize*, until an item is removed by :meth:`get`.
     """
 
+    _Impl: ClassVar[Type[_AbstractQueueImpl[T]]]  # type: ignore[misc]  # ClassVar cannot contain type variables
+
     def __init__(self, maxsize: int = 0) -> None:
         self._maxsize: int = maxsize
+        self._queue: _AbstractQueueImpl[T] = type(self)._Impl(maxsize)
 
         self._getters: Deque[Tuple[Event, Task[Any]]] = collections.deque()
         self._putters: Deque[Tuple[Event, Task[Any]]] = collections.deque()
-
-        self._init(maxsize)
-
-    def _init(self, maxsize: int) -> None:
-        # TODO A better typing strategy would use PIMPL
-        self._queue: Any = collections.deque()
-
-    def _put(self, item: T) -> None:
-        self._queue.append(item)
-
-    def _get(self) -> T:
-        return self._queue.popleft()
 
     def _wakeup_next(self, waiters: Deque[Tuple[Event, Task[Any]]]) -> None:
         while waiters:
@@ -117,7 +134,7 @@ class Queue(Generic[T]):
         """
         if self.full():
             raise QueueFull()
-        self._put(item)
+        self._queue.put(item)
         self._wakeup_next(self._getters)
 
     async def get(self) -> T:
@@ -141,35 +158,69 @@ class Queue(Generic[T]):
         """
         if self.empty():
             raise QueueEmpty()
-        item = self._get()
+        item = self._queue.get()
         self._wakeup_next(self._putters)
         return item
 
 
-class PriorityQueue(Queue[T]):
-    r"""A subclass of :class:`Queue`; retrieves entries in priority order (smallest item first).
+class Queue(AbstractQueue[T]):
+    """A subclass of :class:`AbstractQueue`; retrieves oldest entries first (FIFO)."""
+
+    class _Impl(_AbstractQueueImpl[T]):
+        def __init__(self, maxsize: int) -> None:
+            self._queue: Deque[T] = collections.deque()
+
+        def put(self, item: T) -> None:
+            self._queue.append(item)
+
+        def get(self) -> T:
+            return self._queue.popleft()
+
+        def __len__(self) -> int:
+            return len(self._queue)
+
+        def __iter__(self) -> Iterator[T]:
+            return iter(self._queue)
+
+
+class PriorityQueue(AbstractQueue[T]):
+    r"""A subclass of :class:`AbstractQueue`; retrieves entries in priority order (smallest item first).
 
     Entries are typically tuples of the form ``(priority number, data)``.
     """
 
-    def _init(self, maxsize: int) -> None:
-        self._queue = []
+    class _Impl(_AbstractQueueImpl[T]):
+        def __init__(self, maxsize: int) -> None:
+            self._queue: List[T] = []
 
-    def _put(self, item: T) -> None:
-        heapq.heappush(self._queue, item)
+        def put(self, item: T) -> None:
+            heapq.heappush(self._queue, item)
 
-    def _get(self) -> T:
-        return heapq.heappop(self._queue)
+        def get(self) -> T:
+            return heapq.heappop(self._queue)
+
+        def __len__(self) -> int:
+            return len(self._queue)
+
+        def __iter__(self) -> Iterator[T]:
+            return iter(self._queue)
 
 
-class LifoQueue(Queue[T]):
-    """A subclass of :class:`Queue`; retrieves most recently added entries first."""
+class LifoQueue(AbstractQueue[T]):
+    """A subclass of :class:`AbstractQueue`; retrieves most recently added entries first (LIFO)."""
 
-    def _init(self, maxsize: int) -> None:
-        self._queue = collections.deque()
+    class _Impl(_AbstractQueueImpl[T]):
+        def __init__(self, maxsize: int) -> None:
+            self._queue: Deque[T] = collections.deque()
 
-    def _put(self, item: T) -> None:
-        self._queue.append(item)
+        def put(self, item: T) -> None:
+            self._queue.append(item)
 
-    def _get(self) -> T:
-        return self._queue.pop()
+        def get(self) -> T:
+            return self._queue.pop()
+
+        def __len__(self) -> int:
+            return len(self._queue)
+
+        def __iter__(self) -> Iterator[T]:
+            return iter(self._queue)
