@@ -31,10 +31,23 @@ if they want to use these shims in their own code
 
 import sys
 from contextlib import AbstractContextManager
+from typing import TYPE_CHECKING, TypeVar, Union, overload
+
+__all__ = ("nullcontext", "insertion_ordered_dict", "cached_property", "StrEnum")
+
+T = TypeVar("T")
+
+if TYPE_CHECKING:
+
+    class _NullContextBase(AbstractContextManager[T, None]): ...
+else:
+    from typing import Generic
+
+    class _NullContextBase(AbstractContextManager, Generic[T]): ...
 
 
 # backport of Python 3.7's contextlib.nullcontext
-class nullcontext(AbstractContextManager):
+class nullcontext(_NullContextBase[T]):
     """Context manager that does no additional processing.
     Used as a stand-in for a normal context manager, when a particular
     block of code is only sometimes used with a normal context manager:
@@ -44,13 +57,23 @@ class nullcontext(AbstractContextManager):
         # Perform operation, using optional_cm if condition is True
     """
 
-    def __init__(self, enter_result=None):
+    enter_result: T
+
+    @overload
+    def __init__(self: "nullcontext[None]", enter_result: None = None) -> None: ...
+
+    @overload
+    def __init__(self: "nullcontext[T]", enter_result: T) -> None: ...
+
+    def __init__(
+        self: "nullcontext[Union[T, None]]", enter_result: Union[T, None] = None
+    ) -> None:
         self.enter_result = enter_result
 
-    def __enter__(self):
+    def __enter__(self) -> T:
         return self.enter_result
 
-    def __exit__(self, *excinfo):
+    def __exit__(self, *excinfo: object) -> None:
         pass
 
 

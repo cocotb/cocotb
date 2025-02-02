@@ -26,41 +26,49 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import xml.etree.ElementTree as ET
+from typing import Union
 from xml.etree.ElementTree import Element, SubElement
 
 
 class XUnitReporter:
-    def __init__(self, filename="results.xml"):
+    last_testsuite: Element
+    last_testcase: Element
+
+    def __init__(self, filename: str = "results.xml") -> None:
         self.results = Element("testsuites", name="results")
         self.filename = filename
 
-    def add_testsuite(self, **kwargs):
-        self.last_testsuite = SubElement(self.results, "testsuite", **kwargs)
+    def add_testsuite(self, **kwargs: str) -> Element:
+        self.last_testsuite = SubElement(self.results, "testsuite", kwargs)
         return self.last_testsuite
 
-    def add_testcase(self, testsuite=None, **kwargs):
+    def add_testcase(
+        self, testsuite: Union[Element, None] = None, **kwargs: str
+    ) -> Element:
         if testsuite is None:
             testsuite = self.last_testsuite
-        self.last_testcase = SubElement(testsuite, "testcase", **kwargs)
+        self.last_testcase = SubElement(testsuite, "testcase", kwargs)
         return self.last_testcase
 
-    def add_property(self, testsuite=None, **kwargs):
+    def add_property(
+        self, testsuite: Union[Element, None] = None, **kwargs: str
+    ) -> Element:
         if testsuite is None:
             testsuite = self.last_testsuite
-        self.last_property = SubElement(testsuite, "property", **kwargs)
+        self.last_property = SubElement(testsuite, "property", kwargs)
         return self.last_property
 
-    def add_failure(self, testcase=None, **kwargs):
+    def add_failure(self, testcase: Union[Element, None] = None, **kwargs: str) -> None:
         if testcase is None:
             testcase = self.last_testcase
-        SubElement(testcase, "failure", **kwargs)
+        SubElement(testcase, "failure", kwargs)
 
-    def add_skipped(self, testcase=None, **kwargs):
+    def add_skipped(self, testcase: Union[Element, None] = None, **kwargs: str) -> None:
         if testcase is None:
             testcase = self.last_testcase
-        SubElement(testcase, "skipped", **kwargs)
+        SubElement(testcase, "skipped", kwargs)
 
-    def indent(self, elem, level=0):
+    def indent(self, elem: Element, level: int = 0) -> None:
         i = "\n" + level * "  "
         if len(elem):
             if not elem.text or not elem.text.strip():
@@ -74,6 +82,6 @@ class XUnitReporter:
         elif level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-    def write(self):
+    def write(self) -> None:
         self.indent(self.results)
         ET.ElementTree(self.results).write(self.filename, encoding="UTF-8")
