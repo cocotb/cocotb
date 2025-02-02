@@ -370,7 +370,7 @@ Changes
 - Changed how libraries are specified in :envvar:`GPI_EXTRA` to allow specifying libraries with paths, and names that don't start with "lib". (:pr:`2341`)
 
 
-Cocotb 1.4.0 (2020-07-08)
+cocotb 1.4.0 (2020-07-08)
 =========================
 
 Features
