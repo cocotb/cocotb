@@ -8,10 +8,13 @@ import cProfile
 import os
 import pstats
 from contextlib import AbstractContextManager
+from typing import TYPE_CHECKING
 
 from cocotb._py_compat import nullcontext
 
-profiling_context: AbstractContextManager
+if TYPE_CHECKING:
+    profiling_context: AbstractContextManager[None, None]
+
 
 if "COCOTB_ENABLE_PROFILING" in os.environ:
     _profile: cProfile.Profile
@@ -24,13 +27,20 @@ if "COCOTB_ENABLE_PROFILING" in os.environ:
         ps = pstats.Stats(_profile).sort_stats("cumulative")
         ps.dump_stats("cocotb.pstat")
 
-    class _profiling_context:
+    if TYPE_CHECKING:
+
+        class _ProfilingContextBase(AbstractContextManager[None, None]): ...
+    else:
+
+        class _ProfilingContextBase(AbstractContextManager): ...
+
+    class _profiling_context(_ProfilingContextBase):
         """Context manager that profiles its contents"""
 
-        def __enter__(self):
+        def __enter__(self) -> None:
             _profile.enable()
 
-        def __exit__(self, *excinfo):
+        def __exit__(self, *excinfo: object) -> None:
             _profile.disable()
 
     profiling_context = _profiling_context()

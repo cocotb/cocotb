@@ -7,6 +7,7 @@ import warnings
 from math import ceil
 from typing import (
     TYPE_CHECKING,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -66,7 +67,7 @@ _resolve_lh_table = str.maketrans({"L": "0", "H": "1"})
 _ord_0 = ord("0")
 
 
-class _error_resolve_table(dict):
+class _error_resolve_table(Dict[int, int]):
     def __init__(self) -> None:
         self.update({ord(c): ord(c) for c in "01"})
 
@@ -74,7 +75,7 @@ class _error_resolve_table(dict):
         raise ValueError(f"Unresolvable bit in binary string: {key!r}.")
 
 
-class _random_resolve_table(dict):
+class _random_resolve_table(Dict[int, int]):
     def __init__(self) -> None:
         self.update({ord(c): ord(c) for c in "01"})
 

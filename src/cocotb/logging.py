@@ -59,7 +59,7 @@ logging.addLevelName(5, "TRACE")
 _COCOTB_LOG_LEVEL_DEFAULT = "INFO"
 
 
-def default_config():
+def default_config() -> None:
     """Apply the default cocotb log formatting to the root logger.
 
     This hooks up the logger to write to stdout, using either
@@ -161,11 +161,11 @@ class SimTimeContextFilter(logging.Filter):
     """
 
     # needed to make our docs render well
-    def __init__(self):
+    def __init__(self) -> None:
         """"""
         super().__init__()
 
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord) -> bool:
         try:
             record.created_sim_time = get_sim_time()
         except RecursionError:
@@ -185,24 +185,26 @@ class SimLogFormatter(logging.Formatter):
 
     # Removes the arguments from the base class. Docstring needed to make
     # sphinx happy.
-    def __init__(self):
+    def __init__(self) -> None:
         """Takes no arguments."""
         super().__init__()
 
     # Justify and truncate
     @staticmethod
-    def ljust(string, chars):
+    def ljust(string: str, chars: int) -> str:
         if len(string) > chars:
             return ".." + string[(chars - 2) * -1 :]
         return string.ljust(chars)
 
     @staticmethod
-    def rjust(string, chars):
+    def rjust(string: str, chars: int) -> str:
         if len(string) > chars:
             return ".." + string[(chars - 2) * -1 :]
         return string.rjust(chars)
 
-    def _format(self, level, record, msg, coloured=False):
+    def _format(
+        self, level: str, record: logging.LogRecord, msg: str, coloured: bool = False
+    ) -> str:
         sim_time = getattr(record, "created_sim_time", None)
         if sim_time is None:
             sim_time_str = "  -.--ns"
@@ -244,8 +246,8 @@ class SimLogFormatter(logging.Formatter):
         pad = "\n" + " " * (prefix_len)
         return prefix + pad.join(msg.split("\n"))
 
-    def format(self, record):
-        """Prettify the log output, annotate with simulation time"""
+    def format(self, record: logging.LogRecord) -> str:
+        """Prettify the log output by annotating with simulation time."""
 
         msg = record.getMessage()
         level = record.levelname.ljust(_LEVEL_CHARS)
@@ -265,8 +267,8 @@ class SimColourLogFormatter(SimLogFormatter):
         logging.CRITICAL: _ANSI.COLOR_CRITICAL + "%s" + _ANSI.COLOR_DEFAULT,
     }
 
-    def format(self, record):
-        """Prettify the log output, annotate with simulation time"""
+    def format(self, record: logging.LogRecord) -> str:
+        """Prettify the log output by annotating with simulation time."""
 
         msg = record.getMessage()
 

@@ -2,6 +2,8 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+# type: ignore  # distutils is untyped, so there's little reason to check this file
+
 """
 Classes to compare simulation versions.
 
