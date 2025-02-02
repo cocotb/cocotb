@@ -52,7 +52,7 @@ Cocotb
     The DUT is available in cocotb tests as a Python object at :data:`cocotb.top`;
     and is also passed to all cocotb tests as the :ref:`first and only parameter <quickstart_creating_a_test>`.
 
-    .. versionchanged:: 1.6.0 Strip leading and trailing whitespace
+    .. versionchanged:: 1.6 Strip leading and trailing whitespace
 
     .. versionchanged:: 2.0
 
@@ -329,11 +329,11 @@ GPI
 
     * ``GPI_EXTRA=libnameA.so:entryA,libnameB.so:entryB`` will first load ``libnameA.so`` with entry point ``entryA`` , then load ``libnameB.so`` with entry point ``entryB``.
 
-    .. versionchanged:: 1.4.0
+    .. versionchanged:: 1.4
         Support for the custom entry point via ``:`` was added.
         Previously ``:`` was used as a separator between libraries instead of ``,``.
 
-    .. versionchanged:: 1.5.0
+    .. versionchanged:: 1.5
         Library name must be fully specified.
         This allows using relative or absolute paths in library names,
         and loading from libraries that `aren't` prefixed with "lib".
@@ -472,7 +472,7 @@ The following variables are makefile variables, not environment variables.
       For example, ``SIM_CMD_PREFIX := LD_PRELOAD="foo.so bar.so"`` can be used to force a particular library to load.
       Or, ``SIM_CMD_PREFIX := gdb --args`` to run the simulation with the GDB debugger.
 
-      .. versionadded:: 1.6.0
+      .. versionadded:: 1.6
 
 .. make:var:: SIM_CMD_SUFFIX
 

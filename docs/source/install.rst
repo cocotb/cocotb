@@ -20,9 +20,9 @@ The current stable version of cocotb requires:
 * GNU Make 3+
 * A Verilog or VHDL simulator, depending on your :term:`RTL` source code
 
-.. versionchanged:: 1.7.0 Dropped requirement of Python development headers and C++ compiler for release versions.
+.. versionchanged:: 1.7 Dropped requirement of Python development headers and C++ compiler for release versions.
 
-.. versionchanged:: 1.6.0 Dropped Python 3.5 support
+.. versionchanged:: 1.6 Dropped Python 3.5 support
 
 .. versionchanged:: 1.4 Dropped Python 2 support
 
