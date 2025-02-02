@@ -35,6 +35,7 @@ import sys
 from typing import TYPE_CHECKING, Union
 
 from cocotb import _ANSI, simulator
+from cocotb._deprecation import deprecated
 from cocotb._utils import want_color_output
 from cocotb.utils import get_sim_time, get_time_from_sim_steps
 
@@ -128,9 +129,21 @@ class SimBaseLog(LoggerClass):
             simulator.log_level(self.getEffectiveLevel())
 
 
-# this used to be a class, hence the unusual capitalization
-def SimLog(name, ident=None):
-    """Like logging.getLogger, but append a numeric identifier to the name"""
+@deprecated('Use `logging.getLogger(f"{name}.0x{ident:x}")` instead')
+def SimLog(name: str, ident: Union[int, None] = None) -> logging.Logger:
+    """Like logging.getLogger, but append a numeric identifier to the name.
+
+    Args:
+        name: Logger name.
+        ident: Unique integer identifier.
+
+    Returns:
+        The Logger named ``{name}.0x{ident:x}``.
+
+    .. deprecated:: 2.0
+
+        Use ``logging.getLogger(f"{name}.0x{ident:x}")`` instead.
+    """
     if ident is not None:
         name = f"{name}.0x{ident:x}"
     return logging.getLogger(name)
