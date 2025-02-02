@@ -370,7 +370,7 @@ Changes
 - Changed how libraries are specified in :envvar:`GPI_EXTRA` to allow specifying libraries with paths, and names that don't start with "lib". (:pr:`2341`)
 
 
-Cocotb 1.4.0 (2020-07-08)
+cocotb 1.4.0 (2020-07-08)
 =========================
 
 Features
@@ -529,10 +529,8 @@ Changes
   They now raise an exception with instructions how to fix the problem. (:pr:`1898`)
 
 
-cocotb 1.3.2
-============
-
-Released on 08 July 2020
+cocotb 1.3.2 (2020-07-08)
+=========================
 
 Notable changes and bug fixes
 -----------------------------
@@ -540,20 +538,17 @@ Notable changes and bug fixes
 - Iterating over ``for generate`` statements using VHPI has been fixed.
   This bug caused some simulators to crash, and was a regression in version 1.3.1. (:pr:`1882`)
 
-cocotb 1.3.1
-============
 
-Released on 15 March 2020
+cocotb 1.3.1 (2020-03-15)
+=========================
 
 Notable changes and bug fixes
 -----------------------------
 - The Makefiles for the Aldec Riviera and Cadence Incisive simulators have been fixed to use the correct name of the VHPI library (``libcocotbvhpi``).
   This bug prevented VHDL designs from being simulated, and was a regression in 1.3.0. (:pr:`1472`)
 
-cocotb 1.3.0
-============
-
-Released on 08 January 2020
+cocotb 1.3.0 (2020-01-08)
+=========================
 
 This will likely be the last release to support Python 2.7.
 
@@ -599,10 +594,9 @@ Other news
 
 - cocotb is now packaged for Fedora Linux and available as `python-cocotb <https://src.fedoraproject.org/rpms/python-cocotb>`_. (`Fedora bug #1747574 <https://bugzilla.redhat.com/show_bug.cgi?id=1747574>`_) (thanks Ben Rosser)
 
-cocotb 1.2.0
-============
 
-Released on 24 July 2019
+cocotb 1.2.0 (2019-07-24)
+=========================
 
 New features
 ------------
@@ -641,17 +635,15 @@ Known issues
 
 Please have a look at the `issue tracker <https://github.com/cocotb/cocotb/issues>`_ for more outstanding issues and contribution opportunities.
 
-cocotb 1.1
-==========
 
-Released on 24 January 2019.
+cocotb 1.1 (2019-01-24)
+=======================
 
 This release is the result of four years of work with too many bug fixes, improvements and refactorings to name them all.
 
-cocotb 1.0
-==========
 
-Released on 15 February 2015.
+cocotb 1.0 (2015-02-15)
+=======================
 
 New features
 ------------
@@ -663,11 +655,8 @@ New features
 - WaveDrom support for wave diagrams.
 
 
-cocotb 0.4
-==========
-
-Released on 25 February 2014.
-
+cocotb 0.4 (2014-02-25)
+=======================
 
 New features
 ------------
@@ -693,18 +682,14 @@ New examples
 - Issue :issue:`106`: TUN/TAP example using ping
 
 
-cocotb 0.3
-==========
-
-Released on 27 September 2013.
+cocotb 0.3 (2013-09-27)
+=======================
 
 This contains a raft of fixes and feature enhancements.
 
 
-cocotb 0.2
-==========
-
-Released on 19 July 2013.
+cocotb 0.2 (2013-07-19)
+=======================
 
 New features
 ------------
@@ -713,10 +698,8 @@ New features
 - A centralized installation is now supported (see documentation) with supporting libraries build when the simulation is run for the first time.
 
 
-cocotb 0.1
-==========
-
-Released on 9 July 2013.
+cocotb 0.1 (2013-07-09)
+=======================
 
 - The first release of cocotb.
 - Allows installation and running against Icarus, VCS, Aldec simulators.
