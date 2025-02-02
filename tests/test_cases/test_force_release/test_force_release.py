@@ -7,10 +7,10 @@
 import os
 
 import cocotb
-from cocotb._sim_versions import RivieraVersion
 from cocotb.clock import Clock
 from cocotb.handle import Force, Release
 from cocotb.triggers import ClockCycles, Timer
+from cocotb_tools.sim_versions import RivieraVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 SIM_VERSION = cocotb.SIM_VERSION

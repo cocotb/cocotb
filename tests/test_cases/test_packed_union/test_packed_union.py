@@ -5,7 +5,7 @@
 import os
 
 import cocotb
-from cocotb._sim_versions import RivieraVersion
+from cocotb_tools.sim_versions import RivieraVersion
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 

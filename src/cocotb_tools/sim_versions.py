@@ -13,7 +13,7 @@ These are for cocotb-internal use only.
     These classes silently allow comparing versions of different simulators.
 """
 
-from cocotb._vendor.distutils_version import LooseVersion
+from cocotb_tools._vendor.distutils_version import LooseVersion
 
 
 class ActivehdlVersion(LooseVersion):

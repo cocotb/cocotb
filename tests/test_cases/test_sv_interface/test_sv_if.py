@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import cocotb
-from cocotb._sim_versions import VerilatorVersion
+from cocotb_tools.sim_versions import VerilatorVersion
 
 
 @cocotb.test()
