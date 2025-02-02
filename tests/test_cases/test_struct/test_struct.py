@@ -8,8 +8,8 @@ import os
 import re
 
 import cocotb
-from cocotb._sim_versions import RivieraVersion
 from cocotb.triggers import Timer
+from cocotb_tools.sim_versions import RivieraVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()

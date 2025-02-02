@@ -16,7 +16,6 @@ import re
 import pytest
 
 import cocotb
-from cocotb._sim_versions import RivieraVersion
 from cocotb.clock import Clock
 from cocotb.triggers import (
     ClockCycles,
@@ -31,6 +30,7 @@ from cocotb.triggers import (
     with_timeout,
 )
 from cocotb.utils import get_sim_time
+from cocotb_tools.sim_versions import RivieraVersion
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 

@@ -30,7 +30,6 @@ import os
 import pytest
 
 import cocotb
-from cocotb._sim_versions import VerilatorVersion
 from cocotb.handle import (
     ArrayObject,
     HierarchyObject,
@@ -41,6 +40,7 @@ from cocotb.handle import (
 )
 from cocotb.triggers import Timer
 from cocotb.types import LogicArray
+from cocotb_tools.sim_versions import VerilatorVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()

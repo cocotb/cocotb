@@ -6,7 +6,6 @@ import logging
 import os
 
 import cocotb
-from cocotb._sim_versions import XceliumVersion
 from cocotb.clock import Clock
 from cocotb.handle import (
     ArrayObject,
@@ -17,6 +16,7 @@ from cocotb.handle import (
     LogicObject,
 )
 from cocotb.triggers import Timer
+from cocotb_tools.sim_versions import XceliumVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
