@@ -4,8 +4,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
-
 ifneq ($(VHDL_SOURCES),)
 
 $(COCOTB_RESULTS_FILE):
