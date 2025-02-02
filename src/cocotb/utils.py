@@ -66,7 +66,7 @@ def get_sim_time(units: str = "step") -> int:
     Returns:
         The simulation time in the specified units.
 
-    .. versionchanged:: 1.6.0
+    .. versionchanged:: 1.6
         Support ``'step'`` as the the *units* argument to mean "simulator time step".
     """
     timeh, timel = simulator.get_sim_time()

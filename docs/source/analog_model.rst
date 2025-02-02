@@ -4,7 +4,7 @@
 Models of Analog Circuits
 #########################
 
-.. versionadded:: 1.6.0
+.. versionadded:: 1.6
 
 This is the example :mod:`analog_model` showing how to use Python models
 for analog circuits together with a digital part.

@@ -151,7 +151,7 @@ def start_soon(
     Returns:
         The :class:`~cocotb.task.Task` that is scheduled to be run.
 
-    .. versionadded:: 1.6.0
+    .. versionadded:: 1.6
     """
     task = create_task(coro)
     cocotb._scheduler_inst._schedule_task(task)
@@ -175,7 +175,7 @@ async def start(
     Returns:
         The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
 
-    .. versionadded:: 1.6.0
+    .. versionadded:: 1.6
     """
     task = start_soon(coro)
     await cocotb.triggers.NullTrigger()
@@ -196,7 +196,7 @@ def create_task(
     Returns:
         Either the provided :class:`~cocotb.task.Task` or a new Task wrapping the coroutine.
 
-    .. versionadded:: 1.6.0
+    .. versionadded:: 1.6
     """
     if isinstance(coro, cocotb.task.Task):
         return coro

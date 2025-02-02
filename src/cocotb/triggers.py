@@ -164,7 +164,7 @@ class Timer(GPITrigger):
     Args:
         time: The time value.
 
-            .. versionchanged:: 1.5.0
+            .. versionchanged:: 1.5
                 Previously this argument was misleadingly called `time_ps`.
 
         units: The unit of the time value.
@@ -1213,7 +1213,7 @@ async def with_timeout(
 
     .. versionadded:: 1.3
 
-    .. versionchanged:: 1.7.0
+    .. versionchanged:: 1.7
         Support passing :term:`python:coroutine`\ s.
 
     .. versionchanged:: 2.0

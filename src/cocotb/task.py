@@ -42,7 +42,7 @@ class Task(Generic[ResultType]):
     or use :func:`cocotb.start_soon` or :func:`cocotb.start` to
     create a Task and schedule it to run.
 
-    .. versionchanged:: 1.8.0
+    .. versionchanged:: 1.8
         Moved to the ``cocotb.task`` module.
 
     .. versionchanged:: 2.0
@@ -327,7 +327,7 @@ class _RunningTest(Task[None]):
 
     All this class does is change ``__name__`` to show "Test" instead of "Task".
 
-    .. versionchanged:: 1.8.0
+    .. versionchanged:: 1.8
         Moved to the ``cocotb.task`` module.
     """
 
