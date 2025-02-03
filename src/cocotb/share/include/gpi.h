@@ -306,10 +306,6 @@ gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 GPI_EXPORT gpi_cb_hdl
 gpi_register_readwrite_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 
-/**
- * Calling convention is that `0` = success and negative numbers mean failure.
- * For implementers of GPI the macro `GPI_RET(x)` is provided.
- */
 GPI_EXPORT void gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
 
 /**
