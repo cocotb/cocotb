@@ -32,7 +32,7 @@ import sys
 import time
 import warnings
 from types import SimpleNamespace
-from typing import Callable, List, cast
+from typing import Any, Callable, List, cast
 
 import cocotb
 import cocotb._profiling
@@ -67,7 +67,10 @@ def _shutdown_testbench() -> None:
         cb()
 
 
-def _initialise_testbench(argv: List[str]) -> None:
+def init_package_from_simulation(argv: List[str]) -> None:
+    """Initialize the cocotb package from a simulation context."""
+
+    # register a callback to be called if the simulation fails
     cocotb.simulator.set_sim_event_callback(_sim_event)
 
     cocotb.is_simulation = True
@@ -91,10 +94,6 @@ def _initialise_testbench(argv: List[str]) -> None:
 
     cocotb.log.info(f"Running on {cocotb.SIM_NAME} version {cocotb.SIM_VERSION}")
 
-    cocotb.log.info(
-        f"Running tests with cocotb v{cocotb.__version__} from {os.path.dirname(__file__)}"
-    )
-
     cocotb._profiling.initialize()
     _register_shutdown_callback(cocotb._profiling.finalize)
 
@@ -103,6 +102,15 @@ def _initialise_testbench(argv: List[str]) -> None:
     _setup_random_seed()
     _setup_root_handle()
     _start_user_coverage()
+
+    cocotb.log.info(
+        f"Initialized cocotb v{cocotb.__version__} from {os.path.dirname(__file__)}"
+    )
+
+
+def run_regression(_: Any) -> None:
+    """Setup and run a regression."""
+
     _setup_regression_manager()
 
     # setup global scheduler system
@@ -111,6 +119,7 @@ def _initialise_testbench(argv: List[str]) -> None:
     )
 
     # start Regression Manager
+    cocotb.log.info("Running tests")
     cocotb.regression_manager.start_regression()
 
 
@@ -118,7 +127,7 @@ def _sim_event(msg: str) -> None:
     """Function that can be called externally to signal an event."""
     # We simply return here as the simulator will exit
     # so no cleanup is needed
-    if cocotb.regression_manager is not None:
+    if hasattr(cocotb, "regression_manager"):
         cocotb.regression_manager._fail_simulation(msg)
     else:
         cocotb.log.error(msg)
