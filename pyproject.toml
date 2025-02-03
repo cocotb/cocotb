@@ -2,6 +2,11 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
+# "[project]" added for supporting uv in the ReadTheDocs config
+[project]
+name = "cocotb"
+dynamic = ["version", "dependencies", "scripts", "urls", "classifiers", "maintainers", "authors", "license", "requires-python", "readme"]
+
 [tool.towncrier]
     package = "cocotb"
     directory = "docs/source/newsfragments"

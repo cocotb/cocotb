@@ -22,7 +22,7 @@ build:
       - uv pip install -r docs/requirements.txt
     build:
       html:
-        - uv run sphinx-build -T -b html docs $READTHEDOCS_OUTPUT/html
+        - uv run sphinx-build -T -b html docs/source $READTHEDOCS_OUTPUT/html
 
 # build:
 #   os: ubuntu-22.04
