@@ -21,14 +21,7 @@ build:
     install:
       - uv pip install -r docs/requirements.txt
     build:
-      html: |
-        uv run sphinx-build \
-          --show-traceback \
-          --builder html \
-          --doctree-dir _build/doctrees \
-          --define language=en \
-          docs/source \
-          $READTHEDOCS_OUTPUT/html
+      html: uv run sphinx-build -T -b html -d _build/doctrees -D language=en docs/source $READTHEDOCS_OUTPUT/html
 
 sphinx:
   configuration: docs/source/conf.py
