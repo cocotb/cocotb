@@ -240,8 +240,7 @@ GPI_EXPORT int gpi_get_range_right(gpi_sim_hdl gpi_sim_hdl);
  * @return The direction of the range constraint:
  *         `+1` for ascending, `-1` for descending, `0` for undefined.
  */
-GPI_EXPORT int gpi_get_range_dir(gpi_sim_hdl gpi_sim_hdl);
-
+GPI_EXPORT gpi_range_dir gpi_get_range_dir(gpi_sim_hdl gpi_sim_hdl);
 
 // Functions for querying the properties of a handle
 
@@ -260,7 +259,7 @@ GPI_EXPORT const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 /**
  * @return One of the types defined above.
  */
-GPI_EXPORT gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT gpi_objtype gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 
 /**
  * Get information about the definition of a handle.
