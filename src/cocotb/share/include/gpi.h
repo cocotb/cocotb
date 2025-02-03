@@ -245,7 +245,6 @@ GPI_EXPORT gpi_range_dir gpi_get_range_dir(gpi_sim_hdl gpi_sim_hdl);
 // Functions for querying the properties of a handle
 
 /**
- * Caller responsible for freeing the returned string.
  * This is all slightly verbose but it saves having to enumerate various value
  * types. We only care about a limited subset of values.
  */
