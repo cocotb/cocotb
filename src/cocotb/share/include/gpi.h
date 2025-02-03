@@ -30,26 +30,27 @@
 #ifndef COCOTB_GPI_H_
 #define COCOTB_GPI_H_
 
-/*
+/** \file gpi.h
+
 Generic Language Interface
+==========================
 
 This header file defines a Generic Language Interface into any simulator.
-Implementations need to implement the underlying functions in gpi_priv.h
+Implementations need to implement the underlying functions in `gpi_priv.h`.
 
 The functions are essentially a limited subset of VPI/VHPI/FLI.
 
-Implementation specific notes
-=============================
+Implementation-specific notes
+-----------------------------
 
 By amazing coincidence, VPI and VHPI are strikingly similar which is obviously
-reflected by this header file. Unfortunately, this means that proprietry,
+reflected by this header file. Unfortunately, this means that proprietary,
 non-standard, less featured language interfaces (for example Mentor FLI) may
 have to resort to some hackery.
 
 Because of the lack of ability to register a callback on event change using the
 FLI, we have to create a process with the signal on the sensitivity list to
 imitate a callback.
-
 */
 
 #include <exports.h>
@@ -104,43 +105,52 @@ extern "C" {
 // Functions for controlling/querying the simulation state
 
 /**
- * Returns 1 if there is a registered GPI implementation, 0 otherwise.
- *
+ * Return if there is a registered GPI implementation.
  * Useful for checking if a simulator is running.
+ *
+ * @return `1` if there is a registered GPI implementation, `0` otherwise.
  */
 GPI_EXPORT bool gpi_has_registered_impl(void);
 
-// Stop the simulator
+/**
+ * Stop the simulator.
+ */
 GPI_EXPORT void gpi_sim_end(void);
 
-// Returns simulation time as two uints. Units are default sim units
+/**
+ * Return simulation time as two uints. Units are default sim units.
+ */
 GPI_EXPORT void gpi_get_sim_time(uint32_t *high, uint32_t *low);
 GPI_EXPORT void gpi_get_sim_precision(int32_t *precision);
 
 /**
- * Returns a string with the running simulator product information
+ * Return a string with the running simulator product information.
  *
- * @return simulator product string
+ * @return The simulator product string.
  */
 GPI_EXPORT const char *gpi_get_simulator_product(void);
 
 /**
- * Returns a string with the running simulator version
+ * Return a string with the running simulator version.
  *
- * @return simulator version string
+ * @return The simulator version string.
  */
 GPI_EXPORT const char *gpi_get_simulator_version(void);
 
 // Functions for extracting a gpi_sim_hdl to an object
-// Returns a handle to the root simulation object.
+
+/**
+ * Returns a handle to the root simulation object.
+ */
 GPI_EXPORT gpi_sim_hdl gpi_get_root_handle(const char *name);
 GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent,
                                               const char *name);
 GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent,
                                                int32_t index);
 
-// Types that can be passed to the iterator.
-//
+/**
+ * Types that can be passed to the iterator.
+ */
 // Note these are strikingly similar to the VPI types...
 typedef enum gpi_objtype_e {
     GPI_UNKNOWN = 0,
@@ -162,7 +172,9 @@ typedef enum gpi_objtype_e {
     GPI_LOGIC_ARRAY = 16,
 } gpi_objtype;
 
-// When iterating, we can chose to either get child objects, drivers or loads
+/**
+ * When iterating, we can chose to either get child objects, drivers or loads.
+ */
 typedef enum gpi_iterator_sel_e {
     GPI_OBJECTS = 1,
     GPI_DRIVERS = 2,
@@ -190,34 +202,49 @@ typedef enum gpi_edge_e {
 } gpi_edge;
 
 // Functions for iterating over entries of a handle
-// Returns an iterator handle which can then be used in gpi_next calls
-//
-// Unlike `vpi_iterate` the iterator handle may only be NULL if the `type` is
-// not supported, If no objects of the requested type are found, an empty
-// iterator is returned.
+
+/**
+ * Return an iterator handle which can then be used in `gpi_next` calls.
+ *
+ * Unlike `vpi_iterate` the iterator handle may only be `NULL` if the `type` is
+ * not supported, If no objects of the requested type are found, an empty
+ * iterator is returned.
+ */
 GPI_EXPORT gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base,
                                         gpi_iterator_sel type);
 
-// Returns NULL when there are no more objects
+/**
+ * @return `NULL` when there are no more objects.
+ */
 GPI_EXPORT gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
 
-// Returns the number of objects in the collection of the handle
+/**
+ * @return The number of objects in the collection of the handle.
+ */
 GPI_EXPORT int gpi_get_num_elems(gpi_sim_hdl gpi_sim_hdl);
 
-// Returns the left side of the range constraint
+/**
+ * @return The left side of the range constraint.
+ */
 GPI_EXPORT int gpi_get_range_left(gpi_sim_hdl gpi_sim_hdl);
 
-// Returns the right side of the range constraint
+/**
+ * @return The right side of the range constraint.
+ */
 GPI_EXPORT int gpi_get_range_right(gpi_sim_hdl gpi_sim_hdl);
 
-// Returns the direction of the range constraint
-// +1 for ascending, -1 for descending, 0 for no direction
+/**
+ * @return The direction of the range constraint:
+ *         `+1` for ascending, `-1` for descending, `0` for undefined.
+ */
 GPI_EXPORT gpi_range_dir gpi_get_range_dir(gpi_sim_hdl gpi_sim_hdl);
 
 // Functions for querying the properties of a handle
-// Caller responsible for freeing the returned string.
-// This is all slightly verbose but it saves having to enumerate various value
-// types We only care about a limited subset of values.
+
+/**
+ * This is all slightly verbose but it saves having to enumerate various value
+ * types. We only care about a limited subset of values.
+ */
 GPI_EXPORT const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
 GPI_EXPORT const char *gpi_get_signal_value_str(gpi_sim_hdl gpi_hdl);
 GPI_EXPORT double gpi_get_signal_value_real(gpi_sim_hdl gpi_hdl);
@@ -225,20 +252,29 @@ GPI_EXPORT long gpi_get_signal_value_long(gpi_sim_hdl gpi_hdl);
 GPI_EXPORT const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
 GPI_EXPORT const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
-// Returns one of the types defined above e.g. gpiMemory etc.
+/**
+ * @return One of the types defined above.
+ */
 GPI_EXPORT gpi_objtype gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 
-// Get information about the definition of a handle
+/**
+ * Get information about the definition of a handle.
+ */
 GPI_EXPORT const char *gpi_get_definition_name(gpi_sim_hdl gpi_hdl);
 GPI_EXPORT const char *gpi_get_definition_file(gpi_sim_hdl gpi_hdl);
 
-// Determine whether an object value is constant (parameters / generics etc)
+/**
+ * Determine whether an object value is constant (parameters / generics etc).
+ */
 GPI_EXPORT int gpi_is_constant(gpi_sim_hdl gpi_hdl);
 
-// Determine whether an object is indexable
+/**
+ * Determine whether an object is indexable.
+ */
 GPI_EXPORT int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
 
 // Functions for setting the properties of a handle
+
 GPI_EXPORT void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value,
                                           gpi_set_action action);
 GPI_EXPORT void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int32_t value,
@@ -251,6 +287,7 @@ GPI_EXPORT void gpi_set_signal_value_str(
     gpi_set_action action);  // String of ASCII char(s)
 
 // The callback registering functions
+
 GPI_EXPORT gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
                                                   void *gpi_cb_data,
                                                   uint64_t time);
@@ -264,13 +301,13 @@ gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 GPI_EXPORT gpi_cb_hdl
 gpi_register_readwrite_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 
-// Calling convention is that 0 = success and negative numbers a failure
-// For implementers of GPI the provided macro GPI_RET(x) is provided
 GPI_EXPORT void gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
 
-// Because the internal structures may be different for different
-// implementations of GPI we provide a convenience function to extract the
-// callback data
+/**
+ * Because the internal structures may be different for different
+ * implementations of GPI we provide a convenience function to extract the
+ * callback data.
+ */
 GPI_EXPORT void *gpi_get_callback_data(gpi_cb_hdl gpi_hdl);
 
 #ifdef __cplusplus
