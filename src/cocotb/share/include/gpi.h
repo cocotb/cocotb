@@ -102,7 +102,6 @@ typedef struct GpiIterator *gpi_iterator_hdl;
 extern "C" {
 #endif
 
-
 // Functions for controlling/querying the simulation state
 
 /**
@@ -137,7 +136,6 @@ GPI_EXPORT const char *gpi_get_simulator_product(void);
  * @return The simulator version string.
  */
 GPI_EXPORT const char *gpi_get_simulator_version(void);
-
 
 // Functions for extracting a gpi_sim_hdl to an object
 
@@ -202,7 +200,6 @@ typedef enum gpi_edge_e {
     GPI_FALLING,
     GPI_VALUE_CHANGE,
 } gpi_edge;
-
 
 // Functions for iterating over entries of a handle
 
@@ -276,7 +273,6 @@ GPI_EXPORT int gpi_is_constant(gpi_sim_hdl gpi_hdl);
  */
 GPI_EXPORT int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
 
-
 // Functions for setting the properties of a handle
 
 GPI_EXPORT void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value,
@@ -289,7 +285,6 @@ GPI_EXPORT void gpi_set_signal_value_binstr(
 GPI_EXPORT void gpi_set_signal_value_str(
     gpi_sim_hdl gpi_hdl, const char *str,
     gpi_set_action action);  // String of ASCII char(s)
-
 
 // The callback registering functions
 
