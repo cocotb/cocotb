@@ -85,13 +85,14 @@ release = cocotb.__version__
 v_major, v_minor = LooseVersion(release).version[:2]
 version = "{}.{}".format(v_major, v_minor)
 # Cocotb commit ID
-try:
-    commit_id = (
-        subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("ascii")
-    )
-except subprocess.CalledProcessError as e:
-    commit_id = "master"
-    print(f"conf.py: Setting {commit_id=} because we got CalledProcessError output {e.output}")
+commit_id = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True)
+# try:
+#     commit_id = (
+#         subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("ascii")
+#     )
+# except subprocess.CalledProcessError as e:
+#     commit_id = "master"
+#     print(f"conf.py: Setting {commit_id=} because we got CalledProcessError output {e.output}")
 
 # Is this documentation build a ReadTheDocs build for a git tag, i.e., a
 # release? Set the 'is_release_build' tag then, which can be used by the
