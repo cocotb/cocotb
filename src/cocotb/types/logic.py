@@ -2,7 +2,14 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 from functools import lru_cache
-from typing import Dict, Optional, Set, Type, Union
+from typing import (
+    Dict,
+    Optional,
+    Set,
+    Tuple,  # noqa: F401  # Used by doctests, false positive
+    Type,
+    Union,
+)
 
 LogicLiteralT = Union[str, int, bool]
 LogicConstructibleT = Union[LogicLiteralT, "Logic"]
