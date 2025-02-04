@@ -6,7 +6,7 @@ import os
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, cast
 
 import nox
 
@@ -192,6 +192,39 @@ def dev_test_sim(
     session.log(f"Running 'make test' against a simulator {config_str}")
     session.run("make", "-k", "test", external=True, env=env)
 
+    # Run pytest for files which can only be tested in the source tree, not in
+    # the installed binary (otherwise we get an "import file mismatch" error
+    # from pytest).
+    # TODO move this to dev_test_nosim once we can import cocotb files without
+    # building the simulator module.
+    session.log("Running simulator-agnostic tests in the source tree with pytest")
+
+    cocotb_pkg_dir = Path(
+        cast(
+            str,
+            session.run(
+                "python", "-c", "import cocotb; print(cocotb.__file__)", silent=True
+            ),
+        ).strip()
+    ).parent
+
+    pytest_sourcetree = [
+        str(cocotb_pkg_dir / "types"),
+    ]
+    session.run(
+        "pytest",
+        "-v",
+        "--doctest-modules",
+        "--cov=cocotb",
+        "--cov-branch",
+        # Don't display coverage report here
+        "--cov-report=",
+        # Append to the .coverage file created in the previous pytest
+        # invocation in this session.
+        "--cov-append",
+        *pytest_sourcetree,
+    )
+
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
         "pytest",
@@ -265,40 +298,6 @@ def dev_test_nosim(session: nox.Session) -> None:
         "-k",
         "not simulator_required",
     )
-
-    # Run pytest for files which can only be tested in the source tree, not in
-    # the installed binary (otherwise we get an "import file mismatch" error
-    # from pytest).
-    #
-    # The following tests are disabled because they do not work without an
-    # editable cocotb installation:
-    # "ERROR cocotb/_sim_versions.py - ImportError: cannot import name
-    # 'simulator' from partially initialized module 'cocotb' (most likely due to
-    # a circular import) (/home/runner/work/cocotb/cocotb/cocotb/__init__.py)"
-    # TODO: Re-enable once we have sorted out the import issues.
-    #
-    # session.log("Running simulator-agnostic tests in the source tree with pytest")
-    # pytest_sourcetree = [
-    #     "cocotb/utils.py",
-    #     "cocotb/binary.py",
-    #     "cocotb/types/",
-    #     "cocotb/_sim_versions.py",
-    # ]
-    # session.run(
-    #     "pytest",
-    #     "-v",
-    #     "--doctest-modules",
-    #     "--cov=cocotb",
-    #     "--cov-branch",
-    #     # Don't display coverage report here
-    #     "--cov-report=",
-    #     # Append to the .coverage file created in the previous pytest
-    #     # invocation in this session.
-    #     "--cov-append",
-    #     "-k",
-    #     "not simulator_required",
-    #     *pytest_sourcetree,
-    # )
 
     session.log("All tests passed!")
 

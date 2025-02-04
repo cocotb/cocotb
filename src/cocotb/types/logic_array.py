@@ -136,7 +136,7 @@ class LogicArray(ArrayLike[Logic]):
 
     .. code-block:: python3
 
-        >>> LogicArray.from_bytes(b"1n")
+        >>> LogicArray.from_bytes(b"1n", byteorder="big")
         LogicArray('0011000101101110', Range(15, 'downto', 0))
 
         >>> LogicArray.from_bytes(b"1n", byteorder="little")
@@ -188,8 +188,8 @@ class LogicArray(ArrayLike[Logic]):
         >>> la.to_signed()
         -6
 
-        >>> la.to_bytes()
-        b"\n"
+        >>> la.to_bytes(byteorder="big")
+        b'\n'
 
     You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
     the built-ins :func:`hex:` and :func:`bin`, respectively.
@@ -198,9 +198,9 @@ class LogicArray(ArrayLike[Logic]):
 
         >>> la = LogicArray("01111010")
         >>> hex(la)
-        0x7a
+        '0x7a'
         >>> bin(la)
-        0b1111010
+        '0b1111010'
 
     :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
     ``^``, and ``~``.
