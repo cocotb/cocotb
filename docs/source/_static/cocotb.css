@@ -345,3 +345,17 @@ dl.cpp.macro {
 dl.cpp.enumerator {
     margin-bottom: 0.25rem;
 }
+
+/*
+Make autolinks to reference documentation less prominent
+(https://sphinx-codeautolink.readthedocs.io/en/latest/examples.html#custom-link-styles)
+*/
+.sphinx-codeautolink-a {
+    text-decoration-style: dotted !important;
+    text-decoration-color: #aaa;
+}
+/*
+.sphinx-codeautolink-a:hover {
+    color: rgb(255, 139, 139);
+}
+*/
