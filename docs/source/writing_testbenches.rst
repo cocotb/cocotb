@@ -349,7 +349,7 @@ Below are examples of `passing` tests.
 
 .. code-block:: python
 
-    @cocotb.test():
+    @cocotb.test()
     async def test(dut):
         assert 2 > 1  # assertion is correct, then the coroutine ends
 

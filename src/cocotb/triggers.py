@@ -673,6 +673,7 @@ class Lock(AsyncContextManager[None]):
             await lock.acquire()
             try:
                 # do some stuff
+                ...
             finally:
                 lock.release()
 
@@ -682,6 +683,7 @@ class Lock(AsyncContextManager[None]):
 
             async with lock:
                 # do some stuff
+                ...
 
     .. versionchanged:: 1.4
 
