@@ -24,7 +24,7 @@ class Array(ArrayLike[T]):
 
     Initial values are treated as iterables, which are copied into an internal buffer.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> Array("1234")  # the 0-based range `(0, len(value)-1)` is inferred
         Array(['1', '2', '3', '4'], Range(0, 'to', 3))
@@ -34,7 +34,7 @@ class Array(ArrayLike[T]):
 
     Arrays also support "null" ranges; "null" arrays have zero length and cannot be indexed.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> Array([], range=Range(1, "to", 0))
         Array([], Range(1, 'to', 0))
@@ -45,7 +45,7 @@ class Array(ArrayLike[T]):
     Like :class:`list`\ s, if a start or stop index is not specified, it is inferred as the start or end of the array.
     Slicing an array returns a new :class:`~cocotb.types.Array` object, whose bounds are the slice indexes.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> a = Array("1234abcd")
         >>> a[7]
@@ -77,7 +77,7 @@ class Array(ArrayLike[T]):
     Arrays are equal to other arrays of the same length with the same values (structural equality).
     Bounds do not matter for equality.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> a = Array([1, 1, 2, 3, 5], Range(4, "downto", 0))
         >>> b = Array([1, 1, 2, 3, 5], Range(-2, "to", 2))
@@ -87,7 +87,7 @@ class Array(ArrayLike[T]):
     You can change the bounds of an array by setting the :attr:`range` to a new value.
     The new bounds must be the same length of the array.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> a = Array("1234")
         >>> a.range

@@ -10,7 +10,7 @@ It will keep the newest 3 files which are at most 5 MiB in size.
 See also :ref:`logging-reference-section`,
 and the Python documentation for :class:`logging.handlers.RotatingFileHandler`.
 
-.. code-block:: python3
+.. code-block:: python
 
     from logging.handlers import RotatingFileHandler
     from cocotb.logging import SimLogFormatter

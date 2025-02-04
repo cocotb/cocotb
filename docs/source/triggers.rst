@@ -7,7 +7,9 @@ To use a trigger, a coroutine should :keyword:`await` it.
 This will cause execution of the current coroutine to pause.
 When the trigger fires, execution of the paused coroutine will resume:
 
-.. code-block:: python3
+.. code-block:: python
+
+    from cocotb.triggers import RisingEdge
 
     async def coro():
         print("Some time before a clock edge")

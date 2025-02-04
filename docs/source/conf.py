@@ -46,7 +46,12 @@ extensions = [
     "sphinxcontrib.spelling",
     "sphinx_design",
     "enum_tools.autoenum",
+    "sphinx_codeautolink",
 ]
+
+codeautolink_warn_on_missing_inventory = True
+codeautolink_warn_on_failed_resolve = True
+codeautolink_autodoc_inject = True  # Inject a autolink-examples table to the end of all autodoc definitions
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),

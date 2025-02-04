@@ -63,7 +63,9 @@ class Logic:
     The list of values convertable to :class:`Logic` includes
     ``"U"``, ``"X"``, ``"0"``, ``"1"``, ``"Z"``, ``"W"``, ``"L"``, ``"H"``, ``"-"``, ``0``, ``1``, ``True``, and ``False``.
 
-    .. code-block:: python3
+    .. code-block:: python
+
+        from cocotb.types.logic import Logic
 
         >>> Logic("X")
         Logic('X')
@@ -90,7 +92,7 @@ class Logic:
 
     :class:`Logic` supports the common logic operations ``&``, ``|``, ``^``, and ``~``.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> Tuple[Logic, Logic]:
         ...     res = a ^ b ^ carry

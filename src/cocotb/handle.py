@@ -89,7 +89,7 @@ class SimHandleBase(ABC):
 
     All simulation objects are hashable and equatable by identity.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         a = dut.clk
         b = dut.clk
@@ -375,7 +375,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
     Children under this structure are found by using the name of the child with either the attribute syntax or index syntax.
     For example, if in your :envvar:`COCOTB_TOPLEVEL` entity/module you have a signal/net named ``count``, you could do either of the following.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         dut.count  # attribute syntax
         dut["count"]  # index syntax
@@ -400,7 +400,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
         Accessing escaped/extended identifiers requires enclosing the name
         with leading and trailing double backslashes (``\\``).
 
-        .. code-block:: python3
+        .. code-block:: python
 
             dut["_underscore_signal"]
             dut["\\%extended !ID\\"]
@@ -408,7 +408,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
     Iteration yields all child objects in no particular order.
     The :func:`len` function can be used to find the number of children.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         # discover all children in 'some_module'
         total = 0
@@ -492,7 +492,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
     Children of this object are found by supplying a numerical index using index syntax.
     For example, if you have a design with a generate loop ``gen_pipe_stages`` from the range ``0`` to ``7``:
 
-    .. code-block:: python3
+    .. code-block:: python
 
         block_0 = dut.gen_pipe_stages[0]
         block_7 = dut.gen_pipe_stages[7]
@@ -501,7 +501,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
 
     Iteration yields all child objects in order.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         # set all 'reg's in each pipe stage to 0
         for pipe_stage in dut.gen_pipe_stages:
@@ -510,7 +510,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
     Use the :meth:`range` property if you want to iterate over the indexes.
     The :func:`len` function can be used to find the number of elements.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         # set all 'reg's in each pipe stage to 0
         for idx in dut.gen_pipe_stages.range:
@@ -676,7 +676,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
         The default behavior is to :class:`Deposit` the value.
         Use these actions like so:
 
-        .. code-block:: python3
+        .. code-block:: python
 
             dut.handle.set(1)  # default Deposit action
             dut.handle.set(Deposit(2))
@@ -760,14 +760,14 @@ class ArrayObject(
 
     These objects can be iterated over to yield child objects:
 
-    .. code-block:: python3
+    .. code-block:: python
 
         for child in dut.array_object:
             print(child._path)
 
     A particular child can be retrieved using its index:
 
-    .. code-block:: python3
+    .. code-block:: python
 
         child = dut.array_object[0]
 
@@ -1342,7 +1342,7 @@ class StringObject(
 
         An example of how encoding and decoding could be accomplished using an ASCII string.
 
-        .. code-block:: python3
+        .. code-block:: python
 
             # lowercase a string
             value = dut.string_handle.value.decode("ascii")

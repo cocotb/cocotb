@@ -13,3 +13,4 @@ sphinx-argparse-cli
 towncrier
 IPython
 enum-tools[sphinx]
+sphinx-codeautolink

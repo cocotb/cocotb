@@ -310,7 +310,7 @@ Bugfixes
 - Tests skipped by default (created with `skip=True`) can again be run manually by setting the :envvar:`TESTCASE` variable. (:pr:`2045`)
 - In :ref:`Icarus Verilog <sim-icarus>`, generate blocks are now accessible directly via lookup without having to iterate over parent handle. (:pr:`2079`, :pr:`2143`)
 
-    .. code-block:: python3
+    .. code-block:: python
 
         # Example pseudo-region
         dut.genblk1       #<class 'cocotb.handle.HierarchyArrayObject'>
@@ -382,7 +382,7 @@ Features
 - Simulators run through a Tcl script (Aldec Riviera Pro and Mentor simulators) now support a new :make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime. (:pr:`1244`)
 - Cocotb now supports the following example of forking a *non-decorated* :ref:`async coroutine <async_functions>`.
 
-  .. code-block:: python3
+  .. code-block:: python
 
      async def example():
          for i in range(10):
@@ -412,7 +412,7 @@ Features
 - The colored output can now be disabled by the :envvar:`NO_COLOR` environment variable. (:pr:`1309`)
 - Cocotb now supports deposit/force/release/freeze actions on simulator handles, exposing functionality similar to the respective Verilog/VHDL assignments.
 
-  .. code-block:: python3
+  .. code-block:: python
 
      from cocotb.handle import Deposit, Force, Release, Freeze
 
@@ -437,7 +437,7 @@ Features
   The delimiter between each library in the list has changed from ``:`` to ``,``. (:pr:`1457`)
 - New methods for setting the value of a ``cocotb.handle.NonHierarchyIndexableObject`` (HDL arrays). (:pr:`1507`)
 
-  .. code-block:: python3
+  .. code-block:: python
 
       # Now supported
       dut.some_array <= [0xAA, 0xBB, 0xCC]

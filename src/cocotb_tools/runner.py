@@ -239,7 +239,7 @@ class Runner(ABC):
         +----------+------------------------------------+
 
 
-        .. code-block:: python3
+        .. code-block:: python
 
             runner.build(
                 sources=[

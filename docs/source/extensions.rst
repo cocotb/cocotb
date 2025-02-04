@@ -71,7 +71,7 @@ The module file hierarchy should be as follows (replace ``EXTNAME`` with the nam
 The Python source code should go into the :file:`EXTNAME` directory, next to the :file:`__init__.py` file.
 All packaging metadata goes into :file:`setup.py`.
 
-.. code-block:: python3
+.. code-block:: python
 
   # Minimal setup.py. Extend as needed.
   from setuptools import setup, find_namespace_packages
@@ -99,7 +99,7 @@ Once the extension has been `uploaded to PyPi <https://packaging.python.org/tuto
 
 To use the functionality in the extension module, import it into your testbench.
 
-.. code-block:: python3
+.. code-block:: python
 
   # Examples for importing (parts of) the extension
   import cocotbext.EXTNAME

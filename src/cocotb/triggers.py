@@ -490,7 +490,7 @@ class Event:
         name: Name for the Event.
 
     Usage:
-        .. code-block:: python3
+        .. code-block:: python
 
             e = Event()
 
@@ -668,7 +668,7 @@ class Lock(AsyncContextManager[None]):
     Usage:
         By directly calling :meth:`acquire` and :meth:`release`.
 
-        .. code-block:: python3
+        .. code-block:: python
 
             await lock.acquire()
             try:
@@ -678,7 +678,7 @@ class Lock(AsyncContextManager[None]):
 
         Or...
 
-        .. code-block:: python3
+        .. code-block:: python
 
             async with lock:
                 # do some stuff
@@ -786,7 +786,7 @@ class TaskComplete(Trigger, Generic[T]):
     .. note::
         It is preferable to use :attr:`.Task.complete` to get this object over calling the constructor.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         async def coro_inner():
             await Timer(1, units="ns")
@@ -839,7 +839,7 @@ def Join(task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
 
     Equivalent to calling :meth:`task.join() <cocotb.task.Task.join>`.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         async def coro_inner():
             await Timer(1, units="ns")

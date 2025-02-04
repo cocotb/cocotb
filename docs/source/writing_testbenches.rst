@@ -15,7 +15,7 @@ and creates a *handle* called ``dut``. Toplevel signals can be accessed using th
 "dot" notation used for accessing object attributes in Python. The same mechanism
 can be used to access signals inside the design.
 
-.. code-block:: python3
+.. code-block:: python
 
     # Get a reference to the "clk" signal on the toplevel
     clk = dut.clk
@@ -36,7 +36,7 @@ To find elements of the DUT
 at a certain hierarchy level,
 you can use the :func:`dir` function on a handle.
 
-.. code-block:: python3
+.. code-block:: python
 
     # Print the instances and signals (which includes the ports) of the design's toplevel
     print(dir(dut))
@@ -58,7 +58,7 @@ Values can be assigned to signals using either the
 :attr:`~cocotb.handle.ValueObjectBase.value` property of a handle object
 or :meth:`~cocotb.handle.ValueObjectBase.set` method of a handle object.
 
-.. code-block:: python3
+.. code-block:: python
 
     # Get a reference to the "clk" signal and assign a value
     clk = dut.clk
@@ -102,7 +102,7 @@ value to signals with more fine-grained control (e.g. signed values only).
         output  logic [2:0] data_out
         );
 
-.. code-block:: python3
+.. code-block:: python
 
     # assignment of negative value
     dut.data_in.value = -4
@@ -149,7 +149,7 @@ to either pass or fail.
 The :class:`~cocotb.test` decorator supports several keyword arguments (see section :ref:`writing-tests`).
 In most cases no arguments are passed to the decorator so cocotb tests can be written as:
 
-.. code-block:: python3
+.. code-block:: python
 
     # A valid cocotb test
     @cocotb.test
@@ -175,7 +175,7 @@ which will block the current coroutine's execution until the task finishes.
 
 The following example shows these in action:
 
-.. code-block:: python3
+.. code-block:: python
 
     # A coroutine
     async def reset_dut(reset_n, duration_ns):
@@ -215,7 +215,7 @@ In addition to regular value assignments (deposits), signals can be forced
 to a predetermined value or frozen at their current value. To achieve this,
 the various actions described in :ref:`assignment-methods` can be used.
 
-.. code-block:: python3
+.. code-block:: python
 
     # Deposit action
     dut.my_signal.value = 12
@@ -250,7 +250,7 @@ These objects are generally not accessible using attribute syntax since attribut
 
 All named objects, including those with the aforementioned limitations, can be accessed using index syntax.
 
-.. code-block:: python3
+.. code-block:: python
 
     dut["_some_signal"]  # begins with underscore
     dut["\\!WOOOOW!\\"]  # escaped identifier (Verilog), extended identifier (VHDL)
@@ -273,7 +273,7 @@ It may appear as one or more attributes here depending on the number of compilat
         parameter int foo = 7
     endpackage
 
-.. code-block:: python3
+.. code-block:: python
 
     # prints "7"
     print(cocotb.packages.my_package.foo.value)
@@ -285,7 +285,7 @@ A cocotb test is considered to have `failed` if the test coroutine or any runnin
 fails an :keyword:`assert` statement.
 Below are examples of `failing` tests.
 
-.. code-block:: python3
+.. code-block:: python
 
     @cocotb.test()
     async def test(dut):
@@ -316,7 +316,7 @@ A cocotb test is considered to have `errored` if the test coroutine or any runni
 raises an exception that isn't considered a `failure`.
 Below are examples of `erroring` tests.
 
-.. code-block:: python3
+.. code-block:: python
 
     @cocotb.test()
     async def test(dut):
@@ -347,7 +347,7 @@ raises :exc:`cocotb.result.TestSuccess`,
 the test is considered to have `passed`.
 Below are examples of `passing` tests.
 
-.. code-block:: python3
+.. code-block:: python
 
     @cocotb.test():
     async def test(dut):
@@ -379,7 +379,7 @@ Cocotb uses the built-in :mod:`logging` library, with some configuration describ
 All :class:`~cocotb.Task`\ s have a :class:`logging.Logger`,
 and can be set to its own logging level.
 
-.. code-block:: python3
+.. code-block:: python
 
     task = cocotb.start_soon(coro)
     task.log.setLevel(logging.DEBUG)
@@ -390,7 +390,7 @@ When logging :term:`HDL` objects, beware that ``_log`` is the preferred way to u
 logging. This helps minimize the change of name collisions with an :term:`HDL` log
 component with the Python logging functionality.
 
-.. code-block:: python3
+.. code-block:: python
 
     dut.my_signal._log.info("Setting signal")
     dut.my_signal.value = 1

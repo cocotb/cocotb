@@ -37,7 +37,7 @@ Accessing bits in a vector
 
 Accessing bits of a vector directly was not possible until (including) version 10.3:
 
-.. code-block:: python3
+.. code-block:: python
 
     dut.stream_in_data[2].value = 1
 

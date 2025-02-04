@@ -107,7 +107,7 @@ class LogicArray(ArrayLike[Logic]):
     If a *range* argument is given, but no value,
     the array is filled with the default value of ``Logic()``.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> LogicArray(0b0111, 4)
         LogicArray('0111', Range(3, 'downto', 0))
@@ -123,7 +123,7 @@ class LogicArray(ArrayLike[Logic]):
 
     :class:`LogicArray`\ s can be constructed from :class:`int`\ s using :meth:`from_unsigned` or :meth:`from_signed`.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> LogicArray.from_unsigned(0xA, 4)
         LogicArray('1010', Range(3, 'downto', 0))
@@ -134,7 +134,7 @@ class LogicArray(ArrayLike[Logic]):
     :class:`LogicArray`\ s can be constructed from :class:`bytes` or :class:`bytearray` using :meth:`from_bytes`.
     Use the *byteorder* argument to control endianness; it defaults to ``"big"``.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> LogicArray.from_bytes(b"1n")
         LogicArray('0011000101101110', Range(15, 'downto', 0))
@@ -145,7 +145,7 @@ class LogicArray(ArrayLike[Logic]):
     :class:`LogicArray`\ s support the same operations as :class:`Array`;
     however, it enforces the condition that all elements must be a :class:`Logic`.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> la = LogicArray("1010")
         >>> la[0]                               # is indexable
@@ -163,7 +163,7 @@ class LogicArray(ArrayLike[Logic]):
     When setting an element or slice, the *value* is first constructed into a
     :class:`Logic`.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> la = LogicArray("1010")
         >>> la[3] = "Z"
@@ -176,7 +176,7 @@ class LogicArray(ArrayLike[Logic]):
 
     :class:`LogicArray`\ s can be converted into :class:`str`\ s, :class:`int`\ s, or :class:`bytes`\ s.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> la = LogicArray("1010")
         >>> str(la)
@@ -194,7 +194,7 @@ class LogicArray(ArrayLike[Logic]):
     You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
     the built-ins :func:`hex:` and :func:`bin`, respectively.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> la = LogicArray("01111010")
         >>> hex(la)
@@ -205,7 +205,7 @@ class LogicArray(ArrayLike[Logic]):
     :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
     ``^``, and ``~``.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         >>> def big_mux(a: LogicArray, b: LogicArray, sel: Logic) -> LogicArray:
         ...     s = LogicArray([sel] * len(a))
