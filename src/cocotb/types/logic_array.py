@@ -148,16 +148,16 @@ class LogicArray(ArrayLike[Logic]):
     .. code-block:: pycon3
 
         >>> la = LogicArray("1010")
-        >>> la[0]                               # is indexable
+        >>> la[0]  # is indexable
         Logic('0')
 
-        >>> la[1:]                              # is slice-able
+        >>> la[1:]  # is slice-able
         LogicArray('10', Range(1, 'downto', 0))
 
-        >>> Logic("0") in la                    # is a collection
+        >>> Logic("0") in la  # is a collection
         True
 
-        >>> list(la)                            # is an iterable
+        >>> list(la)  # is an iterable
         [Logic('1'), Logic('0'), Logic('1'), Logic('0')]
 
     When setting an element or slice, the *value* is first constructed into a
@@ -170,7 +170,7 @@ class LogicArray(ArrayLike[Logic]):
         >>> la[3]
         Logic('Z')
 
-        >>> la[2:] = ['X', True, 0]
+        >>> la[2:] = ["X", True, 0]
         >>> la
         LogicArray('ZX10', Range(3, 'downto', 0))
 
@@ -213,7 +213,7 @@ class LogicArray(ArrayLike[Logic]):
 
         >>> la = LogicArray("0110")
         >>> p = LogicArray("1110")
-        >>> sel = Logic('1')        # choose second option
+        >>> sel = Logic("1")  # choose second option
         >>> big_mux(la, p, sel)
         LogicArray('1110', Range(3, 'downto', 0))
 

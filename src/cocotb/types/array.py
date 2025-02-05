@@ -29,7 +29,9 @@ class Array(ArrayLike[T]):
         >>> Array("1234")  # the 0-based range `(0, len(value)-1)` is inferred
         Array(['1', '2', '3', '4'], Range(0, 'to', 3))
 
-        >>> Array([1, True, None, "example"], Range(-2, 1))  # initial value and range lengths must be equal
+        >>> Array(
+        ...     [1, True, None, "example"], Range(-2, 1)
+        ... )  # initial value and range lengths must be equal
         Array([1, True, None, 'example'], Range(-2, 'to', 1))
 
     Arrays also support "null" ranges; "null" arrays have zero length and cannot be indexed.
@@ -92,7 +94,7 @@ class Array(ArrayLike[T]):
         >>> a = Array("1234")
         >>> a.range
         Range(0, 'to', 3)
-        >>> a.range = Range(3, 'downto', 0)
+        >>> a.range = Range(3, "downto", 0)
         >>> a.range
         Range(3, 'downto', 0)
 

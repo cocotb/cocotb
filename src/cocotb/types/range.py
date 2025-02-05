@@ -26,7 +26,7 @@ class Range(Sequence[int]):
         >>> r.left, r.right, len(r)
         (-2, 3, 6)
 
-        >>> s = Range(8, 'downto', 1)
+        >>> s = Range(8, "downto", 1)
         >>> s.left, s.right, len(s)
         (8, 1, 8)
 
@@ -44,7 +44,7 @@ class Range(Sequence[int]):
 
     .. code-block:: pycon3
 
-        >>> r = Range(1, 'to', 0)  # no way to count from 1 'to' 0
+        >>> r = Range(1, "to", 0)  # no way to count from 1 'to' 0
         >>> r.left, r.direction, r.right
         (1, 'to', 0)
         >>> len(r)

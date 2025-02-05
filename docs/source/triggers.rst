@@ -9,8 +9,6 @@ When the trigger fires, execution of the paused coroutine will resume:
 
 .. code-block:: python
 
-    from cocotb.triggers import RisingEdge
-
     async def coro():
         print("Some time before a clock edge")
         await RisingEdge(clk)

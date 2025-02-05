@@ -65,8 +65,6 @@ class Logic:
 
     .. code-block:: pycon3
 
-        >>> from cocotb.types.logic import Logic
-
         >>> Logic("X")
         Logic('X')
         >>> Logic(True)
@@ -94,14 +92,12 @@ class Logic:
 
     .. code-block:: pycon3
 
-        >>> from cocotb.types.logic import Logic
-
         >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> Tuple[Logic, Logic]:
         ...     res = a ^ b ^ carry
         ...     carry_out = (a & b) | (b & carry) | (a & carry)
         ...     return res, carry_out
 
-        >>> full_adder(a=Logic('0'), b=Logic('1'), carry=Logic('1'))
+        >>> full_adder(a=Logic("0"), b=Logic("1"), carry=Logic("1"))
         (Logic('0'), Logic('1'))
 
     Args:

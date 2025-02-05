@@ -24,8 +24,6 @@ For example:
 
 .. code-block:: python
 
-    from cocotb.triggers import Timer
-
     async def wait_10ns():
         cocotb.log.info("About to wait for 10 ns")
         await Timer(10, units='ns')
@@ -42,8 +40,6 @@ Coroutines may also await on other coroutines:
 Coroutines can :keyword:`return` a value, so that they can be used by other coroutines.
 
 .. code-block:: python
-
-    from cocotb.triggers import RisingEdge
 
     async def get_signal(clk, signal):
         await RisingEdge(clk)
@@ -69,10 +65,6 @@ after the calling task yields control.
 
 .. code-block:: python
 
-    import cocotb
-    from cocotb.clock import Clock
-    from cocotb.triggers import Timer
-
     @cocotb.test()
     async def test_act_during_reset(dut):
         """While reset is active, toggle signals"""
@@ -92,10 +84,6 @@ after the calling task yields control.
 Other tasks can be used in an await statement to suspend the current task until the other task finishes.
 
 .. code-block:: python
-
-    import cocotb
-    from cocotb.clock import Clock
-    from cocotb.triggers import First, RisingEdge, Timer
 
     @cocotb.test()
     async def test_count_edge_cycles(dut, period_ns=1, clocks=6):
@@ -120,13 +108,6 @@ Tasks can be killed before they complete,
 forcing their completion before they would naturally end.
 
 .. code-block:: python
-
-    from math import isclose
-
-    import cocotb
-    from cocotb.clock import Clock
-    from cocotb.triggers import RisingEdge, Timer
-    from cocotb.utils import get_sim_time
 
     @cocotb.test()
     async def test_different_clocks(dut):
@@ -188,9 +169,6 @@ Below we see it used to implement a timeout.
 
 .. code-block:: python
 
-    import cocotb
-    from cocotb.triggers import First, Timer
-
     @cocotb.test
     async def test_quiesce_or_timeout(dut):
 
@@ -220,9 +198,6 @@ Determining Which Task Finishes First
 
 .. code-block:: python
 
-    import cocotb
-    from cocotb.triggers import First
-
     @cocotb.test
     async def test_which_finished_first(dut):
 
@@ -250,9 +225,6 @@ Using the example from the previous section, we can use it to wait until both th
 
 .. code-block:: python
 
-    import cocotb
-    from cocotb.triggers import Combine
-
     @cocotb.test
     async def test_wait_for_both(dut):
 
@@ -267,9 +239,6 @@ Using the example from the previous section, we can use it to wait until both th
 And of course, the sky is the limit when you compose the two.
 
 .. code-block:: python
-
-    import cocotb
-    from cocotb.triggers import Combine, with_timeout
 
     @cocotb.test
     async def test_wait_for_both_with_timeout(dut):
@@ -290,9 +259,6 @@ has a new meaning which matches the typical meaning of yield within regular Pyth
 It can be used to create a special type of generator function that can be iterated with :keyword:`async for`:
 
 .. code-block:: python
-
-    import cocotb
-    from cocotb.triggers import RisingEdge
 
     async def ten_samples_of(clk, signal):
         for i in range(10):
