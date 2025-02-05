@@ -114,7 +114,7 @@ def default_config() -> None:
     logging.getLogger("gpi").setLevel(level)
 
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     LoggerClass = logging.Logger
 else:
     LoggerClass = logging.getLoggerClass()

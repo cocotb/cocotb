@@ -22,7 +22,7 @@ from cocotb.types import ArrayLike
 from cocotb.types.logic import Logic, LogicConstructibleT, _str_literals
 from cocotb.types.range import Range
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from typing import Literal
 
 

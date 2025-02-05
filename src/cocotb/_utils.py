@@ -210,7 +210,7 @@ class DocEnum(Enum):
         return self
 
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     F = TypeVar("F")
 
     def cached_method(f: F) -> F: ...

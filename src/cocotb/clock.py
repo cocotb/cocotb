@@ -50,7 +50,7 @@ from cocotb.triggers import (
 )
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from typing import Literal, TypeAlias
 
     Impl: TypeAlias = Literal["gpi"] | Literal["py"]
