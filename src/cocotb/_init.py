@@ -40,9 +40,7 @@ import cocotb.handle
 import cocotb.logging
 import cocotb.regression
 import cocotb.simulator
-from cocotb._scheduler import Scheduler
 from cocotb.logging import _filter_from_c, _log_from_c, default_config
-from cocotb.regression import RegressionManager, RegressionMode
 
 
 def _setup_logging() -> None:
@@ -108,27 +106,13 @@ def init_package_from_simulation(argv: List[str]) -> None:
     )
 
 
-def run_regression(_: Any) -> None:
-    """Setup and run a regression."""
-
-    _setup_regression_manager()
-
-    # setup global scheduler system
-    cocotb._scheduler_inst = Scheduler(
-        test_complete_cb=cocotb.regression_manager._test_complete
-    )
-
-    # start Regression Manager
-    cocotb.log.info("Running tests")
-    cocotb.regression_manager.start_regression()
-
-
 def _sim_event(msg: str) -> None:
     """Function that can be called externally to signal an event."""
     # We simply return here as the simulator will exit
     # so no cleanup is needed
-    if hasattr(cocotb, "regression_manager"):
-        cocotb.regression_manager._fail_simulation(msg)
+    if cocotb.regression._instance is not None:
+        # TODO fix
+        cocotb.regression._instance._fail_simulation(msg)
     else:
         cocotb.log.error(msg)
         _shutdown_testbench()
@@ -277,8 +261,11 @@ def _setup_root_handle() -> None:
     cocotb.top = cocotb.handle.SimHandle(handle)
 
 
-def _setup_regression_manager() -> None:
-    cocotb.regression_manager = RegressionManager()
+def run_regression(_: Any) -> None:
+    """Setup and run a regression."""
+
+    regression_manager = cocotb.regression.RegressionManager()
+    cocotb.regression._instance = regression_manager
 
     # discover tests
     module_str = os.getenv("COCOTB_TEST_MODULES", "")
@@ -287,8 +274,8 @@ def _setup_regression_manager() -> None:
             "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
         )
     modules = [s.strip() for s in module_str.split(",") if s.strip()]
-    cocotb.regression_manager.setup_pytest_assertion_rewriting()
-    cocotb.regression_manager.discover_tests(*modules)
+    regression_manager.setup_pytest_assertion_rewriting()
+    regression_manager.discover_tests(*modules)
 
     # filter tests
     testcase_str = os.getenv("COCOTB_TESTCASE", "").strip()
@@ -301,8 +288,12 @@ def _setup_regression_manager() -> None:
             DeprecationWarning,
         )
         filters = [f"{s.strip()}$" for s in testcase_str.split(",") if s.strip()]
-        cocotb.regression_manager.add_filters(*filters)
-        cocotb.regression_manager.set_mode(RegressionMode.TESTCASE)
+        regression_manager.add_filters(*filters)
+        regression_manager.set_mode(cocotb.regression.RegressionMode.TESTCASE)
     elif test_filter_str:
-        cocotb.regression_manager.add_filters(test_filter_str)
-        cocotb.regression_manager.set_mode(RegressionMode.TESTCASE)
+        regression_manager.add_filters(test_filter_str)
+        regression_manager.set_mode(cocotb.regression.RegressionMode.TESTCASE)
+
+    # start Regression Manager
+    cocotb.log.info("Running tests")
+    cocotb.regression._instance.start_regression()

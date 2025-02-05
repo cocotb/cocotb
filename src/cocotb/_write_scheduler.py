@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import os
 from collections import OrderedDict
-from typing import Any, Callable, Sequence, Tuple, Union
+from typing import Any, Callable, Sequence, Tuple
 
 import cocotb
 import cocotb.handle
 import cocotb.task
-from cocotb.triggers import Event, ReadWrite
+from cocotb.triggers import ReadOnly, ReadWrite, current_gpi_trigger
 
 trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 
@@ -17,40 +17,21 @@ trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 # Only the last scheduled write to a particular handle in a timestep is performed.
 _write_calls: "OrderedDict[cocotb.handle.SimHandleBase, Tuple[Callable[..., None], Sequence[Any]]]" = OrderedDict()
 
-# TODO don't use a task to force ReadWrite, just prime an empty callback
-
-_write_task: Union[cocotb.task.Task[None], None] = None
-
-_writes_pending = Event()
+_read_only: ReadOnly = ReadOnly()
+_read_write: ReadWrite = ReadWrite()
 
 
-async def _do_writes() -> None:
-    """An internal task that schedules a ReadWrite to force writes to occur."""
-    while True:
-        await _writes_pending.wait()
-        await ReadWrite()
-
-
-def start_write_scheduler() -> None:
-    global _write_task
-    if _write_task is None:
-        _write_task = cocotb.start_soon(_do_writes())
-
-
-def stop_write_scheduler() -> None:
-    global _write_task
-    if _write_task is not None:
-        _write_task.kill()
-        _write_task = None
-    _write_calls.clear()
-    _writes_pending.clear()
+def _write_scheduler_callback() -> None:
+    # This function does nothing instead of calling apply_scheduled_writes.
+    # apply_scheduled_writes is called by the ReadWrite Trigger's _react to
+    # ensure that it occurs first.
+    pass
 
 
 def apply_scheduled_writes() -> None:
     while _write_calls:
         _, (func, args) = _write_calls.popitem(last=False)
         func(*args)
-    _writes_pending.clear()
 
 
 if trust_inertial:
@@ -60,7 +41,7 @@ if trust_inertial:
         write_func: Callable[..., None],
         args: Sequence[Any],
     ) -> None:
-        if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
+        if current_gpi_trigger() is _read_only:
             raise RuntimeError(
                 f"Write to object {handle._name} was scheduled during a read-only simulation phase."
             )
@@ -73,14 +54,20 @@ else:
         args: Sequence[Any],
     ) -> None:
         """Queue *write_func* to be called on the next ``ReadWrite`` trigger."""
-        if cocotb.sim_phase == cocotb.SimPhase.READ_WRITE:
+        current_trigger = current_gpi_trigger()
+        if current_trigger is _read_write:
             write_func(*args)
-        elif cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
+        elif current_trigger is _read_only:
             raise RuntimeError(
                 f"Write to object {handle._name} was scheduled during a read-only simulation phase."
             )
         else:
+            # This must come first as it checks if _write_calls is empty to see if this is the first scheduling.
+            if not _write_calls:
+                _read_write.register(_write_scheduler_callback)
+
+            # We explicitly delete so the new handle value doesn't update the old entry without moving it to
+            # the end of the queue.
             if handle in _write_calls:
                 del _write_calls[handle]
             _write_calls[handle] = (write_func, args)
-            _writes_pending.set()

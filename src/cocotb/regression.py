@@ -36,49 +36,43 @@ import pdb
 import random
 import re
 import time
-import warnings
 from enum import auto
 from importlib import import_module
-from itertools import product
-from types import FrameType
 from typing import (
     Any,
     Callable,
     Coroutine,
     Dict,
-    Generic,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
-    TypeVar,
     Union,
     cast,
-    overload,
 )
 
 import cocotb
-import cocotb._scheduler
+import cocotb._init
 import cocotb._write_scheduler
+import cocotb.event_loop
+import cocotb.task
 from cocotb import _ANSI, simulator
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome
+from cocotb._py_compat import cached_property
 from cocotb._utils import (
     DocEnum,
     remove_traceback_frames,
+    safe_divide,
     want_color_output,
 )
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.result import TestSuccess
-from cocotb.task import Task, _RunningTest
-from cocotb.triggers import SimTimeoutError, Timer, Trigger, with_timeout
+from cocotb.task import ResultType, Task
+from cocotb.triggers import NullTrigger, SimTimeoutError, Timer, with_timeout
 from cocotb.utils import get_sim_time
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
-
-
-_logger = logging.getLogger(__name__)
 
 _Failed: Type[BaseException]
 try:
@@ -95,10 +89,11 @@ else:
         assert False, "pytest.raises doesn't raise an exception when it fails"
 
 
-# TODO remove SimFailure once we have functionality in place to abort the test without
-# having to set an exception.
-class SimFailure(Exception):
+class _SimFailure(Exception):
     """A Test failure due to simulator failure."""
+
+    __name__ = "SimFailure"
+    __qualname__ = "SimFailure"
 
 
 class Test:
@@ -163,16 +158,14 @@ class Test:
             co = func  # must save ref because we overwrite variable "func"
 
             @functools.wraps(func)
-            async def f(*args, **kwargs):
+            async def f(*args: object, **kwargs: object) -> None:
                 running_co = Task(co(*args, **kwargs))
 
                 try:
-                    res = await with_timeout(running_co, timeout_time, timeout_unit)
+                    await with_timeout(running_co, timeout_time, timeout_unit)
                 except SimTimeoutError:
                     running_co.kill()
                     raise
-                else:
-                    return res
 
             self.func = f
         else:
@@ -183,7 +176,7 @@ class Test:
         if isinstance(expect_error, type):
             expect_error = (expect_error,)
         if _expect_sim_failure:
-            expect_error += (SimFailure,)
+            expect_error += (_SimFailure,)
         self.expect_error = expect_error
         self._expect_sim_failure = _expect_sim_failure
         self.skip = skip
@@ -203,6 +196,13 @@ def _format_doc(docstring: Union[str, None]) -> str:
     else:
         brief = docstring.split("\n")[0]
         return f"\n    {brief}"
+
+
+def _get_lineno(func: Any) -> int:
+    try:
+        return inspect.getsourcelines(func)[1]
+    except Exception:
+        return 1
 
 
 class RegressionMode(DocEnum):
@@ -245,7 +245,6 @@ class RegressionManager:
         self._test_outcome: Union[None, Outcome[Any]]
         self._test_start_time: float
         self._test_start_sim_time: float
-        self.log = _logger
         self._regression_start_time: float
         self._test_results: List[Dict[str, Any]] = []
         self.total_tests = 0
@@ -263,7 +262,7 @@ class RegressionManager:
         self._filters: List[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
         self._included: List[bool]
-        self._sim_failure: Union[SimFailure, None] = None
+        self._sim_failure: Union[_SimFailure, None] = None
 
         # Setup XUnit
         ###################
@@ -275,6 +274,10 @@ class RegressionManager:
         self.xunit = XUnitReporter(filename=results_filename)
         self.xunit.add_testsuite(name=suite_name, package=package_name)
         self.xunit.add_property(name="random_seed", value=str(cocotb._random_seed))
+
+    @cached_property
+    def log(self) -> logging.Logger:
+        return logging.getLogger(__name__)
 
     def discover_tests(self, *modules: str) -> None:
         """Discover tests in files automatically.
@@ -341,8 +344,7 @@ class RegressionManager:
         self.log.debug("Registered test %r", test.fullname)
         self._test_queue.append(test)
 
-    @classmethod
-    def setup_pytest_assertion_rewriting(cls) -> None:
+    def setup_pytest_assertion_rewriting(self) -> None:
         """Configure pytest to rewrite assertions for better failure messages.
 
         Must be called before all modules containing tests are imported.
@@ -350,7 +352,7 @@ class RegressionManager:
         try:
             import pytest
         except ImportError:
-            _logger.info(
+            self.log.info(
                 "pytest not found, install it to enable better AssertionError messages"
             )
             return
@@ -365,7 +367,7 @@ class RegressionManager:
             )
             install_importhook(pytest_conf)
         except Exception:
-            _logger.exception(
+            self.log.exception(
                 f"Configuring the assertion rewrite hook using pytest {pytest.__version__} failed. "
                 "Please file a bug report!"
             )
@@ -428,7 +430,7 @@ class RegressionManager:
 
             # initialize the test, if it fails, record and continue
             try:
-                self._test_task = _RunningTest(
+                self._test_task = _TestTask(
                     self._test.func(cocotb.top), self._test.name
                 )
             except Exception:
@@ -451,49 +453,71 @@ class RegressionManager:
                 self._first_test = False
                 return self._schedule_next_test()
             else:
-                return self._timer1._prime(self._schedule_next_test)
+                _ = self._timer1.register(self._schedule_next_test)
+                # We don't plan on cancelling this, so we toss the handle
+                return
 
-        return self._tear_down()
+        return self._finalize_regression()
 
-    def _schedule_next_test(self, trigger: Optional[Trigger] = None) -> None:
-        if trigger is not None:
-            # TODO move to Trigger object
-            cocotb.sim_phase = cocotb.SimPhase.NORMAL
-            trigger._cleanup()
-        cocotb._write_scheduler.start_write_scheduler()
+    def _schedule_next_test(self) -> None:
+        self._test_task._schedule_resume()
+        cocotb.event_loop._instance.run()
 
-        self._test_task._add_done_callback(
-            lambda _: cocotb._scheduler_inst.shutdown_soon()
-        )
-        cocotb._scheduler_inst._schedule_task(self._test_task)
-        cocotb._scheduler_inst._event_loop()
+    def _fail_simulation(self, msg: str) -> None:
+        self._sim_failure = _SimFailure(msg)
+        self._end_test(Error(self._sim_failure))
 
-    def _tear_down(self) -> None:
+    def _end_test(self, outcome: Outcome[Any]) -> None:
+        # set test outcome
+        if self._test_outcome is not None:  # pragma: no cover
+            raise InternalError("Outcome already has a value, but is being set again.")
+        self._test_outcome = outcome
+
+        # cancel all remaining tasks
+        for task in cocotb.task.all_tasks():
+            task.cancel()
+
+        # set up test finalization callback after all tasks have been cancelled
+        cocotb.event_loop._instance.schedule(self._finalize_test)
+
+    def _finalize_test(self) -> None:
+        self._record_test_outcome()
+        return self._execute()
+
+    def _finalize_regression(self) -> None:
         """Called by :meth:`_execute` when there are no more tests to run to finalize the regression."""
-        # prevent re-entering the tear down procedure
-        if not self._tearing_down:
-            self._tearing_down = True
-        else:
-            return
+        if self._test_queue:  # pragma: no cover
+            raise InternalError("Finalizing RegressionManager with tests remaining")
 
-        assert not self._test_queue
-
-        # Write out final log messages
         self._log_test_summary()
-
-        # Generate output reports
         self.xunit.write()
-
-        # Setup simulator finalization
         simulator.stop_simulator()
+        cocotb._init._shutdown_testbench()
 
-        # TODO refactor intialization and finalization into their own module
-        # to prevent circult imports requiring local imports
-        from cocotb._init import _shutdown_testbench
+    def _test_done_callback(self, task: Task[Any]) -> None:
+        self._end_test(cast(Outcome[Any], task._result))
 
-        _shutdown_testbench()
+    def _task_done_callback(self, task: Task[Any]) -> None:
+        # if cancelled, do nothing
+        if task.cancelled():
+            return
+        # if no failure, do nothing
+        e = task.exception()
+        if e is None:
+            return
+        # if there are watchers, let the exception propagate
+        breakpoint()
+        if task.complete._callbacks:
+            return
+        # there was a failure and no one is watching, fail test
+        elif isinstance(e, (TestSuccess, AssertionError)):
+            task.log.info("Test stopped by this task")
+            self._end_test(Error(e))
+        else:
+            task.log.error("Exception raised by this task")
+            self._end_test(Error(e))
 
-    def _test_complete(self) -> None:
+    def _record_test_outcome(self) -> None:
         """Callback given to the scheduler, to be called when the current test completes.
 
         Due to the way that simulation failure is handled,
@@ -505,19 +529,13 @@ class RegressionManager:
         sim_time_ns = get_sim_time("ns") - self._test_start_sim_time
         test = self._test
 
-        # clean up write scheduler
-        cocotb._write_scheduler.stop_write_scheduler()
-
         # score test
-        if self._test_outcome is not None:
-            outcome = self._test_outcome
-        else:
-            assert self._test_task._outcome is not None
-            outcome = self._test_task._outcome
+        if self._test_outcome is None:  # pragma: no cover
+            raise InternalError("Test completed without setting outcome")
         try:
-            outcome.get()
+            self._test_outcome.get()
         except BaseException as e:
-            result = remove_traceback_frames(e, ["_test_complete", "get"])
+            result = remove_traceback_frames(e, ["_record_test_outcome", "get"])
         else:
             result = TestSuccess()
 
@@ -584,15 +602,6 @@ class RegressionManager:
             if _pdb_on_exception:
                 pdb.post_mortem(result.__traceback__)
 
-        # continue test loop, assuming sim failure or not
-        return self._execute()
-
-    def _get_lineno(self, test: Test) -> int:
-        try:
-            return inspect.getsourcelines(test.func)[1]
-        except OSError:
-            return 1
-
     def _log_test_start(self) -> None:
         """Called by :meth:`_execute` to log that a test is starting."""
         hilight_start = _ANSI.COLOR_TEST if want_color_output() else ""
@@ -611,7 +620,7 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test is excluded by filters."""
 
         # write out xunit results
-        lineno = self._get_lineno(self._test)
+        lineno = _get_lineno(self._test.func)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
@@ -642,7 +651,7 @@ class RegressionManager:
         )
 
         # write out xunit results
-        lineno = self._get_lineno(self._test)
+        lineno = _get_lineno(self._test.func)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
@@ -685,7 +694,7 @@ class RegressionManager:
         )
 
         # write out xunit results
-        lineno = self._get_lineno(self._test)
+        lineno = _get_lineno(self._test.func)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
@@ -704,7 +713,7 @@ class RegressionManager:
                 "pass": False,
                 "sim": 0,
                 "real": 0,
-                "ratio": self._safe_divide(0, 0),
+                "ratio": safe_divide(0, 0),
             }
         )
 
@@ -739,8 +748,8 @@ class RegressionManager:
         )
 
         # write out xunit results
-        ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
-        lineno = self._get_lineno(self._test)
+        ratio_time = safe_divide(sim_time_ns, wall_time_s)
+        lineno = _get_lineno(self._test.func)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
@@ -789,8 +798,8 @@ class RegressionManager:
         )
 
         # write out xunit results
-        ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
-        lineno = self._get_lineno(self._test)
+        ratio_time = safe_divide(sim_time_ns, wall_time_s)
+        lineno = _get_lineno(self._test.func)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
@@ -839,7 +848,7 @@ class RegressionManager:
         """Called by :meth:`_tear_down` to log the test summary."""
         real_time = time.time() - self._regression_start_time
         sim_time_ns = get_sim_time("ns")
-        ratio_time = self._safe_divide(sim_time_ns, real_time)
+        ratio_time = safe_divide(sim_time_ns, real_time)
 
         if len(self._test_results) == 0:
             return
@@ -959,315 +968,110 @@ class RegressionManager:
 
         self.log.info(summary)
 
-    def _fail_simulation(self, msg: str) -> None:
-        self._sim_failure = SimFailure(msg)
-        self._abort_test(self._sim_failure)
-        cocotb._scheduler_inst._handle_termination()
 
-    def _abort_test(self, exc: BaseException) -> None:
-        """Force this test to end early, without executing any cleanup.
-
-        This happens when a background task fails, and is consistent with
-        how the behavior has always been. In future, we may want to behave
-        more gracefully to allow the test body to clean up.
-
-        `exc` is the exception that the test should report as its reason for
-        aborting.
-        """
-        if self._test_outcome is not None:  # pragma: no cover
-            raise InternalError("Outcome already has a value, but is being set again.")
-        self._test_outcome = Error(exc)
-        self._test_task.kill()
-
-    @staticmethod
-    def _safe_divide(a: float, b: float) -> float:
-        """Used when computing time ratios to ensure no exception is raised if either time is 0."""
-        try:
-            return a / b
-        except ZeroDivisionError:
-            if a == 0:
-                return float("nan")
-            else:
-                return float("inf")
+# TODO Make this not a global singleton
+# TODO Use normal type annotations once we're on Python 3.8
+_instance = None  # type: Union[RegressionManager, None]
 
 
-F = TypeVar("F", bound=Callable[..., Coroutine[Any, Any, None]])
+def get_regression_manager() -> RegressionManager:
+    if _instance is None:
+        raise RuntimeError("No RegressionManager is available")
+    return _instance
 
 
-class TestFactory(Generic[F]):
-    """Factory to automatically generate tests.
+class _TestTask(Task[None]):
+    """Specialized Task for running tests.
 
-    Args:
-        test_function: A Callable that returns the test Coroutine.
-            Must take *dut* as the first argument.
-        *args: Remaining arguments are passed directly to the test function.
-            Note that these arguments are not varied. An argument that
-            varies with each test must be a keyword argument to the
-            test function.
-        **kwargs: Remaining keyword arguments are passed directly to the test function.
-            Note that these arguments are not varied. An argument that
-            varies with each test must be a keyword argument to the
-            test function.
-
-    Assuming we have a common test function that will run a test. This test
-    function will take keyword arguments (for example generators for each of
-    the input interfaces) and generate tests that call the supplied function.
-
-    This Factory allows us to generate sets of tests based on the different
-    permutations of the possible arguments to the test function.
-
-    For example, if we have a module that takes backpressure, has two configurable
-    features where enabling ``feature_b`` requires ``feature_a`` to be active, and
-    need to test against data generation routines ``gen_a`` and ``gen_b``:
-
-    >>> tf = TestFactory(test_function=run_test)
-    >>> tf.add_option(name="data_in", optionlist=[gen_a, gen_b])
-    >>> tf.add_option("backpressure", [None, random_backpressure])
-    >>> tf.add_option(
-    ...     ("feature_a", "feature_b"), [(False, False), (True, False), (True, True)]
-    ... )
-    >>> tf.generate_tests()
-
-    We would get the following tests:
-
-        * ``gen_a`` with no backpressure and both features disabled
-        * ``gen_a`` with no backpressure and only ``feature_a`` enabled
-        * ``gen_a`` with no backpressure and both features enabled
-        * ``gen_a`` with ``random_backpressure`` and both features disabled
-        * ``gen_a`` with ``random_backpressure`` and only ``feature_a`` enabled
-        * ``gen_a`` with ``random_backpressure`` and both features enabled
-        * ``gen_b`` with no backpressure and both features disabled
-        * ``gen_b`` with no backpressure and only ``feature_a`` enabled
-        * ``gen_b`` with no backpressure and both features enabled
-        * ``gen_b`` with ``random_backpressure`` and both features disabled
-        * ``gen_b`` with ``random_backpressure`` and only ``feature_a`` enabled
-        * ``gen_b`` with ``random_backpressure`` and both features enabled
-
-    The tests are appended to the calling module for auto-discovery.
-
-    Tests are simply named ``test_function_N``. The docstring for the test (hence
-    the test description) includes the name and description of each generator.
-
-    .. versionchanged:: 1.5
-        Groups of options are now supported
-
-    .. versionchanged:: 2.0
-        You can now pass :func:`cocotb.test` decorator arguments when generating tests.
-
-    .. deprecated:: 2.0
-        Use :func:`cocotb.parametrize` instead.
+    Overrides the name to include "Test" and adds hook for informing the
+    regression manager when the test is complete.
     """
 
-    def __init__(self, test_function: F, *args: Any, **kwargs: Any) -> None:
-        warnings.warn(
-            "TestFactory is deprecated, use `@cocotb.parametrize` instead",
-            DeprecationWarning,
-            stacklevel=2,
+    def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
+        super().__init__(inst)
+        self.name = f"Test {name}"
+        self._add_done_callback(get_regression_manager()._test_done_callback)
+
+
+def start_soon(
+    coro: Union[Task[ResultType], Coroutine[Any, Any, ResultType]],
+) -> Task[ResultType]:
+    """
+    Schedule a coroutine to be run concurrently in a :class:`~Task`.
+
+    Note that this is not an :keyword:`async` function,
+    and the new task will not execute until the calling task yields control.
+
+    Args:
+        coro: A task or coroutine to be run.
+
+    Returns:
+        The :class:`~Task` that is scheduled to be run.
+
+    .. versionadded:: 1.6
+    """
+    task = create_task(coro)
+    task._schedule_resume()
+    return task
+
+
+async def start(
+    coro: Union[Task[ResultType], Coroutine[Any, Any, ResultType]],
+) -> Task[ResultType]:
+    """
+    Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
+
+    The calling task will resume execution before control is returned to the simulator.
+
+    When the calling task resumes, the newly scheduled task may have completed,
+    raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
+
+    Args:
+        coro: A task or coroutine to be run.
+
+    Returns:
+        The :class:`~Task` that has been scheduled and allowed to execute.
+
+    .. versionadded:: 1.6
+    """
+    task = start_soon(coro)
+    await NullTrigger()
+    return task
+
+
+def create_task(
+    coro: Union[Task[ResultType], Coroutine[Any, Any, ResultType]],
+) -> Task[ResultType]:
+    """
+    Construct a coroutine into a :class:`~Task` without scheduling the task.
+
+    The task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
+
+    Args:
+        coro: An existing task or a coroutine to be wrapped.
+
+    Returns:
+        Either the provided :class:`~Task` or a new Task wrapping the coroutine.
+
+    .. versionadded:: 1.6
+    """
+    if isinstance(coro, Task):
+        return coro
+    elif isinstance(coro, Coroutine):
+        task = Task[ResultType](coro)
+        task._add_done_callback(get_regression_manager()._task_done_callback)
+        return task
+    elif inspect.iscoroutinefunction(coro):
+        raise TypeError(
+            f"Coroutine function {coro} should be called prior to being scheduled."
         )
-        self.test_function = test_function
-        self.args = args
-        self.kwargs_constant = kwargs
-        self.kwargs: Dict[
-            Union[str, Sequence[str]], Union[Sequence[Any], Sequence[Sequence[Any]]]
-        ] = {}
-
-    @overload
-    def add_option(self, name: str, optionlist: Sequence[Any]) -> None: ...
-
-    @overload
-    def add_option(
-        self, name: Sequence[str], optionlist: Sequence[Sequence[Any]]
-    ) -> None: ...
-
-    def add_option(
-        self,
-        name: Union[str, Sequence[str]],
-        optionlist: Union[Sequence[str], Sequence[Sequence[str]]],
-    ) -> None:
-        """Add a named option to the test.
-
-        Args:
-            name:
-                An option name, or an iterable of several option names. Passed to test as keyword arguments.
-
-            optionlist:
-                A list of possible options for this test knob.
-                If N names were specified, this must be a list of N-tuples or
-                lists, where each element specifies a value for its respective
-                option.
-
-        .. versionchanged:: 1.5
-            Groups of options are now supported
-        """
-        if not isinstance(name, str):
-            for opt in optionlist:
-                if len(name) != len(opt):
-                    raise ValueError(
-                        "Mismatch between number of options and number of option values in group"
-                    )
-        self.kwargs[name] = optionlist
-
-    def generate_tests(
-        self,
-        *,
-        prefix: Optional[str] = None,
-        postfix: Optional[str] = None,
-        stacklevel: int = 0,
-        name: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: str = "steps",
-        expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
-        skip: bool = False,
-        stage: int = 0,
-        _expect_sim_failure: bool = False,
-    ) -> None:
-        """
-        Generate an exhaustive set of tests using the cartesian product of the
-        possible keyword arguments.
-
-        The generated tests are appended to the namespace of the calling
-        module.
-
-        Args:
-            prefix:
-                Text string to append to start of ``test_function`` name when naming generated test cases.
-                This allows reuse of a single ``test_function`` with multiple :class:`TestFactories <.TestFactory>` without name clashes.
-
-                .. deprecated:: 2.0
-                    Use the more flexible ``name`` field instead.
-
-            postfix:
-                Text string to append to end of ``test_function`` name when naming generated test cases.
-                This allows reuse of a single ``test_function`` with multiple :class:`TestFactories <.TestFactory>` without name clashes.
-
-                .. deprecated:: 2.0
-                    Use the more flexible ``name`` field instead.
-            stacklevel:
-                Which stack level to add the generated tests to. This can be used to make a custom TestFactory wrapper.
-
-            name:
-                Passed as ``name`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            timeout_time:
-                Passed as ``timeout_time`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            timeout_unit:
-                Passed as ``timeout_unit`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            expect_fail:
-                Passed as ``expect_fail`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            expect_error:
-                Passed as ``expect_error`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            skip:
-                Passed as ``skip`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            stage:
-                Passed as ``stage`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-        """
-
-        if prefix is not None:
-            warnings.warn(
-                "``prefix`` argument is deprecated. Use the more flexible ``name`` field instead.",
-                DeprecationWarning,
-            )
-        else:
-            prefix = ""
-
-        if postfix is not None:
-            warnings.warn(
-                "``postfix`` argument is deprecated. Use the more flexible ``name`` field instead.",
-                DeprecationWarning,
-            )
-        else:
-            postfix = ""
-
-        # trust the user puts a reasonable stacklevel in
-        glbs = cast(FrameType, inspect.stack()[stacklevel][0].f_back).f_globals
-
-        if "__cocotb_tests__" not in glbs:
-            glbs["__cocotb_tests__"] = []
-
-        test_func_name = self.test_function.__qualname__ if name is None else name
-
-        for index, testoptions in enumerate(
-            dict(zip(self.kwargs, v)) for v in product(*self.kwargs.values())
-        ):
-            name = f"{prefix}{test_func_name}{postfix}_{(index + 1):03d}"
-            doc: str = "Automatically generated test\n\n"
-
-            # preprocess testoptions to split tuples
-            testoptions_split: Dict[str, Sequence[Any]] = {}
-            for optname, optvalue in testoptions.items():
-                if isinstance(optname, str):
-                    optvalue = cast(Sequence[Any], optvalue)
-                    testoptions_split[optname] = optvalue
-                else:
-                    # previously checked in add_option; ensure nothing has changed
-                    optvalue = cast(Sequence[Sequence[Any]], optvalue)
-                    assert len(optname) == len(optvalue)
-                    for n, v in zip(optname, optvalue):
-                        testoptions_split[n] = v
-
-            for optname, optvalue in testoptions_split.items():
-                if callable(optvalue):
-                    if not optvalue.__doc__:
-                        desc = "No docstring supplied"
-                    else:
-                        desc = optvalue.__doc__.split("\n")[0]
-                    doc += f"\t{optname}: {optvalue.__qualname__} ({desc})\n"
-                else:
-                    doc += f"\t{optname}: {repr(optvalue)}\n"
-
-            kwargs: Dict[str, Any] = {}
-            kwargs.update(self.kwargs_constant)
-            kwargs.update(testoptions_split)
-
-            @functools.wraps(self.test_function)
-            async def _my_test(dut, kwargs: Dict[str, Any] = kwargs) -> None:
-                await self.test_function(dut, *self.args, **kwargs)
-
-            _my_test.__doc__ = doc
-            _my_test.__name__ = name
-            _my_test.__qualname__ = name
-
-            if name in glbs:
-                _logger.error(
-                    "Overwriting %s in module %s. "
-                    "This causes a previously defined testcase not to be run. "
-                    "Consider using the `name`, `prefix`, or `postfix` arguments to augment the name.",
-                    name,
-                    glbs["__name__"],
-                )
-
-            test = Test(
-                func=_my_test,
-                name=name,
-                module=glbs["__name__"],
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
-                expect_fail=expect_fail,
-                expect_error=expect_error,
-                skip=skip,
-                stage=stage,
-                _expect_sim_failure=_expect_sim_failure,
-            )
-
-            glbs["__cocotb_tests__"].append(test)
-            glbs[test.name] = test
+    elif inspect.isasyncgen(coro):
+        raise TypeError(
+            f"{coro.__qualname__} is an async generator, not a coroutine. "
+            "You likely used the yield keyword instead of await."
+        )
+    else:
+        raise TypeError(
+            f"Attempt to add an object of type {type(coro)} to the scheduler, "
+            f"which isn't a coroutine: {coro!r}\n"
+        )

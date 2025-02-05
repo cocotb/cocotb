@@ -275,3 +275,14 @@ else:
         orig_cls.__new__ = __new__
         orig_cls.__init__ = __init__
         return orig_cls
+
+
+def safe_divide(a: float, b: float) -> float:
+    """Used when computing time ratios to ensure no exception is raised if either time is 0."""
+    try:
+        return a / b
+    except ZeroDivisionError:
+        if a == 0:
+            return float("nan")
+        else:
+            return float("inf")
