@@ -39,7 +39,7 @@ In the following we'll call this object ``dut``.
 Let's create a test file ``test_my_design.py`` containing the following:
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/test_my_design.py
-   :language: python3
+   :language: python
    :start-at: # test_my_design.py (simple)
    :end-before: # test_my_design.py (extended)
 
@@ -66,7 +66,7 @@ In cocotb, you might move the clock generation part of the example above into it
 from the test:
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/test_my_design.py
-   :language: python3
+   :language: python
    :start-at: # test_my_design.py (extended)
 
 Note that the ``generate_clock()`` function is *not* marked with ``@cocotb.test()``
@@ -142,7 +142,7 @@ An alternative to the ``Makefile`` is to use the Python Test Runners, or "runner
 Let's define a runner for ``test_my_design_runner``:
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/test_runner.py
-   :language: python3
+   :language: python
    :start-at: # test_runner.py
 
 Running a test involves three steps:

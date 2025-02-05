@@ -30,7 +30,7 @@ see the file
 with the relevant part shown here:
 
 .. literalinclude:: ../../examples/simple_dff/test_dff.py
-   :language: python3
+   :language: python
    :start-at: def test_simple_dff_runner():
    :end-at: runner.test(hdl_toplevel="dff", test_module="test_dff,")
 
@@ -42,7 +42,7 @@ You run this file with pytest like
 
 Note that the environment variables ``SIM`` and ``HDL_TOPLEVEL_LANG``
 are defined in this test file to set arguments to the runner's
-:meth:`Simulator.build <cocotb_tools.runner.Simulator.build>` and :meth:`Simulator.test <cocotb_tools.runner.Simulator.test>` functions;
+:meth:`Runner.build <cocotb_tools.runner.Runner.build>` and :meth:`Runner.test <cocotb_tools.runner.Runner.test>` functions;
 they are not directly handled by the runner itself.
 
 Test filenames and functions have to follow the

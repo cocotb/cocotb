@@ -211,7 +211,7 @@ class Task(Generic[ResultType]):
 
         Equivalent to calling :func:`Join(self) <cocotb.triggers.Join>`.
 
-        .. code-block:: python3
+        .. code-block:: python
 
             async def coro_inner():
                 await Timer(1, units="ns")

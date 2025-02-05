@@ -20,19 +20,19 @@ class Range(Sequence[int]):
     left and right bounds.
     Not specifying directionality will cause the directionality to be inferred.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> r = Range(-2, 3)
         >>> r.left, r.right, len(r)
         (-2, 3, 6)
 
-        >>> s = Range(8, 'downto', 1)
+        >>> s = Range(8, "downto", 1)
         >>> s.left, s.right, len(s)
         (8, 1, 8)
 
     :meth:`from_range` and :meth:`to_range` can be used to convert from and to :class:`range`.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> r = Range(-2, 3)
         >>> r.to_range()
@@ -42,9 +42,9 @@ class Range(Sequence[int]):
     "null" ranges occur when a left bound cannot reach a right bound with the given direction.
     They have a length of 0, but the :attr:`left`, :attr:`right`, and :attr:`direction` values remain as given.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
-        >>> r = Range(1, 'to', 0)  # no way to count from 1 'to' 0
+        >>> r = Range(1, "to", 0)  # no way to count from 1 'to' 0
         >>> r.left, r.direction, r.right
         (1, 'to', 0)
         >>> len(r)

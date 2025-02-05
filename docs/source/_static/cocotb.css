@@ -191,7 +191,7 @@ a {
 
 a:hover {
     color: var(--color-cocotb-blue-darker) !important;
-    text-decoration-thickness: unset !important;
+    text-decoration-thickness: 1px !important;
 }
 
 label.sd-tab-label:hover {
@@ -344,4 +344,16 @@ dl.cpp.macro {
 
 dl.cpp.enumerator {
     margin-bottom: 0.25rem;
+}
+
+/*
+Make autolinks to reference documentation less prominent
+(https://sphinx-codeautolink.readthedocs.io/en/latest/examples.html#custom-link-styles)
+*/
+.sphinx-codeautolink-a {
+    text-decoration-style: solid !important;
+    text-decoration-color: #aaa;
+}
+.sphinx-codeautolink-a:hover {
+    text-decoration-color: black;
 }

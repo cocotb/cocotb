@@ -293,7 +293,7 @@ def test(
     Tests are evaluated in the order they are defined in a test module.
 
     Usage:
-        .. code-block:: python3
+        .. code-block:: python
 
             @cocotb.test(timeout_time=10, timeout_unit="ms")
             async def test_thing(dut): ...
@@ -366,7 +366,7 @@ def test(
         To extend the test decorator, use the following template to create a new
         ``cocotb.test``\-like wrapper.
 
-        .. code-block:: python3
+        .. code-block:: python
 
             import functools
 
@@ -387,7 +387,7 @@ def test(
 
         Assumes all default values for the test parameters.
 
-        .. code-block:: python3
+        .. code-block:: python
 
             @cocotb.test
             async def test_thing(dut): ...
@@ -462,7 +462,7 @@ def parametrize(
     The call to ``parametrize`` should include the name of each test parameter and the possible values each parameter can hold.
     This will generate a test for each of the Cartesian products of the parameters and their values.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         @cocotb.test(
             skip=False,
@@ -475,7 +475,7 @@ def parametrize(
 
     The above is equivalent to the following.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         @cocotb.test(skip=False)
         async def my_test_0_a() -> None:
@@ -504,11 +504,11 @@ def parametrize(
     either by supplying tuples of the parameter name to values,
     or a sequence of variable names and a sequence of values.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         @cocotb.parametrize(
             ("arg1", [0, 1]),
-            (("arg2", arg3"), [(1, 2), (3, 4)])
+            (("arg2", "arg3"), [(1, 2), (3, 4)])
         )
 
     Args:

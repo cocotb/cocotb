@@ -22,7 +22,7 @@ Typically coroutines await a :class:`~cocotb.triggers.Trigger` object which
 pauses the task, and indicates to the simulator some event which will cause the task to resume execution.
 For example:
 
-.. code-block:: python3
+.. code-block:: python
 
     async def wait_10ns():
         cocotb.log.info("About to wait for 10 ns")
@@ -31,7 +31,7 @@ For example:
 
 Coroutines may also await on other coroutines:
 
-.. code-block:: python3
+.. code-block:: python
 
     async def wait_100ns():
         for i in range(10):
@@ -39,7 +39,7 @@ Coroutines may also await on other coroutines:
 
 Coroutines can :keyword:`return` a value, so that they can be used by other coroutines.
 
-.. code-block:: python3
+.. code-block:: python
 
     async def get_signal(clk, signal):
         await RisingEdge(clk)
@@ -63,7 +63,7 @@ before resuming the calling task.
 :func:`~cocotb.start_soon` schedules the coroutine for future execution,
 after the calling task yields control.
 
-.. code-block:: python3
+.. code-block:: python
 
     @cocotb.test()
     async def test_act_during_reset(dut):
@@ -83,7 +83,7 @@ after the calling task yields control.
 
 Other tasks can be used in an await statement to suspend the current task until the other task finishes.
 
-.. code-block:: python3
+.. code-block:: python
 
     @cocotb.test()
     async def test_count_edge_cycles(dut, period_ns=1, clocks=6):
@@ -107,7 +107,7 @@ Other tasks can be used in an await statement to suspend the current task until 
 Tasks can be killed before they complete,
 forcing their completion before they would naturally end.
 
-.. code-block:: python3
+.. code-block:: python
 
     @cocotb.test()
     async def test_different_clocks(dut):
@@ -167,7 +167,7 @@ and resumes after one of the Triggers or Tasks fires.
 It returns the result of awaiting the Task or Trigger that fired first.
 Below we see it used to implement a timeout.
 
-.. code-block:: python3
+.. code-block:: python
 
     @cocotb.test
     async def test_quiesce_or_timeout(dut):
@@ -196,7 +196,7 @@ Determining Which Task Finishes First
 
 :class:`~cocotb.triggers.First` can be used to determine which of multiple Tasks :meth:`complete <cocotb.task.Task.complete>` first using the following idiom.
 
-.. code-block:: python3
+.. code-block:: python
 
     @cocotb.test
     async def test_which_finished_first(dut):
@@ -223,7 +223,7 @@ Waiting For Multiple Events
 but it resumes after *all* the listed Triggers or Tasks fire.
 Using the example from the previous section, we can use it to wait until both the driving and quiesce are done.
 
-.. code-block:: python3
+.. code-block:: python
 
     @cocotb.test
     async def test_wait_for_both(dut):
@@ -238,7 +238,7 @@ Using the example from the previous section, we can use it to wait until both th
 
 And of course, the sky is the limit when you compose the two.
 
-.. code-block:: python3
+.. code-block:: python
 
     @cocotb.test
     async def test_wait_for_both_with_timeout(dut):
@@ -258,7 +258,7 @@ Starting with Python 3.6, a :keyword:`yield` statement within an async function
 has a new meaning which matches the typical meaning of yield within regular Python code.
 It can be used to create a special type of generator function that can be iterated with :keyword:`async for`:
 
-.. code-block:: python3
+.. code-block:: python
 
     async def ten_samples_of(clk, signal):
         for i in range(10):

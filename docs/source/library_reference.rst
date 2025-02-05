@@ -243,7 +243,6 @@ Clock Driver
     :members:
     :member-order: bysource
 
-
 Asynchronous Queues
 -------------------
 

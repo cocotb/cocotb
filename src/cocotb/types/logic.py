@@ -70,7 +70,7 @@ class Logic:
     The list of values convertable to :class:`Logic` includes
     ``"U"``, ``"X"``, ``"0"``, ``"1"``, ``"Z"``, ``"W"``, ``"L"``, ``"H"``, ``"-"``, ``0``, ``1``, ``True``, and ``False``.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> Logic("X")
         Logic('X')
@@ -97,14 +97,14 @@ class Logic:
 
     :class:`Logic` supports the common logic operations ``&``, ``|``, ``^``, and ``~``.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> Tuple[Logic, Logic]:
         ...     res = a ^ b ^ carry
         ...     carry_out = (a & b) | (b & carry) | (a & carry)
         ...     return res, carry_out
 
-        >>> full_adder(a=Logic('0'), b=Logic('1'), carry=Logic('1'))
+        >>> full_adder(a=Logic("0"), b=Logic("1"), carry=Logic("1"))
         (Logic('0'), Logic('1'))
 
     Args:

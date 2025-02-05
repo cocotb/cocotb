@@ -107,7 +107,7 @@ class LogicArray(ArrayLike[Logic]):
     If a *range* argument is given, but no value,
     the array is filled with the default value of ``Logic()``.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> LogicArray(0b0111, 4)
         LogicArray('0111', Range(3, 'downto', 0))
@@ -123,7 +123,7 @@ class LogicArray(ArrayLike[Logic]):
 
     :class:`LogicArray`\ s can be constructed from :class:`int`\ s using :meth:`from_unsigned` or :meth:`from_signed`.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> LogicArray.from_unsigned(0xA, 4)
         LogicArray('1010', Range(3, 'downto', 0))
@@ -134,7 +134,7 @@ class LogicArray(ArrayLike[Logic]):
     :class:`LogicArray`\ s can be constructed from :class:`bytes` or :class:`bytearray` using :meth:`from_bytes`.
     Use the *byteorder* argument to control endianness; it defaults to ``"big"``.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> LogicArray.from_bytes(b"1n", byteorder="big")
         LogicArray('0011000101101110', Range(15, 'downto', 0))
@@ -145,38 +145,38 @@ class LogicArray(ArrayLike[Logic]):
     :class:`LogicArray`\ s support the same operations as :class:`Array`;
     however, it enforces the condition that all elements must be a :class:`Logic`.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> la = LogicArray("1010")
-        >>> la[0]                               # is indexable
+        >>> la[0]  # is indexable
         Logic('0')
 
-        >>> la[1:]                              # is slice-able
+        >>> la[1:]  # is slice-able
         LogicArray('10', Range(1, 'downto', 0))
 
-        >>> Logic("0") in la                    # is a collection
+        >>> Logic("0") in la  # is a collection
         True
 
-        >>> list(la)                            # is an iterable
+        >>> list(la)  # is an iterable
         [Logic('1'), Logic('0'), Logic('1'), Logic('0')]
 
     When setting an element or slice, the *value* is first constructed into a
     :class:`Logic`.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> la = LogicArray("1010")
         >>> la[3] = "Z"
         >>> la[3]
         Logic('Z')
 
-        >>> la[2:] = ['X', True, 0]
+        >>> la[2:] = ["X", True, 0]
         >>> la
         LogicArray('ZX10', Range(3, 'downto', 0))
 
     :class:`LogicArray`\ s can be converted into :class:`str`\ s, :class:`int`\ s, or :class:`bytes`\ s.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> la = LogicArray("1010")
         >>> str(la)
@@ -194,7 +194,7 @@ class LogicArray(ArrayLike[Logic]):
     You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
     the built-ins :func:`hex:` and :func:`bin`, respectively.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> la = LogicArray("01111010")
         >>> hex(la)
@@ -205,7 +205,7 @@ class LogicArray(ArrayLike[Logic]):
     :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
     ``^``, and ``~``.
 
-    .. code-block:: python3
+    .. code-block:: pycon3
 
         >>> def big_mux(a: LogicArray, b: LogicArray, sel: Logic) -> LogicArray:
         ...     s = LogicArray([sel] * len(a))
@@ -213,7 +213,7 @@ class LogicArray(ArrayLike[Logic]):
 
         >>> la = LogicArray("0110")
         >>> p = LogicArray("1110")
-        >>> sel = Logic('1')        # choose second option
+        >>> sel = Logic("1")  # choose second option
         >>> big_mux(la, p, sel)
         LogicArray('1110', Range(3, 'downto', 0))
 

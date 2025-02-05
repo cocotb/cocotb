@@ -187,7 +187,7 @@ class DocEnum(Enum):
     Documentation for enum members can be optionally added by setting enum values to a tuple of the intended value and the docstring.
     This adds the provided docstring to the ``__doc__`` field of the enum value.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         class MyEnum(DocEnum):
             \"\"\"Class documentation\"\"\"
