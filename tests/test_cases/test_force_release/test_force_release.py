@@ -190,3 +190,27 @@ async def test_force_followed_by_release_correct_value(dut):
     dut.stream_in_data.value = Release()
     await Timer(10, "ns")
     assert dut.stream_in_data.value == 0
+
+
+################################################################################
+# These two tests must be run back to back to ensure the behavior of writes
+# being applied by the beginning of the next test.
+
+
+@cocotb.test
+async def test_apply_force(dut) -> None:
+    """Release a Force as the last operation in a test."""
+    dut.stream_out_data_comb.value = Force(42)
+    await Timer(10, "ns")
+    dut.stream_out_data_comb.value = Release()
+
+
+@cocotb.test
+async def test_force_released(dut) -> None:
+    """Ensure the Force is no longer applied."""
+    dut.stream_in_data.value = 4
+    await Timer(10, "ns")
+    assert dut.stream_out_data_comb.value == 4
+
+
+################################################################################
