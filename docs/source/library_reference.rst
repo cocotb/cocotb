@@ -86,6 +86,7 @@ Writing and Generating Tests
     :members:
     :member-order: bysource
 
+.. autoclass:: cocotb.result.TestSuccess
 
 Interacting with the Simulator
 ==============================
@@ -151,6 +152,8 @@ Simulator Triggers
 
 Edge Triggers
 ^^^^^^^^^^^^^
+
+.. autoclass:: cocotb.triggers.ValueChange
 
 .. autoclass:: cocotb.triggers.Edge
 
