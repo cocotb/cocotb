@@ -418,9 +418,9 @@ class ValueChange(_EdgeBase):
         TypeError: If the signal is not an object which can change value.
 
     .. note::
-        Prefer :attr:`await signal.value_change <cocotb.handle.NonArrayValueObject.rising_edge>` to ``await ValueChange(signal)``.
+        Prefer :attr:`await signal.value_change <cocotb.handle.NonArrayValueObject.value_change>` to ``await ValueChange(signal)``.
 
-    .. versionadded: 2.0
+    .. versionadded:: 2.0
     """
 
     _edge_type = simulator.VALUE_CHANGE
@@ -445,7 +445,7 @@ def Edge(signal: "cocotb.handle.NonArrayValueObject[Any, Any]") -> ValueChange:
     Raises:
         TypeError: If the signal is not an object which can change value.
 
-    .. deprecated: 2.0
+    .. deprecated:: 2.0
 
         Use :attr:`signal.value_change <cocotb.handle.NonArrayValueObject.value_change>` instead.
     """
@@ -800,7 +800,7 @@ class TaskComplete(Trigger, Generic[T]):
     Args:
         task: The Task upon which to wait for completion.
 
-    .. versionadded: 2.0
+    .. versionadded:: 2.0
     """
 
     def __new__(cls, task: "cocotb.task.Task[T]") -> "TaskComplete[T]":
