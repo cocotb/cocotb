@@ -24,40 +24,33 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import inspect
-import logging as py_logging
-from enum import auto
+from logging import Logger
 from types import SimpleNamespace
-from typing import Any, Coroutine, Dict, List, Union
+from typing import TYPE_CHECKING, Dict, List, Union
 
-import cocotb._profiling
-import cocotb.handle
-import cocotb.task
-import cocotb.triggers
-from cocotb._decorators import (
-    bridge,
-    parametrize,
-    resume,
-    test,
+from cocotb._bridge import bridge, resume
+from cocotb._test_generation import TestFactory, parametrize, test
+from cocotb._version import __version__
+from cocotb.regression import create_task, start, start_soon
+
+if TYPE_CHECKING:
+    from cocotb.handle import SimHandleBase
+
+__all__ = (
+    "test",
+    "parametrize",
+    "TestFactory",
+    "bridge",
+    "resume",
+    "start_soon",
+    "start",
+    "create_task",
+    "__version__",
 )
-from cocotb._scheduler import Scheduler
-from cocotb._utils import DocEnum
-from cocotb.regression import RegressionManager
-from cocotb.result import TestSuccess
-
-from ._version import __version__
-
-__all__ = ("bridge", "resume", "test", "parametrize", "__version__")
 
 
-log: py_logging.Logger
+log: Logger
 """The default cocotb logger."""
-
-_scheduler_inst: Scheduler
-"""The global scheduler instance."""
-
-regression_manager: RegressionManager
-"""The global regression manager instance."""
 
 argv: List[str]
 """The argument list as seen by the simulator."""
@@ -91,7 +84,7 @@ See :envvar:`COCOTB_RANDOM_SEED` for details on how the value is computed.
 This is guaranteed to hold a value at test time.
 """
 
-top: cocotb.handle.SimHandleBase
+top: "SimHandleBase"
 r"""
 A handle to the :envvar:`COCOTB_TOPLEVEL` entity/module.
 
@@ -102,119 +95,3 @@ and in parameters to :class:`.TestFactory`\ s.
 
 is_simulation: bool = False
 """``True`` if cocotb was loaded in a simulation."""
-
-
-class SimPhase(DocEnum):
-    """A phase of the time step."""
-
-    NORMAL = (auto(), "In the Beginning Of Time Step or a Value Change phase.")
-    READ_WRITE = (auto(), "In a ReadWrite phase.")
-    READ_ONLY = (auto(), "In a ReadOnly phase.")
-
-
-sim_phase: SimPhase = SimPhase.NORMAL
-"""The current phase of the time step."""
-
-
-def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:
-    # if cancelled, do nothing
-    if task.cancelled():
-        return
-    # if there's a Task awaiting this one, don't fail
-    if task.complete in cocotb._scheduler_inst._trigger2tasks:
-        return
-    # if no failure, do nothing
-    e = task.exception()
-    if e is None:
-        return
-    # there was a failure and no one is watching, fail test
-    elif isinstance(e, (TestSuccess, AssertionError)):
-        task.log.info("Test stopped by this task")
-        cocotb.regression_manager._abort_test(e)
-    else:
-        task.log.error("Exception raised by this task")
-        cocotb.regression_manager._abort_test(e)
-
-
-def start_soon(
-    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
-) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Schedule a coroutine to be run concurrently in a :class:`~cocotb.task.Task`.
-
-    Note that this is not an :keyword:`async` function,
-    and the new task will not execute until the calling task yields control.
-
-    Args:
-        coro: A task or coroutine to be run.
-
-    Returns:
-        The :class:`~cocotb.task.Task` that is scheduled to be run.
-
-    .. versionadded:: 1.6
-    """
-    task = create_task(coro)
-    cocotb._scheduler_inst._schedule_task(task)
-    return task
-
-
-async def start(
-    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
-) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
-
-    The calling task will resume execution before control is returned to the simulator.
-
-    When the calling task resumes, the newly scheduled task may have completed,
-    raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
-
-    Args:
-        coro: A task or coroutine to be run.
-
-    Returns:
-        The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
-
-    .. versionadded:: 1.6
-    """
-    task = start_soon(coro)
-    await cocotb.triggers.NullTrigger()
-    return task
-
-
-def create_task(
-    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
-) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Construct a coroutine into a :class:`~cocotb.task.Task` without scheduling the task.
-
-    The task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
-
-    Args:
-        coro: An existing task or a coroutine to be wrapped.
-
-    Returns:
-        Either the provided :class:`~cocotb.task.Task` or a new Task wrapping the coroutine.
-
-    .. versionadded:: 1.6
-    """
-    if isinstance(coro, cocotb.task.Task):
-        return coro
-    elif isinstance(coro, Coroutine):
-        task = cocotb.task.Task[cocotb.task.ResultType](coro)
-        task._add_done_callback(_task_done_callback)
-        return task
-    elif inspect.iscoroutinefunction(coro):
-        raise TypeError(
-            f"Coroutine function {coro} should be called prior to being scheduled."
-        )
-    elif inspect.isasyncgen(coro):
-        raise TypeError(
-            f"{coro.__qualname__} is an async generator, not a coroutine. "
-            "You likely used the yield keyword instead of await."
-        )
-    else:
-        raise TypeError(
-            f"Attempt to add an object of type {type(coro)} to the scheduler, "
-            f"which isn't a coroutine: {coro!r}\n"
-        )

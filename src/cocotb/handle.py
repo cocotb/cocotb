@@ -863,7 +863,7 @@ class NonArrayValueObject(ValueObjectBase[ValuePropertyT, ValueSetT]):
     """
 
     @cached_property
-    def value_change(self) -> cocotb.triggers.ValueChange:
+    def value_change(self) -> "cocotb.triggers.ValueChange":
         """A trigger which fires whenever the value changes."""
         return cocotb.triggers.ValueChange._make(self)
 
@@ -940,12 +940,12 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
         self.set(value)
 
     @cached_property
-    def rising_edge(self) -> cocotb.triggers.RisingEdge:
+    def rising_edge(self) -> "cocotb.triggers.RisingEdge":
         """A trigger which fires whenever the value changes to a ``1``."""
         return cocotb.triggers.RisingEdge._make(self)
 
     @cached_property
-    def falling_edge(self) -> cocotb.triggers.FallingEdge:
+    def falling_edge(self) -> "cocotb.triggers.FallingEdge":
         """A trigger which fires whenever the value changes to a ``0``."""
         return cocotb.triggers.FallingEdge._make(self)
 

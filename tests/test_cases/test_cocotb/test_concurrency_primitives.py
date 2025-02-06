@@ -109,7 +109,7 @@ async def test_exceptions_first(dut):
 
     async def raise_soon():
         await Timer(1, "ns")
-        await cocotb.triggers.First(cocotb.start_soon(raise_inner()))
+        await cocotb.triggers.First(cocotb.start_soon(raise_inner()), Timer(100, "ns"))
 
     await _check_traceback(
         raise_soon(), ValueError, r".*in raise_soon.*in raise_inner", re.DOTALL
