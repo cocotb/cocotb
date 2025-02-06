@@ -170,7 +170,7 @@ An :keyword:`await` will run an :keyword:`async` coroutine and wait for it to co
 The called coroutine "blocks" the execution of the current coroutine.
 Wrapping the call in :func:`~cocotb.start` or :func:`~cocotb.start_soon` runs the coroutine concurrently,
 allowing the current coroutine to continue executing.
-At any time you can await the result of a :class:`~cocotb.Task`,
+At any time you can await the result of a :class:`~cocotb.task.Task`,
 which will block the current coroutine's execution until the task finishes.
 
 The following example shows these in action:
@@ -215,6 +215,7 @@ In addition to regular value assignments (deposits), signals can be forced
 to a predetermined value or frozen at their current value. To achieve this,
 the various actions described in :ref:`assignment-methods` can be used.
 
+.. autolink-preface:: from cocotb.handle import Deposit, Force, Freeze, Release
 .. code-block:: python
 
     # Deposit action
@@ -261,7 +262,7 @@ All named objects, including those with the aforementioned limitations, can be a
 Accessing Verilog Packages
 ==========================
 
-Verilog packages are accessible via :any:`cocotb.packages`.
+Verilog packages are accessible via :data:`cocotb.packages`.
 Depending on the simulator, packages may need to be imported in
 the compilation unit scope or inside a module in order to be discoverable.
 Also note, the ``$unit`` pseudo-package is implemented differently between simulators.
@@ -281,7 +282,7 @@ It may appear as one or more attributes here depending on the number of compilat
 Passing and Failing Tests
 =========================
 
-A cocotb test is considered to have `failed` if the test coroutine or any running :class:`~cocotb.Task`
+A cocotb test is considered to have `failed` if the test coroutine or any running :class:`~cocotb.task.Task`
 fails an :keyword:`assert` statement.
 Below are examples of `failing` tests.
 
@@ -312,7 +313,7 @@ For example, see the output for the first test from above.
                     AssertionError: Testing the obvious
 
 
-A cocotb test is considered to have `errored` if the test coroutine or any running :class:`~cocotb.Task`
+A cocotb test is considered to have `errored` if the test coroutine or any running :class:`~cocotb.task.Task`
 raises an exception that isn't considered a `failure`.
 Below are examples of `erroring` tests.
 
@@ -342,11 +343,12 @@ For example, see the below output for the first test from above.
 
 
 If a test coroutine completes without `failing` or `erroring`,
-or if the test coroutine or any running :class:`~cocotb.Task`
+or if the test coroutine or any running :class:`~cocotb.task.Task`
 raises :exc:`cocotb.result.TestSuccess`,
 the test is considered to have `passed`.
 Below are examples of `passing` tests.
 
+.. autolink-preface:: from cocotb.result import TestSuccess
 .. code-block:: python
 
     @cocotb.test()
@@ -376,7 +378,7 @@ Logging
 =======
 
 Cocotb uses the built-in :mod:`logging` library, with some configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
-All :class:`~cocotb.Task`\ s have a :class:`logging.Logger`,
+All :class:`~cocotb.task.Task`\ s have a :class:`logging.Logger`,
 and can be set to its own logging level.
 
 .. code-block:: python
@@ -386,8 +388,8 @@ and can be set to its own logging level.
     task.log.debug("Running Task!")
 
 The :term:`DUT` and each hierarchical object can also have individual logging levels set.
-When logging :term:`HDL` objects, beware that ``_log`` is the preferred way to use
-logging. This helps minimize the change of name collisions with an :term:`HDL` log
+When logging :term:`HDL` objects, beware that :meth:`~cocotb.handle.SimHandleBase._log` is the preferred way.
+This helps minimize the change of name collisions of an HDL log
 component with the Python logging functionality.
 
 .. code-block:: python
