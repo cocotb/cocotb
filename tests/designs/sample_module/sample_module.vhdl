@@ -126,7 +126,6 @@ begin
     end process;
 
     process (stream_in_string) is
-      variable v_idx : positive;
       variable v_cur_char : character;
       variable v_stream_in_string_asciival : natural;
       variable v_stream_in_string_asciival_sum : natural;
