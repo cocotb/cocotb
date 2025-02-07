@@ -29,6 +29,7 @@ see the file
 :file:`{cocotb-root}/examples/simple_dff/test_dff.py`,
 with the relevant part shown here:
 
+.. autolink-preface:: from cocotb_tools.runner import get_runner
 .. literalinclude:: ../../examples/simple_dff/test_dff.py
    :language: python
    :start-at: def test_simple_dff_runner():
