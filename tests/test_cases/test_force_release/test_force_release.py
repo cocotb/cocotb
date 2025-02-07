@@ -17,9 +17,8 @@ SIM_VERSION = cocotb.SIM_VERSION
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
-# Release doesn't work on GHDL (gh-3830)
 # Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(expect_fail=SIM_NAME.startswith(("ghdl", "verilator")))
+@cocotb.test(expect_fail=SIM_NAME.startswith(("verilator")))
 async def test_hdl_writes_dont_overwrite_force_combo(dut):
     """Test Forcing then later Releasing a combo signal."""
 
@@ -39,11 +38,10 @@ async def test_hdl_writes_dont_overwrite_force_combo(dut):
     assert dut.stream_out_data_comb.value == 3
 
 
-# Release doesn't work on GHDL (gh-3830)
 # Release doesn't work on Riviera-PRO (VHPI) until version 2022.10.
 # Force/Release doesn't work on Verilator (gh-3831)
 @cocotb.test(
-    expect_fail=SIM_NAME.startswith(("ghdl", "verilator"))
+    expect_fail=SIM_NAME.startswith(("verilator"))
     or (
         SIM_NAME.startswith("riviera")
         and LANGUAGE == "vhdl"
@@ -66,9 +64,6 @@ async def test_hdl_writes_dont_overwrite_force_registered(dut):
     assert dut.stream_out_data_registered.value == 4
 
 
-# Release doesn't work on GHDL (gh-3830)
-# Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(expect_fail=SIM_NAME.startswith("ghdl"))
 async def test_force_followed_by_release_combo(dut):
     """Test if Force followed immediately by Release works on combo signals."""
 
@@ -86,9 +81,6 @@ async def test_force_followed_by_release_combo(dut):
     assert dut.stream_out_data_comb.value == 16
 
 
-# Release doesn't work on GHDL (gh-3830)
-# Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(expect_fail=SIM_NAME.startswith("ghdl"))
 async def test_force_followed_by_release_registered(dut):
     """Test if Force followed immediately by Release works on registered signals."""
 
@@ -115,12 +107,11 @@ riviera_vpi = (
 )
 
 
-# Release doesn't work on GHDL (gh-3830)
 # Force/Release doesn't work on Verilator (gh-3831)
 # Riviera's VPI implicitly releases signal when overwriting forced signal with normal deposit (gh-3832)
 # Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
 @cocotb.test(
-    expect_fail=SIM_NAME.startswith(("ghdl", "verilator")) or riviera_vpi or questa_fli
+    expect_fail=SIM_NAME.startswith(("verilator")) or riviera_vpi or questa_fli
 )
 async def test_cocotb_writes_dont_overwrite_force_combo(dut):
     """Test Deposits following a Force don't overwrite the value on combo signals."""
@@ -146,12 +137,11 @@ async def test_cocotb_writes_dont_overwrite_force_combo(dut):
     assert dut.stream_in_data.value == 46
 
 
-# Release doesn't work on GHDL (gh-3830)
 # Force/Release doesn't work on Verilator (gh-3831)
 # Riviera's VPI implicitly releases signal when overwriting forced signal with normal deposit (gh-3832)
 # Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
 @cocotb.test(
-    expect_fail=SIM_NAME.startswith(("ghdl", "verilator")) or questa_fli or riviera_vpi
+    expect_fail=SIM_NAME.startswith(("verilator")) or questa_fli or riviera_vpi
 )
 async def test_cocotb_writes_dont_overwrite_force_registered(dut):
     """Test Deposits following a Force don't overwrite the value on registered signals."""
