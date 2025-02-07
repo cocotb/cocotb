@@ -178,7 +178,8 @@ Below we see it used to implement a timeout.
 
         # wait for the design to quiesce or timeout
         timeout = Timer(10, "us")
-        result = await First(timeout, quiesce())
+        quiesce_task = cocotb.start_soon(quiesce())
+        result = await First(timeout, quiesce_task)
         assert result is not timeout, "Design has hung!"
 
 Fortunately for users timeouts are a common operation and cocotb provides :func:`~cocotb.triggers.with_timeout`.
@@ -234,7 +235,10 @@ Using the example from the previous section, we can use it to wait until both th
                 await drive(dut.intf, trans)
 
         # wait for both the driving and quiescing to complete before continuing
-        await Combine(drive_transactions(), quiesce())
+        await Combine(
+            cocotb.start_soon(drive_transactions()),
+            cocotb.start_soon(quiesce())
+        )
 
 And of course, the sky is the limit when you compose the two.
 
@@ -246,9 +250,16 @@ And of course, the sky is the limit when you compose the two.
         # wait for both the driving and quiescing to complete before continuing
         # but timeout if *either* the driving or settling take too long
         await Combine(
-            with_timeout(drive_transactions(), 1, "us"),
-            with_timeout(quiesce(), 10, "us"),
+            cocotb.start_soon(with_timeout(drive_transactions(), 1, "us")),
+            cocotb.start_soon(with_timeout(quiesce(), 10, "us")),
         )
+
+
+.. note::
+
+    :class:`~cocotb.triggers.Combine` does *not* cancel Tasks that did not complete if it fails with an exception.
+    This means that Tasks passed to it are *still running*.
+    You may need to cancel those Tasks with :meth:`.Task.cancel`.
 
 
 Async generators
