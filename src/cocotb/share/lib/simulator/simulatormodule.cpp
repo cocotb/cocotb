@@ -791,7 +791,7 @@ static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *) {
     Py_RETURN_NONE;
 }
 
-static PyObject *log_level(PyObject *, PyObject *args) {
+static PyObject *set_gpi_log_level(PyObject *, PyObject *args) {
     int l_level;
 
     if (!PyArg_ParseTuple(args, "i:log_level", &l_level)) {
@@ -1136,11 +1136,11 @@ static PyMethodDef SimulatorMethods[] = {
                "stop_simulator() -> None\n"
                "Instruct the attached simulator to stop. Users should not call "
                "this function.")},
-    {"log_level", log_level, METH_VARARGS,
-     PyDoc_STR("log_level(level, /)\n"
+    {"set_gpi_log_level", set_gpi_log_level, METH_VARARGS,
+     PyDoc_STR("set_gpi_log_level(level, /)\n"
                "--\n\n"
-               "log_level(level: int) -> None\n"
-               "Set the log level for GPI.")},
+               "set_gpi_log_level(level: int) -> None\n"
+               "Set the log level of GPI logger.")},
     {"is_running", is_running, METH_NOARGS,
      PyDoc_STR("is_running()\n"
                "--\n\n"
