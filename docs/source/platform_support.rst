@@ -44,9 +44,6 @@ We encourage especially users less experienced with Linux to use one of the supp
 Linux distributions typically ship a default version of Python called "system Python".
 This version of Python can be used with cocotb unless noted otherwise.
 
-* **Red Hat Enterprise Linux (RHEL) 7.7+ amd64**,
-  shipping with Python 3.6, pip 9, and glibc 2.17.
-  `Upstream support until June 2024 <https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates>`_.
 * **Red Hat Enterprise Linux (RHEL) 8 amd64**,
   shipping with Python 3.6 (newer versions of Python are available), pip 9, and glibc 2.28.
   `Upstream support until May 2029 <https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates>`_.
