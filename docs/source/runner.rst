@@ -12,9 +12,9 @@ Building HDL and Running Tests
 
 The Python Test Runner (short: "runner") described here is a replacement
 for cocotb's traditional Makefile flow.
-It builds the HDL for the simulator and runs the tests.
+It builds the :term:`HDL` for the simulator and runs the tests.
 
-It is not meant to be ideal solution for everyone.
+It is not meant to be the ideal solution for everyone.
 You can easily integrate cocotb into your custom flow, see :ref:`custom-flows`.
 
 
