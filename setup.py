@@ -30,10 +30,10 @@
 
 import sys
 
-if sys.version_info[:2] < (3, 6):  # noqa: UP036 | bug in ruff
-    version_str = ".".join(sys.version_info[:2])
+if sys.version_info[:3] < (3, 6, 2):  # noqa: UP036 | bug in ruff
+    version_str = ".".join(sys.version_info[:3])
     msg = [
-        "This version of cocotb requires at least Python 3.6,",
+        "This version of cocotb requires at least Python 3.6.2,",
         f"you are running Python {version_str}."
         "For more information please refer to the documentation at ",
         "https://cocotb.readthedocs.io.",
@@ -112,7 +112,7 @@ setup(
     install_requires=[
         "find_libpython",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.6.2",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     package_data={
