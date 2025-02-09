@@ -17,7 +17,7 @@
 
 The current stable version of cocotb requires:
 
-- Python 3.6+
+- Python 3.6.2+
 - GNU Make 3+
 - An HDL simulator (such as [Icarus Verilog](https://docs.cocotb.org/en/stable/simulator_support.html#icarus-verilog),
 [Verilator](https://docs.cocotb.org/en/stable/simulator_support.html#verilator),
