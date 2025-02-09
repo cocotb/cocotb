@@ -57,6 +57,8 @@ This version of Python can be used with cocotb unless noted otherwise.
   `Upstream support until April 2025 <https://wiki.ubuntu.com/Releases>`_.
 * **Ubuntu 22.04 LTS amd64**, shipping with Python 3.10, pip 22, glibc 2.35.
   `Upstream support until April 2027 <https://wiki.ubuntu.com/Releases>`_.
+* **Ubuntu 24.04 LTS amd64**, shipping with Python 3.12, pip 24, glibc 2.39.
+  `Upstream support until June 2029 <https://wiki.ubuntu.com/Releases>`_.
 
 .. note::
 
