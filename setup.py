@@ -30,9 +30,9 @@
 
 import sys
 
-if sys.version_info[:2] < (3, 6):
+if sys.version_info[:3] < (3, 6, 2):
     msg = [
-        "This version of cocotb requires at least Python 3.6,",
+        "This version of cocotb requires at least Python 3.6.2,",
         "you are running Python %d.%d.%d."
         % (sys.version_info[0], sys.version_info[1], sys.version_info[2]),
     ]
@@ -68,7 +68,7 @@ def read_file(fname):
 
 def package_files(directory):
     paths = []
-    for (fpath, directories, filenames) in walk(directory):
+    for fpath, directories, filenames in walk(directory):
         for filename in filenames:
             paths.append(path.join("..", fpath, filename))
     return paths
@@ -100,7 +100,7 @@ setup(
     install_requires=[
         "find_libpython",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.6.2",
     packages=find_packages(),
     package_data={
         "cocotb": (
