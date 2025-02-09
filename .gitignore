@@ -115,3 +115,4 @@ src/cocotb/_version.py
 
 # clangd
 compile_commands.json
+.cache/
