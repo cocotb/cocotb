@@ -11,8 +11,7 @@ https://www.cocotb.org/assets/css/bootstrap-theme.css
     --color-cocotb-blue: #3776ab;
     --color-cocotb-blue-darker: rgb(44, 94, 137);
     --color-cocotb-yellow: #ffcd3c;
-    /* --color-cocotb-green: #578a77; */
-    --color-cocotb-green: #28b57f;
+    --color-cocotb-green: rgb(79, 196, 100);
     --color-cocotb-green-bg: #e7f6f1;
     --bs-primary: var(--color-cocotb-blue) !important;
     --bs-secondary: var(--color-cocotb-yellow) !important;
