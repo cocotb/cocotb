@@ -126,7 +126,7 @@ class SimBaseLog(LoggerClass):
     def setLevel(self, level: Union[int, str]) -> None:
         super().setLevel(level)
         if self.name == "gpi":
-            simulator.log_level(self.getEffectiveLevel())
+            simulator.set_gpi_log_level(self.getEffectiveLevel())
 
 
 @deprecated('Use `logging.getLogger(f"{name}.0x{ident:x}")` instead')
