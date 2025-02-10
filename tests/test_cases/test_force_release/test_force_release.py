@@ -8,7 +8,7 @@ import os
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.handle import Force, Release
+from cocotb.handle import Force, Freeze, Release
 from cocotb.triggers import ClockCycles, Timer
 from cocotb_tools.sim_versions import RivieraVersion
 
@@ -190,3 +190,33 @@ async def test_force_followed_by_release_correct_value(dut):
     dut.stream_in_data.value = Release()
     await Timer(10, "ns")
     assert dut.stream_in_data.value == 0
+
+
+@cocotb.test(
+    skip=cocotb.SIM_NAME.lower().startswith("icarus"),
+    expect_fail=SIM_NAME.lower() in ["ghdl"],
+)
+async def test_force_release_struct(dut):
+    """Test force and release on structs."""
+    dut.inout_if.a_in.value = Force(1)
+    await Timer(10, "ns")
+    dut.inout_if.a_in.value = 0  # should have no effect
+    await Timer(10, "ns")
+    assert dut.inout_if.a_in.value == 1
+    dut.inout_if.a_in.value = Release()
+
+
+@cocotb.test(
+    skip=SIM_NAME.lower().startswith("icarus"),
+    expect_fail=SIM_NAME.lower() in ["ghdl"],
+)
+async def test_freeze_struct(dut):
+    """Test freeze on structs."""
+    dut.inout_if.a_in.value = 1
+    await Timer(10, "ns")
+    dut.inout_if.a_in.value = Freeze()
+    await Timer(10, "ns")
+    dut.inout_if.a_in.value = 0  # should have no effect
+    await Timer(10, "ns")
+    assert dut.inout_if.a_in.value == 1
+    dut.inout_if.a_in.value = Release()
