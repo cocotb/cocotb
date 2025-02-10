@@ -7,7 +7,7 @@ import warnings
 import pytest
 
 import cocotb
-from cocotb.regression import TestFactory
+from cocotb import TestFactory
 from cocotb.triggers import Edge, Event, First, Join, Timer
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
