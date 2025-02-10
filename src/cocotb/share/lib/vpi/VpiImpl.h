@@ -36,6 +36,7 @@
 #include "_vendor/vpi/sv_vpi_user.h"
 #include "exports.h"
 #include "gpi.h"
+#include "gpi_logging.h"
 
 #ifdef COCOTBVPI_EXPORTS
 #define COCOTBVPI_EXPORT COCOTB_EXPORT
@@ -51,7 +52,7 @@ static inline int __check_vpi_error(const char *file, const char *func,
     int level = 0;
 #if VPI_CHECKING
     s_vpi_error_info info;
-    enum gpi_log_levels loglevel;
+    enum gpi_log_level loglevel;
 
     memset(&info, 0, sizeof(info));
     level = vpi_chk_error(&info);
@@ -59,20 +60,20 @@ static inline int __check_vpi_error(const char *file, const char *func,
 
     switch (level) {
         case vpiNotice:
-            loglevel = GPIInfo;
+            loglevel = GPI_INFO;
             break;
         case vpiWarning:
-            loglevel = GPIWarning;
+            loglevel = GPI_WARNING;
             break;
         case vpiError:
-            loglevel = GPIError;
+            loglevel = GPI_ERROR;
             break;
         case vpiSystem:
         case vpiInternal:
-            loglevel = GPICritical;
+            loglevel = GPI_CRITICAL;
             break;
         default:
-            loglevel = GPIWarning;
+            loglevel = GPI_WARNING;
     }
 
     gpi_log("gpi", loglevel, file, func, line, "VPI error");

@@ -186,7 +186,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
     int32_t type;
     GpiObjHdl *new_obj = NULL;
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
-        LOG_DEBUG("vpiUnknown returned from vpi_get(vpiType, ...)")
+        LOG_DEBUG("vpiUnknown returned from vpi_get(vpiType, ...)");
         return NULL;
     }
 

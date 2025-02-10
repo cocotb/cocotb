@@ -290,7 +290,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
     GpiObjHdl *new_obj = NULL;
 
     if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
-        LOG_DEBUG("VHPI: vhpiVerilog returned from vhpi_get(vhpiType, ...)")
+        LOG_DEBUG("VHPI: vhpiVerilog returned from vhpi_get(vhpiType, ...)");
         return NULL;
     }
 

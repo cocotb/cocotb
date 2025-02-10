@@ -413,7 +413,7 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
     m_num_elems = static_cast<int>(vhpi_get(vhpiSizeP, handle));
 
     if (m_num_elems == 0) {
-        LOG_DEBUG("VHPI: Null vector... Delete object")
+        LOG_DEBUG("VHPI: Null vector... Delete object");
         return -1;
     }
 

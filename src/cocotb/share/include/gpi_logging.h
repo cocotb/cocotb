@@ -50,18 +50,19 @@ extern "C" {
  *  Python logging module. Implementers of custom loggers should emit human
  *  readable level names for these value, but may support other values.
  */
-enum gpi_log_levels {
-    GPITrace = 5,   ///< Prints `TRACE` by default. Information about execution
-                    ///< of simulator callbacks and Python / simulator contexts
-    GPIDebug = 10,  ///< Prints `DEBUG` by default. Verbose information, useful
-                    ///< for debugging
-    GPIInfo = 20,  ///< Prints `INFO` by default. Information about major events
-                   ///< in the current program
-    GPIWarning = 30,  ///< Prints `WARN` by default. Encountered a recoverable
-                      ///< bug, or information about surprising behavior
-    GPIError = 40,    ///< Prints `ERROR` by default. An unrecoverable error
-    GPICritical = 50  ///< Prints `CRITICAL` by default. An unrecoverable error,
-                      ///< to be followed by immediate simulator shutdown
+enum gpi_log_level {
+    GPI_TRACE = 5,   ///< Prints `TRACE` by default. Information about execution
+                     ///< of simulator callbacks and Python/simulator contexts.
+    GPI_DEBUG = 10,  ///< Prints `DEBUG` by default. Verbose information, useful
+                     ///< for debugging.
+    GPI_INFO = 20,   ///< Prints `INFO` by default. Information about major
+                     ///< events in the current program.
+    GPI_WARNING = 30,  ///< Prints `WARN` by default. Encountered a recoverable
+                       ///< bug, or information about surprising behavior.
+    GPI_ERROR = 40,    ///< Prints `ERROR` by default. An unrecoverable error
+    GPI_CRITICAL = 50  ///< Prints `CRITICAL` by default. An unrecoverable
+                       ///< error, to be followed by immediate simulator
+                       ///< shutdown.
 };
 
 /** Logs a message at the given log level using the current log handler.
@@ -69,37 +70,37 @@ enum gpi_log_levels {
     @param level The level at which to log the message
  */
 #define LOG_(level, ...) \
-    gpi_log("gpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__);
+    gpi_log("gpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
 /** Logs a message at TRACE log level using the current log handler.
-    Automatically populates arguments using information in the called context.
- */
-#define LOG_TRACE(...) LOG_(GPITrace, __VA_ARGS__)
+ Automatically populates arguments using information in the called context.
+*/
+#define LOG_TRACE(...) LOG_(GPI_TRACE, __VA_ARGS__)
 
 /** Logs a message at DEBUG log level using the current log handler.
-    Automatically populates arguments using information in the called context.
- */
-#define LOG_DEBUG(...) LOG_(GPIDebug, __VA_ARGS__)
+ Automatically populates arguments using information in the called context.
+*/
+#define LOG_DEBUG(...) LOG_(GPI_DEBUG, __VA_ARGS__)
 
 /** Logs a message at INFO log level using the current log handler.
-    Automatically populates arguments using information in the called context.
- */
-#define LOG_INFO(...) LOG_(GPIInfo, __VA_ARGS__);
+ Automatically populates arguments using information in the called context.
+*/
+#define LOG_INFO(...) LOG_(GPI_INFO, __VA_ARGS__)
 
 /** Logs a message at WARN log level using the current log handler.
-    Automatically populates arguments using information in the called context.
- */
-#define LOG_WARN(...) LOG_(GPIWarning, __VA_ARGS__);
+ Automatically populates arguments using information in the called context.
+*/
+#define LOG_WARN(...) LOG_(GPI_WARNING, __VA_ARGS__)
 
 /** Logs a message at ERROR log level using the current log handler.
-    Automatically populates arguments using information in the called context.
- */
-#define LOG_ERROR(...) LOG_(GPIError, __VA_ARGS__);
+ Automatically populates arguments using information in the called context.
+*/
+#define LOG_ERROR(...) LOG_(GPI_ERROR, __VA_ARGS__)
 
 /** Logs a message at CRITICAL log level using the current log handler.
-    Automatically populates arguments using information in the called context.
- */
-#define LOG_CRITICAL(...) LOG_(GPICritical, __VA_ARGS__);
+ Automatically populates arguments using information in the called context.
+*/
+#define LOG_CRITICAL(...) LOG_(GPI_CRITICAL, __VA_ARGS__)
 
 /** Type of a log handler function.
     @param userdata  private implementation data registered with this function

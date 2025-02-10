@@ -15,14 +15,14 @@ static PyObject *pLogHandler = nullptr;
 
 static PyObject *pLogFilter = nullptr;
 
-static int py_gpi_log_level = GPIInfo;
+static int py_gpi_log_level = GPI_INFO;
 
 static void fallback_handler(const char *name, int level, const char *pathname,
                              const char *funcname, long lineno,
                              const char *msg) {
     // Note: don't call the LOG_ERROR macro because that might recurse
     gpi_native_logger_log(name, level, pathname, funcname, lineno, msg);
-    gpi_native_logger_log("gpi", GPIError, __FILE__, __func__, __LINE__,
+    gpi_native_logger_log("gpi", GPI_ERROR, __FILE__, __func__, __LINE__,
                           "Error calling Python logging function from C++ "
                           "while logging the above");
 }
