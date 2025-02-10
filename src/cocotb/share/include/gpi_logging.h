@@ -55,6 +55,9 @@ extern "C" {
  *  readable level names for these value, but may support other values.
  */
 enum gpi_log_level {
+    GPI_NOTSET = 0,  ///< Lets the parent logger in the hierarchy decide the
+                     ///< effective log level. By default this behaves like
+                     ///< `INFO`.
     GPI_TRACE = 5,   ///< Prints `TRACE` by default. Information about execution
                      ///< of simulator callbacks and Python/simulator contexts.
     GPI_DEBUG = 10,  ///< Prints `DEBUG` by default. Verbose information, useful
