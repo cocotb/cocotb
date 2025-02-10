@@ -78,7 +78,7 @@ extern "C" void gpi_clear_log_handler(void) {
     current_userdata = nullptr;
 }
 
-static int current_native_logger_level = GPI_INFO;
+static int current_native_logger_level = GPI_NOTSET;
 
 extern "C" void gpi_native_logger_log_(const char *name, int level,
                                        const char *pathname,
@@ -94,7 +94,11 @@ extern "C" void gpi_native_logger_vlog_(const char *name, int level,
                                         const char *pathname,
                                         const char *funcname, long lineno,
                                         const char *msg, va_list argp) {
-    if (level < current_native_logger_level) {
+    int curr_level = current_native_logger_level;
+    if (current_native_logger_level == GPI_NOTSET) {
+        curr_level = GPI_INFO;
+    }
+    if (level < curr_level) {
         return;
     }
 

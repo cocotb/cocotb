@@ -100,7 +100,7 @@ def default_config() -> None:
             logger.setLevel(log_level)
         except ValueError:
             valid_levels = ", ".join(
-                ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE")
+                ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE", "NOTSET")
             )
             raise ValueError(
                 f"Invalid log level {log_level!r} passed through the "

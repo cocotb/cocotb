@@ -15,7 +15,7 @@
 
 static PyObject *pLogHandler = nullptr;
 
-static int py_gpi_log_level = GPI_INFO;
+static int py_gpi_log_level = GPI_NOTSET;
 
 static void fallback_handler(const char *name, int level, const char *pathname,
                              const char *funcname, long lineno,
@@ -30,7 +30,9 @@ static void fallback_handler(const char *name, int level, const char *pathname,
 static void py_gpi_log_handler(void *, const char *name, int level,
                                const char *pathname, const char *funcname,
                                long lineno, const char *msg, va_list argp) {
-    if (level < py_gpi_log_level) {
+    // Always pass through messages when NOTSET to let Python make the decision.
+    // Otherwise, skip logs using the local log level for better performance.
+    if (py_gpi_log_level != GPI_NOTSET && level < py_gpi_log_level) {
         return;
     }
 
