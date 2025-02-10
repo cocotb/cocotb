@@ -55,9 +55,6 @@ _FUNCNAME_CHARS = 31
 logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
 logging.addLevelName(5, "TRACE")
 
-# Default log level if not overwritten by the user.
-_COCOTB_LOG_LEVEL_DEFAULT = "INFO"
-
 
 def default_config() -> None:
     """Apply the default cocotb log formatting to the root logger.
@@ -70,6 +67,9 @@ def default_config() -> None:
 
     The logging level for cocotb logs is set based on the
     :envvar:`COCOTB_LOG_LEVEL` environment variable, which defaults to ``INFO``.
+
+    The logging level for GPI logs is set based on the
+    :envvar:`GPI_LOG_LEVEL` environment variable, which defaults to ``INFO``.
 
     If desired, this logging configuration can be overwritten by calling
     ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards), or by
@@ -86,32 +86,30 @@ def default_config() -> None:
     else:
         hdlr.setFormatter(SimLogFormatter())
 
-    logging.setLoggerClass(SimBaseLog)  # For backwards compatibility
+    logging.setLoggerClass(SimBaseLog)
     logging.basicConfig()
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
-    # apply level settings for cocotb
-    log = logging.getLogger("cocotb")
+    def set_level(logger_name: str, envvar: str, default_level: str) -> None:
+        log_level = os.environ.get(envvar, default_level)
+        log_level = log_level.upper()
 
-    try:
-        # All log levels are upper case, convert the user input for convenience.
-        level = os.environ["COCOTB_LOG_LEVEL"].upper()
-    except KeyError:
-        level = _COCOTB_LOG_LEVEL_DEFAULT
+        logger = logging.getLogger(logger_name)
 
-    try:
-        log.setLevel(level)
-    except ValueError:
-        valid_levels = ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE")
-        raise ValueError(
-            "Invalid log level {!r} passed through the "
-            "COCOTB_LOG_LEVEL environment variable. Valid log "
-            "levels: {}".format(level, ", ".join(valid_levels))
-        )
+        try:
+            logger.setLevel(log_level)
+        except ValueError:
+            valid_levels = ", ".join(
+                ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE")
+            )
+            raise ValueError(
+                f"Invalid log level {log_level!r} passed through the "
+                f"{envvar} environment variable. Valid log "
+                f"levels: {valid_levels}"
+            )
 
-    # Notify GPI of log level, which it uses as an optimization to avoid
-    # calling into Python.
-    logging.getLogger("gpi").setLevel(level)
+    set_level("gpi", "GPI_LOG_LEVEL", "INFO")
+    set_level("cocotb", "COCOTB_LOG_LEVEL", "INFO")
 
 
 if TYPE_CHECKING:
@@ -121,7 +119,7 @@ else:
 
 
 class SimBaseLog(LoggerClass):
-    """This class only exists for backwards compatibility"""
+    # For hooking setLevel to inform the GPI's local log level
 
     def setLevel(self, level: Union[int, str]) -> None:
         super().setLevel(level)

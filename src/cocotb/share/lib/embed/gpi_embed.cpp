@@ -30,19 +30,16 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
-#include <cocotb_utils.h>  // DEFER
-#include <exports.h>       // COCOTB_EXPORT
-#include <gpi.h>           // gpi_event_t
-#include <gpi_logging.h>   // LOG_* macros
-#include <py_gpi_logging.h>  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
 
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include <map>
-#include <string>
 
-#include "locale.h"
+#include "cocotb_utils.h"  // DEFER
+#include "exports.h"       // COCOTB_EXPORT
+#include "gpi.h"           // gpi_event_t
+#include "gpi_logging.h"   // LOG_* macros
+#include "py_gpi_logging.h"  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -54,6 +51,7 @@
 #else
 #include <unistd.h>
 #endif
+
 static bool python_init_called = 0;
 static bool embed_init_called = 0;
 
@@ -105,22 +103,6 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
         // LCOV_EXCL_STOP
     }
     python_init_called = 1;
-
-    const char *log_level = getenv("COCOTB_LOG_LEVEL");
-    if (log_level) {
-        static const std::map<std::string, int> logStrToLevel = {
-            {"CRITICAL", GPI_CRITICAL}, {"ERROR", GPI_ERROR},
-            {"WARNING", GPI_WARNING},   {"INFO", GPI_INFO},
-            {"DEBUG", GPI_DEBUG},       {"TRACE", GPI_TRACE}};
-        auto it = logStrToLevel.find(log_level);
-        if (it != logStrToLevel.end()) {
-            py_gpi_logger_set_level(it->second);
-        } else {
-            // LCOV_EXCL_START
-            LOG_ERROR("Invalid log level: %s", log_level);
-            // LCOV_EXCL_STOP
-        }
-    }
 
     // must set program name to Python executable before initialization, so
     // initialization can determine path from executable
