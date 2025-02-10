@@ -27,13 +27,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <cocotb_utils.h>  // DEFER
-#include <gpi_logging.h>   // this library
+#include "gpi_logging.h"
 
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <vector>
+
+#include "cocotb_utils.h"  // DEFER
 
 static gpi_log_handler_type *current_handler = nullptr;
 static void *current_userdata = nullptr;
@@ -76,7 +77,7 @@ extern "C" void gpi_clear_log_handler(void) {
     current_userdata = nullptr;
 }
 
-static int current_native_logger_level = GPIInfo;
+static int current_native_logger_level = GPI_INFO;
 
 extern "C" void gpi_native_logger_log(const char *name, int level,
                                       const char *pathname,
