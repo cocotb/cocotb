@@ -48,7 +48,7 @@ from cocotb.regression import RegressionManager, RegressionMode
 def _setup_logging() -> None:
     default_config()
     cocotb.log = logging.getLogger("cocotb")
-    cocotb.simulator.initialize_logger(_log_from_c)
+    cocotb.simulator.initialize_logger(_log_from_c, logging.getLogger)
 
 
 _shutdown_callbacks: List[Callable[[], None]] = []

@@ -285,7 +285,7 @@ class SimColourLogFormatter(SimLogFormatter):
 
 
 def _log_from_c(
-    logger_name: str,
+    logger: logging.Logger,
     level: int,
     filename: str,
     lineno: int,
@@ -296,7 +296,6 @@ def _log_from_c(
     This is for use from the C world, and allows us to insert C stack
     information.
     """
-    logger = logging.getLogger(logger_name)
     if logger.isEnabledFor(level):
         record = logger.makeRecord(
             logger.name, level, filename, lineno, msg, (), None, function_name
