@@ -4,6 +4,7 @@
 
 # generated with mypy's stubgen script
 
+from logging import Logger
 from typing import Any, Callable
 
 DRIVERS: int
@@ -94,6 +95,7 @@ class cpp_clock:
 
 def clock_create(hdl: gpi_sim_hdl) -> cpp_clock: ...
 def initialize_logger(
-    log_func: Callable[[str, int, str, int, str, str], None],
+    log_func: Callable[[Logger, int, str, int, str, str], None],
+    get_logger: Callable[[str], Logger],
 ) -> None: ...
 def set_sim_event_callback(sim_event_callback: Callable[[str], None]) -> None: ...

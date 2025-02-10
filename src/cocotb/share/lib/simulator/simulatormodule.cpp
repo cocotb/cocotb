@@ -805,11 +805,12 @@ static PyObject *set_gpi_log_level(PyObject *, PyObject *args) {
 
 static PyObject *initialize_logger(PyObject *, PyObject *args) {
     PyObject *log_func;
-    if (!PyArg_ParseTuple(args, "O", &log_func)) {
+    PyObject *get_logger;
+    if (!PyArg_ParseTuple(args, "OO", &log_func, &get_logger)) {
         PyErr_Print();
         return NULL;
     }
-    py_gpi_logger_initialize(log_func);
+    py_gpi_logger_initialize(log_func, get_logger);
     Py_RETURN_NONE;
 }
 
@@ -1181,7 +1182,8 @@ static PyMethodDef SimulatorMethods[] = {
      PyDoc_STR("initialize_logger(log_func, /)\n"
                "--\n\n"
                "initialize_logger("
-               "log_func: Callable[[str, int, str, int, str, str], None]"
+               "log_func: Callable[[Logger, int, str, int, str, str], None], "
+               "get_logger: Callable[[str], Logger]"
                ") -> None\n"
                "Initialize the GPI logger with Python logging functions.")},
     {"set_sim_event_callback", set_sim_event_callback, METH_VARARGS,
