@@ -21,8 +21,7 @@ extern "C" {
 
 PYGPILOG_EXPORT void py_gpi_logger_set_level(int level);
 
-PYGPILOG_EXPORT void py_gpi_logger_initialize(PyObject* handler,
-                                              PyObject* filter);
+PYGPILOG_EXPORT void py_gpi_logger_initialize(PyObject* handler);
 
 PYGPILOG_EXPORT void py_gpi_logger_finalize();
 

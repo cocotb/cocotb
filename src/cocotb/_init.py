@@ -41,14 +41,14 @@ import cocotb.logging
 import cocotb.regression
 import cocotb.simulator
 from cocotb._scheduler import Scheduler
-from cocotb.logging import _filter_from_c, _log_from_c, default_config
+from cocotb.logging import _log_from_c, default_config
 from cocotb.regression import RegressionManager, RegressionMode
 
 
 def _setup_logging() -> None:
     default_config()
     cocotb.log = logging.getLogger("cocotb")
-    cocotb.simulator.initialize_logger(_log_from_c, _filter_from_c)
+    cocotb.simulator.initialize_logger(_log_from_c)
 
 
 _shutdown_callbacks: List[Callable[[], None]] = []

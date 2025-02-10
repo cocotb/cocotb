@@ -284,10 +284,6 @@ class SimColourLogFormatter(SimLogFormatter):
         return self._format(level, record, msg, coloured=True)
 
 
-def _filter_from_c(logger_name: str, level: int) -> bool:
-    return logging.getLogger(logger_name).isEnabledFor(level)
-
-
 def _log_from_c(
     logger_name: str,
     level: int,
