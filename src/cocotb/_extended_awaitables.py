@@ -50,9 +50,7 @@ import cocotb.task
 from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
 from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
-from cocotb._outcomes import Error, Outcome, Value
 from cocotb._typing import TimeUnit
-from cocotb._utils import remove_traceback_frames
 
 T = TypeVar("T")
 
@@ -183,17 +181,9 @@ class _AggregateWaitable(Waitable[T]):
 
 
 async def _wait_callback(
-    trigger: Union[Trigger, Waitable[T], "cocotb.task.Task[T]"],
-    callback: Callable[[Outcome[T]], None],
-) -> None:
-    """Wait for *trigger*, and call *callback* with the outcome of the await."""
-    ret: Outcome[T]
-    try:
-        ret = Value(await trigger)  # type: ignore # awaiting trigger has a complicated type
-    except BaseException as exc:
-        # hide this from the traceback
-        ret = Error(remove_traceback_frames(exc, ["_wait_callback"]))
-    callback(ret)
+    trigger: Union[Trigger, Waitable[object], "cocotb.task.Task[object]"],
+) -> object:
+    return await trigger
 
 
 class Combine(_AggregateWaitable["Combine"]):
@@ -216,28 +206,45 @@ class Combine(_AggregateWaitable["Combine"]):
         elif len(self._triggers) == 1:
             await self._triggers[0]
         else:
-            waiters: List[cocotb.task.Task[Any]] = []
-            e = _InternalEvent(self)
-            triggers = list(self._triggers)
+            waiters: List[cocotb.task.Task[object]] = []
+            done = _InternalEvent(self)
+            exception: Union[BaseException, None] = None
+
+            def on_done(
+                task: cocotb.task.Task[object],
+            ) -> None:
+                # have to check cancelled first otherwise exception() will throw
+                if task.cancelled():
+                    waiters.remove(task)
+                    if not waiters:
+                        done.set()
+                        return
+                e = task.exception()
+                if e is not None:
+                    nonlocal exception
+                    exception = e
+                    done.set()
+                else:
+                    waiters.remove(task)
+                    if not waiters:
+                        done.set()
 
             # start a parallel task for each trigger
-            for t in triggers:
-                # t=t is needed for the closure to bind correctly
-                def on_done(
-                    ret: Outcome["Combine"],
-                    t: Union[
-                        Trigger, Waitable["Combine"], cocotb.task.Task["Combine"]
-                    ] = t,
-                ) -> None:
-                    triggers.remove(t)
-                    if not triggers:
-                        e.set()
-                    ret.get()  # re-raise any exception
-
-                waiters.append(cocotb.start_soon(_wait_callback(t, on_done)))
+            for t in self._triggers:
+                task = cocotb.task.Task[object](_wait_callback(t))
+                task._add_done_callback(on_done)
+                cocotb.start_soon(task)
+                waiters.append(task)
 
             # wait for the last waiter to complete
-            await e
+            await done
+
+            # kill remaining waiters
+            for w in waiters:
+                w.kill()
+
+            if exception is not None:
+                raise exception
 
         return self
 
@@ -284,27 +291,29 @@ class First(_AggregateWaitable[Any]):
             return await self._triggers[0]
 
         waiters: List[cocotb.task.Task[Any]] = []
-        e = _InternalEvent(self)
-        completed: List[Outcome[Any]] = []
+        done = _InternalEvent(self)
+        completed: List[cocotb.task.Task[Any]] = []
+
+        def on_done(task: cocotb.task.Task[Any]) -> None:
+            waiters.remove(task)
+            completed.append(task)
+            done.set()
+
         # start a parallel task for each trigger
         for t in self._triggers:
-
-            def on_done(ret: Outcome[Any]) -> None:
-                completed.append(ret)
-                e.set()
-
-            waiters.append(cocotb.start_soon(_wait_callback(t, on_done)))
+            task = cocotb.task.Task[Any](_wait_callback(t))
+            task._add_done_callback(on_done)
+            cocotb.start_soon(task)
+            waiters.append(task)
 
         # wait for a waiter to complete
-        await e
+        await done
 
         # kill all the other waiters
-        # TODO: Should this kill the coroutines behind any Join triggers?
-        # Right now it does not.
         for w in waiters:
             w.kill()
 
-        return completed[0].get()
+        return completed[0].result()
 
 
 class ClockCycles(Waitable["ClockCycles"]):
