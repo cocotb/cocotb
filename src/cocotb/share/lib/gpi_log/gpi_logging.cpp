@@ -39,24 +39,24 @@
 static gpi_log_handler_type *current_handler = nullptr;
 static void *current_userdata = nullptr;
 
-extern "C" void gpi_log(const char *name, int level, const char *pathname,
-                        const char *funcname, long lineno, const char *msg,
-                        ...) {
+extern "C" void gpi_log_(const char *name, int level, const char *pathname,
+                         const char *funcname, long lineno, const char *msg,
+                         ...) {
     va_list argp;
     va_start(argp, msg);
-    gpi_vlog(name, level, pathname, funcname, lineno, msg, argp);
+    gpi_vlog_(name, level, pathname, funcname, lineno, msg, argp);
     va_end(argp);
 }
 
-extern "C" void gpi_vlog(const char *name, int level, const char *pathname,
-                         const char *funcname, long lineno, const char *msg,
-                         va_list argp) {
+extern "C" void gpi_vlog_(const char *name, int level, const char *pathname,
+                          const char *funcname, long lineno, const char *msg,
+                          va_list argp) {
     if (current_handler) {
         (*current_handler)(current_userdata, name, level, pathname, funcname,
                            lineno, msg, argp);
     } else {
-        gpi_native_logger_vlog(name, level, pathname, funcname, lineno, msg,
-                               argp);
+        gpi_native_logger_vlog_(name, level, pathname, funcname, lineno, msg,
+                                argp);
     }
 }
 
@@ -79,13 +79,13 @@ extern "C" void gpi_clear_log_handler(void) {
 
 static int current_native_logger_level = GPI_INFO;
 
-extern "C" void gpi_native_logger_log(const char *name, int level,
-                                      const char *pathname,
-                                      const char *funcname, long lineno,
-                                      const char *msg, ...) {
+extern "C" void gpi_native_logger_log_(const char *name, int level,
+                                       const char *pathname,
+                                       const char *funcname, long lineno,
+                                       const char *msg, ...) {
     va_list argp;
     va_start(argp, msg);
-    gpi_native_logger_vlog(name, level, pathname, funcname, lineno, msg, argp);
+    gpi_native_logger_vlog_(name, level, pathname, funcname, lineno, msg, argp);
     va_end(argp);
 }
 
@@ -113,10 +113,10 @@ const char *log_level(long level) {
     return str;
 }
 
-extern "C" void gpi_native_logger_vlog(const char *name, int level,
-                                       const char *pathname,
-                                       const char *funcname, long lineno,
-                                       const char *msg, va_list argp) {
+extern "C" void gpi_native_logger_vlog_(const char *name, int level,
+                                        const char *pathname,
+                                        const char *funcname, long lineno,
+                                        const char *msg, va_list argp) {
     if (level < current_native_logger_level) {
         return;
     }

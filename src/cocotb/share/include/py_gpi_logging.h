@@ -5,7 +5,10 @@
 #ifndef PY_GPI_LOGGING_H
 #define PY_GPI_LOGGING_H
 
-#include <exports.h>
+#include <Python.h>
+
+#include "exports.h"
+
 #ifdef PYGPILOG_EXPORTS
 #define PYGPILOG_EXPORT COCOTB_EXPORT
 #else
