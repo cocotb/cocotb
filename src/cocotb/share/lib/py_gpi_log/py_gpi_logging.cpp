@@ -15,8 +15,6 @@
 
 static PyObject *pLogHandler = nullptr;
 
-static PyObject *pLogFilter = nullptr;
-
 static int py_gpi_log_level = GPI_INFO;
 
 static void fallback_handler(const char *name, int level, const char *pathname,
@@ -101,31 +99,6 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     }
     DEFER(Py_DECREF(logger_name_arg));
 
-    // check if log level is enabled
-    PyObject *filter_ret = PyObject_CallFunctionObjArgs(
-        pLogFilter, logger_name_arg, level_arg, NULL);
-    if (filter_ret == NULL) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return fallback_handler(name, level, pathname, funcname, lineno,
-                                log_buff.data());
-        // LCOV_EXCL_STOP
-    }
-
-    int is_enabled = PyObject_IsTrue(filter_ret);
-    Py_DECREF(filter_ret);
-    if (is_enabled < 0) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return fallback_handler(name, level, pathname, funcname, lineno,
-                                log_buff.data());
-        // LCOV_EXCL_STOP
-    }
-
-    if (!is_enabled) {
-        return;
-    }
-
     PyObject *filename_arg = PyUnicode_FromString(pathname);  // New reference
     if (filename_arg == NULL) {
         // LCOV_EXCL_START
@@ -185,18 +158,15 @@ extern "C" void py_gpi_logger_set_level(int level) {
     gpi_native_logger_set_level(level);
 }
 
-extern "C" void py_gpi_logger_initialize(PyObject *handler, PyObject *filter) {
+extern "C" void py_gpi_logger_initialize(PyObject *handler) {
     Py_INCREF(handler);
-    Py_INCREF(filter);
     pLogHandler = handler;
-    pLogFilter = filter;
     gpi_set_log_handler(py_gpi_log_handler, nullptr);
 }
 
 extern "C" void py_gpi_logger_finalize() {
     gpi_clear_log_handler();
     Py_XDECREF(pLogHandler);
-    Py_XDECREF(pLogFilter);
 }
 
 PyObject *pEventFn = NULL;
