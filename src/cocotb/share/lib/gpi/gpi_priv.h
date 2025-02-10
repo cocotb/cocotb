@@ -92,16 +92,10 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     virtual const char *get_type_str();
     gpi_objtype get_type() { return m_type; };
     bool get_const() { return m_const; };
-    int get_num_elems() {
-        LOG_DEBUG("%s has %d elements", m_name.c_str(), m_num_elems);
-        return m_num_elems;
-    }
+    int get_num_elems() { return m_num_elems; }
     int get_range_left() { return m_range_left; }
     int get_range_right() { return m_range_right; }
-    gpi_range_dir get_range_dir() {
-        LOG_DEBUG("%s has direction %d", m_name.c_str(), m_range_dir);
-        return m_range_dir;
-    }
+    gpi_range_dir get_range_dir() { return m_range_dir; }
     int get_indexable() { return m_indexable; }
 
     const std::string &get_name();
