@@ -83,7 +83,7 @@ static inline int __check_vhpi_error(const char *file, const char *func,
             break;
     }
 
-    gpi_log("gpi", loglevel, file, func, line,
+    gpi_log("", loglevel, file, func, line,
             "VHPI Error level %d: %s\nFILE %s:%d", info.severity, info.message,
             info.file, info.line);
 

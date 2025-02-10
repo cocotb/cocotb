@@ -30,7 +30,11 @@
 #ifndef COCOTB_GPI_LOGGING_H_
 #define COCOTB_GPI_LOGGING_H_
 
-#include <exports.h>
+#include <cstdarg>  // va_list
+#include <cstring>  // strlen
+
+#include "exports.h"
+
 #ifdef GPILOG_EXPORTS
 #define GPILOG_EXPORT COCOTB_EXPORT
 #else
@@ -70,7 +74,7 @@ enum gpi_log_level {
     @param level The level at which to log the message
  */
 #define LOG_(level, ...) \
-    gpi_log("gpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__)
+    gpi_log_("gpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
 /** Logs a message at TRACE log level using the current log handler.
  Automatically populates arguments using information in the called context.
@@ -102,6 +106,9 @@ enum gpi_log_level {
 */
 #define LOG_CRITICAL(...) LOG_(GPI_CRITICAL, __VA_ARGS__)
 
+#define MAKE_LOG_NAME_(extra_name) \
+    (extra_name[0] == '\0' ? "gpi" : "gpi." extra_name)
+
 /** Type of a log handler function.
     @param userdata  private implementation data registered with this function
     @param name      Name of the logger
@@ -119,33 +126,45 @@ typedef void(gpi_log_handler_type)(void *userdata, const char *name, int level,
 
 /** Log a message using the currently registered log handler.
     User is expected to populate all arguments to this function.
-    @param name      Name of the logger
-    @param level     Level at which to log the message
-    @param pathname  Name of the file where the call site is located
-    @param funcname  Name of the function where the call site is located
-    @param lineno    Line number of the call site
-    @param msg       The message to log, uses C-sprintf-style format specifier
-    @param ...       Additional arguments; formatted and inserted in message
-                     according to format specifier in msg argument
+    @param extra_name  Name of the "gpi" child logger, "" for the root logger
+    @param level       Level at which to log the message
+    @param pathname    Name of the file where the call site is located
+    @param funcname    Name of the function where the call site is located
+    @param lineno      Line number of the call site
+    @param msg         The message to log, uses C-sprintf-style format specifier
+    @param ...         Additional arguments; formatted and inserted in message
+                       according to format specifier in msg argument
  */
-GPILOG_EXPORT void gpi_log(const char *name, int level, const char *pathname,
-                           const char *funcname, long lineno, const char *msg,
-                           ...);
+#define gpi_log(extra_name, level, pathname, funcname, lineno, ...)         \
+    gpi_log_(MAKE_LOG_NAME_(extra_name), level, pathname, funcname, lineno, \
+             __VA_ARGS__)
+
+// Don't call this function directly unless the name is "gpi" or starts with
+// "gpi."
+GPILOG_EXPORT void gpi_log_(const char *name, int level, const char *pathname,
+                            const char *funcname, long lineno, const char *msg,
+                            ...);
 
 /** Log a message using the currently registered log handler.
     User is expected to populate all arguments to this function.
-    @param name      Name of the logger
-    @param level     Level at which to log the message
-    @param pathname  Name of the file where the call site is located
-    @param funcname  Name of the function where the call site is located
-    @param lineno    Line number of the call site
-    @param msg       The message to log, uses C-sprintf-style format specifier
-    @param args      Additional arguments; formatted and inserted in message
-                     according to format specifier in msg argument
+    @param extra_name  Name of the "gpi" child logger, "" for the root logger
+    @param level       Level at which to log the message
+    @param pathname    Name of the file where the call site is located
+    @param funcname    Name of the function where the call site is located
+    @param lineno      Line number of the call site
+    @param msg         The message to log, uses C-sprintf-style format specifier
+    @param args        Additional arguments; formatted and inserted in message
+                       according to format specifier in msg argument
  */
-GPILOG_EXPORT void gpi_vlog(const char *name, int level, const char *pathname,
-                            const char *funcname, long lineno, const char *msg,
-                            va_list args);
+#define gpi_vlog(extra_name, level, pathname, funcname, lineno, msg, args)   \
+    gpi_vlog_(MAKE_LOG_NAME_(extra_name), level, pathname, funcname, lineno, \
+              msg, args)
+
+// Don't call this function directly unless the name is "gpi" or starts with
+// "gpi."
+GPILOG_EXPORT void gpi_vlog_(const char *name, int level, const char *pathname,
+                             const char *funcname, long lineno, const char *msg,
+                             va_list args);
 
 /** Retrieve the current log handler.
     @param handler  Location to return current log handler. If no custom logger
@@ -168,35 +187,49 @@ GPILOG_EXPORT void gpi_clear_log_handler(void);
 
 /** Log a message using the native log handler.
     User is expected to populate all arguments to this function.
-    @param name      Name of the logger
-    @param level     Level at which to log the message
-    @param pathname  Name of the file where the call site is located
-    @param funcname  Name of the function where the call site is located
-    @param lineno    Line number of the call site
-    @param msg       The message to log, uses C-sprintf-style format specifier
-    @param ...       Additional arguments; formatted and inserted in message
-                     according to format specifier in msg argument
+    @param extra_name  Name of the "gpi" child logger, "" for the root logger
+    @param level       Level at which to log the message
+    @param pathname    Name of the file where the call site is located
+    @param funcname    Name of the function where the call site is located
+    @param lineno      Line number of the call site
+    @param msg         The message to log, uses C-sprintf-style format specifier
+    @param ...         Additional arguments; formatted and inserted in message
+                       according to format specifier in msg argument
  */
-GPILOG_EXPORT void gpi_native_logger_log(const char *name, int level,
-                                         const char *pathname,
-                                         const char *funcname, long lineno,
-                                         const char *msg, ...);
+#define gpi_native_logger_log(extra_name, level, pathname, funcname, lineno, \
+                              ...)                                           \
+    gpi_native_logger_log_(MAKE_LOG_NAME_(extra_name), level, pathname,      \
+                           funcname, lineno, __VA_ARGS__)
+
+// Don't call this function directly unless the name is "gpi" or starts with
+// "gpi."
+GPILOG_EXPORT void gpi_native_logger_log_(const char *name, int level,
+                                          const char *pathname,
+                                          const char *funcname, long lineno,
+                                          const char *msg, ...);
 
 /** Log a message using the native log handler.
     User is expected to populate all arguments to this function.
-    @param name      Name of the logger
-    @param level     Level at which to log the message
-    @param pathname  Name of the file where the call site is located
-    @param funcname  Name of the function where the call site is located
-    @param lineno    Line number of the call site
-    @param msg       The message to log, uses C-sprintf-style format specifier
-    @param args      Additional arguments; formatted and inserted in message
-                     according to format specifier in msg argument
+    @param extra_name  Name of the "gpi" child logger, "" for the root logger
+    @param level       Level at which to log the message
+    @param pathname    Name of the file where the call site is located
+    @param funcname    Name of the function where the call site is located
+    @param lineno      Line number of the call site
+    @param msg         The message to log, uses C-sprintf-style format specifier
+    @param args        Additional arguments; formatted and inserted in message
+                       according to format specifier in msg argument
  */
-GPILOG_EXPORT void gpi_native_logger_vlog(const char *name, int level,
-                                          const char *pathname,
-                                          const char *funcname, long lineno,
-                                          const char *msg, va_list args);
+#define gpi_native_logger_vlog(extra_name, level, pathname, funcname, lineno, \
+                               msg, args)                                     \
+    gpi_native_logger_vlog_(MAKE_LOG_NAME_(extra_name), level, pathname,      \
+                            funcname, lineno, msg, args)
+
+// Don't call this function directly unless the name is "gpi" or starts with
+// "gpi."
+GPILOG_EXPORT void gpi_native_logger_vlog_(const char *name, int level,
+                                           const char *pathname,
+                                           const char *funcname, long lineno,
+                                           const char *msg, va_list args);
 
 /** Set minimum logging level of the native logger.
     If a logging request occurs where the logging level is lower than the level

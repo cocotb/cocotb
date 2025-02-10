@@ -2,14 +2,16 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <Python.h>          // all things Python
-#include <cocotb_utils.h>    // DEFER
-#include <gpi_logging.h>     // all things GPI logging
-#include <py_gpi_logging.h>  // this library
+#include "py_gpi_logging.h"
+
+#include <Python.h>  // all things Python
 
 #include <cstdarg>  // va_list, va_copy, va_end
 #include <cstdio>   // fprintf, vsnprintf
 #include <vector>   // std::vector
+
+#include "cocotb_utils.h"  // DEFER
+#include "gpi_logging.h"   // all things GPI logging
 
 static PyObject *pLogHandler = nullptr;
 
@@ -21,10 +23,10 @@ static void fallback_handler(const char *name, int level, const char *pathname,
                              const char *funcname, long lineno,
                              const char *msg) {
     // Note: don't call the LOG_ERROR macro because that might recurse
-    gpi_native_logger_log(name, level, pathname, funcname, lineno, msg);
-    gpi_native_logger_log("gpi", GPI_ERROR, __FILE__, __func__, __LINE__,
-                          "Error calling Python logging function from C++ "
-                          "while logging the above");
+    gpi_native_logger_log_(name, level, pathname, funcname, lineno, msg);
+    gpi_native_logger_log_("gpi", GPI_ERROR, __FILE__, __func__, __LINE__,
+                           "Error calling Python logging function from C++ "
+                           "while logging the above");
 }
 
 static void py_gpi_log_handler(void *, const char *name, int level,
