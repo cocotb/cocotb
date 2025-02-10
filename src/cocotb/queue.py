@@ -20,8 +20,9 @@ from typing import (
 )
 
 import cocotb
+from cocotb._utils import pointer_str
 from cocotb.task import Task
-from cocotb.triggers import Event, _pointer_str
+from cocotb.triggers import Event
 
 
 class QueueFull(asyncio.queues.QueueFull):
@@ -73,7 +74,7 @@ class AbstractQueue(Generic[T]):
                 break
 
     def __repr__(self) -> str:
-        return f"<{type(self).__name__} {self._format()} at {_pointer_str(self)}>"
+        return f"<{type(self).__name__} {self._format()} at {pointer_str(self)}>"
 
     def __str__(self) -> str:
         return f"<{type(self).__name__} {self._format()}>"

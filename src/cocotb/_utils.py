@@ -275,3 +275,13 @@ else:
         orig_cls.__new__ = __new__
         orig_cls.__init__ = __init__
         return orig_cls
+
+
+def pointer_str(obj: object) -> str:
+    """Get the memory address of *obj* as used in :meth:`object.__repr__`.
+
+    This is equivalent to ``sprintf("%p", id(obj))``, but Python does not
+    support ``%p``.
+    """
+    full_repr = object.__repr__(obj)  # gives "<{type} object at {address}>"
+    return full_repr.rsplit(" ", 1)[1][:-1]

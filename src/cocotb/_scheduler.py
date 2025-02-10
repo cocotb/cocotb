@@ -44,16 +44,16 @@ import cocotb
 import cocotb._write_scheduler
 from cocotb import _outcomes, _py_compat
 from cocotb._exceptions import InternalError
-from cocotb._profiling import profiling_context
-from cocotb.task import Task
-from cocotb.triggers import (
-    Event,
+from cocotb._gpi_triggers import (
     GPITrigger,
     NextTimeStep,
     ReadOnly,
     ReadWrite,
     Trigger,
 )
+from cocotb._profiling import profiling_context
+from cocotb.task import Task
+from cocotb.triggers import Event
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
