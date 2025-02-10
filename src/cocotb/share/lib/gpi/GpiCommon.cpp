@@ -183,6 +183,22 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
 }
 
 void gpi_entry_point() {
+    const char *log_level = getenv("GPI_LOG_LEVEL");
+    if (log_level) {
+        static const std::map<std::string, int> log_level_str_table = {
+            {"CRITICAL", GPI_CRITICAL}, {"ERROR", GPI_ERROR},
+            {"WARNING", GPI_WARNING},   {"INFO", GPI_INFO},
+            {"DEBUG", GPI_DEBUG},       {"TRACE", GPI_TRACE}};
+        auto it = log_level_str_table.find(log_level);
+        if (it != log_level_str_table.end()) {
+            gpi_native_logger_set_level(it->second);
+        } else {
+            // LCOV_EXCL_START
+            LOG_ERROR("Invalid log level: %s", log_level);
+            // LCOV_EXCL_STOP
+        }
+    }
+
     /* Lets look at what other libs we were asked to load too */
     char *lib_env = getenv("GPI_EXTRA");
 

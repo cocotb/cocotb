@@ -128,10 +128,24 @@ Cocotb
 
 .. envvar:: COCOTB_LOG_LEVEL
 
-    The default logging level to use. This is set to ``INFO`` unless overridden.
+    The default log level of all ``"cocotb"`` Python loggers.
     Valid values are ``TRACE``, ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
+    The default is unset, which means that the log level is inherited from the root logger.
+    This behaves similarly to ``INFO``.
 
-    ``TRACE`` is used for internal low-level logging and produces very verbose logs.
+    .. versionchanged:: 2.0
+        The root ``"gpi"`` logger level is no longer set when this environment variable is used.
+        Use :envvar:`GPI_LOG_LEVEL` instead.
+
+.. envvar:: GPI_LOG_LEVEL
+
+    The default log level of all ``"gpi"`` (the low-level simulator interface) loggers,
+    including both Python and the native GPI logger.
+    Valid values are ``TRACE``, ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
+    The default is unset, which means that the log level is inherited from the root logger.
+    This behaves similarly to ``INFO``.
+
+    .. versionadded:: 2.0
 
 .. envvar:: COCOTB_RESOLVE_X
 
