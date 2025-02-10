@@ -32,6 +32,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <map>
 #include <vector>
 
 #include "cocotb_utils.h"  // DEFER
@@ -89,30 +90,6 @@ extern "C" void gpi_native_logger_log_(const char *name, int level,
     va_end(argp);
 }
 
-// Decode the level into a string matching the Python interpretation
-struct _log_level_table {
-    long level;
-    const char *levelname;
-};
-
-static struct _log_level_table log_level_table[] = {
-    {5, "TRACE"},  {10, "DEBUG"},    {20, "INFO"}, {30, "WARNING"},
-    {40, "ERROR"}, {50, "CRITICAL"}, {0, NULL},
-};
-
-const char *log_level(long level) {
-    struct _log_level_table *p;
-    const char *str = "------";
-
-    for (p = log_level_table; p->levelname; p++) {
-        if (level == p->level) {
-            str = p->levelname;
-            break;
-        }
-    }
-    return str;
-}
-
 extern "C" void gpi_native_logger_vlog_(const char *name, int level,
                                         const char *pathname,
                                         const char *funcname, long lineno,
@@ -162,8 +139,20 @@ extern "C" void gpi_native_logger_vlog_(const char *name, int level,
         }
     }
 
+    static const std::map<int, const char *> log_level_str_table = {
+        {GPI_TRACE, "TRACE"}, {GPI_DEBUG, "DEBUG"},
+        {GPI_INFO, "INFO"},   {GPI_WARNING, "WARNING"},
+        {GPI_ERROR, "ERROR"}, {GPI_CRITICAL, "CRITICAL"},
+    };
+
+    const char *log_level_str = "------";
+    auto idx = log_level_str_table.find(level);
+    if (idx != log_level_str_table.end()) {
+        log_level_str = idx->second;
+    }
+
     fprintf(stdout, "     -.--ns ");
-    fprintf(stdout, "%-9s", log_level(level));
+    fprintf(stdout, "%-9s", log_level_str);
     fprintf(stdout, "%-35s", name);
 
     size_t pathlen = strlen(pathname);
