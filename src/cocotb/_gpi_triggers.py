@@ -46,6 +46,7 @@ import cocotb.handle
 from cocotb import simulator
 from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
+from cocotb._typing import TimeUnit
 from cocotb._utils import pointer_str, singleton
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
@@ -152,7 +153,7 @@ class Timer(GPITrigger):
     def __init__(
         self,
         time: Union[float, Fraction, Decimal],
-        unit: str = "step",
+        unit: TimeUnit = "step",
         *,
         round_mode: Optional[str] = None,
     ) -> None:

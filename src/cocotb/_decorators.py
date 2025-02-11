@@ -48,6 +48,7 @@ from typing import (
 )
 
 import cocotb
+from cocotb._typing import TimeUnit
 from cocotb.regression import Test
 
 Result = TypeVar("Result")
@@ -170,7 +171,7 @@ class _Parameterized(Generic[F]):
         *,
         name: Optional[str] = None,
         timeout_time: Optional[float] = None,
-        timeout_unit: str = "step",
+        timeout_unit: TimeUnit = "step",
         expect_fail: bool = False,
         expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
         skip: bool = False,
@@ -264,7 +265,7 @@ def test(_func: Union[F, _Parameterized[F]]) -> F: ...
 def test(
     *,
     timeout_time: Optional[float] = None,
-    timeout_unit: str = "step",
+    timeout_unit: TimeUnit = "step",
     expect_fail: bool = False,
     expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
     skip: bool = False,
@@ -278,7 +279,7 @@ def test(
     _func: Optional[Union[F, _Parameterized[F]]] = None,
     *,
     timeout_time: Optional[float] = None,
-    timeout_unit: str = "step",
+    timeout_unit: TimeUnit = "step",
     expect_fail: bool = False,
     expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
     skip: bool = False,

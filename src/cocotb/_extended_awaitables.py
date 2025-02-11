@@ -51,6 +51,7 @@ from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
 from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
 from cocotb._outcomes import Error, Outcome, Value
+from cocotb._typing import TimeUnit
 from cocotb._utils import remove_traceback_frames
 
 T = TypeVar("T")
@@ -425,7 +426,7 @@ class SimTimeoutError(TimeoutError):
 async def with_timeout(
     trigger: Trigger,
     timeout_time: Union[float, Decimal],
-    timeout_unit: str = "step",
+    timeout_unit: TimeUnit = "step",
     round_mode: Optional[str] = None,
 ) -> None: ...
 
@@ -434,7 +435,7 @@ async def with_timeout(
 async def with_timeout(
     trigger: Waitable[T],
     timeout_time: Union[float, Decimal],
-    timeout_unit: str = "step",
+    timeout_unit: TimeUnit = "step",
     round_mode: Optional[str] = None,
 ) -> T: ...
 
@@ -443,7 +444,7 @@ async def with_timeout(
 async def with_timeout(
     trigger: "cocotb.task.Task[T]",
     timeout_time: Union[float, Decimal],
-    timeout_unit: str = "step",
+    timeout_unit: TimeUnit = "step",
     round_mode: Optional[str] = None,
 ) -> T: ...
 
@@ -452,7 +453,7 @@ async def with_timeout(
 async def with_timeout(
     trigger: Coroutine[Any, Any, T],
     timeout_time: Union[float, Decimal],
-    timeout_unit: str = "step",
+    timeout_unit: TimeUnit = "step",
     round_mode: Optional[str] = None,
 ) -> T: ...
 
@@ -462,7 +463,7 @@ async def with_timeout(
         Trigger, Waitable[Any], "cocotb.task.Task[Any]", Coroutine[Any, Any, Any]
     ],
     timeout_time: Union[float, Decimal],
-    timeout_unit: str = "step",
+    timeout_unit: TimeUnit = "step",
     round_mode: Optional[str] = None,
 ) -> Any:
     r"""Wait on triggers or coroutines, throw an exception if it waits longer than the given time.

@@ -38,6 +38,7 @@ from typing import (
 )
 
 from cocotb import simulator
+from cocotb._typing import TimeUnit
 
 
 def _get_simulator_precision() -> int:
@@ -49,7 +50,7 @@ def _get_simulator_precision() -> int:
 
 
 # Simulator helper functions
-def get_sim_time(unit: str = "step") -> int:
+def get_sim_time(unit: TimeUnit = "step") -> int:
     """Retrieve the simulation time from the simulator.
 
     Args:
@@ -104,7 +105,7 @@ def _ldexp10(frac: Union[float, Fraction, Decimal], exp: int) -> Any:
         return frac / (10**-exp)
 
 
-def get_time_from_sim_steps(steps: int, unit: str) -> int:
+def get_time_from_sim_steps(steps: int, unit: TimeUnit) -> int:
     """Calculate simulation time in the specified *unit* from the *steps* based
     on the simulator precision.
 
@@ -127,7 +128,7 @@ def get_time_from_sim_steps(steps: int, unit: str) -> int:
 
 def get_sim_steps(
     time: Union[float, Fraction, Decimal],
-    unit: str = "step",
+    unit: TimeUnit = "step",
     *,
     round_mode: str = "error",
 ) -> int:
@@ -190,7 +191,7 @@ def get_sim_steps(
 
 
 @lru_cache(maxsize=None)
-def _get_log_time_scale(unit: str) -> int:
+def _get_log_time_scale(unit: TimeUnit) -> int:
     """Retrieves the ``log10()`` of the scale factor for a given time unit.
 
     Args:
