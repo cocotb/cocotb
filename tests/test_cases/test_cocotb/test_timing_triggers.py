@@ -64,51 +64,51 @@ async def test_timer_with_units(dut):
     # invocation if this assert hits!
     assert get_precision() == -12
 
-    time_step = get_sim_time(units="step")
+    time_step = get_sim_time(unit="step")
 
     # Await for one simulator time step
     await Timer(1)  # NOTE: explicitly no units argument here!
-    time_step = get_sim_time(units="step") - time_step
+    time_step = get_sim_time(unit="step") - time_step
 
     pattern = "Unable to accurately represent .* with the simulator precision of .*"
     with pytest.raises(ValueError, match=pattern):
-        await Timer(2.5 * time_step, units="step")
+        await Timer(2.5 * time_step, unit="step")
     dut._log.info("As expected, unable to create a timer of 2.5 simulator time steps")
 
-    time_step = get_sim_time(units="step")
+    time_step = get_sim_time(unit="step")
 
     await Timer(3, "ns")
 
-    assert get_sim_time(units="step") == time_step + get_sim_steps(3, "ns")
+    assert get_sim_time(unit="step") == time_step + get_sim_steps(3, "ns")
 
-    time_step = get_sim_time(units="step")
+    time_step = get_sim_time(unit="step")
     await Timer(1.5, "ns")
 
-    assert get_sim_time(units="step") == time_step + get_sim_steps(1.5, "ns")
+    assert get_sim_time(unit="step") == time_step + get_sim_steps(1.5, "ns")
 
-    time_step = get_sim_time(units="step")
+    time_step = get_sim_time(unit="step")
     await Timer(10.0, "ps")
 
-    assert get_sim_time(units="step") == time_step + get_sim_steps(10, "ps")
+    assert get_sim_time(unit="step") == time_step + get_sim_steps(10, "ps")
 
-    time_step = get_sim_time(units="step")
+    time_step = get_sim_time(unit="step")
     await Timer(1.0, "us")
 
-    assert get_sim_time(units="step") == time_step + get_sim_steps(1, "us")
+    assert get_sim_time(unit="step") == time_step + get_sim_steps(1, "us")
 
 
 @cocotb.test()
 async def test_timer_with_rational_units(dut):
     """Test that rounding errors are not introduced in exact values"""
     # now with fractions
-    time_step = get_sim_time(units="step")
-    await Timer(Fraction(1, int(1e9)), units="sec")
-    assert get_sim_time(units="step") == time_step + get_sim_steps(1, "ns")
+    time_step = get_sim_time(unit="step")
+    await Timer(Fraction(1, int(1e9)), unit="sec")
+    assert get_sim_time(unit="step") == time_step + get_sim_steps(1, "ns")
 
     # now with decimals
-    time_step = get_sim_time(units="step")
-    await Timer(Decimal("1e-9"), units="sec")
-    assert get_sim_time(units="step") == time_step + get_sim_steps(1, "ns")
+    time_step = get_sim_time(unit="step")
+    await Timer(Decimal("1e-9"), unit="sec")
+    assert get_sim_time(unit="step") == time_step + get_sim_steps(1, "ns")
 
 
 async def do_test_afterdelay_in_readonly(dut, delay):

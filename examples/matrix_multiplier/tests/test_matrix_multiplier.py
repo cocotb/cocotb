@@ -156,7 +156,7 @@ class MatrixMultiplierTester:
 async def multiply_test(dut):
     """Test multiplication of many matrices."""
 
-    cocotb.start_soon(Clock(dut.clk_i, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk_i, 10, unit="ns").start())
     tester = MatrixMultiplierTester(dut)
 
     dut._log.info("Initialize and reset model")

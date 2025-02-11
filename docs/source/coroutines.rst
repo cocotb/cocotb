@@ -26,7 +26,7 @@ For example:
 
     async def wait_10ns():
         cocotb.log.info("About to wait for 10 ns")
-        await Timer(10, units='ns')
+        await Timer(10, unit='ns')
         cocotb.log.info("Simulation time has advanced by 10 ns")
 
 Coroutines may also await on other coroutines:
@@ -66,15 +66,15 @@ some time after the current Task yields control.
         """While reset is active, toggle signals"""
         tb = uart_tb(dut)
         # "Clock" is a built in class for toggling a clock signal
-        Clock(dut.clk, 1, units='ns').start()
+        Clock(dut.clk, 1, unit='ns').start()
         # reset_dut is a function -
         # part of the user-generated "uart_tb" class
         # run reset_dut immediately before continuing
         await tb.reset_dut(dut.rstn, 20)
 
-        await Timer(10, units='ns')
+        await Timer(10, unit='ns')
         print("Reset is still active: %d" % dut.rstn)
-        await Timer(15, units='ns')
+        await Timer(15, unit='ns')
         print("Reset has gone inactive: %d" % dut.rstn)
 
 Other tasks can be used in an await statement to suspend the current task until the other task finishes.
@@ -83,7 +83,7 @@ Other tasks can be used in an await statement to suspend the current task until 
 
     @cocotb.test()
     async def test_count_edge_cycles(dut, period_ns=1, clocks=6):
-        Clock(dut.clk, period_ns, units='ns').start()
+        Clock(dut.clk, period_ns, unit='ns').start()
         await RisingEdge(dut.clk)
 
         timer = Timer(period_ns + 10, 'ns')
@@ -107,23 +107,23 @@ forcing their completion before they would naturally end.
 
     @cocotb.test()
     async def test_different_clocks(dut):
-        clk_1mhz   = Clock(dut.clk, 1.0, units='us')
-        clk_250mhz = Clock(dut.clk, 4.0, units='ns')
+        clk_1mhz   = Clock(dut.clk, 1.0, unit='us')
+        clk_250mhz = Clock(dut.clk, 4.0, unit='ns')
 
         clk_1mhz.start()
-        start_time_ns = get_sim_time(units='ns')
-        await Timer(1, units='ns')
+        start_time_ns = get_sim_time(unit='ns')
+        await Timer(1, unit='ns')
         await RisingEdge(dut.clk)
-        edge_time_ns = get_sim_time(units='ns')
+        edge_time_ns = get_sim_time(unit='ns')
         assert isclose(edge_time_ns, start_time_ns + 1000.0), "Expected a period of 1 us"
 
         clk_1mhz.stop()  # stop 1MHz clock here
 
         clk_250mhz.start()
-        start_time_ns = get_sim_time(units='ns')
-        await Timer(1, units='ns')
+        start_time_ns = get_sim_time(unit='ns')
+        await Timer(1, unit='ns')
         await RisingEdge(dut.clk)
-        edge_time_ns = get_sim_time(units='ns')
+        edge_time_ns = get_sim_time(unit='ns')
         assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
 
 

@@ -69,12 +69,18 @@ class Clock:
 
     Args:
         signal: The clock pin/signal to be driven.
-        period: The clock period. Must convert to an even number of
-            timesteps.
-        units: One of
+        period: The clock period.
+
+            .. note::
+                Must convert to an even number of timesteps.
+        unit: One of
             ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
-            When *units* is ``'step'``,
+            When *unit* is ``'step'``,
             the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
+
+            .. versionchanged:: 2.0
+                Renamed from ``units``.
+
         impl: One of
             ``'auto'``, ``'gpi'``, ``'py'``.
             Specify whether the clock is implemented with a :class:`~cocotb.simulator.GpiClock` (faster), or with a Python coroutine.
@@ -95,9 +101,9 @@ class Clock:
 
         async def custom_clock():
             # pre-construct triggers for performance
-            high_time = Timer(high_delay, units="ns")
-            low_time = Timer(low_delay, units="ns")
-            await Timer(initial_delay, units="ns")
+            high_time = Timer(high_delay, unit="ns")
+            low_time = Timer(low_delay, unit="ns")
+            await Timer(initial_delay, unit="ns")
             while True:
                 dut.clk.value = 1
                 await high_time
@@ -114,22 +120,22 @@ class Clock:
         async def custom_clock():
             while True:
                 dut.clk.value = 1
-                await Timer(high_delay, units="ns")
+                await Timer(high_delay, unit="ns")
                 dut.clk.value = 0
-                await Timer(low_delay, units="ns")
+                await Timer(low_delay, unit="ns")
 
 
         high_delay = low_delay = 100
         cocotb.start_soon(custom_clock())
-        await Timer(1000, units="ns")
+        await Timer(1000, unit="ns")
         high_delay = low_delay = 10  # change the clock speed
-        await Timer(1000, units="ns")
+        await Timer(1000, unit="ns")
 
     .. versionchanged:: 1.5
-        Support ``'step'`` as the *units* argument to mean "simulator time step".
+        Support ``'step'`` as the *unit* argument to mean "simulator time step".
 
     .. versionchanged:: 2.0
-        Passing ``None`` as the *units* argument was removed, use ``'step'`` instead.
+        Passing ``None`` as the *unit* argument was removed, use ``'step'`` instead.
 
     .. versionchanged:: 2.0
         :meth:`start` now automatically calls :func:`cocotb.start_soon` and stores the Task
@@ -140,12 +146,12 @@ class Clock:
         self,
         signal: LogicObject,
         period: Union[float, Fraction, Decimal],
-        units: str = "step",
+        unit: str = "step",
         impl: "Impl | None" = None,
     ) -> None:
         self._signal = signal
         self._period = period
-        self._units = units
+        self._unit = unit
         self._impl: "Impl"  # noqa: UP037  # ruff assumes we are at least using Python 3.7 and gives false positive.
 
         if impl is None:
@@ -167,13 +173,13 @@ class Clock:
 
     @property
     def period(self) -> Union[float, Fraction, Decimal]:
-        """The clock period (unitless)."""
+        """The clock period (unit-less)."""
         return self._period
 
     @property
-    def units(self) -> str:
+    def unit(self) -> str:
         """The unit of the clock period."""
-        return self._units
+        return self._unit
 
     @property
     def impl(self) -> "Impl":
@@ -214,7 +220,7 @@ class Clock:
         if self._task is not None:
             raise RuntimeError("Starting clock that has already been started.")
 
-        period = get_sim_steps(self._period, self._units)
+        period = get_sim_steps(self._period, self._unit)
         t_high = period // 2
 
         if self._impl == "gpi":
@@ -282,7 +288,7 @@ class Clock:
     @cached_method
     def __repr__(self) -> str:
         freq_mhz = 1 / get_time_from_sim_steps(
-            get_sim_steps(self._period, self._units), "us"
+            get_sim_steps(self._period, self._unit), "us"
         )
         return f"<{type(self).__qualname__}, {self._signal._path} @ {freq_mhz} MHz>"
 

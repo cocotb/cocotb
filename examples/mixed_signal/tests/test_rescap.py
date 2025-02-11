@@ -29,10 +29,10 @@ class ResCap_TB:
         self.analog_probe.probe_voltage_toggle.value = toggle
         self.analog_probe.probe_current_toggle.value = toggle
         await Timer(
-            1, units="ps"
+            1, unit="ps"
         )  # waiting time needed for the analog values to be updated
         dataset = Dataset(
-            time=get_sim_time(units="ns"),
+            time=get_sim_time(unit="ns"),
             voltage=self.analog_probe.voltage.value,
             current=self.analog_probe.current.value * 1000.0,  # in mA
         )
@@ -61,7 +61,7 @@ class ResCap_TB:
                 dataset = await self._get_single_sample(node)
                 datasets[node].append(dataset)
             if idx != num:
-                await Timer(delay_ns, units="ns")
+                await Timer(delay_ns, unit="ns")
         return datasets
 
     def plot_data(self, datasets, nodes, graphfile="cocotb_plot.png"):

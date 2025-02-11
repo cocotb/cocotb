@@ -33,7 +33,7 @@ async def gain_select(digital, afe) -> None:
 async def test_analog_model(digital) -> None:
     """Exercise an Analog Front-end and its digital controller."""
 
-    clock = Clock(digital.clk, 1, units="us")  # create a 1us period clock on port clk
+    clock = Clock(digital.clk, 1, unit="us")  # create a 1us period clock on port clk
     cocotb.start_soon(clock.start())  # start the clock
 
     afe_in_queue = Queue()

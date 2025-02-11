@@ -67,7 +67,7 @@ class TaskComplete(Trigger, Generic[T]):
     .. code-block:: python
 
         async def coro_inner():
-            await Timer(1, units="ns")
+            await Timer(1, unit="ns")
             raise ValueError("Oops")
 
 
@@ -120,7 +120,7 @@ def Join(task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
     .. code-block:: python
 
         async def coro_inner():
-            await Timer(1, units="ns")
+            await Timer(1, unit="ns")
             return "Hello world"
 
 
@@ -136,7 +136,7 @@ def Join(task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
         the result of which will be the result of the Task.
 
     .. deprecated:: 2.0
-        Using ``task`` directly is prefered to ``Join(task)`` in all situations where the latter could be used.
+        Using ``task`` directly is preferred to ``Join(task)`` in all situations where the latter could be used.
     """
     return task
 
@@ -261,8 +261,8 @@ class First(_AggregateWaitable[Any]):
         For this reason, the value of ``t_ret is t1`` in the following example
         is implementation-defined, and will vary by simulator::
 
-            t1 = Timer(10, units="ps")
-            t2 = Timer(10, units="ps")
+            t1 = Timer(10, unit="ps")
+            t2 = Timer(10, unit="ps")
             t_ret = await First(t1, t2)
 
     .. note::
@@ -498,7 +498,7 @@ async def with_timeout(
         timeout_time:
             Simulation time duration before timeout occurs.
         timeout_unit:
-            Units of timeout_time, accepts any units that :class:`~cocotb.triggers.Timer` does.
+            Unit of timeout_time, accepts any unit that :class:`~cocotb.triggers.Timer` does.
         round_mode:
             String specifying how to handle time values that sit between time steps
             (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).

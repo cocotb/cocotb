@@ -24,12 +24,12 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 @cocotb.test()
 @cocotb.parametrize(impl=["gpi", "py"])
 async def test_clock_with_units(dut, impl: str) -> None:
-    clk_1mhz = Clock(dut.clk, 1.0, units="us", impl=impl)
-    clk_250mhz = Clock(dut.clk, 4, units="ns", impl=impl)
+    clk_1mhz = Clock(dut.clk, 1.0, unit="us", impl=impl)
+    clk_250mhz = Clock(dut.clk, 4, unit="ns", impl=impl)
 
     assert clk_1mhz.signal is dut.clk
     assert clk_1mhz.period == 1.0
-    assert clk_1mhz.units == "us"
+    assert clk_1mhz.unit == "us"
     assert clk_1mhz.impl == impl
 
     assert str(clk_1mhz) == f"<Clock, {dut.clk._path} @ 1.0 MHz>"
@@ -37,36 +37,36 @@ async def test_clock_with_units(dut, impl: str) -> None:
 
     clk_gen = cocotb.start_soon(clk_1mhz.start())
 
-    start_time_ns = get_sim_time(units="ns")
+    start_time_ns = get_sim_time(unit="ns")
 
     await Timer(1, "ns")
     await RisingEdge(dut.clk)
 
-    edge_time_ns = get_sim_time(units="ns")
+    edge_time_ns = get_sim_time(unit="ns")
     assert isclose(edge_time_ns, start_time_ns + 1000.0), "Expected a period of 1 us"
 
     start_time_ns = edge_time_ns
 
     await RisingEdge(dut.clk)
-    edge_time_ns = get_sim_time(units="ns")
+    edge_time_ns = get_sim_time(unit="ns")
     assert isclose(edge_time_ns, start_time_ns + 1000.0), "Expected a period of 1 us"
 
     clk_gen.kill()
 
     clk_gen = cocotb.start_soon(clk_250mhz.start())
 
-    start_time_ns = get_sim_time(units="ns")
+    start_time_ns = get_sim_time(unit="ns")
 
     await Timer(1, "ns")
     await RisingEdge(dut.clk)
 
-    edge_time_ns = get_sim_time(units="ns")
+    edge_time_ns = get_sim_time(unit="ns")
     assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
 
     start_time_ns = edge_time_ns
 
     await RisingEdge(dut.clk)
-    edge_time_ns = get_sim_time(units="ns")
+    edge_time_ns = get_sim_time(unit="ns")
     assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
 
     clk_gen.kill()
@@ -81,7 +81,7 @@ async def test_gpi_clock_error_signal_type(_) -> None:
 @cocotb.test
 async def test_gpi_clock_error_impl(dut):
     with pytest.raises(ValueError):
-        Clock(dut.clk, 1.0, units="step", impl="invalid")
+        Clock(dut.clk, 1.0, unit="step", impl="invalid")
 
 
 @cocotb.test
@@ -100,7 +100,7 @@ async def test_gpi_clock_error_timing(dut):
 
 @cocotb.test
 async def test_gpi_clock_error_start(dut):
-    clk = Clock(dut.clk, 1.0, units="step", impl="gpi")
+    clk = Clock(dut.clk, 1.0, unit="step", impl="gpi")
     with pytest.raises(ValueError):
         clk.start()
 
@@ -122,11 +122,11 @@ async def test_clocks_with_other_number_types(dut):
     # Update the simulator invocation if this assert hits!
     assert get_precision() <= -10
 
-    clk1 = cocotb.start_soon(Clock(dut.clk, decimal.Decimal("1"), units="ns").start())
+    clk1 = cocotb.start_soon(Clock(dut.clk, decimal.Decimal("1"), unit="ns").start())
     await Timer(10, "ns")
     with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):
         clk1.cancel()
-    clk2 = cocotb.start_soon(Clock(dut.clk, fractions.Fraction(1), units="ns").start())
+    clk2 = cocotb.start_soon(Clock(dut.clk, fractions.Fraction(1), unit="ns").start())
     await Timer(10, "ns")
     with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):
         clk2.cancel()
@@ -172,12 +172,12 @@ async def test_clock_cycles(dut) -> None:
     # so we start at a consistent state for math below
     await RisingEdge(dut.clk)
 
-    start_time = get_sim_time(units="ns")
+    start_time = get_sim_time(unit="ns")
     await c.cycles(cycles)
-    end_time = get_sim_time(units="ns")
+    end_time = get_sim_time(unit="ns")
     assert end_time == (start_time + (cycles * period_ns))
 
-    start_time = get_sim_time(units="ns")
+    start_time = get_sim_time(unit="ns")
     await c.cycles(cycles, FallingEdge)
-    end_time = get_sim_time(units="ns")
+    end_time = get_sim_time(unit="ns")
     assert end_time == (start_time + (cycles * period_ns) - (period_ns // 2))

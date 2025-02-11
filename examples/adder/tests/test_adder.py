@@ -24,7 +24,7 @@ async def adder_basic_test(dut):
     dut.A.value = A
     dut.B.value = B
 
-    await Timer(2, units="ns")
+    await Timer(2, unit="ns")
 
     assert dut.X.value == adder_model(A, B), (
         f"Adder result is incorrect: {dut.X.value} != 15"
@@ -42,7 +42,7 @@ async def adder_randomised_test(dut):
         dut.A.value = A
         dut.B.value = B
 
-        await Timer(2, units="ns")
+        await Timer(2, unit="ns")
 
         assert dut.X.value == adder_model(A, B), (
             f"Randomised test failed with: {dut.A.value} + {dut.B.value} = {dut.X.value}"

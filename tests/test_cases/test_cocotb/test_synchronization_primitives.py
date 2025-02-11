@@ -107,15 +107,15 @@ async def test_internalevent(dut):
     assert repr(e) == "'test parent'"
 
     async def set_internalevent():
-        await Timer(1, units="ns")
+        await Timer(1, unit="ns")
         e.set()
 
     # Test waiting more than once
     cocotb.start_soon(set_internalevent())
-    time_ns = get_sim_time(units="ns")
+    time_ns = get_sim_time(unit="ns")
     await e
     assert e.is_set()
-    assert get_sim_time(units="ns") == time_ns + 1
+    assert get_sim_time(unit="ns") == time_ns + 1
     # _InternalEvent can only be awaited once
     with pytest.raises(RuntimeError):
         await e
@@ -146,19 +146,19 @@ async def test_internalevent(dut):
     e = _InternalEvent(None)
     assert not e.is_set()
     cocotb.start_soon(set_internalevent())
-    await Timer(2, units="ns")
+    await Timer(2, unit="ns")
     assert e.is_set()
-    time_ns = get_sim_time(units="ns")
+    time_ns = get_sim_time(unit="ns")
     await e
-    assert get_sim_time(units="ns") == time_ns
+    assert get_sim_time(unit="ns") == time_ns
 
 
 @cocotb.test
 async def test_empty_Combine(_) -> None:
     """Test that a Combine with no triggers passes no time."""
-    start_time = get_sim_time(units="ns")
+    start_time = get_sim_time(unit="ns")
     await Combine()
-    end_time = get_sim_time(units="ns")
+    end_time = get_sim_time(unit="ns")
     assert end_time == start_time
 
 

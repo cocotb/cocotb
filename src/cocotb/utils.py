@@ -49,32 +49,35 @@ def _get_simulator_precision() -> int:
 
 
 # Simulator helper functions
-def get_sim_time(units: str = "step") -> int:
+def get_sim_time(unit: str = "step") -> int:
     """Retrieve the simulation time from the simulator.
 
     Args:
-        units: String specifying the units of the result
+        unit: String specifying the unit of the result
             (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
             ``'step'`` will return the raw simulation time.
 
             .. versionchanged:: 2.0
-                Passing ``None`` as the *units* argument was removed, use ``'step'`` instead.
+                Passing ``None`` as the *unit* argument was removed, use ``'step'`` instead.
+
+            .. versionchanged:: 2.0
+                Renamed from ``units``.
 
     Raises:
-        ValueError: If *units* is not a valid unit (see Args section).
+        ValueError: If *unit* is not a valid unit (see Args section).
 
     Returns:
-        The simulation time in the specified units.
+        The simulation time in the specified unit.
 
     .. versionchanged:: 1.6
-        Support ``'step'`` as the the *units* argument to mean "simulator time step".
+        Support ``'step'`` as the the *unit* argument to mean "simulator time step".
     """
     timeh, timel = simulator.get_sim_time()
 
     result = timeh << 32 | timel
 
-    if units != "step":
-        result = get_time_from_sim_steps(result, units)
+    if unit != "step":
+        result = get_time_from_sim_steps(result, unit)
 
     return result
 
@@ -101,27 +104,30 @@ def _ldexp10(frac: Union[float, Fraction, Decimal], exp: int) -> Any:
         return frac / (10**-exp)
 
 
-def get_time_from_sim_steps(steps: int, units: str) -> int:
-    """Calculate simulation time in the specified *units* from the *steps* based
+def get_time_from_sim_steps(steps: int, unit: str) -> int:
+    """Calculate simulation time in the specified *unit* from the *steps* based
     on the simulator precision.
 
     Args:
         steps: Number of simulation steps.
-        units: String specifying the units of the result
+        unit: String specifying the unit of the result
             (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
+            .. versionchanged:: 2.0
+                Renamed from ``units``.
+
     Raises:
-        ValueError: If *units* is not a valid unit (see Args section).
+        ValueError: If *unit* is not a valid unit (see Args section).
 
     Returns:
-        The simulation time in the specified units.
+        The simulation time in the specified unit.
     """
-    return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(units))
+    return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(unit))
 
 
 def get_sim_steps(
     time: Union[float, Fraction, Decimal],
-    units: str = "step",
+    unit: str = "step",
     *,
     round_mode: str = "error",
 ) -> int:
@@ -135,9 +141,13 @@ def get_sim_steps(
 
     Args:
         time: The value to convert to simulation time steps.
-        units: String specifying the units of the result
+        unit: String specifying the unit of the result
             (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
             ``'step'`` means *time* is already in simulation time steps.
+
+            .. versionchanged:: 2.0
+                Renamed from ``units``.
+
         round_mode: String specifying how to handle time values that sit between time steps
             (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
 
@@ -149,14 +159,14 @@ def get_sim_steps(
             time steps when *round_mode* is ``"error"``.
 
     .. versionchanged:: 1.5
-        Support ``'step'`` as the *units* argument to mean "simulator time step".
+        Support ``'step'`` as the *unit* argument to mean "simulator time step".
 
     .. versionchanged:: 1.6
         Support rounding modes.
     """
     result: Union[float, Fraction, Decimal]
-    if units != "step":
-        result = _ldexp10(time, _get_log_time_scale(units) - _get_simulator_precision())
+    if unit != "step":
+        result = _ldexp10(time, _get_log_time_scale(unit) - _get_simulator_precision())
     else:
         result = time
 
@@ -165,7 +175,7 @@ def get_sim_steps(
         if result_rounded != result:
             precision = _get_simulator_precision()
             raise ValueError(
-                f"Unable to accurately represent {time}({units}) with the simulator precision of 1e{precision}"
+                f"Unable to accurately represent {time}({unit}) with the simulator precision of 1e{precision}"
             )
     elif round_mode == "ceil":
         result_rounded = math.ceil(result)
@@ -180,23 +190,26 @@ def get_sim_steps(
 
 
 @lru_cache(maxsize=None)
-def _get_log_time_scale(units: str) -> int:
+def _get_log_time_scale(unit: str) -> int:
     """Retrieves the ``log10()`` of the scale factor for a given time unit.
 
     Args:
-        units: String specifying the units
+        unit: String specifying the unit
             (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
+            .. versionchanged:: 2.0
+                Renamed from ``units``.
+
     Raises:
-        ValueError: If *units* is not a valid unit (see Args section).
+        ValueError: If *unit* is not a valid unit (see Args section).
 
     Returns:
         The ``log10()`` of the scale factor for the time unit.
     """
     scale = {"fs": -15, "ps": -12, "ns": -9, "us": -6, "ms": -3, "sec": 0}
 
-    units_lwr = units.lower()
-    if units_lwr not in scale:
-        raise ValueError(f"Invalid unit ({units}) provided")
+    unit_lwr = unit.lower()
+    if unit_lwr not in scale:
+        raise ValueError(f"Invalid unit ({unit}) provided")
     else:
-        return scale[units_lwr]
+        return scale[unit_lwr]
