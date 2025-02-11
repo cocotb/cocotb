@@ -336,3 +336,21 @@ async def test_readonly_in_readonly(_) -> None:
     await ReadOnly()
     with pytest.raises(RuntimeError):
         await ReadOnly()
+
+
+@cocotb.test
+async def test_next_time_step(_) -> None:
+    """Test Timer causes NextTimeStep to wake up after Timer fires."""
+
+    # We can't really test if the NextTimeStep is accurate with this test as a part of
+    # the regression. There are many events which will trigger a simulator wakeup. And
+    # for the simulators where cancelling triggers does not work and we just mark them
+    # as "removed", the next time step caused by them is unavoidable, making this
+    # totally non-deterministic. This test really exists only to ensure that the code
+    # paths work and the Trigger fires.
+
+    async def wait_ns(time_ns: int) -> None:
+        await Timer(time_ns, "ns")
+
+    cocotb.start_soon(wait_ns(10))
+    await NextTimeStep()
