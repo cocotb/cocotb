@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING, Type, Union
 
 import cocotb
 from cocotb._py_compat import cached_property
+from cocotb._typing import TimeUnit
 from cocotb._utils import cached_method
 from cocotb._write_scheduler import trust_inertial
 from cocotb.handle import LogicObject
@@ -146,12 +147,12 @@ class Clock:
         self,
         signal: LogicObject,
         period: Union[float, Fraction, Decimal],
-        unit: str = "step",
+        unit: TimeUnit = "step",
         impl: "Impl | None" = None,
     ) -> None:
         self._signal = signal
         self._period = period
-        self._unit = unit
+        self._unit: TimeUnit = unit
         self._impl: "Impl"  # noqa: UP037  # ruff assumes we are at least using Python 3.7 and gives false positive.
 
         if impl is None:
@@ -177,7 +178,7 @@ class Clock:
         return self._period
 
     @property
-    def unit(self) -> str:
+    def unit(self) -> TimeUnit:
         """The unit of the clock period."""
         return self._unit
 
