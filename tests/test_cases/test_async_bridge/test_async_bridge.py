@@ -42,7 +42,7 @@ def return_two(dut):
 async def await_two_clock_edges(dut):
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
-    await Timer(1, units="ns")
+    await Timer(1, unit="ns")
     dut._log.info("Returning from await_two_clock_edges")
     return 2
 
@@ -67,7 +67,7 @@ async def test_time_in_bridge(dut):
     Test that the simulation time does not advance if the wrapped blocking
     routine does not call @cocotb.resume
     """
-    await Timer(10, units="ns")
+    await Timer(10, unit="ns")
     time = get_sim_time("ns")
     dut._log.info("Time at start of test = %d", time)
     for i in range(100):
@@ -75,7 +75,7 @@ async def test_time_in_bridge(dut):
         await cocotb.bridge(print_sim_time)(dut, time)
 
     time_now = get_sim_time("ns")
-    await Timer(10, units="ns")
+    await Timer(10, unit="ns")
 
     assert time == time_now
 
@@ -96,8 +96,8 @@ async def test_time_in_resume(dut):
     def wait_cycles_wrapper(dut, n):
         return wait_cycles(dut, n)
 
-    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
-    await Timer(10, units="ns")
+    cocotb.start_soon(Clock(dut.clk, 100, unit="ns").start())
+    await Timer(10, unit="ns")
     for n in range(5):
         for i in range(20):
             await RisingEdge(dut.clk)
@@ -118,11 +118,11 @@ async def test_blocking_function_call_return(dut):
         count = 0
         while True:
             await RisingEdge(dut.clk)
-            await Timer(1000, units="ns")
+            await Timer(1000, unit="ns")
             count += 1
 
     cocotb.start_soon(clock_monitor(dut))
-    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, unit="ns").start())
     value = await cocotb.bridge(return_two)(dut)
     assert value == 2
 
@@ -159,7 +159,7 @@ async def test_resume_from_readonly(dut):
     Test that @cocotb.bridge functions that call @cocotb.resumes that await Triggers
     can be called from ReadOnly state
     """
-    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, unit="ns").start())
 
     await ReadOnly()
     dut._log.info("In readonly")
@@ -174,7 +174,7 @@ async def test_resume_that_awaits(dut):
     awaits Triggers and return values back through to
     the test
     """
-    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, unit="ns").start())
 
     value = await cocotb.bridge(calls_cocotb_resume)(dut)
     assert value == 2
@@ -187,12 +187,12 @@ async def test_await_after_bridge(dut):
     from @cocotb.bridge functions that call @cocotb.resumes that consume
     simulation time
     """
-    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, unit="ns").start())
 
     value = await cocotb.bridge(calls_cocotb_resume)(dut)
     assert value == 2
 
-    await Timer(10, units="ns")
+    await Timer(10, unit="ns")
     await RisingEdge(dut.clk)
 
 
@@ -211,7 +211,7 @@ async def test_bridge_from_start_soon(dut):
         value = await cocotb.bridge(return_two)(dut)
         return value
 
-    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, unit="ns").start())
 
     coro1 = cocotb.start_soon(run_function(dut))
     value = await coro1
@@ -304,7 +304,7 @@ async def test_resume_from_weird_thread_fails(dut):
     async def func():
         nonlocal func_started
         func_started = True
-        await Timer(10, units="ns")
+        await Timer(10, unit="ns")
 
     def function_caller():
         nonlocal raised
@@ -324,7 +324,7 @@ async def test_resume_from_weird_thread_fails(dut):
 
     task = cocotb.start_soon(ext())
 
-    await Timer(20, units="ns")
+    await Timer(20, unit="ns")
 
     assert caller_resumed, "Caller was never resumed"
     assert not func_started, "Function should never have started"
@@ -342,7 +342,7 @@ async def test_resume_called_in_parallel(dut):
 
     @cocotb.resume
     async def function(x):
-        await Timer(1, units="ns")
+        await Timer(1, unit="ns")
         return x
 
     @cocotb.bridge

@@ -124,7 +124,7 @@ class Test:
             Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
 
         timeout_unit:
-            Units of ``timeout_time``, accepts any units that :class:`~cocotb.triggers.Timer` does.
+            Unit of ``timeout_time``, accepts any unit that :class:`~cocotb.triggers.Timer` does.
 
         expect_fail:
             If ``True`` and the test fails a functional check via an :keyword:`assert` statement, :func:`pytest.raises`,
