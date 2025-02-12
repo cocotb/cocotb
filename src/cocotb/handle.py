@@ -48,9 +48,9 @@ from typing import (
     cast,
 )
 
-import cocotb.triggers
 from cocotb import simulator
 from cocotb._deprecation import deprecated
+from cocotb._gpi_triggers import FallingEdge, RisingEdge, ValueChange
 from cocotb._py_compat import cached_property
 from cocotb._utils import cached_method
 from cocotb.types import Array, Logic, LogicArray, Range
@@ -863,9 +863,9 @@ class NonArrayValueObject(ValueObjectBase[ValuePropertyT, ValueSetT]):
     """
 
     @cached_property
-    def value_change(self) -> cocotb.triggers.ValueChange:
+    def value_change(self) -> ValueChange:
         """A trigger which fires whenever the value changes."""
-        return cocotb.triggers.ValueChange._make(self)
+        return ValueChange._make(self)
 
 
 class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
@@ -940,14 +940,14 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
         self.set(value)
 
     @cached_property
-    def rising_edge(self) -> cocotb.triggers.RisingEdge:
+    def rising_edge(self) -> RisingEdge:
         """A trigger which fires whenever the value changes to a ``1``."""
-        return cocotb.triggers.RisingEdge._make(self)
+        return RisingEdge._make(self)
 
     @cached_property
-    def falling_edge(self) -> cocotb.triggers.FallingEdge:
+    def falling_edge(self) -> FallingEdge:
         """A trigger which fires whenever the value changes to a ``0``."""
-        return cocotb.triggers.FallingEdge._make(self)
+        return FallingEdge._make(self)
 
     @deprecated(
         "`len(handle)` of scalar objects is redundant. This method will be removed."

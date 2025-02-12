@@ -10,7 +10,8 @@ import re
 import pytest
 
 import cocotb
-from cocotb.triggers import Combine, First, Lock, NullTrigger, Timer, _InternalEvent
+from cocotb._base_triggers import _InternalEvent
+from cocotb.triggers import Combine, First, Lock, NullTrigger, Timer
 from cocotb.utils import get_sim_time
 
 
