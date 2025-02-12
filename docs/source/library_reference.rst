@@ -39,7 +39,7 @@ Python Test Runner
 
 .. autodoc2-object:: cocotb_tools.runner.Verilog
 
-.. autodata:: MAX_PARALLEL_BUILD_JOBS
+.. autodoc2-object:: MAX_PARALLEL_BUILD_JOBS
 
 Simulator Runners
 -----------------
@@ -82,14 +82,14 @@ Writing and Generating Tests
 
 .. autodoc2-object:: cocotb.test
 
-.. autofunction:: cocotb.parametrize
+.. autodoc2-object:: cocotb.parametrize
 
 .. autodoc2-object:: cocotb.regression.TestFactory
 ..
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.result.TestSuccess
+.. autodoc2-object:: cocotb.result.TestSuccess
 
 Interacting with the Simulator
 ==============================
@@ -142,9 +142,9 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
     :members:
     :inherited-members:
 
-.. autoclass:: cocotb.types.logic_array.ResolveX
+.. autodoc2-object:: cocotb.types.logic_array.ResolveX
 
-.. autodata:: cocotb.types.logic_array.RESOLVE_X
+.. autodoc2-object:: cocotb.types.logic_array.RESOLVE_X
 
 
 Triggers
@@ -160,13 +160,13 @@ Simulator Triggers
 Edge Triggers
 ^^^^^^^^^^^^^
 
-.. autoclass:: cocotb.triggers.ValueChange
+.. autodoc2-object:: cocotb.triggers.ValueChange
 
-.. autoclass:: cocotb.triggers.Edge
+.. autodoc2-object:: cocotb.triggers.Edge
 
-.. autoclass:: cocotb.triggers.RisingEdge
+.. autodoc2-object:: cocotb.triggers.RisingEdge
 
-.. autoclass:: cocotb.triggers.FallingEdge
+.. autodoc2-object:: cocotb.triggers.FallingEdge
 
 .. autodoc2-object:: cocotb.triggers.ClockCycles
 
@@ -194,9 +194,10 @@ Python Triggers
 
 .. autodoc2-object:: cocotb.triggers.First
 
-.. autofunction:: cocotb.triggers.Join
+.. autodoc2-object:: cocotb.triggers.Join
 
-.. autoclass:: cocotb.triggers.TaskComplete
+.. autodoc2-object:: cocotb.triggers.TaskComplete
+..
     :members:
 
 
@@ -216,9 +217,9 @@ They are used to synchronize coroutines with each other.
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.SimTimeoutError
+.. autodoc2-object:: cocotb.triggers.SimTimeoutError
 
-.. autofunction:: cocotb.triggers.with_timeout
+.. autodoc2-object:: cocotb.triggers.with_timeout
 
 
 Triggers (Internals)
@@ -259,7 +260,10 @@ Clock Driver
 Asynchronous Queues
 -------------------
 
-.. autodoc2-object:: cocotb.queue
+..
+    FIXME: does not have an __all__: https://sphinx-autodoc2.readthedocs.io/en/stable/quickstart.html#documenting-only-the-public-api-via-all
+   .. autodoc2-object:: cocotb.queue
+
 ..
     :members:
     :member-order: bysource
@@ -269,7 +273,9 @@ Asynchronous Queues
 Simulation Time Utilities
 =========================
 
-.. autodoc2-object:: cocotb.utils
+..
+    FIXME: does not have an __all__: https://sphinx-autodoc2.readthedocs.io/en/stable/quickstart.html#documenting-only-the-public-api-via-all
+    .. autodoc2-object:: cocotb.utils
 ..
     :members:
     :member-order: bysource
@@ -322,7 +328,9 @@ Simulation Object Handles
 
 .. currentmodule:: cocotb.handle
 
-.. autodoc2-object:: cocotb.handle
+..
+    FIXME: does not have an __all__: https://sphinx-autodoc2.readthedocs.io/en/stable/quickstart.html#documenting-only-the-public-api-via-all
+    .. autodoc2-object:: cocotb.handle
 ..
     :members:
     :member-order: bysource
@@ -448,7 +456,10 @@ This module is a Python wrapper to libgpi.
 It should not be considered public API, but is documented here for developers
 of cocotb.
 
-.. automodule:: cocotb.simulator
+..
+    FIXME: does not have an __all__: https://sphinx-autodoc2.readthedocs.io/en/stable/quickstart.html#documenting-only-the-public-api-via-all
+    .. autodoc2-object:: cocotb.simulator
+..
     :members:
     :undoc-members:
     :member-order: bysource
