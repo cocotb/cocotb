@@ -941,19 +941,28 @@ int VhpiTimedCbHdl::cleanup_callback() {
 
 VhpiReadWriteCbHdl::VhpiReadWriteCbHdl(GpiImplInterface *impl)
     : GpiCbHdl(impl), VhpiCbHdl(impl) {
-    cb_data.reason = vhpiCbRepLastKnownDeltaCycle;
+    vhpi_time.high = 0;
+    vhpi_time.low = 0;
+
+    cb_data.reason = vhpiCbLastKnownDeltaCycle;
     cb_data.time = &vhpi_time;
 }
 
 VhpiReadOnlyCbHdl::VhpiReadOnlyCbHdl(GpiImplInterface *impl)
     : GpiCbHdl(impl), VhpiCbHdl(impl) {
-    cb_data.reason = vhpiCbRepEndOfTimeStep;
+    vhpi_time.high = 0;
+    vhpi_time.low = 0;
+
+    cb_data.reason = vhpiCbEndOfTimeStep;
     cb_data.time = &vhpi_time;
 }
 
 VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl)
     : GpiCbHdl(impl), VhpiCbHdl(impl) {
-    cb_data.reason = vhpiCbRepNextTimeStep;
+    vhpi_time.high = 0;
+    vhpi_time.low = 0;
+
+    cb_data.reason = vhpiCbNextTimeStep;
     cb_data.time = &vhpi_time;
 }
 
