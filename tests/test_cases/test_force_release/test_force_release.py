@@ -205,7 +205,7 @@ async def test_apply_force(dut) -> None:
     dut.stream_out_data_comb.value = Release()
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_fail=not SIM_NAME.startswith(("verilator", "nvc")))
 async def test_force_released(dut) -> None:
     """Ensure the Force is no longer applied."""
     dut.stream_in_data.value = 4
