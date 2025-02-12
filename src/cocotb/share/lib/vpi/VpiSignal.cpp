@@ -211,18 +211,7 @@ int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s,
 
     switch (action) {
         case GPI_DEPOSIT:
-#if defined(MODELSIM) || defined(IUS)
-            // Xcelium and Questa do not like setting string variables using
-            // vpiInertialDelay.
-            if (vpiStringVar ==
-                vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>())) {
-                vpi_put_flag = vpiNoDelay;
-            } else {
-                vpi_put_flag = vpiInertialDelay;
-            }
-#else
             vpi_put_flag = vpiInertialDelay;
-#endif
             break;
         case GPI_FORCE:
             vpi_put_flag = vpiForceFlag;
