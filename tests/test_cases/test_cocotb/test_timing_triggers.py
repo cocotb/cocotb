@@ -338,7 +338,7 @@ async def test_readonly_in_readonly(_) -> None:
         await ReadOnly()
 
 
-@cocotb.test
+@cocotb.test(skip=SIM_NAME.startswith("modelsim"))
 async def test_next_time_step(_) -> None:
     """Test Timer causes NextTimeStep to wake up after Timer fires."""
 
