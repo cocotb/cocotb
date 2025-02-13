@@ -118,7 +118,7 @@ GPI_EXPORT bool gpi_has_registered_impl(void);
 GPI_EXPORT void gpi_sim_end(void);
 
 /**
- * Return simulation time as two uints. Units are default sim units.
+ * Return simulation time as two uints. Unit is the default sim unit.
  */
 GPI_EXPORT void gpi_get_sim_time(uint32_t *high, uint32_t *low);
 GPI_EXPORT void gpi_get_sim_precision(int32_t *precision);

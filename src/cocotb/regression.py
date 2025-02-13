@@ -64,6 +64,7 @@ import cocotb._write_scheduler
 from cocotb import _ANSI, simulator
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome
+from cocotb._typing import TimeUnit
 from cocotb._utils import (
     DocEnum,
     remove_traceback_frames,
@@ -124,7 +125,7 @@ class Test:
             Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
 
         timeout_unit:
-            Units of ``timeout_time``, accepts any units that :class:`~cocotb.triggers.Timer` does.
+            Unit of ``timeout_time``, accepts any unit that :class:`~cocotb.triggers.Timer` does.
 
         expect_fail:
             If ``True`` and the test fails a functional check via an :keyword:`assert` statement, :func:`pytest.raises`,
@@ -151,7 +152,7 @@ class Test:
         module: Optional[str] = None,
         doc: Optional[str] = None,
         timeout_time: Optional[float] = None,
-        timeout_unit: str = "step",
+        timeout_unit: TimeUnit = "step",
         expect_fail: bool = False,
         expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
         skip: bool = False,
@@ -1115,7 +1116,7 @@ class TestFactory(Generic[F]):
         stacklevel: int = 0,
         name: Optional[str] = None,
         timeout_time: Optional[float] = None,
-        timeout_unit: str = "steps",
+        timeout_unit: TimeUnit = "step",
         expect_fail: bool = False,
         expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
         skip: bool = False,

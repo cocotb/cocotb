@@ -12,7 +12,7 @@ from cocotb.triggers import RisingEdge
 @cocotb.test()
 async def clk_in_coroutine(dut):
     dut.d.value = 0
-    clock = Clock(dut.clk, 10, units="us")
+    clock = Clock(dut.clk, 10, unit="us")
     cocotb.start_soon(clock.start(start_high=False))
     await RisingEdge(dut.clk)
     for _ in range(3):

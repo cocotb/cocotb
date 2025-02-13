@@ -313,7 +313,7 @@ async def test_both_edge_triggers(dut):
 
     rising_coro = cocotb.start_soon(wait_rising_edge())
     falling_coro = cocotb.start_soon(wait_falling_edge())
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await Combine(rising_coro, falling_coro)
 
 

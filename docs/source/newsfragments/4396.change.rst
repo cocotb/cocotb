@@ -1,1 +1,1 @@
-The attribute ``frequency`` on :class:`~cocotb.clock.Clock` was removed, and the attribute :attr:`~cocotb.clock.Clock.period` was changed to be in terms of the passed-in units rather than simulation steps.
+The attribute ``frequency`` on :class:`~cocotb.clock.Clock` was removed, and the attribute :attr:`~cocotb.clock.Clock.period` was changed to be in terms of the passed-in unit rather than simulation steps.

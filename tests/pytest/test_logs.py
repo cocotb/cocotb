@@ -31,7 +31,7 @@ sim = os.getenv("SIM", "icarus")
 
 @cocotb.test()
 async def clock_design(dut):
-    clock = Clock(dut.clk, 10, units="us")
+    clock = Clock(dut.clk, 10, unit="us")
     cocotb.start_soon(clock.start())
     await ClockCycles(dut.clk, 10)
 

@@ -84,17 +84,17 @@ async def test_first_does_not_kill(dut):
 
     async def coro():
         nonlocal ran
-        await Timer(2, units="ns")
+        await Timer(2, unit="ns")
         ran = True
 
     # Coroutine runs for 2ns, so we expect the timer to fire first
-    timer = Timer(1, units="ns")
+    timer = Timer(1, unit="ns")
     t = await First(timer, cocotb.start_soon(coro()))
     assert t is timer
     assert not ran
 
     # the background routine is still running, but should finish after 1ns
-    await Timer(2, units="ns")
+    await Timer(2, unit="ns")
 
     assert ran
 
@@ -156,17 +156,17 @@ async def test_event_is_set(dut):
 @cocotb.test()
 async def test_combine_start_soon(_):
     async def coro(delay):
-        start_time = get_sim_time(units="ns")
+        start_time = get_sim_time(unit="ns")
         await Timer(delay, "ns")
-        assert get_sim_time(units="ns") == start_time + delay
+        assert get_sim_time(unit="ns") == start_time + delay
 
     max_delay = 10
 
     tasks = [cocotb.start_soon(coro(d)) for d in range(1, max_delay + 1)]
 
-    test_start = get_sim_time(units="ns")
+    test_start = get_sim_time(unit="ns")
     await Combine(*tasks)
-    assert get_sim_time(units="ns") == test_start + max_delay
+    assert get_sim_time(unit="ns") == test_start + max_delay
 
 
 @cocotb.test()

@@ -213,7 +213,7 @@ class Task(Generic[ResultType]):
         .. code-block:: python
 
             async def coro_inner():
-                await Timer(1, units="ns")
+                await Timer(1, unit="ns")
                 return "Hello world"
 
 
@@ -226,7 +226,7 @@ class Task(Generic[ResultType]):
             the result of which will be the result of the Task.
 
         .. deprecated:: 2.0
-            Using ``task`` directly is prefered to ``task.join()`` in all situations where the latter could be used.
+            Using ``task`` directly is preferred to ``task.join()`` in all situations where the latter could be used.
         """
         return self
 

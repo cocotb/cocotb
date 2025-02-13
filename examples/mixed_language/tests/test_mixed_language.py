@@ -25,7 +25,7 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 )
 async def mixed_language_accessing_test(dut):
     """Try accessing handles and setting values in a mixed language environment."""
-    await Timer(100, units="ns")
+    await Timer(100, unit="ns")
 
     verilog = dut.i_swapper_sv
     dut._log.info(f"Got: {repr(verilog._name)}")
@@ -39,10 +39,10 @@ async def mixed_language_accessing_test(dut):
     dut._log.info(f"Got: {repr(vhdl._name)}")
 
     verilog.reset_n.value = 1
-    await Timer(100, units="ns")
+    await Timer(100, unit="ns")
 
     vhdl.reset_n.value = 1
-    await Timer(100, units="ns")
+    await Timer(100, unit="ns")
 
     assert verilog.reset_n.value == vhdl.reset_n.value, "reset_n signals were different"
 
@@ -61,7 +61,7 @@ async def mixed_language_accessing_test(dut):
 )
 async def mixed_language_functional_test(dut):
     """Try concurrent simulation of VHDL and Verilog and check the output."""
-    await Timer(100, units="ns")
+    await Timer(100, unit="ns")
 
     verilog = dut.i_swapper_sv
     dut._log.info(f"Got: {repr(verilog._name)}")
@@ -85,13 +85,13 @@ async def mixed_language_functional_test(dut):
     dut.csr_writedata.value = 0
 
     # reset cycle
-    await Timer(100, units="ns")
+    await Timer(100, unit="ns")
     dut.reset_n.value = 1
-    await Timer(100, units="ns")
+    await Timer(100, unit="ns")
 
     # start clock
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-    await Timer(500, units="ns")
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
+    await Timer(500, unit="ns")
 
     previous_indata = 0
     # transmit some packets

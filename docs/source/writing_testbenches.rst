@@ -180,7 +180,7 @@ The following example shows these in action:
     # A coroutine
     async def reset_dut(reset_n, duration_ns):
         reset_n.value = 0
-        await Timer(duration_ns, units="ns")
+        await Timer(duration_ns, unit="ns")
         reset_n.value = 1
         reset_n._log.debug("Reset complete")
 
@@ -196,7 +196,7 @@ The following example shows these in action:
         reset_thread = cocotb.start_soon(reset_dut(reset_n, duration_ns=500))
 
         # This timer will complete before the timer in the concurrently executing "reset_thread"
-        await Timer(250, units="ns")
+        await Timer(250, unit="ns")
         dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
 
         # Wait for the other thread to complete
