@@ -833,7 +833,7 @@ class LogicArray(ArrayLike[Logic]):
 
     @overload
     def __setitem__(
-        self, item: slice, value: Iterable[LogicConstructibleT]
+        self, item: slice, value: Union[str, Iterable[LogicConstructibleT], int]
     ) -> None: ...
 
     def __setitem__(
@@ -859,13 +859,8 @@ class LogicArray(ArrayLike[Logic]):
                 raise IndexError(
                     f"slice [{start}:{stop}] direction does not match array direction [{self.left}:{self.right}]"
                 )
-            value_as_logics = [
-                Logic(v) for v in cast(Iterable[LogicConstructibleT], value)
-            ]
-            if len(value_as_logics) != (stop_i - start_i + 1):
-                raise ValueError(
-                    f"value of length {len(value_as_logics)!r} will not fit in slice [{start}:{stop}]"
-                )
+            value = cast(Union[str, Iterable[LogicConstructibleT], int], value)
+            value_as_logics = LogicArray(value, stop_i - start_i + 1)
             array[start_i : stop_i + 1] = value_as_logics
         else:
             raise TypeError(

@@ -321,6 +321,8 @@ def test_slicing():
     assert b == LogicArray("10XXU")
     a[3:0] = "ZZZZ"
     assert a == LogicArray("0110ZZZZ")
+    a[7:4] = 0b1010
+    assert a == LogicArray("1010ZZZZ")
 
 
 def test_slicing_infered_start_stop():
@@ -347,7 +349,7 @@ def test_slice_direction_mismatch():
 
 def test_set_slice_wrong_length():
     a = LogicArray("XXXXXX")
-    with pytest.raises(ValueError):
+    with pytest.raises(OverflowError):
         a[4:2] = "0000000000000"
 
 
