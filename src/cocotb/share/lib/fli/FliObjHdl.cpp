@@ -27,8 +27,8 @@
 
 #include <bitset>
 #include <cmath>
+#include <cstring>
 #include <string>
-#include <vector>
 
 #include "FliImpl.h"
 #include "_vendor/fli/acc_vhdl.h"
@@ -38,15 +38,23 @@ using std::abs;
 using std::to_string;
 
 GpiCbHdl *FliSignalObjHdl::register_value_change_callback(
-    gpi_edge edge, int (*function)(void *), void *cb_data) {
+    gpi_edge edge, int (*cb_func)(void *), void *cb_data) {
     if (m_is_var) {
         return NULL;
     }
-    FliSignalCbHdl *cb = new FliSignalCbHdl(m_impl, this, edge);
-    if (cb->arm_callback()) {
+    // TODO The dynamic cast here is a good reason to not declare members in
+    // base classes.
+    auto &cache = dynamic_cast<FliImpl *>(m_impl)->m_value_change_cache;
+    auto cb = cache.acquire();
+    cb->set_signal_and_edge(this, edge);
+    auto err = cb->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        cache.release(cb);
         return NULL;
     }
-    cb->set_user_data(function, cb_data);
+    // LCOV_EXCL_STOP
+    cb->set_cb_info(cb_func, cb_data);
     return cb;
 }
 

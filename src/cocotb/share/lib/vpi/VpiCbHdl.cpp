@@ -27,13 +27,59 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <assert.h>
-
-#include <stdexcept>
-
 #include "VpiImpl.h"
+#include "gpi_logging.h"
 
-extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
+#ifndef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
+#include <algorithm>
+#include <deque>
+
+static std::deque<GpiCbHdl *> cb_queue;
+#endif
+
+static int32_t handle_vpi_callback_(GpiCbHdl *cb_hdl) {
+    gpi_to_user();
+
+    // LCOV_EXCL_START
+    if (!cb_hdl) {
+        LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
+        gpi_embed_end();
+        return -1;
+    }
+    // LCOV_EXCL_STOP
+
+    cb_hdl->run();
+
+    gpi_to_simulator();
+    return 0;
+}
+
+// Main re-entry point for callbacks from simulator
+int32_t handle_vpi_callback(p_cb_data cb_data) {
+#ifdef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
+    VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
+    return handle_vpi_callback_(cb_hdl);
+#else
+    // must push things into a queue because Icaurus (gh-4067), Xcelium
+    // (gh-4013), and Questa (gh-4105) react to value changes on signals that
+    // are set with vpiNoDelay immediately, and not after the current callback
+    // has ended, causing re-entrancy.
+    static bool reacting = false;
+    VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
+    if (reacting) {
+        cb_queue.push_back(cb_hdl);
+        return 0;
+    }
+    reacting = true;
+    int32_t ret = handle_vpi_callback_(cb_hdl);
+    while (!cb_queue.empty()) {
+        handle_vpi_callback_(cb_queue.front());
+        cb_queue.pop_front();
+    }
+    reacting = false;
+    return ret;
+#endif
+}
 
 VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {
     vpi_time.high = 0;
@@ -49,23 +95,7 @@ VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {
     cb_data.user_data = (char *)this;
 }
 
-/* If the user data already has a callback handle then deregister
- * before getting the new one
- */
-int VpiCbHdl::arm_callback() {
-    if (m_state == GPI_PRIMED) {
-        fprintf(stderr, "Attempt to prime an already primed trigger for %s!\n",
-                m_impl->reason_to_string(cb_data.reason));
-    }
-
-    // Only a problem if we have not been asked to deregister and register
-    // in the same simulation callback
-    if (m_obj_hdl != NULL && m_state != GPI_DELETE) {
-        fprintf(stderr, "We seem to already be registered, deregistering %s!\n",
-                m_impl->reason_to_string(cb_data.reason));
-        cleanup_callback();
-    }
-
+int VpiCbHdl::arm() {
     vpiHandle new_hdl = vpi_register_cb(&cb_data);
 
     if (!new_hdl) {
@@ -74,9 +104,6 @@ int VpiCbHdl::arm_callback() {
             m_impl->reason_to_string(cb_data.reason), cb_data.reason);
         check_vpi_error();
         return -1;
-
-    } else {
-        m_state = GPI_PRIMED;
     }
 
     m_obj_hdl = new_hdl;
@@ -84,44 +111,71 @@ int VpiCbHdl::arm_callback() {
     return 0;
 }
 
-int VpiCbHdl::cleanup_callback() {
-    if (m_state == GPI_FREE) return 0;
-
-    /* If the one-time callback has not come back then
-     * remove it, it is has then free it. The remove is done
-     * internally */
-
-    if (m_state == GPI_PRIMED) {
-        if (!m_obj_hdl) {
-            LOG_ERROR("VPI: passed a NULL pointer");
-            return -1;
-        }
-
-        if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
-            LOG_ERROR("VPI: unable to remove callback");
-            return -1;
-        }
-
-        check_vpi_error();
-    } else {
-#ifndef MODELSIM
-        /* This is disabled for now, causes a small leak going to put back in */
-        if (!(vpi_free_object(get_handle<vpiHandle>()))) {
-            LOG_ERROR("VPI: unable to free handle");
-            return -1;
-        }
+int VpiCbHdl::remove() {
+#ifndef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
+    // check if it's already fired and is in callback queue
+    auto it = std::find(cb_queue.begin(), cb_queue.end(), this);
+    if (it != cb_queue.end()) {
+        cb_queue.erase(it);
+        // In Verilator some callbacks are recurring, so we *should* try to
+        // remove by falling through to the code below. Other sims don't like
+        // removing callbacks that have already fired.
+#ifndef VERILATOR
+        // It's already fired, we shouldn't try to vpi_remove_cb() it now.
+        delete this;
+        return 0;
 #endif
     }
+#endif
 
-    m_obj_hdl = NULL;
-    m_state = GPI_FREE;
+    auto err = vpi_remove_cb(get_handle<vpiHandle>());
+    // LCOV_EXCL_START
+    if (!err) {
+        LOG_WARN("VPI: Unable to remove callback");
+        check_vpi_error();
+        // put it in a removed state so if it fires we can squash it
+        m_removed = true;
+    }
+    // LCOV_EXCL_STOP
+    else {
+        delete this;
+    }
+    return 0;
+}
+
+int VpiCbHdl::run() {
+    // LCOV_EXCL_START
+    if (!m_removed) {
+        // Only call up if not removed.
+        m_cb_func(m_cb_data);
+    }
+    // LCOV_EXCL_STOP
+
+// Verilator seems to think some callbacks are recurring that Icarus and other
+// sims do not. So we remove all callbacks here after firing because Verilator
+// doesn't seem to mind (other sims do).
+#ifdef VERILATOR
+    // Remove recurring callback once fired
+    auto err = vpi_remove_cb(get_handle<vpiHandle>());
+    // LCOV_EXCL_START
+    if (!err) {
+        LOG_WARN("VPI: Unable to remove callback");
+        check_vpi_error();
+        // put it in a removed state so if it fires we can squash it
+        m_removed = true;
+    }
+    // LCOV_EXCL_STOP
+    else {
+        delete this;
+    }
+#endif
 
     return 0;
 }
 
-VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig,
+VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *signal,
                              gpi_edge edge)
-    : GpiCbHdl(impl), VpiCbHdl(impl), GpiValueCbHdl(impl, sig, edge) {
+    : VpiCbHdl(impl), m_signal(signal), m_edge(edge) {
     vpi_time.type = vpiSuppressTime;
     m_vpi_value.format = vpiIntVal;
 
@@ -131,23 +185,53 @@ VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig,
     cb_data.obj = m_signal->get_handle<vpiHandle>();
 }
 
-int VpiValueCbHdl::cleanup_callback() {
-    if (m_state == GPI_FREE) return 0;
+int VpiValueCbHdl::run() {
+    // LCOV_EXCL_START
+    if (m_removed) {
+        // Only call up if not removed.
+        return 0;
+    }
+    // LCOV_EXCL_STOP
 
-    /* This is a recurring callback so just remove when
-     * not wanted */
-    if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
-        LOG_ERROR("VPI: unable to remove callback");
-        return -1;
+    bool pass = false;
+    switch (m_edge) {
+        case GPI_RISING: {
+            pass = !strcmp(m_signal->get_signal_value_binstr(), "1");
+            break;
+        }
+        case GPI_FALLING: {
+            pass = !strcmp(m_signal->get_signal_value_binstr(), "0");
+            break;
+        }
+        case GPI_VALUE_CHANGE: {
+            pass = true;
+            break;
+        }
     }
 
-    m_obj_hdl = NULL;
-    m_state = GPI_FREE;
+    if (pass) {
+        m_cb_func(m_cb_data);
+
+        // Remove recurring callback once fired.
+        auto err = vpi_remove_cb(get_handle<vpiHandle>());
+        // LCOV_EXCL_START
+        if (!err) {
+            LOG_WARN("VPI: Unable to remove callback");
+            check_vpi_error();
+            // If we fail to remove the callback, put it in a removed state so
+            // if it fires we can squash it.
+            m_removed = true;
+        }
+        // LCOV_EXCL_STOP
+        else {
+            delete this;
+        }
+    }  // else Don't remove and let it fire again.
+
     return 0;
 }
 
-VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VpiCbHdl(impl) {
+VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl) {
 #ifndef IUS
     cb_data.reason = cbStartOfSimulation;
 #else
@@ -158,32 +242,12 @@ VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl)
 #endif
 }
 
-int VpiStartupCbHdl::run_callback() {
-    s_vpi_vlog_info info;
-
-    if (!vpi_get_vlog_info(&info)) {
-        LOG_WARN("Unable to get argv and argc from simulator");
-        info.argc = 0;
-        info.argv = nullptr;
-    }
-
-    gpi_embed_init(info.argc, info.argv);
-
-    return 0;
-}
-
-VpiShutdownCbHdl::VpiShutdownCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VpiCbHdl(impl) {
+VpiShutdownCbHdl::VpiShutdownCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl) {
     cb_data.reason = cbEndOfSimulation;
 }
 
-int VpiShutdownCbHdl::run_callback() {
-    gpi_embed_end();
-    return 0;
-}
-
 VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time)
-    : GpiCbHdl(impl), VpiCbHdl(impl) {
+    : VpiCbHdl(impl) {
     vpi_time.high = (uint32_t)(time >> 32);
     vpi_time.low = (uint32_t)(time);
     vpi_time.type = vpiSimTime;
@@ -191,36 +255,14 @@ VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time)
     cb_data.reason = cbAfterDelay;
 }
 
-int VpiTimedCbHdl::cleanup_callback() {
-    switch (m_state) {
-        case GPI_PRIMED:
-            /* Issue #188: Work around for modelsim that is harmless to others
-               too, we tag the time as delete, let it fire then do not pass up
-               */
-            LOG_DEBUG("Not removing PRIMED timer %d", vpi_time.low);
-            set_call_state(GPI_DELETE);
-            return 0;
-        case GPI_DELETE:
-            LOG_DEBUG("Removing DELETE timer %d", vpi_time.low);
-        default:
-            break;
-    }
-    VpiCbHdl::cleanup_callback();
-    /* Return one so we delete this object */
-    return 1;
-}
-
-VpiReadWriteCbHdl::VpiReadWriteCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VpiCbHdl(impl) {
+VpiReadWriteCbHdl::VpiReadWriteCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl) {
     cb_data.reason = cbReadWriteSynch;
 }
 
-VpiReadOnlyCbHdl::VpiReadOnlyCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VpiCbHdl(impl) {
+VpiReadOnlyCbHdl::VpiReadOnlyCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl) {
     cb_data.reason = cbReadOnlySynch;
 }
 
-VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VpiCbHdl(impl) {
+VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl) {
     cb_data.reason = cbNextSimTime;
 }

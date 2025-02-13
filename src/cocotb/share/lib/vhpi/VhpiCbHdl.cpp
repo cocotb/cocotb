@@ -25,20 +25,37 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <assert.h>
-
+#include <cassert>
 #include <cinttypes>  // fixed-size int types and format strings
-#include <limits>     // numeric_limits
+#include <cstring>
+#include <limits>  // numeric_limits
 #include <stdexcept>
 
 #include "VhpiImpl.h"
-#include "gpi.h"
+#include "_vendor/vhpi/vhpi_user.h"
 
 namespace {
 using bufSize_type = decltype(vhpiValueT::bufSize);
 }
 
-extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
+// Main entry point for callbacks from simulator
+void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
+    gpi_to_user();
+
+    VhpiCbHdl *cb_hdl = (VhpiCbHdl *)cb_data->user_data;
+
+    // LCOV_EXCL_START
+    if (!cb_hdl) {
+        LOG_CRITICAL("VHPI: Callback data corrupted: ABORTING");
+        gpi_embed_end();
+        return;
+    }
+    // LCOV_EXCL_STOP
+
+    cb_hdl->run();
+
+    gpi_to_simulator();
+}
 
 VhpiArrayObjHdl::~VhpiArrayObjHdl() {
     LOG_DEBUG("VHPI: Releasing VhpiArrayObjHdl handle for %s at %p",
@@ -434,70 +451,67 @@ VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {
     vhpi_time.low = 0;
 }
 
-int VhpiCbHdl::cleanup_callback() {
-    if (m_state == GPI_FREE) return 1;
-
-    vhpi_remove_cb(get_handle<vhpiHandleT>());
-
-    m_obj_hdl = NULL;
-    m_state = GPI_FREE;
+int VhpiCbHdl::remove() {
+    auto err = vhpi_remove_cb(get_handle<vhpiHandleT>());
+    // LCOV_EXCL_START
+    if (err) {
+        LOG_WARN("VHPI: Unable to remove callback!");
+        check_vhpi_error();
+        // If we fail to remove the callback, mark it as removed so once it
+        // fires we can squash it then remove the callback cleanly.
+        m_removed = true;
+    }
+    // LCOV_EXCL_STOP
+    else {
+        delete this;
+    }
     return 0;
 }
 
-int VhpiCbHdl::arm_callback() {
-    int ret = 0;
-    vhpiStateT cbState;
+int VhpiCbHdl::arm() {
+    vhpiHandleT new_hdl = vhpi_register_cb(&cb_data, vhpiReturnCb);
 
-    if (m_state == GPI_PRIMED) return 0;
-
-    /* Do we already have a handle? If so and it is disabled then
-       just re-enable it. */
-
-    if (get_handle<vhpiHandleT>()) {
-        cbState = (vhpiStateT)vhpi_get(vhpiStateP, get_handle<vhpiHandleT>());
-        if (vhpiDisable == cbState) {
-            if (vhpi_enable_cb(get_handle<vhpiHandleT>())) {
-                check_vhpi_error();
-                goto error;
-            }
-        }
-    } else {
-        vhpiHandleT new_hdl = vhpi_register_cb(&cb_data, vhpiReturnCb);
-
-        if (!new_hdl) {
-            check_vhpi_error();
-            LOG_ERROR(
-                "VHPI: Unable to register a callback handle for VHPI type "
-                "%s(%d)",
-                m_impl->reason_to_string(cb_data.reason), cb_data.reason);
-            goto error;
-        }
-
-        // don't cast to vhpiStateT immediately because vhpiUndefined is not in
-        // the enum
-        vhpiIntT cbState_raw = vhpi_get(vhpiStateP, new_hdl);
-        if ((vhpiIntT)vhpiUndefined == cbState_raw) {
-            LOG_ERROR(
-                "VHPI: Registered callback isn't enabled! Got "
-                "vhpiStateP=vhpiUndefined(%d)",
-                vhpiUndefined);
-            goto error;
-        } else if (vhpiEnable != (vhpiStateT)cbState_raw) {
-            LOG_ERROR(
-                "VHPI: Registered callback isn't enabled! Got vhpiStateP=%d",
-                (vhpiStateT)cbState_raw);
-            goto error;
-        }
-
-        m_obj_hdl = new_hdl;
+    // LCOV_EXCL_START
+    if (!new_hdl) {
+        check_vhpi_error();
+        LOG_ERROR(
+            "VHPI: Unable to register a callback handle for VHPI type "
+            "%s(%d)",
+            m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+        check_vhpi_error();
+        return -1;
     }
-    m_state = GPI_PRIMED;
+    // LCOV_EXCL_STOP
 
-    return ret;
+    m_obj_hdl = new_hdl;
+    return 0;
+}
 
-error:
-    m_state = GPI_FREE;
-    return -1;
+int VhpiCbHdl::run() {
+    // LCOV_EXCL_START
+    if (!m_removed) {
+        // Only call up if not removed.
+        m_cb_func(m_cb_data);
+    }
+    // LCOV_EXCL_STOP
+
+    // Many callbacks in VHPI are recurring, so we try to remove them after they
+    // fire. For the callbacks that aren't recurring, this doesn't seem to make
+    // the simulator unhappy, so whatever.
+    auto err = vhpi_remove_cb(get_handle<vhpiHandleT>());
+    // LCOV_EXCL_START
+    if (err) {
+        LOG_WARN("VHPI: Unable to remove callback!");
+        check_vhpi_error();
+        // If we fail to remove the callback, mark it as removed so if it fires
+        // we can squash it.
+        m_removed = true;
+    }
+    // LCOV_EXCL_STOP
+    else {
+        delete this;
+    }
+    return 0;
 }
 
 // Value related functions
@@ -857,71 +871,84 @@ long VhpiSignalObjHdl::get_signal_value_long() {
 }
 
 GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
-    gpi_edge edge, int (*function)(void *), void *cb_data) {
-    VhpiValueCbHdl *cb = new VhpiValueCbHdl(m_impl, this, edge);
-    cb->set_user_data(function, cb_data);
-    if (cb->arm_callback()) {
+    gpi_edge edge, int (*cb_func)(void *), void *cb_data) {
+    auto cb_hdl = new VhpiValueCbHdl(m_impl, this, edge);
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
         return NULL;
     }
-    return cb;
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
 VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig,
                                gpi_edge edge)
-    : GpiCbHdl(impl), VhpiCbHdl(impl), GpiValueCbHdl(impl, sig, edge) {
+    : VhpiCbHdl(impl), m_signal(sig), m_edge(edge) {
     cb_data.reason = vhpiCbValueChange;
     cb_data.time = &vhpi_time;
     cb_data.obj = m_signal->get_handle<vhpiHandleT>();
 }
 
-VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCbHdl(impl) {
+int VhpiValueCbHdl::run() {
+    // LCOV_EXCL_START
+    if (m_removed) {
+        // Only call up if not removed.
+        return 0;
+    }
+    // LCOV_EXCL_STOP
+
+    bool pass = false;
+    switch (m_edge) {
+        case GPI_RISING: {
+            pass = !strcmp(m_signal->get_signal_value_binstr(), "1");
+            break;
+        }
+        case GPI_FALLING: {
+            pass = !strcmp(m_signal->get_signal_value_binstr(), "0");
+            break;
+        }
+        case GPI_VALUE_CHANGE: {
+            pass = true;
+            break;
+        }
+    }
+
+    if (pass) {
+        m_cb_func(m_cb_data);
+
+        // Remove recurring callback once fired
+        auto err = vhpi_remove_cb(get_handle<vhpiHandleT>());
+        // LCOV_EXCL_START
+        if (err) {
+            LOG_WARN("VHPI: Unable to remove callback!");
+            check_vhpi_error();
+            // If we fail to remove the callback, mark it as removed so if it
+            // fires we can squash it.
+            m_removed = true;
+        }
+        // LCOV_EXCL_STOP
+        else {
+            delete this;
+        }
+
+    }  // else Don't remove and let it fire again.
+
+    return 0;
+}
+
+VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl) {
     cb_data.reason = vhpiCbStartOfSimulation;
 }
 
-int VhpiStartupCbHdl::run_callback() {
-    vhpiHandleT tool, argv_iter, argv_hdl;
-    char **tool_argv = NULL;
-    int tool_argc = 0;
-    int i = 0;
-
-    tool = vhpi_handle(vhpiTool, NULL);
-    if (tool) {
-        tool_argc = static_cast<int>(vhpi_get(vhpiArgcP, tool));
-        tool_argv = new char *[tool_argc];
-        assert(tool_argv);
-
-        argv_iter = vhpi_iterator(vhpiArgvs, tool);
-        if (argv_iter) {
-            while ((argv_hdl = vhpi_scan(argv_iter))) {
-                tool_argv[i] = const_cast<char *>(static_cast<const char *>(
-                    vhpi_get_str(vhpiStrValP, argv_hdl)));
-                i++;
-            }
-        }
-
-        vhpi_release_handle(tool);
-    }
-
-    gpi_embed_init(tool_argc, tool_argv);
-    delete[] tool_argv;
-
-    return 0;
-}
-
-VhpiShutdownCbHdl::VhpiShutdownCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCbHdl(impl) {
+VhpiShutdownCbHdl::VhpiShutdownCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl) {
     cb_data.reason = vhpiCbEndOfSimulation;
 }
 
-int VhpiShutdownCbHdl::run_callback() {
-    set_call_state(GPI_DELETE);
-    gpi_embed_end();
-    return 0;
-}
-
 VhpiTimedCbHdl::VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time)
-    : GpiCbHdl(impl), VhpiCbHdl(impl) {
+    : VhpiCbHdl(impl) {
     vhpi_time.high = (uint32_t)(time >> 32);
     vhpi_time.low = (uint32_t)(time);
 
@@ -929,30 +956,19 @@ VhpiTimedCbHdl::VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time)
     cb_data.time = &vhpi_time;
 }
 
-int VhpiTimedCbHdl::cleanup_callback() {
-    if (m_state == GPI_FREE) return 1;
-
-    vhpi_remove_cb(get_handle<vhpiHandleT>());
-
-    m_obj_hdl = NULL;
-    m_state = GPI_FREE;
-    return 0;
-}
-
 VhpiReadWriteCbHdl::VhpiReadWriteCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCbHdl(impl) {
+    : VhpiCbHdl(impl) {
     cb_data.reason = vhpiCbRepLastKnownDeltaCycle;
     cb_data.time = &vhpi_time;
 }
 
-VhpiReadOnlyCbHdl::VhpiReadOnlyCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCbHdl(impl) {
+VhpiReadOnlyCbHdl::VhpiReadOnlyCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl) {
     cb_data.reason = vhpiCbRepEndOfTimeStep;
     cb_data.time = &vhpi_time;
 }
 
 VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl)
-    : GpiCbHdl(impl), VhpiCbHdl(impl) {
+    : VhpiCbHdl(impl) {
     cb_data.reason = vhpiCbRepNextTimeStep;
     cb_data.time = &vhpi_time;
 }

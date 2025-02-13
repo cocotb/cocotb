@@ -29,14 +29,17 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
+#include <cassert>
 #include <cmath>
+#include <cstring>
 
-extern "C" {
-static VhpiCbHdl *sim_init_cb;
-static VhpiCbHdl *sim_finish_cb;
-static VhpiImpl *vhpi_table;
-}
+#include "_vendor/vhpi/vhpi_user.h"
+#include "gpi_logging.h"
+#include "vhpi_user_ext.h"
+
+#ifdef NVC
+#include <algorithm>
+#endif
 
 #define CASE_STR(_X) \
     case _X:         \
@@ -987,52 +990,75 @@ GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
 }
 
 GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time,
-                                            int (*function)(void *),
+                                            int (*cb_func)(void *),
                                             void *cb_data) {
-    VhpiTimedCbHdl *hdl = new VhpiTimedCbHdl(this, time);
+    auto *cb_hdl = new VhpiTimedCbHdl(this, time);
 
-    if (hdl->arm_callback()) {
-        delete (hdl);
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
         return NULL;
     }
-    hdl->set_user_data(function, cb_data);
-    return hdl;
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
-GpiCbHdl *VhpiImpl::register_readwrite_callback(int (*function)(void *),
+GpiCbHdl *VhpiImpl::register_readwrite_callback(int (*cb_func)(void *),
                                                 void *cb_data) {
-    if (m_read_write.arm_callback()) return NULL;
-    m_read_write.set_user_data(function, cb_data);
-    return &m_read_write;
+    auto *cb_hdl = new VhpiReadWriteCbHdl(this);
+
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
+        return NULL;
+    }
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
-GpiCbHdl *VhpiImpl::register_readonly_callback(int (*function)(void *),
+GpiCbHdl *VhpiImpl::register_readonly_callback(int (*cb_func)(void *),
                                                void *cb_data) {
-    if (m_read_only.arm_callback()) return NULL;
-    m_read_only.set_user_data(function, cb_data);
-    return &m_read_only;
+    auto *cb_hdl = new VhpiReadOnlyCbHdl(this);
+
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
+        return NULL;
+    }
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
-GpiCbHdl *VhpiImpl::register_nexttime_callback(int (*function)(void *),
+GpiCbHdl *VhpiImpl::register_nexttime_callback(int (*cb_func)(void *),
                                                void *cb_data) {
-    if (m_next_phase.arm_callback()) return NULL;
-    m_next_phase.set_user_data(function, cb_data);
-    return &m_next_phase;
-}
+    auto *cb_hdl = new VhpiNextPhaseCbHdl(this);
 
-int VhpiImpl::deregister_callback(GpiCbHdl *gpi_hdl) {
-    gpi_hdl->cleanup_callback();
-    return 0;
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
+        return NULL;
+    }
+    // LCOV_EXCL_START
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
 }
 
 void VhpiImpl::sim_end() {
-    // Some sims do not seem to be able to deregister the end of sim callback
-    // so we need to make sure we have tracked this and not call the handler.
-    if (sim_finish_cb->get_call_state() != GPI_DELETE) {
-        sim_finish_cb->set_call_state(GPI_DELETE);
-        vhpi_control(vhpiFinish, vhpiDiagTimeLoc);
+    m_sim_finish_cb->remove();
+    int err = vhpi_control(vhpiFinish, vhpiDiagTimeLoc);
+    // LCOV_EXCL_START
+    if (err) {
+        LOG_ERROR("VHPI: Failed to end simulation");
         check_vhpi_error();
     }
+    // LCOV_EXCL_STOP
 }
 
 bool VhpiImpl::compare_generate_labels(const std::string &a,
@@ -1043,68 +1069,90 @@ bool VhpiImpl::compare_generate_labels(const std::string &a,
     return compare_names(a.substr(0, a_idx), b.substr(0, b_idx));
 }
 
-extern "C" {
+static int startup_callback(void *) {
+    vhpiHandleT tool, argv_iter, argv_hdl;
+    char **tool_argv = NULL;
+    int tool_argc = 0;
+    int i = 0;
 
-// Main entry point for callbacks from simulator
-void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
-    gpi_to_user();
+    tool = vhpi_handle(vhpiTool, NULL);
+    if (tool) {
+        tool_argc = static_cast<int>(vhpi_get(vhpiArgcP, tool));
+        tool_argv = new char *[tool_argc];
+        assert(tool_argv);
 
-    VhpiCbHdl *cb_hdl = (VhpiCbHdl *)cb_data->user_data;
-
-    if (!cb_hdl) {
-        LOG_CRITICAL("VHPI: Callback data corrupted: ABORTING");
-        gpi_embed_end();
-        return;
-    }
-
-    gpi_cb_state_e old_state = cb_hdl->get_call_state();
-
-    if (old_state == GPI_PRIMED) {
-        cb_hdl->set_call_state(GPI_CALL);
-        cb_hdl->run_callback();
-
-        gpi_cb_state_e new_state = cb_hdl->get_call_state();
-
-        /* We have re-primed in the handler */
-        if (new_state != GPI_PRIMED)
-            if (cb_hdl->cleanup_callback()) {
-                delete cb_hdl;
+        argv_iter = vhpi_iterator(vhpiArgvs, tool);
+        if (argv_iter) {
+            while ((argv_hdl = vhpi_scan(argv_iter))) {
+                tool_argv[i] = const_cast<char *>(static_cast<const char *>(
+                    vhpi_get_str(vhpiStrValP, argv_hdl)));
+                i++;
             }
+        }
+
+        vhpi_release_handle(tool);
     }
 
-    gpi_to_simulator();
-};
+    gpi_embed_init(tool_argc, tool_argv);
+    delete[] tool_argv;
 
-static void register_initial_callback() {
-    sim_init_cb = new VhpiStartupCbHdl(vhpi_table);
-    sim_init_cb->arm_callback();
+    return 0;
 }
 
-static void register_final_callback() {
-    sim_finish_cb = new VhpiShutdownCbHdl(vhpi_table);
-    sim_finish_cb->arm_callback();
+static int shutdown_callback(void *) {
+    gpi_embed_end();
+    return 0;
+}
+
+void VhpiImpl::main() noexcept {
+    auto startup_cb = new VhpiStartupCbHdl(this);
+    auto err = startup_cb->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        LOG_CRITICAL(
+            "VHPI: Unable to register startup callback! Simulation will end.");
+        check_vhpi_error();
+        delete startup_cb;
+        exit(1);
+    }
+    // LCOV_EXCL_STOP
+    startup_cb->set_cb_info(startup_callback, nullptr);
+
+    auto shutdown_cb = new VhpiShutdownCbHdl(this);
+    err = shutdown_cb->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        LOG_CRITICAL(
+            "VHPI: Unable to register shutdown callback! Simulation will end.");
+        check_vhpi_error();
+        startup_cb->remove();
+        delete shutdown_cb;
+        exit(1);
+    }
+    // LCOV_EXCL_STOP
+    shutdown_cb->set_cb_info(shutdown_callback, nullptr);
+    m_sim_finish_cb = shutdown_cb;
+
+    gpi_register_impl(this);
+    gpi_entry_point();
+}
+
+static void vhpi_main() {
+    auto vhpi_table = new VhpiImpl("VHPI");
+    vhpi_table->main();
 }
 
 static void register_impl() {
-    vhpi_table = new VhpiImpl("VHPI");
+    auto vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
 }
 
 // pre-defined VHPI registration table
-COCOTBVHPI_EXPORT void (*vhpi_startup_routines[])() = {
-    register_impl, gpi_entry_point, register_initial_callback,
-    register_final_callback, nullptr};
+extern "C" {
+COCOTBVHPI_EXPORT void (*vhpi_startup_routines[])() = {vhpi_main, nullptr};
 
 // For non-VHPI compliant applications that cannot find vhpi_startup_routines
-COCOTBVHPI_EXPORT void vhpi_startup_routines_bootstrap() {
-    void (*routine)();
-    int i;
-    routine = vhpi_startup_routines[0];
-    for (i = 0, routine = vhpi_startup_routines[i]; routine;
-         routine = vhpi_startup_routines[++i]) {
-        routine();
-    }
-}
+COCOTBVHPI_EXPORT void vhpi_startup_routines_bootstrap() { vhpi_main(); }
 }
 
 GPI_ENTRY_POINT(cocotbvhpi, register_impl)
