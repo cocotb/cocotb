@@ -274,6 +274,9 @@ class Scheduler:
             if trigger is self._read_write:
                 cocotb._write_scheduler.apply_scheduled_writes()
 
+            # Increment GPI trigger counter to invalidate simulator values on handles.
+            cocotb._write_scheduler.current_timestamp += 1
+
             self._react(trigger)
             self._event_loop()
 

@@ -3,25 +3,30 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import os
 from collections import OrderedDict
-from typing import Any, Callable, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Sequence, Tuple, Union
 
 import cocotb
-import cocotb.handle
 import cocotb.task
 from cocotb.triggers import Event, ReadWrite
+
+if TYPE_CHECKING:
+    from cocotb.handle import ValueObjectBase
+
 
 trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 
 # A dictionary of pending (write_func, args), keyed by handle.
 # Writes are applied oldest to newest (least recently used).
 # Only the last scheduled write to a particular handle in a timestep is performed.
-_write_calls: "OrderedDict[cocotb.handle.SimHandleBase, Tuple[Callable[..., None], Sequence[Any]]]" = OrderedDict()
+_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[..., None], Sequence[Any]]]" = OrderedDict()
 
 # TODO don't use a task to force ReadWrite, just prime an empty callback
 
 _write_task: Union[cocotb.task.Task[None], None] = None
 
 _writes_pending = Event()
+
+current_timestamp: int = 0
 
 
 async def _do_writes() -> None:
@@ -56,7 +61,7 @@ def apply_scheduled_writes() -> None:
 if trust_inertial:
 
     def schedule_write(
-        handle: cocotb.handle.SimHandleBase,
+        handle: "ValueObjectBase[Any, Any]",
         write_func: Callable[..., None],
         args: Sequence[Any],
     ) -> None:
@@ -68,7 +73,7 @@ if trust_inertial:
 else:
 
     def schedule_write(
-        handle: cocotb.handle.SimHandleBase,
+        handle: "ValueObjectBase[Any, Any]",
         write_func: Callable[..., None],
         args: Sequence[Any],
     ) -> None:
