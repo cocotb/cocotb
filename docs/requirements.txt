@@ -14,3 +14,5 @@ towncrier
 IPython
 enum-tools[sphinx]
 sphinx-codeautolink
+myst-parser
+sphinx-autodoc2[cli]
