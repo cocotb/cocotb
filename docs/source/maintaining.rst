@@ -14,9 +14,11 @@ The ``type`` labels define the type of issue or PR:
 
 -  ``type:bug``: a bug in existing functionality
 -  ``type:feature``: new functionality
--  ``type:question``: a support question
 -  ``type:cleanup``: cleanup or refactoring on code, documentation, or other areas
 -  ``type:deprecation``: API that should warn and eventually be removed
+-  ``type:change``: an API breaking change that isn't a deprecation or removal
+-  ``type:backport``: a backport of another PR from master onto a stable branch
+-  ``type:task``: a generic label for anything that doesn't fall into the above
 
 The ``status`` labels give a quick impression of the current status of the issue or PR:
 
@@ -31,10 +33,18 @@ The ``status`` labels give a quick impression of the current status of the issue
 For the use in pull requests the following additional status labels are defined:
 
 -  ``status:needs-review``: this PR needs at least one review
--  ``status:changes-requested``: changes are requested to the code
 -  ``status:ready-for-merge``: this PR is ready (according to the `Patch Requirements <#patch-requirements>`__) to be merged
 -  ``status:needs-rebase``: needs a git rebase
 -  ``status:needs-newsfragment``: Needs a towncrier newsfragment for the changelog
+-  ``status:needs-test``: needs tests written
+-  ``status:needs-proprietary-testing``: needs testing the change in a simulator we don't have access to
+
+We occasionally find bugs in upstream projects, such as simulators, Python dependencies, CI tools, etc.
+The following labels are used for those issues.
+
+-  ``upstream``: marks the issue as being a issue with an upstream project
+-  ``status:needs-upstream-report``: the issue has been diagnosed as an upstream issue, but no upstream report has been filed
+-  ``status:upstream-report-filed``: the issue has been reported upstream
 
 The ``category`` labels help maintainers to filter issues which are relevant to their area of expertise:
 
@@ -56,17 +66,22 @@ The ``category`` labels help maintainers to filter issues which are relevant to 
 -  ``category:simulators:xcelium``: Cadence Xcelium
 -  ``category:codebase:gpi``: relating to the GPI or one of the implementation
 -  ``category:codebase:pygpi``: relating to the Python wrapper around the GPI (embed library and simulator module)
--  ``category:codebase:scheduler``: relating to the coroutine scheduler, triggers, or coroutine objects
--  ``category:codebase:test-runner``: relating to code for automating test runs (regression manager)
--  ``category:codebase:handle``: relating to handles or handle types (BinaryValue)
--  ``category:codebase:project-automation``: relating to included project automation (makefiles)
--  ``category:codebase:testbenching``: relating to testbenching components (Drivers, Monitors, etc.)
+-  ``category:codebase:scheduler``: relating to the coroutine scheduler
+-  ``category:codebase:triggers``: related to triggers
+-  ``category:codebase:tasks``: related to tasks or coroutines
+-  ``category:codebase:tests``: relating to code for automating test runs (regression manager)
+-  ``category:codebase:handle``: relating to handles
+-  ``category:codebase:types``: relating to modelling types
+-  ``category:codebase:project-automation``: relating to included project automation (makefiles, Python runner)
 -  ``category:building``: relating to build C/C++ libraries and extension modules
 -  ``category:packaging``: issues related to (PyPi) packaging, etc.
 -  ``category:docs``: documentation issues and fixes
 -  ``category:hardware-in-the-loop``: relating to real-life hardware (HIL)
 -  ``category:performance``: performance topics
--  ``category:tests-ci``: continuous integration and unit tests
+-  ``category:ci``: continuous integration and unit tests
+-  ``category:meta``: cocotb repo, maintainers, or community
+-  ``category:extensions``: cocotb extension modules
+-  ``category:debugging``: debugging features
 
 To help new contributors find a good issue to work on one more label is used (following `GitHub standard practices <#https://help.github.com/articles/helping-new-contributors-find-your-project-with-labels/>`__):
 
