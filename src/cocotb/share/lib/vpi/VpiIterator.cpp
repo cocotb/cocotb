@@ -214,16 +214,27 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
     // obj might not be a package since we are forced to iterate over all
     // vpiInstance due to a limitation in Questa so we keep searching until we
     // find one
+    // Check that an object has a non-NULL name during iteration, and pass over
+    // it if it does. This happens with xcelium.
+    std::string name;
     while (true) {
         obj = vpi_scan(m_iterator);
-        if (NULL == obj) return GpiIterator::END;
+        check_vpi_error();
+        if (obj == nullptr) return GpiIterator::END;
 
         PLI_INT32 type = vpi_get(vpiType, obj);
-        if (type == vpiPackage) break;
+        check_vpi_error();
+        if (type == vpiPackage) {
+            auto name_cstr = vpi_get_str(vpiName, obj);
+            check_vpi_error();
+            if (name_cstr != nullptr) {
+                name = name_cstr;
+                break;
+            }
+        }
     }
 
     VpiImpl *vpi_impl = reinterpret_cast<VpiImpl *>(m_impl);
-    std::string name = vpi_get_str(vpiName, obj);
     std::string fq_name = vpi_get_str(vpiFullName, obj);
     LOG_DEBUG("VPI: package found '%s' = '%s'", name.c_str(), fq_name.c_str());
     // '::' may or may not be included in the package vpiFullName:

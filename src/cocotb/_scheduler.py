@@ -314,7 +314,7 @@ class Scheduler:
         for task in scheduling:
             # unset trigger
             task._trigger = None
-            self._schedule_task(task)
+            self._schedule_task_internal(task)
 
         # cleanup trigger
         trigger._cleanup()
@@ -410,11 +410,9 @@ class Scheduler:
                 self._trigger2tasks.pop(trigger)
 
                 # replace it with a new trigger that throws back the exception
-                self._schedule_task(task, outcome=_outcomes.Error(e))
+                self._schedule_task_internal(task, outcome=_outcomes.Error(e))
 
-    def _schedule_task(
-        self, task: Task[Any], outcome: _outcomes.Outcome[Any] = _none_outcome
-    ) -> None:
+    def _schedule_task(self, task: Task[Any]) -> None:
         """Queue *task* for scheduling.
 
         It is an error to attempt to queue a task that has already been queued.
@@ -424,6 +422,11 @@ class Scheduler:
         for tasks in self._trigger2tasks.values():
             if task in tasks:
                 return
+        self._schedule_task_internal(task)
+
+    def _schedule_task_internal(
+        self, task: Task[Any], outcome: _outcomes.Outcome[Any] = _none_outcome
+    ) -> None:
         # TODO Move state tracking into Task
         task._state = Task._State.SCHEDULED
         self._scheduled_tasks[task] = outcome
@@ -464,7 +467,7 @@ class Scheduler:
             event.set()
 
         event = threading.Event()
-        self._schedule_task(Task(wrapper()))
+        self._schedule_task_internal(Task(wrapper()))
         # The scheduler thread blocks in `thread_wait`, and is woken when we
         # call `thread_suspend` - so we need to make sure the task is
         # queued before that.
@@ -522,7 +525,7 @@ class Scheduler:
         return result.complete
 
     def _trigger_from_unstarted_task(self, result: Task) -> Trigger:
-        self._schedule_task(result)
+        self._schedule_task_internal(result)
         if _debug:
             self.log.debug(f"Scheduling unstarted task: {result!r}")
         return result.complete
@@ -584,7 +587,7 @@ class Scheduler:
                 except TypeError as exc:
                     # restart this task with an exception object telling it that
                     # it wasn't allowed to yield that
-                    self._schedule_task(task, _outcomes.Error(exc))
+                    self._schedule_task_internal(task, _outcomes.Error(exc))
                 else:
                     self._schedule_task_upon(task, result)
 
