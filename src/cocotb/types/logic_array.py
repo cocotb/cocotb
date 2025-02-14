@@ -233,6 +233,7 @@ class LogicArray(ArrayLike[Logic]):
     # implementations are faster for particular operations.
     # Each implementation can be present, or None if the implementation has not been
     # computed or has been invalidated by a mutating operation.
+    _dirty: bool
     _value_as_array: Union[List[Logic], None]
     _value_as_int: Union[int, None]
     _value_as_str: Union[str, None]
@@ -340,6 +341,7 @@ class LogicArray(ArrayLike[Logic]):
         *,
         width: Union[int, None] = None,
     ) -> None:
+        self._dirty = False
         self._value_as_array = None
         self._value_as_int = None
         self._value_as_str = None
@@ -585,6 +587,7 @@ class LogicArray(ArrayLike[Logic]):
         # simulator which we expect to be well-formed.
         # Values are required to be uppercase.
         self = super().__new__(cls)
+        self._dirty = False
         self._value_as_array = None
         self._value_as_int = None
         self._value_as_str = value
@@ -606,6 +609,7 @@ class LogicArray(ArrayLike[Logic]):
                 f"{new_range!r} not the same length as old range: {self._range!r}."
             )
         self._range = new_range
+        self._dirty = True
 
     def __iter__(self) -> Iterator[Logic]:
         return iter(self._get_array())
@@ -848,6 +852,7 @@ class LogicArray(ArrayLike[Logic]):
         if isinstance(item, int):
             idx = self._translate_index(item)
             array[idx] = Logic(cast(LogicConstructibleT, value))
+            self._dirty = True
         elif isinstance(item, slice):
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
@@ -867,6 +872,7 @@ class LogicArray(ArrayLike[Logic]):
                     f"value of length {len(value_as_logics)!r} will not fit in slice [{start}:{stop}]"
                 )
             array[start_i : stop_i + 1] = value_as_logics
+            self._dirty = True
         else:
             raise TypeError(
                 f"indexes must be ints or slices, not {type(item).__name__}"

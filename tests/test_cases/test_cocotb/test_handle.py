@@ -14,7 +14,7 @@ import pytest
 import cocotb
 import cocotb.triggers
 from cocotb.handle import LogicArrayObject, StringObject, _Limits
-from cocotb.triggers import FallingEdge, Timer, ValueChange
+from cocotb.triggers import FallingEdge, NullTrigger, Timer, ValueChange
 from cocotb.types import Logic, LogicArray
 
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -569,3 +569,25 @@ async def test_extended_identifiers(dut):
 
     for name in names:
         assert dut[name]._name == name
+
+
+@cocotb.test
+async def test_handle_value_caching(dut) -> None:
+    # Not passing simulation time yields the same value
+    value = dut.stream_in_data.value
+    await NullTrigger()
+    assert dut.stream_in_data.value is value
+
+    # Passing simulation time yields a new value
+    await Timer(1, "step")
+    assert dut.stream_in_data.value is not value
+
+    # Modifying the value yields a new value
+    value = dut.stream_in_data.value
+    value[3:0] = "1111"
+    assert dut.stream_in_data.value is not value
+
+    # Doing an immediate write yields a new value
+    value = dut.stream_in_data.value
+    dut.stream_in_data.setimmediatevalue(10)
+    assert dut.stream_in_data.value is not value

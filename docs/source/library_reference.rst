@@ -295,6 +295,8 @@ Logging
     This is added by :class:`cocotb.log.SimTimeContextFilter`.
 
 
+.. _sim-handles:
+
 Simulation Object Handles
 =========================
 
