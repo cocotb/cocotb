@@ -39,16 +39,7 @@
 #include <embed.h>
 #include <gpi.h>
 
-#include <map>
 #include <string>
-#include <vector>
-
-typedef enum gpi_cb_state {
-    GPI_FREE = 0,
-    GPI_PRIMED = 1,
-    GPI_CALL = 2,
-    GPI_DELETE = 4,
-} gpi_cb_state_e;
 
 class GpiCbHdl;
 class GpiImplInterface;
@@ -94,6 +85,8 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
 
     virtual ~GpiObjHdl() = default;
 
+    // TODO why do these even exist? Just return the string by ref and call
+    // c_str.
     virtual const char *get_name_str();
     virtual const char *get_fullname_str();
     virtual const char *get_type_str();
@@ -178,38 +171,55 @@ class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
 // vpiHandle/vhpiHandleT for instance. The
 class GPI_EXPORT GpiCbHdl : public GpiHdl {
   public:
+    GpiCbHdl() = delete;
     GpiCbHdl(GpiImplInterface *impl) : GpiHdl(impl) {}
 
-    // Pure virtual functions for derived classes
-    virtual int arm_callback() = 0;  // Register with simulator
-    virtual int run_callback();      // Entry point from simulator
-    virtual int
-    cleanup_callback() = 0;  // Cleanup the callback, arm can be called after
+    // TODO Some of these routines don't need to be declared here. Only remove()
+    // and get_cb_info() need to. In fact, declaring these here means we can't
+    // do things like pass arguments to arm().
 
-    void set_call_state(gpi_cb_state_e new_state);
-    gpi_cb_state_e get_call_state();
+    /** Set user callback info
+     *
+     * Not on init to prevent having to pass around the arguments everywhere.
+     * Secondary initialization routine. ONLY CALL ONCE!
+     */
+    void set_cb_info(int (*cb_func)(void *), void *cb_data) noexcept {
+        this->m_cb_func = cb_func;
+        this->m_cb_data = cb_data;
+    }
 
-    int set_user_data(int (*function)(void *), void *cb_data);
-    void *get_user_data() noexcept { return m_cb_data; };
+    /** Get the current user callback function and data. */
+    void get_cb_info(int (**cb_func)(void *), void **cb_data) noexcept {
+        if (cb_func) {
+            *cb_func = m_cb_func;
+        }
+        if (cb_data) {
+            *cb_data = m_cb_data;
+        }
+    }
 
-    virtual ~GpiCbHdl();
+    /** Arm the callback after construction.
+     *
+     * Calling virtual functions from constructors does not work as expected.
+     * Secondary initialization routine. ONLY CALL ONCE!
+     */
+    virtual int arm() = 0;
+
+    /** Remove the callback before it fires.
+     *
+     * This function should delete the object.
+     */
+    virtual int remove() = 0;
+
+    /** Run the callback.
+     *
+     * This function should delete the object if it can't fire again.
+     */
+    virtual int run() = 0;
 
   protected:
-    gpi_cb_state_e m_state =
-        GPI_FREE;  // GPI state of the callback through its cycle
-    int (*gpi_function)(void *) = nullptr;  // GPI function to callback
-    void *m_cb_data = nullptr;  // GPI data supplied to "gpi_function"
-};
-
-class GPI_EXPORT GpiValueCbHdl : public virtual GpiCbHdl {
-  public:
-    GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal,
-                  gpi_edge edge);
-    int run_callback() override;
-
-  protected:
-    std::string required_value;
-    GpiSignalObjHdl *m_signal;
+    int (*m_cb_func)(void *);  // GPI function to callback
+    void *m_cb_data;           // GPI data supplied to "m_cb_func"
 };
 
 class GPI_EXPORT GpiIterator : public GpiHdl {
@@ -273,7 +283,6 @@ class GPI_EXPORT GpiImplInterface {
                                                  void *gpi_cb_data) = 0;
     virtual GpiCbHdl *register_readwrite_callback(int (*gpi_function)(void *),
                                                   void *gpi_cb_data) = 0;
-    virtual int deregister_callback(GpiCbHdl *obj_hdl) = 0;
 
     /* Method to provide strings from operation types */
     virtual const char *reason_to_string(int reason) = 0;
