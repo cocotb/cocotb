@@ -1,0 +1,1 @@
+Report exceptions from tests even when COCOTB_LOG_LEVEL=WARNING or COCOTB_LOG_LEVEL=ERROR
