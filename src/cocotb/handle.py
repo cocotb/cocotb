@@ -654,7 +654,6 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
     """Base class for all simulation objects that have a value."""
 
     @property
-    @abstractmethod
     def value(self) -> ValueGetT:
         """Get or set the value of the simulation object.
 
@@ -669,10 +668,21 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
 
             Use :meth:`setimmediatevalue` if you need to set the value of the simulation object immediately.
         """
+        return self.get()
 
     @value.setter
+    def value(self, value: ValueGetT) -> None:
+        # What we actually expect here that we can't write because property getters and
+        # setters can't have different types.
+        value_ = cast(
+            "ValueSetT | Deposit[ValueSetT] | Force[ValueSetT] | Freeze | Release",
+            value,
+        )
+        self.set(value_)
+
     @abstractmethod
-    def value(self, value: ValueGetT) -> None: ...
+    def get(self) -> ValueGetT:
+        """Returns the current value of the simulation object."""
 
     def set(
         self,
@@ -791,8 +801,7 @@ class ArrayObject(
         super().__init__(handle, path)
         self._sub_handles: Dict[int, ChildObjectT] = {}
 
-    @property
-    def value(self) -> Array[ElemValueT]:
+    def get(self) -> Array[ElemValueT]:
         """The current value of the simulation object.
 
         :getter:
@@ -829,10 +838,6 @@ class ArrayObject(
                 If assigning a :class:`list` of different length than the simulation object.
         """
         return Array((self[i].value for i in self.range), range=self.range)
-
-    @value.setter
-    def value(self, value: Array[ElemValueT]) -> None:
-        self.set(value)
 
     def _set_value(
         self,
@@ -925,8 +930,7 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
 
         schedule_write(self, self._handle.set_signal_val_binstr, (action.value, value_))
 
-    @property
-    def value(self) -> Logic:
+    def get(self) -> Logic:
         """The value of the simulation object.
 
         :getter:
@@ -944,10 +948,6 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
         """
         binstr = self._handle.get_signal_val_binstr()
         return Logic(binstr)
-
-    @value.setter
-    def value(self, value: Logic) -> None:
-        self.set(value)
 
     @cached_property
     def rising_edge(self) -> RisingEdge:
@@ -1065,8 +1065,7 @@ class LogicArrayObject(
 
         schedule_write(self, self._handle.set_signal_val_binstr, (action.value, value_))
 
-    @property
-    def value(self) -> LogicArray:
+    def get(self) -> LogicArray:
         """The value of the simulation object.
 
         :getter:
@@ -1096,10 +1095,6 @@ class LogicArrayObject(
         """
         binstr = self._handle.get_signal_val_binstr()
         return LogicArray._from_handle(binstr)
-
-    @value.setter
-    def value(self, value: LogicArray) -> None:
-        self.set(value)
 
     @deprecated(
         "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
@@ -1144,8 +1139,7 @@ class RealObject(NonArrayValueObject[float, float]):
 
         schedule_write(self, self._handle.set_signal_val_real, (action.value, value))
 
-    @property
-    def value(self) -> float:
+    def get(self) -> float:
         """The value of the simulation object.
 
         :getter:
@@ -1158,10 +1152,6 @@ class RealObject(NonArrayValueObject[float, float]):
             TypeError: If assignment is given a type other than :class:`float`.
         """
         return self._handle.get_signal_val_real()
-
-    @value.setter
-    def value(self, value: float) -> None:
-        self.set(value)
 
     @deprecated(
         "`float(handle)` casts have been deprecated. Use `float(handle.value)` instead."
@@ -1200,8 +1190,7 @@ class EnumObject(NonArrayValueObject[int, int]):
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
             )
 
-    @property
-    def value(self) -> int:
+    def get(self) -> int:
         """The value of the simulation object.
 
         :getter:
@@ -1218,10 +1207,6 @@ class EnumObject(NonArrayValueObject[int, int]):
             OverflowError: If the value used in assignment is out of range of a 32-bit signed integer.
         """
         return self._handle.get_signal_val_long()
-
-    @value.setter
-    def value(self, value: int) -> None:
-        self.set(value)
 
     @deprecated(
         "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
@@ -1275,8 +1260,7 @@ class IntegerObject(NonArrayValueObject[int, int]):
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
             )
 
-    @property
-    def value(self) -> int:
+    def get(self) -> int:
         """The value of the simulation object.
 
         :getter:
@@ -1291,10 +1275,6 @@ class IntegerObject(NonArrayValueObject[int, int]):
             OverflowError: If the value used in assignment is out of range of a 32-bit signed integer.
         """
         return self._handle.get_signal_val_long()
-
-    @value.setter
-    def value(self, value: int) -> None:
-        self.set(value)
 
     @deprecated(
         "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
@@ -1330,8 +1310,7 @@ class StringObject(
 
         schedule_write(self, self._handle.set_signal_val_str, (action.value, value))
 
-    @property
-    def value(self) -> bytes:
+    def get(self) -> bytes:
         """The value of the simulation object.
 
         :getter:
@@ -1367,10 +1346,6 @@ class StringObject(
             Users are now expected to choose an encoding when using these objects.
         """
         return self._handle.get_signal_val_str()
-
-    @value.setter
-    def value(self, value: bytes) -> None:
-        self.set(value)
 
     @deprecated(
         '`str(handle)` casts have been deprecated. Use `handle.value.decode("ascii")` instead.'
