@@ -27,8 +27,10 @@
 
 import enum
 import logging
+import os
 import re
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from functools import lru_cache, wraps
 from logging import Logger
 from typing import (
@@ -49,12 +51,14 @@ from typing import (
     cast,
 )
 
-import cocotb._write_scheduler
+import cocotb
 from cocotb import simulator
+from cocotb._base_triggers import Event
 from cocotb._deprecation import deprecated
-from cocotb._gpi_triggers import FallingEdge, RisingEdge, ValueChange
+from cocotb._gpi_triggers import FallingEdge, ReadWrite, RisingEdge, ValueChange
 from cocotb._py_compat import cached_property
 from cocotb._utils import DocEnum, cached_method
+from cocotb.task import Task
 from cocotb.types import Array, Logic, LogicArray, Range
 
 
@@ -667,6 +671,82 @@ else:
         return wrapper
 
 
+_trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
+
+# A dictionary of pending (write_func, args), keyed by handle.
+# Writes are applied oldest to newest (least recently used).
+# Only the last scheduled write to a particular handle in a timestep is performed.
+_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[..., None], Sequence[Any]]]" = OrderedDict()
+
+# TODO don't use a task to force ReadWrite, just prime an empty callback
+
+_write_task: "Union[Task[None], None]" = None
+
+_writes_pending = Event()
+
+
+async def _do_writes() -> None:
+    """An internal task that schedules a ReadWrite to force writes to occur."""
+    while True:
+        await _writes_pending.wait()
+        await ReadWrite()
+
+
+def start_write_scheduler() -> None:
+    global _write_task
+    if _write_task is None:
+        _write_task = cocotb.start_soon(_do_writes())
+
+
+def stop_write_scheduler() -> None:
+    global _write_task
+    if _write_task is not None:
+        _write_task.kill()
+        _write_task = None
+    _write_calls.clear()
+    _writes_pending.clear()
+
+
+def apply_scheduled_writes() -> None:
+    while _write_calls:
+        _, (func, args) = _write_calls.popitem(last=False)
+        func(*args)
+    _writes_pending.clear()
+
+
+if _trust_inertial:
+
+    def _schedule_write(
+        handle: "ValueObjectBase[Any, Any]",
+        write_func: Callable[..., None],
+        args: Sequence[Any],
+    ) -> None:
+        if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
+            raise RuntimeError(
+                f"Write to object {handle._name} was scheduled during a read-only simulation phase."
+            )
+        write_func(*args)
+else:
+
+    def _schedule_write(
+        handle: "ValueObjectBase[Any, Any]",
+        write_func: Callable[..., None],
+        args: Sequence[Any],
+    ) -> None:
+        """Queue *write_func* to be called on the next ``ReadWrite`` trigger."""
+        if cocotb.sim_phase == cocotb.SimPhase.READ_WRITE:
+            write_func(*args)
+        elif cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
+            raise RuntimeError(
+                f"Write to object {handle._name} was scheduled during a read-only simulation phase."
+            )
+        else:
+            if handle in _write_calls:
+                del _write_calls[handle]
+            _write_calls[handle] = (write_func, args)
+            _writes_pending.set()
+
+
 #: Type accepted and returned by the :attr:`~ValueObjectBase.value` property.
 ValueGetT = TypeVar("ValueGetT")
 
@@ -864,7 +944,7 @@ class ArrayObject(
         value: Union[Array[ElemValueT], Sequence[ElemValueT]],
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
+        self._set_value(value, action, _schedule_write)
 
     def _set_value(
         self,
@@ -934,7 +1014,7 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
         value: Union[Logic, int, str],
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
+        self._set_value(value, action, _schedule_write)
 
     def _set_value(
         self,
@@ -1043,7 +1123,7 @@ class LogicArrayObject(
         value: Union[LogicArray, Logic, int, str],
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
+        self._set_value(value, action, _schedule_write)
 
     def _set_value(
         self,
@@ -1173,7 +1253,7 @@ class RealObject(NonArrayValueObject[float, float]):
         value: float,
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
+        self._set_value(value, action, _schedule_write)
 
     def _set_value(
         self,
@@ -1226,7 +1306,7 @@ class EnumObject(NonArrayValueObject[int, int]):
         value: int,
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
+        self._set_value(value, action, _schedule_write)
 
     def _set_value(
         self,
@@ -1304,7 +1384,7 @@ class IntegerObject(NonArrayValueObject[int, int]):
         value: int,
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
+        self._set_value(value, action, _schedule_write)
 
     def _set_value(
         self,
@@ -1368,7 +1448,7 @@ class StringObject(
         value: bytes,
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
+        self._set_value(value, action, _schedule_write)
 
     def _set_value(
         self,

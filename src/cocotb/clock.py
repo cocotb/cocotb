@@ -37,8 +37,7 @@ import cocotb
 from cocotb._py_compat import cached_property
 from cocotb._typing import TimeUnit
 from cocotb._utils import cached_method
-from cocotb._write_scheduler import trust_inertial
-from cocotb.handle import LogicObject
+from cocotb.handle import LogicObject, _trust_inertial
 from cocotb.simulator import clock_create
 from cocotb.task import Task
 from cocotb.triggers import (
@@ -156,7 +155,7 @@ class Clock:
         self._impl: "Impl"  # noqa: UP037  # ruff assumes we are at least using Python 3.7 and gives false positive.
 
         if impl is None:
-            self._impl = "gpi" if trust_inertial else "py"
+            self._impl = "gpi" if _trust_inertial else "py"
         elif impl in _valid_impls:
             self._impl = impl
         else:
