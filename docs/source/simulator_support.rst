@@ -30,19 +30,6 @@ In order to use this simulator, set :make:var:`SIM` to ``icarus``:
     A working installation of `Icarus Verilog <https://github.com/steveicarus/iverilog>`_ is required.
     You can find installation instructions `in the Icarus Verilog Installation Guide <https://iverilog.fandom.com/wiki/Installation_Guide>`_.
 
-.. _sim-icarus-accessing-bits:
-
-Accessing bits in a vector
---------------------------
-
-Accessing bits of a vector directly was not possible until (including) version 10.3:
-
-.. code-block:: python
-
-    dut.stream_in_data[2].value = 1
-
-See also https://github.com/steveicarus/iverilog/issues/323.
-
 .. _sim-icarus-waveforms:
 
 Waveforms
