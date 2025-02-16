@@ -29,9 +29,10 @@ import enum
 import logging
 import re
 from abc import ABC, abstractmethod
-from functools import lru_cache
+from functools import lru_cache, wraps
 from logging import Logger
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -48,6 +49,7 @@ from typing import (
     cast,
 )
 
+import cocotb._write_scheduler
 from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, ValueChange
@@ -642,6 +644,29 @@ def _map_action_obj_to_value_action_enum_pair(
         return value, WriteType.DEPOSIT
 
 
+if TYPE_CHECKING:
+    _F = TypeVar("_F")
+
+    def _set_check(method: _F) -> _F: ...
+
+else:
+
+    def _set_check(method):
+        """Early checking for handle const-ness and the simulation phase."""
+
+        @wraps(method)
+        def wrapper(self, *args, **kwargs):
+            if self.is_const:
+                raise TypeError(f"{self._path} is constant")
+            if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
+                raise RuntimeError(
+                    f"Attempted writing to {self._name} during the ReadOnly simulation phase."
+                )
+            method(self, *args, **kwargs)
+
+        return wrapper
+
+
 #: Type accepted and returned by the :attr:`~ValueObjectBase.value` property.
 ValueGetT = TypeVar("ValueGetT")
 
@@ -678,16 +703,15 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             "ValueSetT | Deposit[ValueSetT] | Force[ValueSetT] | Freeze | Release",
             value,
         )
-        self.set(value_)
+        value__, action = _map_action_obj_to_value_action_enum_pair(self, value_)
+        self.set(value__, action)
 
     @abstractmethod
     def get(self) -> ValueGetT:
         """Returns the current value of the simulation object."""
 
-    def set(
-        self,
-        value: Union[ValueSetT, Deposit[ValueSetT], Force[ValueSetT], Freeze, Release],
-    ) -> None:
+    @abstractmethod
+    def set(self, value: ValueSetT, action: WriteType = WriteType.DEPOSIT) -> None:
         """Assign the value to this simulation object at the end of the current delta cycle.
 
         This is known in Verilog as a "non-blocking assignment" and in VHDL as a "signal assignment".
@@ -704,15 +728,8 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             dut.handle.set(Freeze())
             dut.handle.set(Release())
         """
-        if self.is_const:
-            raise TypeError(f"{self._path} is constant")
 
-        value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
-
-        import cocotb._write_scheduler
-
-        self._set_value(value_, action, cocotb._write_scheduler.schedule_write)
-
+    @_set_check
     def setimmediatevalue(
         self,
         value: Union[ValueSetT, Deposit[ValueSetT], Force[ValueSetT], Freeze, Release],
@@ -725,14 +742,16 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         The default behavior is to :class:`Deposit` the value.
         See :meth:`set` for an example on how to use these action types.
         """
-        if self.is_const:
-            raise TypeError(f"{self._path} is constant")
-
-        value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
+        # What we actually expect here that we can't write because property getters and
+        # setters can't have different types.
+        value_ = cast(
+            "ValueSetT | Deposit[ValueSetT] | Force[ValueSetT] | Freeze | Release",
+            value,
+        )
+        value__, action = _map_action_obj_to_value_action_enum_pair(self, value_)
         if action == WriteType.DEPOSIT:
             action = WriteType.NO_DELAY
-
-        self._set_value(value_, action, _write_now)
+        self._set_value(value__, action, _write_now)
 
     @cached_property
     def is_const(self) -> bool:
@@ -839,6 +858,14 @@ class ArrayObject(
         """
         return Array((self[i].value for i in self.range), range=self.range)
 
+    @_set_check
+    def set(
+        self,
+        value: Union[Array[ElemValueT], Sequence[ElemValueT]],
+        action: WriteType = WriteType.DEPOSIT,
+    ) -> None:
+        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
+
     def _set_value(
         self,
         value: Union[Array[ElemValueT], Sequence[ElemValueT]],
@@ -900,6 +927,14 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
+
+    @_set_check
+    def set(
+        self,
+        value: Union[Logic, int, str],
+        action: WriteType = WriteType.DEPOSIT,
+    ) -> None:
+        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
 
     def _set_value(
         self,
@@ -1001,6 +1036,14 @@ class LogicArrayObject(
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
+
+    @_set_check
+    def set(
+        self,
+        value: Union[LogicArray, Logic, int, str],
+        action: WriteType = WriteType.DEPOSIT,
+    ) -> None:
+        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
 
     def _set_value(
         self,
@@ -1124,6 +1167,14 @@ class RealObject(NonArrayValueObject[float, float]):
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
+    @_set_check
+    def set(
+        self,
+        value: float,
+        action: WriteType = WriteType.DEPOSIT,
+    ) -> None:
+        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
+
     def _set_value(
         self,
         value: float,
@@ -1168,6 +1219,14 @@ class EnumObject(NonArrayValueObject[int, int]):
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
+
+    @_set_check
+    def set(
+        self,
+        value: int,
+        action: WriteType = WriteType.DEPOSIT,
+    ) -> None:
+        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
 
     def _set_value(
         self,
@@ -1239,6 +1298,14 @@ class IntegerObject(NonArrayValueObject[int, int]):
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
+    @_set_check
+    def set(
+        self,
+        value: int,
+        action: WriteType = WriteType.DEPOSIT,
+    ) -> None:
+        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
+
     def _set_value(
         self,
         value: int,
@@ -1294,6 +1361,14 @@ class StringObject(
 
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
+
+    @_set_check
+    def set(
+        self,
+        value: bytes,
+        action: WriteType = WriteType.DEPOSIT,
+    ) -> None:
+        self._set_value(value, action, cocotb._write_scheduler.schedule_write)
 
     def _set_value(
         self,
