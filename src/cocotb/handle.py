@@ -62,12 +62,6 @@ from cocotb.task import Task
 from cocotb.types import Array, Logic, LogicArray, Range
 
 
-def _write_now(
-    _: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
-) -> None:
-    f(*args)
-
-
 class _Limits(enum.IntEnum):
     SIGNED_NBIT = 1
     UNSIGNED_NBIT = 2
@@ -676,7 +670,7 @@ _trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 # A dictionary of pending (write_func, args), keyed by handle.
 # Writes are applied oldest to newest (least recently used).
 # Only the last scheduled write to a particular handle in a timestep is performed.
-_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[..., None], Sequence[Any]]]" = OrderedDict()
+_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], WriteType, Any]]" = OrderedDict()
 
 # TODO don't use a task to force ReadWrite, just prime an empty callback
 
@@ -709,42 +703,41 @@ def stop_write_scheduler() -> None:
 
 def apply_scheduled_writes() -> None:
     while _write_calls:
-        _, (func, args) = _write_calls.popitem(last=False)
-        func(*args)
+        _, (func, action, value) = _write_calls.popitem(last=False)
+        func(action.value, value)
     _writes_pending.clear()
 
 
 if _trust_inertial:
 
-    def _schedule_write(
+    def _schedule_write(  # type: ignore  # pylance doesn't like if/else function definitions
         handle: "ValueObjectBase[Any, Any]",
-        write_func: Callable[..., None],
-        args: Sequence[Any],
+        write_func: Callable[[int, ValueT], None],
+        action: WriteType,
+        value: ValueT,
     ) -> None:
-        if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
-            raise RuntimeError(
-                f"Write to object {handle._name} was scheduled during a read-only simulation phase."
-            )
-        write_func(*args)
+        # Trust the simulator and just write.
+        write_func(action.value, value)
 else:
 
     def _schedule_write(
         handle: "ValueObjectBase[Any, Any]",
-        write_func: Callable[..., None],
-        args: Sequence[Any],
+        write_func: Callable[[int, ValueT], None],
+        action: WriteType,
+        value: ValueT,
     ) -> None:
-        """Queue *write_func* to be called on the next ``ReadWrite`` trigger."""
         if cocotb.sim_phase == cocotb.SimPhase.READ_WRITE:
-            write_func(*args)
-        elif cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
-            raise RuntimeError(
-                f"Write to object {handle._name} was scheduled during a read-only simulation phase."
-            )
-        else:
+            # If we are already in the ReadWrite phase though, do it immediately as an optimization.
+            write_func(action.value, value)
+        elif action == WriteType.DEPOSIT:
+            # Queue write for the beginning of the next ReadWrite phase because we can't trust the simulator. =(
             if handle in _write_calls:
                 del _write_calls[handle]
-            _write_calls[handle] = (write_func, args)
+            _write_calls[handle] = (write_func, action, value)
             _writes_pending.set()
+        else:
+            # If we are writing anything that isn't an inertial write, it must be applied immediately.
+            write_func(action.value, value)
 
 
 #: Type accepted and returned by the :attr:`~ValueObjectBase.value` property.
@@ -831,32 +824,12 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         value__, action = _map_action_obj_to_value_action_enum_pair(self, value_)
         if action == WriteType.DEPOSIT:
             action = WriteType.NO_DELAY
-        self._set_value(value__, action, _write_now)
+        self.set(value__, action)
 
     @cached_property
     def is_const(self) -> bool:
         """``True`` if the simulator object is immutable, e.g. a Verilog parameter or VHDL constant or generic."""
         return self._handle.get_const()
-
-    @abstractmethod
-    def _set_value(
-        self,
-        value: ValueSetT,
-        action: WriteType,
-        schedule_write: Callable[
-            ["ValueObjectBase[Any, Any]", Callable[..., None], Sequence[Any]], None
-        ],
-    ) -> None:
-        """Schedule a write of the given value to a simulator object.
-
-        Conversion from multiple Python types into a type understood by the simulator is expected.
-        This is used to implement the :attr:`value` property setter, :meth:`setimmediatevalue`, and :meth:`set`.
-
-        Args:
-            value: A value used to set the handle.
-            action: Whether to deposit, force, or release the value on the handle.
-            schedule_write: A function which takes ``(handle, callback, args)`` to schedule the writes.
-        """
 
 
 #: Type of value of each element in an :class:`ArrayObject`.
@@ -944,22 +917,12 @@ class ArrayObject(
         value: Union[Array[ElemValueT], Sequence[ElemValueT]],
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, _schedule_write)
-
-    def _set_value(
-        self,
-        value: Union[Array[ElemValueT], Sequence[ElemValueT]],
-        action: WriteType,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
-    ) -> None:
         if len(value) != len(self):
             raise ValueError(
                 f"Assigning list of length {len(value)} to object {self._name} of length {len(self)}"
             )
         for elem, self_idx in zip(value, self.range):
-            self[self_idx]._set_value(elem, action, schedule_write)
+            self[self_idx].set(elem, action)
 
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
@@ -1014,16 +977,6 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
         value: Union[Logic, int, str],
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, _schedule_write)
-
-    def _set_value(
-        self,
-        value: Union[Logic, int, str],
-        action: WriteType,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
-    ) -> None:
         value_: str
         if isinstance(value, (int, str)):
             value_ = str(Logic(value))
@@ -1043,7 +996,7 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_binstr, (action.value, value_))
+        _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
     def get(self) -> Logic:
         """The value of the simulation object.
@@ -1123,23 +1076,13 @@ class LogicArrayObject(
         value: Union[LogicArray, Logic, int, str],
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, _schedule_write)
-
-    def _set_value(
-        self,
-        value: Union[LogicArray, Logic, int, str],
-        action: WriteType,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
-    ) -> None:
         value_: str
         if isinstance(value, int):
             min_val, max_val = _value_limits(len(self), _Limits.VECTOR_NBIT)
             if min_val <= value <= max_val:
                 if len(self) <= 32:
-                    schedule_write(
-                        self, self._handle.set_signal_val_int, (action.value, value)
+                    _schedule_write(
+                        self, self._handle.set_signal_val_int, action, value
                     )
                     return
 
@@ -1186,7 +1129,7 @@ class LogicArrayObject(
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_binstr, (action.value, value_))
+        _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
     def get(self) -> LogicArray:
         """The value of the simulation object.
@@ -1253,22 +1196,12 @@ class RealObject(NonArrayValueObject[float, float]):
         value: float,
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, _schedule_write)
-
-    def _set_value(
-        self,
-        value: float,
-        action: WriteType,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
-    ) -> None:
         if not isinstance(value, (float, int)):
             raise TypeError(
                 f"Unsupported type for real value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_real, (action.value, value))
+        _schedule_write(self, self._handle.set_signal_val_real, action, value)
 
     def get(self) -> float:
         """The value of the simulation object.
@@ -1306,16 +1239,6 @@ class EnumObject(NonArrayValueObject[int, int]):
         value: int,
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, _schedule_write)
-
-    def _set_value(
-        self,
-        value: int,
-        action: WriteType,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
-    ) -> None:
         if not isinstance(value, int):
             raise TypeError(
                 f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
@@ -1323,7 +1246,7 @@ class EnumObject(NonArrayValueObject[int, int]):
 
         min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
         if min_val <= value <= max_val:
-            schedule_write(self, self._handle.set_signal_val_int, (action.value, value))
+            _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
             raise OverflowError(
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
@@ -1384,16 +1307,6 @@ class IntegerObject(NonArrayValueObject[int, int]):
         value: int,
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, _schedule_write)
-
-    def _set_value(
-        self,
-        value: int,
-        action: WriteType,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
-    ) -> None:
         if not isinstance(value, int):
             raise TypeError(
                 f"Unsupported type for integer value assignment: {type(value)} ({value!r})"
@@ -1401,7 +1314,7 @@ class IntegerObject(NonArrayValueObject[int, int]):
 
         min_val, max_val = _value_limits(32, _Limits.SIGNED_NBIT)
         if min_val <= value <= max_val:
-            schedule_write(self, self._handle.set_signal_val_int, (action.value, value))
+            _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
             raise OverflowError(
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
@@ -1448,22 +1361,12 @@ class StringObject(
         value: bytes,
         action: WriteType = WriteType.DEPOSIT,
     ) -> None:
-        self._set_value(value, action, _schedule_write)
-
-    def _set_value(
-        self,
-        value: bytes,
-        action: WriteType,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
-    ) -> None:
         if not isinstance(value, bytes):
             raise TypeError(
                 f"Unsupported type for string value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_str, (action.value, value))
+        _schedule_write(self, self._handle.set_signal_val_str, action, value)
 
     def get(self) -> bytes:
         """The value of the simulation object.
