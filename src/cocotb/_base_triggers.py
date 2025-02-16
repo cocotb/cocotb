@@ -54,8 +54,7 @@ class Trigger(Awaitable["Trigger"]):
         self._primed = False
 
     @cached_property
-    def log(self) -> logging.Logger:
-        """A :class:`logging.Logger` for the trigger."""
+    def _log(self) -> logging.Logger:
         return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
     def _prime(self, callback: Callable[["Trigger"], None]) -> None:

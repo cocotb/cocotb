@@ -294,7 +294,7 @@ class Scheduler:
             # have been unprimed already
             if isinstance(trigger, GPITrigger):
                 self.log.critical(f"No tasks waiting on trigger that fired: {trigger}")
-                trigger.log.info("I'm the culprit")
+                trigger._log.info("I'm the culprit")
             # For Python triggers this isn't actually an error - we might do
             # event.set() without knowing whether any tasks are actually
             # waiting on this event, for example

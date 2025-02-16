@@ -126,10 +126,6 @@ class SimHandleBase(ABC):
 
     @cached_property
     def _log(self) -> Logger:
-        """The logging object.
-
-        :meta public:
-        """
         return logging.getLogger(f"cocotb.{self._name}")
 
     @cached_property

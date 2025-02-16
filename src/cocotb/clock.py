@@ -294,7 +294,7 @@ class Clock:
         return f"<{type(self).__qualname__}, {self._signal._path} @ {freq_mhz} MHz>"
 
     @cached_property
-    def log(self) -> Logger:
+    def _log(self) -> Logger:
         return logging.getLogger(
             f"cocotb.{type(self).__qualname__}.{self._signal._name}"
         )
