@@ -473,9 +473,9 @@ class HierarchyObject(HierarchyObjectBase[str]):
         except KeyError as e:
             raise AttributeError(str(e)) from None
 
-    def _child_path(self, name: str) -> str:
+    def _child_path(self, key: str) -> str:
         delimiter = "::" if self._type == "GPI_PACKAGE" else "."
-        return f"{self._path}{delimiter}{name}"
+        return f"{self._path}{delimiter}{key}"
 
     def _sub_handle_key(self, name: str) -> str:
         return name
