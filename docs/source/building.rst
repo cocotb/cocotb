@@ -107,10 +107,9 @@ Cocotb
 
 .. envvar:: COCOTB_REDUCED_LOG_FMT
 
-    Defaults internally to ``1``.
-    If the value is ``1``, log lines displayed in the terminal will be shorter.
-    It will print only time, message type (``INFO``, ``WARNING``, ``ERROR``, ...) and the log message itself.
-    Set to ``0`` if you wish to have the full format message.
+    Defaults to ``1``.
+    Logs will include simulation time, message type (``INFO``, ``WARNING``, ``ERROR``, ...), logger name, and the log message itself.
+    If the value is set to ``0``, the filename and line number where a log function was called will be added between the logger name and the log message.
 
 .. envvar:: COCOTB_ATTACH
 
