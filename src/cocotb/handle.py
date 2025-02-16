@@ -565,7 +565,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
             yield self[i]
 
 
-class WriteType(DocEnum):
+class SetAction(DocEnum):
     """How to apply a write to a simulator object."""
 
     DEPOSIT = (
@@ -629,17 +629,17 @@ class Release:
 def _map_action_obj_to_value_action_enum_pair(
     handle: "ValueObjectBase[Any, Any]",
     value: Union[ValueT, Deposit[ValueT], Force[ValueT], Freeze, Release],
-) -> Tuple[ValueT, WriteType]:
+) -> Tuple[ValueT, SetAction]:
     if isinstance(value, Deposit):
-        return value.value, WriteType.DEPOSIT
+        return value.value, SetAction.DEPOSIT
     elif isinstance(value, Force):
-        return value.value, WriteType.FORCE
+        return value.value, SetAction.FORCE
     elif isinstance(value, Freeze):
-        return handle.value, WriteType.FORCE
+        return handle.value, SetAction.FORCE
     elif isinstance(value, Release):
-        return handle.value, WriteType.RELEASE
+        return handle.value, SetAction.RELEASE
     else:
-        return value, WriteType.DEPOSIT
+        return value, SetAction.DEPOSIT
 
 
 if TYPE_CHECKING:
@@ -670,7 +670,7 @@ _trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 # A dictionary of pending (write_func, args), keyed by handle.
 # Writes are applied oldest to newest (least recently used).
 # Only the last scheduled write to a particular handle in a timestep is performed.
-_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], WriteType, Any]]" = OrderedDict()
+_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], SetAction, Any]]" = OrderedDict()
 
 # TODO don't use a task to force ReadWrite, just prime an empty callback
 
@@ -713,7 +713,7 @@ if _trust_inertial:
     def _schedule_write(  # type: ignore  # pylance doesn't like if/else function definitions
         handle: "ValueObjectBase[Any, Any]",
         write_func: Callable[[int, ValueT], None],
-        action: WriteType,
+        action: SetAction,
         value: ValueT,
     ) -> None:
         # Trust the simulator and just write.
@@ -723,13 +723,13 @@ else:
     def _schedule_write(
         handle: "ValueObjectBase[Any, Any]",
         write_func: Callable[[int, ValueT], None],
-        action: WriteType,
+        action: SetAction,
         value: ValueT,
     ) -> None:
         if cocotb.sim_phase == cocotb.SimPhase.READ_WRITE:
             # If we are already in the ReadWrite phase though, do it immediately as an optimization.
             write_func(action.value, value)
-        elif action == WriteType.DEPOSIT:
+        elif action == SetAction.DEPOSIT:
             # Queue write for the beginning of the next ReadWrite phase because we can't trust the simulator. =(
             if handle in _write_calls:
                 del _write_calls[handle]
@@ -784,7 +784,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         """Returns the current value of the simulation object."""
 
     @abstractmethod
-    def set(self, value: ValueSetT, action: WriteType = WriteType.DEPOSIT) -> None:
+    def set(self, value: ValueSetT, action: SetAction = SetAction.DEPOSIT) -> None:
         """Assign the value to this simulation object at the end of the current delta cycle.
 
         This is known in Verilog as a "non-blocking assignment" and in VHDL as a "signal assignment".
@@ -822,8 +822,8 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             value,
         )
         value__, action = _map_action_obj_to_value_action_enum_pair(self, value_)
-        if action == WriteType.DEPOSIT:
-            action = WriteType.NO_DELAY
+        if action == SetAction.DEPOSIT:
+            action = SetAction.NO_DELAY
         self.set(value__, action)
 
     @cached_property
@@ -915,7 +915,7 @@ class ArrayObject(
     def set(
         self,
         value: Union[Array[ElemValueT], Sequence[ElemValueT]],
-        action: WriteType = WriteType.DEPOSIT,
+        action: SetAction = SetAction.DEPOSIT,
     ) -> None:
         if len(value) != len(self):
             raise ValueError(
@@ -975,7 +975,7 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
     def set(
         self,
         value: Union[Logic, int, str],
-        action: WriteType = WriteType.DEPOSIT,
+        action: SetAction = SetAction.DEPOSIT,
     ) -> None:
         value_: str
         if isinstance(value, (int, str)):
@@ -1074,7 +1074,7 @@ class LogicArrayObject(
     def set(
         self,
         value: Union[LogicArray, Logic, int, str],
-        action: WriteType = WriteType.DEPOSIT,
+        action: SetAction = SetAction.DEPOSIT,
     ) -> None:
         value_: str
         if isinstance(value, int):
@@ -1194,7 +1194,7 @@ class RealObject(NonArrayValueObject[float, float]):
     def set(
         self,
         value: float,
-        action: WriteType = WriteType.DEPOSIT,
+        action: SetAction = SetAction.DEPOSIT,
     ) -> None:
         if not isinstance(value, (float, int)):
             raise TypeError(
@@ -1237,7 +1237,7 @@ class EnumObject(NonArrayValueObject[int, int]):
     def set(
         self,
         value: int,
-        action: WriteType = WriteType.DEPOSIT,
+        action: SetAction = SetAction.DEPOSIT,
     ) -> None:
         if not isinstance(value, int):
             raise TypeError(
@@ -1305,7 +1305,7 @@ class IntegerObject(NonArrayValueObject[int, int]):
     def set(
         self,
         value: int,
-        action: WriteType = WriteType.DEPOSIT,
+        action: SetAction = SetAction.DEPOSIT,
     ) -> None:
         if not isinstance(value, int):
             raise TypeError(
@@ -1359,7 +1359,7 @@ class StringObject(
     def set(
         self,
         value: bytes,
-        action: WriteType = WriteType.DEPOSIT,
+        action: SetAction = SetAction.DEPOSIT,
     ) -> None:
         if not isinstance(value, bytes):
             raise TypeError(
