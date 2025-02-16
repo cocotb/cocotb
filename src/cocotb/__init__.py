@@ -52,7 +52,14 @@ __all__ = ("bridge", "resume", "test", "parametrize", "__version__")
 
 
 log: py_logging.Logger
-"""The default cocotb logger."""
+"""An easily accessible :class:`~logging.Logger` for the user.
+
+This logger defaults to the :data:`logging.INFO` log level.
+
+.. versionchanged:: 2.0
+    This was previously the ``"cocotb"`` Logger.
+    It is now a Logger under the ``"test"`` namespace.
+"""
 
 _scheduler_inst: Scheduler
 """The global scheduler instance."""
