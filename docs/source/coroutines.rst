@@ -95,7 +95,7 @@ Other tasks can be used in an await statement to suspend the current task until 
             result = await First(timer, task)
             assert count <= expect, "Task didn't complete in expected time"
             if result is timer:
-                dut._log.info("Count %d: Task still running" % count)
+                cocotb.log.info("Count %d: Task still running", count)
                 count += 1
             else:
                 break

@@ -88,9 +88,7 @@ class Task(Generic[ResultType]):
         self.__qualname__ = self.__name__
 
     @cached_property
-    def log(self) -> logging.Logger:
-        # Creating a logger is expensive, only do it if we actually plan to
-        # log anything
+    def _log(self) -> logging.Logger:
         return logging.getLogger(
             f"cocotb.{self.__qualname__}.{self._coro.__qualname__}"
         )
@@ -182,7 +180,7 @@ class Task(Generic[ResultType]):
             return
 
         if _debug:
-            self.log.debug("kill() called on coroutine")
+            self._log.debug("kill() called on coroutine")
         # todo: probably better to throw an exception for anyone waiting on the coroutine
         self._outcome = Value(None)
         cocotb._scheduler_inst._unschedule(self)

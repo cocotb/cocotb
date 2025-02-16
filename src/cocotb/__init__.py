@@ -130,10 +130,10 @@ def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:
         return
     # there was a failure and no one is watching, fail test
     elif isinstance(e, (TestSuccess, AssertionError)):
-        task.log.info("Test stopped by this task")
+        task._log.info("Test stopped by this task")
         cocotb.regression_manager._abort_test(e)
     else:
-        task.log.error("Exception raised by this task")
+        task._log.error("Exception raised by this task")
         cocotb.regression_manager._abort_test(e)
 
 

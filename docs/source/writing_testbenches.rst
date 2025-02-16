@@ -182,7 +182,7 @@ The following example shows these in action:
         reset_n.value = 0
         await Timer(duration_ns, unit="ns")
         reset_n.value = 1
-        reset_n._log.debug("Reset complete")
+        cocotb.log.debug("Reset complete")
 
     @cocotb.test()
     async def parallel_example(dut):
@@ -190,18 +190,18 @@ The following example shows these in action:
 
         # Execution will block until reset_dut has completed
         await reset_dut(reset_n, 500)
-        dut._log.debug("After reset")
+        cocotb.log.debug("After reset")
 
         # Run reset_dut concurrently
         reset_thread = cocotb.start_soon(reset_dut(reset_n, duration_ns=500))
 
         # This timer will complete before the timer in the concurrently executing "reset_thread"
         await Timer(250, unit="ns")
-        dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
+        cocotb.log.debug("During reset (reset_n = %s)" % reset_n.value)
 
         # Wait for the other thread to complete
         await reset_thread
-        dut._log.debug("After reset")
+        cocotb.log.debug("After reset")
 
 See :ref:`coroutines` for more examples of what can be done with coroutines.
 
@@ -377,22 +377,10 @@ A passing test will print the following output.
 Logging
 =======
 
-Cocotb uses the built-in :mod:`logging` library, with some configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
-All :class:`~cocotb.task.Task`\ s have a :class:`logging.Logger`,
-and can be set to its own logging level.
+Cocotb uses Python's :mod:`logging` library, with the configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
 
-.. code-block:: python
+Users may use :data:`cocotb.log` for all their logging needs,
+but are encouraged to create their own loggers and logger hierarchy by calling :func:`logging.getLogger`.
 
-    task = cocotb.start_soon(coro)
-    task.log.setLevel(logging.DEBUG)
-    task.log.debug("Running Task!")
-
-The :term:`DUT` and each hierarchical object can also have individual logging levels set.
-When logging :term:`HDL` objects, beware that :meth:`~cocotb.handle.SimHandleBase._log` is the preferred way.
-This helps minimize the change of name collisions of an HDL log
-component with the Python logging functionality.
-
-.. code-block:: python
-
-    dut.my_signal._log.info("Setting signal")
-    dut.my_signal.value = 1
+.. warning::
+    The ``"cocotb"`` and ``"gpi"`` logger namespaces and all :class:`~logging.Logger`\ s on cocotb-created objects are reserved for internal use only.
