@@ -52,7 +52,7 @@ from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, ValueChange
 from cocotb._py_compat import cached_property
-from cocotb._utils import cached_method
+from cocotb._utils import DocEnum, cached_method
 from cocotb.types import Array, Logic, LogicArray, Range
 
 
@@ -565,11 +565,21 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
             yield self[i]
 
 
-class _GPISetAction(enum.IntEnum):
-    DEPOSIT = 0
-    FORCE = 1
-    RELEASE = 2
-    NO_DELAY = 3
+class WriteType(DocEnum):
+    """How to apply a write to a simulator object."""
+
+    DEPOSIT = (
+        0,
+        "Deposits a value on an object at the end of the current evaluation cycle. "
+        "Additional deposits made in the same evaluation cycle will override the value.",
+    )
+    FORCE = (
+        1,
+        "Deposits a value on an object immediately and prevents the value from changing"
+        " until a :data:`RELEASE` is issued or another value is forced over this value.",
+    )
+    RELEASE = (2, r"Releases a :data:`FORCE`\ d object.")
+    NO_DELAY = (3, "Like :data:`DEPOSIT`, but the value is applied immediately.")
 
 
 #: The type of the value a :class:`Deposit` or :class:`Force` action contains.
@@ -619,17 +629,17 @@ class Release:
 def _map_action_obj_to_value_action_enum_pair(
     handle: "ValueObjectBase[Any, Any]",
     value: Union[ValueT, Deposit[ValueT], Force[ValueT], Freeze, Release],
-) -> Tuple[ValueT, _GPISetAction]:
+) -> Tuple[ValueT, WriteType]:
     if isinstance(value, Deposit):
-        return value.value, _GPISetAction.DEPOSIT
+        return value.value, WriteType.DEPOSIT
     elif isinstance(value, Force):
-        return value.value, _GPISetAction.FORCE
+        return value.value, WriteType.FORCE
     elif isinstance(value, Freeze):
-        return handle.value, _GPISetAction.FORCE
+        return handle.value, WriteType.FORCE
     elif isinstance(value, Release):
-        return handle.value, _GPISetAction.RELEASE
+        return handle.value, WriteType.RELEASE
     else:
-        return value, _GPISetAction.DEPOSIT
+        return value, WriteType.DEPOSIT
 
 
 #: Type accepted and returned by the :attr:`~ValueObjectBase.value` property.
@@ -709,8 +719,8 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
             raise TypeError(f"{self._path} is constant")
 
         value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
-        if action == _GPISetAction.DEPOSIT:
-            action = _GPISetAction.NO_DELAY
+        if action == WriteType.DEPOSIT:
+            action = WriteType.NO_DELAY
 
         self._set_value(value_, action, _write_now)
 
@@ -723,7 +733,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
     def _set_value(
         self,
         value: ValueSetT,
-        action: _GPISetAction,
+        action: WriteType,
         schedule_write: Callable[
             ["ValueObjectBase[Any, Any]", Callable[..., None], Sequence[Any]], None
         ],
@@ -827,7 +837,7 @@ class ArrayObject(
     def _set_value(
         self,
         value: Union[Array[ElemValueT], Sequence[ElemValueT]],
-        action: _GPISetAction,
+        action: WriteType,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
@@ -889,7 +899,7 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
     def _set_value(
         self,
         value: Union[Logic, int, str],
-        action: _GPISetAction,
+        action: WriteType,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
@@ -913,7 +923,7 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_binstr, (action, value_))
+        schedule_write(self, self._handle.set_signal_val_binstr, (action.value, value_))
 
     @property
     def value(self) -> Logic:
@@ -995,7 +1005,7 @@ class LogicArrayObject(
     def _set_value(
         self,
         value: Union[LogicArray, Logic, int, str],
-        action: _GPISetAction,
+        action: WriteType,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
@@ -1006,7 +1016,7 @@ class LogicArrayObject(
             if min_val <= value <= max_val:
                 if len(self) <= 32:
                     schedule_write(
-                        self, self._handle.set_signal_val_int, (action, value)
+                        self, self._handle.set_signal_val_int, (action.value, value)
                     )
                     return
 
@@ -1053,7 +1063,7 @@ class LogicArrayObject(
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_binstr, (action, value_))
+        schedule_write(self, self._handle.set_signal_val_binstr, (action.value, value_))
 
     @property
     def value(self) -> LogicArray:
@@ -1122,7 +1132,7 @@ class RealObject(NonArrayValueObject[float, float]):
     def _set_value(
         self,
         value: float,
-        action: _GPISetAction,
+        action: WriteType,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
@@ -1132,7 +1142,7 @@ class RealObject(NonArrayValueObject[float, float]):
                 f"Unsupported type for real value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_real, (action, value))
+        schedule_write(self, self._handle.set_signal_val_real, (action.value, value))
 
     @property
     def value(self) -> float:
@@ -1172,7 +1182,7 @@ class EnumObject(NonArrayValueObject[int, int]):
     def _set_value(
         self,
         value: int,
-        action: _GPISetAction,
+        action: WriteType,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
@@ -1184,7 +1194,7 @@ class EnumObject(NonArrayValueObject[int, int]):
 
         min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
         if min_val <= value <= max_val:
-            schedule_write(self, self._handle.set_signal_val_int, (action, value))
+            schedule_write(self, self._handle.set_signal_val_int, (action.value, value))
         else:
             raise OverflowError(
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
@@ -1247,7 +1257,7 @@ class IntegerObject(NonArrayValueObject[int, int]):
     def _set_value(
         self,
         value: int,
-        action: _GPISetAction,
+        action: WriteType,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
@@ -1259,7 +1269,7 @@ class IntegerObject(NonArrayValueObject[int, int]):
 
         min_val, max_val = _value_limits(32, _Limits.SIGNED_NBIT)
         if min_val <= value <= max_val:
-            schedule_write(self, self._handle.set_signal_val_int, (action, value))
+            schedule_write(self, self._handle.set_signal_val_int, (action.value, value))
         else:
             raise OverflowError(
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
@@ -1308,7 +1318,7 @@ class StringObject(
     def _set_value(
         self,
         value: bytes,
-        action: _GPISetAction,
+        action: WriteType,
         schedule_write: Callable[
             [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
         ],
@@ -1318,7 +1328,7 @@ class StringObject(
                 f"Unsupported type for string value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_str, (action, value))
+        schedule_write(self, self._handle.set_signal_val_str, (action.value, value))
 
     @property
     def value(self) -> bytes:
