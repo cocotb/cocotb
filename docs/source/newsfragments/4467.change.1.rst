@@ -1,0 +1,1 @@
+:data:`cocotb.log` was previous the base ``"cocotb"`` Logger, but is now a Logger in the ``"test"`` namespace. It still defaults to the :data:`logging.INFO` log level.

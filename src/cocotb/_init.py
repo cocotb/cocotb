@@ -44,11 +44,17 @@ from cocotb._scheduler import Scheduler
 from cocotb.logging import _log_from_c, default_config
 from cocotb.regression import RegressionManager, RegressionMode
 
+log: logging.Logger
+
 
 def _setup_logging() -> None:
     default_config()
-    cocotb.log = logging.getLogger("cocotb")
+    cocotb.log = logging.getLogger("test")
+    cocotb.log.setLevel(logging.INFO)
     cocotb.simulator.initialize_logger(_log_from_c, logging.getLogger)
+
+    global log
+    log = logging.getLogger("cocotb")
 
 
 _shutdown_callbacks: List[Callable[[], None]] = []
@@ -92,7 +98,7 @@ def init_package_from_simulation(argv: List[str]) -> None:
     cocotb.SIM_NAME = cocotb.simulator.get_simulator_product().strip()
     cocotb.SIM_VERSION = cocotb.simulator.get_simulator_version().strip()
 
-    cocotb.log.info(f"Running on {cocotb.SIM_NAME} version {cocotb.SIM_VERSION}")
+    log.info(f"Running on {cocotb.SIM_NAME} version {cocotb.SIM_VERSION}")
 
     cocotb._profiling.initialize()
     _register_shutdown_callback(cocotb._profiling.finalize)
@@ -103,7 +109,7 @@ def init_package_from_simulation(argv: List[str]) -> None:
     _setup_root_handle()
     _start_user_coverage()
 
-    cocotb.log.info(
+    log.info(
         f"Initialized cocotb v{cocotb.__version__} from {os.path.dirname(__file__)}"
     )
 
@@ -119,7 +125,7 @@ def run_regression(_: Any) -> None:
     )
 
     # start Regression Manager
-    cocotb.log.info("Running tests")
+    log.info("Running tests")
     cocotb.regression_manager.start_regression()
 
 
@@ -130,7 +136,7 @@ def _sim_event(msg: str) -> None:
     if hasattr(cocotb, "regression_manager"):
         cocotb.regression_manager._fail_simulation(msg)
     else:
-        cocotb.log.error(msg)
+        log.error(msg)
         _shutdown_testbench()
 
 
@@ -183,7 +189,7 @@ def _start_user_coverage() -> None:
         try:
             import coverage
         except ImportError:
-            cocotb.log.error(
+            log.error(
                 "Coverage collection requested but coverage module not available. Install it using `pip install coverage`."
             )
         else:
@@ -197,7 +203,7 @@ def _start_user_coverage() -> None:
                     )
             if config_filepath is None:
                 # Exclude cocotb itself from coverage collection.
-                cocotb.log.info(
+                log.info(
                     "Collecting coverage of user code. No coverage config file supplied via COCOTB_COVERAGE_RCFILE."
                 )
                 cocotb_package_dir = os.path.dirname(__file__)
@@ -205,7 +211,7 @@ def _start_user_coverage() -> None:
                     branch=True, omit=[f"{cocotb_package_dir}/*"]
                 )
             else:
-                cocotb.log.info(
+                log.info(
                     "Collecting coverage of user code. Coverage config file supplied."
                 )
                 # Allow the config file to handle all configuration
@@ -214,7 +220,7 @@ def _start_user_coverage() -> None:
 
             def stop_user_coverage() -> None:
                 user_coverage.stop()
-                cocotb.log.debug("Writing user coverage data")
+                log.debug("Writing user coverage data")
                 user_coverage.save()
 
             _register_shutdown_callback(stop_user_coverage)
@@ -248,10 +254,10 @@ def _setup_random_seed() -> None:
             cocotb._random_seed = seed
         else:
             cocotb._random_seed = int(time.time())
-        cocotb.log.info("Seeding Python random module with %d", cocotb._random_seed)
+        log.info("Seeding Python random module with %d", cocotb._random_seed)
     else:
         cocotb._random_seed = ast.literal_eval(seed_envvar)
-        cocotb.log.info(
+        log.info(
             "Seeding Python random module with supplied seed %d", cocotb._random_seed
         )
 
