@@ -941,11 +941,8 @@ class ArrayObject(
             yield self[i]
 
 
-class NonArrayValueObject(ValueObjectBase[ValueGetT, ValueSetT]):
-    """ValueObject that is treated as a single object in the GPI.
-
-    NonArrayValueObjects support :meth:`value_change` triggers.
-    """
+class NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
+    """Abstract base class for non-indexable value-having simulation object."""
 
     @cached_property
     def value_change(self) -> ValueChange:
@@ -953,8 +950,8 @@ class NonArrayValueObject(ValueObjectBase[ValueGetT, ValueSetT]):
         return ValueChange._make(self)
 
 
-class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
-    """A scalar logic simulation object.
+class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
+    """A scalar logic-valued simulation object.
 
     Verilog data types that map to this object:
 
@@ -1047,7 +1044,7 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
 
 
 class LogicArrayObject(
-    NonArrayValueObject[LogicArray, Union[LogicArray, Logic, int, str]],
+    NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
     RangeableObjectMixin,
 ):
     """A logic array simulation object.
@@ -1181,7 +1178,7 @@ class LogicArrayObject(
         return self._handle.get_num_elems()
 
 
-class RealObject(NonArrayValueObject[float, float]):
+class RealObject(NonIndexableValueObjectBase[float, float]):
     """A real/float simulation object.
 
     This type is used when a ``real`` object in VHDL or ``float`` object in Verilog is seen.
@@ -1224,7 +1221,7 @@ class RealObject(NonArrayValueObject[float, float]):
         return self.value
 
 
-class EnumObject(NonArrayValueObject[int, int]):
+class EnumObject(NonIndexableValueObjectBase[int, int]):
     """An enumeration simulation object.
 
     This type is used when an enumerated-type simulation object is seen that isn't a "logic" or similar type.
@@ -1277,7 +1274,7 @@ class EnumObject(NonArrayValueObject[int, int]):
         return int(self.value)
 
 
-class IntegerObject(NonArrayValueObject[int, int]):
+class IntegerObject(NonIndexableValueObjectBase[int, int]):
     """An integer simulation object.
 
     Verilog types that map to this object:
@@ -1344,7 +1341,7 @@ class IntegerObject(NonArrayValueObject[int, int]):
 
 
 class StringObject(
-    NonArrayValueObject[bytes, bytes],
+    NonIndexableValueObjectBase[bytes, bytes],
     RangeableObjectMixin,
 ):
     """A string simulation object.
