@@ -70,6 +70,7 @@ class Trigger(Awaitable["Trigger"]):
             Do not call this directly within a :term:`task`. It is intended to be used
             only by the scheduler.
         """
+        # Set _primed so the trigger can test if it's already been primed and behave appropriately.
         self._primed = True
 
     def _unprime(self) -> None:
@@ -89,6 +90,7 @@ class Trigger(Awaitable["Trigger"]):
         self._cleanup()
 
     def _cleanup(self) -> None:
+        # Clear _primed so this Trigger can be re-primed.
         self._primed = False
 
     def __await__(self: Self) -> Generator[Self, None, Self]:
@@ -248,12 +250,16 @@ class _InternalEvent(Trigger):
         self.fired: bool = False
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        if self._callback is not None:
+        if self._primed:
             raise RuntimeError("This Trigger may only be awaited once")
         self._callback = callback
         super()._prime(callback)
         if self.fired:
             self._callback(self)
+
+    def _cleanup(self) -> None:
+        # Don't clear _primed so a second call to _prime() fails.
+        pass
 
     def set(self) -> None:
         """Wake up coroutine blocked on this event."""
@@ -291,7 +297,9 @@ class _Lock(Trigger):
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._primed:
-            return
+            raise RuntimeError(
+                "Lock.acquire() result can only be used by one thread at a time"
+            )
         self._callback = callback
         self._parent._prime_lock(self)
         return super()._prime(callback)
@@ -417,7 +425,10 @@ class NullTrigger(Trigger):
         self.name = name
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
+        if self._primed:
+            return
         callback(self)
+        return super()._prime(callback)
 
     def __repr__(self) -> str:
         if self.name is None:
