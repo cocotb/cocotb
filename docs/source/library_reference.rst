@@ -320,7 +320,7 @@ Assignment Methods
 
 .. currentmodule:: cocotb.handle
 
-.. autoclass:: WriteType
+.. autoclass:: SetAction
 
 .. autoclass:: Deposit
 
