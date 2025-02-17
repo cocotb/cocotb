@@ -461,7 +461,7 @@ class RegressionManager:
             # TODO move to Trigger object
             cocotb.sim_phase = cocotb.SimPhase.NORMAL
             trigger._cleanup()
-        cocotb.handle.start_write_scheduler()
+        cocotb.handle._start_write_scheduler()
 
         self._test_task._add_done_callback(
             lambda _: cocotb._scheduler_inst.shutdown_soon()
@@ -507,7 +507,7 @@ class RegressionManager:
         test = self._test
 
         # clean up write scheduler
-        cocotb.handle.stop_write_scheduler()
+        cocotb.handle._stop_write_scheduler()
 
         # score test
         if self._test_outcome is not None:

@@ -272,7 +272,7 @@ class Scheduler:
 
             # apply inertial writes if ReadWrite
             if trigger is self._read_write:
-                cocotb.handle.apply_scheduled_writes()
+                cocotb.handle._apply_scheduled_writes()
 
             self._react(trigger)
             self._event_loop()

@@ -686,13 +686,13 @@ async def _do_writes() -> None:
         await ReadWrite()
 
 
-def start_write_scheduler() -> None:
+def _start_write_scheduler() -> None:
     global _write_task
     if _write_task is None:
         _write_task = cocotb.start_soon(_do_writes())
 
 
-def stop_write_scheduler() -> None:
+def _stop_write_scheduler() -> None:
     global _write_task
     if _write_task is not None:
         _write_task.kill()
@@ -701,7 +701,7 @@ def stop_write_scheduler() -> None:
     _writes_pending.clear()
 
 
-def apply_scheduled_writes() -> None:
+def _apply_scheduled_writes() -> None:
     while _write_calls:
         _, (func, action, value) = _write_calls.popitem(last=False)
         func(action.value, value)
