@@ -34,7 +34,7 @@ repos:
     exclude: "^docs/source/diagrams/(svg|xml)/"
 
 - repo: https://github.com/henryiii/validate-pyproject-schema-store
-  rev: "2025.02.10"
+  rev: "2025.02.17"
   hooks:
     - id: validate-pyproject
 
