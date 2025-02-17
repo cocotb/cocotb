@@ -307,7 +307,10 @@ class _Lock(Trigger):
 
 
 class Lock(AsyncContextManager[None]):
-    """A mutual exclusion lock (not re-entrant).
+    """A mutual exclusion lock.
+
+    Guarantees fair scheduling.
+    Lock acquisition is given in order of attempted lock acquisition.
 
     Usage:
         By directly calling :meth:`acquire` and :meth:`release`.
