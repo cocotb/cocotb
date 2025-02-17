@@ -5,20 +5,23 @@
 Tests for synchronization primitives like Lock and Event
 """
 
+import random
 import re
-from typing import Any
+from typing import Any, List
 
 import pytest
 from common import MyException
 
 import cocotb
 from cocotb._base_triggers import _InternalEvent
+from cocotb.task import Task
 from cocotb.triggers import (
     Combine,
     Event,
     First,
     Lock,
     NullTrigger,
+    ReadOnly,
     Timer,
 )
 from cocotb.utils import get_sim_time
@@ -254,3 +257,54 @@ async def test_Combine_objects_shared_by_multiple(_: Any) -> None:
         e.set()
     await Combine(*waiters)
     assert count == 5
+
+
+@cocotb.test
+async def test_Lock_fair_scheduling(_) -> None:
+    """Ensure that Lock acquisition is given in FIFO order to ensure fair access."""
+
+    # test config
+    n_waiters = 500
+    waiter_ns = 1
+    average_kills = 50
+    average_test_time = (n_waiters - average_kills) * waiter_ns
+    average_killer_wakeup = average_test_time / average_kills
+
+    last_scheduled: int = -1
+    lock = Lock()
+
+    async def waiter(n: int) -> None:
+        max_hold_time = waiter_ns * (n + 1)
+        start_time = get_sim_time("ns")
+        await lock.acquire()
+        end_time = get_sim_time("ns")
+
+        # Ensure the waiter didn't hang due another waiter being killed.
+        assert end_time <= (start_time + max_hold_time)
+
+        # Ensure acquisition is in order.
+        nonlocal last_scheduled
+        assert n > last_scheduled
+        last_scheduled = n
+
+        # Hold the Lock for some time to give a chance for other waiters to be cancelled.
+        await Timer(waiter_ns, "ns")
+        lock.release()
+
+    tasks: List[Task[None]] = []
+
+    for i in range(n_waiters):
+        tasks.append(cocotb.start_soon(waiter(i)))
+        # Run the waiter until it gets the acquire()
+        await NullTrigger()
+
+    # We cancel tasks randomly to ensure that doesn't effect acquisition order.
+    while not all(t.done() for t in tasks):
+        # Randomly kill a remaining waiter.
+        tasks[random.randrange(last_scheduled, len(tasks))].kill()
+        # Wait some random time until killing another.
+        await Timer(
+            (random.random() * 2 * average_killer_wakeup), "ns", round_mode="ceil"
+        )
+        # So we don't depend upon the relative scheduling order of the waiter Timers and the above Timer.
+        await ReadOnly()
