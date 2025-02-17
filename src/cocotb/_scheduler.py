@@ -393,24 +393,19 @@ class Scheduler:
         trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
         trigger_tasks.append(task)
 
-        if not trigger._primed:
-            if trigger_tasks != [task]:
-                # should never happen
-                raise InternalError("More than one task waiting on an unprimed trigger")
+        try:
+            # TODO maybe associate the react method with the trigger object so
+            # we don't have to do a type check here.
+            if isinstance(trigger, GPITrigger):
+                trigger._prime(self._sim_react)
+            else:
+                trigger._prime(self._react)
+        except Exception as e:
+            # discard the trigger we associated, it will never fire
+            self._trigger2tasks.pop(trigger)
 
-            try:
-                # TODO maybe associate the react method with the trigger object so
-                # we don't have to do a type check here.
-                if isinstance(trigger, GPITrigger):
-                    trigger._prime(self._sim_react)
-                else:
-                    trigger._prime(self._react)
-            except Exception as e:
-                # discard the trigger we associated, it will never fire
-                self._trigger2tasks.pop(trigger)
-
-                # replace it with a new trigger that throws back the exception
-                self._schedule_task_internal(task, outcome=_outcomes.Error(e))
+            # replace it with a new trigger that throws back the exception
+            self._schedule_task_internal(task, outcome=_outcomes.Error(e))
 
     def _schedule_task(self, task: Task[Any]) -> None:
         """Queue *task* for scheduling.

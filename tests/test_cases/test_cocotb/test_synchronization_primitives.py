@@ -13,7 +13,7 @@ import pytest
 from common import MyException
 
 import cocotb
-from cocotb._base_triggers import _InternalEvent
+from cocotb._base_triggers import Trigger, _InternalEvent
 from cocotb.task import Task
 from cocotb.triggers import (
     Combine,
@@ -308,3 +308,18 @@ async def test_Lock_fair_scheduling(_) -> None:
         )
         # So we don't depend upon the relative scheduling order of the waiter Timers and the above Timer.
         await ReadOnly()
+
+
+@cocotb.test(expect_error=RuntimeError)
+async def test_Lock_multiple_users_acquire_triggers(_) -> None:
+    """Ensure that multiple Tasks using the same Lock.acquire() Triggers is not possible."""
+
+    async def wait(trigger: Trigger) -> None:
+        await trigger
+
+    lock = Lock()
+    acquire_trigger = lock.acquire()
+
+    cocotb.start_soon(wait(acquire_trigger))
+    cocotb.start_soon(wait(acquire_trigger))
+    await Timer(1, "ns")
