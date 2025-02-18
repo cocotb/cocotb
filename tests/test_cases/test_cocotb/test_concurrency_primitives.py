@@ -10,11 +10,10 @@ from collections import deque
 from random import randint
 
 import pytest
-from common import _check_traceback
+from common import _check_traceback, assert_takes
 
 import cocotb
 from cocotb.triggers import Combine, Event, First, Timer
-from cocotb.utils import get_sim_time
 
 
 @cocotb.test()
@@ -156,17 +155,14 @@ async def test_event_is_set(dut):
 @cocotb.test()
 async def test_combine_start_soon(_):
     async def coro(delay):
-        start_time = get_sim_time(unit="ns")
         await Timer(delay, "ns")
-        assert get_sim_time(unit="ns") == start_time + delay
 
     max_delay = 10
 
     tasks = [cocotb.start_soon(coro(d)) for d in range(1, max_delay + 1)]
 
-    test_start = get_sim_time(unit="ns")
-    await Combine(*tasks)
-    assert get_sim_time(unit="ns") == test_start + max_delay
+    with assert_takes(max_delay, "ns"):
+        await Combine(*tasks)
 
 
 @cocotb.test()
@@ -209,14 +205,11 @@ async def test_recursive_combine(_):
         await Timer(N, "ns")
         done.add(N)
 
-    start_time = get_sim_time("ns")
-    await Combine(
-        Combine(cocotb.start_soon(waiter(10)), cocotb.start_soon(waiter(20))),
-        cocotb.start_soon(waiter(30)),
-    )
-    end_time = get_sim_time("ns")
-
-    assert end_time - start_time == 30
+    with assert_takes(30, "ns"):
+        await Combine(
+            Combine(cocotb.start_soon(waiter(10)), cocotb.start_soon(waiter(20))),
+            cocotb.start_soon(waiter(30)),
+        )
     assert done == {10, 20, 30}
 
 
