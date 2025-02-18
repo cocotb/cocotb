@@ -442,23 +442,35 @@ class Runner(ABC):
         if verbose is not None:
             self.verbose = verbose
 
-        # When using pytest, use test name as result file name
+        # Pytest test name is used by the next couple sections.
         pytest_current_test = os.getenv("PYTEST_CURRENT_TEST", None)
-        test_dir_path = Path(self.test_dir)
-        self.current_test_name = "test"
-        if results_xml is not None:
-            # PYTEST_CURRENT_TEST only allowed when results_xml is not set
-            assert not pytest_current_test
-            results_xml_path = Path(results_xml)
-            if results_xml_path.is_absolute():
-                results_xml_file = results_xml_path
-            else:
-                results_xml_file = test_dir_path / results_xml_path
-        elif pytest_current_test is not None:
+
+        if pytest_current_test is not None:
             self.current_test_name = pytest_current_test.split(":")[-1].split(" ")[0]
-            results_xml_file = test_dir_path / f"{self.current_test_name}.{results_xml}"
         else:
-            results_xml_file = test_dir_path / "results.xml"
+            self.current_test_name = "test"
+
+        results_xml_path: Union[None, Path] = (
+            Path(results_xml) if results_xml is not None else None
+        )
+
+        # result.xml filename precedence:
+        # 1. absolute path
+        # 2. pytest test name
+        # 3. relative path
+        # 4. default name
+        if results_xml_path is not None and results_xml_path.is_absolute():
+            results_xml_file = results_xml_path
+        elif pytest_current_test is not None:
+            if results_xml_path is not None:
+                raise NotImplementedError(
+                    "Relative result_xml paths aren't supported when using pytest"
+                )
+            results_xml_file = self.test_dir / f"{self.current_test_name}.result.xml"
+        elif results_xml_path is not None:
+            results_xml_file = self.test_dir / results_xml_path
+        else:
+            results_xml_file = self.test_dir / "results.xml"
 
         with suppress(OSError):
             os.remove(results_xml_file)
