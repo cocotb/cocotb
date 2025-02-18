@@ -706,9 +706,9 @@ void VpiImpl::sim_end() {
     // vpi_control() returns void for some reason.
     vpi_control(vpiFinish, vpiDiagTimeLoc);
 #else
-    int res = vpi_control(vpiFinish, vpiDiagTimeLoc);
+    int ok = vpi_control(vpiFinish, vpiDiagTimeLoc);
     // LCOV_EXCL_START
-    if (res) {
+    if (!ok) {
         LOG_ERROR("VPI: Failed to end simulation");
         check_vpi_error();
     }
