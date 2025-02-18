@@ -546,6 +546,7 @@ class RegressionManager:
                     result=exc,
                     msg="passed but we expected an error",
                 )
+                passed = False
 
             elif test.expect_fail:
                 self._record_test_failed(
@@ -554,6 +555,7 @@ class RegressionManager:
                     result=exc,
                     msg="passed but we expected a failure",
                 )
+                passed = False
 
             else:
                 self._record_test_passed(
@@ -579,6 +581,7 @@ class RegressionManager:
                     result=exc,
                     msg="expected failure, but errored with unexpected type",
                 )
+                passed = False
 
         elif test.expect_error:
             if isinstance(exc, test.expect_error):
@@ -596,6 +599,7 @@ class RegressionManager:
                     result=exc,
                     msg="errored with unexpected type",
                 )
+                passed = False
 
         else:
             self._record_test_failed(
@@ -605,8 +609,8 @@ class RegressionManager:
                 msg=msg,
             )
 
-            if _pdb_on_exception:
-                pdb.post_mortem(exc.__traceback__)
+        if _pdb_on_exception and not passed and exc is not None:
+            pdb.post_mortem(exc.__traceback__)
 
         # continue test loop, assuming sim failure or not
         return self._execute()
