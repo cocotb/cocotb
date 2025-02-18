@@ -48,6 +48,7 @@ from typing import (
     Dict,
     Generic,
     List,
+    NoReturn,
     Optional,
     Sequence,
     Tuple,
@@ -71,7 +72,6 @@ from cocotb._utils import (
     want_color_output,
 )
 from cocotb._xunit_reporter import XUnitReporter
-from cocotb.result import TestSuccess
 from cocotb.task import Task, _RunningTest
 from cocotb.triggers import SimTimeoutError, Timer, Trigger, with_timeout
 from cocotb.utils import get_sim_time
@@ -100,6 +100,14 @@ else:
 # having to set an exception.
 class SimFailure(Exception):
     """A Test failure due to simulator failure."""
+
+
+class _TestSuccess(BaseException):
+    """Base class for all test completion exceptions."""
+
+    def __init__(self, msg: Union[str, None]) -> None:
+        super().__init__(msg)
+        self.msg = msg
 
 
 class Test:
@@ -243,7 +251,7 @@ class RegressionManager:
     def __init__(self) -> None:
         self._test: Test
         self._test_task: Task[None]
-        self._test_outcome: Union[None, Outcome[Any]]
+        self._test_outcome: Union[None, Outcome[Any]] = None
         self._test_start_time: float
         self._test_start_sim_time: float
         self.log = _logger
@@ -515,62 +523,77 @@ class RegressionManager:
         else:
             assert self._test_task._outcome is not None
             outcome = self._test_task._outcome
+
+        passed: bool
+        msg: Union[str, None]
+        exc: Union[BaseException, None]
         try:
             outcome.get()
+        except _TestSuccess as e:
+            passed, msg = True, e.msg
+            exc = remove_traceback_frames(e, ["_test_complete", "get"])
         except BaseException as e:
-            result = remove_traceback_frames(e, ["_test_complete", "get"])
+            passed, msg = False, None
+            exc = remove_traceback_frames(e, ["_test_complete", "get"])
         else:
-            result = TestSuccess()
+            passed, msg, exc = True, None, None
 
-        if (
-            isinstance(result, TestSuccess)
-            and not test.expect_fail
-            and not test.expect_error
-        ):
-            self._record_test_passed(
-                wall_time_s=wall_time_s,
-                sim_time_ns=sim_time_ns,
-                result=None,
-                msg=None,
-            )
+        if passed:
+            if test.expect_error:
+                self._record_test_failed(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
+                    result=exc,
+                    msg="passed but we expected an error",
+                )
 
-        elif isinstance(result, TestSuccess) and test.expect_error:
-            self._record_test_failed(
-                wall_time_s=wall_time_s,
-                sim_time_ns=sim_time_ns,
-                result=None,
-                msg="passed but we expected an error",
-            )
+            elif test.expect_fail:
+                self._record_test_failed(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
+                    result=exc,
+                    msg="passed but we expected a failure",
+                )
 
-        elif isinstance(result, TestSuccess):
-            self._record_test_failed(
-                wall_time_s=wall_time_s,
-                sim_time_ns=sim_time_ns,
-                result=None,
-                msg="passed but we expected a failure",
-            )
+            else:
+                self._record_test_passed(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
+                    result=None,
+                    msg=msg,
+                )
 
-        elif isinstance(result, (AssertionError, _Failed)) and test.expect_fail:
-            self._record_test_passed(
-                wall_time_s=wall_time_s,
-                sim_time_ns=sim_time_ns,
-                result=None,
-                msg="failed as expected",
-            )
+        elif test.expect_fail:
+            if isinstance(exc, (AssertionError, _Failed)):
+                self._record_test_passed(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
+                    result=None,
+                    msg="failed as expected",
+                )
+
+            else:
+                self._record_test_failed(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
+                    result=exc,
+                    msg="expected failure, but errored with unexpected type",
+                )
 
         elif test.expect_error:
-            if isinstance(result, test.expect_error):
+            if isinstance(exc, test.expect_error):
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
                     result=None,
                     msg="errored as expected",
                 )
+
             else:
                 self._record_test_failed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
-                    result=result,
+                    result=exc,
                     msg="errored with unexpected type",
                 )
 
@@ -578,12 +601,12 @@ class RegressionManager:
             self._record_test_failed(
                 wall_time_s=wall_time_s,
                 sim_time_ns=sim_time_ns,
-                result=result,
-                msg=None,
+                result=exc,
+                msg=msg,
             )
 
             if _pdb_on_exception:
-                pdb.post_mortem(result.__traceback__)
+                pdb.post_mortem(exc.__traceback__)
 
         # continue test loop, assuming sim failure or not
         return self._execute()
@@ -1272,3 +1295,14 @@ class TestFactory(Generic[F]):
 
             glbs["__cocotb_tests__"].append(test)
             glbs[test.name] = test
+
+
+def pass_test(msg: Union[str, None] = None) -> NoReturn:
+    """Force a test to pass.
+
+    The test will end and enter termination phase when this is called.
+
+    Args:
+        msg: The message to display when the test passes.
+    """
+    raise _TestSuccess(msg)

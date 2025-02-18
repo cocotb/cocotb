@@ -43,12 +43,11 @@ from cocotb._decorators import (
 from cocotb._deprecation import deprecated
 from cocotb._scheduler import Scheduler
 from cocotb._utils import DocEnum
-from cocotb.regression import RegressionManager
-from cocotb.result import TestSuccess
+from cocotb.regression import RegressionManager, _Failed, _TestSuccess, pass_test
 
 from ._version import __version__
 
-__all__ = ("bridge", "resume", "test", "parametrize", "__version__")
+__all__ = ("bridge", "resume", "test", "parametrize", "pass_test", "__version__")
 
 
 log: py_logging.Logger
@@ -136,7 +135,7 @@ def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:
     if e is None:
         return
     # there was a failure and no one is watching, fail test
-    elif isinstance(e, (TestSuccess, AssertionError)):
+    elif isinstance(e, (_TestSuccess, _Failed, AssertionError)):
         task._log.info("Test stopped by this task")
         cocotb.regression_manager._abort_test(e)
     else:
