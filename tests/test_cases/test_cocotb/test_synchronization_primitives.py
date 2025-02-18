@@ -323,3 +323,18 @@ async def test_Lock_multiple_users_acquire_triggers(_) -> None:
     cocotb.start_soon(wait(acquire_trigger))
     cocotb.start_soon(wait(acquire_trigger))
     await Timer(1, "ns")
+
+
+@cocotb.test(expect_error=RuntimeError)
+async def test_Event_multiple_task_share_trigger(_) -> None:
+    """Test that multiple tasks aren't allowed to share an Event trigger."""
+
+    async def waiter(trigger: Trigger) -> None:
+        await trigger
+
+    e = Event()
+    e_trigger = e.wait()
+    cocotb.start_soon(waiter(e_trigger))
+    cocotb.start_soon(waiter(e_trigger))
+
+    await Timer(1, "ns")
