@@ -207,6 +207,7 @@ class Combine(_AggregateWaitable["Combine"]):
             await self._triggers[0]
         else:
             waiters: List[cocotb.task.Task[object]] = []
+            completed: List[cocotb.task.Task[Any]] = []
             done = _InternalEvent(self)
             exception: Union[BaseException, None] = None
 
@@ -215,8 +216,8 @@ class Combine(_AggregateWaitable["Combine"]):
             ) -> None:
                 # have to check cancelled first otherwise exception() will throw
                 if task.cancelled():
-                    waiters.remove(task)
-                    if not waiters:
+                    completed.append(task)
+                    if len(completed) == len(waiters):
                         done.set()
                         return
                 e = task.exception()
@@ -225,8 +226,8 @@ class Combine(_AggregateWaitable["Combine"]):
                     exception = e
                     done.set()
                 else:
-                    waiters.remove(task)
-                    if not waiters:
+                    completed.append(task)
+                    if len(completed) == len(waiters):
                         done.set()
 
             # start a parallel task for each trigger
@@ -295,7 +296,6 @@ class First(_AggregateWaitable[Any]):
         completed: List[cocotb.task.Task[Any]] = []
 
         def on_done(task: cocotb.task.Task[Any]) -> None:
-            waiters.remove(task)
             completed.append(task)
             done.set()
 
