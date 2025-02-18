@@ -110,7 +110,9 @@ class _Event(Trigger):
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._primed:
-            return
+            raise RuntimeError(
+                "Event.wait() result can only be used by one task at a time"
+            )
         self._callback = callback
         self._parent._prime_trigger(self, callback)
         return super()._prime(callback)
@@ -297,7 +299,7 @@ class _Lock(Trigger):
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._primed:
             raise RuntimeError(
-                "Lock.acquire() result can only be used by one thread at a time"
+                "Lock.acquire() result can only be used by one task at a time"
             )
         self._callback = callback
         self._parent._prime_lock(self)
