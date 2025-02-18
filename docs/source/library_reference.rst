@@ -308,7 +308,7 @@ Simulation Object Handles
     :member-order: bysource
     :show-inheritance:
     :synopsis: Classes for simulation objects.
-    :exclude-members: Deposit, Force, Freeze, Release, WriteType
+    :exclude-members: Deposit, Force, Freeze, Release, Action
     :special-members: __len__
 ..
    Excluding the Assignment Methods that are getting their own section below
@@ -320,7 +320,7 @@ Assignment Methods
 
 .. currentmodule:: cocotb.handle
 
-.. autoclass:: SetAction
+.. autoclass:: Action
 
 .. autoclass:: Deposit
 

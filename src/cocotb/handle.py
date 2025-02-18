@@ -565,7 +565,7 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
             yield self[i]
 
 
-class SetAction(DocEnum):
+class Action(DocEnum):
     """How to apply a write to a simulator object."""
 
     DEPOSIT = (
@@ -611,7 +611,7 @@ ValueT = TypeVar("ValueT")
 class Deposit(Generic[ValueT]):
     r"""Wraps a value to be :term:`deposited <deposit>`.
 
-    See :data:`SetAction.DEPOSIT` for more information on behavior.
+    See :data:`Action.DEPOSIT` for more information on behavior.
     """
 
     def __init__(self, value: ValueT) -> None:
@@ -621,7 +621,7 @@ class Deposit(Generic[ValueT]):
 class Force(Generic[ValueT]):
     r"""Wraps a value to be :term:`forced <force>`.
 
-    See :data:`SetAction.FORCE` for more information on behavior.
+    See :data:`Action.FORCE` for more information on behavior.
     """
 
     def __init__(self, value: ValueT) -> None:
@@ -645,17 +645,17 @@ class Release:
 def _map_action_obj_to_value_action_enum_pair(
     handle: "ValueObjectBase[Any, Any]",
     value: Union[ValueT, Deposit[ValueT], Force[ValueT], Freeze, Release],
-) -> Tuple[ValueT, SetAction]:
+) -> Tuple[ValueT, Action]:
     if isinstance(value, Deposit):
-        return value.value, SetAction.DEPOSIT
+        return value.value, Action.DEPOSIT
     elif isinstance(value, Force):
-        return value.value, SetAction.FORCE
+        return value.value, Action.FORCE
     elif isinstance(value, Freeze):
-        return handle.value, SetAction.FORCE
+        return handle.value, Action.FORCE
     elif isinstance(value, Release):
-        return handle.value, SetAction.RELEASE
+        return handle.value, Action.RELEASE
     else:
-        return value, SetAction.DEPOSIT
+        return value, Action.DEPOSIT
 
 
 if TYPE_CHECKING:
@@ -686,7 +686,7 @@ _trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 # A dictionary of pending (write_func, args), keyed by handle.
 # Writes are applied oldest to newest (least recently used).
 # Only the last scheduled write to a particular handle in a timestep is performed.
-_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], SetAction, Any]]" = OrderedDict()
+_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], Action, Any]]" = OrderedDict()
 
 # TODO don't use a task to force ReadWrite, just prime an empty callback
 
@@ -729,7 +729,7 @@ if _trust_inertial:
     def _schedule_write(  # type: ignore  # pylance doesn't like if/else function definitions
         handle: "ValueObjectBase[Any, Any]",
         write_func: Callable[[int, ValueT], None],
-        action: SetAction,
+        action: Action,
         value: ValueT,
     ) -> None:
         # Trust the simulator and just write.
@@ -739,13 +739,13 @@ else:
     def _schedule_write(
         handle: "ValueObjectBase[Any, Any]",
         write_func: Callable[[int, ValueT], None],
-        action: SetAction,
+        action: Action,
         value: ValueT,
     ) -> None:
         if cocotb.sim_phase == cocotb.SimPhase.READ_WRITE:
             # If we are already in the ReadWrite phase though, do it immediately as an optimization.
             write_func(action.value, value)
-        elif action == SetAction.DEPOSIT:
+        elif action == Action.DEPOSIT:
             # Queue write for the beginning of the next ReadWrite phase because we can't trust the simulator. =(
             if handle in _write_calls:
                 del _write_calls[handle]
@@ -777,10 +777,10 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             Sets the value of the simulation object.
 
             See :class:`Deposit`, :class:`Force`, :class:`Freeze`, and :class:`Release` for additional actions that can be taken when setting a value.
-            The default behavior is to :data:`SetAction.DEPOSIT` the value.
+            The default behavior is to :data:`Action.DEPOSIT` the value.
 
             .. note::
-                Use :meth:`handle.set(value, SetAction.NO_DELAY) <set>` if you need to set the value of the simulation object immediately.
+                Use :meth:`handle.set(value, Action.NO_DELAY) <set>` if you need to set the value of the simulation object immediately.
 
             .. note::
                 The Python type system thinks the setter only supports the getter's type,
@@ -804,12 +804,12 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         """Return the current value of the simulation object."""
 
     @abstractmethod
-    def set(self, value: ValueSetT, action: SetAction = SetAction.DEPOSIT) -> None:
+    def set(self, value: ValueSetT, action: Action = Action.DEPOSIT) -> None:
         """Set the value of the simulation object.
 
         Args:
             value: The value to set the simulation object to. This may include type conversion.
-            action: How to set the value. See :class:`SetAction` for more details.
+            action: How to set the value. See :class:`Action` for more details.
 
         Raises:
             TypeError: If the *value* is of a type that cannot be converted to a simulation value,
@@ -819,7 +819,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
                 but the value would overflow the limits of the simulation object.
         """
 
-    @deprecated("Use `handle.set(value, SetAction.NO_DELAY)` instead.")
+    @deprecated("Use `handle.set(value, Action.NO_DELAY)` instead.")
     @_set_check
     def setimmediatevalue(
         self,
@@ -828,10 +828,10 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         r"""Set the value of the simulation object immediately.
 
         See :class:`Deposit`, :class:`Force`, :class:`Freeze`, and :class:`Release` for additional actions that can be taken when setting a value.
-        Passing :class:`Deposit`\ s and unwrapped values is equivalent to calling :meth:`set` with :data:`SetAction.NO_DELAY`.
+        Passing :class:`Deposit`\ s and unwrapped values is equivalent to calling :meth:`set` with :data:`Action.NO_DELAY`.
 
         .. deprecated:: 2.0
-            Use :meth:`handle.set(value, SetAction.NO_DELAY) <set>` instead.
+            Use :meth:`handle.set(value, Action.NO_DELAY) <set>` instead.
         """
         # What we actually expect here that we can't write because property getters and
         # setters can't have different types.
@@ -840,8 +840,8 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             value,
         )
         value__, action = _map_action_obj_to_value_action_enum_pair(self, value_)
-        if action == SetAction.DEPOSIT:
-            action = SetAction.NO_DELAY
+        if action == Action.DEPOSIT:
+            action = Action.NO_DELAY
         self.set(value__, action)
 
     @cached_property
@@ -911,7 +911,7 @@ class ArrayObject(
     def set(
         self,
         value: Union[Array[ElemValueT], Sequence[ElemValueT]],
-        action: SetAction = SetAction.DEPOSIT,
+        action: Action = Action.DEPOSIT,
     ) -> None:
         """Set the value of each element of an array simulation object.
 
@@ -926,7 +926,7 @@ class ArrayObject(
 
         Args:
             value: The value to set the signal to. This may include type conversion.
-            action: How to set the *value*. See :class:`SetAction` for more details.
+            action: How to set the *value*. See :class:`Action` for more details.
 
         Raises:
             TypeError: If *value* is of a type that can't be assigned to the simulation object.
@@ -990,13 +990,13 @@ class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
     def set(
         self,
         value: Union[Logic, LogicArray, bool, int, str],
-        action: SetAction = SetAction.DEPOSIT,
+        action: Action = Action.DEPOSIT,
     ) -> None:
         """Set the value of the simulation object.
 
         Args:
             value: The value to set the simulation object to.
-            action: How to set the value. See :class:`SetAction` for more details.
+            action: How to set the value. See :class:`Action` for more details.
 
         Raises:
             TypeError: If *value* is of a type that can't be assigned to the simulation object, or readily converted into a type that can.
@@ -1085,7 +1085,7 @@ class LogicArrayObject(
     def set(
         self,
         value: Union[LogicArray, Logic, int, str],
-        action: SetAction = SetAction.DEPOSIT,
+        action: Action = Action.DEPOSIT,
     ) -> None:
         """Set the value of the simulation object.
 
@@ -1196,13 +1196,13 @@ class RealObject(NonIndexableValueObjectBase[float, float]):
     def set(
         self,
         value: float,
-        action: SetAction = SetAction.DEPOSIT,
+        action: Action = Action.DEPOSIT,
     ) -> None:
         """Set the value of the simulation object.
 
         Args:
             value: The value to set the simulation object to.
-            action: How to set the value. See :class:`SetAction` for more details.
+            action: How to set the value. See :class:`Action` for more details.
 
         Raises:
             TypeError: If *value* is any type other than :class:`float`.
@@ -1245,7 +1245,7 @@ class EnumObject(NonIndexableValueObjectBase[int, int]):
     def set(
         self,
         value: int,
-        action: SetAction = SetAction.DEPOSIT,
+        action: Action = Action.DEPOSIT,
     ) -> None:
         """Set the value of the simulation object.
 
@@ -1253,7 +1253,7 @@ class EnumObject(NonIndexableValueObjectBase[int, int]):
 
         Args:
             value: The value to set the simulation object to.
-            action: How to set the value. See :class:`SetAction` for more details.
+            action: How to set the value. See :class:`Action` for more details.
 
         Raises:
             TypeError: If *value* is any type other than :class:`int`.
@@ -1314,13 +1314,13 @@ class IntegerObject(NonIndexableValueObjectBase[int, int]):
     def set(
         self,
         value: int,
-        action: SetAction = SetAction.DEPOSIT,
+        action: Action = Action.DEPOSIT,
     ) -> None:
         """Set the the value of the simulation object.
 
         Args:
             value: The value to set the simulation object to.
-            action: How to set the value. See :class:`SetAction` for more details.
+            action: How to set the value. See :class:`Action` for more details.
 
         Raises:
             TypeError: If *value* is any type other than :class:`int`.
@@ -1366,7 +1366,7 @@ class StringObject(
     def set(
         self,
         value: bytes,
-        action: SetAction = SetAction.DEPOSIT,
+        action: Action = Action.DEPOSIT,
     ) -> None:
         """Set the value of the simulation object.
 
@@ -1392,7 +1392,7 @@ class StringObject(
 
         Args:
             value: The value to set the simulation object to.
-            action: How to set the value. See :class:`SetAction` for more details.
+            action: How to set the value. See :class:`Action` for more details.
 
         Raises:
             TypeError: If *value* is any type other than :class:`bytes`.
