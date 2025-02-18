@@ -8,47 +8,80 @@ Tests for concurrency primitives like First and Combine
 import re
 from collections import deque
 from random import randint
+from typing import Any
 
 import pytest
 from common import _check_traceback, assert_takes
 
 import cocotb
-from cocotb.triggers import Combine, Event, First, Timer
+from cocotb.task import Task
+from cocotb.triggers import Combine, Event, First, Timer, Trigger
 
 
-@cocotb.test()
-async def test_unfired_first_triggers(dut):
-    """Test that un-fired trigger(s) in First don't later cause a spurious wakeup"""
-    # gh-843
-    events = [Event() for i in range(3)]
+class MyTrigger(Trigger):
+    def __init__(self) -> None:
+        super().__init__()
+        self.primed = 0
+        self.unprimed = 0
 
-    waiters = [e.wait() for e in events]
+    def _prime(self, _: Any) -> None:
+        self.primed += 1
 
-    async def wait_for_firsts():
-        ret_i = waiters.index(await First(waiters[0], waiters[1]))
-        assert ret_i == 0, f"Expected event 0 to fire, not {ret_i}"
+    def _unprime(self) -> None:
+        self.unprimed += 1
 
-        ret_i = waiters.index(await First(waiters[2]))
-        assert ret_i == 2, f"Expected event 2 to fire, not {ret_i}"
 
-    async def wait_for_e1():
-        """wait on the event that didn't wake `wait_for_firsts`"""
-        ret_i = waiters.index(await waiters[1])
-        assert ret_i == 1, f"Expected event 1 to fire, not {ret_i}"
+@cocotb.test
+async def test_First_unfired_triggers_killed(_) -> None:
+    """Test that un-fired trigger(s) in First don't later cause a spurious wakeup."""
 
-    async def fire_events():
-        """fire the events in order"""
-        for e in events:
-            await Timer(1, "ns")
-            e.set()
+    triggers = [MyTrigger() for _ in range(3)]
 
-    fire_task = cocotb.start_soon(fire_events())
-    e1_task = cocotb.start_soon(wait_for_e1())
-    await wait_for_firsts()
+    timer = Timer(1, "ns")
+    res = await First(timer, *triggers)
+    assert res is timer
 
-    # make sure the other tasks finish
-    await fire_task
-    await e1_task
+    for t in triggers:
+        assert t.primed == 1
+        assert t.unprimed == 1
+
+
+@cocotb.test
+async def test_First_unfired_triggers_killed_on_exception(_) -> None:
+    """Test that un-fired trigger(s) in First after exception don't later cause a spurious wakeup."""
+
+    triggers = [MyTrigger() for _ in range(3)]
+
+    async def fails() -> None:
+        raise ValueError("I am a failure")
+
+    try:
+        await First(cocotb.start_soon(Task(fails())), *triggers)
+    except ValueError:
+        pass
+
+    for t in triggers:
+        assert t.primed == 1
+        assert t.unprimed == 1
+
+
+@cocotb.test
+async def test_Combine_unfired_triggers_killed_on_exception(_) -> None:
+    """Test that un-fired trigger(s) in Combine after exception don't later cause a spurious wakeup."""
+
+    triggers = [MyTrigger() for _ in range(3)]
+
+    async def fails() -> None:
+        raise ValueError("I am a failure")
+
+    try:
+        await Combine(cocotb.start_soon(Task(fails())), *triggers)
+    except ValueError:
+        pass
+
+    for t in triggers:
+        assert t.primed == 1
+        assert t.unprimed == 1
 
 
 @cocotb.test()
