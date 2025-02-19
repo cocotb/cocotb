@@ -781,7 +781,8 @@ class RegressionManager:
         else:
             rest = f": {msg}"
         self.log.warning(
-            "%s %sfailed%s%s",
+            "%s%s %sfailed%s%s",
+            stop_hilight,
             self._test.fullname,
             start_hilight,
             stop_hilight,

@@ -1,1 +1,1 @@
-Report exceptions from tests even when COCOTB_LOG_LEVEL=WARNING
+Log test failures at log level :data:`~logging.WARNING`.
