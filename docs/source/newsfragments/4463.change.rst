@@ -1,0 +1,1 @@
+Log test failures at log level :data:`~logging.WARNING`.
