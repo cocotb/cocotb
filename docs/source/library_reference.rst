@@ -86,8 +86,6 @@ Writing and Generating Tests
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.result.TestSuccess
-
 Interacting with the Simulator
 ==============================
 
@@ -349,6 +347,11 @@ Other Handle Methods
 Miscellaneous
 =============
 
+Test Control
+------------
+
+.. autofunc:: cocotb.regression.pass_test
+
 Other Runtime Information
 -------------------------
 
@@ -371,7 +374,6 @@ Other Runtime Information
 .. autoenum:: cocotb.SimPhase
 
 .. _combine-results:
-
 
 The ``combine_results`` script
 ------------------------------
