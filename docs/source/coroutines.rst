@@ -283,6 +283,45 @@ It can be used to create a special type of generator function that can be iterat
 More details on this type of generator can be found in :pep:`525`.
 
 
+.. _calling_blocking_code:
+
+Calling Blocking Code
+=====================
+
+When interacting with hardware components through a software interface, a software abstraction layer
+or driver is typically responsible for communication.
+This interface often relies on low-level register read/write functions, which are blocking operations.
+This means they halt execution until the write completes or the read returns a result.
+
+However, since cocotb operates using coroutines and is inherently asynchronous, these blocking
+operations will prevent the simulator from advancing time, causing the read/write operations to
+stall indefinitely.
+
+To address this, cocotb provides two decorators: :func:`~cocotb.bridge` and :func:`~cocotb.resume`.
+
+    - The :func:`~cocotb.bridge` decorator converts a regular (non-coroutine) function into a blocking coroutine by running it in a separate execution thread.
+    - The :func:`~cocotb.resume` decorator enables a coroutine that consumes simulation time to be invoked by a regular thread.
+
+A typical call sequence may look like this:
+
+.. image:: diagrams/svg/blocking_code.svg
+
+By using the :func:`~cocotb.bridge` decorator when calling a synchronous function inside the software
+interface, a new excution thread is started where the synchronous code is executed.
+When calling the read/write functions in the software interface, the corresponding coroutine must be
+invoked using the :func:`~cocotb.resume` decorator.
+
+The following code snippet demonstrates in a simple example how to do register read and write
+operations within cocotb from a synchronous context:
+
+.. literalinclude:: ../../examples/doc_examples/coroutines/calling_blocking_code/test_sync_register_access.py
+   :language: python3
+   :start-at: import random
+
+.. versionchanged:: 2.0
+    :func:`cocotb.bridge` renamed from ``cocotb.external``, :func:`cocotb.resume` renamed from ``cocotb.function``.
+
+
 .. _yield-syntax:
 
 Generator-based coroutines
