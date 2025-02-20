@@ -268,7 +268,6 @@ class Clock:
         if self._task is None:
             raise RuntimeError("Stopping a clock that was never started.")
         self._task.kill()
-        self._cleanup()
 
     def _cleanup(self) -> None:
         if self._impl == "gpi":
