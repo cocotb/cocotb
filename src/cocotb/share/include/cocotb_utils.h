@@ -30,14 +30,13 @@
 #ifndef COCOTB_UTILS_H_
 #define COCOTB_UTILS_H_
 
-#include <exports.h>
+#include "exports.h"
+
 #ifdef COCOTBUTILS_EXPORTS
 #define COCOTBUTILS_EXPORT COCOTB_EXPORT
 #else
 #define COCOTBUTILS_EXPORT COCOTB_IMPORT
 #endif
-
-#include <gpi_logging.h>
 
 #define xstr(a) str(a)
 #define str(a) #a
@@ -45,30 +44,6 @@
 extern "C" COCOTBUTILS_EXPORT void* utils_dyn_open(const char* lib_name);
 extern "C" COCOTBUTILS_EXPORT void* utils_dyn_sym(void* handle,
                                                   const char* sym_name);
-extern "C" COCOTBUTILS_EXPORT int is_python_context;
-
-// to_python and to_simulator are implemented as macros instead of functions so
-// that the logs reference the user's lineno and filename
-
-#define to_python()                                      \
-    do {                                                 \
-        if (is_python_context) {                         \
-            LOG_ERROR("FATAL: We are calling up again"); \
-            exit(1);                                     \
-        }                                                \
-        ++is_python_context;                             \
-        LOG_TRACE("Returning to Python");                \
-    } while (0)
-
-#define to_simulator()                                              \
-    do {                                                            \
-        if (!is_python_context) {                                   \
-            LOG_ERROR("FATAL: We have returned twice from Python"); \
-            exit(1);                                                \
-        }                                                           \
-        --is_python_context;                                        \
-        LOG_TRACE("Returning to simulator");                        \
-    } while (0)
 
 template <typename F>
 class Deferable {

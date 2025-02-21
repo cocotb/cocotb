@@ -165,13 +165,12 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     Py_DECREF(handler_ret);
 }
 
-extern "C" void py_gpi_logger_set_level(int level) {
+void py_gpi_logger_set_level(int level) {
     py_gpi_log_level = level;
     gpi_native_logger_set_level(level);
 }
 
-extern "C" void py_gpi_logger_initialize(PyObject *log_func,
-                                         PyObject *get_logger) {
+void py_gpi_logger_initialize(PyObject *log_func, PyObject *get_logger) {
     Py_INCREF(log_func);
     Py_INCREF(get_logger);
     m_log_func = log_func;
@@ -179,7 +178,7 @@ extern "C" void py_gpi_logger_initialize(PyObject *log_func,
     gpi_set_log_handler(py_gpi_log_handler, nullptr);
 }
 
-extern "C" void py_gpi_logger_finalize() {
+void py_gpi_logger_finalize() {
     gpi_clear_log_handler();
     Py_XDECREF(m_log_func);
     Py_XDECREF(m_get_logger);
@@ -189,4 +188,10 @@ extern "C" void py_gpi_logger_finalize() {
     m_logger_map.clear();
 }
 
+// The following stuff has nothing to do with logging, but this module is shared
+// between the other two PyGPI modules: simulatormodule.so and libcocotb.so.
+
 PyObject *pEventFn = NULL;
+
+// Tracks if we are in the context of Python or Simulator
+int is_python_context = 0;
