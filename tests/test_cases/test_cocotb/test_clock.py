@@ -8,15 +8,14 @@ Tests relating to cocotb.clock.Clock
 import decimal
 import fractions
 import os
-from math import isclose
 
 import pytest
+from common import assert_takes
 
 import cocotb
 from cocotb.clock import Clock
 from cocotb.simulator import clock_create, get_precision
 from cocotb.triggers import FallingEdge, NullTrigger, RisingEdge, Timer
-from cocotb.utils import get_sim_time
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
@@ -37,37 +36,23 @@ async def test_clock_with_units(dut, impl: str) -> None:
 
     clk_gen = cocotb.start_soon(clk_1mhz.start())
 
-    start_time_ns = get_sim_time(unit="ns")
+    with assert_takes(1000, "ns"):
+        await Timer(1, "ns")
+        await RisingEdge(dut.clk)
 
-    await Timer(1, "ns")
-    await RisingEdge(dut.clk)
-
-    edge_time_ns = get_sim_time(unit="ns")
-    assert isclose(edge_time_ns, start_time_ns + 1000.0), "Expected a period of 1 us"
-
-    start_time_ns = edge_time_ns
-
-    await RisingEdge(dut.clk)
-    edge_time_ns = get_sim_time(unit="ns")
-    assert isclose(edge_time_ns, start_time_ns + 1000.0), "Expected a period of 1 us"
+    with assert_takes(1000, "ns"):
+        await RisingEdge(dut.clk)
 
     clk_gen.kill()
 
     clk_gen = cocotb.start_soon(clk_250mhz.start())
 
-    start_time_ns = get_sim_time(unit="ns")
+    with assert_takes(4, "ns"):
+        await Timer(1, "ns")
+        await RisingEdge(dut.clk)
 
-    await Timer(1, "ns")
-    await RisingEdge(dut.clk)
-
-    edge_time_ns = get_sim_time(unit="ns")
-    assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
-
-    start_time_ns = edge_time_ns
-
-    await RisingEdge(dut.clk)
-    edge_time_ns = get_sim_time(unit="ns")
-    assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
+    with assert_takes(4, "ns"):
+        await RisingEdge(dut.clk)
 
     clk_gen.kill()
 
@@ -172,12 +157,8 @@ async def test_clock_cycles(dut) -> None:
     # so we start at a consistent state for math below
     await RisingEdge(dut.clk)
 
-    start_time = get_sim_time(unit="ns")
-    await c.cycles(cycles)
-    end_time = get_sim_time(unit="ns")
-    assert end_time == (start_time + (cycles * period_ns))
+    with assert_takes(cycles * period_ns, "ns"):
+        await c.cycles(cycles)
 
-    start_time = get_sim_time(unit="ns")
-    await c.cycles(cycles, FallingEdge)
-    end_time = get_sim_time(unit="ns")
-    assert end_time == (start_time + (cycles * period_ns) - (period_ns // 2))
+    with assert_takes((cycles * period_ns) - (period_ns // 2), "ns"):
+        await c.cycles(cycles, FallingEdge)
