@@ -53,16 +53,16 @@ FLI, we have to create a process with the signal on the sensitivity list to
 imitate a callback.
 */
 
-#include <exports.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "exports.h"
+
 #ifdef GPI_EXPORTS
 #define GPI_EXPORT COCOTB_EXPORT
 #else
 #define GPI_EXPORT COCOTB_IMPORT
 #endif
-
-#include <gpi_logging.h>
-#include <stdbool.h>
-#include <stdint.h>
 
 /*
  * Declare the handle types.

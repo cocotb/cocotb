@@ -35,6 +35,7 @@
 #include "_vendor/fli/mti.h"
 #include "exports.h"
 #include "gpi.h"
+#include "gpi_logging.h"
 
 #ifdef COCOTBFLI_EXPORTS
 #define COCOTBFLI_EXPORT COCOTB_EXPORT

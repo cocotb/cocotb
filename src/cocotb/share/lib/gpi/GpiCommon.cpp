@@ -33,6 +33,7 @@
 #include <string>
 #include <vector>
 
+#include "embed.h"
 #include "gpi.h"
 #include "gpi_logging.h"
 #include "gpi_priv.h"

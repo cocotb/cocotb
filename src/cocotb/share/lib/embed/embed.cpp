@@ -2,11 +2,13 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <cocotb_utils.h>  // xstr, utils_dyn_open, utils_dyn_sym
-#include <embed.h>
-#include <gpi.h>  // gpi_event_t
+#include "embed.h"
 
 #include <cstdlib>  // getenv
+
+#include "../gpi/gpi_priv.h"  // utils_dyn_open, utils_dyn_sym
+#include "cocotb_utils.h"     // xstr
+
 #ifdef _WIN32
 #include <windows.h>  // Win32 API for loading the embed impl library
 

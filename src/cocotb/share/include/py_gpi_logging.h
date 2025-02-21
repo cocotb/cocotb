@@ -8,6 +8,7 @@
 #include <Python.h>
 
 #include "exports.h"
+#include "gpi_logging.h"
 
 #ifdef PYGPILOG_EXPORTS
 #define PYGPILOG_EXPORT COCOTB_EXPORT

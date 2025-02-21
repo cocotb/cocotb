@@ -35,6 +35,7 @@
 #include "_vendor/vhpi/vhpi_user.h"
 #include "exports.h"
 #include "gpi.h"
+#include "gpi_logging.h"
 
 #ifdef COCOTBVHPI_EXPORTS
 #define COCOTBVHPI_EXPORT COCOTB_EXPORT
