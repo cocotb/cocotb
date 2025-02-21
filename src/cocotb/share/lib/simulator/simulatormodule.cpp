@@ -195,13 +195,6 @@ int handle_gpi_callback(void *user_data) {
     PyGILState_STATE gstate = PyGILState_Ensure();
     DEFER(PyGILState_Release(gstate));
 
-    // Python allowed
-
-    if (!PyCallable_Check(cb_data->function)) {
-        LOG_ERROR("Callback fired but function isn't callable?!\n");
-        return 1;
-    }
-
     // Call the callback
     PyObject *pValue =
         PyObject_Call(cb_data->function, cb_data->args, cb_data->kwargs);
