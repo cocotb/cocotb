@@ -491,23 +491,6 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
     """
 
     #
-    #  libcocotbutils
-    #
-    libcocotbutils_sources = [os.path.join(share_lib_dir, "utils", "cocotb_utils.cpp")]
-    if os.name == "nt":
-        libcocotbutils_sources += ["libcocotbutils.rc"]
-    libcocotbutils_libraries = ["gpilog"]
-    if sys.platform.startswith(("linux", "darwin", "cygwin", "msys")):
-        libcocotbutils_libraries.append("dl")  # dlopen, dlerror, dlsym
-    libcocotbutils = Extension(
-        os.path.join("cocotb", "libs", "libcocotbutils"),
-        define_macros=[("COCOTBUTILS_EXPORTS", "")] + _extra_defines,
-        include_dirs=include_dirs,
-        libraries=libcocotbutils_libraries,
-        sources=libcocotbutils_sources,
-    )
-
-    #
     #  libgpilog
     #
     python_lib_dirs = []
@@ -565,7 +548,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         os.path.join("cocotb", "libs", "libcocotb"),
         define_macros=_extra_defines,
         include_dirs=include_dirs,
-        libraries=["gpilog", "cocotbutils", "pygpilog", "gpi"],
+        libraries=["gpilog", "pygpilog", "gpi"],
         sources=libcocotb_sources,
     )
 
@@ -578,6 +561,9 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
     ]
     if os.name == "nt":
         libgpi_sources += ["libgpi.rc"]
+    libgpi_libraries = ["gpilog", "embed"]
+    if sys.platform.startswith(("linux", "darwin", "cygwin", "msys")):
+        libgpi_libraries.append("dl")  # dlopen, dlerror, dlsym
     libgpi = Extension(
         os.path.join("cocotb", "libs", "libgpi"),
         define_macros=[
@@ -587,7 +573,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         ]
         + _extra_defines,
         include_dirs=include_dirs,
-        libraries=["cocotbutils", "gpilog", "embed"],
+        libraries=libgpi_libraries,
         sources=libgpi_sources,
     )
 
@@ -611,7 +597,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
     # The libraries in this list are compiled in order of their appearance.
     # If there is a linking dependency on one library to another,
     # the linked library must be built first.
-    return [libgpilog, libpygpilog, libcocotbutils, libembed, libgpi, libcocotb, libsim]
+    return [libgpilog, libpygpilog, libembed, libgpi, libcocotb, libsim]
 
 
 def _get_vpi_lib_ext(
