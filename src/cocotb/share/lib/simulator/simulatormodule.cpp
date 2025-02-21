@@ -35,14 +35,12 @@
  */
 
 #include <Python.h>
-#include <cocotb_utils.h>    // to_python to_simulator
-#include <py_gpi_logging.h>  // py_gpi_logger_set_level
 
 #include <cerrno>
-#include <limits>
-#include <type_traits>
 
+#include "cocotb_utils.h"  // to_python to_simulator
 #include "gpi.h"
+#include "py_gpi_logging.h"  // py_gpi_logger_set_level
 
 // This file defines the routines available to Python
 
@@ -194,19 +192,13 @@ int handle_gpi_callback(void *user_data) {
 
     PythonCallback *cb_data = (PythonCallback *)user_data;
 
-    if (cb_data->id_value != COCOTB_ACTIVE_ID) {
-        fprintf(stderr, "Userdata corrupted!\n");
-        return 1;
-    }
-    cb_data->id_value = COCOTB_INACTIVE_ID;
-
     PyGILState_STATE gstate = PyGILState_Ensure();
     DEFER(PyGILState_Release(gstate));
 
     // Python allowed
 
     if (!PyCallable_Check(cb_data->function)) {
-        fprintf(stderr, "Callback fired but function isn't callable?!\n");
+        LOG_ERROR("Callback fired but function isn't callable?!\n");
         return 1;
     }
 
@@ -226,10 +218,7 @@ int handle_gpi_callback(void *user_data) {
     // We don't care about the result
     Py_DECREF(pValue);
 
-    // Remove callback data if no longer active
-    if (cb_data->id_value == COCOTB_INACTIVE_ID) {
-        delete cb_data;
-    }
+    delete cb_data;
 
     return 0;
 }
