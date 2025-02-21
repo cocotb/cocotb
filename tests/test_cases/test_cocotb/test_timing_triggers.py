@@ -17,6 +17,7 @@ from decimal import Decimal
 from fractions import Fraction
 
 import pytest
+from common import assert_takes
 
 import cocotb
 from cocotb.clock import Clock
@@ -30,7 +31,6 @@ from cocotb.triggers import (
     Timer,
     with_timeout,
 )
-from cocotb.utils import get_sim_steps, get_sim_time
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -63,52 +63,37 @@ async def test_timer_with_units(dut):
     # The following test assumes a time precision of 1ps. Update the simulator
     # invocation if this assert hits!
     assert get_precision() == -12
-
-    time_step = get_sim_time(unit="step")
-
     # Await for one simulator time step
-    await Timer(1)  # NOTE: explicitly no units argument here!
-    time_step = get_sim_time(unit="step") - time_step
+    with assert_takes(1, "step"):
+        await Timer(1)  # NOTE: explicitly no units argument here!
 
     pattern = "Unable to accurately represent .* with the simulator precision of .*"
     with pytest.raises(ValueError, match=pattern):
-        await Timer(2.5 * time_step, unit="step")
-    dut._log.info("As expected, unable to create a timer of 2.5 simulator time steps")
+        await Timer(2.5, unit="step")
 
-    time_step = get_sim_time(unit="step")
+    with assert_takes(3, "ns"):
+        await Timer(3, "ns")
 
-    await Timer(3, "ns")
+    with assert_takes(1.5, "ns"):
+        await Timer(1.5, "ns")
 
-    assert get_sim_time(unit="step") == time_step + get_sim_steps(3, "ns")
+    with assert_takes(10, "ps"):
+        await Timer(10.0, "ps")
 
-    time_step = get_sim_time(unit="step")
-    await Timer(1.5, "ns")
-
-    assert get_sim_time(unit="step") == time_step + get_sim_steps(1.5, "ns")
-
-    time_step = get_sim_time(unit="step")
-    await Timer(10.0, "ps")
-
-    assert get_sim_time(unit="step") == time_step + get_sim_steps(10, "ps")
-
-    time_step = get_sim_time(unit="step")
-    await Timer(1.0, "us")
-
-    assert get_sim_time(unit="step") == time_step + get_sim_steps(1, "us")
+    with assert_takes(1.0, "us"):
+        await Timer(1.0, "us")
 
 
 @cocotb.test()
 async def test_timer_with_rational_units(dut):
     """Test that rounding errors are not introduced in exact values"""
     # now with fractions
-    time_step = get_sim_time(unit="step")
-    await Timer(Fraction(1, int(1e9)), unit="sec")
-    assert get_sim_time(unit="step") == time_step + get_sim_steps(1, "ns")
+    with assert_takes(1, "ns"):
+        await Timer(Fraction(1, int(1e9)), unit="sec")
 
     # now with decimals
-    time_step = get_sim_time(unit="step")
-    await Timer(Decimal("1e-9"), unit="sec")
-    assert get_sim_time(unit="step") == time_step + get_sim_steps(1, "ns")
+    with assert_takes(1, "ns"):
+        await Timer(Decimal("1e-9"), unit="sec")
 
 
 async def do_test_afterdelay_in_readonly(dut, delay):
@@ -237,9 +222,8 @@ async def test_neg_timer(_):
 
 @cocotb.test
 async def test_timer_rounds_to_0(_) -> None:
-    steps = get_sim_time("step")
-    await Timer(0.1, "step", round_mode="round")
-    assert get_sim_time("step") == steps + 1
+    with assert_takes(1, "step"):
+        await Timer(0.1, "step", round_mode="round")
 
 
 @cocotb.test()
@@ -284,18 +268,16 @@ async def test_timer_round_mode(_):
 async def test_readonly_in_valuechange(dut):
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
     await RisingEdge(dut.clk)
-    curr_time = get_sim_time()
-    await ReadOnly()
-    assert get_sim_time() == curr_time
+    with assert_takes(0, "step"):
+        await ReadOnly()
 
 
 @cocotb.test
 async def test_readonly_in_timer(dut):
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
     await Timer(3, "ns")
-    curr_time = get_sim_time()
-    await ReadOnly()
-    assert get_sim_time() == curr_time
+    with assert_takes(0, "step"):
+        await ReadOnly()
 
 
 # Riviera VHPI ReadOnly in ReadWrite moves to next time step (gh-4120)
@@ -303,11 +285,10 @@ async def test_readonly_in_timer(dut):
 async def test_readonly_in_readwrite(dut):
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
     await RisingEdge(dut.clk)
-    curr_time = get_sim_time()
-    await ReadWrite()
-    assert get_sim_time() == curr_time
-    await ReadOnly()
-    assert get_sim_time() == curr_time
+    with assert_takes(0, "step"):
+        await ReadWrite()
+        with assert_takes(0, "step"):
+            await ReadOnly()
 
 
 @cocotb.test
