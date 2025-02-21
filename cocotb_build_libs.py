@@ -330,15 +330,6 @@ class build_ext(_build_ext):
         if os.name == "nt":
             ext.define_macros += [("WIN32", "")]
 
-        if lib_name == "libgpi":
-            if self._uses_msvc():
-                embed_lib_name = "cocotb"
-            else:
-                embed_lib_name = "libcocotb"
-            ext.define_macros += [
-                ("EMBED_IMPL_LIB", embed_lib_name + "." + _get_lib_ext_name())
-            ]
-
         old_build_temp = self.build_temp
         self.build_temp = os.path.join(self.build_temp, ext.name)
         super().build_extension(ext)
@@ -447,42 +438,6 @@ class build_ext(_build_ext):
                 )
 
 
-def _get_python_lib_link():
-    """Get name of python library used for linking"""
-
-    if sys.platform == "darwin":
-        ld_library = sysconfig.get_config_var("LIBRARY")
-    else:
-        ld_library = sysconfig.get_config_var("LDLIBRARY")
-
-    if ld_library is not None:
-        python_lib_link = os.path.splitext(ld_library)[0][3:]
-    else:
-        python_version = sysconfig.get_python_version().replace(".", "")
-        python_lib_link = "python" + python_version
-
-    return python_lib_link
-
-
-def _get_python_lib():
-    """Get the library for embedded the python interpreter"""
-
-    if os.name == "nt":
-        python_lib = _get_python_lib_link() + "." + _get_lib_ext_name()
-    elif sys.platform == "darwin":
-        python_lib = os.path.join(
-            sysconfig.get_config_var("LIBDIR"), "lib" + _get_python_lib_link() + "."
-        )
-        if os.path.exists(python_lib + "dylib"):
-            python_lib += "dylib"
-        else:
-            python_lib += "so"
-    else:
-        python_lib = "lib" + _get_python_lib_link() + "." + _get_lib_ext_name()
-
-    return python_lib
-
-
 def _get_common_lib_ext(include_dirs, share_lib_dir):
     """
     Defines common libraries.
@@ -493,36 +448,6 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
     python_lib_dirs = []
     if sys.platform == "darwin":
         python_lib_dirs = [sysconfig.get_config_var("LIBDIR")]
-
-    #
-    #  libpygpilog
-    #
-    libpygpilog_sources = [
-        os.path.join(share_lib_dir, "py_gpi_log", "py_gpi_logging.cpp")
-    ]
-    if os.name == "nt":
-        libpygpilog_sources += ["libpygpilog.rc"]
-    libpygpilog = Extension(
-        os.path.join("cocotb", "libs", "libpygpilog"),
-        define_macros=[("PYGPILOG_EXPORTS", "")] + _extra_defines,
-        include_dirs=include_dirs,
-        libraries=["gpi"],
-        sources=libpygpilog_sources,
-    )
-
-    #
-    #  libcocotb
-    #
-    libcocotb_sources = [os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")]
-    if os.name == "nt":
-        libcocotb_sources += ["libcocotb.rc"]
-    libcocotb = Extension(
-        os.path.join("cocotb", "libs", "libcocotb"),
-        define_macros=_extra_defines,
-        include_dirs=include_dirs,
-        libraries=["pygpilog", "gpi"],
-        sources=libcocotb_sources,
-    )
 
     #
     #  libgpi
@@ -542,9 +467,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         os.path.join("cocotb", "libs", "libgpi"),
         define_macros=[
             ("GPI_EXPORTS", ""),
-            ("LIB_EXT", _get_lib_ext_name()),
             ("SINGLETON_HANDLES", ""),
-            ("PYTHON_LIB", _get_python_lib()),
         ]
         + _extra_defines,
         include_dirs=include_dirs,
@@ -553,18 +476,20 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
     )
 
     #
-    #  simulator
+    #  libpygpi
     #
     simulator_sources = [
         os.path.join(share_lib_dir, "simulator", "simulatormodule.cpp"),
+        os.path.join(share_lib_dir, "py_gpi_log", "py_gpi_logging.cpp"),
+        os.path.join(share_lib_dir, "embed", "gpi_embed.cpp"),
     ]
     if os.name == "nt":
         simulator_sources += ["simulator.rc"]
-    libsim = Extension(
+    libpygpi = Extension(
         os.path.join("cocotb", "simulator"),
         define_macros=_extra_defines,
         include_dirs=include_dirs,
-        libraries=["gpi", "pygpilog"],
+        libraries=["gpi"],
         library_dirs=python_lib_dirs,
         sources=simulator_sources,
     )
@@ -572,7 +497,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
     # The libraries in this list are compiled in order of their appearance.
     # If there is a linking dependency on one library to another,
     # the linked library must be built first.
-    return [libgpi, libpygpilog, libcocotb, libsim]
+    return [libgpi, libpygpi]
 
 
 def _get_vpi_lib_ext(
