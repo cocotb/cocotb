@@ -55,8 +55,9 @@
 struct PythonCallback {
     PythonCallback(PyObject *func, PyObject *_args, PyObject *_kwargs)
         : function(func), args(_args), kwargs(_kwargs) {
-        // All PyObject references are stolen.
-        // Arguments may be NULL.
+        Py_XINCREF(function);
+        Py_XINCREF(args);
+        Py_XINCREF(kwargs);
     }
     ~PythonCallback() {
         Py_XDECREF(function);
@@ -191,6 +192,7 @@ int handle_gpi_callback(void *user_data) {
     DEFER(to_simulator());
 
     PythonCallback *cb_data = (PythonCallback *)user_data;
+    DEFER(delete cb_data);
 
     PyGILState_STATE gstate = PyGILState_Ensure();
     DEFER(PyGILState_Release(gstate));
@@ -210,8 +212,6 @@ int handle_gpi_callback(void *user_data) {
 
     // We don't care about the result
     Py_DECREF(pValue);
-
-    delete cb_data;
 
     return 0;
 }
@@ -235,20 +235,20 @@ static PyObject *register_readonly_callback(PyObject *, PyObject *args) {
     }
 
     // Extract the callback function
-    PyObject *function = PyTuple_GetItem(args, 0);
+    PyObject *function = PyTuple_GetItem(args, 0);  // borrow reference
     if (!PyCallable_Check(function)) {
         PyErr_SetString(
             PyExc_TypeError,
             "Attempt to register ReadOnly without supplying a callback!\n");
         return NULL;
     }
-    Py_INCREF(function);
 
     // Remaining args for function
     PyObject *fArgs = PyTuple_GetSlice(args, 1, numargs);  // New reference
     if (fArgs == NULL) {
         return NULL;
     }
+    DEFER(Py_DECREF(fArgs));
 
     PythonCallback *cb_data = new PythonCallback(function, fArgs, NULL);
 
@@ -276,20 +276,20 @@ static PyObject *register_rwsynch_callback(PyObject *, PyObject *args) {
     }
 
     // Extract the callback function
-    PyObject *function = PyTuple_GetItem(args, 0);
+    PyObject *function = PyTuple_GetItem(args, 0);  // borrow reference
     if (!PyCallable_Check(function)) {
         PyErr_SetString(
             PyExc_TypeError,
             "Attempt to register ReadWrite without supplying a callback!\n");
         return NULL;
     }
-    Py_INCREF(function);
 
     // Remaining args for function
     PyObject *fArgs = PyTuple_GetSlice(args, 1, numargs);  // New reference
     if (fArgs == NULL) {
         return NULL;
     }
+    DEFER(Py_DECREF(fArgs));
 
     PythonCallback *cb_data = new PythonCallback(function, fArgs, NULL);
 
@@ -317,20 +317,20 @@ static PyObject *register_nextstep_callback(PyObject *, PyObject *args) {
     }
 
     // Extract the callback function
-    PyObject *function = PyTuple_GetItem(args, 0);
+    PyObject *function = PyTuple_GetItem(args, 0);  // borrow reference
     if (!PyCallable_Check(function)) {
         PyErr_SetString(
             PyExc_TypeError,
             "Attempt to register NextStep without supplying a callback!\n");
         return NULL;
     }
-    Py_INCREF(function);
 
     // Remaining args for function
     PyObject *fArgs = PyTuple_GetSlice(args, 1, numargs);  // New reference
     if (fArgs == NULL) {
         return NULL;
     }
+    DEFER(Py_DECREF(fArgs));
 
     PythonCallback *cb_data = new PythonCallback(function, fArgs, NULL);
 
@@ -377,20 +377,20 @@ static PyObject *register_timed_callback(PyObject *, PyObject *args) {
     }
 
     // Extract the callback function
-    PyObject *function = PyTuple_GetItem(args, 1);
+    PyObject *function = PyTuple_GetItem(args, 1);  // borrow reference
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,
                         "Attempt to register timed callback without passing a "
                         "callable callback!\n");
         return NULL;
     }
-    Py_INCREF(function);
 
     // Remaining args for function
     PyObject *fArgs = PyTuple_GetSlice(args, 2, numargs);  // New reference
     if (fArgs == NULL) {
         return NULL;
     }
+    DEFER(Py_DECREF(fArgs));
 
     PythonCallback *cb_data = new PythonCallback(function, fArgs, NULL);
 
@@ -433,16 +433,15 @@ static PyObject *register_value_change_callback(
     gpi_sim_hdl sig_hdl = ((gpi_hdl_Object<gpi_sim_hdl> *)pSigHdl)->hdl;
 
     // Extract the callback function
-    PyObject *function = PyTuple_GetItem(args, 1);
+    PyObject *function = PyTuple_GetItem(args, 1);  // borrow reference
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,
                         "Attempt to register value change callback without "
                         "passing a callable callback!\n");
         return NULL;
     }
-    Py_INCREF(function);
 
-    PyObject *pedge = PyTuple_GetItem(args, 2);
+    PyObject *pedge = PyTuple_GetItem(args, 2);  // borrow reference
     gpi_edge edge = (gpi_edge)PyLong_AsLong(pedge);
 
     // Remaining args for function
@@ -450,6 +449,7 @@ static PyObject *register_value_change_callback(
     if (fArgs == NULL) {
         return NULL;
     }
+    DEFER(Py_DECREF(fArgs));
 
     PythonCallback *cb_data = new PythonCallback(function, fArgs, NULL);
 
