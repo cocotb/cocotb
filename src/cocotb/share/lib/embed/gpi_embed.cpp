@@ -94,15 +94,22 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
     return 0;
 }
 
+static int m_argc;
+char const *const *m_argv;
+
 /** Initialize the Python interpreter */
-extern "C" COCOTB_EXPORT void _embed_init_python(void) {
+extern "C" COCOTB_EXPORT int _embed_init_python(int argc,
+                                                char const *const *_argv) {
     if (python_init_called) {
         // LCOV_EXCL_START
         LOG_ERROR("PyGPI library initialized again!");
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
     python_init_called = 1;
+
+    m_argc = argc;
+    m_argv = _argv;
 
     // must set program name to Python executable before initialization, so
     // initialization can determine path from executable
@@ -111,7 +118,7 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
 
     if (get_interpreter_path(interpreter_path, sizeof(interpreter_path))) {
         // LCOV_EXCL_START
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
     LOG_INFO("Using Python interpreter at %ls", interpreter_path);
@@ -136,7 +143,7 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
         if (status.func != NULL) {
             LOG_ERROR("\tfunction: %s", status.func);
         }
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
 
@@ -150,7 +157,7 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
         if (status.func != NULL) {
             LOG_ERROR("\tfunction: %s", status.func);
         }
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
 #else
@@ -190,14 +197,14 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
         if (errno == ERANGE || sleep_time >= UINT_MAX) {
             // LCOV_EXCL_START
             LOG_ERROR("COCOTB_ATTACH only needs to be set to ~30 seconds");
-            return;
+            return -1;
             // LCOV_EXCL_STOP
         }
         if ((errno != 0 && sleep_time == 0) || (sleep_time <= 0)) {
             // LCOV_EXCL_START
             LOG_ERROR(
                 "COCOTB_ATTACH must be set to an integer base 10 or omitted");
-            return;
+            return -1;
             // LCOV_EXCL_STOP
         }
 
@@ -206,6 +213,8 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
             sleep_time, getpid());
         sleep((unsigned int)sleep_time);
     }
+
+    return 0;
 }
 
 /**
@@ -236,13 +245,12 @@ extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void) {
     }
 }
 
-extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
-                                             char const *const *_argv) {
+extern "C" COCOTB_EXPORT void _embed_sim_init() {
     // Check that we are not already initialized
     if (embed_init_called) {
         // LCOV_EXCL_START
         LOG_ERROR("PyGPI library initialized again!");
-        return -1;
+        return;
         // LCOV_EXCL_STOP
     }
     embed_init_called = 1;
@@ -258,27 +266,27 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     if (!entry_utility_module) {
         // LCOV_EXCL_START
         PyErr_Print();
-        return -1;
+        return;
         // LCOV_EXCL_STOP
     }
     DEFER(Py_DECREF(entry_utility_module));
 
     // Build argv for cocotb module
-    auto argv_list = PyList_New(argc);
+    auto argv_list = PyList_New(m_argc);
     if (argv_list == NULL) {
         // LCOV_EXCL_START
         PyErr_Print();
-        return -1;
+        return;
         // LCOV_EXCL_STOP
     }
-    for (int i = 0; i < argc; i++) {
+    for (int i = 0; i < m_argc; i++) {
         // Decode, embedding non-decodable bytes using PEP-383. This can only
         // fail with MemoryError or similar.
-        auto argv_item = PyUnicode_DecodeLocale(_argv[i], "surrogateescape");
+        auto argv_item = PyUnicode_DecodeLocale(m_argv[i], "surrogateescape");
         if (!argv_item) {
             // LCOV_EXCL_START
             PyErr_Print();
-            return -1;
+            return;
             // LCOV_EXCL_STOP
         }
         PyList_SetItem(argv_list, i, argv_item);
@@ -291,12 +299,12 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
         // LCOV_EXCL_START
         PyErr_Print();
         gpi_sim_end();
-        return -1;
+        return;
         // LCOV_EXCL_STOP
     }
     Py_DECREF(cocotb_retval);
 
-    return 0;
+    return;
 }
 
 extern "C" COCOTB_EXPORT void _embed_sim_event(const char *msg) {

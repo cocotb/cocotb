@@ -291,9 +291,9 @@ class GPI_EXPORT GpiImplInterface {
 /* Called from implementation layers back up the stack */
 GPI_EXPORT int gpi_register_impl(GpiImplInterface *func_tbl);
 
-GPI_EXPORT void gpi_embed_init(int argc, char const *const *argv);
+GPI_EXPORT void gpi_embed_init();
 GPI_EXPORT void gpi_embed_end();
-GPI_EXPORT void gpi_entry_point();
+GPI_EXPORT int gpi_entry_point(int argc, char const *const *argv);
 GPI_EXPORT void gpi_to_user();
 GPI_EXPORT void gpi_to_simulator();
 

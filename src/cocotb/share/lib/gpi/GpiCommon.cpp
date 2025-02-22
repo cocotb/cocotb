@@ -126,9 +126,7 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
 
 bool gpi_has_registered_impl() { return registered_impls.size() > 0; }
 
-void gpi_embed_init(int argc, char const *const *argv) {
-    if (embed_sim_init(argc, argv)) gpi_embed_end();
-}
+void gpi_embed_init(void) { embed_sim_init(); }
 
 void gpi_embed_end() {
     sim_ending = true;
@@ -147,7 +145,7 @@ void gpi_cleanup(void) {
     embed_sim_cleanup();
 }
 
-static void gpi_load_libs(std::vector<std::string> to_load) {
+static int gpi_load_libs(std::vector<std::string> to_load) {
     std::vector<std::string>::iterator iter;
 
     for (iter = to_load.begin(); iter != to_load.end(); iter++) {
@@ -157,8 +155,8 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
             ':');  // find from right since path could contain colons (Windows)
         if (idx == std::string::npos) {
             // no colon in the string
-            printf("cocotb: Error parsing GPI_EXTRA %s\n", arg.c_str());
-            exit(1);
+            LOG_CRITICAL("cocotb: Error parsing GPI_EXTRA %s\n", arg.c_str());
+            return -1;
         }
 
         std::string const lib_name = arg.substr(0, idx);
@@ -166,9 +164,9 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
 
         void *lib_handle = utils_dyn_open(lib_name.c_str());
         if (!lib_handle) {
-            printf("cocotb: Error loading shared library %s\n",
-                   lib_name.c_str());
-            exit(1);
+            LOG_CRITICAL("cocotb: Error loading shared library %s\n",
+                         lib_name.c_str());
+            return -1;
         }
 
         void *entry_point = utils_dyn_sym(lib_handle, func_name.c_str());
@@ -179,16 +177,18 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
             char const *msg =
                 "        Perhaps you meant to use `,` instead of `:` to "
                 "separate library names, as this changed in cocotb 1.4?\n";
-            printf(fmt, func_name.c_str(), lib_name.c_str(), msg);
-            exit(1);
+            LOG_CRITICAL(fmt, func_name.c_str(), lib_name.c_str(), msg);
+            return -1;
         }
 
         layer_entry_func new_lib_entry = (layer_entry_func)entry_point;
         new_lib_entry();
     }
+
+    return 0;
 }
 
-void gpi_entry_point() {
+int gpi_entry_point(int argc, char const *const *argv) {
     const char *log_level = getenv("GPI_LOG_LEVEL");
     if (log_level) {
         static const std::map<std::string, int> log_level_str_table = {
@@ -200,7 +200,10 @@ void gpi_entry_point() {
             gpi_native_logger_set_level(it->second);
         } else {
             // LCOV_EXCL_START
-            LOG_ERROR("Invalid log level: %s", log_level);
+            LOG_WARN(
+                "Invalid log level: %s. Leaving GPI loggers at default log "
+                "level.",
+                log_level);
             // LCOV_EXCL_STOP
         }
     }
@@ -224,12 +227,19 @@ void gpi_entry_point() {
             to_load.push_back(lib_list);
         }
 
-        gpi_load_libs(to_load);
+        if (gpi_load_libs(to_load)) {
+            return -1;
+        }
     }
+    gpi_print_registered_impl();
 
     /* Finally embed Python */
-    embed_init_python();
-    gpi_print_registered_impl();
+    if (embed_init_python(argc, argv)) {
+        LOG_CRITICAL("GPI_USER initialization failed. Exiting...");
+        return -1;
+    }
+
+    return 0;
 }
 
 void gpi_get_sim_time(uint32_t *high, uint32_t *low) {

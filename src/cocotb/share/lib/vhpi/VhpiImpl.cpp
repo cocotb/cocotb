@@ -34,7 +34,9 @@
 #include <cstring>
 
 #include "_vendor/vhpi/vhpi_user.h"
+#include "cocotb_utils.h"
 #include "gpi_logging.h"
+#include "share/lib/gpi/gpi_priv.h"
 #include "vhpi_user_ext.h"
 
 #ifdef NVC
@@ -1070,8 +1072,21 @@ bool VhpiImpl::compare_generate_labels(const std::string &a,
 }
 
 static int startup_callback(void *) {
+    gpi_embed_init();
+    return 0;
+}
+
+static int shutdown_callback(void *) {
+    gpi_embed_end();
+    return 0;
+}
+
+void VhpiImpl::main() noexcept {
+    gpi_register_impl(this);
+
     vhpiHandleT tool, argv_iter, argv_hdl;
     char **tool_argv = NULL;
+    DEFER(if (tool_argv) { delete[] tool_argv; });
     int tool_argc = 0;
     int i = 0;
 
@@ -1093,18 +1108,11 @@ static int startup_callback(void *) {
         vhpi_release_handle(tool);
     }
 
-    gpi_embed_init(tool_argc, tool_argv);
-    delete[] tool_argv;
+    if (gpi_entry_point(tool_argc, tool_argv)) {
+        gpi_embed_end();
+        exit(1);
+    }
 
-    return 0;
-}
-
-static int shutdown_callback(void *) {
-    gpi_embed_end();
-    return 0;
-}
-
-void VhpiImpl::main() noexcept {
     auto startup_cb = new VhpiStartupCbHdl(this);
     auto err = startup_cb->arm();
     // LCOV_EXCL_START
@@ -1113,6 +1121,7 @@ void VhpiImpl::main() noexcept {
             "VHPI: Unable to register startup callback! Simulation will end.");
         check_vhpi_error();
         delete startup_cb;
+        gpi_embed_end();
         exit(1);
     }
     // LCOV_EXCL_STOP
@@ -1127,14 +1136,12 @@ void VhpiImpl::main() noexcept {
         check_vhpi_error();
         startup_cb->remove();
         delete shutdown_cb;
+        gpi_embed_end();
         exit(1);
     }
     // LCOV_EXCL_STOP
     shutdown_cb->set_cb_info(shutdown_callback, nullptr);
     m_sim_finish_cb = shutdown_cb;
-
-    gpi_register_impl(this);
-    gpi_entry_point();
 }
 
 static void vhpi_main() {

@@ -30,6 +30,7 @@
 #include "_vendor/vpi/vpi_user.h"
 #include "gpi.h"
 #include "gpi_logging.h"
+#include "share/lib/gpi/gpi_priv.h"
 #include "vpi_user_ext.h"
 
 #define CASE_STR(_X) \
@@ -729,19 +730,7 @@ const char *VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
 }
 
 static int startup_callback(void *) {
-    s_vpi_vlog_info info;
-
-    auto pass = vpi_get_vlog_info(&info);
-    // LCOV_EXCL_START
-    if (!pass) {
-        LOG_ERROR("Unable to get argv and argc from simulator");
-        info.argc = 0;
-        info.argv = nullptr;
-    }
-    // LCOV_EXCL_STOP
-
-    gpi_embed_init(info.argc, info.argv);
-
+    gpi_embed_init();
     return 0;
 }
 
@@ -751,6 +740,23 @@ static int shutdown_callback(void *) {
 }
 
 void VpiImpl::main() noexcept {
+    gpi_register_impl(this);
+
+    s_vpi_vlog_info info;
+    auto pass = vpi_get_vlog_info(&info);
+    // LCOV_EXCL_START
+    if (!pass) {
+        LOG_ERROR("Unable to get argv and argc from simulator");
+        info.argc = 0;
+        info.argv = nullptr;
+    }
+    // LCOV_EXCL_STOP
+
+    if (gpi_entry_point(info.argc, info.argv)) {
+        gpi_embed_end();
+        exit(1);
+    }
+
     auto startup_cb = new VpiStartupCbHdl(this);
     auto err = startup_cb->arm();
     // LCOV_EXCL_START
@@ -759,6 +765,7 @@ void VpiImpl::main() noexcept {
             "VPI: Unable to register startup callback! Simulation will end.");
         check_vpi_error();
         delete startup_cb;
+        gpi_embed_end();
         exit(1);
     }
     // LCOV_EXCL_STOP
@@ -773,14 +780,12 @@ void VpiImpl::main() noexcept {
         check_vpi_error();
         startup_cb->remove();
         delete shutdown_cb;
+        gpi_embed_end();
         exit(1);
     }
     // LCOV_EXCL_STOP
     shutdown_cb->set_cb_info(shutdown_callback, nullptr);
     m_sim_finish_cb = shutdown_cb;
-
-    gpi_register_impl(this);
-    gpi_entry_point();
 }
 
 static void vpi_main() {
