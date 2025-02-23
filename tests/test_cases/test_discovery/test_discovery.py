@@ -35,6 +35,7 @@ from cocotb.handle import (
     GPIDiscovery,
     HierarchyObject,
     HierarchyObjectBase,
+    Immediate,
     IntegerObject,
     LogicArrayObject,
     StringObject,
@@ -223,7 +224,7 @@ async def discover_value_not_in_dut(dut):
 @cocotb.test()
 async def access_signal(dut):
     """Access a signal using the assignment mechanism"""
-    dut.stream_in_data.setimmediatevalue(1)
+    dut.stream_in_data.value = Immediate(1)
     await Timer(1, "ns")
     assert dut.stream_in_data.value == 1
 
@@ -330,7 +331,7 @@ async def access_constant_string_vhdl(dut):
 async def test_writing_string_undersized(dut):
     assert isinstance(dut.stream_in_string, StringObject)
     test_string = b"cocotb"
-    dut.stream_in_string.setimmediatevalue(test_string)
+    dut.stream_in_string.value = Immediate(test_string)
     assert dut.stream_out_string.value == b""
     await Timer(1, "ns")
     assert dut.stream_out_string.value == test_string
@@ -344,7 +345,7 @@ async def test_writing_string_undersized(dut):
 async def test_writing_string_oversized(dut):
     assert isinstance(dut.stream_in_string, StringObject)
     test_string = b"longer_than_the_array"
-    dut.stream_in_string.setimmediatevalue(test_string)
+    dut.stream_in_string.value = Immediate(test_string)
     await Timer(1, "ns")
     assert dut.stream_out_string.value == test_string[: len(dut.stream_out_string)]
 
@@ -405,7 +406,7 @@ async def access_boolean(dut):
     assert isinstance(dut.stream_out_bool, IntegerObject)
 
     curr_val = dut.stream_in_bool.value
-    dut.stream_in_bool.setimmediatevalue(not curr_val)
+    dut.stream_in_bool.value = Immediate(not curr_val)
     await Timer(1, "ns")
     assert curr_val != dut.stream_out_bool.value
 

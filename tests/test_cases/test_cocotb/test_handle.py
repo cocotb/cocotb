@@ -13,7 +13,7 @@ import pytest
 
 import cocotb
 import cocotb.triggers
-from cocotb.handle import LogicArrayObject, StringObject, _Limits
+from cocotb.handle import Immediate, LogicArrayObject, StringObject, _Limits
 from cocotb.triggers import FallingEdge, Timer, ValueChange
 from cocotb.types import Logic, LogicArray
 
@@ -87,9 +87,9 @@ async def test_delayed_assignment_still_errors(dut):
     """Writing a bad value should fail even if the write is scheduled to happen later"""
 
     with pytest.raises(ValueError):
-        dut.stream_in_int.setimmediatevalue("1010 not a real binary string")
+        dut.stream_in_int.value = Immediate("1010 not a real binary string")
     with pytest.raises(TypeError):
-        dut.stream_in_int.setimmediatevalue([])
+        dut.stream_in_int.value = Immediate([])
 
     with pytest.raises(ValueError):
         dut.stream_in_int.value = "1010 not a real binary string"
@@ -134,7 +134,7 @@ async def int_values_test(
     values = gen_int_test_values(n_bits, limits)
     for val in values:
         if setimmediate:
-            signal.setimmediatevalue(val)
+            signal.value = Immediate(val)
         else:
             signal.value = val
         await Timer(1, "ns")
@@ -201,7 +201,7 @@ async def int_overflow_test(
 
     with pytest.raises(OverflowError):
         if setimmediate:
-            signal.setimmediatevalue(value)
+            signal.value = Immediate(value)
         else:
             signal.value = value
 
@@ -436,13 +436,13 @@ async def test_assign_string(dut):
     skip=LANGUAGE in ["vhdl"],
 )
 async def test_assign_immediate(dut):
-    dut.mybits_uninitialized.setimmediatevalue(2)
+    dut.mybits_uninitialized.value = Immediate(2)
     assert dut.mybits_uninitialized.value == 2
 
-    dut.mybits_uninitialized.setimmediatevalue("01")
+    dut.mybits_uninitialized.value = Immediate("01")
     assert dut.mybits_uninitialized.value == "01"
 
-    dut.mybits_uninitialized.setimmediatevalue(LogicArray("11"))
+    dut.mybits_uninitialized.value = Immediate(LogicArray("11"))
     assert dut.mybits_uninitialized.value == LogicArray("11")
 
 
@@ -464,14 +464,14 @@ async def test_immediate_reentrace(dut):
         nonlocal seen, nested
         await ValueChange(dut.mybits_uninitialized)
         seen += 1
-        dut.mybit.setimmediatevalue(0)
+        dut.mybit.value = Immediate(0)
         with pytest.warns(FutureWarning):
             nested.cancel()
 
     cocotb.start_soon(watch())
     await Timer(1, "ns")
 
-    dut.mybits_uninitialized.setimmediatevalue(2)
+    dut.mybits_uninitialized.value = Immediate(2)
     await Timer(1, "ns")
     assert seen == 1
 

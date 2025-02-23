@@ -75,8 +75,7 @@ or :meth:`~cocotb.handle.ValueObjectBase.set` method of a handle object.
 
 The assignment syntax ``sig.value = new_value`` has the same semantics as :term:`HDL`:
 writes are not applied immediately, but delayed until the next write cycle.
-Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
-(see :meth:`~cocotb.handle.ValueObjectBase.setimmediatevalue`).
+Use :class:`~cocotb.handle.Immediate` to set a new value immediately.
 
 .. _writing_tbs_assigning_values_signed_unsigned:
 
