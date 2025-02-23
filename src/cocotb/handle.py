@@ -659,19 +659,19 @@ def _map_action_obj_to_value_action_enum_pair(
 
 
 #: Type accepted and returned by the :attr:`~ValueObjectBase.value` property.
-ValuePropertyT = TypeVar("ValuePropertyT")
+ValueGetT = TypeVar("ValueGetT")
 
 
 #: Type accepted by :meth:`~ValueObjectBase.set` and :meth:`~ValueObjectBase.setimmediatevalue`.
 ValueSetT = TypeVar("ValueSetT")
 
 
-class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
+class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
     """Base class for all simulation objects that have a value."""
 
     @property
     @abstractmethod
-    def value(self) -> ValuePropertyT:
+    def value(self) -> ValueGetT:
         """Get or set the value of the simulation object.
 
         :getter: Returns the current value of the simulation object.
@@ -688,7 +688,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValuePropertyT, ValueSetT]):
 
     @value.setter
     @abstractmethod
-    def value(self, value: ValuePropertyT) -> None: ...
+    def value(self, value: ValueGetT) -> None: ...
 
     def set(
         self,
@@ -882,7 +882,7 @@ class ArrayObject(
             yield self[i]
 
 
-class NonIndexableValueObjectBase(ValueObjectBase[ValuePropertyT, ValueSetT]):
+class NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
     """ValueObject that is treated as a single object in the GPI.
 
     NonArrayValueObjects support :meth:`value_change` triggers.
