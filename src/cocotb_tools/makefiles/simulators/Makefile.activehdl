@@ -11,6 +11,7 @@ ifdef ACTIVEHDL_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+    export ACTIVEHDL_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 ALOG_ARGS += -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
@@ -69,8 +70,3 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(CUSTOM_COMPILE_DEPS) $(CUSTOM_S
 	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) $(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.do $(SIM_CMD_SUFFIX)
 
 	$(call check_results)
-
-clean::
-	$(RM) -r $(SIM_BUILD)
-	$(RM) -r work
-	$(RM) -r wave.asdb

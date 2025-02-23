@@ -36,13 +36,7 @@ ifdef IUS_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-endif
-
-ifeq (, $(CMD))
-    $(error Unable to locate command >$(CMD_BIN)<)
-else
-    IUS_BIN_DIR := $(shell dirname $(CMD))
-    export IUS_BIN_DIR
+    export IUS_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 ifdef VERILOG_INCLUDE_DIRS
@@ -115,9 +109,3 @@ $(COCOTB_RESULTS_FILE): $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	$(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(LIBS) $(MAKE_LIB) $(HDL_SOURCES) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
 
 	$(call check_results)
-
-clean::
-	$(RM) -r $(SIM_BUILD)
-	$(RM) -r irun.*
-	$(RM) -r ncsim.*
-	$(RM) -r gdb_cmd_ncsim

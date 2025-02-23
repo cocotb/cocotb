@@ -30,7 +30,6 @@ ifneq ($(VHDL_SOURCES),)
 $(COCOTB_RESULTS_FILE):
 	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
 debug: $(COCOTB_RESULTS_FILE)
-clean::
 
 else
 
@@ -41,13 +40,7 @@ ifdef CVC_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-endif
-
-ifeq (, $(CMD))
-    $(error Unable to locate command >$(CMD_BIN)<)
-else
-    CVC_BIN_DIR := $(shell dirname $(CMD))
-    export CVC_BIN_DIR
+    export CVC_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 #only interpreted mode works for the moment
@@ -87,6 +80,4 @@ else
 endif
 
 
-clean::
-	$(RM) -r $(SIM_BUILD)
 endif

@@ -9,7 +9,6 @@ ifneq ($(or $(filter-out $(TOPLEVEL_LANG),verilog),$(VHDL_SOURCES)),)
 results.xml:
 	@echo "Skipping simulation as only Verilog is supported on simulator=$(SIM)"
 debug: results.xml
-clean::
 
 else
 
@@ -20,10 +19,7 @@ ifdef VERILATOR_BIN_DIR
 else
   # auto-detect bin dir from system path
   CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-endif
-
-ifeq (, $(CMD))
-  $(error Unable to locate command >$(CMD_BIN)<)
+  export VERILATOR_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 VLT_MIN := 4.106
@@ -79,9 +75,5 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/Vtop $(CUSTOM_SIM_DEPS)
 debug:
 	$(MAKE) VERILATOR_SIM_DEBUG=1 SIM_CMD_PREFIX="gdb --args" $(COCOTB_RESULTS_FILE)
 
-clean::
-	$(RM) -r $(SIM_BUILD)
-	$(RM) dump.vcd
-	$(RM) dump.fst
 
 endif

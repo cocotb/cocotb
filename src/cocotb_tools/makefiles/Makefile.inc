@@ -169,6 +169,47 @@ endif
 
 export COCOTB_TRUST_INERTIAL_WRITES
 
+
+# Universal
+clean::
+	@$(RM) -rf $(SIM_BUILD)
+	@$(RM) -f $(COCOTB_RESULTS_FILE)
+
+
+# Active-HDL
+clean::
+	@$(RM) -rf work
+	@$(RM) -rf wave.asdb
+
+# IUS
+clean::
+	@$(RM) -rf irun.*
+	@$(RM) -rf ncsim.*
+	@$(RM) -rf gdb_cmd_ncsim
+
+# VCS
+clean::
+	@$(RM) -rf simv.daidir
+	@$(RM) -rf cm.log
+	@$(RM) -rf ucli.key
+
+# Riviera
+clean::
+	@$(RM) -rf compile
+	@$(RM) -rf library.cfg
+	@$(RM) -rf dataset.asdb
+
+# Verilator
+clean::
+	@$(RM) -f dump.vcd
+	@$(RM) -f dump.fst
+
+# Xcelium
+clean::
+	@$(RM) -rf xrun.*
+	@$(RM) -rf xmsim.*
+	@$(RM) -rf gdb_cmd_xmsim
+
 else
     $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)
 endif # COCOTB_MAKEFILE_INC_INCLUDED

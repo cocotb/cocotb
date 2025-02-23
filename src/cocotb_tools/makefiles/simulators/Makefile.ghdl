@@ -32,7 +32,6 @@ ifneq ($(or $(filter-out $(TOPLEVEL_LANG),vhdl),$(VERILOG_SOURCES)),)
 
 $(COCOTB_RESULTS_FILE):
 	@echo "Skipping simulation as only VHDL is supported on simulator=$(SIM)"
-clean::
 
 else
 
@@ -43,13 +42,7 @@ ifdef GHDL_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-endif
-
-ifeq (, $(CMD))
-    $(error Unable to locate command >$(CMD_BIN)<)
-else
-    GHDL_BIN_DIR := $(shell dirname $(CMD))
-    export GHDL_BIN_DIR
+    export GHDL_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 RTL_LIBRARY ?= work
@@ -106,6 +99,4 @@ $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 
 	$(call check_results)
 
-clean::
-	$(RM) -r $(SIM_BUILD)
 endif
