@@ -25,52 +25,54 @@ Python Test Runner
 
 .. currentmodule:: cocotb_tools.runner
 
-.. module:: cocotb_tools.runner
-    :synopsis: Build HDL and run cocotb tests.
+..
+   .. module:: cocotb_tools.runner
+       :synopsis: Build HDL and run cocotb tests.
 
-.. autofunction:: get_runner
+.. autodoc2-object:: cocotb_tools.runner.get_runner
 
-.. autoclass:: Runner
+.. autodoc2-object:: cocotb_tools.runner.Runner
+..
     :members:
 
-.. autoclass:: VHDL
+.. autodoc2-object:: cocotb_tools.runner.VHDL
 
-.. autoclass:: Verilog
+.. autodoc2-object:: cocotb_tools.runner.Verilog
 
-.. autodata:: MAX_PARALLEL_BUILD_JOBS
+.. autodoc2-object:: MAX_PARALLEL_BUILD_JOBS
 
 Simulator Runners
 -----------------
 
-.. autoclass:: Icarus
+.. autodoc2-object:: cocotb_tools.runner.Icarus
 
-.. autoclass:: Verilator
+.. autodoc2-object:: cocotb_tools.runner.Verilator
 
-.. autoclass:: Riviera
+.. autodoc2-object:: cocotb_tools.runner.Riviera
 
-.. autoclass:: Questa
+.. autodoc2-object:: cocotb_tools.runner.Questa
 
-.. autoclass:: Xcelium
+.. autodoc2-object:: cocotb_tools.runner.Xcelium
 
-.. autoclass:: Ghdl
+.. autodoc2-object:: cocotb_tools.runner.Ghdl
 
-.. autoclass:: Nvc
+.. autodoc2-object:: cocotb_tools.runner.Nvc
 
 Results
 -------
 
-.. autofunction:: get_results
+.. autodoc2-object:: cocotb_tools.runner.get_results
 
 File Utilities
 --------------
 
-.. autofunction:: get_abs_path
+.. autodoc2-object:: cocotb_tools.runner.get_abs_path
 
-.. autofunction:: get_abs_paths
+.. autodoc2-object:: cocotb_tools.runner.get_abs_paths
 
-.. autofunction:: outdated
+.. autodoc2-object:: cocotb_tools.runner.outdated
 
-.. autoclass:: UnknownFileExtension
+.. autodoc2-object:: cocotb_tools.runner.UnknownFileExtension
 
 
 .. _writing-tests:
@@ -78,15 +80,16 @@ File Utilities
 Writing and Generating Tests
 ============================
 
-.. autofunction:: cocotb.test
+.. autodoc2-object:: cocotb.test
 
-.. autofunction:: cocotb.parametrize
+.. autodoc2-object:: cocotb.parametrize
 
-.. autoclass:: cocotb.regression.TestFactory
+.. autodoc2-object:: cocotb.regression.TestFactory
+..
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.result.TestSuccess
+.. autodoc2-object:: cocotb.result.TestSuccess
 
 Interacting with the Simulator
 ==============================
@@ -96,23 +99,24 @@ Interacting with the Simulator
 Task Management
 ---------------
 
-.. autofunction:: cocotb.start_soon
+.. autodoc2-object:: cocotb.start_soon
 
-.. autofunction:: cocotb.start
+.. autodoc2-object:: cocotb.start
 
-.. autofunction:: cocotb.create_task
+.. autodoc2-object:: cocotb.create_task
 
-.. autoclass:: cocotb.task.ResultType
+.. autodoc2-object:: cocotb.task.ResultType
 
-.. autoclass:: cocotb.task.Task
+.. autodoc2-object:: cocotb.task.Task
+..
     :members:
 
 Dealing with non-``async`` code
 -------------------------------
 
-.. autofunction:: cocotb.bridge
+.. autodoc2-object:: cocotb.bridge
 
-.. autofunction:: cocotb.resume
+.. autodoc2-object:: cocotb.resume
 
 HDL Datatypes
 -------------
@@ -121,23 +125,26 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
 
 .. versionadded:: 1.6
 
-.. autoclass:: cocotb.types.Logic
+.. autodoc2-object:: cocotb.types.Logic
 
-.. autoclass:: cocotb.types.Range
+.. autodoc2-object:: cocotb.types.Range
+..
     :members:
     :exclude-members: count, index
 
-.. autoclass:: cocotb.types.Array
+.. autodoc2-object:: cocotb.types.Array
+..
     :members:
     :inherited-members:
 
-.. autoclass:: cocotb.types.LogicArray
+.. autodoc2-object:: cocotb.types.LogicArray
+..
     :members:
     :inherited-members:
 
-.. autoclass:: cocotb.types.logic_array.ResolveX
+.. autodoc2-object:: cocotb.types.logic_array.ResolveX
 
-.. autodata:: cocotb.types.logic_array.RESOLVE_X
+.. autodoc2-object:: cocotb.types.logic_array.RESOLVE_X
 
 
 Triggers
@@ -153,27 +160,27 @@ Simulator Triggers
 Edge Triggers
 ^^^^^^^^^^^^^
 
-.. autoclass:: cocotb.triggers.ValueChange
+.. autodoc2-object:: cocotb.triggers.ValueChange
 
-.. autoclass:: cocotb.triggers.Edge
+.. autodoc2-object:: cocotb.triggers.Edge
 
-.. autoclass:: cocotb.triggers.RisingEdge
+.. autodoc2-object:: cocotb.triggers.RisingEdge
 
-.. autoclass:: cocotb.triggers.FallingEdge
+.. autodoc2-object:: cocotb.triggers.FallingEdge
 
-.. autoclass:: cocotb.triggers.ClockCycles
+.. autodoc2-object:: cocotb.triggers.ClockCycles
 
 
 Timing
 ^^^^^^
 
-.. autoclass:: cocotb.triggers.Timer
+.. autodoc2-object:: cocotb.triggers.Timer
 
-.. autoclass:: cocotb.triggers.ReadOnly
+.. autodoc2-object:: cocotb.triggers.ReadOnly
 
-.. autoclass:: cocotb.triggers.ReadWrite
+.. autodoc2-object:: cocotb.triggers.ReadWrite
 
-.. autoclass:: cocotb.triggers.NextTimeStep
+.. autodoc2-object:: cocotb.triggers.NextTimeStep
 
 
 .. _python-triggers:
@@ -181,15 +188,16 @@ Timing
 Python Triggers
 ---------------
 
-.. autoclass:: cocotb.triggers.NullTrigger
+.. autodoc2-object:: cocotb.triggers.NullTrigger
 
-.. autoclass:: cocotb.triggers.Combine
+.. autodoc2-object:: cocotb.triggers.Combine
 
-.. autoclass:: cocotb.triggers.First
+.. autodoc2-object:: cocotb.triggers.First
 
-.. autofunction:: cocotb.triggers.Join
+.. autodoc2-object:: cocotb.triggers.Join
 
-.. autoclass:: cocotb.triggers.TaskComplete
+.. autodoc2-object:: cocotb.triggers.TaskComplete
+..
     :members:
 
 
@@ -199,17 +207,19 @@ Synchronization
 The following objects are not :class:`Trigger`\ s themselves, but contain methods that can be used as triggers.
 They are used to synchronize coroutines with each other.
 
-.. autoclass:: cocotb.triggers.Event
+.. autodoc2-object:: cocotb.triggers.Event
+..
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.Lock
+.. autodoc2-object:: cocotb.triggers.Lock
+..
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.SimTimeoutError
+.. autodoc2-object:: cocotb.triggers.SimTimeoutError
 
-.. autofunction:: cocotb.triggers.with_timeout
+.. autodoc2-object:: cocotb.triggers.with_timeout
 
 
 Triggers (Internals)
@@ -219,15 +229,18 @@ The following are internal classes used within ``cocotb``.
 
 .. currentmodule:: cocotb.triggers
 
-.. autoclass:: Trigger
+.. autodoc2-object:: cocotb.triggers.Trigger
+..
     :members:
     :member-order: bysource
 
-.. autoclass:: GPITrigger
+.. autodoc2-object:: cocotb.triggers.GPITrigger
+..
     :members:
     :member-order: bysource
 
-.. autoclass:: Waitable
+.. autodoc2-object:: cocotb.triggers.Waitable
+..
     :members:
     :member-order: bysource
     :private-members:
@@ -239,14 +252,19 @@ Test Utilities
 Clock Driver
 ------------
 
-.. autoclass:: cocotb.clock.Clock
+.. autodoc2-object:: cocotb.clock.Clock
+..
     :members:
     :member-order: bysource
 
 Asynchronous Queues
 -------------------
 
-.. automodule:: cocotb.queue
+..
+    FIXME: does not have an __all__: https://sphinx-autodoc2.readthedocs.io/en/stable/quickstart.html#documenting-only-the-public-api-via-all
+   .. autodoc2-object:: cocotb.queue
+
+..
     :members:
     :member-order: bysource
     :synopsis: Asynchronous queues.
@@ -255,7 +273,10 @@ Asynchronous Queues
 Simulation Time Utilities
 =========================
 
-.. automodule:: cocotb.utils
+..
+    FIXME: does not have an __all__: https://sphinx-autodoc2.readthedocs.io/en/stable/quickstart.html#documenting-only-the-public-api-via-all
+    .. autodoc2-object:: cocotb.utils
+..
     :members:
     :member-order: bysource
     :synopsis: Various utilities for dealing with simulation time.
@@ -269,19 +290,22 @@ Logging
 .. module:: cocotb.logging
     :synopsis: Classes for logging messages from cocotb during simulation.
 
-.. autodata:: cocotb.log
+.. autodoc2-object:: cocotb.log
 
-.. autofunction:: default_config
+.. autodoc2-object:: cocotb.logging.default_config
 
-.. autoclass:: SimLogFormatter
+.. autodoc2-object:: cocotb.logging.SimLogFormatter
+..
     :show-inheritance:
     :no-members:
 
-.. autoclass:: SimColourLogFormatter
+.. autodoc2-object:: cocotb.logging.SimColourLogFormatter
+..
     :show-inheritance:
     :no-members:
 
-.. autoclass:: SimTimeContextFilter
+.. autodoc2-object:: cocotb.logging.SimTimeContextFilter
+..
     :show-inheritance:
     :no-members:
 
@@ -303,7 +327,10 @@ Simulation Object Handles
 
 .. currentmodule:: cocotb.handle
 
-.. automodule:: cocotb.handle
+..
+    FIXME: does not have an __all__: https://sphinx-autodoc2.readthedocs.io/en/stable/quickstart.html#documenting-only-the-public-api-via-all
+    .. autodoc2-object:: cocotb.handle
+..
     :members:
     :member-order: bysource
     :show-inheritance:
@@ -320,13 +347,13 @@ Assignment Methods
 
 .. currentmodule:: cocotb.handle
 
-.. autoclass:: Deposit
+.. autodoc2-object:: cocotb.handle.Deposit
 
-.. autoclass:: Force
+.. autodoc2-object:: cocotb.handle.Force
 
-.. autoclass:: Freeze
+.. autodoc2-object:: cocotb.handle.Freeze
 
-.. autoclass:: Release
+.. autodoc2-object:: cocotb.handle.Release
 
 
 Other Handle Methods
@@ -352,23 +379,23 @@ Miscellaneous
 Other Runtime Information
 -------------------------
 
-.. autodata:: cocotb.argv
+.. autodoc2-object:: cocotb.argv
 
-.. autodata:: cocotb.SIM_NAME
+.. autodoc2-object:: cocotb.SIM_NAME
 
-.. autodata:: cocotb.SIM_VERSION
+.. autodoc2-object:: cocotb.SIM_VERSION
 
-.. autodata:: cocotb.plusargs
+.. autodoc2-object:: cocotb.plusargs
 
-.. autodata:: cocotb.packages
+.. autodoc2-object:: cocotb.packages
 
-.. autodata:: cocotb.top
+.. autodoc2-object:: cocotb.top
 
-.. autodata:: cocotb.is_simulation
+.. autodoc2-object:: cocotb.is_simulation
 
-.. autodata:: cocotb.sim_phase
+.. autodoc2-object:: cocotb.sim_phase
 
-.. autoenum:: cocotb.SimPhase
+.. autodoc2-object:: cocotb.SimPhase
 
 .. _combine-results:
 
@@ -410,13 +437,14 @@ The Regression Manager
 .. module:: cocotb.regression
     :synopsis: Regression test suite manager.
 
-.. autodata:: cocotb.regression_manager
+.. autodoc2-object:: cocotb.regression_manager
 
-.. autoclass:: Test
+.. autodoc2-object:: cocotb.regression.Test
 
-.. autoenum:: RegressionMode
+.. autodoc2-object:: cocotb.regression.RegressionMode
 
-.. autoclass:: RegressionManager
+.. autodoc2-object:: cocotb.regression.RegressionManager
+..
     :members:
     :member-order: bysource
 
@@ -427,7 +455,10 @@ This module is a Python wrapper to libgpi.
 It should not be considered public API, but is documented here for developers
 of cocotb.
 
-.. automodule:: cocotb.simulator
+..
+    FIXME: does not have an __all__: https://sphinx-autodoc2.readthedocs.io/en/stable/quickstart.html#documenting-only-the-public-api-via-all
+    .. autodoc2-object:: cocotb.simulator
+..
     :members:
     :undoc-members:
     :member-order: bysource
