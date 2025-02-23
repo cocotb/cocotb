@@ -23,7 +23,7 @@ Reference Card
 +------------------------+-----------------------------------------------------------------+
 | Assign                 | ``dut.mysignal.value = 0xFF00``                                 |
 +------------------------+-----------------------------------------------------------------+
-| Assign immediately     | ``dut.mysignal.setimmediatevalue(0xFF00)``                      |
+| Assign immediately     | ``dut.mysignal.value = Immediate(0xFF00)``                      |
 +------------------------+-----------------------------------------------------------------+
 | Assign metavalue       | | ``dut.mysignal.value = Logic("X")``                           |
 |                        | | ``dut.mysignal.value = LogicArray("01XZ")``                   |

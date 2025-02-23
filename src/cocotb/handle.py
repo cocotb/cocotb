@@ -614,9 +614,23 @@ class Release:
     """
 
 
+class Immediate(Generic[ValueT]):
+    """:term:`Deposit <no-delay deposit>` a value on a simulator object without delay.
+
+    The value of the signal will be changed immediately
+    and should be able to be read back immediately following the write.
+    Otherwise, behaves like :class:`Deposit`.
+    """
+
+    def __init__(self, value: ValueT) -> None:
+        self.value = value
+
+
 def _map_action_obj_to_value_action_enum_pair(
     handle: "ValueObjectBase[Any, Any]",
-    value: Union[ValueT, Deposit[ValueT], Force[ValueT], Freeze, Release],
+    value: Union[
+        ValueT, Deposit[ValueT], Force[ValueT], Freeze, Release, Immediate[ValueT]
+    ],
 ) -> Tuple[ValueT, _GPISetAction]:
     if isinstance(value, Deposit):
         return value.value, _GPISetAction.DEPOSIT
@@ -626,6 +640,8 @@ def _map_action_obj_to_value_action_enum_pair(
         return handle.value, _GPISetAction.FORCE
     elif isinstance(value, Release):
         return handle.value, _GPISetAction.RELEASE
+    elif isinstance(value, Immediate):
+        return value.value, _GPISetAction.NO_DELAY
     else:
         return value, _GPISetAction.DEPOSIT
 
@@ -664,13 +680,21 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
 
     def set(
         self,
-        value: Union[ValueSetT, Deposit[ValueSetT], Force[ValueSetT], Freeze, Release],
+        value: Union[
+            ValueSetT,
+            Deposit[ValueSetT],
+            Force[ValueSetT],
+            Freeze,
+            Release,
+            Immediate[ValueSetT],
+        ],
     ) -> None:
         """Assign the value to this simulation object at the end of the current delta cycle.
 
         This is known in Verilog as a "non-blocking assignment" and in VHDL as a "signal assignment".
 
-        See :class:`Deposit`, :class:`Force`, :class:`Freeze`, and :class:`Release` for additional actions that can be taken when setting a value.
+        See :class:`Deposit`, :class:`Force`, :class:`Freeze`, :class:`Release`, and :class:`Immediate`
+        for additional actions that can be taken when setting a value.
         The default behavior is to :class:`Deposit` the value.
         Use these actions like so:
 
@@ -691,17 +715,29 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
 
         self._set_value(value_, action, cocotb._write_scheduler.schedule_write)
 
+    @deprecated(
+        "Use `handle.set(Immediate(...))` or `handle.value = Immediate(...)` instead."
+    )
     def setimmediatevalue(
         self,
-        value: Union[ValueSetT, Deposit[ValueSetT], Force[ValueSetT], Freeze, Release],
+        value: Union[
+            ValueSetT,
+            Deposit[ValueSetT],
+            Force[ValueSetT],
+            Freeze,
+            Release,
+            Immediate[ValueSetT],
+        ],
     ) -> None:
-        """Assign a value to this simulation object immediately.
+        r"""Set the value of the simulation object immediately.
 
-        This is known in Verilog as a "blocking assignment" and in VHDL as a "variable assignment".
+        See :class:`Deposit`, :class:`Force`, :class:`Freeze`, :class:`Release`, and :class:`Immediate`
+        for additional actions that can be taken when setting a value.
 
-        See :class:`Deposit`, :class:`Force`, :class:`Freeze`, and :class:`Release` for additional actions that can be taken when setting a value.
-        The default behavior is to :class:`Deposit` the value.
-        See :meth:`set` for an example on how to use these action types.
+        Passing :class:`Deposit`\ s and unwrapped values is equivalent to passing an :class:`Immediate` to :meth:`set`.
+
+        .. deprecated:: 2.0
+            "Use `handle.set(Immediate(...))` or `handle.value = Immediate(...)` instead.
         """
         if self.is_const:
             raise TypeError(f"{self._path} is constant")
