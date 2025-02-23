@@ -603,10 +603,10 @@ ValueT = TypeVar("ValueT")
 
 
 class Deposit(Generic[ValueT]):
-    """Action used for placing a value into a given handle. This is the default action.
+    r""":term:`Inertially deposits <inertial deposit>` the given value on a simulator object.
 
-    If another deposit comes after this deposit, the newer deposit overwrites the old value.
-    If an HDL process is driving the signal/net/register where a deposit from cocotb is made,
+    If another :term:`deposit` comes after this deposit, the newer deposit overwrites the old value.
+    If an HDL process is :term:`driving` the signal/net/register where a deposit from cocotb is made,
     the deposited value will be overwritten at the end of the next delta cycle,
     essentially causing a single delta cycle "glitch" in the waveform.
     """
@@ -616,12 +616,11 @@ class Deposit(Generic[ValueT]):
 
 
 class Force(Generic[ValueT]):
-    r"""Action used to force a handle to a given value until a :class:`Release` is applied.
+    r""":term:`Force <force>` the given value on a simulator object immediately.
 
-    :class:`Deposit` writes from cocotb or drives from HDL processes
-    do not cause the value to change until the handle is :class:`Release`\ d.
-    Further :class:`Force`\ s will overwrite the value and leave the value forced.
-    :class:`Freeze`\ s will act as a no-op.
+    Further :term:`deposits <deposit>` from cocotb or :term:`drives <driving>` from HDL processes
+    do not cause the value to change until the handle is :term:`released <release>` by cocotb or HDL code.
+    Further :term:`forces <force>` will overwrite the value and leave the value forced.
     """
 
     def __init__(self, value: ValueT) -> None:
@@ -629,17 +628,20 @@ class Force(Generic[ValueT]):
 
 
 class Freeze:
-    r"""Action used to make a handle keep its current value until a :class:`Release` is applied.
+    r""":term:`Force <force>` the simulator object with its current value.
 
-    :class:`Deposit` writes from cocotb or drives from HDL processes
-    do not cause the value to change until the handle is :class:`Release`\ d.
-    :class:`Force`\ s will overwrite the value and leave the value forced.
-    Further :class:`Freeze`\ s will act as a no-op.
+    Useful if you have done a :term:`deposit` and later decide to lock the value from changing.
+    Does not change the current value of the simulation object.
+    See :class:`Force` for information on behavior after this write completes.
     """
 
 
 class Release:
-    """Action used to stop the effects of a previously applied :class:`Force`/:class:`Freeze` action."""
+    """:term:`Release <release>` a :term:`forced <force>` simulation object.
+
+    Does not change the current value of the simulation object.
+    See :class:`Deposit` for information on behavior after this write completes.
+    """
 
 
 def _map_action_obj_to_value_action_enum_pair(
