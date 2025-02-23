@@ -200,7 +200,7 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
     # NOTE: this test depends on scheduling priority.
     # It assumes that the first task to wait on a trigger will be woken first.
     # The fix for gh-1348 should prevent that from mattering.
-    dut.clk.setimmediatevalue(0)
+    dut.clk.value = 0
 
     victim_resumed = False
 
