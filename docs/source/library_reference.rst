@@ -322,6 +322,8 @@ Assignment Methods
 
 .. autoclass:: Deposit
 
+.. autoclass:: Immediate
+
 .. autoclass:: Force
 
 .. autoclass:: Freeze
