@@ -1,0 +1,1 @@
+Makefile runners no longer need to specify :make:var:`SIM`, and have the simulator executable available, to run ``make clean``.
