@@ -10,7 +10,7 @@ import re
 from typing import Any, List
 
 import pytest
-from common import MyException
+from common import MyException, assert_takes
 
 import cocotb
 from cocotb._base_triggers import Trigger, _InternalEvent
@@ -24,7 +24,6 @@ from cocotb.triggers import (
     ReadOnly,
     Timer,
 )
-from cocotb.utils import get_sim_time
 
 
 @cocotb.test()
@@ -124,10 +123,9 @@ async def test_internalevent(dut):
 
     # Test waiting more than once
     cocotb.start_soon(set_internalevent())
-    time_ns = get_sim_time(unit="ns")
-    await e
+    with assert_takes(1, "ns"):
+        await e
     assert e.is_set()
-    assert get_sim_time(unit="ns") == time_ns + 1
     # _InternalEvent can only be awaited once
     with pytest.raises(RuntimeError):
         await e
@@ -160,30 +158,25 @@ async def test_internalevent(dut):
     cocotb.start_soon(set_internalevent())
     await Timer(2, unit="ns")
     assert e.is_set()
-    time_ns = get_sim_time(unit="ns")
-    await e
-    assert get_sim_time(unit="ns") == time_ns
+    with assert_takes(0, "ns"):
+        await e
 
 
 @cocotb.test
 async def test_Combine_empty(_) -> None:
     """Test that a Combine with no triggers passes no time."""
-    start_time = get_sim_time(unit="ns")
     combine = Combine()
-    res = await combine
-    end_time = get_sim_time(unit="ns")
-    assert end_time == start_time
+    with assert_takes(0, "ns"):
+        res = await combine
     assert res is combine
 
 
 @cocotb.test
 async def test_Combine_single(_) -> None:
     """Test Combine with a single trigger acts the same as awaiting the trigger directly."""
-    start_time = get_sim_time(unit="ns")
     combine = Combine(Timer(9, "ns"))
-    res = await combine
-    end_time = get_sim_time(unit="ns")
-    assert end_time == (start_time + 9)
+    with assert_takes(9, "ns"):
+        res = await combine
     assert res is combine
 
 
@@ -198,11 +191,9 @@ async def test_Combine_exception(dut) -> None:
         raise MyException
 
     combine = Combine(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
-    start_time = get_sim_time(unit="ns")
-    with pytest.raises(MyException):
-        await combine
-    end_time = get_sim_time(unit="ns")
-    assert end_time == (start_time + 1)
+    with assert_takes(1, "ns"):
+        with pytest.raises(MyException):
+            await combine
 
 
 @cocotb.test
@@ -215,11 +206,9 @@ async def test_First_empty(_) -> None:
 @cocotb.test
 async def test_First_single(_) -> None:
     """Test First with a single trigger acts the same as awaiting the trigger directly."""
-    start_time = get_sim_time(unit="ns")
     timer = Timer(13, "ns")
-    res = await First(timer)
-    end_time = get_sim_time(unit="ns")
-    assert end_time == (start_time + 13)
+    with assert_takes(13, "ns"):
+        res = await First(timer)
     assert res is timer
 
 
@@ -234,11 +223,9 @@ async def test_First_exception(_) -> None:
         raise MyException
 
     first = First(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
-    start_time = get_sim_time(unit="ns")
-    with pytest.raises(MyException):
-        await first
-    end_time = get_sim_time(unit="ns")
-    assert end_time == (start_time + 1)
+    with assert_takes(1, "ns"):
+        with pytest.raises(MyException):
+            await first
 
 
 @cocotb.test
@@ -274,13 +261,9 @@ async def test_Lock_fair_scheduling(_) -> None:
     lock = Lock()
 
     async def waiter(n: int) -> None:
-        max_hold_time = waiter_ns * (n + 1)
-        start_time = get_sim_time("ns")
-        await lock.acquire()
-        end_time = get_sim_time("ns")
-
         # Ensure the waiter didn't hang due another waiter being killed.
-        assert end_time <= (start_time + max_hold_time)
+        with assert_takes(waiter_ns * (n + 1), "ns", lambda a, e: a <= e):
+            await lock.acquire()
 
         # Ensure acquisition is in order.
         nonlocal last_scheduled

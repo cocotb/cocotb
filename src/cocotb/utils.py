@@ -32,13 +32,14 @@ from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
 from typing import (
+    TYPE_CHECKING,
     Any,
     Union,
     overload,
 )
 
 from cocotb import simulator
-from cocotb._typing import TimeUnit
+from cocotb._typing import TimeUnit, TimeUnitWithoutStep
 
 
 def _get_simulator_precision() -> int:
@@ -123,6 +124,8 @@ def get_time_from_sim_steps(steps: int, unit: TimeUnit) -> int:
     Returns:
         The simulation time in the specified unit.
     """
+    if unit == "step":
+        return steps
     return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(unit))
 
 
@@ -190,27 +193,33 @@ def get_sim_steps(
     return result_rounded
 
 
-@lru_cache(maxsize=None)
-def _get_log_time_scale(unit: TimeUnit) -> int:
-    """Retrieves the ``log10()`` of the scale factor for a given time unit.
+if TYPE_CHECKING:
 
-    Args:
-        unit: String specifying the unit
-            (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+    def _get_log_time_scale(unit: TimeUnitWithoutStep) -> int: ...
 
-            .. versionchanged:: 2.0
-                Renamed from ``units``.
+else:
 
-    Raises:
-        ValueError: If *unit* is not a valid unit (see Args section).
+    @lru_cache(maxsize=None)
+    def _get_log_time_scale(unit):
+        """Retrieves the ``log10()`` of the scale factor for a given time unit.
 
-    Returns:
-        The ``log10()`` of the scale factor for the time unit.
-    """
-    scale = {"fs": -15, "ps": -12, "ns": -9, "us": -6, "ms": -3, "sec": 0}
+        Args:
+            unit: String specifying the unit
+                (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
-    unit_lwr = unit.lower()
-    if unit_lwr not in scale:
-        raise ValueError(f"Invalid unit ({unit}) provided")
-    else:
-        return scale[unit_lwr]
+                .. versionchanged:: 2.0
+                    Renamed from ``units``.
+
+        Raises:
+            ValueError: If *unit* is not a valid unit (see Args section).
+
+        Returns:
+            The ``log10()`` of the scale factor for the time unit.
+        """
+        scale = {"fs": -15, "ps": -12, "ns": -9, "us": -6, "ms": -3, "sec": 0}
+
+        unit_lwr = unit.lower()
+        if unit_lwr not in scale:
+            raise ValueError(f"Invalid unit ({unit}) provided")
+        else:
+            return scale[unit_lwr]

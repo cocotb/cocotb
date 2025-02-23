@@ -14,6 +14,7 @@ import os
 import re
 
 import pytest
+from common import assert_takes
 
 import cocotb
 from cocotb.clock import Clock
@@ -29,7 +30,6 @@ from cocotb.triggers import (
     ValueChange,
     with_timeout,
 )
-from cocotb.utils import get_sim_time
 from cocotb_tools.sim_versions import RivieraVersion
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -235,10 +235,8 @@ async def test_clock_cycles(dut):
     assert t.num_cycles == cycles
     assert t.edge_type is RisingEdge
 
-    start_time = get_sim_time("ns")
-    await t
-    end_time = get_sim_time("ns")
-    assert end_time == (start_time + (cycles * period))
+    with assert_takes((cycles * period), "ns"):
+        await t
 
     t = ClockCycles(clk, 10, FallingEdge)
     # NVC gives upper-case identifiers for some things, so do case-insensitive match. See gh-3985
@@ -251,10 +249,8 @@ async def test_clock_cycles(dut):
     assert t.num_cycles == cycles
     assert t.edge_type is FallingEdge
 
-    start_time = get_sim_time("ns")
-    await t
-    end_time = get_sim_time("ns")
-    assert end_time == (start_time + (cycles * period) - (period // 2))
+    with assert_takes((cycles * period) - (period // 2), "ns"):
+        await t
 
     # test other edge type construction
     assert ClockCycles(clk, cycles, True).edge_type is RisingEdge

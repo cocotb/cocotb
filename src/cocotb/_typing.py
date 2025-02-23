@@ -9,4 +9,5 @@ if TYPE_CHECKING:
         TypeAlias,
     )
 
-TimeUnit: "TypeAlias" = 'Literal["step"] | Literal["fs"] | Literal["ps"] | Literal["ns"] | Literal["us"] | Literal["ms"] | Literal["sec"]'
+TimeUnitWithoutStep: "TypeAlias" = 'Literal["fs", "ps", "ns", "us", "ms", "sec"]'
+TimeUnit: "TypeAlias" = 'Literal["step"] | TimeUnitWithoutStep'

@@ -16,7 +16,7 @@ from asyncio import CancelledError, InvalidStateError
 from typing import Any, Awaitable, Coroutine
 
 import pytest
-from common import MyException
+from common import MyException, assert_takes
 
 import cocotb
 import cocotb.utils
@@ -576,13 +576,12 @@ async def test_await_start_soon(_):
     """Test awaiting start_soon queued coroutine before it starts."""
 
     async def coro():
-        start_time = cocotb.utils.get_sim_time(unit="ns")
         await Timer(1, "ns")
-        assert cocotb.utils.get_sim_time(unit="ns") == start_time + 1
 
     coro = cocotb.start_soon(coro())
 
-    await coro
+    with assert_takes(1, "ns"):
+        await coro
 
 
 @cocotb.test()
