@@ -578,6 +578,11 @@ class Deposit(Generic[ValueT]):
     If an HDL process is :term:`driving` the signal/net/register where a deposit from cocotb is made,
     the deposited value will be overwritten at the end of the next delta cycle,
     essentially causing a single delta cycle "glitch" in the waveform.
+
+    .. note::
+        VHDL applies writes according to their definition.
+        ``signal`` writes are set inertially, regardless of using this class;
+        while ``variable`` writes are set immeidately, regardless of using this class.
     """
 
     def __init__(self, value: ValueT) -> None:
@@ -590,6 +595,19 @@ class Force(Generic[ValueT]):
     Further :term:`deposits <deposit>` from cocotb or :term:`drives <drive>` from HDL processes
     do not cause the value to change until the handle is :term:`released <release>` by cocotb or HDL code.
     Further :term:`forces <force>` will overwrite the value and leave the value forced.
+
+    .. note::
+        VHDL applies writes according to their definition.
+        ``signal`` writes are set inertially, regardless of using this class;
+        while ``variable`` writes are set immeidately, regardless of using this class.
+
+    .. note::
+        Verilog Forces are always immediate.
+        This also means that if there are multiple cocotb Tasks or multiple ``always`` blocks writing to the same object,
+        the resulting value is non-deterministic.
+
+    .. note::
+        Issuing a Force and Release in the same evaluation cycle in VHDL will result in the Force "winning".
     """
 
     def __init__(self, value: ValueT) -> None:
@@ -602,6 +620,19 @@ class Freeze:
     Useful if you have done a :term:`deposit` and later decide to lock the value from changing.
     Does not change the current value of the simulation object.
     See :class:`Force` for information on behavior after this write completes.
+
+    .. note::
+        VHDL applies writes according to their definition.
+        ``signal`` writes are set inertially, regardless of using this class;
+        while ``variable`` writes are set immeidately, regardless of using this class.
+
+    .. note::
+        Verilog Forces are always immediate.
+        This also means that if there are multiple cocotb Tasks or multiple ``always`` blocks writing to the same object,
+        the resulting value is non-deterministic.
+
+    .. note::
+        Issuing a Force and Release in the same evaluation cycle in VHDL will result in the Force "winning".
     """
 
 
@@ -610,6 +641,25 @@ class Release:
 
     Does not change the current value of the simulation object.
     See :class:`Deposit` for information on behavior after this write completes.
+
+    .. note::
+        VHDL applies writes according to their definition.
+        ``signal`` writes are set inertially, regardless of using this class,
+        while ``variable`` writes are set immeidately, regardless of using this class.
+
+    .. note::
+        Verilog Releases are always immediate.
+        This also means that if there are multiple cocotb Tasks or multiple ``always`` blocks writing to the same object,
+        the resulting value is non-deterministic.
+
+    .. note::
+        Issuing a Force and Release in the same evaluation cycle in VHDL will result in the Force "winning".
+
+    .. note::
+        Releasing a ``reg`` or `logic` in Verilog will leave the current value.
+        Releasing a ``wire`` in Verilog will cause the value to be recomputed from the wire's drivers current values.
+        Releasing a ``signal`` in VHDL will cause the value to be recomputed from the signal's drivers current value.
+        Unconnected ``in`` ports and unconnected internal signals have no drivers and their value after Release will be ``U`` in VHDL and ``X`` in Verilog.
     """
 
 
@@ -619,6 +669,16 @@ class Immediate(Generic[ValueT]):
     The value of the signal will be changed immediately
     and should be able to be read back immediately following the write.
     Otherwise, behaves like :class:`Deposit`.
+
+    .. note::
+        VHDL applies writes according to their definition.
+        ``signal`` writes are set inertially, regardless of using this class;
+        while ``variable`` writes are set immeidately, regardless of using this class.
+
+    .. note::
+        In Verilog, because these writes are immediate,
+        if there are multiple cocotb Tasks or multiple ``always`` blocks writing to the same object,
+        the resulting value is non-deterministic.
     """
 
     def __init__(self, value: ValueT) -> None:
