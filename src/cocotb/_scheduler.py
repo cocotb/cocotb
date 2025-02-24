@@ -41,7 +41,7 @@ from collections import OrderedDict
 from typing import Any, Callable, Dict
 
 import cocotb
-import cocotb._write_scheduler
+import cocotb.handle
 from cocotb import _outcomes, _py_compat
 from cocotb._exceptions import InternalError
 from cocotb._gpi_triggers import (
@@ -272,7 +272,7 @@ class Scheduler:
 
             # apply inertial writes if ReadWrite
             if trigger is self._read_write:
-                cocotb._write_scheduler.apply_scheduled_writes()
+                cocotb.handle._apply_scheduled_writes()
 
             self._react(trigger)
             self._event_loop()

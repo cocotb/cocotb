@@ -61,7 +61,7 @@ from typing import (
 
 import cocotb
 import cocotb._scheduler
-import cocotb._write_scheduler
+import cocotb.handle
 from cocotb import _ANSI, simulator
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome
@@ -469,7 +469,7 @@ class RegressionManager:
             # TODO move to Trigger object
             cocotb.sim_phase = cocotb.SimPhase.NORMAL
             trigger._cleanup()
-        cocotb._write_scheduler.start_write_scheduler()
+        cocotb.handle._start_write_scheduler()
 
         self._test_task._add_done_callback(
             lambda _: cocotb._scheduler_inst.shutdown_soon()
@@ -515,7 +515,7 @@ class RegressionManager:
         test = self._test
 
         # clean up write scheduler
-        cocotb._write_scheduler.stop_write_scheduler()
+        cocotb.handle._stop_write_scheduler()
 
         # score test
         if self._test_outcome is not None:
