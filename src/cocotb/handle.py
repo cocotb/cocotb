@@ -27,8 +27,10 @@
 
 import enum
 import logging
+import os
 import re
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from functools import lru_cache
 from logging import Logger
 from typing import (
@@ -48,18 +50,15 @@ from typing import (
     cast,
 )
 
+import cocotb
 from cocotb import simulator
+from cocotb._base_triggers import Event
 from cocotb._deprecation import deprecated
-from cocotb._gpi_triggers import FallingEdge, RisingEdge, ValueChange
+from cocotb._gpi_triggers import FallingEdge, ReadWrite, RisingEdge, ValueChange
 from cocotb._py_compat import cached_property
 from cocotb._utils import DocIntEnum, cached_method
+from cocotb.task import Task
 from cocotb.types import Array, Logic, LogicArray, Range
-
-
-def _write_now(
-    _: "ValueObjectBase[Any, Any]", f: Callable[..., None], args: Any
-) -> None:
-    f(*args)
 
 
 class _Limits(enum.IntEnum):
@@ -655,24 +654,77 @@ class Immediate(Generic[_ValueT]):
         self.value = value
 
 
-def _map_action_obj_to_value_action_enum_pair(
-    handle: "ValueObjectBase[Any, Any]",
-    value: Union[
-        _ValueT, Deposit[_ValueT], Force[_ValueT], Freeze, Release, Immediate[_ValueT]
-    ],
-) -> Tuple[_ValueT, _GPISetAction]:
-    if isinstance(value, Deposit):
-        return value.value, _GPISetAction.DEPOSIT
-    elif isinstance(value, Force):
-        return value.value, _GPISetAction.FORCE
-    elif isinstance(value, Freeze):
-        return handle.value, _GPISetAction.FORCE
-    elif isinstance(value, Release):
-        return handle.value, _GPISetAction.RELEASE
-    elif isinstance(value, Immediate):
-        return value.value, _GPISetAction.NO_DELAY
-    else:
-        return value, _GPISetAction.DEPOSIT
+_trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
+
+# A dictionary of pending (write_func, args), keyed by handle.
+# Writes are applied oldest to newest (least recently used).
+# Only the last scheduled write to a particular handle in a timestep is performed.
+_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], _GPISetAction, Any]]" = OrderedDict()
+
+_write_task: "Union[Task[None], None]" = None
+
+_writes_pending = Event()
+
+
+async def _do_writes() -> None:
+    """An internal task that schedules a ReadWrite to force writes to occur."""
+    while True:
+        await _writes_pending.wait()
+        await ReadWrite()
+
+
+def _start_write_scheduler() -> None:
+    global _write_task
+    if _write_task is None:
+        _write_task = cocotb.start_soon(_do_writes())
+
+
+def _stop_write_scheduler() -> None:
+    global _write_task
+    if _write_task is not None:
+        _write_task.kill()
+        _write_task = None
+    _write_calls.clear()
+    _writes_pending.clear()
+
+
+def _apply_scheduled_writes() -> None:
+    while _write_calls:
+        _, (func, action, value) = _write_calls.popitem(last=False)
+        func(action.value, value)
+    _writes_pending.clear()
+
+
+if _trust_inertial:
+
+    def _schedule_write(  # type: ignore  # pylance doesn't like if/else function definitions
+        handle: "ValueObjectBase[Any, Any]",
+        write_func: Callable[[int, _ValueT], None],
+        action: _GPISetAction,
+        value: _ValueT,
+    ) -> None:
+        # Trust the simulator and just write.
+        write_func(action.value, value)
+else:
+
+    def _schedule_write(
+        handle: "ValueObjectBase[Any, Any]",
+        write_func: Callable[[int, _ValueT], None],
+        action: _GPISetAction,
+        value: _ValueT,
+    ) -> None:
+        if cocotb.sim_phase == cocotb.SimPhase.READ_WRITE:
+            # If we are already in the ReadWrite phase, apply writes immediately as an optimization.
+            write_func(action.value, value)
+        elif action == _GPISetAction.DEPOSIT:
+            # Queue write for the beginning of the next ReadWrite phase because we can't trust the simulator. =(
+            if handle in _write_calls:
+                del _write_calls[handle]
+            _write_calls[handle] = (write_func, action, value)
+            _writes_pending.set()
+        else:
+            # If we are writing anything that isn't an inertial write, it must be applied immediately.
+            write_func(action.value, value)
 
 
 #: Type returned by the :attr:`~ValueObjectBase.value` getter and returned by the :meth:`~ValueObjectBase.get` method.
@@ -743,14 +795,24 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
                 or if the simulation object is immutable.
             ValueError: If the *value* is of the correct type, but the value fails to convert.
         """
+        if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
+            raise RuntimeError("Attempting settings a value during the ReadOnly phase.")
         if self.is_const:
-            raise TypeError(f"{self._path} is constant")
-
-        value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
-
-        import cocotb._write_scheduler
-
-        self._set_value(value_, action, cocotb._write_scheduler.schedule_write)
+            raise TypeError("Attempted setting an immutable object")
+        if isinstance(value, Deposit):
+            self._set_value(value.value, _GPISetAction.DEPOSIT)
+        elif isinstance(value, Force):
+            self._set_value(value.value, _GPISetAction.FORCE)
+        elif isinstance(value, Freeze):
+            # We assume that ValueSetT >= ValueGetT
+            self._set_value(cast(ValueSetT, self.get()), _GPISetAction.FORCE)
+        elif isinstance(value, Release):
+            # We assume that ValueSetT >= ValueGetT
+            self._set_value(cast(ValueSetT, self.get()), _GPISetAction.RELEASE)
+        elif isinstance(value, Immediate):
+            self._set_value(value.value, _GPISetAction.NO_DELAY)
+        else:
+            self._set_value(value, _GPISetAction.DEPOSIT)
 
     @deprecated(
         "Use `handle.set(Immediate(...))` or `handle.value = Immediate(...)` instead."
@@ -776,14 +838,11 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         .. deprecated:: 2.0
             "Use `handle.set(Immediate(...))` or `handle.value = Immediate(...)` instead.
         """
-        if self.is_const:
-            raise TypeError(f"{self._path} is constant")
-
-        value_, action = _map_action_obj_to_value_action_enum_pair(self, value)
-        if action == _GPISetAction.DEPOSIT:
-            action = _GPISetAction.NO_DELAY
-
-        self._set_value(value_, action, _write_now)
+        if isinstance(value, Deposit):
+            value = Immediate(value.value)
+        elif not isinstance(value, (Force, Freeze, Release, Immediate)):
+            value = Immediate(value)
+        self.set(value)
 
     @cached_property
     def is_const(self) -> bool:
@@ -795,9 +854,6 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         self,
         value: ValueSetT,
         action: _GPISetAction,
-        schedule_write: Callable[
-            ["ValueObjectBase[Any, Any]", Callable[..., None], Sequence[Any]], None
-        ],
     ) -> None:
         """Schedule a write of the given value to a simulator object.
 
@@ -809,7 +865,6 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         Args:
             value: A value used to set the handle.
             action: Whether to deposit, force, or release the value on the handle.
-            schedule_write: A function which takes ``(handle, callback, args)`` to schedule the writes.
         """
 
 
@@ -908,16 +963,13 @@ class ArrayObject(
         self,
         value: Union[Array[ElemValueT], Sequence[ElemValueT]],
         action: _GPISetAction,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
     ) -> None:
         if len(value) != len(self):
             raise ValueError(
                 f"Assigning list of length {len(value)} to object {self._name} of length {len(self)}"
             )
         for elem, self_idx in zip(value, self.range):
-            self[self_idx]._set_value(elem, action, schedule_write)
+            self[self_idx]._set_value(elem, action)
 
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
@@ -970,9 +1022,6 @@ class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
         self,
         value: Union[Logic, int, str],
         action: _GPISetAction,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
     ) -> None:
         value_: str
         if isinstance(value, (int, str)):
@@ -993,7 +1042,7 @@ class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_binstr, (action, value_))
+        _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
     def get(self) -> Logic:
         """Return the current value of the simulation object as a :class:.Logic`."""
@@ -1076,17 +1125,14 @@ class LogicArrayObject(
         self,
         value: Union[LogicArray, Logic, int, str],
         action: _GPISetAction,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
     ) -> None:
         value_: str
         if isinstance(value, int):
             min_val, max_val = _value_limits(len(self), _Limits.VECTOR_NBIT)
             if min_val <= value <= max_val:
                 if len(self) <= 32:
-                    schedule_write(
-                        self, self._handle.set_signal_val_int, (action, value)
+                    _schedule_write(
+                        self, self._handle.set_signal_val_int, action, value
                     )
                     return
 
@@ -1133,7 +1179,7 @@ class LogicArrayObject(
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_binstr, (action, value_))
+        _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
     def get(self) -> LogicArray:
         """Return the current value of the simulation object as a :class:`.LogicArray`."""
@@ -1207,16 +1253,13 @@ class RealObject(NonIndexableValueObjectBase[float, float]):
         self,
         value: float,
         action: _GPISetAction,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
     ) -> None:
         if not isinstance(value, (float, int)):
             raise TypeError(
                 f"Unsupported type for real value assignment: {type(value)} ({value!r})"
             )
 
-        schedule_write(self, self._handle.set_signal_val_real, (action, value))
+        _schedule_write(self, self._handle.set_signal_val_real, action, value)
 
     def get(self) -> float:
         """Return the current value of the simulation object as a :class:`float`."""
@@ -1270,9 +1313,6 @@ class EnumObject(NonIndexableValueObjectBase[int, int]):
         self,
         value: int,
         action: _GPISetAction,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
     ) -> None:
         if not isinstance(value, int):
             raise TypeError(
@@ -1281,7 +1321,7 @@ class EnumObject(NonIndexableValueObjectBase[int, int]):
 
         min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
         if min_val <= value <= max_val:
-            schedule_write(self, self._handle.set_signal_val_int, (action, value))
+            _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
             raise OverflowError(
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
@@ -1353,9 +1393,6 @@ class IntegerObject(NonIndexableValueObjectBase[int, int]):
         self,
         value: int,
         action: _GPISetAction,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
     ) -> None:
         if not isinstance(value, int):
             raise TypeError(
@@ -1364,7 +1401,7 @@ class IntegerObject(NonIndexableValueObjectBase[int, int]):
 
         min_val, max_val = _value_limits(32, _Limits.SIGNED_NBIT)
         if min_val <= value <= max_val:
-            schedule_write(self, self._handle.set_signal_val_int, (action, value))
+            _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
             raise OverflowError(
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
@@ -1419,16 +1456,12 @@ class StringObject(
         self,
         value: bytes,
         action: _GPISetAction,
-        schedule_write: Callable[
-            [ValueObjectBase[Any, Any], Callable[..., None], Sequence[Any]], None
-        ],
     ) -> None:
         if not isinstance(value, (bytes, bytearray)):
             raise TypeError(
                 f"Unsupported type for string value assignment: {type(value)} ({value!r})"
             )
-
-        schedule_write(self, self._handle.set_signal_val_str, (action, value))
+        _schedule_write(self, self._handle.set_signal_val_str, action, value)
 
     def get(self) -> bytes:
         """Return the current value of the simulation object as a :class:`bytes`."""

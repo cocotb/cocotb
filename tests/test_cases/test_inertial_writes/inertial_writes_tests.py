@@ -4,8 +4,8 @@
 import os
 
 import cocotb
-from cocotb._write_scheduler import trust_inertial
 from cocotb.clock import Clock
+from cocotb.handle import _trust_inertial
 from cocotb.triggers import (
     ReadOnly,
     ReadWrite,
@@ -29,7 +29,7 @@ simulator_test = "COCOTB_SIMULATOR_TEST" in os.environ
 # Riviera's VHPI is skipped in all tests when COCOTB_TRUST_INERTIAL_WRITES mode is enabled
 # because it behaves erratically.
 riviera_vhpi_trust_inertial = (
-    SIM_NAME.startswith("riviera") and intf == "vhpi" and trust_inertial
+    SIM_NAME.startswith("riviera") and intf == "vhpi" and _trust_inertial
 )
 
 
@@ -50,7 +50,7 @@ async def test_writes_on_timer_seen_on_edge(dut):
 
 if simulator_test:
     expect_fail = False
-elif trust_inertial:
+elif _trust_inertial:
     expect_fail = False
 elif SIM_NAME.startswith("riviera") and intf == "vhpi":
     expect_fail = False
@@ -83,7 +83,7 @@ async def test_read_back_in_readwrite(dut):
 
 if simulator_test:
     expect_fail = False
-elif not trust_inertial:
+elif not _trust_inertial:
     expect_fail = False
 elif SIM_NAME.startswith("icarus"):
     expect_fail = True
