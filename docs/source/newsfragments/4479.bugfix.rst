@@ -1,0 +1,1 @@
+Passing :class:`~cocotb.handle.Force`, :class:`~cocotb.handle.Freeze`, :class:`~cocotb.handle.Release`, and :class:`~cocotb.handle.Immediate` to :data:`handle.value setters <cocotb.handle.ValueObjectBase.value>` now applies the set immediately.
