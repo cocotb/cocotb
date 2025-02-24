@@ -147,6 +147,8 @@ endif
 
 export LIBPYTHON_LOC
 
+export GPI_USERS := $(shell $(PYTHON_BIN) -c "import cocotb.simulator; print(cocotb.simulator.__file__)")
+
 define check_vhdl_sources
 if [ "$(VHDL_SOURCES_$(LIB))" == "" ]; then \
   >&2 echo "ERROR: VHDL_SOURCES_$(LIB) is empty or undefined, but '$(LIB)' is present in VHDL_LIB_ORDER."; \

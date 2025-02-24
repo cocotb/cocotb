@@ -2,32 +2,22 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <cocotb_utils.h>  // xstr, utils_dyn_open, utils_dyn_sym
-#include <embed.h>
-#include <gpi.h>  // gpi_event_t
+#include "embed.h"
 
 #include <cstdlib>  // getenv
+
+#include "../gpi/gpi_priv.h"  // utils_dyn_open, utils_dyn_sym
+#include "gpi_logging.h"
+
 #ifdef _WIN32
 #include <windows.h>  // Win32 API for loading the embed impl library
 
 #include <string>  // string
 #endif
 
-#ifndef PYTHON_LIB
-#error "Name of Python library required"
-#else
-#define PYTHON_LIB_STR xstr(PYTHON_LIB)
-#endif
-
-#ifndef EMBED_IMPL_LIB
-#error "Name of embed implementation library required"
-#else
-#define EMBED_IMPL_LIB_STR xstr(EMBED_IMPL_LIB)
-#endif
-
-static void (*_embed_init_python)();
+static void (*_embed_sim_init)();
 static void (*_embed_sim_cleanup)();
-static int (*_embed_sim_init)(int argc, char const *const *argv);
+static int (*_embed_init_python)(int argc, char const *const *argv);
 static void (*_embed_sim_event)(const char *msg);
 
 static bool init_failed = false;
@@ -53,18 +43,22 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID) {
 }
 #endif
 
-extern "C" void embed_init_python(void) {
+extern "C" int embed_init_python(int argc, char const *const *argv) {
     // preload python library
     char const *libpython_path = getenv("LIBPYTHON_LOC");
+    // LCOV_EXCL_START
     if (!libpython_path) {
-        // default to libpythonX.X.so
-        libpython_path = PYTHON_LIB_STR;
+        LOG_DEBUG("Missing required environment variable LIBPYTHON_LOC");
+        init_failed = true;
+        return -1;
     }
+    // LCOV_EXCL_STOP
+
     auto loaded = utils_dyn_open(libpython_path);
     if (!loaded) {
         // LCOV_EXCL_START
         init_failed = true;
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
 
@@ -93,40 +87,49 @@ extern "C" void embed_init_python(void) {
     }
 #endif
 
+    char const *user_lib_path = getenv("GPI_USERS");
+    // LCOV_EXCL_START
+    if (!user_lib_path) {
+        LOG_DEBUG("Missing required environment variable GPI_USERS");
+        init_failed = true;
+        return -1;
+    }
+    // LCOV_EXCL_STOP
+
     // load embed implementation library and functions
-    void *embed_impl_lib_handle;
-    if (!(embed_impl_lib_handle = utils_dyn_open(EMBED_IMPL_LIB_STR))) {
+    void *embed_impl_lib_handle = utils_dyn_open(user_lib_path);
+    if (!embed_impl_lib_handle) {
         // LCOV_EXCL_START
         init_failed = true;
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
     if (!(_embed_init_python = reinterpret_cast<decltype(_embed_init_python)>(
               utils_dyn_sym(embed_impl_lib_handle, "_embed_init_python")))) {
         // LCOV_EXCL_START
         init_failed = true;
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
     if (!(_embed_sim_cleanup = reinterpret_cast<decltype(_embed_sim_cleanup)>(
               utils_dyn_sym(embed_impl_lib_handle, "_embed_sim_cleanup")))) {
         // LCOV_EXCL_START
         init_failed = true;
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
     if (!(_embed_sim_init = reinterpret_cast<decltype(_embed_sim_init)>(
               utils_dyn_sym(embed_impl_lib_handle, "_embed_sim_init")))) {
         // LCOV_EXCL_START
         init_failed = true;
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
     if (!(_embed_sim_event = reinterpret_cast<decltype(_embed_sim_event)>(
               utils_dyn_sym(embed_impl_lib_handle, "_embed_sim_event")))) {
         // LCOV_EXCL_START
         init_failed = true;
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
 
@@ -142,7 +145,7 @@ extern "C" void embed_init_python(void) {
 #endif
 
     // call to embed library impl
-    _embed_init_python();
+    return _embed_init_python(argc, argv);
 }
 
 extern "C" void embed_sim_cleanup(void) {
@@ -151,13 +154,13 @@ extern "C" void embed_sim_cleanup(void) {
     }
 }
 
-extern "C" int embed_sim_init(int argc, char const *const *argv) {
+extern "C" void embed_sim_init(void) {
     if (init_failed) {
         // LCOV_EXCL_START
-        return -1;
+        return;
         // LCOV_EXCL_STOP
     } else {
-        return _embed_sim_init(argc, argv);
+        _embed_sim_init();
     }
 }
 

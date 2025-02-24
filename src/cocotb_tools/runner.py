@@ -37,6 +37,7 @@ from typing import (
 
 import find_libpython
 
+import cocotb.simulator  # TODO move this to pygpi namespace
 import cocotb_tools.config
 from cocotb_tools.check_results import get_results
 
@@ -185,6 +186,7 @@ class Runner(ABC):
                 )
             self.env["LIBPYTHON_LOC"] = libpython_path
 
+        self.env["GPI_USERS"] = cocotb.simulator.__file__
         self.env["PATH"] += os.pathsep + str(cocotb_tools.config.libs_dir)
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
         self.env["PYGPI_PYTHON_BIN"] = sys.executable

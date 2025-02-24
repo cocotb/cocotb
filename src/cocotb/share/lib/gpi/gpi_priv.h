@@ -29,17 +29,16 @@
 #ifndef COCOTB_GPI_PRIV_H_
 #define COCOTB_GPI_PRIV_H_
 
-#include <exports.h>
+#include <string>
+
+#include "exports.h"
+#include "gpi.h"
+
 #ifdef GPI_EXPORTS
 #define GPI_EXPORT COCOTB_EXPORT
 #else
 #define GPI_EXPORT COCOTB_IMPORT
 #endif
-
-#include <embed.h>
-#include <gpi.h>
-
-#include <string>
 
 class GpiCbHdl;
 class GpiImplInterface;
@@ -292,11 +291,14 @@ class GPI_EXPORT GpiImplInterface {
 /* Called from implementation layers back up the stack */
 GPI_EXPORT int gpi_register_impl(GpiImplInterface *func_tbl);
 
-GPI_EXPORT void gpi_embed_init(int argc, char const *const *argv);
+GPI_EXPORT void gpi_embed_init();
 GPI_EXPORT void gpi_embed_end();
-GPI_EXPORT void gpi_entry_point();
+GPI_EXPORT int gpi_entry_point(int argc, char const *const *argv);
 GPI_EXPORT void gpi_to_user();
 GPI_EXPORT void gpi_to_simulator();
+
+void *utils_dyn_open(const char *lib_name);
+void *utils_dyn_sym(void *handle, const char *sym_name);
 
 typedef void (*layer_entry_func)();
 

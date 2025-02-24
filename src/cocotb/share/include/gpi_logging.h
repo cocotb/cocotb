@@ -35,13 +35,11 @@
 
 #include "exports.h"
 
-#ifdef GPILOG_EXPORTS
-#define GPILOG_EXPORT COCOTB_EXPORT
+#ifdef GPI_EXPORTS
+#define GPI_EXPORT COCOTB_EXPORT
 #else
-#define GPILOG_EXPORT COCOTB_IMPORT
+#define GPI_EXPORT COCOTB_IMPORT
 #endif
-
-#include <cstdarg>
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,9 +142,9 @@ typedef void(gpi_log_handler_type)(void *userdata, const char *name, int level,
 
 // Don't call this function directly unless the name is "gpi" or starts with
 // "gpi."
-GPILOG_EXPORT void gpi_log_(const char *name, int level, const char *pathname,
-                            const char *funcname, long lineno, const char *msg,
-                            ...);
+GPI_EXPORT void gpi_log_(const char *name, int level, const char *pathname,
+                         const char *funcname, long lineno, const char *msg,
+                         ...);
 
 /** Log a message using the currently registered log handler.
     User is expected to populate all arguments to this function.
@@ -165,28 +163,28 @@ GPILOG_EXPORT void gpi_log_(const char *name, int level, const char *pathname,
 
 // Don't call this function directly unless the name is "gpi" or starts with
 // "gpi."
-GPILOG_EXPORT void gpi_vlog_(const char *name, int level, const char *pathname,
-                             const char *funcname, long lineno, const char *msg,
-                             va_list args);
+GPI_EXPORT void gpi_vlog_(const char *name, int level, const char *pathname,
+                          const char *funcname, long lineno, const char *msg,
+                          va_list args);
 
 /** Retrieve the current log handler.
     @param handler  Location to return current log handler. If no custom logger
                     is registered this will be `NULL`.
     @param userdata Location to return log handler userdata
  */
-GPILOG_EXPORT void gpi_get_log_handler(gpi_log_handler_type **handler,
-                                       void **userdata);
+GPI_EXPORT void gpi_get_log_handler(gpi_log_handler_type **handler,
+                                    void **userdata);
 
 /** Set custom log handler
     @param handler   Handler function to call when the GPI logs a message
     @param userdata  Data to pass to the handler function when logging a message
  */
-GPILOG_EXPORT void gpi_set_log_handler(gpi_log_handler_type *handler,
-                                       void *userdata);
+GPI_EXPORT void gpi_set_log_handler(gpi_log_handler_type *handler,
+                                    void *userdata);
 
 /** Clear the current custom log handler and use native logger
  */
-GPILOG_EXPORT void gpi_clear_log_handler(void);
+GPI_EXPORT void gpi_clear_log_handler(void);
 
 /** Log a message using the native log handler.
     User is expected to populate all arguments to this function.
@@ -206,10 +204,10 @@ GPILOG_EXPORT void gpi_clear_log_handler(void);
 
 // Don't call this function directly unless the name is "gpi" or starts with
 // "gpi."
-GPILOG_EXPORT void gpi_native_logger_log_(const char *name, int level,
-                                          const char *pathname,
-                                          const char *funcname, long lineno,
-                                          const char *msg, ...);
+GPI_EXPORT void gpi_native_logger_log_(const char *name, int level,
+                                       const char *pathname,
+                                       const char *funcname, long lineno,
+                                       const char *msg, ...);
 
 /** Log a message using the native log handler.
     User is expected to populate all arguments to this function.
@@ -229,10 +227,10 @@ GPILOG_EXPORT void gpi_native_logger_log_(const char *name, int level,
 
 // Don't call this function directly unless the name is "gpi" or starts with
 // "gpi."
-GPILOG_EXPORT void gpi_native_logger_vlog_(const char *name, int level,
-                                           const char *pathname,
-                                           const char *funcname, long lineno,
-                                           const char *msg, va_list args);
+GPI_EXPORT void gpi_native_logger_vlog_(const char *name, int level,
+                                        const char *pathname,
+                                        const char *funcname, long lineno,
+                                        const char *msg, va_list args);
 
 /** Set minimum logging level of the native logger.
     If a logging request occurs where the logging level is lower than the level
@@ -240,7 +238,7 @@ GPILOG_EXPORT void gpi_native_logger_vlog_(const char *name, int level,
     @param level     Logging level
     @return          Previous logging level
  */
-GPILOG_EXPORT int gpi_native_logger_set_level(int level);
+GPI_EXPORT int gpi_native_logger_set_level(int level);
 
 #ifdef __cplusplus
 }

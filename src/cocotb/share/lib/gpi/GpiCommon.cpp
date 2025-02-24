@@ -27,16 +27,22 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <cocotb_utils.h>
-#include <sys/types.h>
-
 #include <algorithm>
+#include <cstdlib>
 #include <map>
 #include <string>
 #include <vector>
 
+#include "embed.h"
 #include "gpi.h"
+#include "gpi_logging.h"
 #include "gpi_priv.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 using namespace std;
 
@@ -120,9 +126,7 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
 
 bool gpi_has_registered_impl() { return registered_impls.size() > 0; }
 
-void gpi_embed_init(int argc, char const *const *argv) {
-    if (embed_sim_init(argc, argv)) gpi_embed_end();
-}
+void gpi_embed_init(void) { embed_sim_init(); }
 
 void gpi_embed_end() {
     sim_ending = true;
@@ -141,7 +145,7 @@ void gpi_cleanup(void) {
     embed_sim_cleanup();
 }
 
-static void gpi_load_libs(std::vector<std::string> to_load) {
+static int gpi_load_libs(std::vector<std::string> to_load) {
     std::vector<std::string>::iterator iter;
 
     for (iter = to_load.begin(); iter != to_load.end(); iter++) {
@@ -151,8 +155,8 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
             ':');  // find from right since path could contain colons (Windows)
         if (idx == std::string::npos) {
             // no colon in the string
-            printf("cocotb: Error parsing GPI_EXTRA %s\n", arg.c_str());
-            exit(1);
+            LOG_CRITICAL("cocotb: Error parsing GPI_EXTRA %s\n", arg.c_str());
+            return -1;
         }
 
         std::string const lib_name = arg.substr(0, idx);
@@ -160,9 +164,9 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
 
         void *lib_handle = utils_dyn_open(lib_name.c_str());
         if (!lib_handle) {
-            printf("cocotb: Error loading shared library %s\n",
-                   lib_name.c_str());
-            exit(1);
+            LOG_CRITICAL("cocotb: Error loading shared library %s\n",
+                         lib_name.c_str());
+            return -1;
         }
 
         void *entry_point = utils_dyn_sym(lib_handle, func_name.c_str());
@@ -173,16 +177,18 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
             char const *msg =
                 "        Perhaps you meant to use `,` instead of `:` to "
                 "separate library names, as this changed in cocotb 1.4?\n";
-            printf(fmt, func_name.c_str(), lib_name.c_str(), msg);
-            exit(1);
+            LOG_CRITICAL(fmt, func_name.c_str(), lib_name.c_str(), msg);
+            return -1;
         }
 
         layer_entry_func new_lib_entry = (layer_entry_func)entry_point;
         new_lib_entry();
     }
+
+    return 0;
 }
 
-void gpi_entry_point() {
+int gpi_entry_point(int argc, char const *const *argv) {
     const char *log_level = getenv("GPI_LOG_LEVEL");
     if (log_level) {
         static const std::map<std::string, int> log_level_str_table = {
@@ -194,7 +200,10 @@ void gpi_entry_point() {
             gpi_native_logger_set_level(it->second);
         } else {
             // LCOV_EXCL_START
-            LOG_ERROR("Invalid log level: %s", log_level);
+            LOG_WARN(
+                "Invalid log level: %s. Leaving GPI loggers at default log "
+                "level.",
+                log_level);
             // LCOV_EXCL_STOP
         }
     }
@@ -218,12 +227,19 @@ void gpi_entry_point() {
             to_load.push_back(lib_list);
         }
 
-        gpi_load_libs(to_load);
+        if (gpi_load_libs(to_load)) {
+            return -1;
+        }
     }
+    gpi_print_registered_impl();
 
     /* Finally embed Python */
-    embed_init_python();
-    gpi_print_registered_impl();
+    if (embed_init_python(argc, argv)) {
+        LOG_CRITICAL("GPI_USER initialization failed. Exiting...");
+        return -1;
+    }
+
+    return 0;
 }
 
 void gpi_get_sim_time(uint32_t *high, uint32_t *low) {
@@ -652,4 +668,63 @@ void gpi_to_simulator() {
         gpi_cleanup();
     }
     LOG_TRACE("Returning control to simulator");
+}
+
+void *utils_dyn_open(const char *lib_name) {
+    void *ret = NULL;
+#ifdef _WIN32
+    SetErrorMode(0);
+    ret = static_cast<void *>(LoadLibrary(lib_name));
+    if (!ret) {
+        const char *log_fmt = "Unable to open lib %s%s%s";
+        LPSTR msg_ptr;
+        if (FormatMessageA(
+                FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                NULL, GetLastError(),
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_SYS_DEFAULT), (LPSTR)&msg_ptr,
+                255, NULL)) {
+            LOG_ERROR(log_fmt, lib_name, ": ", msg_ptr);
+            LocalFree(msg_ptr);
+        } else {
+            LOG_ERROR(log_fmt, lib_name, "", "");
+        }
+    }
+#else
+    /* Clear status */
+    dlerror();
+
+    ret = dlopen(lib_name, RTLD_LAZY | RTLD_GLOBAL);
+    if (!ret) {
+        LOG_ERROR("Unable to open lib %s: %s", lib_name, dlerror());
+    }
+#endif
+    return ret;
+}
+
+void *utils_dyn_sym(void *handle, const char *sym_name) {
+    void *entry_point;
+#ifdef _WIN32
+    entry_point = reinterpret_cast<void *>(
+        GetProcAddress(static_cast<HMODULE>(handle), sym_name));
+    if (!entry_point) {
+        const char *log_fmt = "Unable to find symbol %s%s%s";
+        LPSTR msg_ptr;
+        if (FormatMessageA(
+                FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                NULL, GetLastError(),
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_SYS_DEFAULT), (LPSTR)&msg_ptr,
+                255, NULL)) {
+            LOG_ERROR(log_fmt, sym_name, ": ", msg_ptr);
+            LocalFree(msg_ptr);
+        } else {
+            LOG_ERROR(log_fmt, sym_name, "", "");
+        }
+    }
+#else
+    entry_point = dlsym(handle, sym_name);
+    if (!entry_point) {
+        LOG_ERROR("Unable to find symbol %s: %s", sym_name, dlerror());
+    }
+#endif
+    return entry_point;
 }

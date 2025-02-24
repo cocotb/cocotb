@@ -37,6 +37,7 @@
 #include "_vendor/fli/acc_vhdl.h"
 #include "_vendor/fli/mti.h"
 #include "_vendor/tcl/tcl.h"
+#include "share/lib/gpi/gpi_priv.h"
 
 void FliImpl::sim_end() {
     m_sim_finish_cb->remove();
@@ -1123,16 +1124,7 @@ static std::vector<std::string> get_argv() {
 }
 
 static int startup_callback(void *) {
-    std::vector<std::string> const argv_storage = get_argv();
-    std::vector<const char *> argv_cstr;
-    for (const auto &arg : argv_storage) {
-        argv_cstr.push_back(arg.c_str());
-    }
-    int argc = static_cast<int>(argv_storage.size());
-    const char **argv = argv_cstr.data();
-
-    gpi_embed_init(argc, argv);
-
+    gpi_embed_init();
     return 0;
 }
 
@@ -1142,6 +1134,21 @@ static int shutdown_callback(void *) {
 }
 
 void FliImpl::main() noexcept {
+    gpi_register_impl(this);
+
+    std::vector<std::string> const argv_storage = get_argv();
+    std::vector<const char *> argv_cstr;
+    for (const auto &arg : argv_storage) {
+        argv_cstr.push_back(arg.c_str());
+    }
+    int argc = static_cast<int>(argv_storage.size());
+    const char **argv = argv_cstr.data();
+
+    if (gpi_entry_point(argc, argv)) {
+        gpi_embed_end();
+        exit(1);
+    }
+
     auto startup_cb = new FliStartupCbHdl(this);
     auto err = startup_cb->arm();
     // LCOV_EXCL_START
@@ -1149,6 +1156,7 @@ void FliImpl::main() noexcept {
         LOG_CRITICAL(
             "VHPI: Unable to register startup callback! Simulation will end.");
         delete startup_cb;
+        gpi_embed_end();
         exit(1);
     }
     // LCOV_EXCL_STOP
@@ -1162,14 +1170,12 @@ void FliImpl::main() noexcept {
             "VHPI: Unable to register shutdown callback! Simulation will end.");
         startup_cb->remove();
         delete shutdown_cb;
+        gpi_embed_end();
         exit(1);
     }
     // LCOV_EXCL_STOP
     shutdown_cb->set_cb_info(shutdown_callback, nullptr);
     m_sim_finish_cb = shutdown_cb;
-
-    gpi_register_impl(this);
-    gpi_entry_point();
 }
 
 static void register_impl() {
