@@ -10,207 +10,238 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import Force, Release
 from cocotb.triggers import ClockCycles, Timer
-from cocotb_tools.sim_versions import RivieraVersion
+from cocotb_tools.sim_versions import GhdlVersion, RivieraVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 SIM_VERSION = cocotb.SIM_VERSION
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
-
-# Release doesn't work on GHDL (gh-3830)
-# Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(expect_fail=SIM_NAME.startswith(("ghdl", "verilator")))
-async def test_hdl_writes_dont_overwrite_force_combo(dut):
-    """Test Forcing then later Releasing a combo signal."""
-
-    dut.stream_in_data.value = 4
-
-    # Force the driven signal.
-    dut.stream_out_data_comb.value = Force(5)
-    await Timer(10, "ns")
-    assert dut.stream_out_data_comb.value == 5
-
-    # Release the driven signal.
-    # The driver signal is set again to trigger the process which recomputes the driven signal.
-    # This is done because releasing the driven signal does not cause the process to run again.
-    dut.stream_in_data.value = 3
-    dut.stream_out_data_comb.value = Release()
-    await Timer(10, "ns")
-    assert dut.stream_out_data_comb.value == 3
-
-
-# Release doesn't work on GHDL (gh-3830)
-# Release doesn't work on Riviera-PRO (VHPI) until version 2022.10.
-# Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(
-    expect_fail=SIM_NAME.startswith(("ghdl", "verilator"))
-    or (
-        SIM_NAME.startswith("riviera")
-        and LANGUAGE == "vhdl"
-        and RivieraVersion(SIM_VERSION) < RivieraVersion("2022.10")
-    )
-)
-async def test_hdl_writes_dont_overwrite_force_registered(dut):
-    """Test Forcing then Releasing a registered output."""
-    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
-    dut.stream_in_data.value = 4
-
-    # Force the driven signal.
-    dut.stream_out_data_registered.value = Force(5)
-    await ClockCycles(dut.clk, 2)
-    assert dut.stream_out_data_registered.value == 5
-
-    # Release the driven signal.
-    dut.stream_out_data_registered.value = Release()
-    await ClockCycles(dut.clk, 2)
-    assert dut.stream_out_data_registered.value == 4
-
-
-# Release doesn't work on GHDL (gh-3830)
-# Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(expect_fail=SIM_NAME.startswith("ghdl"))
-async def test_force_followed_by_release_combo(dut):
-    """Test if Force followed immediately by Release works on combo signals."""
-
-    dut.stream_in_data.value = 14
-
-    # Force driven signal then immediately release it.
-    dut.stream_out_data_comb.value = Force(23)
-    dut.stream_out_data_comb.value = Release()
-
-    # Check if the driven signal is actually released.
-    # The driver signal is set again to trigger the process which recomputes the driven signal.
-    # This is done because releasing the driven signal does not cause the process to run again.
-    dut.stream_in_data.value = 16
-    await Timer(10, "ns")
-    assert dut.stream_out_data_comb.value == 16
-
-
-# Release doesn't work on GHDL (gh-3830)
-# Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(expect_fail=SIM_NAME.startswith("ghdl"))
-async def test_force_followed_by_release_registered(dut):
-    """Test if Force followed immediately by Release works on registered signals."""
-
-    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
-    dut.stream_in_data.value = 90
-
-    # Force driven signal then immediately release it.
-    dut.stream_out_data_registered.value = Force(5)
-    dut.stream_out_data_registered.value = Release()
-
-    # Check if the driven signal is actually released.
-    await ClockCycles(dut.clk, 2)
-    assert dut.stream_out_data_registered.value == 90
-
-
 questa_fli = (
     SIM_NAME.startswith("modelsim") and os.getenv("VHDL_GPI_INTERFACE", "") == "fli"
 )
-
 
 riviera_vpi = (
     SIM_NAME.startswith("riviera")
     and os.getenv("TOPLEVEL_LANG", "verilog") == "verilog"
 )
 
+ghdl_before_5 = SIM_NAME.startswith("ghdl") and GhdlVersion(SIM_VERSION) < GhdlVersion(
+    "5"
+)
 
-# Release doesn't work on GHDL (gh-3830)
+riviera_before_2022_10 = (
+    SIM_NAME.startswith("riviera")
+    and LANGUAGE == "vhdl"
+    and RivieraVersion(SIM_VERSION) < RivieraVersion("2022.10")
+)
+
+
+########################################################################################
+# All tests in this file MUST be run in the described order.
+#
+# This is because if the previous test failed, the Forced signal can still be in a
+# Forced state. So the first thing each test does is Release the previously Forced
+# signal in hope to not have previous tests affect the current test.
+########################################################################################
+
+
+async def reset(dut) -> None:
+    dut.stream_in_data.value = 0
+    dut.stream_out_data_comb.value = Release()
+    dut.stream_out_data_registered.value = Release()
+    await Timer(1, "ns")
+
+
 # Force/Release doesn't work on Verilator (gh-3831)
-# Riviera's VPI implicitly releases signal when overwriting forced signal with normal deposit (gh-3832)
+# Release doesn't work on GHDL < 5 (gh-3830)
+@cocotb.test(expect_fail=SIM_NAME.startswith("verilator") or ghdl_before_5)
+async def test_hdl_writes_dont_overwrite_force_combo(dut) -> None:
+    """Test Forcing then later Releasing a combo signal."""
+    await reset(dut)
+
+    # Force a driven signal.
+    dut.stream_out_data_comb.value = Force(5)
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 5
+
+    # Combo drive of the Forced signal.
+    dut.stream_in_data.value = 4
+
+    # Check Forced signal didn't change.
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 5
+
+    # Release the Forced signal
+    dut.stream_out_data_comb.value = Release()
+    await Timer(1, "ns")
+
+    # Set input signal to cause output signal to update.
+    dut.stream_in_data.value = 3
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 3
+
+
+# Release doesn't work on Riviera-PRO (VHPI) until version 2022.10.
+# Release doesn't work on GHDL < 5 (gh-3830)
+# Force/Release doesn't work on Verilator (gh-3831)
+@cocotb.test(
+    expect_fail=SIM_NAME.startswith("verilator")
+    or riviera_before_2022_10
+    or ghdl_before_5
+)
+async def test_hdl_writes_dont_overwrite_force_registered(dut) -> None:
+    """Test Forcing then Releasing a registered output."""
+    await reset(dut)
+
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+
+    # Force the driven signal.
+    dut.stream_out_data_registered.value = Force(5)
+    await ClockCycles(dut.clk, 2)
+    assert dut.stream_out_data_registered.value == 5
+
+    # Drive the input of the registered process.
+    dut.stream_in_data.value = 4
+
+    # Check the Forced signal didn't change
+    await ClockCycles(dut.clk, 2)
+    assert dut.stream_out_data_registered.value == 5
+
+    # Release the driven signal.
+    dut.stream_out_data_registered.value = Release()
+
+    # Check that the registered drive is now propagating the input value.
+    await ClockCycles(dut.clk, 2)
+    assert dut.stream_out_data_registered.value == 4
+
+
+# Force/Release doesn't work on Verilator (gh-3831)
+@cocotb.test(expect_fail=SIM_NAME.startswith("verilator"))
+async def test_multiple_force_in_same_cycle(dut) -> None:
+    """Tests multiple Force in the same eval cycle write the last value."""
+    await reset(dut)
+
+    # Write several Forces
+    dut.stream_out_data_comb.value = Force(67)
+    dut.stream_out_data_comb.value = Force(5)
+    dut.stream_out_data_comb.value = Force(9)
+
+    # Check last value is the last write.
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 9
+
+    # Check value is Forced.
+    dut.stream_in_data.value = 1
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 9
+
+
+# Force/Release doesn't work on Verilator (gh-3831)
+# Release doesn't work on GHDL < 5 (gh-3830)
+@cocotb.test(expect_fail=SIM_NAME.startswith("verilator") or ghdl_before_5)
+async def test_multiple_release_in_same_cycle(dut) -> None:
+    """Tests multiple Force in the same eval cycle write the last value."""
+    await reset(dut)
+
+    # Force a signal.
+    dut.stream_out_data_comb.value = Force(31)
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 31
+
+    # Issue multiple Releases.
+    async def do_realease() -> None:
+        dut.stream_out_data_comb.value = Release()
+
+    for _ in range(10):
+        cocotb.start_soon(do_realease())
+
+    await Timer(1, "ns")
+
+    # Check value is Released.
+    dut.stream_in_data.value = 1
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 1
+
+
+# Force/Release doesn't work on Verilator (gh-3831)
+# Release doesn't work on GHDL < 5 (gh-3830)
+# Riviera's VPI stacktraces when overwriting forced signal with normal deposit (gh-3832)
 # Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
 @cocotb.test(
-    expect_fail=SIM_NAME.startswith(("ghdl", "verilator")) or riviera_vpi or questa_fli
+    expect_fail=SIM_NAME.startswith("verilator") or questa_fli or ghdl_before_5,
+    skip=riviera_vpi,
 )
-async def test_cocotb_writes_dont_overwrite_force_combo(dut):
+async def test_deposit_on_forced(dut) -> None:
     """Test Deposits following a Force don't overwrite the value on combo signals."""
-    dut.stream_in_data.value = 56
+    await reset(dut)
 
     # Force the driven signal.
     dut.stream_out_data_comb.value = Force(10)
-    await Timer(10, "ns")
+    await Timer(1, "ns")
     assert dut.stream_out_data_comb.value == 10
 
     # Attempt depositing on the forced signal. This shouldn't change the value.
     dut.stream_out_data_comb.value = 11
-    dut.stream_in_data.value = 70  # attempt to trigger a change in value
-    await Timer(10, "ns")
+    await Timer(1, "ns")
     assert dut.stream_out_data_comb.value == 10
 
-    # Release the forced signal. The value should follow driver.
-    # The driver signal is set again to trigger the process which recomputes the driven signal.
-    # This is done because releasing the driven signal does not cause the process to run again.
-    dut.stream_in_data.value = 46
-    dut.stream_out_data_registered.value = Release()
-    await Timer(10, "ns")
-    assert dut.stream_in_data.value == 46
-
-
-# Release doesn't work on GHDL (gh-3830)
-# Force/Release doesn't work on Verilator (gh-3831)
-# Riviera's VPI implicitly releases signal when overwriting forced signal with normal deposit (gh-3832)
-# Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
-@cocotb.test(
-    expect_fail=SIM_NAME.startswith(("ghdl", "verilator")) or questa_fli or riviera_vpi
-)
-async def test_cocotb_writes_dont_overwrite_force_registered(dut):
-    """Test Deposits following a Force don't overwrite the value on registered signals."""
-    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
-    dut.stream_in_data.value = 77
-
-    # Force the driven signal.
-    dut.stream_out_data_registered.value = Force(10)
-    await ClockCycles(dut.clk, 2)
-    assert dut.stream_out_data_registered.value == 10
-
-    # Attempt depositing on the forced signal. This shouldn't change the value.
-    dut.stream_out_data_registered.value = 11
-    await ClockCycles(dut.clk, 2)
-    assert dut.stream_out_data_registered.value == 10
-
-    # Release the forced signal. The value should follow driver.
-    dut.stream_out_data_registered.value = Release()
-    await ClockCycles(dut.clk, 2)
-    assert dut.stream_in_data.value == 77
-
-
-# Release and Freeze read current simulator values, not scheduled values (gh-3829)
-@cocotb.test(expect_fail=False if SIM_NAME.startswith("verilator") else True)
-async def test_force_followed_by_release_correct_value(dut):
-    """Test if Forcing then immediately Releasing a signal yields the correct value.
-
-    Due to the way that Release and Freeze are implemented (reading the current value then doing a set with that value) this test will always fail.
-    Leaving this test for when a better implementation of Freeze and Release are implemented.
-    """
-    dut.stream_in_data.value = 19
-    await Timer(10, "ns")
-    assert dut.stream_in_data.value == 19
-
-    dut.stream_in_data.value = Force(0)
-    dut.stream_in_data.value = Release()
-    await Timer(10, "ns")
-    assert dut.stream_in_data.value == 0
-
-
-################################################################################
-# These two tests must be run back to back to ensure the behavior of writes
-# being applied by the beginning of the next test.
-
-
-@cocotb.test
-async def test_apply_force(dut) -> None:
-    """Release a Force as the last operation in a test."""
-    dut.stream_out_data_comb.value = Force(42)
-    await Timer(10, "ns")
+    # Release the Forced signal.
     dut.stream_out_data_comb.value = Release()
 
+    # Check if the driven signal is actually released.
+    dut.stream_out_data_comb.value = 46
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 46
 
-@cocotb.test(expect_fail=not SIM_NAME.startswith(("verilator", "nvc")))
-async def test_force_released(dut) -> None:
-    """Ensure the Force is no longer applied."""
-    dut.stream_in_data.value = 4
-    await Timer(10, "ns")
-    assert dut.stream_out_data_comb.value == 4
+
+# Force/Release doesn't work on Verilator (gh-3831)
+# Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
+# Riviera's VPI stacktraces when overwriting forced signal with normal deposit (gh-3832)
+@cocotb.test(
+    expect_fail=SIM_NAME.startswith("verilator") or questa_fli,
+    skip=riviera_vpi,
+)
+async def test_deposit_then_force_in_same_cycle(dut) -> None:
+    """Tests a Force and Deposit in the same cycle results in Force winning."""
+    await reset(dut)
+
+    # Concurrent Force and Deposit
+    dut.stream_out_data_comb.value = 2
+    dut.stream_out_data_comb.value = Force(1)
+
+    # Check Force value won
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 1
+
+    # Check signal is Forced.
+    dut.stream_in_data.value = 63
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 1
+
+
+# Force/Release doesn't work on Verilator (gh-3831)
+# Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
+# Riviera's VPI stacktraces when overwriting forced signal with normal deposit (gh-3832)
+@cocotb.test(
+    expect_fail=SIM_NAME.startswith("verilator") or ghdl_before_5 or questa_fli,
+    skip=riviera_vpi,
+)
+async def test_force_then_deposit_in_same_cycle(dut) -> None:
+    """Tests a Force and Deposit in the same cycle results in Force winning."""
+    await reset(dut)
+
+    # Concurrent Force and Deposit
+    dut.stream_out_data_comb.value = Force(1)
+    dut.stream_out_data_comb.value = 2
+
+    # Check Force value won
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 1
+
+    # Check signal is Forced.
+    dut.stream_in_data.value = 63
+    await Timer(1, "ns")
+    assert dut.stream_out_data_comb.value == 1
 
 
 ################################################################################
