@@ -90,6 +90,22 @@ extern "C" void gpi_native_logger_log_(const char *name, int level,
     va_end(argp);
 }
 
+static const std::map<int, const char *> log_level_str_table = {
+    {GPI_TRACE, "TRACE"},     {GPI_DEBUG, "DEBUG"}, {GPI_INFO, "INFO"},
+    {GPI_WARNING, "WARNING"}, {GPI_ERROR, "ERROR"}, {GPI_CRITICAL, "CRITICAL"},
+};
+
+static const char *unknown_level = "------";
+
+extern "C" const char *gpi_log_level_to_str(int level) {
+    const char *log_level_str = unknown_level;
+    auto idx = log_level_str_table.find(level);
+    if (idx != log_level_str_table.end()) {
+        log_level_str = idx->second;
+    }
+    return log_level_str;
+}
+
 extern "C" void gpi_native_logger_vlog_(const char *name, int level,
                                         const char *pathname,
                                         const char *funcname, long lineno,
@@ -143,20 +159,8 @@ extern "C" void gpi_native_logger_vlog_(const char *name, int level,
         }
     }
 
-    static const std::map<int, const char *> log_level_str_table = {
-        {GPI_TRACE, "TRACE"}, {GPI_DEBUG, "DEBUG"},
-        {GPI_INFO, "INFO"},   {GPI_WARNING, "WARNING"},
-        {GPI_ERROR, "ERROR"}, {GPI_CRITICAL, "CRITICAL"},
-    };
-
-    const char *log_level_str = "------";
-    auto idx = log_level_str_table.find(level);
-    if (idx != log_level_str_table.end()) {
-        log_level_str = idx->second;
-    }
-
     fprintf(stdout, "     -.--ns ");
-    fprintf(stdout, "%-9s", log_level_str);
+    fprintf(stdout, "%-9s", gpi_log_level_to_str(level));
     fprintf(stdout, "%-35s", name);
 
     size_t pathlen = strlen(pathname);
