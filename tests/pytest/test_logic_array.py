@@ -59,11 +59,6 @@ def test_logic_array_int_construction():
         LogicArray(-10, Range(7, "downto", 0))
 
 
-def test_logic_array_default_construction():
-    assert LogicArray(range=Range(0, "to", 3)) == LogicArray("XXXX")
-    assert LogicArray(width=4) == LogicArray("XXXX")
-
-
 def test_logic_array_bad_construction():
     with pytest.raises(TypeError):
         LogicArray(object())
@@ -380,7 +375,6 @@ def test_null_vector():
     LogicArray([], null_range)
     with pytest.raises(OverflowError):
         LogicArray(0, null_range)
-    LogicArray(range=null_range)
     with pytest.raises(OverflowError):
         LogicArray.from_unsigned(0, null_range)
     with pytest.raises(OverflowError):
@@ -404,7 +398,6 @@ def test_null_vector():
     assert null_vector == LogicArray("", null_range)
     assert null_vector == LogicArray([])
     assert null_vector == LogicArray([], null_range)
-    assert null_vector == LogicArray(range=null_range)
     with pytest.warns(UserWarning):
         assert null_vector == 0
     assert null_vector == ""
