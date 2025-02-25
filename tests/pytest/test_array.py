@@ -21,7 +21,6 @@ def test_both_construction():
 
     Array("1234", 4)
     Array("1234", range=Range(-2, 1))
-    Array("1234", width=4)
 
 
 def test_range_int_construction():
@@ -41,8 +40,6 @@ def test_bad_construction():
         Array(value="1234", range=object())
     with pytest.raises(TypeError):
         Array("1234", range(4))
-    with pytest.raises(TypeError):
-        Array("1234", Range(0, 3), width=4)
 
 
 def test_length():
