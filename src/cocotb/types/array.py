@@ -19,8 +19,6 @@ class Array(ArrayLike[T]):
     The indexes of an array can start or end at any integer value, they are not limited to 0-based indexing.
     Indexing schemes can be either ascending or descending in value.
     An array's indexes are described using a :class:`~cocotb.types.Range` object.
-    Passing an :class:`int` as the second position argument, or as the *width* argument,
-    acts as shorthand for ``Range(0, "to", width-1)``.
 
     Initial values are treated as iterables, which are copied into an internal buffer.
 
@@ -118,52 +116,34 @@ class Array(ArrayLike[T]):
         f
 
     Args:
-        value: Initial value for the array.
-        range: Indexing scheme of the array.
-        width: Shorthand for passing ``Range(0, "to", width - 1)`` to *range*.
+        value: Initial value for the Array.
+        range: The indexing scheme of the Array.
 
     Raises:
         ValueError: When argument values cannot be used to construct an array.
         TypeError: When invalid argument types are used.
     """
 
-    @overload
-    def __init__(self, value: Iterable[T]) -> None: ...
-
-    @overload
-    def __init__(self, value: Iterable[T], *, range: Range) -> None: ...
-
-    @overload
-    def __init__(self, value: Iterable[T], *, width: int) -> None: ...
-
-    @overload
-    def __init__(self, value: Iterable[T], range: Union[Range, int]) -> None: ...
-
     def __init__(
-        self,
-        value: Iterable[T],
-        range: Union[Range, int, None] = None,
-        width: Union[int, None] = None,
+        self, value: Iterable[T], range: Union[Range, int, None] = None
     ) -> None:
         self._value = list(value)
-        if width is not None:
-            if range is not None:
-                raise TypeError("Only provide argument to one of 'range' or 'width'")
-            self._range = Range(0, "to", width - 1)
-        elif range is None:
+        if range is None:
             self._range = Range(0, "to", len(self._value) - 1)
-        elif isinstance(range, int):
-            self._range = Range(0, "to", range - 1)
-        elif isinstance(range, Range):
-            self._range = range
         else:
-            raise TypeError(
-                f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
-            )
-        if len(self._value) != len(self._range):
-            raise ValueError(
-                f"Value of length {len(self._value)!r} does not fit in {self._range!r}"
-            )
+            if isinstance(range, int):
+                self._range = Range(0, "to", range - 1)
+            elif isinstance(range, Range):
+                self._range = range
+            else:
+                raise TypeError(
+                    f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
+                )
+
+            if len(self._value) != len(self._range):
+                raise ValueError(
+                    f"Value of length {len(self._value)!r} does not fit in {self._range!r}"
+                )
 
     @property
     def range(self) -> Range:

@@ -13,7 +13,6 @@ def test_logic_array_str_construction():
     assert LogicArray("1010", Range(0, "to", 3)) == LogicArray("1010")
     assert LogicArray("1010", 4) == LogicArray("1010")
     assert LogicArray("1010", range=Range(0, "to", 3)) == LogicArray("1010")
-    assert LogicArray("1010", width=4) == LogicArray("1010")
 
     with pytest.raises(ValueError):
         LogicArray("101010", Range(0, "to", 0))
@@ -27,7 +26,6 @@ def test_logic_array_iterable_construction():
     assert LogicArray((1, 0, 1, 0), Range(0, "to", 3)) == LogicArray("1010")
     assert LogicArray((1, 0, 1, 0), 4) == LogicArray("1010")
     assert LogicArray((1, 0, 1, 0), range=Range(0, "to", 3)) == LogicArray("1010")
-    assert LogicArray((1, 0, 1, 0), width=4) == LogicArray("1010")
 
     def gen():
         yield True
@@ -51,7 +49,6 @@ def test_logic_array_int_construction():
     assert LogicArray(10, Range(5, "downto", 0)) == LogicArray("001010")
     assert LogicArray(10, 6) == LogicArray("001010")
     assert LogicArray(10, range=Range(5, "downto", 0)) == LogicArray("001010")
-    assert LogicArray(10, width=6) == LogicArray("001010")
 
     with pytest.raises(ValueError):
         LogicArray(10, Range(1, "to", 3))
@@ -67,11 +64,7 @@ def test_logic_array_bad_construction():
     with pytest.raises(TypeError):
         LogicArray(range=dict())
     with pytest.raises(TypeError):
-        LogicArray("1010", width=Range(0, 3))
-    with pytest.raises(TypeError):
         LogicArray()
-    with pytest.raises(TypeError):
-        LogicArray("1010", Range(3, 0), width=4)
 
 
 def test_logic_array_unsigned_conversion():
@@ -82,7 +75,6 @@ def test_logic_array_unsigned_conversion():
     assert LogicArray.from_unsigned(10, range=Range(5, "downto", 0)) == LogicArray(
         "001010"
     )
-    assert LogicArray.from_unsigned(10, width=6) == LogicArray("001010")
 
     with pytest.raises(ValueError):
         LogicArray.from_unsigned(10, Range(1, "to", 3))
@@ -106,7 +98,6 @@ def test_logic_array_signed_conversion():
     assert LogicArray.from_signed(-2, range=Range(5, "downto", 0)) == LogicArray(
         "111110"
     )
-    assert LogicArray.from_signed(-2, width=6) == LogicArray("111110")
 
     with pytest.raises(ValueError):
         LogicArray.from_signed(-45, Range(1, "to", 3))
