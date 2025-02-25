@@ -104,8 +104,6 @@ class LogicArray(ArrayLike[Logic]):
     of the iterable used to initialize the variable.
     Passing an :class:`int` as the second position argument, or as the *width* argument,
     acts as shorthand for ``Range(width-1, "downto", 0)``.
-    If a *range* argument is given, but no value,
-    the array is filled with the default value of ``Logic()``.
 
     .. code-block:: pycon3
 
@@ -117,9 +115,6 @@ class LogicArray(ArrayLike[Logic]):
 
         >>> LogicArray([0, True, "X"])
         LogicArray('01X', Range(2, 'downto', 0))
-
-        >>> LogicArray(range=Range(0, "to", 3))  # default values
-        LogicArray('XXXX', Range(0, 'to', 3))
 
     :class:`LogicArray`\ s can be constructed from :class:`int`\ s using :meth:`from_unsigned` or :meth:`from_signed`.
 
@@ -319,23 +314,9 @@ class LogicArray(ArrayLike[Logic]):
         range: Union[Range, int],
     ) -> None: ...
 
-    @overload
     def __init__(
         self,
-        *,
-        range: Range,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        *,
-        width: int,
-    ) -> None: ...
-
-    def __init__(
-        self,
-        value: Union[int, str, Iterable[LogicConstructibleT], None] = None,
+        value: Union[int, str, Iterable[LogicConstructibleT]],
         range: Union[Range, int, None] = None,
         *,
         width: Union[int, None] = None,
@@ -367,11 +348,6 @@ class LogicArray(ArrayLike[Logic]):
                     f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
                 )
             self._value_as_int = value
-            self._range = range
-        elif value is None:
-            if range is None:
-                raise TypeError("Missing required arguments: 'range' or 'width'")
-            self._value_as_str = "X" * len(range)
             self._range = range
         else:
             self._value_as_array = [Logic(v) for v in value]
