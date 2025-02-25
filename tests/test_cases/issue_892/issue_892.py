@@ -1,11 +1,10 @@
 import cocotb
-from cocotb.result import TestSuccess
 from cocotb.triggers import Timer
 
 
 async def raise_test_success():
     await Timer(1, unit="ns")
-    raise TestSuccess("TestSuccess")
+    cocotb.pass_test("Finished test early")
 
 
 @cocotb.test()
