@@ -1,5 +1,5 @@
 export PYTHONPATH := .
-export PYGPI_ENTRY_POINT := custom_entry:entry_func
+export PYGPI_USERS := custom_entry:entry_func
 
 .PHONY: override_for_this_test
 override_for_this_test:

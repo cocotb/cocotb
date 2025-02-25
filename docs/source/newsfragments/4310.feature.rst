@@ -1,1 +1,1 @@
-:envvar:`PYGPI_ENTRY_POINT` supports multiple entry points by comma-separating the entry points.
+:envvar:`PYGPI_USERS` supports multiple user modules by comma-separating them.
