@@ -37,7 +37,9 @@
 
 #include "cocotb_utils.h"  // DEFER
 
-static gpi_log_handler_type *current_handler = nullptr;
+static gpi_log_handler_ftype current_handler = nullptr;
+static gpi_log_filter_ftype current_filter = nullptr;
+static gpi_log_set_level_ftype current_set_level = nullptr;
 static void *current_userdata = nullptr;
 
 extern "C" void gpi_log_(const char *name, int level, const char *pathname,
@@ -61,22 +63,68 @@ extern "C" void gpi_vlog_(const char *name, int level, const char *pathname,
     }
 }
 
-extern "C" void gpi_get_log_handler(gpi_log_handler_type **handler,
+extern "C" void gpi_get_log_handler(gpi_log_handler_ftype *handler,
+                                    gpi_log_filter_ftype *filter,
+                                    gpi_log_set_level_ftype *set_level,
                                     void **userdata) {
     *handler = current_handler;
+    *filter = current_filter;
+    *set_level = current_set_level;
     *userdata = current_userdata;
 }
 
-extern "C" void gpi_set_log_handler(gpi_log_handler_type *handler,
+extern "C" void gpi_set_log_handler(gpi_log_handler_ftype handler,
+                                    gpi_log_filter_ftype filter,
+                                    gpi_log_set_level_ftype set_level,
                                     void *userdata) {
     current_handler = handler;
+    current_filter = filter;
+    current_set_level = set_level;
     current_userdata = userdata;
 }
 
 extern "C" void gpi_clear_log_handler(void) {
     current_handler = nullptr;
+    current_filter = nullptr;
+    current_set_level = nullptr;
     current_userdata = nullptr;
 }
+
+extern "C" bool gpi_log_filtered(const char *logger, int level) {
+    if (current_filter) {
+        return current_filter(current_userdata, logger, level);
+    } else {
+        return gpi_native_logger_filtered(level);
+    }
+}
+
+extern "C" int gpi_log_set_level(const char *logger, int level) {
+    if (current_set_level) {
+        return current_set_level(current_userdata, logger, level);
+    } else {
+        return gpi_native_logger_set_level(level);
+    }
+}
+
+static const std::map<int, const char *> log_level_str_table = {
+    {GPI_TRACE, "TRACE"},     {GPI_DEBUG, "DEBUG"}, {GPI_INFO, "INFO"},
+    {GPI_WARNING, "WARNING"}, {GPI_ERROR, "ERROR"}, {GPI_CRITICAL, "CRITICAL"},
+};
+
+static const char *unknown_level = "------";
+
+extern "C" const char *gpi_log_level_to_str(int level) {
+    const char *log_level_str = unknown_level;
+    auto idx = log_level_str_table.find(level);
+    if (idx != log_level_str_table.end()) {
+        log_level_str = idx->second;
+    }
+    return log_level_str;
+}
+
+/*******************************************************************************
+ * GPI Native Logger
+ *******************************************************************************/
 
 static int current_native_logger_level = GPI_NOTSET;
 
@@ -143,20 +191,8 @@ extern "C" void gpi_native_logger_vlog_(const char *name, int level,
         }
     }
 
-    static const std::map<int, const char *> log_level_str_table = {
-        {GPI_TRACE, "TRACE"}, {GPI_DEBUG, "DEBUG"},
-        {GPI_INFO, "INFO"},   {GPI_WARNING, "WARNING"},
-        {GPI_ERROR, "ERROR"}, {GPI_CRITICAL, "CRITICAL"},
-    };
-
-    const char *log_level_str = "------";
-    auto idx = log_level_str_table.find(level);
-    if (idx != log_level_str_table.end()) {
-        log_level_str = idx->second;
-    }
-
     fprintf(stdout, "     -.--ns ");
-    fprintf(stdout, "%-9s", log_level_str);
+    fprintf(stdout, "%-9s", gpi_log_level_to_str(level));
     fprintf(stdout, "%-35s", name);
 
     size_t pathlen = strlen(pathname);
@@ -177,4 +213,8 @@ extern "C" int gpi_native_logger_set_level(int level) {
     int old_level = current_native_logger_level;
     current_native_logger_level = level;
     return old_level;
+}
+
+extern "C" bool gpi_native_logger_filtered(int level) {
+    return level >= current_native_logger_level;
 }
