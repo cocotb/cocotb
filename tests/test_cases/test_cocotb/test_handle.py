@@ -199,7 +199,7 @@ async def int_overflow_test(
     else:
         assert False, f"bad test_mode {test_mode}"
 
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         if setimmediate:
             signal.setimmediatevalue(value)
         else:
@@ -424,7 +424,7 @@ async def test_assign_string(dut):
     dut.stream_in_data.value = "10101010"
     await Timer(1, "ns")
     assert dut.stream_in_data.value == "10101010"
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         dut.stream_in_data.value = "XXX"  # not the correct size
     with pytest.raises(ValueError):
         dut.stream_in_data.value = "lol"  # not the correct values

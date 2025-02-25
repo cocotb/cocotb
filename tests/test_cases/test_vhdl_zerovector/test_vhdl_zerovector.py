@@ -61,5 +61,5 @@ async def test_write_zero_signal_with_0(dut):
 )
 async def test_write_zero_signal_with_1(dut):
     """Write a zero vector with 1. Should catch a "out of range" exception."""
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         dut.Cntrl_out.value = 0x1

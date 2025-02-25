@@ -15,7 +15,7 @@ def test_logic_array_str_construction():
     assert LogicArray("1010", range=Range(0, "to", 3)) == LogicArray("1010")
     assert LogicArray("1010", width=4) == LogicArray("1010")
 
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray("101010", Range(0, "to", 0))
 
     with pytest.raises(ValueError):
@@ -37,7 +37,7 @@ def test_logic_array_iterable_construction():
 
     assert LogicArray(gen()) == LogicArray("10XZ")
 
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray([1, 0, 1, 0], Range(1, "downto", 0))
     with pytest.raises(ValueError):
         LogicArray(["l", "o", "l"])
@@ -53,7 +53,7 @@ def test_logic_array_int_construction():
     assert LogicArray(10, range=Range(5, "downto", 0)) == LogicArray("001010")
     assert LogicArray(10, width=6) == LogicArray("001010")
 
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray(10, Range(1, "to", 3))
     with pytest.raises(ValueError):
         LogicArray(-10, Range(7, "downto", 0))
@@ -84,9 +84,9 @@ def test_logic_array_unsigned_conversion():
     )
     assert LogicArray.from_unsigned(10, width=6) == LogicArray("001010")
 
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray.from_unsigned(10, Range(1, "to", 3))
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray.from_unsigned(10, 3)
 
     with pytest.raises(ValueError):
@@ -108,9 +108,9 @@ def test_logic_array_signed_conversion():
     )
     assert LogicArray.from_signed(-2, width=6) == LogicArray("111110")
 
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray.from_signed(-45, Range(1, "to", 3))
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray.from_signed(-45, 3)
 
     with pytest.raises(TypeError):
@@ -124,13 +124,13 @@ def test_logic_array_bytes_conversion():
         "0011000100110010"
     )
 
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray.from_bytes(b"123", Range(6, "downto", 0), byteorder="big")
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray.from_bytes(b"123", 10, byteorder="big")
 
     # b"1" would fit in a 7 bit LogicArray, but we do not guess if top bits are significant or not
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray.from_bytes(b"1", Range(6, "downto", 0), byteorder="big")
 
     assert LogicArray("00101010").to_bytes(byteorder="big") == b"\x2a"
@@ -344,7 +344,7 @@ def test_slice_direction_mismatch():
 
 def test_set_slice_wrong_length():
     a = LogicArray("XXXXXX")
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         a[4:2] = "0000000000000"
 
 
@@ -373,11 +373,11 @@ def test_null_vector():
     LogicArray("", null_range)
     LogicArray([])
     LogicArray([], null_range)
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray(0, null_range)
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray.from_unsigned(0, null_range)
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         LogicArray.from_signed(0, null_range)
 
     null_vector = LogicArray("")
