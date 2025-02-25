@@ -35,6 +35,7 @@
 #include "_vendor/vhpi/vhpi_user.h"
 #include "exports.h"
 #include "gpi.h"
+#include "gpi_logging.h"
 
 #ifdef COCOTBVHPI_EXPORTS
 #define COCOTBVHPI_EXPORT COCOTB_EXPORT
@@ -54,14 +55,17 @@
 #endif
 
 // Should be run after every VHPI call to check error status
-static inline int __check_vhpi_error(const char *file, const char *func,
-                                     long line) {
+static inline void __check_vhpi_error(const char *file, const char *func,
+                                      long line) {
+    if (gpi_log_filtered("gpi", GPI_DEBUG)) {
+        return;
+    }
+
     int err_occurred = 0;
-#if VHPI_CHECKING
     vhpiErrorInfoT info;
     enum gpi_log_level loglevel;
     err_occurred = vhpi_check_error(&info);
-    if (!err_occurred) return 0;
+    if (!err_occurred) return;
 
     switch (info.severity) {
         case vhpiNote:
@@ -83,12 +87,9 @@ static inline int __check_vhpi_error(const char *file, const char *func,
             break;
     }
 
-    gpi_log("", loglevel, file, func, line,
-            "VHPI Error level %d: %s\nFILE %s:%d", info.severity, info.message,
-            info.file, info.line);
-
-#endif
-    return err_occurred;
+    LOG_EXPLICIT("gpi", GPI_DEBUG, file, func, line,
+                 "VHPI Internal Error: %s @ %s:%d: %s", gpi_log_level(loglevel),
+                 info.file, info.line, info.message);
 }
 
 #define check_vhpi_error()                                \
