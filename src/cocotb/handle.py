@@ -814,7 +814,7 @@ class ArrayObject(
             ValueError:
                 If assigning a :class:`list` of different length than the simulation object.
         """
-        return Array((self[i].value for i in self.range), range=self.range)
+        return Array._from_handle([self[i].value for i in self.range], range=self.range)
 
     @value.setter
     def value(self, value: Array[ElemValueT]) -> None:
@@ -1022,7 +1022,7 @@ class LogicArrayObject(
                         )
                     )
             else:
-                raise OverflowError(
+                raise ValueError(
                     f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
                 )
 
@@ -1066,7 +1066,7 @@ class LogicArrayObject(
         Raises:
             TypeError: If assignment is given a type other than :class:`~cocotb.types.Logic`, :class:`~cocotb.types.LogicArray`, :class:`int`, or :class:`str`.
 
-            OverflowError:
+            ValueError:
                 If int value is out of the range that can be represented by the target:
                 ``-2**(len(handle) - 1) <= value <= 2**len(handle) - 1``
 
@@ -1182,7 +1182,7 @@ class EnumObject(NonArrayValueObject[int, int]):
         if min_val <= value <= max_val:
             schedule_write(self, self._handle.set_signal_val_int, (action, value))
         else:
-            raise OverflowError(
+            raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
             )
 
@@ -1201,7 +1201,7 @@ class EnumObject(NonArrayValueObject[int, int]):
         Raises:
             TypeError: If assignment is given a type other than :class:`int`.
 
-            OverflowError: If the value used in assignment is out of range of a 32-bit signed integer.
+            ValueError: If the value used in assignment is out of range of a 32-bit signed integer.
         """
         return self._handle.get_signal_val_long()
 
@@ -1257,7 +1257,7 @@ class IntegerObject(NonArrayValueObject[int, int]):
         if min_val <= value <= max_val:
             schedule_write(self, self._handle.set_signal_val_int, (action, value))
         else:
-            raise OverflowError(
+            raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
             )
 
@@ -1274,7 +1274,7 @@ class IntegerObject(NonArrayValueObject[int, int]):
         Raises:
             TypeError: If assignment is given a type other than :class:`int`.
 
-            OverflowError: If the value used in assignment is out of range of a 32-bit signed integer.
+            ValueError: If the value used in assignment is out of range of a 32-bit signed integer.
         """
         return self._handle.get_signal_val_long()
 
