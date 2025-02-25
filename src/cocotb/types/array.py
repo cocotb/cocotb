@@ -13,37 +13,44 @@ class Array(ArrayLike[T]):
     r"""Fixed-size, arbitrarily-indexed, homogeneous collection type.
 
     Arrays are similar to, but different from Python :class:`list`\ s.
-    An array can store values of any type or values of multiple types at a time, just like a :class:`list`.
-    Unlike :class:`list`\ s, an array's size cannot change.
-
-    The indexes of an array can start or end at any integer value, they are not limited to 0-based indexing.
-    Indexing schemes can be either ascending or descending in value.
-    An array's indexes are described using a :class:`~cocotb.types.Range` object.
-
-    Initial values are treated as iterables, which are copied into an internal buffer.
+    An array can store values of any type or values of multiple types at a time, just like a :class:`!list`.
+    Array constructor values can be any Iterable.
 
     .. code-block:: pycon3
 
-        >>> Array("1234")  # the 0-based range `(0, len(value)-1)` is inferred
-        Array(['1', '2', '3', '4'], Range(0, 'to', 3))
+        >>> Array([1, False, "example", None])
+        Array([1, False, 'example', None], Range(0, 'to', 3))
 
-        >>> Array(
-        ...     [1, True, None, "example"], Range(-2, 1)
-        ... )  # initial value and range lengths must be equal
-        Array([1, True, None, 'example'], Range(-2, 'to', 1))
+        >>> Array("Hello!")
+        Array(['H', 'e', 'l', 'l', 'o', '!'], Range(0, 'to', 5))
 
-    Arrays also support "null" ranges; "null" arrays have zero length and cannot be indexed.
+    Unlike :class:`!list`\ s, an array's size cannot change.
+    This means they do not support methods like :meth:`~list.append` or :meth:`~list.insert`.
+
+    The indexes of an Array can start or end at any integer value, they are not limited to 0-based indexing.
+    Indexing schemes are selected using :class:`Range` objects.
+    If *range* is not given, the range ``Range(0, "to", len(value)-1)`` is used.
+    If an :class:`int` is passed for *range*, the range ``Range(0, "to", range-1)`` is used.
 
     .. code-block:: pycon3
 
-        >>> Array([], range=Range(1, "to", 0))
+        >>> a = Array([0, 1, 2, 3], Range(-1, "downto", -4))
+        >>> a[-1]
+        0
+        >>> a[-4]
+        3
+
+    Arrays can also have 0 length using "null" :class:`Range`\ s.
+
+    .. code-block:: pycon3
+
+        >>> Array([], Range(1, "to", 0))  # 1 to 0 is a null Range
         Array([], Range(1, 'to', 0))
 
-    Indexing and slicing is very similar to :class:`list`\ s, but it uses the indexing scheme specified.
-    Slicing, just like the :class:`~cocotb.types.Range` object uses an inclusive right bound,
-    which is commonly seen in HDLs.
-    Like :class:`list`\ s, if a start or stop index is not specified, it is inferred as the start or end of the array.
-    Slicing an array returns a new :class:`~cocotb.types.Array` object, whose bounds are the slice indexes.
+    Indexing and slicing is very similar to :class:`!list`\ s, but it uses the indexing scheme specified with the *range*.
+    Unlike :class:`!list`, slicing uses an inclusive right bound, which is common in HDLs.
+    But like :class:`!list`, if a start or stop index is not specified in the slice, it is inferred as the start or end of the array.
+    Slicing an Array returns a new :class:`~cocotb.types.Array` object, whose bounds are the slice indexes.
 
     .. code-block:: pycon3
 
@@ -96,7 +103,7 @@ class Array(ArrayLike[T]):
         >>> a.range
         Range(3, 'downto', 0)
 
-    Arrays support the methods and semantics defined by :class:`collections.abc.Sequence`.
+    Arrays support many of the methods and semantics defined by :class:`collections.abc.Sequence`.
 
     .. code-block:: pycon3
 
@@ -120,7 +127,7 @@ class Array(ArrayLike[T]):
         range: The indexing scheme of the Array.
 
     Raises:
-        ValueError: When argument values cannot be used to construct an array.
+        ValueError: When argument values cannot be used to construct an Array.
         TypeError: When invalid argument types are used.
     """
 
