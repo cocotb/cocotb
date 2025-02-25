@@ -630,9 +630,7 @@ def _get_vpi_lib_ext(
         libcocotbvpi_sources += [lib_name + ".rc"]
     libcocotbvpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
-        define_macros=[("COCOTBVPI_EXPORTS", ""), ("VPI_CHECKING", "1")]
-        + [(sim_define, "")]
-        + _extra_defines,
+        define_macros=[("COCOTBVPI_EXPORTS", "")] + [(sim_define, "")] + _extra_defines,
         include_dirs=include_dirs,
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=extra_lib_dir,
@@ -655,7 +653,7 @@ def _get_vhpi_lib_ext(
     libcocotbvhpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
         include_dirs=include_dirs,
-        define_macros=[("COCOTBVHPI_EXPORTS", ""), ("VHPI_CHECKING", 1)]
+        define_macros=[("COCOTBVHPI_EXPORTS", "")]
         + [(sim_define, "")]
         + _extra_defines,
         libraries=["gpi", "gpilog"] + extra_lib,

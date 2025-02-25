@@ -46,7 +46,6 @@
 static inline int __check_vpi_error(const char *file, const char *func,
                                     long line) {
     int level = 0;
-#if VPI_CHECKING
     s_vpi_error_info info;
     enum gpi_log_levels loglevel;
 
@@ -72,10 +71,10 @@ static inline int __check_vpi_error(const char *file, const char *func,
             loglevel = GPIWarning;
     }
 
-    gpi_log("gpi", loglevel, file, func, line, "VPI error");
-    gpi_log("gpi", loglevel, info.file, info.product, info.line, info.message);
+    LOG_EXPLICIT(
+        "gpi", GPIDebug, file, func, line, "VPI Internal Error: %s @ %s:%d: %s",
+        gpi_log_level_to_str(loglevel), info.file, info.line, info.message);
 
-#endif
     return level;
 }
 
