@@ -47,16 +47,21 @@
 // TODO Move the check_vpi_error stuff into another file
 
 // Should be run after every VPI call to check error status
-static inline int __check_vpi_error(const char *file, const char *func,
-                                    long line) {
+static inline void __check_vpi_error(const char *file, const char *func,
+                                     long line) {
+    if (gpi_log_filtered("gpi", GPI_DEBUG)) {
+        return;
+    }
+
     int level = 0;
-#if VPI_CHECKING
     s_vpi_error_info info;
     enum gpi_log_level loglevel;
 
     memset(&info, 0, sizeof(info));
     level = vpi_chk_error(&info);
-    if (info.code == 0 && level == 0) return 0;
+    if (info.code == 0 && level == 0) {
+        return;
+    }
 
     switch (level) {
         case vpiNotice:
@@ -76,11 +81,9 @@ static inline int __check_vpi_error(const char *file, const char *func,
             loglevel = GPI_WARNING;
     }
 
-    gpi_log("", loglevel, file, func, line, "VPI error");
-    gpi_log("", loglevel, info.file, info.product, info.line, info.message);
-
-#endif
-    return level;
+    LOG_EXPLICIT("gpi", GPI_DEBUG, file, func, line,
+                 "VPI Internal Error: %s @ %s:%d: %s", gpi_log_level(loglevel),
+                 info.file, info.line, info.message);
 }
 
 #define check_vpi_error()                                \
