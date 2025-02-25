@@ -5,10 +5,10 @@ from typing import Any, Callable, List, Tuple, cast
 
 
 def load_entry(argv: List[str]) -> Any:
-    """Gather entry point information by parsing :envvar:`PYGPI_ENTRY_POINT`."""
+    """Gather entry point information by parsing :envvar:`PYGPI_USERS`."""
 
     entry_point_str = os.environ.get(
-        "PYGPI_ENTRY_POINT",
+        "PYGPI_USERS",
         ",".join(
             (
                 "cocotb_tools._coverage:start_cocotb_library_coverage",
@@ -29,9 +29,7 @@ def load_entry(argv: List[str]) -> Any:
             # WITHOUT IMPORTING THEM.
             entry_points.append((entry_module_str, entry_func_str))
     except Exception as e:
-        raise RuntimeError(
-            f"Failure to parse PYGPI_ENTRY_POINT ('{entry_point_str}')"
-        ) from e
+        raise RuntimeError(f"Failure to parse PYGPI_USERS ('{entry_point_str}')") from e
 
     # Run all entry points.
     # Expect failure to stop the loading of any additional entry points.

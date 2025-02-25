@@ -360,7 +360,7 @@ PyGPI
     PyGPI is an experimental feature and subject to change.
 
 
-.. envvar:: PYGPI_ENTRY_POINT
+.. envvar:: PYGPI_USERS
 
     The Python module and callable that starts up the Python cosimulation environment.
     User overloads can be used to enter alternative Python frameworks or to hook existing cocotb functionality.
@@ -381,6 +381,9 @@ PyGPI
 
     .. versionchanged:: 2.0
         Multiple entry points can be specified by separating them with a comma.
+
+    .. versionchanged:: 2.0
+        Renamed from ``PYGPI_ENTRY_POINT``.
 
 
 Makefile-based Test Scripts
