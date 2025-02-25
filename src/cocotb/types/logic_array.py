@@ -382,8 +382,6 @@ class LogicArray(ArrayLike[Logic]):
         if self._value_as_int is None:
             # May convert list to str before converting to int.
             value_as_str = self._get_str()
-            # resolve L and H to 0 and 1
-            value_as_str = value_as_str.translate(_resolve_lh_table)
             try:
                 self._value_as_int = int(value_as_str, 2)
             except ValueError:
@@ -391,6 +389,10 @@ class LogicArray(ArrayLike[Logic]):
                 if resolve is None:
                     resolve = RESOLVE_X
 
+                # resolve L and H to 0 and 1
+                value_as_str = value_as_str.translate(_resolve_lh_table)
+
+                # resolve remaining
                 resolve_table = _resolve_tables[resolve]
                 value_as_str = value_as_str.translate(resolve_table)
                 return int(value_as_str, 2)
