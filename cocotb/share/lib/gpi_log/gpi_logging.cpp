@@ -33,6 +33,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <map>
 #include <vector>
 
 static gpi_log_handler_type *current_handler = nullptr;
@@ -88,28 +89,20 @@ extern "C" void gpi_native_logger_log(const char *name, int level,
     va_end(argp);
 }
 
-// Decode the level into a string matching the Python interpretation
-struct _log_level_table {
-    long level;
-    const char *levelname;
+static const std::map<int, const char *> log_level_str_table = {
+    {GPITrace, "TRACE"},     {GPIDebug, "DEBUG"}, {GPIInfo, "INFO"},
+    {GPIWarning, "WARNING"}, {GPIError, "ERROR"}, {GPICritical, "CRITICAL"},
 };
 
-static struct _log_level_table log_level_table[] = {
-    {5, "TRACE"},  {10, "DEBUG"},    {20, "INFO"}, {30, "WARNING"},
-    {40, "ERROR"}, {50, "CRITICAL"}, {0, NULL},
-};
+static const char *unknown_level = "------";
 
-const char *log_level(long level) {
-    struct _log_level_table *p;
-    const char *str = "------";
-
-    for (p = log_level_table; p->levelname; p++) {
-        if (level == p->level) {
-            str = p->levelname;
-            break;
-        }
+extern "C" const char *gpi_log_level_to_str(int level) {
+    const char *log_level_str = unknown_level;
+    auto idx = log_level_str_table.find(level);
+    if (idx != log_level_str_table.end()) {
+        log_level_str = idx->second;
     }
-    return str;
+    return log_level_str;
 }
 
 extern "C" void gpi_native_logger_vlog(const char *name, int level,
@@ -162,7 +155,7 @@ extern "C" void gpi_native_logger_vlog(const char *name, int level,
     }
 
     fprintf(stdout, "     -.--ns ");
-    fprintf(stdout, "%-9s", log_level(level));
+    fprintf(stdout, "%-9s", gpi_log_level_to_str(level));
     fprintf(stdout, "%-35s", name);
 
     size_t pathlen = strlen(pathname);

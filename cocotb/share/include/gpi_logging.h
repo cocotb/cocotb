@@ -64,6 +64,9 @@ enum gpi_log_levels {
                       ///< to be followed by immediate simulator shutdown
 };
 
+#define LOG_EXPLICIT(logger, level, file, func, lineno, ...) \
+    gpi_log(logger, level, file, func, lineno, __VA_ARGS__)
+
 /** Logs a message at the given log level using the current log handler.
     Automatically populates arguments using information in the called context.
     @param level The level at which to log the message
@@ -204,6 +207,8 @@ GPILOG_EXPORT void gpi_native_logger_vlog(const char *name, int level,
     @return          Previous logging level
  */
 GPILOG_EXPORT int gpi_native_logger_set_level(int level);
+
+GPILOG_EXPORT const char *gpi_log_level_to_str(int level);
 
 #ifdef __cplusplus
 }
