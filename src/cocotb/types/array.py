@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Iterable, Iterator, TypeVar, Union, cast, overload
+from typing import Iterable, Iterator, List, TypeVar, Union, cast, overload
 
 from cocotb.types import ArrayLike
 from cocotb.types.range import Range
@@ -151,6 +151,13 @@ class Array(ArrayLike[T]):
                 raise ValueError(
                     f"Value of length {len(self._value)!r} does not fit in {self._range!r}"
                 )
+
+    @classmethod
+    def _from_handle(cls, value: List[T], range: Range) -> "Array[T]":
+        self = cls.__new__(cls)
+        self._value = value
+        self._range = range
+        return self
 
     @property
     def range(self) -> Range:

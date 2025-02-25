@@ -984,7 +984,7 @@ class ArrayObject(
         | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``Array([arr[7].value, arr[6].value, arr[5].value, arr[4].value], range=Range(7, 'downto', 4))`` |
         +--------------+---------------------+--------------------------------------------------------------------------------------------------+
         """
-        return Array((self[i].value for i in self.range), range=self.range)
+        return Array._from_handle([self[i].value for i in self.range], self.range)
 
     def set(
         self,
