@@ -94,129 +94,161 @@ _resolve_tables = {
 class LogicArray(ArrayLike[Logic]):
     r"""Fixed-sized, arbitrarily-indexed, array of :class:`cocotb.types.Logic`.
 
-    .. currentmodule:: cocotb.types
+        .. currentmodule:: cocotb.types
 
-    :class:`LogicArray`\ s can be constructed from iterables of values
-    constructible into :class:`Logic` like :class:`bool`, :class:`str`, :class:`int`,
-    or it can be constructed :class:`str` or :class:`int` literals syntaxes, as seen below.
+        :class:`LogicArray`\ s can be constructed from iterables of values
+        constructible into :class:`Logic` like :class:`bool`, :class:`str`, :class:`int`,
+        or it can be constructed :class:`str` or :class:`int` literals syntaxes, as seen below.
 
-    Like :class:`Array`, if *range* is not given, the range ``Range(len(value)-1, "downto", 0)`` is used.
-    If an :class:`int` is passed for *range*, the range ``Range(range-1, "downto", 0)`` is used.
+        Like :class:`Array`, if *range* is not given, the range ``Range(len(value)-1, "downto", 0)`` is used.
+        If an :class:`int` is passed for *range*, the range ``Range(range-1, "downto", 0)`` is used.
 
-    .. code-block:: pycon3
+        .. code-block:: pycon3
 
-        >>> LogicArray(0b0111, 4)
-        LogicArray('0111', Range(3, 'downto', 0))
+            >>> LogicArray(0b0111, 4)
+            LogicArray('0111', Range(3, 'downto', 0))
 
-        >>> LogicArray("01XZ")
-        LogicArray('01XZ', Range(3, 'downto', 0))
+            >>> LogicArray("01XZ")
+            LogicArray('01XZ', Range(3, 'downto', 0))
 
-        >>> LogicArray([0, True, "X"])
-        LogicArray('01X', Range(2, 'downto', 0))
+            >>> LogicArray([0, True, "X"])
+            LogicArray('01X', Range(2, 'downto', 0))
 
-    :class:`LogicArray`\ s can be constructed from :class:`int`\ s using :meth:`from_unsigned` or :meth:`from_signed`.
+    <<<<<<< HEAD
+    =======
+        .. note::
+            If constructing from an unsigned :class:`int` literal, *range* `must` be given.
 
-    .. code-block:: pycon3
+    >>>>>>> e7acdd96 (Improve documentation on Array and LogicArray)
+        :class:`LogicArray`\ s can be constructed from :class:`int`\ s using :meth:`from_unsigned` or :meth:`from_signed`.
 
-        >>> LogicArray.from_unsigned(0xA, 4)
-        LogicArray('1010', Range(3, 'downto', 0))
+        .. code-block:: pycon3
 
-        >>> LogicArray.from_signed(-4, Range(0, "to", 3))  # will sign-extend
-        LogicArray('1100', Range(0, 'to', 3))
+            >>> LogicArray.from_unsigned(0xA, 4)
+            LogicArray('1010', Range(3, 'downto', 0))
 
-    :class:`LogicArray`\ s can be constructed from :class:`bytes` or :class:`bytearray` using :meth:`from_bytes`.
-    Use the *byteorder* argument to control endianness; it defaults to ``"big"``.
+            >>> LogicArray.from_signed(-4, Range(0, "to", 3))  # will sign-extend
+            LogicArray('1100', Range(0, 'to', 3))
 
-    .. code-block:: pycon3
+        :class:`LogicArray`\ s can be constructed from :class:`bytes` or :class:`bytearray` using :meth:`from_bytes`.
+        Use the *byteorder* argument to control endianness.
 
-        >>> LogicArray.from_bytes(b"1n", byteorder="big")
-        LogicArray('0011000101101110', Range(15, 'downto', 0))
+        .. code-block:: pycon3
 
-        >>> LogicArray.from_bytes(b"1n", byteorder="little")
-        LogicArray('0110111000110001', Range(15, 'downto', 0))
+            >>> LogicArray.from_bytes(b"1n", byteorder="big")
+            LogicArray('0011000101101110', Range(15, 'downto', 0))
 
-    :class:`LogicArray`\ s support the same operations as :class:`Array`;
-    however, it enforces the condition that all elements must be a :class:`Logic`.
+            >>> LogicArray.from_bytes(b"1n", byteorder="little")
+            LogicArray('0110111000110001', Range(15, 'downto', 0))
 
-    .. code-block:: pycon3
+        :class:`LogicArray`\ s support the same :class:`list`-like operations as :class:`Array`;
+        however, it enforces the condition that all elements must be a :class:`Logic`.
 
-        >>> la = LogicArray("1010")
-        >>> la[0]  # is indexable
-        Logic('0')
+        .. code-block:: pycon3
 
-        >>> la[1:]  # is slice-able
-        LogicArray('10', Range(1, 'downto', 0))
+            >>> la = LogicArray("1010")
+            >>> la[0]  # is indexable
+            Logic('0')
 
-        >>> Logic("0") in la  # is a collection
-        True
+            >>> la[1:]  # is slice-able
+            LogicArray('10', Range(1, 'downto', 0))
 
-        >>> list(la)  # is an iterable
-        [Logic('1'), Logic('0'), Logic('1'), Logic('0')]
+            >>> Logic("0") in la  # is a collection
+            True
 
-    When setting an element or slice, the *value* is first constructed into a
-    :class:`Logic`.
+            >>> list(la)  # is an iterable
+            [Logic('1'), Logic('0'), Logic('1'), Logic('0')]
 
-    .. code-block:: pycon3
+        When setting an element or slice, the *value* is first constructed into a
+        :class:`Logic`.
 
-        >>> la = LogicArray("1010")
-        >>> la[3] = "Z"
-        >>> la[3]
-        Logic('Z')
+        .. code-block:: pycon3
 
-        >>> la[2:] = ["X", True, 0]
-        >>> la
-        LogicArray('ZX10', Range(3, 'downto', 0))
+            >>> la = LogicArray("1010")
+            >>> la[3] = "Z"
+            >>> la[3]
+            Logic('Z')
 
-    :class:`LogicArray`\ s can be converted into :class:`str`\ s, :class:`int`\ s, or :class:`bytes`\ s.
+            >>> la[2:] = ["X", True, 0]
+            >>> la
+            LogicArray('ZX10', Range(3, 'downto', 0))
 
-    .. code-block:: pycon3
+            >>> la[:] = 0b0101
+            >>> la
+            LogicArray('0101', Range(3, 'downto', 0))
 
-        >>> la = LogicArray("1010")
-        >>> str(la)
-        '1010'
+        :class:`LogicArray`\ s can be converted into its :class:`str` or :class:`int` literal values using casts.
 
-        >>> la.to_unsigned()
-        10
+        .. code-block:: pycon3
 
-        >>> la.to_signed()
-        -6
+            >>> la = LogicArray("1010")
+            >>> str(la)
+            '1010'
+            >>> int(la)
+            10
 
-        >>> la.to_bytes(byteorder="big")
-        b'\n'
+        .. warning::
+            The :class:`int` cast assumes the value is entirely ``0`` or ``1`` and will raise an exception otherwise.
 
-    You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
-    the built-ins :func:`hex:` and :func:`bin`, respectively.
+        The :meth:`to_unsigned`, :meth:`to_signed`, and :meth:`to_bytes` methods can be used to convert
+        the value into an unsigned or signed integer, or bytes, respectively.
 
-    .. code-block:: pycon3
+        .. code-block:: pycon3
 
-        >>> la = LogicArray("01111010")
-        >>> hex(la)
-        '0x7a'
-        >>> bin(la)
-        '0b1111010'
+            >>> la.to_unsigned()
+            10
 
-    :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
-    ``^``, and ``~``.
+            >>> la.to_signed()
+            -6
 
-    .. code-block:: pycon3
+            >>> la.to_bytes(byteorder="big")
+            b'\n'
 
-        >>> def big_mux(a: LogicArray, b: LogicArray, sel: Logic) -> LogicArray:
-        ...     s = LogicArray([sel] * len(a))
-        ...     return (a & ~s) | (b & s)
+        .. warning::
+            These operations assume the value is entirely ``0`` or ``1`` and will raise an exception otherwise.
 
-        >>> la = LogicArray("0110")
-        >>> p = LogicArray("1110")
-        >>> sel = Logic("1")  # choose second option
-        >>> big_mux(la, p, sel)
-        LogicArray('1110', Range(3, 'downto', 0))
+        You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
+        the built-ins :func:`hex:` and :func:`bin`, respectively.
 
-    Args:
-        value: Initial value for the LogicArray.
-        range: The indexing scheme of the LogicArray.
+        .. code-block:: pycon3
 
-    Raises:
-        TypeError: When invalid argument types are used.
-        ValueError: Generally when *value* will not fit in a LogicArray of the given *range*.
+            >>> la = LogicArray("01111010")
+            >>> hex(la)
+            '0x7a'
+            >>> bin(la)
+            '0b1111010'
+
+        .. warning::
+            Using :func:`hex` or :func:`bin` first turns the LogicArray into an :class:`int`.
+            This means the exact length of the LogicArray is lost.
+            It also means that these expressions will raise an exception if the value is not entirely ``0`` or ``1``.
+
+        :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
+        ``^``, and ``~``.
+
+        .. code-block:: pycon3
+
+            >>> def big_mux(a: LogicArray, b: LogicArray, sel: Logic) -> LogicArray:
+            ...     s = LogicArray([sel] * len(a))
+            ...     return (a & ~s) | (b & s)
+
+            >>> la = LogicArray("0110")
+            >>> p = LogicArray("1110")
+            >>> sel = Logic("1")  # choose second option
+            >>> big_mux(la, p, sel)
+            LogicArray('1110', Range(3, 'downto', 0))
+
+        Args:
+            value: Initial value for the LogicArray.
+            range: The indexing scheme of the LogicArray.
+
+        Raises:
+    <<<<<<< HEAD
+    =======
+            ValueError: When argument values cannot be used to construct an array.
+    >>>>>>> e7acdd96 (Improve documentation on Array and LogicArray)
+            TypeError: When invalid argument types are used.
+            ValueError: Generally when *value* will not fit in a LogicArray of the given *range*.
     """
 
     # These three attribute contain the current value of the array in one or more of
@@ -326,7 +358,7 @@ class LogicArray(ArrayLike[Logic]):
         value: int,
         range: Union[Range, int],
     ) -> "LogicArray":
-        """Construct a :class:`LogicArray` from an :class:`int` by interpreting it as a bit vector with unsigned representation.
+        """Construct a :class:`LogicArray` from an :class:`int` with unsigned representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with unsigned representation where the left-most bit is the most significant bit.
         This bit vector is then constructed into a :class:`LogicArray`.
@@ -336,10 +368,11 @@ class LogicArray(ArrayLike[Logic]):
             range: Indexing scheme for the LogicArray.
 
         Returns:
-            A :class:`LogicArray` equivalent to the *value* by interpreting it as a bit vector with unsigned representation.
+            A :class:`LogicArray` equivalent to the *value*.
 
         Raises:
-            ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
+            TypeError: When invalid argument types are used.
+            ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*, or *value* is negative.
         """
         return LogicArray(value, range)
 
@@ -349,7 +382,7 @@ class LogicArray(ArrayLike[Logic]):
         value: int,
         range: Union[Range, int],
     ) -> "LogicArray":
-        """Construct a :class:`LogicArray` from an :class:`int` by interpreting it as a bit vector with two's complement representation.
+        """Construct a :class:`LogicArray` from an :class:`int` with two's complement representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with two's complement representation where the left-most bit is the most significant bit.
         This bit vector is then constructed into a :class:`LogicArray`.
@@ -359,9 +392,10 @@ class LogicArray(ArrayLike[Logic]):
             range: Indexing scheme for the LogicArray.
 
         Returns:
-            A :class:`LogicArray` equivalent to the *value* by interpreting it as a bit vector with two's complement representation.
+            A :class:`LogicArray` equivalent to the *value*.
 
         Raises:
+            TypeError: When invalid argument types are used.
             ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
         if isinstance(range, int):
@@ -395,7 +429,7 @@ class LogicArray(ArrayLike[Logic]):
             byteorder: The endianness used to construct the intermediate integer, either ``"big"`` or ``"little"``.
 
         Returns:
-            A :class:`LogicArray` equivalent to the *value* by interpreting it as an unsigned integer in big-endian representation.
+            A :class:`LogicArray` equivalent to the *value*.
 
         Raises:
             ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
