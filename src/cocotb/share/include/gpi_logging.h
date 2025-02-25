@@ -72,10 +72,9 @@ enum gpi_log_level {
                        ///< shutdown.
 };
 
-/** Logs a message at the given log level using the current log handler.
-    Automatically populates arguments using information in the called context.
-    @param level The level at which to log the message
- */
+#define LOG_EXPLICIT(logger, level, file, func, lineno, ...) \
+    gpi_log_(logger, level, file, func, lineno, __VA_ARGS__)
+
 #define LOG_(level, ...) \
     gpi_log_("gpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
@@ -241,6 +240,8 @@ GPILOG_EXPORT void gpi_native_logger_vlog_(const char *name, int level,
     @return          Previous logging level
  */
 GPILOG_EXPORT int gpi_native_logger_set_level(int level);
+
+GPILOG_EXPORT const char *gpi_log_level_to_str(int level);
 
 #ifdef __cplusplus
 }

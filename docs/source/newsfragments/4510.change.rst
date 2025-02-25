@@ -1,0 +1,1 @@
+``VPI_CHECKING`` and ``VHPI_CHECKING`` are removed and interface issues are now always emitted with a log level of :data:`logging.DEBUG`.
