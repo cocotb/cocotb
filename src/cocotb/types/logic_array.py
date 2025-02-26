@@ -218,9 +218,8 @@ class LogicArray(ArrayLike[Logic]):
         width: Shorthand for passing ``Range(0, "to", width - 1)`` to *range*.
 
     Raises:
-        OverflowError: When given *value* cannot fit in given *range*.
-        ValueError: When argument values cannot be used to construct an array.
         TypeError: When invalid argument types are used.
+        ValueError: Generally when *value* will not fit in a LogicArray of the given *range*.
     """
 
     # These three attribute contain the current value of the array in one or more of
@@ -331,7 +330,7 @@ class LogicArray(ArrayLike[Logic]):
             self._value_as_str = value.upper()
             if range is not None:
                 if len(value) != len(range):
-                    raise OverflowError(
+                    raise ValueError(
                         f"Value of length {len(self._value_as_str)} will not fit in {range}"
                     )
                 self._range = range
@@ -344,7 +343,7 @@ class LogicArray(ArrayLike[Logic]):
                 raise TypeError("Missing required arguments: 'range' or 'width'")
             bitlen = max(1, int.bit_length(value))
             if bitlen > len(range):
-                raise OverflowError(
+                raise ValueError(
                     f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
                 )
             self._value_as_int = value
@@ -353,7 +352,7 @@ class LogicArray(ArrayLike[Logic]):
             self._value_as_array = [Logic(v) for v in value]
             if range is not None:
                 if len(self._value_as_array) != len(range):
-                    raise OverflowError(
+                    raise ValueError(
                         f"Value of length {len(self._value_as_array)} will not fit in {range}"
                     )
                 self._range = range
@@ -432,7 +431,7 @@ class LogicArray(ArrayLike[Logic]):
             A :class:`LogicArray` equivalent to the *value* by interpreting it as a bit vector with unsigned representation.
 
         Raises:
-            OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
+            ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
         range = _make_range(range, width)
         if range is None:
@@ -473,7 +472,7 @@ class LogicArray(ArrayLike[Logic]):
             A :class:`LogicArray` equivalent to the *value* by interpreting it as a bit vector with two's complement representation.
 
         Raises:
-            OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
+            ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
         range = _make_range(range, width)
         if range is None:
@@ -483,7 +482,7 @@ class LogicArray(ArrayLike[Logic]):
         # If value doesn't fit in range, it will still be negative and will blow the
         # constructor up in a bad way.
         if value < 0:
-            raise OverflowError(
+            raise ValueError(
                 f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
             )
         return LogicArray(value, range)
@@ -542,13 +541,13 @@ class LogicArray(ArrayLike[Logic]):
             A :class:`LogicArray` equivalent to the *value* by interpreting it as an unsigned integer in big-endian representation.
 
         Raises:
-            OverflowError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
+            ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
         range = _make_range(range, width)
         if range is None:
             range = Range(len(value) * 8 - 1, "downto", 0)
         elif len(value) * 8 != len(range):
-            raise OverflowError(
+            raise ValueError(
                 f"Value of length {len(value)} will not fit in a LogicArray with bounds: {range!r}"
             )
         return cls.from_unsigned(
