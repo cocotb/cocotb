@@ -17,7 +17,7 @@ from typing import (
 )
 
 from cocotb._deprecation import deprecated
-from cocotb._py_compat import StrEnum
+from cocotb._utils import DocStrEnum
 from cocotb.types import ArrayLike
 from cocotb.types.logic import Logic, LogicConstructibleT, _str_literals
 from cocotb.types.range import Range
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from typing import Literal
 
 
-class ResolveX(StrEnum):
+class ResolveX(DocStrEnum):
     """Resolution behaviors supported when converting a :class:`LogicArray` to an integer.
 
     The values ``L`` and ``H`` are always resolved to ``0`` and ``1`` respectively.
@@ -34,19 +34,16 @@ class ResolveX(StrEnum):
     to either ``0`` or ``1``.
     """
 
-    VALUE_ERROR = "error"
-    ZEROS = "zeros"
-    ONES = "ones"
-    RANDOM = "random"
-
-
-# Must add documentation after the fact because Enum member creation is weird
-ResolveX.VALUE_ERROR.__doc__ = "Throws a :exc:`ValueError` if the :class:`LogicArray` contains non-``0``/``1`` values."
-ResolveX.ZEROS.__doc__ = "Resolves all non-``0``/``1`` values to ``0``."
-ResolveX.ONES.__doc__ = "Resolves all non-``0``/``1`` values to ``1``."
-ResolveX.RANDOM.__doc__ = (
-    "Resolves all non-``0``/``1`` values randomly to either ``0`` or ``1``."
-)
+    VALUE_ERROR = (
+        "error",
+        "Throws a :exc:`ValueError` if the :class:`LogicArray` contains non-``0``/``1`` values.",
+    )
+    ZEROS = ("zeros", "Resolves all non-``0``/``1`` values to ``0``.")
+    ONES = ("ones", "Resolves all non-``0``/``1`` values to ``1``.")
+    RANDOM = (
+        "random",
+        "Resolves all non-``0``/``1`` values randomly to either ``0`` or ``1``.",
+    )
 
 
 RESOLVE_X = ResolveX[os.getenv("COCOTB_RESOLVE_X", "VALUE_ERROR")]

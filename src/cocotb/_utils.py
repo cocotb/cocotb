@@ -48,6 +48,8 @@ from typing import (
     overload,
 )
 
+from cocotb._py_compat import StrEnum
+
 
 @lru_cache(maxsize=None)
 def want_color_output() -> bool:
@@ -218,6 +220,20 @@ class DocIntEnum(IntEnum):
 
     def __new__(cls: Type[IntEnumT], value: int, doc: Optional[str] = None) -> IntEnumT:
         self = int.__new__(cls, value)
+        self._value_ = value
+        if doc is not None:
+            self.__doc__ = doc
+        return self
+
+
+StrEnumT = TypeVar("StrEnumT", bound=StrEnum)
+
+
+class DocStrEnum(StrEnum):
+    """Like DocEnum but for StrEnum enum types."""
+
+    def __new__(cls: Type[StrEnumT], value: str, doc: Optional[str] = None) -> StrEnumT:
+        self = str.__new__(cls, value)
         self._value_ = value
         if doc is not None:
             self.__doc__ = doc
