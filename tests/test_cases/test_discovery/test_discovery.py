@@ -30,6 +30,7 @@ import os
 import pytest
 
 import cocotb
+import cocotb.handle
 from cocotb.handle import (
     ArrayObject,
     HierarchyObject,
@@ -37,6 +38,7 @@ from cocotb.handle import (
     IntegerObject,
     LogicArrayObject,
     StringObject,
+    _GPIDiscovery,
 )
 from cocotb.triggers import Timer
 from cocotb.types import LogicArray
@@ -539,3 +541,25 @@ async def discover_all_in_component_vhdl(dut):
         assert total_count == 10
     else:
         assert total_count == 9
+
+
+@cocotb.test(
+    expect_error=ValueError,
+)
+async def test_invalid_discovery_method(dut):
+    """Try accessing with an enum value for _GPIDiscovery out of bounds."""
+    dut._get("testsignal", discovery_method=5)
+
+
+@cocotb.test()
+async def test_none_return_on_invalid_signal(dut):
+    """Try accessing a signal that does not exist and make sure we get None back."""
+    assert dut._get("notexistingsignal") is None
+    assert dut._get("notexistingsignal", discovery_method=_GPIDiscovery.AUTO) is None
+    assert dut._get("notexistingsignal", discovery_method=_GPIDiscovery.NATIVE) is None
+
+
+@cocotb.test()
+async def test_native_discovery_verilog(dut):
+    """Try accessing a signal using native strategy."""
+    assert dut._get("stream_data_in", discovery_method=_GPIDiscovery.NATIVE) is not None
