@@ -476,7 +476,9 @@ class HierarchyObject(HierarchyObjectBase[str]):
     def _sub_handle_key(self, name: str) -> str:
         return name
 
-    def _get_handle_by_key(self, key: str, native=False) -> Optional[simulator.gpi_sim_hdl]:
+    def _get_handle_by_key(
+        self, key: str, native=False
+    ) -> Optional[simulator.gpi_sim_hdl]:
         """Query the simulator for an object with the specified *key*.
 
         Like Pythons native dict get-function, this returns None if the object
@@ -493,7 +495,11 @@ class HierarchyObject(HierarchyObjectBase[str]):
         Returns:
             The child object, or ``None`` if not found.
         """
-        return self._handle.get_handle_by_name(key) if not native else self._handle.get_handle_by_name_native(key)
+        return (
+            self._handle.get_handle_by_name(key)
+            if not native
+            else self._handle.get_handle_by_name_native(key)
+        )
 
 
 class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
