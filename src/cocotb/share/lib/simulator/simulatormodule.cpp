@@ -609,7 +609,7 @@ static PyObject *get_handle_by_name(gpi_hdl_Object<gpi_sim_hdl> *self,
         return NULL;
     }
     // do some additional input validation, then map to enum
-    if (py_discovery_method < 0 || py_discovery_method >= 1) {
+    if (py_discovery_method < 0 || py_discovery_method > 1) {
         PyErr_SetString(PyExc_ValueError,
                         "Enum value for discovery_method out of range");
         return NULL;
