@@ -354,30 +354,29 @@ static GpiObjHdl *gpi_get_handle_by_raw(GpiObjHdl *parent, void *raw_hdl,
     }
 }
 
-gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl base, const char *name) {
+gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl base, const char *name,
+                                   gpi_discovery discovery_method = GPI_AUTO) {
     std::string s_name = name;
-    GpiObjHdl *hdl = gpi_get_handle_by_name_(base, s_name, NULL);
-    if (!hdl) {
-        LOG_DEBUG(
-            "Failed to find a handle named %s via any registered "
-            "implementation",
-            name);
-    }
-    return hdl;
-}
-
-gpi_sim_hdl gpi_get_handle_by_name_native(gpi_sim_hdl base, const char *name) {
-    /* Like gpi_get_handle_by_name, but it explicitly does not try to cross
-     * language boundaries. This can be useful when interfacing with simulators
-     * that misbehave during (optional) signal discovery.
-     */
-    std::string s_name = name;
-    auto hdl = base->m_impl->native_check_create(name, base);
-    if (hdl) {
-        return CHECK_AND_STORE(hdl);
-    } else {
-        LOG_DEBUG("Failed to find a handle named %s via native implementation",
-                  name);
+    GpiObjHdl *hdl = NULL;
+    if (discovery_method == GPI_AUTO) {
+        hdl = gpi_get_handle_by_name_(base, s_name, NULL);
+        if (!hdl) {
+            LOG_DEBUG(
+                "Failed to find a handle named %s via any registered "
+                "implementation",
+                name);
+        }
+    } else if (discovery_method == GPI_NATIVE) {
+        /* Explicitly does not try to cross language boundaries.
+         * This can be useful when interfacing with
+         * simulators that misbehave during (optional) signal discovery.
+         */
+        hdl = base->m_impl->native_check_create(name, base);
+        if (!hdl) {
+            LOG_DEBUG(
+                "Failed to find a handle named %s via native implementation",
+                name);
+        }
     }
     return hdl;
 }

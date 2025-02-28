@@ -210,6 +210,11 @@ class RangeableObjectMixin(SimHandleBase):
 KeyType = TypeVar("KeyType")
 
 
+class _GPIDiscovery(enum.IntEnum):
+    AUTO = 0
+    NATIVE = 1
+
+
 class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     """Base class for hierarchical simulation objects.
 
@@ -296,6 +301,28 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
         self._discovered = True
 
+    def _get(self, key: KeyType, discovery_method: _GPIDiscovery = _GPIDiscovery.AUTO):
+        """Query the simulator for an object with the specified *key*.
+
+        Like Pythons native dict get-function, this returns None if the object
+        is not found instead of raising an AttributeError.
+
+        If extended identifiers are needed simply add a ``\\`` character before and after the name.
+
+        Generally, use the `handle[child_name]` syntax instead, unless you have to change the
+        discovery_method or want to check for optional signals
+
+        :meta public:
+
+        Args:
+            key: The child object by name.
+            native: If ``True``, do not cross language boundaries while searching. False by default.
+
+        Returns:
+            The child object, or ``None`` if not found.
+        """
+        return self._handle.get_handle_by_name(key, discovery_method)
+
     def __getitem__(self, key: KeyType) -> SimHandleBase:
         # try to use cached value
         try:
@@ -304,7 +331,8 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
             pass
 
         # try to get value from GPI
-        new_handle = self._get_handle_by_key(key)
+
+        new_handle = self._get(key)
         if not new_handle:
             raise KeyError(f"{self._path} contains no child object named {key}")
 
@@ -476,30 +504,10 @@ class HierarchyObject(HierarchyObjectBase[str]):
     def _sub_handle_key(self, name: str) -> str:
         return name
 
-    def _get_handle_by_key(
-        self, key: str, native=False
-    ) -> Optional[simulator.gpi_sim_hdl]:
-        """Query the simulator for an object with the specified *key*.
-
-        Like Pythons native dict get-function, this returns None if the object
-        is not found instead of raising an AttributeError.
-
-        If extended identifiers are needed simply add a ``\\`` character before and after the name.
-
-        :meta public:
-
-        Args:
-            key: The child object by name.
-            native: If ``True``, do not cross language boundaries while searching. False by default.
-
-        Returns:
-            The child object, or ``None`` if not found.
-        """
-        return (
-            self._handle.get_handle_by_name(key)
-            if not native
-            else self._handle.get_handle_by_name_native(key)
-        )
+    def _get_handle_by_key(self, key: str) -> Optional[simulator.gpi_sim_hdl]:
+        # TODO: do we want to keep that function at all now?
+        # it is probably good to keep it for symmetry with HierarchyArrayObject
+        return self._get(key)
 
 
 class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
