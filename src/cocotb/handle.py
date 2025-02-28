@@ -476,8 +476,24 @@ class HierarchyObject(HierarchyObjectBase[str]):
     def _sub_handle_key(self, name: str) -> str:
         return name
 
-    def _get_handle_by_key(self, key: str) -> Optional[simulator.gpi_sim_hdl]:
-        return self._handle.get_handle_by_name(key)
+    def _get_handle_by_key(self, key: str, native=False) -> Optional[simulator.gpi_sim_hdl]:
+        """Query the simulator for an object with the specified *key*.
+
+        Like Pythons native dict get-function, this returns None if the object
+        is not found instead of raising an AttributeError.
+
+        If extended identifiers are needed simply add a ``\\`` character before and after the name.
+
+        :meta public:
+
+        Args:
+            key: The child object by name.
+            native: If ``True``, do not cross language boundaries while searching. False by default.
+
+        Returns:
+            The child object, or ``None`` if not found.
+        """
+        return self._handle.get_handle_by_name(key) if not native else self._handle.get_handle_by_name_native(key)
 
 
 class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):

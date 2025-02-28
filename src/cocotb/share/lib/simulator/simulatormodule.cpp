@@ -610,6 +610,19 @@ static PyObject *get_handle_by_name(gpi_hdl_Object<gpi_sim_hdl> *self,
     return gpi_hdl_New(result);
 }
 
+static PyObject *get_handle_by_name_native(gpi_hdl_Object<gpi_sim_hdl> *self,
+                                           PyObject *args) {
+    const char *name;
+
+    if (!PyArg_ParseTuple(args, "s:get_handle_by_name", &name)) {
+        return NULL;
+    }
+
+    gpi_sim_hdl result = gpi_get_handle_by_name_native(self->hdl, name);
+
+    return gpi_hdl_New(result);
+}
+
 static PyObject *get_handle_by_index(gpi_hdl_Object<gpi_sim_hdl> *self,
                                      PyObject *args) {
     int32_t index;
