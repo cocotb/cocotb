@@ -337,7 +337,6 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
             pass
 
         # try to get value from GPI
-
         new_handle = self._get_handle_by_key(key)
         if not new_handle:
             raise KeyError(f"{self._path} contains no child object named {key}")
