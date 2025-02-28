@@ -562,4 +562,6 @@ async def test_none_return_on_invalid_signal(dut):
 @cocotb.test()
 async def test_native_discovery(dut):
     """Try accessing a signal using native strategy."""
+    assert dut._get("stream_in_data") is not None
+    assert dut._get("stream_in_data", discovery_method=_GPIDiscovery.AUTO) is not None
     assert dut._get("stream_in_data", discovery_method=_GPIDiscovery.NATIVE) is not None
