@@ -338,7 +338,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
         # try to get value from GPI
 
-        new_handle = self._get(key)
+        new_handle = self._get_handle_by_key(key)
         if not new_handle:
             raise KeyError(f"{self._path} contains no child object named {key}")
 
@@ -511,8 +511,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
         return name
 
     def _get_handle_by_key(self, key: str) -> Optional[simulator.gpi_sim_hdl]:
-        # TODO: do we want to keep that function at all now?
-        # it is probably good to keep it for symmetry with HierarchyArrayObject
+        # this stays to enable __get_item__ symmetry with HierarchyArrayObject
         return self._get(key)
 
 
