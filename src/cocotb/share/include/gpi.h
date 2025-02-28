@@ -99,6 +99,9 @@ typedef struct GpiIterator *gpi_iterator_hdl;
 extern "C" {
 #endif
 
+// Forward declarations
+typedef enum gpi_discovery_e;
+
 // Functions for controlling/querying the simulation state
 
 /**
