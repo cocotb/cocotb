@@ -99,8 +99,11 @@ typedef struct GpiIterator *gpi_iterator_hdl;
 extern "C" {
 #endif
 
-// Forward declarations
-typedef enum gpi_discovery_e;
+// Forward declaration for types needed in function signatures
+typedef enum gpi_discovery_e {
+    GPI_AUTO = 0,
+    GPI_NATIVE = 1,
+} gpi_discovery;
 
 // Functions for controlling/querying the simulation state
 
@@ -201,11 +204,6 @@ typedef enum gpi_edge_e {
     GPI_FALLING,
     GPI_VALUE_CHANGE,
 } gpi_edge;
-
-typedef enum gpi_discovery_e {
-    GPI_AUTO = 0,
-    GPI_NATIVE = 1,
-} gpi_discovery;
 
 // Functions for iterating over entries of a handle
 
