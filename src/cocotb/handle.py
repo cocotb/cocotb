@@ -211,8 +211,12 @@ KeyType = TypeVar("KeyType")
 
 
 class _GPIDiscovery(enum.IntEnum):
+    """Simulator object discovery strategy."""
+
     AUTO = 0
+    """Automatic discovery using all registered interfaces."""
     NATIVE = 1
+    """Native discovery using only the parents native interface."""
 
 
 class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
@@ -310,13 +314,13 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         If extended identifiers are needed simply add a ``\\`` character before and after the name.
 
         Generally, use the `handle[child_name]` syntax instead, unless you have to change the
-        discovery_method or want to check for optional signals
+        discovery_method or want to check for optional signals.
 
         :meta public:
 
         Args:
             key: The child object by name.
-            native: If ``True``, do not cross language boundaries while searching. False by default.
+            discovery_method: Optional selection of discovery strategy. ``_GPIDiscovery.AUTO`` by default.
 
         Returns:
             The child object, or ``None`` if not found.
