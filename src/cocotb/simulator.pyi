@@ -5,7 +5,8 @@
 # generated with mypy's stubgen script
 
 from logging import Logger
-from typing import Any, Callable, Optional
+from typing import Any, Callable
+
 from cocotb.handle import _GPIDiscovery
 
 DRIVERS: int
