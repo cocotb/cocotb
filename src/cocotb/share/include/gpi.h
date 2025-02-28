@@ -142,6 +142,8 @@ GPI_EXPORT const char *gpi_get_simulator_version(void);
 GPI_EXPORT gpi_sim_hdl gpi_get_root_handle(const char *name);
 GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent,
                                               const char *name);
+GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_name_native(gpi_sim_hdl parent,
+                                                     const char *name);
 GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent,
                                                int32_t index);
 

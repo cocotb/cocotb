@@ -614,7 +614,7 @@ static PyObject *get_handle_by_name_native(gpi_hdl_Object<gpi_sim_hdl> *self,
                                            PyObject *args) {
     const char *name;
 
-    if (!PyArg_ParseTuple(args, "s:get_handle_by_name", &name)) {
+    if (!PyArg_ParseTuple(args, "s:get_handle_by_name_native", &name)) {
         return NULL;
     }
 
@@ -1309,6 +1309,14 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
                "--\n\n"
                "get_handle_by_name(name: str) -> cocotb.simulator.gpi_sim_hdl\n"
                "Get a handle to a child object by name.")},
+    {"get_handle_by_name_native", (PyCFunction)get_handle_by_name_native,
+     METH_VARARGS,
+     PyDoc_STR("get_handle_by_name_native($self, name, /)\n"
+               "--\n\n"
+               "get_handle_by_name_native(name: str) -> "
+               "cocotb.simulator.gpi_sim_hdl\n"
+               "Get a handle to a child object by name without crossing "
+               "language boundaries.")},
     {"get_handle_by_index", (PyCFunction)get_handle_by_index, METH_VARARGS,
      PyDoc_STR(
          "get_handle_by_index($self, index, /)\n"
