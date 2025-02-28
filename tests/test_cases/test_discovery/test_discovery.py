@@ -560,6 +560,6 @@ async def test_none_return_on_invalid_signal(dut):
 
 
 @cocotb.test()
-async def test_native_discovery_verilog(dut):
+async def test_native_discovery(dut):
     """Try accessing a signal using native strategy."""
-    assert dut._get("stream_data_in", discovery_method=_GPIDiscovery.NATIVE) is not None
+    assert dut._get("stream_in_data", discovery_method=_GPIDiscovery.NATIVE) is not None
