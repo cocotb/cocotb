@@ -162,11 +162,6 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
 
     m_num_elems = static_cast<int>(vhpi_get(vhpiSizeP, handle));
 
-    if (m_num_elems == 0) {
-        LOG_DEBUG("VHPI: Null vector... Delete object");
-        return -1;
-    }
-
     if (vhpi_get(vhpiKindP, query_hdl) == vhpiArrayTypeDeclK) {
         m_indexable = true;
         m_value.format = vhpiLogicVecVal;
@@ -472,8 +467,11 @@ const char *VhpiSignalObjHdl::get_signal_value_binstr() {
                      VhpiImpl::format_to_string(m_value.format));
             return "";
         default: {
-            /* Some simulators do not support BinaryValues so we fake up here
-             * for them */
+            // Getting the value of a zero-length array can cause some
+            // simulators to error.
+            if (m_num_elems == 0) {
+                return "";
+            }
             int ret = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(),
                                      &m_binvalue);
             if (ret) {
@@ -493,6 +491,11 @@ const char *VhpiSignalObjHdl::get_signal_value_binstr() {
 const char *VhpiSignalObjHdl::get_signal_value_str() {
     switch (m_value.format) {
         case vhpiStrVal: {
+            // Getting the value of a zero-length array can cause some
+            // simulators to error.
+            if (m_num_elems == 0) {
+                return "";
+            }
             int ret =
                 vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value);
             if (ret) {
