@@ -202,7 +202,6 @@ end
 //For testing arrays
 reg [7:0]  array_7_downto_4[7:4];
 reg [7:0]  array_4_to_7[4:7];
-reg [7:0]  array_4_downto_7[4:7];
 reg [7:0]  array_3_downto_0[3:0];
 reg [7:0]  array_0_to_3[0:3];
 reg [7:0]  array_2d[0:1][31:28];
@@ -210,7 +209,6 @@ always @(posedge stream_in_valid) begin
     // Ensure internal array is not optimized out
     array_7_downto_4[4] <= 0;
     array_4_to_7[7] <= 0;
-    array_4_downto_7[7] <= 0;
     array_3_downto_0[0] <= 0;
     array_0_to_3[3] <= 0;
     array_2d[1][28] <= 0;
@@ -255,5 +253,15 @@ reg [3:0] \(.*|this_looks_like_a_regex) = 0;
 
 // just to check that extended identifiers are the same as non-extended ones
 always@* \weird.signal[1] [0] = \stream_in_valid ;
+
+// for testing single bit vectors
+reg [4:4] vector_4_to_4 = 0;
+reg [1:1] vector_1_downto_1 = 0;
+
+// for testing null ranges
+reg [7:0] array_4_downto_7[4:7] = '{8'b0, 8'b0, 8'b0, 8'b0};
+/* verilator lint_off ASCRANGE */
+reg [4:7] vector_4_downto_7 = 0 ;
+/* verilator lint_on ASCRANGE */
 
 endmodule

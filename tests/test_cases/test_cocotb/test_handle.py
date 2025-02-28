@@ -8,12 +8,13 @@ Tests for handles
 import logging
 import os
 import random
+from typing import Any
 
 import pytest
 
 import cocotb
 import cocotb.triggers
-from cocotb.handle import LogicArrayObject, StringObject, _Limits
+from cocotb.handle import ArrayObject, LogicArrayObject, StringObject, _Limits
 from cocotb.triggers import FallingEdge, Timer, ValueChange
 from cocotb.types import Logic, LogicArray
 
@@ -479,21 +480,46 @@ async def test_immediate_reentrace(dut):
 @cocotb.test(
     # GHDL uses the VPI, which does not have a way to infer null ranges
     # Questa's implementation of the VHPI sets vhpiIsUpP incorrectly
-    skip=SIM_NAME.startswith("ghdl")
+    expect_fail=SIM_NAME.startswith("ghdl")
     or (
         SIM_NAME.startswith("modelsim")
         and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
     ),
 )
-async def test_null_range_width(dut):
-    # Normal arrays should have the same length regardless of language
-    assert len(dut.array_7_downto_4) == 4
+async def test_null_range_array(dut: Any) -> None:
+    assert isinstance(dut.array_4_downto_7, ArrayObject)
     if LANGUAGE in ["vhdl"]:
         # But in VHDL, `4 downto 7` should result in a null range
         assert len(dut.array_4_downto_7) == 0
     else:
         # Not so in (System)Verilog though
         assert len(dut.array_4_downto_7) == 4
+
+
+@cocotb.test(
+    # GHDL and NVC can't find null vectors
+    # Questa's implementation of the VHPI sets vhpiIsUpP incorrectly
+    expect_error=AttributeError if SIM_NAME.startswith(("ghdl", "nvc")) else (),
+    expect_fail=SIM_NAME.startswith("modelsim")
+    and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi",
+)
+async def test_null_range_vector(dut: Any) -> None:
+    assert isinstance(dut.vector_4_downto_7, LogicArrayObject)
+    if LANGUAGE in ["vhdl"]:
+        # But in VHDL, `4 downto 7` should result in a null range
+        assert len(dut.vector_4_downto_7) == 0
+    else:
+        # Not so in (System)Verilog though
+        assert len(dut.vector_4_downto_7) == 4
+
+
+@cocotb.test
+async def test_single_bit_array(dut: Any) -> None:
+    """Test that single-bit logic arrays are mapped to the correct type."""
+    assert isinstance(dut.vector_4_to_4, LogicArrayObject)
+    assert isinstance(dut.vector_1_downto_1, LogicArrayObject)
+    assert len(dut.vector_4_to_4) == 1
+    assert len(dut.vector_1_downto_1) == 1
 
 
 @cocotb.test

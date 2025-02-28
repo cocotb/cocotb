@@ -91,7 +91,6 @@ architecture impl of sample_module is
     type unsignedArrayType is array (natural range <>) of unsigned(7 downto 0);
     signal array_7_downto_4 : unsignedArrayType(7 downto 4);
     signal array_4_to_7     : unsignedArrayType(4 to 7);
-    signal array_4_downto_7 : unsignedArrayType(4 downto 7);
     signal array_3_downto_0 : unsignedArrayType(3 downto 0);
     signal array_0_to_3     : unsignedArrayType(0 to 3);
 
@@ -107,6 +106,14 @@ architecture impl of sample_module is
     signal \weird.signal(1)\              : std_ulogic_vector(3 downto 0);
     signal \weird.signal(2)\              : std_ulogic_vector(3 downto 0);
     signal \(.*|this looks like a regex)\ : std_ulogic_vector(3 downto 0);
+
+    -- for testing single bit vectors
+    signal vector_4_to_4     : std_logic_vector(4 to 4);
+    signal vector_1_downto_1 : std_logic_vector(1 downto 1);
+
+    -- for testing null ranges
+    signal array_4_downto_7  : unsignedArrayType(4 downto 7);
+    signal vector_4_downto_7 : std_logic_vector(4 downto 7);
 
 begin
 
