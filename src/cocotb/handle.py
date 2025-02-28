@@ -305,7 +305,9 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
         self._discovered = True
 
-    def _get(self, key: str, discovery_method: _GPIDiscovery = _GPIDiscovery.AUTO):
+    def _get(
+        self, key: str, discovery_method: _GPIDiscovery = _GPIDiscovery.AUTO
+    ) -> Optional[simulator.gpi_sim_hdl]:
         """Query the simulator for an object with the specified *key*.
 
         Like Pythons native dict get-function, this returns None if the object
