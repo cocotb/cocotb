@@ -80,12 +80,19 @@ class Task(Generic[ResultType]):
         self._state: _TaskState = _TaskState.UNSTARTED
         self._outcome: Optional[Outcome[ResultType]] = None
         self._trigger: Optional[cocotb.triggers.Trigger] = None
-        self._cancelled_error: Optional[CancelledError] = None
         self._done_callbacks: List[Callable[[Task[Any]], Any]] = []
+        self._cancelled_msg: Union[str, None] = None
 
         self._task_id = self._id_count
         type(self)._id_count += 1
         self._name = f"Task {self._task_id}"
+
+    @cached_property
+    def _cancelled_error(self) -> CancelledError:
+        if self._cancelled_msg is None:
+            return CancelledError()
+        else:
+            return CancelledError(self._cancelled_msg)
 
     @cached_property
     def _log(self) -> logging.Logger:
@@ -228,7 +235,7 @@ class Task(Generic[ResultType]):
         if self.done():
             return
 
-        self._cancelled_error = CancelledError(msg)
+        self._cancelled_msg = msg
         warnings.warn(
             "Calling this method will cause a CancelledError to be thrown in the "
             "Task sometime in the future.",
