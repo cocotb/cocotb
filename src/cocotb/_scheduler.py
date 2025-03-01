@@ -52,7 +52,7 @@ from cocotb._gpi_triggers import (
     Trigger,
 )
 from cocotb._profiling import profiling_context
-from cocotb.task import Task
+from cocotb.task import Task, _TaskState
 from cocotb.triggers import Event
 
 # Sadly the Python standard logging module is very slow so it's better not to
@@ -363,7 +363,7 @@ class Scheduler:
         """Schedule `task` to be resumed when `trigger` fires."""
         # TODO Move this all into Task
         task._trigger = trigger
-        task._state = Task._State.PENDING
+        task._state = _TaskState.PENDING
 
         trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
         trigger_tasks.append(task)
@@ -398,7 +398,7 @@ class Scheduler:
         self, task: Task[Any], outcome: _outcomes.Outcome[Any] = _none_outcome
     ) -> None:
         # TODO Move state tracking into Task
-        task._state = Task._State.SCHEDULED
+        task._state = _TaskState.SCHEDULED
         self._scheduled_tasks[task] = outcome
 
     def _queue_function(self, task):
@@ -509,7 +509,7 @@ class Scheduler:
 
         # TODO move this into Task
         if isinstance(result, Task):
-            if result._state is Task._State.UNSTARTED:
+            if result._state is _TaskState.UNSTARTED:
                 return self._trigger_from_unstarted_task(result)
             else:
                 return self._trigger_from_started_task(result)

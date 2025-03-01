@@ -34,6 +34,17 @@ ResultType = TypeVar("ResultType")
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
+class _TaskState(DocEnum):
+    """State of a Task."""
+
+    UNSTARTED = (auto(), "Task created, but never run and not scheduled")
+    SCHEDULED = (auto(), "Task queued to run soon")
+    PENDING = (auto(), "Task waiting for Trigger to fire")
+    RUNNING = (auto(), "Task is currently running")
+    FINISHED = (auto(), "Task has finished with a value or Exception")
+    CANCELLED = (auto(), "Task was cancelled before it finished")
+
+
 class Task(Generic[ResultType]):
     """Concurrently executing task.
 
@@ -48,16 +59,6 @@ class Task(Generic[ResultType]):
         The ``retval``, ``_finished``, and ``__bool__`` methods were removed.
         Use :meth:`result`, :meth:`done`, and :meth:`done` methods instead, respectively.
     """
-
-    class _State(DocEnum):
-        """State of a Task."""
-
-        UNSTARTED = (auto(), "Task created, but never run and not scheduled")
-        SCHEDULED = (auto(), "Task in Scheduler queue to run soon")
-        PENDING = (auto(), "Task waiting for Trigger to fire")
-        RUNNING = (auto(), "Task is currently running")
-        FINISHED = (auto(), "Task has finished with a value or Exception")
-        CANCELLED = (auto(), "Task was cancelled before it finished")
 
     _name: str = "Task"  # class name of schedulable task
     _id_count = 0  # used by the scheduler for debug
@@ -76,7 +77,7 @@ class Task(Generic[ResultType]):
             raise TypeError(f"{inst} isn't a valid coroutine!")
 
         self._coro: Coroutine = inst
-        self._state: Task._State = Task._State.UNSTARTED
+        self._state: _TaskState = _TaskState.UNSTARTED
         self._outcome: Optional[Outcome[ResultType]] = None
         self._trigger: Optional[cocotb.triggers.Trigger] = None
         self._cancelled_error: Optional[CancelledError] = None
@@ -109,17 +110,17 @@ class Task(Generic[ResultType]):
     def __repr__(self) -> str:
         coro_stack = self._get_coro_stack()
 
-        if self._state is Task._State.RUNNING:
+        if self._state is _TaskState.RUNNING:
             fmt = "<{name} running coro={coro}()>"
-        elif self._state is Task._State.FINISHED:
+        elif self._state is _TaskState.FINISHED:
             fmt = "<{name} finished coro={coro}() outcome={outcome}>"
-        elif self._state is Task._State.PENDING:
+        elif self._state is _TaskState.PENDING:
             fmt = "<{name} pending coro={coro}() trigger={trigger}>"
-        elif self._state is Task._State.SCHEDULED:
+        elif self._state is _TaskState.SCHEDULED:
             fmt = "<{name} scheduled coro={coro}()>"
-        elif self._state is Task._State.UNSTARTED:
+        elif self._state is _TaskState.UNSTARTED:
             fmt = "<{name} created coro={coro}()>"
-        elif self._state is Task._State.CANCELLED:
+        elif self._state is _TaskState.CANCELLED:
             fmt = (
                 "<{name} cancelled coro={coro} with={cancelled_error} outcome={outcome}"
             )
@@ -157,18 +158,18 @@ class Task(Generic[ResultType]):
 
         """
         try:
-            self._state = Task._State.RUNNING
+            self._state = _TaskState.RUNNING
             return outcome.send(self._coro)
         except StopIteration as e:
             self._outcome = Value(e.value)
-            self._state = Task._State.FINISHED
+            self._state = _TaskState.FINISHED
         except (KeyboardInterrupt, SystemExit):
             # Allow these to bubble up to the execution root to fail the sim immediately.
             # This follows asyncio's behavior.
             raise
         except BaseException as e:
             self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
-            self._state = Task._State.FINISHED
+            self._state = _TaskState.FINISHED
 
         if self.done():
             self._do_done_callbacks()
@@ -188,7 +189,7 @@ class Task(Generic[ResultType]):
         # Close coroutine so there is no RuntimeWarning that it was never awaited
         self._coro.close()
 
-        self._state = Task._State.FINISHED
+        self._state = _TaskState.FINISHED
         self._do_done_callbacks()
 
     def _do_done_callbacks(self) -> None:
@@ -248,16 +249,16 @@ class Task(Generic[ResultType]):
         # Close coroutine so there is no RuntimeWarning that it was never awaited
         self._coro.close()
 
-        self._state = Task._State.CANCELLED
+        self._state = _TaskState.CANCELLED
         self._do_done_callbacks()
 
     def cancelled(self) -> bool:
         """Return ``True`` if the Task was cancelled."""
-        return self._state is Task._State.CANCELLED
+        return self._state is _TaskState.CANCELLED
 
     def done(self) -> bool:
         """Return ``True`` if the Task has finished executing."""
-        return self._state in (Task._State.FINISHED, Task._State.CANCELLED)
+        return self._state in (_TaskState.FINISHED, _TaskState.CANCELLED)
 
     def result(self) -> ResultType:
         """Return the result of the Task.
@@ -267,9 +268,9 @@ class Task(Generic[ResultType]):
         If the Task was cancelled, the :exc:`asyncio.CancelledError` is re-raised.
         If the coroutine is not yet complete, an :exc:`asyncio.InvalidStateError` is raised.
         """
-        if self._state is Task._State.CANCELLED:
+        if self._state is _TaskState.CANCELLED:
             raise self._cancelled_error
-        elif self._state is Task._State.FINISHED:
+        elif self._state is _TaskState.FINISHED:
             return self._outcome.get()
         else:
             raise InvalidStateError("result is not yet available")
@@ -282,9 +283,9 @@ class Task(Generic[ResultType]):
         If the Task was cancelled, the :exc:`asyncio.CancelledError` is re-raised.
         If the coroutine is not yet complete, an :exc:`asyncio.InvalidStateError` is raised.
         """
-        if self._state is Task._State.CANCELLED:
+        if self._state is _TaskState.CANCELLED:
             raise self._cancelled_error
-        elif self._state is Task._State.FINISHED:
+        elif self._state is _TaskState.FINISHED:
             if isinstance(self._outcome, Error):
                 return self._outcome.error
             else:
