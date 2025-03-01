@@ -311,8 +311,6 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         Like Pythons native dict get-function, this returns None if the object
         is not found instead of raising an AttributeError.
 
-        If extended identifiers are needed simply add a ``\\`` character before and after the name.
-
         Generally, use the `handle[child_name]` syntax instead, unless you have to change the
         discovery_method or want to check for optional signals.
 
