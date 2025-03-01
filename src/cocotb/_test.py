@@ -16,6 +16,7 @@ from typing import (
 )
 
 import cocotb
+from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome
@@ -237,7 +238,7 @@ class Test:
 class TestTask(Task[None]):
     """Specialized Task for Tests."""
 
-    def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
+    def __init__(self, inst: Coroutine[Trigger, None, None], name: str) -> None:
         super().__init__(inst)
         self._name = f"Test {name}"
 

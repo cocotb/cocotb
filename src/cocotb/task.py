@@ -5,9 +5,11 @@ import collections.abc
 import inspect
 import logging
 import os
+import traceback
 import warnings
 from asyncio import CancelledError, InvalidStateError
 from enum import auto
+from types import CoroutineType
 from typing import (
     Any,
     Callable,
@@ -18,10 +20,12 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
 )
 
 import cocotb
 import cocotb.triggers
+from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
@@ -63,7 +67,7 @@ class Task(Generic[ResultType]):
 
     _id_count = 0  # used by the scheduler for debug
 
-    def __init__(self, inst):
+    def __init__(self, inst: Coroutine[Trigger, None, ResultType]) -> None:
         if inspect.iscoroutinefunction(inst):
             raise TypeError(
                 f"Coroutine function {inst} should be called prior to being scheduled."
@@ -76,11 +80,11 @@ class Task(Generic[ResultType]):
         elif not isinstance(inst, collections.abc.Coroutine):
             raise TypeError(f"{inst} isn't a valid coroutine!")
 
-        self._coro: Coroutine = inst
+        self._coro = inst
         self._state: _TaskState = _TaskState.UNSTARTED
-        self._outcome: Optional[Outcome[ResultType]] = None
-        self._trigger: Optional[cocotb.triggers.Trigger] = None
-        self._done_callbacks: List[Callable[[Task[Any]], Any]] = []
+        self._outcome: Union[Outcome[ResultType], None] = None
+        self._trigger: Union[Trigger, None] = None
+        self._done_callbacks: List[Callable[[Task[ResultType]], Any]] = []
         self._cancelled_msg: Union[str, None] = None
 
         self._task_id = self._id_count
@@ -102,9 +106,17 @@ class Task(Generic[ResultType]):
         # TODO Do we really need this?
         return f"<{self._name}>"
 
-    def _get_coro_stack(self) -> Any:
-        """Get the coroutine callstack of this Task."""
-        coro_stack = extract_coro_stack(self._coro)
+    def _get_coro_stack(self) -> traceback.StackSummary:
+        """Get the coroutine callstack of this Task.
+
+        Assumes :attr:`_coro` is a native Python coroutine object.
+
+        Raises:
+            TypeError: If :attr:`_coro` is not a native Python coroutine object.
+        """
+        coro_stack = extract_coro_stack(
+            cast("CoroutineType[Trigger, None, ResultType]", self._coro)
+        )
 
         # Remove Trigger.__await__() from the stack, as it's not really useful
         if len(coro_stack) > 0 and coro_stack[-1].name == "__await__":
@@ -143,7 +155,7 @@ class Task(Generic[ResultType]):
         else:
             raise RuntimeError("Task in unknown state")
 
-    def _advance(self, exc: Union[BaseException, None]) -> Any:
+    def _advance(self, exc: Union[BaseException, None]) -> Union[Trigger, None]:
         """Advance to the next yield in this coroutine.
 
         Args:
@@ -172,6 +184,8 @@ class Task(Generic[ResultType]):
         if self.done():
             self._do_done_callbacks()
 
+        return None
+
     def kill(self) -> None:
         """Kill a coroutine."""
         if self.done():
@@ -181,7 +195,7 @@ class Task(Generic[ResultType]):
         if _debug:
             self._log.debug("kill() called on coroutine")
         # todo: probably better to throw an exception for anyone waiting on the coroutine
-        self._outcome = Value(None)
+        self._outcome = Value(None)  # type: ignore
         cocotb._scheduler_inst._unschedule(self)
 
         # Close coroutine so there is no RuntimeWarning that it was never awaited
@@ -269,7 +283,7 @@ class Task(Generic[ResultType]):
         if self._state is _TaskState.CANCELLED:
             raise self._cancelled_error
         elif self._state is _TaskState.FINISHED:
-            return self._outcome.get()
+            return cast(Outcome[ResultType], self._outcome).get()
         else:
             raise InvalidStateError("result is not yet available")
 
@@ -304,7 +318,7 @@ class Task(Generic[ResultType]):
             callback(self)
         self._done_callbacks.append(callback)
 
-    def __await__(self) -> Generator[Any, Any, ResultType]:
+    def __await__(self) -> Generator[Trigger, None, ResultType]:
         if self._state is _TaskState.UNSTARTED:
             cocotb._scheduler_inst._schedule_task_internal(self)
             yield self.complete
