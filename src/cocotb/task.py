@@ -61,7 +61,6 @@ class Task(Generic[ResultType]):
         Use :meth:`result`, :meth:`done`, and :meth:`done` methods instead, respectively.
     """
 
-    _name: str = "Task"  # class name of schedulable task
     _id_count = 0  # used by the scheduler for debug
 
     def __init__(self, inst):
@@ -86,17 +85,15 @@ class Task(Generic[ResultType]):
 
         self._task_id = self._id_count
         type(self)._id_count += 1
-        self.__name__ = f"{type(self)._name} {self._task_id}"
-        self.__qualname__ = self.__name__
+        self._name = f"Task {self._task_id}"
 
     @cached_property
     def _log(self) -> logging.Logger:
-        return logging.getLogger(
-            f"cocotb.{self.__qualname__}.{self._coro.__qualname__}"
-        )
+        return logging.getLogger(f"cocotb.{self._name}.{self._coro.__qualname__}")
 
     def __str__(self) -> str:
-        return f"<{self.__name__}>"
+        # TODO Do we really need this?
+        return f"<{self._name}>"
 
     def _get_coro_stack(self) -> Any:
         """Get the coroutine callstack of this Task."""
@@ -140,7 +137,7 @@ class Task(Generic[ResultType]):
                 coro_name = type(self._coro).__name__
 
         repr_string = fmt.format(
-            name=self.__name__,
+            name=self._name,
             coro=coro_name,
             trigger=self._trigger,
             outcome=self._outcome,
