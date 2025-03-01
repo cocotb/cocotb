@@ -30,7 +30,6 @@ import os
 import pytest
 
 import cocotb
-import cocotb.handle
 from cocotb.handle import (
     ArrayObject,
     GPIDiscovery,
