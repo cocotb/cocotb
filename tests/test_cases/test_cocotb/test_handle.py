@@ -465,8 +465,7 @@ async def test_immediate_reentrace(dut):
         await ValueChange(dut.mybits_uninitialized)
         seen += 1
         dut.mybit.value = Immediate(0)
-        with pytest.warns(FutureWarning):
-            nested.cancel()
+        nested.cancel()
 
     cocotb.start_soon(watch())
     await Timer(1, "ns")
