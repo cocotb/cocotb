@@ -17,6 +17,7 @@ from typing import (
     List,
     Optional,
     TypeVar,
+    Union,
 )
 
 import cocotb
@@ -147,19 +148,21 @@ class Task(Generic[ResultType]):
         )
         return repr_string
 
-    def _advance(self, outcome: Outcome) -> Any:
+    def _advance(self, exc: Union[BaseException, None]) -> Any:
         """Advance to the next yield in this coroutine.
 
         Args:
-            outcome: The :any:`outcomes.Outcome` object to resume with.
+            exc: :exc:`BaseException` to throw into the coroutine or nothing.
 
         Returns:
-            The object yielded from the coroutine or None if coroutine finished
-
+            The object yielded from the coroutine or ``None`` if coroutine finished.
         """
+        self._state = _TaskState.RUNNING
         try:
-            self._state = _TaskState.RUNNING
-            return outcome.send(self._coro)
+            if exc is None:
+                return self._coro.send(None)
+            else:
+                return self._coro.throw(exc)
         except StopIteration as e:
             self._outcome = Value(e.value)
             self._state = _TaskState.FINISHED
@@ -168,7 +171,7 @@ class Task(Generic[ResultType]):
             # This follows asyncio's behavior.
             raise
         except BaseException as e:
-            self._outcome = Error(remove_traceback_frames(e, ["_advance", "send"]))
+            self._outcome = Error(remove_traceback_frames(e, ["_advance"]))
             self._state = _TaskState.FINISHED
 
         if self.done():
