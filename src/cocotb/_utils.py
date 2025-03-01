@@ -216,7 +216,7 @@ IntEnumT = TypeVar("IntEnumT", bound=IntEnum)
 class DocIntEnum(IntEnum):
     """Like DocEnum but for IntEnum enum types."""
 
-    def __new__(cls: Type[IntEnumT], value: str, doc: Optional[str] = None) -> IntEnumT:
+    def __new__(cls: Type[IntEnumT], value: int, doc: Optional[str] = None) -> IntEnumT:
         self = int.__new__(cls, value)
         self._value_ = value
         if doc is not None:
