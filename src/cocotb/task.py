@@ -310,13 +310,9 @@ class Task(Generic[ResultType]):
         self._done_callbacks.append(callback)
 
     def __await__(self) -> Generator[Any, Any, ResultType]:
-        # It's tempting to use `return (yield from self._coro)` here,
-        # which bypasses the scheduler. Unfortunately, this means that
-        # we can't keep track of the result or state of the coroutine,
-        # things which we expose in our public API. If you want the
-        # efficiency of bypassing the scheduler, remove the `@coroutine`
-        # decorator from your `async` functions.
-
-        # Hand the coroutine back to the scheduler trampoline.
-        yield self
+        if self._state is _TaskState.UNSTARTED:
+            cocotb._scheduler_inst._schedule_task_internal(self)
+            yield self.complete
+        elif not self.done():
+            yield self.complete
         return self.result()
