@@ -106,44 +106,35 @@ class Task(Generic[ResultType]):
         return coro_stack
 
     def __repr__(self) -> str:
-        coro_stack = self._get_coro_stack()
+        if inspect.iscoroutine(self._coro):
+            coro_stack = self._get_coro_stack()
+            try:
+                coro_name = coro_stack[-1].name
+            # coro_stack may be empty if:
+            # - exhausted generator
+            # - finished coroutine
+            except IndexError:
+                try:
+                    coro_name = self._coro.__name__
+                except AttributeError:
+                    coro_name = type(self._coro).__name__
+        else:
+            coro_name = type(self._coro).__name__
 
         if self._state is _TaskState.RUNNING:
-            fmt = "<{name} running coro={coro}()>"
+            return f"<{self._name} running coro={coro_name}()>"
         elif self._state is _TaskState.FINISHED:
-            fmt = "<{name} finished coro={coro}() outcome={outcome}>"
+            return f"<{self._name} finished coro={coro_name}() outcome={self._outcome}>"
         elif self._state is _TaskState.PENDING:
-            fmt = "<{name} pending coro={coro}() trigger={trigger}>"
+            return f"<{self._name} pending coro={coro_name}() trigger={self._trigger}>"
         elif self._state is _TaskState.SCHEDULED:
-            fmt = "<{name} scheduled coro={coro}()>"
+            return f"<{self._name} scheduled coro={coro_name}()>"
         elif self._state is _TaskState.UNSTARTED:
-            fmt = "<{name} created coro={coro}()>"
+            return f"<{self._name} created coro={coro_name}()>"
         elif self._state is _TaskState.CANCELLED:
-            fmt = (
-                "<{name} cancelled coro={coro} with={cancelled_error} outcome={outcome}"
-            )
+            return f"<{self._name} cancelled coro={coro_name} with={self._cancelled_error} outcome={self._outcome}"
         else:
             raise RuntimeError("Task in unknown state")
-
-        try:
-            coro_name = coro_stack[-1].name
-        # coro_stack may be empty if:
-        # - exhausted generator
-        # - finished coroutine
-        except IndexError:
-            try:
-                coro_name = self._coro.__name__
-            except AttributeError:
-                coro_name = type(self._coro).__name__
-
-        repr_string = fmt.format(
-            name=self._name,
-            coro=coro_name,
-            trigger=self._trigger,
-            outcome=self._outcome,
-            cancelled_error=self._cancelled_error,
-        )
-        return repr_string
 
     def _advance(self, exc: Union[BaseException, None]) -> Any:
         """Advance to the next yield in this coroutine.
