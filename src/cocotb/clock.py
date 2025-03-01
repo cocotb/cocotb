@@ -155,7 +155,13 @@ class Clock:
         self._impl: "Impl"  # noqa: UP037  # ruff assumes we are at least using Python 3.7 and gives false positive.
 
         if impl is None:
-            self._impl = "gpi" if _trust_inertial else "py"
+            if cocotb.SIM_NAME.lower().startswith("verilator"):
+                # Verilator can sometimes fail with GPI clocks (gh-4526)
+                self._impl = "py"
+            elif _trust_inertial:
+                self._impl = "gpi"
+            else:
+                self._impl = "py"
         elif impl in _valid_impls:
             self._impl = impl
         else:
