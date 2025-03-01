@@ -239,8 +239,7 @@ class TestTask(Task[None]):
 
     def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
         super().__init__(inst)
-        self.__name__ = f"Test {name}"
-        self.__qualname__ = self.__name__
+        self._name = f"Test {name}"
 
 
 def start_soon(
