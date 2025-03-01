@@ -357,8 +357,6 @@ class Scheduler:
                 trigger._unprime()
                 del self._trigger2tasks[trigger]
 
-        self._react(task.complete)
-
     def _schedule_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
         """Schedule `task` to be resumed when `trigger` fires."""
         # TODO Move this all into Task
