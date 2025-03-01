@@ -210,13 +210,11 @@ class RangeableObjectMixin(SimHandleBase):
 KeyType = TypeVar("KeyType")
 
 
-class GPIDiscovery(enum.IntEnum):
+class GPIDiscovery(DocIntEnum):
     """Simulator object discovery strategy."""
 
-    AUTO = 0
-    """Automatic discovery using all registered interfaces."""
-    NATIVE = 1
-    """Native discovery using only the parents native interface."""
+    AUTO = (0, "Automatic discovery using all registered interfaces.")
+    NATIVE = (1, "Native discovery using only the parents native interface.")
 
 
 class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
