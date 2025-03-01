@@ -33,12 +33,12 @@ import cocotb
 import cocotb.handle
 from cocotb.handle import (
     ArrayObject,
+    GPIDiscovery,
     HierarchyObject,
     HierarchyObjectBase,
     IntegerObject,
     LogicArrayObject,
     StringObject,
-    _GPIDiscovery,
 )
 from cocotb.triggers import Timer
 from cocotb.types import LogicArray
@@ -553,13 +553,13 @@ async def test_invalid_discovery_method(dut):
 async def test_none_return_on_invalid_signal(dut):
     """Try accessing a signal that does not exist and make sure we get None back."""
     assert dut._get("notexistingsignal") is None
-    assert dut._get("notexistingsignal", discovery_method=_GPIDiscovery.AUTO) is None
-    assert dut._get("notexistingsignal", discovery_method=_GPIDiscovery.NATIVE) is None
+    assert dut._get("notexistingsignal", discovery_method=GPIDiscovery.AUTO) is None
+    assert dut._get("notexistingsignal", discovery_method=GPIDiscovery.NATIVE) is None
 
 
 @cocotb.test()
 async def test_native_discovery(dut):
     """Try accessing a signal using native strategy."""
     assert dut._get("stream_in_data") is not None
-    assert dut._get("stream_in_data", discovery_method=_GPIDiscovery.AUTO) is not None
-    assert dut._get("stream_in_data", discovery_method=_GPIDiscovery.NATIVE) is not None
+    assert dut._get("stream_in_data", discovery_method=GPIDiscovery.AUTO) is not None
+    assert dut._get("stream_in_data", discovery_method=GPIDiscovery.NATIVE) is not None
