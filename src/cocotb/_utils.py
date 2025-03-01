@@ -31,7 +31,7 @@ import os
 import sys
 import traceback
 import types
-from enum import Enum
+from enum import Enum, IntEnum
 from functools import lru_cache, update_wrapper, wraps
 from types import TracebackType
 from typing import (
@@ -204,6 +204,20 @@ class DocEnum(Enum):
         # super().__new__() assumes the value is already an enum value
         # so we side step that and create a raw object and fill in _value_
         self = object.__new__(cls)
+        self._value_ = value
+        if doc is not None:
+            self.__doc__ = doc
+        return self
+
+
+IntEnumT = TypeVar("IntEnumT", bound=IntEnum)
+
+
+class DocIntEnum(IntEnum):
+    """Like DocEnum but for IntEnum enum types."""
+
+    def __new__(cls: Type[IntEnumT], value: str, doc: Optional[str] = None) -> IntEnumT:
+        self = int.__new__(cls, value)
         self._value_ = value
         if doc is not None:
             self.__doc__ = doc

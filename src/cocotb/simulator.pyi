@@ -7,7 +7,7 @@
 from logging import Logger
 from typing import Any, Callable
 
-from cocotb.handle import _GPIDiscovery
+from cocotb.handle import GPIDiscovery
 
 DRIVERS: int
 ENUM: int
@@ -52,7 +52,7 @@ class gpi_sim_hdl:
     def get_definition_name(self) -> str: ...
     def get_handle_by_index(self, index: int) -> gpi_sim_hdl | None: ...
     def get_handle_by_name(
-        self, name: str, discovery_method: _GPIDiscovery | None = _GPIDiscovery.AUTO
+        self, name: str, discovery_method: GPIDiscovery | None = GPIDiscovery.AUTO
     ) -> gpi_sim_hdl | None: ...
     def get_indexable(self) -> bool: ...
     def get_name_string(self) -> str: ...

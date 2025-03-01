@@ -52,7 +52,7 @@ from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, ValueChange
 from cocotb._py_compat import cached_property
-from cocotb._utils import cached_method
+from cocotb._utils import DocIntEnum, cached_method
 from cocotb.types import Array, Logic, LogicArray, Range
 
 
@@ -210,13 +210,11 @@ class RangeableObjectMixin(SimHandleBase):
 KeyType = TypeVar("KeyType")
 
 
-class _GPIDiscovery(enum.IntEnum):
+class GPIDiscovery(DocIntEnum):
     """Simulator object discovery strategy."""
 
-    AUTO = 0
-    """Automatic discovery using all registered interfaces."""
-    NATIVE = 1
-    """Native discovery using only the parents native interface."""
+    AUTO = (0, "Automatic discovery using all registered interfaces.")
+    NATIVE = (1, "Native discovery using only the parents native interface.")
 
 
 class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
@@ -306,7 +304,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         self._discovered = True
 
     def _get(
-        self, key: str, discovery_method: _GPIDiscovery = _GPIDiscovery.AUTO
+        self, key: str, discovery_method: GPIDiscovery = GPIDiscovery.AUTO
     ) -> Optional[simulator.gpi_sim_hdl]:
         """Query the simulator for an object with the specified *key*.
 
@@ -322,7 +320,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
         Args:
             key: The child object by name.
-            discovery_method: Optional selection of discovery strategy. ``_GPIDiscovery.AUTO`` by default.
+            discovery_method: Optional selection of discovery strategy. ``GPIDiscovery.AUTO`` by default.
 
         Returns:
             The child object, or ``None`` if not found.
