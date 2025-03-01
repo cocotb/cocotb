@@ -1,1 +1,1 @@
-:class:`.HierarchyObjectBase` and its inheritants now support :meth:`_get` for a dictionary-style handle retrieval (replaces deprecated :meth:`_id`), which returns :data:`None` on failure instead of raising an exception to aid with optional signal discovery.
+:class:`.HierarchyObjectBase` and its inheritants now support :meth:`_get` for a dictionary-style handle retrieval, which returns :data:`None` on failure instead of raising an exception to aid with optional signal discovery.
