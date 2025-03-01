@@ -64,7 +64,7 @@ Updating documentation requires knowledge of:
 -  `Markdown <https://www.markdownguide.org/>`__
 -  `How to architect documentation <https://documentation.divio.com/>`__
 
-Some documentation should be located in the official documentation on `Read the Docs/RTD <https://docs.cocotb.org/en/latest/>`__, while the rest belongs on the `Wiki <https://github.com/cocotb/cocotb/wiki>`__.
+Some documentation should be located in the official documentation on `Read the Docs/RTD <https://docs.cocotb.org/en/development/>`__, while the rest belongs on the `Wiki <https://github.com/cocotb/cocotb/wiki>`__.
 There are several ways to improve the documentation:
 
 -  Better documenting core functionality (RTD)
@@ -144,7 +144,7 @@ Instead of including that breakdown here, it is done in the `internal documentat
 
 Small improvements to existing features generally do not require maintainer pre-approval.
 Large changes, approximately >150 LOC changed, and new features generally require maintainer pre-approval.
-If a change is deemed too large for the main repo, or out of scope, please feel free to make it an `extension <https://docs.cocotb.org/en/latest/extensions.html>`__.
+If a change is deemed too large for the main repo, or out of scope, please feel free to make it an `extension <https://docs.cocotb.org/en/development/extensions.html>`__.
 
 **New features must not break existing features.**
 
