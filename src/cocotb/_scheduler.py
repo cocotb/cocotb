@@ -38,11 +38,10 @@ import logging
 import os
 import threading
 from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import cocotb
 import cocotb.handle
-from cocotb import _outcomes, _py_compat
 from cocotb._exceptions import InternalError
 from cocotb._gpi_triggers import (
     GPITrigger,
@@ -51,7 +50,9 @@ from cocotb._gpi_triggers import (
     ReadWrite,
     Trigger,
 )
+from cocotb._outcomes import Error, Value, capture
 from cocotb._profiling import profiling_context
+from cocotb._py_compat import insertion_ordered_dict
 from cocotb.task import Task, _TaskState
 from cocotb.triggers import Event
 
@@ -212,7 +213,6 @@ class Scheduler:
     _next_time_step = NextTimeStep()
     _read_write = ReadWrite()
     _read_only = ReadOnly()
-    _none_outcome = _outcomes.Value(None)
 
     def __init__(self) -> None:
         self.log = logging.getLogger("cocotb.scheduler")
@@ -221,11 +221,11 @@ class Scheduler:
 
         # A dictionary of pending tasks for each trigger,
         # indexed by trigger
-        self._trigger2tasks: Dict[Trigger, list[Task]] = (
-            _py_compat.insertion_ordered_dict()
-        )
+        self._trigger2tasks: Dict[Trigger, list[Task]] = insertion_ordered_dict()
 
-        self._scheduled_tasks: OrderedDict[Task[Any], _outcomes.Outcome] = OrderedDict()
+        self._scheduled_tasks: OrderedDict[Task[Any], Union[BaseException, None]] = (
+            OrderedDict()
+        )
         self._pending_threads = []
         self._pending_events = []  # Events we need to call set on once we've unwound
 
@@ -309,11 +309,11 @@ class Scheduler:
         """
 
         while self._scheduled_tasks:
-            task, outcome = self._scheduled_tasks.popitem(last=False)
+            task, exc = self._scheduled_tasks.popitem(last=False)
 
             if _debug:
                 self.log.debug(f"Scheduling task {task}")
-            self._resume_task(task, outcome)
+            self._resume_task(task, exc)
             if _debug:
                 self.log.debug(f"Scheduled task {task}")
 
@@ -380,7 +380,7 @@ class Scheduler:
             self._trigger2tasks.pop(trigger)
 
             # replace it with a new trigger that throws back the exception
-            self._schedule_task_internal(task, outcome=_outcomes.Error(e))
+            self._schedule_task_internal(task, e)
 
     def _schedule_task(self, task: Task[Any]) -> None:
         """Queue *task* for scheduling.
@@ -395,11 +395,11 @@ class Scheduler:
         self._schedule_task_internal(task)
 
     def _schedule_task_internal(
-        self, task: Task[Any], outcome: _outcomes.Outcome[Any] = _none_outcome
+        self, task: Task[Any], exc: Union[BaseException, None] = None
     ) -> None:
         # TODO Move state tracking into Task
         task._state = _TaskState.SCHEDULED
-        self._scheduled_tasks[task] = outcome
+        self._scheduled_tasks[task] = exc
 
     def _queue_function(self, task):
         """Queue a task for execution and move the containing thread
@@ -419,13 +419,13 @@ class Scheduler:
         async def wrapper():
             # This function runs in the scheduler thread
             try:
-                _outcome = _outcomes.Value(await task)
+                _outcome = Value(await task)
             except (KeyboardInterrupt, SystemExit):
                 # Allow these to bubble up to the execution root to fail the sim immediately.
                 # This follows asyncio's behavior.
                 raise
             except BaseException as e:
-                _outcome = _outcomes.Error(e)
+                _outcome = Error(e)
             event.outcome = _outcome
             # Notify the current (scheduler) thread that we are about to wake
             # up the background (`@external`) thread, making sure to do so
@@ -457,7 +457,7 @@ class Scheduler:
         # calling task (but not the thread) until the external completes
 
         def execute_external(func, _waiter):
-            _waiter._outcome = _outcomes.capture(func, *args, **kwargs)
+            _waiter._outcome = capture(func, *args, **kwargs)
             if _debug:
                 self.log.debug(
                     f"Execution of external routine done {threading.current_thread()}"
@@ -519,7 +519,7 @@ class Scheduler:
             f"handle: {result!r}\n"
         )
 
-    def _resume_task(self, task: Task, outcome: _outcomes.Outcome[Any]) -> None:
+    def _resume_task(self, task: Task, exc: Union[BaseException, None]) -> None:
         """Resume *task* with *outcome*.
 
         Args:
@@ -537,7 +537,7 @@ class Scheduler:
         try:
             self._current_task = task
 
-            result = task._advance(outcome=outcome)
+            result = task._advance(exc)
 
             if task.done():
                 if _debug:
@@ -550,10 +550,10 @@ class Scheduler:
                     self.log.debug(f"{task!r} yielded {result} ({cocotb.sim_phase})")
                 try:
                     result = self._trigger_from_any(result)
-                except TypeError as exc:
+                except TypeError as e:
                     # restart this task with an exception object telling it that
                     # it wasn't allowed to yield that
-                    self._schedule_task_internal(task, _outcomes.Error(exc))
+                    self._schedule_task_internal(task, e)
                 else:
                     self._schedule_task_upon(task, result)
 
