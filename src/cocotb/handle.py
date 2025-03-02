@@ -311,8 +311,8 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         Like Pythons native dict get-function, this returns None if the object
         is not found instead of raising an AttributeError.
 
-        Generally, use the `handle[child_name]` syntax instead, unless you have to change the
-        discovery_method or want to check for optional signals.
+        Generally, use the ``handle[child_name]`` syntax instead, unless you have to change the
+        *discovery_method* or want to check for optional signals.
 
         :meta public:
 
