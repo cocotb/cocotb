@@ -214,7 +214,7 @@ class GPIDiscovery(DocIntEnum):
     """Simulator object discovery strategy."""
 
     AUTO = (0, "Automatic discovery using all registered interfaces.")
-    NATIVE = (1, "Native discovery using only the parents native interface.")
+    NATIVE = (1, "Native discovery using only the parent's native interface.")
 
 
 class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
