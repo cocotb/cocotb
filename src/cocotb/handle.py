@@ -308,8 +308,8 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     ) -> Optional[simulator.gpi_sim_hdl]:
         """Query the simulator for an object with the specified *key*.
 
-        Like Pythons native dict get-function, this returns None if the object
-        is not found instead of raising an AttributeError.
+        Like Python's native dictionary ``get``-function, this returns ``None`` if the object
+        is not found instead of raising an :exc:`AttributeError`.
 
         Generally, use the ``handle[child_name]`` syntax instead, unless you have to change the
         *discovery_method* or want to check for optional signals.
