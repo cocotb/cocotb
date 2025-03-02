@@ -1,1 +1,1 @@
-:meth:`_get` accepts optional parameter ``discovery_method`` that takes values from :class:`GpiGPIDiscovery` and defaults to ``AUTO``. ``NATIVE`` can be used to forbid cross-language search.
+:meth:`~cocotb.handle.GpiGPIDiscovery._get` accepts optional parameter :data:`~cocotb.handle.GpiGPIDiscovery._get.discovery_method` that takes values from :class:`~cocotb.handle.GpiGPIDiscovery` and defaults to ``AUTO``. ``NATIVE`` can be used to forbid cross-language search.
