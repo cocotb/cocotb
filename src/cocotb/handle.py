@@ -214,7 +214,7 @@ class GPIDiscovery(DocIntEnum):
     """Simulator object discovery strategy."""
 
     AUTO = (0, "Automatic discovery using all registered interfaces.")
-    NATIVE = (1, "Native discovery using only the parents native interface.")
+    NATIVE = (1, "Native discovery using only the parent's native interface.")
 
 
 class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
@@ -308,17 +308,17 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     ) -> Optional[simulator.gpi_sim_hdl]:
         """Query the simulator for an object with the specified *key*.
 
-        Like Pythons native dict get-function, this returns None if the object
-        is not found instead of raising an AttributeError.
+        Like Python's native dictionary ``get``-function, this returns ``None`` if the object
+        is not found instead of raising an :exc:`AttributeError`.
 
-        Generally, use the `handle[child_name]` syntax instead, unless you have to change the
-        discovery_method or want to check for optional signals.
+        Generally, use the ``handle[child_name]`` syntax instead, unless you have to change the
+        *discovery_method* or want to check for optional signals.
 
         :meta public:
 
         Args:
             key: The child object by name.
-            discovery_method: Optional selection of discovery strategy. ``GPIDiscovery.AUTO`` by default.
+            discovery_method: Optional selection of discovery strategy. :data:`~cocotb.handle.GPIDiscovery.AUTO` by default.
 
         Returns:
             The child object, or ``None`` if not found.

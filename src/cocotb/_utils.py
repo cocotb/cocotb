@@ -214,7 +214,7 @@ IntEnumT = TypeVar("IntEnumT", bound=IntEnum)
 
 
 class DocIntEnum(IntEnum):
-    """Like DocEnum but for IntEnum enum types."""
+    """Like DocEnum but for :class:`IntEnum` enum types."""
 
     def __new__(cls: Type[IntEnumT], value: int, doc: Optional[str] = None) -> IntEnumT:
         self = int.__new__(cls, value)

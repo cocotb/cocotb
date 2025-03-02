@@ -544,7 +544,7 @@ async def discover_all_in_component_vhdl(dut):
 
 @cocotb.test(expect_error=ValueError)
 async def test_invalid_discovery_method(dut):
-    """Try accessing with an enum value for _GPIDiscovery out of bounds."""
+    """Try accessing with an enum value for GPIDiscovery out of bounds."""
     dut._get("testsignal", discovery_method=5)
 
 
