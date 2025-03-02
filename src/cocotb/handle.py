@@ -318,7 +318,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
         Args:
             key: The child object by name.
-            discovery_method: Optional selection of discovery strategy. ``GPIDiscovery.AUTO`` by default.
+            discovery_method: Optional selection of discovery strategy. :data:`~cocotb.handle.GPIDiscovery.AUTO` by default.
 
         Returns:
             The child object, or ``None`` if not found.
