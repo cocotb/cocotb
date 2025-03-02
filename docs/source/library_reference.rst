@@ -308,6 +308,8 @@ Simulation Object Handles
     :synopsis: Classes for simulation objects.
     :exclude-members: Deposit, Force, Freeze, Release
     :special-members: __len__
+
+.. autoenum:: cocotb.handle.GPIDiscovery
 ..
    Excluding the Assignment Methods that are getting their own section below
 
