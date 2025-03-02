@@ -945,9 +945,6 @@ class LogicObject(NonArrayValueObject[Logic, Union[Logic, int, str]]):
         """A trigger which fires whenever the value changes to a ``0``."""
         return FallingEdge._make(self)
 
-    @deprecated(
-        "`len(handle)` of scalar objects is redundant. This method will be removed."
-    )
     def __len__(self) -> int:
         return 1
 
