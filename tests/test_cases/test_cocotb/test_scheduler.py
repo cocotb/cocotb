@@ -31,6 +31,7 @@ from cocotb.triggers import (
     RisingEdge,
     Timer,
     Trigger,
+    with_timeout,
 )
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -1006,3 +1007,28 @@ async def test_EmptyTrigger_doesnt_yield(_) -> None:
     await EmptyTrigger()
     task.cancel()
     assert not task_ran
+
+
+@cocotb.test
+async def test_task_started(_) -> None:
+    has_resumed = False
+
+    async def coro() -> None:
+        nonlocal has_resumed
+        has_resumed = True
+        await Timer(1, "ns")
+
+    task = cocotb.start_soon(coro())
+    assert not has_resumed
+    await task.started
+    assert has_resumed
+
+
+@cocotb.test
+async def test_task_already_started(_) -> None:
+    async def coro() -> None:
+        await Timer(5, "ns")
+
+    task = cocotb.start_soon(coro())
+    await Timer(1, "ns")
+    await with_timeout(task.started, 1, "step")

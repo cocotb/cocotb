@@ -189,9 +189,15 @@ Triggers dealing with Tasks or running multiple Tasks concurrently.
 
 .. autoclass:: cocotb.task.Join
     :members:
+    :inherited-members:
+
+.. autoclass:: cocotb.triggers.TaskStarted
+    :members:
+    :inherited-members:
 
 .. autoclass:: cocotb.task.TaskComplete
     :members:
+    :inherited-members:
 
 .. autoclass:: cocotb.triggers.Combine
     :members:

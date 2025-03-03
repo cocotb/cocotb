@@ -22,7 +22,7 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
-from cocotb.task import Join, TaskComplete
+from cocotb.task import Join, TaskComplete, TaskStarted
 
 __all__ = (
     "Trigger",
@@ -39,6 +39,7 @@ __all__ = (
     "ValueChange",
     "Edge",
     "TaskComplete",
+    "TaskStarted",
     "Join",
     "Waitable",
     "First",
