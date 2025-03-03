@@ -358,8 +358,7 @@ class ValueChange(_EdgeBase):
         return signal.value_change
 
 
-@deprecated("Use `signal.value_change` instead.")
-def Edge(signal: "NonIndexableValueObjectBase[Any, Any]") -> ValueChange:
+class Edge(ValueChange):
     """Fires on any value change of *signal*.
 
     Args:
@@ -372,4 +371,11 @@ def Edge(signal: "NonIndexableValueObjectBase[Any, Any]") -> ValueChange:
 
         Use :attr:`signal.value_change <cocotb.handle.NonArrayValueObject.value_change>` instead.
     """
-    return ValueChange(signal)
+
+    @deprecated("Use `signal.value_change` instead.")
+    def __new__(cls, signal: "NonIndexableValueObjectBase[Any, Any]") -> "Edge":
+        if not isinstance(signal, cocotb.handle.NonIndexableValueObjectBase):
+            raise TypeError(
+                f"{cls.__qualname__} requires an object derived from NonArrayValueObject which can change value. Got {signal!r} of type {type(signal).__qualname__}"
+            )
+        return signal._edge

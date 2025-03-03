@@ -54,7 +54,7 @@ import cocotb
 from cocotb import simulator
 from cocotb._base_triggers import Event
 from cocotb._deprecation import deprecated
-from cocotb._gpi_triggers import FallingEdge, ReadWrite, RisingEdge, ValueChange
+from cocotb._gpi_triggers import Edge, FallingEdge, ReadWrite, RisingEdge, ValueChange
 from cocotb._py_compat import cached_property
 from cocotb._utils import DocIntEnum, cached_method
 from cocotb.task import Task
@@ -1059,6 +1059,10 @@ class NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
     def value_change(self) -> ValueChange:
         """A trigger which fires whenever the value changes."""
         return ValueChange._make(self)
+
+    @cached_property
+    def _edge(self) -> Edge:
+        return Edge._make(self)
 
 
 class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
