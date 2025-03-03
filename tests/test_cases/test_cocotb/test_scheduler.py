@@ -28,7 +28,6 @@ from cocotb.triggers import (
     First,
     NullTrigger,
     RisingEdge,
-    TaskComplete,
     Timer,
     Trigger,
 )
@@ -942,15 +941,10 @@ async def test_task_complete(_) -> None:
 
     task = cocotb.start_soon(noop())
     assert not task.done()
-    res = await task.complete
-    assert res is task.complete
-    assert task.done()
-
-    tc = TaskComplete(task)
-    assert tc is res
+    tc = task.complete
     assert tc.task is task
-
     res = await tc
+    assert res is tc
     assert res is task.complete
     assert task.done()
 
