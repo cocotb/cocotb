@@ -6,9 +6,7 @@ from cocotb._extended_awaitables import (
     ClockCycles,
     Combine,
     First,
-    Join,
     SimTimeoutError,
-    TaskComplete,
     Waitable,
     with_timeout,
 )
@@ -23,6 +21,7 @@ from cocotb._gpi_triggers import (
     Timer,
     ValueChange,
 )
+from cocotb.task import Join, TaskComplete
 
 __all__ = (
     "Trigger",

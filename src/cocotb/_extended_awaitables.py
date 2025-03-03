@@ -32,10 +32,8 @@ from decimal import Decimal
 from typing import (
     Any,
     Awaitable,
-    Callable,
     Coroutine,
     Generator,
-    Generic,
     List,
     Optional,
     Type,
@@ -46,98 +44,12 @@ from typing import (
 )
 
 import cocotb.handle
-import cocotb.task
 from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
-from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
 from cocotb._typing import TimeUnit
+from cocotb.task import Task
 
 T = TypeVar("T")
-
-
-class TaskComplete(Trigger, Generic[T]):
-    r"""Fires when a :class:`~cocotb.task.Task` completes.
-
-    Unlike :func:`~cocotb.triggers.Join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
-
-    .. note::
-        It is preferable to use :attr:`.Task.complete` to get this object over calling the constructor.
-
-    .. code-block:: python
-
-        async def coro_inner():
-            await Timer(1, unit="ns")
-            raise ValueError("Oops")
-
-
-        task = cocotb.start_soon(coro_inner())
-        await task.complete  # no exception raised here
-        assert task.exception() == ValueError("Oops")
-
-    Args:
-        task: The Task upon which to wait for completion.
-
-    .. versionadded:: 2.0
-    """
-
-    def __new__(cls, task: "cocotb.task.Task[T]") -> "TaskComplete[T]":
-        return task.complete
-
-    @classmethod
-    def _make(cls, task: "cocotb.task.Task[T]") -> "TaskComplete[T]":
-        self = super().__new__(cls)
-        cls.__init__(self, task)
-        return self
-
-    def __init__(self, task: "cocotb.task.Task[T]") -> None:
-        super().__init__()
-        self._task = task
-
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        if self._task.done():
-            callback(self)
-        else:
-            super()._prime(callback)
-
-    def __repr__(self) -> str:
-        return f"{type(self).__qualname__}({self._task!s})"
-
-    @property
-    def task(self) -> "cocotb.task.Task[T]":
-        """The :class:`.Task` associated with this completion event."""
-        return self._task
-
-
-@deprecated(
-    "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
-)
-def Join(task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
-    r"""Fires when a :class:`~cocotb.task.Task` completes and returns the Task's result.
-
-    Equivalent to calling :meth:`task.join() <cocotb.task.Task.join>`.
-
-    .. code-block:: python
-
-        async def coro_inner():
-            await Timer(1, unit="ns")
-            return "Hello world"
-
-
-        task = cocotb.start_soon(coro_inner())
-        result = await Join(task)
-        assert result == "Hello world"
-
-    Args:
-        task: The Task upon which to wait for completion.
-
-    Returns:
-        Object that can be :keyword:`await`\ ed or passed into :class:`~cocotb.triggers.First` or :class:`~cocotb.triggers.Combine`;
-        the result of which will be the result of the Task.
-
-    .. deprecated:: 2.0
-        Using ``task`` directly is preferred to ``Join(task)`` in all situations where the latter could be used.
-    """
-    return task
 
 
 class Waitable(Awaitable[T]):
@@ -157,14 +69,12 @@ class Waitable(Awaitable[T]):
 class _AggregateWaitable(Waitable[T]):
     """Base class for :class:`Combine` and :class:`First`."""
 
-    def __init__(
-        self, *trigger: Union[Trigger, Waitable[Any], "cocotb.task.Task[Any]"]
-    ) -> None:
+    def __init__(self, *trigger: Union[Trigger, Waitable[Any], Task[Any]]) -> None:
         self._triggers = trigger
 
         # Do some basic type-checking up front, rather than waiting until we
         # await them.
-        allowed_types = (Trigger, Waitable, cocotb.task.Task)
+        allowed_types = (Trigger, Waitable, Task)
         for t in self._triggers:
             if not isinstance(t, allowed_types):
                 raise TypeError(
@@ -181,7 +91,7 @@ class _AggregateWaitable(Waitable[T]):
 
 
 async def _wait_callback(
-    trigger: Union[Trigger, Waitable[object], "cocotb.task.Task[object]"],
+    trigger: Union[Trigger, Waitable[object], Task[object]],
 ) -> object:
     return await trigger
 
@@ -206,13 +116,13 @@ class Combine(_AggregateWaitable["Combine"]):
         elif len(self._triggers) == 1:
             await self._triggers[0]
         else:
-            waiters: List[cocotb.task.Task[object]] = []
-            completed: List[cocotb.task.Task[Any]] = []
+            waiters: List[Task[object]] = []
+            completed: List[Task[Any]] = []
             done = _InternalEvent(self)
             exception: Union[BaseException, None] = None
 
             def on_done(
-                task: cocotb.task.Task[object],
+                task: Task[object],
             ) -> None:
                 # have to check cancelled first otherwise exception() will throw
                 if task.cancelled():
@@ -232,7 +142,7 @@ class Combine(_AggregateWaitable["Combine"]):
 
             # start a parallel task for each trigger
             for t in self._triggers:
-                task = cocotb.task.Task[object](_wait_callback(t))
+                task = Task[object](_wait_callback(t))
                 task._add_done_callback(on_done)
                 cocotb.start_soon(task)
                 waiters.append(task)
@@ -280,9 +190,7 @@ class First(_AggregateWaitable[Any]):
         coroutines.
     """
 
-    def __init__(
-        self, *trigger: Union[Trigger, Waitable[Any], "cocotb.task.Task[Any]"]
-    ) -> None:
+    def __init__(self, *trigger: Union[Trigger, Waitable[Any], Task[Any]]) -> None:
         if not trigger:
             raise ValueError("First() requires at least one Trigger or Task argument")
         super().__init__(*trigger)
@@ -291,17 +199,17 @@ class First(_AggregateWaitable[Any]):
         if len(self._triggers) == 1:
             return await self._triggers[0]
 
-        waiters: List[cocotb.task.Task[Any]] = []
+        waiters: List[Task[Any]] = []
         done = _InternalEvent(self)
-        completed: List[cocotb.task.Task[Any]] = []
+        completed: List[Task[Any]] = []
 
-        def on_done(task: cocotb.task.Task[Any]) -> None:
+        def on_done(task: Task[Any]) -> None:
             completed.append(task)
             done.set()
 
         # start a parallel task for each trigger
         for t in self._triggers:
-            task = cocotb.task.Task[Any](_wait_callback(t))
+            task = Task[Any](_wait_callback(t))
             task._add_done_callback(on_done)
             cocotb.start_soon(task)
             waiters.append(task)
@@ -436,7 +344,7 @@ async def with_timeout(
 
 @overload
 async def with_timeout(
-    trigger: "cocotb.task.Task[T]",
+    trigger: Task[T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
     round_mode: Optional[str] = None,
@@ -453,9 +361,7 @@ async def with_timeout(
 
 
 async def with_timeout(
-    trigger: Union[
-        Trigger, Waitable[Any], "cocotb.task.Task[Any]", Coroutine[Any, Any, Any]
-    ],
+    trigger: Union[Trigger, Waitable[Any], Task[Any], Coroutine[Any, Any, Any]],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
     round_mode: Optional[str] = None,
@@ -523,7 +429,7 @@ async def with_timeout(
     if res is timeout_timer:
         if not shielded:
             # shielded = False only when trigger is a Task created to wrap a Coroutine
-            trigger = cast(cocotb.task.Task[Any], trigger)
+            trigger = cast(Task[Any], trigger)
             trigger.kill()
         raise SimTimeoutError
     else:
