@@ -30,6 +30,7 @@
 import logging
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncContextManager,
     Awaitable,
@@ -37,14 +38,14 @@ from typing import (
     Generator,
     List,
     Optional,
-    TypeVar,
 )
 
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
 from cocotb._utils import pointer_str
 
-Self = TypeVar("Self", bound="Trigger")
+if TYPE_CHECKING:
+    from typing import Self
 
 
 class Trigger(Awaitable["Trigger"]):
@@ -92,7 +93,7 @@ class Trigger(Awaitable["Trigger"]):
         # Clear _primed so this Trigger can be re-primed.
         self._primed = False
 
-    def __await__(self: Self) -> Generator[Self, None, Self]:
+    def __await__(self) -> Generator["Self", None, "Self"]:
         yield self
         return self
 
@@ -274,8 +275,8 @@ class _InternalEvent(Trigger):
         return self.fired
 
     def __await__(
-        self: Self,
-    ) -> Generator[Any, Any, Self]:
+        self,
+    ) -> Generator["Self", None, "Self"]:
         if self._primed:
             raise RuntimeError("Only one Task may await this Trigger")
         yield self
