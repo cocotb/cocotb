@@ -55,10 +55,7 @@ if TYPE_CHECKING:
 
 
 class GPITrigger(Trigger):
-    """Base Trigger class for GPI triggers.
-
-    Consumes simulation time.
-    """
+    """A trigger for a simulation event."""
 
     def __init__(self) -> None:
         super().__init__()
