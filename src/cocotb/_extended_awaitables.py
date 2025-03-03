@@ -141,7 +141,7 @@ def Join(task: "cocotb.task.Task[T]") -> "cocotb.task.Task[T]":
 
 
 class Waitable(Awaitable[T]):
-    """Base class for trigger-like objects implemented using coroutines.
+    """A Trigger-like object that can be implemented using coroutines.
 
     This converts a ``_wait`` abstract method into a suitable ``__await__``.
     """
