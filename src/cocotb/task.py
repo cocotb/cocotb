@@ -13,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    ClassVar,
     Coroutine,
     Generator,
     Generic,
@@ -97,6 +98,7 @@ class Task(Generic[ResultType]):
         self._done_callbacks: List[Callable[[Task[ResultType]], Any]] = []
         self._cancelled_msg: Union[str, None] = None
         self._must_cancel: bool = False
+        self._has_resumed: bool = False
 
         self._task_id = self._id_count
         type(self)._id_count += 1
@@ -194,6 +196,10 @@ class Task(Generic[ResultType]):
         """
         self._state = _TaskState.RUNNING
 
+        if not self._has_resumed:
+            self._has_resumed = True
+            cocotb._scheduler_inst._react(self.started)
+
         if self._must_cancel:
             exc = self._cancelled_error
 
@@ -260,6 +266,19 @@ class Task(Generic[ResultType]):
         self._coro.close()
 
         self._set_outcome(Value(None))  # type: ignore  # `kill()` sets the result to None regardless of the ResultType
+
+    @cached_property
+    def started(self) -> "TaskStarted[ResultType]":
+        """Trigger which fires after the first time the Task resumes.
+
+        Mostly useful as a way to emulate :func:`cocotb.start` and ``cocotb.fork``'s behavior of returning after the Task has started running.
+
+        .. code-block:: python
+
+            task = cocotb.start_soon(coro())
+            await task.started
+        """
+        return TaskStarted._make(self)
 
     @cached_property
     def complete(self) -> "TaskComplete[ResultType]":
@@ -404,7 +423,56 @@ class Task(Generic[ResultType]):
         return self.result()
 
 
-class TaskComplete(Trigger, Generic[ResultType]):
+class _TaskTriggerBase(Trigger, Generic[ResultType]):
+    _task_attr: ClassVar[str]
+    _task: Task[ResultType]
+
+    def __new__(cls, task: Task[ResultType]) -> "TaskComplete[ResultType]":
+        raise NotImplementedError(
+            f"{cls.__qualname__} cannot be instantiated. Use the `Task.{cls._task_attr}` attribute."
+        )
+
+    def __init__(self, task: Task[ResultType]) -> None:
+        pass
+
+    @classmethod
+    def _make(cls, task: Task[ResultType]) -> "Self":
+        self = super().__new__(cls)
+        super().__init__(self)
+        self._task = task
+        return self
+
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}({self._task!s})"
+
+    @property
+    def task(self) -> Task[ResultType]:
+        """The :class:`.Task` associated with this completion event."""
+        return self._task
+
+
+class TaskStarted(_TaskTriggerBase[ResultType]):
+    """Trigger which fires after the first time the Task resumes.
+
+    See :attr:`.Task.started` for more info.
+
+    .. warning::
+        This class cannot be instantiated in the normal way.
+        You must use :attr:`.Task.started`.
+
+    .. versionadded:: 2.0
+    """
+
+    _task_attr = "started"
+
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+        if self._task._has_resumed:
+            callback(self)
+        else:
+            super()._prime(callback)
+
+
+class TaskComplete(_TaskTriggerBase[ResultType]):
     r"""Fires when a :class:`~cocotb.task.Task` completes.
 
     Unlike :class:`~cocotb.triggers.Join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
@@ -417,33 +485,13 @@ class TaskComplete(Trigger, Generic[ResultType]):
     .. versionadded:: 2.0
     """
 
-    _task: Task[ResultType]
-
-    def __new__(cls, task: Task[ResultType]) -> "TaskComplete[ResultType]":
-        raise NotImplementedError(
-            "TaskComplete cannot be instantiated in this way. Use the `task.complete` attribute."
-        )
-
-    @classmethod
-    def _make(cls, task: Task[ResultType]) -> "Self":
-        self = super().__new__(cls)
-        super().__init__(self)
-        self._task = task
-        return self
+    _task_attr = "complete"
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._task.done():
             callback(self)
         else:
             super()._prime(callback)
-
-    def __repr__(self) -> str:
-        return f"{type(self).__qualname__}({self._task!s})"
-
-    @property
-    def task(self) -> Task[ResultType]:
-        """The :class:`.Task` associated with this completion event."""
-        return self._task
 
 
 class Join(TaskComplete[ResultType]):
@@ -478,9 +526,6 @@ class Join(TaskComplete[ResultType]):
     )
     def __new__(cls, task: Task[ResultType]) -> "Join[ResultType]":
         return task._join
-
-    def __init__(self, task: Task[ResultType]) -> None:
-        pass
 
     def __await__(self) -> Generator["Self", None, ResultType]:  # type: ignore[override]
         yield self
