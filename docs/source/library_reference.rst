@@ -138,61 +138,70 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
 .. autodata:: cocotb.types.logic_array.RESOLVE_X
 
 
+.. _triggers::
+
 Triggers
 ========
-
-.. _simulator-triggers:
-
-Simulator Triggers
-------------------
 
 .. _edge-triggers:
 
 Edge Triggers
-^^^^^^^^^^^^^
-
-.. autoclass:: cocotb.triggers.ValueChange
-
-.. autoclass:: cocotb.triggers.Edge
+-------------
 
 .. autoclass:: cocotb.triggers.RisingEdge
+    :members:
 
 .. autoclass:: cocotb.triggers.FallingEdge
+    :members:
 
 .. autoclass:: cocotb.triggers.ClockCycles
+    :members:
+
+.. autoclass:: cocotb.triggers.ValueChange
+    :members:
+
+.. autoclass:: cocotb.triggers.Edge
+    :members:
 
 
-Timing
-^^^^^^
-
-.. autoclass:: cocotb.triggers.Timer
-
-.. autoclass:: cocotb.triggers.ReadOnly
-
-.. autoclass:: cocotb.triggers.ReadWrite
-
-.. autoclass:: cocotb.triggers.NextTimeStep
-
-
-.. _python-triggers:
-
-Python Triggers
+Timing Triggers
 ---------------
 
-.. autoclass:: cocotb.triggers.NullTrigger
+.. autoclass:: cocotb.triggers.Timer
+    :members:
 
-.. autoclass:: cocotb.triggers.Combine
+.. autoclass:: cocotb.triggers.ReadOnly
+    :members:
 
-.. autoclass:: cocotb.triggers.First
+.. autoclass:: cocotb.triggers.ReadWrite
+    :members:
+
+.. autoclass:: cocotb.triggers.NextTimeStep
+    :members:
+
+
+Concurrency Triggers
+--------------------
+
+Triggers dealing with Tasks or running multiple Tasks concurrently.
 
 .. autofunction:: cocotb.triggers.Join
 
 .. autoclass:: cocotb.triggers.TaskComplete
     :members:
 
+.. autoclass:: cocotb.triggers.NullTrigger
+    :members:
 
-Synchronization
-^^^^^^^^^^^^^^^
+.. autoclass:: cocotb.triggers.Combine
+    :members:
+
+.. autoclass:: cocotb.triggers.First
+    :members:
+
+
+Synchronization Triggers
+------------------------
 
 The following objects are not :class:`Trigger`\ s themselves, but contain methods that can be used as triggers.
 They are used to synchronize coroutines with each other.
@@ -210,22 +219,20 @@ They are used to synchronize coroutines with each other.
 .. autofunction:: cocotb.triggers.with_timeout
 
 
-Triggers (Internals)
---------------------
+Abstract Triggers
+-----------------
 
 The following are internal classes used within ``cocotb``.
 
-.. currentmodule:: cocotb.triggers
-
-.. autoclass:: Trigger
+.. autoclass:: cocotb.triggers.Trigger
     :members:
     :member-order: bysource
 
-.. autoclass:: GPITrigger
+.. autoclass:: cocotb.triggers.GPITrigger
     :members:
     :member-order: bysource
 
-.. autoclass:: Waitable
+.. autoclass:: cocotb.triggers.Waitable
     :members:
     :member-order: bysource
     :private-members:

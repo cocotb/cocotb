@@ -48,7 +48,7 @@ Self = TypeVar("Self", bound="Trigger")
 
 
 class Trigger(Awaitable["Trigger"]):
-    """Base class to derive from."""
+    """A future event that a Task can wait upon."""
 
     def __init__(self) -> None:
         self._primed = False

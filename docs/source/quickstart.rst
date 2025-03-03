@@ -57,7 +57,7 @@ Things to note:
 The test shown is running sequentially, from start to end.
 Each :keyword:`await` expression suspends execution of the test until
 whatever event the test is waiting for occurs and the simulator returns
-control back to cocotb (see :ref:`simulator-triggers`).
+control back to cocotb (see :ref:`triggers`).
 
 It's most likely that you will want to do several things "at the same time" however -
 think multiple ``always`` blocks in Verilog or ``process`` statements in VHDL.
