@@ -258,7 +258,21 @@ class Task(Generic[ResultType]):
 
     @cached_property
     def complete(self) -> "TaskComplete[ResultType]":
-        r"""Trigger which fires when the Task completes."""
+        r"""Trigger which fires when the Task completes.
+
+        Unlike :meth:`join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
+
+        .. code-block:: python
+
+            async def coro_inner():
+                await Timer(1, unit="ns")
+                raise ValueError("Oops")
+
+
+            task = cocotb.start_soon(coro_inner())
+            await task.complete  # no exception raised here
+            assert task.exception() == ValueError("Oops")
+        """
         return TaskComplete._make(self)
 
     @deprecated(
@@ -385,23 +399,11 @@ class TaskComplete(Trigger, Generic[ResultType]):
     r"""Fires when a :class:`~cocotb.task.Task` completes.
 
     Unlike :func:`~cocotb.triggers.Join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
+    See :attr:`.Task.complete` for more information.
 
-    .. note::
-        It is preferable to use :attr:`.Task.complete` to get this object over calling the constructor.
-
-    .. code-block:: python
-
-        async def coro_inner():
-            await Timer(1, unit="ns")
-            raise ValueError("Oops")
-
-
-        task = cocotb.start_soon(coro_inner())
-        await task.complete  # no exception raised here
-        assert task.exception() == ValueError("Oops")
-
-    Args:
-        task: The Task upon which to wait for completion.
+    .. warning::
+        This class cannot be instantiated in the normal way.
+        You must use :attr:`.Task.complete`.
 
     .. versionadded:: 2.0
     """
@@ -409,7 +411,9 @@ class TaskComplete(Trigger, Generic[ResultType]):
     _task: Task[ResultType]
 
     def __new__(cls, task: Task[ResultType]) -> "TaskComplete[ResultType]":
-        return task.complete
+        raise NotImplementedError(
+            "TaskComplete cannot be instantiated in this way. Use the `task.complete` attribute."
+        )
 
     @classmethod
     def _make(cls, task: Task[ResultType]) -> "TaskComplete[ResultType]":
@@ -417,9 +421,6 @@ class TaskComplete(Trigger, Generic[ResultType]):
         super().__init__(self)
         self._task = task
         return self
-
-    def __init__(self, task: Task[ResultType]) -> None:
-        pass
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
         if self._task.done():
