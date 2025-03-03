@@ -185,7 +185,8 @@ Concurrency Triggers
 
 Triggers dealing with Tasks or running multiple Tasks concurrently.
 
-.. autofunction:: cocotb.task.Join
+.. autoclass:: cocotb.task.Join
+    :members:
 
 .. autoclass:: cocotb.task.TaskComplete
     :members:

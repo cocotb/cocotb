@@ -87,6 +87,8 @@ async def test_join_trigger_deprecated(_) -> None:
     with pytest.warns(DeprecationWarning, match=r"Join\(task\)"):
         j = Join(t)
     assert (await j) == 1
+    assert isinstance(j, Join)
+    assert type(j) is Join
 
 
 @cocotb.test

@@ -10,6 +10,7 @@ from asyncio import CancelledError, InvalidStateError
 from enum import auto
 from types import CoroutineType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Coroutine,
@@ -28,6 +29,9 @@ from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
+
+if TYPE_CHECKING:
+    from typing import Self
 
 #: Task result type
 ResultType = TypeVar("ResultType")
@@ -174,6 +178,7 @@ class Task(Generic[ResultType]):
 
         # Wake up waiting Tasks.
         cocotb._scheduler_inst._react(self.complete)
+        cocotb._scheduler_inst._react(self._join)
 
     def _advance(self, exc: Union[BaseException, None]) -> Union[Trigger, None]:
         """Resume execution of the Task.
@@ -278,10 +283,10 @@ class Task(Generic[ResultType]):
     @deprecated(
         "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used."
     )
-    def join(self) -> "Task[ResultType]":
+    def join(self) -> "Join[ResultType]":
         r"""Block until the Task completes and return the result.
 
-        Equivalent to calling :func:`Join(self) <cocotb.triggers.Join>`.
+        Equivalent to calling :class:`Join(self) <cocotb.triggers.Join>`.
 
         .. code-block:: python
 
@@ -301,7 +306,11 @@ class Task(Generic[ResultType]):
         .. deprecated:: 2.0
             Using ``task`` directly is preferred to ``task.join()`` in all situations where the latter could be used.
         """
-        return self
+        return self._join
+
+    @cached_property
+    def _join(self) -> "Join[ResultType]":
+        return Join._make(self)
 
     def cancel(self, msg: Optional[str] = None) -> bool:
         """Cancel a Task's further execution.
@@ -398,7 +407,7 @@ class Task(Generic[ResultType]):
 class TaskComplete(Trigger, Generic[ResultType]):
     r"""Fires when a :class:`~cocotb.task.Task` completes.
 
-    Unlike :func:`~cocotb.triggers.Join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
+    Unlike :class:`~cocotb.triggers.Join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
     See :attr:`.Task.complete` for more information.
 
     .. warning::
@@ -416,7 +425,7 @@ class TaskComplete(Trigger, Generic[ResultType]):
         )
 
     @classmethod
-    def _make(cls, task: Task[ResultType]) -> "TaskComplete[ResultType]":
+    def _make(cls, task: Task[ResultType]) -> "Self":
         self = super().__new__(cls)
         super().__init__(self)
         self._task = task
@@ -437,10 +446,7 @@ class TaskComplete(Trigger, Generic[ResultType]):
         return self._task
 
 
-@deprecated(
-    "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
-)
-def Join(task: Task[ResultType]) -> Task[ResultType]:
+class Join(TaskComplete[ResultType]):
     r"""Fires when a :class:`~cocotb.task.Task` completes and returns the Task's result.
 
     Equivalent to calling :meth:`task.join() <cocotb.task.Task.join>`.
@@ -466,4 +472,16 @@ def Join(task: Task[ResultType]) -> Task[ResultType]:
     .. deprecated:: 2.0
         Using ``task`` directly is preferred to ``Join(task)`` in all situations where the latter could be used.
     """
-    return task
+
+    @deprecated(
+        "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
+    )
+    def __new__(cls, task: Task[ResultType]) -> "Join[ResultType]":
+        return task._join
+
+    def __init__(self, task: Task[ResultType]) -> None:
+        pass
+
+    def __await__(self) -> Generator["Self", None, ResultType]:  # type: ignore[override]
+        yield self
+        return self._task.result()
