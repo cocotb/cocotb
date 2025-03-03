@@ -36,7 +36,6 @@ from typing import (
     ClassVar,
     Generic,
     Optional,
-    Type,
     TypeVar,
     Union,
 )
@@ -51,6 +50,8 @@ from cocotb._utils import pointer_str, singleton
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from cocotb.handle import LogicObject, NonIndexableValueObjectBase, ValueObjectBase
 
 
@@ -243,7 +244,6 @@ class NextTimeStep(GPITrigger):
 
 
 _SignalType = TypeVar("_SignalType", bound="ValueObjectBase[Any, Any]")
-_EdgeBaseSelf = TypeVar("_EdgeBaseSelf", bound="_EdgeBase")
 
 
 class _EdgeBase(GPITrigger, Generic[_SignalType]):
@@ -253,7 +253,7 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
     signal: _SignalType
 
     @classmethod
-    def _make(cls: Type[_EdgeBaseSelf], signal: _SignalType) -> _EdgeBaseSelf:
+    def _make(cls, signal: _SignalType) -> "Self":
         self = GPITrigger.__new__(cls)
         GPITrigger.__init__(self)
         self.signal = signal
