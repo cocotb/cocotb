@@ -23,7 +23,6 @@ from typing import (
 )
 
 import cocotb
-import cocotb.triggers
 from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
@@ -258,9 +257,9 @@ class Task(Generic[ResultType]):
         self._set_outcome(Value(None))  # type: ignore  # `kill()` sets the result to None regardless of the ResultType
 
     @cached_property
-    def complete(self) -> "cocotb.triggers.TaskComplete[ResultType]":
+    def complete(self) -> "TaskComplete[ResultType]":
         r"""Trigger which fires when the Task completes."""
-        return cocotb.triggers.TaskComplete._make(self)
+        return TaskComplete._make(self)
 
     @deprecated(
         "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used."
@@ -380,3 +379,90 @@ class Task(Generic[ResultType]):
         elif not self.done():
             yield self.complete
         return self.result()
+
+
+class TaskComplete(Trigger, Generic[ResultType]):
+    r"""Fires when a :class:`~cocotb.task.Task` completes.
+
+    Unlike :func:`~cocotb.triggers.Join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
+
+    .. note::
+        It is preferable to use :attr:`.Task.complete` to get this object over calling the constructor.
+
+    .. code-block:: python
+
+        async def coro_inner():
+            await Timer(1, unit="ns")
+            raise ValueError("Oops")
+
+
+        task = cocotb.start_soon(coro_inner())
+        await task.complete  # no exception raised here
+        assert task.exception() == ValueError("Oops")
+
+    Args:
+        task: The Task upon which to wait for completion.
+
+    .. versionadded:: 2.0
+    """
+
+    _task: Task[ResultType]
+
+    def __new__(cls, task: Task[ResultType]) -> "TaskComplete[ResultType]":
+        return task.complete
+
+    @classmethod
+    def _make(cls, task: Task[ResultType]) -> "TaskComplete[ResultType]":
+        self = super().__new__(cls)
+        super().__init__(self)
+        self._task = task
+        return self
+
+    def __init__(self, task: Task[ResultType]) -> None:
+        pass
+
+    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+        if self._task.done():
+            callback(self)
+        else:
+            super()._prime(callback)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}({self._task!s})"
+
+    @property
+    def task(self) -> Task[ResultType]:
+        """The :class:`.Task` associated with this completion event."""
+        return self._task
+
+
+@deprecated(
+    "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
+)
+def Join(task: Task[ResultType]) -> Task[ResultType]:
+    r"""Fires when a :class:`~cocotb.task.Task` completes and returns the Task's result.
+
+    Equivalent to calling :meth:`task.join() <cocotb.task.Task.join>`.
+
+    .. code-block:: python
+
+        async def coro_inner():
+            await Timer(1, unit="ns")
+            return "Hello world"
+
+
+        task = cocotb.start_soon(coro_inner())
+        result = await Join(task)
+        assert result == "Hello world"
+
+    Args:
+        task: The Task upon which to wait for completion.
+
+    Returns:
+        Object that can be :keyword:`await`\ ed or passed into :class:`~cocotb.triggers.First` or :class:`~cocotb.triggers.Combine`;
+        the result of which will be the result of the Task.
+
+    .. deprecated:: 2.0
+        Using ``task`` directly is preferred to ``Join(task)`` in all situations where the latter could be used.
+    """
+    return task
