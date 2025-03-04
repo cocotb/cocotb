@@ -42,7 +42,7 @@ ifdef GHDL_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-    export GHDL_BIN_DIR := $(shell dirname $(CMD))
+    GHDL_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 RTL_LIBRARY ?= work

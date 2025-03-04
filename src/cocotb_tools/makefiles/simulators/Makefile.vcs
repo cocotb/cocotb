@@ -43,7 +43,7 @@ ifdef VCS_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-    export VCS_BIN_DIR := $(shell dirname $(CMD))
+    VCS_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 ifdef VERILOG_INCLUDE_DIRS
