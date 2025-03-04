@@ -4,7 +4,6 @@
 from functools import lru_cache
 from typing import (
     Dict,
-    Optional,
     Set,
     Tuple,  # noqa: F401  # Used by doctests, false positive
     Type,
@@ -67,7 +66,7 @@ class Logic:
     (System)Verilog's 4-value ``logic`` type only utilizes ``X``, ``0``, ``1``, and ``Z`` values.
 
     :class:`Logic` can be converted to and from :class:`int`, :class:`str`, and :class:`bool`.
-    The list of values convertable to :class:`Logic` includes
+    The list of values convertible to :class:`Logic` includes
     ``"U"``, ``"X"``, ``"0"``, ``"1"``, ``"Z"``, ``"W"``, ``"L"``, ``"H"``, ``"-"``, ``0``, ``1``, ``True``, and ``False``.
 
     .. code-block:: pycon3
@@ -78,9 +77,6 @@ class Logic:
         Logic('1')
         >>> Logic(1)
         Logic('1')
-
-        >>> Logic()  # default value
-        Logic('X')
 
         >>> str(Logic("Z"))
         'Z'
@@ -119,7 +115,7 @@ class Logic:
 
     @classmethod
     @lru_cache(maxsize=None)
-    def _get_object(cls: Type["Logic"], _repr: int) -> "Logic":
+    def _singleton(cls: Type["Logic"], _repr: int) -> "Logic":
         """Return the Logic object associated with the repr, enforcing singleton."""
         self = object.__new__(cls)
         self._repr = _repr
@@ -129,33 +125,27 @@ class Logic:
     @lru_cache(maxsize=None)
     def _map_literal(
         cls: Type["Logic"],
-        value: Optional[LogicLiteralT] = None,
+        value: LogicLiteralT,
     ) -> "Logic":
         """Convert and cache all literals."""
-        if value is None:
-            _repr = _X
-        else:
-            # convert literal
-            try:
-                _repr = _literal_repr[value]
-            except KeyError:
-                raise ValueError(
-                    f"{value!r} is not convertible to a {cls.__qualname__}"
-                ) from None
-        obj = cls._get_object(_repr)
+        try:
+            _repr = _literal_repr[value]
+        except KeyError:
+            raise ValueError(
+                f"{value!r} is not convertible to a {cls.__qualname__}"
+            ) from None
+        obj = cls._singleton(_repr)
         return obj
 
     def __new__(
         cls: Type["Logic"],
-        value: Optional[LogicConstructibleT] = None,
+        value: LogicConstructibleT,
     ) -> "Logic":
         if isinstance(value, Logic):
             return value
-        elif value is not None and not isinstance(value, (str, int)):
-            raise TypeError(
-                f"Expected str, bool, or int, not {type(value).__qualname__}"
-            )
-        return cls._map_literal(value)
+        elif isinstance(value, (str, int)):
+            return cls._map_literal(value)
+        raise TypeError(f"Expected str, bool, or int, not {type(value).__qualname__}")
 
     def __and__(self, other: "Logic") -> "Logic":
         if not isinstance(other, Logic):

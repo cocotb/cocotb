@@ -62,10 +62,6 @@ def test_logic_equality():
     assert Logic("1") != 5
 
 
-def test_logic_default_value():
-    assert Logic() == Logic("X")
-
-
 def test_logic_bool_conversions():
     assert bool(Logic("1")) is True
     assert bool(Logic("0")) is False

@@ -407,7 +407,7 @@ async def test_assign_Logic_9value(dut):
 @cocotb.test(skip=LANGUAGE != "vhdl" or SIM_NAME.startswith("ghdl"))
 async def test_assign_LogicArray_9value(dut):
     # Reset to zero.
-    dut.stream_in_data.value = LogicArray(0, width=8)
+    dut.stream_in_data.value = LogicArray(0, 8)
     await Timer(1, "ns")
     assert dut.stream_in_data.value == 0
 
@@ -424,7 +424,7 @@ async def test_assign_string(dut):
     dut.stream_in_data.value = "10101010"
     await Timer(1, "ns")
     assert dut.stream_in_data.value == "10101010"
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         dut.stream_in_data.value = "XXX"  # not the correct size
     with pytest.raises(ValueError):
         dut.stream_in_data.value = "lol"  # not the correct values

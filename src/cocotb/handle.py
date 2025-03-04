@@ -814,7 +814,7 @@ class ArrayObject(
             ValueError:
                 If assigning a :class:`list` of different length than the simulation object.
         """
-        return Array((self[i].value for i in self.range), range=self.range)
+        return Array._from_handle([self[i].value for i in self.range], range=self.range)
 
     @value.setter
     def value(self, value: Array[ElemValueT]) -> None:
