@@ -40,7 +40,7 @@ ifdef CVC_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-    export CVC_BIN_DIR := $(shell dirname $(CMD))
+    CVC_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 #only interpreted mode works for the moment

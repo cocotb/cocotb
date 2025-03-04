@@ -36,7 +36,7 @@ ifdef IUS_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-    export IUS_BIN_DIR := $(shell dirname $(CMD))
+    IUS_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 ifdef VERILOG_INCLUDE_DIRS
