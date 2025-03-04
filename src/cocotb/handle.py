@@ -52,7 +52,7 @@ from cocotb import simulator
 from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, ValueChange
 from cocotb._py_compat import cached_property
-from cocotb._utils import cached_method
+from cocotb._utils import DocIntEnum, cached_method
 from cocotb.types import Array, Logic, LogicArray, Range
 
 
@@ -210,6 +210,13 @@ class RangeableObjectMixin(SimHandleBase):
 KeyType = TypeVar("KeyType")
 
 
+class GPIDiscovery(DocIntEnum):
+    """Simulator object discovery strategy."""
+
+    AUTO = (0, "Automatic discovery using all registered interfaces.")
+    NATIVE = (1, "Native discovery using only the parent's native interface.")
+
+
 class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     """Base class for hierarchical simulation objects.
 
@@ -295,6 +302,28 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
             self._sub_handles[key] = hdl
 
         self._discovered = True
+
+    def _get(
+        self, key: str, discovery_method: GPIDiscovery = GPIDiscovery.AUTO
+    ) -> Optional[simulator.gpi_sim_hdl]:
+        """Query the simulator for an object with the specified *key*.
+
+        Like Python's native dictionary ``get``-function, this returns ``None`` if the object
+        is not found instead of raising an :exc:`AttributeError`.
+
+        Generally, use the ``handle[child_name]`` syntax instead, unless you have to change the
+        *discovery_method* or want to check for optional signals.
+
+        :meta public:
+
+        Args:
+            key: The child object by name.
+            discovery_method: Optional selection of discovery strategy. :data:`~cocotb.handle.GPIDiscovery.AUTO` by default.
+
+        Returns:
+            The child object, or ``None`` if not found.
+        """
+        return self._handle.get_handle_by_name(key, discovery_method)
 
     def __getitem__(self, key: KeyType) -> SimHandleBase:
         # try to use cached value
@@ -477,7 +506,8 @@ class HierarchyObject(HierarchyObjectBase[str]):
         return name
 
     def _get_handle_by_key(self, key: str) -> Optional[simulator.gpi_sim_hdl]:
-        return self._handle.get_handle_by_name(key)
+        # this stays to enable __get_item__ symmetry with HierarchyArrayObject
+        return self._get(key)
 
 
 class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):

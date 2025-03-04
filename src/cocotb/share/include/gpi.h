@@ -99,6 +99,12 @@ typedef struct GpiIterator *gpi_iterator_hdl;
 extern "C" {
 #endif
 
+// Forward declaration for types needed in function signatures
+typedef enum gpi_discovery_e {
+    GPI_AUTO = 0,
+    GPI_NATIVE = 1,
+} gpi_discovery;
+
 // Functions for controlling/querying the simulation state
 
 /**
@@ -141,7 +147,8 @@ GPI_EXPORT const char *gpi_get_simulator_version(void);
  */
 GPI_EXPORT gpi_sim_hdl gpi_get_root_handle(const char *name);
 GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent,
-                                              const char *name);
+                                              const char *name,
+                                              gpi_discovery discovery_method);
 GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent,
                                                int32_t index);
 

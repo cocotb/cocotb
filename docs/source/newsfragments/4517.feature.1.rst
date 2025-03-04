@@ -1,0 +1,1 @@
+:meth:`HierarchyObjectBase._get() <cocotb.handle.HierarchyObjectBase._get>` accepts the optional parameter ``discovery_method`` that takes values from :class:`~cocotb.handle.GPIDiscovery` and defaults to :enum:`~cocotb.handle.GPIDiscovery.AUTO`. To forbid cross-language search, use :enum:`~cocotb.handle.GPIDiscovery.NATIVE`.
