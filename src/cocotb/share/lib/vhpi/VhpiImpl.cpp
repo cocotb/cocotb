@@ -1055,7 +1055,7 @@ void VhpiImpl::sim_end() {
     int err = vhpi_control(vhpiFinish, vhpiDiagTimeLoc);
     // LCOV_EXCL_START
     if (err) {
-        LOG_ERROR("VHPI: Failed to end simulation");
+        LOG_DEBUG("VHPI: Failed to end simulation");
         check_vhpi_error();
     }
     // LCOV_EXCL_STOP
