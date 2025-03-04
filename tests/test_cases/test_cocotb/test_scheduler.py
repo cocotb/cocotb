@@ -200,7 +200,7 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
     # NOTE: this test depends on scheduling priority.
     # It assumes that the first task to wait on a trigger will be woken first.
     # The fix for gh-1348 should prevent that from mattering.
-    dut.clk.setimmediatevalue(0)
+    dut.clk.value = 0
 
     victim_resumed = False
 
@@ -488,7 +488,7 @@ async def test_test_repr(_):
     """Test RunningTest.__repr__"""
     log = logging.getLogger("cocotb.test")
 
-    current_test = cocotb.regression_manager._test_task
+    current_test = cocotb.regression_manager._test._main_task
     log.info(repr(current_test))
     assert re.match(
         r"<Test test_test_repr running coro=test_test_repr\(\)>", repr(current_test)
@@ -506,7 +506,7 @@ class TestClassRepr(Coroutine):
     async def check_repr(self, dut):
         log = logging.getLogger("cocotb.test")
 
-        current_test = cocotb.regression_manager._test_task
+        current_test = cocotb.regression_manager._test._main_task
         log.info(repr(current_test))
         assert re.match(
             r"<Test TestClassRepr running coro=TestClassRepr\(\)>", repr(current_test)
