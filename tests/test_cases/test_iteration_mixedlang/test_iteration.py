@@ -26,6 +26,7 @@
 import logging
 
 import cocotb
+from cocotb.handle import GPIDiscovery
 
 
 def recursive_dump(parent, log):
@@ -75,3 +76,13 @@ async def recursive_discovery_boundary(dut):
     actual = recursive_dump(dut.i_vhdl, tlog)
     tlog.info("Found a total of %d things", actual)
     assert actual == expected
+
+
+@cocotb.test
+async def discovery_method(dut):
+    """Verify that the different discovery methods work."""
+
+    # this is a Verilog toplevel, so we should not be finding a VHDL object
+    # when we request NATIVE discovery, but we should get it with AUTO
+    assert dut._get("i_vhdl", discovery_method=GPIDiscovery.AUTO) is not None
+    assert dut._get("i_vhdl", discovery_method=GPIDiscovery.NATIVE) is None

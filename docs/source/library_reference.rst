@@ -311,6 +311,10 @@ Simulation Object Handles
 ..
    Excluding the Assignment Methods that are getting their own section below
 
+.. autofunc:: cocotb.handle.HierarchyObjectBase._get
+
+.. autoenum:: cocotb.handle.GPIDiscovery
+
 .. _assignment-methods:
 
 Assignment Methods

@@ -600,12 +600,25 @@ static PyObject *get_definition_file(gpi_hdl_Object<gpi_sim_hdl> *self,
 static PyObject *get_handle_by_name(gpi_hdl_Object<gpi_sim_hdl> *self,
                                     PyObject *args) {
     const char *name;
+    // if unset, we assume AUTO, which maintains backward-compatibility
+    int py_discovery_method = 0;
+    gpi_discovery c_discovery_method = GPI_AUTO;
 
-    if (!PyArg_ParseTuple(args, "s:get_handle_by_name", &name)) {
+    if (!PyArg_ParseTuple(args, "s|i:get_handle_by_name", &name,
+                          &py_discovery_method)) {
         return NULL;
     }
+    // do some additional input validation, then map to enum
+    if (py_discovery_method < 0 || py_discovery_method > 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Enum value for discovery_method out of range");
+        return NULL;
+    } else {
+        c_discovery_method = (gpi_discovery)py_discovery_method;
+    }
 
-    gpi_sim_hdl result = gpi_get_handle_by_name(self->hdl, name);
+    gpi_sim_hdl result =
+        gpi_get_handle_by_name(self->hdl, name, c_discovery_method);
 
     return gpi_hdl_New(result);
 }
@@ -1292,10 +1305,14 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
                "get_definition_file() -> str\n"
                "Get the file that sources the object's definition.")},
     {"get_handle_by_name", (PyCFunction)get_handle_by_name, METH_VARARGS,
-     PyDoc_STR("get_handle_by_name($self, name, /)\n"
+     PyDoc_STR("get_handle_by_name($self, name, discovery_method/)\n"
                "--\n\n"
-               "get_handle_by_name(name: str) -> cocotb.simulator.gpi_sim_hdl\n"
-               "Get a handle to a child object by name.")},
+               "get_handle_by_name(name: str, discovery_method: "
+               "cocotb.handle._GPIDiscovery) -> "
+               "cocotb.simulator.gpi_sim_hdl\n"
+               "Get a handle to a child object by name.\n"
+               "Specifiy discovery_method to determine the signal discovery "
+               "strategy. AUTO by default.")},
     {"get_handle_by_index", (PyCFunction)get_handle_by_index, METH_VARARGS,
      PyDoc_STR(
          "get_handle_by_index($self, index, /)\n"

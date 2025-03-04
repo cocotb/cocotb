@@ -70,7 +70,7 @@ def _get_version() -> str:
 
 def _help_vars_text() -> str:
     if "dev" in _get_version():
-        doclink = "https://docs.cocotb.org/en/latest/building.html"
+        doclink = "https://docs.cocotb.org/en/development/building.html"
     else:
         doclink = f"https://docs.cocotb.org/en/v{_get_version()}/building.html"
 

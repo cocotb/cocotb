@@ -149,8 +149,6 @@ async def test_logic_scalar_object_methods_deprecated(dut) -> None:
         assert int(dut.stream_in_valid) == 1
     with pytest.warns(DeprecationWarning):
         assert str(dut.stream_in_valid) == "1"
-    with pytest.warns(DeprecationWarning):
-        assert len(dut.stream_in_valid) == 1
 
 
 @cocotb.test

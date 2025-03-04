@@ -3,7 +3,7 @@ Cocotb documentation
 
 This directory contains the documentation of cocotb, which is built with Doxygen and Sphinx.
 The documentation is automatically built and uploaded with every pull request.
-The documentation for the `master` branch can be found [here](https://docs.cocotb.org/en/latest/).
+The documentation for the `master` branch can be found [here](https://docs.cocotb.org/en/development/).
 
 `nox -e docs` can be used to create an appropriate virtual environment and
 invoke `sphinx-build` to generate the HTML docs.

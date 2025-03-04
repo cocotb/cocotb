@@ -1,0 +1,1 @@
+:class:`.HierarchyObjectBase` and its inheritants now support :meth:`~.HierarchyObjectBase._get` for a dictionary-style handle retrieval, which returns ``None`` on failure instead of raising an exception to aid with optional signal discovery.
