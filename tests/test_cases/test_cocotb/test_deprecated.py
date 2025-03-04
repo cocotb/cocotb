@@ -170,3 +170,9 @@ async def test_cocotb_start(_) -> None:
         await cocotb.start(do_something())
 
     assert done
+
+
+@cocotb.test
+async def test_setimmediatevalue(dut) -> None:
+    with pytest.warns(DeprecationWarning):
+        dut.stream_in_data.setimmediatevalue(10)

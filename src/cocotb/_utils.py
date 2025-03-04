@@ -31,12 +31,14 @@ import os
 import sys
 import traceback
 import types
+from collections import OrderedDict
 from enum import Enum
 from functools import lru_cache, update_wrapper, wraps
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Generic,
     Iterable,
     List,
     Optional,
@@ -244,13 +246,12 @@ else:
             return lookup
 
 
-_T = TypeVar("_T", bound=type)
-_Value = TypeVar("_Value", bound=object)
+T = TypeVar("T")
 
 
 if TYPE_CHECKING:
 
-    def singleton(orig_cls: _T) -> _T: ...
+    def singleton(orig_cls: T) -> T: ...
 
 else:
 
@@ -261,7 +262,7 @@ else:
         instance = None
 
         @wraps(orig_cls.__new__)
-        def __new__(cls: Type[_Value], *args: Any, **kwargs: Any) -> _Value:
+        def __new__(cls, *args, **kwargs):
             nonlocal instance
             if instance is None:
                 instance = orig_new(cls, *args, **kwargs)
@@ -269,7 +270,7 @@ else:
             return instance
 
         @wraps(orig_cls.__init__)
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
+        def __init__(self, *args, **kwargs):
             pass
 
         orig_cls.__new__ = __new__
@@ -285,3 +286,29 @@ def pointer_str(obj: object) -> str:
     """
     full_repr = object.__repr__(obj)  # gives "<{type} object at {address}>"
     return full_repr.rsplit(" ", 1)[1][:-1]
+
+
+class Deck(Generic[T]):
+    """A deque implementation with O(1) random removals."""
+
+    def __init__(self) -> None:
+        self._queue: OrderedDict[T, None] = OrderedDict()
+
+    def append(self, value: T) -> None:
+        self._queue[value] = None
+
+    def peek(self) -> T:
+        return next(iter(self._queue))
+
+    def pop(self) -> T:
+        value, _ = self._queue.popitem(last=False)
+        return value
+
+    def remove(self, value: T) -> None:
+        del self._queue[value]
+
+    def __len__(self) -> int:
+        return len(self._queue)
+
+    def __bool__(self) -> bool:
+        return bool(self._queue)

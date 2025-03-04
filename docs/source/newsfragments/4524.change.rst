@@ -1,0 +1,1 @@
+:meth:`.Task.cancel` now causes a :exc:`~asyncio.CancelledError` to be throw into the coroutine. This is behavior is *scheduled*, so Tasks will not become cancelled immediately.
