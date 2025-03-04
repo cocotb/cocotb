@@ -34,7 +34,7 @@ ifdef MODELSIM_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-	export MODELSIM_BIN_DIR := $(shell dirname $(CMD))
+	MODELSIM_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 ifdef RTL_LIBRARY
