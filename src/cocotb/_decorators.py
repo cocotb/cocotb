@@ -66,6 +66,8 @@ def resume(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., Re
 
     Results of the converted function are returned from the function call.
 
+    See :ref:`calling_blocking_code` for an example.
+
     Args:
         func: The :term:`coroutine function` to convert into a :term:`blocking function`.
 
@@ -103,6 +105,8 @@ def bridge(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Res
     Task blocks until the converted function finishes.
 
     Results of the converted function are returned from the :keyword:`await` expression.
+
+    See :ref:`calling_blocking_code` for an example.
 
     .. warning::
         Each bridge is implemented with a distinct thread, meaning that all bridges and
