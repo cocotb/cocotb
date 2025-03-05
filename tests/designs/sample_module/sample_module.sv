@@ -166,7 +166,7 @@ generate
     end
 endgenerate
 
-TestInterface intf_arr[2] ();
+TestInterface intf_arr[0:2] ();
 
 generate
     if (INT_PARAM == 12) begin : cond_scope
@@ -199,6 +199,7 @@ always @(posedge clk) begin
     register_array[0] <= 0;
 end
 
+`ifndef __ICARUS__
 //For testing arrays
 reg [7:0]  array_7_downto_4[7:4];
 reg [7:0]  array_4_to_7[4:7];
@@ -215,6 +216,7 @@ always @(posedge stream_in_valid) begin
     array_0_to_3[3] <= 0;
     array_2d[1][28] <= 0;
 end
+`endif
 
 //For testing type assigned to logic
 logic logic_a, logic_b, logic_c;
