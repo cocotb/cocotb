@@ -165,17 +165,17 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.12.2",  # The latest release version.
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "sim-version": "r1.15.2",  # The latest release version.
+        "os": "ubuntu-24.04",
+        "python-version": "3.13",
         "group": "ci",
     },
     {
         "lang": "vhdl",
         "sim": "nvc",
         "sim-version": "master",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "os": "ubuntu-24.04",
+        "python-version": "3.13",
         "group": "experimental",
     },
     # Test Verilator on Ubuntu
