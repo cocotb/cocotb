@@ -709,7 +709,7 @@ void VpiImpl::sim_end() {
     int ok = vpi_control(vpiFinish, vpiDiagTimeLoc);
     // LCOV_EXCL_START
     if (!ok) {
-        LOG_ERROR("VPI: Failed to end simulation");
+        LOG_DEBUG("VPI: Failed to end simulation");
         check_vpi_error();
     }
     // LCOV_EXCL_STOP

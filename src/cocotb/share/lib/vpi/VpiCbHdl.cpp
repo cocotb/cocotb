@@ -131,7 +131,7 @@ int VpiCbHdl::remove() {
     auto err = vpi_remove_cb(get_handle<vpiHandle>());
     // LCOV_EXCL_START
     if (!err) {
-        LOG_WARN("VPI: Unable to remove callback");
+        LOG_DEBUG("VPI: Unable to remove callback");
         check_vpi_error();
         // put it in a removed state so if it fires we can squash it
         m_removed = true;
@@ -159,7 +159,7 @@ int VpiCbHdl::run() {
     auto err = vpi_remove_cb(get_handle<vpiHandle>());
     // LCOV_EXCL_START
     if (!err) {
-        LOG_WARN("VPI: Unable to remove callback");
+        LOG_DEBUG("VPI: Unable to remove callback");
         check_vpi_error();
         // put it in a removed state so if it fires we can squash it
         m_removed = true;
@@ -216,7 +216,7 @@ int VpiValueCbHdl::run() {
         auto err = vpi_remove_cb(get_handle<vpiHandle>());
         // LCOV_EXCL_START
         if (!err) {
-            LOG_WARN("VPI: Unable to remove callback");
+            LOG_DEBUG("VPI: Unable to remove callback");
             check_vpi_error();
             // If we fail to remove the callback, put it in a removed state so
             // if it fires we can squash it.
