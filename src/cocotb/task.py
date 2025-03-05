@@ -316,21 +316,3 @@ class Task(Generic[ResultType]):
         # Hand the coroutine back to the scheduler trampoline.
         yield self
         return self.result()
-
-
-class _RunningTest(Task[None]):
-    """
-    The result of calling a :class:`cocotb.test` decorated object.
-
-    All this class does is change ``__name__`` to show "Test" instead of "Task".
-
-    .. versionchanged:: 1.8
-        Moved to the ``cocotb.task`` module.
-    """
-
-    _name: str = "Test"
-
-    def __init__(self, inst: Coroutine[Any, Any, None], name: str) -> None:
-        super().__init__(inst)
-        self.__name__ = f"{type(self)._name} {name}"
-        self.__qualname__ = self.__name__
