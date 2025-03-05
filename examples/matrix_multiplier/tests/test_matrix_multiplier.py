@@ -14,7 +14,7 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import SimHandleBase
 from cocotb.queue import Queue
-from cocotb.triggers import RisingEdge
+from cocotb.triggers import ReadOnly, RisingEdge
 from cocotb.types import LogicArray, Range
 from cocotb_tools.runner import get_runner
 
@@ -61,8 +61,8 @@ class DataValidMonitor:
     async def _run(self) -> None:
         while True:
             await RisingEdge(self._clk)
+            await ReadOnly()
             if self._valid.value != "1":
-                await RisingEdge(self._valid)
                 continue
             self.values.put_nowait(self._sample())
 

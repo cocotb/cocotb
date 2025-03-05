@@ -21,9 +21,9 @@ module matrix_multiplier #(
   input                           reset_i,
   input                           valid_i,
   output logic                    valid_o,
-  input        [DATA_WIDTH-1:0]   a_i[A_ROWS * A_COLUMNS_B_ROWS],
-  input        [DATA_WIDTH-1:0]   b_i[A_COLUMNS_B_ROWS * B_COLUMNS],
-  output logic [C_DATA_WIDTH-1:0] c_o[A_ROWS * B_COLUMNS]
+  input        [DATA_WIDTH-1:0]   a_i[0:A_ROWS*A_COLUMNS_B_ROWS-1],
+  input        [DATA_WIDTH-1:0]   b_i[0:A_COLUMNS_B_ROWS*B_COLUMNS-1],
+  output logic [C_DATA_WIDTH-1:0] c_o[0:A_ROWS*B_COLUMNS-1]
 );
 
   logic [C_DATA_WIDTH-1:0] c_calc[A_ROWS * B_COLUMNS];

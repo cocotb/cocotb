@@ -32,8 +32,15 @@ from cocotb.triggers import (
     Timer,
     Trigger,
 )
+from cocotb_tools.sim_versions import IcarusVersion
 
+SIM_NAME = cocotb.SIM_NAME.lower()
+SIM_VERSION = cocotb.SIM_VERSION.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+
+icarus_11 = SIM_NAME.startswith("icarus") and IcarusVersion("11") <= IcarusVersion(
+    SIM_VERSION
+) < IcarusVersion("12")
 
 test_flag = False
 
@@ -291,7 +298,7 @@ async def test_event_set_schedule(dut):
     assert waiter_scheduled is True
 
 
-@cocotb.test()
+@cocotb.test(skip=IcarusVersion())
 async def test_last_scheduled_write_wins(dut):
     """
     Test that the last scheduled write for a signal handle is the value that is written.
@@ -306,8 +313,10 @@ async def test_last_scheduled_write_wins(dut):
 
 
 # GHDL unable to put values on nested array types (gh-2588)
+# Icarus 11 doesn't like signals that don't start or end with 0 index.
 @cocotb.test(
-    expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+    skip=icarus_11,
+    expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
 )
 async def test_last_scheduled_write_wins_array(dut):
     """

@@ -16,9 +16,15 @@ import cocotb.triggers
 from cocotb.handle import Immediate, LogicArrayObject, StringObject, _Limits
 from cocotb.triggers import FallingEdge, Timer, ValueChange
 from cocotb.types import Logic, LogicArray
+from cocotb_tools.sim_versions import IcarusVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
+SIM_VERSION = cocotb.SIM_VERSION.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+
+icarus_11 = SIM_NAME.startswith("icarus") and IcarusVersion("11") <= IcarusVersion(
+    SIM_VERSION
+) < IcarusVersion("12")
 
 
 @cocotb.test()
@@ -480,6 +486,7 @@ async def test_immediate_reentrace(dut):
     # GHDL uses the VPI, which does not have a way to infer null ranges
     # Questa's implementation of the VHPI sets vhpiIsUpP incorrectly
     skip=SIM_NAME.startswith("ghdl")
+    or icarus_11
     or (
         SIM_NAME.startswith("modelsim")
         and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
