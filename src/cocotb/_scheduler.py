@@ -38,7 +38,7 @@ import logging
 import os
 import threading
 from collections import OrderedDict
-from typing import Any, Callable, Dict
+from typing import Any, Dict
 
 import cocotb
 import cocotb.handle
@@ -214,9 +214,7 @@ class Scheduler:
     _read_only = ReadOnly()
     _none_outcome = _outcomes.Value(None)
 
-    def __init__(self, test_complete_cb: Callable[[], None]) -> None:
-        self._test_complete_cb = test_complete_cb
-
+    def __init__(self) -> None:
         self.log = logging.getLogger("cocotb.scheduler")
         if _debug:
             self.log.setLevel(logging.DEBUG)
@@ -231,26 +229,9 @@ class Scheduler:
         self._pending_threads = []
         self._pending_events = []  # Events we need to call set on once we've unwound
 
-        self._terminate = False
         self._main_thread = threading.current_thread()
 
         self._current_task = None
-
-    def _handle_termination(self) -> None:
-        """
-        Handle a termination that causes us to move onto the next test.
-        """
-        if _debug:
-            self.log.debug("Scheduler terminating...")
-
-        # cleanup triggers and tasks
-        self._cleanup()
-
-        # clear state
-        self._terminate = False
-
-        # call complete cb, may schedule another test
-        self._test_complete_cb()
 
     def _sim_react(self, trigger: Trigger) -> None:
         """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
@@ -327,7 +308,7 @@ class Scheduler:
         * A GPI trigger
         """
 
-        while self._scheduled_tasks and not self._terminate:
+        while self._scheduled_tasks:
             task, outcome = self._scheduled_tasks.popitem(last=False)
 
             if _debug:
@@ -350,9 +331,7 @@ class Scheduler:
                 self._pending_events.pop(0).set()
 
         # no more pending tasks
-        if self._terminate:
-            self._handle_termination()
-        elif _debug:
+        if _debug:
             self.log.debug("All tasks scheduled, handing control back to simulator")
 
     def _unschedule(self, task: Task[Any]) -> None:
@@ -378,11 +357,7 @@ class Scheduler:
                 trigger._unprime()
                 del self._trigger2tasks[trigger]
 
-        if self._terminate:
-            return
-
-        elif task.complete in self._trigger2tasks:
-            self._react(task.complete)
+        self._react(task.complete)
 
     def _schedule_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
         """Schedule `task` to be resumed when `trigger` fires."""
@@ -570,10 +545,6 @@ class Scheduler:
                 assert result is None
                 self._unschedule(task)
 
-            # Don't handle the result if we're shutting down
-            if self._terminate:
-                return
-
             if not task.done():
                 if _debug:
                     self.log.debug(f"{task!r} yielded {result} ({cocotb.sim_phase})")
@@ -607,38 +578,3 @@ class Scheduler:
                         self._pending_events.append(ext.event)
         finally:
             self._current_task = None
-
-    def _cleanup(self) -> None:
-        """Clear up all our state.
-
-        Unprime all pending triggers and kill off any tasks, stop all externals.
-        """
-        # copy since we modify this in kill
-        items = list((k, list(v)) for k, v in self._trigger2tasks.items())
-
-        # reversing seems to fix gh-928, although the order is still somewhat
-        # arbitrary.
-        for _, waiting in items[::-1]:
-            for task in waiting:
-                if _debug:
-                    self.log.debug(f"Killing {task}")
-                task.kill()
-            # we don't unprime trigger here since removing all tasks waiting on
-            # the trigger should cause it to be unprimed in _unschedule
-        assert not self._trigger2tasks
-
-        # Kill any queued coroutines.
-        # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_tasks.
-        # If that happens a for loop will stop early and then the assert will fail.
-        while self._scheduled_tasks:
-            task, _ = self._scheduled_tasks.popitem(last=False)
-            task.kill()
-
-        if self._main_thread is not threading.current_thread():
-            raise Exception("Cleanup() called outside of the main thread")
-
-        for ext in self._pending_threads:
-            self.log.warning(f"Waiting for {ext.thread} to exit")
-
-    def shutdown_soon(self) -> None:
-        self._terminate = True

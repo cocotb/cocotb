@@ -569,3 +569,16 @@ async def test_extended_identifiers(dut):
 
     for name in names:
         assert dut[name]._name == name
+
+
+@cocotb.test
+async def test_set_at_end_of_test(dut) -> None:
+    """Tests that writes at the end of the test are still applied."""
+    dut.stream_in_data.value = 0
+    await Timer(1)
+    dut.stream_in_data.value = 5
+
+
+@cocotb.test
+async def test_set_at_end_of_test_check(dut) -> None:
+    assert dut.stream_in_data.value == 5

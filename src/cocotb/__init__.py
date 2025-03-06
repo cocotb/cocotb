@@ -24,11 +24,10 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import inspect
 import logging as py_logging
 from enum import auto
 from types import SimpleNamespace
-from typing import Any, Coroutine, Dict, List, Union
+from typing import Dict, List, Union
 
 import cocotb._profiling
 import cocotb.handle
@@ -40,14 +39,24 @@ from cocotb._decorators import (
     resume,
     test,
 )
-from cocotb._deprecation import deprecated
 from cocotb._scheduler import Scheduler
+from cocotb._test import create_task, pass_test, start, start_soon
 from cocotb._utils import DocEnum
-from cocotb.regression import RegressionManager, _Failed, _TestSuccess, pass_test
+from cocotb.regression import RegressionManager
 
 from ._version import __version__
 
-__all__ = ("bridge", "resume", "test", "parametrize", "pass_test", "__version__")
+__all__ = (
+    "bridge",
+    "resume",
+    "test",
+    "parametrize",
+    "pass_test",
+    "create_task",
+    "start",
+    "start_soon",
+    "__version__",
+)
 
 
 log: py_logging.Logger
@@ -121,113 +130,3 @@ class SimPhase(DocEnum):
 
 sim_phase: SimPhase = SimPhase.NORMAL
 """The current phase of the time step."""
-
-
-def _task_done_callback(task: "cocotb.task.Task[Any]") -> None:
-    # if cancelled, do nothing
-    if task.cancelled():
-        return
-    # if there's a Task awaiting this one, don't fail
-    if task.complete in cocotb._scheduler_inst._trigger2tasks:
-        return
-    # if no failure, do nothing
-    e = task.exception()
-    if e is None:
-        return
-    # there was a failure and no one is watching, fail test
-    elif isinstance(e, (_TestSuccess, _Failed, AssertionError)):
-        task._log.info("Test stopped by this task")
-        cocotb.regression_manager._abort_test(e)
-    else:
-        task._log.error("Exception raised by this task")
-        cocotb.regression_manager._abort_test(e)
-
-
-def start_soon(
-    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
-) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Schedule a coroutine to be run concurrently in a :class:`~cocotb.task.Task`.
-
-    Note that this is not an :keyword:`async` function,
-    and the new task will not execute until the calling task yields control.
-
-    Args:
-        coro: A task or coroutine to be run.
-
-    Returns:
-        The :class:`~cocotb.task.Task` that is scheduled to be run.
-
-    .. versionadded:: 1.6
-    """
-    task = create_task(coro)
-    cocotb._scheduler_inst._schedule_task(task)
-    return task
-
-
-@deprecated("Use ``cocotb.start_soon`` instead.")
-async def start(
-    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
-) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
-
-    The calling task will resume execution before control is returned to the simulator.
-
-    When the calling task resumes, the newly scheduled task may have completed,
-    raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
-
-    Args:
-        coro: A task or coroutine to be run.
-
-    Returns:
-        The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
-
-    .. versionadded:: 1.6
-
-    .. deprecated:: 2.0
-        Use :func:`cocotb.start_soon` instead.
-        If you need the scheduled Task to run before continuing the current Task,
-        follow the call to :func:`cocotb.start_soon` with an :class:`await NullTrigger() <cocotb.triggers.NullTrigger>`.
-    """
-    task = start_soon(coro)
-    await cocotb.triggers.NullTrigger()
-    return task
-
-
-def create_task(
-    coro: "Union[cocotb.task.Task[cocotb.task.ResultType], Coroutine[Any, Any, cocotb.task.ResultType]]",
-) -> "cocotb.task.Task[cocotb.task.ResultType]":
-    """
-    Construct a coroutine into a :class:`~cocotb.task.Task` without scheduling the task.
-
-    The task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
-
-    Args:
-        coro: An existing task or a coroutine to be wrapped.
-
-    Returns:
-        Either the provided :class:`~cocotb.task.Task` or a new Task wrapping the coroutine.
-
-    .. versionadded:: 1.6
-    """
-    if isinstance(coro, cocotb.task.Task):
-        return coro
-    elif isinstance(coro, Coroutine):
-        task = cocotb.task.Task[cocotb.task.ResultType](coro)
-        task._add_done_callback(_task_done_callback)
-        return task
-    elif inspect.iscoroutinefunction(coro):
-        raise TypeError(
-            f"Coroutine function {coro} should be called prior to being scheduled."
-        )
-    elif inspect.isasyncgen(coro):
-        raise TypeError(
-            f"{coro.__qualname__} is an async generator, not a coroutine. "
-            "You likely used the yield keyword instead of await."
-        )
-    else:
-        raise TypeError(
-            f"Attempt to add an object of type {type(coro)} to the scheduler, "
-            f"which isn't a coroutine: {coro!r}\n"
-        )
