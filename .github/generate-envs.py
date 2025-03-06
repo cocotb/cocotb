@@ -239,7 +239,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.030",
+        "sim-version": "v5.032",
         "os": "macos-13",
         "python-version": "3.9",
         "group": "ci",
