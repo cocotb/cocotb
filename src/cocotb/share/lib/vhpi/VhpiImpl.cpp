@@ -445,18 +445,29 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
               vhpi_get_str(vhpiFullCaseNameP, new_hdl), gpi_type,
               vhpi_get_str(vhpiKindStrP, query_hdl));
 
-    if (gpi_type != GPI_ARRAY && gpi_type != GPI_GENARRAY &&
-        gpi_type != GPI_MODULE && gpi_type != GPI_STRUCTURE) {
-        if (gpi_type == GPI_LOGIC || gpi_type == GPI_LOGIC_ARRAY)
+    switch (gpi_type) {
+        case GPI_ARRAY: {
+            new_obj = new VhpiArrayObjHdl(this, new_hdl, gpi_type);
+            break;
+        }
+        case GPI_GENARRAY:
+        case GPI_MODULE:
+        case GPI_STRUCTURE:
+        case GPI_PACKAGE: {
+            new_obj = new VhpiObjHdl(this, new_hdl, gpi_type);
+            break;
+        }
+        case GPI_LOGIC:
+        case GPI_LOGIC_ARRAY: {
             new_obj = new VhpiLogicSignalObjHdl(this, new_hdl, gpi_type,
                                                 is_const(new_hdl));
-        else
+            break;
+        }
+        default: {
             new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type,
                                            is_const(new_hdl));
-    } else if (gpi_type == GPI_ARRAY) {
-        new_obj = new VhpiArrayObjHdl(this, new_hdl, gpi_type);
-    } else {
-        new_obj = new VhpiObjHdl(this, new_hdl, gpi_type);
+            break;
+        }
     }
 
     if (new_obj->initialise(name, fq_name)) {
