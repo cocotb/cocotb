@@ -33,7 +33,6 @@ from fractions import Fraction
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
-    Any,
     Union,
     overload,
 )
@@ -51,7 +50,7 @@ def _get_simulator_precision() -> int:
 
 
 # Simulator helper functions
-def get_sim_time(unit: TimeUnit = "step") -> int:
+def get_sim_time(unit: TimeUnit = "step") -> float:
     """Retrieve the simulation time from the simulator.
 
     Args:
@@ -75,17 +74,8 @@ def get_sim_time(unit: TimeUnit = "step") -> int:
         Support ``'step'`` as the the *unit* argument to mean "simulator time step".
     """
     timeh, timel = simulator.get_sim_time()
-
-    result = timeh << 32 | timel
-
-    if unit != "step":
-        result = get_time_from_sim_steps(result, unit)
-
-    return result
-
-
-@overload
-def _ldexp10(frac: int, exp: int) -> int: ...
+    steps = timeh << 32 | timel
+    return get_time_from_sim_steps(steps, unit) if unit != "step" else steps
 
 
 @overload
@@ -96,7 +86,7 @@ def _ldexp10(frac: Union[float, Fraction], exp: int) -> float: ...
 def _ldexp10(frac: Decimal, exp: int) -> Decimal: ...
 
 
-def _ldexp10(frac: Union[float, Fraction, Decimal], exp: int) -> Any:
+def _ldexp10(frac: Union[float, Fraction, Decimal], exp: int) -> Union[float, Decimal]:
     """Like :func:`math.ldexp`, but base 10."""
     # using * or / separately prevents rounding errors if `frac` is a
     # high-precision type
@@ -106,7 +96,7 @@ def _ldexp10(frac: Union[float, Fraction, Decimal], exp: int) -> Any:
         return frac / (10**-exp)
 
 
-def get_time_from_sim_steps(steps: int, unit: TimeUnit) -> int:
+def get_time_from_sim_steps(steps: int, unit: TimeUnit) -> float:
     """Calculate simulation time in the specified *unit* from the *steps* based
     on the simulator precision.
 
