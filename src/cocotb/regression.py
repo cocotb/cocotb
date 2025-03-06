@@ -28,12 +28,10 @@
 """All things relating to regression capabilities."""
 
 import functools
-import hashlib
 import inspect
 import logging
 import os
 import pdb
-import random
 import re
 import time
 import warnings
@@ -48,7 +46,6 @@ from typing import (
     Dict,
     Generic,
     List,
-    NoReturn,
     Optional,
     Sequence,
     Tuple,
@@ -63,8 +60,7 @@ import cocotb
 import cocotb._scheduler
 import cocotb.handle
 from cocotb import _ANSI, simulator
-from cocotb._exceptions import InternalError
-from cocotb._outcomes import Error, Outcome
+from cocotb._test import Failed, SimFailure, Test, TestSuccess
 from cocotb._typing import TimeUnit
 from cocotb._utils import (
     DocEnum,
@@ -72,138 +68,13 @@ from cocotb._utils import (
     want_color_output,
 )
 from cocotb._xunit_reporter import XUnitReporter
-from cocotb.task import Task, _RunningTest
-from cocotb.triggers import SimTimeoutError, Timer, Trigger, with_timeout
+from cocotb.triggers import Timer, Trigger
 from cocotb.utils import get_sim_time
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
 
 _logger = logging.getLogger(__name__)
-
-_Failed: Type[BaseException]
-try:
-    import pytest
-except ModuleNotFoundError:
-    _Failed = AssertionError
-else:
-    try:
-        with pytest.raises(Exception):
-            pass
-    except BaseException as _raises_e:
-        _Failed = type(_raises_e)
-    else:
-        assert False, "pytest.raises doesn't raise an exception when it fails"
-
-
-# TODO remove SimFailure once we have functionality in place to abort the test without
-# having to set an exception.
-class SimFailure(Exception):
-    """A Test failure due to simulator failure."""
-
-
-class _TestSuccess(BaseException):
-    """Base class for all test completion exceptions."""
-
-    def __init__(self, msg: Union[str, None]) -> None:
-        super().__init__(msg)
-        self.msg = msg
-
-
-class Test:
-    """A cocotb test in a regression.
-
-    Args:
-        func:
-            The test function object.
-
-        name:
-            The name of the test function.
-            Defaults to ``func.__qualname__`` (the dotted path to the test function in the module).
-
-        module:
-            The name of the module containing the test function.
-            Defaults to ``func.__module__`` (the name of the module containing the test function).
-
-        doc:
-            The docstring for the test.
-            Defaults to ``func.__doc__`` (the docstring of the test function).
-
-        timeout_time:
-            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
-
-        timeout_unit:
-            Unit of ``timeout_time``, accepts any unit that :class:`~cocotb.triggers.Timer` does.
-
-        expect_fail:
-            If ``True`` and the test fails a functional check via an :keyword:`assert` statement, :func:`pytest.raises`,
-            :func:`pytest.warns`, or :func:`pytest.deprecated_call`, the test is considered to have passed.
-            If ``True`` and the test passes successfully, the test is considered to have failed.
-
-        expect_error:
-            Mark the result as a pass only if one of the given exception types is raised in the test.
-
-        skip:
-            Don't execute this test as part of the regression.
-            The test can still be run manually by setting :envvar:`COCOTB_TESTCASE`.
-
-        stage:
-            Order tests logically into stages.
-            Tests from earlier stages are run before tests from later stages.
-    """
-
-    def __init__(
-        self,
-        *,
-        func: Callable[..., Coroutine[Any, Any, None]],
-        name: Optional[str] = None,
-        module: Optional[str] = None,
-        doc: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: TimeUnit = "step",
-        expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
-        skip: bool = False,
-        stage: int = 0,
-        _expect_sim_failure: bool = False,
-    ) -> None:
-        self.func: Callable[..., Coroutine[Any, Any, None]]
-        if timeout_time is not None:
-            co = func  # must save ref because we overwrite variable "func"
-
-            @functools.wraps(func)
-            async def f(*args, **kwargs):
-                running_co = Task(co(*args, **kwargs))
-
-                try:
-                    res = await with_timeout(running_co, timeout_time, timeout_unit)
-                except SimTimeoutError:
-                    running_co.kill()
-                    raise
-                else:
-                    return res
-
-            self.func = f
-        else:
-            self.func = func
-        self.timeout_time = timeout_time
-        self.timeout_unit = timeout_unit
-        self.expect_fail = expect_fail
-        if isinstance(expect_error, type):
-            expect_error = (expect_error,)
-        if _expect_sim_failure:
-            expect_error += (SimFailure,)
-        self.expect_error = expect_error
-        self._expect_sim_failure = _expect_sim_failure
-        self.skip = skip
-        self.stage = stage
-        self.name = self.func.__qualname__ if name is None else name
-        self.module = self.func.__module__ if module is None else module
-        self.doc = self.func.__doc__ if doc is None else doc
-        if self.doc is not None:
-            # cleanup docstring using `trim` function from PEP257
-            self.doc = inspect.cleandoc(self.doc)
-        self.fullname = f"{self.module}.{self.name}"
 
 
 def _format_doc(docstring: Union[str, None]) -> str:
@@ -250,10 +121,6 @@ class RegressionManager:
 
     def __init__(self) -> None:
         self._test: Test
-        self._test_task: Task[None]
-        self._test_outcome: Union[None, Outcome[Any]] = None
-        self._test_start_time: float
-        self._test_start_sim_time: float
         self.log = _logger
         self._regression_start_time: float
         self._test_results: List[Dict[str, Any]] = []
@@ -404,6 +271,9 @@ class RegressionManager:
                 ", ".join(f.pattern for f in self._filters),
             )
 
+        # start write scheduler
+        cocotb.handle._start_write_scheduler()
+
         # start test loop
         self._regression_start_time = time.time()
         self._first_test = True
@@ -437,28 +307,16 @@ class RegressionManager:
 
             # initialize the test, if it fails, record and continue
             try:
-                self._test_task = _RunningTest(
-                    self._test.func(cocotb.top), self._test.name
-                )
+                self._test.init(self._test_complete)
             except Exception:
                 self._record_test_init_failed()
                 continue
 
             self._log_test_start()
 
-            # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
-            hasher = hashlib.sha1()
-            hasher.update(self._test.fullname.encode())
-            seed = cocotb._random_seed + int(hasher.hexdigest(), 16)
-            random.seed(seed)
-
-            self._test_outcome = None
-            self._test_start_sim_time = get_sim_time("ns")
-            self._test_start_time = time.time()
-
             if self._first_test:
                 self._first_test = False
-                return self._schedule_next_test()
+                return self._test.start()
             else:
                 return self._timer1._prime(self._schedule_next_test)
 
@@ -469,13 +327,7 @@ class RegressionManager:
             # TODO move to Trigger object
             cocotb.sim_phase = cocotb.SimPhase.NORMAL
             trigger._cleanup()
-        cocotb.handle._start_write_scheduler()
-
-        self._test_task._add_done_callback(
-            lambda _: cocotb._scheduler_inst.shutdown_soon()
-        )
-        cocotb._scheduler_inst._schedule_task_internal(self._test_task)
-        cocotb._scheduler_inst._event_loop()
+        self._test.start()
 
     def _tear_down(self) -> None:
         """Called by :meth:`_execute` when there are no more tests to run to finalize the regression."""
@@ -487,14 +339,17 @@ class RegressionManager:
 
         assert not self._test_queue
 
+        # stop the write scheduler
+        cocotb.handle._stop_write_scheduler()
+
         # Write out final log messages
         self._log_test_summary()
 
         # Generate output reports
         self.xunit.write()
 
-        # TODO refactor intialization and finalization into their own module
-        # to prevent circult imports requiring local imports
+        # TODO refactor initialization and finalization into their own module
+        # to prevent circular imports requiring local imports
         from cocotb._init import _shutdown_testbench
 
         _shutdown_testbench()
@@ -510,26 +365,18 @@ class RegressionManager:
         """
 
         # compute test completion time
-        wall_time_s = time.time() - self._test_start_time
-        sim_time_ns = get_sim_time("ns") - self._test_start_sim_time
         test = self._test
-
-        # clean up write scheduler
-        cocotb.handle._stop_write_scheduler()
+        wall_time_s = test.wall_time
+        sim_time_ns = test.sim_time_ns
 
         # score test
-        if self._test_outcome is not None:
-            outcome = self._test_outcome
-        else:
-            assert self._test_task._outcome is not None
-            outcome = self._test_task._outcome
-
         passed: bool
         msg: Union[str, None]
         exc: Union[BaseException, None]
+        outcome = test.result()
         try:
             outcome.get()
-        except _TestSuccess as e:
+        except TestSuccess as e:
             passed, msg = True, e.msg
             exc = remove_traceback_frames(e, ["_test_complete", "get"])
         except BaseException as e:
@@ -566,7 +413,7 @@ class RegressionManager:
                 )
 
         elif test.expect_fail:
-            if isinstance(exc, (AssertionError, _Failed)):
+            if isinstance(exc, (AssertionError, Failed)):
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
@@ -990,23 +837,7 @@ class RegressionManager:
 
     def _fail_simulation(self, msg: str) -> None:
         self._sim_failure = SimFailure(msg)
-        self._abort_test(self._sim_failure)
-        cocotb._scheduler_inst._handle_termination()
-
-    def _abort_test(self, exc: BaseException) -> None:
-        """Force this test to end early, without executing any cleanup.
-
-        This happens when a background task fails, and is consistent with
-        how the behavior has always been. In future, we may want to behave
-        more gracefully to allow the test body to clean up.
-
-        `exc` is the exception that the test should report as its reason for
-        aborting.
-        """
-        if self._test_outcome is not None:  # pragma: no cover
-            raise InternalError("Outcome already has a value, but is being set again.")
-        self._test_outcome = Error(exc)
-        self._test_task.kill()
+        self._test.abort(self._sim_failure)
 
     @staticmethod
     def _safe_divide(a: float, b: float) -> float:
@@ -1300,14 +1131,3 @@ class TestFactory(Generic[F]):
 
             glbs["__cocotb_tests__"].append(test)
             glbs[test.name] = test
-
-
-def pass_test(msg: Union[str, None] = None) -> NoReturn:
-    """Force a test to pass.
-
-    The test will end and enter termination phase when this is called.
-
-    Args:
-        msg: The message to display when the test passes.
-    """
-    raise _TestSuccess(msg)

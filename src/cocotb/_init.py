@@ -120,9 +120,7 @@ def run_regression(_: Any) -> None:
     _setup_regression_manager()
 
     # setup global scheduler system
-    cocotb._scheduler_inst = Scheduler(
-        test_complete_cb=cocotb.regression_manager._test_complete
-    )
+    cocotb._scheduler_inst = Scheduler()
 
     # start Regression Manager
     log.info("Running tests")
