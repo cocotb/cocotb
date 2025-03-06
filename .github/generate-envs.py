@@ -183,28 +183,28 @@ ENVS = [
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "v5.032",  # Latest release version.
-        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "python-version": "3.10",
         "group": "ci",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     {
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "master",
-        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "python-version": "3.10",
         "group": "experimental",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     {
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "v5.026",  # Minimum supported version.
-        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "python-version": "3.10",
         "group": "extended",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     # Test other OSes
     # Icarus homebrew
@@ -233,12 +233,13 @@ ENVS = [
         "os": "macos-13",
         "python-version": "3.9",
         "group": "experimental",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     # Verilator macOS latest release
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.030",
+        "sim-version": "v5.032",
         "os": "macos-13",
         "python-version": "3.9",
         "group": "ci",
