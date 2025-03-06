@@ -187,6 +187,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     {
         "lang": "verilog",
@@ -196,6 +197,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "experimental",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     {
         "lang": "verilog",
@@ -205,6 +207,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "extended",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     # Test other OSes
     # Icarus homebrew
@@ -233,6 +236,7 @@ ENVS = [
         "os": "macos-13",
         "python-version": "3.9",
         "group": "experimental",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     # Verilator macOS latest release
     {
