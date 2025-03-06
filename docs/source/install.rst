@@ -4,7 +4,14 @@
 Installation
 ************
 
+.. note::
+   If you want to install the **development version** of cocotb,
+   `instructions are here <https://docs.cocotb.org/en/development/install_devel.html>`_.
+
 Using cocotb requires installation of prerequisites and installation of cocotb itself.
+
+Alternatively, you may use a package manager, see :ref:`install-package-manager`.
+
 In this document, we are assuming that you already have a
 :ref:`supported simulator<simulator-support>` available in :envvar:`PATH`.
 
@@ -107,8 +114,25 @@ Installation of cocotb
     Use ``pip -V`` to check.
     If this prints "(python 2.7)", use :command:`pip3` or ``python3 -m pip`` in place of :command:`pip` in the command shown.
 
-If you want to install the **development version** of cocotb,
-`instructions are here <https://docs.cocotb.org/en/development/install_devel.html>`_.
+.. _install-package-manager:
+
+Alternative installation using a Package Manager
+================================================
+
+The installation instructions vary depending on your package manager:
+
+.. tab-set::
+
+   .. tab-item:: Guix
+
+      First, set up the `Guix-science channel <https://codeberg.org/guix-science/guix-science>`_. Then, in a terminal, run
+
+      .. code-block:: bash
+
+	  guix install python-cocotb
+
+Post installation
+=================
 
 After installation, you should be able to execute :command:`cocotb-config`.
 If it is not found, you need to append its location to the :envvar:`PATH` environment variable.
