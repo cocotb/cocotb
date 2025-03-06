@@ -183,9 +183,8 @@ ENVS = [
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "v5.032",  # Latest release version.
-        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "python-version": "3.10",
         "group": "ci",
         "may-fail": True,  # cocotb/cocotb#4526
     },
@@ -193,9 +192,8 @@ ENVS = [
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "master",
-        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "python-version": "3.10",
         "group": "experimental",
         "may-fail": True,  # cocotb/cocotb#4526
     },
@@ -203,9 +201,8 @@ ENVS = [
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "v5.026",  # Minimum supported version.
-        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "python-version": "3.10",
         "group": "extended",
         "may-fail": True,  # cocotb/cocotb#4526
     },
