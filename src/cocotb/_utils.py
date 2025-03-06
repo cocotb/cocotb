@@ -258,13 +258,12 @@ else:
             return lookup
 
 
-_T = TypeVar("_T", bound=type)
-_Value = TypeVar("_Value", bound=object)
+T = TypeVar("T")
 
 
 if TYPE_CHECKING:
 
-    def singleton(orig_cls: _T) -> _T: ...
+    def singleton(orig_cls: T) -> T: ...
 
 else:
 
@@ -275,7 +274,7 @@ else:
         instance = None
 
         @wraps(orig_cls.__new__)
-        def __new__(cls: Type[_Value], *args: Any, **kwargs: Any) -> _Value:
+        def __new__(cls, *args, **kwargs):
             nonlocal instance
             if instance is None:
                 instance = orig_new(cls, *args, **kwargs)
@@ -283,7 +282,7 @@ else:
             return instance
 
         @wraps(orig_cls.__init__)
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
+        def __init__(self, *args, **kwargs):
             pass
 
         orig_cls.__new__ = __new__
