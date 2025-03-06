@@ -395,6 +395,11 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
             break;
         }
 
+        case vhpiPackInstK: {
+            gpi_type = GPI_PACKAGE;
+            break;
+        }
+
         case vhpiRootInstK:
         case vhpiIfGenerateK:
         case vhpiForGenerateK:
@@ -970,6 +975,9 @@ GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
             break;
         case GPI_LOADS:
             LOG_WARN("VHPI: Loads iterator not implemented yet");
+            break;
+        case GPI_PACKAGE_SCOPES:
+            new_iter = new VhpiPackageIterator(this);
             break;
         default:
             LOG_WARN("VHPI: Other iterator types not implemented yet");

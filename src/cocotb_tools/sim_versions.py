@@ -45,6 +45,12 @@ class GhdlVersion(LooseVersion):
     pass
 
 
+class NvcVersion(LooseVersion):
+    """Version numbering class for NVC."""
+
+    pass
+
+
 class IcarusVersion(LooseVersion):
     """Version numbering class for Icarus Verilog.
 
