@@ -39,19 +39,19 @@ ENVS = [
         "lang": "verilog",
         "sim": "icarus",
         "sim-version": "apt",
-        # lowest version according to https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
         "os": "ubuntu-20.04",
-        "python-version": "3.6.7",
+        "python-version": "3.6",
         "group": "ci",
+        "setup_python": "pyenv",
     },
     {
         "lang": "verilog",
         "sim": "icarus",
         "sim-version": "apt",
-        # lowest version according to https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
         "os": "ubuntu-20.04",
-        "python-version": "3.7.1",
+        "python-version": "3.7",
         "group": "ci",
+        "setup_python": "pyenv",
     },
     {
         "lang": "verilog",
