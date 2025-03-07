@@ -166,7 +166,7 @@ generate
     end
 endgenerate
 
-TestInterface intf_arr[2] ();
+TestInterface intf_arr[0:1] ();
 
 generate
     if (INT_PARAM == 12) begin : cond_scope
