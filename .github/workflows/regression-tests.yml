@@ -32,6 +32,10 @@ on:
         type: number
         default: 0
         description: Maximum number of parallel matrix jobs
+      setup_python:
+        required: false
+        type: string
+        description: Which Github Action to setup Python
 
 jobs:
 
@@ -84,12 +88,18 @@ jobs:
       if: ${{ inputs.download_artifacts }}
 
       # Install Python
-    - name: Set up Python ${{matrix.python-version}}
-      if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
+    - name: Set up Python ${{matrix.python-version}} (setup-python)
+      if: matrix.setup_python == '' && (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos'))
       uses: actions/setup-python@v5
       with:
         python-version: ${{matrix.python-version}}
         allow-prereleases: true
+    - name: Set up Python ${{matrix.python-version}} (pyenv)
+      if: matrix.setup_python == 'pyenv' && (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos'))
+      uses: gabrielfalcao/pyenv-action@v18
+      with:
+        default: ${{matrix.python-version}}
+        command: pip install -U pip  # upgrade pip after installing python
     - name: Set up Anaconda ${{matrix.python-version}} (Windows)
       if: startsWith(matrix.os, 'windows')
       uses: conda-incubator/setup-miniconda@v3
