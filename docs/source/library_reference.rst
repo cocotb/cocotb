@@ -311,7 +311,7 @@ Simulation Object Handles
 ..
    Excluding the Assignment Methods that are getting their own section below
 
-.. autofunc:: cocotb.handle.HierarchyObjectBase._get
+.. autofunction:: cocotb.handle.HierarchyObjectBase._get
 
 .. autoenum:: cocotb.handle.GPIDiscovery
 
@@ -356,7 +356,7 @@ Miscellaneous
 Test Control
 ------------
 
-.. autofunc:: cocotb.regression.pass_test
+.. autofunction:: cocotb.regression.pass_test
 
 Other Runtime Information
 -------------------------
