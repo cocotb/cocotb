@@ -5,9 +5,9 @@
 Tests for handles
 """
 
-import logging
 import os
 import random
+from typing import Iterable, Tuple
 
 import pytest
 
@@ -121,7 +121,7 @@ async def test_int_values(
     if LANGUAGE == "vhdl" and setimmediate:
         return
     signal = signal_widths[width]
-    int_values_test(signal, width, setimmediate, limits)
+    await int_values_test(signal, width, setimmediate, limits)
 
 
 async def int_values_test(
@@ -131,38 +131,38 @@ async def int_values_test(
     limits: _Limits = _Limits.VECTOR_NBIT,
 ) -> None:
     """Test integer access to a signal."""
-    values = gen_int_test_values(n_bits, limits)
-    for val in values:
+    for input, expected_output in gen_int_test_values(n_bits, limits):
         if setimmediate:
-            signal.value = Immediate(val)
+            signal.value = Immediate(input)
         else:
-            signal.value = val
+            signal.value = input
+
         await Timer(1, "ns")
 
-        if limits == _Limits.VECTOR_NBIT:
-            if val < 0:
-                got = signal.value.to_signed()
-            else:
-                got = signal.value.to_unsigned()
-        else:
-            got = signal.value
-
-        assert got == val
+        assert signal.value == expected_output
 
 
-def gen_int_test_values(n_bits, limits=_Limits.VECTOR_NBIT):
+def gen_int_test_values(
+    n_bits, limits=_Limits.VECTOR_NBIT
+) -> Iterable[Tuple[int, LogicArray]]:
     """Generates a list of int test values for a given number of bits."""
-    unsigned_min = 0
-    unsigned_max = 2**n_bits - 1
-    signed_min = -(2 ** (n_bits - 1))
-    signed_max = 2 ** (n_bits - 1) - 1
 
-    if limits == _Limits.VECTOR_NBIT:
-        return [1, -1, 4, -4, unsigned_min, unsigned_max, signed_min, signed_max]
-    elif limits == _Limits.SIGNED_NBIT:
-        return [1, -1, 4, -4, signed_min, signed_max]
-    else:
-        return [1, -1, 4, -4, unsigned_min, unsigned_max]
+    yield 1, LogicArray.from_unsigned(1, n_bits)
+    yield -1, LogicArray.from_signed(-1, n_bits)
+    yield 4, LogicArray.from_unsigned(4, n_bits)
+    yield -4, LogicArray.from_signed(-4, n_bits)
+
+    if limits != _Limits.SIGNED_NBIT:
+        unsigned_min = 0
+        unsigned_max = 2**n_bits - 1
+        yield unsigned_min, LogicArray.from_unsigned(unsigned_min, n_bits)
+        yield unsigned_max, LogicArray.from_unsigned(unsigned_max, n_bits)
+
+    if limits != _Limits.UNSIGNED_NBIT:
+        signed_min = -(2 ** (n_bits - 1))
+        signed_max = 2 ** (n_bits - 1) - 1
+        yield signed_min, LogicArray.from_signed(signed_min, n_bits)
+        yield signed_max, LogicArray.from_signed(signed_max, n_bits)
 
 
 @cocotb.test
@@ -181,7 +181,7 @@ async def test_vector_overflow(
     if LANGUAGE == "vhdl" and setimmediate:
         return
     signal = signal_widths[width]
-    int_overflow_test(signal, width, test_mode, setimmediate, limits)
+    await int_overflow_test(signal, width, test_mode, setimmediate, limits)
 
 
 async def int_overflow_test(
@@ -230,53 +230,35 @@ def gen_int_unfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
         return signed_min - 1
 
 
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
+@cocotb.test
 @cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer(dut, setimmediate: bool) -> None:
     """Test access to integers."""
-    if (
-        LANGUAGE in ["verilog"]
-        and SIM_NAME.startswith("riviera")
-        or SIM_NAME.startswith("ghdl")
-        or SIM_NAME.startswith("verilator")
-    ):
-        limits = (
-            _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
+    if isinstance(dut.stream_in_int, LogicArrayObject):
+        limits = _Limits.VECTOR_NBIT
     else:
         limits = _Limits.SIGNED_NBIT
 
     await int_values_test(dut.stream_in_int, 32, setimmediate, limits)
 
 
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
+@cocotb.test
 @cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer_overflow(dut, setimmediate: bool) -> None:
     """Test integer overflow."""
-    if (
-        LANGUAGE in ["verilog"]
-        and SIM_NAME.startswith("riviera")
-        or SIM_NAME.startswith("ghdl")
-        or SIM_NAME.startswith("verilator")
-    ):
-        limits = (
-            _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
+    if isinstance(dut.stream_in_int, LogicArrayObject):
+        limits = _Limits.VECTOR_NBIT
     else:
         limits = _Limits.SIGNED_NBIT
 
     await int_overflow_test(dut.stream_in_int, 32, "ovfl", setimmediate, limits)
 
 
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
+@cocotb.test
 @cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer_underflow(dut, setimmediate: bool) -> None:
     """Test integer underflow."""
-    if (
-        LANGUAGE in ["verilog"]
-        and SIM_NAME.startswith("riviera")
-        or SIM_NAME.startswith("ghdl")
-    ):
+    if isinstance(dut.stream_in_int, LogicArrayObject):
         limits = (
             _Limits.VECTOR_NBIT
         )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
@@ -287,13 +269,10 @@ async def test_integer_underflow(dut, setimmediate: bool) -> None:
 
 
 # GHDL unable to find real signals (gh-2589)
-# iverilog unable to find real signals (gh-2590)
+# iverilog unable to set real signals (gh-2590)
 @cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith("icarus")
-    else AttributeError
-    if SIM_NAME.startswith("ghdl")
-    else ()
+    expect_fail=SIM_NAME.startswith("icarus"),
+    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else (),
 )
 async def test_real_assign_double(dut):
     """
@@ -301,42 +280,27 @@ async def test_real_assign_double(dut):
     it matches what we assigned
     """
     val = random.uniform(-1e307, 1e307)
-    log = logging.getLogger("cocotb.test")
-    timer_shortest = Timer(1, "step")
-    await timer_shortest
-    log.info(f"Setting the value {val:g}")
     dut.stream_in_real.value = val
-    await timer_shortest
-    await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
+    await Timer(1, "step")
     got = dut.stream_out_real.value
-    log.info(f"Read back value {got:g}")
-    assert got == val, "Values didn't match!"
+    assert got == val
 
 
 # GHDL unable to find real signals (gh-2589)
-# iverilog unable to find real signals (gh-2590)
+# iverilog unable to set real signals (gh-2590)
 @cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith("icarus")
-    else AttributeError
-    if SIM_NAME.startswith("ghdl")
-    else ()
+    expect_fail=SIM_NAME.startswith("icarus"),
+    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else (),
 )
 async def test_real_assign_int(dut):
     """Assign a random integer value to ensure we can write types convertible to
     int, read it back from the DUT and check it matches what we assigned.
     """
     val = random.randint(-(2**31), 2**31 - 1)
-    log = logging.getLogger("cocotb.test")
-    timer_shortest = Timer(1, "step")
-    await timer_shortest
-    log.info("Setting the value %i", val)
     dut.stream_in_real.value = val
-    await timer_shortest
-    await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
+    await Timer(1, "step")
     got = dut.stream_out_real.value
-    log.info("Read back value %d", got)
-    assert got == val, "Values didn't match!"
+    assert got == val
 
 
 # identifiers starting with `_` are illegal in VHDL

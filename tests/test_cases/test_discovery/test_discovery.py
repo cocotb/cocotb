@@ -278,13 +278,12 @@ async def access_type_bit_verilog_metavalues(dut):
 
 # Riviera discovers integers as nets (gh-2597)
 # GHDL discovers integers as nets (gh-2596)
-# Icarus does not support integer signals (gh-2598)
+# Icarus does not find integers with the correct type (gh-2598)
 @cocotb.test(
-    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
     expect_fail=(
         SIM_NAME.startswith("riviera")
         and LANGUAGE in ["verilog"]
-        or SIM_NAME.startswith(("ghdl", "verilator") or "vcs" in SIM_NAME)
+        or any(sim in SIM_NAME for sim in ("ghdl", "verilator", "icarus", "vcs"))
     ),
 )
 async def access_integer(dut):

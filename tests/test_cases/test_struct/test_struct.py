@@ -16,9 +16,7 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 @cocotb.test(
-    expect_error=(
-        AttributeError if SIM_NAME.startswith(("icarus", "ghdl", "nvc")) else ()
-    ),
+    expect_error=(AttributeError if SIM_NAME.startswith(("ghdl", "nvc")) else ()),
 )
 async def test_packed_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
@@ -43,9 +41,7 @@ is_riviera_2024_04 = (
 
 # Riviera-PRO 2022.10+ ignores writes to the packed struct.
 @cocotb.test(
-    expect_error=(
-        AttributeError if SIM_NAME.startswith(("icarus", "ghdl", "nvc")) else ()
-    ),
+    expect_error=(AttributeError if SIM_NAME.startswith(("ghdl", "nvc")) else ()),
     expect_fail=(
         SIM_NAME.startswith("riviera")
         and RivieraVersion(cocotb.SIM_VERSION) >= "2022.10"

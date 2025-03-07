@@ -32,7 +32,6 @@
 `endif
 
 `ifndef __ICARUS__
-
 `ifndef VERILATOR
 typedef struct
 {
@@ -40,6 +39,7 @@ typedef struct
     logic b_out;
 } test_struct_unpacked;
 `endif // `ifndef VERILATOR
+`endif
 
 typedef struct packed
 {
@@ -47,9 +47,6 @@ typedef struct packed
     logic val_b;
     logic value;
 } test_struct_packed;
-
-
-`endif
 
 interface TestInterface ();
 
@@ -74,17 +71,19 @@ module sample_module #(
 
     output reg                                  stream_in_ready,
     input                                       stream_in_valid,
-`ifndef __ICARUS__
     input  real                                 stream_in_real,
     input  integer                              stream_in_int,
     output real                                 stream_out_real,
     output integer                              stream_out_int,
+    `ifndef __ICARUS__
     `ifndef VERILATOR
     input  test_struct_unpacked                 inout_if,
     `endif
+    `endif
     input  test_struct_packed                   my_struct,
+    `ifndef __ICARUS__
     input  string                               stream_in_string,
-`endif
+    `endif
     input  [7:0]                                stream_in_data,
     input  [31:0]                               stream_in_data_dword,
     input  [38:0]                               stream_in_data_39bit,
