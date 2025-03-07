@@ -1045,7 +1045,7 @@ GpiCbHdl *VhpiImpl::register_nexttime_callback(int (*cb_func)(void *),
         delete cb_hdl;
         return NULL;
     }
-    // LCOV_EXCL_START
+    // LCOV_EXCL_STOP
     cb_hdl->set_cb_info(cb_func, cb_data);
     return cb_hdl;
 }
