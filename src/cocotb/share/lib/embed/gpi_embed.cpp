@@ -114,7 +114,8 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
         return;
         // LCOV_EXCL_STOP
     }
-    LOG_INFO("Using Python interpreter at %ls", interpreter_path);
+    LOG_INFO("Using Python %s interpreter at %ls", PY_VERSION,
+             interpreter_path);
 
 #if PY_VERSION_HEX >= 0x3080000
     /* Use the new Python Initialization Configuration from Python 3.8. */
