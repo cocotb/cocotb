@@ -148,7 +148,15 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "ghdl",
-        "sim-version": "v4.1.0",  # The latest release version.
+        "sim-version": "v4.1.0",
+        "os": "ubuntu-20.04",
+        "python-version": "3.9",
+        "group": "extended",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "ghdl",
+        "sim-version": "v5.0.1",  # The latest release version.
         "os": "ubuntu-20.04",
         "python-version": "3.9",
         "group": "ci",
