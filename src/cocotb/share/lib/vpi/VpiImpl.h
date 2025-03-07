@@ -254,9 +254,9 @@ class VpiSingleIterator : public GpiIterator {
         vpiHandle vpi_hdl = m_parent->get_handle<vpiHandle>();
         m_iterator = vpi_iterate(vpitype, vpi_hdl);
         if (NULL == m_iterator) {
-            LOG_WARN("vpi_iterate returned NULL for type %d for object %s(%d)",
-                     vpitype, vpi_get_str(vpiType, vpi_hdl),
-                     vpi_get(vpiType, vpi_hdl));
+            LOG_DEBUG("vpi_iterate returned NULL for type %d for object %s(%d)",
+                      vpitype, vpi_get_str(vpiType, vpi_hdl),
+                      vpi_get(vpiType, vpi_hdl));
             return;
         }
     }
