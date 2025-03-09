@@ -455,7 +455,7 @@ int VhpiCbHdl::remove() {
     auto err = vhpi_remove_cb(get_handle<vhpiHandleT>());
     // LCOV_EXCL_START
     if (err) {
-        LOG_WARN("VHPI: Unable to remove callback!");
+        LOG_DEBUG("VHPI: Unable to remove callback!");
         check_vhpi_error();
         // If we fail to remove the callback, mark it as removed so once it
         // fires we can squash it then remove the callback cleanly.
@@ -501,7 +501,7 @@ int VhpiCbHdl::run() {
     auto err = vhpi_remove_cb(get_handle<vhpiHandleT>());
     // LCOV_EXCL_START
     if (err) {
-        LOG_WARN("VHPI: Unable to remove callback!");
+        LOG_DEBUG("VHPI: Unable to remove callback!");
         check_vhpi_error();
         // If we fail to remove the callback, mark it as removed so if it fires
         // we can squash it.
@@ -923,7 +923,7 @@ int VhpiValueCbHdl::run() {
         auto err = vhpi_remove_cb(get_handle<vhpiHandleT>());
         // LCOV_EXCL_START
         if (err) {
-            LOG_WARN("VHPI: Unable to remove callback!");
+            LOG_DEBUG("VHPI: Unable to remove callback!");
             check_vhpi_error();
             // If we fail to remove the callback, mark it as removed so if it
             // fires we can squash it.
