@@ -133,7 +133,7 @@ ENVS = [
         "lang": "vhdl",
         "sim": "ghdl",
         "sim-version": "v2.0.0",  # GHDL 2.0 is the minimum supported version.
-        "os": "ubuntu-20.04",
+        "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "extended",
     },
@@ -141,15 +141,23 @@ ENVS = [
         "lang": "vhdl",
         "sim": "ghdl",
         "sim-version": "v3.0.0",
-        "os": "ubuntu-20.04",
+        "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "extended",
     },
     {
         "lang": "vhdl",
         "sim": "ghdl",
-        "sim-version": "v4.1.0",  # The latest release version.
-        "os": "ubuntu-20.04",
+        "sim-version": "v4.1.0",
+        "os": "ubuntu-22.04",
+        "python-version": "3.9",
+        "group": "extended",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "ghdl",
+        "sim-version": "v5.0.1",  # The latest release version.
+        "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci",
     },
@@ -157,7 +165,7 @@ ENVS = [
         "lang": "vhdl",
         "sim": "ghdl",
         "sim-version": "master",
-        "os": "ubuntu-20.04",
+        "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "experimental",
     },
@@ -183,28 +191,28 @@ ENVS = [
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "v5.032",  # Latest release version.
-        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "python-version": "3.10",
         "group": "ci",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     {
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "master",
-        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "python-version": "3.10",
         "group": "experimental",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     {
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "v5.026",  # Minimum supported version.
-        # Needs 22.04 for newer GCC with C++ coroutine support used with --timing mode
         "os": "ubuntu-22.04",
-        "python-version": "3.9",
+        "python-version": "3.10",
         "group": "extended",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     # Test other OSes
     # Icarus homebrew
@@ -233,12 +241,13 @@ ENVS = [
         "os": "macos-13",
         "python-version": "3.9",
         "group": "experimental",
+        "may-fail": True,  # cocotb/cocotb#4526
     },
     # Verilator macOS latest release
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.030",
+        "sim-version": "v5.032",
         "os": "macos-13",
         "python-version": "3.9",
         "group": "ci",

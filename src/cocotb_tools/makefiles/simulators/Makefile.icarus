@@ -44,7 +44,7 @@ ifdef ICARUS_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-    export ICARUS_BIN_DIR := $(shell dirname $(CMD))
+    ICARUS_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 ifdef COCOTB_TOPLEVEL
