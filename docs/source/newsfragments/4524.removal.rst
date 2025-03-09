@@ -1,0 +1,1 @@
+Undocumented ``__name__`` and ``__qualname__`` were removed from :class:`cocotb.task.Task` to mirror :class:`asyncio.Task`.
