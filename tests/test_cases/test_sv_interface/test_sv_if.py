@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import cocotb
+from cocotb.handle import ArrayObject, HierarchyArrayObject
 from cocotb_tools.sim_versions import VerilatorVersion
 
 
@@ -36,10 +37,10 @@ async def test_sv_intf_arr_type(dut):
     print(dut.sv_if_arr)
 
     if cocotb.SIM_NAME.lower().startswith(("xmsim", "modelsim", "riviera")):
-        assert isinstance(dut.sv_if_arr, cocotb.handle.ArrayObject)
+        assert isinstance(dut.sv_if_arr, ArrayObject)
     else:
         # This is correct
-        assert isinstance(dut.sv_if_arr, cocotb.handle.HierarchyArrayObject)
+        assert isinstance(dut.sv_if_arr, HierarchyArrayObject)
 
 
 # Verilator before 5.024 doesn't support interface arrays (gh-3824)
