@@ -52,7 +52,11 @@ from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 if TYPE_CHECKING:
     from typing import Self
 
-    from cocotb.handle import LogicObject, NonIndexableValueObjectBase, ValueObjectBase
+    from cocotb.handle import (
+        LogicObject,
+        ValueObjectBase,
+        _NonIndexableValueObjectBase,
+    )
 
 
 class GPITrigger(Trigger):
@@ -350,10 +354,11 @@ class ValueChange(_EdgeBase):
 
     _edge_type = simulator.VALUE_CHANGE
 
-    def __new__(cls, signal: "NonIndexableValueObjectBase[Any, Any]") -> "ValueChange":
-        if not isinstance(signal, cocotb.handle.NonIndexableValueObjectBase):
+    def __new__(cls, signal: "_NonIndexableValueObjectBase[Any, Any]") -> "ValueChange":
+        if not isinstance(signal, cocotb.handle._NonIndexableValueObjectBase):
             raise TypeError(
-                f"{cls.__qualname__} requires an object derived from NonArrayValueObject which can change value. Got {signal!r} of type {type(signal).__qualname__}"
+                f"{cls.__qualname__} requires a simulation object derived from ValueObjectBase. "
+                f"Got {signal!r} of type {type(signal).__qualname__}"
             )
         return signal.value_change
 
@@ -373,10 +378,11 @@ class Edge(ValueChange):
     """
 
     @deprecated("Use `signal.value_change` instead.")
-    def __new__(cls, signal: "NonIndexableValueObjectBase[Any, Any]") -> "Edge":
-        if not isinstance(signal, cocotb.handle.NonIndexableValueObjectBase):
+    def __new__(cls, signal: "_NonIndexableValueObjectBase[Any, Any]") -> "Edge":
+        if not isinstance(signal, cocotb.handle._NonIndexableValueObjectBase):
             raise TypeError(
-                f"{cls.__qualname__} requires an object derived from NonArrayValueObject which can change value. Got {signal!r} of type {type(signal).__qualname__}"
+                f"{cls.__qualname__} requires a simulation object derived from ValueObjectBase. "
+                f"Got {signal!r} of type {type(signal).__qualname__}"
             )
         return signal._edge
 

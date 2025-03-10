@@ -11,9 +11,9 @@ from cocotb.handle import (
     ArrayObject,
     HierarchyArrayObject,
     HierarchyObject,
-    HierarchyObjectBase,
     LogicArrayObject,
     LogicObject,
+    _HierarchyObjectBase,
 )
 from cocotb.triggers import Timer
 from cocotb_tools.sim_versions import XceliumVersion
@@ -313,7 +313,7 @@ async def test_discover_all(dut):
         if not isinstance(
             obj,
             (
-                HierarchyObjectBase,
+                _HierarchyObjectBase,
                 ArrayObject,
             ),
         ):

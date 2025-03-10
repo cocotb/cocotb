@@ -26,7 +26,13 @@
 import logging
 
 import cocotb
-from cocotb.handle import GPIDiscovery
+from cocotb.handle import (
+    ArrayObject,
+    GPIDiscovery,
+    HierarchyArrayObject,
+    HierarchyObject,
+    LogicArrayObject,
+)
 
 ########################################################################################
 # This is testing handle caching, so it must come first!
@@ -57,8 +63,9 @@ def recursive_dump(parent, log):
     if not isinstance(
         parent,
         (
-            cocotb.handle.HierarchyObjectBase,
-            cocotb.handle.ArrayObject,
+            HierarchyObject,
+            HierarchyArrayObject,
+            ArrayObject,
         ),
     ):
         return 0
@@ -81,9 +88,7 @@ async def recursive_discovery(dut):
     assert expected == actual
     tlog.info("Found a total of %d things", actual)
 
-    assert isinstance(
-        dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.LogicArrayObject
-    )
+    assert isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, LogicArrayObject)
 
 
 @cocotb.test
