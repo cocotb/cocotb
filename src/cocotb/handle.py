@@ -1106,7 +1106,7 @@ class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
         _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
     def get(self) -> Logic:
-        """Return the current value of the simulation object as a :class:.Logic`."""
+        """Return the current value of the simulation object as a :class:`.Logic`."""
         binstr = self._handle.get_signal_val_binstr()
         return Logic(binstr)
 
