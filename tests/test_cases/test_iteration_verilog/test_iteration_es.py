@@ -6,6 +6,7 @@
 import logging
 
 import cocotb
+from cocotb.handle import ArrayObject, HierarchyArrayObject, HierarchyObject
 from cocotb.triggers import First
 
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -27,8 +28,9 @@ async def recursive_discovery(dut):
         if not isinstance(
             parent,
             (
-                cocotb.handle.HierarchyObjectBase,
-                cocotb.handle.ArrayObject,
+                HierarchyObject,
+                HierarchyArrayObject,
+                ArrayObject,
             ),
         ):
             return

@@ -162,7 +162,7 @@ class SimHandleBase(ABC):
         )
 
 
-class RangeableObjectMixin(SimHandleBase):
+class _RangeableObjectMixin(SimHandleBase):
     """Base class for simulation objects that have a range."""
 
     @cached_property
@@ -203,7 +203,7 @@ class GPIDiscovery(DocIntEnum):
     NATIVE = (1, "Native discovery using only the parent's native interface.")
 
 
-class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
+class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     """Base class for hierarchical simulation objects.
 
     Hierarchical objects don't have values, they are just scopes/namespaces of other objects.
@@ -378,7 +378,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         return set(super().__dir__()) | {str(k) for k in self._keys()}
 
 
-class HierarchyObject(HierarchyObjectBase[str]):
+class HierarchyObject(_HierarchyObjectBase[str]):
     r"""A simulation object that is a name-indexed collection of hierarchical simulation objects.
 
     Inherits from :class:`SimHandleBase`.
@@ -505,7 +505,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
         return self._handle.get_handle_by_name(key, discovery_method)
 
 
-class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
+class HierarchyArrayObject(_HierarchyObjectBase[int], _RangeableObjectMixin):
     """A simulation object that is an array of hierarchical simulation objects.
 
     Inherits from :class:`SimHandleBase`.
@@ -946,7 +946,7 @@ ChildObjectT = TypeVar("ChildObjectT", bound=ValueObjectBase[Any, Any])
 
 class ArrayObject(
     ValueObjectBase[Array[ElemValueT], Union[Array[ElemValueT], Sequence[ElemValueT]]],
-    RangeableObjectMixin,
+    _RangeableObjectMixin,
     Generic[ElemValueT, ChildObjectT],
 ):
     """A simulation object that is an array of value-having simulation objects.
@@ -1059,7 +1059,7 @@ class ArrayObject(
             yield self[i]
 
 
-class NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
+class _NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
     """ValueObject that is treated as a single object in the GPI.
 
     NonArrayValueObjects support :meth:`value_change` triggers.
@@ -1079,7 +1079,7 @@ class NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
         return Edge._make(self)
 
 
-class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
+class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
     """A scalar logic simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
@@ -1183,8 +1183,8 @@ class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
 
 
 class LogicArrayObject(
-    NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
-    RangeableObjectMixin,
+    _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
+    _RangeableObjectMixin,
 ):
     """A logic array simulation object.
 
@@ -1335,7 +1335,7 @@ class LogicArrayObject(
         )
 
 
-class RealObject(NonIndexableValueObjectBase[float, float]):
+class RealObject(_NonIndexableValueObjectBase[float, float]):
     """A floating point simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
@@ -1390,7 +1390,7 @@ class RealObject(NonIndexableValueObjectBase[float, float]):
         return self.value
 
 
-class EnumObject(NonIndexableValueObjectBase[int, int]):
+class EnumObject(_NonIndexableValueObjectBase[int, int]):
     """An enumeration simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
@@ -1467,7 +1467,7 @@ class EnumObject(NonIndexableValueObjectBase[int, int]):
         return int(self.value)
 
 
-class IntegerObject(NonIndexableValueObjectBase[int, int]):
+class IntegerObject(_NonIndexableValueObjectBase[int, int]):
     """An integer simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
@@ -1548,8 +1548,8 @@ class IntegerObject(NonIndexableValueObjectBase[int, int]):
 
 
 class StringObject(
-    NonIndexableValueObjectBase[bytes, bytes],
-    RangeableObjectMixin,
+    _NonIndexableValueObjectBase[bytes, bytes],
+    _RangeableObjectMixin,
 ):
     """A string simulation object.
 

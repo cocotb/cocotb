@@ -7,6 +7,7 @@ import logging
 import os
 
 import cocotb
+from cocotb.handle import ArrayObject, HierarchyArrayObject, HierarchyObject
 from cocotb.triggers import Combine, Timer
 
 
@@ -45,8 +46,9 @@ async def recursive_discovery(dut):
         if not isinstance(
             parent,
             (
-                cocotb.handle.HierarchyObjectBase,
-                cocotb.handle.ArrayObject,
+                HierarchyObject,
+                HierarchyArrayObject,
+                ArrayObject,
             ),
         ):
             return 0
