@@ -402,6 +402,8 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 class HierarchyObject(HierarchyObjectBase[str]):
     r"""A simulation object that is a name-indexed collection of hierarchical simulation objects.
 
+    Inherits from :class:`SimHandleBase`.
+
     This class is used for named hierarchical structures, such as "generate blocks" or "module"/"entity" instantiations.
 
     Children under this structure are found by using the name of the child with either the attribute syntax or index syntax.
@@ -526,6 +528,8 @@ class HierarchyObject(HierarchyObjectBase[str]):
 
 class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
     """A simulation object that is an array of hierarchical simulation objects.
+
+    Inherits from :class:`SimHandleBase`.
 
     This class is used for array-like hierarchical structures like "generate loops".
 
@@ -819,7 +823,10 @@ ValueSetT = TypeVar("ValueSetT")
 
 
 class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
-    """Abstract base class for simulation objects that have a value."""
+    """Abstract base class for simulation objects that have a value.
+
+    Inherits from :class:`SimHandleBase`.
+    """
 
     @property
     def value(self) -> ValueGetT:
@@ -965,6 +972,8 @@ class ArrayObject(
 ):
     """A simulation object that is an array of value-having simulation objects.
 
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
+
     With Verilog simulation objects, unpacked vectors are mapped to this type.
     Packed vectors are typically mapped to :class:`LogicArrayObject`.
 
@@ -1094,6 +1103,8 @@ class NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
 class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
     """A scalar logic simulation object.
 
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
+
     Verilog data types that map to this object:
 
         * ``logic``
@@ -1136,7 +1147,7 @@ class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
         _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
     def get(self) -> Logic:
-        """Return the current value of the simulation object as a :class:.Logic`."""
+        """Return the current value of the simulation object as a :class:`.Logic`."""
         binstr = self._handle.get_signal_val_binstr()
         return Logic(binstr)
 
@@ -1197,6 +1208,8 @@ class LogicArrayObject(
     RangeableObjectMixin,
 ):
     """A logic array simulation object.
+
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
 
     Verilog types that map to this object:
 
@@ -1346,6 +1359,8 @@ class LogicArrayObject(
 class RealObject(NonIndexableValueObjectBase[float, float]):
     """A floating point simulation object.
 
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
+
     This type is used when a ``real`` object in VHDL or ``float`` object in Verilog is seen.
     """
 
@@ -1398,6 +1413,8 @@ class RealObject(NonIndexableValueObjectBase[float, float]):
 
 class EnumObject(NonIndexableValueObjectBase[int, int]):
     """An enumeration simulation object.
+
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
 
     This type is used when an enumerated-type simulation object is seen that aren't a "logic" or similar type.
     The value of this object is represented with an :class:`int`.
@@ -1473,6 +1490,8 @@ class EnumObject(NonIndexableValueObjectBase[int, int]):
 
 class IntegerObject(NonIndexableValueObjectBase[int, int]):
     """An integer simulation object.
+
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
 
     Verilog types that map to this object:
 
@@ -1554,6 +1573,8 @@ class StringObject(
     RangeableObjectMixin,
 ):
     """A string simulation object.
+
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
 
     This type is used when a ``string`` (VHDL or Verilog) simulation object is seen.
     """
