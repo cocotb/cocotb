@@ -302,6 +302,8 @@ Simulator Objects
 
 .. module:: cocotb.handle
 
+.. autoclass:: GPIDiscovery
+
 .. autoclass:: HierarchyObject
     :members:
     :inherited-members: SimHandleBase
