@@ -40,7 +40,7 @@ ifdef ALDEC_BIN_DIR
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-	export ALDEC_BIN_DIR := $(shell dirname $(CMD))
+	ALDEC_BIN_DIR := $(shell dirname $(CMD))
 endif
 
 ifeq ($(GUI),1)
