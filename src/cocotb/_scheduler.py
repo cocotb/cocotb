@@ -38,11 +38,10 @@ import logging
 import os
 import threading
 from collections import OrderedDict
-from typing import Any, Callable, Dict
+from typing import Any, Dict, Union
 
 import cocotb
 import cocotb.handle
-from cocotb import _outcomes, _py_compat
 from cocotb._exceptions import InternalError
 from cocotb._gpi_triggers import (
     GPITrigger,
@@ -51,8 +50,10 @@ from cocotb._gpi_triggers import (
     ReadWrite,
     Trigger,
 )
+from cocotb._outcomes import Error, Value, capture
 from cocotb._profiling import profiling_context
-from cocotb.task import Task
+from cocotb._py_compat import insertion_ordered_dict
+from cocotb.task import Task, _TaskState
 from cocotb.triggers import Event
 
 # Sadly the Python standard logging module is very slow so it's better not to
@@ -212,45 +213,25 @@ class Scheduler:
     _next_time_step = NextTimeStep()
     _read_write = ReadWrite()
     _read_only = ReadOnly()
-    _none_outcome = _outcomes.Value(None)
 
-    def __init__(self, test_complete_cb: Callable[[], None]) -> None:
-        self._test_complete_cb = test_complete_cb
-
+    def __init__(self) -> None:
         self.log = logging.getLogger("cocotb.scheduler")
         if _debug:
             self.log.setLevel(logging.DEBUG)
 
         # A dictionary of pending tasks for each trigger,
         # indexed by trigger
-        self._trigger2tasks: Dict[Trigger, list[Task]] = (
-            _py_compat.insertion_ordered_dict()
-        )
+        self._trigger2tasks: Dict[Trigger, list[Task]] = insertion_ordered_dict()
 
-        self._scheduled_tasks: OrderedDict[Task[Any], _outcomes.Outcome] = OrderedDict()
+        self._scheduled_tasks: OrderedDict[Task[Any], Union[BaseException, None]] = (
+            OrderedDict()
+        )
         self._pending_threads = []
         self._pending_events = []  # Events we need to call set on once we've unwound
 
-        self._terminate = False
         self._main_thread = threading.current_thread()
 
         self._current_task = None
-
-    def _handle_termination(self) -> None:
-        """
-        Handle a termination that causes us to move onto the next test.
-        """
-        if _debug:
-            self.log.debug("Scheduler terminating...")
-
-        # cleanup triggers and tasks
-        self._cleanup()
-
-        # clear state
-        self._terminate = False
-
-        # call complete cb, may schedule another test
-        self._test_complete_cb()
 
     def _sim_react(self, trigger: Trigger) -> None:
         """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
@@ -327,12 +308,12 @@ class Scheduler:
         * A GPI trigger
         """
 
-        while self._scheduled_tasks and not self._terminate:
-            task, outcome = self._scheduled_tasks.popitem(last=False)
+        while self._scheduled_tasks:
+            task, exc = self._scheduled_tasks.popitem(last=False)
 
             if _debug:
                 self.log.debug(f"Scheduling task {task}")
-            self._resume_task(task, outcome)
+            self._resume_task(task, exc)
             if _debug:
                 self.log.debug(f"Scheduled task {task}")
 
@@ -350,9 +331,7 @@ class Scheduler:
                 self._pending_events.pop(0).set()
 
         # no more pending tasks
-        if self._terminate:
-            self._handle_termination()
-        elif _debug:
+        if _debug:
             self.log.debug("All tasks scheduled, handing control back to simulator")
 
     def _unschedule(self, task: Task[Any]) -> None:
@@ -378,17 +357,11 @@ class Scheduler:
                 trigger._unprime()
                 del self._trigger2tasks[trigger]
 
-        if self._terminate:
-            return
-
-        elif task.complete in self._trigger2tasks:
-            self._react(task.complete)
-
     def _schedule_task_upon(self, task: Task[Any], trigger: Trigger) -> None:
         """Schedule `task` to be resumed when `trigger` fires."""
         # TODO Move this all into Task
         task._trigger = trigger
-        task._state = Task._State.PENDING
+        task._state = _TaskState.PENDING
 
         trigger_tasks = self._trigger2tasks.setdefault(trigger, [])
         trigger_tasks.append(task)
@@ -405,7 +378,7 @@ class Scheduler:
             self._trigger2tasks.pop(trigger)
 
             # replace it with a new trigger that throws back the exception
-            self._schedule_task_internal(task, outcome=_outcomes.Error(e))
+            self._schedule_task_internal(task, e)
 
     def _schedule_task(self, task: Task[Any]) -> None:
         """Queue *task* for scheduling.
@@ -420,11 +393,11 @@ class Scheduler:
         self._schedule_task_internal(task)
 
     def _schedule_task_internal(
-        self, task: Task[Any], outcome: _outcomes.Outcome[Any] = _none_outcome
+        self, task: Task[Any], exc: Union[BaseException, None] = None
     ) -> None:
         # TODO Move state tracking into Task
-        task._state = Task._State.SCHEDULED
-        self._scheduled_tasks[task] = outcome
+        task._state = _TaskState.SCHEDULED
+        self._scheduled_tasks[task] = exc
 
     def _queue_function(self, task):
         """Queue a task for execution and move the containing thread
@@ -444,13 +417,13 @@ class Scheduler:
         async def wrapper():
             # This function runs in the scheduler thread
             try:
-                _outcome = _outcomes.Value(await task)
+                _outcome = Value(await task)
             except (KeyboardInterrupt, SystemExit):
                 # Allow these to bubble up to the execution root to fail the sim immediately.
                 # This follows asyncio's behavior.
                 raise
             except BaseException as e:
-                _outcome = _outcomes.Error(e)
+                _outcome = Error(e)
             event.outcome = _outcome
             # Notify the current (scheduler) thread that we are about to wake
             # up the background (`@external`) thread, making sure to do so
@@ -482,7 +455,7 @@ class Scheduler:
         # calling task (but not the thread) until the external completes
 
         def execute_external(func, _waiter):
-            _waiter._outcome = _outcomes.capture(func, *args, **kwargs)
+            _waiter._outcome = capture(func, *args, **kwargs)
             if _debug:
                 self.log.debug(
                     f"Execution of external routine done {threading.current_thread()}"
@@ -508,43 +481,7 @@ class Scheduler:
 
         return wrapper()
 
-    # This collection of functions parses a trigger out of the object
-    # that was yielded by a task, converting `list` -> `Waitable`,
-    # `Waitable` -> `Task`, `Task` -> `Trigger`.
-    # Doing them as separate functions allows us to avoid repeating unnecessary
-    # `isinstance` checks.
-
-    def _trigger_from_started_task(self, result: Task) -> Trigger:
-        if _debug:
-            self.log.debug(f"Joining to already running task: {result}")
-        return result.complete
-
-    def _trigger_from_unstarted_task(self, result: Task) -> Trigger:
-        self._schedule_task_internal(result)
-        if _debug:
-            self.log.debug(f"Scheduling unstarted task: {result!r}")
-        return result.complete
-
-    def _trigger_from_any(self, result) -> Trigger:
-        """Convert a yielded object into a Trigger instance"""
-        # note: the order of these can significantly impact performance
-
-        if isinstance(result, Trigger):
-            return result
-
-        # TODO move this into Task
-        if isinstance(result, Task):
-            if result._state is Task._State.UNSTARTED:
-                return self._trigger_from_unstarted_task(result)
-            else:
-                return self._trigger_from_started_task(result)
-
-        raise TypeError(
-            f"Coroutine yielded an object of type {type(result)}, which the scheduler can't "
-            f"handle: {result!r}\n"
-        )
-
-    def _resume_task(self, task: Task, outcome: _outcomes.Outcome[Any]) -> None:
+    def _resume_task(self, task: Task, exc: Union[BaseException, None]) -> None:
         """Resume *task* with *outcome*.
 
         Args:
@@ -562,29 +499,25 @@ class Scheduler:
         try:
             self._current_task = task
 
-            result = task._advance(outcome=outcome)
+            trigger = task._advance(exc)
 
             if task.done():
                 if _debug:
                     self.log.debug(f"{task} completed with {task._outcome}")
-                assert result is None
+                assert trigger is None
                 self._unschedule(task)
-
-            # Don't handle the result if we're shutting down
-            if self._terminate:
-                return
 
             if not task.done():
                 if _debug:
-                    self.log.debug(f"{task!r} yielded {result} ({cocotb.sim_phase})")
-                try:
-                    result = self._trigger_from_any(result)
-                except TypeError as exc:
-                    # restart this task with an exception object telling it that
-                    # it wasn't allowed to yield that
-                    self._schedule_task_internal(task, _outcomes.Error(exc))
+                    self.log.debug(f"{task!r} yielded {trigger} ({cocotb.sim_phase})")
+                if not isinstance(trigger, Trigger):
+                    e = TypeError(
+                        f"Coroutine yielded an object of type {type(trigger)}, which the scheduler can't "
+                        f"handle: {trigger!r}\n"
+                    )
+                    self._schedule_task_internal(task, e)
                 else:
-                    self._schedule_task_upon(task, result)
+                    self._schedule_task_upon(task, trigger)
 
             # We do not return from here until pending threads have completed, but only
             # from the main thread, this seems like it could be problematic in cases
@@ -607,38 +540,3 @@ class Scheduler:
                         self._pending_events.append(ext.event)
         finally:
             self._current_task = None
-
-    def _cleanup(self) -> None:
-        """Clear up all our state.
-
-        Unprime all pending triggers and kill off any tasks, stop all externals.
-        """
-        # copy since we modify this in kill
-        items = list((k, list(v)) for k, v in self._trigger2tasks.items())
-
-        # reversing seems to fix gh-928, although the order is still somewhat
-        # arbitrary.
-        for _, waiting in items[::-1]:
-            for task in waiting:
-                if _debug:
-                    self.log.debug(f"Killing {task}")
-                task.kill()
-            # we don't unprime trigger here since removing all tasks waiting on
-            # the trigger should cause it to be unprimed in _unschedule
-        assert not self._trigger2tasks
-
-        # Kill any queued coroutines.
-        # We use a while loop because task.kill() calls _unschedule(), which will remove the task from _pending_tasks.
-        # If that happens a for loop will stop early and then the assert will fail.
-        while self._scheduled_tasks:
-            task, _ = self._scheduled_tasks.popitem(last=False)
-            task.kill()
-
-        if self._main_thread is not threading.current_thread():
-            raise Exception("Cleanup() called outside of the main thread")
-
-        for ext in self._pending_threads:
-            self.log.warning(f"Waiting for {ext.thread} to exit")
-
-    def shutdown_soon(self) -> None:
-        self._terminate = True

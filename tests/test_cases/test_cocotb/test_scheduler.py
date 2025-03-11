@@ -21,7 +21,7 @@ from common import MyException, assert_takes
 import cocotb
 import cocotb.utils
 from cocotb.clock import Clock
-from cocotb.task import Task
+from cocotb.task import CancellationError, Task
 from cocotb.triggers import (
     Combine,
     Event,
@@ -488,7 +488,7 @@ async def test_test_repr(_):
     """Test RunningTest.__repr__"""
     log = logging.getLogger("cocotb.test")
 
-    current_test = cocotb.regression_manager._test_task
+    current_test = cocotb.regression_manager._test._main_task
     log.info(repr(current_test))
     assert re.match(
         r"<Test test_test_repr running coro=test_test_repr\(\)>", repr(current_test)
@@ -506,7 +506,7 @@ class TestClassRepr(Coroutine):
     async def check_repr(self, dut):
         log = logging.getLogger("cocotb.test")
 
-        current_test = cocotb.regression_manager._test_task
+        current_test = cocotb.regression_manager._test._main_task
         log.info(repr(current_test))
         assert re.match(
             r"<Test TestClassRepr running coro=TestClassRepr\(\)>", repr(current_test)
@@ -780,26 +780,58 @@ async def test_task_exception(_):
     assert str(task.exception()) == "msg1234"
 
 
-@cocotb.test()
-async def test_cancel_task(_):
-    async def coro():
-        return 0
+@cocotb.test
+async def test_cancel_task(_: object) -> None:
+    cancelled: bool = False
 
-    task = cocotb.start_soon(coro())
+    async def coro(will_be_cancelled: bool) -> None:
+        try:
+            await Timer(10, "ns")
+        except CancelledError:
+            nonlocal cancelled
+            cancelled = True
+            raise
+        else:
+            assert not will_be_cancelled
+
+    # Test Task succeeds successfully.
+    task = cocotb.start_soon(coro(False))
+    assert not cancelled
     assert not task.cancelled()
     assert not task.done()
     await task
+    assert not cancelled
     assert not task.cancelled()
     assert task.done()
 
-    task = cocotb.start_soon(coro())
-    with pytest.warns(FutureWarning):
-        task.cancel("msg1234")
+    cancelled = False
+    task = cocotb.start_soon(coro(True))
+    await NullTrigger()
+    task.cancel("msg1234")
+    await Timer(1, "ns")
+    assert cancelled
     assert task.cancelled()
+    assert task.done()
     with pytest.raises(CancelledError, match="msg1234"):
         task.result()
     with pytest.raises(CancelledError, match="msg1234"):
         task.exception()
+
+
+@cocotb.test(expect_error=CancellationError)
+async def test_cancel_task_cancellation_error(_: object) -> None:
+    a = Event()
+
+    async def coro():
+        try:
+            await a.wait()
+        except CancelledError:
+            pass
+
+    task = cocotb.start_soon(coro())
+    await NullTrigger()
+    task.cancel()
+    await Timer(1, "ns")
 
 
 @cocotb.test()
@@ -880,8 +912,7 @@ async def test_task_done_callback_cancelled(_) -> None:
     callback_ran = False
     cancelled_task._add_done_callback(done_callback)
     await Timer(1, "ns")
-    with pytest.warns(FutureWarning):
-        cancelled_task.cancel()
+    cancelled_task.cancel()
     await NullTrigger()
     assert callback_ran
 

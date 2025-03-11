@@ -1045,7 +1045,7 @@ GpiCbHdl *VhpiImpl::register_nexttime_callback(int (*cb_func)(void *),
         delete cb_hdl;
         return NULL;
     }
-    // LCOV_EXCL_START
+    // LCOV_EXCL_STOP
     cb_hdl->set_cb_info(cb_func, cb_data);
     return cb_hdl;
 }
@@ -1055,7 +1055,7 @@ void VhpiImpl::sim_end() {
     int err = vhpi_control(vhpiFinish, vhpiDiagTimeLoc);
     // LCOV_EXCL_START
     if (err) {
-        LOG_ERROR("VHPI: Failed to end simulation");
+        LOG_DEBUG("VHPI: Failed to end simulation");
         check_vhpi_error();
     }
     // LCOV_EXCL_STOP

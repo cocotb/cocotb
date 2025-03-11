@@ -721,7 +721,7 @@ _trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 # Only the last scheduled write to a particular handle in a timestep is performed.
 _write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], _GPISetAction, Any]]" = OrderedDict()
 
-_write_task: "Union[Task[None], None]" = None
+_write_task: Union[Task[None], None] = None
 
 _writes_pending = Event()
 
@@ -736,7 +736,8 @@ async def _do_writes() -> None:
 def _start_write_scheduler() -> None:
     global _write_task
     if _write_task is None:
-        _write_task = cocotb.start_soon(_do_writes())
+        _write_task = Task(_do_writes())
+        cocotb._scheduler_inst._schedule_task(_write_task)
 
 
 def _stop_write_scheduler() -> None:
@@ -1267,7 +1268,7 @@ class LogicArrayObject(
             ValueError: If *value* would not fit in the bounds of the simulation object.
             OverflowError:
                 If :class:`int` *value* is out of the range that can be represented by the target:
-                -2**(Nbits - 1) <= value <= 2**Nbits - 1
+                ``-2**(Nbits - 1) <= value <= 2**Nbits - 1``.
 
         .. versionchanged:: 2.0
             Using :class:`ctypes.Structure` objects to set values was removed.

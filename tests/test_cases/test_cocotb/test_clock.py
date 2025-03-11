@@ -109,12 +109,10 @@ async def test_clocks_with_other_number_types(dut):
 
     clk1 = cocotb.start_soon(Clock(dut.clk, decimal.Decimal("1"), unit="ns").start())
     await Timer(10, "ns")
-    with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):
-        clk1.cancel()
+    clk1.cancel()
     clk2 = cocotb.start_soon(Clock(dut.clk, fractions.Fraction(1), unit="ns").start())
     await Timer(10, "ns")
-    with pytest.warns(FutureWarning, match="cause a CancelledError to be thrown"):
-        clk2.cancel()
+    clk2.cancel()
 
 
 @cocotb.test
@@ -139,8 +137,7 @@ async def test_clock_stop_and_restart_by_killing(dut) -> None:
     task = c.start()
     for _ in range(10):
         await RisingEdge(dut.clk)
-    with pytest.warns(FutureWarning):
-        task.cancel()
+    task.cancel()
     await NullTrigger()  # cancel() schedules the done callback
     c.start()
     for _ in range(10):
