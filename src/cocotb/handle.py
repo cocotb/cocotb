@@ -303,8 +303,8 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         self._discovered = True
 
     def _get(
-        self, key: str, discovery_method: GPIDiscovery = GPIDiscovery.AUTO
-    ) -> Optional[simulator.gpi_sim_hdl]:
+        self, key: KeyType, discovery_method: GPIDiscovery = GPIDiscovery.AUTO
+    ) -> Union[SimHandleBase, None]:
         """Query the simulator for an object with the specified *key*.
 
         Like Python's native dictionary ``get``-function, this returns ``None`` if the object
@@ -322,9 +322,6 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         Returns:
             The child object, or ``None`` if not found.
         """
-        return self._handle.get_handle_by_name(key, discovery_method)
-
-    def __getitem__(self, key: KeyType) -> SimHandleBase:
         # try to use cached value
         try:
             return self._sub_handles[key]
@@ -332,9 +329,9 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
             pass
 
         # try to get value from GPI
-        new_handle = self._get_handle_by_key(key)
-        if not new_handle:
-            raise KeyError(f"{self._path} contains no child object named {key}")
+        new_handle = self._get_handle_by_key(key, discovery_method)
+        if new_handle is None:
+            return None
 
         # if successful, construct and cache
         sub_handle = SimHandle(new_handle, self._child_path(key))
@@ -343,11 +340,14 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         return sub_handle
 
     @abstractmethod
-    def _get_handle_by_key(self, key: KeyType) -> Optional[simulator.gpi_sim_hdl]:
+    def _get_handle_by_key(
+        self, key: KeyType, discovery_method: GPIDiscovery
+    ) -> Union[simulator.gpi_sim_hdl, None]:
         """Get child object by key from the simulator.
 
         Args:
             key: The key of the child object.
+            discovery_method: How to discover the object using the GPI.
 
         Returns:
             A raw simulator handle for the child object at the given key, or ``None``.
@@ -458,10 +458,16 @@ class HierarchyObject(HierarchyObjectBase[str]):
         if name.startswith("_"):
             return object.__getattribute__(self, name)  # type: ignore[no-any-return]  # this will always AttributeError
 
-        try:
-            return self[name]
-        except KeyError as e:
-            raise AttributeError(str(e)) from None
+        handle = self._get(name)
+        if handle is None:
+            raise AttributeError(f"{self._path} contains no child object named {name}")
+        return handle
+
+    def __getitem__(self, key: str) -> SimHandleBase:
+        handle = self._get(key)
+        if handle is None:
+            raise KeyError(f"{self._path} contains no child object named {key}")
+        return handle
 
     @deprecated(
         "Use `handle[child_name]` syntax instead. If extended identifiers are needed simply add a '\\' character before and after the name."
@@ -492,10 +498,10 @@ class HierarchyObject(HierarchyObjectBase[str]):
         if extended:
             name = "\\" + name + "\\"
 
-        try:
-            return self[name]
-        except KeyError as e:
-            raise AttributeError(str(e)) from None
+        handle = self._get(name)
+        if handle is None:
+            raise AttributeError(f"{self._path} contains no child object named {name}")
+        return handle
 
     def _child_path(self, key: str) -> str:
         delimiter = "::" if self._type == "GPI_PACKAGE" else "."
@@ -504,9 +510,10 @@ class HierarchyObject(HierarchyObjectBase[str]):
     def _sub_handle_key(self, name: str) -> str:
         return name
 
-    def _get_handle_by_key(self, key: str) -> Optional[simulator.gpi_sim_hdl]:
-        # this stays to enable __get_item__ symmetry with HierarchyArrayObject
-        return self._get(key)
+    def _get_handle_by_key(
+        self, key: str, discovery_method: GPIDiscovery
+    ) -> Union[simulator.gpi_sim_hdl, None]:
+        return self._handle.get_handle_by_name(key, discovery_method)
 
 
 class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
@@ -571,16 +578,23 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
     def _child_path(self, key: int) -> str:
         return f"{self._path}[{key}]"
 
-    def _get_handle_by_key(self, key: int) -> Optional[simulator.gpi_sim_hdl]:
+    def _get_handle_by_key(
+        self, key: int, discovery_method: GPIDiscovery
+    ) -> Union[simulator.gpi_sim_hdl, None]:
+        if discovery_method is not GPIDiscovery.AUTO:
+            raise NotImplementedError(
+                f"Only GPIDiscovery.AUTO is supported for {type(self).__qualname__} right now"
+            )
         return self._handle.get_handle_by_index(key)
 
     def __getitem__(self, key: int) -> SimHandleBase:
         if isinstance(key, slice):
             raise TypeError("Slice indexing is not supported")
-        try:
-            return super().__getitem__(key)
-        except KeyError as e:
-            raise IndexError(str(e)) from None
+
+        handle = self._get(key)
+        if handle is None:
+            raise IndexError(f"{self._path} contains no child object at index {key}")
+        return handle
 
     # ideally `__len__` could be implemented in terms of `range`, but `range` doesn't work universally.
 
