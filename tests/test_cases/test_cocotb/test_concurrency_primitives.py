@@ -349,3 +349,109 @@ async def test_Combine_objects_shared_by_multiple(_: Any) -> None:
         e.set()
     await Combine(*waiters)
     assert count == 5
+
+
+@cocotb.test
+async def test_Combine_task_cancelled(_: Any) -> None:
+    """Test that cancelling a Task waiting on a Combine cleans waiter tasks."""
+
+    triggers = [MyTrigger() for _ in range(5)]
+
+    async def waiter() -> None:
+        await Combine(*triggers)
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1, "ns")
+    for t in triggers:
+        assert t.primed == 1
+    for t in triggers:
+        assert t.unprimed == 0
+    task.cancel()
+    await Timer(1, "ns")
+    for t in triggers:
+        assert t.primed == 1
+    for t in triggers:
+        assert t.unprimed == 1
+
+
+@cocotb.test
+async def test_First_task_cancelled(_: Any) -> None:
+    """Test that cancelling a Task waiting on a First cleans waiter tasks."""
+
+    triggers = [MyTrigger() for _ in range(5)]
+
+    async def waiter() -> None:
+        await First(*triggers)
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1, "ns")
+    for t in triggers:
+        assert t.primed == 1
+    for t in triggers:
+        assert t.unprimed == 0
+    task.cancel()
+    await Timer(1, "ns")
+    for t in triggers:
+        assert t.primed == 1
+    for t in triggers:
+        assert t.unprimed == 1
+
+
+@cocotb.test
+async def test_Combine_task_being_waited_cancelled(_: Any) -> None:
+    """Test cancelling a Task being awaited by a Combine causes it to finish."""
+    e = Event()
+
+    async def wait_forever() -> None:
+        await e.wait()
+
+    tasks = [cocotb.start_soon(wait_forever()) for _ in range(5)]
+
+    async def wait_on_tasks() -> None:
+        await Combine(*tasks)
+
+    waiter_task = cocotb.start_soon(wait_on_tasks())
+    await Timer(1, "ns")
+
+    # cancel just one task
+    tasks[0].cancel()
+
+    # check other tasks haven't been cancelled and the Combine isn't finished.
+    await Timer(1, "ns")
+    assert not waiter_task.done()
+    for t in tasks[1:]:
+        assert not t.done()
+
+    # cancel remaining tasks
+    for t in tasks[1:]:
+        t.cancel()
+
+    # see if that finishes the Combine
+    await Timer(1, "ns")
+    assert waiter_task.done()
+
+
+@cocotb.test
+async def test_First_task_being_waited_cancelled(_: Any) -> None:
+    """Test cancelling a Task being awaited by a First causes it to finish."""
+    e = Event()
+
+    async def wait_forever() -> None:
+        await e.wait()
+
+    tasks = [cocotb.start_soon(wait_forever()) for _ in range(5)]
+
+    async def wait_on_tasks() -> None:
+        await First(*tasks)
+
+    waiter_task = cocotb.start_soon(wait_on_tasks())
+    await Timer(1, "ns")
+
+    # cancel just one task
+    tasks[0].cancel()
+
+    # check other tasks have been cancelled and the Combine is finished.
+    await Timer(1, "ns")
+    assert waiter_task.done()
+    for t in tasks[1:]:
+        assert not t.done()
