@@ -219,7 +219,7 @@ class Combine(_AggregateWaitable["Combine"]):
                     completed.append(task)
                     if len(completed) == len(waiters):
                         done.set()
-                        return
+                    return
                 e = task.exception()
                 if e is not None:
                     nonlocal exception
@@ -237,12 +237,13 @@ class Combine(_AggregateWaitable["Combine"]):
                 cocotb.start_soon(task)
                 waiters.append(task)
 
-            # wait for the last waiter to complete
-            await done
-
-            # kill remaining waiters
-            for w in waiters:
-                w.kill()
+            try:
+                # wait for the last waiter to complete
+                await done
+            finally:
+                # kill remaining waiters
+                for w in waiters:
+                    w.cancel()
 
             if exception is not None:
                 raise exception
@@ -306,12 +307,13 @@ class First(_AggregateWaitable[Any]):
             cocotb.start_soon(task)
             waiters.append(task)
 
-        # wait for a waiter to complete
-        await done
-
-        # kill all the other waiters
-        for w in waiters:
-            w.kill()
+        try:
+            # wait for a waiter to complete
+            await done
+        finally:
+            # kill all the other waiters
+            for w in waiters:
+                w.kill()
 
         return completed[0].result()
 
