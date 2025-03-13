@@ -1213,7 +1213,7 @@ class LogicArrayObject(
                         )
                     )
             else:
-                raise OverflowError(
+                raise ValueError(
                     f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
                 )
 
@@ -1266,9 +1266,6 @@ class LogicArrayObject(
         Raises:
             TypeError: If *value* is of a type that can't be assigned to the simulation object, or readily converted into a type that can.
             ValueError: If *value* would not fit in the bounds of the simulation object.
-            OverflowError:
-                If :class:`int` *value* is out of the range that can be represented by the target:
-                ``-2**(Nbits - 1) <= value <= 2**Nbits - 1``.
 
         .. versionchanged:: 2.0
             Using :class:`ctypes.Structure` objects to set values was removed.
@@ -1279,6 +1276,9 @@ class LogicArrayObject(
             Using :class:`dict` objects to set values was removed.
             Convert the dictionary to an integer before assignment using
             ``sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))`` instead.
+
+        .. versionchanged:: 2.0
+            Supplying too large of an :class:`int` value results in raising a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
         super().set(value)
 
@@ -1384,7 +1384,7 @@ class EnumObject(NonIndexableValueObjectBase[int, int]):
         if min_val <= value <= max_val:
             _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
-            raise OverflowError(
+            raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
             )
 
@@ -1415,7 +1415,10 @@ class EnumObject(NonIndexableValueObjectBase[int, int]):
 
         Raises:
             TypeError: If *value* is any type other than :class:`int`.
-            OverflowError: If *value* would not fit in a 32-bit signed integer.
+            ValueError: If *value* would not fit in a 32-bit signed integer.
+
+        .. versionchanged:: 2.0
+            Supplying too large of a value results in raising a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
         super().set(value)
 
@@ -1464,7 +1467,7 @@ class IntegerObject(NonIndexableValueObjectBase[int, int]):
         if min_val <= value <= max_val:
             _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
-            raise OverflowError(
+            raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
             )
 
@@ -1490,7 +1493,10 @@ class IntegerObject(NonIndexableValueObjectBase[int, int]):
 
         Raises:
             TypeError: If *value* is any type other than :class:`int`.
-            OverflowError: If *value* would not fit in a 32-bit signed integer.
+            ValueError: If *value* would not fit in a 32-bit signed integer.
+
+        .. versionchanged:: 2.0
+            Supplying too large of a value results in raising a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
         super().set(value)
 

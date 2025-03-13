@@ -87,7 +87,7 @@ Cocotb makes no assumptions regarding the signedness of the signal. It only
 considers the width of the signal, so it will allow values in the range from
 the minimum negative value for a signed number up to the maximum positive
 value for an unsigned number: ``-2**(Nbits - 1) <= value <= 2**Nbits - 1``
-Note: assigning out-of-range values will raise an :exc:`OverflowError`.
+Note: assigning out-of-range values will raise an :exc:`ValueError`.
 
 A :class:`~cocotb.types.LogicArray` object can be used instead of a Python int to assign a
 value to signals with more fine-grained control (e.g. signed values only).
@@ -110,8 +110,8 @@ value to signals with more fine-grained control (e.g. signed values only).
     dut.data_in.value = 7
 
     # assignment of out-of-range values
-    dut.data_in.value = 8   # raises OverflowError
-    dut.data_in.value = -5  # raises OverflowError
+    dut.data_in.value = 8   # raises ValueError
+    dut.data_in.value = -5  # raises ValueError
 
 
 .. _writing_tbs_reading_values:

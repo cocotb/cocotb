@@ -199,7 +199,7 @@ async def int_overflow_test(
     else:
         assert False, f"bad test_mode {test_mode}"
 
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         if setimmediate:
             signal.value = Immediate(value)
         else:
