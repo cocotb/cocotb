@@ -356,7 +356,7 @@ Miscellaneous
 Test Control
 ------------
 
-.. autofunction:: cocotb.regression.pass_test
+.. autofunction:: cocotb.pass_test
 
 Other Runtime Information
 -------------------------
