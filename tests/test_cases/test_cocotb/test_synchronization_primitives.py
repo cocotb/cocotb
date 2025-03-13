@@ -7,18 +7,16 @@ Tests for synchronization primitives like Lock and Event
 
 import random
 import re
-from typing import Any, List
+from typing import List
 
 import pytest
-from common import MyException, assert_takes
+from common import assert_takes
 
 import cocotb
 from cocotb._base_triggers import Trigger, _InternalEvent
 from cocotb.task import Task
 from cocotb.triggers import (
-    Combine,
     Event,
-    First,
     Lock,
     NullTrigger,
     ReadOnly,
@@ -160,90 +158,6 @@ async def test_internalevent(dut):
     assert e.is_set()
     with assert_takes(0, "ns"):
         await e
-
-
-@cocotb.test
-async def test_Combine_empty(_) -> None:
-    """Test that a Combine with no triggers passes no time."""
-    combine = Combine()
-    with assert_takes(0, "ns"):
-        res = await combine
-    assert res is combine
-
-
-@cocotb.test
-async def test_Combine_single(_) -> None:
-    """Test Combine with a single trigger acts the same as awaiting the trigger directly."""
-    combine = Combine(Timer(9, "ns"))
-    with assert_takes(9, "ns"):
-        res = await combine
-    assert res is combine
-
-
-@cocotb.test(timeout_time=10, timeout_unit="ns")
-async def test_Combine_exception(dut) -> None:
-    """Test Combine with exception ends immediately and isn't blocked by unfired triggers."""
-
-    e = Event()  # we never plan on setting this
-
-    async def raises_after_1ns():
-        await Timer(1, "ns")
-        raise MyException
-
-    combine = Combine(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
-    with assert_takes(1, "ns"):
-        with pytest.raises(MyException):
-            await combine
-
-
-@cocotb.test
-async def test_First_empty(_) -> None:
-    """Test that a First with no triggers raises an error."""
-    with pytest.raises(ValueError):
-        await First()
-
-
-@cocotb.test
-async def test_First_single(_) -> None:
-    """Test First with a single trigger acts the same as awaiting the trigger directly."""
-    timer = Timer(13, "ns")
-    with assert_takes(13, "ns"):
-        res = await First(timer)
-    assert res is timer
-
-
-@cocotb.test(timeout_time=10, timeout_unit="ns")
-async def test_First_exception(_) -> None:
-    """Test First with exception ends immediately and isn't blocked by unfired triggers."""
-
-    e = Event()  # we never plan on setting this
-
-    async def raises_after_1ns():
-        await Timer(1, "ns")
-        raise MyException
-
-    first = First(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
-    with assert_takes(1, "ns"):
-        with pytest.raises(MyException):
-            await first
-
-
-@cocotb.test
-async def test_Combine_objects_shared_by_multiple(_: Any) -> None:
-    """Test waiting for the same objects in multiple concurrent Combines."""
-    count = 0
-    events = [Event() for _ in range(5)]
-
-    async def wait_for_all_events():
-        nonlocal count
-        await Combine(*(event.wait() for event in events))
-        count += 1
-
-    waiters = [cocotb.start_soon(wait_for_all_events()) for _ in range(5)]
-    for e in events:
-        e.set()
-    await Combine(*waiters)
-    assert count == 5
 
 
 @cocotb.test
