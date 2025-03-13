@@ -104,11 +104,6 @@ def bridge(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Res
 
     Results of the converted function are returned from the :keyword:`await` expression.
 
-    .. warning::
-        Each bridge is implemented with a distinct thread, meaning that all bridges and
-        the main thread that runs all :keyword:`async` code are susceptible to races
-        when sharing data.
-
     .. note::
         Bridge threads *must* either finish or block on a :func:`cocotb.resume`
         converted function before control is given back to the simulator.
