@@ -1,0 +1,1 @@
+Fix bug where :meth:`cancelling <cocotb.task.Task.cancel>` a Task awaiting on a :class:`.First` or :class:`.Combine` doesn't cancel the underlying waiters leading to reduction in performance or concealling test failures.

@@ -11,7 +11,7 @@ from random import randint
 from typing import Any
 
 import pytest
-from common import _check_traceback, assert_takes
+from common import MyException, _check_traceback, assert_takes
 
 import cocotb
 from cocotb.task import Task
@@ -265,3 +265,193 @@ async def test_invalid_trigger_types(dut):
 
     with pytest.raises(TypeError):
         await Combine(Timer(1), o)
+
+
+@cocotb.test
+async def test_Combine_empty(_) -> None:
+    """Test that a Combine with no triggers passes no time."""
+    combine = Combine()
+    with assert_takes(0, "ns"):
+        res = await combine
+    assert res is combine
+
+
+@cocotb.test
+async def test_Combine_single(_) -> None:
+    """Test Combine with a single trigger acts the same as awaiting the trigger directly."""
+    combine = Combine(Timer(9, "ns"))
+    with assert_takes(9, "ns"):
+        res = await combine
+    assert res is combine
+
+
+@cocotb.test(timeout_time=10, timeout_unit="ns")
+async def test_Combine_exception(dut) -> None:
+    """Test Combine with exception ends immediately and isn't blocked by unfired triggers."""
+
+    e = Event()  # we never plan on setting this
+
+    async def raises_after_1ns():
+        await Timer(1, "ns")
+        raise MyException
+
+    combine = Combine(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
+    with assert_takes(1, "ns"):
+        with pytest.raises(MyException):
+            await combine
+
+
+@cocotb.test
+async def test_First_empty(_) -> None:
+    """Test that a First with no triggers raises an error."""
+    with pytest.raises(ValueError):
+        await First()
+
+
+@cocotb.test
+async def test_First_single(_) -> None:
+    """Test First with a single trigger acts the same as awaiting the trigger directly."""
+    timer = Timer(13, "ns")
+    with assert_takes(13, "ns"):
+        res = await First(timer)
+    assert res is timer
+
+
+@cocotb.test(timeout_time=10, timeout_unit="ns")
+async def test_First_exception(_) -> None:
+    """Test First with exception ends immediately and isn't blocked by unfired triggers."""
+
+    e = Event()  # we never plan on setting this
+
+    async def raises_after_1ns():
+        await Timer(1, "ns")
+        raise MyException
+
+    first = First(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
+    with assert_takes(1, "ns"):
+        with pytest.raises(MyException):
+            await first
+
+
+@cocotb.test
+async def test_Combine_objects_shared_by_multiple(_: Any) -> None:
+    """Test waiting for the same objects in multiple concurrent Combines."""
+    count = 0
+    events = [Event() for _ in range(5)]
+
+    async def wait_for_all_events():
+        nonlocal count
+        await Combine(*(event.wait() for event in events))
+        count += 1
+
+    waiters = [cocotb.start_soon(wait_for_all_events()) for _ in range(5)]
+    for e in events:
+        e.set()
+    await Combine(*waiters)
+    assert count == 5
+
+
+@cocotb.test
+async def test_Combine_task_cancelled(_: Any) -> None:
+    """Test that cancelling a Task waiting on a Combine cleans waiter tasks."""
+
+    triggers = [MyTrigger() for _ in range(5)]
+
+    async def waiter() -> None:
+        await Combine(*triggers)
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1, "ns")
+    for t in triggers:
+        assert t.primed == 1
+    for t in triggers:
+        assert t.unprimed == 0
+    task.cancel()
+    await Timer(1, "ns")
+    for t in triggers:
+        assert t.primed == 1
+    for t in triggers:
+        assert t.unprimed == 1
+
+
+@cocotb.test
+async def test_First_task_cancelled(_: Any) -> None:
+    """Test that cancelling a Task waiting on a First cleans waiter tasks."""
+
+    triggers = [MyTrigger() for _ in range(5)]
+
+    async def waiter() -> None:
+        await First(*triggers)
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1, "ns")
+    for t in triggers:
+        assert t.primed == 1
+    for t in triggers:
+        assert t.unprimed == 0
+    task.cancel()
+    await Timer(1, "ns")
+    for t in triggers:
+        assert t.primed == 1
+    for t in triggers:
+        assert t.unprimed == 1
+
+
+@cocotb.test
+async def test_Combine_task_being_waited_cancelled(_: Any) -> None:
+    """Test cancelling a Task being awaited by a Combine causes it to finish."""
+    e = Event()
+
+    async def wait_forever() -> None:
+        await e.wait()
+
+    tasks = [cocotb.start_soon(wait_forever()) for _ in range(5)]
+
+    async def wait_on_tasks() -> None:
+        await Combine(*tasks)
+
+    waiter_task = cocotb.start_soon(wait_on_tasks())
+    await Timer(1, "ns")
+
+    # cancel just one task
+    tasks[0].cancel()
+
+    # check other tasks haven't been cancelled and the Combine isn't finished.
+    await Timer(1, "ns")
+    assert not waiter_task.done()
+    for t in tasks[1:]:
+        assert not t.done()
+
+    # cancel remaining tasks
+    for t in tasks[1:]:
+        t.cancel()
+
+    # see if that finishes the Combine
+    await Timer(1, "ns")
+    assert waiter_task.done()
+
+
+@cocotb.test
+async def test_First_task_being_waited_cancelled(_: Any) -> None:
+    """Test cancelling a Task being awaited by a First causes it to finish."""
+    e = Event()
+
+    async def wait_forever() -> None:
+        await e.wait()
+
+    tasks = [cocotb.start_soon(wait_forever()) for _ in range(5)]
+
+    async def wait_on_tasks() -> None:
+        await First(*tasks)
+
+    waiter_task = cocotb.start_soon(wait_on_tasks())
+    await Timer(1, "ns")
+
+    # cancel just one task
+    tasks[0].cancel()
+
+    # check other tasks have been cancelled and the Combine is finished.
+    await Timer(1, "ns")
+    assert waiter_task.done()
+    for t in tasks[1:]:
+        assert not t.done()
