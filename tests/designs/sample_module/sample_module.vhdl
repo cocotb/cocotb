@@ -38,6 +38,9 @@ library work;
 use work.sample_module_package.all;
 
 entity sample_module is
+    generic (
+        INT_PARAM                       : integer   := 123
+    );
     port (
         clk                             : in    std_ulogic;
 

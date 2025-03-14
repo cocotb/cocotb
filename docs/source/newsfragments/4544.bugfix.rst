@@ -1,0 +1,1 @@
+Can no longer accidentally get :ref:`edge-triggers` on immutable signals that would indefinitely hang.
