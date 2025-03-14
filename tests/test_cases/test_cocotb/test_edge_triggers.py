@@ -33,6 +33,7 @@ from cocotb.triggers import (
 from cocotb_tools.sim_versions import RivieraVersion
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+SIM_NAME = cocotb.SIM_NAME.lower()
 
 
 async def count_edges_cycles(signal, edges):
@@ -294,7 +295,7 @@ async def test_clock_cycles_forked(dut):
         SimTimeoutError
         if (
             LANGUAGE in ["verilog"]
-            and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
+            and SIM_NAME.startswith(("riviera", "aldec"))
             and RivieraVersion(cocotb.SIM_VERSION) < RivieraVersion("2023.04")
         )
         else ()
@@ -325,7 +326,7 @@ async def test_edge_on_vector(dut):
         nonlocal edge_cnt
         while True:
             await ValueChange(dut.stream_out_data_registered)
-            if cocotb.SIM_NAME.lower().startswith("modelsim"):
+            if SIM_NAME.startswith("modelsim"):
                 await ReadOnly()  # not needed for other simulators
             edge_cnt = edge_cnt + 1
 
@@ -386,7 +387,7 @@ async def test_edge_logic_vector(dut):
 
 
 # icarus doesn't support integer inputs/outputs
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+@cocotb.test(skip=SIM_NAME.startswith("icarus"))
 async def test_edge_non_logic_handles(dut):
     dut.stream_in_int.value = 0
 
@@ -420,3 +421,16 @@ async def test_edge_trigger_repr(dut) -> None:
         repr(g),
         flags=re.IGNORECASE,
     )
+
+
+@cocotb.test(expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else ())
+async def test_edge_trigger_on_const(dut) -> None:
+    """Test failure if getting Edge trigger on const signal."""
+    with pytest.raises(TypeError):
+        RisingEdge(dut.INT_PARAM)
+    with pytest.raises(TypeError):
+        FallingEdge(dut.INT_PARAM)
+    with pytest.raises(TypeError):
+        ValueChange(dut.INT_PARAM)
+    with pytest.raises(TypeError):
+        dut.INT_PARAM.value_change
