@@ -348,7 +348,9 @@ class ClockCycles(Waitable["ClockCycles"]):
         self,
         signal: "cocotb.handle.LogicObject",
         num_cycles: int,
-        _3: Union[bool, Type[RisingEdge], Type[FallingEdge], Type[ValueChange]],
+        edge_type: Union[
+            Type[RisingEdge], Type[FallingEdge], Type[ValueChange], None
+        ] = None,
     ) -> None: ...
 
     @overload
@@ -356,46 +358,29 @@ class ClockCycles(Waitable["ClockCycles"]):
         self, signal: "cocotb.handle.LogicObject", num_cycles: int, *, rising: bool
     ) -> None: ...
 
-    @overload
     def __init__(
         self,
         signal: "cocotb.handle.LogicObject",
         num_cycles: int,
-        *,
-        edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[ValueChange]],
-    ) -> None: ...
-
-    def __init__(
-        self,
-        signal: "cocotb.handle.LogicObject",
-        num_cycles: int,
-        _3: Union[
+        edge_type: Union[
             bool, Type[RisingEdge], Type[FallingEdge], Type[ValueChange], None
         ] = None,
         *,
         rising: Union[bool, None] = None,
-        edge_type: Union[
-            Type[RisingEdge], Type[FallingEdge], Type[ValueChange], None
-        ] = None,
     ) -> None:
         self._signal = signal
         self._num_cycles = num_cycles
         self._edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[ValueChange]]
-        if _3 is not None:
-            if rising is not None or edge_type is not None:
-                raise TypeError("Passed more than one edge selection argument.")
-            if _3 is True:
-                self._edge_type = RisingEdge
-            elif _3 is False:
-                self._edge_type = FallingEdge
-            else:
-                self._edge_type = _3
-        elif rising is not None:
-            if edge_type is not None:
-                raise TypeError("Passed more than one edge selection argument.")
-            self._edge_type = RisingEdge if rising else FallingEdge
+        if edge_type is not None and rising is not None:
+            raise TypeError("Passed more than one edge selection argument.")
+        elif edge_type is True:
+            self._edge_type = RisingEdge
+        elif edge_type is False:
+            self._edge_type = FallingEdge
         elif edge_type is not None:
             self._edge_type = edge_type
+        elif rising is not None:
+            self._edge_type = RisingEdge if rising else FallingEdge
         else:
             # default if no argument is passed
             self._edge_type = RisingEdge
