@@ -87,6 +87,8 @@ async def test_join_trigger_deprecated(_) -> None:
     with pytest.warns(DeprecationWarning, match=r"Join\(task\)"):
         j = Join(t)
     assert (await j) == 1
+    assert isinstance(j, Join)
+    assert type(j) is Join
 
 
 @cocotb.test
@@ -155,7 +157,8 @@ async def test_logic_scalar_object_methods_deprecated(dut) -> None:
 async def test_edge_trigger_deprecated(dut) -> None:
     with pytest.warns(DeprecationWarning):
         e = Edge(dut.stream_in_valid)
-    assert e is dut.stream_in_valid.value_change
+    assert isinstance(e, Edge)
+    assert type(e) is Edge
 
 
 @cocotb.test

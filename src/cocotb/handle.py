@@ -54,7 +54,7 @@ import cocotb
 from cocotb import simulator
 from cocotb._base_triggers import Event
 from cocotb._deprecation import deprecated
-from cocotb._gpi_triggers import FallingEdge, ReadWrite, RisingEdge, ValueChange
+from cocotb._gpi_triggers import Edge, FallingEdge, ReadWrite, RisingEdge, ValueChange
 from cocotb._py_compat import cached_property
 from cocotb._utils import DocIntEnum, cached_method
 from cocotb.task import Task
@@ -1058,7 +1058,15 @@ class NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
     @cached_property
     def value_change(self) -> ValueChange:
         """A trigger which fires whenever the value changes."""
+        if self.is_const:
+            raise TypeError("Can't get ValueChange on immutable signal.")
         return ValueChange._make(self)
+
+    @cached_property
+    def _edge(self) -> Edge:
+        if self.is_const:
+            raise TypeError("Can't get Edge on immutable signal.")
+        return Edge._make(self)
 
 
 class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
@@ -1135,11 +1143,15 @@ class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
     @cached_property
     def rising_edge(self) -> RisingEdge:
         """A trigger which fires whenever the value changes to a ``1``."""
+        if self.is_const:
+            raise TypeError("Can't get RisingEdge on immutable signal")
         return RisingEdge._make(self)
 
     @cached_property
     def falling_edge(self) -> FallingEdge:
         """A trigger which fires whenever the value changes to a ``0``."""
+        if self.is_const:
+            raise TypeError("Can't get FallingEdge on immutable signal")
         return FallingEdge._make(self)
 
     def __len__(self) -> int:

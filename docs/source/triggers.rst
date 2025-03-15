@@ -14,5 +14,4 @@ When the trigger fires, execution of the paused coroutine will resume:
         await RisingEdge(clk)
         print("Immediately after the rising clock edge")
 
-See :ref:`simulator-triggers` and :ref:`python-triggers`
-for a list of available triggers.
+See :ref:`triggers` for a list of available triggers.

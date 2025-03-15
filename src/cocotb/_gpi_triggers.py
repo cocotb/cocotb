@@ -36,7 +36,6 @@ from typing import (
     ClassVar,
     Generic,
     Optional,
-    Type,
     TypeVar,
     Union,
 )
@@ -51,14 +50,13 @@ from cocotb._utils import pointer_str, singleton
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from cocotb.handle import LogicObject, NonIndexableValueObjectBase, ValueObjectBase
 
 
 class GPITrigger(Trigger):
-    """Base Trigger class for GPI triggers.
-
-    Consumes simulation time.
-    """
+    """A trigger for a simulation event."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -246,7 +244,6 @@ class NextTimeStep(GPITrigger):
 
 
 _SignalType = TypeVar("_SignalType", bound="ValueObjectBase[Any, Any]")
-_EdgeBaseSelf = TypeVar("_EdgeBaseSelf", bound="_EdgeBase")
 
 
 class _EdgeBase(GPITrigger, Generic[_SignalType]):
@@ -256,7 +253,7 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
     signal: _SignalType
 
     @classmethod
-    def _make(cls: Type[_EdgeBaseSelf], signal: _SignalType) -> _EdgeBaseSelf:
+    def _make(cls, signal: _SignalType) -> "Self":
         self = GPITrigger.__new__(cls)
         GPITrigger.__init__(self)
         self.signal = signal
@@ -361,8 +358,7 @@ class ValueChange(_EdgeBase):
         return signal.value_change
 
 
-@deprecated("Use `signal.value_change` instead.")
-def Edge(signal: "NonIndexableValueObjectBase[Any, Any]") -> ValueChange:
+class Edge(ValueChange):
     """Fires on any value change of *signal*.
 
     Args:
@@ -375,4 +371,11 @@ def Edge(signal: "NonIndexableValueObjectBase[Any, Any]") -> ValueChange:
 
         Use :attr:`signal.value_change <cocotb.handle.NonArrayValueObject.value_change>` instead.
     """
-    return ValueChange(signal)
+
+    @deprecated("Use `signal.value_change` instead.")
+    def __new__(cls, signal: "NonIndexableValueObjectBase[Any, Any]") -> "Edge":
+        if not isinstance(signal, cocotb.handle.NonIndexableValueObjectBase):
+            raise TypeError(
+                f"{cls.__qualname__} requires an object derived from NonArrayValueObject which can change value. Got {signal!r} of type {type(signal).__qualname__}"
+            )
+        return signal._edge

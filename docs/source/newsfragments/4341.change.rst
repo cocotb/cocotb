@@ -1,1 +1,0 @@
-:func:`~cocotb.triggers.Join` and :meth:`.Task.join` now return the Task to be joined instead of a Trigger. This preserves backwards compatibility for ``await join`` or using the result in :class:`~cocotb.triggers.First` or :class:`~cocotb.triggers.Combine`.
