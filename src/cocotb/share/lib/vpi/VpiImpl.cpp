@@ -202,6 +202,8 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiIntVar:
         case vpiIntegerVar:
         case vpiIntegerNet:
+        case vpiPackedArrayVar:
+        case vpiPackedArrayNet:
         case vpiRealVar:
         case vpiRealNet:
         case vpiStringVar:
@@ -224,8 +226,6 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiRegArray:
         case vpiNetArray:
         case vpiInterfaceArray:
-        case vpiPackedArrayVar:
-        case vpiPackedArrayNet:
         case vpiMemory:
         case vpiInterconnectArray: {
             const auto is_vector = vpi_get(vpiVector, new_hdl);
