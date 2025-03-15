@@ -65,12 +65,15 @@ int VpiArrayObjHdl::initialise(const std::string &name,
     if (iter != NULL) {
         rangeHdl = vpi_scan(iter);
 
+// Questa and VCS vpiRange iter always starts from the first index of the array.
+#if defined(MODELSIM) || defined(VCS)
         for (int i = 0; i < range_idx; ++i) {
             rangeHdl = vpi_scan(iter);
             if (rangeHdl == NULL) {
                 break;
             }
         }
+#endif
         if (rangeHdl == NULL) {
             LOG_ERROR("Unable to get range for indexable array");
             return -1;
