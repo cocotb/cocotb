@@ -175,7 +175,7 @@ class SimHandleBase(ABC):
         )
 
 
-class RangeableObjectMixin(SimHandleBase):
+class _RangeableObjectMixin(SimHandleBase):
     """Base class for simulation objects that have a range."""
 
     @cached_property
@@ -216,7 +216,7 @@ class GPIDiscovery(DocIntEnum):
     NATIVE = (1, "Native discovery using only the parent's native interface.")
 
 
-class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
+class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     """Base class for hierarchical simulation objects.
 
     Hierarchical objects don't have values, they are just scopes/namespaces of other objects.
@@ -290,7 +290,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
             # attempt to create the child object
             try:
-                hdl = SimHandle(thing, path)
+                hdl = _make_sim_handle(thing, path)
             except NotImplementedError:
                 self._log.exception(
                     "Unable to construct a SimHandle object for %s", path
@@ -303,8 +303,8 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         self._discovered = True
 
     def _get(
-        self, key: str, discovery_method: GPIDiscovery = GPIDiscovery.AUTO
-    ) -> Optional[simulator.gpi_sim_hdl]:
+        self, key: KeyType, discovery_method: GPIDiscovery = GPIDiscovery.AUTO
+    ) -> Union[SimHandleBase, None]:
         """Query the simulator for an object with the specified *key*.
 
         Like Python's native dictionary ``get``-function, this returns ``None`` if the object
@@ -322,9 +322,6 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         Returns:
             The child object, or ``None`` if not found.
         """
-        return self._handle.get_handle_by_name(key, discovery_method)
-
-    def __getitem__(self, key: KeyType) -> SimHandleBase:
         # try to use cached value
         try:
             return self._sub_handles[key]
@@ -332,22 +329,25 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
             pass
 
         # try to get value from GPI
-        new_handle = self._get_handle_by_key(key)
-        if not new_handle:
-            raise KeyError(f"{self._path} contains no child object named {key}")
+        new_handle = self._get_handle_by_key(key, discovery_method)
+        if new_handle is None:
+            return None
 
         # if successful, construct and cache
-        sub_handle = SimHandle(new_handle, self._child_path(key))
+        sub_handle = _make_sim_handle(new_handle, self._child_path(key))
         self._sub_handles[key] = sub_handle
 
         return sub_handle
 
     @abstractmethod
-    def _get_handle_by_key(self, key: KeyType) -> Optional[simulator.gpi_sim_hdl]:
+    def _get_handle_by_key(
+        self, key: KeyType, discovery_method: GPIDiscovery
+    ) -> Union[simulator.gpi_sim_hdl, None]:
         """Get child object by key from the simulator.
 
         Args:
             key: The key of the child object.
+            discovery_method: How to discover the object using the GPI.
 
         Returns:
             A raw simulator handle for the child object at the given key, or ``None``.
@@ -391,7 +391,7 @@ class HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         return set(super().__dir__()) | {str(k) for k in self._keys()}
 
 
-class HierarchyObject(HierarchyObjectBase[str]):
+class HierarchyObject(_HierarchyObjectBase[str]):
     r"""A simulation object that is a name-indexed collection of hierarchical simulation objects.
 
     This class is used for named hierarchical structures, such as "generate blocks" or "module"/"entity" instantiations.
@@ -458,10 +458,16 @@ class HierarchyObject(HierarchyObjectBase[str]):
         if name.startswith("_"):
             return object.__getattribute__(self, name)  # type: ignore[no-any-return]  # this will always AttributeError
 
-        try:
-            return self[name]
-        except KeyError as e:
-            raise AttributeError(str(e)) from None
+        handle = self._get(name)
+        if handle is None:
+            raise AttributeError(f"{self._path} contains no child object named {name}")
+        return handle
+
+    def __getitem__(self, key: str) -> SimHandleBase:
+        handle = self._get(key)
+        if handle is None:
+            raise KeyError(f"{self._path} contains no child object named {key}")
+        return handle
 
     @deprecated(
         "Use `handle[child_name]` syntax instead. If extended identifiers are needed simply add a '\\' character before and after the name."
@@ -492,10 +498,10 @@ class HierarchyObject(HierarchyObjectBase[str]):
         if extended:
             name = "\\" + name + "\\"
 
-        try:
-            return self[name]
-        except KeyError as e:
-            raise AttributeError(str(e)) from None
+        handle = self._get(name)
+        if handle is None:
+            raise AttributeError(f"{self._path} contains no child object named {name}")
+        return handle
 
     def _child_path(self, key: str) -> str:
         delimiter = "::" if self._type == "GPI_PACKAGE" else "."
@@ -504,12 +510,13 @@ class HierarchyObject(HierarchyObjectBase[str]):
     def _sub_handle_key(self, name: str) -> str:
         return name
 
-    def _get_handle_by_key(self, key: str) -> Optional[simulator.gpi_sim_hdl]:
-        # this stays to enable __get_item__ symmetry with HierarchyArrayObject
-        return self._get(key)
+    def _get_handle_by_key(
+        self, key: str, discovery_method: GPIDiscovery
+    ) -> Union[simulator.gpi_sim_hdl, None]:
+        return self._handle.get_handle_by_name(key, discovery_method)
 
 
-class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
+class HierarchyArrayObject(_HierarchyObjectBase[int], _RangeableObjectMixin):
     """A simulation object that is an array of hierarchical simulation objects.
 
     This class is used for array-like hierarchical structures like "generate loops".
@@ -571,16 +578,23 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
     def _child_path(self, key: int) -> str:
         return f"{self._path}[{key}]"
 
-    def _get_handle_by_key(self, key: int) -> Optional[simulator.gpi_sim_hdl]:
+    def _get_handle_by_key(
+        self, key: int, discovery_method: GPIDiscovery
+    ) -> Union[simulator.gpi_sim_hdl, None]:
+        if discovery_method is not GPIDiscovery.AUTO:
+            raise NotImplementedError(
+                f"Only GPIDiscovery.AUTO is supported for {type(self).__qualname__} right now"
+            )
         return self._handle.get_handle_by_index(key)
 
     def __getitem__(self, key: int) -> SimHandleBase:
         if isinstance(key, slice):
             raise TypeError("Slice indexing is not supported")
-        try:
-            return super().__getitem__(key)
-        except KeyError as e:
-            raise IndexError(str(e)) from None
+
+        handle = self._get(key)
+        if handle is None:
+            raise IndexError(f"{self._path} contains no child object at index {key}")
+        return handle
 
     # ideally `__len__` could be implemented in terms of `range`, but `range` doesn't work universally.
 
@@ -938,7 +952,7 @@ ChildObjectT = TypeVar("ChildObjectT", bound=ValueObjectBase[Any, Any])
 
 class ArrayObject(
     ValueObjectBase[Array[ElemValueT], Union[Array[ElemValueT], Sequence[ElemValueT]]],
-    RangeableObjectMixin,
+    _RangeableObjectMixin,
     Generic[ElemValueT, ChildObjectT],
 ):
     """A simulation object that is an array of value-having simulation objects.
@@ -1041,7 +1055,9 @@ class ArrayObject(
         if not new_handle:
             raise IndexError(f"{self._path} contains no object at index {index}")
         path = self._path + "[" + str(index) + "]"
-        self._sub_handles[index] = cast(ChildObjectT, SimHandle(new_handle, path))
+        self._sub_handles[index] = cast(
+            ChildObjectT, _make_sim_handle(new_handle, path)
+        )
         return self._sub_handles[index]
 
     def __iter__(self) -> Iterable[ChildObjectT]:
@@ -1049,7 +1065,7 @@ class ArrayObject(
             yield self[i]
 
 
-class NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
+class _NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
     """ValueObject that is treated as a single object in the GPI.
 
     NonArrayValueObjects support :meth:`value_change` triggers.
@@ -1061,7 +1077,7 @@ class NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
         return ValueChange._make(self)
 
 
-class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
+class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
     """A scalar logic simulation object.
 
     Verilog data types that map to this object:
@@ -1106,7 +1122,7 @@ class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
         _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
     def get(self) -> Logic:
-        """Return the current value of the simulation object as a :class:.Logic`."""
+        """Return the current value of the simulation object as a :class:`.Logic`."""
         binstr = self._handle.get_signal_val_binstr()
         return Logic(binstr)
 
@@ -1159,8 +1175,8 @@ class LogicObject(NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
 
 
 class LogicArrayObject(
-    NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
-    RangeableObjectMixin,
+    _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
+    _RangeableObjectMixin,
 ):
     """A logic array simulation object.
 
@@ -1301,7 +1317,7 @@ class LogicArrayObject(
         return self._handle.get_num_elems()
 
 
-class RealObject(NonIndexableValueObjectBase[float, float]):
+class RealObject(_NonIndexableValueObjectBase[float, float]):
     """A floating point simulation object.
 
     This type is used when a ``real`` object in VHDL or ``float`` object in Verilog is seen.
@@ -1354,7 +1370,7 @@ class RealObject(NonIndexableValueObjectBase[float, float]):
         return self.value
 
 
-class EnumObject(NonIndexableValueObjectBase[int, int]):
+class EnumObject(_NonIndexableValueObjectBase[int, int]):
     """An enumeration simulation object.
 
     This type is used when an enumerated-type simulation object is seen that aren't a "logic" or similar type.
@@ -1429,7 +1445,7 @@ class EnumObject(NonIndexableValueObjectBase[int, int]):
         return int(self.value)
 
 
-class IntegerObject(NonIndexableValueObjectBase[int, int]):
+class IntegerObject(_NonIndexableValueObjectBase[int, int]):
     """An integer simulation object.
 
     Verilog types that map to this object:
@@ -1508,8 +1524,8 @@ class IntegerObject(NonIndexableValueObjectBase[int, int]):
 
 
 class StringObject(
-    NonIndexableValueObjectBase[bytes, bytes],
-    RangeableObjectMixin,
+    _NonIndexableValueObjectBase[bytes, bytes],
+    _RangeableObjectMixin,
 ):
     """A string simulation object.
 
@@ -1620,7 +1636,7 @@ _type2cls: Dict[int, Type[_ConcreteHandleTypes]] = {
 }
 
 
-def SimHandle(
+def _make_sim_handle(
     handle: simulator.gpi_sim_hdl, path: Optional[str] = None
 ) -> SimHandleBase:
     """Factory function to create the correct type of `SimHandle` object.

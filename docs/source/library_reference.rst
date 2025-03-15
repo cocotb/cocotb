@@ -293,34 +293,76 @@ Logging
     This is added by :class:`cocotb.log.SimTimeContextFilter`.
 
 
-Simulation Object Handles
-=========================
+Simulator Objects
+=================
 
-.. image:: diagrams/svg/inheritance-cocotb.handle.svg
-   :alt: The class inheritance diagram for cocotb.handle
+.. note::
+    "Handle" is a legacy term which refers to the fact these objects are implented using opaque "handles" to simulator objects.
+    A better term is :term:`simulator object`.
 
-.. currentmodule:: cocotb.handle
+.. module:: cocotb.handle
 
-.. automodule:: cocotb.handle
+.. autoclass:: GPIDiscovery
+
+.. autoclass:: HierarchyObject
+    :members:
+    :inherited-members: SimHandleBase
+    :special-members: __len__
+    :member-order: bysource
+
+.. autoclass:: HierarchyArrayObject
+    :members:
+    :inherited-members: HierarchyBaseObject
+    :special-members: __len__, __iter__
+    :member-order: bysource
+
+.. autoclass:: LogicObject
+    :members:
+    :inherited-members: ValueObjectBase
+    :member-order: bysource
+
+.. autoclass:: LogicArrayObject
+    :members:
+    :inherited-members: ValueObjectBase
+    :special-members: __len__
+    :member-order: bysource
+
+.. autoclass:: StringObject
+    :members:
+    :inherited-members: ValueObjectBase
+    :special-members: __len__
+    :member-order: bysource
+
+.. autoclass:: IntegerObject
+    :members:
+    :inherited-members: ValueObjectBase
+    :member-order: bysource
+
+.. autoclass:: RealObject
+    :members:
+    :inherited-members: ValueObjectBase
+    :member-order: bysource
+
+.. autoclass:: EnumObject
+    :members:
+    :inherited-members: ValueObjectBase
+    :member-order: bysource
+
+Abstract Base Classes
+---------------------
+
+.. autoclass:: SimHandleBase
     :members:
     :member-order: bysource
-    :show-inheritance:
-    :synopsis: Classes for simulation objects.
-    :exclude-members: Deposit, Force, Freeze, Release, Immediate
-    :special-members: __len__
-..
-   Excluding the Assignment Methods that are getting their own section below
 
-.. autofunction:: cocotb.handle.HierarchyObjectBase._get
-
-.. autoenum:: cocotb.handle.GPIDiscovery
+.. autoclass:: ValueObjectBase
+    :members:
+    :member-order: bysource
 
 .. _assignment-methods:
 
 Assignment Methods
 ------------------
-
-.. currentmodule:: cocotb.handle
 
 .. autoclass:: Deposit
 
@@ -332,23 +374,7 @@ Assignment Methods
 
 .. autoclass:: Release
 
-
-Other Handle Methods
---------------------
-
-.. currentmodule:: None
-
-.. function:: len(handle)
-
-   Return the "length" (the number of elements) of the underlying object.
-
-   For vectors this is the number of bits.
-
-.. function:: dir(handle)
-
-   Return a list of the sub-handles of *handle*,
-   that is, the instances, signals, constants etc. of a certain hierarchy level in the DUT.
-
+.. module:: None
 
 Miscellaneous
 =============
