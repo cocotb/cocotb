@@ -57,6 +57,7 @@ from typing import (
 )
 
 import cocotb
+import cocotb._gpi_triggers
 import cocotb._scheduler
 import cocotb.handle
 from cocotb import _ANSI, simulator
@@ -325,7 +326,7 @@ class RegressionManager:
     def _schedule_next_test(self, trigger: Optional[Trigger] = None) -> None:
         if trigger is not None:
             # TODO move to Trigger object
-            cocotb.sim_phase = cocotb.SimPhase.NORMAL
+            cocotb._gpi_triggers._current_gpi_trigger = trigger
             trigger._cleanup()
         self._test.start()
 

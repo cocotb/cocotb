@@ -1,1 +1,0 @@
-Added :data:`cocotb.sim_phase` to allow the user to determine what phase of a time step they are in.

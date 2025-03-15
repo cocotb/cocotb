@@ -143,6 +143,8 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
 Triggers
 ========
 
+.. autofunction:: cocotb.triggers.current_gpi_trigger
+
 .. _edge-triggers:
 
 Edge Triggers
@@ -389,10 +391,6 @@ Other Runtime Information
 .. autodata:: cocotb.top
 
 .. autodata:: cocotb.is_simulation
-
-.. autodata:: cocotb.sim_phase
-
-.. autoenum:: cocotb.SimPhase
 
 .. _combine-results:
 

@@ -25,7 +25,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import logging as py_logging
-from enum import auto
 from types import SimpleNamespace
 from typing import Dict, List, Union
 
@@ -41,7 +40,6 @@ from cocotb._decorators import (
 )
 from cocotb._scheduler import Scheduler
 from cocotb._test import create_task, pass_test, start, start_soon
-from cocotb._utils import DocEnum
 from cocotb.regression import RegressionManager
 
 from ._version import __version__
@@ -118,15 +116,3 @@ and in parameters to :class:`.TestFactory`\ s.
 
 is_simulation: bool = False
 """``True`` if cocotb was loaded in a simulation."""
-
-
-class SimPhase(DocEnum):
-    """A phase of the time step."""
-
-    NORMAL = (auto(), "In the Beginning Of Time Step or a Value Change phase.")
-    READ_WRITE = (auto(), "In a ReadWrite phase.")
-    READ_ONLY = (auto(), "In a ReadOnly phase.")
-
-
-sim_phase: SimPhase = SimPhase.NORMAL
-"""The current phase of the time step."""
