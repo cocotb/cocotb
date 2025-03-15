@@ -121,7 +121,7 @@ async def test_int_values(
     if LANGUAGE == "vhdl" and setimmediate:
         return
     signal = signal_widths[width]
-    int_values_test(signal, width, setimmediate, limits)
+    await int_values_test(signal, width, setimmediate, limits)
 
 
 async def int_values_test(
@@ -181,7 +181,7 @@ async def test_vector_overflow(
     if LANGUAGE == "vhdl" and setimmediate:
         return
     signal = signal_widths[width]
-    int_overflow_test(signal, width, test_mode, setimmediate, limits)
+    await int_overflow_test(signal, width, test_mode, setimmediate, limits)
 
 
 async def int_overflow_test(
