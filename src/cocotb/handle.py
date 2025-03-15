@@ -54,7 +54,15 @@ import cocotb
 from cocotb import simulator
 from cocotb._base_triggers import Event
 from cocotb._deprecation import deprecated
-from cocotb._gpi_triggers import Edge, FallingEdge, ReadWrite, RisingEdge, ValueChange
+from cocotb._gpi_triggers import (
+    Edge,
+    FallingEdge,
+    ReadOnly,
+    ReadWrite,
+    RisingEdge,
+    ValueChange,
+    current_gpi_trigger,
+)
 from cocotb._py_compat import cached_property
 from cocotb._utils import DocIntEnum, cached_method
 from cocotb.task import Task
@@ -788,7 +796,7 @@ else:
         action: _GPISetAction,
         value: _ValueT,
     ) -> None:
-        if cocotb.sim_phase == cocotb.SimPhase.READ_WRITE:
+        if isinstance(current_gpi_trigger(), ReadWrite):
             # If we are already in the ReadWrite phase, apply writes immediately as an optimization.
             write_func(action.value, value)
         elif action == _GPISetAction.DEPOSIT:
@@ -870,7 +878,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
                 or if the simulation object is immutable.
             ValueError: If the *value* is of the correct type, but the value fails to convert.
         """
-        if cocotb.sim_phase == cocotb.SimPhase.READ_ONLY:
+        if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError("Attempting settings a value during the ReadOnly phase.")
         if self.is_const:
             raise TypeError("Attempted setting an immutable object")

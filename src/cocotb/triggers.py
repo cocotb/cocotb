@@ -20,6 +20,7 @@ from cocotb._gpi_triggers import (
     RisingEdge,
     Timer,
     ValueChange,
+    current_gpi_trigger,
 )
 from cocotb.task import Join, TaskComplete
 
@@ -46,4 +47,5 @@ __all__ = (
     "with_timeout",
     "SimTimeoutError",
     "EmptyTrigger",
+    "current_gpi_trigger",
 )

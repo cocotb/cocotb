@@ -46,7 +46,6 @@ from cocotb._exceptions import InternalError
 from cocotb._gpi_triggers import (
     GPITrigger,
     NextTimeStep,
-    ReadOnly,
     ReadWrite,
     Trigger,
 )
@@ -212,7 +211,6 @@ class Scheduler:
     # Singleton events, recycled to avoid spurious object creation
     _next_time_step = NextTimeStep()
     _read_write = ReadWrite()
-    _read_only = ReadOnly()
 
     def __init__(self) -> None:
         self.log = logging.getLogger("cocotb.scheduler")
@@ -244,12 +242,7 @@ class Scheduler:
         with profiling_context:
             # TODO: move state tracking to global variable
             # and handle this via some kind of trigger-specific Python callback
-            if trigger is self._read_write:
-                cocotb.sim_phase = cocotb.SimPhase.READ_WRITE
-            elif trigger is self._read_only:
-                cocotb.sim_phase = cocotb.SimPhase.READ_ONLY
-            else:
-                cocotb.sim_phase = cocotb.SimPhase.NORMAL
+            cocotb._gpi_triggers._current_gpi_trigger = trigger
 
             # apply inertial writes if ReadWrite
             if trigger is self._read_write:
@@ -509,7 +502,7 @@ class Scheduler:
 
             if not task.done():
                 if _debug:
-                    self.log.debug(f"{task!r} yielded {trigger} ({cocotb.sim_phase})")
+                    self.log.debug(f"{task!r} yielded {trigger}")
                 if not isinstance(trigger, Trigger):
                     e = TypeError(
                         f"Coroutine yielded an object of type {type(trigger)}, which the scheduler can't "

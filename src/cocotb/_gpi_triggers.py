@@ -195,7 +195,7 @@ class ReadOnly(GPITrigger):
     """
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
+        if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadOnly in ReadOnly phase"
             )
@@ -214,7 +214,7 @@ class ReadWrite(GPITrigger):
     """Fires when the read-write simulation phase is reached."""
 
     def _prime(self, callback: Callable[[Trigger], None]) -> None:
-        if cocotb.sim_phase is cocotb.SimPhase.READ_ONLY:
+        if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadWrite in ReadOnly phase"
             )
@@ -379,3 +379,14 @@ class Edge(ValueChange):
                 f"{cls.__qualname__} requires an object derived from NonArrayValueObject which can change value. Got {signal!r} of type {type(signal).__qualname__}"
             )
         return signal._edge
+
+
+# The initializer is a lie, but a useful one. Perhaps one day this can be something like `StartupTrigger`.`
+_current_gpi_trigger = Timer(1, "step")  # type: Union[None, GPITrigger]
+
+
+def current_gpi_trigger() -> GPITrigger:
+    """Return the last GPITrigger that fired."""
+    if _current_gpi_trigger is None:
+        raise RuntimeError("No GPI trigger has fired.")
+    return _current_gpi_trigger

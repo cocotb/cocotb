@@ -23,12 +23,15 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.simulator import get_precision
 from cocotb.triggers import (
+    Event,
     NextTimeStep,
+    NullTrigger,
     ReadOnly,
     ReadWrite,
     RisingEdge,
     SimTimeoutError,
     Timer,
+    current_gpi_trigger,
     with_timeout,
 )
 
@@ -292,17 +295,27 @@ async def test_readonly_in_readwrite(dut):
 
 
 @cocotb.test
-async def test_sim_phase(dut) -> None:
-    assert cocotb.sim_phase is cocotb.SimPhase.NORMAL
-    await ReadWrite()
-    assert cocotb.sim_phase is cocotb.SimPhase.READ_WRITE
+async def test_current_gpi_trigger(dut) -> None:
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
-    await Timer(10, "ns")
-    assert cocotb.sim_phase is cocotb.SimPhase.NORMAL
+    assert isinstance(current_gpi_trigger(), Timer)
+    await ReadWrite()
+    assert isinstance(current_gpi_trigger(), ReadWrite)
     await ReadOnly()
-    assert cocotb.sim_phase is cocotb.SimPhase.READ_ONLY
+    assert isinstance(current_gpi_trigger(), ReadOnly)
     await RisingEdge(dut.clk)
-    assert cocotb.sim_phase is cocotb.SimPhase.NORMAL
+    assert isinstance(current_gpi_trigger(), RisingEdge)
+    t = current_gpi_trigger()
+
+    e = Event()
+
+    async def check_after_python_trigger() -> None:
+        await e.wait()
+        assert current_gpi_trigger() is t
+
+    cocotb.start_soon(check_after_python_trigger())
+    await NullTrigger()
+    e.set()
+    await Timer(1, "ns")
 
 
 @cocotb.test
