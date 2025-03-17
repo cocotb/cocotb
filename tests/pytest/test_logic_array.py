@@ -396,10 +396,10 @@ def test_null_vector():
 
 
 def test_bool_cast():
-    with pytest.warns(FutureWarning):
+    with pytest.warns(DeprecationWarning):
         assert LogicArray("0110")
     with warnings.catch_warnings():
-        warnings.filterwarnings(action="ignore", category=FutureWarning)
+        warnings.filterwarnings(action="ignore", category=DeprecationWarning)
         assert not LogicArray("0000")
         assert LogicArray("01XZ")
         assert LogicArray("XZ01")
