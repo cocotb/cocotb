@@ -781,11 +781,9 @@ class LogicArray(ArrayLike[Logic]):
     def __invert__(self) -> "LogicArray":
         return LogicArray(~v for v in self)
 
+    @deprecated(
+        "`bool()` casts and using LogicArray in conditional expressions is deprecated. "
+        """Use explicit comparisons (e.g. `LogicArray() == "11"`) or `all`/`any` expressions instead."""
+    )
     def __bool__(self) -> bool:
-        warnings.warn(
-            "The behavior of bool casts and using LogicArray in conditionals may change in the future. "
-            """Use explicit comparisons (e.g. `LogicArray() == "11"`) instead""",
-            FutureWarning,
-            stacklevel=2,
-        )
         return any(v in (Logic("H"), Logic("1")) for v in self)
