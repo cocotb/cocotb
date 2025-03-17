@@ -536,8 +536,10 @@ class LogicArray(ArrayLike[Logic]):
 
     @property
     def is_resolvable(self) -> bool:
-        """``True`` if all elements are ``0`` or ``1``."""
-        return all(bit in (Logic(0), Logic(1)) for bit in self)
+        """``True`` if all elements are ``0``, ``1``, ``L``, ``H``."""
+        return all(
+            bit in (Logic("0"), Logic("1"), Logic("L"), Logic("H")) for bit in self
+        )
 
     @property
     @deprecated("`.integer` property is deprecated. Use `value.to_unsigned()` instead.")

@@ -87,7 +87,7 @@ class Logic:
 
     .. note::
 
-        The :class:`int` and :class:`bool` conversions will raise :exc:`ValueError` if the value is not ``0`` or ``1``.
+        The :class:`int` and :class:`bool` conversions will raise :exc:`ValueError` if the value is not ``0``, ``1``, ``L``, or ``H``.
 
     :class:`Logic` values are immutable and therefore hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
 
@@ -229,16 +229,16 @@ class Logic:
         return ("U", "X", "0", "1", "Z", "W", "L", "H", "-")[self._repr]
 
     def __bool__(self) -> bool:
-        if self._repr == _0:
+        if self._repr in (_0, _L):
             return False
-        elif self._repr == _1:
+        elif self._repr in (_1, _H):
             return True
         raise ValueError(f"Cannot convert {self!r} to bool")
 
     def __int__(self) -> int:
-        if self._repr == _0:
+        if self._repr in (_0, _L):
             return 0
-        elif self._repr == _1:
+        elif self._repr in (_1, _H):
             return 1
         raise ValueError(f"Cannot convert {self!r} to int")
 

@@ -1,0 +1,1 @@
+:meth:`.LogicArray.is_resolvable` now returns ``True`` for arrays containing ``H`` and ``L`` values.

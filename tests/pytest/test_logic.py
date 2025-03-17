@@ -64,11 +64,19 @@ def test_logic_equality():
 
 def test_logic_bool_conversions():
     assert bool(Logic("1")) is True
+    assert bool(Logic("H")) is True
     assert bool(Logic("0")) is False
+    assert bool(Logic("L")) is False
     with pytest.raises(ValueError):
         bool(Logic("X"))
     with pytest.raises(ValueError):
         bool(Logic("Z"))
+    with pytest.raises(ValueError):
+        bool(Logic("U"))
+    with pytest.raises(ValueError):
+        bool(Logic("W"))
+    with pytest.raises(ValueError):
+        bool(Logic("-"))
 
 
 def test_logic_str_conversions():
@@ -88,10 +96,18 @@ def test_logic_index_cast():
 def test_logic_int_conversions():
     assert int(Logic("0")) == 0
     assert int(Logic("1")) == 1
+    assert int(Logic("L")) == 0
+    assert int(Logic("H")) == 1
     with pytest.raises(ValueError):
         int(Logic("X"))
     with pytest.raises(ValueError):
         int(Logic("Z"))
+    with pytest.raises(ValueError):
+        int(Logic("U"))
+    with pytest.raises(ValueError):
+        int(Logic("-"))
+    with pytest.raises(ValueError):
+        int(Logic("W"))
 
 
 def test_logic_repr():
