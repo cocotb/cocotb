@@ -18,7 +18,7 @@ from cocotb.triggers import RisingEdge
 from cocotb.types import LogicArray, Range
 from cocotb_tools.runner import get_runner
 
-NUM_SAMPLES = int(os.environ.get("NUM_SAMPLES", 3000))
+NUM_SAMPLES = int(os.environ.get("NUM_SAMPLES", "3000"))
 if cocotb.simulator.is_running():
     DATA_WIDTH = int(cocotb.top.DATA_WIDTH.value)
     A_ROWS = int(cocotb.top.A_ROWS.value)
