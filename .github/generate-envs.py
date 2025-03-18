@@ -178,14 +178,7 @@ ENVS = [
         "group": "experimental",
     },
     # Test NVC on Ubuntu
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.12.2",  # The latest release version.
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "ci",
-    },
+    # Testing latest release is covered by the Python version tests
     {
         "lang": "vhdl",
         "sim": "nvc",
