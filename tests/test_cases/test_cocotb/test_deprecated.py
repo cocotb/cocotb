@@ -179,3 +179,18 @@ async def test_cocotb_start(_) -> None:
 async def test_setimmediatevalue(dut) -> None:
     with pytest.warns(DeprecationWarning):
         dut.stream_in_data.setimmediatevalue(10)
+
+
+@cocotb.test
+async def test_event_name_deprecated(_) -> None:
+    with pytest.warns(DeprecationWarning):
+        e = Event("test1")
+
+    with pytest.warns(DeprecationWarning):
+        assert e.name == "test1"
+
+    with pytest.warns(DeprecationWarning):
+        e.name = "test2"
+
+    with pytest.warns(DeprecationWarning):
+        assert e.name == "test2"

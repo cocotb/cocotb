@@ -326,7 +326,7 @@ async def test_task_repr(_) -> None:
     """Test Task.__repr__."""
     log = logging.getLogger("cocotb.test")
 
-    coro_e = Event("coroutine_inner")
+    coro_e = Event()
 
     async def coroutine_wait():
         await Timer(1, unit="ns")
