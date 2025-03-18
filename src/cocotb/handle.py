@@ -1048,7 +1048,7 @@ class ArrayObject(
 
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
-            raise IndexError("Slicing is not supported")
+            raise TypeError("Slicing is not supported")
         if index in self._sub_handles:
             return self._sub_handles[index]
         new_handle = self._handle.get_handle_by_index(index)
@@ -1325,6 +1325,14 @@ class LogicArrayObject(
         # can't use `range` to get length because `range` is for outer-most dimension only
         # and this object needs to support multi-dimensional packed arrays.
         return self._handle.get_num_elems()
+
+    def __getitem__(self, _: Any) -> NoReturn:
+        raise TypeError(
+            "Packed objects, either arrays or structs, cannot be indexed.\n"
+            "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"
+            "If you need to use an element in an Edge Trigger, consider making the array or struct unpacked.\n"
+            "Alternatively, use `ValueChange` on the whole object and check the bit(s) you care about for changes afterwards."
+        )
 
 
 class RealObject(NonIndexableValueObjectBase[float, float]):
