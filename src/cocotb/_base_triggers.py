@@ -38,6 +38,7 @@ from typing import (
     Generator,
     List,
     Optional,
+    Union,
 )
 
 from cocotb._deprecation import deprecated
@@ -155,14 +156,32 @@ class Event:
 
     .. versionremoved:: 2.0
 
-        Removed the undocumented *data* attribute and argument to :meth:`set`.
+        Removed the undocumented *data* attribute and argument to :meth:`set`,
+        and the *name* attribute and argument to the constructor.
     """
 
     def __init__(self, name: Optional[str] = None) -> None:
         self._pending_events: List[_Event] = []
-        self.name: Optional[str] = name
+        self._name: Union[str, None] = None
+        if name is not None:
+            self.name = name
         self._fired: bool = False
         self._data: Any = None
+
+    @property
+    @deprecated("The name field will be removed in a future release.")
+    def name(self) -> Union[str, None]:
+        """Name of the Event.
+
+        .. deprecated:: 2.0
+            The name field will be removed in a future release.
+        """
+        return self._name
+
+    @name.setter
+    @deprecated("The name field will be removed in a future release.")
+    def name(self, new_name: Union[str, None]) -> None:
+        self._name = new_name
 
     @property
     @deprecated("The data field will be removed in a future release.")
@@ -228,11 +247,11 @@ class Event:
         return self._fired
 
     def __repr__(self) -> str:
-        if self.name is None:
+        if self._name is None:
             fmt = "<{0} at {2}>"
         else:
             fmt = "<{0} for {1} at {2}>"
-        return fmt.format(type(self).__qualname__, self.name, pointer_str(self))
+        return fmt.format(type(self).__qualname__, self._name, pointer_str(self))
 
 
 class _InternalEvent(Trigger):

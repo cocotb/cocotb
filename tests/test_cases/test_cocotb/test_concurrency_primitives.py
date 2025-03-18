@@ -246,14 +246,19 @@ async def test_recursive_combine(_):
     assert done == {10, 20, 30}
 
 
+class MyEvent(Event):
+    pass
+
+
 @cocotb.test
 async def test_concurrency_trigger_repr(_):
     e = Event()
     assert re.match(r"<Event at \w+>", repr(e))
-    e = Event(name="my_event")
-    assert re.match(r"<Event for my_event at \w+>", repr(e))
+
+    e = MyEvent()
+    assert re.match(r"<MyEvent at \w+>", repr(e))
     w = e.wait()
-    assert re.match(r"<<Event for my_event at \w+>\.wait\(\) at \w+>", repr(w))
+    assert re.match(r"<<MyEvent at \w+>\.wait\(\) at \w+>", repr(w))
 
 
 @cocotb.test()

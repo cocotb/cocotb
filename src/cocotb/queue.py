@@ -116,7 +116,7 @@ class AbstractQueue(Generic[T]):
         slot is available before adding the item.
         """
         while self.full():
-            event = Event(f"{type(self).__name__} put")
+            event = Event()
             self._putters.append(
                 (event, cast(Task[Any], cocotb._scheduler_inst._current_task))
             )
@@ -139,7 +139,7 @@ class AbstractQueue(Generic[T]):
         If the queue is empty, wait until an item is available.
         """
         while self.empty():
-            event = Event(f"{type(self).__name__} get")
+            event = Event()
             self._getters.append(
                 (event, cast(Task[Any], cocotb._scheduler_inst._current_task))
             )
