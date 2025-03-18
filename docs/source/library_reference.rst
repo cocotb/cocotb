@@ -191,9 +191,6 @@ Triggers dealing with Tasks or running multiple Tasks concurrently.
 .. autoclass:: cocotb.task.TaskComplete
     :members:
 
-.. autoclass:: cocotb.triggers.NullTrigger
-    :members:
-
 .. autoclass:: cocotb.triggers.Combine
     :members:
 
@@ -218,6 +215,16 @@ They are used to synchronize coroutines with each other.
 .. autoclass:: cocotb.triggers.SimTimeoutError
 
 .. autofunction:: cocotb.triggers.with_timeout
+
+
+Miscellaneous Triggers
+----------------------
+
+.. autoclass:: cocotb.triggers.EmptyTrigger
+    :members:
+
+.. autoclass:: cocotb.triggers.NullTrigger
+    :members:
 
 
 Abstract Triggers

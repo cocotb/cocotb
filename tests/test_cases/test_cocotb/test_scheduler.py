@@ -24,6 +24,7 @@ from cocotb.clock import Clock
 from cocotb.task import CancellationError, Task
 from cocotb.triggers import (
     Combine,
+    EmptyTrigger,
     Event,
     First,
     NullTrigger,
@@ -991,3 +992,17 @@ async def test_start_again_while_pending(_) -> None:
     b = cocotb.start_soon(a)
     assert b is a
     await a
+
+
+@cocotb.test
+async def test_EmptyTrigger_doesnt_yield(_) -> None:
+    task_ran = False
+
+    async def coro() -> None:
+        nonlocal task_ran
+        task_ran = True
+
+    task = cocotb.start_soon(coro())
+    await EmptyTrigger()
+    task.cancel()
+    assert not task_ran
