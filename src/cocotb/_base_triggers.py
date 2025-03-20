@@ -412,9 +412,66 @@ class Lock(AsyncContextManager[None]):
 
 
 class NullTrigger(Trigger):
-    """Fires immediately.
+    """Trigger that fires immediately.
 
-    This is primarily for forcing the current Task to be rescheduled after all currently pending Tasks.
+    Mostly useful when building or using higher-order functions which need to take or return Triggers.
+
+    The scheduling order of the Task awaiting this Trigger with respect to any other Task is not deterministic
+    and should generally not be relied upon.
+    Instead of using this Trigger to push the Task until "after" another Task has run,
+    use other synchronization techniques, such as using an :class:`.Event`.
+
+    **Do not** do this:
+
+    .. code-block:: python
+
+        transaction_data = None
+
+
+        def monitor():
+            while dut.valid.value != 1 and dut.ready.value != 1:
+                await RisingEdge(dut.clk)
+            transaction_data = dut.data.value
+
+
+        def use_transaction():
+            while True:
+                await RisingEdge(dut.clk)
+                # We need the NullTrigger here because both Tasks react to RisingEdge,
+                # but there's no guarantee about which Task is run first,
+                # so we need to force this one to run "later" using NullTrigger.
+                await NullTrigger()
+                if transaction_data is not None:
+                    process(transaction_data)
+
+
+        use_task = cocotb.start_soon(use_transaction())
+        monitor_task = cocotb.start_soon(monitor())
+
+    Instead use an :class:`!.Event` to explicitly synchronize the two Tasks, like so:
+
+    .. code-block:: python
+
+        transaction_data = None
+        transaction_event = Event()
+
+
+        def monitor():
+            while dut.valid.value != 1 and dut.ready.value != 1:
+                await RisingEdge(dut.clk)
+            transaction_data = dut.data.value
+            transaction_event.set()
+
+
+        def use_transaction():
+            # Now we don't need the NullTrigger.
+            # This Task will wake up *strictly* after `monitor_task` sets the transaction.
+            await transaction_event.wait()
+            process(transaction_data)
+
+
+        use_task = cocotb.start_soon(use_transaction())
+        monitor_task = cocotb.start_soon(monitor())
 
     .. versionremoved:: 2.0
         The *outcome* parameter was removed. There is no alternative.
