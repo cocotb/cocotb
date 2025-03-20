@@ -123,15 +123,16 @@ class Event:
             e = Event()
 
 
-            async def coro1():
+            async def task1():
                 await e.wait()
                 print("resuming!")
 
 
-            task1 = cocotb.start_soon(coro1())
+            cocotb.start_soon(task1())
+            # do stuff
             e.set()
-            await task1  # allows task1 to execute
-            # "resuming!"
+            await NullTrigger()  # allows task1 to execute
+            # resuming!
 
     .. versionremoved:: 2.0
 
@@ -210,7 +211,7 @@ class Event:
         call :meth:`clear`.
         """
         if self._fired:
-            return EmptyTrigger()
+            return NullTrigger(name=f"{str(self)}.wait()")
         return _Event(self)
 
     def clear(self) -> None:
@@ -410,100 +411,10 @@ class Lock(AsyncContextManager[None]):
         self.release()
 
 
-class EmptyTrigger(Trigger):
+class NullTrigger(Trigger):
     """Fires immediately.
 
-    Mostly useful for building higher-order functions which need to take or return Triggers.
-
-    .. versionadded:: 2.0
-    """
-
-    def __await__(self) -> Generator["Self", None, "Self"]:
-        yield from []  # Forces this to be a generator
-        return self
-
-    def __repr__(self) -> str:
-        return f"<{type(self).__qualname__} at {pointer_str(self)}>"
-
-
-class NullTrigger(Trigger):
-    """Fires after all currently scheduled Tasks are resumed.
-
-    The firing of this Trigger with respect to any other Trigger or Task is not deterministic,
-    so it should generally not be relied upon.
-    Below are examples showing usage of alternatives.
-
-    Instead of using this Trigger after a call to :meth:`cocotb.start_soon`,
-    use :class:`.TaskStarted` like so:
-
-    .. code-block:: python
-
-        task = cocotb.start_soon(coro())
-        await task.started
-
-    Instead of using this as a "no-op" Trigger, instead use :class:`.EmptyTrigger` like so:
-
-    .. code-block:: python
-
-        def wait_for_event() -> Trigger:
-            if event.is_set():
-                return EmptyTrigger()
-            return event.wait()
-
-    Instead of using this Trigger to push the Task until "after" another Task has run,
-    instead use other synchronization techniques, such as using an :class:`.Event`.
-
-    **Do not** do this:
-
-    .. code-block:: python
-
-        transaction_data = None
-
-
-        def monitor():
-            while dut.valid.value != 1 and dut.ready.value != 1:
-                await RisingEdge(dut.clk)
-            transaction_data = dut.data.value
-
-
-        def use_transaction():
-            while True:
-                await RisingEdge(dut.clk)
-                # We need the NullTrigger here because both Tasks react to RisingEdge,
-                # but there's no guarantee about which Task is run first,
-                # so we need to force this one to run "later" using NullTrigger.
-                await NullTrigger()
-                if transaction_data is not None:
-                    process(transaction_data)
-
-
-        use_task = cocotb.start_soon(use_transaction())
-        monitor_task = cocotb.start_soon(monitor())
-
-    Instead use an :class:`!.Event`, like so:
-
-    .. code-block:: python
-
-        transaction_data = None
-        transaction_event = Event()
-
-
-        def monitor():
-            while dut.valid.value != 1 and dut.ready.value != 1:
-                await RisingEdge(dut.clk)
-            transaction_data = dut.data.value
-            transaction_event.set()
-
-
-        def use_transaction():
-            # Now we don't need the NullTrigger.
-            # This Task will wake up *strictly* after `monitor_task` sets the transaction.
-            await transaction_event.wait()
-            process(transaction_data)
-
-
-        use_task = cocotb.start_soon(use_transaction())
-        monitor_task = cocotb.start_soon(monitor())
+    This is primarily for forcing the current Task to be rescheduled after all currently pending Tasks.
 
     .. versionremoved:: 2.0
         The *outcome* parameter was removed. There is no alternative.
