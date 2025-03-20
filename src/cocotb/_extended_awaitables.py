@@ -23,7 +23,7 @@ from typing import (
 )
 
 import cocotb.handle
-from cocotb._base_triggers import EmptyTrigger, Trigger, _InternalEvent
+from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
 from cocotb._typing import TimeUnit
 from cocotb.task import Task
@@ -91,7 +91,7 @@ class Combine(_AggregateWaitable["Combine"]):
 
     async def _wait(self) -> "Combine":
         if len(self._triggers) == 0:
-            await EmptyTrigger()
+            await NullTrigger()
         elif len(self._triggers) == 1:
             await self._triggers[0]
         else:
