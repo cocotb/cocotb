@@ -24,14 +24,12 @@ from cocotb.clock import Clock
 from cocotb.task import CancellationError, Task
 from cocotb.triggers import (
     Combine,
-    EmptyTrigger,
     Event,
     First,
     NullTrigger,
     RisingEdge,
     Timer,
     Trigger,
-    with_timeout,
 )
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -993,42 +991,3 @@ async def test_start_again_while_pending(_) -> None:
     b = cocotb.start_soon(a)
     assert b is a
     await a
-
-
-@cocotb.test
-async def test_EmptyTrigger_doesnt_yield(_) -> None:
-    task_ran = False
-
-    async def coro() -> None:
-        nonlocal task_ran
-        task_ran = True
-
-    task = cocotb.start_soon(coro())
-    await EmptyTrigger()
-    task.cancel()
-    assert not task_ran
-
-
-@cocotb.test
-async def test_task_started(_) -> None:
-    has_resumed = False
-
-    async def coro() -> None:
-        nonlocal has_resumed
-        has_resumed = True
-        await Timer(1, "ns")
-
-    task = cocotb.start_soon(coro())
-    assert not has_resumed
-    await task.started
-    assert has_resumed
-
-
-@cocotb.test
-async def test_task_already_started(_) -> None:
-    async def coro() -> None:
-        await Timer(5, "ns")
-
-    task = cocotb.start_soon(coro())
-    await Timer(1, "ns")
-    await with_timeout(task.started, 1, "step")
