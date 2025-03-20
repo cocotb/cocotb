@@ -287,8 +287,20 @@ async def start(
 
     .. deprecated:: 2.0
         Use :func:`cocotb.start_soon` instead.
-        If you need the scheduled Task to run before continuing the current Task,
-        follow the call to :func:`cocotb.start_soon` with an :class:`await NullTrigger() <cocotb.triggers.NullTrigger>`.
+        If you need the scheduled Task to start before continuing the current Task,
+        use an :class:`.Event` to block the current Task until the scheduled Task starts,
+        like so:
+
+        .. code-block:: python
+
+            async def coro(started: Event) -> None:
+                started.set()
+                # Do stuff...
+
+
+            task_started = Event()
+            task = cocotb.start_soon(coro(task_started))
+            await task_started.wait()
     """
     task = start_soon(coro)
     await NullTrigger()
