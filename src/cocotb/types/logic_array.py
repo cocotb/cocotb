@@ -280,15 +280,17 @@ class LogicArray(ArrayLike[Logic]):
             else:
                 self._range = Range(len(self._value_as_str) - 1, "downto", 0)
         elif isinstance(value, int):
-            if value < 0:
-                raise ValueError("Invalid int literal")
             if range is None:
                 raise TypeError("Missing required arguments: 'range'")
-            bitlen = max(1, int.bit_length(value))
-            if bitlen > len(range):
+
+            # Convert to unsigned if signed assuming two's complement.
+            limit = 1 << (len(range) - 1)
+            if value < -limit or limit <= value:
                 raise ValueError(
                     f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
                 )
+            value %= 2 * limit
+
             self._value_as_int = value
             self._range = range
         else:
@@ -365,6 +367,8 @@ class LogicArray(ArrayLike[Logic]):
             TypeError: When invalid argument types are used.
             ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*, or *value* is negative.
         """
+        if value < 0:
+            raise ValueError("Expected unsigned integer, got negative value.")
         return LogicArray(value, range)
 
     @classmethod
@@ -389,20 +393,7 @@ class LogicArray(ArrayLike[Logic]):
             TypeError: When invalid argument types are used.
             ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
-        if isinstance(range, int):
-            range = Range(range - 1, "downto", 0)
-        elif not isinstance(range, Range):
-            raise TypeError(
-                f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
-            )
-
-        limit = 1 << (len(range) - 1)
-        if value < -limit or limit <= value:
-            raise ValueError(
-                f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
-            )
-
-        return LogicArray(value % (2 * limit), range)
+        return LogicArray(value, range)
 
     @classmethod
     def from_bytes(
@@ -483,7 +474,10 @@ class LogicArray(ArrayLike[Logic]):
     ) -> bool:
         if isinstance(other, int):
             try:
-                return self.to_unsigned() == other
+                if other < 0:
+                    return self.to_signed() == other
+                else:
+                    return self.to_unsigned() == other
             except ValueError:
                 return False
         elif isinstance(other, str):
