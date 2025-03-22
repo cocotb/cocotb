@@ -37,6 +37,7 @@ from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Generic,
     Iterable,
     List,
     Optional,
@@ -314,3 +315,19 @@ def pointer_str(obj: object) -> str:
     """
     full_repr = object.__repr__(obj)  # gives "<{type} object at {address}>"
     return full_repr.rsplit(" ", 1)[1][:-1]
+
+
+class Box(Generic[T]):
+    """Wraps a copy-value to turn it into a reference-value."""
+
+    def __init__(self, value: T) -> None:
+        self.value = value
+
+    def get(self) -> T:
+        return self.value
+
+    def set(self, value: T) -> None:
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"Box({self.value!r})"

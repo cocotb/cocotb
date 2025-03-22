@@ -28,15 +28,15 @@
 """A clock class."""
 
 import logging
+import warnings
 from decimal import Decimal
 from fractions import Fraction
-from logging import Logger
-from typing import TYPE_CHECKING, Type, Union
+from typing import TYPE_CHECKING, Any, Type, Union, cast
 
 import cocotb
 from cocotb._py_compat import cached_property
 from cocotb._typing import TimeUnit
-from cocotb._utils import cached_method
+from cocotb._utils import Box, cached_method
 from cocotb.handle import LogicObject, _trust_inertial
 from cocotb.simulator import clock_create
 from cocotb.task import Task
@@ -165,6 +165,7 @@ class Clock:
             )
 
         self._task: Union[Task[None], None] = None
+        self._stopped: Union[Box[bool], None] = None
 
     @property
     def signal(self) -> LogicObject:
@@ -231,7 +232,10 @@ class Clock:
                 # The clock is meant to toggle forever, so awaiting this should
                 # never return by awaiting on Event that's never set.
                 e = Event()
-                await e.wait()
+                try:
+                    await e.wait()
+                finally:
+                    self._clkobj.stop()
 
         else:
 
@@ -248,9 +252,26 @@ class Clock:
                     await timer_high
 
         self._task = cocotb.start_soon(drive())
+        stopped = Box(False)
+        self._stopped = stopped
 
-        # So if a user calls `task.kill()` on the returned task the Clock object is stopped.
-        self._task._add_done_callback(lambda _: self._cleanup())
+        def _clock_task_done(_: Any) -> None:
+            # This callback can be called after the user calls stop(), or if the task
+            # is cancel()ed.
+            if stopped.get():
+                # If the user called stop(), the previous state is already cleaned up and
+                # we don't need to do anything here.
+                return
+            # If the task was cancel()ed, calling stop() will clean up the previous state.
+            # And the call to self._task.cancel() in stop() will no-op.
+            warnings.warn(
+                "Do not kill() or cancel() a clock Task to stop a Clock, "
+                "instead call `Clock.stop`.",
+                DeprecationWarning,
+            )
+            self.stop()
+
+        self._task._add_done_callback(_clock_task_done)
 
         return self._task
 
@@ -266,11 +287,9 @@ class Clock:
         """
         if self._task is None:
             raise RuntimeError("Stopping a clock that was never started.")
-        self._task.kill()
-
-    def _cleanup(self) -> None:
-        if self._impl == "gpi":
-            self._clkobj.stop()
+        cast(Box[bool], self._stopped).set(True)
+        self._task.cancel()
+        self._stopped = None
         self._task = None
 
     async def cycles(
@@ -292,7 +311,7 @@ class Clock:
         return f"<{type(self).__qualname__}, {self._signal._path} @ {freq_mhz} MHz>"
 
     @cached_property
-    def _log(self) -> Logger:
+    def _log(self) -> logging.Logger:
         return logging.getLogger(
             f"cocotb.{type(self).__qualname__}.{self._signal._name}"
         )
