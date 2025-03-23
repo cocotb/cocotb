@@ -999,3 +999,17 @@ async def test_start_again_while_pending(_) -> None:
     b = cocotb.start_soon(a)
     assert b is a
     await a
+
+
+@cocotb.test(expect_error=CancellationError)
+async def test_test_end_cancellation_error(_) -> None:
+    """Test that test-end Cancellation causes test failure."""
+
+    async def coro() -> None:
+        try:
+            await Timer(1000, "ns")
+        except CancelledError:
+            pass  # whoops
+
+    cocotb.start_soon(coro())
+    await Timer(1)
