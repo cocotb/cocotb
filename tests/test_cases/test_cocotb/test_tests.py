@@ -196,3 +196,18 @@ async def test_without_parenthesis(dut):
 @cocotb.test()
 async def test_test_without_parenthesis_ran(dut):
     assert a == 1
+
+
+@cocotb.test
+async def test_pass_test_in_task(_) -> None:
+    async def raise_test_success():
+        await Timer(1, unit="ns")
+        cocotb.pass_test("Finished test early")
+
+    cocotb.start_soon(raise_test_success())
+    await Timer(10, unit="ns")
+
+
+@cocotb.test
+async def test_pass_test_in_test(_) -> None:
+    cocotb.pass_test("Finished test early")
