@@ -41,7 +41,7 @@ import cocotb._scheduler
 import cocotb.handle
 from cocotb import _ANSI, simulator
 from cocotb._outcomes import Error
-from cocotb._test import Failed, SimFailure, Test, TestSuccess
+from cocotb._test import Failed, SimFailure, Test
 from cocotb._typing import TimeUnit
 from cocotb._utils import (
     DocEnum,
@@ -357,9 +357,6 @@ class RegressionManager:
         outcome = test.result()
         try:
             outcome.get()
-        except TestSuccess as e:
-            passed, msg = True, e.msg
-            exc = remove_traceback_frames(e, ["_test_complete", "get"])
         except BaseException as e:
             passed, msg = False, None
             exc = remove_traceback_frames(e, ["_test_complete", "get"])
