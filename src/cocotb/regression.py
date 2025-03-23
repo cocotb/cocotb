@@ -663,7 +663,6 @@ class RegressionManager:
             start_hilight,
             stop_hilight,
             rest,
-            exc_info=result,
         )
 
         # write out xunit results

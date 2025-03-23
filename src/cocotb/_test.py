@@ -178,11 +178,11 @@ class Test:
         e = task.exception()
         if e is None:
             self.abort(Value(task.result()))
-        elif isinstance(e, (TestSuccess, Failed, AssertionError)):
-            task._log.info("Test stopped by this task")
+        elif isinstance(e, TestSuccess):
+            task._log.info("Test stopped early by this task")
             self.abort(Error(e))
         else:
-            task._log.error("Exception raised by this task")
+            task._log.warning(e, exc_info=e)
             self.abort(Error(e))
 
     def start(self) -> None:
@@ -241,11 +241,11 @@ class Test:
         if e is None:
             return
         # there was a failure and no one is watching, fail test
-        elif isinstance(e, (TestSuccess, Failed, AssertionError)):
-            task._log.info("Test stopped by this task")
+        elif isinstance(e, TestSuccess):
+            task._log.info("Test stopped early by this task")
             self.abort(Error(e))
         else:
-            task._log.error("Exception raised by this task")
+            task._log.warning(e, exc_info=e)
             self.abort(Error(e))
 
 
