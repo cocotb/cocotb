@@ -61,7 +61,7 @@ endif
 export RANDOM_SEED := 123456789
 
 COCOTB_TOPLEVEL     := matrix_multiplier
-COCOTB_TEST_MODULES := test_matrix_multiplier
+COCOTB_TEST_MODULES := matrix_multiplier_tests
 
 ifeq ($(SIM),ghdl)
 
