@@ -19,7 +19,7 @@ import cocotb
 from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._exceptions import InternalError
-from cocotb._outcomes import Error, Outcome
+from cocotb._outcomes import Error, Outcome, Value
 from cocotb._typing import TimeUnit
 from cocotb.task import ResultType, Task
 from cocotb.triggers import NullTrigger, SimTimeoutError, with_timeout
@@ -157,23 +157,33 @@ class Test:
         self._test_complete_cb: Callable[[], None]
         self._main_task: Task[None]
         self._outcome: Union[None, Outcome[Any]] = None
+        self._shutdown_errors: list[Outcome[Any]] = []
         self._start_time: float
         self._start_sim_time: float
 
     def init(self, _test_complete_cb: Callable[[], None]) -> None:
         self._test_complete_cb = _test_complete_cb
         self._main_task = TestTask(self.func(cocotb.top), self.name)
-        self._main_task._add_done_callback(self._shutdown_test)
+        self._main_task._add_done_callback(self._test_done_callback)
+        self.tasks.append(self._main_task)
 
-    def _shutdown_test(self, task: Task[Any]) -> None:
-        # kill test Tasks
-        while self.tasks:
-            self.tasks[0].kill()
-
-        # record times
-        self.wall_time = time.time() - self._start_time
-        self.sim_time_ns = get_sim_time("ns") - self._start_sim_time
-        self._test_complete_cb()
+    def _test_done_callback(self, task: Task[None]) -> None:
+        self.tasks.remove(task)
+        # If cancelled, end the Test without additional error. This case would only
+        # occur if a child threw a CancelledError or if the Test was forced to shutdown.
+        if task.cancelled():
+            self.abort(Value(None))
+            return
+        # Handle outcome appropriately and shut down the Test.
+        e = task.exception()
+        if e is None:
+            self.abort(Value(task.result()))
+        elif isinstance(e, (TestSuccess, Failed, AssertionError)):
+            task._log.info("Test stopped by this task")
+            self.abort(Error(e))
+        else:
+            task._log.error("Exception raised by this task")
+            self.abort(Error(e))
 
     def start(self) -> None:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
@@ -189,26 +199,30 @@ class Test:
         cocotb._scheduler_inst._event_loop()
 
     def result(self) -> Outcome[Any]:
+        if self._outcome is None:  # pragma: no cover
+            raise InternalError("Getting result before test is completed")
+
+        if not isinstance(self._outcome, Error) and self._shutdown_errors:
+            return self._shutdown_errors[0]
+        return self._outcome
+
+    def abort(self, outcome: Outcome[Any]) -> None:
+        """Force this test to end early."""
+
+        # If we are shutting down, save any errors
         if self._outcome is not None:
-            return self._outcome
-        else:
-            assert self._main_task._outcome is not None
-            return self._main_task._outcome
+            if isinstance(outcome, Error):
+                self._shutdown_errors.append(outcome)
+            return
 
-    def abort(self, exc: BaseException) -> None:
-        """Force this test to end early.
+        # Set outcome and cancel Tasks.
+        self._outcome = outcome
+        for task in self.tasks[:]:
+            task._cancel_now()
 
-        This happens when a background task fails, and is consistent with
-        how the behavior has always been. In future, we may want to behave
-        more gracefully to allow the test body to clean up.
-
-        *exc* is the exception that the test should report as its reason for
-        aborting.
-        """
-        if self._outcome is not None:  # pragma: no cover
-            raise InternalError("Outcome already has a value, but is being set again.")
-        self._outcome = Error(exc)
-        self._main_task.kill()
+        self.wall_time = time.time() - self._start_time
+        self.sim_time_ns = get_sim_time("ns") - self._start_sim_time
+        self._test_complete_cb()
 
     def add_task(self, task: Task[Any]) -> None:
         task._add_done_callback(self._task_done_callback)
@@ -229,10 +243,10 @@ class Test:
         # there was a failure and no one is watching, fail test
         elif isinstance(e, (TestSuccess, Failed, AssertionError)):
             task._log.info("Test stopped by this task")
-            self.abort(e)
+            self.abort(Error(e))
         else:
             task._log.error("Exception raised by this task")
-            self.abort(e)
+            self.abort(Error(e))
 
 
 class TestTask(Task[None]):
