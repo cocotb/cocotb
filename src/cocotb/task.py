@@ -345,18 +345,41 @@ class Task(Generic[ResultType]):
         self._must_cancel = True
 
         if self._state is _TaskState.UNSTARTED:
-            # must fail immediately
+            # Must fail immediately as we can't start a coroutine with an exception.
             self._set_outcome(Error(self._cancelled_error), _TaskState.CANCELLED)
 
         elif self._state is _TaskState.PENDING:
-            # unprime triggers if pending
+            # Unprime trigger if pending.
             cocotb._scheduler_inst._unschedule(self)
-            # schedule wakeup to throw CancelledError
+            # Then schedule wakeup to throw CancelledError.
             cocotb._scheduler_inst._schedule_task_internal(self)
 
         elif self._state is _TaskState.RUNNING:
-            # Reschedule to throw CancelledError
+            # Reschedule to throw CancelledError.
             cocotb._scheduler_inst._schedule_task_internal(self)
+
+        return True
+
+    def _cancel_now(self, msg: Optional[str] = None) -> bool:
+        """Like cancel(), but throws CancelledError into the Task and puts it into a "done" state immediately.
+
+        Not safe to be called from a running Task.
+        Only from done callbacks or scheduler or Task internals.
+        """
+        if self.done():
+            return False
+
+        self._cancelled_msg = msg
+        self._must_cancel = True
+
+        if self._state is _TaskState.UNSTARTED:
+            # Must fail immediately as we can't start a coroutine with an exception.
+            self._set_outcome(Error(self._cancelled_error), _TaskState.CANCELLED)
+        else:
+            # Unprime and unschedule the Task so it's out of the scheduler.
+            cocotb._scheduler_inst._unschedule(self)
+            # Force CancelledError to be thrown immediately.
+            self._advance(None)
 
         return True
 
