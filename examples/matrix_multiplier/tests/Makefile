@@ -57,9 +57,6 @@ else
     $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
 
-# Fix the seed to ensure deterministic tests
-export RANDOM_SEED := 123456789
-
 COCOTB_TOPLEVEL     := matrix_multiplier
 COCOTB_TEST_MODULES := matrix_multiplier_tests
 
