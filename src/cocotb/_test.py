@@ -180,7 +180,7 @@ class Test:
             self.abort(Value(task.result()))
         elif isinstance(e, TestSuccess):
             task._log.info("Test stopped early by this task")
-            self.abort(Error(e))
+            self.abort(Value(e))
         else:
             task._log.warning(e, exc_info=e)
             self.abort(Error(e))
@@ -243,7 +243,7 @@ class Test:
         # there was a failure and no one is watching, fail test
         elif isinstance(e, TestSuccess):
             task._log.info("Test stopped early by this task")
-            self.abort(Error(e))
+            self.abort(Value(e))
         else:
             task._log.warning(e, exc_info=e)
             self.abort(Error(e))
