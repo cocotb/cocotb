@@ -5,6 +5,44 @@ Writing Testbenches
 *******************
 
 
+Logging
+=======
+
+Cocotb uses Python's :mod:`logging` library, with the configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
+``cocotb.log.info`` is a good stand-in for :func:`print`,
+but user are encouraged to create their own loggers and logger hierarchy by calling :func:`logging.getLogger` and/or :meth:`.Logger.getChild`.
+
+Logging functions `only` log messages, they do not cause the test to fail.
+See :ref:`passing_and_failing_tests` for more information on how to fail a test.
+
+.. code-block:: python
+
+    import logging
+    import cocotb
+
+    @cocotb.test()
+    async def test(dut):
+        # Create a logger for this testbench
+        logger = logging.getLogger("my_testbench")
+
+        logger.debug("This is a debug message")
+        logger.info("This is an info message")
+        logger.warning("This is a warning message")
+        logger.error("This is an error message")
+        logger.critical("This is a critical message")
+
+.. note::
+
+    Writing messages to the log/console using the built-in function :func:`print` is not recommended in cocotb testbenches.
+    :func:`print` defaults to writing to ``stdout``, which is often buffered;
+    not only by the Python runtime, but sometimes by the simulator as well.
+    This can make messages appear out-of-order compared to messages coming from the simulator or the :term:`DUT`.
+
+.. warning::
+
+    The ``"cocotb"`` and ``"gpi"`` logger namespaces and all :class:`~logging.Logger`\ s on cocotb-created objects are reserved for internal use only.
+
+
 .. _writing_tbs_accessing_design:
 
 Accessing the design
@@ -39,14 +77,14 @@ you can use the :func:`dir` function on a handle.
 .. code-block:: python
 
     # Print the instances and signals (which includes the ports) of the design's toplevel
-    print(dir(dut))
+    cocotb.log.info(dir(dut))
 
     # Print the instances and signals of "inst_sub_block" under the toplevel
     # which is the instance name of a Verilog module or VHDL entity/component
-    print(dir(dut.inst_sub_block))
+    cocotb.log.info(dir(dut.inst_sub_block))
 
     # Print the packages
-    print(dir(cocotb.packages))
+    cocotb.log.info(dir(cocotb.packages))
 
 
 .. _writing_tbs_assigning_values:
@@ -237,7 +275,7 @@ the various actions described in :ref:`assignment-methods` can be used.
 
 .. _writing_tbs_accessing_underscore_identifiers:
 
-Accessing Identifiers Starting with an Underscore or Invalid Python Names
+Accessing identifiers starting with an underscore or invalid Python names
 =========================================================================
 
 The attribute syntax of ``dut._some_signal`` cannot be used to access
@@ -258,7 +296,7 @@ All named objects, including those with the aforementioned limitations, can be a
 
 .. _writing_tbs_accessing_verilog_packages:
 
-Accessing Verilog Packages
+Accessing Verilog packages
 ==========================
 
 Verilog packages are accessible via :data:`cocotb.packages`.
@@ -276,9 +314,12 @@ It may appear as one or more attributes here depending on the number of compilat
 .. code-block:: python
 
     # prints "7"
-    print(cocotb.packages.my_package.foo.value)
+    cocotb.log.info(cocotb.packages.my_package.foo.value)
 
-Passing and Failing Tests
+
+.. _passing_and_failing_tests:
+
+Passing and failing tests
 =========================
 
 A cocotb test is considered to have `failed` if the test coroutine or any running :class:`~cocotb.task.Task`
@@ -369,15 +410,3 @@ A passing test will print the following output.
 .. code-block::
 
     0.00ns INFO     Test Passed: test
-
-
-Logging
-=======
-
-Cocotb uses Python's :mod:`logging` library, with the configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
-
-Users may use :data:`cocotb.log` for all their logging needs,
-but are encouraged to create their own loggers and logger hierarchy by calling :func:`logging.getLogger`.
-
-.. warning::
-    The ``"cocotb"`` and ``"gpi"`` logger namespaces and all :class:`~logging.Logger`\ s on cocotb-created objects are reserved for internal use only.
