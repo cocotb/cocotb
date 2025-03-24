@@ -410,3 +410,41 @@ A passing test will print the following output.
 .. code-block::
 
     0.00ns INFO     Test Passed: test
+
+
+Cleaning up resources
+=====================
+
+When you call :meth:`.Task.cancel` on a Task,
+a :exc:`CancelledError` will be raised which can be caught to run cleanup or end-of-test code.
+This will also trigger the finalization routine of any :term:`context manager`.
+
+When a test ends, the cocotb runtime will call :meth:`.Task.cancel` on all running tasks started with :func:`cocotb.start_soon`,
+allowing for end-of-test cleanup.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def test(dut):
+
+        async def drive_data_valid(intf, sequence):
+            try:
+                intf.valid.value = 1
+                for data in sequence:
+                    intf.data.value = data
+            finally:
+                # Ensure that valid is brought back to 0 when the test ends,
+                # the Task is explicitly cancelled, or if the Task ends normally.
+                intf.valid.value = 0
+
+        # Generate sequence
+        sequence = ...
+
+        # Run driver Task concurrently
+        cocotb.start_soon(drive_data_valid(dut.data_in, sequence))
+
+        # Do other stuff
+
+.. note::
+    If a :exc:`!CancelledError` is handled and not re-raised, the test will be considered to have failed.
+    For that reason, it is recommended to use :keyword:`finally` rather than specifically catching :exc:`!CancelledError`.
