@@ -61,7 +61,8 @@ import cocotb._gpi_triggers
 import cocotb._scheduler
 import cocotb.handle
 from cocotb import _ANSI, simulator
-from cocotb._test import Failed, SimFailure, Test, TestSuccess
+from cocotb._outcomes import Error
+from cocotb._test import Failed, SimFailure, Test
 from cocotb._typing import TimeUnit
 from cocotb._utils import (
     DocEnum,
@@ -377,9 +378,6 @@ class RegressionManager:
         outcome = test.result()
         try:
             outcome.get()
-        except TestSuccess as e:
-            passed, msg = True, e.msg
-            exc = remove_traceback_frames(e, ["_test_complete", "get"])
         except BaseException as e:
             passed, msg = False, None
             exc = remove_traceback_frames(e, ["_test_complete", "get"])
@@ -662,7 +660,6 @@ class RegressionManager:
             start_hilight,
             stop_hilight,
             rest,
-            exc_info=result,
         )
 
         # write out xunit results
@@ -838,7 +835,8 @@ class RegressionManager:
 
     def _fail_simulation(self, msg: str) -> None:
         self._sim_failure = SimFailure(msg)
-        self._test.abort(self._sim_failure)
+        self._test.abort(Error(self._sim_failure))
+        cocotb._scheduler_inst._event_loop()
 
     @staticmethod
     def _safe_divide(a: float, b: float) -> float:

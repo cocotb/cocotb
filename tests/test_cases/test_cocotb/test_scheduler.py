@@ -1032,3 +1032,17 @@ async def test_task_already_started(_) -> None:
     task = cocotb.start_soon(coro())
     await Timer(1, "ns")
     await with_timeout(task.started, 1, "step")
+
+
+@cocotb.test(expect_error=CancellationError)
+async def test_test_end_cancellation_error(_) -> None:
+    """Test that test-end Cancellation causes test failure."""
+
+    async def coro() -> None:
+        try:
+            await Timer(1000, "ns")
+        except CancelledError:
+            pass  # whoops
+
+    cocotb.start_soon(coro())
+    await Timer(1)
