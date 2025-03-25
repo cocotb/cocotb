@@ -391,6 +391,8 @@ class LogicArray(ArrayLike[Logic]):
         """
         if isinstance(range, int):
             range = Range(range - 1, "downto", 0)
+        elif not isinstance(range, Range):
+            raise TypeError("Invalid range type")
 
         limit = 1 << (len(range) - 1)
         if (value < -limit) or (value >= limit):
