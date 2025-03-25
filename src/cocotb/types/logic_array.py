@@ -392,16 +392,13 @@ class LogicArray(ArrayLike[Logic]):
         if isinstance(range, int):
             range = Range(range - 1, "downto", 0)
 
-        limit = 2 ** (len(range) - 1)
+        limit = 1 << (len(range) - 1)
         if (value < -limit) or (value >= limit):
             raise ValueError(
                 f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
             )
 
-        if value < 0:
-            value += 2 * limit
-
-        return LogicArray(value, range)
+        return LogicArray(value % (2 * limit), range)
 
     @classmethod
     def from_bytes(
