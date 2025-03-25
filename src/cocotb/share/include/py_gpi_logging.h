@@ -24,7 +24,9 @@ PYGPILOG_EXPORT void py_gpi_logger_initialize(PyObject* handler,
 
 PYGPILOG_EXPORT void py_gpi_logger_finalize();
 
-extern PYGPILOG_EXPORT PyObject* pEventFn;  // This is gross but I don't care
+extern PYGPILOG_EXPORT PyObject* pEventFn;
+
+PYGPILOG_EXPORT void handle_error();
 
 #ifdef __cplusplus
 }

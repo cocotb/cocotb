@@ -182,8 +182,8 @@ int handle_gpi_callback(void *user_data) {
     // The best thing to do here is shutdown as any subsequent
     // calls will go back to Python which is now in an unknown state
     if (pValue == NULL) {
-        PyErr_Print();
         gpi_sim_end();
+        handle_error();
         return 0;
     }
 
@@ -779,7 +779,7 @@ static PyObject *initialize_logger(PyObject *, PyObject *args) {
     PyObject *log_func;
     PyObject *get_logger;
     if (!PyArg_ParseTuple(args, "OO", &log_func, &get_logger)) {
-        PyErr_Print();
+        handle_error();
         return NULL;
     }
     py_gpi_logger_initialize(log_func, get_logger);
@@ -795,7 +795,7 @@ static PyObject *set_sim_event_callback(PyObject *, PyObject *args) {
 
     PyObject *sim_event_callback;
     if (!PyArg_ParseTuple(args, "O", &sim_event_callback)) {
-        PyErr_Print();
+        handle_error();
         Py_RETURN_NONE;
     }
     Py_INCREF(sim_event_callback);
