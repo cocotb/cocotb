@@ -280,10 +280,15 @@ class LogicArray(ArrayLike[Logic]):
             else:
                 self._range = Range(len(self._value_as_str) - 1, "downto", 0)
         elif isinstance(value, int):
-            if value < 0:
-                raise ValueError("Invalid int literal")
             if range is None:
                 raise TypeError("Missing required arguments: 'range'")
+            if value < 0:
+                value += 2 ** len(range)
+                # If value doesn't fit in range, it will still be negative.
+                if value < 0:
+                    raise ValueError(
+                        f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
+                    )
             bitlen = max(1, int.bit_length(value))
             if bitlen > len(range):
                 raise ValueError(
@@ -365,6 +370,8 @@ class LogicArray(ArrayLike[Logic]):
             TypeError: When invalid argument types are used.
             ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*, or *value* is negative.
         """
+        if value < 0:
+            raise ValueError("Expected unsigned integer, got negative value.")
         return LogicArray(value, range)
 
     @classmethod
@@ -389,16 +396,6 @@ class LogicArray(ArrayLike[Logic]):
             TypeError: When invalid argument types are used.
             ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
         """
-        if isinstance(range, int):
-            range = Range(range - 1, "downto", 0)
-        if value < 0:
-            value += 2 ** len(range)
-        # If value doesn't fit in range, it will still be negative and will blow the
-        # constructor up in a bad way.
-        if value < 0:
-            raise ValueError(
-                f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
-            )
         return LogicArray(value, range)
 
     @classmethod
@@ -480,7 +477,10 @@ class LogicArray(ArrayLike[Logic]):
     ) -> bool:
         if isinstance(other, int):
             try:
-                return self.to_unsigned() == other
+                if other < 0:
+                    return self.to_signed() == other
+                else:
+                    return self.to_unsigned() == other
             except ValueError:
                 return False
         elif isinstance(other, str):
