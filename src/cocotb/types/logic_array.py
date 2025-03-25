@@ -392,7 +392,9 @@ class LogicArray(ArrayLike[Logic]):
         if isinstance(range, int):
             range = Range(range - 1, "downto", 0)
         elif not isinstance(range, Range):
-            raise TypeError(f"Expected Range or int for parameter 'range', not {type(range).__qualname__}")
+            raise TypeError(
+                f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
+            )
 
         limit = 1 << (len(range) - 1)
         if value < -limit or limit <= value:
