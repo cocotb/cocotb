@@ -391,14 +391,16 @@ class LogicArray(ArrayLike[Logic]):
         """
         if isinstance(range, int):
             range = Range(range - 1, "downto", 0)
-        if value < 0:
-            value += 2 ** len(range)
-        # If value doesn't fit in range, it will still be negative and will blow the
-        # constructor up in a bad way.
-        if value < 0:
+
+        limit = 2 ** (len(range) - 1)
+        if (value < -limit) or (value >= limit):
             raise ValueError(
                 f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
             )
+
+        if value < 0:
+            value += 2 * limit
+
         return LogicArray(value, range)
 
     @classmethod
