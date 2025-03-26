@@ -236,7 +236,6 @@ class Task(Generic[ResultType]):
             return None
         else:
             if self._must_cancel:
-                self._coro.close()
                 self._set_outcome(
                     Error(
                         CancellationError(
@@ -255,15 +254,12 @@ class Task(Generic[ResultType]):
             return
 
         if self._state is _TaskState.UNSTARTED:
-            pass
+            self._coro.close()
         elif self._state is _TaskState.RUNNING:
             raise RuntimeError("Can't kill currently running Task")
         else:
             # unschedule if scheduled and unprime triggers if pending
             cocotb._scheduler_inst._unschedule(self)
-
-        # Close coroutine so there is no RuntimeWarning that it was never awaited
-        self._coro.close()
 
         self._set_outcome(Value(None))  # type: ignore  # `kill()` sets the result to None regardless of the ResultType
 
@@ -345,6 +341,7 @@ class Task(Generic[ResultType]):
         self._must_cancel = True
 
         if self._state is _TaskState.UNSTARTED:
+            self._coro.close()
             # must fail immediately
             self._set_outcome(Error(self._cancelled_error), _TaskState.CANCELLED)
 
