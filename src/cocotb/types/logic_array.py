@@ -391,15 +391,18 @@ class LogicArray(ArrayLike[Logic]):
         """
         if isinstance(range, int):
             range = Range(range - 1, "downto", 0)
-        if value < 0:
-            value += 2 ** len(range)
-        # If value doesn't fit in range, it will still be negative and will blow the
-        # constructor up in a bad way.
-        if value < 0:
+        elif not isinstance(range, Range):
+            raise TypeError(
+                f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
+            )
+
+        limit = 1 << (len(range) - 1)
+        if value < -limit or limit <= value:
             raise ValueError(
                 f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
             )
-        return LogicArray(value, range)
+
+        return LogicArray(value % (2 * limit), range)
 
     @classmethod
     def from_bytes(

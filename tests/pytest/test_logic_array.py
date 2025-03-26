@@ -109,6 +109,13 @@ def test_logic_array_signed_conversion():
     with pytest.raises(TypeError):
         LogicArray.from_signed(10, "lol")
 
+    with pytest.raises(ValueError):
+        LogicArray.from_signed(-9, 4)
+    assert LogicArray.from_signed(-8, 4) == LogicArray("1000")
+    assert LogicArray.from_signed(7, 4) == LogicArray("0111")
+    with pytest.raises(ValueError):
+        LogicArray.from_signed(8, 4)
+
 
 def test_logic_array_bytes_conversion():
     assert LogicArray.from_bytes(b"12", byteorder="big") == LogicArray(
