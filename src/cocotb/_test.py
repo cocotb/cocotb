@@ -22,7 +22,7 @@ from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome
 from cocotb._typing import TimeUnit
 from cocotb.task import ResultType, Task
-from cocotb.triggers import SimTimeoutError, with_timeout
+from cocotb.triggers import NullTrigger, SimTimeoutError, with_timeout
 from cocotb.utils import get_sim_time
 
 Failed: Type[BaseException]
@@ -265,7 +265,7 @@ def start_soon(
     return task
 
 
-@deprecated("Use `cocotb.start_soon` instead.")
+@deprecated("Use ``cocotb.start_soon`` instead.")
 async def start(
     coro: Union[Task[ResultType], Coroutine[Any, Any, ResultType]],
 ) -> Task[ResultType]:
@@ -287,16 +287,23 @@ async def start(
 
     .. deprecated:: 2.0
         Use :func:`cocotb.start_soon` instead.
-        If you need the scheduled Task to run before continuing the current Task,
-        follow the call to :func:`cocotb.start_soon` with an :data:`await task.started <cocotb.task.Task.started>`.
+        If you need the scheduled Task to start before continuing the current Task,
+        use an :class:`.Event` to block the current Task until the scheduled Task starts,
+        like so:
 
-        .. code-block:: python3
+        .. code-block:: python
 
-            task = cocotb.start_soon(coro())
-            await task.started
+            async def coro(started: Event) -> None:
+                started.set()
+                # Do stuff...
+
+
+            task_started = Event()
+            task = cocotb.start_soon(coro(task_started))
+            await task_started.wait()
     """
     task = start_soon(coro)
-    await task.started
+    await NullTrigger()
     return task
 
 
