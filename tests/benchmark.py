@@ -44,7 +44,7 @@ def build_and_run_matrix_multiplier(benchmark, sim):
         runner.test(
             hdl_toplevel="matrix_multiplier",
             hdl_toplevel_lang=hdl_toplevel_lang,
-            test_module="test_matrix_multiplier",
+            test_module="matrix_multiplier_tests",
             test_args=test_args,
             seed=123456789,
         )
