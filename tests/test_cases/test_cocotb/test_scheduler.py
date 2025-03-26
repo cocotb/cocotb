@@ -818,6 +818,14 @@ async def test_cancel_task(_: object) -> None:
     with pytest.raises(CancelledError, match="msg1234"):
         task.exception()
 
+    # Test cancel before task starts
+    task = cocotb.start_soon(coro(True))
+    task.cancel()
+    await Timer(1, "ns")
+    assert cancelled
+    assert task.cancelled()
+    assert task.done()
+
 
 @cocotb.test(expect_error=CancellationError)
 async def test_cancel_task_cancellation_error(_: object) -> None:
