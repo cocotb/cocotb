@@ -357,6 +357,10 @@ class Task(Generic[ResultType]):
 
         return True
 
+    def cancelling(self) -> bool:
+        """Return ``True`` if the Task is in the process of being cancelled."""
+        return not self.done() and self._must_cancel
+
     def cancelled(self) -> bool:
         """Return ``True`` if the Task was cancelled."""
         return self._state is _TaskState.CANCELLED

@@ -125,7 +125,7 @@ class Test:
                 try:
                     res = await with_timeout(running_co, timeout_time, timeout_unit)
                 except SimTimeoutError:
-                    running_co.kill()
+                    running_co.cancel()
                     raise
                 else:
                     return res

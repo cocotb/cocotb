@@ -35,7 +35,7 @@ class MonitorChange:
 
     def stop_monitor(self):
         if self.monitor_process is not None:
-            self.monitor_process.kill()
+            self.monitor_process.cancel()
         self.monitor_process = None
 
     def start_monitor(self):
@@ -60,7 +60,9 @@ async def init_dut(dut):
     dut.i_rst_n.value = 0
     await Timer(10, "ns")
     dut.i_rst_n.value = 1
-    return cocotb.start_soon(Clock(dut.i_clk, 1, "ns").start())
+    clk = Clock(dut.i_clk, 1, "ns")
+    clk.start()
+    return clk
 
 
 @cocotb.test()
@@ -83,8 +85,8 @@ async def buggy(dut):
     dut.i_trg.value = 0
 
     await RisingEdge(dut.o_pulse)
-    clk.kill()
-    coro.kill()
+    clk.stop()
+    coro.cancel()
     await Timer(1, "us")
 
 
@@ -105,4 +107,4 @@ async def basic_ok(dut):
         await Timer(10, "ns")
 
     await Timer(10, "ns")
-    clk.kill()
+    clk.stop()
