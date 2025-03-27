@@ -13,6 +13,7 @@
 #include <vector>   // std::vector
 
 #include "cocotb_utils.h"  // DEFER
+#include "gpi.h"           // gpi_sim_end
 #include "gpi_logging.h"   // all things GPI logging
 
 static int py_gpi_log_level = GPI_NOTSET;
@@ -88,7 +89,7 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     PyObject *level_arg = PyLong_FromLong(level);  // New reference
     if (level_arg == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        handle_error();
         return fallback_handler(name, level, pathname, funcname, lineno,
                                 log_buff.data());
         // LCOV_EXCL_STOP
@@ -101,7 +102,7 @@ static void py_gpi_log_handler(void *, const char *name, int level,
         logger = PyObject_CallFunction(m_get_logger, "s", name);  // incs a ref
         // LCOV_EXCL_START
         if (!logger) {
-            PyErr_Print();
+            handle_error();
             return fallback_handler(name, level, pathname, funcname, lineno,
                                     log_buff.data());
         }
@@ -114,7 +115,7 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     PyObject *filename_arg = PyUnicode_FromString(pathname);  // New reference
     if (filename_arg == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        handle_error();
         return fallback_handler(name, level, pathname, funcname, lineno,
                                 log_buff.data());
         // LCOV_EXCL_STOP
@@ -124,7 +125,7 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     PyObject *lineno_arg = PyLong_FromLong(lineno);  // New reference
     if (lineno_arg == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        handle_error();
         return fallback_handler(name, level, pathname, funcname, lineno,
                                 log_buff.data());
         // LCOV_EXCL_STOP
@@ -134,7 +135,7 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     PyObject *msg_arg = PyUnicode_FromString(log_buff.data());  // New reference
     if (msg_arg == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        handle_error();
         return fallback_handler(name, level, pathname, funcname, lineno,
                                 log_buff.data());
         // LCOV_EXCL_STOP
@@ -144,7 +145,7 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     PyObject *function_arg = PyUnicode_FromString(funcname);  // New reference
     if (function_arg == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        handle_error();
         return fallback_handler(name, level, pathname, funcname, lineno,
                                 log_buff.data());
         // LCOV_EXCL_STOP
@@ -157,7 +158,7 @@ static void py_gpi_log_handler(void *, const char *name, int level,
         function_arg, NULL);
     if (handler_ret == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        handle_error();
         return fallback_handler(name, level, pathname, funcname, lineno,
                                 log_buff.data());
         // LCOV_EXCL_STOP
@@ -197,3 +198,17 @@ extern "C" void py_gpi_logger_finalize() {
 }
 
 PyObject *pEventFn = NULL;
+
+/** Handles SystemExit exceptions and prints the exception. */
+void handle_error() {
+    // LCOV_EXCL_START
+    // should only be followed if Python or our code is incorrect
+    if (!PyErr_Occurred()) {
+        return;
+    }
+    // LCOV_EXCL_STOP
+    if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
+        gpi_sim_end();
+    }
+    PyErr_Print();
+}
