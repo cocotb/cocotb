@@ -12,8 +12,8 @@ import cocotb
 from cocotb.handle import (
     ArrayObject,
     GPIDiscovery,
+    HierarchyArrayObject,
     HierarchyObject,
-    HierarchyObjectBase,
     Immediate,
     IntegerObject,
     LogicArrayObject,
@@ -144,7 +144,7 @@ async def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
 
     def _discover(obj):
-        if not isinstance(obj, (HierarchyObject, ArrayObject)):
+        if not isinstance(obj, (HierarchyObject, HierarchyArrayObject, ArrayObject)):
             return
         for thing in obj:
             dut._log.debug("Found %s (%s)", thing._name, type(thing))
@@ -488,7 +488,7 @@ async def discover_all_in_component_vhdl(dut):
         if questa_vhpi and isinstance(obj, StringObject):
             # Iterating over the elements of a string with Questa's VHPI causes a stacktrace
             return 0
-        if not isinstance(obj, (HierarchyObjectBase, ArrayObject)):
+        if not isinstance(obj, (HierarchyObject, HierarchyArrayObject, ArrayObject)):
             return 0
         count = 0
         for thing in obj:
