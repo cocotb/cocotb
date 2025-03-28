@@ -174,6 +174,10 @@ class Task(Generic[ResultType]):
         self._outcome = result
         self._state = state
 
+        # silence ResourceWarnings from coroutines that are never resumed
+        if not self._has_resumed:
+            self._coro.close()
+
         # Run done callbacks.
         for callback in self._done_callbacks:
             callback(self)
@@ -254,7 +258,7 @@ class Task(Generic[ResultType]):
             return
 
         if self._state is _TaskState.UNSTARTED:
-            self._coro.close()
+            pass
         elif self._state is _TaskState.RUNNING:
             raise RuntimeError("Can't kill currently running Task")
         else:
@@ -341,7 +345,6 @@ class Task(Generic[ResultType]):
         self._must_cancel = True
 
         if self._state is _TaskState.UNSTARTED:
-            self._coro.close()
             # must fail immediately
             self._set_outcome(Error(self._cancelled_error), _TaskState.CANCELLED)
 
