@@ -1609,6 +1609,103 @@ class Vcs(Runner):
         return cmds
 
 
+class Dsim(Runner):
+    """Implementation of :class:`Runner` for DSim.
+
+    * Does not support the ``gui`` argument to :meth:`.test`.
+    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    """
+
+    supported_gpi_interfaces = {"verilog": ["vpi"]}
+
+    def _simulator_in_path(self) -> None:
+        if shutil.which("dsim") is None:
+            raise SystemExit("ERROR: dsim executable not found!")
+
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
+        return [f"+incdir+{include}" for include in includes]
+
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
+        return [
+            f"+define+{name}={_as_sv_literal(value)}" for name, value in defines.items()
+        ]
+
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
+        return [
+            f"-defparam {name}={_as_sv_literal(value)}"
+            for name, value in parameters.items()
+        ]
+
+    @property
+    def sim_file(self) -> Path:
+        return self.build_dir / "image.so"
+
+    def _test_command(self) -> List[_Command]:
+        plusargs = self.plusargs
+        if self.waves:
+            plusargs += ["-waves file.vcd"]
+
+        if self.pre_cmd is not None:
+            raise ValueError("WARNING: pre_cmd is not implemented for DSim.")
+
+        return [
+            [
+                "dsim",
+                "-work",
+                str(self.build_dir),
+                "-pli_lib",
+                cocotb_tools.config.lib_name_path("vpi", "dsim").as_posix(),
+                "+acc+rwcbfsWF",
+                "-image",
+                "image",
+            ]
+            + self.test_args
+            + plusargs
+        ]
+
+    def _build_command(self) -> List[_Command]:
+        for source in self.sources:
+            if not is_verilog_source(source):
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports Verilog. {str(source)!r} cannot be compiled."
+                )
+        for arg in self.build_args:
+            if type(arg) not in (str, Verilog):
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports Verilog. build_args {arg!r} cannot be applied."
+                )
+
+        build_args = list(self.build_args)
+
+        cmds: list[_Command] = []
+        sources = [
+            source for source in self.sources if is_verilog_source(source)
+        ] + self.verilog_sources
+        if outdated(self.sim_file, sources) or self.always:
+            cmds = [
+                [
+                    "dsim",
+                    "-work",
+                    str(self.build_dir),
+                    "-pli_lib",
+                    cocotb_tools.config.lib_name_path("vpi", "dsim").as_posix(),
+                    "+acc+rwcbfsWF",
+                    "-genimage",
+                    "image",
+                ]
+                + self._get_define_options(self.defines)
+                + self._get_include_options(self.includes)
+                + self._get_parameter_options(self.parameters)
+                + [arg for arg in build_args if type(arg) in (str, Verilog)]
+                + [str(source_file) for source_file in sources]
+            ]
+
+        else:
+            self.log.warning("Skipping compilation of %s", self.sim_file)
+
+        return cmds
+
+
 def get_runner(simulator_name: str) -> Runner:
     """Return an instance of a runner for *simulator_name*.
 
@@ -1628,6 +1725,7 @@ def get_runner(simulator_name: str) -> Runner:
         "xcelium": Xcelium,
         "nvc": Nvc,
         "vcs": Vcs,
+        "dsim": Dsim,
         # TODO: "activehdl": ActiveHdl,
     }
     try:

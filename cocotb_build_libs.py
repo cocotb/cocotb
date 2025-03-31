@@ -827,4 +827,14 @@ def get_ext():
         )
         ext.append(nvc_vhpi_ext)
 
+    #
+    # DSim
+    #
+    if os.name == "posix":
+        logger.info("Compiling libraries for DSim")
+        dsim_vpi_ext = _get_vpi_lib_ext(
+            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="DSim"
+        )
+        ext.append(dsim_vpi_ext)
+
     return ext

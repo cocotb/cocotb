@@ -57,6 +57,7 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
     # Special-case simulators.
     special = [
         ("cvc", "verilog", "vpi"),
+        ("dsim", "verilog", "vpi"),
         ("ghdl", "vhdl", "vpi"),
         ("icarus", "verilog", "vpi"),
         ("nvc", "vhdl", "vhpi"),
