@@ -185,3 +185,11 @@ Tachyon DA CVC
 
 * Extend the ``cvc64`` call with the option
   ``+interp +acc+2 +loadvpi=$(cocotb-config --lib-name-path vpi cvc):vlog_startup_routines_bootstrap``.
+
+.. _custom-flows-dsim:
+
+Siemens DSim
+============
+
+* Extend the ``dsim`` call with the option
+  ``-pli_lib $(cocotb-config --lib-name-path vpi dsim) +acc+rwcbfsWF``.

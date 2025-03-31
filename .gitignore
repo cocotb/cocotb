@@ -109,6 +109,10 @@ examples/*/tests/compile
 tests/test_cases/*/verilog.log
 examples/*/tests/verilog.log
 
+# DSim
+dsim*
+metrics.db
+
 # Build artifacts
 /dist/
 src/cocotb/_version.py
