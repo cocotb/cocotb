@@ -1,0 +1,1 @@
+``cocotb.handle.RangeableMixin``, ``cocotb.handle.HierarchyObjectBase``, and ``cocotb.handle.NonIndexableValueObjectBase`` have been made private.
