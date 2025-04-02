@@ -200,7 +200,7 @@ class First(_AggregateWaitable[Any]):
         finally:
             # kill all the other waiters
             for w in waiters:
-                w.kill()
+                w.cancel()
 
         return completed[0].result()
 
@@ -411,7 +411,7 @@ async def with_timeout(
         if not shielded:
             # shielded = False only when trigger is a Task created to wrap a Coroutine
             trigger = cast(Task[Any], trigger)
-            trigger.kill()
+            trigger.cancel()
         raise SimTimeoutError
     else:
         return res
