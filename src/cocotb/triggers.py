@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from cocotb._base_triggers import EmptyTrigger, Event, Lock, NullTrigger, Trigger
+from cocotb._base_triggers import Event, Lock, NullTrigger, Trigger
 from cocotb._extended_awaitables import (
     ClockCycles,
     Combine,
@@ -22,7 +22,7 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
-from cocotb.task import Join, TaskComplete, TaskStarted
+from cocotb.task import Join, TaskComplete
 
 __all__ = (
     "Trigger",
@@ -39,7 +39,6 @@ __all__ = (
     "ValueChange",
     "Edge",
     "TaskComplete",
-    "TaskStarted",
     "Join",
     "Waitable",
     "First",
@@ -47,6 +46,5 @@ __all__ = (
     "ClockCycles",
     "with_timeout",
     "SimTimeoutError",
-    "EmptyTrigger",
     "current_gpi_trigger",
 )
