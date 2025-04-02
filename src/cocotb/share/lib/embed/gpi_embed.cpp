@@ -235,7 +235,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     auto entry_utility_module = PyImport_ImportModule("pygpi.entry");
     if (!entry_utility_module) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        handle_error();
         return -1;
         // LCOV_EXCL_STOP
     }
@@ -245,7 +245,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     auto argv_list = PyList_New(argc);
     if (argv_list == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
+        handle_error();
         return -1;
         // LCOV_EXCL_STOP
     }
@@ -255,7 +255,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
         auto argv_item = PyUnicode_DecodeLocale(_argv[i], "surrogateescape");
         if (!argv_item) {
             // LCOV_EXCL_START
-            PyErr_Print();
+            handle_error();
             return -1;
             // LCOV_EXCL_STOP
         }
@@ -267,8 +267,8 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
         PyObject_CallMethod(entry_utility_module, "load_entry", "O", argv_list);
     if (!cocotb_retval) {
         // LCOV_EXCL_START
-        PyErr_Print();
         gpi_sim_end();
+        handle_error();
         return -1;
         // LCOV_EXCL_STOP
     }
@@ -292,8 +292,8 @@ extern "C" COCOTB_EXPORT void _embed_sim_event(const char *msg) {
         PyObject *pValue = PyObject_CallFunction(pEventFn, "s", msg);
         if (pValue == NULL) {
             // LCOV_EXCL_START
-            PyErr_Print();
             LOG_ERROR("Passing event to upper layer failed");
+            handle_error();
             // LCOV_EXCL_STOP
         }
         Py_XDECREF(pValue);
