@@ -274,7 +274,7 @@ class LogicArray(AbstractArray[Logic]):
             if range is not None:
                 if len(value) != len(range):
                     raise ValueError(
-                        f"Value of length {len(self._value_as_str)} will not fit in {range}"
+                        f"Value of length {len(self._value_as_str)} will not fit in {range!r}"
                     )
                 self._range = range
             else:
@@ -296,7 +296,7 @@ class LogicArray(AbstractArray[Logic]):
             if range is not None:
                 if len(self._value_as_array) != len(range):
                     raise ValueError(
-                        f"Value of length {len(self._value_as_array)} will not fit in {range}"
+                        f"Value of length {len(self._value_as_array)} will not fit in {range!r}"
                     )
                 self._range = range
             else:
@@ -365,6 +365,8 @@ class LogicArray(AbstractArray[Logic]):
             TypeError: When invalid argument types are used.
             ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*, or *value* is negative.
         """
+        if value < 0:
+            raise ValueError("Expected unsigned integer, got negative value.")
         return LogicArray(value, range)
 
     @classmethod
@@ -399,10 +401,11 @@ class LogicArray(AbstractArray[Logic]):
         limit = 1 << (len(range) - 1)
         if value < -limit or limit <= value:
             raise ValueError(
-                f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
+                f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}."
             )
+        value %= 2 * limit
 
-        return LogicArray(value % (2 * limit), range)
+        return LogicArray(value, range)
 
     @classmethod
     def from_bytes(
@@ -641,8 +644,9 @@ class LogicArray(AbstractArray[Logic]):
             warnings.warn("Converting a LogicArray of length 0 to integer")
             return 0
         value = self._get_int(resolve)
-        if value >= (1 << (len(self) - 1)):
-            value -= 1 << len(self)
+        limit = 1 << (len(self) - 1)
+        if value >= limit:
+            value -= 2 * limit
         return value
 
     def to_bytes(
