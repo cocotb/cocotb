@@ -384,20 +384,21 @@ def test_null_vector():
     assert len(null_vector) == 0
     assert list(null_vector) == []
     assert str(null_vector) == ""
-    with pytest.warns(UserWarning):
-        assert int(null_vector) == 0
-    with pytest.warns(UserWarning):
-        assert null_vector.to_signed() == 0
-    with pytest.warns(UserWarning):
-        assert null_vector.to_unsigned() == 0
+    with pytest.raises(ValueError):
+        int(null_vector)
+    with pytest.raises(ValueError):
+        null_vector.to_signed()
+    with pytest.raises(ValueError):
+        null_vector.to_unsigned()
 
     # test comparison
     assert null_vector == LogicArray("")
     assert null_vector == LogicArray("", null_range)
     assert null_vector == LogicArray([])
     assert null_vector == LogicArray([], null_range)
-    with pytest.warns(UserWarning):
-        assert null_vector == 0
+    assert null_vector != 0
+    assert null_vector != 1
+    assert null_vector != -1
     assert null_vector == ""
     assert null_vector == []
 
