@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import os
 import random
-import warnings
 from math import ceil
 from typing import (
     TYPE_CHECKING,
@@ -398,6 +397,12 @@ class LogicArray(AbstractArray[Logic]):
                 f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
             )
 
+        # Prevent null range from blowing up the below code.
+        if len(range) == 0:
+            raise ValueError(
+                f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}."
+            )
+
         limit = 1 << (len(range) - 1)
         if value < -limit or limit <= value:
             raise ValueError(
@@ -485,6 +490,9 @@ class LogicArray(AbstractArray[Logic]):
         other: object,
     ) -> bool:
         if isinstance(other, int):
+            if len(self) == 0:
+                # Null arrays don't have a value and thus always compare False.
+                return False
             try:
                 return self.to_unsigned() == other
             except ValueError:
@@ -617,8 +625,7 @@ class LogicArray(AbstractArray[Logic]):
             An integer equivalent to the value by interpreting it using unsigned representation.
         """
         if len(self) == 0:
-            warnings.warn("Converting a LogicArray of length 0 to integer")
-            return 0
+            raise ValueError("Cannot convert null vector to integer")
         return self._get_int(resolve)
 
     def to_signed(
@@ -641,8 +648,7 @@ class LogicArray(AbstractArray[Logic]):
             An integer equivalent to the value by interpreting it using two's complement representation.
         """
         if len(self) == 0:
-            warnings.warn("Converting a LogicArray of length 0 to integer")
-            return 0
+            raise ValueError("Cannot convert null vector to integer")
         value = self._get_int(resolve)
         limit = 1 << (len(self) - 1)
         if value >= limit:
