@@ -253,13 +253,18 @@ class Task(Generic[ResultType]):
         if self.done():
             return
 
-        if self._state is _TaskState.UNSTARTED:
-            self._coro.close()
-        elif self._state is _TaskState.RUNNING:
+        if self._state is _TaskState.RUNNING:
             raise RuntimeError("Can't kill currently running Task")
         else:
             # unschedule if scheduled and unprime triggers if pending
             cocotb._scheduler_inst._unschedule(self)
+
+        # Close native coroutines if they were never resumed to prevent ResourceWarnings.
+        if (
+            inspect.iscoroutine(self._coro)
+            and inspect.getcoroutinestate(self._coro) == "CORO_CREATED"
+        ):
+            self._coro.close()
 
         self._set_outcome(Value(None))  # type: ignore  # `kill()` sets the result to None regardless of the ResultType
 
