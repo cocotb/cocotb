@@ -244,14 +244,18 @@ class Task(Generic[ResultType]):
 
     def kill(self) -> None:
         """Kill a coroutine."""
-        if self.done():
-            return
 
-        if self._state is _TaskState.RUNNING:
-            raise RuntimeError("Can't kill currently running Task")
-        else:
-            # unschedule if scheduled and unprime triggers if pending
+        if self._state in (_TaskState.PENDING, _TaskState.SCHEDULED):
+            # Unschedule if scheduled and unprime triggers if pending.
             cocotb._scheduler_inst._unschedule(self)
+        elif self._state is _TaskState.UNSTARTED:
+            # Don't need to unschedule.
+            pass
+        elif self._state in (_TaskState.FINISHED, _TaskState.CANCELLED):
+            # Do nothing if already done.
+            return
+        else:
+            raise RuntimeError("Can't kill currently running Task")
 
         # Close native coroutines if they were never resumed to prevent ResourceWarnings.
         if (
@@ -320,22 +324,23 @@ class Task(Generic[ResultType]):
 
         Returns: ``True`` if the Task was cancelled; ``False`` otherwise.
         """
-        if self.done():
+        if self._state is _TaskState.PENDING:
+            # Unprime trigger if pending
+            cocotb._scheduler_inst._unschedule(self)
+            # Schedule wakeup to throw CancelledError
+            cocotb._scheduler_inst._schedule_task_internal(self)
+        elif self._state is _TaskState.SCHEDULED:
+            # Already scheduled, so we just hijack it to throw CancelledError
+            pass
+        elif self._state in (_TaskState.UNSTARTED, _TaskState.RUNNING):
+            # (Re)schedule to throw CancelledError
+            cocotb._scheduler_inst._schedule_task_internal(self)
+        else:
+            # Already finished or cancelled
             return False
 
         self._cancelled_msg = msg
         self._must_cancel = True
-
-        if self._state is _TaskState.PENDING:
-            # unprime triggers if pending
-            cocotb._scheduler_inst._unschedule(self)
-            # schedule wakeup to throw CancelledError
-            cocotb._scheduler_inst._schedule_task_internal(self)
-
-        elif self._state in (_TaskState.RUNNING, _TaskState.UNSTARTED):
-            # Reschedule to throw CancelledError
-            cocotb._scheduler_inst._schedule_task_internal(self)
-
         return True
 
     def cancelled(self) -> bool:
