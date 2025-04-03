@@ -345,18 +345,13 @@ class Task(Generic[ResultType]):
         self._cancelled_msg = msg
         self._must_cancel = True
 
-        if self._state is _TaskState.UNSTARTED:
-            self._coro.close()
-            # must fail immediately
-            self._set_outcome(Error(self._cancelled_error), _TaskState.CANCELLED)
-
-        elif self._state is _TaskState.PENDING:
+        if self._state is _TaskState.PENDING:
             # unprime triggers if pending
             cocotb._scheduler_inst._unschedule(self)
             # schedule wakeup to throw CancelledError
             cocotb._scheduler_inst._schedule_task_internal(self)
 
-        elif self._state is _TaskState.RUNNING:
+        elif self._state in (_TaskState.RUNNING, _TaskState.UNSTARTED):
             # Reschedule to throw CancelledError
             cocotb._scheduler_inst._schedule_task_internal(self)
 
