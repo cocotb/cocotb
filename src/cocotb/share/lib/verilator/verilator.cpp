@@ -109,8 +109,8 @@ int main(int argc, char** argv) {
     std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
 #endif
 
+    Verilated::traceEverOn(true);
     if (traceOn) {
-        Verilated::traceEverOn(true);
         top->trace(tfp.get(), 99);
         tfp->open(traceFile);
     }
