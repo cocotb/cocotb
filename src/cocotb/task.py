@@ -216,9 +216,10 @@ class Task(Generic[ResultType]):
             else:
                 self._set_outcome(outcome)
             return None
-        except (KeyboardInterrupt, SystemExit):
+        except (KeyboardInterrupt, SystemExit) as e:
             # Allow these to bubble up to the execution root to fail the sim immediately.
             # This follows asyncio's behavior.
+            self._set_outcome(Error(remove_traceback_frames(e, ["_advance"])))
             raise
         except CancelledError as e:
             self._set_outcome(
