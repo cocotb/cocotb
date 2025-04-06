@@ -7,6 +7,7 @@ import logging
 import os
 import traceback
 from asyncio import CancelledError, InvalidStateError
+from bdb import BdbQuit
 from enum import auto
 from types import CoroutineType
 from typing import (
@@ -216,7 +217,7 @@ class Task(Generic[ResultType]):
             else:
                 self._set_outcome(outcome)
             return None
-        except (KeyboardInterrupt, SystemExit) as e:
+        except (KeyboardInterrupt, SystemExit, BdbQuit) as e:
             # Allow these to bubble up to the execution root to fail the sim immediately.
             # This follows asyncio's behavior.
             self._set_outcome(Error(remove_traceback_frames(e, ["_advance"])))
