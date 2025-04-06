@@ -126,11 +126,12 @@ class VhpiStartupCbHdl : public VhpiCbHdl {
     // don't try. TODO Is this still accurate?
 
     int run() override {
+        int res = 0;
         if (!m_removed) {
-            m_cb_func(m_cb_data);
+            res = m_cb_func(m_cb_data);
         }
         delete this;
-        return 0;
+        return res;
     }
 
     int remove() override {
@@ -147,11 +148,12 @@ class VhpiShutdownCbHdl : public VhpiCbHdl {
     // don't try. TODO Is this still accurate?
 
     int run() override {
+        int res = 0;
         if (!m_removed) {
-            m_cb_func(m_cb_data);
+            res = m_cb_func(m_cb_data);
         }
         delete this;
-        return 0;
+        return res;
     }
 
     int remove() override {

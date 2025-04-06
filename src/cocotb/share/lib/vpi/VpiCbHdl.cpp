@@ -6,6 +6,7 @@
 
 #include "VpiImpl.h"
 #include "gpi_logging.h"
+#include "share/lib/gpi/gpi_priv.h"
 
 #ifndef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
 #include <algorithm>
@@ -25,7 +26,11 @@ static int32_t handle_vpi_callback_(GpiCbHdl *cb_hdl) {
     }
     // LCOV_EXCL_STOP
 
-    cb_hdl->run();
+    if (cb_hdl->run()) {
+        // sim failed, so call shutdown
+        gpi_embed_end();
+        return 0;
+    }
 
     gpi_to_simulator();
     return 0;
@@ -121,10 +126,12 @@ int VpiCbHdl::remove() {
 }
 
 int VpiCbHdl::run() {
+    int res = 0;
+
     // LCOV_EXCL_START
     if (!m_removed) {
         // Only call up if not removed.
-        m_cb_func(m_cb_data);
+        res = m_cb_func(m_cb_data);
     }
     // LCOV_EXCL_STOP
 
@@ -147,7 +154,7 @@ int VpiCbHdl::run() {
     }
 #endif
 
-    return 0;
+    return res;
 }
 
 VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *signal,
@@ -186,8 +193,9 @@ int VpiValueCbHdl::run() {
         }
     }
 
+    int res = 0;
     if (pass) {
-        m_cb_func(m_cb_data);
+        res = m_cb_func(m_cb_data);
 
         // Remove recurring callback once fired.
         auto err = vpi_remove_cb(get_handle<vpiHandle>());
@@ -205,7 +213,7 @@ int VpiValueCbHdl::run() {
         }
     }  // else Don't remove and let it fire again.
 
-    return 0;
+    return res;
 }
 
 VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl) {
