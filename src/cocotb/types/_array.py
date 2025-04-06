@@ -187,8 +187,10 @@ class Array(AbstractArray[T]):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Array):
             return self._value == other._value
-        elif isinstance(other, (list, tuple)):
-            return self == Array(other)
+        elif isinstance(other, list):
+            return self._value == other
+        elif isinstance(other, tuple):
+            return tuple(self._value) == other
         else:
             return NotImplemented
 
