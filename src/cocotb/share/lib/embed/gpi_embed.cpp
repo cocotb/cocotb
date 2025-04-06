@@ -17,6 +17,7 @@
 #include "gpi.h"           // gpi_event_t
 #include "gpi_logging.h"   // LOG_* macros
 #include "py_gpi_logging.h"  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
+#include "pyerrors.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -266,11 +267,13 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     auto cocotb_retval =
         PyObject_CallMethod(entry_utility_module, "load_entry", "O", argv_list);
     if (!cocotb_retval) {
-        // LCOV_EXCL_START
-        PyErr_Print();
+        if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
+            PyErr_Print();
+        } else {
+            PyErr_Clear();
+        }
         gpi_sim_end();
         return -1;
-        // LCOV_EXCL_STOP
     }
     Py_DECREF(cocotb_retval);
 
@@ -291,10 +294,13 @@ extern "C" COCOTB_EXPORT void _embed_sim_event(const char *msg) {
 
         PyObject *pValue = PyObject_CallFunction(pEventFn, "s", msg);
         if (pValue == NULL) {
-            // LCOV_EXCL_START
-            PyErr_Print();
+            if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
+                PyErr_Print();
+            } else {
+                PyErr_Clear();
+            }
             LOG_ERROR("Passing event to upper layer failed");
-            // LCOV_EXCL_STOP
+            gpi_sim_end();
         }
         Py_XDECREF(pValue);
         PyGILState_Release(gstate);

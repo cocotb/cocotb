@@ -182,7 +182,11 @@ int handle_gpi_callback(void *user_data) {
     // The best thing to do here is shutdown as any subsequent
     // calls will go back to Python which is now in an unknown state
     if (pValue == NULL) {
-        PyErr_Print();
+        if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
+            PyErr_Print();
+        } else {
+            PyErr_Clear();
+        }
         gpi_sim_end();
         return 0;
     }
