@@ -11,7 +11,7 @@ def make_failure_file() -> None:
     open("test_failed", "w").close()
 
 
-@cocotb.test(_expect_sim_failure=True)
+@cocotb.test(expect_error=SystemExit)
 async def test_sys_exit(_: Any) -> None:
     sys.exit(1)
     make_failure_file()
@@ -36,7 +36,7 @@ async def test_task_sys_exit_sim_continued(_: Any) -> None:
     make_failure_file()
 
 
-@cocotb.test(_expect_sim_failure=True)
+@cocotb.test(expect_error=KeyboardInterrupt)
 async def test_keyboard_interrupt(_: Any) -> None:
     raise KeyboardInterrupt  # Analogous to Ctrl-C
     make_failure_file()
