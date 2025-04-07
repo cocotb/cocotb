@@ -656,9 +656,7 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
-        self.xunit.add_failure(
-            message=f"Test failed with RANDOM_SEED={cocotb._random_seed}"
-        )
+        self.xunit.add_failure(error_type=type(result).__name__, error_msg=str(result))
 
         # update running passed/failed/skipped counts
         self.failures += 1
