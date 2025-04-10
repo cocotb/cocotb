@@ -12,7 +12,7 @@ import sys
 from contextlib import AbstractContextManager
 from typing import TypeVar, Union, overload
 
-__all__ = ("nullcontext", "insertion_ordered_dict", "cached_property", "StrEnum")
+__all__ = ("nullcontext", "insertion_ordered_dict", "cached_property")
 
 T = TypeVar("T")
 
@@ -101,13 +101,3 @@ else:
             res = self._method(instance)
             instance.__dict__[self._method.__name__] = res
             return res
-
-
-# inheriting from (str, Enum) was broken in 3.11 and StrEnum must be used
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-    from enum import Enum
-
-    class StrEnum(str, Enum):
-        pass
