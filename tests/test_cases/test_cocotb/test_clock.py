@@ -15,7 +15,13 @@ from common import assert_takes
 import cocotb
 from cocotb.clock import Clock
 from cocotb.simulator import clock_create, get_precision
-from cocotb.triggers import FallingEdge, NullTrigger, RisingEdge, Timer
+from cocotb.triggers import (
+    FallingEdge,
+    RisingEdge,
+    SimTimeoutError,
+    Timer,
+    with_timeout,
+)
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
@@ -34,7 +40,7 @@ async def test_clock_with_units(dut, impl: str) -> None:
     assert str(clk_1mhz) == f"<Clock, {dut.clk._path} @ 1.0 MHz>"
     assert str(clk_250mhz) == f"<Clock, {dut.clk._path} @ 250.0 MHz>"
 
-    clk_gen = cocotb.start_soon(clk_1mhz.start())
+    clk_1mhz.start()
 
     with assert_takes(1000, "ns"):
         await Timer(1, "ns")
@@ -43,9 +49,9 @@ async def test_clock_with_units(dut, impl: str) -> None:
     with assert_takes(1000, "ns"):
         await RisingEdge(dut.clk)
 
-    clk_gen.kill()
+    clk_1mhz.stop()
 
-    clk_gen = cocotb.start_soon(clk_250mhz.start())
+    clk_250mhz.start()
 
     with assert_takes(4, "ns"):
         await Timer(1, "ns")
@@ -54,7 +60,7 @@ async def test_clock_with_units(dut, impl: str) -> None:
     with assert_takes(4, "ns"):
         await RisingEdge(dut.clk)
 
-    clk_gen.kill()
+    clk_250mhz.stop()
 
 
 @cocotb.test
@@ -132,19 +138,6 @@ async def test_clock_stop_and_restart(dut) -> None:
 
 
 @cocotb.test
-async def test_clock_stop_and_restart_by_killing(dut) -> None:
-    c = Clock(dut.clk, 10, "ns")
-    task = c.start()
-    for _ in range(10):
-        await RisingEdge(dut.clk)
-    task.cancel()
-    await NullTrigger()  # cancel() schedules the done callback
-    c.start()
-    for _ in range(10):
-        await RisingEdge(dut.clk)
-
-
-@cocotb.test
 async def test_clock_cycles(dut) -> None:
     period_ns = 10
     cycles = 10
@@ -159,3 +152,16 @@ async def test_clock_cycles(dut) -> None:
 
     with assert_takes((cycles * period_ns) - (period_ns // 2), "ns"):
         await c.cycles(cycles, FallingEdge)
+
+
+@cocotb.test
+async def test_clock_task_cancel(dut) -> None:
+    c = Clock(dut.clk, 10, "ns")
+    task = c.start()
+
+    await RisingEdge(dut.clk)
+    task.cancel()
+
+    # Ensure clock is dead.
+    with pytest.raises(SimTimeoutError):
+        await with_timeout(RisingEdge(dut.clk), 20, "ns")
