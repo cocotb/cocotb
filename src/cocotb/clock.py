@@ -202,14 +202,17 @@ class Clock:
         t_high = period // 2
 
         if self._impl == "gpi":
-            self._clkobj = clock_create(self._signal._handle)
-            self._clkobj.start(period, t_high, start_high)
+            clkobj = clock_create(self._signal._handle)
+            clkobj.start(period, t_high, start_high)
 
             async def drive() -> None:
                 # The clock is meant to toggle forever, so awaiting this should
                 # never return by awaiting on Event that's never set.
                 e = Event()
-                await e.wait()
+                try:
+                    await e.wait()
+                finally:
+                    clkobj.stop()
 
         else:
 
@@ -226,10 +229,6 @@ class Clock:
                     await timer_high
 
         self._task = cocotb.start_soon(drive())
-
-        # So if a user calls `task.kill()` on the returned task the Clock object is stopped.
-        self._task._add_done_callback(lambda _: self._cleanup())
-
         return self._task
 
     def stop(self) -> None:
@@ -244,11 +243,7 @@ class Clock:
         """
         if self._task is None:
             raise RuntimeError("Stopping a clock that was never started.")
-        self._task.kill()
-
-    def _cleanup(self) -> None:
-        if self._impl == "gpi":
-            self._clkobj.stop()
+        self._task.cancel()
         self._task = None
 
     async def cycles(
