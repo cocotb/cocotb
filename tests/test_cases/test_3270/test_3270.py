@@ -35,7 +35,7 @@ class MonitorChange:
 
     def stop_monitor(self):
         if self.monitor_process is not None:
-            self.monitor_process.kill()
+            self.monitor_process.cancel()
         self.monitor_process = None
 
     def start_monitor(self):

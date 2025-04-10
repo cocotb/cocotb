@@ -748,7 +748,7 @@ def _start_write_scheduler() -> None:
 def _stop_write_scheduler() -> None:
     global _write_task
     if _write_task is not None:
-        _write_task.kill()
+        _write_task.cancel()
         _write_task = None
     _write_calls.clear()
     _writes_pending.clear()

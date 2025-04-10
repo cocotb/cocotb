@@ -198,7 +198,7 @@ async def test_Lock_fair_scheduling(_) -> None:
     # We cancel tasks randomly to ensure that doesn't effect acquisition order.
     while not all(t.done() for t in tasks):
         # Randomly kill a remaining waiter.
-        tasks[random.randrange(last_scheduled, len(tasks))].kill()
+        tasks[random.randrange(last_scheduled, len(tasks))].cancel()
         # Wait some random time until killing another.
         await Timer(
             (random.random() * 2 * average_killer_wakeup), "ns", round_mode="ceil"
