@@ -1,0 +1,1 @@
+:meth:`.Task.kill` is deprecated in favor of :meth:`.Task.cancel`.
