@@ -33,25 +33,38 @@ from cocotb.triggers import (
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
-test_flag = False
-
-
-async def clock_yield(task):
-    global test_flag
-    await task
-    test_flag = True
-
 
 @cocotb.test()
 async def test_task_kill(dut):
     """Test that killing a task causes pending task to continue"""
-    clk_task = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
-    await Timer(100, "ns")
-    cocotb.start_soon(clock_yield(clk_task))
-    await Timer(100, "ns")
-    clk_task.kill()
+
+    test_flag = False
+
+    async def waiter(task):
+        try:
+            await task
+        finally:
+            nonlocal test_flag
+            test_flag = True
+
+    async def coro():
+        await Timer(1000, "ns")
+
+    task = cocotb.start_soon(coro())
+    await Timer(1)
+    waiter_task = cocotb.start_soon(waiter(task))
+    await Timer(1)
+    task.cancel()
+
+    # task should be cancelled, but waiter_task hasn't resumed yet
+    await NullTrigger()
+    assert task.cancelled()
+    assert not waiter_task.done()
     assert not test_flag
-    await Timer(1000, "ns")
+
+    # waiter should resume and finish
+    await NullTrigger()
+    assert waiter_task.done()
     assert test_flag
 
 
@@ -132,11 +145,15 @@ async def test_kill_twice(dut):
     """
     Test that killing a coroutine that has already been killed does not crash
     """
-    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
+
+    async def coro() -> None:
+        await Timer(100, "ns")
+
+    task = cocotb.start_soon(coro())
     await Timer(1, "ns")
-    clk_gen.kill()
+    task.cancel()
     await Timer(1, "ns")
-    clk_gen.kill()
+    task.cancel()
 
 
 @cocotb.test()
@@ -212,7 +229,7 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
 
     async def killer():
         await RisingEdge(dut.clk)
-        victim_task.kill()
+        victim_task.cancel()
 
     cocotb.start_soon(killer())
 
@@ -388,7 +405,7 @@ async def test_task_repr(_) -> None:
     async def coroutine_first():
         task = Task(coroutine_wait())
         await First(task, Timer(2, unit="ns"))
-        task.kill()
+        task.cancel()
 
     coro_task = cocotb.start_soon(coroutine_first())
     assert re.match(r"<Task \d+ scheduled coro=coroutine_first\(\)>", repr(coro_task))
@@ -478,7 +495,8 @@ async def test_task_repr(_) -> None:
     log.info(repr(object_task))
     assert re.match(r"<Task \d+ created coro=CoroutineClass\(\)>", repr(object_task))
 
-    object_task.kill()  # prevent RuntimeWarning of unwatched coroutine
+    object_task.cancel()  # prevent RuntimeWarning of unwatched coroutine
+    await NullTrigger()
 
 
 @cocotb.test()
@@ -592,7 +610,7 @@ async def test_kill_start_soon_task(_):
         coro_scheduled = True
 
     task = cocotb.start_soon(coro())
-    task.kill()
+    task.cancel()
 
     await NullTrigger()
     assert coro_scheduled is False
