@@ -234,6 +234,7 @@ class Task(Generic[ResultType]):
             else:
                 return trigger
 
+    @deprecated("`task.kill()` is deprecated in favor of `task.cancel()`")
     def kill(self) -> None:
         """Kill a coroutine."""
 
