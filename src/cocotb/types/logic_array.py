@@ -170,7 +170,8 @@ class LogicArray(ArrayLike[Logic]):
         >>> la
         LogicArray('0101', Range(3, 'downto', 0))
 
-    :class:`LogicArray`\ s can be converted into their :class:`str` or :class:`int` literal values using casts.
+    :class:`!LogicArray`\ s can be converted into their :class:`str` or :class:`int` literal values using casts.
+    And can be used in conditionals, where any non-0 value is ``True``.
 
     .. code-block:: pycon3
 
@@ -179,9 +180,13 @@ class LogicArray(ArrayLike[Logic]):
         '1010'
         >>> int(la)
         10
+        >>> if la:
+        ...     print("Not 0!")
+        Not 0!
 
     .. warning::
-        The :class:`int` cast assumes the value is entirely ``0`` or ``1`` and will raise an exception otherwise.
+        The :class:`int` cast, :class:`bool` cast, and use in conditionals assumes the
+        value is entirely ``0`` or ``1`` and will raise an exception otherwise.
 
     The :meth:`to_unsigned`, :meth:`to_signed`, and :meth:`to_bytes` methods can be used to convert
     the value into an unsigned or signed integer, or bytes, respectively.
@@ -794,9 +799,7 @@ class LogicArray(ArrayLike[Logic]):
     def __invert__(self) -> "LogicArray":
         return LogicArray(~v for v in self)
 
-    @deprecated(
-        "`bool()` casts and using LogicArray in conditional expressions is deprecated. "
-        """Use explicit comparisons (e.g. `LogicArray() == "11"`) or `all`/`any` expressions instead."""
-    )
     def __bool__(self) -> bool:
-        return any(v in (Logic("H"), Logic("1")) for v in self)
+        if len(self) == 0:
+            return False
+        return bool(int(self))
