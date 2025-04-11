@@ -5,6 +5,7 @@ import sys
 from typing import Any
 
 import cocotb
+from cocotb.triggers import Timer
 
 
 def make_failure_file() -> None:
@@ -22,17 +23,30 @@ async def test_sys_exit_sim_continued(_: Any) -> None:
     make_failure_file()
 
 
-@cocotb.test(_expect_sim_failure=True)
+@cocotb.test(expect_error=SystemExit)
 async def test_task_sys_exit(_: Any) -> None:
     async def coro():
         sys.exit(1)
 
-    await cocotb.start_soon(coro())
+    cocotb.start_soon(coro())
+    await Timer(1)
     make_failure_file()
 
 
 @cocotb.test(_expect_sim_failure=True)
 async def test_task_sys_exit_sim_continued(_: Any) -> None:
+    make_failure_file()
+
+
+@cocotb.test(expect_error=SystemExit)
+async def test_trigger_sys_exit(_: Any) -> None:
+    await Timer(1)
+    sys.exit(1)
+    make_failure_file()
+
+
+@cocotb.test(_expect_sim_failure=True)
+async def test_trigger_sys_exit_sim_continued(_: Any) -> None:
     make_failure_file()
 
 
@@ -47,15 +61,28 @@ async def test_keyboard_interrupt_sim_continued(_: Any) -> None:
     make_failure_file()
 
 
-@cocotb.test(_expect_sim_failure=True)
+@cocotb.test(expect_error=KeyboardInterrupt)
 async def test_task_keyboard_interrupt(_: Any) -> None:
     async def coro():
         raise KeyboardInterrupt  # Analogous to Ctrl-C
 
-    await cocotb.start_soon(coro())
+    cocotb.start_soon(coro())
+    await Timer(1)
     make_failure_file()
 
 
 @cocotb.test(_expect_sim_failure=True)
 async def test_task_keyboard_interrupt_sim_continued(_: Any) -> None:
+    make_failure_file()
+
+
+@cocotb.test(expect_error=KeyboardInterrupt)
+async def test_trigger_keyboard_interrupt(_: Any) -> None:
+    await Timer(1)
+    raise KeyboardInterrupt  # Analogous to Ctrl-C
+    make_failure_file()
+
+
+@cocotb.test(_expect_sim_failure=True)
+async def test_trigger_keyboard_interrupt_sim_continued(_: Any) -> None:
     make_failure_file()
