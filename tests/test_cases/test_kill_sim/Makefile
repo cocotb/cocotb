@@ -8,8 +8,10 @@ COCOTB_TEST_MODULES := kill_sim_tests
 tests:
 	$(MAKE) test_kill_sim COCOTB_TEST_FILTER=test_sys_exit
 	$(MAKE) test_kill_sim COCOTB_TEST_FILTER=test_task_sys_exit
+	$(MAKE) test_kill_sim COCOTB_TEST_FILTER=test_trigger_sys_exit
 	$(MAKE) test_kill_sim COCOTB_TEST_FILTER=test_keyboard_interrupt
 	$(MAKE) test_kill_sim COCOTB_TEST_FILTER=test_task_keyboard_interrupt
+	$(MAKE) test_kill_sim COCOTB_TEST_FILTER=test_trigger_keyboard_interrupt
 
 .PHONY: test_kill_sim
 test_kill_sim:
