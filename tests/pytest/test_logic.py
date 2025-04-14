@@ -162,3 +162,24 @@ def test_logic_identity():
     assert Logic("1") is Logic(1)
     assert Logic("X") is Logic("x")
     assert Logic("z") is Logic("Z")
+
+
+def test_resolve():
+    for inp, exp in zip("UX01ZWLH-", "UX01ZX01-"):
+        assert Logic(inp).resolve("weak") == Logic(exp)
+
+    for inp, exp in zip("UX01ZWLH-", "000100010"):
+        assert Logic(inp).resolve("zeros") == Logic(exp)
+
+    for inp, exp in zip("UX01ZWLH-", "110111011"):
+        assert Logic(inp).resolve("ones") == Logic(exp)
+
+    assert Logic("U").resolve("random") in (Logic("0"), Logic("1"))
+    assert Logic("X").resolve("random") in (Logic("0"), Logic("1"))
+    assert Logic("0").resolve("random") == Logic("0")
+    assert Logic("1").resolve("random") == Logic("1")
+    assert Logic("Z").resolve("random") in (Logic("0"), Logic("1"))
+    assert Logic("W").resolve("random") in (Logic("0"), Logic("1"))
+    assert Logic("L").resolve("random") == Logic("0")
+    assert Logic("H").resolve("random") == Logic("1")
+    assert Logic("-").resolve("random") in (Logic("0"), Logic("1"))

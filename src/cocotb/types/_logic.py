@@ -10,6 +10,8 @@ from typing import (
     Union,
 )
 
+from cocotb.types._resolve import ResolverLiteral, get_str_resolver
+
 LogicLiteralT = Union[str, int, bool]
 LogicConstructibleT = Union[LogicLiteralT, "Logic"]
 
@@ -244,3 +246,34 @@ class Logic:
 
     def __index__(self) -> int:
         return int(self)
+
+    def resolve(self, resolver: ResolverLiteral) -> "Logic":
+        """Resolves non-0/1 values to 0/1.
+
+        The possible values of the *resolver* argument are:
+
+        * ``"weak"``: Weak values are resolved to their strong-valued equivalents.
+
+        * ``"zeros"``:
+            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+            Remaining non-``0``/``1`` values are resolved to ``0``.
+
+        * ``"ones"``:
+            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+            Remaining non-``0``/``1`` values are resolved to ``1``.
+
+        * ``"random"``:
+            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+            Remaining non-``0``/``1`` values are randomly resolved to either ``0`` or ``1``.
+
+        Args:
+            resolver: How to resolve non-``0``/``1`` values. See possible values above.
+
+        Returns:
+            The resolved Logic.
+
+        Raises:
+            ValueError: Invalid *resolver* value.
+            TypeError: Unsupported *value* type.
+        """
+        return Logic(get_str_resolver(resolver)(str(self)))

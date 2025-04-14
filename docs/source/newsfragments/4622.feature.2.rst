@@ -1,0 +1,1 @@
+Added :func:`cocotb.handle.set_resolve_x` for changing the non-``0``/``1`` value resolution behavior at runtime (overriding :envvar:`COCOTB_RESOLVE_X` if set).
