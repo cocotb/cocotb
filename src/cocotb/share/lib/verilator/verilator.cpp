@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
         if (arg == "--trace") {
             traceOn = true;
 #ifndef VM_TRACE
-            fprintf(stderr, "Error: design not built with trace support\n");
+            fprintf(stderr, "Error: --trace requires the design to be built with trace support\n");
             return -1;
 #endif
         } else if (arg == "--trace-file") {
