@@ -64,6 +64,12 @@ int main(int argc, char** argv) {
         std::string arg = std::string(argv[i]);
         if (arg == "--trace") {
             traceOn = true;
+#ifndef VM_TRACE
+            fprintf(stderr,
+                    "Error: --trace requires the design to be built with trace "
+                    "support\n");
+            return -1;
+#endif
         } else if (arg == "--trace-file") {
             if (++i < argc) {
                 traceFile = argv[i];
