@@ -46,6 +46,7 @@ from cocotb._py_compat import cached_property
 from cocotb._utils import DocIntEnum, cached_method
 from cocotb.task import Task
 from cocotb.types import Array, Logic, LogicArray, Range
+from cocotb.types._resolve import ResolverLiteral, resolve_str
 
 
 class _Limits(enum.IntEnum):
@@ -68,6 +69,43 @@ def _value_limits(n_bits: int, limits: _Limits) -> Tuple[int, int]:
         max_val = 2**n_bits - 1
 
     return min_val, max_val
+
+
+def _no_x_resolver(value: str) -> str:
+    return value
+
+
+_x_resolver = _no_x_resolver  # type: Callable[[str], str]
+
+
+def set_resolve_x(resolver: Union[ResolverLiteral, None]) -> None:
+    """Sets global non-0/1 value resolver.
+
+    Args:
+        resolver:
+            Which resolver to use.
+            If ``None``, no resolving is done.
+            See :func:`.resolve` for other possible value and their meanings.
+
+    Raises:
+        ValueError: If an invalid *resolver* is given.
+
+    .. versionadded:: 2.0
+
+    .. warning::
+        Using this feature is *not* recommended.
+    """
+    global _x_resolver
+    if resolver is None:
+        _x_resolver = _no_x_resolver
+    else:
+        if resolver not in ("zeros", "ones", "random"):
+            raise ValueError(f"Unsupported X resolver {resolver!r}")
+
+        def x_resolver(value: str) -> str:
+            return resolve_str(value, cast(ResolverLiteral, resolver))
+
+        _x_resolver = x_resolver
 
 
 class SimHandleBase(ABC):
@@ -1128,7 +1166,8 @@ class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
     def get(self) -> Logic:
         """Return the current value of the simulation object as a :class:`.Logic`."""
         binstr = self._handle.get_signal_val_binstr()
-        return Logic(binstr)
+        resolved_binstr = _x_resolver(binstr)
+        return Logic(resolved_binstr)
 
     def set(
         self,
@@ -1271,7 +1310,8 @@ class LogicArrayObject(
     def get(self) -> LogicArray:
         """Return the current value of the simulation object as a :class:`.LogicArray`."""
         binstr = self._handle.get_signal_val_binstr()
-        return LogicArray._from_handle(binstr)
+        resolved_binstr = _x_resolver(binstr)
+        return LogicArray._from_handle(resolved_binstr)
 
     def set(
         self,

@@ -11,7 +11,7 @@ import sys
 import time
 import warnings
 from types import SimpleNamespace
-from typing import Any, Callable, List, cast
+from typing import Any, Callable, List, Union, cast
 
 import cocotb
 import cocotb._profiling
@@ -22,6 +22,7 @@ import cocotb.simulator
 from cocotb._scheduler import Scheduler
 from cocotb.logging import _log_from_c, default_config
 from cocotb.regression import RegressionManager, RegressionMode
+from cocotb.types._resolve import ResolverLiteral
 
 log: logging.Logger
 
@@ -86,6 +87,7 @@ def init_package_from_simulation(argv: List[str]) -> None:
     _process_packages()
     _setup_random_seed()
     _setup_root_handle()
+    _setup_resolve_x()
     _start_user_coverage()
 
     log.info(
@@ -289,3 +291,22 @@ def _setup_regression_manager() -> None:
     elif test_filter_str:
         cocotb.regression_manager.add_filters(test_filter_str)
         cocotb.regression_manager.set_mode(RegressionMode.TESTCASE)
+
+
+def _setup_resolve_x() -> None:
+    envvar = os.getenv("COCOTB_RESOLVE_X", None)
+    try:
+        resolver = cast(
+            Union[ResolverLiteral, None],
+            {
+                None: None,
+                "VALUE_ERROR": None,
+                "ZEROS": "zeros",
+                "ONES": "ones",
+                "RANDOM": "random",
+            }[envvar],
+        )
+    except KeyError:
+        raise ValueError(f"Invalid COCOTB_RESOLVE_X value {envvar!r}") from None
+
+    cocotb.handle.set_resolve_x(resolver)
