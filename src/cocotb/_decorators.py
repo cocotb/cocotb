@@ -26,86 +26,8 @@ from typing import (
     overload,
 )
 
-import cocotb
+from cocotb._test import Test
 from cocotb._typing import TimeUnit
-from cocotb.regression import Test
-
-Result = TypeVar("Result")
-
-
-def resume(func: Callable[..., Coroutine[Any, Any, Result]]) -> Callable[..., Result]:
-    """Converts a coroutine function into a blocking function.
-
-    This allows a :term:`coroutine function` that awaits cocotb triggers to be
-    called from a :term:`blocking function` converted by :func:`cocotb.bridge`.
-    This completes the bridge through non-:keyword:`async` code.
-
-    When a converted coroutine function is called the current function blocks until the
-    converted function exits.
-
-    Results of the converted function are returned from the function call.
-
-    Args:
-        func: The :term:`coroutine function` to convert into a :term:`blocking function`.
-
-    Returns:
-        *func* as a :term:`blocking function`.
-
-    Raises:
-        RuntimeError:
-            If the function that is returned is subsequently called from a
-            thread that was not started with :class:`cocotb.bridge`.
-
-    .. versionchanged:: 2.0
-        Renamed from ``function``.
-        No longer implemented as a type.
-        The ``log`` attribute is no longer available.
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return cocotb._scheduler_inst._queue_function(func(*args, **kwargs))
-
-    return wrapper
-
-
-def bridge(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Result]]:
-    r"""Converts a blocking function into a coroutine function.
-
-    This function converts a :term:`blocking function` into a :term:`coroutine function`
-    with the expectation that the function being converted is intended to call a
-    :func:`cocotb.resume` converted function. This creates a bridge through
-    non-:keyword:`async` code for code wanting to eventually :keyword:`await` on cocotb
-    triggers.
-
-    When a converted function call is used in an :keyword:`await` statement, the current
-    Task blocks until the converted function finishes.
-
-    Results of the converted function are returned from the :keyword:`await` expression.
-
-    .. note::
-        Bridge threads *must* either finish or block on a :func:`cocotb.resume`
-        converted function before control is given back to the simulator.
-        This is done to prevent any code from executing in parallel with the simulation.
-
-    Args:
-        func: The :term:`blocking function` to convert into a :term:`coroutine function`.
-
-    Returns:
-        *func* as a :term:`coroutine function`.
-
-    .. versionchanged:: 2.0
-        Renamed from ``external``.
-        No longer implemented as a type.
-        The ``log`` attribute is no longer available.
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return cocotb._scheduler_inst._run_in_executor(func, *args, **kwargs)
-
-    return wrapper
-
 
 F = TypeVar("F", bound=Callable[..., Coroutine[Any, Any, None]])
 

@@ -9,6 +9,7 @@ from IPython.terminal.prompts import Prompts
 from pygments.token import Token
 
 import cocotb
+from cocotb.task import bridge
 from cocotb.utils import get_sim_time
 
 T = TypeVar("T")
@@ -79,7 +80,7 @@ async def embed(user_ns: Dict[str, Any] = {}) -> None:
     shell.prompts = SimTimePrompt(shell)
 
     # start the shell in a background thread
-    @cocotb.bridge
+    @bridge
     def run_shell() -> None:
         shell()
 

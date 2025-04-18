@@ -26,6 +26,7 @@ from typing import (
 
 import cocotb
 from cocotb._base_triggers import Trigger
+from cocotb._bridge import bridge, resume
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
@@ -40,6 +41,15 @@ ResultType = TypeVar("ResultType")
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
+
+
+__all__ = (
+    "Join",
+    "Task",
+    "TaskComplete",
+    "bridge",
+    "resume",
+)
 
 
 class _TaskState(DocEnum):
