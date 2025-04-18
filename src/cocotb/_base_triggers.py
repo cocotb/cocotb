@@ -7,9 +7,9 @@
 """A collection of triggers which a testbench can :keyword:`await`."""
 
 import logging
+import sys
 import warnings
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncContextManager,
     Awaitable,
@@ -24,7 +24,7 @@ from cocotb._deprecation import deprecated
 from cocotb._py_compat import cached_property
 from cocotb._utils import pointer_str
 
-if TYPE_CHECKING:
+if sys.version_info >= (3, 11):
     from typing import Self
 
 

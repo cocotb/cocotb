@@ -35,6 +35,8 @@ The current stable version of cocotb requires:
 
 .. note:: In order to use a 32-bit simulator you need to use a 32-bit version of Python.
 
+.. note:: Type checking cocotb code requires Python 3.11+.
+
 The installation instructions vary depending on your operating system:
 
 .. tab-set::
@@ -129,7 +131,7 @@ The installation instructions vary depending on your package manager:
 
       .. code-block:: bash
 
-	  guix install python-cocotb
+	    guix install python-cocotb
 
 Post installation
 =================

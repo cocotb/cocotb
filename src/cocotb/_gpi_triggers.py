@@ -6,10 +6,10 @@
 
 """A collection of triggers which a testbench can :keyword:`await`."""
 
+import sys
 from decimal import Decimal
 from fractions import Fraction
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -28,14 +28,8 @@ from cocotb._typing import TimeUnit
 from cocotb._utils import pointer_str, singleton
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
-if TYPE_CHECKING:
+if sys.version_info >= (3, 11):
     from typing import Self
-
-    from cocotb.handle import (
-        LogicObject,
-        ValueObjectBase,
-        _NonIndexableValueObjectBase,
-    )
 
 
 class GPITrigger(Trigger):
@@ -226,7 +220,7 @@ class NextTimeStep(GPITrigger):
         return f"{type(self).__qualname__}()"
 
 
-_SignalType = TypeVar("_SignalType", bound="ValueObjectBase[Any, Any]")
+_SignalType = TypeVar("_SignalType", bound="cocotb.handle.ValueObjectBase[Any, Any]")
 
 
 class _EdgeBase(GPITrigger, Generic[_SignalType]):
@@ -279,7 +273,7 @@ class RisingEdge(_EdgeBase):
 
     _edge_type = simulator.RISING
 
-    def __new__(cls, signal: "LogicObject") -> "RisingEdge":
+    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "RisingEdge":
         if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
                 f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
@@ -308,7 +302,7 @@ class FallingEdge(_EdgeBase):
 
     _edge_type = simulator.FALLING
 
-    def __new__(cls, signal: "LogicObject") -> "FallingEdge":
+    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "FallingEdge":
         if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
                 f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
@@ -333,7 +327,9 @@ class ValueChange(_EdgeBase):
 
     _edge_type = simulator.VALUE_CHANGE
 
-    def __new__(cls, signal: "_NonIndexableValueObjectBase[Any, Any]") -> "ValueChange":
+    def __new__(
+        cls, signal: "cocotb.handle._NonIndexableValueObjectBase[Any, Any]"
+    ) -> "ValueChange":
         if not isinstance(signal, cocotb.handle._NonIndexableValueObjectBase):
             raise TypeError(
                 f"{cls.__qualname__} requires a simulation object derived from ValueObjectBase. "
@@ -357,7 +353,9 @@ class Edge(ValueChange):
     """
 
     @deprecated("Use `signal.value_change` instead.")
-    def __new__(cls, signal: "_NonIndexableValueObjectBase[Any, Any]") -> "Edge":
+    def __new__(
+        cls, signal: "cocotb.handle._NonIndexableValueObjectBase[Any, Any]"
+    ) -> "Edge":
         if not isinstance(signal, cocotb.handle._NonIndexableValueObjectBase):
             raise TypeError(
                 f"{cls.__qualname__} requires a simulation object derived from ValueObjectBase. "

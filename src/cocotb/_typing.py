@@ -1,11 +1,11 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import TYPE_CHECKING
+import sys
 
-if TYPE_CHECKING:
-    from typing import (  # noqa: F401  # These types are used in type strings in this module
-        Literal,
+if sys.version_info >= (3, 10):
+    from typing import (
+        Literal,  # noqa: F401  # This type is used in type strings in this module
         TypeAlias,
     )
 

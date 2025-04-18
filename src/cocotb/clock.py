@@ -7,10 +7,11 @@
 """A clock class."""
 
 import logging
+import sys
 from decimal import Decimal
 from fractions import Fraction
 from logging import Logger
-from typing import TYPE_CHECKING, Type, Union
+from typing import Type, Union
 
 import cocotb
 from cocotb._py_compat import cached_property
@@ -29,10 +30,13 @@ from cocotb.triggers import (
 )
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
-if TYPE_CHECKING:
-    from typing import Literal, TypeAlias
+if sys.version_info >= (3, 10):
+    from typing import (
+        Literal,  # noqa: F401  # used in forward ref
+        TypeAlias,
+    )
 
-    Impl: TypeAlias = Literal["gpi"] | Literal["py"]
+Impl: "TypeAlias" = 'Literal["gpi", "py"]'
 
 
 _valid_impls = ("gpi", "py")

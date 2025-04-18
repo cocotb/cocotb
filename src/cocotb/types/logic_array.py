@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import os
 import random
+import sys
 from math import ceil
 from typing import (
-    TYPE_CHECKING,
     Dict,
     Iterable,
     Iterator,
@@ -21,7 +21,7 @@ from cocotb.types import ArrayLike
 from cocotb.types.logic import Logic, LogicConstructibleT, _str_literals
 from cocotb.types.range import Range
 
-if TYPE_CHECKING:
+if sys.version_info >= (3, 8):
     from typing import Literal
 
 
