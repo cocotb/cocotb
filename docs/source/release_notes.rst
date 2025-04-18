@@ -171,7 +171,7 @@ cocotb 1.6.2 (2022-02-07)
 Bugfixes
 --------
 
-- Fix regression in :class:`~cocotb.regression.TestFactory` when using generator-based test coroutines. (:issue:`2839`)
+- Fix regression in :class:`~cocotb.TestFactory` when using generator-based test coroutines. (:issue:`2839`)
 
 Changes
 -------
@@ -185,7 +185,7 @@ cocotb 1.6.1 (2021-12-07)
 Bugfixes
 --------
 
-- Fix regression in :class:`~cocotb.regression.TestFactory` wrt unique test names. (:issue:`2781`)
+- Fix regression in :class:`~cocotb.TestFactory` wrt unique test names. (:issue:`2781`)
 
 cocotb 1.6.0 (2021-10-20)
 =========================
@@ -201,7 +201,7 @@ Features
 - Add the :make:var:`SIM_CMD_PREFIX` to supported Makefile variables, allowing users to pass environment variables and other command prefixes to simulators. (:pr:`2615`)
 - To support VHDL libraries in ModelSim/Questa/Xcelium, :make:var:`VHDL_LIB_ORDER` has been added to specify a library compilation order. (:pr:`2635`)
 - ``cocotb.fork()``, :func:`cocotb.start`, :func:`cocotb.start_soon`, and :func:`cocotb.create_task` now accept any object that implements the :class:`collections.abc.Coroutine` protocol. (:pr:`2647`)
-- :class:`~cocotb.regression.TestFactory` and :class:`cocotb.test` now accept any :class:`collections.abc.Callable` object which returns a :class:`collections.abc.Coroutine` as a test function. (:pr:`2647`)
+- :class:`~cocotb.TestFactory` and :class:`cocotb.test` now accept any :class:`collections.abc.Callable` object which returns a :class:`collections.abc.Coroutine` as a test function. (:pr:`2647`)
 - Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions. (:pr:`2660`)
 - Add :func:`cocotb.create_task` API for creating a Task from a Coroutine without scheduling. (:pr:`2665`)
 - Support rounding modes in :class:`~cocotb.triggers.Timer`. (:pr:`2684`)
@@ -293,7 +293,7 @@ Features
   :func:`~cocotb.triggers.with_timeout` and :class:`cocotb.test`
   now accepts ``'step'`` to mean the simulator time step.
   This used to be expressed using ``None``, which is now deprecated. (:pr:`2171`)
-- :meth:`TestFactory.add_option() <cocotb.regression.TestFactory.add_option>` now supports groups of options when a full Cartesian product is not desired. (:pr:`2175`)
+- :meth:`TestFactory.add_option() <cocotb.TestFactory.add_option>` now supports groups of options when a full Cartesian product is not desired. (:pr:`2175`)
 - Added asyncio-style queues, :class:`~cocotb.queue.Queue`, :class:`~cocotb.queue.PriorityQueue`, and :class:`~cocotb.queue.LifoQueue`. (:pr:`2297`)
 - Support for the SystemVerilog type ``bit`` has been added. (:pr:`2322`)
 - Added the ``--lib-dir``,  ``--lib-name`` and ``--lib-name-path`` options to the ``cocotb-config`` command to make cocotb integration into existing flows easier. (:pr:`2387`)

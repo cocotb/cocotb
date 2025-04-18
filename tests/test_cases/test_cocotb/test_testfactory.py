@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 """
-Tests of cocotb.regression.TestFactory functionality
+Tests of cocotb.parametrize functionality
 """
 
 from collections.abc import Coroutine

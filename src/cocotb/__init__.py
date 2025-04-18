@@ -13,7 +13,7 @@ import cocotb.triggers
 from cocotb._bridge import bridge, resume
 from cocotb._scheduler import Scheduler
 from cocotb._test import create_task, pass_test, start, start_soon
-from cocotb._test_generation import parametrize, test
+from cocotb._test_generation import TestFactory, parametrize, test
 from cocotb.regression import RegressionManager
 
 from ._version import __version__
@@ -23,6 +23,7 @@ __all__ = (
     "resume",
     "test",
     "parametrize",
+    "TestFactory",
     "pass_test",
     "create_task",
     "start",
