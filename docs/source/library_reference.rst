@@ -112,9 +112,9 @@ Task Management
 Dealing with non-``async`` code
 -------------------------------
 
-.. autofunction:: cocotb.bridge
+.. autofunction:: cocotb.task.bridge
 
-.. autofunction:: cocotb.resume
+.. autofunction:: cocotb.task.resume
 
 HDL Datatypes
 -------------
