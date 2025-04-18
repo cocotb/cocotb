@@ -133,11 +133,6 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
     :members:
     :inherited-members:
 
-.. autoclass:: cocotb.types.logic_array.ResolveX
-
-.. autodata:: cocotb.types.logic_array.RESOLVE_X
-
-
 .. _triggers::
 
 Triggers
@@ -351,6 +346,8 @@ Simulator Objects
     :member-order: bysource
     :special-members: __len__
     :inherited-members: SimHandleBase, ValueObjectBase
+
+.. autofunction:: set_resolve_x
 
 .. autoclass:: StringObject
     :members:

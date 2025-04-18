@@ -27,6 +27,8 @@ Namely, it requires the Python development headers and a C/C++ compiler.
 * GNU Make
 * A Verilog or VHDL simulator, depending on your :term:`RTL` source code
 
+.. note:: Type checking cocotb code requires Python 3.11+.
+
 The installation instructions vary depending on your operating system:
 
 .. tab-set::

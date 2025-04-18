@@ -1,7 +1,6 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import warnings
 
 import pytest
 
@@ -384,72 +383,36 @@ def test_null_vector():
     assert len(null_vector) == 0
     assert list(null_vector) == []
     assert str(null_vector) == ""
-    with pytest.warns(UserWarning):
-        assert int(null_vector) == 0
-    with pytest.warns(UserWarning):
-        assert null_vector.to_signed() == 0
-    with pytest.warns(UserWarning):
-        assert null_vector.to_unsigned() == 0
+    with pytest.raises(ValueError):
+        assert int(null_vector)
+    with pytest.raises(ValueError):
+        assert null_vector.to_signed()
+    with pytest.raises(ValueError):
+        assert null_vector.to_unsigned()
 
     # test comparison
     assert null_vector == LogicArray("")
     assert null_vector == LogicArray("", null_range)
     assert null_vector == LogicArray([])
     assert null_vector == LogicArray([], null_range)
-    with pytest.warns(UserWarning):
-        assert null_vector == 0
+    assert null_vector != 0
+    assert null_vector != 1
+    assert null_vector != -1
     assert null_vector == ""
     assert null_vector == []
 
 
 def test_bool_cast():
-    with pytest.warns(DeprecationWarning):
-        assert LogicArray("0110")
-    with warnings.catch_warnings():
-        warnings.filterwarnings(action="ignore", category=DeprecationWarning)
-        assert not LogicArray("0000")
-        assert LogicArray("01XZ")
-        assert LogicArray("XZ01")
-
-
-def test_resolve_x():
-    a = LogicArray("UX01ZWLH-")
-
+    assert not LogicArray("0000")
+    assert LogicArray("0100")
     with pytest.raises(ValueError):
-        a.to_unsigned("error")
-    with pytest.raises(ValueError):
-        a.to_signed("error")
-    assert LogicArray("01LH").to_unsigned("error") == 0b0101
-
-    assert a.to_unsigned("ones") == 0b110111011
-
-    assert a.to_unsigned("zeros") == 0b000100010
-
-    rand_val = a.to_unsigned("random")
-    # check known bits only
-    assert (rand_val >> 1) & 1 == 1
-    assert (rand_val >> 2) & 1 == 0
-    assert (rand_val >> 5) & 1 == 1
-    assert (rand_val >> 6) & 1 == 0
+        bool(LogicArray("XZ01"))
 
 
-def test_resolve_default_behavior():
-    import cocotb.types.logic_array
-
-    a = LogicArray("01X")
-
-    cocotb.types.logic_array.RESOLVE_X = "error"
-    with pytest.raises(ValueError):
-        a.to_unsigned()
-
-    cocotb.types.logic_array.RESOLVE_X = "zeros"
-    assert a.to_unsigned() == 0b010
-
-    cocotb.types.logic_array.RESOLVE_X = "ones"
-    assert a.to_unsigned() == 0b011
-
-    cocotb.types.logic_array.RESOLVE_X = "random"
-    rand_val = a.to_unsigned()
-    # check known bits only
-    assert (rand_val >> 1) & 1 == 1
-    assert (rand_val >> 2) & 1 == 0
+def test_resolve():
+    assert LogicArray("UX01ZWLH-").resolve("weak") == LogicArray("UX01ZX01-")
+    assert LogicArray("UX01ZWLH-").resolve("zeros") == LogicArray("000100010")
+    assert LogicArray("UX01ZWLH-").resolve("ones") == LogicArray("110111011")
+    assert LogicArray("01LH").resolve("random") == LogicArray("0101")
+    array = LogicArray("UXZW-").resolve("random")
+    assert all(elem in (Logic("0"), Logic("1")) for elem in array)
