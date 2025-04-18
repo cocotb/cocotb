@@ -7,16 +7,11 @@ import logging as py_logging
 from types import SimpleNamespace
 from typing import Dict, List, Union
 
-import cocotb._profiling
 import cocotb.handle
 import cocotb.task
 import cocotb.triggers
-from cocotb._decorators import (
-    bridge,
-    parametrize,
-    resume,
-    test,
-)
+from cocotb._bridge import bridge, resume
+from cocotb._decorators import parametrize, test
 from cocotb._scheduler import Scheduler
 from cocotb._test import create_task, pass_test, start, start_soon
 from cocotb.regression import RegressionManager
