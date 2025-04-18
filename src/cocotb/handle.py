@@ -449,13 +449,23 @@ class HierarchyObject(_HierarchyObjectBase[str]):
 
         handle = self._get(name)
         if handle is None:
-            raise AttributeError(f"{self._path} contains no child object named {name}")
+            # See if we can find it via iteration.
+            self._discover_all()
+            handle = self._get(name)
+            if handle is None:
+                raise AttributeError(
+                    f"{self._path} contains no child object named {name}"
+                )
         return handle
 
     def __getitem__(self, key: str) -> SimHandleBase:
         handle = self._get(key)
         if handle is None:
-            raise KeyError(f"{self._path} contains no child object named {key}")
+            # See if we can find it via iteration.
+            self._discover_all()
+            handle = self._get(key)
+            if handle is None:
+                raise KeyError(f"{self._path} contains no child object named {key}")
         return handle
 
     @deprecated(
@@ -584,7 +594,13 @@ class HierarchyArrayObject(_HierarchyObjectBase[int], _RangeableObjectMixin):
 
         handle = self._get(key)
         if handle is None:
-            raise IndexError(f"{self._path} contains no child object at index {key}")
+            # See if we can find it via iteration.
+            self._discover_all()
+            handle = self._get(key)
+            if handle is None:
+                raise IndexError(
+                    f"{self._path} contains no child object at index {key}"
+                )
         return handle
 
     # ideally `__len__` could be implemented in terms of `range`, but `range` doesn't work universally.
