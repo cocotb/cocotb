@@ -434,3 +434,40 @@ async def test_edge_trigger_on_const(dut) -> None:
         ValueChange(dut.INT_PARAM)
     with pytest.raises(TypeError):
         dut.INT_PARAM.value_change
+
+
+async def wait_for_edge(signal):
+    for i in range(10):
+        await ValueChange(signal)
+
+
+async def wait_for_rising_edge(signal):
+    for i in range(10):
+        await RisingEdge(signal)
+
+
+async def wait_for_falling_edge(signal):
+    for i in range(10):
+        await FallingEdge(signal)
+
+
+@cocotb.test
+async def issue_376_all_edges(dut):
+    Clock(dut.clk, 2500).start()
+    cocotb.start_soon(wait_for_edge(dut.clk))
+    cocotb.start_soon(wait_for_rising_edge(dut.clk))
+    await cocotb.start_soon(wait_for_falling_edge(dut.clk))
+
+
+@cocotb.test()
+async def issue_376_same_edges(dut):
+    Clock(dut.clk, 2500).start()
+    cocotb.start_soon(wait_for_rising_edge(dut.clk))
+    await cocotb.start_soon(wait_for_rising_edge(dut.clk))
+
+
+@cocotb.test()
+async def issue_376_different_edges(dut):
+    Clock(dut.clk, 2500).start()
+    cocotb.start_soon(wait_for_rising_edge(dut.clk))
+    await cocotb.start_soon(wait_for_falling_edge(dut.clk))
