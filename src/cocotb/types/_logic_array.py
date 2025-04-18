@@ -88,32 +88,35 @@ _resolve_tables = {
 
 
 class LogicArray(AbstractArray[Logic]):
-    r"""Fixed-sized, arbitrarily-indexed, array of :class:`cocotb.types.Logic`.
+    r"""Fixed-sized, arbitrarily-indexed, Array of Logics.
 
     .. currentmodule:: cocotb.types
 
-    :class:`LogicArray`\ s can be constructed from iterables of values
-    constructible into :class:`Logic` like :class:`bool`, :class:`str`, :class:`int`,
-    or it can be constructed :class:`str` or :class:`int` literals syntaxes, as seen below.
+    An :class:`Array`, where all elements are enforced to be :class:`Logic`.
+    This allows the additional of bit-wise logical operators, conversions to integers and bytes, and ``X`` testing and mapping.
 
-    Like :class:`Array`, if *range* is not given, the range ``Range(len(value)-1, "downto", 0)`` is used.
-    If an :class:`int` is passed for *range*, the range ``Range(range-1, "downto", 0)`` is used.
+    :class:`!LogicArray`\ s can be constructed from an iterable of :class:`!Logic`\ s,
+    or values constructible into :class:`!Logic`, like :class:`bool`, :class:`str`, or :class:`int`.
+    Alternatively, they can be constructed from :class:`!str` or :class:`!int` literals.
+
+    Like :class:`Array`, if *range* is not given, the range ``Range(len(value)-1, "downto", 0)`` is used;
+    and if an :class:`int` is passed for *range*, the range ``Range(range-1, "downto", 0)`` is used.
 
     .. code-block:: pycon3
 
         >>> LogicArray(0b0111, 4)
         LogicArray('0111', Range(3, 'downto', 0))
 
-        >>> LogicArray("01XZ")
-        LogicArray('01XZ', Range(3, 'downto', 0))
+        >>> LogicArray("01XZ", Range(0, "to", 3))
+        LogicArray('01XZ', Range(0, 'to', 3))
 
-        >>> LogicArray([0, True, "X"])
-        LogicArray('01X', Range(2, 'downto', 0))
+        >>> LogicArray([0, True, "X", Logic("-")])
+        LogicArray('01X-', Range(3, 'downto', 0))
 
     .. note::
-        If constructing from an unsigned :class:`int` literal, *range* `must` be given.
+        If constructing from an unsigned :class:`!int` literal, *range* `must` be given.
 
-    :class:`LogicArray`\ s can be constructed from :class:`int`\ s using :meth:`from_unsigned` or :meth:`from_signed`.
+    :class:`!LogicArray`\ s can be constructed from :class:`int`\ s using :meth:`from_unsigned` or :meth:`from_signed`.
 
     .. code-block:: pycon3
 
@@ -123,7 +126,7 @@ class LogicArray(AbstractArray[Logic]):
         >>> LogicArray.from_signed(-4, Range(0, "to", 3))  # will sign-extend
         LogicArray('1100', Range(0, 'to', 3))
 
-    :class:`LogicArray`\ s can be constructed from :class:`bytes` or :class:`bytearray` using :meth:`from_bytes`.
+    :class:`!LogicArray`\ s can be constructed from :class:`bytes` or :class:`bytearray` using :meth:`from_bytes`.
     Use the *byteorder* argument to control endianness.
 
     .. code-block:: pycon3
@@ -134,87 +137,90 @@ class LogicArray(AbstractArray[Logic]):
         >>> LogicArray.from_bytes(b"1n", byteorder="little")
         LogicArray('0110111000110001', Range(15, 'downto', 0))
 
-    :class:`LogicArray`\ s support the same :class:`list`-like operations as :class:`Array`;
-    however, it enforces the condition that all elements must be a :class:`Logic`.
+    :class:`!LogicArray`\ s support the same :class:`list`-like operations as :class:`Array`;
+    however, it enforces the condition that all elements must be a :class:`!Logic`.
 
     .. code-block:: pycon3
 
-        >>> la = LogicArray("1010")
-        >>> la[0]  # is indexable
+        >>> array = LogicArray("1010")
+        >>> array[0]  # is indexable
         Logic('0')
 
-        >>> la[1:]  # is slice-able
+        >>> array[1:]  # is slice-able
         LogicArray('10', Range(1, 'downto', 0))
 
-        >>> Logic("0") in la  # is a collection
+        >>> Logic("0") in array  # is a collection
         True
 
-        >>> list(la)  # is an iterable
+        >>> list(array)  # is an iterable
         [Logic('1'), Logic('0'), Logic('1'), Logic('0')]
 
-    When setting an element or slice, the *value* is first constructed into a
-    :class:`Logic`.
+    When setting an element or slice, the *value* is first constructed into a :class:`Logic`.
 
     .. code-block:: pycon3
 
-        >>> la = LogicArray("1010")
-        >>> la[3] = "Z"
-        >>> la[3]
+        >>> array = LogicArray("1010")
+        >>> array[3] = "Z"
+        >>> array[3]
         Logic('Z')
 
-        >>> la[2:] = ["X", True, 0]
-        >>> la
+        >>> array[2:] = ["X", True, 0]
+        >>> array
         LogicArray('ZX10', Range(3, 'downto', 0))
 
-        >>> la[:] = 0b0101
-        >>> la
+        >>> array[:] = 0b0101
+        >>> array
         LogicArray('0101', Range(3, 'downto', 0))
 
-    :class:`LogicArray`\ s can be converted into their :class:`str` or :class:`int` literal values using casts.
+    :class:`!LogicArray`\ s can be converted into their :class:`str` or :class:`int` literal values using casts.
 
     .. code-block:: pycon3
 
-        >>> la = LogicArray("1010")
-        >>> str(la)
+        >>> value = LogicArray("1010")
+        >>> str(value)
         '1010'
-        >>> int(la)
+
+        >>> int(value)
         10
 
     .. warning::
-        The :class:`int` cast assumes the value is entirely ``0`` or ``1`` and will raise an exception otherwise.
+        The :class:`int` cast and :class:`bool` cast assumes the
+        value is entirely ``0``, ``1``, ``L``, or ``H``, and will raise an exception otherwise.
 
     The :meth:`to_unsigned`, :meth:`to_signed`, and :meth:`to_bytes` methods can be used to convert
     the value into an unsigned or signed integer, or bytes, respectively.
 
     .. code-block:: pycon3
 
-        >>> la.to_unsigned()
+        >>> value = LogicArray("1010")
+        >>> value.to_unsigned()
         10
 
-        >>> la.to_signed()
+        >>> value.to_signed()
         -6
 
-        >>> la.to_bytes(byteorder="big")
+        >>> value.to_bytes(byteorder="big")
         b'\n'
 
     .. warning::
-        These operations assume the value is entirely ``0`` or ``1`` and will raise an exception otherwise.
+        These operations assume the value is entirely ``0``, ``1``, ``L``, or ``H``, and will raise an exception otherwise.
 
     You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
     the built-ins :func:`hex:` and :func:`bin`, respectively.
 
     .. code-block:: pycon3
 
-        >>> la = LogicArray("01111010")
-        >>> hex(la)
+        >>> value = LogicArray("01111010")
+        >>> hex(value)
         '0x7a'
-        >>> bin(la)
+
+        >>> bin(value)
         '0b1111010'
 
     .. warning::
         Using :func:`hex` or :func:`bin` first turns the LogicArray into an :class:`int`.
         This means the exact length of the LogicArray is lost.
-        It also means that these expressions will raise an exception if the value is not entirely ``0`` or ``1``.
+        It also means that these expressions will raise an exception if the value is not entirely ``0``, ``1``, ``L``, or ``H``.
 
     :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
     ``^``, and ``~``.
@@ -225,10 +231,10 @@ class LogicArray(AbstractArray[Logic]):
         ...     s = LogicArray([sel] * len(a))
         ...     return (a & ~s) | (b & s)
 
-        >>> la = LogicArray("0110")
-        >>> p = LogicArray("1110")
+        >>> a = LogicArray("0110")
+        >>> b = LogicArray("1110")
         >>> sel = Logic("1")  # choose second option
-        >>> big_mux(la, p, sel)
+        >>> big_mux(a, b, sel)
         LogicArray('1110', Range(3, 'downto', 0))
 
     Args:
