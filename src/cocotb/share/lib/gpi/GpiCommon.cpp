@@ -98,12 +98,14 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
 bool gpi_has_registered_impl() { return registered_impls.size() > 0; }
 
 void gpi_embed_init(int argc, char const *const *argv) {
-    if (embed_sim_init(argc, argv)) gpi_embed_end();
+    if (embed_sim_init(argc, argv)) {
+        gpi_embed_end();
+    }
 }
 
 void gpi_embed_end() {
-    sim_ending = true;
     embed_sim_event("Simulator shut down prematurely");
+    gpi_sim_end();
 }
 
 void gpi_sim_end() {

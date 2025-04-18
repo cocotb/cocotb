@@ -182,9 +182,13 @@ int handle_gpi_callback(void *user_data) {
     // The best thing to do here is shutdown as any subsequent
     // calls will go back to Python which is now in an unknown state
     if (pValue == NULL) {
-        PyErr_Print();
-        gpi_sim_end();
-        return 0;
+        // Printing a SystemExit calls exit(1), which we don't want.
+        if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
+            PyErr_Print();
+        }
+        // Clear error so re-entering Python doesn't fail.
+        PyErr_Clear();
+        return -1;
     }
 
     // We don't care about the result

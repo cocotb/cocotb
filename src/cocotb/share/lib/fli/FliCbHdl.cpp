@@ -25,7 +25,10 @@ void handle_fli_callback(void* data) {
     }
     // LCOV_EXCL_STOP
 
-    cb_hdl->run();
+    if (cb_hdl->run()) {
+        // sim failed, so call shutdown
+        gpi_embed_end();
+    }
 
     gpi_to_simulator();
 }
@@ -45,13 +48,14 @@ int FliTimedCbHdl::arm() {
 }
 
 int FliTimedCbHdl::run() {
+    int res = 0;
     if (!m_removed) {
         // Prevent the callback from calling up if it's been removed.
-        m_cb_func(m_cb_data);
+        res = m_cb_func(m_cb_data);
     }
     // Don't delete, but release back to the appropriate cache to be reused.
     release();
-    return 0;
+    return res;
 }
 
 int FliTimedCbHdl::remove() {
@@ -85,8 +89,9 @@ int FliSignalCbHdl::run() {
         }
     }
 
+    int res = 0;
     if (pass) {
-        m_cb_func(m_cb_data);
+        res = m_cb_func(m_cb_data);
 
         // Don't delete, but desensitize the process from the signal change and
         // release back to the appropriate cache to be reused.
@@ -94,7 +99,7 @@ int FliSignalCbHdl::run() {
         release();
     }  // else don't remove and let it fire again.
 
-    return 0;
+    return res;
 }
 
 int FliSignalCbHdl::remove() {
@@ -112,13 +117,14 @@ int FliSimPhaseCbHdl::arm() {
 }
 
 int FliSimPhaseCbHdl::run() {
+    int res = 0;
     if (!m_removed) {
         // Prevent the callback from calling up if it's been removed.
-        m_cb_func(m_cb_data);
+        res = m_cb_func(m_cb_data);
     }
     // Don't delete, but release back to the appropriate cache to be reused.
     release();
-    return 0;
+    return res;
 }
 
 int FliSimPhaseCbHdl::remove() {
@@ -156,9 +162,9 @@ int FliStartupCbHdl::arm() {
 }
 
 int FliStartupCbHdl::run() {
-    m_cb_func(m_cb_data);
+    int res = m_cb_func(m_cb_data);
     delete this;
-    return 0;
+    return res;
 }
 
 int FliStartupCbHdl::remove() {
@@ -173,9 +179,9 @@ int FliShutdownCbHdl::arm() {
 }
 
 int FliShutdownCbHdl::run() {
-    m_cb_func(m_cb_data);
+    int res = m_cb_func(m_cb_data);
     delete this;
-    return 0;
+    return res;
 }
 
 int FliShutdownCbHdl::remove() {

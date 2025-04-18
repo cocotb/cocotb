@@ -16,6 +16,7 @@ the ReadOnly (and this is invalid, at least in Modelsim).
 import logging
 import os
 import threading
+from bdb import BdbQuit
 from collections import OrderedDict
 from typing import Any, Dict, Union
 
@@ -390,7 +391,7 @@ class Scheduler:
             # This function runs in the scheduler thread
             try:
                 _outcome = Value(await task)
-            except (KeyboardInterrupt, SystemExit):
+            except (KeyboardInterrupt, SystemExit, BdbQuit):
                 # Allow these to bubble up to the execution root to fail the sim immediately.
                 # This follows asyncio's behavior.
                 raise

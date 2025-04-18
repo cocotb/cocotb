@@ -158,6 +158,7 @@ class Test:
         self._main_task: Task[None]
         self._outcome: Union[None, Outcome[Any]] = None
         self._shutdown_errors: list[Outcome[Any]] = []
+        self._started: bool = False
         self._start_time: float
         self._start_sim_time: float
 
@@ -195,6 +196,8 @@ class Test:
         self._start_sim_time = get_sim_time("ns")
         self._start_time = time.time()
 
+        self._started = True
+
         cocotb._scheduler_inst._schedule_task_internal(self._main_task)
         cocotb._scheduler_inst._event_loop()
 
@@ -220,8 +223,12 @@ class Test:
         for task in self.tasks[:]:
             task._cancel_now()
 
-        self.wall_time = time.time() - self._start_time
-        self.sim_time_ns = get_sim_time("ns") - self._start_sim_time
+        if self._started:
+            self.wall_time = time.time() - self._start_time
+            self.sim_time_ns = get_sim_time("ns") - self._start_sim_time
+        else:
+            self.wall_time = 0
+            self.sim_time_ns = 0
         self._test_complete_cb()
 
     def add_task(self, task: Task[Any]) -> None:

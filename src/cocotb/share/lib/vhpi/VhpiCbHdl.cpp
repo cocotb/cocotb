@@ -30,7 +30,10 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
     }
     // LCOV_EXCL_STOP
 
-    cb_hdl->run();
+    if (cb_hdl->run()) {
+        // sim failed, so call shutdown
+        gpi_embed_end();
+    }
 
     gpi_to_simulator();
 }
@@ -466,10 +469,12 @@ int VhpiCbHdl::arm() {
 }
 
 int VhpiCbHdl::run() {
+    int res = 0;
+
     // LCOV_EXCL_START
     if (!m_removed) {
         // Only call up if not removed.
-        m_cb_func(m_cb_data);
+        res = m_cb_func(m_cb_data);
     }
     // LCOV_EXCL_STOP
 
@@ -489,7 +494,7 @@ int VhpiCbHdl::run() {
     else {
         delete this;
     }
-    return 0;
+    return res;
 }
 
 // Value related functions
@@ -894,8 +899,9 @@ int VhpiValueCbHdl::run() {
         }
     }
 
+    int res = 0;
     if (pass) {
-        m_cb_func(m_cb_data);
+        res = m_cb_func(m_cb_data);
 
         // Remove recurring callback once fired
         auto err = vhpi_remove_cb(get_handle<vhpiHandleT>());
@@ -914,7 +920,7 @@ int VhpiValueCbHdl::run() {
 
     }  // else Don't remove and let it fire again.
 
-    return 0;
+    return res;
 }
 
 VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl) {
