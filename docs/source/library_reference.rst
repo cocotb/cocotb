@@ -458,7 +458,7 @@ The Regression Manager
 .. module:: cocotb.regression
     :synopsis: Regression test suite manager.
 
-.. autodata:: cocotb.regression_manager
+.. autodata:: cocotb._regression_manager
 
 .. autoclass:: Test
 

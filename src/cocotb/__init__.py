@@ -7,7 +7,6 @@ import logging as py_logging
 from types import SimpleNamespace
 from typing import Dict, List, Union
 
-import cocotb._profiling
 import cocotb.handle
 import cocotb.task
 import cocotb.triggers
@@ -49,7 +48,7 @@ This logger defaults to the :data:`logging.INFO` log level.
 _scheduler_inst: Scheduler
 """The global scheduler instance."""
 
-regression_manager: RegressionManager
+_regression_manager: RegressionManager
 """The global regression manager instance."""
 
 argv: List[str]
