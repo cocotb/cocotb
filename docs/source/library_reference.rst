@@ -82,7 +82,7 @@ Writing and Generating Tests
 
 .. autofunction:: cocotb.parametrize
 
-.. autoclass:: cocotb.regression.TestFactory
+.. autoclass:: cocotb.TestFactory
     :members:
     :member-order: bysource
 
@@ -413,6 +413,8 @@ Other Runtime Information
 
 .. autodata:: cocotb.top
 
+.. autodata:: cocotb.random_seed
+
 .. autodata:: cocotb.is_simulation
 
 .. _combine-results:
@@ -451,10 +453,10 @@ Implementation Details
 The Regression Manager
 ----------------------
 
-.. module:: cocotb.regression
+.. module:: cocotb._regression
     :synopsis: Regression test suite manager.
 
-.. autodata:: cocotb.regression_manager
+.. autodata:: cocotb._regression_manager
 
 .. autoclass:: Test
 

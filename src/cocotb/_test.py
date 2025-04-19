@@ -189,7 +189,7 @@ class Test:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
         hasher = hashlib.sha1()
         hasher.update(self.fullname.encode())
-        seed = cocotb._random_seed + int(hasher.hexdigest(), 16)
+        seed = cocotb.random_seed + int(hasher.hexdigest(), 16)
         random.seed(seed)
 
         self._start_sim_time = get_sim_time("ns")
@@ -341,7 +341,7 @@ def create_task(
         return coro
     elif isinstance(coro, Coroutine):
         task = Task[ResultType](coro)
-        cocotb.regression_manager._test.add_task(task)
+        cocotb._regression_manager._test.add_task(task)
         return task
     elif inspect.iscoroutinefunction(coro):
         raise TypeError(

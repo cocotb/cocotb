@@ -1,0 +1,1 @@
+:class:`.TestFactory` should now be imported from the ``cocotb`` module: ``from cocotb import TestFactory``.

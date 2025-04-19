@@ -7,19 +7,14 @@ import logging as py_logging
 from types import SimpleNamespace
 from typing import Dict, List, Union
 
-import cocotb._profiling
 import cocotb.handle
 import cocotb.task
 import cocotb.triggers
-from cocotb._decorators import (
-    bridge,
-    parametrize,
-    resume,
-    test,
-)
+from cocotb._bridge import bridge, resume
+from cocotb._regression import RegressionManager
 from cocotb._scheduler import Scheduler
 from cocotb._test import create_task, pass_test, start, start_soon
-from cocotb.regression import RegressionManager
+from cocotb._test_generation import TestFactory, parametrize, test
 
 from ._version import __version__
 
@@ -28,6 +23,7 @@ __all__ = (
     "resume",
     "test",
     "parametrize",
+    "TestFactory",
     "pass_test",
     "create_task",
     "start",
@@ -49,7 +45,7 @@ This logger defaults to the :data:`logging.INFO` log level.
 _scheduler_inst: Scheduler
 """The global scheduler instance."""
 
-regression_manager: RegressionManager
+_regression_manager: RegressionManager
 """The global regression manager instance."""
 
 argv: List[str]
@@ -76,9 +72,9 @@ SIM_NAME: str
 SIM_VERSION: str
 """The version of the running simulator."""
 
-_random_seed: int
+random_seed: int
 """
-The value passed to the Python default random number generator.
+The value passed to the Python global random number generator.
 
 See :envvar:`COCOTB_RANDOM_SEED` for details on how the value is computed.
 This is guaranteed to hold a value at test time.

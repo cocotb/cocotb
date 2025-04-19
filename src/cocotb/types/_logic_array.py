@@ -18,9 +18,9 @@ from typing import (
 
 from cocotb._deprecation import deprecated
 from cocotb._utils import DocStrEnum
-from cocotb.types import ArrayLike
-from cocotb.types.logic import Logic, LogicConstructibleT, _str_literals
-from cocotb.types.range import Range
+from cocotb.types._abstract_array import AbstractArray
+from cocotb.types._logic import Logic, LogicConstructibleT, _str_literals
+from cocotb.types._range import Range
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -88,7 +88,7 @@ _resolve_tables = {
 }
 
 
-class LogicArray(ArrayLike[Logic]):
+class LogicArray(AbstractArray[Logic]):
     r"""Fixed-sized, arbitrarily-indexed, array of :class:`cocotb.types.Logic`.
 
     .. currentmodule:: cocotb.types

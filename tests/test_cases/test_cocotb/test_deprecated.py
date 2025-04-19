@@ -7,7 +7,6 @@ import warnings
 import pytest
 
 import cocotb
-from cocotb.regression import TestFactory
 from cocotb.triggers import Edge, Event, First, Join, Timer
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -29,7 +28,7 @@ async def test_testfactory_deprecated_test(dut, a):
 
 with warnings.catch_warnings(record=True) as tf_warns:
     warnings.simplefilter("default", category=DeprecationWarning)
-    tf = TestFactory(test_testfactory_deprecated_test)
+    tf = cocotb.TestFactory(test_testfactory_deprecated_test)
 
 tf.add_option("a", [1, 2])
 tf.generate_tests()

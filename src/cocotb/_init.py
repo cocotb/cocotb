@@ -16,12 +16,10 @@ from typing import Any, Callable, List, cast
 import cocotb
 import cocotb._profiling
 import cocotb.handle
-import cocotb.logging
-import cocotb.regression
 import cocotb.simulator
+from cocotb._regression import RegressionManager, RegressionMode
 from cocotb._scheduler import Scheduler
 from cocotb.logging import _log_from_c, default_config
-from cocotb.regression import RegressionManager, RegressionMode
 
 log: logging.Logger
 
@@ -103,7 +101,7 @@ def run_regression(_: Any) -> None:
 
     # start Regression Manager
     log.info("Running tests")
-    cocotb.regression_manager.start_regression()
+    cocotb._regression_manager.start_regression()
 
 
 def _sim_event(msg: str) -> None:
@@ -111,7 +109,7 @@ def _sim_event(msg: str) -> None:
     # We simply return here as the simulator will exit
     # so no cleanup is needed
     if hasattr(cocotb, "regression_manager"):
-        cocotb.regression_manager._fail_simulation(msg)
+        cocotb._regression_manager._fail_simulation(msg)
     else:
         log.error(msg)
         _shutdown_testbench()
@@ -140,7 +138,9 @@ def _process_packages() -> None:
         return
 
     for pkg in pkgs:
-        handle = cast(cocotb.handle.HierarchyObject, cocotb.handle.SimHandle(pkg))
+        handle = cast(
+            cocotb.handle.HierarchyObject, cocotb.handle._make_sim_object(pkg)
+        )
         name = handle._name
 
         # Icarus doesn't support named access to package objects:
@@ -220,7 +220,7 @@ def _setup_random_seed() -> None:
             seed = ast.literal_eval(plusarg_seed)
             if not isinstance(seed, int):
                 raise TypeError("ntb_random_seed plusargs is not a valid seed value.")
-            cocotb._random_seed = seed
+            cocotb.random_seed = seed
         elif "seed" in cocotb.plusargs:
             plusarg_seed = cocotb.plusargs["seed"]
             if not isinstance(plusarg_seed, str):
@@ -228,17 +228,17 @@ def _setup_random_seed() -> None:
             seed = ast.literal_eval(plusarg_seed)
             if not isinstance(seed, int):
                 raise TypeError("seed plusargs is not a valid seed value.")
-            cocotb._random_seed = seed
+            cocotb.random_seed = seed
         else:
-            cocotb._random_seed = int(time.time())
-        log.info("Seeding Python random module with %d", cocotb._random_seed)
+            cocotb.random_seed = int(time.time())
+        log.info("Seeding Python random module with %d", cocotb.random_seed)
     else:
-        cocotb._random_seed = ast.literal_eval(seed_envvar)
+        cocotb.random_seed = ast.literal_eval(seed_envvar)
         log.info(
-            "Seeding Python random module with supplied seed %d", cocotb._random_seed
+            "Seeding Python random module with supplied seed %d", cocotb.random_seed
         )
 
-    random.seed(cocotb._random_seed)
+    random.seed(cocotb.random_seed)
 
 
 def _setup_root_handle() -> None:
@@ -257,11 +257,11 @@ def _setup_root_handle() -> None:
     if not handle:
         raise RuntimeError(f"Can not find root handle {root_name!r}")
 
-    cocotb.top = cocotb.handle.SimHandle(handle)
+    cocotb.top = cocotb.handle._make_sim_object(handle)
 
 
 def _setup_regression_manager() -> None:
-    cocotb.regression_manager = RegressionManager()
+    cocotb._regression_manager = RegressionManager()
 
     # discover tests
     module_str = os.getenv("COCOTB_TEST_MODULES", "")
@@ -270,8 +270,8 @@ def _setup_regression_manager() -> None:
             "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
         )
     modules = [s.strip() for s in module_str.split(",") if s.strip()]
-    cocotb.regression_manager.setup_pytest_assertion_rewriting()
-    cocotb.regression_manager.discover_tests(*modules)
+    cocotb._regression_manager.setup_pytest_assertion_rewriting()
+    cocotb._regression_manager.discover_tests(*modules)
 
     # filter tests
     testcase_str = os.getenv("COCOTB_TESTCASE", "").strip()
@@ -284,8 +284,8 @@ def _setup_regression_manager() -> None:
             DeprecationWarning,
         )
         filters = [f"{s.strip()}$" for s in testcase_str.split(",") if s.strip()]
-        cocotb.regression_manager.add_filters(*filters)
-        cocotb.regression_manager.set_mode(RegressionMode.TESTCASE)
+        cocotb._regression_manager.add_filters(*filters)
+        cocotb._regression_manager.set_mode(RegressionMode.TESTCASE)
     elif test_filter_str:
-        cocotb.regression_manager.add_filters(test_filter_str)
-        cocotb.regression_manager.set_mode(RegressionMode.TESTCASE)
+        cocotb._regression_manager.add_filters(test_filter_str)
+        cocotb._regression_manager.set_mode(RegressionMode.TESTCASE)
