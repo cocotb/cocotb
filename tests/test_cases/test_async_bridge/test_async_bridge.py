@@ -5,13 +5,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import threading
+import time
 
 import pytest
 
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ReadOnly, RisingEdge, Timer
-from cocotb.utils import get_sim_time
+from cocotb.utils import get_sim_steps, get_sim_time
 
 
 def return_two(dut):
@@ -35,10 +36,8 @@ def print_sim_time(dut, base_time):
     # We are not calling out here so time should not advance
     # And should also remain consistent
     for _ in range(5):
-        _t = get_sim_time("ns")
-        dut._log.info("Time reported = %d", _t)
-        assert _t == base_time
-    dut._log.info("bridge function has ended")
+        time.sleep(0.02)
+        assert get_sim_time("step") == base_time
 
 
 @cocotb.test()
@@ -48,13 +47,11 @@ async def test_time_in_bridge(dut):
     routine does not call @cocotb.resume
     """
     await Timer(10, unit="ns")
-    time = get_sim_time("ns")
-    dut._log.info("Time at start of test = %d", time)
-    for i in range(100):
-        dut._log.info("Loop call %d", i)
+    time = get_sim_time("step")
+    for i in range(10):
         await cocotb.bridge(print_sim_time)(dut, time)
 
-    time_now = get_sim_time("ns")
+    time_now = get_sim_time("step")
     await Timer(10, unit="ns")
 
     assert time == time_now
@@ -81,10 +78,10 @@ async def test_time_in_resume(dut):
     for n in range(5):
         for i in range(20):
             await RisingEdge(dut.clk)
-            time = get_sim_time("ns")
-            expected_after = time + 100 * n
+            time = get_sim_time("step")
+            expected_after = time + get_sim_steps(100, "ns") * n
             await wait_cycles_wrapper(dut, n)
-            time_after = get_sim_time("ns")
+            time_after = get_sim_time("step")
             assert expected_after == time_after
 
 
@@ -274,7 +271,7 @@ async def test_resume_returns_exception(dut):
 @cocotb.test()
 async def test_resume_from_weird_thread_fails(dut):
     """
-    Test that background threads caling a @cocotb.resume do not hang forever
+    Test that background threads calling a @cocotb.resume do not hang forever
     """
     func_started = False
     caller_resumed = False
