@@ -11,10 +11,10 @@ import cocotb.handle
 import cocotb.task
 import cocotb.triggers
 from cocotb._bridge import bridge, resume
+from cocotb._regression import RegressionManager
 from cocotb._scheduler import Scheduler
 from cocotb._test import create_task, pass_test, start, start_soon
 from cocotb._test_generation import TestFactory, parametrize, test
-from cocotb.regression import RegressionManager
 
 from ._version import __version__
 
@@ -45,7 +45,7 @@ This logger defaults to the :data:`logging.INFO` log level.
 _scheduler_inst: Scheduler
 """The global scheduler instance."""
 
-regression_manager: RegressionManager
+_regression_manager: RegressionManager
 """The global regression manager instance."""
 
 argv: List[str]
