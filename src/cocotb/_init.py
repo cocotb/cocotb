@@ -138,7 +138,9 @@ def _process_packages() -> None:
         return
 
     for pkg in pkgs:
-        handle = cast(cocotb.handle.HierarchyObject, cocotb.handle.SimHandle(pkg))
+        handle = cast(
+            cocotb.handle.HierarchyObject, cocotb.handle._make_sim_object(pkg)
+        )
         name = handle._name
 
         # Icarus doesn't support named access to package objects:
@@ -255,7 +257,7 @@ def _setup_root_handle() -> None:
     if not handle:
         raise RuntimeError(f"Can not find root handle {root_name!r}")
 
-    cocotb.top = cocotb.handle.SimHandle(handle)
+    cocotb.top = cocotb.handle._make_sim_object(handle)
 
 
 def _setup_regression_manager() -> None:
