@@ -26,8 +26,7 @@ from cocotb.clock import Clock
 from cocotb.handle import LogicObject, ValueObjectBase
 from cocotb.task import Task
 from cocotb.triggers import Event, FallingEdge, ReadOnly, RisingEdge, Trigger
-from cocotb.types import LogicArray, Range
-from cocotb.types.array import Array
+from cocotb.types import Array, LogicArray, Range
 
 T = TypeVar("T")
 
