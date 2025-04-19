@@ -277,7 +277,7 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
             # attempt to create the child object
             try:
-                hdl = SimHandle(thing, path)
+                hdl = _make_sim_object(thing, path)
             except NotImplementedError:
                 self._log.exception(
                     "Unable to construct a SimHandle object for %s", path
@@ -321,7 +321,7 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
             return None
 
         # if successful, construct and cache
-        sub_handle = SimHandle(new_handle, self._child_path(key))
+        sub_handle = _make_sim_object(new_handle, self._child_path(key))
         self._sub_handles[key] = sub_handle
 
         return sub_handle
@@ -1051,7 +1051,9 @@ class ArrayObject(
         if not new_handle:
             raise IndexError(f"{self._path} contains no object at index {index}")
         path = self._path + "[" + str(index) + "]"
-        self._sub_handles[index] = cast(ChildObjectT, SimHandle(new_handle, path))
+        self._sub_handles[index] = cast(
+            ChildObjectT, _make_sim_object(new_handle, path)
+        )
         return self._sub_handles[index]
 
     def __iter__(self) -> Iterable[ChildObjectT]:
@@ -1665,7 +1667,7 @@ _type2cls: Dict[int, Type[_ConcreteHandleTypes]] = {
 }
 
 
-def SimHandle(
+def _make_sim_object(
     handle: simulator.gpi_sim_hdl, path: Optional[str] = None
 ) -> SimHandleBase:
     """Factory function to create the correct type of `SimHandle` object.
