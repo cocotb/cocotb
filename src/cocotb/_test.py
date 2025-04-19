@@ -348,7 +348,7 @@ def create_task(
         return coro
     elif isinstance(coro, Coroutine):
         task = Task[ResultType](coro)
-        cocotb.regression_manager._test.add_task(task)
+        cocotb._regression_manager._test.add_task(task)
         return task
     elif inspect.iscoroutinefunction(coro):
         raise TypeError(
