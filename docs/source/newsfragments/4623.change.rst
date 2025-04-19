@@ -1,0 +1,1 @@
+Renamed ``cocotb.types.ArrayLike`` to :class:`.AbstractArray`.

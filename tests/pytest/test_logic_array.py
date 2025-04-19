@@ -434,21 +434,21 @@ def test_resolve_x():
 
 
 def test_resolve_default_behavior():
-    import cocotb.types.logic_array
+    import cocotb.types._logic_array
 
     a = LogicArray("01X")
 
-    cocotb.types.logic_array.RESOLVE_X = "error"
+    cocotb.types._logic_array.RESOLVE_X = "error"
     with pytest.raises(ValueError):
         a.to_unsigned()
 
-    cocotb.types.logic_array.RESOLVE_X = "zeros"
+    cocotb.types._logic_array.RESOLVE_X = "zeros"
     assert a.to_unsigned() == 0b010
 
-    cocotb.types.logic_array.RESOLVE_X = "ones"
+    cocotb.types._logic_array.RESOLVE_X = "ones"
     assert a.to_unsigned() == 0b011
 
-    cocotb.types.logic_array.RESOLVE_X = "random"
+    cocotb.types._logic_array.RESOLVE_X = "random"
     rand_val = a.to_unsigned()
     # check known bits only
     assert (rand_val >> 1) & 1 == 1
