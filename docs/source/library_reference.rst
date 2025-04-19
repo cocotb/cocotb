@@ -417,6 +417,8 @@ Other Runtime Information
 
 .. autodata:: cocotb.top
 
+.. autodata:: cocotb.random_seed
+
 .. autodata:: cocotb.is_simulation
 
 .. _combine-results:

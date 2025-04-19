@@ -131,7 +131,7 @@ class RegressionManager:
 
         self.xunit = XUnitReporter(filename=results_filename)
         self.xunit.add_testsuite(name=suite_name, package=package_name)
-        self.xunit.add_property(name="random_seed", value=str(cocotb._random_seed))
+        self.xunit.add_property(name="random_seed", value=str(cocotb.random_seed))
 
     def discover_tests(self, *modules: str) -> None:
         """Discover tests in files automatically.

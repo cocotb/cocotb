@@ -75,9 +75,9 @@ SIM_NAME: str
 SIM_VERSION: str
 """The version of the running simulator."""
 
-_random_seed: int
+random_seed: int
 """
-The value passed to the Python default random number generator.
+The value passed to the Python global random number generator.
 
 See :envvar:`COCOTB_RANDOM_SEED` for details on how the value is computed.
 This is guaranteed to hold a value at test time.

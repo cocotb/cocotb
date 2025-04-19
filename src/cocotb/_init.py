@@ -218,7 +218,7 @@ def _setup_random_seed() -> None:
             seed = ast.literal_eval(plusarg_seed)
             if not isinstance(seed, int):
                 raise TypeError("ntb_random_seed plusargs is not a valid seed value.")
-            cocotb._random_seed = seed
+            cocotb.random_seed = seed
         elif "seed" in cocotb.plusargs:
             plusarg_seed = cocotb.plusargs["seed"]
             if not isinstance(plusarg_seed, str):
@@ -226,17 +226,17 @@ def _setup_random_seed() -> None:
             seed = ast.literal_eval(plusarg_seed)
             if not isinstance(seed, int):
                 raise TypeError("seed plusargs is not a valid seed value.")
-            cocotb._random_seed = seed
+            cocotb.random_seed = seed
         else:
-            cocotb._random_seed = int(time.time())
-        log.info("Seeding Python random module with %d", cocotb._random_seed)
+            cocotb.random_seed = int(time.time())
+        log.info("Seeding Python random module with %d", cocotb.random_seed)
     else:
-        cocotb._random_seed = ast.literal_eval(seed_envvar)
+        cocotb.random_seed = ast.literal_eval(seed_envvar)
         log.info(
-            "Seeding Python random module with supplied seed %d", cocotb._random_seed
+            "Seeding Python random module with supplied seed %d", cocotb.random_seed
         )
 
-    random.seed(cocotb._random_seed)
+    random.seed(cocotb.random_seed)
 
 
 def _setup_root_handle() -> None:
