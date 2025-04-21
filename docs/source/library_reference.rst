@@ -396,7 +396,7 @@ Miscellaneous
 Test Control
 ------------
 
-.. autofunction:: cocotb.pass_test
+.. autofunction:: cocotb.fpass
 
 Other Runtime Information
 -------------------------

@@ -47,7 +47,7 @@ class SimFailure(BaseException):
 
 
 class TestSuccess(BaseException):
-    """Implementation of :func:`pass_test`.
+    """Implementation of :func:`fpass`.
 
     Users are *not* intended to catch this exception type.
     """
@@ -359,7 +359,7 @@ def create_task(
         )
 
 
-def pass_test(msg: Union[str, None] = None) -> NoReturn:
+def fpass(msg: Union[str, None] = None) -> NoReturn:
     """Force a test to pass.
 
     The test will end and enter termination phase when this is called.
