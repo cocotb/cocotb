@@ -1,0 +1,1 @@
+Add support for discovering VHDL packages and making them available in :data:`cocotb.packages`.
