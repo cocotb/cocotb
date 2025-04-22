@@ -146,8 +146,8 @@ def _process_packages() -> None:
         # Icarus doesn't support named access to package objects:
         # https://github.com/steveicarus/iverilog/issues/1038
         # so we cannot lazily create handles
-        if cocotb.SIM_NAME == "Icarus Verilog":
-            handle._discover_all()
+        # if cocotb.SIM_NAME == "Icarus Verilog":
+        handle._discover_all()
         pkg_dict[name] = handle
 
     cocotb.packages = SimpleNamespace(**pkg_dict)
