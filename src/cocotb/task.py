@@ -41,14 +41,6 @@ ResultType = TypeVar("ResultType")
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
-class CancellationError(Exception):
-    """Result of a cancelled Task when cancellation exits abnormally."""
-
-    def __init__(self, msg: str, outcome: Outcome[Any]) -> None:
-        super().__init__(msg)
-        self.outcome = outcome
-
-
 class _TaskState(DocEnum):
     """State of a Task."""
 
@@ -207,9 +199,8 @@ class Task(Generic[ResultType]):
             if self._must_cancel:
                 self._set_outcome(
                     Error(
-                        CancellationError(
-                            "Task was cancelled, but exited normally. Did you forget to re-raise the CancelledError?",
-                            outcome,
+                        RuntimeError(
+                            "Task was cancelled, but exited normally. Did you forget to re-raise the CancelledError?"
                         )
                     )
                 )
@@ -232,9 +223,8 @@ class Task(Generic[ResultType]):
             if self._must_cancel:
                 self._set_outcome(
                     Error(
-                        CancellationError(
-                            "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?",
-                            Value(None),
+                        RuntimeError(
+                            "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?"
                         )
                     )
                 )

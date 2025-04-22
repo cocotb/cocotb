@@ -19,9 +19,8 @@ import pytest
 from common import MyException, assert_takes
 
 import cocotb
-import cocotb.utils
 from cocotb.clock import Clock
-from cocotb.task import CancellationError, Task
+from cocotb.task import Task
 from cocotb.triggers import (
     Combine,
     Event,
@@ -825,7 +824,7 @@ async def test_cancel_task(_: object) -> None:
     assert task.done()
 
 
-@cocotb.test(expect_error=CancellationError)
+@cocotb.test(expect_error=RuntimeError)
 async def test_cancel_task_cancellation_error(_: object) -> None:
     a = Event()
 
@@ -1001,7 +1000,7 @@ async def test_start_again_while_pending(_) -> None:
     await a
 
 
-@cocotb.test(expect_error=CancellationError)
+@cocotb.test(expect_error=RuntimeError)
 async def test_test_end_cancellation_error(_) -> None:
     """Test that test-end Cancellation causes test failure."""
 
