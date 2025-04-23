@@ -355,10 +355,13 @@ GPI
 PyGPI
 -----
 
-.. warning::
+.. envvar:: PYGPI_PYTHON_BIN
 
-    PyGPI is an experimental feature and subject to change.
-
+    The Python binary in the Python environment to use with cocotb.
+    This is set to the result of ``cocotb-config --python-bin`` in the Makefiles and :ref:`Python Runner <howto-python-runner>`.
+    You will likely only need to set this variable manually if
+    you are using a Python environment other than the currently activated environment,
+    or if you are using a :ref:`custom flow <custom-flows>`.
 
 .. envvar:: PYGPI_USERS
 
