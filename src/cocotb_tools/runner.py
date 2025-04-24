@@ -1312,6 +1312,11 @@ class Verilator(Runner):
             ]
             + (["--trace"] if self.waves else [])
             + [arg for arg in self.build_args if type(arg) in (str, Verilog)]
+            + (
+                ["--timescale", "{}/{}".format(*self.timescale)]
+                if self.timescale is not None
+                else []
+            )
             + self._get_define_options(self.defines)
             + self._get_include_options(self.includes)
             + self._get_parameter_options(self.parameters)
