@@ -26,7 +26,10 @@ from cocotb_tools.runner import get_runner
 
 sys.path.insert(0, str(Path(tests_dir) / "pytest"))
 test_module = Path(__file__).stem
-sim = os.getenv("SIM", "icarus")
+sim = os.getenv(
+    "SIM",
+    "icarus" if os.getenv("HDL_TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
+)
 
 
 @cocotb.test()

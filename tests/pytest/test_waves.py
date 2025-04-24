@@ -22,7 +22,10 @@ from cocotb_tools.runner import get_runner
 
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 test_module = os.path.basename(os.path.splitext(__file__)[0])
-sim = os.getenv("SIM", "icarus")
+sim = os.getenv(
+    "SIM",
+    "icarus" if os.getenv("HDL_TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
+)
 
 
 @cocotb.test()
@@ -62,8 +65,8 @@ def run_simulation(sim, test_args=None):
 
 @pytest.mark.simulator_required
 @pytest.mark.skipif(
-    sim not in ["icarus", "verilator", "xcelium"],
-    reason="Skipping test because it is only for Icarus, Verilator or Xcelium simulators",
+    sim not in ["icarus", "verilator", "xcelium", "nvc", "ghdl"],
+    reason="Skipping test because it is only for Icarus, Verilator, Xcelium, NVC, and GHDL simulators",
 )
 def test_wave_dump():
     run_simulation(sim=sim)
@@ -73,6 +76,10 @@ def test_wave_dump():
         dumpfile_path = os.path.join(sim_build, "dump.vcd")
     elif sim == "xcelium":
         dumpfile_path = os.path.join(sim_build, "cocotb_waves.shm", "cocotb_waves.trn")
+    elif sim == "nvc":
+        dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.fst")
+    elif sim == "ghdl":
+        dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.ghw")
     else:
         raise RuntimeError("Not a supported simulator")
     assert os.path.exists(dumpfile_path)
@@ -81,7 +88,7 @@ def test_wave_dump():
 @pytest.mark.simulator_required
 @pytest.mark.skipif(
     sim not in ["verilator"],
-    reason="Skipping test because it is only for Verilator simulators",
+    reason="Skipping test because it is only for the Verilator simulator",
 )
 def test_named_wave_dump():
     temp_dir = Path(tempfile.mkdtemp())

@@ -18,7 +18,10 @@ tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sim_build = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sim_build")
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 
-sim = os.getenv("SIM", "icarus")
+sim = os.getenv(
+    "SIM",
+    "icarus" if os.getenv("HDL_TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
+)
 
 pre_cmd_sims = {
     "questa",
@@ -123,7 +126,10 @@ def test_missing_libpython(monkeypatch):
         hdl_sources = [os.path.join(tests_dir, "designs", "runner", "runner.vhdl")]
         gpi_interfaces = [os.getenv("VHDL_GPI_INTERFACE", None)]
 
-    sim_tool = os.getenv("SIM", "icarus")
+    sim_tool = os.getenv(
+        "SIM",
+        "icarus" if os.getenv("HDL_TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
+    )
     sim_runner = get_runner(sim_tool)
     sim_params = dict(
         WIDTH_IN="8",

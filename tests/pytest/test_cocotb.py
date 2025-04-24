@@ -39,6 +39,7 @@ vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 if hdl_toplevel_lang == "verilog":
     sources = [os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")]
     gpi_interfaces = ["vpi"]
+    sim = os.getenv("SIM", "icarus")
 else:
     sources = [
         os.path.join(
@@ -48,8 +49,7 @@ else:
         os.path.join(tests_dir, "designs", "sample_module", "sample_module.vhdl"),
     ]
     gpi_interfaces = [vhdl_gpi_interfaces]
-
-sim = os.getenv("SIM", "icarus")
+    sim = os.getenv("SIM", "nvc")
 compile_args = []
 sim_args = []
 if sim == "questa":
