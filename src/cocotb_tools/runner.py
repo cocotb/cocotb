@@ -896,7 +896,6 @@ class Ghdl(Runner):
 
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     * Does not support the ``gui`` argument to :meth:`.test`.
-    * Does not support the ``waves`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"vhdl": ["vpi"]}
@@ -1001,6 +1000,7 @@ class Ghdl(Runner):
             + ["--vpi=" + cocotb_tools.config.lib_name_path("vpi", "ghdl").as_posix()]
             + self.plusargs
             + self._get_parameter_options(self.parameters)
+            + ([f"--wave={self.hdl_toplevel}.ghw"] if self.waves else [])
         ]
 
         return cmds
@@ -1011,7 +1011,6 @@ class Nvc(Runner):
 
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     * Does not support the ``gui`` argument to :meth:`.test`.
-    * Does not support the ``waves`` argument to :meth:`.build` or :meth:`.test`.
     * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
@@ -1068,6 +1067,7 @@ class Nvc(Runner):
             + self.test_args
             + ["--load=" + cocotb_tools.config.lib_name_path("vhpi", "nvc").as_posix()]
             + self.plusargs
+            + ([f"--wave={self.hdl_toplevel}.fst"] if self.waves else [])
         ]
 
         return cmds

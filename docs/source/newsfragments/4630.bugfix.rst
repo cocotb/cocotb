@@ -1,0 +1,1 @@
+Support ``waves`` argument to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` for GHDL and NVC.
