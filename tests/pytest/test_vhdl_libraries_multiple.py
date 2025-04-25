@@ -43,7 +43,7 @@ def test_toplevel_library():
     for lib in ["e", "d", "c", "b"]:
         runner.build(
             hdl_library=f"{lib}lib",
-            vhdl_sources=[src_path / f"{lib}.vhdl"],
+            sources=[src_path / f"{lib}.vhdl"],
             build_args=compile_args,
             build_dir=str(src_path / "sim_build" / "pytest"),
         )
@@ -52,7 +52,7 @@ def test_toplevel_library():
     lib = "a"
     runner.build(
         hdl_library=f"{lib}lib",
-        vhdl_sources=[src_path / f"{lib}.vhdl"],
+        sources=[src_path / f"{lib}.vhdl"],
         hdl_toplevel="a",
         build_args=compile_args,
         build_dir=str(src_path / "sim_build" / "pytest"),
