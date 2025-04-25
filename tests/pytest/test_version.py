@@ -15,4 +15,6 @@ def test_version():
         rev = subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"], universal_newlines=True
         ).strip()
-        assert parts[1] == rev
+        assert parts[1] == rev, (
+            "Installed cocotb version is not the same as your latest git version"
+        )
