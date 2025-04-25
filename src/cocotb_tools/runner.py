@@ -200,6 +200,14 @@ class Runner(ABC):
     def _test_command(self) -> Sequence[_Command]:
         """Return command to run a test."""
 
+    def _use_external_viewer(self) -> bool:
+        """Return if an external viewer should be called after simulation when ``gui=True``."""
+        return False
+
+    def _waves_file(self) -> Optional[str]:
+        """Return file name of the generated waveform file for use with external viewer."""
+        return None
+
     def build(
         self,
         hdl_library: str = "top",
@@ -267,7 +275,7 @@ class Runner(ABC):
             clean: Delete *build_dir* before building.
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
-            waves: Record signal traces.
+            waves: Record signal traces. Overridden by the ``WAVES`` environment variable.
             log_file: File to write the build log to.
 
         .. deprecated:: 2.0
@@ -311,7 +319,7 @@ class Runner(ABC):
         self.timescale: Optional[Tuple[str, str]] = timescale
         self.log_file: Optional[PathLike] = log_file
 
-        self.waves = waves
+        self.waves = bool(os.getenv("WAVES", waves))
 
         self.env.update(os.environ)
 
@@ -360,8 +368,8 @@ class Runner(ABC):
             test_args: A list of extra arguments for the simulator.
             plusargs: 'plusargs' to set for the simulator.
             extra_env: Extra environment variables to set.
-            waves: Record signal traces.
-            gui: Run with simulator GUI.
+            waves: Record signal traces. Overridden by the ``WAVES`` environment variable.
+            gui: Run with simulator GUI. Overridden by the ``GUI`` environment variable.
             parameters: Verilog parameters or VHDL generics.
             build_dir: Directory the build step has been run in.
             test_dir: Directory to run the tests in.
@@ -435,8 +443,8 @@ class Runner(ABC):
             self.env["COCOTB_RANDOM_SEED"] = str(seed)
 
         self.log_file = log_file
-        self.waves = waves
-        self.gui = gui
+        self.waves = bool(os.getenv("WAVES", waves))
+        self.gui = bool(os.getenv("GUI", gui))
         self.timescale = timescale
 
         if verbose is not None:
@@ -506,6 +514,28 @@ class Runner(ABC):
 
         if simulator_exit_code != 0:
             sys.exit(simulator_exit_code)
+
+        if pytest_current_test and self._use_external_viewer() and self.gui:
+            viewer = os.getenv("COCOTB_WAVEFORM_VIEWER")
+            if viewer is not None:
+                viewer_path = shutil.which(viewer)
+                if viewer_path is None:
+                    raise ValueError(f"Cannot find {viewer} in the system path")
+            else:
+                viewer_path = shutil.which("surfer")
+                if viewer_path is None:
+                    viewer_path = shutil.which("gtkwave")
+            if viewer_path is None:
+                raise SystemError(
+                    "Cannot find any viewer (surfer or gtkwave) in the system path"
+                )
+
+            subprocess.run(
+                [f"{viewer_path} {self._waves_file()}"],
+                cwd=self.test_dir,
+                check=True,
+                shell=True,
+            )
 
         self.log.info("Results file: %s", results_xml_file)
         return results_xml_file
@@ -631,9 +661,8 @@ class Icarus(Runner):
     """Implementation of :class:`Runner` for Icarus.
 
     * ``hdl_toplevel`` argument to :meth:`.build` is *required*.
-    * ``waves`` argument *must* be given to :meth:`.build` if used.
+    * ``waves=True`` *must* be given to :meth:`.build` if either ``waves`` or ``gui`` are to be used during :meth:`.test`.
     * ``timescale`` argument to :meth:`.build` must be given to support dumping the command file.
-    * Does not support the ``gui`` argument to :meth:`.test`.
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     """
 
@@ -655,6 +684,12 @@ class Icarus(Runner):
             f"-P{self.hdl_toplevel}.{name}={value}"
             for name, value in parameters.items()
         ]
+
+    def _use_external_viewer(self) -> bool:
+        return True
+
+    def _waves_file(self) -> Optional[str]:
+        return f"{self.hdl_toplevel}.fst"
 
     def _create_cmd_file(self) -> None:
         assert self.timescale is not None
@@ -685,7 +720,7 @@ class Icarus(Runner):
 
     def _test_command(self) -> List[_Command]:
         plusargs = self.plusargs
-        if self.waves:
+        if self.waves or self.gui:
             plusargs += ["-fst"]
         else:
             # Disable waveform output
@@ -895,7 +930,6 @@ class Ghdl(Runner):
     """Implementation of :class:`Runner` for GHDL.
 
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-    * Does not support the ``gui`` argument to :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"vhdl": ["vpi"]}
@@ -919,6 +953,12 @@ class Ghdl(Runner):
             stderr=subprocess.STDOUT,
         )
         return "mcode" in result.stdout
+
+    def _use_external_viewer(self) -> bool:
+        return True
+
+    def _waves_file(self) -> Optional[str]:
+        return f"{self.hdl_toplevel}.ghw"
 
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         raise RuntimeError
@@ -1000,7 +1040,7 @@ class Ghdl(Runner):
             + ["--vpi=" + cocotb_tools.config.lib_name_path("vpi", "ghdl").as_posix()]
             + self.plusargs
             + self._get_parameter_options(self.parameters)
-            + ([f"--wave={self.hdl_toplevel}.ghw"] if self.waves else [])
+            + ([f"--wave={self._waves_file()}"] if self.waves or self.gui else [])
         ]
 
         return cmds
@@ -1010,7 +1050,6 @@ class Nvc(Runner):
     """Implementation of :class:`Runner` for NVC.
 
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-    * Does not support the ``gui`` argument to :meth:`.test`.
     * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
@@ -1033,6 +1072,12 @@ class Nvc(Runner):
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
+
+    def _use_external_viewer(self) -> bool:
+        return True
+
+    def _waves_file(self) -> Optional[str]:
+        return f"{self.hdl_toplevel}.fst"
 
     def _build_command(self) -> List[_Command]:
         for source in self.sources:
@@ -1067,7 +1112,7 @@ class Nvc(Runner):
             + self.test_args
             + ["--load=" + cocotb_tools.config.lib_name_path("vhpi", "nvc").as_posix()]
             + self.plusargs
-            + ([f"--wave={self.hdl_toplevel}.fst"] if self.waves else [])
+            + ([f"--wave={self._waves_file()}"] if self.waves or self.gui else [])
         ]
 
         return cmds
@@ -1234,8 +1279,8 @@ class Riviera(Runner):
 class Verilator(Runner):
     """Implementation of :class:`Runner` for Verilator.
 
+    * ``waves=True`` *must* be given to :meth:`.build` if either ``waves`` or ``gui`` are to be used during :meth:`.test`.
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-    * Does not support the ``gui`` argument to :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
@@ -1248,6 +1293,12 @@ class Verilator(Runner):
     def _simulator_in_path(self) -> None:
         # the verilator binary is only needed for building
         return
+
+    def _use_external_viewer(self) -> bool:
+        return True
+
+    def _waves_file(self) -> Optional[str]:
+        return "dump.vcd"
 
     def _simulator_in_path_build_only(self) -> None:
         executable = shutil.which("verilator")
@@ -1347,7 +1398,7 @@ class Verilator(Runner):
         out_file = self.build_dir / self.sim_hdl_toplevel
         return [
             [str(out_file)]
-            + (["--trace"] if self.waves else [])
+            + (["--trace"] if self.waves or self.gui else [])
             + self.test_args
             + self.plusargs
         ]
@@ -1617,7 +1668,6 @@ class Vcs(Runner):
 class Dsim(Runner):
     """Implementation of :class:`Runner` for DSim.
 
-    * Does not support the ``gui`` argument to :meth:`.test`.
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     """
 
@@ -1645,10 +1695,16 @@ class Dsim(Runner):
     def sim_file(self) -> Path:
         return self.build_dir / "image.so"
 
+    def _use_external_viewer(self) -> bool:
+        return True
+
+    def _waves_file(self) -> Optional[str]:
+        return "file.vcd"
+
     def _test_command(self) -> List[_Command]:
         plusargs = self.plusargs
-        if self.waves:
-            plusargs += ["-waves file.vcd"]
+        if self.waves or self.gui:
+            plusargs += [f"-waves {self._waves_file()}"]
 
         if self.pre_cmd is not None:
             raise ValueError("WARNING: pre_cmd is not implemented for DSim.")
