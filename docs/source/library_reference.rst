@@ -56,6 +56,10 @@ Simulator Runners
 
 .. autoclass:: Nvc
 
+.. autoclass:: Vcs
+
+.. autoclass:: Dsim
+
 Results
 -------
 
