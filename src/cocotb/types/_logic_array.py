@@ -619,7 +619,7 @@ class LogicArray(AbstractArray[Logic]):
             resolve:
                 How ``X``, ``Z``, ``U``, ``W``, and ``-`` values should be resolve to ``0`` or ``1`` to allow conversion to an integer.
                 See :class:`ResolveX` for details.
-                Defaults to the current value of :attr:`~cocotb.types.logic_array.RESOLVE_X`.
+                Defaults to the current value of :attr:`~cocotb.types.RESOLVE_X`.
 
         Returns:
             An integer equivalent to the value by interpreting it using unsigned representation.
@@ -642,7 +642,7 @@ class LogicArray(AbstractArray[Logic]):
             resolve:
                 How ``X``, ``Z``, ``U``, ``W``, and ``-`` values should be resolve to ``0`` or ``1`` to allow conversion to an integer.
                 See :class:`ResolveX` for details.
-                Defaults to the current value of :attr:`~cocotb.types.logic_array.RESOLVE_X`.
+                Defaults to the current value of :attr:`~cocotb.types.RESOLVE_X`.
 
         Returns:
             An integer equivalent to the value by interpreting it using two's complement representation.
