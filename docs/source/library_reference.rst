@@ -15,6 +15,8 @@ Library Reference
    stdout
    un
 
+.. module:: cocotb
+
 .. _api-runner:
 
 Python Test Runner
@@ -139,10 +141,12 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
     :members:
     :inherited-members:
 
-.. _triggers::
+.. _triggers:
 
 Triggers
 ========
+
+.. module:: cocotb.triggers
 
 .. autofunction:: cocotb.triggers.current_gpi_trigger
 
@@ -247,6 +251,8 @@ Test Utilities
 
 Clock Driver
 ------------
+
+.. module:: cocotb.clock
 
 .. autoclass:: cocotb.clock.Clock
     :members:

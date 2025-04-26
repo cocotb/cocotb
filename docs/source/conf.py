@@ -55,7 +55,8 @@ intersphinx_mapping = {
     "ghdl": ("https://ghdl.github.io/ghdl", None),
     "scapy": ("https://scapy.readthedocs.io/en/latest", None),
     "pytest": ("https://docs.pytest.org/en/latest/", None),
-    "coverage": ("https://coverage.readthedocs.io/en/latest/", None)
+    "coverage": ("https://coverage.readthedocs.io/en/latest/", None),
+    "remote_pdb": ("https://python-remote-pdb.readthedocs.io/en/latest/", None),
 }
 
 # Github repo
