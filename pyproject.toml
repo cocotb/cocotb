@@ -147,3 +147,19 @@ exclude_lines = [
     # excluding type checking blocks
     "if (typing\\.)?TYPE_CHECKING:"
 ]
+
+[tool.codespell]
+ignore-words-list = [
+    "AFE",
+    "Synopsys",
+    "afe",
+    "afile",
+    "alog",
+    "ccompiler",
+    "datas",
+    "implementors",
+    "inout",
+    "nam",
+    "sting",
+    "synopsys",
+]

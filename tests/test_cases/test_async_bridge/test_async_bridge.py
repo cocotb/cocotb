@@ -274,7 +274,7 @@ async def test_resume_returns_exception(dut):
 @cocotb.test()
 async def test_resume_from_weird_thread_fails(dut):
     """
-    Test that background threads caling a @cocotb.resume do not hang forever
+    Test that background threads calling a @cocotb.resume do not hang forever
     """
     func_started = False
     caller_resumed = False

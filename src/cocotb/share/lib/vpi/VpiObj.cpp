@@ -29,7 +29,7 @@ int VpiArrayObjHdl::initialise(const std::string &name,
                       name.c_str());
             return -1;
         }
-        // count occurences of [
+        // count occurrences of [
         auto start =
             name.begin() + static_cast<std::string::difference_type>(idx_str);
         range_idx = static_cast<int>(std::count(start, name.end(), '['));

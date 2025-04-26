@@ -1288,7 +1288,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
                "cocotb.handle._GPIDiscovery) -> "
                "cocotb.simulator.gpi_sim_hdl\n"
                "Get a handle to a child object by name.\n"
-               "Specifiy discovery_method to determine the signal discovery "
+               "Specify discovery_method to determine the signal discovery "
                "strategy. AUTO by default.")},
     {"get_handle_by_index", (PyCFunction)get_handle_by_index, METH_VARARGS,
      PyDoc_STR(

@@ -562,7 +562,7 @@ def docs(session: nox.Session) -> None:
 def docs_preview(session: nox.Session) -> None:
     """Build a live preview of the documentation"""
     create_env_for_docs_build(session)
-    # Editable install allows editing cocotb source and seing it updated in the live preview
+    # Editable install allows editing cocotb source and seeing it updated in the live preview
     session.run("pip", "install", "-e", ".")
     session.run("pip", "install", "sphinx-autobuild")
     outdir = session.cache_dir / "docs_out"

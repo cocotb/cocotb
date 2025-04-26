@@ -20,7 +20,7 @@ entity baudGen is
          baudFreq  : in  std_logic_vector(11 downto 0); -- baud rate setting registers - see header description
          -- baudLimit = clkFreq / gcd(clkFreq, 16 * baudRate) - baudFreq
          baudLimit : in  std_logic_vector(15 downto 0); -- baud rate setting registers - see header description
-         ce16      : out std_logic);                    -- baud rate multiplyed by 16
+         ce16      : out std_logic);                    -- baud rate multiplied by 16
 end baudGen;
 
 architecture Behavioral of baudGen is

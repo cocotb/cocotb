@@ -41,7 +41,7 @@ package pkg_trellis is
 
 
 	--
-	-- This function calculates corresponding transitions to a trellis sate.
+	-- This function calculates corresponding transitions to a trellis state.
 	-- The values are used to connect branch units to ACS units.
 	--
 	function calc_transitions     return t_transitions;

@@ -545,7 +545,7 @@ async def test_extended_identifiers(dut):
         ]
     elif SIM_NAME.startswith("icarus"):
         # Icarus normalizes extended identifier names to not include the
-        # preceeding \ or the trailing space
+        # preceding \ or the trailing space
         names = [
             "weird.signal[1]",
             "weird.signal[2]",

@@ -9,7 +9,7 @@
 --! @author Markus Fehrenz
 --! @date   2011/01/12
 --!
---! @details The recusion handling buffers the reorder ouput and
+--! @details The recursion handling buffers the reorder output and
 --! calculates the correct output depending on the feedback polynomial.
 --!
 

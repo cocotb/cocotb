@@ -23,7 +23,7 @@ The ``type`` labels define the type of issue or PR:
 The ``status`` labels give a quick impression of the current status of the issue or PR:
 
 -  ``status:worksforme``: the issue it not reproducible, or intended behavior (i.e. not a bug)
--  ``status:blocked``: further progress is blocked by a dependency, e.g. other code which must be commited first.
+-  ``status:blocked``: further progress is blocked by a dependency, e.g. other code which must be committed first.
 -  ``status:needs-info``: feedback from someone is required. The issue/PR text gives more details.
 -  ``status:duplicate``: the same issue is already being handled in another issue/PR.
 -  ``status:close?``: issues which can probably be closed, but need a second pair of eyes

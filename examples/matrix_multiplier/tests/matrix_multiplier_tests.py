@@ -73,7 +73,7 @@ class DataValidMonitor(Generic[T]):
     Args:
         clk: clock signal
         rst: reset signal
-        valid: control signal noting a transaction occured
+        valid: control signal noting a transaction occurred
         datas: named handles to be sampled when transaction occurs
     """
 

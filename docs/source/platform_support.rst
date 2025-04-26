@@ -93,7 +93,7 @@ For cocotb, this means supporting rather old Python and operating system version
 
 The second item is less obvious.
 One might argue that users of older Python or operating system versions should simply use an old version of cocotb.
-There are two reasons against applying this rule too agressively.
+There are two reasons against applying this rule too aggressively.
 First of all, we want to give users the benefit of using the latest and greatest version of cocotb on the platform they are on (and are typically unable to change).
 But even more importantly, every user who is on the latest release is beneficial for the cocotb project.
 Supporting multiple older cocotb releases comes a cost: users report bugs which have been fixed in later releases, patch releases need to be supplied (e.g. for security problems), and integrating improvements our users made becomes harder.

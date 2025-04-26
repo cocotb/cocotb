@@ -66,7 +66,7 @@ async def embed(user_ns: Dict[str, Any] = {}) -> None:
     c = load_default_config()
     c.TerminalInteractiveShell.loop_runner = _runner
     c.TerminalInteractiveShell.autoawait = True
-    # Python3 checks SQLite DB accesses to ensure process ID matches the one that opened the DB and is not propogated
+    # Python3 checks SQLite DB accesses to ensure process ID matches the one that opened the DB and is not propagated
     # because we launch IPython in a different process, this will cause unnecessary warnings, so disable the PID check
     c.HistoryAccessor.connection_options = {"check_same_thread": False}
     # create a shell with access to the dut, and cocotb pre-imported

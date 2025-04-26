@@ -87,7 +87,7 @@ architecture rtl of ram_ctrl is
 	type t_read_ram_fsm is (WAIT_FOR_WINDOW, TRACEBACK, WAIT_FOR_RAM, FINISH);
 	type t_read_ram_fsm_array is array (0 to 1) of t_read_ram_fsm;
 
-	-- RAM controling types
+	-- RAM controlling types
 	type t_ram_data    is array (3 downto 0) of std_logic_vector(NUMBER_TRELLIS_STATES - 1 downto 0);
 	type t_ram_addr    is array (3 downto 0) of unsigned(BW_MAX_WINDOW_LENGTH - 1  downto 0);
 	type t_ram_rd_addr is array (1 downto 0) of unsigned(BW_MAX_WINDOW_LENGTH - 1  downto 0);
@@ -111,7 +111,7 @@ architecture rtl of ram_ctrl is
 	signal addr            : t_ram_addr;
 	signal q_reg           : t_ram_data;
 
-	-- ram addess, number and data pointer
+	-- ram address, number and data pointer
 	signal write_ram_ptr  : unsigned(1 downto 0);
 	signal read_ram_ptr   : t_ram_ptr;
 	signal read_ram_ptr_d : t_ram_ptr;
@@ -144,7 +144,7 @@ begin
 	--
 	-- When the output port is not ready to read the output of the RAM immediately
 	-- we have to remember the output value of the RAM in an extra register.
-	-- When the output is ready to read, we first use the ouput of the register
+	-- When the output is ready to read, we first use the output of the register
 	-- and only then the output of the RAM again.
 	--
 	pr_buf_ram_output: process(clk) is

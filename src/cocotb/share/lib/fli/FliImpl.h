@@ -423,11 +423,11 @@ class FliImpl : public GpiImplInterface {
     const char *get_simulator_product() override;
     const char *get_simulator_version() override;
 
-    /* Hierachy related */
+    /* Hierarchy related */
     GpiObjHdl *native_check_create(const std::string &name,
                                    GpiObjHdl *parent) override;
     GpiObjHdl *native_check_create(int32_t index, GpiObjHdl *parent) override;
-    GpiObjHdl *native_check_create(void *raw_hdl, GpiObjHdl *paret) override;
+    GpiObjHdl *native_check_create(void *raw_hdl, GpiObjHdl *parent) override;
     GpiObjHdl *get_root_handle(const char *name) override;
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl,
                                 gpi_iterator_sel type) override;

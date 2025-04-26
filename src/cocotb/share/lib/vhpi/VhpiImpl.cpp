@@ -522,7 +522,7 @@ GpiObjHdl *VhpiImpl::native_check_create(const std::string &name,
     new_hdl = vhpi_handle_by_name(&writable[0], NULL);
 
     if (new_hdl == NULL && parent->get_type() == GPI_STRUCTURE) {
-        /* vhpi_handle_by_name() doesn't always work for records, specificaly
+        /* vhpi_handle_by_name() doesn't always work for records, specifically
          * records in generics */
         vhpiHandleT iter = vhpi_iterator(vhpiSelectedNames, vhpi_hdl);
         if (iter != NULL) {

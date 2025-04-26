@@ -16,7 +16,7 @@ class Testbench:
         self.clkedge = RisingEdge(dut.clk)
 
     async def initialise(self):
-        """Initalise the testbench"""
+        """Initialise the testbench"""
         cocotb.start_soon(Clock(self.dut.clk, 10).start())
         self.dut.reset.value = 0
         for _ in range(2):
