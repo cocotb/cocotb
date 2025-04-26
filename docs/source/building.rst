@@ -1,7 +1,7 @@
 .. _building:
 
 ***************************************
-Build options and Environment Variables
+Build Options and Environment Variables
 ***************************************
 
 Make System
