@@ -476,8 +476,9 @@ def parametrize(
 
         @cocotb.parametrize(
             ("arg1", [0, 1]),
-            (("arg2", "arg3"), [(1, 2), (3, 4)])
+            (("arg2", "arg3"), [(1, 2), (3, 4)]),
         )
+        async def my_test_2(arg1: int, arg2: int, arg3: int) -> None: ...
 
     Args:
         options_by_tuple:
