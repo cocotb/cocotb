@@ -206,7 +206,7 @@ Using cocotb with more than one Python installation
 ===================================================
 
 Users of cocotb with more than one installation of a single Python version (including ``conda env`` users)
-must take care not to re-use cached versions of the installed cocotb package.
+must take care not to reuse cached versions of the installed cocotb package.
 If this isn't done, running simulations fails with errors like ``libpython3.7m.so.1.0: cannot open shared object file: No such file or directory``.
 
 Cocotb builds binary libraries during its installation process.

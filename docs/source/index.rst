@@ -30,7 +30,7 @@ A (possibly older) version of cocotb can be used live in a web browser on `EDA P
 How is cocotb different?
 ************************
 
-cocotb encourages the same philosophy of design re-use and randomized testing as
+cocotb encourages the same philosophy of design reuse and randomized testing as
 `UVM <https://en.wikipedia.org/wiki/Universal_Verification_Methodology>`_,
 however is implemented in Python.
 
@@ -47,7 +47,7 @@ All verification is done using Python which has various advantages over using Sy
 
 * Writing Python is **fast** - it's a very productive language.
 * It's **easy** to interface to other languages from Python.
-* Python has a huge library of existing code to **re-use**.
+* Python has a huge library of existing code to **reuse**.
 * Python is **interpreted** - tests can be edited and re-run without having to recompile the design.
 * Python is **popular** - far more engineers know Python than SystemVerilog or VHDL.
 

@@ -311,7 +311,7 @@ Simulator Objects
 =================
 
 .. note::
-    "Handle" is a legacy term which refers to the fact these objects are implented using opaque "handles" to simulator objects.
+    "Handle" is a legacy term which refers to the fact these objects are implemented using opaque "handles" to simulator objects.
     A better term is :term:`simulator object`.
 
 .. module:: cocotb.handle

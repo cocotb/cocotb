@@ -286,7 +286,7 @@ class Task(Generic[ResultType]):
         return TaskComplete._make(self)
 
     @deprecated(
-        "Using `task` directly is prefered to `task.join()` in all situations where the latter could be used."
+        "Using `task` directly is preferred to `task.join()` in all situations where the latter could be used."
     )
     def join(self) -> "Join[ResultType]":
         r"""Block until the Task completes and return the result.
@@ -499,7 +499,7 @@ class Join(TaskComplete[ResultType]):
     """
 
     @deprecated(
-        "Using `task` directly is prefered to `Join(task)` in all situations where the latter could be used."
+        "Using `task` directly is preferred to `Join(task)` in all situations where the latter could be used."
     )
     def __new__(cls, task: Task[ResultType]) -> "Join[ResultType]":
         return task._join

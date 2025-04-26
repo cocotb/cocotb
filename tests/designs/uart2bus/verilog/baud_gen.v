@@ -19,7 +19,7 @@ module baud_gen
 // modules inputs and outputs
 input 			clock;		// global clock input
 input 			reset;		// global reset input
-output			ce_16;		// baud rate multiplyed by 16
+output			ce_16;		// baud rate multiplied by 16
 input	[11:0]	baud_freq;	// baud rate setting registers - see header description
 input	[15:0]	baud_limit;
 
@@ -52,5 +52,5 @@ end
 
 endmodule
 //---------------------------------------------------------------------------------------
-//						Th.. Th.. Th.. Thats all folks !!!
+//						Th.. Th.. Th.. That's all folks !!!
 //---------------------------------------------------------------------------------------

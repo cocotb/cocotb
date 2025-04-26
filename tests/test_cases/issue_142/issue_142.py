@@ -7,7 +7,7 @@ from cocotb.triggers import RisingEdge
 
 @cocotb.test()
 async def issue_142_overflow_error(dut):
-    """Tranparently convert ints too long to pass
+    """Transparently convert ints too long to pass
     through the GPI interface natively into LogicArrays"""
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 

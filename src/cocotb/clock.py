@@ -188,7 +188,7 @@ class Clock:
             Object which can be passed to :func:`cocotb.start_soon` or ignored.
 
         .. versionchanged:: 2.0
-            Removed ``cycles`` arguments for toggling for a finite amount of cyles.
+            Removed ``cycles`` arguments for toggling for a finite amount of cycles.
             Use :meth:`stop` to stop a clock from running.
 
         .. versionchanged:: 2.0

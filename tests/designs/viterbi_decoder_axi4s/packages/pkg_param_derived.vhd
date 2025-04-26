@@ -30,7 +30,7 @@ package pkg_param_derived is
 	-- Memory depth of the encoder shift register.
 	constant ENCODER_MEMORY_DEPTH : natural;
 
-	-- Number of trellis states corresponds to the nubmer of ACS units.
+	-- Number of trellis states corresponds to the number of ACS units.
 	constant NUMBER_TRELLIS_STATES : natural;
 
 	-- Number of branch units for a single polynomial set

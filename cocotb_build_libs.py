@@ -365,7 +365,7 @@ class build_ext(_build_ext):
         head, tail = os.path.split(filename)
         tail_split = tail.split(".")
 
-        # mingw on msys2 uses `-` as seperator
+        # mingw on msys2 uses `-` as separator
         tail_split = tail_split[0].split("-")
 
         # strip lib prefix if msvc is used
