@@ -1,7 +1,7 @@
 .. _custom-flows:
 
 ******************************
-Extending existing build flows
+Extending Existing Build Flows
 ******************************
 
 In order to extend an existing build flow for use with cocotb,

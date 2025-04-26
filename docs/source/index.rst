@@ -1,5 +1,5 @@
 ##################################
-Welcome to cocotb's documentation!
+Welcome to cocotb's Documentation!
 ##################################
 
 ..

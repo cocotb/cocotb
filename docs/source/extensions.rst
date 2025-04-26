@@ -1,5 +1,5 @@
 *************************
-Writing cocotb extensions
+Writing cocotb Extensions
 *************************
 
 This guide explains how to write cocotb extensions, with a focus on the conventions that should be followed.
