@@ -62,12 +62,6 @@ Verilator
 
     **cocotb supports Verilator 5.036+.**
 
-    Verilator is in the process of adding more functionality to its VPI interface, which is used by cocotb to access the design.
-    Therefore, Verilator support in cocotb is currently experimental, and some features of cocotb may not work correctly or at all.
-    If you encounter an issue using Verilator with cocotb, please try the newest release and
-    `check existing issues <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Averilator>`_
-    before opening a new one.
-
 In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 
 .. code-block:: bash
@@ -79,15 +73,16 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
     A working installation of `Verilator <https://www.veripool.org/verilator/>`_ is required.
     You can find installation instructions `in the Verilator documentation <https://verilator.org/guide/latest/install.html>`_.
 
-.. note::
-
-    Delayed assignments require the use of Verilator's `timing <https://verilator.org/guide/latest/exe_verilator.html#cmdoption-timing>`_ argument.
-
-To run cocotb with Verilator, you need ``verilator`` in your PATH.
-
 .. versionadded:: 1.3
 
 .. versionchanged:: 1.5 Improved cocotb support and greatly improved performance when using a higher time precision.
+
+.. versionchanged:: 2.0
+
+    Reimplemented the Verilator evaluator loop used in cocotb tests.
+    This allowed for better performance and behavior more consistent with event-based simulators.
+    Additionally, added support for inertial writes so :envvar:`COCOTB_TRUST_INERTIAL_WRITES` can be defaulted to ``1``,
+    which should noticeably improve performance.
 
 Coverage
 --------
