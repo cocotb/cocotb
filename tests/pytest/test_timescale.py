@@ -32,8 +32,8 @@ async def check_timescale(dut):
 
 @pytest.mark.simulator_required
 @pytest.mark.skipif(
-    os.getenv("SIM", "icarus") not in ["icarus", "ghdl"],
-    reason="Currently only Icarus and GHDL support timescale setting when using Cocotb runner",
+    os.getenv("SIM", "icarus") not in ["icarus", "ghdl", "verilator", "dsim"],
+    reason="Currently only Icarus, GHDL, Verilator, and Dsim support timescale setting when using Cocotb runner",
 )
 @pytest.mark.parametrize("precision", ["fs", "ps", "ns", "us", "ms", "s"])
 def test_precision(precision):

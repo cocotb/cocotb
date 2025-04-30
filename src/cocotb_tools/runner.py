@@ -1529,6 +1529,7 @@ class Vcs(Runner):
 
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     * Does not support VHDL.
+    * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
@@ -1650,6 +1651,8 @@ class Dsim(Runner):
         if self.waves:
             plusargs += ["-waves file.vcd"]
 
+        if self.timescale:
+            plusargs += ["-timescale {}/{}".format(*self.timescale)]
         if self.pre_cmd is not None:
             raise ValueError("WARNING: pre_cmd is not implemented for DSim.")
 
