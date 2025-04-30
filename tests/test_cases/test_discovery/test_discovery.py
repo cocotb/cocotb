@@ -76,13 +76,7 @@ async def test_bad_var(dut):
 
 
 # VCS is unable to access signals in generate loops (gh-4328)
-@verilog_test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith("verilator")
-    else IndexError
-    if "vcs" in SIM_NAME
-    else ()
-)
+@verilog_test(expect_error=IndexError if "vcs" in SIM_NAME else ())
 async def test_arr_scope(dut):
     assert dut.arr[1].arr_sub._path == f"{dut._path}.arr[1].arr_sub"
 
