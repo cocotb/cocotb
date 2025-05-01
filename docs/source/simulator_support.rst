@@ -81,8 +81,8 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 
     Reimplemented the Verilator evaluator loop used in cocotb tests.
     This allowed for better performance and behavior more consistent with event-based simulators.
-    Additionally, added support for inertial writes so :envvar:`COCOTB_TRUST_INERTIAL_WRITES` can be defaulted to ``1``,
-    which should noticeably improve performance.
+    Additionally, added support for inertial writes,
+    which noticeably improves performance.
 
 Coverage
 --------
