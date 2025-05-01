@@ -198,11 +198,10 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.034",  # Latest release version.
+        "sim-version": "v5.036",  # Latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci",
-        "may-fail": True,  # cocotb/cocotb#4526
     },
     {
         "lang": "verilog",
@@ -215,11 +214,10 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.034",  # Minimum supported version.
+        "sim-version": "v5.036",  # Minimum supported version.
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "extended",
-        "may-fail": True,  # cocotb/cocotb#4526
     },
     # Test other OSes
     # Icarus homebrew
@@ -248,13 +246,13 @@ ENVS = [
         "os": "macos-13",
         "python-version": "3.9",
         "group": "experimental",
-        "may-fail": True,  # cocotb/cocotb#4526
+        "may-fail": True,  # verilator/verilator#5404
     },
     # Verilator macOS latest release
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.034",
+        "sim-version": "v5.036",
         "os": "macos-13",
         "python-version": "3.9",
         "group": "ci",
