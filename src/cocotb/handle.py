@@ -43,7 +43,7 @@ from cocotb._gpi_triggers import (
     current_gpi_trigger,
 )
 from cocotb._py_compat import cached_property
-from cocotb._utils import DocIntEnum, cached_method
+from cocotb._utils import DocIntEnum
 from cocotb.task import Task
 from cocotb.types import Array, Logic, LogicArray, Range
 
@@ -1320,10 +1320,13 @@ class LogicArrayObject(
     def __str__(self) -> str:
         return str(self.value)
 
-    @cached_method
     def __len__(self) -> int:
         # can't use `range` to get length because `range` is for outer-most dimension only
         # and this object needs to support multi-dimensional packed arrays.
+        return self._len
+
+    @cached_property
+    def _len(self) -> int:
         return self._handle.get_num_elems()
 
     def __getitem__(self, _: Any) -> NoReturn:
