@@ -100,8 +100,7 @@ Finally, they should notify the maintainers that they are able and willing to ac
 
 To be able to add labels and close issues and PRs you will need special permissions.
 Contact a `maintainer <#maintainer>`__ if you are interested in receiving these permissions.
-They will be granted according to the project's need and the requestor's familiarity with
-cocotb.
+They will be granted according to the project's need and the requestor's familiarity with cocotb.
 Once you have those permissions, see the guidelines on `managing issues and pull requests <#Managing-of-Issues-and-Pull-Requests>`__.
 
 This task can also be done without special repo permissions, by just commenting on the issue or PR. This is especially helpful for Github issues about bugs.
