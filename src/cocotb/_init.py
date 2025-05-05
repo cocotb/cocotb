@@ -280,7 +280,7 @@ def _setup_regression_manager() -> None:
         raise RuntimeError("Specify only one of COCOTB_TESTCASE or COCOTB_TEST_FILTER")
     elif testcase_str:
         warnings.warn(
-            "TESTCASE is deprecated in favor of COCOTB_TEST_FILTER",
+            "COCOTB_TESTCASE is deprecated in favor of COCOTB_TEST_FILTER",
             DeprecationWarning,
         )
         filters = [f"{s.strip()}$" for s in testcase_str.split(",") if s.strip()]
