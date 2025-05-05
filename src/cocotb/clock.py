@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Type, Union
 import cocotb
 from cocotb._py_compat import cached_property
 from cocotb._typing import TimeUnit
-from cocotb._utils import cached_method
 from cocotb.handle import LogicObject, _trust_inertial
 from cocotb.simulator import clock_create
 from cocotb.task import Task
@@ -263,8 +262,11 @@ class Clock:
         # TODO Improve implementation to use a Timer to skip most of the cycles
         await ClockCycles(self._signal, num_cycles, edge_type)
 
-    @cached_method
     def __repr__(self) -> str:
+        return self._repr
+
+    @cached_property
+    def _repr(self) -> str:
         freq_mhz = 1 / get_time_from_sim_steps(
             get_sim_steps(self._period, self._unit), "us"
         )
