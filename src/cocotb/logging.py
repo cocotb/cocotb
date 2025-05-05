@@ -11,7 +11,7 @@ Everything related to logging
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from cocotb import _ANSI, simulator
 from cocotb._deprecation import deprecated
@@ -107,7 +107,7 @@ class SimBaseLog(LoggerClass):
 
 
 @deprecated('Use `logging.getLogger(f"{name}.0x{ident:x}")` instead')
-def SimLog(name: str, ident: Union[int, None] = None) -> logging.Logger:
+def SimLog(name: str, ident: Optional[int] = None) -> logging.Logger:
     """Like logging.getLogger, but append a numeric identifier to the name.
 
     Args:

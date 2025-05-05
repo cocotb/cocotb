@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import xml.etree.ElementTree as ET
-from typing import Union
+from typing import Optional
 from xml.etree.ElementTree import Element, SubElement
 
 
@@ -22,7 +22,7 @@ class XUnitReporter:
         return self.last_testsuite
 
     def add_testcase(
-        self, testsuite: Union[Element, None] = None, **kwargs: str
+        self, testsuite: Optional[Element] = None, **kwargs: str
     ) -> Element:
         if testsuite is None:
             testsuite = self.last_testsuite
@@ -30,19 +30,19 @@ class XUnitReporter:
         return self.last_testcase
 
     def add_property(
-        self, testsuite: Union[Element, None] = None, **kwargs: str
+        self, testsuite: Optional[Element] = None, **kwargs: str
     ) -> Element:
         if testsuite is None:
             testsuite = self.last_testsuite
         self.last_property = SubElement(testsuite, "property", kwargs)
         return self.last_property
 
-    def add_failure(self, testcase: Union[Element, None] = None, **kwargs: str) -> None:
+    def add_failure(self, testcase: Optional[Element] = None, **kwargs: str) -> None:
         if testcase is None:
             testcase = self.last_testcase
         SubElement(testcase, "failure", kwargs)
 
-    def add_skipped(self, testcase: Union[Element, None] = None, **kwargs: str) -> None:
+    def add_skipped(self, testcase: Optional[Element] = None, **kwargs: str) -> None:
         if testcase is None:
             testcase = self.last_testcase
         SubElement(testcase, "skipped", kwargs)

@@ -40,6 +40,7 @@ import cocotb._gpi_triggers
 import cocotb._scheduler
 import cocotb.handle
 from cocotb import _ANSI, simulator
+from cocotb._gpi_triggers import GPITrigger
 from cocotb._outcomes import Error
 from cocotb._test import Failed, SimFailure, Test
 from cocotb._typing import TimeUnit
@@ -49,7 +50,7 @@ from cocotb._utils import (
     want_color_output,
 )
 from cocotb._xunit_reporter import XUnitReporter
-from cocotb.triggers import Timer, Trigger
+from cocotb.triggers import Timer
 from cocotb.utils import get_sim_time
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
@@ -58,7 +59,7 @@ _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 _logger = logging.getLogger(__name__)
 
 
-def _format_doc(docstring: Union[str, None]) -> str:
+def _format_doc(docstring: Optional[str]) -> str:
     if docstring is None:
         return ""
     else:
@@ -120,7 +121,7 @@ class RegressionManager:
         self._filters: List[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
         self._included: List[bool]
-        self._sim_failure: Union[SimFailure, None] = None
+        self._sim_failure: Optional[SimFailure] = None
 
         # Setup XUnit
         ###################
@@ -303,7 +304,7 @@ class RegressionManager:
 
         return self._tear_down()
 
-    def _schedule_next_test(self, trigger: Optional[Trigger] = None) -> None:
+    def _schedule_next_test(self, trigger: Optional[GPITrigger] = None) -> None:
         if trigger is not None:
             # TODO move to Trigger object
             cocotb._gpi_triggers._current_gpi_trigger = trigger
@@ -352,8 +353,8 @@ class RegressionManager:
 
         # score test
         passed: bool
-        msg: Union[str, None]
-        exc: Union[BaseException, None]
+        msg: Optional[str]
+        exc: Optional[BaseException]
         outcome = test.result()
         try:
             outcome.get()
@@ -569,8 +570,8 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[Exception, None],
-        msg: Union[str, None],
+        result: Optional[Exception],
+        msg: Optional[str],
     ) -> None:
         start_hilight = _ANSI.COLOR_PASSED if want_color_output() else ""
         stop_hilight = _ANSI.COLOR_DEFAULT if want_color_output() else ""
@@ -623,8 +624,8 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[BaseException, None],
-        msg: Union[str, None],
+        result: Optional[BaseException],
+        msg: Optional[str],
     ) -> None:
         start_hilight = _ANSI.COLOR_FAILED if want_color_output() else ""
         stop_hilight = _ANSI.COLOR_DEFAULT if want_color_output() else ""

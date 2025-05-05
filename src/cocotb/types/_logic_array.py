@@ -11,6 +11,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Optional,
     Union,
     cast,
     overload,
@@ -246,9 +247,9 @@ class LogicArray(AbstractArray[Logic]):
     # implementations are faster for particular operations.
     # Each implementation can be present, or None if the implementation has not been
     # computed or has been invalidated by a mutating operation.
-    _value_as_array: Union[List[Logic], None]
-    _value_as_int: Union[int, None]
-    _value_as_str: Union[str, None]
+    _value_as_array: Optional[List[Logic]]
+    _value_as_int: Optional[int]
+    _value_as_str: Optional[str]
     _range: Range
 
     def __init__(

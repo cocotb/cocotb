@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 from functools import lru_cache
-from typing import Iterator, Sequence, Union, overload
+from typing import Iterator, Optional, Sequence, Union, overload
 
 from cocotb._utils import cached_method
 
@@ -79,7 +79,7 @@ class Range(Sequence[int]):
         self,
         left: int,
         direction: Union[int, str, None] = None,
-        right: Union[int, None] = None,
+        right: Optional[int] = None,
     ) -> None:
         start = left
         stop: int

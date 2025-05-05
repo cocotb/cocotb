@@ -18,7 +18,7 @@ import os
 import threading
 from bdb import BdbQuit
 from collections import OrderedDict
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional
 
 import cocotb
 import cocotb.handle
@@ -201,17 +201,17 @@ class Scheduler:
         # indexed by trigger
         self._trigger2tasks: Dict[Trigger, list[Task]] = insertion_ordered_dict()
 
-        self._scheduled_tasks: OrderedDict[Task[Any], Union[BaseException, None]] = (
+        self._scheduled_tasks: OrderedDict[Task[Any], Optional[BaseException]] = (
             OrderedDict()
         )
-        self._pending_threads = []
-        self._pending_events = []  # Events we need to call set on once we've unwound
+        self._pending_threads: list[external_waiter] = []
+        self._pending_events: list[Event] = []
 
         self._main_thread = threading.current_thread()
 
-        self._current_task = None
+        self._current_task: Optional[Task] = None
 
-    def _sim_react(self, trigger: Trigger) -> None:
+    def _sim_react(self, trigger: GPITrigger) -> None:
         """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
 
         This is often the entry point into Python from the simulator,
@@ -366,7 +366,7 @@ class Scheduler:
         self._schedule_task_internal(task)
 
     def _schedule_task_internal(
-        self, task: Task[Any], exc: Union[BaseException, None] = None
+        self, task: Task[Any], exc: Optional[BaseException] = None
     ) -> None:
         # TODO Move state tracking into Task
         task._state = _TaskState.SCHEDULED
@@ -454,7 +454,7 @@ class Scheduler:
 
         return wrapper()
 
-    def _resume_task(self, task: Task, exc: Union[BaseException, None]) -> None:
+    def _resume_task(self, task: Task, exc: Optional[BaseException]) -> None:
         """Resume *task* with *outcome*.
 
         Args:

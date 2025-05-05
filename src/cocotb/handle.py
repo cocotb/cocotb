@@ -291,7 +291,7 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
     def _get(
         self, key: KeyType, discovery_method: GPIDiscovery = GPIDiscovery.AUTO
-    ) -> Union[SimHandleBase, None]:
+    ) -> Optional[SimHandleBase]:
         """Query the simulator for an object with the specified *key*.
 
         Like Python's native dictionary ``get``-function, this returns ``None`` if the object
@@ -329,7 +329,7 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     @abstractmethod
     def _get_handle_by_key(
         self, key: KeyType, discovery_method: GPIDiscovery
-    ) -> Union[simulator.gpi_sim_hdl, None]:
+    ) -> Optional[simulator.gpi_sim_hdl]:
         """Get child object by key from the simulator.
 
         Args:
@@ -501,7 +501,7 @@ class HierarchyObject(_HierarchyObjectBase[str]):
 
     def _get_handle_by_key(
         self, key: str, discovery_method: GPIDiscovery
-    ) -> Union[simulator.gpi_sim_hdl, None]:
+    ) -> Optional[simulator.gpi_sim_hdl]:
         return self._handle.get_handle_by_name(key, discovery_method)
 
 
@@ -571,7 +571,7 @@ class HierarchyArrayObject(_HierarchyObjectBase[int], _RangeableObjectMixin):
 
     def _get_handle_by_key(
         self, key: int, discovery_method: GPIDiscovery
-    ) -> Union[simulator.gpi_sim_hdl, None]:
+    ) -> Optional[simulator.gpi_sim_hdl]:
         if discovery_method is not GPIDiscovery.AUTO:
             raise NotImplementedError(
                 f"Only GPIDiscovery.AUTO is supported for {type(self).__qualname__} right now"
@@ -726,7 +726,7 @@ _trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 # Only the last scheduled write to a particular handle in a timestep is performed.
 _write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], _GPISetAction, Any]]" = OrderedDict()
 
-_write_task: Union[Task[None], None] = None
+_write_task: Optional[Task[None]] = None
 
 _writes_pending = Event()
 
