@@ -252,6 +252,10 @@ else:
             setattr(instance, self._method.__name__, lookup)
             return lookup
 
+        def __call__(self, instance, *args, **kwargs):
+            func = getattr(instance, self._method.__name__)
+            return func(*args, **kwargs)
+
 
 T = TypeVar("T")
 

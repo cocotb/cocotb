@@ -50,6 +50,13 @@ def test_downto_range():
     assert r.count(10) == 0
 
 
+def test_range_index_from_class():
+    r = Range(9, "downto", 4)
+    assert Range.index(r, 8) == 1
+    with pytest.raises(ValueError):
+        Range.index(r, 0)
+
+
 def test_null_range():
     r = Range(1, "downto", 4)
     assert r.left == 1
