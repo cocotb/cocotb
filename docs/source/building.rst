@@ -278,8 +278,7 @@ Regression Manager
 
     Enable to collect Python coverage data for user code.
     For some simulators, this will also report :term:`HDL` coverage.
-    If :envvar:`COCOTB_COVERAGE_RCFILE` is not set,
-    branch coverage is collected
+    If :envvar:`COCOTB_COVERAGE_RCFILE` is not set, branch coverage is collected
     and files in the cocotb package directory are excluded.
 
     This needs the :mod:`coverage` Python module to be installed.

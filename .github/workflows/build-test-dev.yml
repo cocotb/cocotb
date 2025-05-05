@@ -14,6 +14,22 @@ on:
     branches:
       - master
       - 'stable/**'
+    paths-ignore:
+      # Skip running tests for changes only in:
+      # Documentation
+      - 'docs/**'
+      # Dot-files not related to running tests
+      - '.backportrc.json'
+      - '.clang-format'
+      - '.git-blame-ignore-revs'
+      - '.gitignore'
+      - '.pre-commit-config.yml'
+      - '.readthedocs.yml'
+      - '.pylintrc'
+      # Information files
+      - 'LICENSE'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
 
 jobs:
   test_dev:
