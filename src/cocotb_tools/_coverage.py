@@ -2,7 +2,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import os
-import sys
 from typing import Any
 
 
@@ -12,10 +11,9 @@ def start_cocotb_library_coverage(_: Any) -> None:  # pragma: no cover
     try:
         import coverage
     except (ImportError, ModuleNotFoundError):
-        print(
-            "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`.",
-            file=sys.stderr,
-        )
+        raise RuntimeError(
+            "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`."
+        ) from None
     else:
         library_coverage = coverage.coverage(
             data_file=".coverage.cocotb",
