@@ -5,13 +5,13 @@ import collections.abc
 import inspect
 import logging
 import os
+import sys
 import traceback
 from asyncio import CancelledError, InvalidStateError
 from bdb import BdbQuit
 from enum import auto
 from types import CoroutineType
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Coroutine,
@@ -32,7 +32,7 @@ from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import cached_property
 from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
 
-if TYPE_CHECKING:
+if sys.version_info >= (3, 11):
     from typing import Self
 
 #: Task result type

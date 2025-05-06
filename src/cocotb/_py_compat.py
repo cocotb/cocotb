@@ -10,13 +10,13 @@ if they want to use these shims in their own code
 
 import sys
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, TypeVar, Union, overload
+from typing import TypeVar, Union, overload
 
 __all__ = ("StrEnum", "cached_property", "insertion_ordered_dict", "nullcontext")
 
 T = TypeVar("T")
 
-if TYPE_CHECKING:
+if sys.version_info >= (3, 9):
 
     class _NullContextBase(AbstractContextManager[T, None]): ...
 else:
