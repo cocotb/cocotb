@@ -7,13 +7,12 @@
 import cProfile
 import os
 import pstats
+import sys
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING
 
 from cocotb._py_compat import nullcontext
 
-if TYPE_CHECKING:
-    profiling_context: AbstractContextManager[None, None]
+profiling_context: "AbstractContextManager[None, None]"
 
 
 if "COCOTB_ENABLE_PROFILING" in os.environ:
@@ -27,7 +26,7 @@ if "COCOTB_ENABLE_PROFILING" in os.environ:
         ps = pstats.Stats(_profile).sort_stats("cumulative")
         ps.dump_stats("cocotb.pstat")
 
-    if TYPE_CHECKING:
+    if sys.version_info >= (3, 9):
 
         class _ProfilingContextBase(AbstractContextManager[None, None]): ...
     else:
