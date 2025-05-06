@@ -166,9 +166,9 @@ def _start_user_coverage() -> None:
         try:
             import coverage
         except ImportError:
-            log.error(
+            raise RuntimeError(
                 "Coverage collection requested but coverage module not available. Install it using `pip install coverage`."
-            )
+            ) from None
         else:
             config_filepath = os.getenv("COCOTB_COVERAGE_RCFILE")
             if config_filepath is None:
