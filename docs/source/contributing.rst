@@ -259,7 +259,7 @@ Follow the steps below to get your changes merged, i.e. integrated into the main
 5. Create new `pull request (PR) <https://github.com/cocotb/cocotb/pulls>`__.
 6. When you submit (or update) the pull request, a suite of regression tests will run.
    If any of them turns "red," i.e. reports a failure, you most likely need to fix your code before it can be merged.
-7. The pull request needs to be reviewed by at least one :ref:`maintainer`.
+7. The pull request needs to be reviewed by at least one of the :ref:`maintainers`.
    We aim to give feedback to all pull requests within a week, but as so often, life can get in the way.
    If you receive no feedback from a maintainer within that time, please contact them directly (e.g. on `Gitter <https://gitter.im/cocotb>`__ or email).
    If a maintainer asks you to explain or modify code, try to do so.
@@ -275,7 +275,7 @@ To potentially save you frustration and time, it is a good idea to get maintaine
 
 The best way to get maintainer pre-approval is to make a `Github issue <https://github.com/cocotb/cocotb/issues>`__.
 These issues can be a place for maintainers, as well as other users, to voice opinions on a proposed change before the task is worked.
-You may also propose changes on the `Gitter channel <https://gitter.im/cocotb/Lobby>`__ or by directly contacting a :ref:`maintainer`.
+You may also propose changes on the `Gitter channel <https://gitter.im/cocotb/Lobby>`__ or by directly contacting one of the :ref:`maintainers`.
 
 Patch Requirements
 ------------------
