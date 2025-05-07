@@ -10,7 +10,7 @@ if they want to use these shims in their own code
 
 import sys
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Optional, TypeVar, Union, overload
 
 __all__ = ("nullcontext", "insertion_ordered_dict", "cached_property", "StrEnum")
 
@@ -45,7 +45,7 @@ class nullcontext(_NullContextBase[T]):
     def __init__(self: "nullcontext[T]", enter_result: T) -> None: ...
 
     def __init__(
-        self: "nullcontext[Union[T, None]]", enter_result: Union[T, None] = None
+        self: "nullcontext[Optional[T]]", enter_result: Optional[T] = None
     ) -> None:
         self.enter_result = enter_result
 
@@ -83,18 +83,18 @@ else:
 
         @overload
         def __get__(
-            self, instance: None, owner: Union[Type[Any], None] = None
+            self, instance: None, owner: Optional[Type[Any]] = None
         ) -> "cached_property[T_co]": ...
 
         @overload
         def __get__(
-            self, instance: object, owner: Union[Type[Any], None] = None
+            self, instance: object, owner: Optional[Type[Any]] = None
         ) -> T_co: ...
 
         def __get__(
             self,
-            instance: Union[object, None],
-            owner: Union[Type[Any], None] = None,
+            instance: Optional[object],
+            owner: Optional[Type[Any]] = None,
         ) -> Union["cached_property[T_co]", T_co]:
             if instance is None:
                 return self

@@ -367,7 +367,7 @@ class Edge(ValueChange):
 
 
 # The initializer is a lie, but a useful one. Perhaps one day this can be something like `StartupTrigger`.`
-_current_gpi_trigger = Timer(1, "step")  # type: Union[None, GPITrigger]
+_current_gpi_trigger: GPITrigger = Timer(1, "step")
 
 
 def current_gpi_trigger() -> GPITrigger:

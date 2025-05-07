@@ -20,7 +20,6 @@ from typing import (
     List,
     Optional,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -85,10 +84,10 @@ class Task(Generic[ResultType]):
 
         self._coro = inst
         self._state: _TaskState = _TaskState.UNSTARTED
-        self._outcome: Union[Outcome[ResultType], None] = None
-        self._trigger: Union[Trigger, None] = None
+        self._outcome: Optional[Outcome[ResultType]] = None
+        self._trigger: Optional[Trigger] = None
         self._done_callbacks: List[Callable[[Task[ResultType]], Any]] = []
-        self._cancelled_msg: Union[str, None] = None
+        self._cancelled_msg: Optional[str] = None
         self._must_cancel: bool = False
 
         self._task_id = self._id_count
@@ -173,7 +172,7 @@ class Task(Generic[ResultType]):
         cocotb._scheduler_inst._react(self.complete)
         cocotb._scheduler_inst._react(self._join)
 
-    def _advance(self, exc: Union[BaseException, None]) -> Union[Trigger, None]:
+    def _advance(self, exc: Optional[BaseException]) -> Optional[Trigger]:
         """Resume execution of the Task.
 
         Runs until the coroutine ends, raises, or yields a Trigger.

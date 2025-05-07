@@ -18,7 +18,6 @@ from typing import (
     Sequence,
     Tuple,
     TypeVar,
-    Union,
 )
 
 import cocotb
@@ -91,7 +90,7 @@ class DataValidMonitor(Generic[T]):
         self._datas = datas
         self._valid = valid
         self._callbacks: List[Callable[[Dict[str, T]], Any]] = []
-        self._task: Union[Task[None], None] = None
+        self._task: Optional[Task[None]] = None
 
     def add_callback(self, callback: Callable[[Dict], Any]) -> None:
         """Add callback to be called with transaction data when a transaction is observed."""
@@ -154,7 +153,7 @@ class DataValidDriver(Generic[T]):
         self._datas = datas
         self._valid = valid
         self._initial_values = initial_values
-        self._task: Union[Task[None], None] = None
+        self._task: Optional[Task[None]] = None
         self._mb = Mailbox[Tuple[Dict[str, T], Event]]()
 
     def send(self, data: Dict[str, T]) -> Trigger:

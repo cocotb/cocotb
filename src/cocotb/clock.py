@@ -10,7 +10,7 @@ import logging
 from decimal import Decimal
 from fractions import Fraction
 from logging import Logger
-from typing import TYPE_CHECKING, Type, Union
+from typing import TYPE_CHECKING, Optional, Type, Union
 
 import cocotb
 from cocotb._py_compat import cached_property
@@ -142,7 +142,7 @@ class Clock:
                 f"Invalid clock impl {impl!r}, must be one of: {valid_impls_str}"
             )
 
-        self._task: Union[Task[None], None] = None
+        self._task: Optional[Task[None]] = None
 
     @property
     def signal(self) -> LogicObject:

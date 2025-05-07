@@ -98,7 +98,7 @@ class Combine(_AggregateWaitable["Combine"]):
             waiters: List[Task[object]] = []
             completed: List[Task[Any]] = []
             done = _InternalEvent(self)
-            exception: Union[BaseException, None] = None
+            exception: Optional[BaseException] = None
 
             def on_done(
                 task: Task[object],
@@ -255,7 +255,7 @@ class ClockCycles(Waitable["ClockCycles"]):
             bool, Type[RisingEdge], Type[FallingEdge], Type[ValueChange], None
         ] = None,
         *,
-        rising: Union[bool, None] = None,
+        rising: Optional[bool] = None,
     ) -> None:
         self._signal = signal
         self._num_cycles = num_cycles

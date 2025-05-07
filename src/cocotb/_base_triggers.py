@@ -17,7 +17,6 @@ from typing import (
     Generator,
     List,
     Optional,
-    Union,
 )
 
 from cocotb._deprecation import deprecated
@@ -142,7 +141,7 @@ class Event:
 
     def __init__(self, name: Optional[str] = None) -> None:
         self._pending_events: List[_Event] = []
-        self._name: Union[str, None] = None
+        self._name: Optional[str] = None
         if name is not None:
             self.name = name
         self._fired: bool = False
@@ -150,7 +149,7 @@ class Event:
 
     @property
     @deprecated("The name field will be removed in a future release.")
-    def name(self) -> Union[str, None]:
+    def name(self) -> Optional[str]:
         """Name of the Event.
 
         .. deprecated:: 2.0
@@ -160,7 +159,7 @@ class Event:
 
     @name.setter
     @deprecated("The name field will be removed in a future release.")
-    def name(self, new_name: Union[str, None]) -> None:
+    def name(self, new_name: Optional[str]) -> None:
         self._name = new_name
 
     @property

@@ -88,7 +88,7 @@ for i in range(32):
 _sv_escape_translate_table = str.maketrans(_sv_escapes)
 
 
-def _as_sv_literal(value: str) -> str:
+def _as_sv_literal(value: object) -> str:
     if isinstance(value, (int, float)):
         return str(value)
     elif isinstance(value, str):
@@ -458,7 +458,7 @@ class Runner(ABC):
         else:
             self.current_test_name = "test"
 
-        results_xml_path: Union[None, Path] = (
+        results_xml_path: Optional[Path] = (
             Path(results_xml) if results_xml is not None else None
         )
 

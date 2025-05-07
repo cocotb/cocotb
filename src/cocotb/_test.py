@@ -52,7 +52,7 @@ class TestSuccess(BaseException):
     Users are *not* intended to catch this exception type.
     """
 
-    def __init__(self, msg: Union[str, None]) -> None:
+    def __init__(self, msg: Optional[str]) -> None:
         super().__init__(msg)
         self.msg = msg
 
@@ -366,7 +366,7 @@ def create_task(
         )
 
 
-def pass_test(msg: Union[str, None] = None) -> NoReturn:
+def pass_test(msg: Optional[str] = None) -> NoReturn:
     """Force a test to pass.
 
     The test will end and enter termination phase when this is called.
