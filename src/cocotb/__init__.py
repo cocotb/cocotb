@@ -6,10 +6,9 @@
 from typing import TYPE_CHECKING, Dict, List, Union
 
 from cocotb._decorators import (
-    parametrize,
     test,
 )
-from cocotb._test import create_task, pass_test, start, start_soon
+from cocotb._test import create_task, start, start_soon
 
 from ._version import __version__
 
@@ -24,8 +23,6 @@ if TYPE_CHECKING:
 __all__ = (
     "__version__",
     "create_task",
-    "parametrize",
-    "pass_test",
     "start",
     "start_soon",
     "test",
