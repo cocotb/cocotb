@@ -17,7 +17,9 @@ SIM_VERSION = cocotb.SIM_VERSION
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 questa_fli = (
-    SIM_NAME.startswith("modelsim") and os.getenv("VHDL_GPI_INTERFACE", "") == "fli"
+    SIM_NAME.startswith("modelsim")
+    and LANGUAGE == "vhdl"
+    and os.getenv("VHDL_GPI_INTERFACE", "") == "fli"
 )
 
 riviera_vpi = (
