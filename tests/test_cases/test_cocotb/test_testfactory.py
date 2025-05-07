@@ -8,13 +8,14 @@ Tests of cocotb.regression.TestFactory functionality
 from collections.abc import Coroutine
 
 import cocotb
+from cocotb.regression import parametrize
 
 testfactory_test_names = set()
 testfactory_test_args = set()
 
 
 @cocotb.test
-@cocotb.parametrize(
+@parametrize(
     ("arg1", ["a1v1", "a1v2"]), (("arg2", "arg3"), [("a2v1", "a3v1"), ("a2v2", "a3v2")])
 )
 async def run_testfactory_test(dut, arg1, arg2, arg3):
@@ -43,7 +44,7 @@ async def test_testfactory_verify_names(dut):
 
 
 @cocotb.test
-@cocotb.parametrize(myarg=[1])
+@parametrize(myarg=[1])
 class TestClass(Coroutine):
     def __init__(self, dut, myarg):
         self._coro = self.run(dut, myarg)
@@ -66,7 +67,7 @@ p_testfactory_test_args = set()
 
 
 @cocotb.test()
-@cocotb.parametrize(
+@parametrize(
     arg1=["a1v1", "a1v2"],
     arg2=["a2v1", "a2v2"],
 )
@@ -99,7 +100,7 @@ testfactory_no_empty_call_test_args = set()
 
 
 @cocotb.test
-@cocotb.parametrize(
+@parametrize(
     arg1=["a1v1", "a1v2"],
     arg2=["a2v1", "a2v2"],
 )

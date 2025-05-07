@@ -6,8 +6,8 @@ from enum import Enum
 
 import pytest
 
-import cocotb
 from cocotb._decorators import _repr, _reprs
+from cocotb.regression import parametrize
 
 
 class MyEnum(Enum):
@@ -42,10 +42,10 @@ def test_parametrize_reprs():
 
 def test_parametrize_bad_args():
     with pytest.raises(ValueError):
-        cocotb.parametrize(("not valid", [1, 2, 3], "extra arg whoops"))
+        parametrize(("not valid", [1, 2, 3], "extra arg whoops"))
     with pytest.raises(ValueError):
-        cocotb.parametrize(("not valid", [1, 2, 3]))
+        parametrize(("not valid", [1, 2, 3]))
     with pytest.raises(ValueError):
-        cocotb.parametrize((("not valid", "valid"), [(1, 2), (3, 4)]))
+        parametrize((("not valid", "valid"), [(1, 2), (3, 4)]))
     with pytest.raises(ValueError):
-        cocotb.parametrize((("a", "b"), [(1, 2, "too", "many", "args"), (3, 4)]))
+        parametrize((("a", "b"), [(1, 2, "too", "many", "args"), (3, 4)]))

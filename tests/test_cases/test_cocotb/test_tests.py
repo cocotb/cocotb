@@ -15,6 +15,7 @@ import pytest
 from common import MyBaseException, MyException
 
 import cocotb
+from cocotb.regression import pass_test
 from cocotb.triggers import NullTrigger, SimTimeoutError, Timer
 
 
@@ -202,7 +203,7 @@ async def test_test_without_parenthesis_ran(dut):
 async def test_pass_test_in_task(_) -> None:
     async def raise_test_success():
         await Timer(1, unit="ns")
-        cocotb.pass_test("Finished test early")
+        pass_test("Finished test early")
 
     cocotb.start_soon(raise_test_success())
     await Timer(10, unit="ns")
@@ -210,4 +211,4 @@ async def test_pass_test_in_task(_) -> None:
 
 @cocotb.test
 async def test_pass_test_in_test(_) -> None:
-    cocotb.pass_test("Finished test early")
+    pass_test("Finished test early")

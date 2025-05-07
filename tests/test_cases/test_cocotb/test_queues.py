@@ -9,11 +9,12 @@ import pytest
 
 import cocotb
 from cocotb.queue import LifoQueue, PriorityQueue, Queue, QueueEmpty, QueueFull
+from cocotb.regression import parametrize
 from cocotb.triggers import Combine, NullTrigger
 
 
 @cocotb.test
-@cocotb.parametrize(queue_type=[Queue, PriorityQueue, LifoQueue])
+@parametrize(queue_type=[Queue, PriorityQueue, LifoQueue])
 async def run_queue_nonblocking_test(dut, queue_type):
     QUEUE_SIZE = 10
 
@@ -168,7 +169,7 @@ async def test_fair_scheduling(dut):
 
 
 @cocotb.test
-@cocotb.parametrize(queue_type=[Queue, PriorityQueue, LifoQueue])
+@parametrize(queue_type=[Queue, PriorityQueue, LifoQueue])
 async def run_queue_blocking_test(dut, queue_type):
     NUM_PUTTERS = 20
     QUEUE_SIZE = 10

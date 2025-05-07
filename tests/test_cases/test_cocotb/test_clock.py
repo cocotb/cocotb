@@ -14,6 +14,7 @@ from common import assert_takes
 
 import cocotb
 from cocotb.clock import Clock
+from cocotb.regression import parametrize
 from cocotb.simulator import clock_create, get_precision
 from cocotb.triggers import (
     FallingEdge,
@@ -27,7 +28,7 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 @cocotb.test()
-@cocotb.parametrize(impl=["gpi", "py"])
+@parametrize(impl=["gpi", "py"])
 async def test_clock_with_units(dut, impl: str) -> None:
     clk_1mhz = Clock(dut.clk, 1.0, unit="us", impl=impl)
     clk_250mhz = Clock(dut.clk, 4, unit="ns", impl=impl)
