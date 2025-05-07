@@ -24,15 +24,15 @@ if TYPE_CHECKING:
     from cocotb.regression import RegressionManager
 
 __all__ = (
+    "__version__",
     "bridge",
-    "resume",
-    "test",
+    "create_task",
     "parametrize",
     "pass_test",
-    "create_task",
+    "resume",
     "start",
     "start_soon",
-    "__version__",
+    "test",
 )
 
 

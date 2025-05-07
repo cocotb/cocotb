@@ -52,9 +52,10 @@ docstring-code-format = true
 
 [tool.ruff.lint]
 extend-select = [
-    "I",  # isort
-    "UP", # pyupgrade
-    "PL", # pylint
+    "I",        # isort
+    "UP",       # pyupgrade
+    "PL",       # pylint
+    "RUF022",   # unsorted __all__
 ]
 ignore = [
     # ambiguous variable name (preference)

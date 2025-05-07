@@ -12,7 +12,7 @@ import sys
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, TypeVar, Union, overload
 
-__all__ = ("nullcontext", "insertion_ordered_dict", "cached_property", "StrEnum")
+__all__ = ("StrEnum", "cached_property", "insertion_ordered_dict", "nullcontext")
 
 T = TypeVar("T")
 
