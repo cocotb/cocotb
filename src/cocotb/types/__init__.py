@@ -7,4 +7,4 @@ from ._logic import Logic
 from ._logic_array import LogicArray
 from ._range import Range
 
-__all__ = ("Range", "Array", "Logic", "LogicArray", "AbstractArray")
+__all__ = ("AbstractArray", "Array", "Logic", "LogicArray", "Range")
