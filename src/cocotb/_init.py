@@ -20,6 +20,7 @@ import cocotb.simulator
 from cocotb._scheduler import Scheduler
 from cocotb.logging import _log_from_c, default_config
 from cocotb.regression import RegressionManager, RegressionMode
+from cocotb.types._resolve import VALID_RESOLVERS, ResolverLiteral
 
 log: logging.Logger
 
@@ -84,6 +85,7 @@ def init_package_from_simulation(argv: List[str]) -> None:
     _process_packages()
     _setup_random_seed()
     _setup_root_handle()
+    _setup_resolve_x()
     _start_user_coverage()
 
     log.info(
@@ -289,3 +291,18 @@ def _setup_regression_manager() -> None:
     elif test_filter_str:
         cocotb._regression_manager.add_filters(test_filter_str)
         cocotb._regression_manager.set_mode(RegressionMode.TESTCASE)
+
+
+def _setup_resolve_x() -> None:
+    envvar = os.getenv("COCOTB_RESOLVE_X", None)
+    if envvar is not None:
+        resolver = envvar.strip().lower()
+        if resolver == "value_error":
+            return
+
+        if resolver not in VALID_RESOLVERS:
+            resolvers_str = ", ".join(f"{r!r}" for r in VALID_RESOLVERS)
+            raise ValueError(
+                f"Invalid COCOTB_RESOLVE_X value: {envvar!r}. Valid values are {resolvers_str}."
+            )
+        cocotb.handle.set_resolve_x(cast(ResolverLiteral, resolver))

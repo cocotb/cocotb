@@ -1,12 +1,9 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import os
-import random
+import sys
 from math import ceil
 from typing import (
-    TYPE_CHECKING,
-    Dict,
     Iterable,
     Iterator,
     List,
@@ -16,104 +13,48 @@ from typing import (
 )
 
 from cocotb._deprecation import deprecated
-from cocotb._utils import DocStrEnum
 from cocotb.types._abstract_array import AbstractArray
 from cocotb.types._logic import Logic, LogicConstructibleT, _str_literals
 from cocotb.types._range import Range
+from cocotb.types._resolve import ResolverLiteral, get_str_resolver
 
-if TYPE_CHECKING:
+if sys.version_info >= (3, 8):
     from typing import Literal
-
-
-class ResolveX(DocStrEnum):
-    """Resolution behaviors supported when converting a :class:`LogicArray` to an integer.
-
-    The values ``L`` and ``H`` are always resolved to ``0`` and ``1`` respectively.
-    These behaviors exist to resolve the Logic values ``X``, ``Z``, ``U``, ``W``, and ``-``
-    to either ``0`` or ``1``.
-    """
-
-    VALUE_ERROR = (
-        "error",
-        "Throws a :exc:`ValueError` if the :class:`LogicArray` contains non-``0``/``1`` values.",
-    )
-    ZEROS = ("zeros", "Resolves all non-``0``/``1`` values to ``0``.")
-    ONES = ("ones", "Resolves all non-``0``/``1`` values to ``1``.")
-    RANDOM = (
-        "random",
-        "Resolves all non-``0``/``1`` values randomly to either ``0`` or ``1``.",
-    )
-
-
-RESOLVE_X = ResolveX[os.getenv("COCOTB_RESOLVE_X", "VALUE_ERROR")]
-"""Global default for resolving ``X``, ``Z``, ``U``, ``W``, and ``-`` values to ``0`` or ``1``.
-
-Set using :envvar:`COCOTB_RESOLVE_X` before boot, or via this variable any time thereafter.
-Defaults to :attr:`~ResolveX.VALUE_ERROR`.
-
-.. warning::
-
-    This exists for backwards-compatibility reasons.
-    Using any value besides ``VALUE_ERROR`` is *not* recommended.
-"""
 
 
 _resolve_lh_table = str.maketrans({"L": "0", "H": "1"})
 
-_ord_0 = ord("0")
-
-
-class _error_resolve_table(Dict[int, int]):
-    def __init__(self) -> None:
-        self.update({ord(c): ord(c) for c in "01"})
-
-    def __missing__(self, key: str) -> int:
-        raise ValueError(f"Unresolvable bit in binary string: {key!r}.")
-
-
-class _random_resolve_table(Dict[int, int]):
-    def __init__(self) -> None:
-        self.update({ord(c): ord(c) for c in "01"})
-
-    def __missing__(self, _: str) -> int:
-        return random.getrandbits(1) + _ord_0
-
-
-_resolve_tables = {
-    "error": _error_resolve_table(),
-    "zeros": str.maketrans("XZUW-", "00000"),
-    "ones": str.maketrans("XZUW-", "11111"),
-    "random": _random_resolve_table(),
-}
-
 
 class LogicArray(AbstractArray[Logic]):
-    r"""Fixed-sized, arbitrarily-indexed, array of :class:`cocotb.types.Logic`.
+    r"""Fixed-sized, arbitrarily-indexed, Array of Logics.
 
     .. currentmodule:: cocotb.types
 
-    :class:`LogicArray`\ s can be constructed from iterables of values
-    constructible into :class:`Logic` like :class:`bool`, :class:`str`, :class:`int`,
-    or it can be constructed :class:`str` or :class:`int` literals syntaxes, as seen below.
+    An :class:`Array`, where all elements are enforced to be :class:`Logic`.
+    This allows the additional of bit-wise logical operators, conversions to integers and bytes, and ``X`` testing and mapping.
 
-    Like :class:`Array`, if *range* is not given, the range ``Range(len(value)-1, "downto", 0)`` is used.
-    If an :class:`int` is passed for *range*, the range ``Range(range-1, "downto", 0)`` is used.
+    :class:`!LogicArray`\ s can be constructed from an iterable of :class:`!Logic`\ s,
+    or values constructible into :class:`!Logic`, like :class:`bool`, :class:`str`, or :class:`int`.
+    Alternatively, they can be constructed from :class:`!str` or :class:`!int` literals.
+
+    Like :class:`Array`, if *range* is not given, the range ``Range(len(value)-1, "downto", 0)`` is used;
+    and if an :class:`int` is passed for *range*, the range ``Range(range-1, "downto", 0)`` is used.
 
     .. code-block:: pycon3
 
         >>> LogicArray(0b0111, 4)
         LogicArray('0111', Range(3, 'downto', 0))
 
-        >>> LogicArray("01XZ")
-        LogicArray('01XZ', Range(3, 'downto', 0))
+        >>> LogicArray("01XZ", Range(0, "to", 3))
+        LogicArray('01XZ', Range(0, 'to', 3))
 
-        >>> LogicArray([0, True, "X"])
-        LogicArray('01X', Range(2, 'downto', 0))
+        >>> LogicArray([0, True, "X", Logic("-")])
+        LogicArray('01X-', Range(3, 'downto', 0))
 
     .. note::
-        If constructing from an unsigned :class:`int` literal, *range* `must` be given.
+        If constructing from an unsigned :class:`!int` literal, *range* `must` be given.
 
-    :class:`LogicArray`\ s can be constructed from :class:`int`\ s using :meth:`from_unsigned` or :meth:`from_signed`.
+    :class:`!LogicArray`\ s can be constructed from :class:`int`\ s using :meth:`from_unsigned` or :meth:`from_signed`.
 
     .. code-block:: pycon3
 
@@ -123,7 +64,7 @@ class LogicArray(AbstractArray[Logic]):
         >>> LogicArray.from_signed(-4, Range(0, "to", 3))  # will sign-extend
         LogicArray('1100', Range(0, 'to', 3))
 
-    :class:`LogicArray`\ s can be constructed from :class:`bytes` or :class:`bytearray` using :meth:`from_bytes`.
+    :class:`!LogicArray`\ s can be constructed from :class:`bytes` or :class:`bytearray` using :meth:`from_bytes`.
     Use the *byteorder* argument to control endianness.
 
     .. code-block:: pycon3
@@ -134,87 +75,95 @@ class LogicArray(AbstractArray[Logic]):
         >>> LogicArray.from_bytes(b"1n", byteorder="little")
         LogicArray('0110111000110001', Range(15, 'downto', 0))
 
-    :class:`LogicArray`\ s support the same :class:`list`-like operations as :class:`Array`;
-    however, it enforces the condition that all elements must be a :class:`Logic`.
+    :class:`!LogicArray`\ s support the same :class:`list`-like operations as :class:`Array`;
+    however, it enforces the condition that all elements must be a :class:`!Logic`.
 
     .. code-block:: pycon3
 
-        >>> la = LogicArray("1010")
-        >>> la[0]  # is indexable
+        >>> array = LogicArray("1010")
+        >>> array[0]  # is indexable
         Logic('0')
 
-        >>> la[1:]  # is slice-able
+        >>> array[1:]  # is slice-able
         LogicArray('10', Range(1, 'downto', 0))
 
-        >>> Logic("0") in la  # is a collection
+        >>> Logic("0") in array  # is a collection
         True
 
-        >>> list(la)  # is an iterable
+        >>> list(array)  # is an iterable
         [Logic('1'), Logic('0'), Logic('1'), Logic('0')]
 
-    When setting an element or slice, the *value* is first constructed into a
-    :class:`Logic`.
+    When setting an element or slice, the *value* is first constructed into a :class:`Logic`.
 
     .. code-block:: pycon3
 
-        >>> la = LogicArray("1010")
-        >>> la[3] = "Z"
-        >>> la[3]
+        >>> array = LogicArray("1010")
+        >>> array[3] = "Z"
+        >>> array[3]
         Logic('Z')
 
-        >>> la[2:] = ["X", True, 0]
-        >>> la
+        >>> array[2:] = ["X", True, 0]
+        >>> array
         LogicArray('ZX10', Range(3, 'downto', 0))
 
-        >>> la[:] = 0b0101
-        >>> la
+        >>> array[:] = 0b0101
+        >>> array
         LogicArray('0101', Range(3, 'downto', 0))
 
-    :class:`LogicArray`\ s can be converted into their :class:`str` or :class:`int` literal values using casts.
+    :class:`!LogicArray`\ s can be converted into their :class:`str` or :class:`int` literal values using casts.
+    And they can be used in conditionals, where any non-``0`` value is ``True``.
 
     .. code-block:: pycon3
 
-        >>> la = LogicArray("1010")
-        >>> str(la)
+        >>> value = LogicArray("1010")
+        >>> str(value)
         '1010'
-        >>> int(la)
+
+        >>> int(value)
         10
 
+        >>> if value:
+        ...     print("Not 0!")
+        Not 0!
+
     .. warning::
-        The :class:`int` cast assumes the value is entirely ``0`` or ``1`` and will raise an exception otherwise.
+        The :class:`int` cast, :class:`bool` cast, and use in conditionals assumes the
+        value is entirely ``0``, ``1``, ``L``, or ``H``, and will raise an exception otherwise.
 
     The :meth:`to_unsigned`, :meth:`to_signed`, and :meth:`to_bytes` methods can be used to convert
     the value into an unsigned or signed integer, or bytes, respectively.
 
     .. code-block:: pycon3
 
-        >>> la.to_unsigned()
+        >>> value = LogicArray("1010")
+        >>> value.to_unsigned()
         10
 
-        >>> la.to_signed()
+        >>> value.to_signed()
         -6
 
-        >>> la.to_bytes(byteorder="big")
+        >>> value.to_bytes(byteorder="big")
         b'\n'
 
     .. warning::
-        These operations assume the value is entirely ``0`` or ``1`` and will raise an exception otherwise.
+        These operations assume the value is entirely ``0``, ``1``, ``L``, or ``H``, and will raise an exception otherwise.
 
     You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
     the built-ins :func:`hex:` and :func:`bin`, respectively.
 
     .. code-block:: pycon3
 
-        >>> la = LogicArray("01111010")
-        >>> hex(la)
+        >>> value = LogicArray("01111010")
+        >>> hex(value)
         '0x7a'
-        >>> bin(la)
+
+        >>> bin(value)
         '0b1111010'
 
     .. warning::
         Using :func:`hex` or :func:`bin` first turns the LogicArray into an :class:`int`.
         This means the exact length of the LogicArray is lost.
-        It also means that these expressions will raise an exception if the value is not entirely ``0`` or ``1``.
+        It also means that these expressions will raise an exception if the value is not entirely ``0``, ``1``, ``L``, or ``H``.
 
     :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
     ``^``, and ``~``.
@@ -225,10 +174,10 @@ class LogicArray(AbstractArray[Logic]):
         ...     s = LogicArray([sel] * len(a))
         ...     return (a & ~s) | (b & s)
 
-        >>> la = LogicArray("0110")
-        >>> p = LogicArray("1110")
+        >>> a = LogicArray("0110")
+        >>> b = LogicArray("1110")
         >>> sel = Logic("1")  # choose second option
-        >>> big_mux(la, p, sel)
+        >>> big_mux(a, b, sel)
         LogicArray('1110', Range(3, 'downto', 0))
 
     Args:
@@ -317,10 +266,7 @@ class LogicArray(AbstractArray[Logic]):
                 )
         return self._value_as_str
 
-    def _get_int(
-        self,
-        resolve: "ResolveX | Literal['error'] | Literal['zeros'] | Literal['ones'] | Literal['random'] | None",
-    ) -> int:
+    def _get_int(self) -> int:
         if self._value_as_int is None:
             # May convert list to str before converting to int.
             value_as_str = self._get_str()
@@ -331,14 +277,7 @@ class LogicArray(AbstractArray[Logic]):
             try:
                 self._value_as_int = int(value_as_str, 2)
             except ValueError:
-                # value needs resolving
-                if resolve is None:
-                    resolve = RESOLVE_X
-
-                # resolve remaining
-                resolve_table = _resolve_tables[resolve]
-                value_as_str = value_as_str.translate(resolve_table)
-                return int(value_as_str, 2)
+                raise ValueError("Can't convert non-0/1 value to int") from None
 
         return self._value_as_int
 
@@ -605,51 +544,33 @@ class LogicArray(AbstractArray[Logic]):
         """
         return self.to_bytes(byteorder="big")
 
-    def to_unsigned(
-        self,
-        resolve: "ResolveX | Literal['error'] | Literal['zeros'] | Literal['ones'] | Literal['random'] | None" = None,
-    ) -> int:
+    def to_unsigned(self) -> int:
         """Convert the value to an integer by interpreting it using unsigned representation.
 
         The :class:`LogicArray` is treated as an arbitrary-length vector of bits
         with the left-most bit being the most significant bit in the integer value.
         The bit vector is then interpreted as an integer using unsigned representation.
 
-        Args:
-            resolve:
-                How ``X``, ``Z``, ``U``, ``W``, and ``-`` values should be resolve to ``0`` or ``1`` to allow conversion to an integer.
-                See :class:`ResolveX` for details.
-                Defaults to the current value of :attr:`~cocotb.types.logic_array.RESOLVE_X`.
-
         Returns:
             An integer equivalent to the value by interpreting it using unsigned representation.
         """
         if len(self) == 0:
             raise ValueError("Cannot convert null vector to integer")
-        return self._get_int(resolve)
+        return self._get_int()
 
-    def to_signed(
-        self,
-        resolve: "ResolveX | Literal['error'] | Literal['zeros'] | Literal['ones'] | Literal['random'] | None" = None,
-    ) -> int:
+    def to_signed(self) -> int:
         """Convert the value to an integer by interpreting it using two's complement representation.
 
         The :class:`LogicArray` is treated as an arbitrary-length vector of bits
         with the left-most bit being the most significant bit in the integer value.
         The bit vector is then interpreted as an integer using two's complement representation.
 
-        Args:
-            resolve:
-                How ``X``, ``Z``, ``U``, ``W``, and ``-`` values should be resolve to ``0`` or ``1`` to allow conversion to an integer.
-                See :class:`ResolveX` for details.
-                Defaults to the current value of :attr:`~cocotb.types.logic_array.RESOLVE_X`.
-
         Returns:
             An integer equivalent to the value by interpreting it using two's complement representation.
         """
         if len(self) == 0:
             raise ValueError("Cannot convert null vector to integer")
-        value = self._get_int(resolve)
+        value = self._get_int()
         limit = 1 << (len(self) - 1)
         if value >= limit:
             value -= 2 * limit
@@ -794,9 +715,38 @@ class LogicArray(AbstractArray[Logic]):
     def __invert__(self) -> "LogicArray":
         return LogicArray(~v for v in self)
 
-    @deprecated(
-        "`bool()` casts and using LogicArray in conditional expressions is deprecated. "
-        """Use explicit comparisons (e.g. `LogicArray() == "11"`) or `all`/`any` expressions instead."""
-    )
     def __bool__(self) -> bool:
-        return any(v in (Logic("H"), Logic("1")) for v in self)
+        if len(self) == 0:
+            return False
+        return bool(int(self))
+
+    def resolve(self, resolver: ResolverLiteral) -> "LogicArray":
+        """Resolves non-0/1 values to 0/1.
+
+        The possible values of the *resolver* argument are:
+
+        * ``"weak"``: Weak values are resolved to their strong-valued equivalents.
+
+        * ``"zeros"``:
+            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+            Remaining non-``0``/``1`` values are resolved to ``0``.
+
+        * ``"ones"``:
+            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+            Remaining non-``0``/``1`` values are resolved to ``1``.
+
+        * ``"random"``:
+            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+            Remaining non-``0``/``1`` values are randomly resolved to either ``0`` or ``1``.
+
+        Args:
+            resolver: How to resolve non-``0``/``1`` values. See possible values above.
+
+        Returns:
+            The resolved Logic.
+
+        Raises:
+            ValueError: Invalid *resolver* value.
+            TypeError: Unsupported *value* type.
+        """
+        return LogicArray(get_str_resolver(resolver)(str(self)), self.range)

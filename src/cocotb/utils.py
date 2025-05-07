@@ -10,11 +10,7 @@ import math
 from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
-from typing import (
-    TYPE_CHECKING,
-    Union,
-    overload,
-)
+from typing import Union, overload
 
 from cocotb import simulator
 from cocotb._typing import TimeUnit, TimeUnitWithoutStep
@@ -162,33 +158,27 @@ def get_sim_steps(
     return result_rounded
 
 
-if TYPE_CHECKING:
+@lru_cache(maxsize=None)
+def _get_log_time_scale(unit: TimeUnitWithoutStep) -> int:
+    """Retrieves the ``log10()`` of the scale factor for a given time unit.
 
-    def _get_log_time_scale(unit: TimeUnitWithoutStep) -> int: ...
+    Args:
+        unit: String specifying the unit
+            (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
-else:
+            .. versionchanged:: 2.0
+                Renamed from ``units``.
 
-    @lru_cache(maxsize=None)
-    def _get_log_time_scale(unit):
-        """Retrieves the ``log10()`` of the scale factor for a given time unit.
+    Raises:
+        ValueError: If *unit* is not a valid unit (see Args section).
 
-        Args:
-            unit: String specifying the unit
-                (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+    Returns:
+        The ``log10()`` of the scale factor for the time unit.
+    """
+    scale = {"fs": -15, "ps": -12, "ns": -9, "us": -6, "ms": -3, "sec": 0}
 
-                .. versionchanged:: 2.0
-                    Renamed from ``units``.
-
-        Raises:
-            ValueError: If *unit* is not a valid unit (see Args section).
-
-        Returns:
-            The ``log10()`` of the scale factor for the time unit.
-        """
-        scale = {"fs": -15, "ps": -12, "ns": -9, "us": -6, "ms": -3, "sec": 0}
-
-        unit_lwr = unit.lower()
-        if unit_lwr not in scale:
-            raise ValueError(f"Invalid unit ({unit}) provided")
-        else:
-            return scale[unit_lwr]
+    unit_lwr = unit.lower()
+    if unit_lwr not in scale:
+        raise ValueError(f"Invalid unit ({unit}) provided")
+    else:
+        return scale[unit_lwr]

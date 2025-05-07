@@ -7,10 +7,11 @@
 """A clock class."""
 
 import logging
+import sys
 from decimal import Decimal
 from fractions import Fraction
 from logging import Logger
-from typing import TYPE_CHECKING, Type, Union
+from typing import Type, Union
 
 import cocotb
 from cocotb._py_compat import cached_property
@@ -28,10 +29,13 @@ from cocotb.triggers import (
 )
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
-if TYPE_CHECKING:
-    from typing import Literal, TypeAlias
+if sys.version_info >= (3, 10):
+    from typing import (
+        Literal,
+        TypeAlias,
+    )
 
-    Impl: TypeAlias = Literal["gpi"] | Literal["py"]
+    Impl: TypeAlias = Literal["gpi", "py"]
 
 
 _valid_impls = ("gpi", "py")
@@ -120,6 +124,8 @@ class Clock:
         on the Clock object, so that it may later be :meth:`stop`\ ped.
     """
 
+    _impl: "Impl"
+
     def __init__(
         self,
         signal: LogicObject,
@@ -130,7 +136,6 @@ class Clock:
         self._signal = signal
         self._period = period
         self._unit: TimeUnit = unit
-        self._impl: "Impl"  # noqa: UP037  # ruff assumes we are at least using Python 3.7 and gives false positive.
 
         if impl is None:
             self._impl = "gpi" if _trust_inertial else "py"
