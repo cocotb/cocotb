@@ -1097,6 +1097,7 @@ class Nvc(Runner):
             + ["-a"]
             + [str(source) for source in self.sources if is_vhdl_source(source)]
             + [str(source) for source in self.vhdl_sources]
+            + ["--preserve-case"]
         ]
 
         return cmds

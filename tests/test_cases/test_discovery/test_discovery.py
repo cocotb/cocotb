@@ -509,9 +509,6 @@ async def discover_all_in_component_vhdl(dut):
         # finds SAMPLE_BLOCK twice
         # doesn't find EXAMPLE_STRING, EXAMPLE_BOOL, or EXAMPLE_WIDTH
         assert total_count == 7
-    elif sim.startswith("nvc"):
-        # finds SAMPLE_BLOCK.clk_inv twice?
-        assert total_count == 10
     else:
         assert total_count == 9
 

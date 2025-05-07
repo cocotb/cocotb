@@ -65,7 +65,7 @@ package pkg_components is
 
 	component acs is
 		generic(
-			initialize_value : in signed(BW_MAX_PROBABILITY - 1 downto 0)
+			INITIALIZE_VALUE : in signed(BW_MAX_PROBABILITY - 1 downto 0)
 		);
 		port(
 			clk                    : in std_logic;
