@@ -42,19 +42,18 @@ async def test_read_write(dut):
         assert dut.param_char.value == ord("p")
         assert dut.param_str.value == b"ARRAYMOD"
 
-        if not cocotb.SIM_NAME.lower().startswith("riviera"):
-            assert dut.param_rec.a.value == 0
-            assert dut.param_rec.b[0].value == 0
-            assert dut.param_rec.b[1].value == 0
-            assert dut.param_rec.b[2].value == 0
-            assert dut.param_cmplx[0].a.value == 0
-            assert dut.param_cmplx[0].b[0].value == 0
-            assert dut.param_cmplx[0].b[1].value == 0
-            assert dut.param_cmplx[0].b[2].value == 0
-            assert dut.param_cmplx[1].a.value == 0
-            assert dut.param_cmplx[1].b[0].value == 0
-            assert dut.param_cmplx[1].b[1].value == 0
-            assert dut.param_cmplx[1].b[2].value == 0
+        assert dut.param_rec.a.value == 0
+        assert dut.param_rec.b[0].value == 0
+        assert dut.param_rec.b[1].value == 0
+        assert dut.param_rec.b[2].value == 0
+        assert dut.param_cmplx[0].a.value == 0
+        assert dut.param_cmplx[0].b[0].value == 0
+        assert dut.param_cmplx[0].b[1].value == 0
+        assert dut.param_cmplx[0].b[2].value == 0
+        assert dut.param_cmplx[1].a.value == 0
+        assert dut.param_cmplx[1].b[0].value == 0
+        assert dut.param_cmplx[1].b[1].value == 0
+        assert dut.param_cmplx[1].b[2].value == 0
 
     assert dut.const_logic.value == 0
     assert dut.const_logic_vec.value == 0x3D
@@ -66,19 +65,18 @@ async def test_read_write(dut):
         assert dut.const_char.value == ord("c")
         assert dut.const_str.value == b"MODARRAY"
 
-        if not cocotb.SIM_NAME.lower().startswith("riviera"):
-            assert dut.const_rec.a.value == 1
-            assert dut.const_rec.b[0].value == 0xFF
-            assert dut.const_rec.b[1].value == 0xFF
-            assert dut.const_rec.b[2].value == 0xFF
-            assert dut.const_cmplx[1].a.value == 1
-            assert dut.const_cmplx[1].b[0].value == 0xFF
-            assert dut.const_cmplx[1].b[1].value == 0xFF
-            assert dut.const_cmplx[1].b[2].value == 0xFF
-            assert dut.const_cmplx[2].a.value == 1
-            assert dut.const_cmplx[2].b[0].value == 0xFF
-            assert dut.const_cmplx[2].b[1].value == 0xFF
-            assert dut.const_cmplx[2].b[2].value == 0xFF
+        assert dut.const_rec.a.value == 1
+        assert dut.const_rec.b[0].value == 0xFF
+        assert dut.const_rec.b[1].value == 0xFF
+        assert dut.const_rec.b[2].value == 0xFF
+        assert dut.const_cmplx[1].a.value == 1
+        assert dut.const_cmplx[1].b[0].value == 0xFF
+        assert dut.const_cmplx[1].b[1].value == 0xFF
+        assert dut.const_cmplx[1].b[2].value == 0xFF
+        assert dut.const_cmplx[2].a.value == 1
+        assert dut.const_cmplx[2].b[0].value == 0xFF
+        assert dut.const_cmplx[2].b[1].value == 0xFF
+        assert dut.const_cmplx[2].b[2].value == 0xFF
 
     dut.select_in.value = 2
 
@@ -280,8 +278,6 @@ async def test_discover_all(dut):
 
     # Modelsim/Questa VPI will not find a vpiStructVar from vpiModule so we access them explicitly
     # to ensure the handle is in the dut "sub_handles" for iterating
-    #
-    # DO NOT ADD FOR ALDEC.  Older Versions do not iterate over properly
     if LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
         ("modelsim", "ncsim", "xmsim")
     ):

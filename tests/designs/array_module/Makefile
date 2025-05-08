@@ -18,11 +18,8 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     ifneq ($(filter $(SIM),ius xcelium),)
         COMPILE_ARGS += -v93
     endif
-ifeq ($(shell echo $(SIM) | tr A-Z a-z),aldec)
-    VHDL_SOURCES =  $(COCOTB)/tests/designs/array_module/array_module_pack.vhd $(COCOTB)/tests/designs/array_module/array_module_aldec.vhd
-else
-    VHDL_SOURCES =  $(COCOTB)/tests/designs/array_module/array_module_pack.vhd $(COCOTB)/tests/designs/array_module/array_module.vhd
-endif
+    VHDL_SOURCES =  $(COCOTB)/tests/designs/array_module/array_module_pack.vhd
+    VHDL_SOURCES += $(COCOTB)/tests/designs/array_module/array_module.vhd
 else
     $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
 endif
