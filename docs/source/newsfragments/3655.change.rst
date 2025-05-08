@@ -1,1 +1,0 @@
-``cocotb.handle.RegionObject`` was renamed to :class:`~cocotb.handle.HierarchyObjectBase`.

@@ -1,0 +1,1 @@
+Support ``waves`` argument to :meth:`.Runner.build` for Verilator.

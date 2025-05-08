@@ -10,7 +10,7 @@ from cocotb._decorators import (
 )
 from cocotb._test import create_task, start, start_soon
 
-from ._version import __version__
+from ._version import __version__ as _version
 
 if TYPE_CHECKING:
     from logging import Logger
@@ -27,6 +27,10 @@ __all__ = (
     "start_soon",
     "test",
 )
+
+
+__version__ = _version
+"""The version of cocotb."""
 
 
 log: "Logger"
@@ -69,7 +73,7 @@ SIM_NAME: str
 SIM_VERSION: str
 """The version of the running simulator."""
 
-random_seed: int
+RANDOM_SEED: int
 """
 The value passed to the Python global random number generator.
 

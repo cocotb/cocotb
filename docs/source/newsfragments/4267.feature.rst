@@ -1,1 +1,1 @@
-Allow user to specify elaboration arguments for NVC (e.g. to enable coverage collection).
+Allow user to specify elaboration arguments (``elab_args``) to :meth:`.Runner.build` for NVC (e.g. to enable coverage collection).

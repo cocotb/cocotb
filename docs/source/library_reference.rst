@@ -407,17 +407,17 @@ Other Runtime Information
 
 .. autodata:: cocotb.argv
 
+.. autodata:: cocotb.plusargs
+
+.. autodata:: cocotb.top
+
+.. autodata:: cocotb.packages
+
 .. autodata:: cocotb.SIM_NAME
 
 .. autodata:: cocotb.SIM_VERSION
 
-.. autodata:: cocotb.plusargs
-
-.. autodata:: cocotb.packages
-
-.. autodata:: cocotb.top
-
-.. autodata:: cocotb.random_seed
+.. autodata:: cocotb.RANDOM_SEED
 
 .. autodata:: cocotb.is_simulation
 

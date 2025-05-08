@@ -1,1 +1,1 @@
-Not using parentheses on ``@cocotb.test`` decorator is now supported.
+Not using parentheses on :func:`cocotb.test` decorator is now supported.
