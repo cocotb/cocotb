@@ -13,6 +13,10 @@
 name: Ecosystem compatibility tests
 
 on:
+  pull_request:
+    branches:
+      - master
+      - 'stable/**'
   # Run daily at midnight (UTC).
   schedule:
     - cron: '0 0 * * *'
@@ -38,9 +42,6 @@ jobs:
         with:
           path: cocotb
 
-      - name: Install the development version of cocotb
-        run: pip3 install ./cocotb
-
       - name: Checkout cocotb-coverage repository
         uses: actions/checkout@v4
         with:
@@ -49,6 +50,9 @@ jobs:
 
       - name: Install the release version of cocotb-coverage
         run: pip3 install cocotb-coverage==1.2
+
+      - name: Install the development version of cocotb
+        run: pip3 install ./cocotb
 
       - name: Run tests
         # Don't run tests through tox (as present in cocotb-coverage) to be able
@@ -80,9 +84,6 @@ jobs:
         with:
           path: cocotb
 
-      - name: Install the development version of cocotb
-        run: pip3 install ./cocotb
-
       - name: Checkout pyuvm repository
         uses: actions/checkout@v4
         with:
@@ -91,6 +92,9 @@ jobs:
 
       - name: Install the release version of pyuvm
         run: pip3 install pyuvm>=3.0.0
+
+      - name: Install the development version of cocotb
+        run: pip3 install ./cocotb
 
       - name: Run tests
           # Don't run tests through tox (as present in pyuvm) to be able
