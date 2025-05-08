@@ -102,15 +102,14 @@ ENVS = [
         "group": "ci",
     },
     # A single test for the upcoming Python version.
-    # TODO: Enable once Python 3.14 development starts.
-    # {
-    #     "lang": "vhdl",
-    #     "sim": "nvc",
-    #     "sim-version": "r1.16.0",
-    #     "os": "ubuntu-22.04",
-    #     "python-version": "3.14.0-alpha - 3.14.0",
-    #     "group": "experimental",
-    # },
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.16.0",
+        "os": "ubuntu-22.04",
+        "python-version": "3.14-dev",
+        "group": "ci",
+    },
     # Test Icarus on Ubuntu
     {
         "lang": "verilog",
