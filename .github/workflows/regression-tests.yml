@@ -111,6 +111,10 @@ jobs:
       if: startsWith(matrix.os, 'windows')
       run: conda install --yes python=${{matrix.python-version}}
 
+      # Install
+    - name: Install XML-dependencies for Python 3.14
+      if: startsWith(matrix.python-version, '3.14') && startsWith(matrix.os, 'ubuntu')
+      run: sudo apt-get install -y --no-install-recommends libxml2-dev libxslt-dev
       # Run tests that don't need a simulator.
     - name: Install Python testing dependencies
       run: |
