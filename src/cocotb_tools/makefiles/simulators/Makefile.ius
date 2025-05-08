@@ -60,8 +60,13 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vhpi ius):cocotbvhpi_entry_point
     EXTRA_ARGS += -v93
     EXTRA_ARGS += -top $(COCOTB_TOPLEVEL)
-    RTL_LIBRARY ?= $(COCOTB_TOPLEVEL)
-    MAKE_LIB = -makelib $(RTL_LIBRARY)
+ifdef RTL_LIBRARY
+    $(warning Using RTL_LIBRARY is deprecated, please use TOPLEVEL_LIBRARY instead.)
+    TOPLEVEL_LIBRARY ?= $(RTL_LIBRARY)
+else
+    TOPLEVEL_LIBRARY ?= work
+endif
+    MAKE_LIB = -makelib $(TOPLEVEL_LIBRARY)
     HDL_SOURCES = $(VHDL_SOURCES)
 ifneq ($(VERILOG_SOURCES),)
     HDL_SOURCES += $(VERILOG_SOURCES)

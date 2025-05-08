@@ -69,8 +69,13 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     # Xcelium 23.09.004 fixes cocotb issue #1076 as long as the following define
     # is set.
     EXTRA_ARGS += -NEW_VHPI_PROPAGATE_DELAY
-    RTL_LIBRARY ?= $(COCOTB_TOPLEVEL)
-    MAKE_LIB = -makelib $(RTL_LIBRARY)
+ifdef RTL_LIBRARY
+    $(warning Using RTL_LIBRARY is deprecated, please use TOPLEVEL_LIBRARY instead.)
+    TOPLEVEL_LIBRARY ?= $(RTL_LIBRARY)
+else
+    TOPLEVEL_LIBRARY ?= work
+endif
+    MAKE_LIB = -makelib $(TOPLEVEL_LIBRARY)
     END_LIB = -endlib
     HDL_SOURCES = $(VHDL_SOURCES)
     ifneq ($(VERILOG_SOURCES),)

@@ -21,7 +21,7 @@ COCOTB?=$(PWD)/../../..
 
 SRC_BASE = $(COCOTB)/tests/designs/viterbi_decoder_axi4s
 
-RTL_LIBRARY = dec_viterbi
+TOPLEVEL_LIBRARY = dec_viterbi
 
 VHDL_SOURCES = $(SRC_BASE)/packages/pkg_helper.vhd \
 	       $(SRC_BASE)/packages/pkg_param.vhd \
