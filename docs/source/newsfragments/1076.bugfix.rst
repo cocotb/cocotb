@@ -1,1 +1,0 @@
-Xcelium 23.09.004 and newer can now be used to test designs with a VHDL toplevel.
