@@ -21,11 +21,6 @@
 
 // This file defines the routines available to Python
 
-#define COCOTB_ACTIVE_ID \
-    0xC0C07B  // User data flag to indicate callback is active
-#define COCOTB_INACTIVE_ID \
-    0xDEADB175  // User data flag set when callback has been de-registered
-
 #define MODULE_NAME "simulator"
 
 // callback user data
@@ -41,11 +36,9 @@ struct PythonCallback {
         Py_XDECREF(args);
         Py_XDECREF(kwargs);
     }
-    uint32_t id_value =
-        COCOTB_ACTIVE_ID;  // COCOTB_ACTIVE_ID or COCOTB_INACTIVE_ID
-    PyObject *function;    // Function to call when the callback fires
-    PyObject *args;        // The arguments to call the function with
-    PyObject *kwargs;      // Keyword arguments to call the function with
+    PyObject *function;  // Function to call when the callback fires
+    PyObject *args;      // The arguments to call the function with
+    PyObject *kwargs;    // Keyword arguments to call the function with
 };
 
 class GpiClock;
