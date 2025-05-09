@@ -549,8 +549,8 @@ The following variables are makefile variables, not environment variables.
 
 .. make:var:: PYTHON_BIN
 
-    The path to the ``python`` binary.
-    Set to the result of ``cocotb-config --python-bin`` if present on the ``PATH``.
+    The path to the Python binary.
+    Set to the result of ``cocotb-config --python-bin`` if ``cocotb-config`` is present on the ``PATH``.
     Otherwise defaults to ``python3``.
 
 
