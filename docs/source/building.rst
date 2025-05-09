@@ -551,7 +551,7 @@ The following variables are makefile variables, not environment variables.
 
     The path to the ``python`` binary.
     Set to the result of ``cocotb-config --python-bin`` if present on the ``PATH``.
-    Otherwise defaults to ``python``.
+    Otherwise defaults to ``python3``.
 
 
 Library Build Process
