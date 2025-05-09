@@ -1,1 +1,0 @@
-``cocotb.RANDOM_SEED`` was made private.

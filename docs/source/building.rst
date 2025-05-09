@@ -88,6 +88,25 @@ Cocotb
 
         :envvar:`RANDOM_SEED` is a deprecated alias and will be removed.
 
+.. envvar:: COCOTB_PLUSARGS
+
+      "Plusargs" are options that are starting with a plus (``+``) sign.
+      They are passed to the simulator and are also available within cocotb as :data:`cocotb.plusargs`.
+      In the simulator, they can be read by the Verilog/SystemVerilog system functions
+      ``$test$plusargs`` and ``$value$plusargs``.
+
+      The special plusargs ``+ntb_random_seed`` and ``+seed``, if present, are evaluated
+      to set the random seed value if :envvar:`COCOTB_RANDOM_SEED` is not set.
+      If both ``+ntb_random_seed`` and ``+seed`` are set, ``+ntb_random_seed`` is used.
+
+    .. versionchanged:: 2.0
+
+        :envvar:`PLUSARGS` is renamed to :envvar:`COCOTB_PLUSARGS`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`PLUSARGS` is a deprecated alias and will be removed.
+
 .. envvar:: COCOTB_ANSI_OUTPUT
 
     Use this to override the default behavior of annotating cocotb output with
@@ -462,25 +481,6 @@ The following variables are makefile variables, not environment variables.
 
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
 
-.. make:var:: COCOTB_PLUSARGS
-
-      "Plusargs" are options that are starting with a plus (``+``) sign.
-      They are passed to the simulator and are also available within cocotb as :data:`cocotb.plusargs`.
-      In the simulator, they can be read by the Verilog/SystemVerilog system functions
-      ``$test$plusargs`` and ``$value$plusargs``.
-
-      The special plusargs ``+ntb_random_seed`` and ``+seed``, if present, are evaluated
-      to set the random seed value if :envvar:`COCOTB_RANDOM_SEED` is not set.
-      If both ``+ntb_random_seed`` and ``+seed`` are set, ``+ntb_random_seed`` is used.
-
-    .. versionchanged:: 2.0
-
-        :envvar:`PLUSARGS` is renamed to :envvar:`COCOTB_PLUSARGS`.
-
-    .. deprecated:: 2.0
-
-        :envvar:`PLUSARGS` is a deprecated alias and will be removed.
-
 .. make:var:: SIM_CMD_PREFIX
 
       Prefix for simulation command invocations.
@@ -546,6 +546,12 @@ The following variables are makefile variables, not environment variables.
     The name of the library that contains the :envvar:`COCOTB_TOPLEVEL` module/entity.
     Only supported by the Aldec Riviera-PRO, Aldec Active-HDL, and Siemens EDA Questa simulators.
 
+
+.. make:var:: PYTHON_BIN
+
+    The path to the ``python`` binary.
+    Set to the result of ``cocotb-config --python-bin`` if present on the ``PATH``.
+    Otherwise defaults to ``python``.
 
 
 Library Build Process

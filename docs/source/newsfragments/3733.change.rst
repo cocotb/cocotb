@@ -1,1 +1,1 @@
-Renamed ``cocotb.handle.NonHierarchyObject`` to :class:`~cocotb.handle.ValueObjectBase`.
+Renamed ``cocotb.handle.NonConstantObject`` to :class:`~cocotb.handle.ValueObjectBase`.

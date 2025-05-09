@@ -1,1 +1,0 @@
-The ``test_args`` argument to :meth:`Runner.test() <cocotb_tools.runner.Runner.test>` is now passed to the Verilator simulation binary when running the simulation, which was previously missing.

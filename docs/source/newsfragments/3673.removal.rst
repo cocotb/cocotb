@@ -1,1 +1,0 @@
-Removed ``cocotb.logging.SimLog``, use :meth:`logging.getLogger` instead.

@@ -1,1 +1,1 @@
-Removed the ``cycles`` argument to :meth:`Clock.start() <cocotb.clock.Clock.start>`. Use :meth:`.Task.cancel` on the clock task instead.
+Removed the ``cycles`` argument to :meth:`Clock.start() <cocotb.clock.Clock.start>`. Use :meth:`.Clock.stop` to stop the Clock at the desired time instead.

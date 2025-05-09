@@ -1,1 +1,0 @@
-The ``sources`` option was added to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` to better support building mixed-language designs.

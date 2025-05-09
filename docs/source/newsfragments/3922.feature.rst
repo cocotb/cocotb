@@ -1,1 +1,0 @@
-Riviera-PRO now supports compilation into (multiple) VHDL libraries using :make:var:`VHDL_SOURCES_\<lib\>`.
