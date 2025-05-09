@@ -33,7 +33,7 @@ PYTHON_BIN_RES := $(shell cocotb-config --python-bin 2>>/dev/null; echo $$?)
 PYTHON_BIN_RC := $(lastword $(PYTHON_BIN_RES))
 PYTHON_BIN := $(strip $(subst $(PYTHON_BIN_RC)QQQQ,,$(PYTHON_BIN_RES)QQQQ))
 ifneq ($(PYTHON_BIN_RC),0)
-    PYTHON_BIN := python
+    PYTHON_BIN := python3
 endif
 
 export PYGPI_PYTHON_BIN := $(shell $(PYTHON_BIN) -m cocotb_tools.config --python-bin)
