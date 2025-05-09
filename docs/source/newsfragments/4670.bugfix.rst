@@ -1,0 +1,1 @@
+Fix segfault when using VCS Slave Mode.

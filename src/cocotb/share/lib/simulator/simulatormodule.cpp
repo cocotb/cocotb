@@ -163,11 +163,11 @@ int handle_gpi_callback(void *user_data) {
     to_python();
     DEFER(to_simulator());
 
-    PythonCallback *cb_data = (PythonCallback *)user_data;
-    DEFER(delete cb_data);
-
     PyGILState_STATE gstate = PyGILState_Ensure();
     DEFER(PyGILState_Release(gstate));
+
+    PythonCallback *cb_data = (PythonCallback *)user_data;
+    DEFER(delete cb_data);
 
     // Call the callback
     PyObject *pValue =
