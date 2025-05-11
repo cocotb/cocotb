@@ -1,0 +1,1 @@
+Added :meth:`.Logic.resolve` and :meth:`.LogicArray.resolve` to resolve non-``0``/``1`` values on demand.

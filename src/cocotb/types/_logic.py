@@ -10,6 +10,8 @@ from typing import (
     Union,
 )
 
+from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
+
 LogicLiteralT = Union[str, int, bool]
 LogicConstructibleT = Union[LogicLiteralT, "Logic"]
 
@@ -228,19 +230,64 @@ class Logic:
     def __str__(self) -> str:
         return ("U", "X", "0", "1", "Z", "W", "L", "H", "-")[self._repr]
 
-    def __bool__(self) -> bool:
-        if self._repr in (_0, _L):
-            return False
-        elif self._repr in (_1, _H):
-            return True
-        raise ValueError(f"Cannot convert {self!r} to bool")
+    if RESOLVE_X is None:
 
-    def __int__(self) -> int:
-        if self._repr in (_0, _L):
-            return 0
-        elif self._repr in (_1, _H):
-            return 1
-        raise ValueError(f"Cannot convert {self!r} to int")
+        def __bool__(self) -> bool:
+            if self._repr in (_0, _L):
+                return False
+            elif self._repr in (_1, _H):
+                return True
+            raise ValueError(f"Cannot convert {self!r} to bool")
+
+        def __int__(self) -> int:
+            if self._repr in (_0, _L):
+                return 0
+            elif self._repr in (_1, _H):
+                return 1
+            raise ValueError(f"Cannot convert {self!r} to int")
+
+    else:
+
+        def __bool__(self) -> bool:
+            if self._repr in (_1, _H):
+                return True
+            return False
+
+        def __int__(self) -> int:
+            s = str(self)
+            s = RESOLVE_X(s)  # type: ignore  # mypy fails to narrow RESOLVE_X here
+            return int(s, 2)
 
     def __index__(self) -> int:
         return int(self)
+
+    def resolve(self, resolver: ResolverLiteral) -> "Logic":
+        """Resolves non-0/1 values to 0/1.
+
+        The possible values of the *resolver* argument are:
+
+        * ``"weak"``: Weak values are resolved to their strong-valued equivalents.
+
+        * ``"zeros"``:
+            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+            Remaining non-``0``/``1`` values are resolved to ``0``.
+
+        * ``"ones"``:
+            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+            Remaining non-``0``/``1`` values are resolved to ``1``.
+
+        * ``"random"``:
+            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+            Remaining non-``0``/``1`` values are randomly resolved to either ``0`` or ``1``.
+
+        Args:
+            resolver: How to resolve non-``0``/``1`` values. See possible values above.
+
+        Returns:
+            The resolved Logic.
+
+        Raises:
+            ValueError: Invalid *resolver* value.
+            TypeError: Unsupported *value* type.
+        """
+        return Logic(get_str_resolver(resolver)(str(self)))

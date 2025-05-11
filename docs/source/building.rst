@@ -170,21 +170,26 @@ Cocotb
     Defines how to resolve bits with a value of ``X``, ``Z``, ``U``, ``W``, or ``-`` when being converted to integer.
     Valid settings are:
 
-    ``VALUE_ERROR``
-       Raise a :exc:`ValueError` exception.
-    ``ZEROS``
-       Resolve to ``0``.
-    ``ONES``
-       Resolve to ``1``.
-    ``RANDOM``
-       Randomly resolve to a ``0`` or a ``1``.
+    ``error``
+        Resolves nothing.
+    ``weak``
+        Resolves ``L`` to ``0`` and ``H`` to ``1``.
+    ``zeros``
+        Like ``weak``, but resolves all other non-\ ``0``\ /\ ``1`` values to ``0``.
+    ``ones``
+        Like ``weak``, but resolves all other non-\ ``0``\ /\ ``1`` values to ``1``.
+    ``random``
+        Like ``weak``, but resolves all other non-\ ``0``\ /\ ``1`` values randomly to either ``0`` or ``1``.
 
-    Set to ``VALUE_ERROR`` by default.
+    There is also a slight difference in behavior of ``bool(logic)`` when this environment variable is set.
+    When this variable is set, ``bool(logic)`` treats all non-\ ``0``\ /\ ``1`` values as equivalent to ``0``.
+    When this variable is *not* set, ``bool(logic)`` will fail on non-\ ``0``\ /\ ``1`` values.
 
     .. warning::
+        Using this feature is *not* recommended.
 
-        This exists for backwards-compatability reasons.
-        Using any value besides ``VALUE_ERROR`` is *not* recommended.
+    .. deprecated:: 2.0
+        The previously accepted values ``VALUE_ERROR``, ``ZEROS``, ``ONES``, and ``RANDOM`` are deprecated.
 
 .. envvar:: LIBPYTHON_LOC
 

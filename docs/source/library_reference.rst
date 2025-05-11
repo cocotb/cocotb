@@ -137,11 +137,6 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
     :members:
     :inherited-members:
 
-.. autoclass:: cocotb.types.logic_array.ResolveX
-
-.. autodata:: cocotb.types.logic_array.RESOLVE_X
-
-
 .. _triggers::
 
 Triggers
