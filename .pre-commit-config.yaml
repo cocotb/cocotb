@@ -54,5 +54,15 @@ repos:
     additional_dependencies:
       - tomli
 
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v1.15.0
+  hooks:
+  - id: mypy
+    additional_dependencies:
+    - pytest
+    - coverage
+    - nox
+    exclude: ^(tests/|examples/|docs/|src/cocotb_tools/)
+
 ci:
   autofix_prs: false

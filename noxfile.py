@@ -2,11 +2,10 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import glob
-import os
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Tuple, cast
 
 import nox
 
@@ -48,10 +47,8 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
     # Simulators with support for VHDL through VHPI, and Verilog through VPI.
     standard = [
         (sim, toplevel_lang, gpi_interface)
-        for sim in ("activehdl", "riviera", "xcelium", "vcs")
-        for toplevel_lang in ("verilog", "vhdl")
-        for gpi_interface in ("vpi", "vhpi")
-        if (toplevel_lang, gpi_interface) in (("verilog", "vpi"), ("vhdl", "vhpi"))
+        for sim in ("activehdl", "riviera", "xcelium", "vcs", "questa")
+        for toplevel_lang, gpi_interface in (("verilog", "vpi"), ("vhdl", "vhpi"))
     ]
 
     # Special-case simulators.
@@ -61,9 +58,7 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
         ("ghdl", "vhdl", "vpi"),
         ("icarus", "verilog", "vpi"),
         ("nvc", "vhdl", "vhpi"),
-        ("questa", "verilog", "vpi"),
         ("questa", "vhdl", "fli"),
-        ("questa", "vhdl", "vhpi"),
         ("verilator", "verilog", "vpi"),
     ]
 
@@ -71,22 +66,13 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
 
 
 def env_vars_for_test(
-    sim: Optional[str], toplevel_lang: Optional[str], gpi_interface: Optional[str]
+    sim: str, toplevel_lang: str, gpi_interface: str
 ) -> Dict[str, str]:
     """Prepare the environment variables controlling the test run."""
-    e = {}
-    if sim is not None:
-        e["SIM"] = sim
-
-    if os.getenv("TOPLEVEL_LANG") is not None:
-        e["HDL_TOPLEVEL_LANG"] = os.getenv("TOPLEVEL_LANG")
-
-    if toplevel_lang is not None:
-        e["TOPLEVEL_LANG"] = toplevel_lang
-        e["HDL_TOPLEVEL_LANG"] = toplevel_lang
+    e = {"SIM": sim, "TOPLEVEL_LANG": toplevel_lang, "HDL_TOPLEVEL_LANG": toplevel_lang}
 
     assert not (toplevel_lang == "verilog" and gpi_interface != "vpi")
-    if toplevel_lang == "vhdl" and gpi_interface is not None:
+    if toplevel_lang == "vhdl":
         e["VHDL_GPI_INTERFACE"] = gpi_interface
 
     return e
@@ -158,9 +144,9 @@ def dev_test(session: nox.Session) -> None:
 @nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 def dev_test_sim(
     session: nox.Session,
-    sim: Optional[str],
-    toplevel_lang: Optional[str],
-    gpi_interface: Optional[str],
+    sim: str,
+    toplevel_lang: str,
+    gpi_interface: str,
 ) -> None:
     """Test a development version of cocotb against a simulator."""
 

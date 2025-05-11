@@ -102,7 +102,7 @@ class Test:
     def __init__(
         self,
         *,
-        func: Callable[..., Coroutine[Any, Any, None]],
+        func: Callable[..., Coroutine[Trigger, None, None]],
         name: Optional[str] = None,
         module: Optional[str] = None,
         doc: Optional[str] = None,
@@ -114,21 +114,19 @@ class Test:
         stage: int = 0,
         _expect_sim_failure: bool = False,
     ) -> None:
-        self.func: Callable[..., Coroutine[Any, Any, None]]
+        self.func: Callable[..., Coroutine[Trigger, None, None]]
         if timeout_time is not None:
             co = func  # must save ref because we overwrite variable "func"
 
             @functools.wraps(func)
-            async def f(*args, **kwargs):
+            async def f(*args: object, **kwargs: object) -> None:
                 running_co = Task(co(*args, **kwargs))
 
                 try:
-                    res = await with_timeout(running_co, timeout_time, timeout_unit)
+                    await with_timeout(running_co, timeout_time, timeout_unit)
                 except SimTimeoutError:
                     running_co.cancel()
                     raise
-                else:
-                    return res
 
             self.func = f
         else:

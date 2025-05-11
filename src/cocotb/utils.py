@@ -6,10 +6,10 @@
 
 """Utility functions for dealing with simulation time."""
 
-import math
 from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
+from math import ceil, floor
 from typing import Union, overload
 
 from cocotb import simulator
@@ -54,14 +54,20 @@ def get_sim_time(unit: TimeUnit = "step") -> float:
 
 
 @overload
-def _ldexp10(frac: Union[float, Fraction], exp: int) -> float: ...
+def _ldexp10(frac: float, exp: int) -> float: ...
+
+
+@overload
+def _ldexp10(frac: Fraction, exp: int) -> Fraction: ...
 
 
 @overload
 def _ldexp10(frac: Decimal, exp: int) -> Decimal: ...
 
 
-def _ldexp10(frac: Union[float, Fraction, Decimal], exp: int) -> Union[float, Decimal]:
+def _ldexp10(
+    frac: Union[float, Fraction, Decimal], exp: int
+) -> Union[float, Fraction, Decimal]:
     """Like :func:`math.ldexp`, but base 10."""
     # using * or / separately prevents rounding errors if `frac` is a
     # high-precision type
@@ -140,18 +146,18 @@ def get_sim_steps(
         result = time
 
     if round_mode == "error":
-        result_rounded = math.floor(result)
+        result_rounded = floor(result)
         if result_rounded != result:
             precision = _get_simulator_precision()
             raise ValueError(
                 f"Unable to accurately represent {time}({unit}) with the simulator precision of 1e{precision}"
             )
     elif round_mode == "ceil":
-        result_rounded = math.ceil(result)
+        result_rounded = ceil(result)
     elif round_mode == "round":
         result_rounded = round(result)
     elif round_mode == "floor":
-        result_rounded = math.floor(result)
+        result_rounded = floor(result)
     else:
         raise ValueError(f"Invalid round_mode specifier: {round_mode}")
 

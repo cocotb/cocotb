@@ -143,7 +143,7 @@ class Timer(GPITrigger):
         if self._sim_steps == 0:
             self._sim_steps = 1
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self, callback: Callable[["Self"], None]) -> None:
         """Register for a timed callback."""
         if self._cbhdl is None:
             self._cbhdl = simulator.register_timed_callback(
@@ -171,7 +171,7 @@ class ReadOnly(GPITrigger):
     Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
     """
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self, callback: Callable[["Self"], None]) -> None:
         if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadOnly in ReadOnly phase"
@@ -190,7 +190,7 @@ class ReadOnly(GPITrigger):
 class ReadWrite(GPITrigger):
     """Fires when the read-write simulation phase is reached."""
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self, callback: Callable[["Self"], None]) -> None:
         if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadWrite in ReadOnly phase"
@@ -209,7 +209,7 @@ class ReadWrite(GPITrigger):
 class NextTimeStep(GPITrigger):
     """Fires when the next time step is started."""
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self, callback: Callable[["Self"], None]) -> None:
         if self._cbhdl is None:
             self._cbhdl = simulator.register_nextstep_callback(callback, self)
             if self._cbhdl is None:
@@ -239,7 +239,7 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
     def __init__(self, _: _SignalType) -> None:
         pass
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self, callback: Callable[["Self"], None]) -> None:
         if self._cbhdl is None:
             self._cbhdl = simulator.register_value_change_callback(
                 self.signal._handle, callback, type(self)._edge_type, self
@@ -252,7 +252,7 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
         return f"{type(self).__qualname__}({self.signal!r})"
 
 
-class RisingEdge(_EdgeBase):
+class RisingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
     """Fires on the rising edge of *signal*, on a transition to ``1``.
 
     Only valid for scalar ``logic`` or ``bit``-typed signals.
@@ -281,7 +281,7 @@ class RisingEdge(_EdgeBase):
         return signal.rising_edge
 
 
-class FallingEdge(_EdgeBase):
+class FallingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
     """Fires on the falling edge of *signal*, on a transition to ``0``.
 
     Only valid for scalar ``logic`` or ``bit``-typed signals.
@@ -310,7 +310,7 @@ class FallingEdge(_EdgeBase):
         return signal.falling_edge
 
 
-class ValueChange(_EdgeBase):
+class ValueChange(_EdgeBase["cocotb.handle._NonIndexableValueObjectBase[Any, Any]"]):
     """Fires on any value change of *signal*.
 
     Args:

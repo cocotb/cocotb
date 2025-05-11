@@ -445,7 +445,7 @@ class HierarchyObject(_HierarchyObjectBase[str]):
 
     def __getattr__(self, name: str) -> SimHandleBase:
         if name.startswith("_"):
-            return object.__getattribute__(self, name)  # type: ignore[no-any-return]  # this will always AttributeError
+            return object.__getattribute__(self, name)
 
         handle = self._get(name)
         if handle is None:
@@ -763,7 +763,7 @@ def _apply_scheduled_writes() -> None:
 
 if _trust_inertial:
 
-    def _schedule_write(  # type: ignore  # pylance doesn't like if/else function definitions
+    def _schedule_write(
         handle: "ValueObjectBase[Any, Any]",
         write_func: Callable[[int, _ValueT], None],
         action: _GPISetAction,

@@ -107,7 +107,9 @@ class _Parameterized(Generic[F]):
 
             # create wrapper function to bind kwargs
             @functools.wraps(self.test_function)
-            async def _my_test(dut, kwargs: Dict[str, Any] = test_kwargs) -> None:
+            async def _my_test(
+                dut: object, kwargs: Dict[str, Any] = test_kwargs
+            ) -> None:
                 await self.test_function(dut, **kwargs)
 
             yield Test(
@@ -147,7 +149,7 @@ def _repr(v: Any) -> Optional[str]:
         return repr(v)
     elif isinstance(v, type):
         return v.__qualname__
-    elif callable(v) and hasattr(v, "__qualname__"):
+    elif hasattr(v, "__qualname__"):
         return v.__qualname__
     else:
         return None
