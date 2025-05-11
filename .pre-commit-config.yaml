@@ -62,7 +62,7 @@ repos:
     - pytest
     - coverage
     - nox
-    exclude: ^(tests/|examples/|docs/|src/cocotb_tools/)
+    files: ^(src/cocotb/|src/pygpi/|noxfile.py)
 
 ci:
   autofix_prs: false
