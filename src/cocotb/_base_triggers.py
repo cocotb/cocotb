@@ -12,7 +12,6 @@ import warnings
 from typing import (
     Any,
     AsyncContextManager,
-    Awaitable,
     Callable,
     Generator,
     List,
@@ -28,7 +27,7 @@ if sys.version_info >= (3, 11):
     from typing import Self
 
 
-class Trigger(Awaitable["Trigger"]):
+class Trigger:
     """A future event that a Task can wait upon."""
 
     def __init__(self) -> None:
@@ -38,7 +37,7 @@ class Trigger(Awaitable["Trigger"]):
     def _log(self) -> logging.Logger:
         return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
-    def _prime(self, callback: Callable[["Trigger"], None]) -> None:
+    def _prime(self, callback: Callable[["Self"], None]) -> None:
         """Set a callback to be invoked when the trigger fires.
 
         The callback will be invoked with a single argument, `self`.
@@ -89,7 +88,7 @@ class _Event(Trigger):
         super().__init__()
         self._parent = parent
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self, callback: Callable[["_Event"], None]) -> None:
         if self._primed:
             raise RuntimeError(
                 "Event.wait() result can only be used by one task at a time"
@@ -180,7 +179,7 @@ class Event:
         self._data = new_data
 
     def _prime_trigger(
-        self, trigger: _Event, callback: Callable[[Trigger], None]
+        self, trigger: _Event, callback: Callable[[_Event], None]
     ) -> None:
         self._pending_events.append(trigger)
 
@@ -246,10 +245,10 @@ class _InternalEvent(Trigger):
     def __init__(self, parent: object) -> None:
         super().__init__()
         self._parent = parent
-        self._callback: Optional[Callable[[Trigger], None]] = None
+        self._callback: Optional[Callable[[_InternalEvent], None]] = None
         self.fired: bool = False
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self, callback: Callable[["_InternalEvent"], None]) -> None:
         if self._primed:
             raise RuntimeError("This Trigger may only be awaited once")
         self._callback = callback
@@ -295,7 +294,7 @@ class _Lock(Trigger):
         super().__init__()
         self._parent = parent
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self, callback: Callable[["Self"], None]) -> None:
         if self._primed:
             raise RuntimeError(
                 "Lock.acquire() result can only be used by one task at a time"
@@ -481,7 +480,7 @@ class NullTrigger(Trigger):
         super().__init__()
         self.name = name
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self, callback: Callable[["Self"], None]) -> None:
         if self._primed:
             return
         callback(self)

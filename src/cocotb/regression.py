@@ -312,11 +312,11 @@ class RegressionManager:
 
         return self._tear_down()
 
-    def _schedule_next_test(self, trigger: Optional[Trigger] = None) -> None:
-        if trigger is not None:
-            # TODO move to Trigger object
-            cocotb._gpi_triggers._current_gpi_trigger = trigger
-            trigger._cleanup()
+    def _schedule_next_test(self, trigger: cocotb._gpi_triggers.GPITrigger) -> None:
+        # TODO move to Trigger object
+        cocotb._gpi_triggers._current_gpi_trigger = trigger
+        trigger._cleanup()
+
         self._test.start()
 
     def _tear_down(self) -> None:
@@ -836,7 +836,7 @@ class RegressionManager:
                 return float("inf")
 
 
-F = TypeVar("F", bound=Callable[..., Coroutine[Any, Any, None]])
+F = TypeVar("F", bound=Callable[..., Coroutine[Trigger, None, None]])
 
 
 class TestFactory(Generic[F]):
@@ -1085,7 +1085,7 @@ class TestFactory(Generic[F]):
             kwargs.update(testoptions_split)
 
             @functools.wraps(self.test_function)
-            async def _my_test(dut, kwargs: Dict[str, Any] = kwargs) -> None:
+            async def _my_test(dut: object, kwargs: Dict[str, Any] = kwargs) -> None:
                 await self.test_function(dut, *self.args, **kwargs)
 
             _my_test.__doc__ = doc

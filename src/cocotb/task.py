@@ -459,7 +459,7 @@ class TaskComplete(Trigger, Generic[ResultType]):
         self._task = task
         return self
 
-    def _prime(self, callback: Callable[[Trigger], None]) -> None:
+    def _prime(self, callback: Callable[["Self"], None]) -> None:
         if self._task.done():
             callback(self)
         else:

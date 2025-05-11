@@ -4,10 +4,10 @@
 import functools
 import logging
 import os
+import sys
 import threading
 from enum import IntEnum
 from typing import (
-    Any,
     Callable,
     Coroutine,
     Generic,
@@ -20,6 +20,11 @@ from cocotb._base_triggers import Event, Trigger
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Outcome
 
+if sys.version_info >= (3, 10):
+    from typing import ParamSpec
+
+    P = ParamSpec("P")
+
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
@@ -28,8 +33,8 @@ Result = TypeVar("Result")
 
 
 def resume(
-    func: Callable[..., Coroutine[Trigger, None, Result]],
-) -> Callable[..., Result]:
+    func: "Callable[P, Coroutine[Trigger, None, Result]]",
+) -> "Callable[P, Result]":
     """Converts a coroutine function into a blocking function.
 
     This allows a :term:`coroutine function` that awaits cocotb triggers to be
@@ -59,13 +64,15 @@ def resume(
     """
 
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> Result:
         return cocotb._scheduler_inst._queue_function(func(*args, **kwargs))
 
     return wrapper
 
 
-def bridge(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Result]]:
+def bridge(
+    func: "Callable[P, Result]",
+) -> "Callable[P, Coroutine[Trigger, None, Result]]":
     r"""Converts a blocking function into a coroutine function.
 
     This function converts a :term:`blocking function` into a :term:`coroutine function`
@@ -97,7 +104,9 @@ def bridge(func: Callable[..., Result]) -> Callable[..., Coroutine[Any, Any, Res
     """
 
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(
+        *args: "P.args", **kwargs: "P.kwargs"
+    ) -> Coroutine[Trigger, None, Result]:
         return cocotb._scheduler_inst._run_in_executor(func, *args, **kwargs)
 
     return wrapper
@@ -125,7 +134,7 @@ class external_waiter(Generic[Result]):
             raise InternalError("Got result of external before it finished")
         return self._outcome.get()
 
-    def _propagate_state(self, new_state):
+    def _propagate_state(self, new_state: external_state) -> None:
         with self.cond:
             if _debug:
                 self._log.debug(
@@ -134,15 +143,15 @@ class external_waiter(Generic[Result]):
             self.state = new_state
             self.cond.notify()
 
-    def thread_done(self):
+    def thread_done(self) -> None:
         if _debug:
             self._log.debug(f"Thread finished from {threading.current_thread()}")
         self._propagate_state(external_state.EXITED)
 
-    def thread_suspend(self):
+    def thread_suspend(self) -> None:
         self._propagate_state(external_state.PAUSED)
 
-    def thread_start(self):
+    def thread_start(self) -> None:
         if self.state > external_state.INIT:
             return
 
@@ -150,10 +159,10 @@ class external_waiter(Generic[Result]):
             self._propagate_state(external_state.RUNNING)
             self.thread.start()
 
-    def thread_resume(self):
+    def thread_resume(self) -> None:
         self._propagate_state(external_state.RUNNING)
 
-    def thread_wait(self):
+    def thread_wait(self) -> external_state:
         if _debug:
             self._log.debug(
                 f"Waiting for the condition lock {threading.current_thread()}"
@@ -171,10 +180,6 @@ class external_waiter(Generic[Result]):
                 elif self.state == external_state.PAUSED:
                     self._log.debug(
                         f"Thread {self.thread} has called yield from {threading.current_thread()}"
-                    )
-                elif self.state == external_state.RUNNING:
-                    self._log.debug(
-                        f"Thread {self.thread} is in RUNNING from {threading.current_thread()}"
                     )
 
             if self.state == external_state.INIT:

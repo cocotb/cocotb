@@ -15,29 +15,39 @@ the ReadOnly (and this is invalid, at least in Modelsim).
 
 import logging
 import os
+import sys
 import threading
 from bdb import BdbQuit
 from collections import OrderedDict
-from typing import Any, Dict, Union
+from typing import Any, Callable, Coroutine, Dict, List, TypeVar, Union
 
 import cocotb
+import cocotb._gpi_triggers
 import cocotb.handle
+from cocotb._base_triggers import Event, Trigger
 from cocotb._bridge import external_state, external_waiter
 from cocotb._exceptions import InternalError
 from cocotb._gpi_triggers import (
     GPITrigger,
     NextTimeStep,
     ReadWrite,
-    Trigger,
 )
-from cocotb._outcomes import Error, Value, capture
+from cocotb._outcomes import Error, Outcome, Value, capture
 from cocotb._profiling import profiling_context
 from cocotb._py_compat import insertion_ordered_dict
 from cocotb.task import Task, _TaskState
 
+if sys.version_info >= (3, 10):
+    from typing import ParamSpec
+
+    P = ParamSpec("P")
+
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
+
+
+T = TypeVar("T")
 
 
 class Scheduler:
@@ -119,19 +129,21 @@ class Scheduler:
 
         # A dictionary of pending tasks for each trigger,
         # indexed by trigger
-        self._trigger2tasks: Dict[Trigger, list[Task]] = insertion_ordered_dict()
+        self._trigger2tasks: Dict[Trigger, list[Task[object]]] = (
+            insertion_ordered_dict()
+        )
 
-        self._scheduled_tasks: OrderedDict[Task[Any], Union[BaseException, None]] = (
+        self._scheduled_tasks: OrderedDict[Task[object], Union[BaseException, None]] = (
             OrderedDict()
         )
-        self._pending_threads = []
-        self._pending_events = []  # Events we need to call set on once we've unwound
+        self._pending_threads: List[external_waiter[Any]] = []
+        self._pending_events: List[Event] = []
 
         self._main_thread = threading.current_thread()
 
-        self._current_task = None
+        self._current_task: Union[Task[object], None] = None
 
-    def _sim_react(self, trigger: Trigger) -> None:
+    def _sim_react(self, trigger: GPITrigger) -> None:
         """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
 
         This is often the entry point into Python from the simulator,
@@ -292,7 +304,7 @@ class Scheduler:
         task._state = _TaskState.SCHEDULED
         self._scheduled_tasks[task] = exc
 
-    def _queue_function(self, task):
+    def _queue_function(self, task: Coroutine[Trigger, None, T]) -> T:
         """Queue a task for execution and move the containing thread
         so that it does not block execution of the main thread any longer.
         """
@@ -307,17 +319,19 @@ class Scheduler:
         # each entry always has a unique thread.
         (t,) = matching_threads
 
-        async def wrapper():
+        outcome: Union[Outcome[T], None] = None
+
+        async def wrapper() -> None:
+            nonlocal outcome
             # This function runs in the scheduler thread
             try:
-                _outcome = Value(await task)
+                outcome = Value(await task)
             except (KeyboardInterrupt, SystemExit, BdbQuit):
                 # Allow these to bubble up to the execution root to fail the sim immediately.
                 # This follows asyncio's behavior.
                 raise
             except BaseException as e:
-                _outcome = Error(e)
-            event.outcome = _outcome
+                outcome = Error(e)
             # Notify the current (scheduler) thread that we are about to wake
             # up the background (`@external`) thread, making sure to do so
             # before the background thread gets a chance to go back to sleep by
@@ -335,9 +349,12 @@ class Scheduler:
         t.thread_suspend()
         # This blocks the calling `@external` thread until the task finishes
         event.wait()
-        return event.outcome.get()
+        assert outcome is not None
+        return outcome.get()
 
-    def _run_in_executor(self, func, *args, **kwargs):
+    def _run_in_executor(
+        self, func: "Callable[P, T]", *args: "P.args", **kwargs: "P.kwargs"
+    ) -> Coroutine[Trigger, None, T]:
         """Run the task in a separate execution thread
         and return an awaitable object for the caller.
         """
@@ -347,22 +364,21 @@ class Scheduler:
         # Event object set when the thread finishes execution, this blocks the
         # calling task (but not the thread) until the external completes
 
-        def execute_external(func, _waiter):
-            _waiter._outcome = capture(func, *args, **kwargs)
+        waiter = external_waiter[T]()
+
+        def execute_external() -> None:
+            waiter._outcome = capture(func, *args, **kwargs)
             if _debug:
                 self.log.debug(
                     f"Execution of external routine done {threading.current_thread()}"
                 )
-            _waiter.thread_done()
+            waiter.thread_done()
 
-        async def wrapper():
-            waiter = external_waiter()
+        async def wrapper() -> T:
             thread = threading.Thread(
                 group=None,
                 target=execute_external,
                 name=func.__qualname__ + "_thread",
-                args=([func, waiter]),
-                kwargs={},
             )
 
             waiter.thread = thread
@@ -374,7 +390,7 @@ class Scheduler:
 
         return wrapper()
 
-    def _resume_task(self, task: Task, exc: Union[BaseException, None]) -> None:
+    def _resume_task(self, task: Task[object], exc: Union[BaseException, None]) -> None:
         """Resume *task* with *outcome*.
 
         Args:
