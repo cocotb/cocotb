@@ -3,12 +3,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import os
 import warnings
+from typing import Any
 
 import pytest
+from common import assert_takes
 
 import cocotb
+from cocotb.clock import Clock
 from cocotb.regression import TestFactory
 from cocotb.triggers import Edge, Event, First, Join, Timer
+from cocotb.utils import get_sim_steps, get_sim_time, get_time_from_sim_steps
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
@@ -194,3 +198,20 @@ async def test_event_name_deprecated(_) -> None:
 
     with pytest.warns(DeprecationWarning):
         assert e.name == "test2"
+
+
+@cocotb.test
+async def test_units_deprecated(dut: Any) -> None:
+    with assert_takes(10, "ns"):
+        with pytest.warns(DeprecationWarning):
+            await Timer(10, units="ns")
+    with pytest.warns(DeprecationWarning):
+        assert Clock(dut.clk, 10, units="ns").unit == "ns"
+    with pytest.warns(DeprecationWarning):
+        assert get_sim_time(units="ns") == get_sim_time("ns")
+    with pytest.warns(DeprecationWarning):
+        assert get_sim_steps(10, units="ns") == get_sim_steps(10, "ns")
+    with pytest.warns(DeprecationWarning):
+        assert get_time_from_sim_steps(10, units="ns") == get_time_from_sim_steps(
+            10, "ns"
+        )

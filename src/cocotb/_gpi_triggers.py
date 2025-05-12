@@ -7,6 +7,7 @@
 """A collection of triggers which a testbench can :keyword:`await`."""
 
 import sys
+import warnings
 from decimal import Decimal
 from fractions import Fraction
 from typing import (
@@ -131,10 +132,17 @@ class Timer(GPITrigger):
         unit: TimeUnit = "step",
         *,
         round_mode: Optional[str] = None,
+        units: None = None,
     ) -> None:
         super().__init__()
         if time <= 0:
             raise ValueError("Timer argument time must be positive")
+        if units is not None:
+            warnings.warn(
+                "The 'units' argument has been renamed to 'unit'.",
+                DeprecationWarning,
+            )
+            unit = units
         if round_mode is None:
             round_mode = type(self).round_mode
         self._sim_steps = get_sim_steps(time, unit, round_mode=round_mode)
