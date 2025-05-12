@@ -6,6 +6,7 @@
 
 """Utility functions for dealing with simulation time."""
 
+import warnings
 from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
@@ -25,7 +26,7 @@ def _get_simulator_precision() -> int:
 
 
 # Simulator helper functions
-def get_sim_time(unit: TimeUnit = "step") -> float:
+def get_sim_time(unit: TimeUnit = "step", *, units: None = None) -> float:
     """Retrieve the simulation time from the simulator.
 
     Args:
@@ -48,6 +49,12 @@ def get_sim_time(unit: TimeUnit = "step") -> float:
     .. versionchanged:: 1.6
         Support ``'step'`` as the the *unit* argument to mean "simulator time step".
     """
+    if units is not None:
+        warnings.warn(
+            "The 'units' argument has been renamed to 'unit'.",
+            DeprecationWarning,
+        )
+        unit = units
     timeh, timel = simulator.get_sim_time()
     steps = timeh << 32 | timel
     return get_time_from_sim_steps(steps, unit) if unit != "step" else steps
@@ -77,7 +84,12 @@ def _ldexp10(
         return frac / (10**-exp)
 
 
-def get_time_from_sim_steps(steps: int, unit: TimeUnit) -> float:
+def get_time_from_sim_steps(
+    steps: int,
+    unit: Union[TimeUnit, None] = None,
+    *,
+    units: None = None,
+) -> float:
     """Calculate simulation time in the specified *unit* from the *steps* based
     on the simulator precision.
 
@@ -95,6 +107,14 @@ def get_time_from_sim_steps(steps: int, unit: TimeUnit) -> float:
     Returns:
         The simulation time in the specified unit.
     """
+    if units is not None:
+        warnings.warn(
+            "The 'units' argument has been renamed to 'unit'.",
+            DeprecationWarning,
+        )
+        unit = units
+    if unit is None:
+        raise TypeError("Missing required argument 'unit'")
     if unit == "step":
         return steps
     return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(unit))
@@ -105,6 +125,7 @@ def get_sim_steps(
     unit: TimeUnit = "step",
     *,
     round_mode: str = "error",
+    units: None = None,
 ) -> int:
     """Calculates the number of simulation time steps for a given amount of *time*.
 
@@ -139,6 +160,12 @@ def get_sim_steps(
     .. versionchanged:: 1.6
         Support rounding modes.
     """
+    if units is not None:
+        warnings.warn(
+            "The 'units' argument has been renamed to 'unit'.",
+            DeprecationWarning,
+        )
+        unit = units
     result: Union[float, Fraction, Decimal]
     if unit != "step":
         result = _ldexp10(time, _get_log_time_scale(unit) - _get_simulator_precision())

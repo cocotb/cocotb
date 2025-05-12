@@ -8,6 +8,7 @@
 
 import logging
 import sys
+import warnings
 from decimal import Decimal
 from fractions import Fraction
 from logging import Logger
@@ -132,9 +133,17 @@ class Clock:
         period: Union[float, Fraction, Decimal],
         unit: TimeUnit = "step",
         impl: "Impl | None" = None,
+        *,
+        units: None = None,
     ) -> None:
         self._signal = signal
         self._period = period
+        if units is not None:
+            warnings.warn(
+                "The 'units' argument has been renamed to 'unit'.",
+                DeprecationWarning,
+            )
+            unit = units
         self._unit: TimeUnit = unit
 
         if impl is None:
