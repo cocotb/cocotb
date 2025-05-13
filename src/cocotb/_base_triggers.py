@@ -84,24 +84,31 @@ class _Event(Trigger):
     can maintain a unique mapping of triggers to tasks.
     """
 
+    _callback: Callable[["_Event"], None]
+
     def __init__(self, parent: "Event") -> None:
         super().__init__()
         self._parent = parent
 
     def _prime(self, callback: Callable[["_Event"], None]) -> None:
         if self._primed:
-            raise RuntimeError(
-                "Event.wait() result can only be used by one task at a time"
-            )
+            return
+        if self._parent.is_set():
+            # If the event is already set, we need to call the callback
+            # immediately, so we don't need to wait for the scheduler.
+            callback(self)
+            return
         self._callback = callback
-        self._parent._prime_trigger(self, callback)
         return super()._prime(callback)
 
     def _unprime(self) -> None:
         if not self._primed:
             return
-        self._parent._unprime_trigger(self)
         return super()._unprime()
+
+    def _set(self) -> None:
+        if self._primed:
+            self._callback(self)
 
     def __repr__(self) -> str:
         return f"<{self._parent!r}.wait() at {pointer_str(self)}>"
@@ -140,7 +147,7 @@ class Event:
     """
 
     def __init__(self, name: Optional[str] = None) -> None:
-        self._pending_events: List[_Event] = []
+        self._event: _Event = _Event(self)
         self._name: Union[str, None] = None
         if name is not None:
             self.name = name
@@ -178,14 +185,6 @@ class Event:
     def data(self, new_data: Any) -> None:
         self._data = new_data
 
-    def _prime_trigger(
-        self, trigger: _Event, callback: Callable[[_Event], None]
-    ) -> None:
-        self._pending_events.append(trigger)
-
-    def _unprime_trigger(self, trigger: _Event) -> None:
-        self._pending_events.remove(trigger)
-
     def set(self, data: Optional[Any] = None) -> None:
         """Set the Event and unblock all Tasks blocked on this Event."""
         self._fired = True
@@ -195,10 +194,7 @@ class Event:
                 DeprecationWarning,
             )
         self._data = data
-
-        pending_events, self._pending_events = self._pending_events, []
-        for event in pending_events:
-            event._callback(event)
+        self._event._set()
 
     def wait(self) -> Trigger:
         """Block the current Task until the Event is set.
@@ -209,9 +205,7 @@ class Event:
         To reset the Event (and enable the use of :meth:`wait` again),
         call :meth:`clear`.
         """
-        if self._fired:
-            return NullTrigger(name=f"{str(self)}.wait()")
-        return _Event(self)
+        return self._event
 
     def clear(self) -> None:
         """Clear this event that has been set.

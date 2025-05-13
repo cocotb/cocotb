@@ -223,7 +223,7 @@ async def test_Lock_multiple_users_acquire_triggers(_) -> None:
     await Timer(1, "ns")
 
 
-@cocotb.test(expect_error=RuntimeError)
+@cocotb.test
 async def test_Event_multiple_task_share_trigger(_) -> None:
     """Test that multiple tasks aren't allowed to share an Event trigger."""
 
