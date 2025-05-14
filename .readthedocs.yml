@@ -21,3 +21,8 @@ python:
 
 sphinx:
   configuration: documentation/source/conf.py
+
+# Build PDF & ePub
+formats:
+  - epub
+  - pdf
