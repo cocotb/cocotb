@@ -7,7 +7,7 @@ Tests for synchronization primitives like Lock and Event
 
 import random
 import re
-from typing import List
+from typing import Any, List
 
 import pytest
 from common import assert_takes
@@ -21,6 +21,7 @@ from cocotb.triggers import (
     NullTrigger,
     ReadOnly,
     Timer,
+    with_timeout,
 )
 
 
@@ -222,7 +223,7 @@ async def test_Lock_multiple_users_acquire_triggers(_) -> None:
     await Timer(1, "ns")
 
 
-@cocotb.test(expect_error=RuntimeError)
+@cocotb.test
 async def test_Event_multiple_task_share_trigger(_) -> None:
     """Test that multiple tasks aren't allowed to share an Event trigger."""
 
@@ -235,3 +236,16 @@ async def test_Event_multiple_task_share_trigger(_) -> None:
     cocotb.start_soon(waiter(e_trigger))
 
     await Timer(1, "ns")
+
+
+@cocotb.test
+async def test_Event_wait_after_set(_: Any) -> None:
+    """Test that getting the _Event Trigger, setting it, then awaiting the Trigger doesn't hang."""
+
+    e = Event()
+    trigger = e.wait()
+
+    e.set()
+
+    # Should not block
+    await with_timeout(trigger, 1, "step")
