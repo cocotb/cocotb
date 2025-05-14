@@ -1,1 +1,1 @@
-Support specifying arguments like in :meth:`TestFactory.add_option() <cocotb.regression.TestFactory.add_option>` in :func:`.parametrize`.
+Support specifying arguments like in :meth:`TestFactory.add_option() <cocotb.regression.TestFactory.add_option>` in :func:`cocotb.parametrize`.

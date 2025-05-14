@@ -84,7 +84,7 @@ Writing and Generating Tests
 
 .. autofunction:: cocotb.test
 
-.. autofunction:: cocotb.regression.parametrize
+.. autofunction:: cocotb.parametrize
 
 .. autoclass:: cocotb.regression.TestFactory
     :members:
@@ -395,7 +395,7 @@ Miscellaneous
 Test Control
 ------------
 
-.. autofunction:: cocotb.regression.pass_test
+.. autofunction:: cocotb.pass_test
 
 Other Runtime Information
 -------------------------

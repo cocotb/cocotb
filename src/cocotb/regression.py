@@ -37,11 +37,11 @@ from typing import (
 
 import cocotb
 import cocotb._gpi_triggers
+import cocotb._scheduler
 import cocotb.handle
 from cocotb import _ANSI, simulator
-from cocotb._decorators import parametrize
 from cocotb._outcomes import Error
-from cocotb._test import Failed, SimFailure, Test, pass_test
+from cocotb._test import Failed, SimFailure, Test
 from cocotb._typing import TimeUnit
 from cocotb._utils import (
     DocEnum,
@@ -51,15 +51,6 @@ from cocotb._utils import (
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.triggers import Timer, Trigger
 from cocotb.utils import get_sim_time
-
-__all__ = (
-    "RegressionManager",
-    "RegressionMode",
-    "Test",
-    "TestFactory",
-    "parametrize",
-    "pass_test",
-)
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
@@ -900,12 +891,12 @@ class TestFactory(Generic[F]):
         You can now pass :func:`cocotb.test` decorator arguments when generating tests.
 
     .. deprecated:: 2.0
-        Use :func:`cocotb.regression.parametrize` instead.
+        Use :func:`cocotb.parametrize` instead.
     """
 
     def __init__(self, test_function: F, *args: Any, **kwargs: Any) -> None:
         warnings.warn(
-            "TestFactory is deprecated, use `@cocotb.regression.parametrize` instead",
+            "TestFactory is deprecated, use `@cocotb.parametrize` instead",
             DeprecationWarning,
             stacklevel=2,
         )

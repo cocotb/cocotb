@@ -117,7 +117,6 @@ codeautolink_autodoc_inject = True  # Inject an autolink-examples table to the e
 # import statements that are often used in code examples
 codeautolink_global_preface = textwrap.dedent("""\
     import cocotb
-    import cocotb.regression
     from cocotb.clock import Clock
     from cocotb.triggers import Combine, Edge, FallingEdge, First, Join, RisingEdge, Timer, with_timeout
     from cocotb.types import Array, Logic, LogicArray, Range
