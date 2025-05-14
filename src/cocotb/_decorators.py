@@ -366,7 +366,7 @@ def parametrize(
         @cocotb.test(
             skip=False,
         )
-        @parametrize(
+        @cocotb.parametrize(
             arg1=[0, 1],
             arg2=["a", "b"],
         )
@@ -405,14 +405,10 @@ def parametrize(
 
     .. code-block:: python
 
-        @cocotb.test
-        @cocotb.regression.parametrize(
+        @cocotb.parametrize(
             ("arg1", [0, 1]),
-            (("arg2", "arg3"), [(1, 2), (3, 4)]),
+            (("arg2", "arg3"), [(1, 2), (3, 4)])
         )
-        async def test(dut, arg1, arg2):
-            # do stuff
-            ...
 
     Args:
         options_by_tuple:
