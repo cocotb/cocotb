@@ -240,9 +240,6 @@ class TestFactory:
         # trust the user puts a reasonable stacklevel in
         glbs = cast(FrameType, inspect.stack()[stacklevel][0].f_back).f_globals
 
-        if "__cocotb_tests__" not in glbs:
-            glbs["__cocotb_tests__"] = []
-
         test_func_name = self.test_function.__qualname__ if name is None else name
 
         for index, testoptions in enumerate(
@@ -295,18 +292,23 @@ class TestFactory:
                     glbs["__name__"],
                 )
 
+            if timeout_time is not None:
+                if timeout_unit is None:
+                    raise TypeError("Must pass both timeout_time and timeout_unit")
+                timeout = (timeout_time, timeout_unit)
+            else:
+                timeout = None
+
             test = Test(
                 func=_my_test,
                 name=name,
                 module=glbs["__name__"],
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
+                timeout=timeout,
                 expect_fail=expect_fail,
                 expect_error=expect_error,
                 skip=skip,
                 stage=stage,
-                _expect_sim_failure=_expect_sim_failure,
+                expect_sim_failure=_expect_sim_failure,
             )
 
-            glbs["__cocotb_tests__"].append(test)
             glbs[test.name] = test

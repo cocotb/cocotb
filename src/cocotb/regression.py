@@ -25,8 +25,9 @@ import cocotb
 import cocotb._gpi_triggers
 import cocotb.handle
 from cocotb import _ANSI, simulator
+from cocotb._decorators import TestGenerator
 from cocotb._outcomes import Error
-from cocotb._test import Failed, SimFailure, Test
+from cocotb._test import Failed, RunningTest, SimFailure, Test
 from cocotb._test_factory import TestFactory
 from cocotb._utils import (
     DocEnum,
@@ -42,6 +43,7 @@ __all__ = (
     "RegressionMode",
     "Test",
     "TestFactory",
+    "TestGenerator",
 )
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
@@ -94,6 +96,7 @@ class RegressionManager:
 
     def __init__(self) -> None:
         self._test: Test
+        self._running_test: RunningTest
         self.log = _logger
         self._regression_start_time: float
         self._test_results: List[Dict[str, Any]] = []
@@ -132,20 +135,22 @@ class RegressionManager:
 
         Args:
             modules: Each argument given is the name of a module where tests are found.
-
-        Raises:
-            RuntimeError: If no tests are found in any of the provided modules.
         """
         for module_name in modules:
             mod = import_module(module_name)
 
-            if not hasattr(mod, "__cocotb_tests__"):
-                raise RuntimeError(
-                    f"No tests were discovered in module: {module_name!r}"
-                )
+            found_test: bool = False
+            for obj in vars(mod).values():
+                if isinstance(obj, Test):
+                    found_test = True
+                    self.register_test(obj)
+                elif isinstance(obj, TestGenerator):
+                    for test in obj.generate_tests():
+                        found_test = True
+                        self.register_test(test)
 
-            for test in mod.__cocotb_tests__:
-                self.register_test(test)
+            if not found_test:
+                self.log.warning(f"No tests were discovered in module: {module_name!r}")
 
         # error if no tests were discovered
         if not self._test_queue:
@@ -280,7 +285,7 @@ class RegressionManager:
 
             # initialize the test, if it fails, record and continue
             try:
-                self._test.init(self._test_complete)
+                self._running_test = self._test.init(self._test_complete)
             except Exception:
                 self._record_test_init_failed()
                 continue
@@ -289,7 +294,7 @@ class RegressionManager:
 
             if self._first_test:
                 self._first_test = False
-                return self._test.start()
+                return self._running_test.start()
             else:
                 return self._timer1._prime(self._schedule_next_test)
 
@@ -300,7 +305,7 @@ class RegressionManager:
         cocotb._gpi_triggers._current_gpi_trigger = trigger
         trigger._cleanup()
 
-        self._test.start()
+        self._running_test.start()
 
     def _tear_down(self) -> None:
         """Called by :meth:`_execute` when there are no more tests to run to finalize the regression."""
@@ -337,16 +342,15 @@ class RegressionManager:
         this function must be able to detect simulation failure and finalize the regression.
         """
 
-        # compute test completion time
         test = self._test
-        wall_time_s = test.wall_time
-        sim_time_ns = test.sim_time_ns
+        wall_time_s = self._running_test.wall_time
+        sim_time_ns = self._running_test.sim_time_ns
 
         # score test
         passed: bool
         msg: Union[str, None]
         exc: Union[BaseException, None]
-        outcome = test.result()
+        outcome = self._running_test.result()
         try:
             outcome.get()
         except BaseException as e:
@@ -663,7 +667,7 @@ class RegressionManager:
         )
 
     def _record_sim_failure(self) -> None:
-        if self._test._expect_sim_failure:
+        if self._test.expect_sim_failure:
             self._record_test_passed(
                 wall_time_s=0,
                 sim_time_ns=0,
@@ -804,7 +808,7 @@ class RegressionManager:
 
     def _fail_simulation(self, msg: str) -> None:
         self._sim_failure = SimFailure(msg)
-        self._test.abort(Error(self._sim_failure))
+        self._running_test.abort(Error(self._sim_failure))
         cocotb._scheduler_inst._event_loop()
 
     @staticmethod

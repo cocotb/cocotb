@@ -7,6 +7,7 @@ from typing import (
     Any,
     Callable,
     Coroutine,
+    Dict,
     List,
     NoReturn,
     Optional,
@@ -19,10 +20,11 @@ import cocotb
 from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._exceptions import InternalError
+from cocotb._extended_awaitables import SimTimeoutError, with_timeout
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._typing import TimeUnit
 from cocotb.task import ResultType, Task
-from cocotb.triggers import NullTrigger, SimTimeoutError, with_timeout
+from cocotb.triggers import NullTrigger
 from cocotb.utils import get_sim_time
 
 Failed: Type[BaseException]
@@ -64,6 +66,12 @@ class Test:
         func:
             The test function object.
 
+        args:
+            Positional arguments to pass to the test function.
+
+        kwargs:
+            Keyword arguments to pass to the test function.
+
         name:
             The name of the test function.
             Defaults to ``func.__qualname__`` (the dotted path to the test function in the module).
@@ -103,68 +111,100 @@ class Test:
         self,
         *,
         func: Callable[..., Coroutine[Trigger, None, None]],
+        args: Tuple[Any, ...] = (),
+        kwargs: Dict[str, Any] = {},
         name: Optional[str] = None,
         module: Optional[str] = None,
         doc: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: TimeUnit = "step",
+        timeout: Union[Tuple[float, TimeUnit], None] = None,
         expect_fail: bool = False,
         expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
         skip: bool = False,
         stage: int = 0,
-        _expect_sim_failure: bool = False,
+        expect_sim_failure: bool = False,
     ) -> None:
-        self.func: Callable[..., Coroutine[Trigger, None, None]]
-        if timeout_time is not None:
-            co = func  # must save ref because we overwrite variable "func"
+        self.func: Callable[..., Coroutine[Trigger, None, None]] = func
+        self.args: Tuple[Any, ...] = args
+        self.kwargs: Dict[str, Any] = kwargs
+        self.timeout: Union[Tuple[float, TimeUnit], None] = timeout
+        self.expect_fail: bool = expect_fail
+        if isinstance(expect_error, type):
+            expect_error = (expect_error,)
+        if expect_sim_failure:
+            expect_error += (SimFailure,)
+        self.expect_error: Union[
+            Type[BaseException], Tuple[Type[BaseException], ...]
+        ] = expect_error
+        self.expect_sim_failure: bool = expect_sim_failure
+        self.skip: bool = skip
+        self.stage: int = stage
+        self.name: str = self.func.__qualname__ if name is None else name
+        self.module: str = self.func.__module__ if module is None else module
+        self.doc: Union[str, None] = self.func.__doc__ if doc is None else doc
+        if self.doc is not None:
+            self.doc = inspect.cleandoc(self.doc)
+        self.fullname: str = f"{self.module}.{self.name}"
 
-            @functools.wraps(func)
+    def init(self, _test_complete_cb: Callable[[], None]) -> "RunningTest":
+        # build function with timeout
+        func: Callable[..., Coroutine[Trigger, None, None]]
+        timeout = self.timeout
+        if timeout is not None:
+            co = self.func  # must save ref because we overwrite variable "func"
+
+            @functools.wraps(self.func)
             async def f(*args: object, **kwargs: object) -> None:
                 running_co = Task(co(*args, **kwargs))
 
                 try:
-                    await with_timeout(running_co, timeout_time, timeout_unit)
+                    await with_timeout(running_co, *timeout)
                 except SimTimeoutError:
                     running_co.cancel()
                     raise
 
-            self.func = f
+            func = f
         else:
-            self.func = func
-        self.timeout_time = timeout_time
-        self.timeout_unit = timeout_unit
-        self.expect_fail = expect_fail
-        if isinstance(expect_error, type):
-            expect_error = (expect_error,)
-        if _expect_sim_failure:
-            expect_error += (SimFailure,)
-        self.expect_error = expect_error
-        self._expect_sim_failure = _expect_sim_failure
-        self.skip = skip
-        self.stage = stage
-        self.name = self.func.__qualname__ if name is None else name
-        self.module = self.func.__module__ if module is None else module
-        self.doc = self.func.__doc__ if doc is None else doc
-        if self.doc is not None:
-            # cleanup docstring using `trim` function from PEP257
-            self.doc = inspect.cleandoc(self.doc)
-        self.fullname = f"{self.module}.{self.name}"
+            func = self.func
 
-        self.tasks: List[Task[Any]] = []
+        # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
+        hasher = hashlib.sha1()
+        hasher.update(self.fullname.encode())
+        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
+        random.seed(seed)
 
-        self._test_complete_cb: Callable[[], None]
-        self._main_task: Task[None]
+        main_task = TestTask(
+            func(cocotb.top, *self.args, **self.kwargs),
+            self.name,
+        )
+
+        return RunningTest(main_task, _test_complete_cb)
+
+
+class TestTask(Task[None]):
+    """Specialized Task for Tests."""
+
+    def __init__(self, inst: Coroutine[Trigger, None, None], name: str) -> None:
+        super().__init__(inst)
+        self._name = f"Test {name}"
+
+
+class RunningTest:
+    """State of a running Test."""
+
+    def __init__(
+        self,
+        main_task: Task[None],
+        test_complete_cb: Callable[[], None],
+    ) -> None:
+        self._test_complete_cb = test_complete_cb
+        self._main_task = main_task
+        self._main_task._add_done_callback(self._test_done_callback)
+        self.tasks: List[Task[Any]] = [self._main_task]
         self._outcome: Union[None, Outcome[Any]] = None
         self._shutdown_errors: list[Outcome[Any]] = []
         self._started: bool = False
         self._start_time: float
         self._start_sim_time: float
-
-    def init(self, _test_complete_cb: Callable[[], None]) -> None:
-        self._test_complete_cb = _test_complete_cb
-        self._main_task = TestTask(self.func(cocotb.top), self.name)
-        self._main_task._add_done_callback(self._test_done_callback)
-        self.tasks.append(self._main_task)
 
     def _test_done_callback(self, task: Task[None]) -> None:
         self.tasks.remove(task)
@@ -185,12 +225,6 @@ class Test:
             self.abort(Error(e))
 
     def start(self) -> None:
-        # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
-        hasher = hashlib.sha1()
-        hasher.update(self.fullname.encode())
-        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
-        random.seed(seed)
-
         self._start_sim_time = get_sim_time("ns")
         self._start_time = time.time()
 
@@ -252,14 +286,6 @@ class Test:
         else:
             task._log.warning(e, exc_info=e)
             self.abort(Error(e))
-
-
-class TestTask(Task[None]):
-    """Specialized Task for Tests."""
-
-    def __init__(self, inst: Coroutine[Trigger, None, None], name: str) -> None:
-        super().__init__(inst)
-        self._name = f"Test {name}"
 
 
 def start_soon(
@@ -346,7 +372,7 @@ def create_task(
         return coro
     elif isinstance(coro, Coroutine):
         task = Task[ResultType](coro)
-        cocotb._regression_manager._test.add_task(task)
+        cocotb._regression_manager._running_test.add_task(task)
         return task
     elif inspect.iscoroutinefunction(coro):
         raise TypeError(
