@@ -232,7 +232,7 @@ Regression Manager
 
     The name of the Python module(s) to search for test functions -
     if your tests are in a file called ``test_mydesign.py``, ``COCOTB_TEST_MODULES`` would be set to ``test_mydesign``.
-    Multiple modules can be specified using a comma-separated list.
+    Multiple modules can be specified using a comma-separated String.
     All tests will be run from each specified module in order of the module's appearance in this list.
 
     The is the only environment variable that is **required** for cocotb, all others are optional.
