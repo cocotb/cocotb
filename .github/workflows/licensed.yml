@@ -1,0 +1,43 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: CI (Licensed)
+
+on:
+  # Run this workflow on every push to the master branch, or a stable branch.
+  push:
+    branches:
+      - master
+      - "stable/**"
+  pull_request:
+    branches:
+      - master
+      - 'stable/**'
+    paths-ignore:
+      # Skip running tests for changes only in:
+      # Documentation
+      - 'docs/**'
+      # Dot-files not related to running tests
+      - '.backportrc.json'
+      - '.clang-format'
+      - '.git-blame-ignore-revs'
+      - '.gitignore'
+      - '.pre-commit-config.yml'
+      - '.readthedocs.yml'
+      - '.pylintrc'
+      # Information files
+      - 'LICENSE'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+
+jobs:
+  test_dev:
+    if: github.repository == 'cocotb/cocotb'
+    name: Regression Tests
+    uses: ./.github/workflows/regression-tests.yml
+    with:
+      nox_session_test_sim: dev_test_sim
+      nox_session_test_nosim: dev_test_nosim
+      collect_coverage: true
+      group: licensed

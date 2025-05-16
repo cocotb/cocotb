@@ -12,7 +12,7 @@ on:
 jobs:
 
   tests:
-
+    if: github.repository == 'cocotb/cocotb'
     name: Python ${{matrix.python-version}}
     runs-on: ubuntu-22.04
 
