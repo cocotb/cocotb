@@ -17,6 +17,7 @@ on:
 
 jobs:
   test_dev:
+    if: github.repository == 'cocotb/cocotb'
     name: Regression Tests
     uses: ./.github/workflows/regression-tests.yml
     with:

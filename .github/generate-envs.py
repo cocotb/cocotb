@@ -294,7 +294,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "ci",
+        "group": "licensed",
     },
     {
         "lang": "vhdl and fli",
@@ -303,7 +303,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "ci",
+        "group": "licensed",
     },
     {
         "lang": "vhdl and vhpi",
@@ -312,7 +312,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "ci",
+        "group": "licensed",
     },
     # Test Aldec Riviera-PRO on Ubuntu
     {
@@ -322,7 +322,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "ci",
+        "group": "licensed",
     },
     {
         "lang": "vhdl",
@@ -331,7 +331,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "ci",
+        "group": "licensed",
     },
     # Test Cadence Xcelium on Ubuntu
     {
@@ -341,7 +341,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "ci",
+        "group": "licensed",
     },
     {
         "lang": "vhdl",
@@ -350,7 +350,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "ci",
+        "group": "licensed",
     },
     # Test Synopsys VCS on Ubuntu
     {
@@ -360,7 +360,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "ci",
+        "group": "licensed",
     },
     {
         "lang": "vhdl",

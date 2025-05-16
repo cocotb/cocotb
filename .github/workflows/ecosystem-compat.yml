@@ -21,6 +21,7 @@ on:
 
 jobs:
   cocotb-coverage:
+    if: github.repository == 'cocotb/cocotb'
     name: Test cocotb-coverage 1.2
     runs-on: ubuntu-22.04
     steps:
@@ -59,53 +60,54 @@ jobs:
           make -k -C tests
 
   pyuvm:
-      name: Test pyuvm 3+
-      runs-on: ubuntu-22.04
-      steps:
-        - name: Set up Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: "3.11"
+    if: github.repository == 'cocotb/cocotb'
+    name: Test pyuvm 3+
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-        - name: Install GHDL
-          run: sudo apt-get install -y --no-install-recommends ghdl
+      - name: Install GHDL
+        run: sudo apt-get install -y --no-install-recommends ghdl
 
-        - name: Install Icarus Verilog
-          run: sudo apt-get install -y --no-install-recommends iverilog
+      - name: Install Icarus Verilog
+        run: sudo apt-get install -y --no-install-recommends iverilog
 
-        - name: Checkout cocotb repository
-          uses: actions/checkout@v4
-          with:
-            path: cocotb
+      - name: Checkout cocotb repository
+        uses: actions/checkout@v4
+        with:
+          path: cocotb
 
-        - name: Install the development version of cocotb
-          run: pip3 install ./cocotb
+      - name: Install the development version of cocotb
+        run: pip3 install ./cocotb
 
-        - name: Checkout pyuvm repository
-          uses: actions/checkout@v4
-          with:
-            path: pyuvm_clone
-            repository: pyuvm/pyuvm
+      - name: Checkout pyuvm repository
+        uses: actions/checkout@v4
+        with:
+          path: pyuvm_clone
+          repository: pyuvm/pyuvm
 
-        - name: Install the release version of pyuvm
-          run: pip3 install pyuvm>=3.0.0
+      - name: Install the release version of pyuvm
+        run: pip3 install pyuvm>=3.0.0
 
-        - name: Run tests
-            # Don't run tests through tox (as present in pyuvm) to be able
-            # to override the cocotb dependency.
-          run: |
-            pip3 install pytest
-            export SIM=icarus
-            make -C pyuvm_clone/tests/cocotb_tests/run_phase sim checkclean
-            make -C pyuvm_clone/tests/cocotb_tests/decorator sim checkclean
-            make -C pyuvm_clone/tests/cocotb_tests/t05_base_classes sim checkclean
-            make -C pyuvm_clone/tests/cocotb_tests/t08_factories sim checkclean
-            make -C pyuvm_clone/tests/cocotb_tests/t09_phasing sim checkclean
-            make -C pyuvm_clone/tests/cocotb_tests/t12_tlm sim checkclean
-            make -C pyuvm_clone/tests/cocotb_tests/t13_components sim checkclean
-            make -C pyuvm_clone/tests/cocotb_tests/config_db sim checkclean
-            make -C pyuvm_clone/tests/cocotb_tests/t14_15_sequences sim checkclean
-            make -C pyuvm_clone/tests/cocotb_tests/ext_classes sim checkclean
-            make -C pyuvm_clone/examples/TinyALU sim checkclean
-            make -C pyuvm_clone/examples/TinyALU_reg sim checkclean
-            make SIM=ghdl TOPLEVEL_LANG=vhdl -C pyuvm_clone/examples/TinyALU sim checkclean
+      - name: Run tests
+          # Don't run tests through tox (as present in pyuvm) to be able
+          # to override the cocotb dependency.
+        run: |
+          pip3 install pytest
+          export SIM=icarus
+          make -C pyuvm_clone/tests/cocotb_tests/run_phase sim checkclean
+          make -C pyuvm_clone/tests/cocotb_tests/decorator sim checkclean
+          make -C pyuvm_clone/tests/cocotb_tests/t05_base_classes sim checkclean
+          make -C pyuvm_clone/tests/cocotb_tests/t08_factories sim checkclean
+          make -C pyuvm_clone/tests/cocotb_tests/t09_phasing sim checkclean
+          make -C pyuvm_clone/tests/cocotb_tests/t12_tlm sim checkclean
+          make -C pyuvm_clone/tests/cocotb_tests/t13_components sim checkclean
+          make -C pyuvm_clone/tests/cocotb_tests/config_db sim checkclean
+          make -C pyuvm_clone/tests/cocotb_tests/t14_15_sequences sim checkclean
+          make -C pyuvm_clone/tests/cocotb_tests/ext_classes sim checkclean
+          make -C pyuvm_clone/examples/TinyALU sim checkclean
+          make -C pyuvm_clone/examples/TinyALU_reg sim checkclean
+          make SIM=ghdl TOPLEVEL_LANG=vhdl -C pyuvm_clone/examples/TinyALU sim checkclean
