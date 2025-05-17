@@ -179,6 +179,10 @@ NVC
 * Extend the ``nvc -r`` call with the option
   ``--load=$(cocotb-config --lib-name-path vhpi nvc)``.
 
+.. note::
+   It is recommended to add ``--preserve-case`` to build arguments.
+   This is standards-compliant behavior and may become default behavior in NVC.
+
 .. _custom-flows-cvc:
 
 Tachyon DA CVC

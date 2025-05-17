@@ -39,6 +39,7 @@ import find_libpython
 
 import cocotb_tools.config
 from cocotb_tools.check_results import get_results
+from cocotb_tools.sim_versions import NvcVersion
 
 PathLike = Union["os.PathLike[str]", str]  # TODO use TypeAlias in Python 3.10
 "A path that can be passed to :class:`pathlib.Path` or :func:`open`"
@@ -1055,6 +1056,21 @@ class Nvc(Runner):
 
     supported_gpi_interfaces = {"vhdl": ["vhpi"]}
 
+    def __init__(self) -> None:
+        super().__init__()
+
+        version_str = subprocess.run(
+            ["nvc", "--version"],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+        ).stdout
+        version = NvcVersion.from_commandline(version_str)
+        if version > NvcVersion("1.16"):
+            self._preserve_case = ["--preserve-case"]
+        else:
+            self._preserve_case = []
+
     def _set_env(self) -> None:
         super()._set_env()
         if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
@@ -1097,6 +1113,7 @@ class Nvc(Runner):
             + ["-a"]
             + [str(source) for source in self.sources if is_vhdl_source(source)]
             + [str(source) for source in self.vhdl_sources]
+            + self._preserve_case
         ]
 
         return cmds
