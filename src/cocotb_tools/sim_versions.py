@@ -23,8 +23,6 @@ class ActivehdlVersion(LooseVersion):
     ActivehdlVersion("10.5a.12.6914") > ActivehdlVersion("10.5.216.6767")
     """
 
-    pass
-
 
 class CvcVersion(LooseVersion):
     """Version numbering class for Tachyon DA CVC.
@@ -36,13 +34,9 @@ class CvcVersion(LooseVersion):
         True
     """
 
-    pass
-
 
 class GhdlVersion(LooseVersion):
     """Version numbering class for GHDL."""
-
-    pass
 
 
 class IcarusVersion(LooseVersion):
@@ -55,13 +49,9 @@ class IcarusVersion(LooseVersion):
         True
     """
 
-    pass
-
 
 class ModelsimVersion(LooseVersion):
     """Version numbering class for Mentor ModelSim."""
-
-    pass
 
 
 class QuestaVersion(LooseVersion):
@@ -100,8 +90,6 @@ class RivieraVersion(LooseVersion):
         True
     """
 
-    pass
-
 
 class VcsVersion(LooseVersion):
     """Version numbering class for Synopsys VCS.
@@ -111,8 +99,6 @@ class VcsVersion(LooseVersion):
         True
     """
 
-    pass
-
 
 class VerilatorVersion(LooseVersion):
     """Version numbering class for Verilator.
@@ -121,8 +107,6 @@ class VerilatorVersion(LooseVersion):
         >>> VerilatorVersion("4.032 2020-04-04") > VerilatorVersion("4.031 devel")
         True
     """
-
-    pass
 
 
 class XceliumVersion(LooseVersion):
@@ -135,8 +119,6 @@ class XceliumVersion(LooseVersion):
         True
     """
 
-    pass
-
 
 class IusVersion(XceliumVersion):  # inherit everything from Xcelium
     """Version numbering class for Cadence IUS.
@@ -146,4 +128,13 @@ class IusVersion(XceliumVersion):  # inherit everything from Xcelium
         True
     """
 
-    pass
+
+class NvcVersion(LooseVersion):
+    """Version numbering class for NVC."""
+
+    @classmethod
+    def from_commandline(cls, cmdline):
+        firstline = cmdline.split("\n")[0]
+        sim, version, *version_extra = firstline.strip().split(" ")
+        assert sim == "nvc"
+        return cls(version)
