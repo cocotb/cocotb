@@ -1,1 +1,1 @@
-Use parameter values in generated test names of :func:`.parametrize`, which should be clearer and allow the user to better group tests using :envvar:`COCOTB_TEST_FILTER`.
+Use parameter values in generated test names of :func:`cocotb.parametrize`, which should be clearer and allow the user to better group tests using :envvar:`COCOTB_TEST_FILTER`.

@@ -6,50 +6,38 @@
 
 """All things relating to regression capabilities."""
 
-import functools
+import hashlib
 import inspect
 import logging
 import os
 import pdb
+import random
 import re
 import time
-import warnings
 from enum import auto
 from importlib import import_module
-from itertools import product
-from types import FrameType
 from typing import (
     Any,
-    Callable,
-    Coroutine,
     Dict,
-    Generic,
     List,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
     Union,
-    cast,
-    overload,
 )
 
 import cocotb
 import cocotb._gpi_triggers
 import cocotb.handle
 from cocotb import _ANSI, simulator
-from cocotb._decorators import parametrize
+from cocotb._decorators import TestGenerator
 from cocotb._outcomes import Error
-from cocotb._test import Failed, SimFailure, Test, pass_test
-from cocotb._typing import TimeUnit
+from cocotb._test import Failed, RunningTest, SimFailure, Test
+from cocotb._test_factory import TestFactory
 from cocotb._utils import (
     DocEnum,
     remove_traceback_frames,
     want_color_output,
 )
 from cocotb._xunit_reporter import XUnitReporter
-from cocotb.triggers import Timer, Trigger
+from cocotb.triggers import Timer
 from cocotb.utils import get_sim_time
 
 __all__ = (
@@ -57,8 +45,7 @@ __all__ = (
     "RegressionMode",
     "Test",
     "TestFactory",
-    "parametrize",
-    "pass_test",
+    "TestGenerator",
 )
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
@@ -111,6 +98,10 @@ class RegressionManager:
 
     def __init__(self) -> None:
         self._test: Test
+        self._running_test: RunningTest
+        self._start_sim_time = get_sim_time("ns")
+        self._start_time = time.time()
+
         self.log = _logger
         self._regression_start_time: float
         self._test_results: List[Dict[str, Any]] = []
@@ -149,20 +140,22 @@ class RegressionManager:
 
         Args:
             modules: Each argument given is the name of a module where tests are found.
-
-        Raises:
-            RuntimeError: If no tests are found in any of the provided modules.
         """
         for module_name in modules:
             mod = import_module(module_name)
 
-            if not hasattr(mod, "__cocotb_tests__"):
-                raise RuntimeError(
-                    f"No tests were discovered in module: {module_name!r}"
-                )
+            found_test: bool = False
+            for obj in vars(mod).values():
+                if isinstance(obj, Test):
+                    found_test = True
+                    self.register_test(obj)
+                elif isinstance(obj, TestGenerator):
+                    for test in obj.generate_tests():
+                        found_test = True
+                        self.register_test(test)
 
-            for test in mod.__cocotb_tests__:
-                self.register_test(test)
+            if not found_test:
+                self.log.warning(f"No tests were discovered in module: {module_name!r}")
 
         # error if no tests were discovered
         if not self._test_queue:
@@ -297,7 +290,7 @@ class RegressionManager:
 
             # initialize the test, if it fails, record and continue
             try:
-                self._test.init(self._test_complete)
+                self._running_test = self._test.init(self._test_complete)
             except Exception:
                 self._record_test_init_failed()
                 continue
@@ -306,7 +299,7 @@ class RegressionManager:
 
             if self._first_test:
                 self._first_test = False
-                return self._test.start()
+                return self._start_test()
             else:
                 return self._timer1._prime(self._schedule_next_test)
 
@@ -317,7 +310,16 @@ class RegressionManager:
         cocotb._gpi_triggers._current_gpi_trigger = trigger
         trigger._cleanup()
 
-        self._test.start()
+        return self._start_test()
+
+    def _start_test(self) -> None:
+        # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
+        hasher = hashlib.sha1()
+        hasher.update(self._test.fullname.encode())
+        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
+        random.seed(seed)
+
+        self._running_test.start()
 
     def _tear_down(self) -> None:
         """Called by :meth:`_execute` when there are no more tests to run to finalize the regression."""
@@ -354,16 +356,15 @@ class RegressionManager:
         this function must be able to detect simulation failure and finalize the regression.
         """
 
-        # compute test completion time
         test = self._test
-        wall_time_s = test.wall_time
-        sim_time_ns = test.sim_time_ns
+        wall_time_s = time.time() - self._start_time
+        sim_time_ns = get_sim_time("ns") - self._start_sim_time
 
         # score test
         passed: bool
         msg: Union[str, None]
         exc: Union[BaseException, None]
-        outcome = test.result()
+        outcome = self._running_test.result()
         try:
             outcome.get()
         except BaseException as e:
@@ -680,7 +681,7 @@ class RegressionManager:
         )
 
     def _record_sim_failure(self) -> None:
-        if self._test._expect_sim_failure:
+        if self._test.expect_sim_failure:
             self._record_test_passed(
                 wall_time_s=0,
                 sim_time_ns=0,
@@ -821,7 +822,7 @@ class RegressionManager:
 
     def _fail_simulation(self, msg: str) -> None:
         self._sim_failure = SimFailure(msg)
-        self._test.abort(Error(self._sim_failure))
+        self._running_test.abort(Error(self._sim_failure))
         cocotb._scheduler_inst._event_loop()
 
     @staticmethod
@@ -834,285 +835,3 @@ class RegressionManager:
                 return float("nan")
             else:
                 return float("inf")
-
-
-F = TypeVar("F", bound=Callable[..., Coroutine[Trigger, None, None]])
-
-
-class TestFactory(Generic[F]):
-    """Factory to automatically generate tests.
-
-    Args:
-        test_function: A Callable that returns the test Coroutine.
-            Must take *dut* as the first argument.
-        *args: Remaining arguments are passed directly to the test function.
-            Note that these arguments are not varied. An argument that
-            varies with each test must be a keyword argument to the
-            test function.
-        **kwargs: Remaining keyword arguments are passed directly to the test function.
-            Note that these arguments are not varied. An argument that
-            varies with each test must be a keyword argument to the
-            test function.
-
-    Assuming we have a common test function that will run a test. This test
-    function will take keyword arguments (for example generators for each of
-    the input interfaces) and generate tests that call the supplied function.
-
-    This Factory allows us to generate sets of tests based on the different
-    permutations of the possible arguments to the test function.
-
-    For example, if we have a module that takes backpressure, has two configurable
-    features where enabling ``feature_b`` requires ``feature_a`` to be active, and
-    need to test against data generation routines ``gen_a`` and ``gen_b``:
-
-    >>> tf = TestFactory(test_function=run_test)
-    >>> tf.add_option(name="data_in", optionlist=[gen_a, gen_b])
-    >>> tf.add_option("backpressure", [None, random_backpressure])
-    >>> tf.add_option(
-    ...     ("feature_a", "feature_b"), [(False, False), (True, False), (True, True)]
-    ... )
-    >>> tf.generate_tests()
-
-    We would get the following tests:
-
-        * ``gen_a`` with no backpressure and both features disabled
-        * ``gen_a`` with no backpressure and only ``feature_a`` enabled
-        * ``gen_a`` with no backpressure and both features enabled
-        * ``gen_a`` with ``random_backpressure`` and both features disabled
-        * ``gen_a`` with ``random_backpressure`` and only ``feature_a`` enabled
-        * ``gen_a`` with ``random_backpressure`` and both features enabled
-        * ``gen_b`` with no backpressure and both features disabled
-        * ``gen_b`` with no backpressure and only ``feature_a`` enabled
-        * ``gen_b`` with no backpressure and both features enabled
-        * ``gen_b`` with ``random_backpressure`` and both features disabled
-        * ``gen_b`` with ``random_backpressure`` and only ``feature_a`` enabled
-        * ``gen_b`` with ``random_backpressure`` and both features enabled
-
-    The tests are appended to the calling module for auto-discovery.
-
-    Tests are simply named ``test_function_N``. The docstring for the test (hence
-    the test description) includes the name and description of each generator.
-
-    .. versionchanged:: 1.5
-        Groups of options are now supported
-
-    .. versionchanged:: 2.0
-        You can now pass :func:`cocotb.test` decorator arguments when generating tests.
-
-    .. deprecated:: 2.0
-        Use :func:`cocotb.regression.parametrize` instead.
-    """
-
-    def __init__(self, test_function: F, *args: Any, **kwargs: Any) -> None:
-        warnings.warn(
-            "TestFactory is deprecated, use `@cocotb.regression.parametrize` instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.test_function = test_function
-        self.args = args
-        self.kwargs_constant = kwargs
-        self.kwargs: Dict[
-            Union[str, Sequence[str]], Union[Sequence[Any], Sequence[Sequence[Any]]]
-        ] = {}
-
-    @overload
-    def add_option(self, name: str, optionlist: Sequence[Any]) -> None: ...
-
-    @overload
-    def add_option(
-        self, name: Sequence[str], optionlist: Sequence[Sequence[Any]]
-    ) -> None: ...
-
-    def add_option(
-        self,
-        name: Union[str, Sequence[str]],
-        optionlist: Union[Sequence[str], Sequence[Sequence[str]]],
-    ) -> None:
-        """Add a named option to the test.
-
-        Args:
-            name:
-                An option name, or an iterable of several option names. Passed to test as keyword arguments.
-
-            optionlist:
-                A list of possible options for this test knob.
-                If N names were specified, this must be a list of N-tuples or
-                lists, where each element specifies a value for its respective
-                option.
-
-        .. versionchanged:: 1.5
-            Groups of options are now supported
-        """
-        if not isinstance(name, str):
-            for opt in optionlist:
-                if len(name) != len(opt):
-                    raise ValueError(
-                        "Mismatch between number of options and number of option values in group"
-                    )
-        self.kwargs[name] = optionlist
-
-    def generate_tests(
-        self,
-        *,
-        prefix: Optional[str] = None,
-        postfix: Optional[str] = None,
-        stacklevel: int = 0,
-        name: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: TimeUnit = "step",
-        expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
-        skip: bool = False,
-        stage: int = 0,
-        _expect_sim_failure: bool = False,
-    ) -> None:
-        """
-        Generate an exhaustive set of tests using the cartesian product of the
-        possible keyword arguments.
-
-        The generated tests are appended to the namespace of the calling
-        module.
-
-        Args:
-            prefix:
-                Text string to append to start of ``test_function`` name when naming generated test cases.
-                This allows reuse of a single ``test_function`` with multiple :class:`TestFactories <.TestFactory>` without name clashes.
-
-                .. deprecated:: 2.0
-                    Use the more flexible ``name`` field instead.
-
-            postfix:
-                Text string to append to end of ``test_function`` name when naming generated test cases.
-                This allows reuse of a single ``test_function`` with multiple :class:`TestFactories <.TestFactory>` without name clashes.
-
-                .. deprecated:: 2.0
-                    Use the more flexible ``name`` field instead.
-            stacklevel:
-                Which stack level to add the generated tests to. This can be used to make a custom TestFactory wrapper.
-
-            name:
-                Passed as ``name`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            timeout_time:
-                Passed as ``timeout_time`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            timeout_unit:
-                Passed as ``timeout_unit`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            expect_fail:
-                Passed as ``expect_fail`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            expect_error:
-                Passed as ``expect_error`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            skip:
-                Passed as ``skip`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-
-            stage:
-                Passed as ``stage`` argument to :func:`cocotb.test`.
-
-                .. versionadded:: 2.0
-        """
-
-        if prefix is not None:
-            warnings.warn(
-                "``prefix`` argument is deprecated. Use the more flexible ``name`` field instead.",
-                DeprecationWarning,
-            )
-        else:
-            prefix = ""
-
-        if postfix is not None:
-            warnings.warn(
-                "``postfix`` argument is deprecated. Use the more flexible ``name`` field instead.",
-                DeprecationWarning,
-            )
-        else:
-            postfix = ""
-
-        # trust the user puts a reasonable stacklevel in
-        glbs = cast(FrameType, inspect.stack()[stacklevel][0].f_back).f_globals
-
-        if "__cocotb_tests__" not in glbs:
-            glbs["__cocotb_tests__"] = []
-
-        test_func_name = self.test_function.__qualname__ if name is None else name
-
-        for index, testoptions in enumerate(
-            dict(zip(self.kwargs, v)) for v in product(*self.kwargs.values())
-        ):
-            name = f"{prefix}{test_func_name}{postfix}_{(index + 1):03d}"
-            doc: str = "Automatically generated test\n\n"
-
-            # preprocess testoptions to split tuples
-            testoptions_split: Dict[str, Sequence[Any]] = {}
-            for optname, optvalue in testoptions.items():
-                if isinstance(optname, str):
-                    optvalue = cast(Sequence[Any], optvalue)
-                    testoptions_split[optname] = optvalue
-                else:
-                    # previously checked in add_option; ensure nothing has changed
-                    optvalue = cast(Sequence[Sequence[Any]], optvalue)
-                    assert len(optname) == len(optvalue)
-                    for n, v in zip(optname, optvalue):
-                        testoptions_split[n] = v
-
-            for optname, optvalue in testoptions_split.items():
-                if callable(optvalue):
-                    if not optvalue.__doc__:
-                        desc = "No docstring supplied"
-                    else:
-                        desc = optvalue.__doc__.split("\n")[0]
-                    doc += f"\t{optname}: {optvalue.__qualname__} ({desc})\n"
-                else:
-                    doc += f"\t{optname}: {repr(optvalue)}\n"
-
-            kwargs: Dict[str, Any] = {}
-            kwargs.update(self.kwargs_constant)
-            kwargs.update(testoptions_split)
-
-            @functools.wraps(self.test_function)
-            async def _my_test(dut: object, kwargs: Dict[str, Any] = kwargs) -> None:
-                await self.test_function(dut, *self.args, **kwargs)
-
-            _my_test.__doc__ = doc
-            _my_test.__name__ = name
-            _my_test.__qualname__ = name
-
-            if name in glbs:
-                _logger.error(
-                    "Overwriting %s in module %s. "
-                    "This causes a previously defined testcase not to be run. "
-                    "Consider using the `name`, `prefix`, or `postfix` arguments to augment the name.",
-                    name,
-                    glbs["__name__"],
-                )
-
-            test = Test(
-                func=_my_test,
-                name=name,
-                module=glbs["__name__"],
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
-                expect_fail=expect_fail,
-                expect_error=expect_error,
-                skip=skip,
-                stage=stage,
-                _expect_sim_failure=_expect_sim_failure,
-            )
-
-            glbs["__cocotb_tests__"].append(test)
-            glbs[test.name] = test

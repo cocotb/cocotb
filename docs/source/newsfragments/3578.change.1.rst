@@ -1,1 +1,0 @@
-The :func:`cocotb.test` decorator now returns the decorated object instead of a ``Test`` object.
