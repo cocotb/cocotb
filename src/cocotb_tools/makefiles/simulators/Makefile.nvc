@@ -19,6 +19,8 @@ else
 	NVC_BIN_DIR := $(shell dirname $(CMD))
 endif
 
+PRESERVE_CASE := $(shell $(CMD) --version | $(PYTHON_BIN) -c "from cocotb_tools.sim_versions import NvcVersion; import sys; print('--preserve-case' if NvcVersion.from_commandline(sys.stdin.read()) > NvcVersion('1.16') else '')")
+
 ifdef RTL_LIBRARY
     $(warning Using RTL_LIBRARY is deprecated, please use TOPLEVEL_LIBRARY instead.)
     TOPLEVEL_LIBRARY ?= $(RTL_LIBRARY)
@@ -42,8 +44,8 @@ analyse: $(VHDL_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
 	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
 
 	$(foreach LIB_VAR,$(VHDL_LIB_ORDER), \
-		$(CMD) $(EXTRA_ARGS) --work=$(LIB_VAR):$(SIM_BUILD)/$(LIB_VAR) -L $(SIM_BUILD) -a $(VHDL_SOURCES_$(LIB_VAR)) $(COMPILE_ARGS) && ) \
-	$(CMD) $(EXTRA_ARGS) --work=$(TOPLEVEL_LIBRARY):$(SIM_BUILD)/$(TOPLEVEL_LIBRARY) -L $(SIM_BUILD) -a $(VHDL_SOURCES) $(COMPILE_ARGS)
+		$(CMD) $(EXTRA_ARGS) --work=$(LIB_VAR):$(SIM_BUILD)/$(LIB_VAR) -L $(SIM_BUILD) -a $(VHDL_SOURCES_$(LIB_VAR)) $(PRESERVE_CASE) $(COMPILE_ARGS) && ) \
+	$(CMD) $(EXTRA_ARGS) --work=$(TOPLEVEL_LIBRARY):$(SIM_BUILD)/$(TOPLEVEL_LIBRARY) -L $(SIM_BUILD) -a $(VHDL_SOURCES) $(PRESERVE_CASE) $(COMPILE_ARGS)
 
 $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)

@@ -379,6 +379,11 @@ NVC
 
     NVC version **1.11.0** or later is required.
 
+.. note::
+
+    Using NVC versions greater than **1.16.0** will automatically add the ``--preserve-case`` option build commands.
+    This is standards-compliant behavior and may become default behavior in NVC, so think twice before overriding it.
+
 In order to use this simulator, set :make:var:`SIM` to ``nvc``:
 
 .. code-block:: bash
