@@ -38,7 +38,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.15.2",
+        "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.6",
         "group": "ci",
@@ -47,7 +47,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.15.2",
+        "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.7",
         "group": "ci",
@@ -56,7 +56,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.15.2",
+        "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.8",
         "group": "ci",
@@ -64,7 +64,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.15.2",
+        "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci",
@@ -72,7 +72,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.15.2",
+        "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci",
@@ -80,7 +80,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.15.2",
+        "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.11",
         "group": "ci",
@@ -88,7 +88,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.15.2",
+        "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.12",
         "group": "ci",
@@ -96,7 +96,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.15.2",
+        "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.13",
         "group": "ci",
@@ -106,7 +106,7 @@ ENVS = [
     # {
     #     "lang": "vhdl",
     #     "sim": "nvc",
-    #     "sim-version": "r1.15.2",
+    #     "sim-version": "r1.16.0",
     #     "os": "ubuntu-22.04",
     #     "python-version": "3.14.0-alpha - 3.14.0",
     #     "group": "experimental",
@@ -278,7 +278,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.15.2",
+        "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "cxx": "clang++",

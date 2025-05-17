@@ -38,7 +38,7 @@ jobs:
         sudo apt-get install -y --no-install-recommends llvm-dev libdw-dev flex libzstd-dev pkg-config
         git clone https://github.com/nickg/nvc.git
         cd nvc
-        git reset --hard r1.15.2
+        git reset --hard r1.16.0
         ./autogen.sh
         mkdir build
         cd build
