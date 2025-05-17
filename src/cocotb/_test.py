@@ -1,8 +1,5 @@
 import functools
-import hashlib
 import inspect
-import random
-import time
 from typing import (
     Any,
     Callable,
@@ -25,7 +22,6 @@ from cocotb._outcomes import Error, Outcome, Value
 from cocotb._typing import TimeUnit
 from cocotb.task import ResultType, Task
 from cocotb.triggers import NullTrigger
-from cocotb.utils import get_sim_time
 
 Failed: Type[BaseException]
 try:
@@ -130,11 +126,7 @@ class Test:
         self.expect_fail: bool = expect_fail
         if isinstance(expect_error, type):
             expect_error = (expect_error,)
-        if expect_sim_failure:
-            expect_error += (SimFailure,)
-        self.expect_error: Union[
-            Type[BaseException], Tuple[Type[BaseException], ...]
-        ] = expect_error
+        self.expect_error: Tuple[Type[BaseException], ...] = expect_error
         self.expect_sim_failure: bool = expect_sim_failure
         self.skip: bool = skip
         self.stage: int = stage
@@ -166,12 +158,6 @@ class Test:
         else:
             func = self.func
 
-        # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
-        hasher = hashlib.sha1()
-        hasher.update(self.fullname.encode())
-        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
-        random.seed(seed)
-
         main_task = TestTask(
             func(cocotb.top, *self.args, **self.kwargs),
             self.name,
@@ -202,9 +188,6 @@ class RunningTest:
         self.tasks: List[Task[Any]] = [self._main_task]
         self._outcome: Union[None, Outcome[Any]] = None
         self._shutdown_errors: list[Outcome[Any]] = []
-        self._started: bool = False
-        self._start_time: float
-        self._start_sim_time: float
 
     def _test_done_callback(self, task: Task[None]) -> None:
         self.tasks.remove(task)
@@ -225,11 +208,6 @@ class RunningTest:
             self.abort(Error(e))
 
     def start(self) -> None:
-        self._start_sim_time = get_sim_time("ns")
-        self._start_time = time.time()
-
-        self._started = True
-
         cocotb._scheduler_inst._schedule_task_internal(self._main_task)
         cocotb._scheduler_inst._event_loop()
 
@@ -255,12 +233,6 @@ class RunningTest:
         for task in self.tasks[:]:
             task._cancel_now()
 
-        if self._started:
-            self.wall_time = time.time() - self._start_time
-            self.sim_time_ns = get_sim_time("ns") - self._start_sim_time
-        else:
-            self.wall_time = 0
-            self.sim_time_ns = 0
         self._test_complete_cb()
 
     def add_task(self, task: Task[Any]) -> None:

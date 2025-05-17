@@ -6,10 +6,12 @@
 
 """All things relating to regression capabilities."""
 
+import hashlib
 import inspect
 import logging
 import os
 import pdb
+import random
 import re
 import time
 from enum import auto
@@ -97,6 +99,9 @@ class RegressionManager:
     def __init__(self) -> None:
         self._test: Test
         self._running_test: RunningTest
+        self._start_sim_time = get_sim_time("ns")
+        self._start_time = time.time()
+
         self.log = _logger
         self._regression_start_time: float
         self._test_results: List[Dict[str, Any]] = []
@@ -294,7 +299,7 @@ class RegressionManager:
 
             if self._first_test:
                 self._first_test = False
-                return self._running_test.start()
+                return self._start_test()
             else:
                 return self._timer1._prime(self._schedule_next_test)
 
@@ -304,6 +309,15 @@ class RegressionManager:
         # TODO move to Trigger object
         cocotb._gpi_triggers._current_gpi_trigger = trigger
         trigger._cleanup()
+
+        return self._start_test()
+
+    def _start_test(self) -> None:
+        # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
+        hasher = hashlib.sha1()
+        hasher.update(self._test.fullname.encode())
+        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
+        random.seed(seed)
 
         self._running_test.start()
 
@@ -343,8 +357,8 @@ class RegressionManager:
         """
 
         test = self._test
-        wall_time_s = self._running_test.wall_time
-        sim_time_ns = self._running_test.sim_time_ns
+        wall_time_s = time.time() - self._start_time
+        sim_time_ns = get_sim_time("ns") - self._start_sim_time
 
         # score test
         passed: bool
