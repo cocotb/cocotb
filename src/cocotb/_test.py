@@ -40,12 +40,6 @@ else:
         assert False, "pytest.raises doesn't raise an exception when it fails"
 
 
-# TODO remove SimFailure once we have functionality in place to abort the test without
-# having to set an exception.
-class SimFailure(BaseException):
-    """A Test failure due to simulator failure."""
-
-
 class TestSuccess(BaseException):
     """Implementation of :func:`pass_test`.
 
@@ -112,7 +106,6 @@ class Test:
         expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
         skip: bool = False,
         stage: int = 0,
-        _expect_sim_failure: bool = False,
     ) -> None:
         self.func: Callable[..., Coroutine[Trigger, None, None]]
         if timeout_time is not None:
@@ -136,10 +129,7 @@ class Test:
         self.expect_fail = expect_fail
         if isinstance(expect_error, type):
             expect_error = (expect_error,)
-        if _expect_sim_failure:
-            expect_error += (SimFailure,)
         self.expect_error = expect_error
-        self._expect_sim_failure = _expect_sim_failure
         self.skip = skip
         self.stage = stage
         self.name = self.func.__qualname__ if name is None else name

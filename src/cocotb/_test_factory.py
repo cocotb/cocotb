@@ -159,7 +159,6 @@ class TestFactory:
         expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
         skip: bool = False,
         stage: int = 0,
-        _expect_sim_failure: bool = False,
     ) -> None:
         """
         Generate an exhaustive set of tests using the cartesian product of the
@@ -305,7 +304,6 @@ class TestFactory:
                 expect_error=expect_error,
                 skip=skip,
                 stage=stage,
-                _expect_sim_failure=_expect_sim_failure,
             )
 
             glbs["__cocotb_tests__"].append(test)
