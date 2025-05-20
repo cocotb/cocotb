@@ -19,17 +19,29 @@ on:
       # Documentation
       - 'docs/**'
       # Dot-files not related to running tests
+      - '.theia/**'
       - '.backportrc.json'
       - '.clang-format'
       - '.git-blame-ignore-revs'
       - '.gitignore'
-      - '.pre-commit-config.yml'
+      - '.gitpod.Dockerfile'
+      - '.gitpod.yml'
+      - '.pre-commit-config.yaml'
       - '.readthedocs.yml'
-      - '.pylintrc'
       # Information files
       - 'LICENSE'
       - 'README.md'
       - 'CONTRIBUTING.md'
+      - 'MANIFEST.in'
+      # Github files that aren't related to testing
+      - '.github/issue_template.md'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+      - '.github/workflows/backport.yml'
+      - '.github/workflows/benchmark.yml'
+      - '.github/workflows/ecosystem-compat.yml'
+      - '.github/workflows/experimental.yml'
+      - '.github/workflows/extended.yml'
+      - '.github/workflows/stale.yml'
 
 jobs:
   test_dev:
