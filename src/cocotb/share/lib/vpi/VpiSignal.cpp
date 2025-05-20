@@ -58,7 +58,7 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                             name.c_str(), vpi_get_str(vpiType, hdl), type);
                         return -1;
                     }
-                } else {
+                } else if (m_indexable) {  // Only try to get range handles if it's a vector
                     vpiHandle leftRange = vpi_handle(vpiLeftRange, hdl);
                     check_vpi_error();
                     vpiHandle rightRange = vpi_handle(vpiRightRange, hdl);
