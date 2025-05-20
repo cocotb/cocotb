@@ -13,10 +13,6 @@
 name: Ecosystem compatibility tests
 
 on:
-  pull_request:
-    branches:
-      - master
-      - 'stable/**'
   # Run daily at midnight (UTC).
   schedule:
     - cron: '0 0 * * *'
