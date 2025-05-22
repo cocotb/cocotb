@@ -1,3 +1,6 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
 import functools
 import hashlib
 import inspect
@@ -8,7 +11,6 @@ from typing import (
     Callable,
     Coroutine,
     List,
-    NoReturn,
     Optional,
     Tuple,
     Type,
@@ -20,35 +22,11 @@ from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome, Value
+from cocotb._test_functions import TestSuccess
 from cocotb._typing import TimeUnit
 from cocotb.task import ResultType, Task
 from cocotb.triggers import NullTrigger, SimTimeoutError, with_timeout
 from cocotb.utils import get_sim_time
-
-Failed: Type[BaseException]
-try:
-    import pytest
-except ModuleNotFoundError:
-    Failed = AssertionError
-else:
-    try:
-        with pytest.raises(Exception):
-            pass
-    except BaseException as _raises_e:
-        Failed = type(_raises_e)
-    else:
-        assert False, "pytest.raises doesn't raise an exception when it fails"
-
-
-class TestSuccess(BaseException):
-    """Implementation of :func:`pass_test`.
-
-    Users are *not* intended to catch this exception type.
-    """
-
-    def __init__(self, msg: Union[str, None]) -> None:
-        super().__init__(msg)
-        self.msg = msg
 
 
 class Test:
@@ -352,14 +330,3 @@ def create_task(
             f"Attempt to add an object of type {type(coro)} to the scheduler, "
             f"which isn't a coroutine: {coro!r}\n"
         )
-
-
-def pass_test(msg: Union[str, None] = None) -> NoReturn:
-    """Force a test to pass.
-
-    The test will end and enter termination phase when this is called.
-
-    Args:
-        msg: The message to display when the test passes.
-    """
-    raise TestSuccess(msg)

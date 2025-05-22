@@ -26,8 +26,9 @@ import cocotb._gpi_triggers
 import cocotb.handle
 from cocotb import _ANSI, simulator
 from cocotb._outcomes import Error, Outcome
-from cocotb._test import Failed, Test
+from cocotb._test import Test
 from cocotb._test_factory import TestFactory
+from cocotb._test_functions import Failed
 from cocotb._utils import (
     DocEnum,
     remove_traceback_frames,
