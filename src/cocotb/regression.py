@@ -6,10 +6,12 @@
 
 """All things relating to regression capabilities."""
 
+import hashlib
 import inspect
 import logging
 import os
 import pdb
+import random
 import re
 import time
 from enum import auto
@@ -25,8 +27,9 @@ import cocotb
 import cocotb._gpi_triggers
 import cocotb.handle
 from cocotb import _ANSI, simulator
+from cocotb._gpi_triggers import GPITrigger, Timer
 from cocotb._outcomes import Error, Outcome
-from cocotb._test import Test
+from cocotb._test import RunningTest, Test, TestTask
 from cocotb._test_factory import TestFactory
 from cocotb._test_functions import Failed
 from cocotb._utils import (
@@ -35,7 +38,6 @@ from cocotb._utils import (
     want_color_output,
 )
 from cocotb._xunit_reporter import XUnitReporter
-from cocotb.triggers import Timer
 from cocotb.utils import get_sim_time
 
 __all__ = (
@@ -100,6 +102,7 @@ class RegressionManager:
 
     def __init__(self) -> None:
         self._test: Test
+        self._running_test: RunningTest
         self.log = _logger
         self._regression_start_time: float
         self._test_results: List[Dict[str, Any]] = []
@@ -290,7 +293,7 @@ class RegressionManager:
 
             # initialize the test, if it fails, record and continue
             try:
-                self._test.init(self._test_complete)
+                self._running_test = self._init_test()
             except Exception:
                 self._record_test_init_failed()
                 continue
@@ -299,18 +302,32 @@ class RegressionManager:
 
             if self._first_test:
                 self._first_test = False
-                return self._test.start()
+                return self._schedule_next_test()
             else:
                 return self._timer1._prime(self._schedule_next_test)
 
         return self._tear_down()
 
-    def _schedule_next_test(self, trigger: cocotb._gpi_triggers.GPITrigger) -> None:
-        # TODO move to Trigger object
-        cocotb._gpi_triggers._current_gpi_trigger = trigger
-        trigger._cleanup()
+    def _init_test(self) -> RunningTest:
+        main_task = TestTask(self._test.func(cocotb.top), self._test.name)
+        return RunningTest(self._test_complete, main_task)
 
-        self._test.start()
+    def _schedule_next_test(self, trigger: Union[GPITrigger, None] = None) -> None:
+        if trigger is not None:
+            # TODO move to Trigger object
+            cocotb._gpi_triggers._current_gpi_trigger = trigger
+            trigger._cleanup()
+
+        # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
+        hasher = hashlib.sha1()
+        hasher.update(self._test.fullname.encode())
+        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
+        random.seed(seed)
+
+        self._start_sim_time = get_sim_time("ns")
+        self._start_time = time.time()
+
+        self._running_test.start()
 
     def _tear_down(self) -> None:
         """Called by :meth:`_execute` when there are no more tests to run to finalize the regression."""
@@ -343,11 +360,15 @@ class RegressionManager:
     def _test_complete(self) -> None:
         """Callback given to the test to be called when the test finished."""
 
+        # compute wall time
+        wall_time = time.time() - self._start_time
+        sim_time_ns = get_sim_time("ns") - self._start_sim_time
+
         # Judge and record pass/fail.
         self._score_test(
-            self._test.result(),
-            self._test.wall_time,
-            self._test.sim_time_ns,
+            self._running_test.result(),
+            wall_time,
+            sim_time_ns,
         )
 
         # Run next test.
@@ -803,7 +824,7 @@ class RegressionManager:
 
     def _fail_simulation(self, msg: str) -> None:
         self._sim_failure = Error(SimFailure(msg))
-        self._test.abort(self._sim_failure)
+        self._running_test.abort(self._sim_failure)
         cocotb._scheduler_inst._event_loop()
 
     @staticmethod
