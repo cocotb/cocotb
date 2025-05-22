@@ -1,1 +1,0 @@
-The :class:`~cocotb.regression.RegressionManager` uses a new mechanism to discover tests. Typical uses of the :func:`cocotb.test` decorator and :class:`~cocotb.regression.TestFactory` should be unaffected, but atypical uses may not.
