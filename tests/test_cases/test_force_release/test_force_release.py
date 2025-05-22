@@ -14,18 +14,16 @@ from cocotb_tools.sim_versions import GhdlVersion, RivieraVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 SIM_VERSION = cocotb.SIM_VERSION
-LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+LANGUAGE = os.getenv("TOPLEVEL_LANG", "verilog").lower().strip()
+VHDL_GPI_INTERFACE = os.getenv("VHDL_GPI_INTERFACE", "")
 
 questa_fli = (
     SIM_NAME.startswith("modelsim")
     and LANGUAGE == "vhdl"
-    and os.getenv("VHDL_GPI_INTERFACE", "") == "fli"
+    and VHDL_GPI_INTERFACE == "fli"
 )
 
-riviera_vpi = (
-    SIM_NAME.startswith("riviera")
-    and os.getenv("TOPLEVEL_LANG", "verilog") == "verilog"
-)
+riviera_vpi = SIM_NAME.startswith("riviera") and LANGUAGE == "verilog"
 
 ghdl_before_5 = SIM_NAME.startswith("ghdl") and GhdlVersion(SIM_VERSION) < GhdlVersion(
     "5"
