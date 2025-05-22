@@ -1,16 +1,12 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import functools
 import inspect
 from typing import (
     Any,
     Callable,
     Coroutine,
     List,
-    Optional,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -20,99 +16,8 @@ from cocotb._deprecation import deprecated
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._test_functions import TestSuccess
-from cocotb._typing import TimeUnit
 from cocotb.task import ResultType, Task
-from cocotb.triggers import NullTrigger, SimTimeoutError, with_timeout
-
-
-class Test:
-    """A cocotb test in a regression.
-
-    Args:
-        func:
-            The test function object.
-
-        name:
-            The name of the test function.
-            Defaults to ``func.__qualname__`` (the dotted path to the test function in the module).
-
-        module:
-            The name of the module containing the test function.
-            Defaults to ``func.__module__`` (the name of the module containing the test function).
-
-        doc:
-            The docstring for the test.
-            Defaults to ``func.__doc__`` (the docstring of the test function).
-
-        timeout_time:
-            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
-
-        timeout_unit:
-            Unit of ``timeout_time``, accepts any unit that :class:`~cocotb.triggers.Timer` does.
-
-        expect_fail:
-            If ``True`` and the test fails a functional check via an :keyword:`assert` statement, :func:`pytest.raises`,
-            :func:`pytest.warns`, or :func:`pytest.deprecated_call`, the test is considered to have passed.
-            If ``True`` and the test passes successfully, the test is considered to have failed.
-
-        expect_error:
-            Mark the result as a pass only if one of the given exception types is raised in the test.
-
-        skip:
-            Don't execute this test as part of the regression.
-            The test can still be run manually by setting :envvar:`COCOTB_TESTCASE`.
-
-        stage:
-            Order tests logically into stages.
-            Tests from earlier stages are run before tests from later stages.
-    """
-
-    def __init__(
-        self,
-        *,
-        func: Callable[..., Coroutine[Trigger, None, None]],
-        name: Optional[str] = None,
-        module: Optional[str] = None,
-        doc: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: TimeUnit = "step",
-        expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
-        skip: bool = False,
-        stage: int = 0,
-    ) -> None:
-        self.func: Callable[..., Coroutine[Trigger, None, None]]
-        if timeout_time is not None:
-            co = func  # must save ref because we overwrite variable "func"
-
-            @functools.wraps(func)
-            async def f(*args: object, **kwargs: object) -> None:
-                running_co = Task(co(*args, **kwargs))
-
-                try:
-                    await with_timeout(running_co, timeout_time, timeout_unit)
-                except SimTimeoutError:
-                    running_co.cancel()
-                    raise
-
-            self.func = f
-        else:
-            self.func = func
-        self.timeout_time = timeout_time
-        self.timeout_unit = timeout_unit
-        self.expect_fail = expect_fail
-        if isinstance(expect_error, type):
-            expect_error = (expect_error,)
-        self.expect_error = expect_error
-        self.skip = skip
-        self.stage = stage
-        self.name = self.func.__qualname__ if name is None else name
-        self.module = self.func.__module__ if module is None else module
-        self.doc = self.func.__doc__ if doc is None else doc
-        if self.doc is not None:
-            # cleanup docstring using `trim` function from PEP257
-            self.doc = inspect.cleandoc(self.doc)
-        self.fullname = f"{self.module}.{self.name}"
+from cocotb.triggers import NullTrigger
 
 
 class RunningTest:

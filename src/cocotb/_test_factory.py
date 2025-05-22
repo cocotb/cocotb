@@ -23,7 +23,7 @@ from typing import (
 )
 
 from cocotb._base_triggers import Trigger
-from cocotb._test import Test
+from cocotb._decorators import Test
 from cocotb._typing import TimeUnit
 
 
