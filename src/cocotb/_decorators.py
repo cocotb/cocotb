@@ -14,14 +14,12 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
-    Generic,
     Iterable,
     List,
     Optional,
     Sequence,
     Tuple,
     Type,
-    TypeVar,
     Union,
     cast,
     overload,
@@ -31,6 +29,9 @@ from cocotb._base_triggers import Trigger
 from cocotb._extended_awaitables import SimTimeoutError, with_timeout
 from cocotb._typing import TimeUnit
 from cocotb.task import Task
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
 
 
 class Test:
@@ -123,13 +124,13 @@ class Test:
         self.fullname = f"{self.module}.{self.name}"
 
 
-F = TypeVar("F", bound=Callable[..., Coroutine[Any, Any, None]])
+TestFuncType: "TypeAlias" = Callable[..., Coroutine[Trigger, None, None]]
 
 
-class _Parameterized(Generic[F]):
+class Parameterized:
     def __init__(
         self,
-        test_function: F,
+        test_function: TestFuncType,
         options: List[
             Union[
                 Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
@@ -247,8 +248,22 @@ def _repr(v: Any) -> Optional[str]:
         return None
 
 
+if sys.version_info >= (3, 8):
+    from typing import Protocol
+
+    class TestDecoratorType(Protocol):
+        @overload
+        def __call__(self, obj: TestFuncType) -> Test: ...
+        @overload
+        def __call__(self, obj: Parameterized) -> None: ...
+
+
 @overload
-def test(_func: Union[F, _Parameterized[F]]) -> F: ...
+def test(_func: TestFuncType) -> Test: ...
+
+
+@overload
+def test(_func: Parameterized) -> None: ...
 
 
 @overload
@@ -261,11 +276,11 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
-) -> Callable[[Union[F, _Parameterized[F]]], F]: ...
+) -> TestDecoratorType: ...
 
 
 def test(
-    _func: Optional[Union[F, _Parameterized[F]]] = None,
+    _func: Optional[Union[TestFuncType, Parameterized]] = None,
     *,
     timeout_time: Optional[float] = None,
     timeout_unit: TimeUnit = "step",
@@ -274,7 +289,11 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
-) -> Union[F, Callable[[Union[F, _Parameterized[F]]], F]]:
+) -> Union[
+    Test,
+    None,
+    TestDecoratorType,
+]:
     r"""
     Decorator to register a Callable which returns a Coroutine as a test.
 
@@ -389,25 +408,29 @@ def test(
 
     def _add_tests(module_name: str, *tests: Test) -> None:
         mod = sys.modules[module_name]
-        if not hasattr(mod, "__cocotb_tests__"):
-            setattr(mod, "__cocotb_tests__", [])
-        cast(List[Test], mod.__cocotb_tests__).extend(tests)
+        for test in tests:
+            setattr(mod, test.name, test)
 
     if _func is not None:
-        if isinstance(_func, _Parameterized):
+        if isinstance(_func, Parameterized):
             test_func = _func.test_function
             _add_tests(test_func.__module__, *_func.generate_tests())
-            return test_func
+            return None
         else:
-            _add_tests(_func.__module__, Test(func=_func))
-            return _func
+            return Test(func=_func)
 
-    def wrapper(f: Union[F, _Parameterized[F]]) -> F:
-        if isinstance(f, _Parameterized):
-            test_func = f.test_function
+    @overload
+    def wrapper(obj: TestFuncType) -> Test: ...
+
+    @overload
+    def wrapper(obj: Parameterized) -> None: ...
+
+    def wrapper(obj: Union[TestFuncType, Parameterized]) -> Union[Test, None]:
+        if isinstance(obj, Parameterized):
+            test_func = obj.test_function
             _add_tests(
                 test_func.__module__,
-                *f.generate_tests(
+                *obj.generate_tests(
                     name=name,
                     timeout_time=timeout_time,
                     timeout_unit=timeout_unit,
@@ -417,22 +440,18 @@ def test(
                     stage=stage,
                 ),
             )
-            return test_func
+            return None
         else:
-            _add_tests(
-                f.__module__,
-                Test(
-                    func=f,
-                    name=name,
-                    timeout_time=timeout_time,
-                    timeout_unit=timeout_unit,
-                    expect_fail=expect_fail,
-                    expect_error=expect_error,
-                    skip=skip,
-                    stage=stage,
-                ),
+            return Test(
+                func=obj,
+                name=name,
+                timeout_time=timeout_time,
+                timeout_unit=timeout_unit,
+                expect_fail=expect_fail,
+                expect_error=expect_error,
+                skip=skip,
+                stage=stage,
             )
-            return f
 
     return wrapper
 
@@ -442,7 +461,7 @@ def parametrize(
         Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
     ],
     **options_by_name: Sequence[Any],
-) -> Callable[[F], _Parameterized[F]]:
+) -> Callable[[TestFuncType], Parameterized]:
     """Decorator to generate parametrized tests from a single test function.
 
     Decorates a test function with named test parameters.
@@ -531,7 +550,7 @@ def parametrize(
 
     options = [*options_by_tuple, *options_by_name.items()]
 
-    def wrapper(f: F) -> _Parameterized[F]:
-        return _Parameterized(f, options)
+    def wrapper(f: TestFuncType) -> Parameterized:
+        return Parameterized(f, options)
 
     return wrapper

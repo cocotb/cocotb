@@ -239,9 +239,6 @@ class TestFactory:
         # trust the user puts a reasonable stacklevel in
         glbs = cast(FrameType, inspect.stack()[stacklevel][0].f_back).f_globals
 
-        if "__cocotb_tests__" not in glbs:
-            glbs["__cocotb_tests__"] = []
-
         test_func_name = self.test_function.__qualname__ if name is None else name
 
         for index, testoptions in enumerate(
@@ -306,5 +303,4 @@ class TestFactory:
                 stage=stage,
             )
 
-            glbs["__cocotb_tests__"].append(test)
             glbs[test.name] = test

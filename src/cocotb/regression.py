@@ -14,6 +14,7 @@ import pdb
 import random
 import re
 import time
+import warnings
 from enum import auto
 from importlib import import_module
 from typing import (
@@ -142,20 +143,18 @@ class RegressionManager:
 
         Args:
             modules: Each argument given is the name of a module where tests are found.
-
-        Raises:
-            RuntimeError: If no tests are found in any of the provided modules.
         """
         for module_name in modules:
             mod = import_module(module_name)
 
-            if not hasattr(mod, "__cocotb_tests__"):
-                raise RuntimeError(
-                    f"No tests were discovered in module: {module_name!r}"
-                )
+            found_test: bool = False
+            for obj in vars(mod).values():
+                if isinstance(obj, Test):
+                    found_test = True
+                    self.register_test(obj)
 
-            for test in mod.__cocotb_tests__:
-                self.register_test(test)
+            if not found_test:
+                warnings.warn(f"No tests were discovered in module: {module_name!r}")
 
         # error if no tests were discovered
         if not self._test_queue:
