@@ -9,7 +9,8 @@ from cocotb._decorators import (
     parametrize,
     test,
 )
-from cocotb._test import create_task, pass_test, start, start_soon
+from cocotb._test import create_task, start, start_soon
+from cocotb._test_functions import pass_test
 
 from ._version import __version__ as _version
 
