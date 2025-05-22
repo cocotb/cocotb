@@ -2,10 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import functools
-import hashlib
 import inspect
-import random
-import time
 from typing import (
     Any,
     Callable,
@@ -26,7 +23,6 @@ from cocotb._test_functions import TestSuccess
 from cocotb._typing import TimeUnit
 from cocotb.task import ResultType, Task
 from cocotb.triggers import NullTrigger, SimTimeoutError, with_timeout
-from cocotb.utils import get_sim_time
 
 
 class Test:
@@ -118,21 +114,30 @@ class Test:
             self.doc = inspect.cleandoc(self.doc)
         self.fullname = f"{self.module}.{self.name}"
 
-        self.tasks: List[Task[Any]] = []
 
-        self._test_complete_cb: Callable[[], None]
-        self._main_task: Task[None]
+class RunningTest:
+    """State of the currently executing Test."""
+
+    # TODO
+    # Make the tasks list a TaskManager.
+    # Make shutdown errors and outcome be an ExceptionGroup from that TaskManager.
+    # Replace result() with passing the outcome to the done callback.
+    # Make this and TestTask the same object which is a Coroutine.
+    # Reimplement the logic in the body of an async function.
+    # Make RunningTest a normal Task that the RegressionManager runs and registers a
+    #  done callback with.
+
+    def __init__(
+        self, test_complete_cb: Callable[[], None], main_task: Task[None]
+    ) -> None:
+        self._test_complete_cb: Callable[[], None] = test_complete_cb
+        self._main_task: Task[None] = main_task
+        self._main_task._add_done_callback(self._test_done_callback)
+
+        self.tasks: List[Task[Any]] = [main_task]
+
         self._outcome: Union[None, Outcome[Any]] = None
         self._shutdown_errors: list[Outcome[Any]] = []
-        self._started: bool = False
-        self._start_time: float
-        self._start_sim_time: float
-
-    def init(self, _test_complete_cb: Callable[[], None]) -> None:
-        self._test_complete_cb = _test_complete_cb
-        self._main_task = TestTask(self.func(cocotb.top), self.name)
-        self._main_task._add_done_callback(self._test_done_callback)
-        self.tasks.append(self._main_task)
 
     def _test_done_callback(self, task: Task[None]) -> None:
         self.tasks.remove(task)
@@ -153,17 +158,6 @@ class Test:
             self.abort(Error(e))
 
     def start(self) -> None:
-        # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
-        hasher = hashlib.sha1()
-        hasher.update(self.fullname.encode())
-        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
-        random.seed(seed)
-
-        self._start_sim_time = get_sim_time("ns")
-        self._start_time = time.time()
-
-        self._started = True
-
         cocotb._scheduler_inst._schedule_task_internal(self._main_task)
         cocotb._scheduler_inst._event_loop()
 
@@ -189,12 +183,6 @@ class Test:
         for task in self.tasks[:]:
             task._cancel_now()
 
-        if self._started:
-            self.wall_time = time.time() - self._start_time
-            self.sim_time_ns = get_sim_time("ns") - self._start_sim_time
-        else:
-            self.wall_time = 0
-            self.sim_time_ns = 0
         self._test_complete_cb()
 
     def add_task(self, task: Task[Any]) -> None:
@@ -314,7 +302,7 @@ def create_task(
         return coro
     elif isinstance(coro, Coroutine):
         task = Task[ResultType](coro)
-        cocotb._regression_manager._test.add_task(task)
+        cocotb._regression_manager._running_test.add_task(task)
         return task
     elif inspect.iscoroutinefunction(coro):
         raise TypeError(
