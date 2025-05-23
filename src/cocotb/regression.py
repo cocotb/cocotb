@@ -6,6 +6,7 @@
 
 """All things relating to regression capabilities."""
 
+import functools
 import hashlib
 import inspect
 import logging
@@ -19,6 +20,8 @@ from enum import auto
 from importlib import import_module
 from typing import (
     Any,
+    Callable,
+    Coroutine,
     Dict,
     List,
     Union,
@@ -28,7 +31,9 @@ import cocotb
 import cocotb._gpi_triggers
 import cocotb.handle
 from cocotb import _ANSI, simulator
+from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test
+from cocotb._extended_awaitables import SimTimeoutError, with_timeout
 from cocotb._gpi_triggers import GPITrigger, Timer
 from cocotb._outcomes import Error, Outcome
 from cocotb._test import RunningTest, TestTask
@@ -40,6 +45,7 @@ from cocotb._utils import (
     want_color_output,
 )
 from cocotb._xunit_reporter import XUnitReporter
+from cocotb.task import Task
 from cocotb.utils import get_sim_time
 
 __all__ = (
@@ -309,7 +315,25 @@ class RegressionManager:
         return self._tear_down()
 
     def _init_test(self) -> RunningTest:
-        main_task = TestTask(self._test.func(cocotb.top), self._test.name)
+        # wrap test function in timeout
+        func: Callable[..., Coroutine[Trigger, None, None]]
+        timeout = self._test.timeout_time
+        if timeout is not None:
+            f = self._test.func
+
+            @functools.wraps(f)
+            async def func(*args: object, **kwargs: object) -> None:
+                running_co = Task(f(*args, **kwargs))
+
+                try:
+                    await with_timeout(running_co, timeout, self._test.timeout_unit)
+                except SimTimeoutError:
+                    running_co.cancel()
+                    raise
+        else:
+            func = self._test.func
+
+        main_task = TestTask(func(cocotb.top), self._test.name)
         return RunningTest(self._test_complete, main_task)
 
     def _schedule_next_test(self, trigger: Union[GPITrigger, None] = None) -> None:
