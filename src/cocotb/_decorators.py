@@ -26,9 +26,7 @@ from typing import (
 )
 
 from cocotb._base_triggers import Trigger
-from cocotb._extended_awaitables import SimTimeoutError, with_timeout
 from cocotb._typing import TimeUnit
-from cocotb.task import Task
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
@@ -90,23 +88,7 @@ class Test:
         skip: bool = False,
         stage: int = 0,
     ) -> None:
-        self.func: Callable[..., Coroutine[Trigger, None, None]]
-        if timeout_time is not None:
-            co = func  # must save ref because we overwrite variable "func"
-
-            @functools.wraps(func)
-            async def f(*args: object, **kwargs: object) -> None:
-                running_co = Task(co(*args, **kwargs))
-
-                try:
-                    await with_timeout(running_co, timeout_time, timeout_unit)
-                except SimTimeoutError:
-                    running_co.cancel()
-                    raise
-
-            self.func = f
-        else:
-            self.func = func
+        self.func: Callable[..., Coroutine[Trigger, None, None]] = func
         self.timeout_time = timeout_time
         self.timeout_unit = timeout_unit
         self.expect_fail = expect_fail
