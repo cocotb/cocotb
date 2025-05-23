@@ -32,7 +32,7 @@ import cocotb._gpi_triggers
 import cocotb.handle
 from cocotb import _ANSI, simulator
 from cocotb._base_triggers import Trigger
-from cocotb._decorators import Test
+from cocotb._decorators import Parameterized, Test
 from cocotb._extended_awaitables import SimTimeoutError, with_timeout
 from cocotb._gpi_triggers import GPITrigger, Timer
 from cocotb._outcomes import Error, Outcome
@@ -49,6 +49,7 @@ from cocotb.task import Task
 from cocotb.utils import get_sim_time
 
 __all__ = (
+    "Parameterized",
     "RegressionManager",
     "RegressionMode",
     "SimFailure",
@@ -154,13 +155,23 @@ class RegressionManager:
             mod = import_module(module_name)
 
             found_test: bool = False
-            for obj in vars(mod).values():
+            for obj_name, obj in vars(mod).items():
                 if isinstance(obj, Test):
                     found_test = True
                     self.register_test(obj)
+                elif isinstance(obj, Parameterized):
+                    found_test = True
+                    generated_tests: bool = False
+                    for test in obj.generate_tests():
+                        generated_tests = True
+                        self.register_test(test)
+                    if not generated_tests:
+                        warnings.warn(
+                            f"Parametrize object generated no tests: {module_name}.{obj_name}"
+                        )
 
             if not found_test:
-                warnings.warn(f"No tests were discovered in module: {module_name!r}")
+                warnings.warn(f"No tests were discovered in module: {module_name}")
 
         # error if no tests were discovered
         if not self._test_queue:
