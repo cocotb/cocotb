@@ -1,17 +1,12 @@
-import functools
-import hashlib
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
 import inspect
-import random
-import time
 from typing import (
     Any,
     Callable,
     Coroutine,
     List,
-    NoReturn,
-    Optional,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -20,151 +15,34 @@ from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome, Value
-from cocotb._typing import TimeUnit
+from cocotb._test_functions import TestSuccess
 from cocotb.task import ResultType, Task
-from cocotb.triggers import NullTrigger, SimTimeoutError, with_timeout
-from cocotb.utils import get_sim_time
-
-Failed: Type[BaseException]
-try:
-    import pytest
-except ModuleNotFoundError:
-    Failed = AssertionError
-else:
-    try:
-        with pytest.raises(Exception):
-            pass
-    except BaseException as _raises_e:
-        Failed = type(_raises_e)
-    else:
-        assert False, "pytest.raises doesn't raise an exception when it fails"
+from cocotb.triggers import NullTrigger
 
 
-# TODO remove SimFailure once we have functionality in place to abort the test without
-# having to set an exception.
-class SimFailure(BaseException):
-    """A Test failure due to simulator failure."""
+class RunningTest:
+    """State of the currently executing Test."""
 
-
-class TestSuccess(BaseException):
-    """Implementation of :func:`pass_test`.
-
-    Users are *not* intended to catch this exception type.
-    """
-
-    def __init__(self, msg: Union[str, None]) -> None:
-        super().__init__(msg)
-        self.msg = msg
-
-
-class Test:
-    """A cocotb test in a regression.
-
-    Args:
-        func:
-            The test function object.
-
-        name:
-            The name of the test function.
-            Defaults to ``func.__qualname__`` (the dotted path to the test function in the module).
-
-        module:
-            The name of the module containing the test function.
-            Defaults to ``func.__module__`` (the name of the module containing the test function).
-
-        doc:
-            The docstring for the test.
-            Defaults to ``func.__doc__`` (the docstring of the test function).
-
-        timeout_time:
-            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
-
-        timeout_unit:
-            Unit of ``timeout_time``, accepts any unit that :class:`~cocotb.triggers.Timer` does.
-
-        expect_fail:
-            If ``True`` and the test fails a functional check via an :keyword:`assert` statement, :func:`pytest.raises`,
-            :func:`pytest.warns`, or :func:`pytest.deprecated_call`, the test is considered to have passed.
-            If ``True`` and the test passes successfully, the test is considered to have failed.
-
-        expect_error:
-            Mark the result as a pass only if one of the given exception types is raised in the test.
-
-        skip:
-            Don't execute this test as part of the regression.
-            The test can still be run manually by setting :envvar:`COCOTB_TESTCASE`.
-
-        stage:
-            Order tests logically into stages.
-            Tests from earlier stages are run before tests from later stages.
-    """
+    # TODO
+    # Make the tasks list a TaskManager.
+    # Make shutdown errors and outcome be an ExceptionGroup from that TaskManager.
+    # Replace result() with passing the outcome to the done callback.
+    # Make this and TestTask the same object which is a Coroutine.
+    # Reimplement the logic in the body of an async function.
+    # Make RunningTest a normal Task that the RegressionManager runs and registers a
+    #  done callback with.
 
     def __init__(
-        self,
-        *,
-        func: Callable[..., Coroutine[Trigger, None, None]],
-        name: Optional[str] = None,
-        module: Optional[str] = None,
-        doc: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: TimeUnit = "step",
-        expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
-        skip: bool = False,
-        stage: int = 0,
-        _expect_sim_failure: bool = False,
+        self, test_complete_cb: Callable[[], None], main_task: Task[None]
     ) -> None:
-        self.func: Callable[..., Coroutine[Trigger, None, None]]
-        if timeout_time is not None:
-            co = func  # must save ref because we overwrite variable "func"
+        self._test_complete_cb: Callable[[], None] = test_complete_cb
+        self._main_task: Task[None] = main_task
+        self._main_task._add_done_callback(self._test_done_callback)
 
-            @functools.wraps(func)
-            async def f(*args: object, **kwargs: object) -> None:
-                running_co = Task(co(*args, **kwargs))
+        self.tasks: List[Task[Any]] = [main_task]
 
-                try:
-                    await with_timeout(running_co, timeout_time, timeout_unit)
-                except SimTimeoutError:
-                    running_co.cancel()
-                    raise
-
-            self.func = f
-        else:
-            self.func = func
-        self.timeout_time = timeout_time
-        self.timeout_unit = timeout_unit
-        self.expect_fail = expect_fail
-        if isinstance(expect_error, type):
-            expect_error = (expect_error,)
-        if _expect_sim_failure:
-            expect_error += (SimFailure,)
-        self.expect_error = expect_error
-        self._expect_sim_failure = _expect_sim_failure
-        self.skip = skip
-        self.stage = stage
-        self.name = self.func.__qualname__ if name is None else name
-        self.module = self.func.__module__ if module is None else module
-        self.doc = self.func.__doc__ if doc is None else doc
-        if self.doc is not None:
-            # cleanup docstring using `trim` function from PEP257
-            self.doc = inspect.cleandoc(self.doc)
-        self.fullname = f"{self.module}.{self.name}"
-
-        self.tasks: List[Task[Any]] = []
-
-        self._test_complete_cb: Callable[[], None]
-        self._main_task: Task[None]
         self._outcome: Union[None, Outcome[Any]] = None
         self._shutdown_errors: list[Outcome[Any]] = []
-        self._started: bool = False
-        self._start_time: float
-        self._start_sim_time: float
-
-    def init(self, _test_complete_cb: Callable[[], None]) -> None:
-        self._test_complete_cb = _test_complete_cb
-        self._main_task = TestTask(self.func(cocotb.top), self.name)
-        self._main_task._add_done_callback(self._test_done_callback)
-        self.tasks.append(self._main_task)
 
     def _test_done_callback(self, task: Task[None]) -> None:
         self.tasks.remove(task)
@@ -185,17 +63,6 @@ class Test:
             self.abort(Error(e))
 
     def start(self) -> None:
-        # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
-        hasher = hashlib.sha1()
-        hasher.update(self.fullname.encode())
-        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
-        random.seed(seed)
-
-        self._start_sim_time = get_sim_time("ns")
-        self._start_time = time.time()
-
-        self._started = True
-
         cocotb._scheduler_inst._schedule_task_internal(self._main_task)
         cocotb._scheduler_inst._event_loop()
 
@@ -221,12 +88,6 @@ class Test:
         for task in self.tasks[:]:
             task._cancel_now()
 
-        if self._started:
-            self.wall_time = time.time() - self._start_time
-            self.sim_time_ns = get_sim_time("ns") - self._start_sim_time
-        else:
-            self.wall_time = 0
-            self.sim_time_ns = 0
         self._test_complete_cb()
 
     def add_task(self, task: Task[Any]) -> None:
@@ -346,7 +207,7 @@ def create_task(
         return coro
     elif isinstance(coro, Coroutine):
         task = Task[ResultType](coro)
-        cocotb._regression_manager._test.add_task(task)
+        cocotb._regression_manager._running_test.add_task(task)
         return task
     elif inspect.iscoroutinefunction(coro):
         raise TypeError(
@@ -362,14 +223,3 @@ def create_task(
             f"Attempt to add an object of type {type(coro)} to the scheduler, "
             f"which isn't a coroutine: {coro!r}\n"
         )
-
-
-def pass_test(msg: Union[str, None] = None) -> NoReturn:
-    """Force a test to pass.
-
-    The test will end and enter termination phase when this is called.
-
-    Args:
-        msg: The message to display when the test passes.
-    """
-    raise TestSuccess(msg)

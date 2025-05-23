@@ -1,1 +1,0 @@
-``cocotb.result.SimFailure`` has been removed. It's replaced with the ``_expect_sim_failure`` argument to :func:`cocotb.test`. Users are not intended to use this functionality.

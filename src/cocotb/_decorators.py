@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import functools
+import inspect
 import sys
 from enum import Enum
 from itertools import product
@@ -13,36 +14,112 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
-    Generic,
     Iterable,
     List,
     Optional,
     Sequence,
     Tuple,
     Type,
-    TypeVar,
     Union,
     cast,
     overload,
 )
 
-from cocotb._test import Test
+from cocotb._base_triggers import Trigger
 from cocotb._typing import TimeUnit
 
-F = TypeVar("F", bound=Callable[..., Coroutine[Any, Any, None]])
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
 
 
-class _Parameterized(Generic[F]):
+class Test:
+    """A cocotb test in a regression.
+
+    Args:
+        func:
+            The test function object.
+
+        name:
+            The name of the test function.
+            Defaults to ``func.__qualname__`` (the dotted path to the test function in the module).
+
+        module:
+            The name of the module containing the test function.
+            Defaults to ``func.__module__`` (the name of the module containing the test function).
+
+        doc:
+            The docstring for the test.
+            Defaults to ``func.__doc__`` (the docstring of the test function).
+
+        timeout_time:
+            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
+
+        timeout_unit:
+            Unit of ``timeout_time``, accepts any unit that :class:`~cocotb.triggers.Timer` does.
+
+        expect_fail:
+            If ``True`` and the test fails a functional check via an :keyword:`assert` statement, :func:`pytest.raises`,
+            :func:`pytest.warns`, or :func:`pytest.deprecated_call`, the test is considered to have passed.
+            If ``True`` and the test passes successfully, the test is considered to have failed.
+
+        expect_error:
+            Mark the result as a pass only if one of the given exception types is raised in the test.
+
+        skip:
+            Don't execute this test as part of the regression.
+            The test can still be run manually by setting :envvar:`COCOTB_TESTCASE`.
+
+        stage:
+            Order tests logically into stages.
+            Tests from earlier stages are run before tests from later stages.
+    """
+
     def __init__(
         self,
-        test_function: F,
+        *,
+        func: Callable[..., Coroutine[Trigger, None, None]],
+        name: Optional[str] = None,
+        module: Optional[str] = None,
+        doc: Optional[str] = None,
+        timeout_time: Optional[float] = None,
+        timeout_unit: TimeUnit = "step",
+        expect_fail: bool = False,
+        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
+        skip: bool = False,
+        stage: int = 0,
+    ) -> None:
+        self.func: Callable[..., Coroutine[Trigger, None, None]] = func
+        self.timeout_time = timeout_time
+        self.timeout_unit = timeout_unit
+        self.expect_fail = expect_fail
+        if isinstance(expect_error, type):
+            expect_error = (expect_error,)
+        self.expect_error = expect_error
+        self.skip = skip
+        self.stage = stage
+        self.name = self.func.__qualname__ if name is None else name
+        self.module = self.func.__module__ if module is None else module
+        self.doc = self.func.__doc__ if doc is None else doc
+        if self.doc is not None:
+            # cleanup docstring using `trim` function from PEP257
+            self.doc = inspect.cleandoc(self.doc)
+        self.fullname = f"{self.module}.{self.name}"
+
+
+TestFuncType: "TypeAlias" = Callable[..., Coroutine[Trigger, None, None]]
+
+
+class Parameterized:
+    def __init__(
+        self,
+        test_function: TestFuncType,
         options: List[
             Union[
                 Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
             ]
         ],
     ) -> None:
-        self.test_function = test_function
+        self.test_template = Test(func=test_function)
         self.options = options
         # we are assuming the input checking is done in parametrize()
 
@@ -62,19 +139,9 @@ class _Parameterized(Generic[F]):
                 for n, vs in transformed.items():
                     self._option_reprs[n] = _reprs(vs)
 
-    def generate_tests(
-        self,
-        *,
-        name: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: TimeUnit = "step",
-        expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
-        skip: bool = False,
-        stage: int = 0,
-        _expect_sim_failure: bool = False,
-    ) -> Iterable[Test]:
-        test_func_name = self.test_function.__qualname__ if name is None else name
+    def generate_tests(self) -> Iterable[Test]:
+        test_func = self.test_template.func
+        test_func_name = self.test_template.name
 
         # this value is a list of ranges of the same length as each set of values in self.options for passing to itertools.product
         option_indexes = [range(len(option[1])) for option in self.options]
@@ -106,22 +173,21 @@ class _Parameterized(Generic[F]):
             parametrized_test_name = "".join(test_name_pieces)
 
             # create wrapper function to bind kwargs
-            @functools.wraps(self.test_function)
+            @functools.wraps(test_func)
             async def _my_test(
                 dut: object, kwargs: Dict[str, Any] = test_kwargs
             ) -> None:
-                await self.test_function(dut, **kwargs)
+                await test_func(dut, **kwargs)
 
             yield Test(
                 func=_my_test,
                 name=parametrized_test_name,
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
-                expect_fail=expect_fail,
-                expect_error=expect_error,
-                skip=skip,
-                stage=stage,
-                _expect_sim_failure=_expect_sim_failure,
+                timeout_time=self.test_template.timeout_time,
+                timeout_unit=self.test_template.timeout_unit,
+                expect_fail=self.test_template.expect_fail,
+                expect_error=self.test_template.expect_error,
+                skip=self.test_template.skip,
+                stage=self.test_template.stage,
             )
 
 
@@ -155,8 +221,22 @@ def _repr(v: Any) -> Optional[str]:
         return None
 
 
+if sys.version_info >= (3, 8):
+    from typing import Protocol
+
+    class TestDecoratorType(Protocol):
+        @overload
+        def __call__(self, obj: TestFuncType) -> Test: ...
+        @overload
+        def __call__(self, obj: Parameterized) -> Parameterized: ...
+
+
 @overload
-def test(_func: Union[F, _Parameterized[F]]) -> F: ...
+def test(_func: TestFuncType) -> Test: ...
+
+
+@overload
+def test(_func: Parameterized) -> Parameterized: ...
 
 
 @overload
@@ -169,12 +249,11 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
-    _expect_sim_failure: bool = False,
-) -> Callable[[Union[F, _Parameterized[F]]], F]: ...
+) -> TestDecoratorType: ...
 
 
 def test(
-    _func: Optional[Union[F, _Parameterized[F]]] = None,
+    _func: Optional[Union[TestFuncType, Parameterized]] = None,
     *,
     timeout_time: Optional[float] = None,
     timeout_unit: TimeUnit = "step",
@@ -183,8 +262,11 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
-    _expect_sim_failure: bool = False,
-) -> Union[F, Callable[[Union[F, _Parameterized[F]]], F]]:
+) -> Union[
+    Test,
+    Parameterized,
+    TestDecoratorType,
+]:
     r"""
     Decorator to register a Callable which returns a Coroutine as a test.
 
@@ -296,55 +378,42 @@ def test(
         Decorated tests now return the decorated object.
 
     """
-
-    def _add_tests(module_name: str, *tests: Test) -> None:
-        mod = sys.modules[module_name]
-        if not hasattr(mod, "__cocotb_tests__"):
-            setattr(mod, "__cocotb_tests__", [])
-        cast(List[Test], mod.__cocotb_tests__).extend(tests)
-
     if _func is not None:
-        if isinstance(_func, _Parameterized):
-            test_func = _func.test_function
-            _add_tests(test_func.__module__, *_func.generate_tests())
-            return test_func
-        else:
-            _add_tests(_func.__module__, Test(func=_func))
+        if isinstance(_func, Parameterized):
             return _func
-
-    def wrapper(f: Union[F, _Parameterized[F]]) -> F:
-        if isinstance(f, _Parameterized):
-            test_func = f.test_function
-            _add_tests(
-                test_func.__module__,
-                *f.generate_tests(
-                    name=name,
-                    timeout_time=timeout_time,
-                    timeout_unit=timeout_unit,
-                    expect_fail=expect_fail,
-                    expect_error=expect_error,
-                    skip=skip,
-                    stage=stage,
-                    _expect_sim_failure=_expect_sim_failure,
-                ),
-            )
-            return test_func
         else:
-            _add_tests(
-                f.__module__,
-                Test(
-                    func=f,
-                    name=name,
-                    timeout_time=timeout_time,
-                    timeout_unit=timeout_unit,
-                    expect_fail=expect_fail,
-                    expect_error=expect_error,
-                    skip=skip,
-                    stage=stage,
-                    _expect_sim_failure=_expect_sim_failure,
-                ),
+            return Test(func=_func)
+
+    @overload
+    def wrapper(obj: TestFuncType) -> Test: ...
+
+    @overload
+    def wrapper(obj: Parameterized) -> Parameterized: ...
+
+    def wrapper(obj: Union[TestFuncType, Parameterized]) -> Union[Test, Parameterized]:
+        if isinstance(obj, Parameterized):
+            obj.test_template = Test(
+                func=obj.test_template.func,
+                name=name,
+                timeout_time=timeout_time,
+                timeout_unit=timeout_unit,
+                expect_fail=expect_fail,
+                expect_error=expect_error,
+                skip=skip,
+                stage=stage,
             )
-            return f
+            return obj
+        else:
+            return Test(
+                func=obj,
+                name=name,
+                timeout_time=timeout_time,
+                timeout_unit=timeout_unit,
+                expect_fail=expect_fail,
+                expect_error=expect_error,
+                skip=skip,
+                stage=stage,
+            )
 
     return wrapper
 
@@ -354,7 +423,7 @@ def parametrize(
         Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
     ],
     **options_by_name: Sequence[Any],
-) -> Callable[[F], _Parameterized[F]]:
+) -> Callable[[TestFuncType], Parameterized]:
     """Decorator to generate parametrized tests from a single test function.
 
     Decorates a test function with named test parameters.
@@ -366,7 +435,7 @@ def parametrize(
         @cocotb.test(
             skip=False,
         )
-        @parametrize(
+        @cocotb.parametrize(
             arg1=[0, 1],
             arg2=["a", "b"],
         )
@@ -405,14 +474,10 @@ def parametrize(
 
     .. code-block:: python
 
-        @cocotb.test
-        @cocotb.regression.parametrize(
+        @cocotb.parametrize(
             ("arg1", [0, 1]),
-            (("arg2", "arg3"), [(1, 2), (3, 4)]),
+            (("arg2", "arg3"), [(1, 2), (3, 4)])
         )
-        async def test(dut, arg1, arg2):
-            # do stuff
-            ...
 
     Args:
         options_by_tuple:
@@ -447,7 +512,7 @@ def parametrize(
 
     options = [*options_by_tuple, *options_by_name.items()]
 
-    def wrapper(f: F) -> _Parameterized[F]:
-        return _Parameterized(f, options)
+    def wrapper(f: TestFuncType) -> Parameterized:
+        return Parameterized(f, options)
 
     return wrapper
