@@ -119,7 +119,7 @@ class Parameterized:
             ]
         ],
     ) -> None:
-        self.test_function = test_function
+        self.test_template = Test(func=test_function)
         self.options = options
         # we are assuming the input checking is done in parametrize()
 
@@ -139,18 +139,9 @@ class Parameterized:
                 for n, vs in transformed.items():
                     self._option_reprs[n] = _reprs(vs)
 
-    def generate_tests(
-        self,
-        *,
-        name: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: TimeUnit = "step",
-        expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
-        skip: bool = False,
-        stage: int = 0,
-    ) -> Iterable[Test]:
-        test_func_name = self.test_function.__qualname__ if name is None else name
+    def generate_tests(self) -> Iterable[Test]:
+        test_func = self.test_template.func
+        test_func_name = self.test_template.name
 
         # this value is a list of ranges of the same length as each set of values in self.options for passing to itertools.product
         option_indexes = [range(len(option[1])) for option in self.options]
@@ -182,21 +173,21 @@ class Parameterized:
             parametrized_test_name = "".join(test_name_pieces)
 
             # create wrapper function to bind kwargs
-            @functools.wraps(self.test_function)
+            @functools.wraps(test_func)
             async def _my_test(
                 dut: object, kwargs: Dict[str, Any] = test_kwargs
             ) -> None:
-                await self.test_function(dut, **kwargs)
+                await test_func(dut, **kwargs)
 
             yield Test(
                 func=_my_test,
                 name=parametrized_test_name,
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
-                expect_fail=expect_fail,
-                expect_error=expect_error,
-                skip=skip,
-                stage=stage,
+                timeout_time=self.test_template.timeout_time,
+                timeout_unit=self.test_template.timeout_unit,
+                expect_fail=self.test_template.expect_fail,
+                expect_error=self.test_template.expect_error,
+                skip=self.test_template.skip,
+                stage=self.test_template.stage,
             )
 
 
@@ -237,7 +228,7 @@ if sys.version_info >= (3, 8):
         @overload
         def __call__(self, obj: TestFuncType) -> Test: ...
         @overload
-        def __call__(self, obj: Parameterized) -> None: ...
+        def __call__(self, obj: Parameterized) -> Parameterized: ...
 
 
 @overload
@@ -245,7 +236,7 @@ def test(_func: TestFuncType) -> Test: ...
 
 
 @overload
-def test(_func: Parameterized) -> None: ...
+def test(_func: Parameterized) -> Parameterized: ...
 
 
 @overload
@@ -273,7 +264,7 @@ def test(
     name: Optional[str] = None,
 ) -> Union[
     Test,
-    None,
+    Parameterized,
     TestDecoratorType,
 ]:
     r"""
@@ -387,17 +378,9 @@ def test(
         Decorated tests now return the decorated object.
 
     """
-
-    def _add_tests(module_name: str, *tests: Test) -> None:
-        mod = sys.modules[module_name]
-        for test in tests:
-            setattr(mod, test.name, test)
-
     if _func is not None:
         if isinstance(_func, Parameterized):
-            test_func = _func.test_function
-            _add_tests(test_func.__module__, *_func.generate_tests())
-            return None
+            return _func
         else:
             return Test(func=_func)
 
@@ -405,24 +388,21 @@ def test(
     def wrapper(obj: TestFuncType) -> Test: ...
 
     @overload
-    def wrapper(obj: Parameterized) -> None: ...
+    def wrapper(obj: Parameterized) -> Parameterized: ...
 
-    def wrapper(obj: Union[TestFuncType, Parameterized]) -> Union[Test, None]:
+    def wrapper(obj: Union[TestFuncType, Parameterized]) -> Union[Test, Parameterized]:
         if isinstance(obj, Parameterized):
-            test_func = obj.test_function
-            _add_tests(
-                test_func.__module__,
-                *obj.generate_tests(
-                    name=name,
-                    timeout_time=timeout_time,
-                    timeout_unit=timeout_unit,
-                    expect_fail=expect_fail,
-                    expect_error=expect_error,
-                    skip=skip,
-                    stage=stage,
-                ),
+            obj.test_template = Test(
+                func=obj.test_template.func,
+                name=name,
+                timeout_time=timeout_time,
+                timeout_unit=timeout_unit,
+                expect_fail=expect_fail,
+                expect_error=expect_error,
+                skip=skip,
+                stage=stage,
             )
-            return None
+            return obj
         else:
             return Test(
                 func=obj,
