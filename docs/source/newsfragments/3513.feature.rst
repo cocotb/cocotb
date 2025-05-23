@@ -1,1 +1,1 @@
-Added :func:`cocotb.regression.parametrize`, a decorator that serves as an alternative to :class:`~cocotb.regression.TestFactory`.
+Added :func:`cocotb.parametrize`, a decorator that serves as an alternative to :class:`~cocotb.regression.TestFactory`.

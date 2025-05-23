@@ -1,1 +1,1 @@
-:class:`~cocotb.regression.TestFactory` is now deprecated. Use :class:`cocotb.regression.parametrize` instead.
+:class:`~cocotb.regression.TestFactory` is now deprecated. Use :class:`cocotb.parametrize` instead.

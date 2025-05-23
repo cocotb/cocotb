@@ -1,1 +1,1 @@
-``cocotb.result.TestSuccess`` was removed. Use :func:`cocotb.regression.pass_test` instead.
+``cocotb.result.TestSuccess`` was removed. Use :func:`cocotb.pass_test` instead.

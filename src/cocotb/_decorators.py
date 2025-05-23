@@ -72,7 +72,6 @@ class _Parameterized(Generic[F]):
         expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
         skip: bool = False,
         stage: int = 0,
-        _expect_sim_failure: bool = False,
     ) -> Iterable[Test]:
         test_func_name = self.test_function.__qualname__ if name is None else name
 
@@ -121,7 +120,6 @@ class _Parameterized(Generic[F]):
                 expect_error=expect_error,
                 skip=skip,
                 stage=stage,
-                _expect_sim_failure=_expect_sim_failure,
             )
 
 
@@ -169,7 +167,6 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
-    _expect_sim_failure: bool = False,
 ) -> Callable[[Union[F, _Parameterized[F]]], F]: ...
 
 
@@ -183,7 +180,6 @@ def test(
     skip: bool = False,
     stage: int = 0,
     name: Optional[str] = None,
-    _expect_sim_failure: bool = False,
 ) -> Union[F, Callable[[Union[F, _Parameterized[F]]], F]]:
     r"""
     Decorator to register a Callable which returns a Coroutine as a test.
@@ -325,7 +321,6 @@ def test(
                     expect_error=expect_error,
                     skip=skip,
                     stage=stage,
-                    _expect_sim_failure=_expect_sim_failure,
                 ),
             )
             return test_func
@@ -341,7 +336,6 @@ def test(
                     expect_error=expect_error,
                     skip=skip,
                     stage=stage,
-                    _expect_sim_failure=_expect_sim_failure,
                 ),
             )
             return f
@@ -366,7 +360,7 @@ def parametrize(
         @cocotb.test(
             skip=False,
         )
-        @parametrize(
+        @cocotb.parametrize(
             arg1=[0, 1],
             arg2=["a", "b"],
         )
@@ -405,14 +399,10 @@ def parametrize(
 
     .. code-block:: python
 
-        @cocotb.test
-        @cocotb.regression.parametrize(
+        @cocotb.parametrize(
             ("arg1", [0, 1]),
-            (("arg2", "arg3"), [(1, 2), (3, 4)]),
+            (("arg2", "arg3"), [(1, 2), (3, 4)])
         )
-        async def test(dut, arg1, arg2):
-            # do stuff
-            ...
 
     Args:
         options_by_tuple:

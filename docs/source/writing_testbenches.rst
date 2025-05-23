@@ -383,7 +383,7 @@ For example, see the below output for the first test from above.
 
 
 If a test coroutine completes without `failing` or `erroring`,
-or if the test coroutine or any running :class:`~cocotb.task.Task` calls :func:`.pass_test`,
+or if the test coroutine or any running :class:`~cocotb.task.Task` calls :func:`~cocotb.pass_test`,
 the test is considered to have `passed`.
 Below are examples of `passing` tests.
 
@@ -395,13 +395,13 @@ Below are examples of `passing` tests.
 
     @cocotb.test()
     async def test(dut):
-        cocotb.regression.pass_test("Reason")  # ends test with success early
+        cocotb.pass_test("Reason")  # ends test with success early
         assert 1 > 2  # this would fail, but it isn't run because the test was ended early
 
     @cocotb.test()
     async def test(dut):
         async def ends_test_with_pass():
-            cocotb.regression.pass_test("Reason")  # passes test from different task
+            cocotb.pass_test("Reason")
         cocotb.start_soon(ends_test_with_pass())
         await Timer(10, 'ns')
 
