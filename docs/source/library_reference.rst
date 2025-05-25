@@ -90,6 +90,8 @@ Writing and Generating Tests
     :members:
     :member-order: bysource
 
+.. autofunction:: cocotb.regression.SimFailure
+
 Interacting with the Simulator
 ==============================
 

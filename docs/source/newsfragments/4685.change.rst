@@ -1,0 +1,1 @@
+Moved ``cocotb.result.SimFailure`` to :mod:`cocotb.regression`.
