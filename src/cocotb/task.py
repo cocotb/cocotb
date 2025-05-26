@@ -294,7 +294,7 @@ class Task(Generic[ResultType]):
     def join(self) -> "Join[ResultType]":
         r"""Block until the Task completes and return the result.
 
-        Equivalent to calling :class:`Join(self) <cocotb.triggers.Join>`.
+        Equivalent to calling :class:`Join(self) <cocotb.task.Join>`.
 
         .. code-block:: python
 
@@ -435,7 +435,7 @@ class Task(Generic[ResultType]):
 class TaskComplete(Trigger, Generic[ResultType]):
     r"""Fires when a :class:`~cocotb.task.Task` completes.
 
-    Unlike :class:`~cocotb.triggers.Join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
+    Unlike :class:`~cocotb.task.Join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
     See :attr:`.Task.complete` for more information.
 
     .. warning::

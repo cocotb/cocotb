@@ -68,7 +68,7 @@ Changes
 -------
 
 - For Aldec simulators, the `-dbg` and `-O2` options are no longer passed by default, as they reduce simulation speed. Pass these options in ``COMPILE_ARGS`` and ``SIM_ARGS`` if you need them for increased observability. (:pr:`3490`)
-- :keyword:`await`\ ing a :class:`~cocotb.triggers.Join` trigger will yield the Join trigger and not the result of the task in the 2.0 release. (:pr:`3871`)
+- :keyword:`await`\ ing a :class:`~cocotb.task.Join` trigger will yield the Join trigger and not the result of the task in the 2.0 release. (:pr:`3871`)
 - :meth:`Lock.locked <cocotb.triggers.Lock.locked>` is now a method rather than an attribute to mirror :meth:`asyncio.Lock.locked`. (:pr:`3871`)
 
 

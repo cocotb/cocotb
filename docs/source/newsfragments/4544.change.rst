@@ -1,0 +1,1 @@
+:class:`.Join` was moved from :mod:`cocotb.triggers` to :mod:`cocotb.task`.
