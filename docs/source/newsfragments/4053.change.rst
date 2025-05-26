@@ -1,0 +1,1 @@
+``cocotb.ipython_support`` was moved to :mod:`cocotb_tools.ipython_support`.

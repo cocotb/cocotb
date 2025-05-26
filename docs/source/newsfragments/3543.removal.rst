@@ -1,0 +1,1 @@
+Removed the ``cocotb.memdebug`` module.
