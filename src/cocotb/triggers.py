@@ -49,6 +49,11 @@ __all__ = (
     "with_timeout",
 )
 
+# Set __module__ on re-exports
+for name in __all__:
+    obj = globals()[name]
+    obj.__module__ = __name__
+
 
 def __getattr__(name: str) -> Any:
     if name == "Join":

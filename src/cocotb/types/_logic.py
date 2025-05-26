@@ -5,7 +5,6 @@ from functools import lru_cache
 from typing import (
     Dict,
     Set,
-    Tuple,  # noqa: F401  # Used by doctests, false positive
     Type,
     Union,
 )

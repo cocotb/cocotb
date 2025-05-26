@@ -23,14 +23,31 @@ if TYPE_CHECKING:
     from cocotb.regression import RegressionManager
 
 __all__ = (
+    "RANDOM_SEED",
+    "SIM_NAME",
+    "SIM_VERSION",
     "__version__",
+    "argv",
     "create_task",
+    "is_simulation",
+    "log",
+    "packages",
     "parametrize",
     "pass_test",
+    "plusargs",
     "start",
     "start_soon",
     "test",
+    "top",
 )
+
+# Set __module__ on re-exports
+test.__module__ = __name__
+start_soon.__module__ = __name__
+start.__module__ = __name__
+create_task.__module__ = __name__
+parametrize.__module__ = __name__
+pass_test.__module__ = __name__
 
 
 __version__ = _version

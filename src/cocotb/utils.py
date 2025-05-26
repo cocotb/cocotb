@@ -16,6 +16,12 @@ from typing import Union, overload
 from cocotb import simulator
 from cocotb._typing import TimeUnit, TimeUnitWithoutStep
 
+__all__ = (
+    "get_sim_steps",
+    "get_sim_time",
+    "get_time_from_sim_steps",
+)
+
 
 def _get_simulator_precision() -> int:
     # cache and replace this function

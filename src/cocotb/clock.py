@@ -30,6 +30,8 @@ from cocotb.triggers import (
 )
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
+__all__ = ("Clock",)
+
 if sys.version_info >= (3, 10):
     from typing import (
         Literal,

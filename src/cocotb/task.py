@@ -51,6 +51,10 @@ __all__ = (
     "resume",
 )
 
+# Set __module__ on re-exports
+bridge.__module__ = __name__
+resume.__module__ = __name__
+
 
 class _TaskState(DocEnum):
     """State of a Task."""

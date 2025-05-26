@@ -20,6 +20,15 @@ from cocotb._utils import pointer_str
 from cocotb.task import Task
 from cocotb.triggers import Event
 
+__all__ = (
+    "AbstractQueue",
+    "LifoQueue",
+    "PriorityQueue",
+    "Queue",
+    "QueueEmpty",
+    "QueueFull",
+)
+
 
 class QueueFull(asyncio.queues.QueueFull):
     """Raised when the :meth:`Queue.put_nowait()` method is called on a full :class:`Queue`."""

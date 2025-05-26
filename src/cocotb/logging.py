@@ -35,6 +35,16 @@ logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like addi
 logging.addLevelName(5, "TRACE")
 
 
+__all__ = (
+    "SimBaseLog",
+    "SimColourLogFormatter",
+    "SimLog",
+    "SimLogFormatter",
+    "SimTimeContextFilter",
+    "default_config",
+)
+
+
 def default_config() -> None:
     """Apply the default cocotb log formatting to the root logger.
 
