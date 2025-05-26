@@ -12,7 +12,8 @@ from common import assert_takes
 import cocotb
 from cocotb.clock import Clock
 from cocotb.regression import TestFactory
-from cocotb.triggers import Edge, Event, First, Join, Timer
+from cocotb.task import Join
+from cocotb.triggers import Edge, Event, First, Timer
 from cocotb.utils import get_sim_steps, get_sim_time, get_time_from_sim_steps
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -226,3 +227,9 @@ async def test_results_deprecated(_: Any) -> None:
         from cocotb.result import SimFailure  # noqa: F401
     with pytest.warns(DeprecationWarning):
         from cocotb.result import SimTimeoutError  # noqa: F401
+
+
+@cocotb.test
+async def test_triggers_Join_import_deprecated(_: Any) -> None:
+    with pytest.warns(DeprecationWarning):
+        from cocotb.triggers import Join  # noqa: F401

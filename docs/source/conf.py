@@ -118,7 +118,7 @@ codeautolink_autodoc_inject = True  # Inject an autolink-examples table to the e
 codeautolink_global_preface = textwrap.dedent("""\
     import cocotb
     from cocotb.clock import Clock
-    from cocotb.triggers import Combine, Edge, FallingEdge, First, Join, RisingEdge, Timer, with_timeout
+    from cocotb.triggers import Combine, Edge, FallingEdge, First, RisingEdge, Timer, with_timeout
     from cocotb.types import Array, Logic, LogicArray, Range
     from cocotb.utils import get_sim_time
     """

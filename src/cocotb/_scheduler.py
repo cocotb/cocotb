@@ -67,7 +67,7 @@ class Scheduler:
         so as to wake up Tasks waiting for that Trigger to `fire` (when the event encoded by the Trigger occurs).
         This is accomplished by :meth:`_resume_task_upon`.
         :meth:`_resume_task_upon` also associates the Trigger with the Task waiting on it to fire by adding them to the :attr:`_trigger2tasks` map.
-        If, instead of reaching an :keyword:`await`, a Task finishes, :meth:`_schedule` will cause the :class:`~cocotb.triggers.Join` trigger to fire.
+        If, instead of reaching an :keyword:`await`, a Task finishes, :meth:`_schedule` will cause the :class:`~cocotb.task.Join` trigger to fire.
         Once a Trigger fires it calls the react function which queues all Tasks waiting for that Trigger to fire.
         Then the process repeats.
 
@@ -244,7 +244,7 @@ class Scheduler:
 
         Also:
           * enters the scheduler termination state if the Test Task is unscheduled.
-          * creates and fires a :class:`~cocotb.triggers.Join` trigger.
+          * creates and fires a :class:`~cocotb.task.Join` trigger.
           * forcefully ends the Test if a Task ends with an exception.
         """
 

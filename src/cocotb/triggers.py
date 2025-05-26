@@ -1,6 +1,9 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import warnings
+from typing import Any
+
 from cocotb._base_triggers import Event, Lock, NullTrigger, Trigger
 from cocotb._extended_awaitables import (
     ClockCycles,
@@ -22,7 +25,6 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
-from cocotb.task import Join, TaskComplete
 
 __all__ = (
     "ClockCycles",
@@ -32,7 +34,6 @@ __all__ = (
     "FallingEdge",
     "First",
     "GPITrigger",
-    "Join",
     "Lock",
     "NextTimeStep",
     "NullTrigger",
@@ -40,7 +41,6 @@ __all__ = (
     "ReadWrite",
     "RisingEdge",
     "SimTimeoutError",
-    "TaskComplete",
     "Timer",
     "Trigger",
     "ValueChange",
@@ -48,3 +48,16 @@ __all__ = (
     "current_gpi_trigger",
     "with_timeout",
 )
+
+
+def __getattr__(name: str) -> Any:
+    if name == "Join":
+        warnings.warn(
+            "Join has been moved to `cocotb.task`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        from cocotb.task import Join
+
+        return Join
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

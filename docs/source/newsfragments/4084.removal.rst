@@ -1,1 +1,1 @@
-:class:`~cocotb.triggers.Join` was deprecated, use the :class:`~cocotb.task.Task` being joined directly wherever ``Join(task)`` was previously used.
+:class:`~cocotb.task.Join` was deprecated, use the :class:`~cocotb.task.Task` being joined directly wherever ``Join(task)`` was previously used.
