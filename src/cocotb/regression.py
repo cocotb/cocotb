@@ -57,6 +57,12 @@ __all__ = (
     "TestFactory",
 )
 
+# Set __module__ on re-exports
+Parameterized.__module__ = __name__
+Test.__module__ = __name__
+TestFactory.__module__ = __name__
+
+
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
 

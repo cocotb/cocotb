@@ -47,6 +47,26 @@ from cocotb._utils import DocIntEnum
 from cocotb.task import Task
 from cocotb.types import Array, Logic, LogicArray, Range
 
+__all__ = (
+    "ArrayObject",
+    "Deposit",
+    "EnumObject",
+    "Force",
+    "Freeze",
+    "GPIDiscovery",
+    "HierarchyArrayObject",
+    "HierarchyObject",
+    "Immediate",
+    "IntegerObject",
+    "LogicArrayObject",
+    "LogicObject",
+    "RealObject",
+    "Release",
+    "SimHandleBase",
+    "StringObject",
+    "ValueObjectBase",
+)
+
 
 class _Limits(enum.IntEnum):
     SIGNED_NBIT = 1
