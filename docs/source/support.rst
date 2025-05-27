@@ -5,7 +5,7 @@ Getting Help
 Getting in Contact with a Maintainer
 ====================================
 
-All of the :ref:`maintainers <maintainers>` are active on the `Gitter channel <https://github.com/cocotb/cocotb>`__.
+All of the :ref:`maintainers <maintainers>` are active on the `Gitter channel <https://gitter.im/cocotb/Lobby>`__.
 They prefer inquiries go through direct messages on Gitter,
 or by mentioning them in the main `cocotb Gitter channel <https://gitter.im/cocotb/Lobby>`__ using ``@{maintainer name}``.
 Maintainers are unpaid volunteers, so it might take a while for a maintainer to get back to you.
