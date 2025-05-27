@@ -2,6 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import os
+import sys
 import warnings
 from typing import Any
 
@@ -215,3 +216,13 @@ async def test_units_deprecated(dut: Any) -> None:
         assert get_time_from_sim_steps(10, units="ns") == get_time_from_sim_steps(
             10, "ns"
         )
+
+
+@cocotb.test(skip=sys.version_info < (3, 7))
+async def test_results_deprecated(_: Any) -> None:
+    with pytest.warns(DeprecationWarning):
+        from cocotb.result import TestSuccess  # noqa: F401
+    with pytest.warns(DeprecationWarning):
+        from cocotb.result import SimFailure  # noqa: F401
+    with pytest.warns(DeprecationWarning):
+        from cocotb.result import SimTimeoutError  # noqa: F401
