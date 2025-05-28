@@ -14,7 +14,6 @@ the ReadOnly (and this is invalid, at least in Modelsim).
 """
 
 import logging
-import os
 import sys
 import threading
 from bdb import BdbQuit
@@ -35,16 +34,13 @@ from cocotb._gpi_triggers import (
 from cocotb._outcomes import Error, Outcome, Value, capture
 from cocotb._profiling import profiling_context
 from cocotb._py_compat import insertion_ordered_dict
+from cocotb._utils import DEBUG
 from cocotb.task import Task, _TaskState
 
 if sys.version_info >= (3, 10):
     from typing import ParamSpec
 
     P = ParamSpec("P")
-
-# Sadly the Python standard logging module is very slow so it's better not to
-# make any calls by testing a boolean flag first
-_debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
 T = TypeVar("T")
@@ -124,7 +120,7 @@ class Scheduler:
 
     def __init__(self) -> None:
         self.log = logging.getLogger("cocotb.scheduler")
-        if _debug:
+        if DEBUG:
             self.log.setLevel(logging.DEBUG)
 
         # A dictionary of pending tasks for each trigger,
@@ -168,7 +164,7 @@ class Scheduler:
 
         Finds all Tasks waiting on the Trigger that fired and queues them.
         """
-        if _debug:
+        if DEBUG:
             self.log.debug("Trigger fired: %s", trigger)
 
         # find all tasks waiting on trigger that fired
@@ -184,11 +180,11 @@ class Scheduler:
             # For Python triggers this isn't actually an error - we might do
             # event.set() without knowing whether any tasks are actually
             # waiting on this event, for example
-            elif _debug:
+            elif DEBUG:
                 self.log.debug("No tasks waiting on trigger that fired: %s", trigger)
             return
 
-        if _debug:
+        if DEBUG:
             debugstr = "\n\t".join([str(task) for task in scheduling])
             if len(scheduling) > 0:
                 debugstr = "\n\t" + debugstr
@@ -219,10 +215,10 @@ class Scheduler:
         while self._scheduled_tasks:
             task, exc = self._scheduled_tasks.popitem(last=False)
 
-            if _debug:
+            if DEBUG:
                 self.log.debug("Scheduling task %s", task)
             self._resume_task(task, exc)
-            if _debug:
+            if DEBUG:
                 self.log.debug("Scheduled task %s", task)
 
             # remove our reference to the objects at the end of each loop,
@@ -232,14 +228,14 @@ class Scheduler:
 
             # Schedule may have queued up some events so we'll burn through those
             while self._pending_events:
-                if _debug:
+                if DEBUG:
                     self.log.debug(
                         "Scheduling pending event %s", self._pending_events[0]
                     )
                 self._pending_events.pop(0).set()
 
         # no more pending tasks
-        if _debug:
+        if DEBUG:
             self.log.debug("All tasks scheduled, handing control back to simulator")
 
     def _unschedule(self, task: Task[Any]) -> None:
@@ -371,7 +367,7 @@ class Scheduler:
 
         def execute_external() -> None:
             waiter._outcome = capture(func, *args, **kwargs)
-            if _debug:
+            if DEBUG:
                 self.log.debug(
                     "Execution of external routine done %s", threading.current_thread()
                 )
@@ -414,13 +410,13 @@ class Scheduler:
             trigger = task._advance(exc)
 
             if task.done():
-                if _debug:
+                if DEBUG:
                     self.log.debug("%s completed with %s", task, task._outcome)
                 assert trigger is None
                 self._unschedule(task)
 
             if not task.done():
-                if _debug:
+                if DEBUG:
                     self.log.debug("%r yielded %s", task, trigger)
                 if not isinstance(trigger, Trigger):
                     e = TypeError(
@@ -438,14 +434,14 @@ class Scheduler:
             if self._main_thread is threading.current_thread():
                 for ext in self._pending_threads:
                     ext.thread_start()
-                    if _debug:
+                    if DEBUG:
                         self.log.debug(
                             "Blocking from %s on %s",
                             threading.current_thread(),
                             ext.thread,
                         )
                     state = ext.thread_wait()
-                    if _debug:
+                    if DEBUG:
                         self.log.debug(
                             "Back from wait on self %s with newstate %s",
                             threading.current_thread(),

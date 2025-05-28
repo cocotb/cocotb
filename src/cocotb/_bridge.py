@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import functools
 import logging
-import os
 import sys
 import threading
 from enum import IntEnum
@@ -19,15 +18,12 @@ import cocotb
 from cocotb._base_triggers import Event, Trigger
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Outcome
+from cocotb._utils import DEBUG
 
 if sys.version_info >= (3, 10):
     from typing import ParamSpec
 
     P = ParamSpec("P")
-
-# Sadly the Python standard logging module is very slow so it's better not to
-# make any calls by testing a boolean flag first
-_debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 Result = TypeVar("Result")
 
@@ -136,7 +132,7 @@ class external_waiter(Generic[Result]):
 
     def _propagate_state(self, new_state: external_state) -> None:
         with self.cond:
-            if _debug:
+            if DEBUG:
                 self._log.debug(
                     f"Changing state from {self.state} -> {new_state} from {threading.current_thread()}"
                 )
@@ -144,7 +140,7 @@ class external_waiter(Generic[Result]):
             self.cond.notify()
 
     def thread_done(self) -> None:
-        if _debug:
+        if DEBUG:
             self._log.debug(f"Thread finished from {threading.current_thread()}")
         self._propagate_state(external_state.EXITED)
 
@@ -163,7 +159,7 @@ class external_waiter(Generic[Result]):
         self._propagate_state(external_state.RUNNING)
 
     def thread_wait(self) -> external_state:
-        if _debug:
+        if DEBUG:
             self._log.debug(
                 f"Waiting for the condition lock {threading.current_thread()}"
             )
@@ -172,7 +168,7 @@ class external_waiter(Generic[Result]):
             while self.state == external_state.RUNNING:
                 self.cond.wait()
 
-            if _debug:
+            if DEBUG:
                 if self.state == external_state.EXITED:
                     self._log.debug(
                         f"Thread {self.thread} has exited from {threading.current_thread()}"

@@ -27,6 +27,10 @@ from typing import (
     overload,
 )
 
+# Sadly the Python standard logging module is very slow so it's better not to make any
+# calls by testing a boolean flag first.
+DEBUG = "COCOTB_SCHEDULER_DEBUG" in os.environ
+
 
 @lru_cache(maxsize=None)
 def want_color_output() -> bool:

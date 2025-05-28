@@ -4,7 +4,6 @@
 import collections.abc
 import inspect
 import logging
-import os
 import sys
 import traceback
 from asyncio import CancelledError, InvalidStateError
@@ -37,10 +36,6 @@ if sys.version_info >= (3, 11):
 
 #: Task result type
 ResultType = TypeVar("ResultType")
-
-# Sadly the Python standard logging module is very slow so it's better not to
-# make any calls by testing a boolean flag first
-_debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
 __all__ = (
