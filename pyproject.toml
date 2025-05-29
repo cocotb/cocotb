@@ -55,15 +55,28 @@ extend-select = [
     "I",        # isort
     "UP",       # pyupgrade
     "PL",       # pylint
+    "E",        # pycodestyle errors
+    "W",        # pycodestyle warnings
+    "F",        # pyflakes
+    "C4",       # flake8-comprehension
+    "LOG",      # flake8-logging
+    "G",        # flake8-logging-format
+    "ISC",      # implicit string concat
+    "SIM103",   # return the condition directly
+    "SIM300",   # yoda conditions
+    "RUF100",   # unused noqa
+    "RUF101",   # redirected noqa
+    "RUF010",   # explicit type conversion in f-string
+    "RUF005",   # collection literal concatenation
     "RUF022",   # unsorted __all__
+    "PERF101",  # unnecessary list cast
+    "PERF102",  # unnecessary dict.items()
+    "B007",     # unused loop variable
 ]
 ignore = [
-    # ambiguous variable name (preference)
-    "E741",
-    # line too long (preference)
-    "E501",
-    # whitespace before ':' (black)
-    "E203",
+
+    "E741",    # ambiguous variable name (preference)
+    "E501",    # line too long (preference)
     "PLR0912", # Too many branches (>12) (preference)
     "PLR0913", # Too many arguments to function call (>5) (preference)
     "PLR0915", # Too many statements (>50) (preference)
