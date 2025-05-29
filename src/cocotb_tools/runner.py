@@ -733,10 +733,10 @@ class Icarus(Runner):
                 str(cocotb_tools.config.libs_dir),
                 "-m",
                 cocotb_tools.config.lib_name("vpi", "icarus"),
+                *self.test_args,
+                str(self.sim_file),
+                *plusargs,
             ]
-            + self.test_args
-            + [str(self.sim_file)]
-            + plusargs
         ]
 
     def _build_command(self) -> List[_Command]:
@@ -859,7 +859,7 @@ class Questa(Runner):
         cmds = []
 
         if self.pre_cmd is not None:
-            pre_cmd = ["-do"] + self.pre_cmd
+            pre_cmd = ["-do", *self.pre_cmd]
         else:
             pre_cmd = []
 
@@ -988,10 +988,13 @@ class Ghdl(Runner):
 
         if self.hdl_toplevel is not None:
             cmds += [
-                ["ghdl", "-m"]
-                + [f"--work={self.hdl_library}"]
-                + self.build_args
-                + [self.hdl_toplevel]
+                [
+                    "ghdl",
+                    "-m",
+                    f"--work={self.hdl_library}",
+                    *self.build_args,
+                    self.hdl_toplevel,
+                ]
             ]
 
         return cmds
@@ -1202,7 +1205,7 @@ class Riviera(Runner):
         with tempfile.NamedTemporaryFile(delete=False) as do_file:
             do_file.write("\n".join(do_script).encode())
 
-        return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
+        return [["vsimsa", "-do", "do", do_file.name]]
 
     def _build_vhdl_source(self, source: PathLike) -> str:
         return "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}".format(
@@ -1284,7 +1287,7 @@ class Riviera(Runner):
         with tempfile.NamedTemporaryFile(delete=False) as do_file:
             do_file.write(do_script.encode())
 
-        return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
+        return [["vsimsa", "-do", "do", do_file.name]]
 
 
 class Verilator(Runner):
@@ -1562,21 +1565,23 @@ class Xcelium(Runner):
 
         cmds = [["mkdir", "-p", tmpdir]]
         cmds += [
-            ["xrun"]
-            + ["-logfile"]
-            + [f"xrun_{self.current_test_name}.log"]
-            + ["-xmlibdirname"]
-            + [f"{self.build_dir}/xrun_snapshot"]
-            + ["-cds_implicit_tmpdir"]
-            + [tmpdir]
-            + ["-licqueue"]
-            + vhpi_opts
-            + verbosity_opts
-            + ["-R"]
-            + self.test_args
-            + self.plusargs
-            + ["-gui" if self.gui else ""]
-            + input_tcl
+            [
+                "xrun",
+                "-logfile",
+                f"xrun_{self.current_test_name}.log",
+                "-xmlibdirname",
+                f"{self.build_dir}/xrun_snapshot",
+                "-cds_implicit_tmpdir",
+                tmpdir,
+                "-licqueue",
+                *vhpi_opts,
+                *verbosity_opts,
+                "-R",
+                *self.test_args,
+                *self.plusargs,
+                "-gui" if self.gui else "",
+                *input_tcl,
+            ]
         ]
         self.env["GPI_EXTRA"] = (
             cocotb_tools.config.lib_name_path("vhpi", "xcelium").as_posix()
@@ -1621,13 +1626,13 @@ class Vcs(Runner):
 
     @property
     def _build_opts(self) -> List[str]:
-        opts = (
-            ["-full64"]
-            + ["-debug_access+all"]
-            + ["+acc+3"]
-            + ["-sverilog"]
-            + ["-LDFLAGS -Wl,--no-as-needed"]
-        )
+        opts = [
+            "-full64",
+            "-debug_access+all",
+            "+acc+3",
+            "-sverilog",
+            "-LDFLAGS -Wl,--no-as-needed",
+        ]
 
         if self.verbose:
             opts += ["-diag all"]
@@ -1639,10 +1644,7 @@ class Vcs(Runner):
 
     def _build_command(self) -> List[_Command]:
         cmds: List[_Command] = []
-        sources = [
-            source
-            for source in (self.sources + self.vhdl_sources + self.verilog_sources)
-        ]
+        sources = list(self.sources + self.vhdl_sources + self.verilog_sources)
 
         if outdated(self.sim_file, sources) or self.always:
             cmds = [
@@ -1672,7 +1674,7 @@ class Vcs(Runner):
         else:
             verbosity_opts += ["-suppress=ASLR_DETECTED_INFO"]
 
-        cmds = [[str(self.sim_file)] + verbosity_opts + self.test_args + self.plusargs]
+        cmds = [[str(self.sim_file), *verbosity_opts, *self.test_args, *self.plusargs]]
 
         return cmds
 
@@ -1733,9 +1735,9 @@ class Dsim(Runner):
                 "+acc+rwcbfsWF",
                 "-image",
                 "image",
+                *self.test_args,
+                *plusargs,
             ]
-            + self.test_args
-            + plusargs
         ]
 
     def _build_command(self) -> List[_Command]:

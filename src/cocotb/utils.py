@@ -59,6 +59,7 @@ def get_sim_time(unit: TimeUnit = "step", *, units: None = None) -> float:
         warnings.warn(
             "The 'units' argument has been renamed to 'unit'.",
             DeprecationWarning,
+            stacklevel=2,
         )
         unit = units
     timeh, timel = simulator.get_sim_time()
@@ -117,6 +118,7 @@ def get_time_from_sim_steps(
         warnings.warn(
             "The 'units' argument has been renamed to 'unit'.",
             DeprecationWarning,
+            stacklevel=2,
         )
         unit = units
     if unit is None:
@@ -170,6 +172,7 @@ def get_sim_steps(
         warnings.warn(
             "The 'units' argument has been renamed to 'unit'.",
             DeprecationWarning,
+            stacklevel=2,
         )
         unit = units
     result: Union[float, Fraction, Decimal]

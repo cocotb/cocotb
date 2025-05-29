@@ -161,6 +161,7 @@ def _start_user_coverage() -> None:
             warnings.warn(
                 "COVERAGE is deprecated in favor of COCOTB_USER_COVERAGE",
                 DeprecationWarning,
+                stacklevel=2,
             )
     if coverage_envvar:
         try:
@@ -177,6 +178,7 @@ def _start_user_coverage() -> None:
                     warnings.warn(
                         "COVERAGE_RCFILE is deprecated in favor of COCOTB_COVERAGE_RCFILE",
                         DeprecationWarning,
+                        stacklevel=2,
                     )
             if config_filepath is None:
                 # Exclude cocotb itself from coverage collection.
@@ -211,6 +213,7 @@ def _setup_random_seed() -> None:
             warnings.warn(
                 "RANDOM_SEED is deprecated in favor of COCOTB_RANDOM_SEED",
                 DeprecationWarning,
+                stacklevel=2,
             )
     if seed_envvar is None:
         if "ntb_random_seed" in cocotb.plusargs:
@@ -282,6 +285,7 @@ def _setup_regression_manager() -> None:
         warnings.warn(
             "COCOTB_TESTCASE is deprecated in favor of COCOTB_TEST_FILTER",
             DeprecationWarning,
+            stacklevel=2,
         )
         filters = [f"{s.strip()}$" for s in testcase_str.split(",") if s.strip()]
         cocotb._regression_manager.add_filters(*filters)

@@ -26,7 +26,8 @@ class SimTimePrompt(Prompts):
             tokens = [
                 (Token.Comment, f"sim time: {get_sim_time()}"),
                 (Token.Text, "\n"),
-            ] + tokens
+                *tokens,
+            ]
         return tokens
 
 
@@ -53,7 +54,7 @@ async def embed(user_ns: Dict[str, Any] = {}) -> None:
         not all simulators are supported.
     """
     # ensure cocotb is in the namespace, for convenience
-    default_ns = dict(cocotb=cocotb)
+    default_ns = {"cocotb": cocotb}
     default_ns.update(user_ns)
 
     def _runner(x):
@@ -95,4 +96,4 @@ async def run_ipython(dut: Any) -> None:
 
     Within the shell, a global ``dut`` variable pointing to the design will be present.
     """
-    await embed(user_ns=dict(dut=dut))
+    await embed(user_ns={"dut": dut})

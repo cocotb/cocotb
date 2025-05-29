@@ -115,7 +115,7 @@ def test_indexing():
 
 def test_bad_indexing():
     with pytest.raises(TypeError):
-        Array("1234")[list()]
+        Array("1234")[[]]
     with pytest.raises(TypeError):
         Array("1234")[object()] = 9
 

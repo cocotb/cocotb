@@ -34,12 +34,13 @@ _base_warns = [
     "-Wno-missing-field-initializers",
     "-Werror=shadow",
 ]
-_ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
+_ccx_warns = [*_base_warns, "-Wnon-virtual-dtor", "-Woverloaded-virtual"]
 _extra_cxx_compile_args = [
     "-std=c++11",
     "-fvisibility=hidden",
     "-fvisibility-inlines-hidden",
-] + _ccx_warns
+    *_ccx_warns,
+]
 if os.name != "nt":
     _extra_cxx_compile_args += ["-flto"]
 
@@ -213,7 +214,7 @@ class build_ext(_build_ext):
         if self.compiler is None:
             return get_default_compiler() == "msvc"
         else:
-            return "msvc" == getattr(self.compiler, "compiler_type", None)
+            return getattr(self.compiler, "compiler_type", None) == "msvc"
 
     def run(self):
         if os.name == "nt":
@@ -359,7 +360,7 @@ class build_ext(_build_ext):
         filename = _build_ext.get_ext_filename(self, ext_name)
 
         # for the simulator python extension library, leaving suffix in place
-        if "simulator" == os.path.split(ext_name)[-1]:
+        if os.path.split(ext_name)[-1] == "simulator":
             return filename
 
         head, tail = os.path.split(filename)
@@ -501,7 +502,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         libcocotbutils_libraries.append("dl")  # dlopen, dlerror, dlsym
     libcocotbutils = Extension(
         os.path.join("cocotb", "libs", "libcocotbutils"),
-        define_macros=[("COCOTBUTILS_EXPORTS", "")] + _extra_defines,
+        define_macros=[("COCOTBUTILS_EXPORTS", ""), *_extra_defines],
         include_dirs=include_dirs,
         libraries=libcocotbutils_libraries,
         sources=libcocotbutils_sources,
@@ -519,7 +520,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         libgpilog_sources += ["libgpilog.rc"]
     libgpilog = Extension(
         os.path.join("cocotb", "libs", "libgpilog"),
-        define_macros=[("GPILOG_EXPORTS", "")] + _extra_defines,
+        define_macros=[("GPILOG_EXPORTS", ""), *_extra_defines],
         include_dirs=include_dirs,
         sources=libgpilog_sources,
     )
@@ -534,7 +535,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         libpygpilog_sources += ["libpygpilog.rc"]
     libpygpilog = Extension(
         os.path.join("cocotb", "libs", "libpygpilog"),
-        define_macros=[("PYGPILOG_EXPORTS", "")] + _extra_defines,
+        define_macros=[("PYGPILOG_EXPORTS", ""), *_extra_defines],
         include_dirs=include_dirs,
         libraries=["gpilog"],
         sources=libpygpilog_sources,
@@ -548,8 +549,11 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         libembed_sources += ["libembed.rc"]
     libembed = Extension(
         os.path.join("cocotb", "libs", "libembed"),
-        define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_LIB", _get_python_lib())]
-        + _extra_defines,
+        define_macros=[
+            ("COCOTB_EMBED_EXPORTS", ""),
+            ("PYTHON_LIB", _get_python_lib()),
+            *_extra_defines,
+        ],
         include_dirs=include_dirs,
         libraries=["gpilog", "cocotbutils"],
         sources=libembed_sources,
@@ -584,8 +588,8 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
             ("GPI_EXPORTS", ""),
             ("LIB_EXT", _get_lib_ext_name()),
             ("SINGLETON_HANDLES", ""),
-        ]
-        + _extra_defines,
+            *_extra_defines,
+        ],
         include_dirs=include_dirs,
         libraries=["cocotbutils", "gpilog", "embed"],
         sources=libgpi_sources,
@@ -629,9 +633,9 @@ def _get_vpi_lib_ext(
         libcocotbvpi_sources += [lib_name + ".rc"]
     libcocotbvpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
-        define_macros=[("COCOTBVPI_EXPORTS", "")] + [(sim_define, "")] + _extra_defines,
+        define_macros=[("COCOTBVPI_EXPORTS", ""), (sim_define, ""), *_extra_defines],
         include_dirs=include_dirs,
-        libraries=["gpi", "gpilog"] + extra_lib,
+        libraries=["gpi", "gpilog", *extra_lib],
         library_dirs=extra_lib_dir,
         sources=libcocotbvpi_sources,
     )
@@ -652,10 +656,8 @@ def _get_vhpi_lib_ext(
     libcocotbvhpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
         include_dirs=include_dirs,
-        define_macros=[("COCOTBVHPI_EXPORTS", "")]
-        + [(sim_define, "")]
-        + _extra_defines,
-        libraries=["gpi", "gpilog"] + extra_lib,
+        define_macros=[("COCOTBVHPI_EXPORTS", ""), (sim_define, ""), *_extra_defines],
+        libraries=["gpi", "gpilog", *extra_lib],
         library_dirs=extra_lib_dir,
         sources=libcocotbvhpi_sources,
     )
@@ -732,9 +734,9 @@ def get_ext():
         fli_sources += [lib_name + ".rc"]
     fli_ext = Extension(
         os.path.join("cocotb", "libs", lib_name),
-        define_macros=[("COCOTBFLI_EXPORTS", "")] + _extra_defines,
+        define_macros=[("COCOTBFLI_EXPORTS", ""), *_extra_defines],
         include_dirs=include_dirs,
-        libraries=["gpi", "gpilog"] + modelsim_extra_lib,
+        libraries=["gpi", "gpilog", *modelsim_extra_lib],
         sources=fli_sources,
     )
 

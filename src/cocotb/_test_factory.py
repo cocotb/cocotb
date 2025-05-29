@@ -224,6 +224,7 @@ class TestFactory:
             warnings.warn(
                 "``prefix`` argument is deprecated. Use the more flexible ``name`` field instead.",
                 DeprecationWarning,
+                stacklevel=2,
             )
         else:
             prefix = ""
@@ -232,6 +233,7 @@ class TestFactory:
             warnings.warn(
                 "``postfix`` argument is deprecated. Use the more flexible ``name`` field instead.",
                 DeprecationWarning,
+                stacklevel=2,
             )
         else:
             postfix = ""
@@ -268,7 +270,7 @@ class TestFactory:
                         desc = optvalue.__doc__.split("\n")[0]
                     doc += f"\t{optname}: {optvalue.__qualname__} ({desc})\n"
                 else:
-                    doc += f"\t{optname}: {repr(optvalue)}\n"
+                    doc += f"\t{optname}: {optvalue!r}\n"
 
             kwargs: Dict[str, Any] = {}
             kwargs.update(self.kwargs_constant)

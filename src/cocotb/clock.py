@@ -144,6 +144,7 @@ class Clock:
             warnings.warn(
                 "The 'units' argument has been renamed to 'unit'.",
                 DeprecationWarning,
+                stacklevel=2,
             )
             unit = units
         self._unit: TimeUnit = unit
