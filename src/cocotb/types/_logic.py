@@ -54,7 +54,7 @@ _literal_repr: Dict[LogicLiteralT, int] = {
     "-": _D,
 }
 
-_str_literals: Set[str] = {k for k in _literal_repr.keys() if isinstance(k, str)}
+_str_literals: Set[str] = {k for k in _literal_repr if isinstance(k, str)}
 
 
 class Logic:
@@ -248,9 +248,7 @@ class Logic:
     else:
 
         def __bool__(self) -> bool:
-            if self._repr in (_1, _H):
-                return True
-            return False
+            return self._repr in (_1, _H)
 
         def __int__(self) -> int:
             s = str(self)

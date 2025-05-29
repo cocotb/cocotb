@@ -3,7 +3,7 @@ from cocotb.triggers import FallingEdge, RisingEdge, Timer, ValueChange
 
 
 async def clock_gen(signal, num):
-    for x in range(num):
+    for _ in range(num):
         signal.value = 0
         await Timer(5, "ns")
         signal.value = 1

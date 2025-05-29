@@ -437,17 +437,17 @@ async def test_edge_trigger_on_const(dut) -> None:
 
 
 async def wait_for_edge(signal):
-    for i in range(10):
+    for _ in range(10):
         await ValueChange(signal)
 
 
 async def wait_for_rising_edge(signal):
-    for i in range(10):
+    for _ in range(10):
         await RisingEdge(signal)
 
 
 async def wait_for_falling_edge(signal):
-    for i in range(10):
+    for _ in range(10):
         await FallingEdge(signal)
 
 

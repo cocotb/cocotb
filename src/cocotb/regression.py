@@ -243,8 +243,9 @@ class RegressionManager:
             install_importhook(pytest_conf)
         except Exception:
             _logger.exception(
-                f"Configuring the assertion rewrite hook using pytest {pytest.__version__} failed. "
-                "Please file a bug report!"
+                "Configuring the assertion rewrite hook using pytest %s failed. "
+                "Please file a bug report!",
+                pytest.__version__,
             )
 
     def start_regression(self) -> None:

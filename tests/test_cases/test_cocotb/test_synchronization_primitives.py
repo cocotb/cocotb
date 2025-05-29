@@ -39,13 +39,13 @@ async def test_trigger_lock(dut):
         nonlocal resource
         await Timer(10, "ns")
         async with lock:
-            for i in range(4):
+            for _ in range(4):
                 await Timer(10, "ns")
                 resource += 1
 
     cocotb.start_soon(co())
     async with lock:
-        for i in range(4):
+        for _ in range(4):
             resource += 1
             await Timer(10, "ns")
     assert resource == 4

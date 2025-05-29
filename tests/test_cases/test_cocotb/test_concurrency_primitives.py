@@ -5,6 +5,7 @@
 Tests for concurrency primitives like First and Combine
 """
 
+import contextlib
 import re
 from collections import deque
 from random import randint
@@ -55,10 +56,8 @@ async def test_First_unfired_triggers_killed_on_exception(_) -> None:
     async def fails() -> None:
         raise ValueError("I am a failure")
 
-    try:
+    with contextlib.suppress(ValueError):
         await First(cocotb.start_soon(Task(fails())), *triggers)
-    except ValueError:
-        pass
 
     for t in triggers:
         assert t.primed == 1
@@ -74,10 +73,8 @@ async def test_Combine_unfired_triggers_killed_on_exception(_) -> None:
     async def fails() -> None:
         raise ValueError("I am a failure")
 
-    try:
+    with contextlib.suppress(ValueError):
         await Combine(cocotb.start_soon(Task(fails())), *triggers)
-    except ValueError:
-        pass
 
     for t in triggers:
         assert t.primed == 1
@@ -301,9 +298,8 @@ async def test_Combine_exception(dut) -> None:
         raise MyException
 
     combine = Combine(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
-    with assert_takes(1, "ns"):
-        with pytest.raises(MyException):
-            await combine
+    with assert_takes(1, "ns"), pytest.raises(MyException):
+        await combine
 
 
 @cocotb.test
@@ -333,9 +329,8 @@ async def test_First_exception(_) -> None:
         raise MyException
 
     first = First(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
-    with assert_takes(1, "ns"):
-        with pytest.raises(MyException):
-            await first
+    with assert_takes(1, "ns"), pytest.raises(MyException):
+        await first
 
 
 @cocotb.test

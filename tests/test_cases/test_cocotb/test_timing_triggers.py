@@ -50,7 +50,7 @@ async def test_function_reentrant_clock(dut):
     """Test awaiting a reentrant clock"""
     clock = dut.clk
     timer = Timer(100, "ns")
-    for i in range(10):
+    for _ in range(10):
         clock.value = 0
         await timer
         clock.value = 1

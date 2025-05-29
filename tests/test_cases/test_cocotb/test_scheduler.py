@@ -9,6 +9,7 @@ Test for scheduler and coroutine behavior
 * kill
 """
 
+import contextlib
 import logging
 import os
 import re
@@ -254,7 +255,7 @@ async def test_nulltrigger_reschedule(dut):
     async def reschedule(n):
         nonlocal last_fork
         for i in range(4):
-            log.info(f"Fork {n}, iteration {i}, last fork was {last_fork}")
+            log.info("Fork %d, iteration %d, last fork was %s", n, i, last_fork)
             assert last_fork != n
             last_fork = n
             await NullTrigger()
@@ -847,10 +848,8 @@ async def test_cancel_task_cancellation_error(_: object) -> None:
     a = Event()
 
     async def coro():
-        try:
+        with contextlib.suppress(CancelledError):
             await a.wait()
-        except CancelledError:
-            pass
 
     task = cocotb.start_soon(coro())
     await NullTrigger()
@@ -913,10 +912,8 @@ async def test_task_done_callback_erroring(_) -> None:
     erroring_task = cocotb.start_soon(erroring_coro())
     callback_ran = False
     erroring_task._add_done_callback(done_callback)
-    try:
+    with contextlib.suppress(Exception):
         await erroring_task
-    except Exception:
-        pass
     assert callback_ran
 
 
@@ -1023,10 +1020,8 @@ async def test_test_end_cancellation_error(_) -> None:
     """Test that test-end Cancellation causes test failure."""
 
     async def coro() -> None:
-        try:
+        with contextlib.suppress(CancelledError):
             await Timer(1000, "ns")
-        except CancelledError:
-            pass  # whoops
 
     cocotb.start_soon(coro())
     await Timer(1)

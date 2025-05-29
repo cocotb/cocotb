@@ -169,7 +169,7 @@ class Scheduler:
         Finds all Tasks waiting on the Trigger that fired and queues them.
         """
         if _debug:
-            self.log.debug(f"Trigger fired: {trigger}")
+            self.log.debug("Trigger fired: %s", trigger)
 
         # find all tasks waiting on trigger that fired
         try:
@@ -179,13 +179,13 @@ class Scheduler:
             # associated task waiting on that trigger, otherwise it would
             # have been unprimed already
             if isinstance(trigger, GPITrigger):
-                self.log.critical(f"No tasks waiting on trigger that fired: {trigger}")
+                self.log.critical("No tasks waiting on trigger that fired: %s", trigger)
                 trigger._log.info("I'm the culprit")
             # For Python triggers this isn't actually an error - we might do
             # event.set() without knowing whether any tasks are actually
             # waiting on this event, for example
             elif _debug:
-                self.log.debug(f"No tasks waiting on trigger that fired: {trigger}")
+                self.log.debug("No tasks waiting on trigger that fired: %s", trigger)
             return
 
         if _debug:
@@ -193,7 +193,10 @@ class Scheduler:
             if len(scheduling) > 0:
                 debugstr = "\n\t" + debugstr
             self.log.debug(
-                f"{len(scheduling)} pending tasks for trigger {trigger}{debugstr}"
+                "%d pending tasks for trigger %s%s",
+                len(scheduling),
+                trigger,
+                debugstr,
             )
 
         # queue all tasks to wake up
@@ -217,10 +220,10 @@ class Scheduler:
             task, exc = self._scheduled_tasks.popitem(last=False)
 
             if _debug:
-                self.log.debug(f"Scheduling task {task}")
+                self.log.debug("Scheduling task %s", task)
             self._resume_task(task, exc)
             if _debug:
-                self.log.debug(f"Scheduled task {task}")
+                self.log.debug("Scheduled task %s", task)
 
             # remove our reference to the objects at the end of each loop,
             # to try and avoid them being destroyed at a weird time (as
@@ -231,7 +234,7 @@ class Scheduler:
             while self._pending_events:
                 if _debug:
                     self.log.debug(
-                        f"Scheduling pending event {self._pending_events[0]}"
+                        "Scheduling pending event %s", self._pending_events[0]
                     )
                 self._pending_events.pop(0).set()
 
@@ -370,7 +373,7 @@ class Scheduler:
             waiter._outcome = capture(func, *args, **kwargs)
             if _debug:
                 self.log.debug(
-                    f"Execution of external routine done {threading.current_thread()}"
+                    "Execution of external routine done %s", threading.current_thread()
                 )
             waiter.thread_done()
 
@@ -412,13 +415,13 @@ class Scheduler:
 
             if task.done():
                 if _debug:
-                    self.log.debug(f"{task} completed with {task._outcome}")
+                    self.log.debug("%s completed with %s", task, task._outcome)
                 assert trigger is None
                 self._unschedule(task)
 
             if not task.done():
                 if _debug:
-                    self.log.debug(f"{task!r} yielded {trigger}")
+                    self.log.debug("%r yielded %s", task, trigger)
                 if not isinstance(trigger, Trigger):
                     e = TypeError(
                         f"Coroutine yielded an object of type {type(trigger)}, which the scheduler can't "
@@ -437,12 +440,16 @@ class Scheduler:
                     ext.thread_start()
                     if _debug:
                         self.log.debug(
-                            f"Blocking from {threading.current_thread()} on {ext.thread}"
+                            "Blocking from %s on %s",
+                            threading.current_thread(),
+                            ext.thread,
                         )
                     state = ext.thread_wait()
                     if _debug:
                         self.log.debug(
-                            f"Back from wait on self {threading.current_thread()} with newstate {state}"
+                            "Back from wait on self %s with newstate %s",
+                            threading.current_thread(),
+                            state,
                         )
                     if state == external_state.EXITED:
                         self._pending_threads.remove(ext)

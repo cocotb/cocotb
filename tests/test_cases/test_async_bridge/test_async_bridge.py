@@ -49,7 +49,7 @@ async def test_time_in_bridge(dut):
     """
     await Timer(10, unit="ns")
     time = get_sim_time("step")
-    for i in range(10):
+    for _ in range(10):
         await bridge(print_sim_time)(dut, time)
 
     time_now = get_sim_time("step")
@@ -77,7 +77,7 @@ async def test_time_in_resume(dut):
     cocotb.start_soon(Clock(dut.clk, 100, unit="ns").start())
     await Timer(10, unit="ns")
     for n in range(5):
-        for i in range(20):
+        for _ in range(20):
             await RisingEdge(dut.clk)
             time = get_sim_time("step")
             expected_after = time + get_sim_steps(100, "ns") * n

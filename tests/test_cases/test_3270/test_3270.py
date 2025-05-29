@@ -70,9 +70,11 @@ async def buggy(dut):
     clk = await init_dut(dut)
 
     async def stuff(dut):
-        with MonitorChange(dut.o_pulse, dut.o_valid, expect_change=False):
-            with MonitorChange(dut.i_trg, dut.o_valid, expect_change=False):
-                await Timer(10, "us")
+        with (
+            MonitorChange(dut.o_pulse, dut.o_valid, expect_change=False),
+            MonitorChange(dut.i_trg, dut.o_valid, expect_change=False),
+        ):
+            await Timer(10, "us")
 
     coro = cocotb.start_soon(stuff(dut))
 

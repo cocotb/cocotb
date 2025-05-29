@@ -512,7 +512,7 @@ def main() -> int:
         append_str_val(name_parts, env, "lang")
         append_str_val(name_parts, env, "os")
         append_str_val(name_parts, env, "python-version")
-        if "may-fail" in env and env["may-fail"]:
+        if env.get("may-fail") is not None:
             name_parts.append("May fail")
 
         env["name"] = "|".join(name_parts)

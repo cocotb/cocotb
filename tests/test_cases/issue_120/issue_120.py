@@ -12,7 +12,7 @@ async def send_data(dut):
 
 
 async def monitor(dut):
-    for i in range(4):
+    for _ in range(4):
         await RisingEdge(dut.clk)
     await ReadOnly()
     assert dut.stream_in_valid.value == 1, (
@@ -27,7 +27,7 @@ async def issue_120_scheduling(dut):
     await RisingEdge(dut.clk)
 
     # First attempt, not from coroutine - works as expected
-    for i in range(2):
+    for _ in range(2):
         dut.stream_in_valid.value = 1
         await RisingEdge(dut.clk)
         dut.stream_in_valid.value = 0

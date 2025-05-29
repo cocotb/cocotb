@@ -103,8 +103,8 @@ async def test_queue_contention(dut):
 
     await Combine(*coro_list)
 
-    assert putter_list == list(range(NUM_PUTTERS)) + [101]
-    assert getter_list == list(range(NUM_PUTTERS)) + [101]
+    assert putter_list == [*range(NUM_PUTTERS), 101]
+    assert getter_list == [*range(NUM_PUTTERS), 101]
 
     assert q.qsize() == 0
 
@@ -128,8 +128,8 @@ async def test_queue_contention(dut):
 
     await Combine(*coro_list)
 
-    assert putter_list == list(range(NUM_PUTTERS)) + [101]
-    assert getter_list == list(range(NUM_PUTTERS)) + [101]
+    assert putter_list == [*range(NUM_PUTTERS), 101]
+    assert getter_list == [*range(NUM_PUTTERS), 101]
 
     assert q.qsize() == 0
 

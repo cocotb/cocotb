@@ -95,7 +95,7 @@ def default_config() -> None:
                 f"Invalid log level {log_level!r} passed through the "
                 f"{envvar} environment variable. Valid log "
                 f"levels: {valid_levels}"
-            )
+            ) from None
 
     set_level("gpi", "GPI_LOG_LEVEL", "INFO")
     set_level("cocotb", "COCOTB_LOG_LEVEL", "INFO")

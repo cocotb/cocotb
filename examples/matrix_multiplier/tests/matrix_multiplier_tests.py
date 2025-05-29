@@ -467,7 +467,7 @@ async def test_random(dut: Any) -> None:
 
         # Log progress
         if i % 100 == 0:
-            tb.log.info(f"{i} / {NUM_SAMPLES}")
+            tb.log.info("%d / %d", i, NUM_SAMPLES)
 
     # Wait for all transactions to be processed and stop the testbench
     await tb.clk_drv.cycles(5)

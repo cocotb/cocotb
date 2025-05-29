@@ -75,7 +75,7 @@ def init_package_from_simulation(argv: List[str]) -> None:
     cocotb.SIM_NAME = cocotb.simulator.get_simulator_product().strip()
     cocotb.SIM_VERSION = cocotb.simulator.get_simulator_version().strip()
 
-    log.info(f"Running on {cocotb.SIM_NAME} version {cocotb.SIM_VERSION}")
+    log.info("Running on %s version %s", cocotb.SIM_NAME, cocotb.SIM_VERSION)
 
     cocotb._profiling.initialize()
     _register_shutdown_callback(cocotb._profiling.finalize)
@@ -87,7 +87,7 @@ def init_package_from_simulation(argv: List[str]) -> None:
     _start_user_coverage()
 
     log.info(
-        f"Initialized cocotb v{cocotb.__version__} from {os.path.dirname(__file__)}"
+        "Initialized cocotb v%s from %s", cocotb.__version__, os.path.dirname(__file__)
     )
 
 
