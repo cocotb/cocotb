@@ -11,7 +11,6 @@ import hashlib
 import inspect
 import logging
 import os
-import pdb
 import random
 import re
 import time
@@ -61,9 +60,6 @@ __all__ = (
 Parameterized.__module__ = __name__
 Test.__module__ = __name__
 TestFactory.__module__ = __name__
-
-
-_pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
 
 class SimFailure(BaseException):
@@ -505,9 +501,6 @@ class RegressionManager:
                 result=exc,
                 msg=msg,
             )
-
-        if _pdb_on_exception and not passed and exc is not None:
-            pdb.post_mortem(exc.__traceback__)
 
     def _get_lineno(self, test: Test) -> int:
         try:

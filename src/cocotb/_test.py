@@ -2,6 +2,8 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import inspect
+import os
+import pdb
 from typing import (
     Any,
     Callable,
@@ -18,6 +20,8 @@ from cocotb._outcomes import Error, Outcome, Value
 from cocotb._test_functions import TestSuccess
 from cocotb.task import ResultType, Task
 from cocotb.triggers import NullTrigger
+
+_pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
 
 class RunningTest:
@@ -82,6 +86,10 @@ class RunningTest:
             if isinstance(outcome, Error):
                 self._shutdown_errors.append(outcome)
             return
+
+        # Break into pdb on test end before all Tasks are killed.
+        if _pdb_on_exception and isinstance(outcome, Error):
+            pdb.post_mortem(outcome.error.__traceback__)
 
         # Set outcome and cancel Tasks.
         self._outcome = outcome
