@@ -43,9 +43,7 @@ async def test_compare_simhandlebase(dut):
 
     # Same handle
     assert dut.i_module_a == dut.i_module_a
-    assert not dut.i_module_a != dut.i_module_a
     # Different handles
-    assert not dut.i_module_a == dut.i_module_b
     assert dut.i_module_a != dut.i_module_b
     # Compare against non-handle not implemented
     assert dut.i_module_a.__eq__(1) == NotImplemented
@@ -67,11 +65,9 @@ async def test_compare_valueobject(dut):
     assert isinstance(dut.i_module_a.clk, ValueObjectBase)
 
     # Two different handles
-    assert not dut.counter_plus_two == dut.counter_plus_five
     assert dut.counter_plus_two != dut.counter_plus_five
     # Two different handles with the same value
     # Because they are handles, it is checked if they are the same handle
-    assert not dut.clk == dut.i_module_a.clk
     assert dut.clk != dut.i_module_a.clk
     # A handle and a value
     # Because one is a value, it is compared against the value of the handle

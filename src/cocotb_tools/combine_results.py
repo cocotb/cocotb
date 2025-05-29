@@ -103,7 +103,7 @@ def main() -> int:
         testsuite_count += 1
         for testcase in testsuite.iter("testcase"):
             testcase_count += 1
-            for failure in testcase.iter("failure"):
+            for _ in testcase.iter("failure"):
                 rc = 1
                 print(
                     "Failure in testsuite: '{}' classname: '{}' testcase: '{}' with parameters '{}'".format(

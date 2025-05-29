@@ -11,7 +11,7 @@ from cocotb.triggers import Timer
 async def my_first_test(dut):
     """Try accessing the design."""
 
-    for cycle in range(10):
+    for _ in range(10):
         dut.clk.value = 0
         await Timer(1, unit="ns")
         dut.clk.value = 1
@@ -30,7 +30,7 @@ from cocotb.triggers import FallingEdge, Timer
 async def generate_clock(dut):
     """Generate clock pulses."""
 
-    for cycle in range(10):
+    for _ in range(10):
         dut.clk.value = 0
         await Timer(1, unit="ns")
         dut.clk.value = 1

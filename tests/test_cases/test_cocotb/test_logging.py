@@ -75,7 +75,8 @@ async def test_logging_default_config(dut):
 
     finally:
         # Restore pre-test configuration
-        os.environ = os_environ_prev
+        os.environ.clear()
+        os.environ.update(os_environ_prev)
         cocotb_log.level = log_level_prev
 
         logging.getLogger("gpi").setLevel(logging.INFO)

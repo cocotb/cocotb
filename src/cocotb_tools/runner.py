@@ -164,12 +164,12 @@ class Runner(ABC):
         else:
             lang = hdl_toplevel_lang
 
-        if lang in self.supported_gpi_interfaces.keys():
+        if lang in self.supported_gpi_interfaces:
             return lang
         else:
             raise ValueError(
                 f"{type(self).__qualname__}: hdl_toplevel_lang {hdl_toplevel_lang!r} is not "
-                f"in supported list: {', '.join(self.supported_gpi_interfaces.keys())}"
+                f"in supported list: {', '.join(self.supported_gpi_interfaces)}"
             )
 
     def _set_env(self) -> None:
@@ -644,18 +644,14 @@ def is_vhdl_source(source: PathLike) -> bool:
     if isinstance(source, VHDL):
         return True
     source_as_path = Path(source)
-    if source_as_path.suffix in _vhdl_extensions:
-        return True
-    return False
+    return source_as_path.suffix in _vhdl_extensions
 
 
 def is_verilog_source(source: PathLike) -> bool:
     if isinstance(source, Verilog):
         return True
     source_as_path = Path(source)
-    if source_as_path.suffix in _verilog_extensions:
-        return True
-    return False
+    return source_as_path.suffix in _verilog_extensions
 
 
 class Icarus(Runner):
@@ -1203,9 +1199,8 @@ class Riviera(Runner):
         # behavior.
         do_script.append("exit")
 
-        do_file = tempfile.NamedTemporaryFile(delete=False)
-        do_file.write("\n".join(do_script).encode())
-        do_file.close()
+        with tempfile.NamedTemporaryFile(delete=False) as do_file:
+            do_file.write("\n".join(do_script).encode())
 
         return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
 
@@ -1286,9 +1281,8 @@ class Riviera(Runner):
 
         do_script += "run -all \nexit"
 
-        do_file = tempfile.NamedTemporaryFile(delete=False)
-        do_file.write(do_script.encode())
-        do_file.close()
+        with tempfile.NamedTemporaryFile(delete=False) as do_file:
+            do_file.write(do_script.encode())
 
         return [["vsimsa"] + ["-do"] + ["do"] + [do_file.name]]
 

@@ -35,7 +35,7 @@ async def adder_basic_test(dut):
 async def adder_randomised_test(dut):
     """Test for adding 2 random numbers multiple times"""
 
-    for i in range(10):
+    for _ in range(10):
         A = random.randint(0, 15)
         B = random.randint(0, 15)
 

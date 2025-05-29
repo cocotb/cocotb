@@ -204,9 +204,8 @@ async def test_event_name_deprecated(_) -> None:
 
 @cocotb.test
 async def test_units_deprecated(dut: Any) -> None:
-    with assert_takes(10, "ns"):
-        with pytest.warns(DeprecationWarning):
-            await Timer(10, units="ns")
+    with assert_takes(10, "ns"), pytest.warns(DeprecationWarning):
+        await Timer(10, units="ns")
     with pytest.warns(DeprecationWarning):
         assert Clock(dut.clk, 10, units="ns").unit == "ns"
     with pytest.warns(DeprecationWarning):

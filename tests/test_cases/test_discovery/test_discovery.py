@@ -182,7 +182,7 @@ async def test_both_conds(dut):
 async def discover_module_values(dut):
     """Discover everything in the DUT"""
     count = 0
-    for thing in dut:
+    for _ in dut:
         count += 1
     assert count >= 2, "Expected to discover things in the DUT"
 
@@ -254,11 +254,8 @@ async def access_type_bit_verilog_metavalues(dut):
 # Icarus does not support integer signals (gh-2598)
 @cocotb.test(
     expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
-    expect_fail=(
-        SIM_NAME.startswith("riviera")
-        and LANGUAGE in ["verilog"]
-        or SIM_NAME.startswith(("ghdl", "verilator") or "vcs" in SIM_NAME)
-    ),
+    expect_fail=(SIM_NAME.startswith("riviera") and LANGUAGE in ["verilog"])
+    or SIM_NAME.startswith(("ghdl", "verilator")),
 )
 async def access_integer(dut):
     """Integer should show as an IntegerObject"""
@@ -366,7 +363,7 @@ async def access_var_string_verilog(dut):
 async def access_constant_boolean(dut):
     """Test access to a constant boolean"""
     assert isinstance(dut.isample_module1.EXAMPLE_BOOL, IntegerObject)
-    assert dut.isample_module1.EXAMPLE_BOOL.value == True  # noqa
+    assert bool(dut.isample_module1.EXAMPLE_BOOL.value) is True
 
 
 # GHDL discovers booleans as vpiNet (gh-2596)

@@ -56,10 +56,7 @@ class AbstractArray(Protocol, Generic[T]):
             yield self[i]
 
     def __contains__(self, item: object) -> bool:
-        for v in self:
-            if v == item:
-                return True
-        return False
+        return any(v == item for v in self)
 
     @overload
     def __getitem__(self, item: int) -> T: ...
