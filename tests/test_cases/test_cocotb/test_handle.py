@@ -235,11 +235,8 @@ def gen_int_unfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
 async def test_integer(dut, setimmediate: bool) -> None:
     """Test access to integers."""
     if (
-        LANGUAGE in ["verilog"]
-        and SIM_NAME.startswith("riviera")
-        or SIM_NAME.startswith("ghdl")
-        or SIM_NAME.startswith("verilator")
-    ):
+        LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
+    ) or SIM_NAME.startswith(("ghdl", "verilator")):
         limits = (
             _Limits.VECTOR_NBIT
         )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
@@ -254,11 +251,8 @@ async def test_integer(dut, setimmediate: bool) -> None:
 async def test_integer_overflow(dut, setimmediate: bool) -> None:
     """Test integer overflow."""
     if (
-        LANGUAGE in ["verilog"]
-        and SIM_NAME.startswith("riviera")
-        or SIM_NAME.startswith("ghdl")
-        or SIM_NAME.startswith("verilator")
-    ):
+        LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
+    ) or SIM_NAME.startswith(("ghdl", "verilator")):
         limits = (
             _Limits.VECTOR_NBIT
         )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
@@ -273,10 +267,8 @@ async def test_integer_overflow(dut, setimmediate: bool) -> None:
 async def test_integer_underflow(dut, setimmediate: bool) -> None:
     """Test integer underflow."""
     if (
-        LANGUAGE in ["verilog"]
-        and SIM_NAME.startswith("riviera")
-        or SIM_NAME.startswith("ghdl")
-    ):
+        LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
+    ) or SIM_NAME.startswith("ghdl"):
         limits = (
             _Limits.VECTOR_NBIT
         )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject

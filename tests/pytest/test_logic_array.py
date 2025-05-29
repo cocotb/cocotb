@@ -59,9 +59,9 @@ def test_logic_array_bad_construction():
     with pytest.raises(TypeError):
         LogicArray(object())
     with pytest.raises(TypeError):
-        LogicArray("1010", dict())
+        LogicArray("1010", {})
     with pytest.raises(TypeError):
-        LogicArray(range=dict())
+        LogicArray(range={})
     with pytest.raises(TypeError):
         LogicArray()
 
@@ -300,7 +300,7 @@ def test_indexing():
 
 def test_bad_indexing():
     with pytest.raises(TypeError):
-        LogicArray("01XZ")[list()]
+        LogicArray("01XZ")[[]]
     with pytest.raises(TypeError):
         LogicArray("1010")[object()] = 9
 

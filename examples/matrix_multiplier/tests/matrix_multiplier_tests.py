@@ -354,11 +354,11 @@ class MatrixMultiplierTestbench:
             clk=self.dut.clk_i,
             rst=self.dut.reset_i,
             valid=self.dut.valid_i,
-            datas=dict(A=self.dut.a_i, B=self.dut.b_i),
-            initial_values=dict(
-                A=self.create_a_matrix(lambda: 0),
-                B=self.create_b_matrix(lambda: 0),
-            ),
+            datas={"A": self.dut.a_i, "B": self.dut.b_i},
+            initial_values={
+                "A": self.create_a_matrix(lambda: 0),
+                "B": self.create_b_matrix(lambda: 0),
+            },
         )
 
         self.input_mon = DataValidMonitor(
@@ -366,7 +366,7 @@ class MatrixMultiplierTestbench:
             clk=self.dut.clk_i,
             rst=self.dut.reset_i,
             valid=self.dut.valid_i,
-            datas=dict(A=self.dut.a_i, B=self.dut.b_i),
+            datas={"A": self.dut.a_i, "B": self.dut.b_i},
         )
 
         self.output_mon = DataValidMonitor(
@@ -374,7 +374,7 @@ class MatrixMultiplierTestbench:
             clk=self.dut.clk_i,
             rst=self.dut.reset_i,
             valid=self.dut.valid_o,
-            datas=dict(C=self.dut.c_o),
+            datas={"C": self.dut.c_o},
         )
 
         self.model = MatrixMultiplierModel(
@@ -456,10 +456,10 @@ async def test_random(dut: Any) -> None:
     for i in range(NUM_SAMPLES):
         # Send random data to the driver
         tb.input_drv.send(
-            dict(
-                A=tb.create_a_matrix(lambda: random.getrandbits(tb.DATA_WIDTH)),
-                B=tb.create_b_matrix(lambda: random.getrandbits(tb.DATA_WIDTH)),
-            )
+            {
+                "A": tb.create_a_matrix(lambda: random.getrandbits(tb.DATA_WIDTH)),
+                "B": tb.create_b_matrix(lambda: random.getrandbits(tb.DATA_WIDTH)),
+            }
         )
 
         # Wait random clock cycles before sending another

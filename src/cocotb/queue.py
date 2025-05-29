@@ -84,7 +84,7 @@ class AbstractQueue(Generic[T]):
         return f"<{type(self).__name__} {self._format()}>"
 
     def _format(self) -> str:
-        result = f"maxsize={repr(self._maxsize)}"
+        result = f"maxsize={self._maxsize!r}"
         if getattr(self, "_queue", None):
             result += f" _queue={self._repr()}"
         if self._getters:

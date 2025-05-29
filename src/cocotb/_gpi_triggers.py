@@ -141,6 +141,7 @@ class Timer(GPITrigger):
             warnings.warn(
                 "The 'units' argument has been renamed to 'unit'.",
                 DeprecationWarning,
+                stacklevel=2,
             )
             unit = units
         if round_mode is None:
@@ -158,7 +159,7 @@ class Timer(GPITrigger):
                 self._sim_steps, callback, self
             )
             if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {self!s} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -187,7 +188,7 @@ class ReadOnly(GPITrigger):
         if self._cbhdl is None:
             self._cbhdl = simulator.register_readonly_callback(callback, self)
             if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {self!s} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -206,7 +207,7 @@ class ReadWrite(GPITrigger):
         if self._cbhdl is None:
             self._cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {self!s} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -221,7 +222,7 @@ class NextTimeStep(GPITrigger):
         if self._cbhdl is None:
             self._cbhdl = simulator.register_nextstep_callback(callback, self)
             if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {self!s} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:
@@ -253,7 +254,7 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
                 self.signal._handle, callback, type(self)._edge_type, self
             )
             if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {str(self)} Trigger")
+                raise RuntimeError(f"Unable set up {self!s} Trigger")
         super()._prime(callback)
 
     def __repr__(self) -> str:

@@ -169,11 +169,14 @@ class RegressionManager:
                         self.register_test(test)
                     if not generated_tests:
                         warnings.warn(
-                            f"Parametrize object generated no tests: {module_name}.{obj_name}"
+                            f"Parametrize object generated no tests: {module_name}.{obj_name}",
+                            stacklevel=2,
                         )
 
             if not found_test:
-                warnings.warn(f"No tests were discovered in module: {module_name}")
+                warnings.warn(
+                    f"No tests were discovered in module: {module_name}", stacklevel=2
+                )
 
         # error if no tests were discovered
         if not self._test_queue:
@@ -759,18 +762,18 @@ class RegressionManager:
         REAL_FIELD_LEN = len(REAL_FIELD)
         RATIO_FIELD_LEN = len(RATIO_FIELD)
 
-        header_dict = dict(
-            a=TEST_FIELD,
-            b=RESULT_FIELD,
-            c=SIM_FIELD,
-            d=REAL_FIELD,
-            e=RATIO_FIELD,
-            a_len=TEST_FIELD_LEN,
-            b_len=RESULT_FIELD_LEN,
-            c_len=SIM_FIELD_LEN,
-            d_len=REAL_FIELD_LEN,
-            e_len=RATIO_FIELD_LEN,
-        )
+        header_dict = {
+            "a": TEST_FIELD,
+            "b": RESULT_FIELD,
+            "c": SIM_FIELD,
+            "d": REAL_FIELD,
+            "e": RATIO_FIELD,
+            "a_len": TEST_FIELD_LEN,
+            "b_len": RESULT_FIELD_LEN,
+            "c_len": SIM_FIELD_LEN,
+            "d_len": REAL_FIELD_LEN,
+            "e_len": RATIO_FIELD_LEN,
+        }
 
         LINE_LEN = (
             3
@@ -819,20 +822,20 @@ class RegressionManager:
                     hilite = _ANSI.COLOR_FAILED
                     lolite = _ANSI.COLOR_DEFAULT
 
-            test_dict = dict(
-                a=result["test"],
-                b=pass_fail_str,
-                c=result["sim"],
-                d=result["real"],
-                e=ratio,
-                a_len=TEST_FIELD_LEN,
-                b_len=RESULT_FIELD_LEN,
-                c_len=SIM_FIELD_LEN - 1,
-                d_len=REAL_FIELD_LEN - 1,
-                e_len=RATIO_FIELD_LEN - 1,
-                start=hilite,
-                end=lolite,
-            )
+            test_dict = {
+                "a": result["test"],
+                "b": pass_fail_str,
+                "c": result["sim"],
+                "d": result["real"],
+                "e": ratio,
+                "a_len": TEST_FIELD_LEN,
+                "b_len": RESULT_FIELD_LEN,
+                "c_len": SIM_FIELD_LEN - 1,
+                "d_len": REAL_FIELD_LEN - 1,
+                "e_len": RATIO_FIELD_LEN - 1,
+                "start": hilite,
+                "end": lolite,
+            }
 
             summary += test_line.format(**test_dict)
 

@@ -192,6 +192,7 @@ class Event:
             warnings.warn(
                 "The data field will be removed in a future release.",
                 DeprecationWarning,
+                stacklevel=2,
             )
         self._data = data
         self._event._set()
@@ -374,7 +375,7 @@ class Lock(AsyncContextManager[None]):
     def release(self) -> None:
         """Release the lock."""
         if not self._locked:
-            raise RuntimeError(f"Attempt to release an unacquired Lock {str(self)}")
+            raise RuntimeError(f"Attempt to release an unacquired Lock {self!s}")
 
         self._locked = False
 

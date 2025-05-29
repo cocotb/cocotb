@@ -98,7 +98,7 @@ async def test_dollar_unit(dut):
     # Is $unit even a package?  Xcelium says yes and 37.10 detail 5 would also suggest yes
     pkgs = vars(cocotb.packages).keys()
     f = filter(lambda x: "unit" in x, pkgs)
-    unit = list(f)[0]
+    unit = next(iter(f))
     cocotb.log.info(f"Found $unit as {unit}")
     unit_pkg = getattr(cocotb.packages, unit)
     assert unit_pkg.unit_four_int.value == 4

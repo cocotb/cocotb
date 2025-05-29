@@ -46,8 +46,8 @@ async def cocotb_runner_test(dut):
     WIDTH_IN = int(os.environ.get("WIDTH_IN", "8"))
     WIDTH_OUT = int(os.environ.get("WIDTH_OUT", "8"))
 
-    assert WIDTH_IN == len(dut.data_in)
-    assert WIDTH_OUT == len(dut.data_out)
+    assert len(dut.data_in) == WIDTH_IN
+    assert len(dut.data_out) == WIDTH_OUT
 
 
 @pytest.mark.parametrize(
@@ -131,10 +131,10 @@ def test_missing_libpython(monkeypatch):
         "icarus" if os.getenv("HDL_TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
     )
     sim_runner = get_runner(sim_tool)
-    sim_params = dict(
-        WIDTH_IN="8",
-        WIDTH_OUT="8",
-    )
+    sim_params = {
+        "WIDTH_IN": "8",
+        "WIDTH_OUT": "8",
+    }
     build_args = [VHDL("-v93")] if sim_tool == "xcelium" else []
     build_dir = os.path.join(sim_build, "test_missing_libpython")
 
