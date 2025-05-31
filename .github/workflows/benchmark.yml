@@ -1,6 +1,10 @@
 name: Performance Benchmark
 # adapted from https://github.com/benchmark-action/github-action-benchmark#charts-on-github-pages-1
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.ref }}
+  cancel-in-progress: ${{ !(contains(github.ref, 'release/') || contains(github.ref, 'master')) }}
+
 on:
   push:
     branches:

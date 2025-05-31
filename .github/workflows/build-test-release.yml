@@ -4,6 +4,10 @@
 
 name: Release
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.ref }}
+  cancel-in-progress: ${{ !(contains(github.ref, 'release/') || contains(github.ref, 'master')) }}
+
 on:
   # Run this workflow on every push to master or to a stable branch.
   push:
@@ -72,12 +76,23 @@ jobs:
       nox_session_test_sim: release_test_sim
       nox_session_test_nosim: release_test_nosim
       download_artifacts: true
-      group: ci
+      group: ci-free
+
+  test_release_licensed:
+    name: Regression Tests
+    needs: build_release
+    uses: ./.github/workflows/regression-tests.yml
+    with:
+      nox_session_test_sim: release_test_sim
+      nox_session_test_nosim: release_test_nosim
+      download_artifacts: true
+      group: ci-licensed
 
   deploy_pypi:
     name: Deploy to pypi.org
     needs:
     - test_release
+    - test_release_licensed
     - test_sdist
     runs-on: ubuntu-22.04
     # Only upload tagged releases.
