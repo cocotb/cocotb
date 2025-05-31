@@ -1,1 +1,0 @@
-Fix incorrect cleanup of pending Tasks (queued by :func:`cocotb.start_soon` but not started yet) when a test ends.
