@@ -1,1 +1,1 @@
-``cocotb.binary.BinaryValue``, ``cocotb.binary.BinaryRepresentation``, and the ``cocotb.binary`` module have been removed in favor of :class:`~cocotb.types.LogicArray`. See :ref:`the guide <TODO PLACEHOLDER>` for a tutorial on upgrading to :class:`~cocotb.types.LogicArray`.
+``cocotb.binary.BinaryValue``, ``cocotb.binary.BinaryRepresentation``, and the ``cocotb.binary`` module have been removed in favor of :class:`~cocotb.types.LogicArray`.

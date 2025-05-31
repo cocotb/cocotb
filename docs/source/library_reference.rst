@@ -288,6 +288,8 @@ Logging
 
 .. autofunction:: default_config
 
+.. autofunction:: SimLog
+
 .. autoclass:: SimLogFormatter
     :show-inheritance:
     :no-members:
