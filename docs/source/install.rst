@@ -94,7 +94,7 @@ Installation of cocotb
 
     .. parsed-literal::
 
-        pip install "cocotb~=|version|"
+        pip install "cocotb~=\ |version|\ "
 
 .. only:: not is_release_build
 

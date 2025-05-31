@@ -111,7 +111,6 @@ accessible via a TCP socket:
    .. code:: python
 
       rpdb.set_trace()  # <-- debugger stops execution after this line
-      <your code line>  # <-- next statement being evaluated by the interpreter
 
 3. Run the Makefile so that the interpreter hits the breakpoint line and *hangs*.
 4. Connect to the freshly created socket, for instance through :command:`telnet`:

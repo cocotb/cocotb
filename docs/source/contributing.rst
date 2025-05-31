@@ -213,7 +213,7 @@ Details on how to debug cocotb can be found on the `Wiki <https://github.com/coc
 Deprecations and Removals
 -------------------------
 
-Cocotb's treatment of deprecations and removal follows guidelines laid out `here <https://symfony.com/doc/current/setup/upgrade_major.html#make-your-code-deprecation-free>`__.
+Cocotb's treatment of deprecations and removal follows guidelines laid out `here <https://symfony.com/doc/current/setup/upgrade_major.html#1-make-your-code-deprecation-free>`__.
 Deprecations serve the following purposes:
 
 -  Remove legacy code that has been deemed out of scope
@@ -261,7 +261,7 @@ Follow the steps below to get your changes merged, i.e. integrated into the main
    If any of them turns "red," i.e. reports a failure, you most likely need to fix your code before it can be merged.
 7. The pull request needs to be reviewed by at least one of the :ref:`maintainers`.
    We aim to give feedback to all pull requests within a week, but as so often, life can get in the way.
-   If you receive no feedback from a maintainer within that time, please contact them directly (e.g. on `Gitter <https://gitter.im/cocotb>`__ or email).
+   If you receive no feedback from a maintainer within that time, please contact them directly (e.g. on `Gitter <https://gitter.im/cocotb/Lobby>`__ or email).
    If a maintainer asks you to explain or modify code, try to do so.
 8. Once your code has at least one positive review from a maintainer and no maintainer strongly objects it your code is ready to be merged into the ``master`` branch.
 
