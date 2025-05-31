@@ -72,6 +72,20 @@ Changes
 - :meth:`Lock.locked <cocotb.triggers.Lock.locked>` is now a method rather than an attribute to mirror :meth:`asyncio.Lock.locked`. (:pr:`3871`)
 
 
+cocotb 1.8.1 (2023-10-06)
+=========================
+
+Features
+--------
+
+- Python 3.12 is now supported. (:issue:`3409`)
+
+Bugfixes
+--------
+
+- Fix incorrect cleanup of pending Tasks (queued by :func:`cocotb.start_soon` but not started yet) when a test ends. (:issue:`3354`)
+
+
 cocotb 1.8.0 (2023-06-15)
 =========================
 
