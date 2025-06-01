@@ -23,7 +23,9 @@ from typing import (
 )
 
 import cocotb
-from cocotb._base_triggers import Trigger
+import cocotb._event_loop
+from cocotb import debug
+from cocotb._base_triggers import Trigger, TriggerCallback
 from cocotb._bridge import bridge, resume
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
@@ -32,6 +34,9 @@ from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
 
 if TYPE_CHECKING:
     from types import CoroutineType
+    from typing import Any  # noqa: F401
+
+    from cocotb._event_loop import ScheduledCallback
 
 
 __all__ = (
@@ -102,7 +107,9 @@ class Task(Generic[ResultType]):
         self._coro = inst
         self._state: _TaskState = _TaskState.UNSTARTED
         self._outcome: Union[Outcome[ResultType], None] = None
-        self._trigger: Union[Trigger, None] = None
+        self._trigger: Trigger
+        self._schedule_callback: ScheduledCallback
+        self._trigger_callback: TriggerCallback
         self._done_callbacks: List[Callable[[Task[ResultType]], None]] = []
         self._cancelled_msg: Union[str, None] = None
         self._must_cancel: bool = False
@@ -154,6 +161,8 @@ class Task(Generic[ResultType]):
         Args:
             value: Any object which can be converted to a :class:`str` to use as the name.
         """
+        if "_log" in vars(self):
+            del self._log  # clear cached value
         self._name = str(value)
 
     @cached_property
@@ -165,12 +174,7 @@ class Task(Generic[ResultType]):
 
     @cached_property
     def _log(self) -> logging.Logger:
-        coro_name: str
-        if self._native_coroutine:
-            coro_name = self._coro.__qualname__
-        else:
-            coro_name = type(self._coro).__qualname__
-        return logging.getLogger(f"cocotb.{self._name}.{coro_name}")
+        return logging.getLogger(f"cocotb.task.{self._name}")
 
     def __str__(self) -> str:
         # TODO Do we really need this?
@@ -230,9 +234,20 @@ class Task(Generic[ResultType]):
         else:
             raise RuntimeError("Task in unknown state")
 
+    def _ensure_started(self) -> None:
+        # start if unstarted
+        if self._state is _TaskState.UNSTARTED:
+            self._schedule_resume()
+        # fail if it's already done
+        elif self.done():
+            raise RuntimeError("Cannot start a finished Task")
+        # it's already running
+
     def _set_outcome(
         self, result: Outcome[ResultType], state: _TaskState = _TaskState.FINISHED
     ) -> None:
+        if debug.debug:
+            self._log.debug("Finished %s with %s", self, state)
         self._outcome = result
         self._state = state
 
@@ -241,10 +256,16 @@ class Task(Generic[ResultType]):
             callback(self)
 
         # Wake up waiting Tasks.
-        cocotb._scheduler_inst._react(self.complete)
-        cocotb._scheduler_inst._react(self._join)
+        self.complete._react()
+        self._join._react()
 
-    def _advance(self, exc: Union[BaseException, None]) -> Union[Trigger, None]:
+    def _schedule_resume(self, exc: Union[BaseException, None] = None) -> None:
+        if debug.debug:
+            self._log.debug("Scheduling %s", self)
+        self._state = _TaskState.SCHEDULED
+        self._schedule_callback = cocotb._event_loop._inst.schedule(self._resume, exc)
+
+    def _resume(self, exc: Union[BaseException, None] = None) -> None:
         """Resume execution of the Task.
 
         Runs until the coroutine ends, raises, or yields a Trigger.
@@ -256,10 +277,18 @@ class Task(Generic[ResultType]):
         Returns:
             The object yielded from the coroutine or ``None`` if coroutine finished.
         """
+        if debug.debug:
+            self._log.debug("Resuming %s", self)
+
         self._state = _TaskState.RUNNING
 
+        # If we are cancelling, hijack the resume to throw CancelledError.
         if self._must_cancel:
             exc = self._cancelled_error
+
+        # Set this Task and the current. Unset in finally block.
+        global _current_task
+        _current_task = self
 
         try:
             if exc is None:
@@ -278,20 +307,17 @@ class Task(Generic[ResultType]):
                 )
             else:
                 self._set_outcome(outcome)
-            return None
         except (KeyboardInterrupt, SystemExit, BdbQuit) as e:
             # Allow these to bubble up to the execution root to fail the sim immediately.
             # This follows asyncio's behavior.
-            self._set_outcome(Error(remove_traceback_frames(e, ["_advance"])))
+            self._set_outcome(Error(remove_traceback_frames(e, ["_resume"])))
             raise
         except CancelledError as e:
             self._set_outcome(
-                Error(remove_traceback_frames(e, ["_advance"])), _TaskState.CANCELLED
+                Error(remove_traceback_frames(e, ["_resume"])), _TaskState.CANCELLED
             )
-            return None
         except BaseException as e:
-            self._set_outcome(Error(remove_traceback_frames(e, ["_advance"])))
-            return None
+            self._set_outcome(Error(remove_traceback_frames(e, ["_resume"])))
         else:
             if self._must_cancel:
                 self._set_outcome(
@@ -301,23 +327,40 @@ class Task(Generic[ResultType]):
                         )
                     )
                 )
-                return None
+            elif not isinstance(trigger, Trigger):
+                self._schedule_resume(
+                    TypeError(
+                        f"Coroutine yielded {trigger!r}, which the scheduler can't handle."
+                    )
+                )
             else:
-                return trigger
+                self._state = _TaskState.PENDING
+                self._trigger = trigger
+                # `trigger._register()`` calls `trigger._prime()` and `trigger._prime()`
+                # can call `trigger._react()`, which can immediately schedule this task.
+                # So setting the state to PENDING *must* be done *before* calling
+                # `_register()` so the possible call to `_react()` can override the
+                # state correctly.
+                # TODO Don't allow `_prime()` to call `_react()`?
+                try:
+                    self._trigger_callback = trigger._register(self._schedule_resume)
+                except Exception as e:
+                    self._schedule_resume(remove_traceback_frames(e, ["_resume"]))
 
-    def _schedule_resume(self, exc: Optional[BaseException] = None) -> None:
-        cocotb._scheduler_inst._unschedule(self)
-        cocotb._scheduler_inst._schedule_task_internal(self, exc)
+        finally:
+            _current_task = None
 
     @deprecated("`task.kill()` is deprecated in favor of `task.cancel()`")
     def kill(self) -> None:
         """Kill a coroutine."""
 
-        if self._state in (_TaskState.PENDING, _TaskState.SCHEDULED):
-            # Unschedule if scheduled and unprime triggers if pending.
-            cocotb._scheduler_inst._unschedule(self)
+        if self._state is _TaskState.PENDING:
+            # Unprime triggers if pending.
+            self._trigger_callback.cancel()
+        elif self._state is _TaskState.SCHEDULED:
+            # Unschedule if scheduled.
+            self._schedule_callback.cancel()
         elif self._state is _TaskState.UNSTARTED:
-            # Don't need to unschedule.
             pass
         elif self._state in (_TaskState.FINISHED, _TaskState.CANCELLED):
             # Do nothing if already done.
@@ -392,17 +435,25 @@ class Task(Generic[ResultType]):
 
         Returns: ``True`` if the Task was cancelled; ``False`` otherwise.
         """
-        if self._state in {_TaskState.PENDING, _TaskState.SCHEDULED}:
-            self._schedule_resume()
-        elif self._state in (_TaskState.UNSTARTED, _TaskState.RUNNING):
-            # (Re)schedule to throw CancelledError
-            cocotb._scheduler_inst._schedule_task_internal(self)
-        else:
-            # Already finished or cancelled
+        if debug.debug:
+            self._log.debug("Cancelling")
+
+        if self._state is _TaskState.PENDING:
+            # Unprime triggers if pending.
+            self._trigger_callback.cancel()
+        elif self._state is _TaskState.SCHEDULED:
+            # Unschedule if scheduled.
+            self._schedule_callback.cancel()
+        elif self._state in (_TaskState.FINISHED, _TaskState.CANCELLED):
             return False
 
+        # Set state to do cancel
         self._cancelled_msg = msg
         self._must_cancel = True
+
+        # Schedule resume to throw CancelledError
+        self._schedule_resume()
+
         return True
 
     def _cancel_now(self, msg: Optional[str] = None) -> bool:
@@ -411,20 +462,27 @@ class Task(Generic[ResultType]):
         Not safe to be called from a running Task.
         Only from done callbacks or scheduler or Task internals.
         """
-        if self.done():
+        if self._state is _TaskState.PENDING:
+            # Unprime triggers if pending.
+            self._trigger_callback.cancel()
+        elif self._state is _TaskState.SCHEDULED:
+            # Unschedule if scheduled.
+            self._schedule_callback.cancel()
+        elif self._state is _TaskState.UNSTARTED:
+            # Must fail immediately as we can't start a coroutine with an exception.
+            pass
+        elif self._state is _TaskState.RUNNING:
+            raise RuntimeError("Can't _cancel_now() currently running Task")
+        else:
+            # Already finished or cancelled
             return False
 
+        # Set state to do cancel
         self._cancelled_msg = msg
         self._must_cancel = True
 
-        if self._state is _TaskState.UNSTARTED:
-            # Must fail immediately as we can't start a coroutine with an exception.
-            self._set_outcome(Error(self._cancelled_error), _TaskState.CANCELLED)
-        else:
-            # Unprime and unschedule the Task so it's out of the scheduler.
-            cocotb._scheduler_inst._unschedule(self)
-            # Force CancelledError to be thrown immediately.
-            self._advance(None)
+        # Throw CancelledError now
+        self._resume()
 
         return True
 
@@ -485,12 +543,13 @@ class Task(Generic[ResultType]):
         self._done_callbacks.append(callback)
 
     def __await__(self) -> Generator[Trigger, None, ResultType]:
-        if self._state is _TaskState.UNSTARTED:
-            cocotb._scheduler_inst._schedule_task_internal(self)
-            yield self.complete
-        elif not self.done():
+        if not self.done():
+            self._ensure_started()
             yield self.complete
         return self.result()
+
+
+_current_task = None  # type: Union[None, Task[Any]]
 
 
 def current_task() -> Task[object]:
@@ -498,13 +557,10 @@ def current_task() -> Task[object]:
 
     Raises:
         RuntimeError: If no Task is running.
-
-    .. versionadded:: 2.0
     """
-    task = cocotb._scheduler_inst._current_task
-    if task is None:
-        raise RuntimeError("No Task is currently running")
-    return task
+    if _current_task is None:
+        raise RuntimeError("No currently running Task")
+    return _current_task
 
 
 class TaskComplete(Trigger, Generic[ResultType]):
@@ -534,11 +590,9 @@ class TaskComplete(Trigger, Generic[ResultType]):
         self._task = task
         return self
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self) -> None:
         if self._task.done():
-            callback(self)
-        else:
-            super()._prime(callback)
+            self._react()
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({self._task!s})"

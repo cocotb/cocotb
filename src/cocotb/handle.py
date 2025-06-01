@@ -28,9 +28,8 @@ from typing import (
     cast,
 )
 
-import cocotb
 from cocotb import simulator
-from cocotb._base_triggers import Event
+from cocotb._base_triggers import TriggerCallback
 from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import (
     Edge,
@@ -43,7 +42,6 @@ from cocotb._gpi_triggers import (
 )
 from cocotb._py_compat import cached_property, insertion_ordered_dict
 from cocotb._utils import DocIntEnum
-from cocotb.task import Task
 from cocotb.types import Array, Logic, LogicArray, Range
 from cocotb.types._indexing import do_indexing_changed_warning, indexing_changed
 
@@ -760,48 +758,10 @@ class _OldImmediate(Generic[_ValueT]):
 
 
 _trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
-
-# A dictionary of pending (write_func, args), keyed by handle.
-# Writes are applied oldest to newest (least recently used).
-# Only the last scheduled write to a particular handle in a timestep is performed.
-_write_calls: "dict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], _GPISetAction, Any]]" = insertion_ordered_dict()
-
-_write_task: Union[Task[None], None] = None
-
-_writes_pending = Event()
-
-
-async def _do_writes() -> None:
-    """An internal task that schedules a ReadWrite to force writes to occur."""
-    while True:
-        await _writes_pending.wait()
-        await ReadWrite()
-
-
-def _start_write_scheduler() -> None:
-    global _write_task
-    if _write_task is None:
-        _write_task = Task(_do_writes())
-        cocotb._scheduler_inst._schedule_task(_write_task)
-
-
-def _stop_write_scheduler() -> None:
-    global _write_task
-    if _write_task is not None:
-        _write_task.cancel()
-        _write_task = None
-    _write_calls.clear()
-    _writes_pending.clear()
-
-
-def _apply_scheduled_writes() -> None:
-    for func, action, value in _write_calls.values():
-        func(action.value, value)
-    _write_calls.clear()
-    _writes_pending.clear()
-
-
 if _trust_inertial:
+
+    def _apply_scheduled_writes() -> None:
+        pass
 
     def _schedule_write(
         handle: "ValueObjectBase[Any, Any]",
@@ -811,7 +771,24 @@ if _trust_inertial:
     ) -> None:
         # Trust the simulator and just write.
         write_func(action.value, value)
+
 else:
+    # A dictionary of pending (write_func, args), keyed by handle.
+    # Writes are applied oldest to newest (least recently used).
+    # Only the last scheduled write to a particular handle in a timestep is performed.
+    _write_calls: "dict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], _GPISetAction, Any]]" = insertion_ordered_dict()
+
+    _apply_writes_cb: Union[TriggerCallback, None] = None
+
+    def _apply_scheduled_writes() -> None:
+        for func, action, value in _write_calls.values():
+            func(action.value, value)
+        _write_calls.clear()
+
+        # Clear variable so the next scheduled writes re-primes ReadWrite()
+        # for the next set of writes.
+        global _apply_writes_cb
+        _apply_writes_cb = None
 
     def _schedule_write(
         handle: "ValueObjectBase[Any, Any]",
@@ -820,16 +797,24 @@ else:
         value: _ValueT,
     ) -> None:
         if isinstance(current_gpi_trigger(), ReadWrite):
-            # If we are already in the ReadWrite phase, apply writes immediately as an optimization.
+            # If we are already in the ReadWrite phase,
+            # apply writes immediately as an optimization.
             write_func(action.value, value)
         elif action is _GPISetAction.DEPOSIT:
             # Queue write for the beginning of the next ReadWrite phase because we can't trust the simulator. =(
             if handle in _write_calls:
                 del _write_calls[handle]
             _write_calls[handle] = (write_func, action, value)
-            _writes_pending.set()
+
+            # Register ReadWrite to occur but do nothing. ReadWrite._do_callbacks() is
+            # set up so _apply_scheduled_writes() executes first.
+            global _apply_writes_cb
+            if _apply_writes_cb is None:
+                _apply_writes_cb = ReadWrite()._register(lambda: None)
+
         else:
-            # If we are writing anything that isn't an inertial write, it must be applied immediately.
+            # If we are writing anything that isn't an inertial write,
+            # it must be applied immediately.
             write_func(action.value, value)
 
 

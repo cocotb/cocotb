@@ -26,13 +26,12 @@ from typing import (
 )
 
 import cocotb
-import cocotb._gpi_triggers
-import cocotb.handle
+import cocotb._event_loop
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
 from cocotb._decorators import Parameterized, Test
 from cocotb._extended_awaitables import with_timeout
-from cocotb._gpi_triggers import GPITrigger, Timer
+from cocotb._gpi_triggers import Timer
 from cocotb._outcomes import Error, Outcome
 from cocotb._test import RunningTest
 from cocotb._test_factory import TestFactory
@@ -315,9 +314,6 @@ class RegressionManager:
                 ", ".join(f.pattern for f in self._filters),
             )
 
-        # start write scheduler
-        cocotb.handle._start_write_scheduler()
-
         # start test loop
         self._regression_start_time = time.time()
         self._first_test = True
@@ -366,7 +362,8 @@ class RegressionManager:
                 self._first_test = False
                 return self._schedule_next_test()
             else:
-                return self._timer1._prime(self._schedule_next_test)
+                self._timer1._register(self._schedule_next_test)
+                return
 
         return self._tear_down()
 
@@ -386,12 +383,7 @@ class RegressionManager:
         main_task = Task(func(cocotb.top), name=f"Test {self._test.name}")
         return RunningTest(self._test_complete, main_task)
 
-    def _schedule_next_test(self, trigger: Union[GPITrigger, None] = None) -> None:
-        if trigger is not None:
-            # TODO move to Trigger object
-            cocotb._gpi_triggers._current_gpi_trigger = trigger
-            trigger._cleanup()
-
+    def _schedule_next_test(self) -> None:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
         hasher = hashlib.sha1()
         hasher.update(self._test.fullname.encode())
@@ -412,9 +404,6 @@ class RegressionManager:
             return
 
         assert not self._test_queue
-
-        # stop the write scheduler
-        cocotb.handle._stop_write_scheduler()
 
         # Write out final log messages
         self._log_test_summary()
@@ -895,4 +884,4 @@ class RegressionManager:
     def _fail_simulation(self, msg: str) -> None:
         self._sim_failure = Error(SimFailure(msg))
         self._running_test.abort(self._sim_failure)
-        cocotb._scheduler_inst._event_loop()
+        cocotb._event_loop._inst.run()
