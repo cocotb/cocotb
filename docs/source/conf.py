@@ -57,6 +57,7 @@ intersphinx_mapping = {
     "pytest": ("https://docs.pytest.org/en/latest/", None),
     "coverage": ("https://coverage.readthedocs.io/en/latest/", None),
     "remote_pdb": ("https://python-remote-pdb.readthedocs.io/en/latest/", None),
+    "cocotb19": ("https://docs.cocotb.org/en/v1.9.2/", None),
 }
 
 # Github repo
