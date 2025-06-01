@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from logging import Logger
     from types import SimpleNamespace
 
-    from cocotb._scheduler import Scheduler
     from cocotb.handle import SimHandleBase
     from cocotb.regression import RegressionManager
 
@@ -64,9 +63,6 @@ This logger defaults to the :data:`logging.INFO` log level.
     This was previously the ``"cocotb"`` Logger.
     It is now a Logger under the ``"test"`` namespace.
 """
-
-_scheduler_inst: "Scheduler"
-"""The global scheduler instance."""
 
 _regression_manager: "RegressionManager"
 """The global regression manager instance."""

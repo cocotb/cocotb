@@ -195,7 +195,7 @@ pending_threads: List[external_waiter[Any]] = []
 
 def queue_function(task: Coroutine[Trigger, None, Result]) -> Result:
     """Queue *task* for execution and switch back to main thread."""
-    # We should be able to find ourselves inside the _pending_threads list
+    # We should be able to find ourselves inside the pending_threads list
     matching_threads = [
         t for t in pending_threads if t.thread == threading.current_thread()
     ]
