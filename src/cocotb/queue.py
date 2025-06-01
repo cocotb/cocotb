@@ -14,6 +14,7 @@ from typing import (
 )
 
 import cocotb
+import cocotb.task
 from cocotb._utils import pointer_str
 from cocotb.task import Task
 from cocotb.triggers import Event
