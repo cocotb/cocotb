@@ -1,0 +1,1 @@
+Deprecated :attr:`.Lock.name` and passing a ``name`` argument to :class:`.Lock` constructors. If you need to associate a name with a Lock, create an empty subclass of :class:`!Lock` with your desired name.
