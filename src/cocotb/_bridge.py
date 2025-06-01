@@ -184,3 +184,109 @@ class external_waiter(Generic[Result]):
                 )
 
         return self.state
+
+    # def _queue_function(self, task: Coroutine[Trigger, None, T]) -> T:
+    #     """Queue a task for execution and move the containing thread
+    #     so that it does not block execution of the main thread any longer.
+    #     """
+    #     # We should be able to find ourselves inside the _pending_threads list
+    #     matching_threads = [
+    #         t for t in self._pending_threads if t.thread == threading.current_thread()
+    #     ]
+    #     if len(matching_threads) == 0:
+    #         raise RuntimeError("queue_function called from unrecognized thread")
+
+    #     # Raises if there is more than one match. This can never happen, since
+    #     # each entry always has a unique thread.
+    #     (t,) = matching_threads
+
+    #     outcome: Union[Outcome[T], None] = None
+
+    #     async def wrapper() -> None:
+    #         nonlocal outcome
+    #         # This function runs in the scheduler thread
+    #         try:
+    #             outcome = Value(await task)
+    #         except (KeyboardInterrupt, SystemExit, BdbQuit):
+    #             # Allow these to bubble up to the execution root to fail the sim immediately.
+    #             # This follows asyncio's behavior.
+    #             raise
+    #         except BaseException as e:
+    #             outcome = Error(e)
+    #         # Notify the current (scheduler) thread that we are about to wake
+    #         # up the background (`@external`) thread, making sure to do so
+    #         # before the background thread gets a chance to go back to sleep by
+    #         # calling thread_suspend.
+    #         # We need to do this here in the scheduler thread so that no more
+    #         # tasks run until the background thread goes back to sleep.
+    #         t.thread_resume()
+    #         event.set()
+
+    #     event = threading.Event()
+    #     self._schedule_task_internal(Task(wrapper()))
+    #     # The scheduler thread blocks in `thread_wait`, and is woken when we
+    #     # call `thread_suspend` - so we need to make sure the task is
+    #     # queued before that.
+    #     t.thread_suspend()
+    #     # This blocks the calling `@external` thread until the task finishes
+    #     event.wait()
+    #     assert outcome is not None
+    #     return outcome.get()
+
+    # def _run_in_executor(
+    #     self, func: "Callable[P, T]", *args: "P.args", **kwargs: "P.kwargs"
+    # ) -> Coroutine[Trigger, None, T]:
+    #     """Run the task in a separate execution thread
+    #     and return an awaitable object for the caller.
+    #     """
+    #     # Create a thread
+    #     # Create a trigger that is called as a result of the thread finishing
+    #     # Create an Event object that the caller can await on
+    #     # Event object set when the thread finishes execution, this blocks the
+    #     # calling task (but not the thread) until the external completes
+
+    #     waiter = external_waiter[T]()
+
+    #     def execute_external() -> None:
+    #         waiter._outcome = capture(func, *args, **kwargs)
+    #         if DEBUG:
+    #             self.log.debug(
+    #                 f"Execution of external routine done {threading.current_thread()}"
+    #             )
+    #         waiter.thread_done()
+
+    #     async def wrapper() -> T:
+    #         thread = threading.Thread(
+    #             group=None,
+    #             target=execute_external,
+    #             name=func.__qualname__ + "_thread",
+    #         )
+
+    #         waiter.thread = thread
+    #         self._pending_threads.append(waiter)
+
+    #         await waiter.event.wait()
+
+    #         return waiter.result  # raises if there was an exception
+
+    #     return wrapper()
+
+    # # We do not return from here until pending threads have completed, but only
+    # # from the main thread, this seems like it could be problematic in cases
+    # # where a sim might change what this thread is.
+
+    # if self._main_thread is threading.current_thread():
+    #     for ext in self._pending_threads:
+    #         ext.thread_start()
+    #         if DEBUG:
+    #             self.log.debug(
+    #                 f"Blocking from {threading.current_thread()} on {ext.thread}"
+    #             )
+    #         state = ext.thread_wait()
+    #         if DEBUG:
+    #             self.log.debug(
+    #                 f"Back from wait on self {threading.current_thread()} with newstate {state}"
+    #             )
+    #         if state == external_state.EXITED:
+    #             self._pending_threads.remove(ext)
+    #             self._pending_events.append(ext.event)
