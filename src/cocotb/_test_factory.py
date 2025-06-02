@@ -7,7 +7,7 @@ import inspect
 import logging
 import warnings
 from itertools import product
-from types import FrameType
+from types import FrameType, FunctionType
 from typing import (
     Any,
     Callable,
@@ -264,7 +264,8 @@ class TestFactory:
 
             for optname, optvalue in testoptions_split.items():
                 if callable(optvalue):
-                    if not optvalue.__doc__:
+                    optvalue = cast(FunctionType, optvalue)
+                    if optvalue.__doc__ is None:
                         desc = "No docstring supplied"
                     else:
                         desc = optvalue.__doc__.split("\n")[0]
