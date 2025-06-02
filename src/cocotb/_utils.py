@@ -96,7 +96,7 @@ def remove_traceback_frames(
             remove_traceback_frames(cast(TracebackType, exc.__traceback__), frame_names)
         )
     elif isinstance(tb_or_exc, tuple):
-        exc_type, exc_value, exc_tb = cast(ExceptionTuple, tb_or_exc)
+        exc_type, exc_value, exc_tb = tb_or_exc
         exc_tb = remove_traceback_frames(exc_tb, frame_names)
         return exc_type, exc_value, exc_tb
     # base case

@@ -252,7 +252,7 @@ class Logic:
 
         def __int__(self) -> int:
             s = str(self)
-            s = RESOLVE_X(s)  # type: ignore  # mypy fails to narrow RESOLVE_X here
+            s = RESOLVE_X(s)
             return int(s, 2)
 
     def __index__(self) -> int:
