@@ -147,7 +147,7 @@ class LogicArray(AbstractArray[Logic]):
     .. warning::
         These operations assume the value is entirely ``0``, ``1``, ``L``, or ``H``, and will raise an exception otherwise.
 
-    You can also convert :class:`LogicArray`\ s to hexadecimal or binary strings using
+    You can also convert :class:`!LogicArray`\ s to hexadecimal or binary strings using
     the built-ins :func:`hex:` and :func:`bin`, respectively.
 
     .. code-block:: pycon3
@@ -164,7 +164,7 @@ class LogicArray(AbstractArray[Logic]):
         This means the exact length of the LogicArray is lost.
         It also means that these expressions will raise an exception if the value is not entirely ``0``, ``1``, ``L``, or ``H``.
 
-    :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
+    :class:`!LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
     ``^``, and ``~``.
 
     .. code-block:: pycon3
@@ -292,21 +292,21 @@ class LogicArray(AbstractArray[Logic]):
         value: int,
         range: Union[Range, int],
     ) -> "LogicArray":
-        """Construct a :class:`LogicArray` from an :class:`int` with unsigned representation.
+        """Construct a :class:`!LogicArray` from an :class:`int` with unsigned representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with unsigned representation where the left-most bit is the most significant bit.
-        This bit vector is then constructed into a :class:`LogicArray`.
+        This bit vector is then constructed into a :class:`!LogicArray`.
 
         Args:
             value: The integer to convert.
             range: Indexing scheme for the LogicArray.
 
         Returns:
-            A :class:`LogicArray` equivalent to the *value*.
+            A :class:`!LogicArray` equivalent to the *value*.
 
         Raises:
             TypeError: When invalid argument types are used.
-            ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*, or *value* is negative.
+            ValueError: When a :class:`!LogicArray` of the given *range* can't hold the *value*, or *value* is negative.
         """
         if value < 0:
             raise ValueError("Expected unsigned integer, got negative value.")
@@ -318,21 +318,21 @@ class LogicArray(AbstractArray[Logic]):
         value: int,
         range: Union[Range, int],
     ) -> "LogicArray":
-        """Construct a :class:`LogicArray` from an :class:`int` with two's complement representation.
+        """Construct a :class:`!LogicArray` from an :class:`int` with two's complement representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with two's complement representation where the left-most bit is the most significant bit.
-        This bit vector is then constructed into a :class:`LogicArray`.
+        This bit vector is then constructed into a :class:`!LogicArray`.
 
         Args:
             value: The integer to convert.
             range: Indexing scheme for the LogicArray.
 
         Returns:
-            A :class:`LogicArray` equivalent to the *value*.
+            A :class:`!LogicArray` equivalent to the *value*.
 
         Raises:
             TypeError: When invalid argument types are used.
-            ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
+            ValueError: When a :class:`!LogicArray` of the given *range* can't hold the *value*.
         """
         if isinstance(range, int):
             range = Range(range - 1, "downto", 0)
@@ -364,10 +364,10 @@ class LogicArray(AbstractArray[Logic]):
         *,
         byteorder: "Literal['big'] | Literal['little']",
     ) -> "LogicArray":
-        """Construct a :class:`LogicArray` from :class:`bytes`.
+        """Construct a :class:`!LogicArray` from :class:`bytes`.
 
         The :class:`bytes` is first converted to an unsigned integer using *byteorder*-endian representation,
-        then is converted to a :class:`LogicArray` as in :meth:`from_unsigned`.
+        then is converted to a :class:`!LogicArray` as in :meth:`from_unsigned`.
 
         Args:
             value: The bytes to convert.
@@ -375,10 +375,10 @@ class LogicArray(AbstractArray[Logic]):
             byteorder: The endianness used to construct the intermediate integer, either ``"big"`` or ``"little"``.
 
         Returns:
-            A :class:`LogicArray` equivalent to the *value*.
+            A :class:`!LogicArray` equivalent to the *value*.
 
         Raises:
-            ValueError: When a :class:`LogicArray` of the given *range* can't hold the *value*.
+            ValueError: When a :class:`!LogicArray` of the given *range* can't hold the *value*.
         """
         if range is None:
             range = Range(len(value) * 8 - 1, "downto", 0)
@@ -622,7 +622,7 @@ class LogicArray(AbstractArray[Logic]):
     def to_unsigned(self) -> int:
         """Convert the value to an integer by interpreting it using unsigned representation.
 
-        The :class:`LogicArray` is treated as an arbitrary-length vector of bits
+        The :class:`!LogicArray` is treated as an arbitrary-length vector of bits
         with the left-most bit being the most significant bit in the integer value.
         The bit vector is then interpreted as an integer using unsigned representation.
 
@@ -636,7 +636,7 @@ class LogicArray(AbstractArray[Logic]):
     def to_signed(self) -> int:
         """Convert the value to an integer by interpreting it using two's complement representation.
 
-        The :class:`LogicArray` is treated as an arbitrary-length vector of bits
+        The :class:`!LogicArray` is treated as an arbitrary-length vector of bits
         with the left-most bit being the most significant bit in the integer value.
         The bit vector is then interpreted as an integer using two's complement representation.
 
@@ -658,9 +658,9 @@ class LogicArray(AbstractArray[Logic]):
     ) -> bytes:
         """Convert the value to bytes.
 
-        The :class:`LogicArray` is converted to an unsigned integer as in :meth:`to_unsigned`,
+        The :class:`!LogicArray` is converted to an unsigned integer as in :meth:`to_unsigned`,
         then is converted to :class:`bytes` using *byteorder*-endian representation
-        with the minimum number of bytes which can store all the bits in the original :class:`LogicArray`.
+        with the minimum number of bytes which can store all the bits in the original :class:`!LogicArray`.
 
         Args:
             byteorder: The endianness used to construct the intermediate integer, either ``"big"`` or ``"little"``.
