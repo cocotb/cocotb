@@ -45,6 +45,10 @@ To enable FST tracing, set :make:var:`WAVES` to ``1``.
 
     make SIM=icarus WAVES=1
 
+By default, the wave file will be named `<hdl_toplevel>.fst`. Unlike other simulators, it will be placed in the build directory, rather than the test directory.
+
+To redirect the wave file to a different location, use the plusarg `dumpfile_path` when running the test.
+
 .. _sim-icarus-issues:
 
 Issues for this simulator
