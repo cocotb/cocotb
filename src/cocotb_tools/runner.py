@@ -699,8 +699,10 @@ class Icarus(Runner):
             f.write("module cocotb_iverilog_dump();\n")
             f.write("initial begin\n")
             f.write("    string dumpfile_path;")
-            f.write(f'    if ($value$plusargs("dumpfile_path=%s", dumpfile_path)) begin\n')
-            f.write(f'        $dumpfile(dumpfile_path);\n')
+            f.write(
+                '    if ($value$plusargs("dumpfile_path=%s", dumpfile_path)) begin\n'
+            )
+            f.write("        $dumpfile(dumpfile_path);\n")
             f.write("    end else begin\n")
             f.write(f'        $dumpfile("{dumpfile_path}");\n')
             f.write("    end\n")
