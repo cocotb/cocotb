@@ -484,13 +484,32 @@ class LogicArray(AbstractArray[Logic]):
             return NotImplemented
 
     @property
-    @deprecated("`.binstr` property is deprecated. Use `str(value)` instead.")
+    @deprecated(
+        "`logic_array.binstr` getter is deprecated. Use `str(logic_array)` instead."
+    )
     def binstr(self) -> str:
-        """Convert the value to the :class:`str` literal representation.
+        """The :class:`!LogicArray`'s value in :class:`str` literal representation.
 
-        .. deprecated:: 2.0
+        :getter:
+            Return the :class:`!LogicArray`'s value in :class:`str` literal representation.
+
+            .. deprecated:: 2.0
+                Use ``str(logic_array)`` instead.
+
+        :setter:
+            Set the :class:`!LogicArray`'s value using a :class:`str` literal representation.
+
+            .. deprecated:: 2.0
+                Use ``logic_array[:] = value`` instead.
         """
         return str(self)
+
+    @binstr.setter
+    @deprecated(
+        "`logic_array.binstr = value` setter is deprecated. Use `logic_array[:] = value` instead."
+    )
+    def binstr(self, value: str) -> None:
+        self[:] = value
 
     @property
     def is_resolvable(self) -> bool:
@@ -500,54 +519,105 @@ class LogicArray(AbstractArray[Logic]):
         )
 
     @property
-    @deprecated("`.integer` property is deprecated. Use `value.to_unsigned()` instead.")
+    @deprecated(
+        "`logic_array.integer` getter is deprecated. Use `logic_array.to_unsigned()` instead."
+    )
     def integer(self) -> int:
-        """Convert the value to an :class:`int` by interpreting it using unsigned representation.
+        """The :class:`!LogicArray`'s value as an unsigned :class:`int`.
 
-        The :class:`LogicArray` is treated as an arbitrary-length vector of bits
+        The :class:`!LogicArray` is treated as an arbitrary-length vector of bits
         with the left-most bit being the most significant bit in the integer value.
         The bit vector is then interpreted as an integer using unsigned representation.
 
-        Returns:
-            An :class:`int` equivalent to the value by interpreting it using unsigned representation.
+        :getter:
+            Return the :class:`!LogicArray`'s value as an unsigned integer.
 
-        .. deprecated:: 2.0
+            .. deprecated:: 2.0
+                Use :meth:`logic_array.to_unsigned() <cocotb.types.LogicArray.to_unsigned>` instead.
+
+        :setter:
+            Set the :class:`!LogicArray`'s value using an unsigned integer.
+
+            .. deprecated:: 2.0
+                Use ``logic_array[:] = value`` instead.
+
+        :setter
         """
         return self.to_unsigned()
 
+    @integer.setter
+    @deprecated(
+        "`logic_array.integer = value` setter is deprecated. Use `logic_array[:] = value` instead."
+    )
+    def integer(self, value: int) -> None:
+        self[:] = value
+
     @property
     @deprecated(
-        "`.signed_integer` property is deprecated. Use `value.to_signed()` instead."
+        "`logic_array.signed_integer` getter is deprecated. Use `logic_array.to_signed()` instead."
     )
     def signed_integer(self) -> int:
-        """Convert the value to an :class:`int` by interpreting it using two's complement representation.
+        """The :class:`!LogicArray`'s value as a signed :class:`int`.
 
-        The :class:`LogicArray` is treated as an arbitrary-length vector of bits
+        The :class:`!LogicArray` is treated as an arbitrary-length vector of bits
         with the left-most bit being the most significant bit in the integer value.
         The bit vector is then interpreted as an integer using two's complement representation.
 
-        Returns:
-            An :class:`int` equivalent to the value by interpreting it using two's complement representation.
+        :getter:
+            Return the :class:`!LogicArray`'s value as a signed integer.
 
-        .. deprecated:: 2.0
+            .. deprecated:: 2.0
+                Use :meth:`logic_array.to_signed() <cocotb.types.LogicArray.to_signed>` instead.
+
+        :setter:
+            Set the :class:`!LogicArray`'s value using a signed integer.
+
+            .. deprecated:: 2.0
+                Use ``logic_array[:] = LogicArray.from_signed(value, len(logic_array))`` instead.
         """
         return self.to_signed()
 
+    @signed_integer.setter
+    @deprecated(
+        "`logic_array.signed_integer = value` setter is deprecated. "
+        "Use `logic_array[:] = LogicArray.from_signed(value, len(logic_array))` instead."
+    )
+    def signed_integer(self, value: int) -> None:
+        self[:] = LogicArray.from_signed(value, len(self))
+
     @property
-    @deprecated("`.buff` property is deprecated. Use `v.to_bytes()` instead.")
+    @deprecated(
+        "`logic_array.buff` getter is deprecated. "
+        'Use `logic_array.to_bytes(byteorder="big")` instead.'
+    )
     def buff(self) -> bytes:
-        """Convert the value to :class:`bytes` by interpreting it as an unsigned integer in big-endian byte order.
+        """The :class:`!LogicArray`'s value as :class:`bytes`.
 
         The object is first converted to an :class:`int` as in :meth:`to_unsigned`.
         Then the object is converted to :class:`bytes` by converting the resulting integer value as in :meth:`int.to_bytes`.
         This assumes big-endian byte order and the minimal number of bytes necessary to hold any value of the current object.
 
-        Returns:
-            A :class:`bytes` object equivalent to the value.
+        :getter:
+            Return the :class:`!LogicArray`'s value as :class:`bytes`.
 
-        .. deprecated:: 2.0
+            .. deprecated:: 2.0
+                Use :meth:`logic_array.to_bytes(byteorder="big") <cocotb.types.LogicArray.to_bytes>` instead.
+
+        :setter:
+            Set the :class:`!LogicArray`'s value using :class:`bytes`.
+
+            .. deprecated:: 2.0
+                Use ``logic_array[:] = LogicArray.from_bytes(value, len(logic_array), byteorder="big")`` instead.
         """
         return self.to_bytes(byteorder="big")
+
+    @buff.setter
+    @deprecated(
+        "`logic_array.buff = value` setter is deprecated. "
+        'Use `logic_array[:] = LogicArray.from_bytes(value, len(logic_array), byteorder="big")` instead.'
+    )
+    def buff(self, value: bytes) -> None:
+        self[:] = LogicArray.from_bytes(value, len(self), byteorder="big")
 
     def to_unsigned(self) -> int:
         """Convert the value to an integer by interpreting it using unsigned representation.
