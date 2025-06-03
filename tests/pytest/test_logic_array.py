@@ -140,19 +140,51 @@ def test_logic_array_properties():
 
 def test_logic_array_properties_deprecated():
     with pytest.warns(DeprecationWarning):
-        assert LogicArray("0").integer == 0
-    with pytest.warns(DeprecationWarning):
-        assert LogicArray("0").signed_integer == 0
-    with pytest.warns(DeprecationWarning):
-        assert LogicArray("0").binstr == "0"
-    with pytest.warns(DeprecationWarning):
         assert LogicArray("1010").integer == 10
+
+    l = LogicArray("1100")
+    with pytest.warns(DeprecationWarning):
+        l.integer = 1
+    assert l.to_unsigned() == 1
+    with pytest.warns(DeprecationWarning), pytest.raises(ValueError):
+        l.integer = 100
+    with pytest.warns(DeprecationWarning), pytest.raises(ValueError):
+        l.integer = -1
+
     with pytest.warns(DeprecationWarning):
         assert LogicArray("1010").signed_integer == -6
+
+    l = LogicArray("1100")
+    with pytest.warns(DeprecationWarning):
+        l.signed_integer = 3
+    assert l.to_signed() == 3
+    with pytest.warns(DeprecationWarning):
+        l.signed_integer = -1
+    assert l.to_signed() == -1
+    with pytest.warns(DeprecationWarning), pytest.raises(ValueError):
+        l.signed_integer = 100
+    with pytest.warns(DeprecationWarning), pytest.raises(ValueError):
+        l.signed_integer = -10
+
     with pytest.warns(DeprecationWarning):
         assert LogicArray("1010").binstr == "1010"
+
+    l = LogicArray("1010")
+    with pytest.warns(DeprecationWarning):
+        l.binstr = "0101"
+    assert str(l) == "0101"
+
     with pytest.warns(DeprecationWarning):
         assert LogicArray("01000001" + "00101111").buff == b"\x41\x2f"
+
+    l = LogicArray("0" * 16)
+    with pytest.warns(DeprecationWarning):
+        l.buff = b"\x41\x2f"
+    assert l.to_bytes(byteorder="big") == b"\x41\x2f"
+    with pytest.warns(DeprecationWarning), pytest.raises(ValueError):
+        l.buff = b"\x41\x2f0123"
+    with pytest.warns(DeprecationWarning), pytest.raises(ValueError):
+        l.buff = b""
 
 
 def test_logic_array_setattr():
