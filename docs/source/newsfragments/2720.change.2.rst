@@ -1,1 +1,0 @@
-``std_(u)logic_vector`` and ``std_(u)logic`` signals and constants in VHDL, and ``logic`` and packed arrays of ``logic`` signals and parameters in Verilog are now :class:`~cocotb.handle.LogicObject`\ s.

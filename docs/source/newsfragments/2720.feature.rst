@@ -1,0 +1,1 @@
+Added the :attr:`.ValueObjectBase.is_const` property to support checking if a :class:`ValueObject` is immutable.

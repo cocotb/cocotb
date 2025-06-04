@@ -1,1 +1,1 @@
-Iteration of and querying length and range of :class:`~cocotb.handle.IntegerObject`, :class:`~cocotb.handle.EnumObject`, and :class:`~cocotb.handle.RealObject` have been removed.
+Removed iteration (``for sub_handle in handle: ...``) and querying the length (``len(handle)``) of :class:`~cocotb.handle.IntegerObject`, :class:`~cocotb.handle.EnumObject`, and :class:`~cocotb.handle.RealObject`.

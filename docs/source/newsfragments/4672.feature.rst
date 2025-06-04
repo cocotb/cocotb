@@ -1,1 +1,1 @@
-Added `mypy <https://mypy.readthedocs.io/en/stable/getting_started.html>` checking to CI to ensure type correctness.
+Added a Python type checker (`mypy <https://mypy.readthedocs.io/en/stable/getting_started.html>`_) to CI to ensure type correctness.
