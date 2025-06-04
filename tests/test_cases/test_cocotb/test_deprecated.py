@@ -10,6 +10,7 @@ import pytest
 from common import assert_takes
 
 import cocotb
+from cocotb._base_triggers import Lock
 from cocotb.clock import Clock
 from cocotb.regression import TestFactory
 from cocotb.task import Join
@@ -232,3 +233,15 @@ async def test_results_deprecated(_: Any) -> None:
 async def test_triggers_Join_import_deprecated(_: Any) -> None:
     with pytest.warns(DeprecationWarning):
         from cocotb.triggers import Join  # noqa: F401
+
+
+@cocotb.test
+async def test_Lock_name_deprecated(_: object) -> None:
+    with pytest.warns(DeprecationWarning):
+        l = Lock(name="thingy")
+    with pytest.warns(DeprecationWarning):
+        assert l.name == "thingy"
+    with pytest.warns(DeprecationWarning):
+        l.name = "foobar"
+    with pytest.warns(DeprecationWarning):
+        assert l.name == "foobar"

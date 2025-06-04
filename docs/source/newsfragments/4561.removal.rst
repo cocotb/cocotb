@@ -1,1 +1,1 @@
-Deprecated :attr:`.Event.name` and passing a ``name`` argument to :class:`.Event` constructors. If you need to associate a name with an Event, create an empty subclass of :class:`!cocotb.triggers.Event` with your desired name.
+Deprecated :attr:`.Event.name` and passing a ``name`` argument to :class:`.Event` constructors.
