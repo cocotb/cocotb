@@ -84,7 +84,8 @@ async def test_lock_repr(dut):
 
     assert re.match(r"<Lock \[0 waiting\] at \w+>", repr(lock))
 
-    lock = Lock(name="my_lock")
+    with pytest.warns(DeprecationWarning):
+        lock = Lock(name="my_lock")
 
     async def task():
         async with lock:

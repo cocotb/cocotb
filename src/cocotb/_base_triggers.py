@@ -150,22 +150,27 @@ class Event:
         self._event: _Event = _Event(self)
         self._name: Union[str, None] = None
         if name is not None:
+            warnings.warn(
+                "The 'name' argument will be removed in a future release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             self.name = name
         self._fired: bool = False
         self._data: Any = None
 
     @property
-    @deprecated("The name field will be removed in a future release.")
+    @deprecated("The 'name' field will be removed in a future release.")
     def name(self) -> Union[str, None]:
         """Name of the Event.
 
         .. deprecated:: 2.0
-            The name field will be removed in a future release.
+            The *name* field will be removed in a future release.
         """
         return self._name
 
     @name.setter
-    @deprecated("The name field will be removed in a future release.")
+    @deprecated("The 'name' field will be removed in a future release.")
     def name(self, new_name: Union[str, None]) -> None:
         self._name = new_name
 
@@ -342,8 +347,30 @@ class Lock(AsyncContextManager[None]):
 
     def __init__(self, name: Optional[str] = None) -> None:
         self._pending_primed: List[_Lock] = []
-        self.name: Optional[str] = name
+        self._name: Union[str, None] = None
+        if name is not None:
+            warnings.warn(
+                "The 'name' argument will be removed in a future release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self._name = name
         self._locked: bool = False
+
+    @property
+    @deprecated("The 'name' field will be removed in a future release.")
+    def name(self) -> Union[str, None]:
+        """Name of the Lock.
+
+        .. deprecated:: 2.0
+            The *name* field will be removed in a future release.
+        """
+        return self._name
+
+    @name.setter
+    @deprecated("The 'name' field will be removed in a future release.")
+    def name(self, new_name: Union[str, None]) -> None:
+        self._name = new_name
 
     def locked(self) -> bool:
         """Return ``True`` if the lock has been acquired.
@@ -387,13 +414,13 @@ class Lock(AsyncContextManager[None]):
         self._acquire_and_fire(lock)
 
     def __repr__(self) -> str:
-        if self.name is None:
+        if self._name is None:
             fmt = "<{0} [{2} waiting] at {3}>"
         else:
             fmt = "<{0} for {1} [{2} waiting] at {3}>"
         return fmt.format(
             type(self).__qualname__,
-            self.name,
+            self._name,
             len(self._pending_primed),
             pointer_str(self),
         )

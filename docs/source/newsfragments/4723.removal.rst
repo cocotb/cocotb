@@ -1,0 +1,1 @@
+Deprecated :attr:`.Lock.name` and passing a ``name`` argument to :class:`.Lock` constructors.
