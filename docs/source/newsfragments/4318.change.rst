@@ -1,1 +1,1 @@
-For scalar logic objects, such as un-arrayed ``logic`` in Verilog and ``std_logic`` in VHDL, ``handle.value`` now returns a :class:`.Logic` rather than a :class:`.LogicArray`.
+``std_(u)logic`` signals and constants in VHDL and scalar ``logic`` signals and parameters in Verilog are now discovered as :class:`.LogicObject`\ s instead of ``cocotb.handle.ModifiableObject``. (:pr:`2720`)

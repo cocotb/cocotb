@@ -1,1 +1,1 @@
-:exc:`KeyboardInterrupt` and :exc:`SystemExit` are no longer handled by the scheduler, allowing them to end the simulation immediately.
+:exc:`KeyboardInterrupt` and :exc:`SystemExit` now end the simulation immediately.

@@ -1,1 +1,1 @@
-All :class:`simulator objects <cocotb.handle.SimHandleBase>` when cast to a :func:`str` now return the :func:`repr` of the object and not the :meth:`path <cocotb.handle.SimHandleBase._path>`.
+When casting a :class:`simulator objects <cocotb.handle.SimHandleBase>` to a :class:`str` return the :func:`repr` of the object instead of the :meth:`path <cocotb.handle.SimHandleBase._path>`.

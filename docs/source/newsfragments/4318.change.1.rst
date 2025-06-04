@@ -1,1 +1,1 @@
-Array'd logic objects, such as arrayed ``logic`` in Verilog and ``std_logic_vector`` in VHDL, are now mapped to the :class:`.LogicArrayObject` type.
+``std_(u)logic_vector`` signals and constants in VHDL and packed arrays of ``logic`` signals and parameters in Verilog are now discovered as :class:`.LogicArrayObject`\ s instead of ``cocotb.handle.ModifiableObject``. (:pr:`2720`)

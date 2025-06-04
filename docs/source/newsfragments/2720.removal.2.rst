@@ -1,0 +1,1 @@
+Removed ``cocotb.handle.ConstantObject``. Use :attr:`.ValueObjectBase.is_const` to determine is an object is immutable instead.
