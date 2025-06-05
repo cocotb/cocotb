@@ -180,10 +180,10 @@ The Python type of a value depends on the handle's HDL type:
 Identifying tests
 =================
 
-Cocotb tests are identified using the :class:`~cocotb.test` decorator.
+Cocotb tests are identified using the :deco:`cocotb.test` decorator.
 Using this decorator will tell cocotb that this function is a special type of coroutine that is meant
 to either pass or fail.
-The :class:`~cocotb.test` decorator supports several keyword arguments (see section :ref:`writing-tests`).
+The :deco:`cocotb.test` decorator supports several keyword arguments (see section :ref:`writing-tests`).
 In most cases no arguments are passed to the decorator so cocotb tests can be written as:
 
 .. code-block:: python
@@ -383,7 +383,7 @@ For example, see the below output for the first test from above.
 
 
 If a test coroutine completes without `failing` or `erroring`,
-or if the test coroutine or any running :class:`~cocotb.task.Task` calls :func:`~cocotb.pass_test`,
+or if the test coroutine or any running :class:`~cocotb.task.Task` calls :func:`cocotb.pass_test`,
 the test is considered to have `passed`.
 Below are examples of `passing` tests.
 
