@@ -1,0 +1,1 @@
+Added :envvar:`COCOTB_REWRITE_ASSERTION_FILES` to allow users to select which files to enable ``pytest``'s assertion rewriting in, or disable it.

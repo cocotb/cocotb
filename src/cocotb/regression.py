@@ -240,8 +240,14 @@ class RegressionManager:
             from _pytest.assertion import install_importhook
             from _pytest.config import Config
 
+            python_files = os.getenv("COCOTB_REWRITE_ASSERTION_FILES", "*.py").strip()
+            if not python_files:
+                # Even running the hook causes exceptions in some cases, so if the user
+                # selects nothing, don't install the hook at all.
+                return
+
             pytest_conf = Config.fromdictargs(
-                {}, ["--capture=no", "-o", "python_files=*.py"]
+                {}, ["--capture=no", "-o", f"python_files={python_files}"]
             )
             install_importhook(pytest_conf)
         except Exception:
