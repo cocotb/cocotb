@@ -10,6 +10,9 @@ our release notes, and this directory contains the input for it -
 **ReST**-formatted text that will be added to the next version's
 Release Notes page.
 
+Writing Newsfragments
+---------------------
+
 Each file should be named like ``<ISSUE_OR_PR>.<TYPE>.rst``,
 where ``<ISSUE_OR_PR>`` is an issue or a pull request number -
 whatever is most useful to link to,
@@ -21,35 +24,55 @@ and ``<TYPE>`` is one of:
 * ``removal``: Deprecation or removal of public API or behavior.
 * ``change``: A change in public API or behavior.
 
-In that file, make sure to use full sentences with correct case and punctuation,
-and do not use a bullet point at the beginning of the file.
-Each fragment file should be a single piece of news on a single line;
-multi-line files will not render correctly.
-In cases where there is more than one piece of news for a pull request,
-split the news into 2 fragments (see below for details on how to do that).
+In that file, make sure to use full sentences with correct case and punctuation.
+Use "action" statements as much as possible.
+If deprecating or removing something and there is an alternative, mention the alternative.
+If changing behavior list both the new and old behavior;
+and if there is a way to emulate the old behavior, mention it.
+Avoid mentioning rationale or needless details and avoid talking to the reader.
 Use Sphinx references (see https://sphinx-tutorial.readthedocs.io/cheatsheet/)
 if you refer to added classes, methods etc.
+In cases where there is more than one piece of news for a pull request,
+split the news into multiple fragments (see below for details on how to do that).
 
+Do not use a bullet point at the beginning of the file;
+those are added automatically.
+Each fragment file must be a single piece of news on a single line;
+multi-line files will not render correctly.
+
+Examples:
+
+.. parsed-literal::
+
+    Added :class:`TaskManager`.
+
+.. parsed-literal::
+
+    Deprecated passing ``name`` to the :class:`.Event` constructor. If you need to associate a name with an :class:`!Event`, subclass :class:`!Event` and add a ``name`` attribute.
+
+
+Multiple Newsfragments per PR
+-----------------------------
+
+Multiple newsfragments of different ``<TYPE>`` can be added for a single ``<ISSUE_OR_PR>``.
 Additional newsfragments of the same ``<TYPE>`` for a single ``<ISSUE_OR_PR>`` are
-supported, using the name format ``<ISSUE_OR_PR>.<TYPE>.<#>.rst``.
+supported using the name format ``<ISSUE_OR_PR>.<TYPE>.<#>.rst``.
 
 Example:
 
 * ``<ISSUE_OR_PR>.bugfix.rst``
 * ``<ISSUE_OR_PR>.bugfix.1.rst``
+* ``<ISSUE_OR_PR>.removal.rst``
 
-An example file could consist of the content between the marks:
 
---8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<
-Summary of a new feature.
+How Towncrier Works
+-------------------
 
-This is a second paragraph.
--->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8
-
-Note that the last paragraph should be a normal sentence and not e.g. code,
-because the issue number is appended there.
-
-Towncrier automatically assembles a list of unreleased changes when building Sphinx,
+Towncrier automatically assembles a list of unreleased changes when building Sphinx (see :file:`docs/conf.py`),
 meaning your notes will be visible in the documentation immediately after merging.
+
 When performing a release, ``towncrier`` should be run independently (in cocotb's root directory),
-which will delete all the merged newsfragments, and create new commits.
+which will delete all the merged newsfragments.
+Make sure to commit the changes.
+
+:file:`pyproject.toml` contains the configuration for towncrier.

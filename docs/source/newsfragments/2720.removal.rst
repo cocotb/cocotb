@@ -1,1 +1,0 @@
-``cocotb.handle.NonConstantObject`` was removed, use :class:`~cocotb.handle.ValueObjectBase` instead.

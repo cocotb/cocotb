@@ -1,1 +1,1 @@
-Getting a value with :attr:`LogicObject.value <cocotb.handle.LogicObject.value>` now returns a :class:`~cocotb.types.LogicArray`.
+Getting a value with :attr:`.LogicArrayObject.value` now returns a :class:`~cocotb.types.LogicArray` instead of a ``cocotb.binary.BinaryValue``.

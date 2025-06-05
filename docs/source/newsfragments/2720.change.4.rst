@@ -1,1 +1,0 @@
-All casts on :class:`simulator value objects <cocotb.handle.ValueObjectBase>` have been deprecated. If you want to get the value from a simulator value object, use the :meth:`~cocotb.handle.ValueObjectBase.value` property; then cast the value.

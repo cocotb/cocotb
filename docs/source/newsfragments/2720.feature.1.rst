@@ -1,0 +1,1 @@
+Made :class:`simulator objects <cocotb.handle.SimHandleBase>` hashable. Simulator objects can now be used as :class:`dict` keys and :class:`set` items.
