@@ -342,6 +342,15 @@ Regression Manager
    See also the :ref:`troubleshooting-attaching-debugger-python` subsection of :ref:`troubleshooting-attaching-debugger`.
 
 
+.. envvar:: COCOTB_REWRITE_ASSERTION_FILES
+
+    Select the Python files to apply ``pytest``'s assertion rewriting to.
+    This is useful to get more informative assertion error messages in cocotb tests.
+    Specify using a space-separated list of file globs, e.g. ``test_*.py testbench_common/**/*.py``.
+    Set to the empty string to disable assertion rewriting.
+    Defaults to ``*.py`` (all Python files, even third-party modules like ``scipy``).
+
+
 Scheduler
 ~~~~~~~~~
 
