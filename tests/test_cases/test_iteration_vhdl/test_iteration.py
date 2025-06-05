@@ -18,7 +18,12 @@ def total_object_count():
     # Questa with VHPI
     # TODO: Why do we get massively different numbers for Questa/VHPI than for Questa/FLI or VPI?
     if SIM_NAME.startswith("modelsim") and os.environ["VHDL_GPI_INTERFACE"] == "vhpi":
-        return 5119
+        if os.environ.get("COCOTB__QUESTA_MODE", "compat") == "compat":
+            return 5119
+        else:
+            # The QIS/Qrun flow additionally finds
+            # Found dec_viterbi_ent.#IMPLICIT# (<class 'cocotb.handle.IntegerObject'>)
+            return 5120
 
     if SIM_NAME.startswith(
         (
