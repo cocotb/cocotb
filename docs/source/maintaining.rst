@@ -78,7 +78,7 @@ The ``category`` labels help maintainers to filter issues which are relevant to 
 -  ``category:docs``: documentation issues and fixes
 -  ``category:hardware-in-the-loop``: relating to real-life hardware (HIL)
 -  ``category:performance``: performance topics
--  ``category:ci``: continuous integration and unit tests
+-  ``category:ci-free``: continuous integration and unit tests
 -  ``category:meta``: cocotb repo, maintainers, or community
 -  ``category:extensions``: cocotb extension modules
 -  ``category:debugging``: debugging features

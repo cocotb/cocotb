@@ -4,6 +4,10 @@
 
 name: CI
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.ref }}
+  cancel-in-progress: ${{ !(contains(github.ref, 'release/') || contains(github.ref, 'master')) }}
+
 on:
   # Run this workflow on every push to the master branch, or a stable branch.
   push:
@@ -51,4 +55,14 @@ jobs:
       nox_session_test_sim: dev_test_sim
       nox_session_test_nosim: dev_test_nosim
       collect_coverage: true
-      group: ci
+      group: ci-free
+
+  test_dev_licensed:
+    if: github.repository == 'cocotb/cocotb'
+    name: Regression Tests
+    uses: ./.github/workflows/regression-tests.yml
+    with:
+      nox_session_test_sim: dev_test_sim
+      nox_session_test_nosim: dev_test_nosim
+      collect_coverage: true
+      group: ci-licensed
