@@ -6,7 +6,6 @@ import collections
 import heapq
 from abc import abstractmethod
 from typing import (
-    Any,
     Deque,
     Generic,
     List,
@@ -50,8 +49,8 @@ class AbstractQueue(Generic[T]):
 
     def __init__(self, maxsize: int = 0) -> None:
         self._maxsize: int = maxsize
-        self._getters: Deque[Tuple[Event, Task[Any]]] = collections.deque()
-        self._putters: Deque[Tuple[Event, Task[Any]]] = collections.deque()
+        self._getters: Deque[Tuple[Event, Task[object]]] = collections.deque()
+        self._putters: Deque[Tuple[Event, Task[object]]] = collections.deque()
 
     @abstractmethod
     def _get(self) -> T:
@@ -69,7 +68,7 @@ class AbstractQueue(Generic[T]):
     def _repr(self) -> str:
         """Return a string representation of the state of the queue."""
 
-    def _wakeup_next(self, waiters: Deque[Tuple[Event, Task[Any]]]) -> None:
+    def _wakeup_next(self, waiters: Deque[Tuple[Event, Task[object]]]) -> None:
         while waiters:
             event, task = waiters.popleft()
             if not task.done():
