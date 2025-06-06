@@ -113,6 +113,8 @@ Task Management
 .. autoclass:: cocotb.task.Task
     :members:
 
+.. autofunction:: cocotb.task.current_task
+
 Dealing with non-``async`` code
 -------------------------------
 
