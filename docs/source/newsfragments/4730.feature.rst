@@ -1,0 +1,1 @@
+Added :func:`cocotb.task.current_task` to get the current task object.
