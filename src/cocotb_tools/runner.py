@@ -698,7 +698,14 @@ class Icarus(Runner):
         with open(self.iverilog_dump_file, "w") as f:
             f.write("module cocotb_iverilog_dump();\n")
             f.write("initial begin\n")
-            f.write(f'    $dumpfile("{dumpfile_path}");\n')
+            f.write("    string dumpfile_path;")
+            f.write(
+                '    if ($value$plusargs("dumpfile_path=%s", dumpfile_path)) begin\n'
+            )
+            f.write("        $dumpfile(dumpfile_path);\n")
+            f.write("    end else begin\n")
+            f.write(f'        $dumpfile("{dumpfile_path}");\n')
+            f.write("    end\n")
             f.write(f"    $dumpvars(0, {self.hdl_toplevel});\n")
             f.write("end\n")
             f.write("endmodule\n")

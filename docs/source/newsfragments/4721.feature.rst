@@ -1,0 +1,1 @@
+Allow user to specify iverilog wave dump file location at run time with a plusarg.
