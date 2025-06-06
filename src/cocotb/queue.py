@@ -6,13 +6,11 @@ import collections
 import heapq
 from abc import abstractmethod
 from typing import (
-    Any,
     Deque,
     Generic,
     List,
     Tuple,
     TypeVar,
-    cast,
 )
 
 import cocotb
@@ -51,8 +49,8 @@ class AbstractQueue(Generic[T]):
 
     def __init__(self, maxsize: int = 0) -> None:
         self._maxsize: int = maxsize
-        self._getters: Deque[Tuple[Event, Task[Any]]] = collections.deque()
-        self._putters: Deque[Tuple[Event, Task[Any]]] = collections.deque()
+        self._getters: Deque[Tuple[Event, Task[object]]] = collections.deque()
+        self._putters: Deque[Tuple[Event, Task[object]]] = collections.deque()
 
     @abstractmethod
     def _get(self) -> T:
@@ -70,7 +68,7 @@ class AbstractQueue(Generic[T]):
     def _repr(self) -> str:
         """Return a string representation of the state of the queue."""
 
-    def _wakeup_next(self, waiters: Deque[Tuple[Event, Task[Any]]]) -> None:
+    def _wakeup_next(self, waiters: Deque[Tuple[Event, Task[object]]]) -> None:
         while waiters:
             event, task = waiters.popleft()
             if not task.done():
@@ -126,9 +124,7 @@ class AbstractQueue(Generic[T]):
         """
         while self.full():
             event = Event()
-            self._putters.append(
-                (event, cast(Task[Any], cocotb._scheduler_inst._current_task))
-            )
+            self._putters.append((event, cocotb.task.current_task()))
             await event.wait()
         self.put_nowait(item)
 
@@ -149,9 +145,7 @@ class AbstractQueue(Generic[T]):
         """
         while self.empty():
             event = Event()
-            self._getters.append(
-                (event, cast(Task[Any], cocotb._scheduler_inst._current_task))
-            )
+            self._getters.append((event, cocotb.task.current_task()))
             await event.wait()
         return self.get_nowait()
 
