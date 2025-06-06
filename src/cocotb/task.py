@@ -48,6 +48,7 @@ __all__ = (
     "Task",
     "TaskComplete",
     "bridge",
+    "current_task",
     "resume",
 )
 
@@ -434,6 +435,20 @@ class Task(Generic[ResultType]):
         elif not self.done():
             yield self.complete
         return self.result()
+
+
+def current_task() -> Task[object]:
+    """Return the currently running Task.
+
+    Raises:
+        RuntimeError: If no Task is running.
+
+    .. versionadded:: 2.0
+    """
+    task = cocotb._scheduler_inst._current_task
+    if task is None:
+        raise RuntimeError("No Task is currently running")
+    return task
 
 
 class TaskComplete(Trigger, Generic[ResultType]):

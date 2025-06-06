@@ -12,7 +12,6 @@ from typing import (
     List,
     Tuple,
     TypeVar,
-    cast,
 )
 
 import cocotb
@@ -126,9 +125,7 @@ class AbstractQueue(Generic[T]):
         """
         while self.full():
             event = Event()
-            self._putters.append(
-                (event, cast(Task[Any], cocotb._scheduler_inst._current_task))
-            )
+            self._putters.append((event, cocotb.task.current_task()))
             await event.wait()
         self.put_nowait(item)
 
@@ -149,9 +146,7 @@ class AbstractQueue(Generic[T]):
         """
         while self.empty():
             event = Event()
-            self._getters.append(
-                (event, cast(Task[Any], cocotb._scheduler_inst._current_task))
-            )
+            self._getters.append((event, cocotb.task.current_task()))
             await event.wait()
         return self.get_nowait()
 
