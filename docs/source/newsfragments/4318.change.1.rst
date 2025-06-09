@@ -1,1 +1,1 @@
-``std_(u)logic_vector`` signals and constants in VHDL and packed arrays of ``logic`` signals and parameters in Verilog are now discovered as :class:`.LogicArrayObject`\ s instead of ``cocotb.handle.ModifiableObject``. (:pr:`2720`)
+``std_ulogic_vector``/``std_logic_vector`` signals and constants in VHDL and packed arrays of ``logic`` signals and parameters in Verilog are now discovered as :class:`.LogicArrayObject`\ s instead of ``cocotb.handle.ModifiableObject``. (:pr:`2720`)

@@ -1,1 +1,1 @@
-``std_(u)logic`` signals and constants in VHDL and scalar ``logic`` signals and parameters in Verilog are now discovered as :class:`.LogicObject`\ s instead of ``cocotb.handle.ModifiableObject``. (:pr:`2720`)
+``std_ulogic``/``std_logic`` signals and constants in VHDL and scalar ``logic`` signals and parameters in Verilog are now discovered as :class:`.LogicObject`\ s instead of ``cocotb.handle.ModifiableObject``. (:pr:`2720`)
