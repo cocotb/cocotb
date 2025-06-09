@@ -129,12 +129,10 @@ class Range(Sequence[int]):
         return len(self._range)
 
     @overload
-    def __getitem__(self, item: int) -> int:
-        pass  # pragma: no cover
+    def __getitem__(self, item: int) -> int: ...
 
     @overload
-    def __getitem__(self, item: slice) -> "Range":
-        pass  # pragma: no cover
+    def __getitem__(self, item: slice) -> "Range": ...
 
     def __getitem__(self, item: Union[int, slice]) -> Union[int, "Range"]:
         if isinstance(item, int):

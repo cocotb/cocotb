@@ -357,7 +357,8 @@ def test(
                     @cocotb.test(**decorator_kwargs)
                     @functools.wraps(obj)
                     async def test(dut, **test_kwargs):
-                        pass  # your code here
+                        # your code here
+                        ...
 
                     return obj
 

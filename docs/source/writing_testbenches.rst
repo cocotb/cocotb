@@ -191,12 +191,19 @@ In most cases no arguments are passed to the decorator so cocotb tests can be wr
     # A valid cocotb test
     @cocotb.test
     async def test(dut):
-        pass
+        ...
 
     # Also a valid cocotb test
-    @cocotb.test()
+    @cocotb.test()  # added ()
     async def test(dut):
-        pass
+        ...
+
+    # Another valid cocotb test
+    @cocotb.test(
+        skip=cocotb.top.feature.value != 1  # skip if feature disabled
+    )
+    async def test(dut):
+        ...
 
 .. _writing_tbs_concurrent_sequential:
 
