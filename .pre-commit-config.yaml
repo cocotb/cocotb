@@ -37,6 +37,7 @@ repos:
   rev: "2025.05.12"
   hooks:
     - id: validate-pyproject
+      files: pyproject.toml
 
 - repo: local
   hooks:
