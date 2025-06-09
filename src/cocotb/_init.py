@@ -10,6 +10,7 @@ import random
 import sys
 import time
 import warnings
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, List, cast
 
@@ -87,7 +88,9 @@ def init_package_from_simulation(argv: List[str]) -> None:
     _start_user_coverage()
 
     log.info(
-        "Initialized cocotb v%s from %s", cocotb.__version__, os.path.dirname(__file__)
+        "Initialized cocotb v%s from %s",
+        cocotb.__version__,
+        Path(__file__).parent.absolute(),
     )
 
 
@@ -185,7 +188,7 @@ def _start_user_coverage() -> None:
                 log.info(
                     "Collecting coverage of user code. No coverage config file supplied via COCOTB_COVERAGE_RCFILE."
                 )
-                cocotb_package_dir = os.path.dirname(__file__)
+                cocotb_package_dir = Path(__file__).parent.absolute()
                 user_coverage = coverage.coverage(
                     branch=True, omit=[f"{cocotb_package_dir}/*"]
                 )

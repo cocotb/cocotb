@@ -140,7 +140,7 @@ def lib_name(interface: str, simulator: str) -> str:
         lib_ext = ".so"
 
     # check if compiled with msvc
-    if os.path.isfile(os.path.join(libs_dir, "cocotb.dll")):
+    if (libs_dir / "cocotb.dll").is_file():
         lib_prefix = ""
     else:
         lib_prefix = "lib"
@@ -152,9 +152,7 @@ def lib_name_path(interface: str, simulator: str) -> Path:
     """
     Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
     """
-    library_name_path = os.path.join(libs_dir, lib_name(interface, simulator))
-
-    return Path(library_name_path)
+    return libs_dir / lib_name(interface, simulator)
 
 
 def _get_parser() -> argparse.ArgumentParser:
