@@ -104,8 +104,8 @@ jobs:
       if: startsWith(matrix.os, 'windows')
       uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f  # v3.2.0
       with:
-        auto-update-conda: true
         # Use base environment to properly import _sqlite3 DLL - see gh-3166
+        auto-activate-base: true
         activate-environment: ""
     - name: Set up python version for Anaconda (base) ${{matrix.python-version}} (Windows)
       if: startsWith(matrix.os, 'windows')
@@ -141,7 +141,7 @@ jobs:
         sudo make install
     - name: Set up Icarus (Windows - source)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
-      timeout-minutes: 5
+      timeout-minutes: 7
       run: |
         conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain
         git clone https://github.com/steveicarus/iverilog.git
@@ -149,8 +149,7 @@ jobs:
         git reset --hard ${{matrix.sim-version}}
         bash ./autoconf.sh
         bash ./configure --host=x86_64-w64-mingw32 --prefix=/c/iverilog
-        make -j $(nproc)
-        make install
+        make -j $(nproc) install
         echo "C:\iverilog\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
     - name: Set up Icarus (MacOS - homebrew --HEAD)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-HEAD'
