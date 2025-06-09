@@ -1115,7 +1115,12 @@ class Nvc(Runner):
                 )
 
         cmds = [
-            ["nvc", f"--work={self.hdl_library}", "-L", str(self.build_dir)]
+            [
+                "nvc",
+                f"--work={self.hdl_library}",
+                "-L",
+                str(get_abs_path(self.build_dir)),
+            ]
             + [arg for arg in self.build_args if type(arg) in (str, VHDL)]
             + ["-a"]
             + [str(source) for source in self.sources if is_vhdl_source(source)]
@@ -1126,8 +1131,14 @@ class Nvc(Runner):
         return cmds
 
     def _test_command(self) -> List[_Command]:
+        work_library = str(get_abs_path(self.build_dir / self.hdl_toplevel_library))
         cmds = [
-            ["nvc", f"--work={self.hdl_toplevel_library}", "-L", str(self.build_dir)]
+            [
+                "nvc",
+                f"--work={self.hdl_toplevel_library}:{work_library}",
+                "-L",
+                str(get_abs_path(self.build_dir)),
+            ]
             + self.build_args
             + ["-e", self.sim_hdl_toplevel, "--no-save", "--jit"]
             + self.elab_args
