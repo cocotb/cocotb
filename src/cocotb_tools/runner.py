@@ -127,6 +127,7 @@ class Runner(ABC):
         self.parameters: Mapping[str, object] = {}
 
         self.log = logging.getLogger(type(self).__qualname__)
+        self.log.setLevel(logging.INFO)
 
     @abstractmethod
     def _simulator_in_path(self) -> None:
