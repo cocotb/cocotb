@@ -11,6 +11,7 @@ Everything related to logging
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
 from cocotb import _ANSI, simulator
@@ -208,7 +209,7 @@ class SimLogFormatter(logging.Formatter):
         )
         if not _suppress:
             prefix += (
-                self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS)
+                self.rjust(Path(record.filename).name, _FILENAME_CHARS)
                 + ":"
                 + self.ljust(str(record.lineno), _LINENO_CHARS)
                 + " in "

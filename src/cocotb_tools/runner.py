@@ -288,7 +288,7 @@ class Runner(ABC):
         self.build_dir = get_abs_path(build_dir)
         if self.clean:
             self.rm_build_folder(self.build_dir)
-        os.makedirs(self.build_dir, exist_ok=True)
+        self.build_dir.mkdir(parents=True, exist_ok=True)
 
         # note: to avoid mutating argument defaults, we ensure that no value
         # is written without a copy. This is much more concise and leads to
@@ -403,7 +403,7 @@ class Runner(ABC):
             self.test_dir = self.build_dir
         else:
             self.test_dir = get_abs_path(test_dir)
-        os.makedirs(self.test_dir, exist_ok=True)
+        self.test_dir.mkdir(parents=True, exist_ok=True)
 
         if isinstance(test_module, str):
             self.test_module = test_module
@@ -482,7 +482,7 @@ class Runner(ABC):
             results_xml_file = self.test_dir / "results.xml"
 
         with suppress(OSError):
-            os.remove(results_xml_file)
+            results_xml_file.unlink()
 
         # transport the settings to cocotb via environment variables
         self._set_env()
@@ -579,7 +579,7 @@ class Runner(ABC):
             )
 
     def rm_build_folder(self, build_dir: Path) -> None:
-        if os.path.isdir(build_dir):
+        if build_dir.is_dir():
             self.log.info("Removing: %s", build_dir)
             shutil.rmtree(build_dir, ignore_errors=True)
 

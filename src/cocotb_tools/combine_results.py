@@ -10,15 +10,17 @@ import argparse
 import os
 import re
 import sys
+from pathlib import Path
 from typing import Iterable, Pattern
 from xml.etree import ElementTree as ET
 
 
-def _find_all(name: Pattern, path: str) -> Iterable[str]:
-    for root, _, files in os.walk(path):
-        for file in files:
-            if re.match(name, file):
-                yield os.path.join(root, file)
+def _find_all(name: Pattern, path: Path) -> Iterable[Path]:
+    for obj in path.iterdir():
+        if obj.is_file() and re.match(name, str(obj)):
+            yield obj
+        elif obj.is_dir():
+            yield from _find_all(name, obj)
 
 
 def _get_parser() -> argparse.ArgumentParser:
@@ -29,7 +31,8 @@ def _get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "directories",
         nargs="*",
-        default=["."],
+        type=lambda args: [Path(arg) for arg in args],
+        default=[Path()],
         help="Directories to search for input files.",
     )
     parser.add_argument(
@@ -119,13 +122,14 @@ def main() -> int:
                     assert (
                         file is not None
                     )  # if this file was output by cocotb, it has this attribute
+                    filepath = Path(file)
                     repo_root = os.path.commonprefix(
                         [
-                            os.path.abspath(file),
-                            os.path.abspath(__file__),
+                            filepath.absolute(),
+                            Path(__file__).absolute(),
                         ]
                     )
-                    relative_file = file.replace(repo_root, "")
+                    relative_file = filepath.relative_to(repo_root)
                     print(
                         "::error file={},line={}::Test {}:{} failed".format(
                             relative_file,
