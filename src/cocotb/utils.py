@@ -6,6 +6,7 @@
 
 """Utility functions for dealing with simulation time."""
 
+import sys
 import warnings
 from decimal import Decimal
 from fractions import Fraction
@@ -14,7 +15,10 @@ from math import ceil, floor
 from typing import Union, overload
 
 from cocotb import simulator
-from cocotb._typing import TimeUnit, TimeUnitWithoutStep
+from cocotb._typing import TimeUnit
+
+if sys.version_info >= (3, 10):
+    from typing import Literal
 
 __all__ = (
     "get_sim_steps",
@@ -201,7 +205,7 @@ def get_sim_steps(
 
 
 @lru_cache(maxsize=None)
-def _get_log_time_scale(unit: TimeUnitWithoutStep) -> int:
+def _get_log_time_scale(unit: 'Literal["fs", "ps", "ns", "us", "ms", "sec"]') -> int:
     """Retrieves the ``log10()`` of the scale factor for a given time unit.
 
     Args:
