@@ -9,5 +9,4 @@ if sys.version_info >= (3, 10):
         TypeAlias,
     )
 
-TimeUnitWithoutStep: "TypeAlias" = 'Literal["fs", "ps", "ns", "us", "ms", "sec"]'
-TimeUnit: "TypeAlias" = 'Literal["step"] | TimeUnitWithoutStep'
+TimeUnit: "TypeAlias" = 'Literal["step", "fs", "ps", "ns", "us", "ms", "sec"]'
