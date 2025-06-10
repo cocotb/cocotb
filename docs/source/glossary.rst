@@ -26,6 +26,13 @@ Glossary
       or turn them into a :term:`task`, which can be run concurrently.
       See also the :term:`Python glossary <python:coroutine>`.
 
+   task
+      A :term:`coroutine` that can be run concurren to other tasks.
+
+   trigger
+      An :term:`awaitable` object which when :keyword:`awaited <await>` will block the current :term:`task` until its condition is met.
+      For example, a :class:`RisingEdge(dut.clk) <cocotb.triggers.RisingEdge>` trigger will block until the next rising edge of the ``dut.clk`` signal.
+
    DUT
       Design under Test
 
@@ -70,13 +77,6 @@ Glossary
       One iteration of the evaluation loop in a :term:`time step`.
       Occurs when HDL or cocotb code is executed in reaction to events, such as simulated time advancing or signal or variable values changing.
       The executed code tends to create more events, leading to the next evaluation cycle.
-
-   task
-      A :term:`coroutine` that can be run concurrently.
-
-   trigger
-      An :term:`awaitable` object which when :keyword:`awaited <await>` will block the current :term:`task` until it's condition is met.
-      For example, a :class:`RisingEdge(dut.clk) <cocotb.triggers.RisingEdge>` trigger will block until the rising edge of the ``dut.clk`` signal.
 
    inertial deposit
       :term:`Depositing <deposit>` a value on a signal or variable at the end of the current delta cycle.

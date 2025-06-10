@@ -25,7 +25,7 @@ The Time Step
 Time steps are split into five phases in the cocotb timing model,
 some of which are repeated many times.
 
-The time step starts in the :ref:`beginning-of-time-step` phase and ends in the :ref:`end-of-time-step` phase.
+The time step starts in the :ref:`beginning-of-time-step` (BOTS) phase and ends in the :ref:`end-of-time-step` (EOTS) phase.
 Evaluation cycles occur between these two points,
 with the simulator running in the :ref:`evaluation` phases,
 and cocotb code reacting in the :ref:`values-change` and :ref:`values-settle` phases.
@@ -57,9 +57,9 @@ HDL Evaluation
 --------------
 
 This phase represents the time spent in the simulator evaluating ``always`` or ``process`` blocks, continuous assignments, or other HDL code.
-If an signal or variable passed to a :class:`.ValueChange`, :class:`.RisingEdge`, or :class:`.FallingEdge` trigger changes value accordingly,
+If a signal or variable passed to a :class:`.ValueChange`, :class:`.RisingEdge`, or :class:`.FallingEdge` trigger changes value accordingly,
 the simulator will enter the :ref:`values-change` phase.
-Alternatively, after all values changes and sympathetic HDL has finished executing and the design is in a stable state,
+Alternatively, after all values have changed and all HDL has finished executing,
 it will enter the :ref:`values-settle` phase.
 
 .. note::
@@ -72,11 +72,12 @@ Values Change
 
 This is the phase where the :class:`.ValueChange`, :class:`.RisingEdge`, or :class:`.FallingEdge` triggers will return.
 The signal or variable given to the trigger will have changed value,
-but no sympathetic HDL will have executed and "downstream" signals and variables will not have updated values.
+but no HDL that reacts to that value change will have executed;
+meaning "downstream" signals and variables will not have updated values.
 In this phase, users can read and write values on any signal or variable.
 After control returns to the simulator, it will re-enter the :ref:`evaluation` phase.
 
-There are 0 or more these phases in a time step and they are not distinguishable.
+There are 0 or more of these phases in a time step and they are not distinguishable from cocotb.
 There is no way to jump to any particular one of these phases in a time step.
 
 Users can :keyword:`await` the following triggers in this phase:
@@ -98,7 +99,7 @@ In this phase, users can read and write values on any signal or variable.
 If they do write, the simulator will re-enter the :ref:`evaluation` phase.
 Alternatively, the simulator will enter the :ref:`end-of-time-step` phase.
 
-There are 0 or more of these phases in a time step and they are not distinguishable.
+There are 0 or more of these phases in a time step and they are not distinguishable from cocotb.
 There is no way to jump to any particular one of these phases in a time step.
 
 Users can :keyword:`await` the following triggers in this phase:
@@ -149,20 +150,20 @@ Simulated time cannot move backwards, meaning negative and ``0`` time values are
 :class:`.NextTimeStep` is like :class:`.Timer`,
 except that it always returns at the :ref:`beginning of the next time step <beginning-of-time-step>`.
 The next time step could be at any simulated time thereafter, **or never**.
-It is only safe to use if there is a some scheduled behavior that will cause another time step to occur.
+It is only safe to use if there is scheduled behavior that will cause another time step to occur.
 Using :class:`.NextTimeStep` in other situations will result in undefined behavior.
 
-:class:`ValueChange` / :class:`.RisingEdge` / :class:`.FallingEdge`
--------------------------------------------------------------------
+:class:`.ValueChange` / :class:`.RisingEdge` / :class:`.FallingEdge`
+--------------------------------------------------------------------
 
-The edge triggers (:class:`ValueChange`, :class:`.RisingEdge`, and :class:`.FallingEdge`)
+The edge triggers (:class:`.ValueChange`, :class:`.RisingEdge`, and :class:`.FallingEdge`)
 allow users to block a cocotb coroutine until a signal or variable changes value at some point in the future.
 That point in the future may be in a different evaluation cycle in the same time step, in a different time step, **or never**.
 Using an edge trigger on a signal or variable that will never change value will result in undefined behavior.
 
 After returning, an edge trigger returns at the point where the signal or variable given to the trigger will have changed value,
-but no sympathetic HDL will have executed,
-and "downstream" signals and variables will not have updated values.
+but no HDL that reacts to that value change will have executed;
+meaning "downstream" signals and variables will not have updated values.
 
 Using a flip-flop for example, after an ``await RisingEdge(dut.clk)``, ``dut.clk`` will be ``1``,
 but the output of the flip-flop will remain the previous value.
@@ -212,24 +213,24 @@ State Transitions
     BEGIN{N} ->
         BEGIN{>N} : Timer
         BEGIN{N+1} : NextTimeStep
-        CHANGE{N,>=0} : Edge/RisingEdge/FallingEdge
-        CHANGE{>N,>=0} : Edge/RisingEdge/FallingEdge
+        CHANGE{N,>=0} : ValueChange/RisingEdge/FallingEdge
+        CHANGE{>N,>=0} : ValueChange/RisingEdge/FallingEdge
         SETTLE{N,0} : ReadWrite
         END{N} : ReadOnly
 
     CHANGE{N,M} ->
         BEGIN{>N} : Timer
         BEGIN{N+1} : NextTimeStep
-        CHANGE{N,>M} : Edge/RisingEdge/FallingEdge
-        CHANGE{>N,>=0} : Edge/RisingEdge/FallingEdge
+        CHANGE{N,>M} : ValueChange/RisingEdge/FallingEdge
+        CHANGE{>N,>=0} : ValueChange/RisingEdge/FallingEdge
         SETTLE{N,M} : ReadWrite
         END{N} : ReadOnly
 
     SETTLE{N,M} ->
         BEGIN{>N} : Timer
         BEGIN{N+1} : NextTimeStep
-        CHANGE{N,>M} : Edge/RisingEdge/FallingEdge
-        CHANGE{>N,>=0} : Edge/RisingEdge/FallingEdge
+        CHANGE{N,>M} : ValueChange/RisingEdge/FallingEdge
+        CHANGE{>N,>=0} : ValueChange/RisingEdge/FallingEdge
         SETTLE{N,M+1} : ReadWrite
         END{N} : ReadOnly
 
@@ -238,14 +239,14 @@ State Transitions
         BEGIN{N+1} : NextTimeStep
 
 
-Verilator
-=========
+Differences in Verilator
+========================
 
 Verilator is a cycle-based simulator, meaning it does not have discrete events like "value changed."
 Instead it has "cycles", meaning it evaluates all HDL code in a time step iteratively until quiescence, without stopping.
 This frees the simulator to evaluate the HDL however it sees fit, as long as it can maintain correctness, allowing for optimizations.
 
 In Verilator, the :class:`.Timer`, :class:`.NextTimeStep`, :class:`.ReadWrite`, and :class:`.ReadOnly` work as intended, as these map to "cycles" well.
-However, the value change triggers: :class:`.ValueChange`, :class:`.RisingEdge`, and :class:`.FallingEdge`, can not handled in the middle of a cycle,
+However, the value change triggers: :class:`.ValueChange`, :class:`.RisingEdge`, and :class:`.FallingEdge`, can not be handled in the middle of a cycle,
 so they are handled after the cycle has ended (equivalent to the :class:`.ReadWrite` phase).
 The easiest way to think of the behavior is as if the value change triggers all have an implicit ``await ReadWrite()`` after them.
