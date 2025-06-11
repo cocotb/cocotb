@@ -110,6 +110,9 @@ autoclass_content = "both"
 autodoc_typehints = "description"  # show type hints in the list of parameters
 autodoc_typehints_description_target = "documented"
 
+# use short "a | b" syntax for Literal types
+python_display_short_literal_types = True
+
 # Options for automatic links from code examples to reference docs
 # (https://sphinx-codeautolink.readthedocs.io/)
 codeautolink_warn_on_missing_inventory = True
