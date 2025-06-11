@@ -176,8 +176,14 @@ jobs:
         sudo make install
 
       # Install NVC
-    - name: Set up NVC (Ubuntu)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'nvc'
+    - name: Set up NVC (Ubuntu, release)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'nvc' && startsWith(matrix.sim-version, 'r') && matrix.cc != 'clang'
+      uses: nickg/setup-nvc@v1
+      with:
+        version: ${{matrix.sim-version}}
+
+    - name: Set up NVC (Ubuntu, source)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'nvc' && (!startsWith(matrix.sim-version, 'r') || matrix.cc == 'clang')
       run: |
         sudo apt-get install -y --no-install-recommends llvm-dev libdw-dev flex
         git clone --depth=1 --no-single-branch https://github.com/nickg/nvc.git
