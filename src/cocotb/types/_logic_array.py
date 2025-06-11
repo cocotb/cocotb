@@ -362,7 +362,7 @@ class LogicArray(AbstractArray[Logic]):
         value: Union[bytes, bytearray],
         range: Union[Range, int, None] = None,
         *,
-        byteorder: "Literal['big'] | Literal['little']",
+        byteorder: "Literal['big', 'little']",
     ) -> "LogicArray":
         """Construct a :class:`!LogicArray` from :class:`bytes`.
 
@@ -654,7 +654,7 @@ class LogicArray(AbstractArray[Logic]):
     def to_bytes(
         self,
         *,
-        byteorder: "Literal['big'] | Literal['little']",
+        byteorder: "Literal['big', 'little']",
     ) -> bytes:
         """Convert the value to bytes.
 

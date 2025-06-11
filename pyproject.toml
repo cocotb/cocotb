@@ -72,6 +72,7 @@ extend-select = [
     "PERF101",  # unnecessary list cast
     "PERF102",  # unnecessary dict.items()
     "B007",     # unused loop variable
+    "PYI030",   # unnecessary literal union
 ]
 ignore = [
 
