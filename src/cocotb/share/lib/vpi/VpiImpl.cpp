@@ -74,6 +74,8 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
         case vpiReg:
         case vpiRegBit:
         case vpiMemoryWord:
+        case vpiPackedArrayVar:
+        case vpiPackedArrayNet:
             if (is_vector || num_elements > 1) {
                 return GPI_LOGIC_ARRAY;
             } else {
@@ -86,8 +88,6 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
             return GPI_REAL;
 
         case vpiInterfaceArray:
-        case vpiPackedArrayVar:
-        case vpiPackedArrayNet:
         case vpiRegArray:
         case vpiNetArray:
         case vpiGenScopeArray:
