@@ -6,6 +6,7 @@
 
 """A collection of triggers which a testbench can :keyword:`await`."""
 
+import sys
 from abc import abstractmethod
 from decimal import Decimal
 from typing import (
@@ -27,6 +28,10 @@ from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
 from cocotb._typing import TimeUnit
 from cocotb.task import Task
+
+if sys.version_info >= (3, 10):
+    from typing import Literal  # noqa: F401  # used in type strings
+
 
 T = TypeVar("T")
 

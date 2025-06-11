@@ -29,7 +29,7 @@ from cocotb._base_triggers import Trigger
 from cocotb._typing import TimeUnit
 
 if sys.version_info >= (3, 10):
-    from typing import TypeAlias
+    from typing import Literal, TypeAlias  # noqa: F401  # used in type strings
 
 
 class Test:

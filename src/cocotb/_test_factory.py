@@ -5,6 +5,7 @@
 import functools
 import inspect
 import logging
+import sys
 import warnings
 from itertools import product
 from types import FrameType, FunctionType
@@ -25,6 +26,9 @@ from typing import (
 from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test
 from cocotb._typing import TimeUnit
+
+if sys.version_info >= (3, 10):
+    from typing import Literal  # noqa: F401  # used in type strings
 
 
 class TestFactory:
