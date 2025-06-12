@@ -127,7 +127,7 @@ The installation instructions vary depending on your package manager:
 
    .. tab-item:: Guix
 
-      First, set up the `Guix-science channel <https://codeberg.org/guix-science/guix-science>`_. Then, in a terminal, run
+      In a terminal, run
 
         .. code-block:: bash
 
