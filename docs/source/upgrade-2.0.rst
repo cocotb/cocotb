@@ -75,7 +75,7 @@ One caveat of this approach is that :class:`!NullTrigger` also allows every othe
 But this should generally not be an issue.
 
 If you require the "runs immediately" behavior of :func:`!cocotb.fork`,
-but are not calling it from a coroutine function,
+but are not calling it from a :term:`coroutine function`,
 update the function to be a coroutine function and add an ``await NullTrigger``, if possible.
 Otherwise, more serious refactorings will be necessary.
 
