@@ -11,7 +11,7 @@ Each environment must contain the following fields:
 - sim-version: The version of the simulator to use. Valid values depend upon the simulator and build recipe.
 - os: The OS to operate on. Must be a valid value for the "jobs.<job_name>.runs-on" field for Github Actions.
 - python-version: The Python version to test with. Must be a valid value for the "python-version" field of the "actions/setup-python" Github Action.
-- group: The group to run the test in. One of "ci", "experimental", or "extended". See below note.
+- group: The group to run the test in. One of "ci-free", "ci-licensed", "experimental", or "extended". See below note.
 
 Optional fields:
 - self-hosted: True if test needs to be run on a self-hosted Github Action runner. Default: False.
@@ -20,13 +20,14 @@ Optional fields:
 - extra_name: Additional tag prepended to computed name for test. Default: <none>.
 
 What tests belong in what groups:
-- ci: The most recent stable release of a given simulator, all supported versions of Python, and all supported operating systems. Run on all PRs and master pushes.
+- ci-free: The most recent stable release of a given free simulator, all supported versions of Python, and all supported operating systems. Run on all PRs and master pushes.
+- ci-licensed: The most recent stable release of a given licensed simulator. Run on all PRs and master pushes in the cocotb repo, but are skipped in forks.
 - experimental: Development HEAD for each simulator, any under-development version of Python, and under-development simulator. Run weekly.
 - extended: The minimum supoprted version of a simulator, and a smattering of released simulator versions between the minimum and most recent. Run weekly.
 
 Ideally, whenever a new version of a simulator is released, a new test should be added for that simulator.
-The current test in the "ci" group should be moved to "extended",
-and the new version should be added to "ci" and any changes in behavior recorded with expectations to make CI pass.
+The current test in the "ci-free"/"ci-licensed" group should be moved to "extended",
+and the new version should be added to "ci-free"/"ci-licensed" and any changes in behavior recorded with expectations to make CI pass.
 """
 
 import argparse
@@ -41,7 +42,7 @@ ENVS = [
         "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.6",
-        "group": "ci",
+        "group": "ci-free",
         "setup_python": "pyenv",
     },
     {
@@ -50,7 +51,7 @@ ENVS = [
         "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.7",
-        "group": "ci",
+        "group": "ci-free",
         "setup_python": "pyenv",
     },
     {
@@ -59,7 +60,7 @@ ENVS = [
         "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.8",
-        "group": "ci",
+        "group": "ci-free",
     },
     {
         "lang": "vhdl",
@@ -67,7 +68,7 @@ ENVS = [
         "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
-        "group": "ci",
+        "group": "ci-free",
     },
     {
         "lang": "vhdl",
@@ -75,7 +76,7 @@ ENVS = [
         "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.10",
-        "group": "ci",
+        "group": "ci-free",
     },
     {
         "lang": "vhdl",
@@ -83,7 +84,7 @@ ENVS = [
         "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.11",
-        "group": "ci",
+        "group": "ci-free",
     },
     {
         "lang": "vhdl",
@@ -91,7 +92,7 @@ ENVS = [
         "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.12",
-        "group": "ci",
+        "group": "ci-free",
     },
     {
         "lang": "vhdl",
@@ -99,7 +100,7 @@ ENVS = [
         "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.13",
-        "group": "ci",
+        "group": "ci-free",
     },
     # A single test for the upcoming Python version.
     {
@@ -108,7 +109,7 @@ ENVS = [
         "sim-version": "r1.16.0",
         "os": "ubuntu-22.04",
         "python-version": "3.14-dev",
-        "group": "ci",
+        "group": "experimental",
     },
     # Test Icarus on Ubuntu
     {
@@ -125,7 +126,7 @@ ENVS = [
         "sim-version": "v12_0",  # The latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.9",
-        "group": "ci",
+        "group": "ci-free",
     },
     {
         "lang": "verilog",
@@ -166,7 +167,7 @@ ENVS = [
         "sim-version": "v5.0.1",  # The latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.9",
-        "group": "ci",
+        "group": "ci-free",
     },
     {
         "lang": "vhdl",
@@ -193,7 +194,7 @@ ENVS = [
         "sim-version": "v5.036",  # Latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.10",
-        "group": "ci",
+        "group": "ci-free",
     },
     {
         "lang": "verilog",
@@ -219,7 +220,7 @@ ENVS = [
         "sim-version": "homebrew-stable",
         "os": "macos-13",
         "python-version": "3.9",
-        "group": "ci",
+        "group": "ci-free",
     },
     # Icarus homebrew (HEAD/master)
     {
@@ -247,7 +248,7 @@ ENVS = [
         "sim-version": "v5.036",
         "os": "macos-13",
         "python-version": "3.9",
-        "group": "ci",
+        "group": "ci-free",
         "may-fail": True,  # verilator/verilator#5404
     },
     # Icarus windows from source
@@ -259,7 +260,7 @@ ENVS = [
         "python-version": "3.11",
         "toolchain": "mingw",
         "extra-name": "mingw",
-        "group": "ci",
+        "group": "ci-free",
     },
     # use msvc instead of mingw
     {
@@ -270,7 +271,7 @@ ENVS = [
         "python-version": "3.11",
         "toolchain": "msvc",
         "extra-name": "msvc",
-        "group": "ci",
+        "group": "ci-free",
     },
     # Other
     # use clang instead of gcc
@@ -283,7 +284,7 @@ ENVS = [
         "cxx": "clang++",
         "cc": "clang",
         "extra-name": "clang",
-        "group": "ci",
+        "group": "ci-free",
     },
     # Test Siemens Questa on Ubuntu
     {
@@ -293,7 +294,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "licensed",
+        "group": "ci-licensed",
     },
     {
         "lang": "vhdl and fli",
@@ -302,7 +303,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "licensed",
+        "group": "ci-licensed",
     },
     {
         "lang": "vhdl and vhpi",
@@ -311,7 +312,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "licensed",
+        "group": "ci-licensed",
     },
     # Test Aldec Riviera-PRO on Ubuntu
     {
@@ -321,7 +322,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "licensed",
+        "group": "ci-licensed",
     },
     {
         "lang": "vhdl",
@@ -330,7 +331,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "licensed",
+        "group": "ci-licensed",
     },
     # Test Cadence Xcelium on Ubuntu
     {
@@ -340,7 +341,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "licensed",
+        "group": "ci-licensed",
     },
     {
         "lang": "vhdl",
@@ -349,7 +350,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "licensed",
+        "group": "ci-licensed",
     },
     # Test Synopsys VCS on Ubuntu
     {
@@ -359,7 +360,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "licensed",
+        "group": "ci-licensed",
     },
     {
         "lang": "vhdl",
