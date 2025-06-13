@@ -17,7 +17,7 @@ from xml.etree import ElementTree as ET
 
 def _find_all(name: Pattern, path: Path) -> Iterable[Path]:
     for obj in path.iterdir():
-        if obj.is_file() and re.match(name, str(obj)):
+        if obj.is_file() and re.match(name, obj.name):
             yield obj
         elif obj.is_dir():
             yield from _find_all(name, obj)
