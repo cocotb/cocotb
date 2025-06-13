@@ -33,6 +33,16 @@ module cocotb_array (
 
   input     test_3d_array_t                         in_3d_arr                                           ,
 
+  //Struct single dimensions
+  input     struct_packed_t                         in_struct_packed                                    ,
+  input     struct_packed_t     [2:0]               in_struct_packed_array_packed                       ,
+  input     struct_packed_t                         in_struct_packed_array_unpacked[2:0]                ,
+
+  //Struct 2 dimensions
+  input     struct_packed_t     [2:0][2:0]          in_struct_packed_arr_packed_packed                  ,
+  input     struct_packed_t     [2:0]               in_struct_packed_arr_packed_unpacked[2:0]           ,
+  input     struct_packed_t                         in_struct_packed_arr_unpacked_unpacked[2:0][2:0]    ,
+
 
   //OUTPUTS
   //Single dimensions
@@ -62,7 +72,17 @@ module cocotb_array (
   output    test_2d_array_t     [2:0]               out_2d_arr_packed                                   ,
   output    test_2d_array_t                         out_2d_arr_unpacked[2:0]                            ,
 
-  output    test_3d_array_t                         out_3d_arr
+  output    test_3d_array_t                         out_3d_arr                                          ,
+
+  //Struct single dimensions
+  output    struct_packed_t                         out_struct_packed                                   ,
+  output    struct_packed_t     [2:0]               out_struct_packed_array_packed                      ,
+  output    struct_packed_t                         out_struct_packed_array_unpacked[2:0]               ,
+
+  //Struct 2 dimensions
+  output    struct_packed_t     [2:0][2:0]          out_struct_packed_arr_packed_packed                 ,
+  output    struct_packed_t     [2:0]               out_struct_packed_arr_packed_unpacked[2:0]          ,
+  output    struct_packed_t                         out_struct_packed_arr_unpacked_unpacked[2:0][2:0]
 
 );
 
@@ -96,6 +116,12 @@ assign out_2d_arr_unpacked                                  = in_2d_arr_unpacked
 
 assign out_3d_arr                                           = in_3d_arr                                           ;
 
+assign out_struct_packed                                    = in_struct_packed                                    ;
+assign out_struct_packed_array_packed                       = in_struct_packed_array_packed                       ;
+assign out_struct_packed_array_unpacked                     = in_struct_packed_array_unpacked                     ;
 
+assign out_struct_packed_arr_packed_packed                  = in_struct_packed_arr_packed_packed                  ;
+assign out_struct_packed_arr_packed_unpacked                = in_struct_packed_arr_packed_unpacked                ;
+assign out_struct_packed_arr_unpacked_unpacked              = in_struct_packed_arr_unpacked_unpacked              ;
 
 endmodule;
