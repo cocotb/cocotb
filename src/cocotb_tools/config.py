@@ -215,24 +215,24 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.share:
-        print(share_dir.as_posix())
+        print(share_dir)
     elif args.makefiles:
-        print(makefiles_dir.as_posix())
+        print(makefiles_dir)
     elif args.python_bin:
-        print(Path(sys.executable).as_posix())
+        print(sys.executable)
     elif args.help_vars:
         print(_help_vars_text())
     elif args.libpython:
         libpython_path = find_libpython.find_libpython()
         if libpython_path is None:
             sys.exit(1)
-        print(Path(libpython_path).as_posix())
+        print(libpython_path)
     elif args.lib_dir:
-        print(libs_dir.as_posix())
+        print(libs_dir)
     elif args.lib_name:
         print(lib_name(*args.lib_name))
     elif args.lib_name_path:
-        print(lib_name_path(*args.lib_name_path).as_posix())
+        print(lib_name_path(*args.lib_name_path))
     elif args.version:
         print(_get_version())
 
