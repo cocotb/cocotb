@@ -9,7 +9,6 @@ import logging
 import os
 import re
 from abc import ABC, abstractmethod
-from collections import OrderedDict
 from functools import lru_cache
 from logging import Logger
 from typing import (
@@ -42,7 +41,7 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
-from cocotb._py_compat import cached_property
+from cocotb._py_compat import cached_property, insertion_ordered_dict
 from cocotb._utils import DocIntEnum
 from cocotb.task import Task
 from cocotb.types import Array, Logic, LogicArray, Range
@@ -744,7 +743,7 @@ _trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 # A dictionary of pending (write_func, args), keyed by handle.
 # Writes are applied oldest to newest (least recently used).
 # Only the last scheduled write to a particular handle in a timestep is performed.
-_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], _GPISetAction, Any]]" = OrderedDict()
+_write_calls: "dict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], _GPISetAction, Any]]" = insertion_ordered_dict()
 
 _write_task: Union[Task[None], None] = None
 
@@ -775,9 +774,9 @@ def _stop_write_scheduler() -> None:
 
 
 def _apply_scheduled_writes() -> None:
-    while _write_calls:
-        _, (func, action, value) = _write_calls.popitem(last=False)
+    for func, action, value in _write_calls.values():
         func(action.value, value)
+    _write_calls.clear()
     _writes_pending.clear()
 
 
