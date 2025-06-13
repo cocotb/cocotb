@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 import cocotb
 from cocotb.handle import ArrayObject, LogicArrayObject, LogicObject
@@ -301,3 +302,77 @@ async def test_in_3d_arr(dut):
     dut.in_3d_arr.value = test_value
     await Timer(1, "ns")
     assert dut.out_3d_arr.value == test_value
+
+
+# Riviera fails when trying to access packed structs (gh-4753)
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera"))
+async def test_struct(dut: Any) -> None:
+    assert isinstance(dut.in_struct_packed, LogicArrayObject)
+    assert len(dut.in_struct_packed) == 24
+
+    dut.in_struct_packed.value = 123
+    await Timer(1)
+    assert dut.out_struct_packed.value == 123
+
+
+# Riviera crashes when trying to access packed structs (gh-4753)
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera"))
+async def test_struct_1d_arr_packed(dut: Any) -> None:
+    assert isinstance(dut.in_struct_packed_array_packed, LogicArrayObject)
+    assert len(dut.in_struct_packed_array_packed) == 72
+
+    dut.in_struct_packed_array_packed.value = 123456
+    await Timer(1)
+    assert dut.out_struct_packed_array_packed.value == 123456
+
+
+# Riviera crashes when trying to access packed structs (gh-4753)
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera"))
+async def test_struct_1d_arr_unpacked(dut: Any) -> None:
+    assert isinstance(dut.in_struct_packed_array_unpacked, ArrayObject)
+    assert len(dut.in_struct_packed_array_unpacked) == 3
+
+    assert isinstance(dut.in_struct_packed_array_unpacked[0], LogicArrayObject)
+    assert len(dut.in_struct_packed_array_unpacked[0]) == 24
+
+    dut.in_struct_packed_array_unpacked.value = [6798, 2000, 3000]
+    await Timer(1)
+    assert dut.out_struct_packed_array_unpacked.value == [6798, 2000, 3000]
+    assert dut.out_struct_packed_array_unpacked[2].value == 6798
+
+
+# Riviera crashes when trying to access packed structs (gh-4753)
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera"))
+async def test_struct_2d_arr_packed_packed(dut: Any) -> None:
+    assert isinstance(dut.in_struct_packed_arr_packed_packed, LogicArrayObject)
+    assert len(dut.in_struct_packed_arr_packed_packed) == 216
+
+    dut.in_struct_packed_arr_packed_packed.value = 123458123456123
+    await Timer(1)
+    assert dut.in_struct_packed_arr_packed_packed.value == 123458123456123
+
+
+# Riviera crashes when trying to access packed structs (gh-4753)
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera"))
+async def test_struct_2d_arr_packed_unpacked(dut: Any) -> None:
+    assert isinstance(dut.in_struct_packed_arr_packed_unpacked, ArrayObject)
+    assert len(dut.in_struct_packed_arr_packed_unpacked) == 3
+    assert isinstance(dut.in_struct_packed_arr_packed_unpacked[0], LogicArrayObject)
+    assert len(dut.in_struct_packed_arr_packed_unpacked[0]) == 72
+
+
+# Icarus flattens multi-dimensional unpacked arrays (gh-2595)
+# Riviera crashes when trying to access packed structs (gh-4753)
+@cocotb.test(
+    expect_fail=cocotb.SIM_NAME.lower().startswith("icarus"),
+    skip=cocotb.SIM_NAME.lower().startswith("riviera"),
+)
+async def test_struct_2d_arr_unpacked_unpacked(dut: Any) -> None:
+    assert isinstance(dut.in_struct_packed_arr_unpacked_unpacked, ArrayObject)
+    assert len(dut.in_struct_packed_arr_unpacked_unpacked) == 3
+    assert isinstance(dut.in_struct_packed_arr_unpacked_unpacked[0], ArrayObject)
+    assert len(dut.in_struct_packed_arr_unpacked_unpacked[0]) == 3
+    assert isinstance(
+        dut.in_struct_packed_arr_unpacked_unpacked[0][2], LogicArrayObject
+    )
+    assert len(dut.in_struct_packed_arr_unpacked_unpacked[0][2]) == 24
