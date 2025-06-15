@@ -48,14 +48,14 @@ endif
 
 COMPILE_ARGS += --timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
-_COCOTB_LIB_DIR = $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-dir)
+_COCOTB_LIB_DIR = $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-dir)
 COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o Vtop -LDFLAGS "-Wl,-rpath,$(_COCOTB_LIB_DIR) -L$(_COCOTB_LIB_DIR) -lcocotbvpi_verilator"
 
 ifdef VERILOG_INCLUDE_DIRS
   COMPILE_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
 endif
 
-VERILATOR_CPP := $(shell $(PYTHON_BIN) -m cocotb_tools.config --share)/lib/verilator/verilator.cpp
+VERILATOR_CPP := $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --share)/lib/verilator/verilator.cpp
 
 $(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(VERILATOR_CPP) | $(SIM_BUILD)
 	$(CMD) -cc --exe -Mdir $(SIM_BUILD) $(TOPMODULE_ARG) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(VERILATOR_CPP)

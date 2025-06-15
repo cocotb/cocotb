@@ -34,16 +34,16 @@ ACOM_ARGS += -dbg
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
     # backslashes needed because we embed in `echo` below
-    GPI_ARGS = -pli \"$(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi activehdl)\"
+    GPI_ARGS = -pli \"$(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vpi activehdl)\"
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vhpi activehdl):cocotbvhpi_entry_point
+    GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vhpi activehdl):cocotbvhpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     # backslashes needed because we embed in `echo` below
-    GPI_ARGS = -loadvhpi \"$(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap\"
+    GPI_ARGS = -loadvhpi \"$(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap\"
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi activehdl):cocotbvpi_entry_point
+    GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vpi activehdl):cocotbvpi_entry_point
 endif
 else
    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))

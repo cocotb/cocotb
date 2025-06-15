@@ -46,7 +46,7 @@ else
 endif
 
 # Pass the VPI library to the Verilog compilation to get extended checking.
-ALOG_ARGS += -pli $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi riviera)
+ALOG_ARGS += -pli $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vpi riviera)
 
 # Aldec-specific coverage types:
 # - (s)tatement
@@ -67,15 +67,15 @@ endif
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
-    GPI_ARGS = -pli $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi riviera)
+    GPI_ARGS = -pli $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vpi riviera)
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vhpi riviera):cocotbvhpi_entry_point
+    GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vhpi riviera):cocotbvhpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    GPI_ARGS = -loadvhpi $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap
+    GPI_ARGS = -loadvhpi $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi riviera):cocotbvpi_entry_point
+    GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vpi riviera):cocotbvpi_entry_point
 endif
 
 else

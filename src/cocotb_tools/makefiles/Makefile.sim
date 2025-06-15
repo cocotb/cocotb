@@ -70,7 +70,7 @@ ifeq ($(MAKECMDGOALS),help)
 endif
 
 PYTHON_BIN ?= python
-include $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)/Makefile.inc
+include $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --makefiles)/Makefile.inc
 
 # Default to Icarus if no simulator is defined
 SIM ?= icarus

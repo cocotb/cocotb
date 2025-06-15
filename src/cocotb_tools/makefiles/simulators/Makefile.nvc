@@ -53,7 +53,7 @@ $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 	COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	  $(SIM_CMD_PREFIX) $(CMD) $(EXTRA_ARGS) --work=$(TOPLEVEL_LIBRARY):$(SIM_BUILD)/$(TOPLEVEL_LIBRARY) -L $(SIM_BUILD) \
 	  -e $(COCOTB_TOPLEVEL) --no-save $(NVC_E_ARGS) \
-	  -r --load $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vhpi nvc) $(TRACE) $(NVC_R_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
+	  -r --load $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vhpi nvc) $(TRACE) $(NVC_R_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
 
 	$(call check_results)
 
