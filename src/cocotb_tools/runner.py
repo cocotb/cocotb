@@ -695,7 +695,7 @@ class Icarus(Runner):
             f.write("+timescale+{}/{}\n".format(*self.timescale))
 
     def _create_iverilog_dump_file(self) -> None:
-        dumpfile_path = Path(self.build_dir, f"{self.hdl_toplevel}.fst").as_posix()
+        dumpfile_path = str(Path(self.build_dir, f"{self.hdl_toplevel}.fst"))
         with open(self.iverilog_dump_file, "w") as f:
             f.write("module cocotb_iverilog_dump();\n")
             f.write("initial begin\n")
@@ -884,7 +884,7 @@ class Questa(Runner):
                 "-foreign",
                 "cocotb_init "
                 + _as_tcl_value(
-                    cocotb_tools.config.lib_name_path("fli", "questa").as_posix()
+                    str(cocotb_tools.config.lib_name_path("fli", "questa"))
                 ),
             ]
         elif gpi_if_entry == "vhpi":
@@ -893,15 +893,13 @@ class Questa(Runner):
                 "-foreign",
                 "vhpi_startup_routines_bootstrap "
                 + _as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vhpi", "questa").as_posix()
+                    str(cocotb_tools.config.lib_name_path("vhpi", "questa"))
                 ),
             ]
         else:
             lib_opts = [
                 "-pli",
-                _as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vpi", "questa").as_posix()
-                ),
+                _as_tcl_value(str(cocotb_tools.config.lib_name_path("vpi", "questa"))),
             ]
 
         cmds.append(
@@ -922,7 +920,7 @@ class Questa(Runner):
             gpi_if_lib_path = cocotb_tools.config.lib_name_path(gpi_if, "questa")
             if gpi_if_lib_path.is_file():
                 gpi_extra_list.append(
-                    gpi_if_lib_path.as_posix() + f":cocotb{gpi_if}_entry_point"
+                    str(gpi_if_lib_path) + f":cocotb{gpi_if}_entry_point"
                 )
             else:
                 raise RuntimeError(f"{gpi_if_lib_path} library not found.")
@@ -1045,7 +1043,7 @@ class Ghdl(Runner):
             + [f"--work={self.hdl_toplevel_library}"]
             + ghdl_run_args
             + [self.sim_hdl_toplevel]
-            + ["--vpi=" + cocotb_tools.config.lib_name_path("vpi", "ghdl").as_posix()]
+            + ["--vpi=" + str(cocotb_tools.config.lib_name_path("vpi", "ghdl"))]
             + self.plusargs
             + self._get_parameter_options(self.parameters)
             + ([f"--wave={self._waves_file()}"] if self.waves or self.gui else [])
@@ -1145,7 +1143,7 @@ class Nvc(Runner):
             + self._get_parameter_options(self.parameters)
             + ["-r"]
             + self.test_args
-            + ["--load=" + cocotb_tools.config.lib_name_path("vhpi", "nvc").as_posix()]
+            + ["--load=" + str(cocotb_tools.config.lib_name_path("vhpi", "nvc"))]
             + self.plusargs
             + ([f"--wave={self._waves_file()}"] if self.waves or self.gui else [])
         ]
@@ -1239,7 +1237,7 @@ class Riviera(Runner):
         return "alog -work {RTL_LIBRARY} -pli {EXT_NAME} -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}".format(
             RTL_LIBRARY=_as_tcl_value(self.hdl_library),
             EXT_NAME=_as_tcl_value(
-                cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
+                str(cocotb_tools.config.lib_name_path("vpi", "riviera"))
             ),
             VERILOG_SOURCES=_as_tcl_value(str(source)),
             DEFINES=" ".join(self._get_define_options(self.defines)),
@@ -1261,7 +1259,7 @@ class Riviera(Runner):
                     f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
                 ),
                 EXT_NAME=_as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vhpi", "riviera").as_posix()
+                    str(cocotb_tools.config.lib_name_path("vhpi", "riviera"))
                     + ":vhpi_startup_routines_bootstrap"
                 ),
                 EXTRA_ARGS=" ".join(
@@ -1274,7 +1272,7 @@ class Riviera(Runner):
             )
 
             self.env["GPI_EXTRA"] = (
-                cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
+                str(cocotb_tools.config.lib_name_path("vpi", "riviera"))
                 + ":cocotbvpi_entry_point"
             )
         else:
@@ -1283,7 +1281,7 @@ class Riviera(Runner):
                     f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
                 ),
                 EXT_NAME=_as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
+                    str(cocotb_tools.config.lib_name_path("vpi", "riviera"))
                 ),
                 EXTRA_ARGS=" ".join(
                     _as_tcl_value(v)
@@ -1295,7 +1293,7 @@ class Riviera(Runner):
             )
 
             self.env["GPI_EXTRA"] = (
-                cocotb_tools.config.lib_name_path("vhpi", "riviera").as_posix()
+                str(cocotb_tools.config.lib_name_path("vhpi", "riviera"))
                 + ":cocotbvhpi_entry_point"
             )
 
@@ -1519,7 +1517,7 @@ class Xcelium(Runner):
             + ["-loadvpi"]
             # always start with VPI on Xcelium
             + [
-                cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
+                str(cocotb_tools.config.lib_name_path("vpi", "xcelium"))
                 + ":vlog_startup_routines_bootstrap"
             ]
             + vhpi_opts
@@ -1604,7 +1602,7 @@ class Xcelium(Runner):
             ]
         ]
         self.env["GPI_EXTRA"] = (
-            cocotb_tools.config.lib_name_path("vhpi", "xcelium").as_posix()
+            str(cocotb_tools.config.lib_name_path("vhpi", "xcelium"))
             + ":cocotbvhpi_entry_point"
         )
 
@@ -1670,7 +1668,7 @@ class Vcs(Runner):
             cmds = [
                 ["vcs"]
                 + self._build_opts
-                + ["-load", cocotb_tools.config.lib_name_path("vpi", "vcs").as_posix()]
+                + ["-load", str(cocotb_tools.config.lib_name_path("vpi", "vcs"))]
                 + self.build_args
                 + self._get_include_options(self.includes)
                 + self._get_define_options(self.defines)
@@ -1751,7 +1749,7 @@ class Dsim(Runner):
                 "-work",
                 str(self.build_dir),
                 "-pli_lib",
-                cocotb_tools.config.lib_name_path("vpi", "dsim").as_posix(),
+                str(cocotb_tools.config.lib_name_path("vpi", "dsim")),
                 "+acc+rwcbfsWF",
                 "-image",
                 "image",
@@ -1785,7 +1783,7 @@ class Dsim(Runner):
                     "-work",
                     str(self.build_dir),
                     "-pli_lib",
-                    cocotb_tools.config.lib_name_path("vpi", "dsim").as_posix(),
+                    str(cocotb_tools.config.lib_name_path("vpi", "dsim")),
                     "+acc+rwcbfsWF",
                     "-genimage",
                     "image",
