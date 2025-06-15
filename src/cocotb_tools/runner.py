@@ -89,7 +89,7 @@ for i in range(32):
 _sv_escape_translate_table = str.maketrans(_sv_escapes)
 
 
-def _as_sv_literal(value: str) -> str:
+def _as_sv_literal(value: object) -> str:
     if isinstance(value, (int, float)):
         return str(value)
     elif isinstance(value, str):
@@ -697,7 +697,7 @@ class Icarus(Runner):
             f.write("+timescale+{}/{}\n".format(*self.timescale))
 
     def _create_iverilog_dump_file(self) -> None:
-        dumpfile_path = Path(self.build_dir, f"{self.hdl_toplevel}.fst").as_posix()
+        dumpfile_path = _as_sv_literal(str(self.build_dir / f"{self.hdl_toplevel}.fst"))
         with open(self.iverilog_dump_file, "w") as f:
             f.write("module cocotb_iverilog_dump();\n")
             f.write("initial begin\n")
@@ -707,7 +707,7 @@ class Icarus(Runner):
             )
             f.write("        $dumpfile(dumpfile_path);\n")
             f.write("    end else begin\n")
-            f.write(f'        $dumpfile("{dumpfile_path}");\n')
+            f.write(f"        $dumpfile({dumpfile_path});\n")
             f.write("    end\n")
             f.write(f"    $dumpvars(0, {self.hdl_toplevel});\n")
             f.write("end\n")
