@@ -207,6 +207,12 @@ def _get_parser() -> argparse.ArgumentParser:
         help="Print the version of cocotb",
     )
 
+    parser.add_argument(
+        "--posix-paths",
+        action="store_true",
+        help="Use POSIX syntax for paths, overriding the system default syntax",
+    )
+
     return parser
 
 
@@ -214,25 +220,31 @@ def main() -> None:
     parser = _get_parser()
     args = parser.parse_args()
 
+    def path_repr(path: Path) -> str:
+        if args.posix_paths:
+            return path.as_posix()
+        else:
+            return str(path)
+
     if args.share:
-        print(share_dir.as_posix())
+        print(path_repr(share_dir))
     elif args.makefiles:
-        print(makefiles_dir.as_posix())
+        print(path_repr(makefiles_dir))
     elif args.python_bin:
-        print(Path(sys.executable).as_posix())
+        print(path_repr(Path(sys.executable)))
     elif args.help_vars:
         print(_help_vars_text())
     elif args.libpython:
         libpython_path = find_libpython.find_libpython()
         if libpython_path is None:
             sys.exit(1)
-        print(Path(libpython_path).as_posix())
+        print(path_repr(Path(libpython_path)))
     elif args.lib_dir:
-        print(libs_dir.as_posix())
+        print(path_repr(libs_dir))
     elif args.lib_name:
         print(lib_name(*args.lib_name))
     elif args.lib_name_path:
-        print(lib_name_path(*args.lib_name_path).as_posix())
+        print(path_repr(lib_name_path(*args.lib_name_path)))
     elif args.version:
         print(_get_version())
 
