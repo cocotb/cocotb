@@ -23,7 +23,7 @@ endif
 
 TOPMODULE_ARG = -top $(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL)
 
-DSIM_ARGS = -work $(SIM_BUILD) -pli_lib $(shell cocotb-config --lib-name-path vpi dsim) +acc+rwcbfsWF
+DSIM_ARGS = -work $(SIM_BUILD) -pli_lib $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vpi dsim) +acc+rwcbfsWF
 COMP_ARGS = $(DSIM_ARGS) -genimage image -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 RUN_ARGS = $(DSIM_ARGS) -image image $(WAVE_ARG)
 
