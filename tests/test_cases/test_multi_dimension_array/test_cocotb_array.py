@@ -304,7 +304,8 @@ async def test_in_3d_arr(dut):
     assert dut.out_3d_arr.value == test_value
 
 
-@cocotb.test
+# Riviera fails when trying to access packed structs (gh-4753)
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera"))
 async def test_struct(dut: Any) -> None:
     assert isinstance(dut.in_struct_packed, LogicArrayObject)
     assert len(dut.in_struct_packed) == 24
