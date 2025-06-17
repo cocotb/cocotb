@@ -13,7 +13,6 @@
 name: Ecosystem compatibility tests
 
 on:
-  pull_request:
   # Run daily at midnight (UTC).
   schedule:
     - cron: '0 0 * * *'
@@ -114,7 +113,7 @@ jobs:
           make SIM=ghdl TOPLEVEL_LANG=vhdl -C pyuvm_clone/examples/TinyALU sim checkclean
 
   forastero:
-    # if: github.repository == 'cocotb/cocotb'
+    if: github.repository == 'cocotb/cocotb'
     name: Test Forastero
     runs-on: ubuntu-22.04
     steps:
