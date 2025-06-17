@@ -140,7 +140,7 @@ jobs:
       - name: Run tests
         run: |
           # Clone matching tag of Forastero git repository
-          git clone --branch v$(pip3 freeze | grep forastero | cut -d= -f3) https://github.com/intuity/forastero.git forastero_clone
+          git clone --branch $(pip3 freeze | grep forastero | cut -d= -f3) https://github.com/intuity/forastero.git forastero_clone
           # Run Forastero examples
           export SIM=icarus
           make -C forastero_clone/examples/arbiter_strict
