@@ -1262,6 +1262,7 @@ class Riviera(Runner):
                 ),
                 EXT_NAME=_as_tcl_value(
                     cocotb_tools.config.lib_name_path("vhpi", "riviera").as_posix()
+                    + ":vhpi_startup_routines_bootstrap"
                 ),
                 EXTRA_ARGS=" ".join(
                     _as_tcl_value(v)
