@@ -25,7 +25,7 @@ The Time Step
 Time steps are split into five phases in the cocotb timing model,
 some of which are repeated many times.
 
-The time step starts in the :ref:`beginning-of-time-step` (BOTS) phase and ends in the :ref:`end-of-time-step` (EOTS) phase.
+The time step starts in the :ref:`beginning-of-time-step` phase and ends in the :ref:`end-of-time-step` phase.
 Evaluation cycles occur between these two points,
 with the simulator running in the :ref:`evaluation` phases,
 and cocotb code reacting in the :ref:`values-change` and :ref:`values-settle` phases.
@@ -63,7 +63,7 @@ Alternatively, after all values have changed and all HDL has finished executing,
 it will enter the :ref:`values-settle` phase.
 
 .. note::
-    cocotb is not executing during this phase, so no triggers can be :keyword:`await`\ ed.
+    cocotb is not executing during this phase.
 
 .. _values-change:
 
@@ -129,22 +129,21 @@ Users can :keyword:`await` the following triggers in this phase:
 * :class:`.ValueChange`, :class:`.RisingEdge`, or :class:`.FallingEdge` to move to the next :ref:`values-change` phase where the requested value changes.
 
 .. note::
-    :class:`await ReadWrite() <cocotb.triggers.ReadWrite>` or :class:`await ReadOnly() <cocotb.triggers.ReadOnly>`
-    in this phase **are not** well defined behaviors and will result in a :exc:`RuntimeError` being raised.
+    ``await ReadWrite()`` or ``await ReadOnly()`` in this phase **are not** well defined behaviors and will result in a :exc:`RuntimeError` being raised.
 
 
 Triggers
 ========
 
-:class:`.Timer`
+:class:`!Timer`
 ---------------
 
 The :class:`.Timer` trigger allows users to jump forward in simulated time arbitrarily.
 It will always return at the :ref:`beginning of time step <beginning-of-time-step>`.
 Simulated time cannot move backwards, meaning negative and ``0`` time values are not valid.
-:class:`.Timer` cannot be used to move between evaluation cycles, only between time steps.
+:class:`!Timer` cannot be used to move between evaluation cycles, only between time steps.
 
-:class:`.NextTimeStep`
+:class:`!NextTimeStep`
 ----------------------
 
 :class:`.NextTimeStep` is like :class:`.Timer`,
@@ -153,7 +152,7 @@ The next time step could be at any simulated time thereafter, **or never**.
 It is only safe to use if there is scheduled behavior that will cause another time step to occur.
 Using :class:`.NextTimeStep` in other situations will result in undefined behavior.
 
-:class:`.ValueChange` / :class:`.RisingEdge` / :class:`.FallingEdge`
+:class:`!ValueChange` / :class:`!RisingEdge` / :class:`!FallingEdge`
 --------------------------------------------------------------------
 
 The edge triggers (:class:`.ValueChange`, :class:`.RisingEdge`, and :class:`.FallingEdge`)
@@ -169,7 +168,7 @@ Using a flip-flop for example, after an ``await RisingEdge(dut.clk)``, ``dut.clk
 but the output of the flip-flop will remain the previous value.
 Wait until :class:`.ReadWrite` or :class:`.ReadOnly` to see the output change.
 
-:class:`.ReadWrite`
+:class:`!ReadWrite`
 -------------------
 
 :class:`.ReadWrite` allows users to synchronize with the :ref:`end of the current evaluation cycle <values-settle>`.
@@ -190,7 +189,7 @@ users could write the following.
             dut.valid.value = 1
 
 
-:class:`.ReadOnly`
+:class:`!ReadOnly`
 ------------------
 
 :class:`.ReadOnly` allows users to jump to the :ref:`end of the time step <end-of-time-step>`;
@@ -198,8 +197,7 @@ allowing them to read the final values of signals or variables before more simul
 This may be necessary if they wish to sample a signal or variable whose value glitches (changes value in multiple evaluation cycles).
 
 .. note::
-    :class:`await ReadWrite() <cocotb.triggers.ReadWrite>` or :class:`await ReadOnly() <cocotb.triggers.ReadOnly>`
-    after an ``await ReadOnly()`` **is not** well defined and will result in a :exc:`RuntimeError` being raised.
+    ``await ReadWrite()`` or ``await ReadOnly()`` after an ``await ReadOnly()`` **is not** well defined and will result in a :exc:`RuntimeError` being raised.
 
 
 State Transitions
@@ -246,7 +244,7 @@ Verilator is a cycle-based simulator, meaning it does not have discrete events l
 Instead it has "cycles", meaning it evaluates all HDL code in a time step iteratively until quiescence, without stopping.
 This frees the simulator to evaluate the HDL however it sees fit, as long as it can maintain correctness, allowing for optimizations.
 
-In Verilator, the :class:`.Timer`, :class:`.NextTimeStep`, :class:`.ReadWrite`, and :class:`.ReadOnly` work as intended, as these map to "cycles" well.
-However, the value change triggers: :class:`.ValueChange`, :class:`.RisingEdge`, and :class:`.FallingEdge`, can not be handled in the middle of a cycle,
-so they are handled after the cycle has ended (equivalent to the :class:`.ReadWrite` phase).
-The easiest way to think of the behavior is as if the value change triggers all have an implicit ``await ReadWrite()`` after them.
+In Verilator, the timing triggers (:class:`.Timer`, :class:`.NextTimeStep`, :class:`.ReadWrite`, and :class:`.ReadOnly`) work as intended, as these map to "cycles" well.
+However, the value change triggers (:class:`.ValueChange`, :class:`.RisingEdge`, and :class:`.FallingEdge`) can not be handled in the middle of a cycle,
+so they are handled after the cycle has ended (equivalent to the :ref:`values-settle` phase).
+The easiest way to think of the behavior is as if the value change triggers all have an implicit :class:`await ReadWrite() <cocotb.triggers.ReadWrite>` after them.

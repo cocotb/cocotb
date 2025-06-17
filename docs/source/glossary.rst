@@ -27,7 +27,7 @@ Glossary
       See also the :term:`Python glossary <python:coroutine>`.
 
    task
-      A :term:`coroutine` that can be run concurren to other tasks.
+      A :term:`coroutine` that can be run concurrently to other tasks.
 
    trigger
       An :term:`awaitable` object which when :keyword:`awaited <await>` will block the current :term:`task` until its condition is met.
