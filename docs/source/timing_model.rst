@@ -30,7 +30,10 @@ Evaluation cycles occur between these two points,
 with the simulator running in the :ref:`evaluation` phases,
 and cocotb code reacting in the :ref:`values-change` and :ref:`values-settle` phases.
 
-.. image:: diagrams/svg/timing_model.svg
+.. figure:: diagrams/svg/timing_model.svg
+   :align: center
+
+   The phases of a time step
 
 
 .. _beginning-of-time-step:
