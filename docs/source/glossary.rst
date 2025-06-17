@@ -26,6 +26,13 @@ Glossary
       or turn them into a :term:`task`, which can be run concurrently.
       See also the :term:`Python glossary <python:coroutine>`.
 
+   task
+      A :term:`coroutine` that can be run concurrently to other tasks.
+
+   trigger
+      An :term:`awaitable` object which when :keyword:`awaited <await>` will block the current :term:`task` until its condition is met.
+      For example, a :class:`RisingEdge(dut.clk) <cocotb.triggers.RisingEdge>` trigger will block until the next rising edge of the ``dut.clk`` signal.
+
    DUT
       Design under Test
 
@@ -50,9 +57,6 @@ Glossary
    RTL
       Register Transfer Level
 
-   task
-      A :term:`coroutine` that can be run concurrently.
-
    UVM
       Universal Verification Methodology
 
@@ -65,6 +69,14 @@ Glossary
    VPI
       The Verilog Procedural Interface, an application-programming interface to (System)Verilog tools.
       Its original name was "PLI 2.0".
+
+   time step
+      A single point in simulated time, comprised of a series of one or more :term:`evaluation cycles <evaluation cycle>`.
+
+   evaluation cycle
+      One iteration of the evaluation loop in a :term:`time step`.
+      Occurs when HDL or cocotb code is executed in reaction to events, such as simulated time advancing or signal or variable values changing.
+      The executed code tends to create more events, leading to the next evaluation cycle.
 
    inertial deposit
       :term:`Depositing <deposit>` a value on a signal or variable at the end of the current delta cycle.

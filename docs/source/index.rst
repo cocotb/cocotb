@@ -149,12 +149,12 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
 
    install_devel
    troubleshooting
+   timing_model
 
 .. todo::
    - Move section "How does cocotb work?" from Introduction to here
    - Add some info from :doc:`coroutines`
    - Add GPI section
-   - Explain ``ReadOnly``, ``ReadWrite``, ... phases
 
 
 ..
