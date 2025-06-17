@@ -13,6 +13,7 @@
 name: Ecosystem compatibility tests
 
 on:
+  pull_request:
   # Run daily at midnight (UTC).
   schedule:
     - cron: '0 0 * * *'
@@ -113,7 +114,7 @@ jobs:
           make SIM=ghdl TOPLEVEL_LANG=vhdl -C pyuvm_clone/examples/TinyALU sim checkclean
 
   forastero:
-    if: github.repository == 'cocotb/cocotb'
+    # if: github.repository == 'cocotb/cocotb'
     name: Test Forastero
     runs-on: ubuntu-22.04
     steps:
@@ -130,20 +131,17 @@ jobs:
         with:
           path: cocotb
 
-      - name: Checkout Forastero repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-        with:
-          path: forastero_clone
-          repository: intuity/forastero
-
       - name: Install the release version of Forastero
-        run: pip3 install forastero>=3.0.0
+        run: pip3 install forastero
 
       - name: Install the development version of cocotb
         run: pip3 install ./cocotb
 
       - name: Run tests
         run: |
+          # Clone matching tag of Forastero git repository
+          git clone --branch v$(pip3 freeze | grep forastero | cut -d= -f3) https://github.com/intuity/forastero.git forastero_clone
+          # Run Forastero examples
           export SIM=icarus
           make -C forastero_clone/examples/arbiter_strict
           make -C forastero_clone/examples/arbiter_window
