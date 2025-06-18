@@ -21,15 +21,22 @@ endif
 endif
 
 TOPLEVEL_LANG ?= verilog
-ifneq ($(TOPLEVEL_LANG),verilog)
-SKIP := 1
-$(info "Skipping . . . Verilog only")
-endif
 
 ifeq ($(SKIP),)
 
+ifeq ($(TOPLEVEL_LANG),verilog)
 VERILOG_SOURCES = $(PWD)/cocotb_package_pkg.sv \
                   $(PWD)/cocotb_package.sv
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+VHDL_SOURCES = $(PWD)/cocotb_package_pkg.vhd \
+               $(PWD)/cocotb_package.vhd
+
+ifneq ($(filter $(SIM),ius xcelium),)
+COMPILE_ARGS += -v93
+endif
+
+endif
+
 COCOTB_TOPLEVEL := cocotb_package
 COCOTB_TEST_MODULES = test_package
 
