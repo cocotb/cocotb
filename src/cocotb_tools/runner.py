@@ -29,6 +29,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     TextIO,
     Tuple,
     Type,
@@ -89,7 +90,7 @@ for i in range(32):
 _sv_escape_translate_table = str.maketrans(_sv_escapes)
 
 
-def _as_sv_literal(value: str) -> str:
+def _as_sv_literal(value: object) -> str:
     if isinstance(value, (int, float)):
         return str(value)
     elif isinstance(value, str):
@@ -137,41 +138,48 @@ class Runner(ABC):
             SystemExit: Simulator executable does not exist in :envvar:`PATH`.
         """
 
-    def _check_hdl_toplevel_lang(self, hdl_toplevel_lang: Optional[str]) -> str:
-        """Return *hdl_toplevel_lang* if supported by simulator, raise exception otherwise.
-
-        Returns:
-            *hdl_toplevel_lang* if supported by the simulator.
+    def _check_hdl_toplevel_lang(
+        self, hdl_toplevel_lang: Optional[str]
+    ) -> Tuple[str, Set[str]]:
+        """Return *hdl_toplevel_lang* and remaining languages required by the sources if supported by the simulator.
 
         Raises:
             ValueError: *hdl_toplevel_lang* is not supported by the simulator.
         """
+        source_langs: Set[str] = set()
+        if self.vhdl_sources:
+            source_langs.add("vhdl")
+        if self.verilog_sources:
+            source_langs.add("verilog")
+        for src in self.sources:
+            if is_vhdl_source(src):
+                source_langs.add("vhdl")
+            elif is_verilog_source(src):
+                source_langs.add("verilog")
+            else:
+                raise UnknownFileExtension(src)
+
         if hdl_toplevel_lang is None:
-            if self.vhdl_sources and not self.verilog_sources and not self.sources:
-                lang = "vhdl"
-            elif self.verilog_sources and not self.vhdl_sources and not self.sources:
-                lang = "verilog"
-            elif self.sources and not self.vhdl_sources and not self.verilog_sources:
-                if is_vhdl_source(self.sources[-1]):
-                    lang = "vhdl"
-                elif is_verilog_source(self.sources[-1]):
-                    lang = "verilog"
-                else:
-                    raise UnknownFileExtension(self.sources[-1])
+            if len(source_langs) == 1:
+                (hdl_toplevel_lang,) = source_langs
             else:
                 raise ValueError(
-                    f"{type(self).__qualname__}: Must specify a hdl_toplevel_lang in a mixed-language design"
+                    "Must specify 'hdl_toplevel_lang' in mixed-language simulation"
                 )
-        else:
-            lang = hdl_toplevel_lang
-
-        if lang in self.supported_gpi_interfaces:
-            return lang
-        else:
+        elif hdl_toplevel_lang not in type(self).supported_gpi_interfaces:
             raise ValueError(
-                f"{type(self).__qualname__}: hdl_toplevel_lang {hdl_toplevel_lang!r} is not "
-                f"in supported list: {', '.join(self.supported_gpi_interfaces)}"
+                f"{type(self).__qualname__} does not support {hdl_toplevel_lang!r}."
             )
+
+        for lang in source_langs:
+            if lang not in type(self).supported_gpi_interfaces:
+                raise ValueError(
+                    f"{type(self).__qualname__} does not support {lang!r}."
+                )
+
+        source_langs.remove(hdl_toplevel_lang)
+
+        return hdl_toplevel_lang, source_langs
 
     def _set_env(self) -> None:
         """Set environment variables for sub-processes."""
@@ -394,6 +402,11 @@ class Runner(ABC):
 
         __tracebackhide__ = True  # Hide the traceback when using pytest
 
+        # note: to avoid mutating argument defaults, we ensure that no value
+        # is written without a copy. This is much more concise and leads to
+        # a better docstring than using `None` as a default in the parameters
+        # list.
+
         if build_dir is not None:
             self.build_dir = get_abs_path(build_dir)
 
@@ -411,19 +424,21 @@ class Runner(ABC):
         else:
             self.test_module = ",".join(test_module)
 
-        # note: to avoid mutating argument defaults, we ensure that no value
-        # is written without a copy. This is much more concise and leads to
-        # a better docstring than using `None` as a default in the parameters
-        # list.
         self.sim_hdl_toplevel = hdl_toplevel
         self.hdl_toplevel_library: str = hdl_toplevel_library
-        self.hdl_toplevel_lang = self._check_hdl_toplevel_lang(hdl_toplevel_lang)
+        self.hdl_toplevel_lang, other_langs = self._check_hdl_toplevel_lang(
+            hdl_toplevel_lang
+        )
         if gpi_interfaces:
             self.gpi_interfaces = gpi_interfaces
         else:
-            self.gpi_interfaces = []
-            for gpi_if in self.supported_gpi_interfaces.values():
-                self.gpi_interfaces.append(gpi_if[0])
+            # Force language of toplevel to be first in GPI Impl load order.
+            self.gpi_interfaces = [
+                self.supported_gpi_interfaces[self.hdl_toplevel_lang][0]
+            ]
+            # Add remaining languages GPI Impls in any order.
+            for lang in other_langs:
+                self.gpi_interfaces.extend(self.supported_gpi_interfaces[lang][0])
 
         self.pre_cmd = pre_cmd
 
