@@ -593,7 +593,7 @@ def hdl(request: FixtureRequest, hdl_session: HDL) -> HDL:
     # if missing then it will retrieve this information from list of HDL source files
     # Unfortunately, they are not set in Runner created during function scope when build() was not called
     if not hdl_session.toplevel_lang and hasattr(hdl_session.runner, "_sources"):
-        instance.toplevel_lang = hdl_session.runner._check_hdl_toplevel_lang(
+        instance.toplevel_lang, _ = hdl_session.runner._check_hdl_toplevel_lang(
             hdl_session.toplevel_lang
         )
 
