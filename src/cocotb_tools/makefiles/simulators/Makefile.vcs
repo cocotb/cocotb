@@ -51,7 +51,7 @@ $(SIM_BUILD)/simv: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
 	$(CMD) -top $(COCOTB_TOPLEVEL) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) -sverilog \
 	-timescale=$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
-	$(EXTRA_ARGS) -load $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi vcs) $(COMPILE_ARGS) $(VERILOG_SOURCES)
+	$(EXTRA_ARGS) -load $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --lib-name-path vpi vcs) $(COMPILE_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(CUSTOM_SIM_DEPS)

@@ -29,17 +29,17 @@ export OS
 
 # this ensures we use the same python as the one cocotb was installed into
 # attempts to use cocotb_config entry script to get that info, falls back to "python"
-PYTHON_BIN_RES := $(shell cocotb-config --python-bin 2>>/dev/null; echo $$?)
+PYTHON_BIN_RES := $(shell cocotb-config --posix-paths --python-bin 2>>/dev/null; echo $$?)
 PYTHON_BIN_RC := $(lastword $(PYTHON_BIN_RES))
 PYTHON_BIN := $(strip $(subst $(PYTHON_BIN_RC)QQQQ,,$(PYTHON_BIN_RES)QQQQ))
 ifneq ($(PYTHON_BIN_RC),0)
     PYTHON_BIN := python3
 endif
 
-export PYGPI_PYTHON_BIN := $(shell $(PYTHON_BIN) -m cocotb_tools.config --python-bin)
+export PYGPI_PYTHON_BIN := $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --python-bin)
 
 # Directory containing the cocotb Makefiles
-COCOTB_MAKEFILES_DIR := $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)
+COCOTB_MAKEFILES_DIR := $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --makefiles)
 
 include $(COCOTB_MAKEFILES_DIR)/Makefile.deprecations
 
@@ -111,7 +111,7 @@ ifndef LIBPYTHON_LOC
 
 # get the path to libpython and the return code from the script
 # adapted from https://stackoverflow.com/a/24658961/6614127
-FIND_LIBPYTHON_RES := $(shell $(PYTHON_BIN) -m cocotb_tools.config --libpython; echo $$?)
+FIND_LIBPYTHON_RES := $(shell $(PYTHON_BIN) -m cocotb_tools.config --posix-paths --libpython; echo $$?)
 FIND_LIBPYTHON_RC := $(lastword $(FIND_LIBPYTHON_RES))
 LIBPYTHON_LOC := $(strip $(subst $(FIND_LIBPYTHON_RC)QQQQ,,$(FIND_LIBPYTHON_RES)QQQQ))
 
