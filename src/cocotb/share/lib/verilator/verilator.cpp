@@ -20,9 +20,13 @@
 #if VM_TRACE
 #if VM_TRACE_FST
 #include <verilated_fst_c.h>
+using verilated_trace_t = VerilatedFstC;
 #else
 #include <verilated_vcd_c.h>
+using verilated_trace_t = VerilatedVcdC;
 #endif
+#else
+using verilated_trace_t = void*;  // arbitrary type with no tracing
 #endif
 
 static vluint64_t main_time = 0;  // Current simulation time
@@ -50,20 +54,13 @@ static inline bool settle_value_callbacks() {
     return cbs_called;
 }
 
-static void clean_exit_cb(void* _tfp) {
+void wrap_up(void* tfp) {
     VerilatedVpi::callCbs(cbEndOfSimulation);
-#if VM_TRACE
-#if VM_TRACE_FST
-    VerilatedFstC* tfp = (VerilatedFstC*)_tfp;
-#else
-    VerilatedVcdC* tfp = (VerilatedVcdC*)_tfp;
-#endif
     if (tfp) {
-        tfp->close();
-    }
-#else
-    (void)_tfp;
+#if VM_TRACE
+        reinterpret_cast<verilated_trace_t*>(tfp)->close();
 #endif
+    }
 }
 
 int main(int argc, char** argv) {
@@ -78,7 +75,7 @@ int main(int argc, char** argv) {
         std::string arg = std::string(argv[i]);
         if (arg == "--trace") {
             traceOn = true;
-#ifndef VM_TRACE
+#if !VM_TRACE
             fprintf(stderr,
                     "Error: --trace requires the design to be built with trace "
                     "support\n");
@@ -117,26 +114,18 @@ int main(int argc, char** argv) {
     Verilated::internalsDump();
 #endif
 
+    std::unique_ptr<verilated_trace_t> tfp;
 #if VM_TRACE
-#if VM_TRACE_FST
-    std::unique_ptr<VerilatedFstC> tfp(new VerilatedFstC);
-#else
-    std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
-#endif
-
     Verilated::traceEverOn(true);
     if (traceOn) {
+        tfp = std::make_unique<verilated_trace_t>();
         top->trace(tfp.get(), 99);
         tfp->open(traceFile);
     }
 #endif
 
     vlog_startup_routines_bootstrap();
-#if VM_TRACE
-    Verilated::addExitCb(clean_exit_cb, traceOn ? tfp.get() : NULL);
-#else
-    Verilated::addExitCb(clean_exit_cb, NULL);
-#endif
+    Verilated::addExitCb(wrap_up, tfp.get());
     VerilatedVpi::callCbs(cbStartOfSimulation);
     settle_value_callbacks();
 
@@ -163,7 +152,7 @@ int main(int argc, char** argv) {
         VerilatedVpi::callCbs(cbReadOnlySynch);
 
 #if VM_TRACE
-        if (traceOn) {
+        if (tfp) {
             tfp->dump(main_time);
         }
 #endif
@@ -196,15 +185,9 @@ int main(int argc, char** argv) {
         settle_value_callbacks();
     }
 
-    VerilatedVpi::callCbs(cbEndOfSimulation);
-
     top->final();
 
-#if VM_TRACE
-    if (traceOn) {
-        tfp->close();
-    }
-#endif
+    wrap_up(tfp.get());
 
 // VM_COVERAGE is a define which is set if Verilator is
 // instructed to collect coverage (when compiling the simulation)
