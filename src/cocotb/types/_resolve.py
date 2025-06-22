@@ -2,16 +2,13 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import os
-import sys
 from functools import lru_cache
 from random import getrandbits
 from typing import Callable, Dict, Union
 
-if sys.version_info >= (3, 10):
-    from typing import Final, Literal, TypeAlias  # noqa: F401  # used in type strings
+from cocotb._py_compat import Final, Literal, TypeAlias
 
-
-ResolverLiteral: "TypeAlias" = "Literal['weak', 'zeros', 'ones', 'random']"
+ResolverLiteral: TypeAlias = Literal["weak", "zeros", "ones", "random"]
 
 
 _ord_0 = ord("0")
@@ -76,4 +73,4 @@ def _init() -> Union[Callable[[str], str], None]:
         ) from None
 
 
-RESOLVE_X: "Final" = _init()
+RESOLVE_X: Final = _init()

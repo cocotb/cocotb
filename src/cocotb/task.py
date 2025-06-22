@@ -5,7 +5,6 @@ import collections.abc
 import inspect
 import logging
 import os
-import sys
 import traceback
 from asyncio import CancelledError, InvalidStateError
 from bdb import BdbQuit
@@ -29,11 +28,8 @@ from cocotb._base_triggers import Trigger
 from cocotb._bridge import bridge, resume
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
-from cocotb._py_compat import cached_property
+from cocotb._py_compat import Self, cached_property
 from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
-
-if sys.version_info >= (3, 11):
-    from typing import Self
 
 #: Task result type
 ResultType = TypeVar("ResultType")

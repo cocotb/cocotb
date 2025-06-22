@@ -9,10 +9,11 @@ from typing import (
     Union,
 )
 
+from cocotb._py_compat import TypeAlias
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
 
-LogicLiteralT = Union[str, int, bool]
-LogicConstructibleT = Union[LogicLiteralT, "Logic"]
+LogicLiteralT: TypeAlias = Union[str, int, bool]
+LogicConstructibleT: TypeAlias = Union[LogicLiteralT, "Logic"]
 
 
 _U = 0

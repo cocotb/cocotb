@@ -6,7 +6,6 @@
 
 import functools
 import inspect
-import sys
 from enum import Enum
 from itertools import product
 from typing import (
@@ -26,10 +25,8 @@ from typing import (
 )
 
 from cocotb._base_triggers import Trigger
+from cocotb._py_compat import TypeAlias
 from cocotb._typing import TimeUnit
-
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
 
 
 class Test:
@@ -106,7 +103,7 @@ class Test:
         self.fullname = f"{self.module}.{self.name}"
 
 
-TestFuncType: "TypeAlias" = Callable[..., Coroutine[Trigger, None, None]]
+TestFuncType: TypeAlias = Callable[..., Coroutine[Trigger, None, None]]
 
 
 class Parameterized:
@@ -221,14 +218,9 @@ def _repr(v: Any) -> Optional[str]:
         return None
 
 
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-
-    class TestDecoratorType(Protocol):
-        @overload
-        def __call__(self, obj: TestFuncType) -> Test: ...
-        @overload
-        def __call__(self, obj: Parameterized) -> Parameterized: ...
+TestDecoratorType: TypeAlias = Union[
+    Callable[[TestFuncType], Test], Callable[[Parameterized], Parameterized]
+]
 
 
 @overload

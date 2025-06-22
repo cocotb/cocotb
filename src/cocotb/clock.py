@@ -7,7 +7,6 @@
 """A clock class."""
 
 import logging
-import sys
 import warnings
 from decimal import Decimal
 from fractions import Fraction
@@ -15,7 +14,11 @@ from logging import Logger
 from typing import Type, Union
 
 import cocotb
-from cocotb._py_compat import cached_property
+from cocotb._py_compat import (
+    Literal,
+    TypeAlias,
+    cached_property,
+)
 from cocotb._typing import TimeUnit
 from cocotb.handle import LogicObject, _trust_inertial
 from cocotb.simulator import clock_create
@@ -32,13 +35,7 @@ from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 __all__ = ("Clock",)
 
-if sys.version_info >= (3, 10):
-    from typing import (
-        Literal,
-        TypeAlias,
-    )
-
-    Impl: TypeAlias = Literal["gpi", "py"]
+Impl: TypeAlias = Literal["gpi", "py"]
 
 
 _valid_impls = ("gpi", "py")
@@ -127,14 +124,14 @@ class Clock:
         on the Clock object, so that it may later be :meth:`stop`\ ped.
     """
 
-    _impl: "Impl"
+    _impl: Impl
 
     def __init__(
         self,
         signal: LogicObject,
         period: Union[float, Fraction, Decimal],
         unit: TimeUnit = "step",
-        impl: "Impl | None" = None,
+        impl: Union[Impl, None] = None,
         *,
         units: None = None,
     ) -> None:
@@ -177,7 +174,7 @@ class Clock:
         return self._unit
 
     @property
-    def impl(self) -> "Impl":
+    def impl(self) -> Impl:
         """The concrete implementation of the clock used.
 
         ``"gpi"`` if the clock is implemented in C in the GPI layer,

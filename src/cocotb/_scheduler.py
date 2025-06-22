@@ -15,7 +15,6 @@ the ReadOnly (and this is invalid, at least in Modelsim).
 
 import logging
 import os
-import sys
 import threading
 from bdb import BdbQuit
 from collections import OrderedDict
@@ -34,13 +33,8 @@ from cocotb._gpi_triggers import (
 )
 from cocotb._outcomes import Error, Outcome, Value, capture
 from cocotb._profiling import profiling_context
-from cocotb._py_compat import insertion_ordered_dict
+from cocotb._py_compat import ParamSpec, insertion_ordered_dict
 from cocotb.task import Task, _TaskState
-
-if sys.version_info >= (3, 10):
-    from typing import ParamSpec
-
-    P = ParamSpec("P")
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
@@ -48,6 +42,8 @@ _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
 
 
 T = TypeVar("T")
+
+P = ParamSpec("P")
 
 
 class Scheduler:
