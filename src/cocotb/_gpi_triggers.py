@@ -6,7 +6,6 @@
 
 """A collection of triggers which a testbench can :keyword:`await`."""
 
-import sys
 import warnings
 from decimal import Decimal
 from fractions import Fraction
@@ -25,12 +24,10 @@ import cocotb.handle
 from cocotb import simulator
 from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
+from cocotb._py_compat import Self
 from cocotb._typing import TimeUnit
 from cocotb._utils import pointer_str, singleton
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
-
-if sys.version_info >= (3, 11):
-    from typing import Self
 
 
 class GPITrigger(Trigger):

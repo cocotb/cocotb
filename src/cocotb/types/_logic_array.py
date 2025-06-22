@@ -1,7 +1,6 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import sys
 from math import ceil
 from typing import (
     Iterable,
@@ -13,16 +12,16 @@ from typing import (
 )
 
 from cocotb._deprecation import deprecated
+from cocotb._py_compat import Literal, TypeAlias
 from cocotb.types._abstract_array import AbstractArray
 from cocotb.types._logic import Logic, LogicConstructibleT, _str_literals
 from cocotb.types._range import Range
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-
-
 _resolve_lh_table = str.maketrans({"L": "0", "H": "1"})
+
+
+ByteOrder: TypeAlias = Literal["big", "little"]
 
 
 class LogicArray(AbstractArray[Logic]):
@@ -363,7 +362,7 @@ class LogicArray(AbstractArray[Logic]):
         value: Union[bytes, bytearray],
         range: Union[Range, int, None] = None,
         *,
-        byteorder: "Literal['big', 'little']",
+        byteorder: ByteOrder,
     ) -> "LogicArray":
         """Construct a :class:`!LogicArray` from :class:`bytes`.
 
@@ -655,7 +654,7 @@ class LogicArray(AbstractArray[Logic]):
     def to_bytes(
         self,
         *,
-        byteorder: "Literal['big', 'little']",
+        byteorder: ByteOrder,
     ) -> bytes:
         """Convert the value to bytes.
 

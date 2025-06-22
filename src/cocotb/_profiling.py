@@ -7,12 +7,10 @@
 import cProfile
 import os
 import pstats
-import sys
-from contextlib import AbstractContextManager
 
-from cocotb._py_compat import nullcontext
+from cocotb._py_compat import AbstractContextManager, nullcontext
 
-profiling_context: "AbstractContextManager[None, None]"
+profiling_context: AbstractContextManager[None, None]
 
 
 if "COCOTB_ENABLE_PROFILING" in os.environ:
@@ -26,14 +24,7 @@ if "COCOTB_ENABLE_PROFILING" in os.environ:
         ps = pstats.Stats(_profile).sort_stats("cumulative")
         ps.dump_stats("cocotb.pstat")
 
-    if sys.version_info >= (3, 9):
-
-        class _ProfilingContextBase(AbstractContextManager[None, None]): ...
-    else:
-
-        class _ProfilingContextBase(AbstractContextManager): ...
-
-    class _profiling_context(_ProfilingContextBase):
+    class _profiling_context(AbstractContextManager[None, None]):
         """Context manager that profiles its contents"""
 
         def __enter__(self) -> None:

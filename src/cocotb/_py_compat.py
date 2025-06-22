@@ -9,10 +9,18 @@ if they want to use these shims in their own code
 """
 
 import sys
+from abc import ABC
 from contextlib import AbstractContextManager
 from typing import TypeVar, Union, overload
 
 __all__ = (
+    "AbstractContextManager",
+    "Final",
+    "Literal",
+    "ParamSpec",
+    "Protocol",
+    "Self",
+    "TypeAlias",
     "cached_property",
     "insertion_ordered_dict",
     "nullcontext",
@@ -20,17 +28,17 @@ __all__ = (
 
 T = TypeVar("T")
 
-if sys.version_info >= (3, 9):
-
-    class _NullContextBase(AbstractContextManager[T, None]): ...
-else:
+if sys.version_info < (3, 9):
     from typing import Generic
 
-    class _NullContextBase(AbstractContextManager, Generic[T]): ...
+    T_co = TypeVar("T_co", covariant=True)
+    ExitT_co = TypeVar("ExitT_co", covariant=True)
+
+    class AbstractContextManager(AbstractContextManager, Generic[T_co, ExitT_co]): ...
 
 
 # backport of Python 3.7's contextlib.nullcontext
-class nullcontext(_NullContextBase[T]):
+class nullcontext(AbstractContextManager[T, None]):
     """Context manager that does no additional processing.
     Used as a stand-in for a normal context manager, when a particular
     block of code is only sometimes used with a normal context manager:
@@ -105,3 +113,39 @@ else:
             res = self._method(instance)
             instance.__dict__[self._method.__name__] = res
             return res
+
+
+class FakeGetItemType:
+    def __class_getitem__(self, a: object) -> str:
+        return ""
+
+
+if sys.version_info >= (3, 8):
+    from typing import Final, Literal, Protocol
+else:
+    Final = FakeGetItemType
+    Literal = FakeGetItemType
+    Protocol = ABC
+
+
+if sys.version_info >= (3, 10):
+    from typing import ParamSpec, TypeAlias
+else:
+    TypeAlias = ""
+
+    class FakeParamSpecType:
+        def __init__(self, name: str) -> None: ...
+
+        def kwargs(self) -> str:
+            return ""
+
+        def args(self) -> str:
+            return ""
+
+    ParamSpec = FakeParamSpecType
+
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    Self = ""

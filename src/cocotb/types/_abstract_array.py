@@ -1,21 +1,16 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import sys
 from abc import abstractmethod
-from typing import Generic, Iterable, Iterator, Optional, TypeVar, Union, overload
+from typing import Iterable, Iterator, Optional, TypeVar, Union, overload
 
+from cocotb._py_compat import Protocol
 from cocotb.types._range import Range
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from abc import ABC as Protocol
 
 T = TypeVar("T")
 
 
-class AbstractArray(Protocol, Generic[T]):
+class AbstractArray(Protocol[T]):
     @property
     def left(self) -> int:
         """Leftmost index of the array."""

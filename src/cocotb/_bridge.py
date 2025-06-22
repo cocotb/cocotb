@@ -4,7 +4,6 @@
 import functools
 import logging
 import os
-import sys
 import threading
 from enum import IntEnum
 from typing import (
@@ -19,15 +18,13 @@ import cocotb
 from cocotb._base_triggers import Event, Trigger
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Outcome
-
-if sys.version_info >= (3, 10):
-    from typing import ParamSpec
-
-    P = ParamSpec("P")
+from cocotb._py_compat import ParamSpec
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
 _debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
+
+P = ParamSpec("P")
 
 Result = TypeVar("Result")
 
