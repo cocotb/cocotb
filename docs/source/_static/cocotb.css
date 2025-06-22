@@ -66,6 +66,7 @@ html {
 
     --pst-color-primary: var(--color-cocotb-blue) !important;
     --pst-color-secondary: var(--color-cocotb-yellow) !important;
+    --pst-color-secondary-highlight: var(--color-cocotb-blue) !important;
     --pst-color-accent: var(--color-cocotb-yellow) !important;
 
     --pst-color-link: var(--color-cocotb-blue) !important;
