@@ -84,6 +84,7 @@ ignore = [
     "PLR2004", # Magic value used in comparison (preference)
     "PLW0603", # Using the global statement (preference)
     "PLR0911", # Too many return statements (preference)
+    "PLW1641", # __eq__ without __hash__ (mypy compatibility)
 ]
 
 [tool.ruff.lint.per-file-ignores]
