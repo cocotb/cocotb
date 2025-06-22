@@ -32,6 +32,9 @@ from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 if sys.version_info >= (3, 11):
     from typing import Self
 
+if sys.version_info >= (3, 10):
+    from typing import Literal  # noqa: F401  # used in type strings
+
 
 class GPITrigger(Trigger):
     """A trigger for a simulation event."""
