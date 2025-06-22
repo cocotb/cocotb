@@ -246,6 +246,11 @@ span.viewcode-link {
 /* apidoc "Parameters:", "Returns:" etc. */
 dl.field-list > dt {
     background-color: white !important;
+    padding-left: 0px !important;
+}
+
+dl.field-list > dd {
+    padding-left: 0px !important;
 }
 
 /* highlighted code */
