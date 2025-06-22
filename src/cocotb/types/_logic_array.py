@@ -234,7 +234,7 @@ class LogicArray(AbstractArray[Logic]):
             bitlen = max(1, int.bit_length(value))
             if bitlen > len(range):
                 raise ValueError(
-                    f"{value!r} will not fit in a LogicArray with bounds: {range!r}."
+                    f"{value!r} will not fit in a LogicArray with bounds: {range!r}"
                 )
             self._value_as_int = value
             self._range = range
@@ -309,7 +309,7 @@ class LogicArray(AbstractArray[Logic]):
             ValueError: When a :class:`!LogicArray` of the given *range* can't hold the *value*, or *value* is negative.
         """
         if value < 0:
-            raise ValueError("Expected unsigned integer, got negative value.")
+            raise ValueError("Expected unsigned integer, got negative value")
         return LogicArray(value, range)
 
     @classmethod
@@ -344,13 +344,13 @@ class LogicArray(AbstractArray[Logic]):
         # Prevent null range from blowing up the below code.
         if len(range) == 0:
             raise ValueError(
-                f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}."
+                f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
             )
 
         limit = 1 << (len(range) - 1)
         if value < -limit or limit <= value:
             raise ValueError(
-                f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}."
+                f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
             )
         value %= 2 * limit
 
@@ -416,7 +416,7 @@ class LogicArray(AbstractArray[Logic]):
             raise TypeError("range argument must be of type 'Range'")
         if len(new_range) != len(self):
             raise ValueError(
-                f"{new_range!r} not the same length as old range: {self._range!r}."
+                f"{new_range!r} not the same length as old range: {self._range!r}"
             )
         self._range = new_range
 
