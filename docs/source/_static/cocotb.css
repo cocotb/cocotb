@@ -315,7 +315,7 @@ and might mis-select elements that should be left alone.
 // }
 */
 dl > dd > dl:not(.field-list.simple) {
-    margin-left: 0.5rem !important;
+    margin-left: 0rem !important;
 }
 
 /* fix for extra linebreak in apidoc (https://github.com/pydata/pydata-sphinx-theme/issues/2098) */
