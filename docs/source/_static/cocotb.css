@@ -10,6 +10,7 @@ https://www.cocotb.org/assets/css/bootstrap-theme.css
 :root {
     --color-cocotb-blue: #3776ab;
     --color-cocotb-blue-darker: rgb(44, 94, 137);
+    --color-cocotb-red: #b41d2e;
     --color-cocotb-yellow: #ffcd3c;
     --color-cocotb-green: rgb(79, 196, 100);
     --color-cocotb-green-bg: #e7f6f1;
@@ -393,4 +394,23 @@ Make autolinks to reference documentation less prominent
 }
 .sphinx-codeautolink-a:hover {
     text-decoration-color: black;
+}
+
+/*
+Classes that are manually set (using :class:)
+on e.g. .. code-block:: in the "Upgrading to cocotb 2.0" section
+*/
+.removed.highlight-python {
+    border-left: 0.2rem solid;
+    border-color: var(--color-cocotb-red);
+}
+
+.deprecated.highlight-python {
+    border-left: 0.2rem solid;
+    border-color: var(--color-cocotb-yellow);
+}
+
+.new.highlight-python {
+    border-left: 0.2rem solid;
+    border-color: var(--color-cocotb-green);
 }
