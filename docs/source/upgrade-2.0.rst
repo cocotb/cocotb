@@ -18,11 +18,15 @@ How to Upgrade
 * Run tests to check for any changes in behavior.
 
 .. code-block:: python
+    :caption: Old way with :func:`!cocotb.fork`
+    :class: removed
 
-    ### Old way with cocotb.fork() ###
     task = cocotb.fork(drive_clk())
 
-    ### New way with cocotb.start_soon() ###
+.. code-block:: python
+    :caption: New way with :func:`!cocotb.start_soon`
+    :class: new
+
     task = cocotb.start_soon(drive_clk())
 
 Rationale
@@ -55,16 +59,21 @@ you will have to add additional code to ensure that happens.
 In general, the easiest way to fix this is to add an :class:`await NullTrigger() <cocotb.triggers.NullTrigger>` after the call to :func:`!cocotb.start_soon`.
 
 .. code-block:: python
+    :caption: Set up example...
 
     async def hello_world():
         cocotb.log.info("Hello, world!")
 
-    ### Behavior of the old cocotb.fork() ###
+.. code-block:: python
+    :caption: Behavior of the old :func:`!cocotb.fork`
+    :class: removed
 
     cocotb.fork(hello_world())
     # "Hello, world!"
 
-    ### Behavior of the new cocotb.start_soon() ###
+.. code-block:: python
+    :caption: Behavior of the new :func:`!cocotb.start_soon`
+    :class: new
 
     cocotb.start_soon(hello_world())
     # No print...
@@ -87,12 +96,15 @@ Also worth noting is that with :func:`!cocotb.fork`, if there was an exception b
 that exception would be thrown back to the caller of :func:`!cocotb.fork` and the ``Task`` object would not be successfully constructed.
 
 .. code-block:: python
+    :caption: Set up example...
 
     async def has_exception():
         if variable_does_not_exit:  # throws NameError
             await Timer(1, 'ns')
 
-    ### Behavior of the old cocotb.fork() ###
+.. code-block:: python
+    :caption: Behavior of the old :func:`!cocotb.fork`
+    :class: removed
 
     try:
         task = cocotb.fork(has_exception())  # NameError comes out here
@@ -100,7 +112,9 @@ that exception would be thrown back to the caller of :func:`!cocotb.fork` and th
         cocotb.log.info("Got expected NameError!")
     # no task object exists
 
-    ### Behavior of the new cocotb.start_soon() ###
+.. code-block:: python
+    :caption: Behavior of the new :func:`!cocotb.start_soon`
+    :class: new
 
     task = cocotb.start_soon(has_exception())
     # no exception here
@@ -130,15 +144,17 @@ How to Upgrade
 * Remove all imports of the :deco:`!cocotb.coroutine` decorator
 
 .. code-block:: python
-
-    ### Old way with @cocotb.coroutine ###
+    :caption: Old way with :deco:`!cocotb.coroutine`
+    :class: removed
 
     @cocotb.coroutine
     def my_driver():
         yield [RisingEdge(dut.clk), FallingEdge(dut.areset_n)]
         yield Timer(random.randint(10), 'ns')
 
-    ### New way with async/await ###
+.. code-block:: python
+    :caption: New way with :keyword:`!async`\ /:keyword:`!await`
+    :class: new
 
     async def my_driver():  # async instead of @cocotb.coroutine
         await First(RisingEdge(dut.clk), FallingEdge(dut.areset_n))  # await First() instead of yield [...]
