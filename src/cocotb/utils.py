@@ -51,7 +51,7 @@ def get_sim_time(unit: TimeUnit = "step", *, units: None = None) -> float:
                 Renamed from ``units``.
 
     Raises:
-        ValueError: If *unit* is not a valid unit (see Args section).
+        ValueError: If *unit* is not a valid unit.
 
     Returns:
         The simulation time in the specified unit.
@@ -113,7 +113,7 @@ def get_time_from_sim_steps(
                 Renamed from ``units``.
 
     Raises:
-        ValueError: If *unit* is not a valid unit (see Args section).
+        ValueError: If *unit* is not a valid unit.
 
     Returns:
         The simulation time in the specified unit.
@@ -216,7 +216,7 @@ def _get_log_time_scale(unit: 'Literal["fs", "ps", "ns", "us", "ms", "sec"]') ->
                 Renamed from ``units``.
 
     Raises:
-        ValueError: If *unit* is not a valid unit (see Args section).
+        ValueError: If *unit* is not a valid unit.
 
     Returns:
         The ``log10()`` of the scale factor for the time unit.
