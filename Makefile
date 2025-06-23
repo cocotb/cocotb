@@ -4,6 +4,8 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+REPO_ROOT := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
 .PHONY: all
 all: test
 
@@ -25,12 +27,12 @@ do_tests::
 # failures and the XML to track test results
 .PHONY: jenkins
 jenkins: do_tests
-	python -m cocotb_tools.combine_results --suppress_rc --testsuites_name=cocotb_regression
+	python -m cocotb_tools.combine_results --repo-root $(REPO_ROOT) --suppress_rc --testsuites_name=cocotb_regression
 
 # By default want the exit code to indicate the test results
 .PHONY: test
 test:
-	$(MAKE) do_tests; ret=$$?; python -m cocotb_tools.combine_results && exit $$ret
+	$(MAKE) do_tests; ret=$$?; python -m cocotb_tools.combine_results --repo-root $(REPO_ROOT) && exit $$ret
 
 COCOTB_MAKEFILES_DIR = $(realpath $(shell cocotb-config --makefiles))
 AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.*)))
