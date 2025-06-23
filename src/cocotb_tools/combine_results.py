@@ -57,6 +57,11 @@ def _get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Enables verbose output.",
     )
+    parser.add_argument(
+        "--repo-root",
+        type=Path,
+        help="Specify root of cocotb repo the regression is run from (CI only).",
+    )
     return parser
 
 
@@ -116,20 +121,15 @@ def main() -> int:
                         testsuite.get("package"),
                     )
                 )
-                if os.getenv("GITHUB_ACTIONS") is not None:
+                if (
+                    os.getenv("GITHUB_ACTIONS") is not None
+                    and args.repo_root is not None
+                ):
                     # Get test file relative to root of repo
                     file = testcase.get("file")
-                    assert (
-                        file is not None
-                    )  # if this file was output by cocotb, it has this attribute
-                    filepath = Path(file)
-                    repo_root = os.path.commonprefix(
-                        [
-                            filepath.absolute(),
-                            Path(__file__).absolute(),
-                        ]
-                    )
-                    relative_file = filepath.relative_to(repo_root)
+                    # if this file was output by cocotb, it has this attribute
+                    assert file is not None
+                    relative_file = Path(file).relative_to(args.repo_root)
                     print(
                         "::error file={},line={}::Test {}:{} failed".format(
                             relative_file,
