@@ -211,6 +211,11 @@ a {
     text-decoration-style: solid !important;
 }
 
+/* "Hide Search Matches" */
+div#searchbox p.highlight-link a {
+    background-color: var(--pst-color-on-background) !important;
+}
+
 a:hover {
     color: var(--color-cocotb-blue-darker) !important;
     text-decoration-thickness: 1px !important;
