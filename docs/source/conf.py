@@ -122,28 +122,18 @@ codeautolink_autodoc_inject = True  # Inject an autolink-examples table to the e
 # import statements that are often used in code examples
 codeautolink_global_preface = textwrap.dedent("""\
     import cocotb
-    from cocotb.clock import Clock
-    from cocotb.triggers import (
-        Combine,
-        FallingEdge,
-        First,
-        NullTrigger,
-        ReadOnly,
-        ReadWrite,
-        RisingEdge,
-        Timer,
-        ValueChange,
-        with_timeout,
-    )
-    from cocotb.utils import get_sim_time
-    from cocotb.types import Array, Logic, LogicArray, Range
-    # handle
-    # logging
-    # queue
-    # regression
-    # result
+    from cocotb.clock import *
+    from cocotb.handle import *
+    from cocotb.logging import *
+    from cocotb.queue import *
+    from cocotb.regression import *
+    from cocotb.result import *
+    from cocotb.task import *
+    from cocotb.triggers import *
+    from cocotb.utils import *
     """
 )
+
 codeautolink_custom_blocks = {
     # https://sphinx-codeautolink.readthedocs.io/en/latest/examples.html#doctest-code-blocks
     "pycon": "sphinx_codeautolink.clean_pycon",
