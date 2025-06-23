@@ -227,6 +227,7 @@ class LogicArray(AbstractArray[Logic]):
             else:
                 self._range = Range(len(self._value_as_str) - 1, "downto", 0)
         elif isinstance(value, int):
+            value = int(value)  # force bool to int
             if value < 0:
                 raise ValueError("Invalid int literal")
             if range is None:
