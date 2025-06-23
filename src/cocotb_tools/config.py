@@ -40,7 +40,7 @@ makefiles_dir = base_tools_dir.joinpath("makefiles")
 
 
 def _get_version() -> str:
-    import cocotb
+    import cocotb  # noqa: PLC0415
 
     return cocotb.__version__
 

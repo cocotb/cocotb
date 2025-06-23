@@ -228,7 +228,7 @@ class RegressionManager:
         Must be called before all modules containing tests are imported.
         """
         try:
-            import pytest
+            import pytest  # noqa: PLC0415
         except ImportError:
             _logger.info(
                 "pytest not found, install it to enable better AssertionError messages"
@@ -237,8 +237,8 @@ class RegressionManager:
         try:
             # Install the assertion rewriting hook, which must be done before we
             # import the test modules.
-            from _pytest.assertion import install_importhook
-            from _pytest.config import Config
+            from _pytest.assertion import install_importhook  # noqa: PLC0415
+            from _pytest.config import Config  # noqa: PLC0415
 
             python_files = os.getenv("COCOTB_REWRITE_ASSERTION_FILES", "*.py").strip()
             if not python_files:
@@ -397,7 +397,7 @@ class RegressionManager:
 
         # TODO refactor initialization and finalization into their own module
         # to prevent circular imports requiring local imports
-        from cocotb._init import _shutdown_testbench
+        from cocotb._init import _shutdown_testbench  # noqa: PLC0415
 
         _shutdown_testbench()
 
