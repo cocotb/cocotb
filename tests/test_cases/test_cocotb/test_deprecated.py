@@ -222,17 +222,17 @@ async def test_units_deprecated(dut: Any) -> None:
 @cocotb.test(skip=sys.version_info < (3, 7))
 async def test_results_deprecated(_: Any) -> None:
     with pytest.warns(DeprecationWarning):
-        from cocotb.result import TestSuccess  # noqa: F401
+        from cocotb.result import TestSuccess  # noqa: F401, PLC0415
     with pytest.warns(DeprecationWarning):
-        from cocotb.result import SimFailure  # noqa: F401
+        from cocotb.result import SimFailure  # noqa: F401, PLC0415
     with pytest.warns(DeprecationWarning):
-        from cocotb.result import SimTimeoutError  # noqa: F401
+        from cocotb.result import SimTimeoutError  # noqa: F401, PLC0415
 
 
 @cocotb.test
 async def test_triggers_Join_import_deprecated(_: Any) -> None:
     with pytest.warns(DeprecationWarning):
-        from cocotb.triggers import Join  # noqa: F401
+        from cocotb.triggers import Join  # noqa: F401, PLC0415
 
 
 @cocotb.test

@@ -42,10 +42,6 @@ async def test_logging_with_args(dut):
 
 @cocotb.test()
 async def test_logging_default_config(dut):
-    # The cocotb.log module is shadowed by an instance of
-    # cocotb.log.SimBaseLog()
-    from cocotb.logging import default_config as log_default_config
-
     cocotb_log = logging.getLogger("cocotb")
 
     # Save pre-test configuration
@@ -55,22 +51,22 @@ async def test_logging_default_config(dut):
     try:
         # Set a valid log level
         os.environ["COCOTB_LOG_LEVEL"] = "DEBUG"
-        log_default_config()
+        cocotb.logging.default_config()
         assert cocotb_log.level == logging.DEBUG, cocotb_log.level
 
         # Try to set log level to an invalid log level
         os.environ["COCOTB_LOG_LEVEL"] = "INVALID_LOG_LEVEL"
         with pytest.raises(ValueError):
-            log_default_config()
+            cocotb.logging.default_config()
 
         # Try to set log level to a valid log level with wrong capitalization
         os.environ["COCOTB_LOG_LEVEL"] = "error"
-        log_default_config()
+        cocotb.logging.default_config()
         assert cocotb_log.level == logging.ERROR, cocotb_log.level
 
         # Set custom TRACE log level
         os.environ["COCOTB_LOG_LEVEL"] = "TRACE"
-        log_default_config()
+        cocotb.logging.default_config()
         assert cocotb_log.level == logging.TRACE, cocotb_log.level
 
     finally:

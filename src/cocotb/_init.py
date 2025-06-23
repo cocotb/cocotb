@@ -133,7 +133,7 @@ def _process_plusargs() -> None:
 def _process_packages() -> None:
     pkg_dict = {}
 
-    from cocotb import simulator
+    from cocotb import simulator  # noqa: PLC0415
 
     pkgs = simulator.package_iterate()
     if pkgs is None:
@@ -168,7 +168,7 @@ def _start_user_coverage() -> None:
             )
     if coverage_envvar:
         try:
-            import coverage
+            import coverage  # noqa: PLC0415
         except ImportError:
             raise RuntimeError(
                 "Coverage collection requested but coverage module not available. Install it using `pip install coverage`."
@@ -257,7 +257,7 @@ def _setup_root_handle() -> None:
             # Skip any library component of the toplevel
             root_name = root_name.split(".", 1)[1]
 
-    from cocotb import simulator
+    from cocotb import simulator  # noqa: PLC0415
 
     handle = simulator.get_root_handle(root_name)
     if not handle:

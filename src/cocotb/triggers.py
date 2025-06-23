@@ -62,7 +62,7 @@ def __getattr__(name: str) -> Any:
             DeprecationWarning,
             stacklevel=2,
         )
-        from cocotb.task import Join
+        from cocotb.task import Join  # noqa: PLC0415
 
         return Join
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

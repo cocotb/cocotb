@@ -12,7 +12,7 @@ def __getattr__(name: str) -> Any:
             DeprecationWarning,
             stacklevel=2,
         )
-        from cocotb._test_functions import TestSuccess
+        from cocotb._test_functions import TestSuccess  # noqa: PLC0415
 
         return TestSuccess
 
@@ -22,7 +22,7 @@ def __getattr__(name: str) -> Any:
             DeprecationWarning,
             stacklevel=2,
         )
-        from cocotb.regression import SimFailure
+        from cocotb.regression import SimFailure  # noqa: PLC0415
 
         return SimFailure
 
@@ -32,7 +32,7 @@ def __getattr__(name: str) -> Any:
             DeprecationWarning,
             stacklevel=2,
         )
-        from cocotb.triggers import SimTimeoutError
+        from cocotb.triggers import SimTimeoutError  # noqa: PLC0415
 
         return SimTimeoutError
 

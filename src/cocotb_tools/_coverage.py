@@ -9,7 +9,7 @@ def start_cocotb_library_coverage(_: Any) -> None:  # pragma: no cover
     if "COCOTB_LIBRARY_COVERAGE" not in os.environ:
         return
     try:
-        import coverage
+        import coverage  # noqa: PLC0415
     except (ImportError, ModuleNotFoundError):
         raise RuntimeError(
             "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`."
@@ -27,6 +27,8 @@ def start_cocotb_library_coverage(_: Any) -> None:  # pragma: no cover
             library_coverage.stop()
             library_coverage.save()  # pragma: no cover
 
-        from cocotb._init import _register_shutdown_callback
+        # This must come after `library_coverage.start()` to ensure coverage is being
+        # collected on the cocotb library before importing from it.
+        from cocotb._init import _register_shutdown_callback  # noqa: PLC0415
 
         _register_shutdown_callback(stop_library_coverage)
