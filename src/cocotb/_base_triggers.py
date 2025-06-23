@@ -320,6 +320,8 @@ class Lock(AsyncContextManager[None]):
 
         .. code-block:: python
 
+            lock = Lock()
+            ...
             await lock.acquire()
             try:
                 # do some stuff
@@ -331,7 +333,7 @@ class Lock(AsyncContextManager[None]):
 
         .. code-block:: python
 
-            async with lock:
+            async with Lock():
                 # do some stuff
                 ...
 

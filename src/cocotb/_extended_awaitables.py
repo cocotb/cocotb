@@ -214,7 +214,7 @@ class ClockCycles(Waitable["ClockCycles"]):
         signal: The signal to monitor.
         num_cycles: The number of cycles to count.
         rising: If ``True``, count rising edges; if ``False``, count falling edges.
-        edge: The kind of :ref:`edge-triggers` to count.
+        edge_type: The kind of :ref:`edge-triggers` to count.
 
     .. warning::
         On many simulators transitions occur when the signal changes value from non-``0`` to ``0`` or non-``1`` to ``1``,
