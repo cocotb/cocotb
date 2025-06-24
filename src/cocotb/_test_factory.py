@@ -9,7 +9,6 @@ import warnings
 from itertools import product
 from types import FrameType, FunctionType
 from typing import (
-    Any,
     Callable,
     Coroutine,
     Dict,
@@ -94,8 +93,8 @@ class TestFactory:
     def __init__(
         self,
         test_function: Callable[..., Coroutine[Trigger, None, None]],
-        *args: Any,
-        **kwargs: Any,
+        *args: object,
+        **kwargs: object,
     ) -> None:
         warnings.warn(
             "TestFactory is deprecated, use `@cocotb.parametrize` instead",
@@ -106,22 +105,23 @@ class TestFactory:
         self.args = args
         self.kwargs_constant = kwargs
         self.kwargs: Dict[
-            Union[str, Sequence[str]], Union[Sequence[Any], Sequence[Sequence[Any]]]
+            Union[str, Sequence[str]],
+            Union[Sequence[object], Sequence[Sequence[object]]],
         ] = {}
         self._log = logging.getLogger(f"TestFactory({self.test_function.__name__})")
 
     @overload
-    def add_option(self, name: str, optionlist: Sequence[Any]) -> None: ...
+    def add_option(self, name: str, optionlist: Sequence[object]) -> None: ...
 
     @overload
     def add_option(
-        self, name: Sequence[str], optionlist: Sequence[Sequence[Any]]
+        self, name: Sequence[str], optionlist: Sequence[Sequence[object]]
     ) -> None: ...
 
     def add_option(
         self,
         name: Union[str, Sequence[str]],
-        optionlist: Union[Sequence[str], Sequence[Sequence[str]]],
+        optionlist: Union[Sequence[object], Sequence[Sequence[object]]],
     ) -> None:
         """Add a named option to the test.
 
@@ -139,6 +139,7 @@ class TestFactory:
             Groups of options are now supported
         """
         if not isinstance(name, str):
+            optionlist = cast(Sequence[Sequence[object]], optionlist)
             for opt in optionlist:
                 if len(name) != len(opt):
                     raise ValueError(
@@ -250,14 +251,14 @@ class TestFactory:
             doc: str = "Automatically generated test\n\n"
 
             # preprocess testoptions to split tuples
-            testoptions_split: Dict[str, Sequence[Any]] = {}
+            testoptions_split: Dict[str, Sequence[object]] = {}
             for optname, optvalue in testoptions.items():
                 if isinstance(optname, str):
-                    optvalue = cast(Sequence[Any], optvalue)
+                    optvalue = cast(Sequence[object], optvalue)
                     testoptions_split[optname] = optvalue
                 else:
                     # previously checked in add_option; ensure nothing has changed
-                    optvalue = cast(Sequence[Sequence[Any]], optvalue)
+                    optvalue = cast(Sequence[Sequence[object]], optvalue)
                     assert len(optname) == len(optvalue)
                     for n, v in zip(optname, optvalue):
                         testoptions_split[n] = v
@@ -273,12 +274,11 @@ class TestFactory:
                 else:
                     doc += f"\t{optname}: {optvalue!r}\n"
 
-            kwargs: Dict[str, Any] = {}
-            kwargs.update(self.kwargs_constant)
+            kwargs = self.kwargs_constant.copy()
             kwargs.update(testoptions_split)
 
             @functools.wraps(self.test_function)
-            async def _my_test(dut: object, kwargs: Dict[str, Any] = kwargs) -> None:
+            async def _my_test(dut: object, kwargs: Dict[str, object] = kwargs) -> None:
                 await self.test_function(dut, *self.args, **kwargs)
 
             _my_test.__doc__ = doc

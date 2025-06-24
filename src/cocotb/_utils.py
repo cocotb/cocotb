@@ -179,7 +179,7 @@ class DocEnum(Enum):
     as recommended by the ``enum_tools`` documentation.
     """
 
-    def __new__(cls: Type[EnumT], value: Any, doc: Optional[str] = None) -> EnumT:
+    def __new__(cls: Type[EnumT], value: object, doc: Optional[str] = None) -> EnumT:
         # super().__new__() assumes the value is already an enum value
         # so we side step that and create a raw object and fill in _value_
         self = object.__new__(cls)

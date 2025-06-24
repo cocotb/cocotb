@@ -12,7 +12,7 @@ import time
 import warnings
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, List, cast
+from typing import Callable, List, cast
 
 import cocotb
 import cocotb._profiling
@@ -94,7 +94,7 @@ def init_package_from_simulation(argv: List[str]) -> None:
     )
 
 
-def run_regression(_: Any) -> None:
+def run_regression(_: object) -> None:
     """Setup and run a regression."""
 
     _setup_regression_manager()

@@ -4,9 +4,9 @@
 
 import functools
 import warnings
-from typing import Any, Callable, Type, TypeVar
+from typing import Callable, Type, TypeVar
 
-AnyCallableT = TypeVar("AnyCallableT", bound=Callable[..., Any])
+AnyCallableT = TypeVar("AnyCallableT", bound=Callable[..., object])
 
 
 def deprecated(
@@ -27,7 +27,7 @@ def deprecated(
 
     def decorator(f: AnyCallableT) -> AnyCallableT:
         @functools.wraps(f)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: object, **kwargs: object) -> object:
             warnings.warn(msg, category=category, stacklevel=2)
             return f(*args, **kwargs)
 

@@ -41,7 +41,7 @@ class Waitable(Awaitable[T]):
     async def _wait(self) -> T:
         """The coroutine function which implements the functionality of the Waitable."""
 
-    def __await__(self) -> Generator[Any, Any, T]:
+    def __await__(self) -> Generator[Trigger, None, T]:
         return self._wait().__await__()
 
 
@@ -69,9 +69,7 @@ class _AggregateWaitable(Waitable[T]):
         )
 
 
-async def _wait_callback(
-    trigger: Union[Trigger, Waitable[object], Task[object]],
-) -> object:
+async def _wait_callback(trigger: Awaitable[T]) -> T:
     return await trigger
 
 
@@ -96,7 +94,7 @@ class Combine(_AggregateWaitable["Combine"]):
             await self._triggers[0]
         else:
             waiters: List[Task[object]] = []
-            completed: List[Task[Any]] = []
+            completed: List[Task[object]] = []
             done = _InternalEvent(self)
             exception: Union[BaseException, None] = None
 
@@ -140,7 +138,7 @@ class Combine(_AggregateWaitable["Combine"]):
         return self
 
 
-class First(_AggregateWaitable[Any]):
+class First(_AggregateWaitable[object]):
     r"""Fires when the first trigger in *triggers* fires.
 
     :keyword:`await`\ ing this object returns the result of the first trigger that fires.
@@ -175,21 +173,21 @@ class First(_AggregateWaitable[Any]):
             raise ValueError("First() requires at least one Trigger or Task argument")
         super().__init__(*trigger)
 
-    async def _wait(self) -> Any:
+    async def _wait(self) -> object:
         if len(self._triggers) == 1:
             return await self._triggers[0]
 
-        waiters: List[Task[Any]] = []
+        waiters: List[Task[object]] = []
         done = _InternalEvent(self)
-        completed: List[Task[Any]] = []
+        completed: List[Task[object]] = []
 
-        def on_done(task: Task[Any]) -> None:
+        def on_done(task: Task[object]) -> None:
             completed.append(task)
             done.set()
 
         # start a parallel task for each trigger
         for t in self._triggers:
-            task = Task[Any](_wait_callback(t))
+            task = Task[object](_wait_callback(t))
             task._add_done_callback(on_done)
             cocotb.start_soon(task)
             waiters.append(task)
@@ -305,13 +303,16 @@ class SimTimeoutError(TimeoutError):
     """Exception thrown when a timeout, in terms of simulation time, occurs."""
 
 
+TriggerT = TypeVar("TriggerT", bound=Trigger)
+
+
 @overload
 async def with_timeout(
-    trigger: Trigger,
+    trigger: TriggerT,
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
     round_mode: Optional[str] = None,
-) -> None: ...
+) -> TriggerT: ...
 
 
 @overload
@@ -334,7 +335,7 @@ async def with_timeout(
 
 @overload
 async def with_timeout(
-    trigger: Coroutine[Any, Any, T],
+    trigger: Coroutine[Trigger, None, T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
     round_mode: Optional[str] = None,
@@ -342,11 +343,11 @@ async def with_timeout(
 
 
 async def with_timeout(
-    trigger: Union[Trigger, Waitable[Any], Task[Any], Coroutine[Any, Any, Any]],
+    trigger: Union[TriggerT, Waitable[T], Task[T], Coroutine[Trigger, None, T]],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
     round_mode: Optional[str] = None,
-) -> Any:
+) -> Union[T, TriggerT]:
     r"""Wait on triggers or coroutines, throw an exception if it waits longer than the given time.
 
     When a :term:`python:coroutine` is passed,
@@ -410,8 +411,8 @@ async def with_timeout(
     if res is timeout_timer:
         if not shielded:
             # shielded = False only when trigger is a Task created to wrap a Coroutine
-            trigger = cast(Task[Any], trigger)
-            trigger.cancel()
+            task = cast(Task[object], trigger)
+            task.cancel()
         raise SimTimeoutError
     else:
-        return res
+        return cast(Union[T, TriggerT], res)
