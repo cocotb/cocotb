@@ -14,7 +14,6 @@ from typing import (
     Coroutine,
     Generator,
     List,
-    Optional,
     Type,
     TypeVar,
     Union,
@@ -310,7 +309,7 @@ async def with_timeout(
     trigger: Trigger,
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[RoundMode] = None,
+    round_mode: RoundMode = "error",
 ) -> None: ...
 
 
@@ -319,7 +318,7 @@ async def with_timeout(
     trigger: Waitable[T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[RoundMode] = None,
+    round_mode: RoundMode = "error",
 ) -> T: ...
 
 
@@ -328,7 +327,7 @@ async def with_timeout(
     trigger: Task[T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[RoundMode] = None,
+    round_mode: RoundMode = "error",
 ) -> T: ...
 
 
@@ -337,7 +336,7 @@ async def with_timeout(
     trigger: Coroutine[Any, Any, T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[RoundMode] = None,
+    round_mode: RoundMode = "error",
 ) -> T: ...
 
 
@@ -345,7 +344,7 @@ async def with_timeout(
     trigger: Union[Trigger, Waitable[Any], Task[Any], Coroutine[Any, Any, Any]],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[RoundMode] = None,
+    round_mode: RoundMode = "error",
 ) -> Any:
     r"""Wait on triggers or coroutines, throw an exception if it waits longer than the given time.
 
@@ -383,8 +382,7 @@ async def with_timeout(
             Unit of timeout_time, accepts any unit that :class:`~cocotb.triggers.Timer` does.
         round_mode:
             String specifying how to handle time values that sit between time steps
-            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``, ``None``).
-            The default of ``None`` means ``'error'``.
+            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
 
     Returns:
         First trigger that completed if timeout did not occur.
@@ -400,6 +398,8 @@ async def with_timeout(
     .. versionchanged:: 2.0
         Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
 
+    .. versionchanged:: 2.0
+        Passing ``None`` as the *round_mode* argument was removed, use ``'error'`` instead.
     """
     if isinstance(trigger, Coroutine):
         trigger = cocotb.start_soon(trigger)
