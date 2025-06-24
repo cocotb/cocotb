@@ -139,7 +139,7 @@ class TestFactory:
             Groups of options are now supported
         """
         if not isinstance(name, str):
-            optionlist = cast(Sequence[Sequence[object]], optionlist)
+            optionlist = cast("Sequence[Sequence[object]]", optionlist)
             for opt in optionlist:
                 if len(name) != len(opt):
                     raise ValueError(
@@ -240,7 +240,7 @@ class TestFactory:
             postfix = ""
 
         # trust the user puts a reasonable stacklevel in
-        glbs = cast(FrameType, inspect.stack()[stacklevel][0].f_back).f_globals
+        glbs = cast("FrameType", inspect.stack()[stacklevel][0].f_back).f_globals
 
         test_func_name = self.test_function.__qualname__ if name is None else name
 
@@ -254,18 +254,18 @@ class TestFactory:
             testoptions_split: Dict[str, Sequence[object]] = {}
             for optname, optvalue in testoptions.items():
                 if isinstance(optname, str):
-                    optvalue = cast(Sequence[object], optvalue)
+                    optvalue = cast("Sequence[object]", optvalue)
                     testoptions_split[optname] = optvalue
                 else:
                     # previously checked in add_option; ensure nothing has changed
-                    optvalue = cast(Sequence[Sequence[object]], optvalue)
+                    optvalue = cast("Sequence[Sequence[object]]", optvalue)
                     assert len(optname) == len(optvalue)
                     for n, v in zip(optname, optvalue):
                         testoptions_split[n] = v
 
             for optname, optvalue in testoptions_split.items():
                 if callable(optvalue):
-                    optvalue = cast(FunctionType, optvalue)
+                    optvalue = cast("FunctionType", optvalue)
                     if optvalue.__doc__ is None:
                         desc = "No docstring supplied"
                     else:
