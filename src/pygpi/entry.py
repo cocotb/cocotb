@@ -36,6 +36,6 @@ def load_entry(argv: List[str]) -> None:
     for entry_module_str, entry_func_str in entry_points:
         entry_module = importlib.import_module(entry_module_str)
         entry_func: Callable[[List[str]], object] = reduce(
-            getattr, entry_func_str.split("."), cast(Any, entry_module)
+            getattr, entry_func_str.split("."), cast("Any", entry_module)
         )
         entry_func(argv)

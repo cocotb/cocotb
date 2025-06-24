@@ -411,8 +411,8 @@ async def with_timeout(
     if res is timeout_timer:
         if not shielded:
             # shielded = False only when trigger is a Task created to wrap a Coroutine
-            task = cast(Task[object], trigger)
+            task = cast("Task[object]", trigger)
             task.cancel()
         raise SimTimeoutError
     else:
-        return cast(Union[T, TriggerT], res)
+        return cast("T | TriggerT", res)

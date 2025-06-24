@@ -231,7 +231,7 @@ class Array(AbstractArray[T]):
     ) -> None:
         if isinstance(item, int):
             idx = self._translate_index(item)
-            self._value[idx] = cast(T, value)
+            self._value[idx] = cast("T", value)
         elif isinstance(item, slice):
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
@@ -243,7 +243,7 @@ class Array(AbstractArray[T]):
                 raise IndexError(
                     f"slice [{start}:{stop}] direction does not match array direction [{self.left}:{self.right}]"
                 )
-            value = list(cast(Iterable[T], value))
+            value = list(cast("Iterable[T]", value))
             if len(value) != (stop_i - start_i + 1):
                 raise ValueError(
                     f"value of length {len(value)!r} will not fit in slice [{start}:{stop}]"

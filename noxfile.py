@@ -187,7 +187,7 @@ def dev_test_sim(
 
     cocotb_pkg_dir = Path(
         cast(
-            str,
+            "str",
             session.run(
                 "python", "-c", "import cocotb; print(cocotb.__file__)", silent=True
             ),

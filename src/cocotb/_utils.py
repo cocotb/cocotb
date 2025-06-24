@@ -93,7 +93,9 @@ def remove_traceback_frames(
     if isinstance(tb_or_exc, BaseException):
         exc: BaseException = tb_or_exc
         return exc.with_traceback(
-            remove_traceback_frames(cast(TracebackType, exc.__traceback__), frame_names)
+            remove_traceback_frames(
+                cast("TracebackType", exc.__traceback__), frame_names
+            )
         )
     elif isinstance(tb_or_exc, tuple):
         exc_type, exc_value, exc_tb = tb_or_exc
@@ -105,7 +107,7 @@ def remove_traceback_frames(
         for frame_name in frame_names:
             # the assert and cast are there assuming the frame_names being removed are correct
             assert tb.tb_frame.f_code.co_name == frame_name
-            tb = cast(TracebackType, tb.tb_next)
+            tb = cast("TracebackType", tb.tb_next)
         return tb
 
 

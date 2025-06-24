@@ -130,7 +130,7 @@ class Parameterized:
                 transformed: Dict[str, List[object]] = {}
                 for nam_idx, nam in enumerate(name):
                     transformed[nam] = []
-                    for value_array in cast(Sequence[Sequence[object]], values):
+                    for value_array in cast("Sequence[Sequence[object]]", values):
                         value = value_array[nam_idx]
                         transformed[nam].append(value)
                 for n, vs in transformed.items():
@@ -153,14 +153,14 @@ class Parameterized:
 
                 if isinstance(option_name, str):
                     # single params per option
-                    selected_value = cast(Sequence[object], selected_value)
+                    selected_value = cast("Sequence[object]", selected_value)
                     test_kwargs[option_name] = selected_value
                     test_name_pieces.append(
                         f"/{option_name}={self._option_reprs[option_name][select_idx]}"
                     )
                 else:
                     # multiple params per option
-                    selected_value = cast(Sequence[object], selected_value)
+                    selected_value = cast("Sequence[object]", selected_value)
                     for n, v in zip(option_name, selected_value):
                         test_kwargs[n] = v
                         test_name_pieces.append(
@@ -495,7 +495,7 @@ def parametrize(
             for n in name:
                 if not n.isidentifier():
                     raise ValueError("Option names must be valid Python identifiers")
-            values = cast(Sequence[Sequence[object]], values)
+            values = cast("Sequence[Sequence[object]]", values)
             for value in values:
                 if len(name) != len(value):
                     raise ValueError(
