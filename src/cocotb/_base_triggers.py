@@ -9,7 +9,6 @@
 import logging
 import warnings
 from typing import (
-    Any,
     AsyncContextManager,
     Callable,
     Generator,
@@ -153,7 +152,7 @@ class Event:
             )
             self.name = name
         self._fired: bool = False
-        self._data: Any = None
+        self._data: object = None
 
     @property
     @deprecated("The 'name' field will be removed in a future release.")
@@ -172,7 +171,7 @@ class Event:
 
     @property
     @deprecated("The data field will be removed in a future release.")
-    def data(self) -> Any:
+    def data(self) -> object:
         """The data associated with the Event.
 
         .. deprecated:: 2.0
@@ -183,10 +182,10 @@ class Event:
 
     @data.setter
     @deprecated("The data field will be removed in a future release.")
-    def data(self, new_data: Any) -> None:
+    def data(self, new_data: object) -> None:
         self._data = new_data
 
-    def set(self, data: Optional[Any] = None) -> None:
+    def set(self, data: Optional[object] = None) -> None:
         """Set the Event and unblock all Tasks blocked on this Event."""
         self._fired = True
         if data is not None:
@@ -426,7 +425,7 @@ class Lock(AsyncContextManager[None]):
     async def __aenter__(self) -> None:
         await self.acquire()
 
-    async def __aexit__(self, *args: Any) -> None:
+    async def __aexit__(self, *args: object) -> None:
         self.release()
 
 

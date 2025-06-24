@@ -19,7 +19,7 @@ from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._test_functions import TestSuccess
 from cocotb.task import ResultType, Task
-from cocotb.triggers import NullTrigger
+from cocotb.triggers import NullTrigger, Trigger
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
@@ -45,8 +45,8 @@ class RunningTest:
 
         self.tasks: List[Task[Any]] = [main_task]
 
-        self._outcome: Union[None, Outcome[Any]] = None
-        self._shutdown_errors: list[Outcome[Any]] = []
+        self._outcome: Union[None, Outcome[None]] = None
+        self._shutdown_errors: list[Outcome[None]] = []
 
     def _test_done_callback(self, task: Task[None]) -> None:
         self.tasks.remove(task)
@@ -61,7 +61,7 @@ class RunningTest:
             self.abort(Value(task.result()))
         elif isinstance(e, TestSuccess):
             task._log.info("Test stopped early by this task")
-            self.abort(Value(e))
+            self.abort(Value(None))
         else:
             task._log.warning(e, exc_info=e)
             self.abort(Error(e))
@@ -70,7 +70,7 @@ class RunningTest:
         cocotb._scheduler_inst._schedule_task_internal(self._main_task)
         cocotb._scheduler_inst._event_loop()
 
-    def result(self) -> Outcome[Any]:
+    def result(self) -> Outcome[None]:
         if self._outcome is None:  # pragma: no cover
             raise InternalError("Getting result before test is completed")
 
@@ -78,7 +78,7 @@ class RunningTest:
             return self._shutdown_errors[0]
         return self._outcome
 
-    def abort(self, outcome: Outcome[Any]) -> None:
+    def abort(self, outcome: Outcome[None]) -> None:
         """Force this test to end early."""
 
         # If we are shutting down, save any errors
@@ -117,14 +117,14 @@ class RunningTest:
         # there was a failure and no one is watching, fail test
         elif isinstance(e, TestSuccess):
             task._log.info("Test stopped early by this task")
-            self.abort(Value(e))
+            self.abort(Value(None))
         else:
             task._log.warning(e, exc_info=e)
             self.abort(Error(e))
 
 
 def start_soon(
-    coro: Union[Task[ResultType], Coroutine[Any, Any, ResultType]],
+    coro: Union[Task[ResultType], Coroutine[Trigger, None, ResultType]],
     *,
     name: Optional[str] = None,
 ) -> Task[ResultType]:
@@ -153,7 +153,7 @@ def start_soon(
 
 @deprecated("Use ``cocotb.start_soon`` instead.")
 async def start(
-    coro: Union[Task[ResultType], Coroutine[Any, Any, ResultType]],
+    coro: Union[Task[ResultType], Coroutine[Trigger, None, ResultType]],
     *,
     name: Optional[str] = None,
 ) -> Task[ResultType]:
@@ -200,7 +200,7 @@ async def start(
 
 
 def create_task(
-    coro: Union[Task[ResultType], Coroutine[Any, Any, ResultType]],
+    coro: Union[Task[ResultType], Coroutine[Trigger, None, ResultType]],
     *,
     name: Optional[str] = None,
 ) -> Task[ResultType]:

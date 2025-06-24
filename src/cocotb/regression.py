@@ -423,7 +423,7 @@ class RegressionManager:
 
     def _score_test(
         self,
-        outcome: Outcome[Any],
+        outcome: Outcome[None],
         wall_time_s: float,
         sim_time_ns: float,
     ) -> None:

@@ -9,7 +9,6 @@ import inspect
 from enum import Enum
 from itertools import product
 from typing import (
-    Any,
     Callable,
     Coroutine,
     Dict,
@@ -112,7 +111,8 @@ class Parameterized:
         test_function: TestFuncType,
         options: List[
             Union[
-                Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
+                Tuple[str, Sequence[object]],
+                Tuple[Sequence[str], Sequence[Sequence[object]]],
             ]
         ],
     ) -> None:
@@ -127,10 +127,10 @@ class Parameterized:
                 self._option_reprs[name] = _reprs(values)
             else:
                 # transform to Dict[name, values]
-                transformed: Dict[str, List[Optional[str]]] = {}
+                transformed: Dict[str, List[object]] = {}
                 for nam_idx, nam in enumerate(name):
                     transformed[nam] = []
-                    for value_array in cast(Sequence[Sequence[Any]], values):
+                    for value_array in cast(Sequence[Sequence[object]], values):
                         value = value_array[nam_idx]
                         transformed[nam].append(value)
                 for n, vs in transformed.items():
@@ -145,7 +145,7 @@ class Parameterized:
 
         # go through the cartesian product of all values of all options
         for selected_options in product(*option_indexes):
-            test_kwargs: Dict[str, Sequence[Any]] = {}
+            test_kwargs: Dict[str, object] = {}
             test_name_pieces: List[str] = [test_func_name]
             for option_idx, select_idx in enumerate(selected_options):
                 option_name, option_values = self.options[option_idx]
@@ -153,14 +153,14 @@ class Parameterized:
 
                 if isinstance(option_name, str):
                     # single params per option
-                    selected_value = cast(Sequence[Any], selected_value)
+                    selected_value = cast(Sequence[object], selected_value)
                     test_kwargs[option_name] = selected_value
                     test_name_pieces.append(
                         f"/{option_name}={self._option_reprs[option_name][select_idx]}"
                     )
                 else:
                     # multiple params per option
-                    selected_value = cast(Sequence[Any], selected_value)
+                    selected_value = cast(Sequence[object], selected_value)
                     for n, v in zip(option_name, selected_value):
                         test_kwargs[n] = v
                         test_name_pieces.append(
@@ -172,7 +172,7 @@ class Parameterized:
             # create wrapper function to bind kwargs
             @functools.wraps(test_func)
             async def _my_test(
-                dut: object, kwargs: Dict[str, Any] = test_kwargs
+                dut: object, kwargs: Dict[str, object] = test_kwargs
             ) -> None:
                 await test_func(dut, **kwargs)
 
@@ -188,7 +188,7 @@ class Parameterized:
             )
 
 
-def _reprs(values: Sequence[Any]) -> List[str]:
+def _reprs(values: Sequence[object]) -> List[str]:
     result: List[str] = []
     for value in values:
         value_repr = _repr(value)
@@ -200,7 +200,7 @@ def _reprs(values: Sequence[Any]) -> List[str]:
     return result
 
 
-def _repr(v: Any) -> Optional[str]:
+def _repr(v: object) -> Optional[str]:
     if isinstance(v, Enum):
         return v.name
     elif isinstance(v, str):
@@ -413,9 +413,9 @@ def test(
 
 def parametrize(
     *options_by_tuple: Union[
-        Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
+        Tuple[str, Sequence[object]], Tuple[Sequence[str], Sequence[Sequence[object]]]
     ],
-    **options_by_name: Sequence[Any],
+    **options_by_name: Sequence[object],
 ) -> Callable[[TestFuncType], Parameterized]:
     """Decorator to generate parametrized tests from a single test function.
 
@@ -495,7 +495,7 @@ def parametrize(
             for n in name:
                 if not n.isidentifier():
                     raise ValueError("Option names must be valid Python identifiers")
-            values = cast(Sequence[Sequence[Any]], values)
+            values = cast(Sequence[Sequence[object]], values)
             for value in values:
                 if len(name) != len(value):
                     raise ValueError(
