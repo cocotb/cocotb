@@ -25,7 +25,7 @@ from typing import (
 import cocotb.handle
 from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
-from cocotb._typing import TimeUnit
+from cocotb._typing import RoundMode, TimeUnit
 from cocotb.task import Task
 
 T = TypeVar("T")
@@ -311,7 +311,7 @@ async def with_timeout(
     trigger: TriggerT,
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
+    round_mode: Optional[RoundMode] = None,
 ) -> TriggerT: ...
 
 
@@ -320,7 +320,7 @@ async def with_timeout(
     trigger: Waitable[T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
+    round_mode: Optional[RoundMode] = None,
 ) -> T: ...
 
 
@@ -329,7 +329,7 @@ async def with_timeout(
     trigger: Task[T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
+    round_mode: Optional[RoundMode] = None,
 ) -> T: ...
 
 
@@ -338,7 +338,7 @@ async def with_timeout(
     trigger: Coroutine[Trigger, None, T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
+    round_mode: Optional[RoundMode] = None,
 ) -> T: ...
 
 
@@ -346,7 +346,7 @@ async def with_timeout(
     trigger: Union[TriggerT, Waitable[T], Task[T], Coroutine[Trigger, None, T]],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
+    round_mode: Optional[RoundMode] = None,
 ) -> Union[T, TriggerT]:
     r"""Wait on triggers or coroutines, throw an exception if it waits longer than the given time.
 
@@ -384,7 +384,8 @@ async def with_timeout(
             Unit of timeout_time, accepts any unit that :class:`~cocotb.triggers.Timer` does.
         round_mode:
             String specifying how to handle time values that sit between time steps
-            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
+            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``, ``None``).
+            The default of ``None`` means ``'error'``.
 
     Returns:
         First trigger that completed if timeout did not occur.

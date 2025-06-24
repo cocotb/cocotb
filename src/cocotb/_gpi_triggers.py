@@ -25,7 +25,7 @@ from cocotb import simulator
 from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import Self
-from cocotb._typing import TimeUnit
+from cocotb._typing import RoundMode, TimeUnit
 from cocotb._utils import pointer_str, singleton
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
@@ -72,7 +72,8 @@ class Timer(GPITrigger):
         round_mode:
 
             String specifying how to handle time values that sit between time steps
-            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
+            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``, ``None``).
+            The default of ``None`` means ``'error'``.
 
     Raises:
         ValueError: If a non-positive value is passed for Timer setup.
@@ -120,7 +121,7 @@ class Timer(GPITrigger):
         Passing ``0`` as the *time* argument now raises a :exc:`ValueError`.
     """
 
-    round_mode: str = "error"
+    round_mode: RoundMode = "error"
     """The default rounding mode."""
 
     def __init__(
@@ -128,7 +129,7 @@ class Timer(GPITrigger):
         time: Union[float, Fraction, Decimal],
         unit: TimeUnit = "step",
         *,
-        round_mode: Optional[str] = None,
+        round_mode: Optional[RoundMode] = None,
         units: None = None,
     ) -> None:
         super().__init__()
