@@ -400,17 +400,17 @@ Make autolinks to reference documentation less prominent
 Classes that are manually set (using :class:)
 on e.g. .. code-block:: in the "Upgrading to cocotb 2.0" section
 */
-.removed {
+.removed.highlight-python {
     border-left: 0.2rem solid;
     border-color: var(--color-cocotb-red);
 }
 
-.deprecated {
+.deprecated.highlight-python {
     border-left: 0.2rem solid;
     border-color: var(--color-cocotb-yellow);
 }
 
-.new {
+.new.highlight-python {
     border-left: 0.2rem solid;
     border-color: var(--color-cocotb-green);
 }
