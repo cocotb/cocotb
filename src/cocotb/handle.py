@@ -160,7 +160,7 @@ class SimHandleBase(ABC):
     def __hash__(self) -> int:
         return hash(self._handle)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, SimHandleBase):
             return NotImplemented
         return self._handle == other._handle
@@ -455,7 +455,7 @@ class HierarchyObject(_HierarchyObjectBase[str]):
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         # private attributes pass through directly
         if name.startswith("_"):
             return object.__setattr__(self, name, value)
@@ -1350,7 +1350,7 @@ class LogicArrayObject(
     def _len(self) -> int:
         return self._handle.get_num_elems()
 
-    def __getitem__(self, _: Any) -> NoReturn:
+    def __getitem__(self, _: object) -> NoReturn:
         raise TypeError(
             "Packed objects, either arrays or structs, cannot be indexed.\n"
             "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"

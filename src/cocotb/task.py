@@ -11,7 +11,6 @@ from bdb import BdbQuit
 from enum import auto
 from types import CoroutineType
 from typing import (
-    Any,
     Callable,
     Coroutine,
     Generator,
@@ -100,7 +99,7 @@ class Task(Generic[ResultType]):
         self._state: _TaskState = _TaskState.UNSTARTED
         self._outcome: Union[Outcome[ResultType], None] = None
         self._trigger: Union[Trigger, None] = None
-        self._done_callbacks: List[Callable[[Task[ResultType]], Any]] = []
+        self._done_callbacks: List[Callable[[Task[ResultType]], None]] = []
         self._cancelled_msg: Union[str, None] = None
         self._must_cancel: bool = False
 
@@ -429,7 +428,9 @@ class Task(Generic[ResultType]):
         else:
             raise InvalidStateError("result is not yet available")
 
-    def _add_done_callback(self, callback: Callable[["Task[ResultType]"], Any]) -> None:
+    def _add_done_callback(
+        self, callback: Callable[["Task[ResultType]"], None]
+    ) -> None:
         """Add *callback* to the list of callbacks to be run once the Task becomes "done".
 
         Args:

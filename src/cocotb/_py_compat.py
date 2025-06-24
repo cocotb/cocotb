@@ -84,30 +84,13 @@ if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from functools import update_wrapper
-    from typing import Any, Callable, Generic, Type, TypeVar, Union, overload
 
-    T_co = TypeVar("T_co", covariant=True)
-
-    class cached_property(Generic[T_co]):
-        def __init__(self, method: Callable[..., T_co]) -> None:
+    class cached_property:
+        def __init__(self, method):
             self._method = method
-            update_wrapper(self, method)  # type: ignore[arg-type]
+            update_wrapper(self, method)
 
-        @overload
-        def __get__(
-            self, instance: None, owner: Union[Type[Any], None] = None
-        ) -> "cached_property[T_co]": ...
-
-        @overload
-        def __get__(
-            self, instance: object, owner: Union[Type[Any], None] = None
-        ) -> T_co: ...
-
-        def __get__(
-            self,
-            instance: Union[object, None],
-            owner: Union[Type[Any], None] = None,
-        ) -> Union["cached_property[T_co]", T_co]:
+        def __get__(self, instance, owner=None):
             if instance is None:
                 return self
             res = self._method(instance)

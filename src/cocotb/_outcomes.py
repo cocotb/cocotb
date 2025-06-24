@@ -6,14 +6,18 @@ or :any:`asyncio.Future`, but without being tied to a particular task model.
 """
 
 import abc
-from typing import Any, Callable, Coroutine, Generic, TypeVar
+from typing import Callable, Generic, TypeVar
 
+from cocotb._py_compat import ParamSpec
 from cocotb._utils import remove_traceback_frames
 
 T = TypeVar("T")
+P = ParamSpec("P")
 
 
-def capture(fn: Callable[..., T], *args: Any, **kwargs: Any) -> "Outcome[T]":
+def capture(
+    fn: "Callable[P, T]", *args: "P.args", **kwargs: "P.kwargs"
+) -> "Outcome[T]":
     """Obtain an `Outcome` representing the result of a function call."""
     try:
         return Value(fn(*args, **kwargs))
@@ -22,11 +26,7 @@ def capture(fn: Callable[..., T], *args: Any, **kwargs: Any) -> "Outcome[T]":
         return Error(e)
 
 
-class Outcome(Generic[T], metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def send(self, coro: Coroutine[Any, T, Any]) -> Any:
-        """Send or throw this outcome into a coroutine."""
-
+class Outcome(Generic[T]):
     @abc.abstractmethod
     def get(self) -> T:
         """Get the value of this outcome, or throw its exception."""
@@ -35,9 +35,6 @@ class Outcome(Generic[T], metaclass=abc.ABCMeta):
 class Value(Outcome[T]):
     def __init__(self, value: T):
         self.value = value
-
-    def send(self, coro: Coroutine[Any, T, Any]) -> Any:
-        return coro.send(self.value)
 
     def get(self) -> T:
         return self.value
@@ -49,9 +46,6 @@ class Value(Outcome[T]):
 class Error(Outcome[T]):
     def __init__(self, error: BaseException) -> None:
         self.error = error
-
-    def send(self, coro: Coroutine[Any, T, Any]) -> Any:
-        return coro.throw(self.error)
 
     def get(self) -> T:
         raise self.error
