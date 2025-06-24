@@ -406,7 +406,7 @@ class Task(Generic[ResultType]):
         if self._state is _TaskState.CANCELLED:
             raise self._cancelled_error
         elif self._state is _TaskState.FINISHED:
-            return cast(Outcome[ResultType], self._outcome).get()
+            return cast("Outcome[ResultType]", self._outcome).get()
         else:
             raise InvalidStateError("result is not yet available")
 

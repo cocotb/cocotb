@@ -893,10 +893,10 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             self._set_value(value.value, _GPISetAction.FORCE)
         elif isinstance(value, Freeze):
             # We assume that ValueSetT >= ValueGetT
-            self._set_value(cast(ValueSetT, self.get()), _GPISetAction.FORCE)
+            self._set_value(cast("ValueSetT", self.get()), _GPISetAction.FORCE)
         elif isinstance(value, Release):
             # We assume that ValueSetT >= ValueGetT
-            self._set_value(cast(ValueSetT, self.get()), _GPISetAction.RELEASE)
+            self._set_value(cast("ValueSetT", self.get()), _GPISetAction.RELEASE)
         elif isinstance(value, Immediate):
             self._set_value(value.value, _GPISetAction.NO_DELAY)
         else:
@@ -1071,7 +1071,7 @@ class ArrayObject(
             raise IndexError(f"{self._path} contains no object at index {index}")
         path = self._path + "[" + str(index) + "]"
         self._sub_handles[index] = cast(
-            ChildObjectT, _make_sim_object(new_handle, path)
+            "ChildObjectT", _make_sim_object(new_handle, path)
         )
         return self._sub_handles[index]
 

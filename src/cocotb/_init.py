@@ -142,7 +142,7 @@ def _process_packages() -> None:
 
     for pkg in pkgs:
         handle = cast(
-            cocotb.handle.HierarchyObject, cocotb.handle._make_sim_object(pkg)
+            "cocotb.handle.HierarchyObject", cocotb.handle._make_sim_object(pkg)
         )
         name = handle._name
 
