@@ -18,10 +18,8 @@ import warnings
 from enum import auto
 from importlib import import_module
 from typing import (
-    Any,
     Callable,
     Coroutine,
-    Dict,
     List,
     Union,
 )
@@ -41,6 +39,7 @@ from cocotb._test_functions import Failed
 from cocotb._utils import (
     DocEnum,
     remove_traceback_frames,
+    safe_divide,
     want_color_output,
 )
 from cocotb._xunit_reporter import XUnitReporter
@@ -91,6 +90,26 @@ class RegressionMode(DocEnum):
     )
 
 
+class _TestResults:
+    # TODO Replace with dataclass in Python 3.7+
+
+    def __init__(
+        self,
+        test_fullname: str,
+        passed: Union[None, bool],
+        wall_time_s: float,
+        sim_time_ns: float,
+    ) -> None:
+        self.test_fullname = test_fullname
+        self.passed = passed
+        self.wall_time_s = wall_time_s
+        self.sim_time_ns = sim_time_ns
+
+    @property
+    def ratio(self) -> float:
+        return safe_divide(self.sim_time_ns, self.wall_time_s)
+
+
 class RegressionManager:
     """Object which manages tests.
 
@@ -116,7 +135,7 @@ class RegressionManager:
         self._running_test: RunningTest
         self.log = _logger
         self._regression_start_time: float
-        self._test_results: List[Dict[str, Any]] = []
+        self._test_results: List[_TestResults] = []
         self.total_tests = 0
         """Total number of tests that will be run or skipped."""
         self.count = 0
@@ -581,12 +600,12 @@ class RegressionManager:
 
         # save details for summary
         self._test_results.append(
-            {
-                "test": self._test.fullname,
-                "pass": None,
-                "sim": 0,
-                "real": 0,
-            }
+            _TestResults(
+                test_fullname=self._test.fullname,
+                passed=None,
+                sim_time_ns=0,
+                wall_time_s=0,
+            )
         )
 
         # update running passed/failed/skipped counts
@@ -624,13 +643,12 @@ class RegressionManager:
 
         # save details for summary
         self._test_results.append(
-            {
-                "test": self._test.fullname,
-                "pass": False,
-                "sim": 0,
-                "real": 0,
-                "ratio": self._safe_divide(0, 0),
-            }
+            _TestResults(
+                test_fullname=self._test.fullname,
+                passed=False,
+                sim_time_ns=0,
+                wall_time_s=0,
+            )
         )
 
         # update running passed/failed/skipped counts
@@ -664,7 +682,7 @@ class RegressionManager:
         )
 
         # write out xunit results
-        ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
+        ratio_time = safe_divide(sim_time_ns, wall_time_s)
         lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
@@ -682,13 +700,12 @@ class RegressionManager:
 
         # save details for summary
         self._test_results.append(
-            {
-                "test": self._test.fullname,
-                "pass": True,
-                "sim": sim_time_ns,
-                "real": wall_time_s,
-                "ratio": ratio_time,
-            }
+            _TestResults(
+                test_fullname=self._test.fullname,
+                passed=True,
+                sim_time_ns=sim_time_ns,
+                wall_time_s=wall_time_s,
+            )
         )
 
     def _record_test_failed(
@@ -714,7 +731,7 @@ class RegressionManager:
         )
 
         # write out xunit results
-        ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
+        ratio_time = safe_divide(sim_time_ns, wall_time_s)
         lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
@@ -733,20 +750,19 @@ class RegressionManager:
 
         # save details for summary
         self._test_results.append(
-            {
-                "test": self._test.fullname,
-                "pass": False,
-                "sim": sim_time_ns,
-                "real": wall_time_s,
-                "ratio": ratio_time,
-            }
+            _TestResults(
+                test_fullname=self._test.fullname,
+                passed=False,
+                sim_time_ns=sim_time_ns,
+                wall_time_s=wall_time_s,
+            )
         )
 
     def _log_test_summary(self) -> None:
         """Called by :meth:`_tear_down` to log the test summary."""
         real_time = time.time() - self._regression_start_time
         sim_time_ns = get_sim_time("ns")
-        ratio_time = self._safe_divide(sim_time_ns, real_time)
+        ratio_time = safe_divide(sim_time_ns, real_time)
 
         if len(self._test_results) == 0:
             return
@@ -761,7 +777,7 @@ class RegressionManager:
         TEST_FIELD_LEN = max(
             len(TEST_FIELD),
             len(TOTAL_NAME),
-            len(max([x["test"] for x in self._test_results], key=len)),
+            len(max([x.test_fullname for x in self._test_results], key=len)),
         )
         RESULT_FIELD_LEN = len(RESULT_FIELD)
         SIM_FIELD_LEN = len(SIM_FIELD)
@@ -809,30 +825,30 @@ class RegressionManager:
             hilite = ""
             lolite = ""
 
-            if result["pass"] is None:
+            if result.passed is None:
                 ratio = "-.--"
                 pass_fail_str = "SKIP"
                 if want_color_output():
                     hilite = _ANSI.COLOR_SKIPPED
                     lolite = _ANSI.COLOR_DEFAULT
-            elif result["pass"]:
-                ratio = format(result["ratio"], "0.2f")
+            elif result.passed:
+                ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "PASS"
                 if want_color_output():
                     hilite = _ANSI.COLOR_PASSED
                     lolite = _ANSI.COLOR_DEFAULT
             else:
-                ratio = format(result["ratio"], "0.2f")
+                ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "FAIL"
                 if want_color_output():
                     hilite = _ANSI.COLOR_FAILED
                     lolite = _ANSI.COLOR_DEFAULT
 
             test_dict = {
-                "a": result["test"],
+                "a": result.test_fullname,
                 "b": pass_fail_str,
-                "c": result["sim"],
-                "d": result["real"],
+                "c": result.sim_time_ns,
+                "d": result.wall_time_s,
                 "e": ratio,
                 "a_len": TEST_FIELD_LEN,
                 "b_len": RESULT_FIELD_LEN,
@@ -870,14 +886,3 @@ class RegressionManager:
         self._sim_failure = Error(SimFailure(msg))
         self._running_test.abort(self._sim_failure)
         cocotb._scheduler_inst._event_loop()
-
-    @staticmethod
-    def _safe_divide(a: float, b: float) -> float:
-        """Used when computing time ratios to ensure no exception is raised if either time is 0."""
-        try:
-            return a / b
-        except ZeroDivisionError:
-            if a == 0:
-                return float("nan")
-            else:
-                return float("inf")
