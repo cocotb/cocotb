@@ -281,3 +281,14 @@ def pointer_str(obj: object) -> str:
     """
     full_repr = object.__repr__(obj)  # gives "<{type} object at {address}>"
     return full_repr.rsplit(" ", 1)[1][:-1]
+
+
+def safe_divide(a: float, b: float) -> float:
+    """Used when computing time ratios to ensure no exception is raised if either time is 0."""
+    try:
+        return a / b
+    except ZeroDivisionError:
+        if a == 0:
+            return float("nan")
+        else:
+            return float("inf")
