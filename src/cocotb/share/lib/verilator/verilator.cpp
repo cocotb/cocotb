@@ -25,8 +25,7 @@ using verilated_trace_t = VerilatedFstC;
 #include <verilated_vcd_c.h>
 using verilated_trace_t = VerilatedVcdC;
 #endif
-#else
-using verilated_trace_t = void*;  // arbitrary type with no tracing
+static verilated_trace_t* tfp;
 #endif
 
 static vluint64_t main_time = 0;  // Current simulation time
@@ -54,17 +53,25 @@ static inline bool settle_value_callbacks() {
     return cbs_called;
 }
 
-void wrap_up(void* tfp) {
+void wrap_up() {
     VerilatedVpi::callCbs(cbEndOfSimulation);
-    if (tfp) {
+
 #if VM_TRACE
-        reinterpret_cast<verilated_trace_t*>(tfp)->close();
-#endif
+    if (tfp) {
+        delete tfp;
+        tfp = nullptr;
     }
+#endif
+
+    // VM_COVERAGE is a define which is set if Verilator is
+    // instructed to collect coverage (when compiling the simulation)
+#if VM_COVERAGE
+    VerilatedCov::write();  // Uses +verilator+coverage+file+<filename>,
+                            // defaults to coverage.dat
+#endif
 }
 
 int main(int argc, char** argv) {
-    bool traceOn = false;
 #if VM_TRACE_FST
     const char* traceFile = "dump.fst";
 #else
@@ -74,8 +81,9 @@ int main(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
         std::string arg = std::string(argv[i]);
         if (arg == "--trace") {
-            traceOn = true;
-#if !VM_TRACE
+#if VM_TRACE
+            tfp = new verilated_trace_t;
+#else
             fprintf(stderr,
                     "Error: --trace requires the design to be built with trace "
                     "support\n");
@@ -114,18 +122,16 @@ int main(int argc, char** argv) {
     Verilated::internalsDump();
 #endif
 
-    std::unique_ptr<verilated_trace_t> tfp;
 #if VM_TRACE
     Verilated::traceEverOn(true);
-    if (traceOn) {
-        tfp = std::make_unique<verilated_trace_t>();
-        top->trace(tfp.get(), 99);
+    if (tfp) {
+        top->trace(tfp, 99);
         tfp->open(traceFile);
     }
 #endif
 
     vlog_startup_routines_bootstrap();
-    Verilated::addExitCb(wrap_up, tfp.get());
+    Verilated::addExitCb([](void*) { wrap_up(); }, nullptr);
     VerilatedVpi::callCbs(cbStartOfSimulation);
     settle_value_callbacks();
 
@@ -187,14 +193,7 @@ int main(int argc, char** argv) {
 
     top->final();
 
-    wrap_up(tfp.get());
-
-// VM_COVERAGE is a define which is set if Verilator is
-// instructed to collect coverage (when compiling the simulation)
-#if VM_COVERAGE
-    VerilatedCov::write();  // Uses +verilator+coverage+file+<filename>,
-                            // defaults to coverage.dat
-#endif
+    wrap_up();
 
     return 0;
 }
