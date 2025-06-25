@@ -12,6 +12,7 @@ def load_entry(argv: List[str]) -> None:
         ",".join(
             (
                 "cocotb_tools._coverage:start_cocotb_library_coverage",
+                "cocotb._init:init_logging",
                 "cocotb._init:init_package_from_simulation",
                 "cocotb._init:run_regression",
             )
