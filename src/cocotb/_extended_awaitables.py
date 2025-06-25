@@ -14,7 +14,6 @@ from typing import (
     Coroutine,
     Generator,
     List,
-    Optional,
     Type,
     TypeVar,
     Union,
@@ -25,7 +24,7 @@ from typing import (
 import cocotb.handle
 from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
-from cocotb._typing import TimeUnit
+from cocotb._typing import RoundMode, TimeUnit
 from cocotb.task import Task
 
 T = TypeVar("T")
@@ -310,7 +309,7 @@ async def with_timeout(
     trigger: Trigger,
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
+    round_mode: RoundMode = "error",
 ) -> None: ...
 
 
@@ -319,7 +318,7 @@ async def with_timeout(
     trigger: Waitable[T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
+    round_mode: RoundMode = "error",
 ) -> T: ...
 
 
@@ -328,7 +327,7 @@ async def with_timeout(
     trigger: Task[T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
+    round_mode: RoundMode = "error",
 ) -> T: ...
 
 
@@ -337,7 +336,7 @@ async def with_timeout(
     trigger: Coroutine[Any, Any, T],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
+    round_mode: RoundMode = "error",
 ) -> T: ...
 
 
@@ -345,7 +344,7 @@ async def with_timeout(
     trigger: Union[Trigger, Waitable[Any], Task[Any], Coroutine[Any, Any, Any]],
     timeout_time: Union[float, Decimal],
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
+    round_mode: RoundMode = "error",
 ) -> Any:
     r"""Wait on triggers or coroutines, throw an exception if it waits longer than the given time.
 
@@ -399,6 +398,8 @@ async def with_timeout(
     .. versionchanged:: 2.0
         Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
 
+    .. versionchanged:: 2.0
+        Passing ``None`` as the *round_mode* argument was removed, use ``'error'`` instead.
     """
     if isinstance(trigger, Coroutine):
         trigger = cocotb.start_soon(trigger)
