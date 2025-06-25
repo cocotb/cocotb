@@ -68,17 +68,18 @@ def default_config() -> None:
 
     .. versionadded:: 1.4
     """
-    # construct an appropriate handler
-    hdlr = logging.StreamHandler(sys.stdout)
-    hdlr.addFilter(SimTimeContextFilter())
-    if want_color_output():
-        hdlr.setFormatter(SimColourLogFormatter())
-    else:
-        hdlr.setFormatter(SimLogFormatter())
+    if not logging.getLogger().hasHandlers():
+        # construct an appropriate handler
+        hdlr = logging.StreamHandler(sys.stdout)
+        hdlr.addFilter(SimTimeContextFilter())
+        if want_color_output():
+            hdlr.setFormatter(SimColourLogFormatter())
+        else:
+            hdlr.setFormatter(SimLogFormatter())
 
-    logging.setLoggerClass(SimBaseLog)
-    logging.basicConfig()
-    logging.getLogger().handlers = [hdlr]  # overwrite default handlers
+        logging.setLoggerClass(SimBaseLog)
+        logging.basicConfig()
+        logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
     def set_level(logger_name: str, envvar: str, default_level: str) -> None:
         log_level = os.environ.get(envvar, default_level)
