@@ -68,6 +68,12 @@ def default_config() -> None:
 
     .. versionadded:: 1.4
     """
+    _setup_handler()
+    _setup_loggers()
+
+
+def _setup_handler() -> None:
+    """Apply the default cocotb log formatting to the root logger."""
     # construct an appropriate handler
     hdlr = logging.StreamHandler(sys.stdout)
     hdlr.addFilter(SimTimeContextFilter())
@@ -79,6 +85,10 @@ def default_config() -> None:
     logging.setLoggerClass(SimBaseLog)
     logging.basicConfig()
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
+
+
+def _setup_loggers() -> None:
+    """Set up the `cocotb` and `gpi` loggers."""
 
     def set_level(logger_name: str, envvar: str, default_level: str) -> None:
         log_level = os.environ.get(envvar, default_level)
