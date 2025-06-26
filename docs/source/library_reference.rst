@@ -84,6 +84,8 @@ File Utilities
 Writing and Generating Tests
 ============================
 
+.. currentmodule:: None
+
 .. autofunction:: cocotb.test
 
 .. autofunction:: cocotb.parametrize
