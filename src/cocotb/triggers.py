@@ -2,7 +2,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import warnings
-from typing import Any
 
 from cocotb._base_triggers import Event, Lock, NullTrigger, Trigger
 from cocotb._extended_awaitables import (
@@ -55,7 +54,7 @@ for name in __all__:
     obj.__module__ = __name__
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> object:
     if name == "Join":
         warnings.warn(
             "Join has been moved to `cocotb.task`.",

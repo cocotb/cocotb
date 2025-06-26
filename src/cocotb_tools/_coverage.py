@@ -2,10 +2,9 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import os
-from typing import Any
 
 
-def start_cocotb_library_coverage(_: Any) -> None:  # pragma: no cover
+def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
     if "COCOTB_LIBRARY_COVERAGE" not in os.environ:
         return
     try:

@@ -9,7 +9,6 @@ import logging
 import os
 import re
 from abc import ABC, abstractmethod
-from collections import OrderedDict
 from functools import lru_cache
 from logging import Logger
 from typing import (
@@ -42,7 +41,7 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
-from cocotb._py_compat import cached_property
+from cocotb._py_compat import cached_property, insertion_ordered_dict
 from cocotb._utils import DocIntEnum
 from cocotb.task import Task
 from cocotb.types import Array, Logic, LogicArray, Range
@@ -161,7 +160,7 @@ class SimHandleBase(ABC):
     def __hash__(self) -> int:
         return hash(self._handle)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, SimHandleBase):
             return NotImplemented
         return self._handle == other._handle
@@ -456,7 +455,7 @@ class HierarchyObject(_HierarchyObjectBase[str]):
     def __init__(self, handle: simulator.gpi_sim_hdl, path: Optional[str]) -> None:
         super().__init__(handle, path)
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         # private attributes pass through directly
         if name.startswith("_"):
             return object.__setattr__(self, name, value)
@@ -744,7 +743,7 @@ _trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 # A dictionary of pending (write_func, args), keyed by handle.
 # Writes are applied oldest to newest (least recently used).
 # Only the last scheduled write to a particular handle in a timestep is performed.
-_write_calls: "OrderedDict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], _GPISetAction, Any]]" = OrderedDict()
+_write_calls: "dict[ValueObjectBase[Any, Any], Tuple[Callable[[int, Any], None], _GPISetAction, Any]]" = insertion_ordered_dict()
 
 _write_task: Union[Task[None], None] = None
 
@@ -775,9 +774,9 @@ def _stop_write_scheduler() -> None:
 
 
 def _apply_scheduled_writes() -> None:
-    while _write_calls:
-        _, (func, action, value) = _write_calls.popitem(last=False)
+    for func, action, value in _write_calls.values():
         func(action.value, value)
+    _write_calls.clear()
     _writes_pending.clear()
 
 
@@ -894,10 +893,10 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             self._set_value(value.value, _GPISetAction.FORCE)
         elif isinstance(value, Freeze):
             # We assume that ValueSetT >= ValueGetT
-            self._set_value(cast(ValueSetT, self.get()), _GPISetAction.FORCE)
+            self._set_value(cast("ValueSetT", self.get()), _GPISetAction.FORCE)
         elif isinstance(value, Release):
             # We assume that ValueSetT >= ValueGetT
-            self._set_value(cast(ValueSetT, self.get()), _GPISetAction.RELEASE)
+            self._set_value(cast("ValueSetT", self.get()), _GPISetAction.RELEASE)
         elif isinstance(value, Immediate):
             self._set_value(value.value, _GPISetAction.NO_DELAY)
         else:
@@ -1072,7 +1071,7 @@ class ArrayObject(
             raise IndexError(f"{self._path} contains no object at index {index}")
         path = self._path + "[" + str(index) + "]"
         self._sub_handles[index] = cast(
-            ChildObjectT, _make_sim_object(new_handle, path)
+            "ChildObjectT", _make_sim_object(new_handle, path)
         )
         return self._sub_handles[index]
 
@@ -1351,7 +1350,7 @@ class LogicArrayObject(
     def _len(self) -> int:
         return self._handle.get_num_elems()
 
-    def __getitem__(self, _: Any) -> NoReturn:
+    def __getitem__(self, _: object) -> NoReturn:
         raise TypeError(
             "Packed objects, either arrays or structs, cannot be indexed.\n"
             "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"

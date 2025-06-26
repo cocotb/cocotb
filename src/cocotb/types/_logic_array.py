@@ -261,7 +261,7 @@ class LogicArray(AbstractArray[Logic]):
                 self._value_as_str = format(self._value_as_int, f"0{len(self)}b")
             else:
                 self._value_as_str = "".join(
-                    str(v) for v in cast(List[Logic], self._value_as_array)
+                    str(v) for v in cast("List[Logic]", self._value_as_array)
                 )
         return self._value_as_str
 
@@ -716,7 +716,7 @@ class LogicArray(AbstractArray[Logic]):
         self._value_as_int = None
         if isinstance(item, int):
             idx = self._translate_index(item)
-            array[idx] = Logic(cast(LogicConstructibleT, value))
+            array[idx] = Logic(cast("LogicConstructibleT", value))
         elif isinstance(item, slice):
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
@@ -728,7 +728,7 @@ class LogicArray(AbstractArray[Logic]):
                 raise IndexError(
                     f"slice [{start}:{stop}] direction does not match array direction [{self.left}:{self.right}]"
                 )
-            value = cast(Union[str, Iterable[LogicConstructibleT], int], value)
+            value = cast("str | int | Iterable[LogicConstructibleT]", value)
             value_as_logics = LogicArray(value, stop_i - start_i + 1)
             array[start_i : stop_i + 1] = value_as_logics
         else:

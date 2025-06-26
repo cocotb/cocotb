@@ -93,7 +93,9 @@ def remove_traceback_frames(
     if isinstance(tb_or_exc, BaseException):
         exc: BaseException = tb_or_exc
         return exc.with_traceback(
-            remove_traceback_frames(cast(TracebackType, exc.__traceback__), frame_names)
+            remove_traceback_frames(
+                cast("TracebackType", exc.__traceback__), frame_names
+            )
         )
     elif isinstance(tb_or_exc, tuple):
         exc_type, exc_value, exc_tb = tb_or_exc
@@ -105,7 +107,7 @@ def remove_traceback_frames(
         for frame_name in frame_names:
             # the assert and cast are there assuming the frame_names being removed are correct
             assert tb.tb_frame.f_code.co_name == frame_name
-            tb = cast(TracebackType, tb.tb_next)
+            tb = cast("TracebackType", tb.tb_next)
         return tb
 
 
@@ -179,7 +181,7 @@ class DocEnum(Enum):
     as recommended by the ``enum_tools`` documentation.
     """
 
-    def __new__(cls: Type[EnumT], value: Any, doc: Optional[str] = None) -> EnumT:
+    def __new__(cls: Type[EnumT], value: object, doc: Optional[str] = None) -> EnumT:
         # super().__new__() assumes the value is already an enum value
         # so we side step that and create a raw object and fill in _value_
         self = object.__new__(cls)
@@ -281,3 +283,14 @@ def pointer_str(obj: object) -> str:
     """
     full_repr = object.__repr__(obj)  # gives "<{type} object at {address}>"
     return full_repr.rsplit(" ", 1)[1][:-1]
+
+
+def safe_divide(a: float, b: float) -> float:
+    """Used when computing time ratios to ensure no exception is raised if either time is 0."""
+    try:
+        return a / b
+    except ZeroDivisionError:
+        if a == 0:
+            return float("nan")
+        else:
+            return float("inf")
