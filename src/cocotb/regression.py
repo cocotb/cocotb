@@ -35,7 +35,7 @@ from cocotb._decorators import Parameterized, Test
 from cocotb._extended_awaitables import SimTimeoutError, with_timeout
 from cocotb._gpi_triggers import GPITrigger, Timer
 from cocotb._outcomes import Error, Outcome
-from cocotb._test import RunningTest, TestTask
+from cocotb._test import RunningTest
 from cocotb._test_factory import TestFactory
 from cocotb._test_functions import Failed
 from cocotb._utils import (
@@ -356,7 +356,7 @@ class RegressionManager:
         else:
             func = self._test.func
 
-        main_task = TestTask(func(cocotb.top), self._test.name)
+        main_task = Task(func(cocotb.top), name=f"Test {self._test.name}")
         return RunningTest(self._test_complete, main_task)
 
     def _schedule_next_test(self, trigger: Union[GPITrigger, None] = None) -> None:
