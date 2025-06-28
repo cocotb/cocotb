@@ -1,0 +1,1 @@
+Added :meth:`.Task.get_name` and :meth:`.Task.set_name` to get and set a :class:`.Task`\ s name.

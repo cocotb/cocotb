@@ -1025,3 +1025,29 @@ async def test_test_end_cancellation_error(_) -> None:
 
     cocotb.start_soon(coro())
     await Timer(1)
+
+
+@cocotb.test
+async def test_task_name(_: object) -> None:
+    async def coro() -> None:
+        await Timer(1)
+
+    t = Task(coro(), name="Task123")
+    assert t.get_name() == "Task123"
+
+    t.set_name("different")
+    assert t.get_name() == "different"
+    t.cancel()
+
+    t = cocotb.create_task(coro(), name="foo")
+    assert t.get_name() == "foo"
+    t.cancel()
+
+    t = cocotb.start_soon(coro(), name="bar")
+    assert t.get_name() == "bar"
+    t.cancel()
+
+    with pytest.warns(DeprecationWarning):
+        t = await cocotb.start(coro(), name="baz")
+    assert t.get_name() == "baz"
+    t.cancel()

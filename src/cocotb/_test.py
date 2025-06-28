@@ -9,11 +9,11 @@ from typing import (
     Callable,
     Coroutine,
     List,
+    Optional,
     Union,
 )
 
 import cocotb
-from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome, Value
@@ -31,7 +31,7 @@ class RunningTest:
     # Make the tasks list a TaskManager.
     # Make shutdown errors and outcome be an ExceptionGroup from that TaskManager.
     # Replace result() with passing the outcome to the done callback.
-    # Make this and TestTask the same object which is a Coroutine.
+    # Make this and Task the same object which is a Coroutine.
     # Reimplement the logic in the body of an async function.
     # Make RunningTest a normal Task that the RegressionManager runs and registers a
     #  done callback with.
@@ -123,32 +123,30 @@ class RunningTest:
             self.abort(Error(e))
 
 
-class TestTask(Task[None]):
-    """Specialized Task for Tests."""
-
-    def __init__(self, inst: Coroutine[Trigger, None, None], name: str) -> None:
-        super().__init__(inst)
-        self._name = f"Test {name}"
-
-
 def start_soon(
     coro: Union[Task[ResultType], Coroutine[Any, Any, ResultType]],
+    *,
+    name: Optional[str] = None,
 ) -> Task[ResultType]:
     """
-    Schedule a coroutine to be run concurrently in a :class:`~cocotb.task.Task`.
+    Schedule a :term:`coroutine` to be run concurrently in a :class:`~cocotb.task.Task`.
 
     Note that this is not an :keyword:`async` function,
     and the new task will not execute until the calling task yields control.
 
     Args:
-        coro: A task or coroutine to be run.
+        coro: A :class:`!Task` or :term:`!coroutine` to be run concurrently.
+        name:
+            The task's name.
+
+            .. versionadded:: 2.0
 
     Returns:
         The :class:`~cocotb.task.Task` that is scheduled to be run.
 
     .. versionadded:: 1.6
     """
-    task = create_task(coro)
+    task = create_task(coro, name=name)
     cocotb._scheduler_inst._schedule_task(task)
     return task
 
@@ -156,9 +154,11 @@ def start_soon(
 @deprecated("Use ``cocotb.start_soon`` instead.")
 async def start(
     coro: Union[Task[ResultType], Coroutine[Any, Any, ResultType]],
+    *,
+    name: Optional[str] = None,
 ) -> Task[ResultType]:
     """
-    Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
+    Schedule a :term:`coroutine` to be run concurrently, then yield control to allow pending tasks to execute.
 
     The calling task will resume execution before control is returned to the simulator.
 
@@ -166,7 +166,11 @@ async def start(
     raised an Exception, or be pending on a :class:`~cocotb.triggers.Trigger`.
 
     Args:
-        coro: A task or coroutine to be run.
+        coro: A :class:`!Task` or :term:`!coroutine` to be run concurrently.
+        name:
+            The task's name.
+
+            .. versionadded:: 2.0
 
     Returns:
         The :class:`~cocotb.task.Task` that has been scheduled and allowed to execute.
@@ -190,21 +194,27 @@ async def start(
             task = cocotb.start_soon(coro(task_started))
             await task_started.wait()
     """
-    task = start_soon(coro)
+    task = start_soon(coro, name=name)
     await NullTrigger()
     return task
 
 
 def create_task(
     coro: Union[Task[ResultType], Coroutine[Any, Any, ResultType]],
+    *,
+    name: Optional[str] = None,
 ) -> Task[ResultType]:
     """
-    Construct a coroutine into a :class:`~cocotb.task.Task` without scheduling the task.
+    Construct a :term:`!coroutine` into a :class:`~cocotb.task.Task` without scheduling the task.
 
     The task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
 
     Args:
-        coro: An existing task or a coroutine to be wrapped.
+        coro: A :class:`!Task` or a :term:`!coroutine` to be turned into a :class:`!Task`.
+        name:
+            The task's name.
+
+            .. versionadded:: 2.0
 
     Returns:
         Either the provided :class:`~cocotb.task.Task` or a new Task wrapping the coroutine.
@@ -212,9 +222,11 @@ def create_task(
     .. versionadded:: 1.6
     """
     if isinstance(coro, Task):
+        if name is not None:
+            coro.set_name(name)
         return coro
     elif isinstance(coro, Coroutine):
-        task = Task[ResultType](coro)
+        task = Task[ResultType](coro, name=name)
         cocotb._regression_manager._running_test.add_task(task)
         return task
     elif inspect.iscoroutinefunction(coro):

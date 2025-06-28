@@ -81,7 +81,9 @@ class Task(Generic[ResultType]):
 
     _id_count = 0  # used by the scheduler for debug
 
-    def __init__(self, inst: Coroutine[Trigger, None, ResultType]) -> None:
+    def __init__(
+        self, inst: Coroutine[Trigger, None, ResultType], *, name: Optional[str] = None
+    ) -> None:
         if inspect.iscoroutinefunction(inst):
             raise TypeError(
                 f"Coroutine function {inst} should be called prior to being scheduled."
@@ -104,7 +106,23 @@ class Task(Generic[ResultType]):
 
         self._task_id = self._id_count
         type(self)._id_count += 1
-        self._name = f"Task {self._task_id}"
+        self._name = f"Task {self._task_id}" if name is None else name
+
+    def get_name(self) -> str:
+        """Return the name of the :class:`!Task`.
+
+        If not set using :meth:`set_name` or passed during construction,
+        a reasonable default name is generated.
+        """
+        return self._name
+
+    def set_name(self, value: object) -> None:
+        """Set the name of the :class:`!Task`.
+
+        Args:
+            value: Any object which can be converted to a :class:`str` to use as the name.
+        """
+        self._name = str(value)
 
     @cached_property
     def _cancelled_error(self) -> CancelledError:
