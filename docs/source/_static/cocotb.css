@@ -43,6 +43,7 @@ html {
     --pst-font-size-milli: 0.75rem;
 
     /* --pst-font-weight-caption: 300; */
+    --pst-font-weight-caption: 400;
     --pst-font-weight-heading: 700;
     --pst-admonition-font-weight-heading: 700;
 
@@ -263,6 +264,10 @@ dl.field-list > dd {
 dt:target,
 span.highlighted {
     background-color: var(--color-cocotb-yellow) !important;
+}
+
+div.code-block-caption span.caption-text {
+    font-style: italic;
 }
 
 /* search bar */
