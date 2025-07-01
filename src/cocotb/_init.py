@@ -19,17 +19,14 @@ import cocotb._profiling
 import cocotb.handle
 import cocotb.simulator
 from cocotb._scheduler import Scheduler
-from cocotb.logging import _log_from_c, _setup_handler, _setup_loggers
 from cocotb.regression import RegressionManager, RegressionMode
 
 log: logging.Logger
 
 
 def _setup_logging() -> None:
-    _setup_loggers()
     cocotb.log = logging.getLogger("test")
     cocotb.log.setLevel(logging.INFO)
-    cocotb.simulator.initialize_logger(_log_from_c, logging.getLogger)
 
     global log
     log = logging.getLogger("cocotb")
@@ -49,11 +46,6 @@ def _shutdown_testbench() -> None:
     while _shutdown_callbacks:
         cb = _shutdown_callbacks.pop(0)
         cb()
-
-
-def init_logging(_: List[str]) -> None:
-    """Initialize the cocotb log handler and formatter."""
-    _setup_handler()
 
 
 def init_package_from_simulation(argv: List[str]) -> None:
