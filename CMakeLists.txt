@@ -21,6 +21,71 @@ else()
     set(LIB_EXT "so")
 endif()
 
+# Handle environment variables for compiler flags
+# Filter out GCC-specific flags when using MSVC
+if(MSVC)
+    # List of GCC-specific flags that break MSVC
+    set(GCC_SPECIFIC_FLAGS 
+        "-Werror" "-Wno-error=deprecated-declarations" "-Wsuggest-override" 
+        "-Og" "-g" "--coverage" "-Wall" "-Wextra" "-fvisibility=hidden"
+        "-fvisibility-inlines-hidden" "-flto" "-std=c++11"
+    )
+    
+    # Filter CFLAGS
+    if(DEFINED ENV{CFLAGS})
+        string(REPLACE " " ";" CFLAGS_LIST "$ENV{CFLAGS}")
+        set(FILTERED_CFLAGS "")
+        foreach(FLAG ${CFLAGS_LIST})
+            set(SKIP_FLAG FALSE)
+            foreach(GCC_FLAG ${GCC_SPECIFIC_FLAGS})
+                if(FLAG STREQUAL GCC_FLAG OR FLAG MATCHES "^${GCC_FLAG}=")
+                    set(SKIP_FLAG TRUE)
+                    break()
+                endif()
+            endforeach()
+            if(NOT SKIP_FLAG)
+                list(APPEND FILTERED_CFLAGS ${FLAG})
+            endif()
+        endforeach()
+        string(REPLACE ";" " " FILTERED_CFLAGS_STR "${FILTERED_CFLAGS}")
+        set(ENV{CFLAGS} "${FILTERED_CFLAGS_STR}")
+    endif()
+    
+    # Filter CXXFLAGS
+    if(DEFINED ENV{CXXFLAGS})
+        string(REPLACE " " ";" CXXFLAGS_LIST "$ENV{CXXFLAGS}")
+        set(FILTERED_CXXFLAGS "")
+        foreach(FLAG ${CXXFLAGS_LIST})
+            set(SKIP_FLAG FALSE)
+            foreach(GCC_FLAG ${GCC_SPECIFIC_FLAGS})
+                if(FLAG STREQUAL GCC_FLAG OR FLAG MATCHES "^${GCC_FLAG}=")
+                    set(SKIP_FLAG TRUE)
+                    break()
+                endif()
+            endforeach()
+            if(NOT SKIP_FLAG)
+                list(APPEND FILTERED_CXXFLAGS ${FLAG})
+            endif()
+        endforeach()
+        string(REPLACE ";" " " FILTERED_CXXFLAGS_STR "${FILTERED_CXXFLAGS}")
+        set(ENV{CXXFLAGS} "${FILTERED_CXXFLAGS_STR}")
+    endif()
+    
+    # Filter LDFLAGS
+    if(DEFINED ENV{LDFLAGS})
+        string(REPLACE " " ";" LDFLAGS_LIST "$ENV{LDFLAGS}")
+        set(FILTERED_LDFLAGS "")
+        foreach(FLAG ${LDFLAGS_LIST})
+            # Remove coverage-related linker flags
+            if(NOT FLAG STREQUAL "--coverage")
+                list(APPEND FILTERED_LDFLAGS ${FLAG})
+            endif()
+        endforeach()
+        string(REPLACE ";" " " FILTERED_LDFLAGS_STR "${FILTERED_LDFLAGS}")
+        set(ENV{LDFLAGS} "${FILTERED_LDFLAGS_STR}")
+    endif()
+endif()
+
 # Compiler-specific settings
 if(MSVC)
     set(EXTRA_CXX_FLAGS "/permissive-" "/W4")
