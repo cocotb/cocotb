@@ -1,6 +1,69 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = [
+    "scikit-build-core>=0.3.3",
+    "pybind11",
+    "find_libpython",
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "cocotb"
+version = "2.0.0.dev0"
+description = "cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python."
+readme = "README.md"
+license = {text = "BSD-3-Clause"}
+authors = [
+    {name = "Chris Higgs"},
+    {name = "Stuart Hodgson"},
+]
+maintainers = [
+    {name = "cocotb contributors", email = "cocotb@lists.librecores.org"},
+]
+requires-python = ">=3.6.2"
+dependencies = [
+    "find_libpython",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+    "Framework :: cocotb",
+]
+
+[project.urls]
+Homepage = "https://www.cocotb.org"
+"Bug Tracker" = "https://github.com/cocotb/cocotb/issues"
+"Source Code" = "https://github.com/cocotb/cocotb"
+Documentation = "https://docs.cocotb.org"
+
+[project.scripts]
+cocotb-config = "cocotb_tools.config:main"
+
+[tool.scikit-build]
+# Specify the CMake source directory
+cmake.source-dir = "."
+# Set minimum CMake version
+cmake.version = ">=3.15"
+# Build directory
+build-dir = "build/{wheel_tag}"
+# CMake args can be passed here if needed
+cmake.args = []
+# Verbose output during build
+build.verbose = false
+# Ensure all packages are discovered and included
+wheel.packages = ["src/cocotb", "src/cocotb_tools", "src/pygpi"]
+
+[tool.scikit-build.cmake.define]
+# Define any CMake variables here if needed
+
+
 
 [tool.towncrier]
     package = "cocotb"
