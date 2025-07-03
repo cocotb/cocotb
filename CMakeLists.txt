@@ -202,7 +202,7 @@ function(add_cocotb_library TARGET_NAME)
     
     # Handle Windows resource files
     set(ALL_SOURCES ${ARG_SOURCES})
-    if(WIN32 AND ARG_RC_LIBRARIES)
+    if(WIN32)
         set(RC_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.rc")
         set(LIB_NAME ${ARG_OUTPUT_NAME})
         if(NOT LIB_NAME)
@@ -372,27 +372,13 @@ else()
 endif()
 
 # 7. simulator (Python extension)
+add_cocotb_library(simulator
+    SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
+    LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
+    RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
+)
 if(WIN32)
-    # On Windows, use RC manifest for proper SxS assembly loading
-    add_cocotb_library(simulator
-        SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
-        LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
-        RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
-    )
     target_link_directories(simulator PRIVATE ${Python_LIBRARY_DIRS})
-else()
-    # On non-Windows platforms, build as a simple shared library without RC manifest
-    add_library(simulator SHARED ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp)
-    target_include_directories(simulator PRIVATE ${INCLUDE_DIRS})
-    target_compile_definitions(simulator PRIVATE ${EXTRA_DEFINES})
-    target_compile_options(simulator PRIVATE ${EXTRA_CXX_FLAGS})
-    target_link_libraries(simulator PRIVATE cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES})
-    
-    # Set RPATH for the simulator module
-    set_target_properties(simulator PROPERTIES INSTALL_RPATH "$ORIGIN/libs")
-    if(APPLE)
-        set_target_properties(simulator PROPERTIES INSTALL_NAME_DIR "@rpath")
-    endif()
 endif()
 
 # Set simulator to be a Python extension module
@@ -402,15 +388,6 @@ set_target_properties(simulator PROPERTIES
     PREFIX ""
     SUFFIX ${PYTHON_EXT_SUFFIX}
 )
-
-# Additional macOS-specific settings for the simulator module
-if(APPLE)
-    # Ensure the simulator can find its dependencies in the libs directory
-    set_target_properties(simulator PROPERTIES 
-        INSTALL_RPATH "@loader_path/libs"
-        BUILD_RPATH "@loader_path/libs"
-    )
-endif()
 
 # Function to add VPI libraries
 function(add_vpi_library SIM_NAME SIM_DEFINE)
@@ -436,17 +413,6 @@ function(add_vpi_library SIM_NAME SIM_DEFINE)
     
     if(ARG_EXTRA_LIB_DIRS)
         target_link_directories(${TARGET_NAME} PRIVATE ${ARG_EXTRA_LIB_DIRS})
-    endif()
-    
-    # On non-Windows platforms, VPI symbols are provided by the simulator at runtime
-    # We need to allow undefined symbols at link time
-    if(NOT WIN32)
-        if(APPLE)
-            target_link_options(${TARGET_NAME} PRIVATE -undefined dynamic_lookup)
-        else()
-            # Linux: Allow undefined symbols for VPI functions
-            target_link_options(${TARGET_NAME} PRIVATE -Wl,--allow-shlib-undefined)
-        endif()
     endif()
     
     # Special handling for Icarus Verilog extension
@@ -476,17 +442,6 @@ function(add_vhpi_library SIM_NAME SIM_DEFINE)
     
     if(ARG_EXTRA_LIB_DIRS)
         target_link_directories(${TARGET_NAME} PRIVATE ${ARG_EXTRA_LIB_DIRS})
-    endif()
-    
-    # On non-Windows platforms, VHPI symbols are provided by the simulator at runtime
-    # We need to allow undefined symbols at link time
-    if(NOT WIN32)
-        if(APPLE)
-            target_link_options(${TARGET_NAME} PRIVATE -undefined dynamic_lookup)
-        else()
-            # Linux: Allow undefined symbols for VHPI functions
-            target_link_options(${TARGET_NAME} PRIVATE -Wl,--allow-shlib-undefined)
-        endif()
     endif()
 endfunction()
 
@@ -573,14 +528,6 @@ add_cocotb_library(cocotbfli_modelsim
 )
 if(WIN32)
     add_dependencies(cocotbfli_modelsim modelsim_import_lib)
-else()
-    # On non-Windows platforms, FLI symbols are provided by the simulator at runtime
-    if(APPLE)
-        target_link_options(cocotbfli_modelsim PRIVATE -undefined dynamic_lookup)
-    else()
-        # Linux: Allow undefined symbols for FLI functions
-        target_link_options(cocotbfli_modelsim PRIVATE -Wl,--allow-shlib-undefined)
-    endif()
 endif()
 
 # GHDL
