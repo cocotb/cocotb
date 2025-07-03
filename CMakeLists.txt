@@ -21,71 +21,6 @@ else()
     set(LIB_EXT "so")
 endif()
 
-# Handle environment variables for compiler flags
-# Filter out GCC-specific flags when using MSVC
-if(MSVC)
-    # List of GCC-specific flags that break MSVC
-    set(GCC_SPECIFIC_FLAGS 
-        "-Werror" "-Wno-error=deprecated-declarations" "-Wsuggest-override" 
-        "-Og" "-g" "--coverage" "-Wall" "-Wextra" "-fvisibility=hidden"
-        "-fvisibility-inlines-hidden" "-flto" "-std=c++11"
-    )
-    
-    # Filter CFLAGS
-    if(DEFINED ENV{CFLAGS})
-        string(REPLACE " " ";" CFLAGS_LIST "$ENV{CFLAGS}")
-        set(FILTERED_CFLAGS "")
-        foreach(FLAG ${CFLAGS_LIST})
-            set(SKIP_FLAG FALSE)
-            foreach(GCC_FLAG ${GCC_SPECIFIC_FLAGS})
-                if(FLAG STREQUAL GCC_FLAG OR FLAG MATCHES "^${GCC_FLAG}=")
-                    set(SKIP_FLAG TRUE)
-                    break()
-                endif()
-            endforeach()
-            if(NOT SKIP_FLAG)
-                list(APPEND FILTERED_CFLAGS ${FLAG})
-            endif()
-        endforeach()
-        string(REPLACE ";" " " FILTERED_CFLAGS_STR "${FILTERED_CFLAGS}")
-        set(ENV{CFLAGS} "${FILTERED_CFLAGS_STR}")
-    endif()
-    
-    # Filter CXXFLAGS
-    if(DEFINED ENV{CXXFLAGS})
-        string(REPLACE " " ";" CXXFLAGS_LIST "$ENV{CXXFLAGS}")
-        set(FILTERED_CXXFLAGS "")
-        foreach(FLAG ${CXXFLAGS_LIST})
-            set(SKIP_FLAG FALSE)
-            foreach(GCC_FLAG ${GCC_SPECIFIC_FLAGS})
-                if(FLAG STREQUAL GCC_FLAG OR FLAG MATCHES "^${GCC_FLAG}=")
-                    set(SKIP_FLAG TRUE)
-                    break()
-                endif()
-            endforeach()
-            if(NOT SKIP_FLAG)
-                list(APPEND FILTERED_CXXFLAGS ${FLAG})
-            endif()
-        endforeach()
-        string(REPLACE ";" " " FILTERED_CXXFLAGS_STR "${FILTERED_CXXFLAGS}")
-        set(ENV{CXXFLAGS} "${FILTERED_CXXFLAGS_STR}")
-    endif()
-    
-    # Filter LDFLAGS
-    if(DEFINED ENV{LDFLAGS})
-        string(REPLACE " " ";" LDFLAGS_LIST "$ENV{LDFLAGS}")
-        set(FILTERED_LDFLAGS "")
-        foreach(FLAG ${LDFLAGS_LIST})
-            # Remove coverage-related linker flags
-            if(NOT FLAG STREQUAL "--coverage")
-                list(APPEND FILTERED_LDFLAGS ${FLAG})
-            endif()
-        endforeach()
-        string(REPLACE ";" " " FILTERED_LDFLAGS_STR "${FILTERED_LDFLAGS}")
-        set(ENV{LDFLAGS} "${FILTERED_LDFLAGS_STR}")
-    endif()
-endif()
-
 # Compiler-specific settings
 if(MSVC)
     set(EXTRA_CXX_FLAGS "/permissive-" "/W4")
@@ -310,6 +245,10 @@ function(add_cocotb_library TARGET_NAME)
     # Windows-specific settings
     if(WIN32)
         target_compile_definitions(${TARGET_NAME} PRIVATE WIN32)
+        # Add DEF directory to library search path for simulator libraries
+        if(TARGET_NAME MATCHES "cocotb.*_(icarus|modelsim|aldec|ghdl)")
+            target_link_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src/cocotb/share/def)
+        endif()
     endif()
     
     # Set RPATH for non-Windows platforms
@@ -347,9 +286,12 @@ add_cocotb_library(gpilog
 add_cocotb_library(pygpilog
     SOURCES ${SHARE_LIB_DIR}/py_gpi_log/py_gpi_logging.cpp
     DEFINES PYGPILOG_EXPORTS
-    LIBRARIES gpilog
+    LIBRARIES gpilog ${Python_LIBRARIES}
     RC_LIBRARIES "gpilog"
 )
+if(WIN32)
+    target_link_directories(pygpilog PRIVATE ${Python_LIBRARY_DIRS})
+endif()
 
 # 3. cocotbutils
 set(COCOTBUTILS_LIBS gpilog)
@@ -392,24 +334,49 @@ add_cocotb_library(gpi
 # 6. cocotb
 add_cocotb_library(cocotb
     SOURCES ${SHARE_LIB_DIR}/embed/gpi_embed.cpp
-    LIBRARIES gpilog cocotbutils pygpilog gpi
+    LIBRARIES gpilog cocotbutils pygpilog gpi ${Python_LIBRARIES}
     RC_LIBRARIES "gpilog;cocotbutils;pygpilog;gpi"
 )
+if(WIN32)
+    target_link_directories(cocotb PRIVATE ${Python_LIBRARY_DIRS})
+endif()
+
+# Set simulator Python extension suffix first
+if(WIN32)
+    set(PYTHON_EXT_SUFFIX ".${Python_SOABI}.pyd")
+else()
+    set(PYTHON_EXT_SUFFIX ".${Python_SOABI}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+endif()
 
 # 7. simulator (Python extension)
-add_cocotb_library(simulator
-    SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
-    LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
-    RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
-)
-
-# Set simulator to be a Python extension module
-set_target_properties(simulator PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
-    PREFIX ""
-    SUFFIX .${Python_SOABI}${CMAKE_SHARED_LIBRARY_SUFFIX}
-)
+if(WIN32)
+    # Don't generate RC manifest for simulator - causes SxS issues
+    add_library(simulator SHARED ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp)
+    target_include_directories(simulator PRIVATE ${INCLUDE_DIRS})
+    target_compile_definitions(simulator PRIVATE ${EXTRA_DEFINES} WIN32)
+    target_compile_options(simulator PRIVATE ${EXTRA_CXX_FLAGS})
+    target_link_libraries(simulator PRIVATE cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES})
+    target_link_directories(simulator PRIVATE ${Python_LIBRARY_DIRS})
+    set_target_properties(simulator PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
+        PREFIX ""
+        SUFFIX ${PYTHON_EXT_SUFFIX}
+    )
+else()
+    add_cocotb_library(simulator
+        SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
+        LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
+        RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
+    )
+    # Set simulator to be a Python extension module (non-Windows)
+    set_target_properties(simulator PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
+        PREFIX ""
+        SUFFIX ${PYTHON_EXT_SUFFIX}
+    )
+endif()
 
 # Function to add VPI libraries
 function(add_vpi_library SIM_NAME SIM_DEFINE)
@@ -467,70 +434,7 @@ function(add_vhpi_library SIM_NAME SIM_DEFINE)
     endif()
 endfunction()
 
-# Build simulator-specific libraries
-
-# Icarus Verilog
-set(ICARUS_EXTRA_LIBS "")
-if(WIN32)
-    set(ICARUS_EXTRA_LIBS icarus)
-endif()
-add_vpi_library(ICARUS ICARUS EXTRA_LIBS ${ICARUS_EXTRA_LIBS})
-
-# Modelsim/Questa
-set(MODELSIM_EXTRA_LIBS "")
-if(WIN32)
-    set(MODELSIM_EXTRA_LIBS modelsim)
-endif()
-
-add_vpi_library(MODELSIM MODELSIM EXTRA_LIBS ${MODELSIM_EXTRA_LIBS})
-add_vhpi_library(MODELSIM MODELSIM EXTRA_LIBS ${MODELSIM_EXTRA_LIBS})
-
-# FLI for Modelsim
-add_cocotb_library(cocotbfli_modelsim
-    SOURCES
-        ${SHARE_LIB_DIR}/fli/FliImpl.cpp
-        ${SHARE_LIB_DIR}/fli/FliCbHdl.cpp
-        ${SHARE_LIB_DIR}/fli/FliObjHdl.cpp
-    DEFINES COCOTBFLI_EXPORTS
-    LIBRARIES gpi gpilog ${MODELSIM_EXTRA_LIBS}
-    RC_LIBRARIES "gpi;gpilog"
-)
-
-# GHDL
-set(GHDL_EXTRA_LIBS "")
-if(WIN32)
-    set(GHDL_EXTRA_LIBS ghdl)
-endif()
-add_vpi_library(GHDL GHDL EXTRA_LIBS ${GHDL_EXTRA_LIBS})
-
-# POSIX-only simulators
-if(UNIX)
-    # IUS/Xcelium
-    add_vpi_library(IUS IUS)
-    add_vhpi_library(IUS IUS)
-    
-    # VCS
-    add_vpi_library(VCS VCS)
-    
-    # Verilator
-    add_vpi_library(VERILATOR VERILATOR)
-    
-    # NVC
-    add_vhpi_library(NVC NVC)
-    
-    # DSim
-    add_vpi_library(DSim DSim)
-endif()
-
-# Aldec Riviera Pro
-set(ALDEC_EXTRA_LIBS "")
-if(WIN32)
-    set(ALDEC_EXTRA_LIBS aldec)
-endif()
-add_vpi_library(ALDEC ALDEC EXTRA_LIBS ${ALDEC_EXTRA_LIBS})
-add_vhpi_library(ALDEC ALDEC EXTRA_LIBS ${ALDEC_EXTRA_LIBS})
-
-# Windows-specific: Generate import libraries and app config
+# Windows-specific: Generate import libraries first
 if(WIN32)
     # Generate import libraries from DEF files
     set(DEF_DIR ${CMAKE_SOURCE_DIR}/src/cocotb/share/def)
@@ -568,6 +472,86 @@ if(WIN32)
 </configuration>")
     
     file(WRITE ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config "${APPCONFIG_CONTENT}")
+endif()
+
+# Build simulator-specific libraries
+
+# Icarus Verilog
+set(ICARUS_EXTRA_LIBS "")
+if(WIN32)
+    set(ICARUS_EXTRA_LIBS icarus)
+endif()
+add_vpi_library(ICARUS ICARUS EXTRA_LIBS ${ICARUS_EXTRA_LIBS})
+if(WIN32)
+    add_dependencies(cocotbvpi_icarus icarus_import_lib)
+endif()
+
+# Modelsim/Questa
+set(MODELSIM_EXTRA_LIBS "")
+if(WIN32)
+    set(MODELSIM_EXTRA_LIBS modelsim)
+endif()
+
+add_vpi_library(MODELSIM MODELSIM EXTRA_LIBS ${MODELSIM_EXTRA_LIBS})
+add_vhpi_library(MODELSIM MODELSIM EXTRA_LIBS ${MODELSIM_EXTRA_LIBS})
+if(WIN32)
+    add_dependencies(cocotbvpi_modelsim modelsim_import_lib)
+    add_dependencies(cocotbvhpi_modelsim modelsim_import_lib)
+endif()
+
+# FLI for Modelsim
+add_cocotb_library(cocotbfli_modelsim
+    SOURCES
+        ${SHARE_LIB_DIR}/fli/FliImpl.cpp
+        ${SHARE_LIB_DIR}/fli/FliCbHdl.cpp
+        ${SHARE_LIB_DIR}/fli/FliObjHdl.cpp
+    DEFINES COCOTBFLI_EXPORTS
+    LIBRARIES gpi gpilog ${MODELSIM_EXTRA_LIBS}
+    RC_LIBRARIES "gpi;gpilog"
+)
+if(WIN32)
+    add_dependencies(cocotbfli_modelsim modelsim_import_lib)
+endif()
+
+# GHDL
+set(GHDL_EXTRA_LIBS "")
+if(WIN32)
+    set(GHDL_EXTRA_LIBS ghdl)
+endif()
+add_vpi_library(GHDL GHDL EXTRA_LIBS ${GHDL_EXTRA_LIBS})
+if(WIN32)
+    add_dependencies(cocotbvpi_ghdl ghdl_import_lib)
+endif()
+
+# POSIX-only simulators
+if(UNIX)
+    # IUS/Xcelium
+    add_vpi_library(IUS IUS)
+    add_vhpi_library(IUS IUS)
+    
+    # VCS
+    add_vpi_library(VCS VCS)
+    
+    # Verilator
+    add_vpi_library(VERILATOR VERILATOR)
+    
+    # NVC
+    add_vhpi_library(NVC NVC)
+    
+    # DSim
+    add_vpi_library(DSim DSim)
+endif()
+
+# Aldec Riviera Pro
+set(ALDEC_EXTRA_LIBS "")
+if(WIN32)
+    set(ALDEC_EXTRA_LIBS aldec)
+endif()
+add_vpi_library(ALDEC ALDEC EXTRA_LIBS ${ALDEC_EXTRA_LIBS})
+add_vhpi_library(ALDEC ALDEC EXTRA_LIBS ${ALDEC_EXTRA_LIBS})
+if(WIN32)
+    add_dependencies(cocotbvpi_aldec aldec_import_lib)
+    add_dependencies(cocotbvhpi_aldec aldec_import_lib)
 endif()
 
 # Version generation logic matching setup.py
@@ -636,7 +620,9 @@ if(SKBUILD)
     install(TARGETS ${SIM_TARGETS} DESTINATION cocotb/libs OPTIONAL)
     
     # Install simulator extension separately
-    install(TARGETS simulator DESTINATION cocotb)
+    install(TARGETS simulator 
+            RUNTIME DESTINATION cocotb
+            LIBRARY DESTINATION cocotb)
     
     if(WIN32)
         install(FILES ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config DESTINATION cocotb)
