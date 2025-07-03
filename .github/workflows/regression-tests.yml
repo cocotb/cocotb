@@ -111,6 +111,18 @@ jobs:
       if: startsWith(matrix.os, 'windows')
       run: conda install --yes python=${{matrix.python-version}}
 
+      # Windows-specific: Setup mingw as default compiler
+    - name: Setup mingw as default compiler (Windows, mingw)
+      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
+      run: |
+        "[build]`ncompiler=mingw32`nforce=1`n[build_ext]`ncompiler=mingw32`nforce=1" | Out-File -Encoding ASCII -FilePath $Env:USERPROFILE\pydistutils.cfg
+    - name: Install cocotb build dependencies (Windows, mingw)
+      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
+      run: conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython
+    - name: Install cocotb runtime dependencies (Windows, msvc)
+      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
+      run: conda install --yes -c msys2 m2-base m2-make
+
       # Install
     - name: Install XML-dependencies for Python 3.14
       if: startsWith(matrix.python-version, '3.14') && startsWith(matrix.os, 'ubuntu')
@@ -222,12 +234,6 @@ jobs:
         sudo make install
 
       # Windows Testing
-    - name: Install cocotb build dependencies (Windows, mingw)
-      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
-      run: conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython
-    - name: Install cocotb runtime dependencies (Windows, msvc)
-      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
-      run: conda install --yes -c msys2 m2-base m2-make
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
