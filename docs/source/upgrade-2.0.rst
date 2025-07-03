@@ -167,7 +167,7 @@ These existed to support defining coroutines in Python 2 and early versions of P
 using the :keyword:`!async`\ /:keyword:`!await` syntax was added in Python 3.5.
 We no longer support versions of Python that don't support :keyword:`!async`\ /:keyword:`!await`,
 Python coroutines are noticeably faster than :deco:`!cocotb.coroutine`'s implementation,
-and the behavior of :deco:`!cocotb.coroutine` would have to be changed to support changes to the scheduler.
+and the behavior of :deco:`!cocotb.coroutine` would have had to be changed to support changes to the scheduler.
 For all those reasons the :deco:`!cocotb.coroutine` decorator and generator-based coroutine support was removed.
 
 
@@ -395,14 +395,14 @@ These unexpected behaviors were either an unfortunate product of its design or d
 They could not necessarily be "fixed" and any fix would invariably break the API.
 So rather than attempt to fix it, it was outright replaced.
 Unfortunately, a gradual change is not possible with such core functionality,
-so it was outright replaced in one step.
+so it was replaced in one step.
 
 
 Additional Details
 ==================
 
 There are some behaviors of :class:`!BinaryValue` that are *not* supported anymore.
-Support for these were deliberately not added to :class:`!LogicArray` because they were unnecessary, unintuitive, and had bugs.
+They were deliberately not added to :class:`!LogicArray` because they were unnecessary, unintuitive, or had bugs.
 
 
 Dynamic-sized :class:`!BinaryValue`\ s
@@ -410,7 +410,7 @@ Dynamic-sized :class:`!BinaryValue`\ s
 
 The above examples all pass the ``n_bits`` argument to the :class:`!BinaryValue` constructor.
 However, it is possible to construct a :class:`!BinaryValue` without a set size.
-Doing so would allow the size of the :class:`!BinaryValue` to change whenever set.
+Doing so would allow the size of the :class:`!BinaryValue` to change whenever the value was set.
 
 :class:`!LogicArray`\ s are fixed size.
 Instead of modifying the :class:`!LogicArray` in-place with a different sized value,
@@ -451,7 +451,7 @@ if the provided value was smaller than the :class:`!BinaryValue`,
 the value would be zero-extended based on the endianness of :class:`!BinaryValue`.
 
 :class:`!LogicArray` has no concept of "bit-endianness" as the indexing scheme is arbitrary.
-When partially setting a :class:`!LogicArray`, you are expected to provide the slice you want to set explicitly,
+When partially setting a :class:`!LogicArray`, you are expected to explicitly provide the slice you want to set,
 and it must match the size of the value it's being set with.
 
 .. code-block:: python
@@ -548,7 +548,7 @@ and :external+cocotb19:py:attr:`BinaryValue.signed_integer <cocotb.binary.Binary
 Unlike endianness, this could not be changed after construction (setting :attr:`!BinaryValue.binaryRepresentation` has no effect).
 
 :class:`!LogicArray` does not have a concept of integer representation as a part of its value,
-it's value is just an array of :class:`!Logic`.
+its value is just an array of :class:`!Logic`.
 Integer representation is provided when converting to and from an integer.
 
 .. note::
