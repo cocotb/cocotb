@@ -244,6 +244,17 @@ strong.command {
     color: var(--color-cocotb-blue) !important;
 }
 
+/* normal font weight for .pre ... */
+.pre {
+    font-weight: normal;
+}
+/* ... but restore bold when .pre is in headings
+   (a check for "not in headings" does not really exist in CSS)
+*/
+h1:has(.pre) .pre, h2:has(.pre) .pre, h3:has(.pre) .pre, h4:has(.pre) .pre, h5:has(.pre) .pre, h6:has(.pre) .pre {
+    font-weight: bold;
+}
+
 /* apidoc "[source]" link */
 span.viewcode-link {
     font-weight: normal !important;
