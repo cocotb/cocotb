@@ -373,33 +373,30 @@ endif()
 
 # 7. simulator (Python extension)
 if(WIN32)
-    # Don't generate RC manifest for simulator - causes SxS issues
+    # For Windows, don't use RC manifest for simulator to avoid SxS issues
+    # The DLL search path approach handles dependency loading
     add_library(simulator SHARED ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp)
     target_include_directories(simulator PRIVATE ${INCLUDE_DIRS})
     target_compile_definitions(simulator PRIVATE ${EXTRA_DEFINES} WIN32)
     target_compile_options(simulator PRIVATE ${EXTRA_CXX_FLAGS})
     target_link_libraries(simulator PRIVATE cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES})
     target_link_directories(simulator PRIVATE ${Python_LIBRARY_DIRS})
-    set_target_properties(simulator PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
-        PREFIX ""
-        SUFFIX ${PYTHON_EXT_SUFFIX}
-    )
 else()
-add_cocotb_library(simulator
-    SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
-    LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
-    RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
-)
-    # Set simulator to be a Python extension module (non-Windows)
+    # For non-Windows, use the standard approach with RC manifest
+    add_cocotb_library(simulator
+        SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
+        LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
+        RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
+    )
+endif()
+
+# Set simulator to be a Python extension module
 set_target_properties(simulator PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
     PREFIX ""
-        SUFFIX ${PYTHON_EXT_SUFFIX}
+    SUFFIX ${PYTHON_EXT_SUFFIX}
 )
-endif()
 
 # Function to add VPI libraries
 function(add_vpi_library SIM_NAME SIM_DEFINE)
@@ -484,7 +481,8 @@ if(WIN32)
         endforeach()
     endif()
     
-    # Create application configuration file
+    # Create application configuration file for SxS assembly loading
+    # This tells Windows to look for DLL dependencies in the libs subdirectory
     set(APPCONFIG_CONTENT "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
 <configuration>
     <windows>
