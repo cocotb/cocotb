@@ -277,14 +277,23 @@ function(add_cocotb_library TARGET_NAME)
     # Set RPATH for non-Windows platforms
     if(NOT WIN32)
         if(TARGET_NAME STREQUAL "simulator")
-            set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/libs")
+            if(APPLE)
+                set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "@loader_path/libs")
+            else()
+                set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/libs")
+            endif()
         else()
-            set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
-        endif()
-        
-        if(APPLE)
-            if(NOT TARGET_NAME STREQUAL "simulator")
-                set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_NAME_DIR "@rpath")
+            if(APPLE)
+                set_target_properties(${TARGET_NAME} PROPERTIES 
+                    INSTALL_RPATH "@loader_path"
+                    INSTALL_NAME_DIR "@rpath"
+                )
+                # Set install name for libraries (not simulator)
+                set_target_properties(${TARGET_NAME} PROPERTIES 
+                    LINK_FLAGS "-Wl,-install_name,@rpath/lib${TARGET_NAME}.so"
+                )
+            else()
+                set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
             endif()
         endif()
     endif()
