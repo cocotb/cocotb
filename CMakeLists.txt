@@ -372,22 +372,13 @@ else()
 endif()
 
 # 7. simulator (Python extension)
+add_cocotb_library(simulator
+    SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
+    LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
+    RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
+)
 if(WIN32)
-    # For Windows, don't use RC manifest for simulator to avoid SxS issues
-    # The DLL search path approach handles dependency loading
-    add_library(simulator SHARED ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp)
-    target_include_directories(simulator PRIVATE ${INCLUDE_DIRS})
-    target_compile_definitions(simulator PRIVATE ${EXTRA_DEFINES} WIN32)
-    target_compile_options(simulator PRIVATE ${EXTRA_CXX_FLAGS})
-    target_link_libraries(simulator PRIVATE cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES})
     target_link_directories(simulator PRIVATE ${Python_LIBRARY_DIRS})
-else()
-    # For non-Windows, use the standard approach with RC manifest
-    add_cocotb_library(simulator
-        SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
-        LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
-        RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
-    )
 endif()
 
 # Set simulator to be a Python extension module
@@ -483,6 +474,7 @@ if(WIN32)
     
     # Create application configuration file for SxS assembly loading
     # This tells Windows to look for DLL dependencies in the libs subdirectory
+    # Based on the pattern used in the old build system
     set(APPCONFIG_CONTENT "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
 <configuration>
     <windows>
@@ -493,6 +485,10 @@ if(WIN32)
 </configuration>")
     
     file(WRITE ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config "${APPCONFIG_CONTENT}")
+    
+    # Also create for the Python extension with .pyd suffix
+    get_filename_component(SIMULATOR_NAME ${CMAKE_BINARY_DIR}/cocotb/simulator.cp311-win_amd64.pyd NAME_WLE)
+    file(WRITE ${CMAKE_BINARY_DIR}/cocotb/${SIMULATOR_NAME}.pyd.2.config "${APPCONFIG_CONTENT}")
 endif()
 
 # Build simulator-specific libraries
@@ -647,5 +643,10 @@ if(SKBUILD)
     
     if(WIN32)
         install(FILES ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config DESTINATION cocotb)
+        # Install the .pyd-specific config file as well
+        file(GLOB PYD_CONFIG_FILES ${CMAKE_BINARY_DIR}/cocotb/*.pyd.2.config)
+        if(PYD_CONFIG_FILES)
+            install(FILES ${PYD_CONFIG_FILES} DESTINATION cocotb)
+        endif()
     endif()
 endif()
