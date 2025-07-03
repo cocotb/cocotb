@@ -415,6 +415,17 @@ function(add_vpi_library SIM_NAME SIM_DEFINE)
         target_link_directories(${TARGET_NAME} PRIVATE ${ARG_EXTRA_LIB_DIRS})
     endif()
     
+    # On non-Windows platforms, VPI symbols are provided by the simulator at runtime
+    # We need to allow undefined symbols at link time
+    if(NOT WIN32)
+        if(APPLE)
+            target_link_options(${TARGET_NAME} PRIVATE -undefined dynamic_lookup)
+        else()
+            # Linux: Allow undefined symbols for VPI functions
+            target_link_options(${TARGET_NAME} PRIVATE -Wl,--allow-shlib-undefined)
+        endif()
+    endif()
+    
     # Special handling for Icarus Verilog extension
     if(SIM_LOWER STREQUAL "icarus")
         set_target_properties(${TARGET_NAME} PROPERTIES SUFFIX ".vpl")
@@ -442,6 +453,17 @@ function(add_vhpi_library SIM_NAME SIM_DEFINE)
     
     if(ARG_EXTRA_LIB_DIRS)
         target_link_directories(${TARGET_NAME} PRIVATE ${ARG_EXTRA_LIB_DIRS})
+    endif()
+    
+    # On non-Windows platforms, VHPI symbols are provided by the simulator at runtime
+    # We need to allow undefined symbols at link time
+    if(NOT WIN32)
+        if(APPLE)
+            target_link_options(${TARGET_NAME} PRIVATE -undefined dynamic_lookup)
+        else()
+            # Linux: Allow undefined symbols for VHPI functions
+            target_link_options(${TARGET_NAME} PRIVATE -Wl,--allow-shlib-undefined)
+        endif()
     endif()
 endfunction()
 
@@ -528,6 +550,14 @@ add_cocotb_library(cocotbfli_modelsim
 )
 if(WIN32)
     add_dependencies(cocotbfli_modelsim modelsim_import_lib)
+else()
+    # On non-Windows platforms, FLI symbols are provided by the simulator at runtime
+    if(APPLE)
+        target_link_options(cocotbfli_modelsim PRIVATE -undefined dynamic_lookup)
+    else()
+        # Linux: Allow undefined symbols for FLI functions
+        target_link_options(cocotbfli_modelsim PRIVATE -Wl,--allow-shlib-undefined)
+    endif()
 endif()
 
 # GHDL
