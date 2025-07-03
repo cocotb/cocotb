@@ -1,5 +1,28 @@
 cmake_minimum_required(VERSION 3.15)
+
+# Clear problematic environment variables before project() command
+# This prevents CMake from picking up GCC-style flags for MSVC
+if(WIN32)
+    set(ENV{CFLAGS} "")
+    set(ENV{CXXFLAGS} "")
+    set(ENV{LDFLAGS} "")
+    
+    # Force MSVC-compatible flags from the start using cache variables
+    # This will override any environment variables
+    set(CMAKE_CXX_FLAGS "/W3" CACHE STRING "CXX compiler flags" FORCE)
+    set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Zi /Ob0 /Od /RTC1" CACHE STRING "CXX debug flags" FORCE)
+    set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG" CACHE STRING "CXX release flags" FORCE)
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /Zi /O2 /Ob1 /DNDEBUG" CACHE STRING "CXX release with debug info flags" FORCE)
+    set(CMAKE_CXX_FLAGS_MINSIZEREL "/MD /O1 /Ob1 /DNDEBUG" CACHE STRING "CXX min size release flags" FORCE)
+endif()
+
 project(cocotb LANGUAGES CXX)
+
+# MSVC flag validation
+if(MSVC)
+    message(STATUS "MSVC detected - using forced MSVC-compatible flags")
+    message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+endif()
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -364,18 +387,18 @@ if(WIN32)
         SUFFIX ${PYTHON_EXT_SUFFIX}
     )
 else()
-    add_cocotb_library(simulator
-        SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
-        LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
-        RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
-    )
+add_cocotb_library(simulator
+    SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
+    LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
+    RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
+)
     # Set simulator to be a Python extension module (non-Windows)
-    set_target_properties(simulator PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
-        PREFIX ""
+set_target_properties(simulator PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
+    PREFIX ""
         SUFFIX ${PYTHON_EXT_SUFFIX}
-    )
+)
 endif()
 
 # Function to add VPI libraries
