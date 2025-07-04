@@ -271,7 +271,7 @@ async def access_ulogic(dut):
 # GHDL discovers generics as vpiParameter (gh-2722)
 @cocotb.test(
     skip=LANGUAGE in ["verilog"],
-    expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def access_constant_integer(dut):
     """
@@ -284,7 +284,7 @@ async def access_constant_integer(dut):
 # GHDL discovers generics as vpiParameter (gh-2722)
 @cocotb.test(
     skip=LANGUAGE in ["verilog"],
-    expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def access_constant_string_vhdl(dut):
     """Access to a string, both constant and signal."""
@@ -358,7 +358,7 @@ async def access_var_string_verilog(dut):
 # GHDL discovers generics as vpiParameter (gh-2722)
 @cocotb.test(
     skip=LANGUAGE in ["verilog"],
-    expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def access_constant_boolean(dut):
     """Test access to a constant boolean"""
@@ -504,8 +504,7 @@ async def discover_all_in_component_vhdl(dut):
     #   1   SAMPLE_BLOCK.clk_inv
     if sim.startswith("ghdl"):
         # finds SAMPLE_BLOCK twice
-        # doesn't find EXAMPLE_STRING, EXAMPLE_BOOL, or EXAMPLE_WIDTH
-        assert total_count == 7
+        assert total_count == 10
     else:
         assert total_count == 9
 
