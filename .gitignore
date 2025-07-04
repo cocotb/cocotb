@@ -96,6 +96,8 @@ tests/test_cases/*/transcript
 examples/*/tests/modelsim.ini
 examples/*/tests/transcript
 *.wlf
+qrun.log
+visualizer.log
 
 # Riviera
 tests/test_cases/*/library.cfg

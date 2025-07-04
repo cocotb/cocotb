@@ -12,7 +12,7 @@ ifneq ($(filter $(SIM),xcelium),)
     COMPILE_ARGS += -v93
 endif
 
-ifneq ($(filter nvc questa modelsim xcelium ius riviera,$(shell echo $(SIM) | tr A-Z a-z)),)
+ifneq ($(filter nvc questa-compat questa-qisqrun modelsim xcelium ius riviera,$(shell echo $(SIM) | tr A-Z a-z)),)
     VHDL_LIB_ORDER := blib
 endif
 
@@ -20,7 +20,7 @@ ifneq ($(shell echo $(TOPLEVEL_LANG) | tr A-Z a-z),vhdl)
 all:
 	@echo "Skipping test since only VHDL is supported"
 clean::
-else ifeq ($(filter ghdl nvc questa modelsim xcelium ius riviera,$(shell echo $(SIM) | tr A-Z a-z)),)
+else ifeq ($(filter ghdl nvc questa-compat questa-qisqrun modelsim xcelium ius riviera,$(shell echo $(SIM) | tr A-Z a-z)),)
 all:
 	@echo "Skipping test since only GHDL, NVC, Questa/ModelSim, Xcelium, Incisive and Riviera-PRO are supported"
 clean::
