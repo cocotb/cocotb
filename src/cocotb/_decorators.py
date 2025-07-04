@@ -24,7 +24,7 @@ from typing import (
 )
 
 from cocotb._base_triggers import Trigger
-from cocotb._py_compat import TypeAlias
+from cocotb._py_compat import Protocol, TypeAlias
 from cocotb._typing import TimeUnit
 
 
@@ -218,17 +218,20 @@ def _repr(v: object) -> Optional[str]:
         return None
 
 
-TestDecoratorType: TypeAlias = Union[
-    Callable[[TestFuncType], Test], Callable[[Parameterized], Parameterized]
-]
+class TestDecoratorType(Protocol):
+    # TODO use position only argument for *obj* so we aren't tied to that name.
+    @overload
+    def __call__(self, obj: TestFuncType) -> Test: ...
+    @overload
+    def __call__(self, obj: Parameterized) -> Parameterized: ...
 
 
 @overload
-def test(_func: TestFuncType) -> Test: ...
+def test(obj: TestFuncType) -> Test: ...
 
 
 @overload
-def test(_func: Parameterized) -> Parameterized: ...
+def test(obj: Parameterized) -> Parameterized: ...
 
 
 @overload
@@ -245,7 +248,7 @@ def test(
 
 
 def test(
-    _func: Optional[Union[TestFuncType, Parameterized]] = None,
+    obj: Optional[Union[TestFuncType, Parameterized]] = None,
     *,
     timeout_time: Optional[float] = None,
     timeout_unit: TimeUnit = "step",
@@ -371,11 +374,11 @@ def test(
         Decorated tests now return the decorated object.
 
     """
-    if _func is not None:
-        if isinstance(_func, Parameterized):
-            return _func
+    if obj is not None:
+        if isinstance(obj, Parameterized):
+            return obj
         else:
-            return Test(func=_func)
+            return Test(func=obj)
 
     @overload
     def wrapper(obj: TestFuncType) -> Test: ...
