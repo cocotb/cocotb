@@ -444,6 +444,11 @@ class Runner(ABC):
             for lang in other_langs:
                 self.gpi_interfaces.extend(self.supported_gpi_interfaces[lang][0])
 
+        self.log.warning("gpi_interfaces arg: %r", gpi_interfaces)
+        self.log.warning("hdl_toplevel_lang: %r", hdl_toplevel_lang)
+        self.log.warning("other_langs: %r", other_langs)
+        self.log.warning("self.gpi_interfaces: %r", self.gpi_interfaces)
+
         self.pre_cmd = pre_cmd
 
         self.elab_args = list(elab_args)
