@@ -179,6 +179,8 @@ Timing Triggers
 .. autoclass:: cocotb.triggers.Timer
     :members:
 
+    .. autoattribute:: round_mode
+
 .. autoclass:: cocotb.triggers.ReadOnly
     :members:
 

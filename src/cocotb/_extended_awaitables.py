@@ -385,7 +385,7 @@ async def with_timeout(
         round_mode:
             String specifying how to handle time values that sit between time steps
             (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``, ``None``).
-            The default of ``None`` means ``'error'``.
+            A ``None`` argument is converted to the current value of :attr:`.Timer.round_mode`.
 
     Returns:
         First trigger that completed if timeout did not occur.

@@ -73,7 +73,7 @@ class Timer(GPITrigger):
 
             String specifying how to handle time values that sit between time steps
             (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``, ``None``).
-            The default of ``None`` means ``'error'``.
+            A ``None`` argument is converted to the current value of :attr:`.Timer.round_mode`.
 
     Raises:
         ValueError: If a non-positive value is passed for Timer setup.
@@ -121,7 +121,7 @@ class Timer(GPITrigger):
         Passing ``0`` as the *time* argument now raises a :exc:`ValueError`.
     """
 
-    round_mode: RoundMode = "error"
+    round_mode: ClassVar[RoundMode] = "error"
     """The default rounding mode."""
 
     def __init__(
