@@ -442,7 +442,7 @@ class Runner(ABC):
             ]
             # Add remaining languages GPI Impls in any order.
             for lang in other_langs:
-                self.gpi_interfaces.extend(self.supported_gpi_interfaces[lang][0])
+                self.gpi_interfaces.append(self.supported_gpi_interfaces[lang][0])
 
         self.log.warning("gpi_interfaces arg: %r", gpi_interfaces)
         self.log.warning("hdl_toplevel_lang: %r", hdl_toplevel_lang)
