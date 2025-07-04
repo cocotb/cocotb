@@ -152,9 +152,11 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
             return GPI_STRING;
         // case vpiTimeConst:  // Not implemented
         default:
-            LOG_DEBUG("Unable to map vpiConst type %d onto GPI type",
-                      const_type);
-            return GPI_UNKNOWN;
+            LOG_WARN(
+                "Unable to map vpiConst type %d onto GPI type,"
+                "guessing this is a logic vector",
+                const_type);
+            return GPI_LOGIC_ARRAY;
     }
 }
 

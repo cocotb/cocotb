@@ -423,7 +423,6 @@ async def test_edge_trigger_repr(dut) -> None:
     )
 
 
-@cocotb.test(expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else ())
 async def test_edge_trigger_on_const(dut) -> None:
     """Test failure if getting Edge trigger on const signal."""
     with pytest.raises(TypeError):
