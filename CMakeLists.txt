@@ -37,6 +37,10 @@ if(WIN32)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 else()
     set(LIB_EXT "so")
+    # Force .so extension on macOS to match old build system behavior
+    if(APPLE)
+        set(CMAKE_SHARED_LIBRARY_SUFFIX ".so")
+    endif()
 endif()
 
 # Compiler-specific settings
