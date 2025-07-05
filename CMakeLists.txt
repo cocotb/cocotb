@@ -6,7 +6,7 @@ if(WIN32)
     set(ENV{CFLAGS} "")
     set(ENV{CXXFLAGS} "")
     set(ENV{LDFLAGS} "")
-    
+
     # Force MSVC-compatible flags from the start using cache variables
     # This will override any environment variables
     set(CMAKE_CXX_FLAGS "/W3" CACHE STRING "CXX compiler flags" FORCE)
@@ -62,13 +62,13 @@ else()
     if(NOT WIN32)
         list(APPEND EXTRA_CXX_FLAGS "-flto")
     endif()
-    
+
     # Windows-specific GCC/MinGW settings
     if(WIN32)
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--exclude-all-symbols")
     else()
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto")
-        
+
         # Linux-specific: avoid libstdc++ runtime dependency
         if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libstdc++")
@@ -132,7 +132,7 @@ if(WIN32)
         else()
             set(ARCHITECTURE "x86")
         endif()
-        
+
         set(DEPENDENCIES "")
         foreach(LIB ${LIBRARIES})
             string(APPEND DEPENDENCIES "        <dependency>\n")
@@ -141,7 +141,7 @@ if(WIN32)
             string(APPEND DEPENDENCIES "            </dependentAssembly>\n")
             string(APPEND DEPENDENCIES "        </dependency>\n")
         endforeach()
-        
+
         if(NOT DEPENDENCY_ONLY)
             set(MANIFEST_BODY "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
             string(APPEND MANIFEST_BODY "<assembly xmlns=\"urn:schemas-microsoft-com:asm.v1\" manifestVersion=\"1.0\">\n")
@@ -155,19 +155,19 @@ if(WIN32)
             string(APPEND MANIFEST_BODY "${DEPENDENCIES}")
             string(APPEND MANIFEST_BODY "</assembly>\n")
         endif()
-        
+
         set(${MANIFEST_VAR} "${MANIFEST_BODY}" PARENT_SCOPE)
     endfunction()
-    
+
     # Function to create resource files
     function(create_rc_file RC_FILENAME NAME FILENAME LIBRARIES RUNTIME_LIBRARIES)
         create_sxs_assembly_manifest(${NAME} ${FILENAME} "${LIBRARIES}" FALSE MANIFEST)
-        
+
         # Escape quotes and format for RC file
         string(REPLACE "\"" "\"\"" MANIFEST "${MANIFEST}")
         string(REPLACE "\n" "\\r\\n\"\n\"" MANIFEST "${MANIFEST}")
         set(MANIFEST "\"${MANIFEST}\"")
-        
+
         set(RC_BODY "#pragma code_page(65001) // UTF-8\n")
         string(APPEND RC_BODY "#include <Windows.h>\n\n")
         string(APPEND RC_BODY "LANGUAGE 0x00, 0x00\n\n")
@@ -175,19 +175,19 @@ if(WIN32)
         string(APPEND RC_BODY "BEGIN\n")
         string(APPEND RC_BODY "${MANIFEST}\n")
         string(APPEND RC_BODY "END\n")
-        
+
         if(RUNTIME_LIBRARIES)
             create_sxs_assembly_manifest(${NAME} ${FILENAME} "${RUNTIME_LIBRARIES}" TRUE RUNTIME_MANIFEST)
             string(REPLACE "\"" "\"\"" RUNTIME_MANIFEST "${RUNTIME_MANIFEST}")
             string(REPLACE "\n" "\\r\\n\"\n\"" RUNTIME_MANIFEST "${RUNTIME_MANIFEST}")
             set(RUNTIME_MANIFEST "\"${RUNTIME_MANIFEST}\"")
-            
+
             string(APPEND RC_BODY "\n1000 RT_MANIFEST\n")
             string(APPEND RC_BODY "BEGIN\n")
             string(APPEND RC_BODY "${RUNTIME_MANIFEST}\n")
             string(APPEND RC_BODY "END\n")
         endif()
-        
+
         file(WRITE ${RC_FILENAME} "${RC_BODY}")
     endfunction()
 endif()
@@ -198,7 +198,7 @@ function(add_cocotb_library TARGET_NAME)
     set(oneValueArgs "OUTPUT_NAME")
     set(multiValueArgs "SOURCES" "LIBRARIES" "DEFINES" "RC_LIBRARIES" "RC_RUNTIME_LIBRARIES")
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    
+
     # Handle Windows resource files
     set(ALL_SOURCES ${ARG_SOURCES})
     if(WIN32)
@@ -207,12 +207,12 @@ function(add_cocotb_library TARGET_NAME)
         if(NOT LIB_NAME)
             set(LIB_NAME ${TARGET_NAME})
         endif()
-        
+
         # Strip lib prefix for MSVC
         if(MSVC AND LIB_NAME MATCHES "^lib(.+)")
             string(REGEX REPLACE "^lib" "" LIB_NAME ${LIB_NAME})
         endif()
-        
+
         set(RC_LIBS ${ARG_RC_LIBRARIES})
         if(MSVC)
             # Strip lib prefix from RC libraries for MSVC
@@ -225,7 +225,7 @@ function(add_cocotb_library TARGET_NAME)
             endforeach()
             set(RC_LIBS ${RC_LIBS_PROCESSED})
         endif()
-        
+
         set(RC_RUNTIME_LIBS ${ARG_RC_RUNTIME_LIBRARIES})
         if(MSVC AND RC_RUNTIME_LIBS)
             set(RC_RUNTIME_LIBS_PROCESSED "")
@@ -237,33 +237,33 @@ function(add_cocotb_library TARGET_NAME)
             endforeach()
             set(RC_RUNTIME_LIBS ${RC_RUNTIME_LIBS_PROCESSED})
         endif()
-        
+
         create_rc_file(${RC_FILENAME} ${LIB_NAME} "${LIB_NAME}.${LIB_EXT}" "${RC_LIBS}" "${RC_RUNTIME_LIBS}")
         list(APPEND ALL_SOURCES ${RC_FILENAME})
     endif()
-    
+
     # Create the library
     add_library(${TARGET_NAME} SHARED ${ALL_SOURCES})
-    
+
     # Set output name
     if(ARG_OUTPUT_NAME)
         set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${ARG_OUTPUT_NAME})
     endif()
-    
+
     # Set include directories
     target_include_directories(${TARGET_NAME} PRIVATE ${INCLUDE_DIRS})
-    
+
     # Set compile definitions
     target_compile_definitions(${TARGET_NAME} PRIVATE ${ARG_DEFINES} ${EXTRA_DEFINES})
-    
+
     # Set compile options
     target_compile_options(${TARGET_NAME} PRIVATE ${EXTRA_CXX_FLAGS})
-    
+
     # Link libraries
     if(ARG_LIBRARIES)
         target_link_libraries(${TARGET_NAME} PRIVATE ${ARG_LIBRARIES})
     endif()
-    
+
     # Windows-specific settings
     if(WIN32)
         target_compile_definitions(${TARGET_NAME} PRIVATE WIN32)
@@ -272,7 +272,7 @@ function(add_cocotb_library TARGET_NAME)
             target_link_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src/cocotb/share/def)
         endif()
     endif()
-    
+
     # Set RPATH for non-Windows platforms
     if(NOT WIN32)
         if(TARGET_NAME STREQUAL "simulator")
@@ -283,12 +283,12 @@ function(add_cocotb_library TARGET_NAME)
             endif()
         else()
             if(APPLE)
-                set_target_properties(${TARGET_NAME} PROPERTIES 
+                set_target_properties(${TARGET_NAME} PROPERTIES
                     INSTALL_RPATH "@loader_path"
                     INSTALL_NAME_DIR "@rpath"
                 )
                 # Set install name for libraries (not simulator)
-                set_target_properties(${TARGET_NAME} PROPERTIES 
+                set_target_properties(${TARGET_NAME} PROPERTIES
                     LINK_FLAGS "-Wl,-install_name,@rpath/lib${TARGET_NAME}.so"
                 )
             else()
@@ -296,7 +296,7 @@ function(add_cocotb_library TARGET_NAME)
             endif()
         endif()
     endif()
-    
+
     # Set output directory
     set_target_properties(${TARGET_NAME} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb/libs
@@ -313,7 +313,7 @@ add_cocotb_library(gpilog
     RC_LIBRARIES ""
 )
 
-# 2. pygpilog  
+# 2. pygpilog
 add_cocotb_library(pygpilog
     SOURCES ${SHARE_LIB_DIR}/py_gpi_log/py_gpi_logging.cpp
     DEFINES PYGPILOG_EXPORTS
@@ -354,7 +354,7 @@ add_cocotb_library(embed
 
 # 5. gpi
 add_cocotb_library(gpi
-    SOURCES 
+    SOURCES
         ${SHARE_LIB_DIR}/gpi/GpiCbHdl.cpp
         ${SHARE_LIB_DIR}/gpi/GpiCommon.cpp
     DEFINES GPI_EXPORTS "LIB_EXT=${LIB_EXT}" SINGLETON_HANDLES
@@ -403,10 +403,10 @@ function(add_vpi_library SIM_NAME SIM_DEFINE)
     set(oneValueArgs "")
     set(multiValueArgs "EXTRA_LIBS" "EXTRA_LIB_DIRS")
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    
+
     string(TOLOWER ${SIM_NAME} SIM_LOWER)
     set(TARGET_NAME cocotbvpi_${SIM_LOWER})
-    
+
     add_cocotb_library(${TARGET_NAME}
         SOURCES
             ${SHARE_LIB_DIR}/vpi/VpiImpl.cpp
@@ -418,11 +418,11 @@ function(add_vpi_library SIM_NAME SIM_DEFINE)
         LIBRARIES gpi gpilog ${ARG_EXTRA_LIBS}
         RC_LIBRARIES "gpi;gpilog"
     )
-    
+
     if(ARG_EXTRA_LIB_DIRS)
         target_link_directories(${TARGET_NAME} PRIVATE ${ARG_EXTRA_LIB_DIRS})
     endif()
-    
+
     # On non-Windows platforms, VPI symbols are provided by the simulator at runtime
     # We need to allow undefined symbols at link time
     if(NOT WIN32)
@@ -433,7 +433,7 @@ function(add_vpi_library SIM_NAME SIM_DEFINE)
             target_link_options(${TARGET_NAME} PRIVATE -Wl,--allow-shlib-undefined)
         endif()
     endif()
-    
+
     # Special handling for Icarus Verilog extension
     if(SIM_LOWER STREQUAL "icarus")
         set_target_properties(${TARGET_NAME} PROPERTIES SUFFIX ".vpl")
@@ -446,10 +446,10 @@ function(add_vhpi_library SIM_NAME SIM_DEFINE)
     set(oneValueArgs "")
     set(multiValueArgs "EXTRA_LIBS" "EXTRA_LIB_DIRS")
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    
+
     string(TOLOWER ${SIM_NAME} SIM_LOWER)
     set(TARGET_NAME cocotbvhpi_${SIM_LOWER})
-    
+
     add_cocotb_library(${TARGET_NAME}
         SOURCES
             ${SHARE_LIB_DIR}/vhpi/VhpiImpl.cpp
@@ -458,11 +458,11 @@ function(add_vhpi_library SIM_NAME SIM_DEFINE)
         LIBRARIES gpi gpilog ${ARG_EXTRA_LIBS}
         RC_LIBRARIES "gpi;gpilog"
     )
-    
+
     if(ARG_EXTRA_LIB_DIRS)
         target_link_directories(${TARGET_NAME} PRIVATE ${ARG_EXTRA_LIB_DIRS})
     endif()
-    
+
     # On non-Windows platforms, VHPI symbols are provided by the simulator at runtime
     # We need to allow undefined symbols at link time
     if(NOT WIN32)
@@ -479,7 +479,7 @@ endfunction()
 if(WIN32)
     # Generate import libraries from DEF files
     set(DEF_DIR ${CMAKE_SOURCE_DIR}/src/cocotb/share/def)
-    
+
     if(MSVC)
         foreach(SIM icarus modelsim aldec ghdl)
             add_custom_command(
@@ -501,7 +501,7 @@ if(WIN32)
             add_custom_target(${SIM}_import_lib ALL DEPENDS ${DEF_DIR}/lib${SIM}.a)
         endforeach()
     endif()
-    
+
     # Create application configuration file for SxS assembly loading
     # This tells Windows to look for DLL dependencies in the libs subdirectory
     # Based on the pattern used in the old build system
@@ -513,9 +513,9 @@ if(WIN32)
         </assemblyBinding>
     </windows>
 </configuration>")
-    
+
     file(WRITE ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config "${APPCONFIG_CONTENT}")
-    
+
     # Also create for the Python extension with .pyd suffix
     get_filename_component(SIMULATOR_NAME ${CMAKE_BINARY_DIR}/cocotb/simulator.cp311-win_amd64.pyd NAME_WLE)
     file(WRITE ${CMAKE_BINARY_DIR}/cocotb/${SIMULATOR_NAME}.pyd.2.config "${APPCONFIG_CONTENT}")
@@ -583,16 +583,16 @@ if(UNIX)
     # IUS/Xcelium
     add_vpi_library(IUS IUS)
     add_vhpi_library(IUS IUS)
-    
+
     # VCS
     add_vpi_library(VCS VCS)
-    
+
     # Verilator
     add_vpi_library(VERILATOR VERILATOR)
-    
+
     # NVC
     add_vhpi_library(NVC NVC)
-    
+
     # DSim
     add_vpi_library(DSim DSim)
 endif()
@@ -657,28 +657,28 @@ __version__ = \"${COCOTB_VERSION}\"
 if(SKBUILD)
     # Install the _version.py file generated by CMake
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cocotb/_version.py DESTINATION cocotb)
-    
+
     install(TARGETS gpilog pygpilog cocotbutils embed gpi cocotb
             DESTINATION cocotb/libs)
-    
+
     # Install simulator-specific libraries
-    set(SIM_TARGETS 
-        cocotbvpi_icarus cocotbvpi_modelsim cocotbvhpi_modelsim 
+    set(SIM_TARGETS
+        cocotbvpi_icarus cocotbvpi_modelsim cocotbvhpi_modelsim
         cocotbfli_modelsim cocotbvpi_ghdl cocotbvpi_aldec cocotbvhpi_aldec)
-    
+
     if(UNIX)
-        list(APPEND SIM_TARGETS 
-            cocotbvpi_ius cocotbvhpi_ius cocotbvpi_vcs 
+        list(APPEND SIM_TARGETS
+            cocotbvpi_ius cocotbvhpi_ius cocotbvpi_vcs
             cocotbvpi_verilator cocotbvhpi_nvc cocotbvpi_dsim)
     endif()
-    
+
     install(TARGETS ${SIM_TARGETS} DESTINATION cocotb/libs OPTIONAL)
-    
+
     # Install simulator extension separately
-    install(TARGETS simulator 
+    install(TARGETS simulator
             RUNTIME DESTINATION cocotb
             LIBRARY DESTINATION cocotb)
-    
+
     if(WIN32)
         install(FILES ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config DESTINATION cocotb)
         # Install the .pyd-specific config file as well
