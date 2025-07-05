@@ -31,11 +31,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find Python
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
-# Include scikit-build-core helpers
-if(SKBUILD)
-    find_package(pybind11 CONFIG REQUIRED)
-endif()
-
 # Platform-specific settings
 if(WIN32)
     set(LIB_EXT "dll")
