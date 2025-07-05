@@ -15,7 +15,7 @@ from typing import Union, overload
 
 from cocotb import simulator
 from cocotb._py_compat import Literal, TypeAlias
-from cocotb._typing import TimeUnit
+from cocotb._typing import RoundMode, TimeUnit
 
 __all__ = (
     "get_sim_steps",
@@ -133,7 +133,7 @@ def get_sim_steps(
     time: Union[float, Fraction, Decimal],
     unit: TimeUnit = "step",
     *,
-    round_mode: str = "error",
+    round_mode: RoundMode = "error",
     units: None = None,
 ) -> int:
     """Calculates the number of simulation time steps for a given amount of *time*.
