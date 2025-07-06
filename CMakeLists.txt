@@ -29,7 +29,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Python
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
+find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 
 # Platform-specific settings
 if(WIN32)
@@ -80,38 +80,13 @@ endif()
 set(EXTRA_DEFINES "__STDC_FORMAT_MACROS")
 
 # Get Python library for linking
-if(APPLE)
-    set(PYTHON_LIB_VAR "LIBRARY")
-else()
-    set(PYTHON_LIB_VAR "LDLIBRARY")
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Embed)
+# absolute path to the DLL / .so that will be loaded at run time
+get_target_property(PYTHON_LIB Python::Python IMPORTED_LOCATION)
+if(NOT APPLE)
+    get_filename_component(PYTHON_LIB "${PYTHON_LIB}" NAME)
 endif()
-
-execute_process(
-    COMMAND ${Python_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('${PYTHON_LIB_VAR}') or '')"
-    OUTPUT_VARIABLE PYTHON_LDLIBRARY
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-if(PYTHON_LDLIBRARY)
-    get_filename_component(PYTHON_LIB_LINK ${PYTHON_LDLIBRARY} NAME_WLE)
-    string(REGEX REPLACE "^lib" "" PYTHON_LIB_LINK ${PYTHON_LIB_LINK})
-else()
-    string(REPLACE "." "" PYTHON_VERSION_NODOT ${Python_VERSION_MAJOR}${Python_VERSION_MINOR})
-    set(PYTHON_LIB_LINK "python${PYTHON_VERSION_NODOT}")
-endif()
-
-if(WIN32)
-    set(PYTHON_LIB "${PYTHON_LIB_LINK}.${LIB_EXT}")
-elseif(APPLE)
-    set(PYTHON_LIB_DIR ${Python_STDLIB}/../..)
-    if(EXISTS "${PYTHON_LIB_DIR}/lib${PYTHON_LIB_LINK}.dylib")
-        set(PYTHON_LIB "${PYTHON_LIB_DIR}/lib${PYTHON_LIB_LINK}.dylib")
-    else()
-        set(PYTHON_LIB "${PYTHON_LIB_DIR}/lib${PYTHON_LIB_LINK}.so")
-    endif()
-else()
-    set(PYTHON_LIB "lib${PYTHON_LIB_LINK}.${LIB_EXT}")
-endif()
+message(STATUS "PYTHON_LIB: ${PYTHON_LIB}")
 
 # Include directories
 set(INCLUDE_DIRS
