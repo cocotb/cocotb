@@ -4,6 +4,7 @@ A set of tests that demonstrate Array structure support
 
 import logging
 import os
+from typing import cast
 
 import cocotb
 from cocotb.clock import Clock
@@ -182,6 +183,34 @@ async def test_gen_loop(dut):
 
     for gens in dut.asc_gen:
         tlog.info("Iterate access found %s", gens)
+
+
+@cocotb.test()
+async def test_hierarchy_array_generic_typing(dut):
+    """Test that HierarchyArrayObject generic typing works correctly"""
+    tlog = logging.getLogger("cocotb.test")
+
+    asc_gen: HierarchyArrayObject[HierarchyObject] = cast(
+        "HierarchyArrayObject[HierarchyObject]", dut.asc_gen
+    )
+    desc_gen: HierarchyArrayObject[HierarchyObject] = cast(
+        "HierarchyArrayObject[HierarchyObject]", dut.desc_gen
+    )
+
+    asc_gen_element, desc_gen_element = asc_gen[20], desc_gen[20]
+
+    assert isinstance(asc_gen_element, HierarchyObject)
+    assert isinstance(desc_gen_element, HierarchyObject)
+
+    for element in asc_gen:
+        assert isinstance(element, HierarchyObject)
+        tlog.info("Iteration element type: %s", type(element).__name__)
+        break
+
+    first_element = next(iter(asc_gen))
+    assert isinstance(first_element, HierarchyObject)
+
+    tlog.info("HierarchyArrayObject[HierarchyObject] works correctly")
 
 
 @cocotb.test()

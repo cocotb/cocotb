@@ -131,4 +131,4 @@ else:
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
-    Self = ""
+    from typing_extensions import Self
