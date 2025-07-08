@@ -8,12 +8,15 @@ Tests relating to cocotb.clock.Clock
 import decimal
 import fractions
 import os
+from typing import Any
 
 import pytest
 from common import assert_takes
 
 import cocotb
+from cocotb._base_triggers import NullTrigger
 from cocotb.clock import Clock
+from cocotb.handle import Immediate
 from cocotb.simulator import clock_create, get_precision
 from cocotb.triggers import (
     FallingEdge,
@@ -86,7 +89,7 @@ async def test_gpi_clock_error_params(dut):
 async def test_gpi_clock_error_timing(dut):
     clk = clock_create(dut.clk._handle)
     with pytest.raises(ValueError):
-        clk.start(2, 3, True)
+        clk.start(2, 3, True, 0)
 
 
 @cocotb.test
@@ -99,9 +102,9 @@ async def test_gpi_clock_error_start(dut):
 @cocotb.test
 async def test_gpi_clock_error_already_started(dut):
     clk = clock_create(dut.clk._handle)
-    clk.start(2, 1, True)
+    clk.start(2, 1, True, 0)
     with pytest.raises(RuntimeError):
-        clk.start(2, 1, True)
+        clk.start(2, 1, True, 0)
     clk.stop()
 
 
@@ -165,3 +168,24 @@ async def test_clock_task_cancel(dut) -> None:
     # Ensure clock is dead.
     with pytest.raises(SimTimeoutError):
         await with_timeout(RisingEdge(dut.clk), 20, "ns")
+
+
+@cocotb.test
+async def test_bad_set_action(dut: Any) -> None:
+    with pytest.raises(TypeError):
+        Clock(dut.clk, 10, "ns", set_action=1)
+
+
+# Immediate isn't truly immediate on every simulator,
+# and checking just one is sufficient to know it works.
+@cocotb.test(skip=not cocotb.SIM_NAME.lower().startswith("verilator"))
+async def test_set_action(dut: Any) -> None:
+    c = Clock(dut.clk, 10, "ns", set_action=Immediate)
+
+    c.start(start_high=True)
+    await NullTrigger()
+    assert dut.clk.value == 1
+
+    await Timer(5, "ns")
+    await NullTrigger()
+    assert dut.clk.value == 0
