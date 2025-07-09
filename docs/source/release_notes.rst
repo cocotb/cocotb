@@ -34,7 +34,7 @@ Features
 - Not using parentheses on ``@cocotb.test`` decorator is now supported. (:pr:`2731`)
 - The :external+cocotb19:meth:`cocotb.runner.Simulator.build` method now accepts a ``clean`` argument to remove ``build_dir`` completely during build stage. (:pr:`3351`)
 - Added support for the `NVC <https://github.com/nickg/nvc>`_ VHDL simulator. (:pr:`3427`)
-- Added :make:var:`SIM_CMD_SUFFIX` to allow users to redirect simulator output or otherwise suffix the simulation command invocation. (:pr:`3561`)
+- Added :external+cocotb19:make:var:`SIM_CMD_SUFFIX` to allow users to redirect simulator output or otherwise suffix the simulation command invocation. (:pr:`3561`)
 - Added ``--trace`` command line argument to Verilator simulation binaries for run-time trace generation. This new argument is passed to the binary when the ``waves`` argument to :external+cocotb19:meth:`cocotb.runner.Simulator.test` is ``True``. (:pr:`3667`)
 - The :external+cocotb19:meth:`cocotb.runner.Simulator.build` and :external+cocotb19:meth:`cocotb.runner.Simulator.test` methods now accept a ``log_file`` argument to redirect stdout and stderr to the specified file. (:pr:`3668`)
 - The ``results_xml`` argument to :external+cocotb19:meth:`cocotb.runner.Simulator.test` can now be an absolute path. (:pr:`3669`)
@@ -43,7 +43,7 @@ Features
 - The ``sources`` option was added to :external+cocotb19:meth:`cocotb.runner.Simulator.build` to better support building mixed-language designs. (:pr:`3796`)
 - Enable use of VPI fallback in all simulators when attempting to access generate blocks directly via lookup. This enables better support for simulators that don't support ``vpiGenScopeArray``, allowing discovery of generate blocks without having to iterate over the parent handle. (:pr:`3817`)
 - Added support for comparing :external+cocotb19:class:`~cocotb.binary.BinaryValue` with :external+cocotb19:class:`~cocotb.types.Logic`, :external+cocotb19:class:`~cocotb.types.LogicArray`, and :external+cocotb19:class:`str`. (:pr:`3845`)
-- Riviera-PRO now supports compilation into (multiple) VHDL libraries using :make:var:`VHDL_SOURCES_<lib>`. (:pr:`3922`)
+- Riviera-PRO now supports compilation into (multiple) VHDL libraries using :external+cocotb19:make:var:`VHDL_SOURCES_<lib>`. (:pr:`3922`)
 
 
 Bugfixes
@@ -212,8 +212,8 @@ Features
 - ModelSim and Questa now support compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`2465`)
 - Added the :external+cocotb16:class:`~cocotb.types.LogicArray` modeling datatype. (:pr:`2514`)
 - Xcelium now supports compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`2614`)
-- Add the :make:var:`SIM_CMD_PREFIX` to supported Makefile variables, allowing users to pass environment variables and other command prefixes to simulators. (:pr:`2615`)
-- To support VHDL libraries in ModelSim/Questa/Xcelium, :make:var:`VHDL_LIB_ORDER` has been added to specify a library compilation order. (:pr:`2635`)
+- Add the :external+cocotb16:make:var:`SIM_CMD_PREFIX` to supported Makefile variables, allowing users to pass environment variables and other command prefixes to simulators. (:pr:`2615`)
+- To support VHDL libraries in ModelSim/Questa/Xcelium, :external+cocotb16:make:var:`VHDL_LIB_ORDER` has been added to specify a library compilation order. (:pr:`2635`)
 - ``cocotb.fork()``, :external+cocotb16:func:`cocotb.start`, :external+cocotb16:func:`cocotb.start_soon`, and :external+cocotb16:func:`cocotb.create_task` now accept any object that implements the :external+cocotb16:class:`collections.abc.Coroutine` protocol. (:pr:`2647`)
 - :external+cocotb16:class:`~cocotb.regression.TestFactory` and :external+cocotb16:class:`cocotb.test` now accept any :external+cocotb16:class:`collections.abc.Callable` object which returns a :external+cocotb16:class:`collections.abc.Coroutine` as a test function. (:pr:`2647`)
 - Added :external+cocotb16:func:`cocotb.start` and :external+cocotb16:func:`cocotb.start_soon` scheduling functions. (:pr:`2660`)
@@ -258,7 +258,7 @@ Changes
 
 - Assigning out-of-range Python integers to signals will now raise an :external+cocotb16:exc:`OverflowError`. (:pr:`2316`)
 - cocotb now requires Python 3.6+. (:pr:`2422`)
-- Selecting tests using :make:var:`TESTCASE` will now search for the first occurrence of a test of that name in order of modules listed in :make:var:`MODULE`\ s, and not just the first module in that list. (:pr:`2434`)
+- Selecting tests using :external+cocotb16:make:var:`TESTCASE` will now search for the first occurrence of a test of that name in order of modules listed in :external+cocotb16:make:var:`MODULE`\ s, and not just the first module in that list. (:pr:`2434`)
 - The environment variable :external+cocotb16:envvar:`COCOTB_LOG_LEVEL` now supports ``TRACE`` value, which is used for verbose low-level logging that was previously in ``DEBUG`` logs. (:pr:`2502`)
 - Improves formatting on test-related logging outputs. (:pr:`2564`)
 - Shorter log lines (configurable with :external+cocotb16:envvar:`COCOTB_REDUCED_LOG_FMT`) are now the default. For wider log output, similar to previous cocotb releases, set the :external+cocotb16:envvar:`COCOTB_REDUCED_LOG_FMT` environment variable to ``0``. (:pr:`2564`)
@@ -293,8 +293,8 @@ Features
 
 - Support for building with Microsoft Visual C++ has been added.
   See :external+cocotb15:ref:`install` for more details. (:pr:`1798`)
-- Makefiles now automatically deduce :make:var:`TOPLEVEL_LANG` based on the value of :make:var:`VERILOG_SOURCES` and :make:var:`VHDL_SOURCES`.
-  Makefiles also detect incorrect usage of :make:var:`TOPLEVEL_LANG` for simulators that only support one language. (:pr:`1982`)
+- Makefiles now automatically deduce :external+cocotb15:make:var:`TOPLEVEL_LANG` based on the value of :external+cocotb15:make:var:`VERILOG_SOURCES` and :external+cocotb15:make:var:`VHDL_SOURCES`.
+  Makefiles also detect incorrect usage of :external+cocotb15:make:var:`TOPLEVEL_LANG` for simulators that only support one language. (:pr:`1982`)
 - ``cocotb.fork()`` will now raise a descriptive :external+cocotb15:class:`TypeError` if a coroutine function is passed into them. (:pr:`2006`)
 - Added ``cocotb.scheduler.start_soon()`` which schedules a coroutine to start *after* the current coroutine yields control.
   This behavior is distinct from ``cocotb.fork()`` which schedules the given coroutine immediately. (:pr:`2023`)
@@ -312,7 +312,7 @@ Features
 - Support for the SystemVerilog type ``bit`` has been added. (:pr:`2322`)
 - Added the ``--lib-dir``,  ``--lib-name`` and ``--lib-name-path`` options to the ``cocotb-config`` command to make cocotb integration into existing flows easier. (:pr:`2387`)
 - Support for using Questa's VHPI has been added.
-  Use :make:var:`VHDL_GPI_INTERFACE` to select between using the FLI or VHPI when dealing with VHDL simulations.
+  Use :external+cocotb15:make:var:`VHDL_GPI_INTERFACE` to select between using the FLI or VHPI when dealing with VHDL simulations.
   Note that VHPI support in Questa is still experimental at this time. (:pr:`2408`)
 
 
@@ -393,7 +393,7 @@ Features
 - :external+cocotb14:class:`~cocotb.triggers.Lock` can now be used in :keyword:`async with` statements. (:pr:`1031`)
 - Add support for distinguishing between ``net`` (``vpiNet``) and ``reg`` (``vpiReg``) type when using the VPI interface. (:pr:`1107`)
 - Support for dropping into :external+cocotb14:mod:`pdb` upon failure, via the new :external+cocotb14:envvar:`COCOTB_PDB_ON_EXCEPTION` environment variable. (:pr:`1180`)
-- Simulators run through a Tcl script (Aldec Riviera Pro and Mentor simulators) now support a new :make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime. (:pr:`1244`)
+- Simulators run through a Tcl script (Aldec Riviera Pro and Mentor simulators) now support a new :external+cocotb14:make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime. (:pr:`1244`)
 - Cocotb now supports the following example of forking a *non-decorated* :external+cocotb14:ref:`async coroutine <async_functions>`.
 
   .. code-block:: python
@@ -441,7 +441,7 @@ Features
 
   Issue (:pr:`1403`)
 - Custom logging handlers can now access the simulator time using
-  :attr:`logging.LogRecord.created_sim_time`, provided the
+  :external+cocotb14:attr:`logging.LogRecord.created_sim_time`, provided the
   :external+cocotb14:class:`~cocotb.logging.SimTimeContextFilter` filter added by
   :external+cocotb14:func:`~cocotb.logging.default_config` is not removed from the logger instance. (:pr:`1411`)
 - Questa now supports :external+cocotb14:envvar:`PLUSARGS`.
@@ -501,7 +501,7 @@ Deprecations and Removals
   needed now that we only support Python 3.5 and newer. (:pr:`1339`)
 - The value of :external+cocotb14:class:`cocotb.handle.StringObject`\ s is now of type :external+cocotb14:class:`bytes`, instead of  :external+cocotb14:class:`str` with an implied ASCII encoding scheme. (:pr:`1381`)
 - ``ReturnValue`` is now deprecated. Use a :keyword:`return` statement instead; this works in all supported versions of Python. (:pr:`1489`)
-- The makefile variable :make:var:`VERILATOR_TRACE`
+- The makefile variable :external+cocotb14:make:var:`VERILATOR_TRACE`
   that was not supported for all simulators has been deprecated.
   Using it prints a deprecation warning and points to the documentation section
   :external+cocotb14:ref:`simulator-support` explaining how to get the same effect by other means. (:pr:`1495`)
@@ -537,7 +537,7 @@ Changes
   Code working with these objects may find it needs to switch from creating :external+cocotb14:class:`str` objects like ``"this"`` to :external+cocotb14:class:`bytes` objects like ``b"this"``.
   This change is a consequence of the move to Python 3. (:pr:`1514`)
 - There's no longer any need to set the ``PYTHON_BIN`` makefile variable, the Python executable automatically matches the one cocotb was installed into. (:pr:`1574`)
-- The :make:var:`SIM` setting for Aldec Riviera-PRO has changed from ``aldec`` to ``riviera``. (:pr:`1691`)
+- The :external+cocotb14:make:var:`SIM` setting for Aldec Riviera-PRO has changed from ``aldec`` to ``riviera``. (:pr:`1691`)
 - Certain methods on the :external+cocotb14:mod:`cocotb.simulator` Python module now throw a :external+cocotb14:exc:`RuntimeError` when no simulator is present, making it safe to use :external+cocotb14:mod:`cocotb` without a simulator present. (:pr:`1843`)
 - Invalid values of the environment variable :external+cocotb14:envvar:`COCOTB_LOG_LEVEL` are no longer ignored.
   They now raise an exception with instructions how to fix the problem. (:pr:`1898`)
@@ -572,7 +572,7 @@ New features
 - Initial support for the :external+cocotb13:ref:`sim-verilator` simulator (version 4.020 and above).
   The integration of Verilator into cocotb is not yet as fast or as powerful as it is for other simulators.
   Please use the latest version of Verilator, and `report bugs <https://github.com/cocotb/cocotb/issues/new>`_ if you experience problems.
-- New makefile variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` for setting the default time unit and precision that should be assumed for simulation when not specified by modules in the design. (:pr:`1113`)
+- New makefile variables :external+cocotb13:make:var:`COCOTB_HDL_TIMEUNIT` and :external+cocotb13:make:var:`COCOTB_HDL_TIMEPRECISION` for setting the default time unit and precision that should be assumed for simulation when not specified by modules in the design. (:pr:`1113`)
 - New ``timeout_time`` and ``timeout_unit`` arguments to :external+cocotb13:func:`cocotb.test`, for adding test timeouts. (:pr:`1119`)
 - :external+cocotb13:func:`~cocotb.triggers.with_timeout`, for a shorthand for waiting for a trigger with a timeout. (:pr:`1119`)
 - The ``expect_error`` argument to :external+cocotb13:func:`cocotb.test` now accepts a specific exception type. (:pr:`1116`)
