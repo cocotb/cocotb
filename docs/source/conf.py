@@ -58,6 +58,14 @@ intersphinx_mapping = {
     "coverage": ("https://coverage.readthedocs.io/en/latest/", None),
     "remote_pdb": ("https://python-remote-pdb.readthedocs.io/en/latest/", None),
     "cocotb19": ("https://docs.cocotb.org/en/v1.9.2/", None),
+    "cocotb18": ("https://docs.cocotb.org/en/v1.8.1/", None),
+    "cocotb17": ("https://docs.cocotb.org/en/v1.7.2/", None),
+    "cocotb16": ("https://docs.cocotb.org/en/v1.6.2/", None),
+    "cocotb15": ("https://docs.cocotb.org/en/v1.5.2/", None),
+    "cocotb14": ("https://docs.cocotb.org/en/v1.4.0/", None),
+    "cocotb13": ("https://docs.cocotb.org/en/v1.3.1/", None),
+    "cocotb12": ("https://docs.cocotb.org/en/v1.2.0/", None),
+    "cocotb11": ("https://docs.cocotb.org/en/v1.1/", None),
 }
 
 # Github repo

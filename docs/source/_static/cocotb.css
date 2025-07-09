@@ -433,3 +433,45 @@ hr.docutils {
     margin: 1.5rem 0;
     opacity: 1.0;
 }
+
+/* add badges for links that point to docs of specific cocotb versions */
+/* Common styles for all cocotb version badges */
+a[href*="docs.cocotb.org"]::after {
+    background-color: var(--color-cocotb-blue);
+    color: white;
+    font-size: 0.6rem;
+    padding: 0px 3px;
+    margin-left: 0.1rem;
+    border-radius: 4px;
+    vertical-align: super;
+    text-decoration: none;
+    display: inline-block;
+}
+
+a[href*="docs.cocotb.org"][href*="v1.9"]::after {
+    content: "v1.9";
+}
+a[href*="docs.cocotb.org"][href*="v1.8"]::after {
+    content: "v1.8";
+}
+a[href*="docs.cocotb.org"][href*="v1.7"]::after {
+    content: "v1.7";
+}
+a[href*="docs.cocotb.org"][href*="v1.6"]::after {
+    content: "v1.6";
+}
+a[href*="docs.cocotb.org"][href*="v1.5"]::after {
+    content: "v1.5";
+}
+a[href*="docs.cocotb.org"][href*="v1.4"]::after {
+    content: "v1.4";
+}
+a[href*="docs.cocotb.org"][href*="v1.3"]::after {
+    content: "v1.3";
+}
+a[href*="docs.cocotb.org"][href*="v1.2"]::after {
+    content: "v1.2";
+}
+a[href*="docs.cocotb.org"][href*="v1.1"]::after {
+    content: "v1.1";
+}
