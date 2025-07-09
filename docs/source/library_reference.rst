@@ -137,6 +137,13 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
     :members:
     :exclude-members: count, index
 
+.. autoclass:: cocotb.types.AbstractArray
+    :members:
+
+.. autoclass:: cocotb.types.AbstractMutableArray
+    :members:
+    :show-inheritance:
+
 .. autoclass:: cocotb.types.Array
     :members:
     :inherited-members:
