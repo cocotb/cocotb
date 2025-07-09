@@ -28,8 +28,8 @@ import find_libpython
 import cocotb_tools
 
 base_tools_dir = Path(cocotb_tools.__file__).parent.resolve()
-base_cocotb_dir = base_tools_dir.parent.joinpath("cocotb").resolve()
-if not base_cocotb_dir.exists():
+base_cocotb_dir = (base_tools_dir.parent / "cocotb").resolve()
+if not (base_cocotb_dir.exists() and (base_cocotb_dir / "libs").exists()):
     import cocotb
 
     base_cocotb_dir = Path(cocotb.__file__).parent.resolve()

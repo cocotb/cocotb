@@ -559,7 +559,10 @@ GpiObjHdl *VpiImpl::get_root_handle(const char *name) {
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
         if (to_gpi_objtype(vpi_get(vpiType, root)) != GPI_MODULE) continue;
 
-        if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
+        // prevents finding virtual classes (which Xcelium puts at the top-level
+        // scope) when looking for objects with get_root_handle.
+        const char *obj_name = vpi_get_str(vpiFullName, root);
+        if ((!name && obj_name[0] != '\\') || (name && !strcmp(name, obj_name)))
             break;
     }
 
