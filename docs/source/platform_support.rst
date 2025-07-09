@@ -50,8 +50,9 @@ This version of Python can be used with cocotb unless noted otherwise.
 * **Red Hat Enterprise Linux (RHEL) 9 amd64**,
   shipping with Python 3.9 (newer versions of Python are available), pip 21, and glibc 2.34.
   `Upstream support until May 2032 <https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates>`_.
-* **Ubuntu 20.04 LTS amd64**, shipping with Python 3.8, pip 20, glibc 2.31.
-  `Upstream support until April 2025 <https://wiki.ubuntu.com/Releases>`_.
+* **Red Hat Enterprise Linux (RHEL) 10 amd64**,
+  shipping with Python 3.12, pip 23.3, and glibc 2.39.
+  `Upstream support until May 2035 <https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates>`_.
 * **Ubuntu 22.04 LTS amd64**, shipping with Python 3.10, pip 22, glibc 2.35.
   `Upstream support until April 2027 <https://wiki.ubuntu.com/Releases>`_.
 * **Ubuntu 24.04 LTS amd64**, shipping with Python 3.12, pip 24, glibc 2.39.
@@ -73,9 +74,9 @@ Supported Windows Versions
 Supported macOS Versions
 ========================
 
-* **macOS 11 (Big Sur)**
-* **macOS 12 (Monterey) x86_64**
 * **macOS 13 (Ventura) x86_64**
+* **macOS 14 (Sonoma) x86_64**
+* **macOS 15 (Sequoia) x86_64**
 
 .. _platform-support-policy:
 
