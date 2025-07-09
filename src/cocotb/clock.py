@@ -118,8 +118,8 @@ class Clock:
 
     .. versionremoved:: 2.0
         Passing ``None`` as the *unit* argument was removed, use ``'step'`` instead.
- 
-     .. versionchanged:: 2.0
+
+    .. versionchanged:: 2.0
         :meth:`start` now automatically calls :func:`cocotb.start_soon` and stores the Task
         on the Clock object, so that it may later be :meth:`stop`\ ped.
     """
