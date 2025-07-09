@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 test_module = os.path.basename(os.path.splitext(__file__)[0])
 sim = os.getenv(
     "SIM",
-    "icarus" if os.getenv("HDL_TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
+    "icarus" if os.getenv("TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
 )
 
 

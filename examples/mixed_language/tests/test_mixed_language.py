@@ -128,7 +128,6 @@ def test_mixed_language_runner():
 
     This file can be run directly or via pytest discovery.
     """
-    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
 
     proj_path = Path(__file__).resolve().parent.parent
 
@@ -137,13 +136,13 @@ def test_mixed_language_runner():
         proj_path / "hdl" / "endian_swapper.vhdl",
     ]
 
-    if hdl_toplevel_lang == "verilog":
+    if LANGUAGE == "verilog":
         sources += [proj_path / "hdl" / "toplevel.sv"]
-    elif hdl_toplevel_lang == "vhdl":
+    elif LANGUAGE == "vhdl":
         sources += [proj_path / "hdl" / "toplevel.vhdl"]
     else:
         raise ValueError(
-            f"A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG={hdl_toplevel_lang}"
+            f"A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG={LANGUAGE}"
         )
 
     build_args = []
@@ -167,7 +166,7 @@ def test_mixed_language_runner():
 
     runner.test(
         hdl_toplevel="endian_swapper_mixed",
-        hdl_toplevel_lang=hdl_toplevel_lang,
+        hdl_toplevel_lang=LANGUAGE,
         test_module="test_mixed_language",
         test_args=test_args,
     )
