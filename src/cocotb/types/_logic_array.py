@@ -13,7 +13,7 @@ from typing import (
 
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import Literal, TypeAlias
-from cocotb.types._abstract_array import AbstractArray
+from cocotb.types._abstract_array import AbstractMutableArray
 from cocotb.types._logic import Logic, LogicConstructibleT, _str_literals
 from cocotb.types._range import Range
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
@@ -24,7 +24,7 @@ _resolve_lh_table = str.maketrans({"L": "0", "H": "1"})
 ByteOrder: TypeAlias = Literal["big", "little"]
 
 
-class LogicArray(AbstractArray[Logic]):
+class LogicArray(AbstractMutableArray[Logic]):
     r"""Fixed-sized, arbitrarily-indexed, Array of Logics.
 
     .. currentmodule:: cocotb.types
@@ -540,8 +540,6 @@ class LogicArray(AbstractArray[Logic]):
 
             .. deprecated:: 2.0
                 Use ``logic_array[:] = value`` instead.
-
-        :setter
         """
         return self.to_unsigned()
 

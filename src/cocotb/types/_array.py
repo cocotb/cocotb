@@ -3,13 +3,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from typing import Iterable, Iterator, List, TypeVar, Union, cast, overload
 
-from cocotb.types._abstract_array import AbstractArray
+from cocotb.types._abstract_array import AbstractMutableArray
 from cocotb.types._range import Range
 
 T = TypeVar("T")
 
 
-class Array(AbstractArray[T]):
+class Array(AbstractMutableArray[T]):
     r"""Fixed-size, arbitrarily-indexed, homogeneous collection type.
 
     Arrays are similar to, but different from Python :class:`list`\ s.
