@@ -113,15 +113,11 @@ class Clock:
         high_delay = low_delay = 10  # change the clock speed
         await Timer(1000, unit="ns")
 
-    .. versionchanged:: 1.5
+    .. versionadded:: 1.5
         Support ``'step'`` as the *unit* argument to mean "simulator time step".
 
-    .. versionchanged:: 2.0
+    .. versionremoved:: 2.0
         Passing ``None`` as the *unit* argument was removed, use ``'step'`` instead.
-
-    .. versionchanged:: 2.0
-        :meth:`start` now automatically calls :func:`cocotb.start_soon` and stores the Task
-        on the Clock object, so that it may later be :meth:`stop`\ ped.
     """
 
     _impl: Impl
@@ -200,7 +196,7 @@ class Clock:
         Returns:
             Object which can be passed to :func:`cocotb.start_soon` or ignored.
 
-        .. versionchanged:: 2.0
+        .. versionremoved:: 2.0
             Removed ``cycles`` arguments for toggling for a finite amount of cycles.
             Use :meth:`stop` to stop a clock from running.
 
