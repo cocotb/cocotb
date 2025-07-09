@@ -425,3 +425,11 @@ on e.g. .. code-block:: in the "Upgrading to cocotb 2.0" section
     border-left: 0.2rem solid;
     border-color: var(--color-cocotb-green);
 }
+
+/* a manually inserted horizontal rule */
+hr.docutils {
+    border: 0;
+    border-top: 1.5px solid var(--color-cocotb-blue);
+    margin: 1.5rem 0;
+    opacity: 1.0;
+}
