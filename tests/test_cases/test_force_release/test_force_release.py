@@ -22,9 +22,10 @@ questa_fli = (
     and os.getenv("VHDL_GPI_INTERFACE", "") == "fli"
 )
 
-riviera_vpi = (
+riviera_vpi_below_2024_10 = (
     SIM_NAME.startswith("riviera")
-    and os.getenv("TOPLEVEL_LANG", "verilog") == "verilog"
+    and LANGUAGE == "verilog"
+    and RivieraVersion(cocotb.SIM_VERSION) < "2024.10"
 )
 
 ghdl_before_5 = SIM_NAME.startswith("ghdl") and GhdlVersion(SIM_VERSION) < GhdlVersion(
@@ -167,11 +168,11 @@ async def test_multiple_release_in_same_cycle(dut) -> None:
 
 # Force/Release doesn't work on Verilator (gh-3831)
 # Release doesn't work on GHDL < 5 (gh-3830)
-# Riviera's VPI stacktraces when overwriting forced signal with normal deposit (gh-3832)
+# Riviera's VPI < 2024.10 stacktraces when overwriting forced signal with normal deposit (gh-3832)
 # Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
 @cocotb.test(
     expect_fail=SIM_NAME.startswith("verilator") or questa_fli or ghdl_before_5,
-    skip=riviera_vpi,
+    skip=riviera_vpi_below_2024_10,
 )
 async def test_deposit_on_forced(dut) -> None:
     """Test Deposits following a Force don't overwrite the value on combo signals."""
@@ -198,10 +199,10 @@ async def test_deposit_on_forced(dut) -> None:
 
 # Force/Release doesn't work on Verilator (gh-3831)
 # Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
-# Riviera's VPI stacktraces when overwriting forced signal with normal deposit (gh-3832)
+# Riviera's VPI < 2024.10 stacktraces when overwriting forced signal with normal deposit (gh-3832)
 @cocotb.test(
     expect_fail=SIM_NAME.startswith("verilator") or questa_fli,
-    skip=riviera_vpi,
+    skip=riviera_vpi_below_2024_10,
 )
 async def test_deposit_then_force_in_same_cycle(dut) -> None:
     """Tests a Force and Deposit in the same cycle results in Force winning."""
@@ -223,10 +224,10 @@ async def test_deposit_then_force_in_same_cycle(dut) -> None:
 
 # Force/Release doesn't work on Verilator (gh-3831)
 # Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
-# Riviera's VPI stacktraces when overwriting forced signal with normal deposit (gh-3832)
+# Riviera's VPI < 2024.10 stacktraces when overwriting forced signal with normal deposit (gh-3832)
 @cocotb.test(
     expect_fail=SIM_NAME.startswith("verilator") or ghdl_before_5 or questa_fli,
-    skip=riviera_vpi,
+    skip=riviera_vpi_below_2024_10,
 )
 async def test_force_then_deposit_in_same_cycle(dut) -> None:
     """Tests a Force and Deposit in the same cycle results in Force winning."""
