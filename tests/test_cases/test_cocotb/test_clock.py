@@ -189,3 +189,5 @@ async def test_set_action(dut: Any) -> None:
     await Timer(5, "ns")
     await NullTrigger()
     assert dut.clk.value == 0
+
+    assert c.set_action is Immediate
