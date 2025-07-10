@@ -155,8 +155,6 @@ omit = [
     "*/cocotb_tools/*",
     "*/_vendor/*",
 ]
-
-[tool.coverage.report]
 exclude_also = [
     "@(typing\\.)?overload",
 ]
