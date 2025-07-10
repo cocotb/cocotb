@@ -12,4 +12,4 @@ async def y_test(dut):
 
 @cocotb.test()
 async def y_test_with_additional(_):
-    assert False, "TESTCASE shouldn't match this test"
+    assert False, "COCOTB_TESTCASE shouldn't match this test"
