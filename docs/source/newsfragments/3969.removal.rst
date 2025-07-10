@@ -1,1 +1,1 @@
-The ``outcome`` parameter to :class:`~cocotb.trigger.NullTrigger` was removed. There is no alternative.
+The ``outcome`` parameter to :class:`~cocotb.triggers.NullTrigger` was removed. There is no alternative.
