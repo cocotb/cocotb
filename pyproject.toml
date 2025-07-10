@@ -156,6 +156,11 @@ omit = [
     "*/_vendor/*",
 ]
 
+[tool.coverage.report]
+exclude_also = [
+    "@(typing\\.)?overload",
+]
+
 [tool.codespell]
 ignore-words-list = [
     "AFE",
