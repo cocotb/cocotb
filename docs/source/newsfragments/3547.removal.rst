@@ -1,1 +1,1 @@
-``cocotb.utils.lazy_property`` was removed. Use :func:`functools.cached_property` instead.
+:external+cocotb19:class:`cocotb.utils.lazy_property` was removed. Use :func:`functools.cached_property` instead.

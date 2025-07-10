@@ -18,7 +18,7 @@ Bugfixes
 --------
 
 - Improve the Verilator Makefile to pass on ``--trace`` at runtime as well. (:issue:`4088`)
-- Pass ``EXTRA_ARGS`` in the Verilator Makefile to both the compilation and the simulation step.
+- Pass :external+cocotb19:make:var:`EXTRA_ARGS` in the Verilator Makefile to both the compilation and the simulation step.
 
 Changes
 -------
@@ -31,7 +31,7 @@ cocotb 1.9.0 (2024-07-14)
 Features
 --------
 
-- Not using parentheses on ``@cocotb.test`` decorator is now supported. (:pr:`2731`)
+- Not using parentheses on the :external+cocotb19:exc:`@cocotb.test <cocotb.test>` decorator is now supported. (:pr:`2731`)
 - The :external+cocotb19:meth:`cocotb.runner.Simulator.build` method now accepts a ``clean`` argument to remove ``build_dir`` completely during build stage. (:pr:`3351`)
 - Added support for the `NVC <https://github.com/nickg/nvc>`_ VHDL simulator. (:pr:`3427`)
 - Added :external+cocotb19:make:var:`SIM_CMD_SUFFIX` to allow users to redirect simulator output or otherwise suffix the simulation command invocation. (:pr:`3561`)
@@ -43,7 +43,7 @@ Features
 - The ``sources`` option was added to :external+cocotb19:meth:`cocotb.runner.Simulator.build` to better support building mixed-language designs. (:pr:`3796`)
 - Enable use of VPI fallback in all simulators when attempting to access generate blocks directly via lookup. This enables better support for simulators that don't support ``vpiGenScopeArray``, allowing discovery of generate blocks without having to iterate over the parent handle. (:pr:`3817`)
 - Added support for comparing :external+cocotb19:class:`~cocotb.binary.BinaryValue` with :external+cocotb19:class:`~cocotb.types.Logic`, :external+cocotb19:class:`~cocotb.types.LogicArray`, and :external+cocotb19:class:`str`. (:pr:`3845`)
-- Riviera-PRO now supports compilation into (multiple) VHDL libraries using :external+cocotb19:make:var:`VHDL_SOURCES_<lib>`. (:pr:`3922`)
+- Riviera-PRO now supports compilation into (multiple) VHDL libraries using :make:var:`VHDL_SOURCES_\<lib\>`. (:pr:`3922`)
 
 
 Bugfixes
@@ -59,17 +59,17 @@ Deprecations and Removals
 -------------------------
 
 - ``bool(Lock())`` is deprecated. Use :external+cocotb19:meth:`~cocotb.triggers.Lock.locked` instead. (:pr:`3871`)
-- ``cocotb.triggers.Join.retval`` is deprecated. Use :external+cocotb19:meth:`.Task.result` to get the result of a finished Task. (:pr:`3871`)
-- Passing the *outcome* argument to :external+cocotb19:class:`~cocotb.triggers.NullTrigger` - which allowed the user to inject arbitrary outcomes when the trigger was :keyword:`await`\ ed - is deprecated. There is no alternative. (:pr:`3871`)
+- :external+cocotb19:attr:`cocotb.triggers.Join.retval` is deprecated. Use :external+cocotb19:meth:`cocotb.task.Task.result` to get the result of a finished Task. (:pr:`3871`)
+- Passing the ``outcome`` argument to :external+cocotb19:class:`~cocotb.triggers.NullTrigger` - which allowed the user to inject arbitrary outcomes when the trigger was :keyword:`await`\ ed - is deprecated. There is no alternative. (:pr:`3871`)
 - :external+cocotb19:meth:`Event.fired <cocotb.triggers.Event.fired>` is deprecated. Use :external+cocotb19:meth:`~cocotb.triggers.Event.is_set` instead. (:pr:`3871`)
 
 
 Changes
 -------
 
-- For Aldec simulators, the `-dbg` and `-O2` options are no longer passed by default, as they reduce simulation speed. Pass these options in ``COMPILE_ARGS`` and ``SIM_ARGS`` if you need them for increased observability. (:pr:`3490`)
+- For Aldec simulators, the ``-dbg`` and ``-O2`` options are no longer passed by default, as they reduce simulation speed. Pass these options in :external+cocotb19:make:var:`COMPILE_ARGS` and :external+cocotb19:make:var:`SIM_ARGS` if you need them for increased observability. (:pr:`3490`)
 - :keyword:`await`\ ing a :external+cocotb19:class:`~cocotb.task.Join` trigger will yield the Join trigger and not the result of the task in the 2.0 release. (:pr:`3871`)
-- :external+cocotb19:meth:`Lock.locked <cocotb.triggers.Lock.locked>` is now a method rather than an attribute to mirror :external+cocotb19:meth:`asyncio.Lock.locked`. (:pr:`3871`)
+- :external+cocotb19:meth:`Lock.locked <cocotb.triggers.Lock.locked>` is now a method rather than an attribute to mirror :meth:`asyncio.Lock.locked`. (:pr:`3871`)
 
 
 cocotb 1.8.1 (2023-10-06)
@@ -92,8 +92,8 @@ cocotb 1.8.0 (2023-06-15)
 Features
 --------
 
-- :external+cocotb18:class:`cocotb.types.LogicArray` now supports a default value construction if a ``range`` is given. (:pr:`3031`)
-- Add support for :external+cocotb18:class:`fraction.Fraction` and :external+cocotb18:class:`decimal.Decimal` to the ``period`` argument of :external+cocotb18:class:`cocotb.clock.Clock`. (:pr:`3045`)
+- :external+cocotb18:class:`cocotb.types.LogicArray` now supports a default value construction if a :external+cocotb19:attr:`range` is given. (:pr:`3031`)
+- Add support for :class:`fractions.Fraction` and :class:`decimal.Decimal` to the :external+cocotb18:attr:`~cocotb.clock.Clock.period` argument of :external+cocotb18:class:`cocotb.clock.Clock`. (:pr:`3045`)
 - This release adds the :external+cocotb18:ref:`Python Test Runner <howto-python-runner>`, an experimental replacement for the traditional Makefile-based build and run flow. (:pr:`3103`)
 - Incisive now supports compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`3261`)
 - Cocotb can now correctly drive Verilator when its new ``--timing`` flag is used. (:pr:`3316`)
@@ -116,7 +116,7 @@ Changes
 -------
 
 - Removed ``level`` arg from ``_sim_event`` function in the :external+cocotb18:envvar:`PYGPI_ENTRY_POINT` interface. This function can only indicate a request to shutdown from the simulator or GPI. (:pr:`3066`)
-- Moved :external+cocotb18:class:`cocotb.task.Task` and friends to ``cocotb.task`` module to alleviate internal cyclic import dependency. Users should update imports of the :external+cocotb18:class:`~cocotb.task.Task` to import from the top-level ``cocotb`` namespace. (:pr:`3067`)
+- Moved :external+cocotb18:class:`cocotb.task.Task` and friends to ``cocotb.task`` module to alleviate internal cyclic import dependency. Users should update imports of the :external+cocotb18:class:`~cocotb.task.Task` to import from the top-level :external+cocotb18:mod:`cocotb` namespace. (:pr:`3067`)
 - Added support for :external+cocotb18:envvar:`VERILOG_INCLUDE_DIRS` in the Makefiles. (:pr:`3189`)
 - Changed platform support: Added Red Hat Enterprise Linux 9 (RHEL) and compatible clones, added macOS 13 x86_64 (Ventura on Intel), removed Ubuntu 18.04 (end-of-life). Note that Python wheels compatible with Ubuntu 18.04 remain available for the time being. Even though the cocotb project does not provide pre-compiled binaries for unsupported platforms users can typically compile cocotb themselves, as done automatically when running ``pip install``.
 
@@ -167,7 +167,7 @@ Bugfixes
 Deprecations and Removals
 -------------------------
 
-- ``cocotb.fork()`` has been deprecated in favor of :external+cocotb17:func:`cocotb.start_soon` or :external+cocotb17:func:`cocotb.start`. (:pr:`2663`)
+- :external+cocotb17:func:`cocotb.fork()` has been deprecated in favor of :external+cocotb17:func:`cocotb.start_soon` or :external+cocotb17:func:`cocotb.start`. (:pr:`2663`)
 
 
 Changes
@@ -175,7 +175,7 @@ Changes
 
 - Passing :term:`python:coroutine`\ s to :external+cocotb17:func:`~cocotb.triggers.with_timeout` is now supported. (:pr:`2494`)
 - Renamed ``RunningTask`` to :external+cocotb17:class:`~cocotb.task.Task`. (:pr:`2876`)
-- Made :external+cocotb17:class:`~cocotb.task.Task` interface more like :external+cocotb17:class:`asyncio.Task`'s. (:pr:`2876`)
+- Made :external+cocotb17:class:`~cocotb.task.Task` interface more like :class:`asyncio.Task`'s. (:pr:`2876`)
 - When code coverage is enabled with :external+cocotb17:envvar:`COVERAGE` and a configuration file is specified with :external+cocotb17:envvar:`COVERAGE_RCFILE`, default coverage configuration is not applied to avoid overriding the user-defined configuration. (:pr:`3014`)
 
 
@@ -214,8 +214,8 @@ Features
 - Xcelium now supports compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`2614`)
 - Add the :external+cocotb16:make:var:`SIM_CMD_PREFIX` to supported Makefile variables, allowing users to pass environment variables and other command prefixes to simulators. (:pr:`2615`)
 - To support VHDL libraries in ModelSim/Questa/Xcelium, :external+cocotb16:make:var:`VHDL_LIB_ORDER` has been added to specify a library compilation order. (:pr:`2635`)
-- ``cocotb.fork()``, :external+cocotb16:func:`cocotb.start`, :external+cocotb16:func:`cocotb.start_soon`, and :external+cocotb16:func:`cocotb.create_task` now accept any object that implements the :external+cocotb16:class:`collections.abc.Coroutine` protocol. (:pr:`2647`)
-- :external+cocotb16:class:`~cocotb.regression.TestFactory` and :external+cocotb16:class:`cocotb.test` now accept any :external+cocotb16:class:`collections.abc.Callable` object which returns a :external+cocotb16:class:`collections.abc.Coroutine` as a test function. (:pr:`2647`)
+- :external+cocotb16:func:`cocotb.fork()`, :external+cocotb16:func:`cocotb.start`, :external+cocotb16:func:`cocotb.start_soon`, and :external+cocotb16:func:`cocotb.create_task` now accept any object that implements the :class:`collections.abc.Coroutine` protocol. (:pr:`2647`)
+- :external+cocotb16:class:`~cocotb.regression.TestFactory` and :external+cocotb16:class:`cocotb.test` now accept any :class:`collections.abc.Callable` object which returns a :class:`collections.abc.Coroutine` as a test function. (:pr:`2647`)
 - Added :external+cocotb16:func:`cocotb.start` and :external+cocotb16:func:`cocotb.start_soon` scheduling functions. (:pr:`2660`)
 - Add :external+cocotb16:func:`cocotb.create_task` API for creating a Task from a Coroutine without scheduling. (:pr:`2665`)
 - Support rounding modes in :external+cocotb16:class:`~cocotb.triggers.Timer`. (:pr:`2684`)
@@ -246,8 +246,8 @@ Deprecations and Removals
 - Setting values on indexed handles using the ``handle[i] = value`` syntax is deprecated. Instead use the ``handle[i].value = value`` syntax. (:pr:`2490`)
 - Setting values on handles using the ``dut.handle = value`` syntax is deprecated. Instead use the ``handle.value = value`` syntax. (:pr:`2490`)
 - Setting values on handles using the ``signal <= newval`` syntax is deprecated. Instead, use the ``signal.value = newval`` syntax. (:pr:`2681`)
-- ``cocotb.utils.hexdump`` is deprecated; use :external+cocotb16:func:`scapy.utils.hexdump` instead. (:pr:`2691`)
-- ``cocotb.utils.hexdiffs`` is deprecated; use :external+cocotb16:func:`scapy.utils.hexdiff` instead. (:pr:`2691`)
+- :external+cocotb16:func:`cocotb.utils.hexdump` is deprecated; use :func:`scapy.utils.hexdump` instead. (:pr:`2691`)
+- :external+cocotb16:func:`cocotb.utils.hexdiffs` is deprecated; use :func:`scapy.utils.hexdiff` instead. (:pr:`2691`)
 - Passing ``None`` to :external+cocotb16:func:`cocotb.utils.get_sim_time` is deprecated; use ``'step'`` as the time unit instead. (:pr:`2691`)
 - The ``stdout`` and ``stderr`` attributes on :external+cocotb16:class:`cocotb.result.TestComplete` and subclasses are deprecated. (:pr:`2692`)
 - ``TestFailure`` is deprecated, use an :keyword:`assert` statement instead. (:pr:`2692`)
@@ -295,9 +295,9 @@ Features
   See :external+cocotb15:ref:`install` for more details. (:pr:`1798`)
 - Makefiles now automatically deduce :external+cocotb15:make:var:`TOPLEVEL_LANG` based on the value of :external+cocotb15:make:var:`VERILOG_SOURCES` and :external+cocotb15:make:var:`VHDL_SOURCES`.
   Makefiles also detect incorrect usage of :external+cocotb15:make:var:`TOPLEVEL_LANG` for simulators that only support one language. (:pr:`1982`)
-- ``cocotb.fork()`` will now raise a descriptive :external+cocotb15:class:`TypeError` if a coroutine function is passed into them. (:pr:`2006`)
+- :external+cocotb15:func:`cocotb.fork()` will now raise a descriptive :external+cocotb15:class:`TypeError` if a coroutine function is passed into them. (:pr:`2006`)
 - Added ``cocotb.scheduler.start_soon()`` which schedules a coroutine to start *after* the current coroutine yields control.
-  This behavior is distinct from ``cocotb.fork()`` which schedules the given coroutine immediately. (:pr:`2023`)
+  This behavior is distinct from :external+cocotb15:func:`cocotb.fork()` which schedules the given coroutine immediately. (:pr:`2023`)
 - If ``pytest`` is installed, its assertion-rewriting framework will be used to
   produce more informative tracebacks from the :keyword:`assert` statement. (:pr:`2028`)
 - The handle to :external+cocotb15:envvar:`TOPLEVEL`, typically seen as the first argument to a cocotb test function, is now available globally as :external+cocotb15:data:`cocotb.top`. (:pr:`2134`)
@@ -320,7 +320,7 @@ Bugfixes
 --------
 
 - Assigning Python integers to signals greater than 32 bits wide will now work correctly for negative values. (:pr:`913`)
-- Fix GHDL's library search path, allowing libraries other than *work* to be used in simulation. (:pr:`2038`)
+- Fix GHDL's library search path, allowing libraries other than ``work`` to be used in simulation. (:pr:`2038`)
 - Tests skipped by default (created with `skip=True`) can again be run manually by setting the :external+cocotb15:envvar:`TESTCASE` variable. (:pr:`2045`)
 - In :external+cocotb15:ref:`Icarus Verilog <sim-icarus>`, generate blocks are now accessible directly via lookup without having to iterate over parent handle. (:pr:`2079`, :pr:`2143`)
 
@@ -578,7 +578,7 @@ New features
 - The ``expect_error`` argument to :external+cocotb13:func:`cocotb.test` now accepts a specific exception type. (:pr:`1116`)
 - New environment variable :external+cocotb13:envvar:`COCOTB_RESULTS_FILE`, to allow configuration of the xUnit XML output filename. (:pr:`1053`)
 - A new ``bus_separator`` argument to :external+cocotb13:class:`cocotb.drivers.BusDriver`. (:pr:`1160`)
-- A new ``start_high`` argument to :external+cocotb13:meth:`cocotb.clock.Clock.start`. (:pr:`1036`)
+- A new ``start_high`` argument to :external+cocotb13:attr:`cocotb.clock.Clock.start`. (:pr:`1036`)
 - A new :external+cocotb13:data:`cocotb.__version__` constant, which contains the version number of the running cocotb. (:pr:`1196`)
 
 Notable changes and bug fixes
@@ -587,17 +587,17 @@ Notable changes and bug fixes
 - ``DeprecationWarning``\ s are now shown in the output by default.
 - Tracebacks are now preserved correctly for exceptions in Python 2.
   The tracebacks in all Python versions are now a little shorter.
-- :external+cocotb13:func:`.bridge` and :external+cocotb13:func:`.resume` now work more reliably and with fewer race conditions.
+- :external+cocotb13:class:`cocotb.external` and :external+cocotb13:class:`cocotb.function` now work more reliably and with fewer race conditions.
 - A failing :keyword:`assert` will be considered a test failure. Previously, it was considered a test *error*.
 - :external+cocotb13:meth:`~cocotb.handle.NonConstantObject.drivers` and :external+cocotb13:meth:`~cocotb.handle.NonConstantObject.loads` now also work correctly in Python 3.7 onwards.
-- :external+cocotb13:class:`~cocotb.triggers.Timer` can now be used with :external+cocotb13:class:`decimal.Decimal` instances, allowing constructs like ``Timer(Decimal("1e-9"), units="sec")`` as an alternate spelling for ``Timer(100, units="us")``. (:pr:`1114`)
+- :external+cocotb13:class:`~cocotb.triggers.Timer` can now be used with :class:`decimal.Decimal` instances, allowing constructs like ``Timer(Decimal("1e-9"), units="sec")`` as an alternate spelling for ``Timer(100, units="us")``. (:pr:`1114`)
 - Many (editorial) documentation improvements.
 
 Deprecations
 ------------
 
-- ``cocotb.result.raise_error`` and ``cocotb.result.create_error`` are deprecated in favor of using Python exceptions directly.
-  ``TestError`` can still be used if the same exception type is desired. (:pr:`1109`)
+- :external+cocotb13:func:`cocotb.result.raise_error` and :external+cocotb13:func:`cocotb.result.create_error` are deprecated in favor of using Python exceptions directly.
+  :external+cocotb13:exc:`~cocotb.result.TestError` can still be used if the same exception type is desired. (:pr:`1109`)
 - The ``AvalonSTPktsWithChannel`` type is deprecated.
   Use the ``report_channel`` argument to :external+cocotb13:class:`~cocotb.monitors.avalon.AvalonSTPkts` instead.
 - The ``colour`` attribute of log objects like ``cocotb.log`` or ``some_coro.log`` is deprecated.
@@ -625,7 +625,7 @@ Notable changes and bug fixes
 
 - The heart of cocotb, its scheduler, is now even more robust. Many small bugs, inconsistencies and unreliable behavior have been ironed out.
 - Exceptions are now correctly propagated between coroutines, giving users the "natural" behavior they'd expect with exceptions. (:pr:`633`)
-- The ``setimmediatevalue()`` function now works for values larger than 32 bit. (:pr:`768`)
+- The :external+cocotb13:meth:`~cocotb.handle.ValueObjectBase.setimmediatevalue()` function now works for values larger than 32 bit. (:pr:`768`)
 - The documentation was cleaned up, improved and extended in various places, making it more consistent and complete.
 - Tab completion in newer versions of IPython is fixed. (:pr:`825`)
 - Python 2.6 is officially not supported any more. cocotb supports Python 2.7 and Python 3.5+.

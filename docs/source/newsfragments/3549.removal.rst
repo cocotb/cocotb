@@ -1,1 +1,1 @@
-Removed ``cocotb.types.Bit``.
+Removed :external+cocotb19:class:`cocotb.types.Bit`.
