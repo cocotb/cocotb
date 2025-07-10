@@ -16,9 +16,15 @@ import cocotb.triggers
 from cocotb.handle import Immediate, LogicArrayObject, StringObject, _Limits
 from cocotb.triggers import FallingEdge, Timer, ValueChange
 from cocotb.types import Logic, LogicArray
+from cocotb_tools.sim_versions import RivieraVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+SIM_VERSION = cocotb.SIM_VERSION
+
+riviera_before_2025_04 = SIM_NAME.startswith("riviera") and RivieraVersion(
+    SIM_VERSION
+) < RivieraVersion("2025.04")
 
 
 @cocotb.test()
@@ -234,12 +240,10 @@ def gen_int_unfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
 @cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer(dut, setimmediate: bool) -> None:
     """Test access to integers."""
-    if (
-        LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
-    ) or SIM_NAME.startswith(("ghdl", "verilator")):
-        limits = (
-            _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
+    if (LANGUAGE in ["verilog"] and riviera_before_2025_04) or SIM_NAME.startswith(
+        ("ghdl", "verilator")
+    ):
+        limits = _Limits.VECTOR_NBIT  # stream_in_int is LogicArrayObject in Riviera < 2025.04 and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -250,12 +254,10 @@ async def test_integer(dut, setimmediate: bool) -> None:
 @cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer_overflow(dut, setimmediate: bool) -> None:
     """Test integer overflow."""
-    if (
-        LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
-    ) or SIM_NAME.startswith(("ghdl", "verilator")):
-        limits = (
-            _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
+    if (LANGUAGE in ["verilog"] and riviera_before_2025_04) or SIM_NAME.startswith(
+        ("ghdl", "verilator")
+    ):
+        limits = _Limits.VECTOR_NBIT  # stream_in_int is LogicArrayObject in Riviera < 2025.04 and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
@@ -266,12 +268,10 @@ async def test_integer_overflow(dut, setimmediate: bool) -> None:
 @cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer_underflow(dut, setimmediate: bool) -> None:
     """Test integer underflow."""
-    if (
-        LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
-    ) or SIM_NAME.startswith("ghdl"):
-        limits = (
-            _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
+    if (LANGUAGE in ["verilog"] and riviera_before_2025_04) or SIM_NAME.startswith(
+        "ghdl"
+    ):
+        limits = _Limits.VECTOR_NBIT  # stream_in_int is LogicArrayObject in Riviera < 2025.04 and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
