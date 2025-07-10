@@ -155,15 +155,6 @@ omit = [
     "*/cocotb_tools/*",
     "*/_vendor/*",
 ]
-exclude_lines = [
-    "pragma: no cover",
-    # for excluding typing stubs
-    "\\.\\.\\.",
-    # for excluding abstractmethods
-    "raise\\s+NotImplementedError",
-    # excluding type checking blocks
-    "if (typing\\.)?TYPE_CHECKING:"
-]
 
 [tool.codespell]
 ignore-words-list = [
