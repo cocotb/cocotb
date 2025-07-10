@@ -21,10 +21,15 @@ from cocotb.handle import (
 )
 from cocotb.triggers import Timer
 from cocotb.types import LogicArray
-from cocotb_tools.sim_versions import VerilatorVersion
+from cocotb_tools.sim_versions import RivieraVersion, VerilatorVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+SIM_VERSION = cocotb.SIM_VERSION
+
+riviera_before_2025_04 = SIM_NAME.startswith("riviera") and RivieraVersion(
+    SIM_VERSION
+) < RivieraVersion("2025.04")
 
 
 # GHDL is unable to access signals in generate loops (gh-2594)
@@ -249,12 +254,12 @@ async def access_type_bit_verilog_metavalues(dut):
         assert dut.mybits.value == "00"
 
 
-# Riviera discovers integers as nets (gh-2597)
+# Riviera < 2025.04 discovers integers as nets (gh-2597)
 # GHDL discovers integers as nets (gh-2596)
 # Icarus does not support integer signals (gh-2598)
 @cocotb.test(
     expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
-    expect_fail=(SIM_NAME.startswith("riviera") and LANGUAGE in ["verilog"])
+    expect_fail=(riviera_before_2025_04 and LANGUAGE in ["verilog"])
     or SIM_NAME.startswith(("ghdl", "verilator")),
 )
 async def access_integer(dut):
