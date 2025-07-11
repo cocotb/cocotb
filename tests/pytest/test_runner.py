@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 
 sim = os.getenv(
     "SIM",
-    "icarus" if os.getenv("HDL_TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
+    "icarus" if os.getenv("TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
 )
 
 pre_cmd_sims = {
@@ -59,7 +59,7 @@ def test_runner(parameters, pre_cmd, clean_build):
     if sim not in pre_cmd_sims and pre_cmd is not None:
         pytest.skip("This simulator does not support pre_cmd")
 
-    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+    hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
     if hdl_toplevel_lang == "verilog":
@@ -118,7 +118,7 @@ def test_runner(parameters, pre_cmd, clean_build):
 
 
 def test_missing_libpython(monkeypatch):
-    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+    hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
     if hdl_toplevel_lang == "verilog":
         hdl_sources = [os.path.join(tests_dir, "designs", "runner", "runner.sv")]
         gpi_interfaces = ["vpi"]
@@ -128,7 +128,7 @@ def test_missing_libpython(monkeypatch):
 
     sim_tool = os.getenv(
         "SIM",
-        "icarus" if os.getenv("HDL_TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
+        "icarus" if os.getenv("TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
     )
     sim_runner = get_runner(sim_tool)
     sim_params = {
