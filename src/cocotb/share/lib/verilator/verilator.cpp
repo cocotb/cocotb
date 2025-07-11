@@ -77,12 +77,13 @@ int main(int argc, char** argv) {
 #else
     const char* traceFile = "dump.vcd";
 #endif
+    bool traceOn = false;
 
     for (int i = 1; i < argc; i++) {
         std::string arg = std::string(argv[i]);
         if (arg == "--trace") {
 #if VM_TRACE
-            tfp = new verilated_trace_t;
+            traceOn = true;
 #else
             fprintf(stderr,
                     "Error: --trace requires the design to be built with trace "
@@ -124,7 +125,8 @@ int main(int argc, char** argv) {
 
 #if VM_TRACE
     Verilated::traceEverOn(true);
-    if (tfp) {
+    if (traceOn) {
+        tfp = new verilated_trace_t;
         top->trace(tfp, 99);
         tfp->open(traceFile);
     }
