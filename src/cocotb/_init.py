@@ -19,17 +19,14 @@ import cocotb._profiling
 import cocotb.handle
 import cocotb.simulator
 from cocotb._scheduler import Scheduler
-from cocotb.logging import _log_from_c, default_config
 from cocotb.regression import RegressionManager, RegressionMode
 
 log: logging.Logger
 
 
 def _setup_logging() -> None:
-    default_config()
     cocotb.log = logging.getLogger("test")
     cocotb.log.setLevel(logging.INFO)
-    cocotb.simulator.initialize_logger(_log_from_c, logging.getLogger)
 
     global log
     log = logging.getLogger("cocotb")

@@ -11,8 +11,9 @@ Everything related to logging
 import logging
 import os
 import sys
+from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import Union
 
 from cocotb import _ANSI, simulator
 from cocotb._deprecation import deprecated
@@ -37,7 +38,6 @@ logging.addLevelName(5, "TRACE")
 
 
 __all__ = (
-    "SimBaseLog",
     "SimColourLogFormatter",
     "SimLog",
     "SimLogFormatter",
@@ -55,20 +55,16 @@ def default_config() -> None:
     :class:`SimTimeContextFilter` filter so that
     :attr:`~logging.LogRecord.created_sim_time` is available to the formatter.
 
-    The logging level for cocotb logs is set based on the
-    :envvar:`COCOTB_LOG_LEVEL` environment variable, which defaults to ``INFO``.
-
-    The logging level for GPI logs is set based on the
-    :envvar:`GPI_LOG_LEVEL` environment variable, which defaults to ``INFO``.
-
     If desired, this logging configuration can be overwritten by calling
     ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards), or by
     manually resetting the root logger instance.
     An example of this can be found in the section on :ref:`rotating-logger`.
 
     .. versionadded:: 1.4
+
+    .. versionchanged:: 2.0
+        No longer set the log level of the ``cocotb`` and ``gpi`` loggers.
     """
-    # construct an appropriate handler
     hdlr = logging.StreamHandler(sys.stdout)
     hdlr.addFilter(SimTimeContextFilter())
     if want_color_output():
@@ -76,10 +72,29 @@ def default_config() -> None:
     else:
         hdlr.setFormatter(SimLogFormatter())
 
-    logging.setLoggerClass(SimBaseLog)
     logging.basicConfig()
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
+
+def _init(_: object) -> None:
+    """Set cocotb and pygpi log levels."""
+
+    # Monkeypatch "gpi" logger with function that also sets a PyGPI-local logger level
+    # as an optimization.
+    gpi_logger = logging.getLogger("gpi")
+    old_setLevel = gpi_logger.setLevel
+
+    @wraps(old_setLevel)
+    def setLevel(level: Union[int, str]) -> None:
+        old_setLevel(level)
+        simulator.set_gpi_log_level(gpi_logger.getEffectiveLevel())
+
+    gpi_logger.setLevel = setLevel  # type: ignore[method-assign]
+
+    # Initialize PyGPI logging
+    simulator.initialize_logger(_log_from_c, logging.getLogger)
+
+    # Set "cocotb" and "gpi" logger based on environment variables
     def set_level(logger_name: str, envvar: str, default_level: str) -> None:
         log_level = os.environ.get(envvar, default_level)
         log_level = log_level.upper()
@@ -102,19 +117,9 @@ def default_config() -> None:
     set_level("cocotb", "COCOTB_LOG_LEVEL", "INFO")
 
 
-if TYPE_CHECKING:
-    LoggerClass = logging.Logger
-else:
-    LoggerClass = logging.getLoggerClass()
-
-
-class SimBaseLog(LoggerClass):
-    # For hooking setLevel to inform the GPI's local log level
-
-    def setLevel(self, level: Union[int, str]) -> None:
-        super().setLevel(level)
-        if self.name == "gpi":
-            simulator.set_gpi_log_level(self.getEffectiveLevel())
+def _setup_formatter(_: object) -> None:
+    """Setup cocotb's logging formatter."""
+    default_config()
 
 
 @deprecated('Use `logging.getLogger(f"{name}.0x{ident:x}")` instead')

@@ -6,12 +6,8 @@ Tests for the cocotb logger
 """
 
 import logging
-import os
-
-import pytest
 
 import cocotb
-import cocotb.logging
 
 
 class StrCallCounter:
@@ -38,44 +34,6 @@ async def test_logging_with_args(dut):
     dut._log.info("No substitution")
 
     dut._log.warning("Testing multiple line\nmessage")
-
-
-@cocotb.test()
-async def test_logging_default_config(dut):
-    cocotb_log = logging.getLogger("cocotb")
-
-    # Save pre-test configuration
-    log_level_prev = cocotb_log.level
-    os_environ_prev = os.environ.copy()
-
-    try:
-        # Set a valid log level
-        os.environ["COCOTB_LOG_LEVEL"] = "DEBUG"
-        cocotb.logging.default_config()
-        assert cocotb_log.level == logging.DEBUG, cocotb_log.level
-
-        # Try to set log level to an invalid log level
-        os.environ["COCOTB_LOG_LEVEL"] = "INVALID_LOG_LEVEL"
-        with pytest.raises(ValueError):
-            cocotb.logging.default_config()
-
-        # Try to set log level to a valid log level with wrong capitalization
-        os.environ["COCOTB_LOG_LEVEL"] = "error"
-        cocotb.logging.default_config()
-        assert cocotb_log.level == logging.ERROR, cocotb_log.level
-
-        # Set custom TRACE log level
-        os.environ["COCOTB_LOG_LEVEL"] = "TRACE"
-        cocotb.logging.default_config()
-        assert cocotb_log.level == logging.TRACE, cocotb_log.level
-
-    finally:
-        # Restore pre-test configuration
-        os.environ.clear()
-        os.environ.update(os_environ_prev)
-        cocotb_log.level = log_level_prev
-
-        logging.getLogger("gpi").setLevel(logging.INFO)
 
 
 @cocotb.test()
