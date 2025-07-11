@@ -11,7 +11,7 @@ import warnings
 from decimal import Decimal
 from fractions import Fraction
 from logging import Logger
-from typing import Type, Union
+from typing import ClassVar, Type, Union
 
 import cocotb
 from cocotb._py_compat import (
@@ -20,7 +20,14 @@ from cocotb._py_compat import (
     cached_property,
 )
 from cocotb._typing import TimeUnit
-from cocotb.handle import LogicObject, _trust_inertial
+from cocotb.handle import (
+    Deposit,
+    Force,
+    Immediate,
+    LogicObject,
+    _GPISetAction,
+    _trust_inertial,
+)
 from cocotb.simulator import clock_create
 from cocotb.task import Task
 from cocotb.triggers import (
@@ -55,18 +62,25 @@ class Clock:
 
             .. note::
                 Must convert to an even number of timesteps.
-        unit: One of
-            ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
+        unit:
+            One of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
             When *unit* is ``'step'``,
             the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
 
             .. versionchanged:: 2.0
                 Renamed from ``units``.
 
-        impl: One of
-            ``'auto'``, ``'gpi'``, ``'py'``.
+        impl:
+            One of ``'auto'``, ``'gpi'``, ``'py'``.
             Specify whether the clock is implemented with a :class:`~cocotb.simulator.GpiClock` (faster), or with a Python coroutine.
             When ``'auto'`` is used (default), the fastest implementation that supports your environment and use case is picked.
+
+            .. versionadded:: 2.0
+
+        set_action:
+            One of :class:`.Immediate`, :class:`.Deposit`, or :class:`.Force`.
+            Specify the action to use when setting the clock signal value.
+            Defaults to the value of :attr:`default_set_action`.
 
             .. versionadded:: 2.0
 
@@ -126,6 +140,15 @@ class Clock:
 
     _impl: Impl
 
+    default_set_action: ClassVar[Union[Type[Immediate], Type[Deposit], Type[Force]]] = (
+        Deposit
+    )
+    """The default action used to set the clock signal value.
+    One of :class:`.Immediate`, :class:`.Deposit`, or :class:`.Force`.
+
+    .. versionadded:: 2.0
+    """
+
     def __init__(
         self,
         signal: LogicObject,
@@ -134,6 +157,7 @@ class Clock:
         impl: Union[Impl, None] = None,
         *,
         units: None = None,
+        set_action: Union[Type[Immediate], Type[Deposit], Type[Force], None] = None,
     ) -> None:
         self._signal = signal
         self._period = period
@@ -145,6 +169,13 @@ class Clock:
             )
             unit = units
         self._unit: TimeUnit = unit
+        if set_action is None:
+            set_action = type(self).default_set_action
+        if set_action not in (Immediate, Deposit, Force):
+            raise TypeError(
+                "Invalid value for *set_action*. *set_action* must be one of Immediate, Deposit, or Force"
+            )
+        self._set_action = set_action
 
         if impl is None:
             self._impl = "gpi" if _trust_inertial else "py"
@@ -170,7 +201,10 @@ class Clock:
 
     @property
     def unit(self) -> TimeUnit:
-        """The unit of the clock period."""
+        """The unit of the clock period.
+
+        .. versionadded:: 2.0
+        """
         return self._unit
 
     @property
@@ -179,8 +213,18 @@ class Clock:
 
         ``"gpi"`` if the clock is implemented in C in the GPI layer,
         or ``"py"`` if the clock is implemented in Python using cocotb Tasks.
+
+        .. versionadded:: 2.0
         """
         return self._impl
+
+    @property
+    def set_action(self) -> Union[Type[Immediate], Type[Deposit], Type[Force]]:
+        """The value setting action used to set the clock signal value.
+
+        .. versionadded:: 2.0
+        """
+        return self._set_action
 
     def start(self, start_high: bool = True) -> Task[None]:
         r"""Start driving the clock signal.
@@ -217,7 +261,12 @@ class Clock:
 
         if self._impl == "gpi":
             clkobj = clock_create(self._signal._handle)
-            clkobj.start(period, t_high, start_high)
+            set_action = {
+                Deposit: _GPISetAction.DEPOSIT,
+                Immediate: _GPISetAction.NO_DELAY,
+                Force: _GPISetAction.FORCE,
+            }[self._set_action]
+            clkobj.start(period, t_high, start_high, set_action)
 
             async def drive() -> None:
                 # The clock is meant to toggle forever, so awaiting this should
@@ -234,12 +283,12 @@ class Clock:
                 timer_high = Timer(t_high)
                 timer_low = Timer(period - t_high)
                 if start_high:
-                    self._signal.set(1)
+                    self._signal.set(self._set_action(1))
                     await timer_high
                 while True:
-                    self._signal.set(0)
+                    self._signal.set(self._set_action(0))
                     await timer_low
-                    self._signal.set(1)
+                    self._signal.set(self._set_action(1))
                     await timer_high
 
         self._task = cocotb.start_soon(drive())

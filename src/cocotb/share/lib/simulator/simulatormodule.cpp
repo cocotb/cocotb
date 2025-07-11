@@ -812,7 +812,8 @@ class GpiClock {
     //  - EBUSY if the clock was already started (stop first)
     //  - EINVAL if the parameters are invalid
     //  - EAGAIN if registering the toggle callback failed
-    int start(uint64_t period_steps, uint64_t high_steps, bool start_high);
+    int start(uint64_t period_steps, uint64_t high_steps, bool start_high,
+              gpi_set_action set_action);
 
     int stop();
 
@@ -822,6 +823,7 @@ class GpiClock {
 
     uint64_t period = 0;
     uint64_t t_high = 0;
+    gpi_set_action m_set_action;
 
     int clk_val = 0;
 
@@ -829,8 +831,8 @@ class GpiClock {
     static int toggle_cb(void *gpi_clk);
 };
 
-int GpiClock::start(uint64_t period_steps, uint64_t high_steps,
-                    bool start_high) {
+int GpiClock::start(uint64_t period_steps, uint64_t high_steps, bool start_high,
+                    gpi_set_action set_action) {
     if (clk_toggle_cb_hdl) {
         return EBUSY;
     }
@@ -841,6 +843,7 @@ int GpiClock::start(uint64_t period_steps, uint64_t high_steps,
 
     period = period_steps;
     t_high = high_steps;
+    m_set_action = set_action;
 
     clk_val = start_high;
     return toggle(true);
@@ -859,7 +862,7 @@ int GpiClock::toggle(bool initialSet) {
     if (!initialSet) {
         clk_val = !clk_val;
     }
-    gpi_set_signal_value_int(clk_signal, clk_val, GPI_DEPOSIT);
+    gpi_set_signal_value_int(clk_signal, clk_val, m_set_action);
 
     uint64_t to_next_edge = clk_val ? t_high : (period - t_high);
 
@@ -939,12 +942,15 @@ static void clock_dealloc(PyObject *self) {
 static PyObject *clk_start(gpi_hdl_Object<gpi_clk_hdl> *self, PyObject *args) {
     unsigned long long period, t_high;
     int start_high;
+    int set_action;
 
-    if (!PyArg_ParseTuple(args, "KKp:start", &period, &t_high, &start_high)) {
+    if (!PyArg_ParseTuple(args, "KKpi:start", &period, &t_high, &start_high,
+                          &set_action)) {
         return NULL;
     }
 
-    int ret = self->hdl->start(period, t_high, start_high);
+    int ret = self->hdl->start(period, t_high, start_high,
+                               (gpi_set_action)set_action);
 
     if (ret != 0) {
         if (ret == EINVAL) {
