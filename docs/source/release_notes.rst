@@ -11,6 +11,26 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+cocotb 1.9.2 (2024-10-26)
+=========================
+
+Bugfixes
+--------
+
+- Better handle errors happening during the startup phase.
+- Fix toplevel discovery in Questa and Modelsim.
+
+Features
+--------
+
+- Python 3.13 is now supported.
+
+Deprecations and Removals
+-------------------------
+
+- The ``RTL_LIBRARY`` and :envvar:`TOPLEVEL_LIBRARY` Makefile variables were merged into :envvar:`TOPLEVEL_LIBRARY`. Update all uses of ``RTL_LIBRARY``.
+
+
 cocotb 1.9.1 (2024-08-29)
 =========================
 
