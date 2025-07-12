@@ -1,1 +1,0 @@
-If the user requests coverage collection via ``COCOTB_LIBRARY_COVERAGE`` or :envvar:`COCOTB_USER_COVERAGE` and the :mod:`coverage` module is not available, the regression will fail.

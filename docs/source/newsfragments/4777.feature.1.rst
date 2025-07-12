@@ -1,1 +1,0 @@
-Added the ``name`` keyword argument to :func:`cocotb.start_soon`, :func:`cocotb.start`, and :func:`cocotb.create_task` to set a :class:`.Task`\ s name during creation.

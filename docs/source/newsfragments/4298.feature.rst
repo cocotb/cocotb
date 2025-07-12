@@ -1,1 +1,0 @@
-Adding support for resolving ``X``, ``Z``, ``U``, ``W``, and ``-`` values to :meth:`.LogicArray.to_unsigned` and :meth:`.LogicArray.to_signed`.

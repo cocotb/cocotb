@@ -1,1 +1,0 @@
-:meth:`handle.get() <cocotb.handle.ValueObjectBase.get>` was added to parallel :meth:`handle.set() <cocotb.handle.ValueObjectBase.set>`.

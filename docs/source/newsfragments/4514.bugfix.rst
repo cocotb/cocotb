@@ -1,1 +1,0 @@
-Fixed bug where scheduled writes at the end of a test are cancelled.

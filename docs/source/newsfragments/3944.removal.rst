@@ -1,1 +1,0 @@
-:attr:`LogicArray.buff <cocotb.types.LogicArray.buff>` has been deprecated. Use :meth:`.LogicArray.to_bytes` instead.

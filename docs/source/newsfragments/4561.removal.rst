@@ -1,1 +1,0 @@
-Deprecated :attr:`.Event.name` and passing a ``name`` argument to :class:`.Event` constructors.

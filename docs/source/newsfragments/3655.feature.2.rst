@@ -1,1 +1,0 @@
-Add support for ``handle[sub_handle_name]`` syntax to :class:`~cocotb.handle.HierarchyObject` as a more readable alternative to :meth:`HierarchyObject._id() <cocotb.handle.HierarchyObject._id>`.

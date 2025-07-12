@@ -1,1 +1,0 @@
-Moved :class:`~cocotb.triggers.SimTimeoutError` from ``cocotb.result`` to :mod:`cocotb.triggers`.

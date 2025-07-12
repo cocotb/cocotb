@@ -1,1 +1,0 @@
-:attr:`LogicArray.binstr <cocotb.types.LogicArray.binstr>` has been deprecated. Use ``str(logic_array)`` instead.

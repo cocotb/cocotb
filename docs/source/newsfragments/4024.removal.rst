@@ -1,1 +1,0 @@
-The undocumented ``cocotb.triggers._TriggerException``, thrown when a trigger failed to register, was removed. :exc:`RuntimeError` is thrown in its place.

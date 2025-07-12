@@ -1,1 +1,0 @@
-The attribute ``frequency`` on :class:`~cocotb.clock.Clock` was removed.

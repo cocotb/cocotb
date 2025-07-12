@@ -1,1 +1,0 @@
-The module ``cocotb.xunit_reporter`` was made private.

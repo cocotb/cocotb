@@ -1,1 +1,0 @@
-The attributes ``cocotb.handle.SimHandleBase._log``, ``cocotb.task.Task.log``, ``cocotb.clock.Clock.log``, and ``cocotb.triggers.Trigger.log`` have been made private. Users are encouraged to make their own loggers that aren't in the ``"cocotb"`` namespace.

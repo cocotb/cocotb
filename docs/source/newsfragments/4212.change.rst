@@ -1,1 +1,0 @@
-The GPI ``get_range`` method now returns a range's direction in addition to the left and right bounds. When using VHDL, the direction is set explicitly by the ``to``/``downto`` keywords in the range definition; otherwise, the direction is inferred by the relative values of the left and right bounds. This change also allows null range sizes to be inferred correctly in VHDL.

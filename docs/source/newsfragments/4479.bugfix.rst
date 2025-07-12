@@ -1,1 +1,0 @@
-Passing :class:`~cocotb.handle.Force`, :class:`~cocotb.handle.Freeze`, :class:`~cocotb.handle.Release`, and :class:`~cocotb.handle.Immediate` to :meth:`handle.set() <cocotb.handle.ValueObjectBase.set>` and :attr:`handle.value <cocotb.handle.ValueObjectBase.value>` now applies the set immediately instead of applying it inertially.

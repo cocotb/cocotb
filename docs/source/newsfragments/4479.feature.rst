@@ -1,1 +1,0 @@
-:class:`cocotb.handle.Immediate` was added to support :term:`no-delay deposit`\ s.

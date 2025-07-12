@@ -1,1 +1,0 @@
-``cocotb.result.ExternalException`` was removed.

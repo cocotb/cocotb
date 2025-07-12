@@ -1,1 +1,0 @@
-Added :meth:`~.HierarchyObject._get` which returns ``None`` on failure instead of raising an exception to aid with optional signal discovery. It also accepts the optional parameter ``discovery_method`` that takes :class:`~cocotb.handle.GPIDiscovery` to specialize object discovery.

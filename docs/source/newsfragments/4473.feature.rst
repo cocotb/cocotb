@@ -1,1 +1,0 @@
-Guarantee that :class:`.Lock` acquisition is fair.

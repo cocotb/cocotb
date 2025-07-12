@@ -1,1 +1,0 @@
-:meth:`handle.set() <cocotb.handle.ValueObjectBase.set>` was added to value-having simulation object handles as an alternative to the :attr:`~cocotb.handle.ValueObjectBase.value` property that provides correct type checking information.

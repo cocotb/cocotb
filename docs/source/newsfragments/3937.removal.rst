@@ -1,1 +1,0 @@
-Support for passing ``0`` as the ``time`` argument to :class:`~cocotb.triggers.Timer` has been removed. If a rounding operation causes the value to become ``0``, we change it to 1 simulation time step.

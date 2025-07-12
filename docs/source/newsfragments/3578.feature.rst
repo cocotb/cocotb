@@ -1,1 +1,0 @@
-The :func:`cocotb.test` decorator now accepts a ``name`` argument to override the name of the test in the :class:`~cocotb.regression.RegressionManager`.

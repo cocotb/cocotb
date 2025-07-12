@@ -1,1 +1,0 @@
-:any:`cocotb.logging.SimLog` is deprecated. Use ``logging.getLogger(f"{name}.0x{ident:x}")`` instead.

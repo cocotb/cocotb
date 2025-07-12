@@ -1,1 +1,0 @@
-:class:`~cocotb.task.Task` objects which are already created or running can be passed to :func:`cocotb.start`, :func:`cocotb.start_soon`, and :func:`cocotb.create_task` more than once.

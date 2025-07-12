@@ -1,1 +1,0 @@
-:class:`.LogicArray` now supports :class:`bool` casts and usage in conditionals (e.g. ``if dut.data.value: ...``).

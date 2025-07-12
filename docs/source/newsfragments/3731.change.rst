@@ -1,1 +1,0 @@
-Moved ``cocotb.config`` to ``cocotb_tools.config`` and ``cocotb.runner`` to ``cocotb_tools.runner`` to improve startup speed.

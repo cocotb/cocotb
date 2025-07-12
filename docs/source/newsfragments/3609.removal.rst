@@ -1,1 +1,0 @@
-Methods :external+cocotb19:meth:`~cocotb.simulator.gpi_sim_hdl.get_definition_name()` and :external+cocotb19:meth:`~cocotb.simulator.gpi_sim_hdl.get_definition_file()` of :class:`cocotb.handle.SimHandleBase` were removed in favor of :meth:`~cocotb.handle.SimHandleBase._def_name` and :meth:`~cocotb.handle.SimHandleBase._def_file`, respectively.

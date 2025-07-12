@@ -1,1 +1,0 @@
-The Makefile test flow now fails the ``sim`` target if there are test failures.

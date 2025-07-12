@@ -1,1 +1,0 @@
-Deprecated the undocumented ``data`` attribute on :class:`~cocotb.triggers.Event` and corresponding argument to :meth:`.Event.set`.

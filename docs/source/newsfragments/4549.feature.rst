@@ -1,1 +1,0 @@
-Added :data:`cocotb.triggers.current_gpi_trigger` to allow the user to determine the last GPI trigger that fired.

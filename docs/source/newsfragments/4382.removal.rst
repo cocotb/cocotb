@@ -1,1 +1,0 @@
-:class:`~cocotb.triggers.Edge` has been deprecated in favor of the new name :class:`~cocotb.triggers.ValueChange`.

@@ -1,1 +1,0 @@
-:func:`cocotb.pass_test` was introduced to immediately end a test with a passing outcome.

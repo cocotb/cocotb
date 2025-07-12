@@ -1,1 +1,0 @@
-The ``cocotb.scheduler`` module and ``cocotb.scheduler`` object have been made private.

@@ -1,1 +1,0 @@
-The ``units`` argument was renamed to ``unit`` in :class:`~cocotb.clock.Clock`, :class:`~cocotb.triggers.Timer`, :func:`~cocotb.utils.get_sim_time`, :func:`~cocotb.utils.get_time_from_sim_steps`, and :func:`~cocotb.utils.get_sim_steps`.

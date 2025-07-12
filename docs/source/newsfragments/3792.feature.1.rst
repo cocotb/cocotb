@@ -1,1 +1,0 @@
-Added :meth:`LogicArray.to_unsigned() <cocotb.types.LogicArray.to_unsigned>` and :meth:`LogicArray.to_signed() <cocotb.types.LogicArray.to_signed>` to convert :class:`~cocotb.types.LogicArray` into :class:`int`.

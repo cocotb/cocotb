@@ -1,1 +1,0 @@
-The deprecated :external+cocotb19:func:`cocotb.fork()` function was removed.

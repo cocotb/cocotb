@@ -1,1 +1,0 @@
-:envvar:`GPI_LOG_LEVEL` was added to control GPI loggers (``"gpi"`` and children).

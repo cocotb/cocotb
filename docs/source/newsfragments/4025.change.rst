@@ -1,1 +1,0 @@
-The base class for :ref:`Python runners <howto-python-runner>` has been renamed from ``Simulator`` to :class:`~cocotb_tools.runner.Runner`.

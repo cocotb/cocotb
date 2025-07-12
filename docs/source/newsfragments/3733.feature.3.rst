@@ -1,1 +1,0 @@
-Setting a value with :attr:`ArrayObject.value <cocotb.handle.ArrayObject.value>` now accepts any :class:`~collections.abc.Sequence`\ -like type, such as :class:`tuple` and :class:`list`, as well as :class:`~cocotb.types.Array`.

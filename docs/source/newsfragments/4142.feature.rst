@@ -1,1 +1,0 @@
-:class:`~cocotb.types.LogicArray` can take :class:`int` as the second positional argument as shorthand for passing ``Range(width-1, "downto", 0)`` as ``range``.

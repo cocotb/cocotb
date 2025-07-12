@@ -1,1 +1,0 @@
-Passing no triggers to :class:`~cocotb.triggers.Combine` previously hung the simulation indefinitely. Now, doing so makes ``Combine`` behave equivalently to :class:`~cocotb.triggers.NullTrigger`.

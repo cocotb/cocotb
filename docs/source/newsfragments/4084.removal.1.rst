@@ -1,1 +1,0 @@
-:meth:`.Task.join` was deprecated, use the :class:`~cocotb.task.Task` being joined directly wherever ``task.join()`` was previously used.

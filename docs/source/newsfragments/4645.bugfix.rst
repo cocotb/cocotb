@@ -1,1 +1,0 @@
-Support ``timescale`` argument to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` and :meth:`Runner.test() <cocotb_tools.runner.Runner.test>` for DSim.

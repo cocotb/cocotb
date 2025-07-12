@@ -1,1 +1,0 @@
-The Makefile flow no longer requires that :ref:`cocotb-config <cocotb-config>` be located on the ``PATH``. Set :envvar:`PYTHON_BIN` if the wrong Python executable is used.

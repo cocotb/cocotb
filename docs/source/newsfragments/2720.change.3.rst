@@ -1,1 +1,0 @@
-When casting a :class:`simulator object <cocotb.handle.SimHandleBase>` to a :class:`str` return the :func:`repr` of the object instead of the :meth:`path <cocotb.handle.SimHandleBase._path>`.

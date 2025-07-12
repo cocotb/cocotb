@@ -1,1 +1,0 @@
-Fixed bug where calling :meth:`.Event.wait` but not ``await``\ ing the returned Trigger, then calling :meth:`.Event.set`, then ``await``\ ing the Trigger would hang.

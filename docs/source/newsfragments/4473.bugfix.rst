@@ -1,1 +1,0 @@
-Prevent multiple Tasks from sharing a :meth:`.Lock.acquire` Trigger. If this was shared it would cause all Tasks waiting on that same Trigger to think they have acquired the Lock.

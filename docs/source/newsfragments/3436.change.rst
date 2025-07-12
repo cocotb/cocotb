@@ -1,1 +1,0 @@
-cocotb-bus can no longer be installed at the same time as cocotb using ``pip install cocotb[bus]``. Use ``pip install cocotb-bus`` instead.

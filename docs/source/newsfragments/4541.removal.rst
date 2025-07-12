@@ -1,1 +1,0 @@
-``cocotb.handle.RegionObject`` and ``cocotb.handle.NonHierarchyObject`` have been removed.

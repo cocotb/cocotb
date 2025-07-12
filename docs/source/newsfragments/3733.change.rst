@@ -1,1 +1,0 @@
-Renamed ``cocotb.handle.NonConstantObject`` to :class:`~cocotb.handle.ValueObjectBase`.
