@@ -3,6 +3,7 @@
 # Copyright (c) 2013 SolarFlare Communications Inc
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import sys
 from typing import TYPE_CHECKING, Dict, List, Union
 
 from cocotb._decorators import (
@@ -113,3 +114,12 @@ and in parameters to :class:`.TestFactory`\ s.
 
 is_simulation: bool = False
 """``True`` if cocotb was loaded in a simulation."""
+
+
+if sys.version_info < (3, 8):
+    import warnings
+
+    warnings.warn(
+        "Support for Python versions < 3.8 will be dropped in version 2.1",
+        FutureWarning,
+    )
