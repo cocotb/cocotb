@@ -191,7 +191,7 @@ async def test_hierarchy_array_generic_typing(dut):
 
     asc_gen, desc_gen = dut.asc_gen, dut.desc_gen
 
-    asc_gen_element, desc_gen_element = asc_gen[20], desc_gen[20]
+    asc_gen_element, desc_gen_element = asc_gen[4], desc_gen[4]
 
     assert isinstance(asc_gen_element, HierarchyObject)
     assert isinstance(desc_gen_element, HierarchyObject)
