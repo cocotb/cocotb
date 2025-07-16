@@ -4,7 +4,6 @@ A set of tests that demonstrate Array structure support
 
 import logging
 import os
-from typing import cast
 
 import cocotb
 from cocotb.clock import Clock
@@ -190,12 +189,7 @@ async def test_hierarchy_array_generic_typing(dut):
     """Test that HierarchyArrayObject generic typing works correctly"""
     tlog = logging.getLogger("cocotb.test")
 
-    asc_gen: HierarchyArrayObject[HierarchyObject] = cast(
-        "HierarchyArrayObject[HierarchyObject]", dut.asc_gen
-    )
-    desc_gen: HierarchyArrayObject[HierarchyObject] = cast(
-        "HierarchyArrayObject[HierarchyObject]", dut.desc_gen
-    )
+    asc_gen, desc_gen = dut.asc_gen, dut.desc_gen
 
     asc_gen_element, desc_gen_element = asc_gen[20], desc_gen[20]
 
