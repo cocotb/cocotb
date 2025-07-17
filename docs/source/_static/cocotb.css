@@ -187,7 +187,6 @@ div.versionremoved {
     break-inside: avoid;
     border-left: 0.2rem solid;
     border-color: var(--pst-color-info);
-    border-radius: $admonition-border-radius;
     background-color: var(--pst-color-on-background);
     /* @include box-shadow; */
     position: relative;
@@ -474,4 +473,35 @@ a[href*="docs.cocotb.org"][href*="v1.2"]::after {
 }
 a[href*="docs.cocotb.org"][href*="v1.1"]::after {
     content: "v1.1";
+}
+
+
+/*
+Sticky headings for Release Notes only (where we know the heading text spans only one line).
+The "release-notes" class on "body" is dynamically set in cocotb.js
+*/
+body.release-notes h1,
+body.release-notes h2,
+body.release-notes h3 {
+  position: sticky;
+  /* top: 48px; */
+  height: 48px;
+  display: flex;
+  align-items: center;
+  background-color: var(--pst-color-background);
+}
+
+body.release-notes h1 {
+  top: calc(1 * 48px);
+  z-index: 990;
+}
+
+body.release-notes h2 {
+  top: calc(2 * 48px);
+  z-index: 980;
+}
+
+body.release-notes h3 {
+  top: calc(3 * 48px);
+  z-index: 970;
 }
