@@ -48,9 +48,9 @@ As in step one, address those at your convenience (the sooner the better, of cou
 If you get lost or have questions, :doc:`reach out through one of our support channels <support>`, we're happy to help!
 
 
-****************************
-Removed :func:`!cocotb.fork`
-****************************
+**************************************************************
+Use :func:`!cocotb.start_soon` instead of :func:`!cocotb.fork`
+**************************************************************
 
 Change
 ======
@@ -170,9 +170,9 @@ that exception would be thrown back to the caller of :func:`!cocotb.fork` and th
         cocotb.log.info("Got expected NameError!")
 
 
-************************************
-:deco:`!cocotb.coroutine` Coroutines
-************************************
+****************************************
+Move away from :deco:`!cocotb.coroutine`
+****************************************
 
 Change
 ======
@@ -218,7 +218,7 @@ For all those reasons the :deco:`!cocotb.coroutine` decorator and generator-base
 
 
 ********************************************************
-:class:`!BinaryValue` replaced with :class:`!LogicArray`
+Use :class:`!LogicArray` instead of :class:`!BinaryValue`
 ********************************************************
 
 Change
