@@ -2,6 +2,52 @@
 Upgrading to cocotb 2.0
 =======================
 
+cocotb 2.0 makes testbenches easier to understand and write.
+Some of these improvements require updates to existing testbenches.
+This guide helps you port existing testbenches to cocotb 2.0.
+
+**************************
+Step-by-step to cocotb 2.0
+**************************
+
+The migration to cocotb 2.0 is a two-step process.
+The first step is a gradual migration that can be performed in small increments as time permits and keeps the testbench fully operational.
+The second step is a flag-day migration to switch outdated APIs to their new counterparts.
+
+Step 1: Upgrade to cocotb 1.9 and resolve all deprecation warnings
+==================================================================
+
+Many of the new features in cocotb 2.0 were already introduced in cocotb 1.x, while keeping existing functionality in place.
+Deprecation warnings highlight where functionality is used that will be gone in cocotb 2.0.
+Resolving all deprecations is therefore the first step in upgrading.
+
+1. Upgrade to the latest version of cocotb 1.9.
+2. Resolve all deprecation warnings.
+
+With every warning resolved, your code will be better prepared for cocotb 2.0.
+
+Step 2: Move to cocotb 2.0
+==========================
+
+After step 1 your testbenches are ready for the final migration to cocotb 2.0.
+
+1. Start from a known-good state.
+   Ensure all tests are passing, the logic is stable, and all code is committed.
+2. Upgrade to cocotb 2.0.
+3. Run the testbench to see where it fails.
+   Replace outdated constructs as needed.
+   Rinse and repeat.
+4. Your testbenches are now running on cocotb 2.0!
+
+Continue reading on this page for common migration steps.
+Also have a look at the :doc:`release_notes` for cocotb 2.0 and the linked GitHub pull requests or issues, which often also include changes to the cocotb tests that show the before and after of a change.
+
+You might see some new deprecation warnings in your code after the upgrade.
+As in step one, address those at your convenience (the sooner the better, of course).
+
+If you get lost or have questions, :doc:`reach out through one of our support channels <support>`, we're happy to help!
+
+
 ****************************
 Removed :func:`!cocotb.fork`
 ****************************
