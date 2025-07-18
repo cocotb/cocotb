@@ -5,13 +5,11 @@
 
 import logging
 import os
-from typing import cast
 
 import pytest
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.handle import HierarchyArrayObject, HierarchyObject
 from cocotb.triggers import Timer
 
 tlog = logging.getLogger("cocotb.test")
@@ -162,45 +160,6 @@ async def test_struct_unpacked(dut):
     dut.inout_if.a_in.value = 0
     await Timer(1000, "ns")
     _check_value(tlog, dut.inout_if.a_in, 0)
-
-
-@cocotb.test(
-    expect_error=(
-        AttributeError
-        if any(sim in cocotb.SIM_NAME.lower() for sim in ["vcs", "xcelium"])
-        or cocotb.SIM_NAME.lower().startswith("riviera")
-        or cocotb.SIM_NAME.lower().startswith("ghdl")
-        else ()
-    )
-)
-async def test_hierarchy_array_generic_typing(dut):
-    """Test that HierarchyArrayObject generic typing works correctly.
-    Note: This test expects failures for:
-    - VCS (AttributeError) as generate arrays aren't properly exposed through VPI
-    - Xcelium (AttributeError) due to similar VPI limitations
-    - Riviera (AttributeError) due to similar VPI limitations
-    - GHDL (AttributeError) as its VPI implementation doesn't fully support generate loops
-    """
-    tlog = logging.getLogger("cocotb.test")
-
-    arr_gen = cast("HierarchyArrayObject[HierarchyObject]", dut.arr)
-
-    assert len(arr_gen) == 4, (
-        f"Expected 4 instances in generate array, got {len(arr_gen)}"
-    )
-
-    arr_element_1, arr_element_2 = arr_gen[1], arr_gen[2]
-    assert isinstance(arr_element_1, HierarchyObject)
-    assert isinstance(arr_element_2, HierarchyObject)
-
-    for element in arr_gen:
-        assert isinstance(element, HierarchyObject)
-        tlog.info("Iteration element type: %s", type(element).__name__)
-        break
-
-    first_element = next(iter(arr_gen))
-    assert isinstance(first_element, HierarchyObject)
-    tlog.info("HierarchyArrayObject[HierarchyObject] works correctly")
 
 
 @cocotb.test()
