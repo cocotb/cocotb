@@ -87,7 +87,27 @@ architecture impl of sample_module is
     signal \weird.signal(2)\              : std_ulogic_vector(3 downto 0);
     signal \(.*|this looks like a regex)\ : std_ulogic_vector(3 downto 0);
 
+    -- for testing HierarchyArrayObject typing
+    constant NUM_TEST_MODULES : natural := 4;
+
 begin
+
+    -- Generate array of test modules for HierarchyArrayObject typing test
+    arr: for i in 0 to NUM_TEST_MODULES-1 generate
+    begin
+        test_mod : component sample_module_1
+            generic map (
+                EXAMPLE_STRING => "TEST" & integer'image(i),
+                EXAMPLE_BOOL => true,
+                EXAMPLE_WIDTH => 7
+            )
+            port map (
+                clk => clk,
+                stream_in_data => stream_in_data,
+                stream_out_data_registered => open,
+                stream_out_data_valid => open
+            );
+    end generate arr;
 
     genblk1: for i in NUM_OF_MODULES - 1 downto 0 generate
     begin
