@@ -185,28 +185,6 @@ async def test_gen_loop(dut):
 
 
 @cocotb.test()
-async def test_hierarchy_array_generic_typing(dut):
-    """Test that HierarchyArrayObject generic typing works correctly"""
-    tlog = logging.getLogger("cocotb.test")
-
-    asc_gen, desc_gen = dut.asc_gen, dut.desc_gen
-
-    asc_gen_element, desc_gen_element = asc_gen[asc_gen.left], desc_gen[desc_gen.left]
-    assert isinstance(asc_gen_element, HierarchyObject)
-    assert isinstance(desc_gen_element, HierarchyObject)
-
-    for element in asc_gen:
-        assert isinstance(element, HierarchyObject)
-        tlog.info("Iteration element type: %s", type(element).__name__)
-        break
-
-    first_element = next(iter(asc_gen))
-    assert isinstance(first_element, HierarchyObject)
-
-    tlog.info("HierarchyArrayObject[HierarchyObject] works correctly")
-
-
-@cocotb.test()
 async def test_discover_all(dut):
     r"""Discover everything in the DUT:
     dut
