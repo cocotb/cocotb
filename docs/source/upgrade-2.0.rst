@@ -145,7 +145,7 @@ that exception would be thrown back to the caller of :func:`!cocotb.fork` and th
     :caption: Set up example...
 
     async def has_exception():
-        if variable_does_not_exit:  # throws NameError
+        if variable_does_not_exist:  # throws NameError
             await Timer(1, 'ns')
 
 .. code-block:: python
@@ -184,7 +184,7 @@ How to Upgrade
 ==============
 
 * Remove the :deco:`!cocotb.coroutine` decorator.
-* Add :keyword:`!async` keyword directly before the :keyword:`def` keyword in the function definition.
+* Add :keyword:`async` keyword directly before the :keyword:`def` keyword in the function definition.
 * Replace any ``yield [triggers, ...]`` with :class:`await First(triggers, ...) <cocotb.triggers.First>`.
 * Replace all ``yield``\ s in the function with :keyword:`await`\ s.
 * Remove all imports of the :deco:`!cocotb.coroutine` decorator
@@ -211,7 +211,7 @@ Rationale
 
 These existed to support defining coroutines in Python 2 and early versions of Python 3 before :term:`coroutine functions <coroutine function>`
 using the :keyword:`!async`\ /:keyword:`!await` syntax was added in Python 3.5.
-We no longer support versions of Python that don't support :keyword:`!async`\ /:keyword:`!await`,
+We no longer support versions of Python that don't support :keyword:`!async`\ /:keyword:`!await`.
 Python coroutines are noticeably faster than :deco:`!cocotb.coroutine`'s implementation,
 and the behavior of :deco:`!cocotb.coroutine` would have had to be changed to support changes to the scheduler.
 For all those reasons the :deco:`!cocotb.coroutine` decorator and generator-based coroutine support was removed.
@@ -440,7 +440,7 @@ Change expected type of single indexes to :class:`.Logic` and slices to :class:`
     assert isinstance(val[0:3], LogicArray)
 
 .. note::
-    :class:`Logic` supports usage in condition expressions (e.g. ``if val: ...``),
+    :class:`Logic` supports usage in conditional expressions (e.g. ``if val: ...``),
     equality with :class:`!str`, :class:`!bool`, or :class:`!int`,
     and casting to :class:`!str`, :class:`!bool`, or :class:`!int`;
     so many behaviors overlap with :class:`!LogicArray`
