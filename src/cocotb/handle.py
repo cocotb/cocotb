@@ -214,6 +214,9 @@ class _RangeableObjectMixin(SimHandleBase):
 #: Type of keys (name or index) in HierarchyObjectBase.
 KeyType = TypeVar("KeyType")
 
+#: Subtype of :class:`SimHandleBase` returned when iterating or indexing a :class:`HierarchyArrayObject`.
+HierarchyChildObjectT = TypeVar("HierarchyChildObjectT", bound=SimHandleBase)
+
 
 class GPIDiscovery(DocIntEnum):
     """Simulator object discovery strategy."""
@@ -524,7 +527,9 @@ class HierarchyObject(_HierarchyObjectBase[str]):
         return self._handle.get_handle_by_name(key, discovery_method)
 
 
-class HierarchyArrayObject(_HierarchyObjectBase[int], _RangeableObjectMixin):
+class HierarchyArrayObject(
+    _HierarchyObjectBase[int], _RangeableObjectMixin, Generic[HierarchyChildObjectT]
+):
     """A simulation object that is an array of hierarchical simulation objects.
 
     Inherits from :class:`SimHandleBase`.
@@ -597,18 +602,18 @@ class HierarchyArrayObject(_HierarchyObjectBase[int], _RangeableObjectMixin):
             )
         return self._handle.get_handle_by_index(key)
 
-    def __getitem__(self, key: int) -> SimHandleBase:
+    def __getitem__(self, key: int) -> HierarchyChildObjectT:
         if isinstance(key, slice):
             raise TypeError("Slice indexing is not supported")
 
         handle = self._get(key)
         if handle is None:
             raise IndexError(f"{self._path} contains no child object at index {key}")
-        return handle
+        return cast("HierarchyChildObjectT", handle)
 
     # ideally `__len__` could be implemented in terms of `range`, but `range` doesn't work universally.
 
-    def __iter__(self) -> Iterator[SimHandleBase]:
+    def __iter__(self) -> Iterator[HierarchyChildObjectT]:
         # must use `sorted(self._keys())` instead of the range because `range` doesn't work universally.
         for i in sorted(self._keys()):
             yield self[i]
@@ -1657,7 +1662,7 @@ class StringObject(
 
 _ConcreteHandleTypes = Union[
     HierarchyObject,
-    HierarchyArrayObject,
+    HierarchyArrayObject[SimHandleBase],
     LogicObject,
     LogicArrayObject,
     ArrayObject[Any, ValueObjectBase[Any, Any]],
@@ -1684,7 +1689,7 @@ _type2cls: Dict[int, Type[_ConcreteHandleTypes]] = {
     simulator.INTEGER: IntegerObject,
     simulator.ENUM: EnumObject,
     simulator.STRING: StringObject,
-    simulator.GENARRAY: HierarchyArrayObject,
+    simulator.GENARRAY: HierarchyArrayObject[SimHandleBase],
     simulator.PACKAGE: HierarchyObject,
 }
 
