@@ -6,7 +6,7 @@ exclude: "^.*/_vendor/"
 repos:
 # ruff with --fix should run before other formatting tools
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.12.3"
+  rev: "v0.12.4"
   hooks:
     # Run the linter.
     - id: "ruff"
@@ -56,7 +56,7 @@ repos:
       - tomli
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.16.1
+  rev: v1.17.0
   hooks:
   - id: mypy
     additional_dependencies:
