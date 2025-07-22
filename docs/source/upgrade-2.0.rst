@@ -217,6 +217,8 @@ and the behavior of :deco:`!cocotb.coroutine` would have had to be changed to su
 For all those reasons the :deco:`!cocotb.coroutine` decorator and generator-based coroutine support was removed.
 
 
+.. _logic-array-over-binary-value:
+
 ********************************************************
 Use :class:`!LogicArray` instead of :class:`!BinaryValue`
 ********************************************************
@@ -620,3 +622,143 @@ Integer representation is provided when converting to and from an integer.
 .. note::
     :class:`!LogicArray` supports setting its value with the deprecated :attr:`.LogicArray.integer` and :attr:`.LogicArray.signed_integer` setters,
     but assumes an unsigned and two's complement representation, respectively.
+
+
+**************************************************************************************************************************************
+Expect :class:`!LogicArray` and :class:`!Logic` instead of :class:`!BinaryValue` when getting values from logic-like simulator objects
+**************************************************************************************************************************************
+
+Change
+======
+
+Handles to logic-like simulator objects now return :class:`.LogicArray` or :class:`.Logic` instead of :external+cocotb19:py:class:`~cocotb.binary.BinaryValue`
+when getting their value with the :attr:`value <cocotb.handle.ValueObjectBase.value>` getter.
+Scalar logic-like simulator objects return :class:`!Logic`, and array logic-like simulator objects return :class:`!LogicArray`.
+
+How to Upgrade
+==============
+
+:ref:`logic-array-over-binary-value` when dealing with array logic-like simulator objects.
+Also, change indexing assumptions from always being ``0`` to ``length-1`` left-to-right, to following the arbitrary indexing scheme of the logic array as defined in HDL.
+
+.. code-block:: verilog
+    :caption: HDL signal being used
+
+    logic [7:0] signal;
+
+.. code-block:: python
+    :caption: Old way with :class:`!BinaryValue`\ s
+    :class: removed
+
+    dut.signal.value = "1010"
+    ...
+    val = dut.signal.value
+    assert val[0] == 1  # always left-most
+
+.. code-block:: python
+    :caption: New way with :class:`!LogicArray`\ s
+    :class: new
+
+    dut.signal.value = "1010"
+    ...
+    val = dut.signal.value
+    assert val[0] == 0  # uses HDL indexing, index 0 is right-most
+
+
+Change code when dealing with scalar logic-like simulator objects to work with :class:`!Logic`.
+
+Rationale
+=========
+
+See the rationale for switching from :class:`!BinaryValue` to :class:`!LogicArray`.
+The change to use the HDL indexing scheme makes usage more intuitive for new users and eases debugging.
+Scalars and arrays of logic handles were split into two types with different value types so that handles to arrays could support
+getting :func:`length <len>` and indexing information: :meth:`.LogicArrayObject.left`, :meth:`.LogicArrayObject.right`, :meth:`.LogicArrayObject.direction`, and :meth:`.LogicArrayObject.range`,
+which cause errors when applied to scalar objects.
+
+Additional Details
+==================
+
+Operations such as equality with and conversion to :class:`int`, :class:`str`, and :class:`bool`,
+as well as getting the :func:`length <len>`,
+work the same for :class:`!Logic`, :class:`!LogicArray`, and :class:`!BinaryValue`.
+This was done deliberately to reduce the number of changes required,
+while also providing a common API to enable writing backwards-compatible and higher-order APIs.
+
+.. code-block:: python
+    :caption: Works with :class:`!BinaryValue` in cocotb 1.x and both :class:`!Logic` and :class:`!LogicArray` in cocotb 2.x.
+
+    assert len(dut.signal.value) == 1
+    assert dut.signal.value == 1
+    assert dut.signal.value == "1"
+    assert dut.signal.value == True
+    assert int(dut.signal.value) == 1
+    assert str(dut.signal.value) == "1"
+    assert bool(dut.signal.value) is True
+    dut.signal.value = 1
+    dut.signal.value = "1"
+    dut.signal.value = True
+
+
+***************************************************************************************************
+Expect :class:`!Array` instead of :class:`!list` when getting values from arrayed simulator objects
+***************************************************************************************************
+
+Change
+======
+
+Handles to arrayed simulator objects now return :class:`.Array` instead of :class:`list` when getting values with the :attr:`value <cocotb.handle.ValueObjectBase.value>` getter.
+
+How to Upgrade
+==============
+
+Change indexing assumptions from always being ``0`` to ``length-1`` left-to-right, to following the arbitrary indexing scheme of the array as defined in HDL.
+For example, if the HDL defines an array with the indexing scheme ``[15:0]``, index ``15`` will be the left-most element of the array rather than the right-most.
+
+.. code-block:: verilog
+    :caption: HDL signal being used
+
+    integer array[1:-2];
+
+.. code-block:: python
+    :caption: Old way with :class:`!list`\ s
+    :class: removed
+
+    dut.array.value = [1, 2, 3, 4]
+    ...
+    val = dut.array.value
+    assert val[0] == 1  # always left-most
+
+.. code-block:: python
+    :caption: New way with :class:`!Array`\ s
+    :class: new
+
+    dut.array.value = [1, 2, 3, 4]
+    ...
+    val = dut.array.value
+    assert val[0] == 2  # uses HDL indexing, index 0 is second element
+
+Rationale
+=========
+
+:class:`!Array` provides most features of :class:`!list` besides the fact that it is immutable in size and uses arbitrary indexing, like :class:`.LogicArray`.
+The change to use the HDL indexing scheme makes usage more intuitive for new users and eases debugging.
+
+Additional Details
+==================
+
+Equality with and conversion to :class:`!list`,
+getting the :func:`length <len>`,
+and iteration,
+works the same for both the old way and the new way using :class:`!Array`.
+This was done deliberately to reduce the number of changes required.
+
+.. code-block:: python
+    :caption: Works with both :class:`!list` in cocotb 1.x and :class:`!Array` in cocotb 2.x.
+
+    assert dut.array.value == [1, 2, 3, 4]
+    as_list = list(dut.array.value)
+    assert as_list[0] == 1
+    assert len(dut.array.value) == 4
+    for actual, expected in zip(dut.array.value, [1, 2, 3, 4]):
+        assert actual == expected
