@@ -1192,9 +1192,6 @@ class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
             raise TypeError("Can't get FallingEdge on immutable signal")
         return FallingEdge._make(self)
 
-    @deprecated(
-        '`len(logic_scalar_handle)` has been deprecated. A scalar handle\'s "length" is always 1.'
-    )
     def __len__(self) -> int:
         return 1
 
