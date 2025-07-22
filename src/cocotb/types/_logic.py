@@ -9,7 +9,6 @@ from typing import (
     Union,
 )
 
-from cocotb._deprecation import deprecated
 from cocotb._py_compat import TypeAlias
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
 
@@ -291,6 +290,5 @@ class Logic:
         """
         return Logic(get_str_resolver(resolver)(str(self)))
 
-    @deprecated('`len(logic)` is deprecated. A Logic\'s "length" is always 1.')
     def __len__(self) -> int:
         return 1
