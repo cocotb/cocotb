@@ -8,29 +8,21 @@
 Everything related to logging
 """
 
+import io
 import logging
 import os
 import sys
-from functools import wraps
-from pathlib import Path
-from typing import Union
+import time
+import traceback
+from functools import cached_property, wraps
+from types import TracebackType
+from typing import Optional, Union, cast
 
 from cocotb import _ANSI, simulator
 from cocotb._deprecation import deprecated
+from cocotb._typing import TimeUnit
 from cocotb._utils import want_color_output
 from cocotb.utils import get_sim_time, get_time_from_sim_steps
-
-try:
-    _suppress = int(os.environ.get("COCOTB_REDUCED_LOG_FMT", "1"))
-except ValueError:
-    _suppress = 1
-
-# Column alignment
-_LEVEL_CHARS = len("CRITICAL")
-_RECORD_CHARS = 34
-_FILENAME_CHARS = 20
-_LINENO_CHARS = 4
-_FUNCNAME_CHARS = 31
 
 # Custom log level
 logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
@@ -65,14 +57,11 @@ def default_config() -> None:
     .. versionchanged:: 2.0
         No longer set the log level of the ``cocotb`` and ``gpi`` loggers.
     """
+    logging.basicConfig()
+
     hdlr = logging.StreamHandler(sys.stdout)
     hdlr.addFilter(SimTimeContextFilter())
-    if want_color_output():
-        hdlr.setFormatter(SimColourLogFormatter())
-    else:
-        hdlr.setFormatter(SimLogFormatter())
-
-    logging.basicConfig()
+    hdlr.setFormatter(SimLogFormatter(color=want_color_output()))  # type: ignore
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
 
@@ -168,115 +157,151 @@ class SimTimeContextFilter(logging.Filter):
         return True
 
 
-class SimLogFormatter(logging.Formatter):
-    """Log formatter to provide consistent log message handling.
+def _vfstrfmt(fmt: str, args: dict[str, object]) -> str:
+    return eval(f'f"""{fmt}"""', args)
 
-    This will only add simulator timestamps if the handler object this
-    formatter is attached to has a :class:`SimTimeContextFilter` filter
-    attached, which cocotb ensures by default.
-    """
 
-    # Removes the arguments from the base class. Docstring needed to make
-    # sphinx happy.
-    def __init__(self) -> None:
-        """Takes no arguments."""
-        super().__init__()
+class SimLogFormatter:
+    loglevel2colour = {
+        logging.TRACE: "",  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
+        logging.DEBUG: "",
+        logging.INFO: "",
+        logging.WARNING: _ANSI.COLOR_WARNING,
+        logging.ERROR: _ANSI.COLOR_ERROR,
+        logging.CRITICAL: _ANSI.COLOR_CRITICAL,
+    }
 
-    # Justify and truncate
-    @staticmethod
-    def ljust(string: str, chars: int) -> str:
-        if len(string) > chars:
-            return ".." + string[(chars - 2) * -1 :]
-        return string.ljust(chars)
+    time_converter = time.localtime
 
-    @staticmethod
-    def rjust(string: str, chars: int) -> str:
-        if len(string) > chars:
-            return ".." + string[(chars - 2) * -1 :]
-        return string.rjust(chars)
+    class _SimTimeConverter(dict):
+        def __init__(self, steps: int) -> None:
+            self._steps = steps
 
-    def _format(
-        self, level: str, record: logging.LogRecord, msg: str, coloured: bool = False
-    ) -> str:
-        sim_time = getattr(record, "created_sim_time", None)
-        if sim_time is None:
-            sim_time_str = "  -.--ns"
-        else:
-            time_ns = get_time_from_sim_steps(sim_time, "ns")
-            sim_time_str = f"{time_ns:6.2f}ns"
-        prefix = (
-            sim_time_str.rjust(11)
-            + " "
-            + level
-            + " "
-            + self.ljust(record.name, _RECORD_CHARS)
-            + " "
+        def __getitem__(self, key: str) -> float:
+            if key == "step":
+                return self._steps
+            else:
+                return get_time_from_sim_steps(self._steps, cast("TimeUnit", key))
+
+    default_prefix = "{sim_time:>11} {levelname:<8} {name[-34:]:<34} "
+    default_datefmt = "%Y-%m-%d %H:%M:%S"
+    default_sim_time_fmt = "{ns:.2f}ns"
+    default_empty_sim_time_fmt = "-.--ns"
+
+    def __init__(
+        self,
+        *,
+        prefix_fmt: Optional[str] = None,
+        date_fmt: Optional[str] = None,
+        sim_time_fmt: Optional[str] = None,
+        empty_sim_time_fmt: Optional[str] = None,
+        color: bool = False,
+    ) -> None:
+        self.prefix_fmt = prefix_fmt if prefix_fmt is not None else self.default_prefix
+        self.date_fmt = date_fmt if date_fmt is not None else self.default_datefmt
+        self.sim_time_fmt = (
+            sim_time_fmt if sim_time_fmt is not None else self.default_sim_time_fmt
         )
-        if not _suppress:
-            prefix += (
-                self.rjust(Path(record.filename).name, _FILENAME_CHARS)
-                + ":"
-                + self.ljust(str(record.lineno), _LINENO_CHARS)
-                + " in "
-                + self.ljust(str(record.funcName), _FUNCNAME_CHARS)
-                + " "
-            )
+        self.empty_sim_time_fmt = (
+            empty_sim_time_fmt
+            if empty_sim_time_fmt is not None
+            else self.default_empty_sim_time_fmt
+        )
+        self.color = color
 
-        # these lines are copied from the built-in logger
+    def _format_time(self, record: logging.LogRecord) -> str:
+        ct = type(self).time_converter(record.created)
+        return time.strftime(self.date_fmt, ct)
+
+    def _format_sim_time(self, record: logging.LogRecord) -> str:
+        sim_time = cast("int | None", getattr(record, "created_sim_time", None))
+        if sim_time is None:
+            return _vfstrfmt(self.empty_sim_time_fmt, {})
+        else:
+            return _vfstrfmt(self.sim_time_fmt, type(self)._SimTimeConverter(sim_time))
+
+    @cached_property
+    def _uses_time(self) -> bool:
+        return "asctime" in self.prefix_fmt
+
+    @cached_property
+    def _uses_sim_time(self) -> bool:
+        return "sim_time" in self.prefix_fmt
+
+    def _format_message(self, record: logging.LogRecord) -> str:
+        prefix = _vfstrfmt(self.prefix_fmt, vars(record))
+
+        # add padding to each line of message
+        msg_lines = record.getMessage().split("\n")
+        prefix_len = sum(c.isprintable() for c in prefix)
+        pad = "\n" + " " * prefix_len
+        msg = pad.join(msg_lines)
+
+        if self.color:
+            highlight = self.loglevel2colour.get(record.levelno, "%s")
+            msg = f"{highlight}{msg}{_ANSI.COLOR_DEFAULT}"
+
+        return prefix + msg
+
+    def _format_exception(
+        self,
+        ei: "tuple[type[BaseException], BaseException, TracebackType | None] | tuple[None, None, None]",
+    ) -> str:
+        with io.StringIO() as sio:
+            traceback.print_exception(ei[0], ei[1], ei[2], None, sio)
+            s = sio.getvalue()
+        if s.endswith("\n"):
+            s = s[:-1]
+        return s
+
+    def _format_stack(self, stack_info: str) -> str:
+        return stack_info
+
+    def format(self, record: logging.LogRecord) -> str:
+        if self._uses_sim_time:
+            record.sim_time = self._format_sim_time(record)
+
+        if self._uses_time:
+            record.asctime = self._format_time(record)
+
+        s = self._format_message(record)
+
         if record.exc_info:
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
             if not record.exc_text:
-                record.exc_text = self.formatException(record.exc_info)
+                record.exc_text = self._format_exception(record.exc_info)
+
         if record.exc_text:
-            if msg[-1:] != "\n":
-                msg = msg + "\n"
-            msg = msg + record.exc_text
+            if not s.endswith("\n"):
+                s = s + "\n"
+            s = s + record.exc_text
 
-        prefix_len = len(prefix)
-        if coloured:
-            prefix_len -= len(level) - _LEVEL_CHARS
-        pad = "\n" + " " * (prefix_len)
-        return prefix + pad.join(msg.split("\n"))
+        if record.stack_info:
+            if not s.endswith("\n"):
+                s = s + "\n"
+            s = s + self._format_stack(record.stack_info)
 
-    def format(self, record: logging.LogRecord) -> str:
-        """Prettify the log output by annotating with simulation time."""
-
-        msg = record.getMessage()
-        level = record.levelname.ljust(_LEVEL_CHARS)
-
-        return self._format(level, record, msg)
+        return s
 
 
 class SimColourLogFormatter(SimLogFormatter):
-    """Log formatter to provide consistent log message handling."""
-
-    loglevel2colour = {
-        logging.TRACE: "%s",  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
-        logging.DEBUG: "%s",
-        logging.INFO: "%s",
-        logging.WARNING: _ANSI.COLOR_WARNING + "%s" + _ANSI.COLOR_DEFAULT,
-        logging.ERROR: _ANSI.COLOR_ERROR + "%s" + _ANSI.COLOR_DEFAULT,
-        logging.CRITICAL: _ANSI.COLOR_CRITICAL + "%s" + _ANSI.COLOR_DEFAULT,
-    }
-
-    def format(self, record: logging.LogRecord) -> str:
-        """Prettify the log output by annotating with simulation time."""
-
-        msg = record.getMessage()
-
-        # Need to colour each line in case coloring is applied in the message
-        msg = "\n".join(
-            [
-                SimColourLogFormatter.loglevel2colour.get(record.levelno, "%s") % line
-                for line in msg.split("\n")
-            ]
+    def __init__(
+        self,
+        *,
+        fmt: Optional[str] = None,
+        datefmt: Optional[str] = None,
+        sim_time_fmt: Optional[str] = None,
+        empty_sim_time_fmt: Optional[str] = None,
+        color: bool = True,
+    ) -> None:
+        super().__init__(
+            prefix_fmt=fmt,
+            date_fmt=datefmt,
+            sim_time_fmt=sim_time_fmt,
+            empty_sim_time_fmt=empty_sim_time_fmt,
+            color=color,
         )
-        level = SimColourLogFormatter.loglevel2colour.get(
-            record.levelno, "%s"
-        ) % record.levelname.ljust(_LEVEL_CHARS)
-
-        return self._format(level, record, msg, coloured=True)
 
 
 def _log_from_c(
