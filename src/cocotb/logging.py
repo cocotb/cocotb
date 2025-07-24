@@ -10,10 +10,12 @@ Everything related to logging
 
 import io
 import logging
+import logging.config
 import os
 import sys
 import time
 import traceback
+import warnings
 from functools import cached_property, wraps
 from types import TracebackType
 from typing import Optional, Union, cast
@@ -24,11 +26,6 @@ from cocotb._typing import TimeUnit
 from cocotb._utils import want_color_output
 from cocotb.utils import get_sim_time, get_time_from_sim_steps
 
-# Custom log level
-logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
-logging.addLevelName(5, "TRACE")
-
-
 __all__ = (
     "SimColourLogFormatter",
     "SimLog",
@@ -36,6 +33,20 @@ __all__ = (
     "SimTimeContextFilter",
     "default_config",
 )
+
+# Custom log level
+logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
+logging.addLevelName(5, "TRACE")
+
+_reduced_fmt_env = os.environ.get("COCOTB_REDUCED_LOG_FMT")
+if _reduced_fmt_env is not None:
+    warnings.warn(
+        "`COCOTB_REDUCED_LOG_FMT` is deprecated. Use COCOTB_LOG_CONFIG instead.",
+        DeprecationWarning,
+    )
+    _reduced_fmt = bool(int(_reduced_fmt_env))
+else:
+    _reduced_fmt = False
 
 
 def default_config() -> None:
@@ -108,7 +119,11 @@ def _init(_: object) -> None:
 
 def _setup_formatter(_: object) -> None:
     """Setup cocotb's logging formatter."""
-    default_config()
+    log_config = os.environ.get("COCOTB_LOG_CONFIG")
+    if log_config is None:
+        default_config()
+    else:
+        logging.config.fileConfig(log_config)
 
 
 @deprecated('Use `logging.getLogger(f"{name}.0x{ident:x}")` instead')
@@ -183,7 +198,11 @@ class SimLogFormatter:
             else:
                 return get_time_from_sim_steps(self._steps, cast("TimeUnit", key))
 
-    default_prefix = "{sim_time:>11} {levelname:<8} {name[-34:]:<34} "
+    default_prefix = "{sim_time:>11} {levelname:<8} {name[-34:]:<34} " + (
+        ""
+        if _reduced_fmt
+        else "{filename[-20:]:>20}:{lineno:4} in {funcName[-31:]:31} "
+    )
     default_datefmt = "%Y-%m-%d %H:%M:%S"
     default_sim_time_fmt = "{ns:.2f}ns"
     default_empty_sim_time_fmt = "-.--ns"

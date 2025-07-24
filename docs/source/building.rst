@@ -224,6 +224,9 @@ Cocotb
 
         If the tests pass, your simulator and version apply inertial writes as expected and you can turn on :envvar:`COCOTB_TRUST_INERTIAL_WRITES`.
 
+.. envvar:: COCOTB_LOG_CONFIG
+    A filepath to a :func:`logging config file <logging.config.fileConfig>` to initialize logging.
+    Defaults to the format defined by :envvar:`COCOTB_REDUCED_LOG_FMT`.
 
 Regression Manager
 ~~~~~~~~~~~~~~~~~~
