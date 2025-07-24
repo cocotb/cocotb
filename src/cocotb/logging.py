@@ -18,7 +18,7 @@ import traceback
 import warnings
 from functools import cached_property, wraps
 from types import TracebackType
-from typing import Optional, Union, cast
+from typing import Dict, Optional, Union, cast
 
 from cocotb import _ANSI, simulator
 from cocotb._deprecation import deprecated
@@ -172,7 +172,7 @@ class SimTimeContextFilter(logging.Filter):
         return True
 
 
-def _vfstrfmt(fmt: str, args: dict[str, object]) -> str:
+def _vfstrfmt(fmt: str, args: Dict[str, object]) -> str:
     return eval(f'f"""{fmt}"""', args)
 
 
