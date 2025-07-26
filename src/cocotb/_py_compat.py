@@ -98,14 +98,15 @@ else:
             return res
 
 
-class FakeGetItemType:
-    def __class_getitem__(self, a: object) -> str:
-        return ""
-
-
 if sys.version_info >= (3, 8):
     from typing import Final, Literal, Protocol
 else:
+    from typing import Any
+
+    class FakeGetItemType:
+        def __class_getitem__(self, a: object) -> Any:
+            return Any
+
     Final = FakeGetItemType
     Literal = FakeGetItemType
     Protocol = ABC
@@ -114,16 +115,18 @@ else:
 if sys.version_info >= (3, 10):
     from typing import ParamSpec, TypeAlias
 else:
-    TypeAlias = ""
+    from typing import Any
+
+    TypeAlias = Any
 
     class FakeParamSpecType:
         def __init__(self, name: str) -> None: ...
 
-        def kwargs(self) -> str:
-            return ""
+        def kwargs(self) -> Any:
+            return Any
 
-        def args(self) -> str:
-            return ""
+        def args(self) -> Any:
+            return Any
 
     ParamSpec = FakeParamSpecType
 
