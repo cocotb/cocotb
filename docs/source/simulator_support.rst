@@ -25,6 +25,9 @@ In order to use this simulator, set :make:var:`SIM` to ``icarus``:
 
     make SIM=icarus
 
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Icarus`.
+
 .. note::
 
     A working installation of `Icarus Verilog <https://github.com/steveicarus/iverilog>`_ is required.
@@ -71,6 +74,9 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 .. code-block:: bash
 
     make SIM=verilator
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Verilator`.
 
 .. note::
 
@@ -145,6 +151,13 @@ In order to use this simulator, set :make:var:`SIM` to ``vcs``:
 
     make SIM=vcs
 
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Vcs`.
+
+.. note::
+
+    A working installation of the simulator itself is required.
+
 cocotb currently only supports :term:`VPI` for Synopsys VCS, not :term:`VHPI`.
 
 .. _sim-vcs-issues:
@@ -166,6 +179,13 @@ In order to use this simulator, set :make:var:`SIM` to ``riviera``:
 .. code-block:: bash
 
     make SIM=riviera
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Riviera`.
+
+.. note::
+
+    A working installation of the simulator itself is required.
 
 .. note::
 
@@ -199,6 +219,13 @@ In order to use this simulator, set :make:var:`SIM` to ``activehdl``:
 
     make SIM=activehdl
 
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.ActiveHdl`.
+
+.. note::
+
+    A working installation of the simulator itself is required.
+
 .. warning::
 
     cocotb does not work with some versions of Active-HDL (see :issue:`1494`).
@@ -226,6 +253,13 @@ In order to use this simulator, set :make:var:`SIM` to ``questa``:
 .. code-block:: bash
 
     make SIM=questa
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Questa`.
+
+.. note::
+
+    A working installation of the simulator itself is required.
 
 Cocotb implements two flows for Questa.
 The most suitable flow is chosen based on the Questa version being used.
@@ -272,6 +306,12 @@ In order to use this simulator, set :make:var:`SIM` to ``modelsim``:
 
     make SIM=modelsim
 
+This simulator is not currently supported in the :ref:`Python Runner <howto-python-runner>` flow.
+
+.. note::
+
+    A working installation of the simulator itself is required.
+
 Any ModelSim PE or ModelSim PE derivatives (like the ModelSim Microsemi, Intel, Lattice Editions) do not support the VHDL :term:`FLI` feature.
 If you try to use them with :term:`FLI`, you will see a ``vsim-FLI-3155`` error:
 
@@ -304,6 +344,12 @@ In order to use this simulator, set :make:var:`SIM` to ``ius``:
 
     make SIM=ius
 
+This simulator is not currently supported in the :ref:`Python Runner <howto-python-runner>` flow.
+
+.. note::
+
+    A working installation of the simulator itself is required.
+
 For more information, see :ref:`sim-xcelium`.
 
 .. _sim-incisive-issues:
@@ -324,6 +370,13 @@ In order to use this simulator, set :make:var:`SIM` to ``xcelium``:
 .. code-block:: bash
 
     make SIM=xcelium
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Xcelium`.
+
+.. note::
+
+    A working installation of the simulator itself is required.
 
 The simulator automatically loads :term:`VPI` even when only :term:`VHPI` is requested.
 
@@ -353,6 +406,9 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 .. code-block:: bash
 
     make SIM=ghdl
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Ghdl`.
 
 .. note::
 
@@ -415,6 +471,9 @@ In order to use this simulator, set :make:var:`SIM` to ``nvc``:
 
     make SIM=nvc
 
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Nvc`.
+
 .. _sim-nvc-issues:
 
 Issues for this simulator
@@ -468,6 +527,12 @@ set :make:var:`SIM` to ``cvc``:
 
     make SIM=cvc
 
+This simulator is not currently supported in the :ref:`Python Runner <howto-python-runner>` flow.
+
+.. note::
+
+    A working installation of the simulator itself is required.
+
 Note that cocotb's makefile is using CVC's interpreted mode.
 
 .. _sim-cvc-issues:
@@ -493,6 +558,9 @@ In order to use this simulator, set :make:var:`SIM` to ``dsim``:
 .. code-block:: bash
 
     make SIM=dsim
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.DSim`.
 
 .. note::
 
