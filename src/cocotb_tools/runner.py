@@ -1482,6 +1482,11 @@ class Xcelium(Runner):
     def _build_command(self) -> List[_Command]:
         self.env["CDS_AUTO_64BIT"] = "all"
 
+        if self.waves:
+            raise RuntimeError(
+                "waves is not supported in the build step. Please set it in the test step."
+            )
+
         assert self.hdl_toplevel, "A HDL toplevel is required in all Xcelium compiles."
 
         verbosity_opts = []
