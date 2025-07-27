@@ -1442,7 +1442,7 @@ class Xcelium(Runner):
     """Implementation of :class:`Runner` for Xcelium.
 
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-    * Does not support the ``timescale`` argument to :meth:`.build` and :meth:`.test`.
+    * Does not support the ``timescale`` argument to :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
@@ -1524,6 +1524,11 @@ class Xcelium(Runner):
             ]
             + vhpi_opts
             + [f"-work {self.hdl_library}"]
+            + (
+                ["-timescale", "{}/{}".format(*self.timescale)]
+                if self.timescale is not None
+                else []
+            )
             + self.build_args
             + self._get_include_options(self.includes)
             + self._get_define_options(self.defines)
