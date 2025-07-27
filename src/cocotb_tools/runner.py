@@ -658,10 +658,12 @@ def is_verilog_source(source: PathLike) -> bool:
 class Icarus(Runner):
     """Implementation of :class:`Runner` for Icarus Verilog.
 
-    * ``hdl_toplevel`` argument to :meth:`.build` is *required*.
-    * ``waves=True`` *must* be given to :meth:`.build` if either ``waves`` or ``gui`` are to be used during :meth:`.test`.
-    * ``timescale`` argument to :meth:`.build` must be given to support dumping the command file.
-    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    .. admonition:: Simulator-specific Usage
+
+       * ``hdl_toplevel`` argument to :meth:`.build` is *required*.
+       * ``waves=True`` *must* be given to :meth:`.build` if either ``waves`` or ``gui`` are to be used during :meth:`.test`.
+       * ``timescale`` argument to :meth:`.build` must be given to support dumping the command file.
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
@@ -805,7 +807,9 @@ class Icarus(Runner):
 class Questa(Runner):
     """Implementation of :class:`Runner` for Siemens Questa.
 
-    * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
+    .. admonition:: Simulator-specific Usage
+
+       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["fli", "vhpi"]}
@@ -934,7 +938,9 @@ class Questa(Runner):
 class Ghdl(Runner):
     """Implementation of :class:`Runner` for GHDL.
 
-    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    .. admonition:: Simulator-specific Usage
+
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"vhdl": ["vpi"]}
@@ -1057,8 +1063,10 @@ class Ghdl(Runner):
 class Nvc(Runner):
     """Implementation of :class:`Runner` for NVC.
 
-    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-    * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
+    .. admonition:: Simulator-specific Usage
+
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"vhdl": ["vhpi"]}
@@ -1156,9 +1164,11 @@ class Nvc(Runner):
 class Riviera(Runner):
     """Implementation of :class:`Runner` for Aldec Riviera-PRO.
 
-    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-    * Does not support the ``gui`` argument to :meth:`.test`.
-    * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
+    .. admonition:: Simulator-specific Usage
+
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+       * Does not support the ``gui`` argument to :meth:`.test`.
+       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
@@ -1313,8 +1323,10 @@ class Riviera(Runner):
 class Verilator(Runner):
     """Implementation of :class:`Runner` for Verilator.
 
-    * ``waves=True`` *must* be given to :meth:`.build` if either ``waves`` or ``gui`` are to be used during :meth:`.test`.
-    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    .. admonition:: Simulator-specific Usage
+
+       * ``waves=True`` *must* be given to :meth:`.build` if either ``waves`` or ``gui`` are to be used during :meth:`.test`.
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
@@ -1441,9 +1453,11 @@ class Verilator(Runner):
 class Xcelium(Runner):
     """Implementation of :class:`Runner` for Cadence Xcelium.
 
-    * Does not support the ``waves`` argument to :meth:`.build` (must be set in :meth:`.test` instead).
-    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-    * Does not support the ``timescale`` argument to :meth:`.test`.
+    .. admonition:: Simulator-specific Usage
+
+       * Does not support the ``waves`` argument to :meth:`.build` (must be set in :meth:`.test` instead).
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+       * Does not support the ``timescale`` argument to :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
@@ -1630,9 +1644,11 @@ class Xcelium(Runner):
 class Vcs(Runner):
     """Implementation of :class:`Runner` for Synopsys VCS.
 
-    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-    * Does not support VHDL.
-    * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
+    .. admonition:: Simulator-specific Usage
+
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+       * Does not support VHDL.
+       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
@@ -1718,7 +1734,9 @@ class Vcs(Runner):
 class Dsim(Runner):
     """Implementation of :class:`Runner` for Siemens DSim.
 
-    * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    .. admonition:: Simulator-specific Usage
+
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
