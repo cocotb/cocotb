@@ -24,6 +24,8 @@ In order to use this simulator, set :make:var:`SIM` to ``icarus``:
 .. code-block:: bash
 
     make SIM=icarus
+    # or
+    SIM=icarus [...] pytest [...]
 
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.Icarus`.
@@ -74,6 +76,8 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 .. code-block:: bash
 
     make SIM=verilator
+    # or
+    SIM=verilator [...] pytest [...]
 
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.Verilator`.
@@ -150,6 +154,8 @@ In order to use this simulator, set :make:var:`SIM` to ``vcs``:
 .. code-block:: bash
 
     make SIM=vcs
+    # or
+    SIM=vcs [...] pytest [...]
 
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.Vcs`.
@@ -179,6 +185,8 @@ In order to use this simulator, set :make:var:`SIM` to ``riviera``:
 .. code-block:: bash
 
     make SIM=riviera
+    # or
+    SIM=riviera [...] pytest [...]
 
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.Riviera`.
@@ -219,8 +227,7 @@ In order to use this simulator, set :make:var:`SIM` to ``activehdl``:
 
     make SIM=activehdl
 
-For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
-see :class:`cocotb_tools.runner.ActiveHdl`.
+This simulator is not currently supported in the :ref:`Python Runner <howto-python-runner>` flow.
 
 .. note::
 
@@ -253,6 +260,8 @@ In order to use this simulator, set :make:var:`SIM` to ``questa``:
 .. code-block:: bash
 
     make SIM=questa
+    # or
+    SIM=questa [...] pytest [...]
 
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.Questa`.
@@ -370,6 +379,8 @@ In order to use this simulator, set :make:var:`SIM` to ``xcelium``:
 .. code-block:: bash
 
     make SIM=xcelium
+    # or
+    SIM=xcelium [...] pytest [...]
 
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.Xcelium`.
@@ -406,6 +417,8 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 .. code-block:: bash
 
     make SIM=ghdl
+    # or
+    SIM=ghdl [...] pytest [...]
 
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.Ghdl`.
@@ -470,6 +483,8 @@ In order to use this simulator, set :make:var:`SIM` to ``nvc``:
 .. code-block:: bash
 
     make SIM=nvc
+    # or
+    SIM=nvc [...] pytest [...]
 
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.Nvc`.
@@ -558,6 +573,8 @@ In order to use this simulator, set :make:var:`SIM` to ``dsim``:
 .. code-block:: bash
 
     make SIM=dsim
+    # or
+    SIM=dsim [...] pytest [...]
 
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.DSim`.
