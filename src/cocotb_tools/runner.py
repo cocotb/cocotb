@@ -656,7 +656,7 @@ def is_verilog_source(source: PathLike) -> bool:
 
 
 class Icarus(Runner):
-    """Implementation of :class:`Runner` for Icarus.
+    """Implementation of :class:`Runner` for Icarus Verilog.
 
     * ``hdl_toplevel`` argument to :meth:`.build` is *required*.
     * ``waves=True`` *must* be given to :meth:`.build` if either ``waves`` or ``gui`` are to be used during :meth:`.test`.
@@ -803,7 +803,7 @@ class Icarus(Runner):
 
 
 class Questa(Runner):
-    """Implementation of :class:`Runner` for Questa.
+    """Implementation of :class:`Runner` for Siemens Questa.
 
     * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
@@ -1154,7 +1154,7 @@ class Nvc(Runner):
 
 
 class Riviera(Runner):
-    """Implementation of :class:`Runner` for Riviera-PRO.
+    """Implementation of :class:`Runner` for Aldec Riviera-PRO.
 
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     * Does not support the ``gui`` argument to :meth:`.test`.
@@ -1365,7 +1365,7 @@ class Verilator(Runner):
 
         if self.hdl_toplevel is None:
             raise ValueError(
-                f"{type(self).__qualname__} requires the hdl_toplevel parameter to be specified"
+                f"{type(self).__qualname__} requires the hdl_toplevel parameter to be specified."
             )
 
         # TODO: set "--debug" if self.verbose
@@ -1439,8 +1439,9 @@ class Verilator(Runner):
 
 
 class Xcelium(Runner):
-    """Implementation of :class:`Runner` for Xcelium.
+    """Implementation of :class:`Runner` for Cadence Xcelium.
 
+    * Does not support the ``waves`` argument to :meth:`.build` (must be set in :meth:`.test` instead).
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     * Does not support the ``timescale`` argument to :meth:`.test`.
     """
@@ -1622,7 +1623,7 @@ class Xcelium(Runner):
 
 
 class Vcs(Runner):
-    """Implementation of :class:`Runner` for VCS.
+    """Implementation of :class:`Runner` for Synopsys VCS.
 
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     * Does not support VHDL.
@@ -1710,7 +1711,7 @@ class Vcs(Runner):
 
 
 class Dsim(Runner):
-    """Implementation of :class:`Runner` for DSim.
+    """Implementation of :class:`Runner` for Siemens DSim.
 
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
     """
@@ -1746,14 +1747,15 @@ class Dsim(Runner):
         return "file.vcd"
 
     def _test_command(self) -> List[_Command]:
+        if self.pre_cmd is not None:
+            raise RuntimeError("pre_cmd is not implemented for DSim.")
+
         plusargs = self.plusargs
         if self.waves or self.gui:
             plusargs += [f"-waves {self._waves_file()}"]
 
         if self.timescale:
             plusargs += ["-timescale {}/{}".format(*self.timescale)]
-        if self.pre_cmd is not None:
-            raise ValueError("WARNING: pre_cmd is not implemented for DSim.")
 
         return [
             [
