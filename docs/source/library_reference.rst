@@ -41,6 +41,8 @@ Python Test Runner
 
 .. autodata:: MAX_PARALLEL_BUILD_JOBS
 
+.. _api-runner-sim:
+
 Simulator Runners
 -----------------
 
