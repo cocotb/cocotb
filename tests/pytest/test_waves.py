@@ -45,7 +45,7 @@ def run_simulation(sim, test_args=None):
         build_dir=sim_build,
         build_args=compile_args,
         defines={"NODUMPFILE": 1},
-        waves=True,
+        waves=False if sim in ("xcelium",) else True,
     )
 
     _test_args = sim_args

@@ -84,7 +84,7 @@ def test_cocotb():
         test_module=module_name,
         gpi_interfaces=gpi_interfaces,
         test_args=sim_args,
-        timescale=timescale,
+        timescale=None if sim in ("xcelium",) else timescale,
     )
 
 

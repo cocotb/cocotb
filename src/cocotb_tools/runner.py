@@ -723,30 +723,6 @@ class Icarus(Runner):
     def cmds_file(self) -> Path:
         return self.build_dir / "cmds.f"
 
-    def _test_command(self) -> List[_Command]:
-        plusargs = self.plusargs
-        if self.waves or self.gui:
-            plusargs += ["-fst"]
-        else:
-            # Disable waveform output
-            plusargs += ["-none"]
-
-        if self.pre_cmd is not None:
-            raise ValueError("WARNING: pre_cmd is not implemented for Icarus Verilog.")
-
-        return [
-            [
-                "vvp",
-                "-M",
-                str(cocotb_tools.config.libs_dir),
-                "-m",
-                cocotb_tools.config.lib_name("vpi", "icarus"),
-                *self.test_args,
-                str(self.sim_file),
-                *plusargs,
-            ]
-        ]
-
     def _build_command(self) -> List[_Command]:
         assert self.hdl_toplevel is not None
 
@@ -800,6 +776,30 @@ class Icarus(Runner):
             self.log.warning("Skipping compilation of %s", self.sim_file)
 
         return cmds
+
+    def _test_command(self) -> List[_Command]:
+        if self.pre_cmd is not None:
+            raise RuntimeError("pre_cmd is not implemented for Icarus Verilog.")
+
+        plusargs = self.plusargs
+        if self.waves or self.gui:
+            plusargs += ["-fst"]
+        else:
+            # Disable waveform output
+            plusargs += ["-none"]
+
+        return [
+            [
+                "vvp",
+                "-M",
+                str(cocotb_tools.config.libs_dir),
+                "-m",
+                cocotb_tools.config.lib_name("vpi", "icarus"),
+                *self.test_args,
+                str(self.sim_file),
+                *plusargs,
+            ]
+        ]
 
 
 class Questa(Runner):
@@ -1442,7 +1442,7 @@ class Xcelium(Runner):
     """Implementation of :class:`Runner` for Xcelium.
 
     * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-    * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
+    * Does not support the ``timescale`` argument to :meth:`.build` and :meth:`.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
@@ -1542,6 +1542,11 @@ class Xcelium(Runner):
     def _test_command(self) -> List[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Xcelium.")
+
+        if self.timescale is not None:
+            raise RuntimeError(
+                "timescale is not supported in the test step. Please set it in the build step."
+            )
 
         self.env["CDS_AUTO_64BIT"] = "all"
 
