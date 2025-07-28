@@ -1,9 +1,11 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import warnings
 from typing import Iterable, Iterator, List, TypeVar, Union, cast, overload
 
 from cocotb.types._abstract_array import AbstractMutableArray
+from cocotb.types._indexing import IndexingChangedWarning
 from cocotb.types._range import Range
 
 T = TypeVar("T")
@@ -134,6 +136,7 @@ class Array(AbstractMutableArray[T]):
     def __init__(
         self, value: Iterable[T], range: Union[Range, int, None] = None
     ) -> None:
+        self._warn_indexing = False
         self._value = list(value)
         if range is None:
             self._range = Range(0, "to", len(self._value) - 1)
@@ -153,8 +156,11 @@ class Array(AbstractMutableArray[T]):
                 )
 
     @classmethod
-    def _from_handle(cls, value: List[T], range: Range) -> "Array[T]":
+    def _from_handle(
+        cls, value: List[T], range: Range, warn_indexing: bool
+    ) -> "Array[T]":
         self = cls.__new__(cls)
+        self._warn_indexing = warn_indexing
         self._value = value
         self._range = range
         return self
@@ -202,9 +208,23 @@ class Array(AbstractMutableArray[T]):
 
     def __getitem__(self, item: Union[int, slice]) -> Union[T, "Array[T]"]:
         if isinstance(item, int):
+            if self._warn_indexing:
+                warnings.warn(
+                    f"Update index {item} to {self.range[item]}",
+                    IndexingChangedWarning,
+                    stacklevel=2,
+                )
             idx = self._translate_index(item)
             return self._value[idx]
         elif isinstance(item, slice):
+            if self._warn_indexing:
+                start = item.start if item.start is not None else 0
+                stop = item.stop if item.stop is not None else len(self) - 1
+                warnings.warn(
+                    f"Update slice {start}:{stop} to {self.range[start]}:{self.range[stop]}",
+                    IndexingChangedWarning,
+                    stacklevel=2,
+                )
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
             if item.step is not None:
