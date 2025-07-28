@@ -433,7 +433,11 @@ The following variables are makefile variables, not environment variables.
 
 .. make:var:: SIM
 
-      Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`src/cocotb/share/makefiles/simulators/makefile.$(SIM)`
+      In the makefile flow, selects which simulator Makefile to use.
+      Attempts to include a simulator specific makefile from :file:`src/cocotb/share/makefiles/simulators/makefile.$(SIM)`
+
+      In the :ref:`Python Runner <howto-python-runner>` flow,
+      selects the :ref:`Simulator Runner <api-runner-sim>` to use.
 
 .. make:var:: WAVES
 

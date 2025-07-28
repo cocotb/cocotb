@@ -24,6 +24,11 @@ In order to use this simulator, set :make:var:`SIM` to ``icarus``:
 .. code-block:: bash
 
     make SIM=icarus
+    # or
+    SIM=icarus [...] pytest [...]
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Icarus`.
 
 .. note::
 
@@ -51,8 +56,8 @@ To redirect the wave file to a different location, use the plusarg `dumpfile_pat
 
 .. _sim-icarus-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:icarus <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aicarus>`_
 
@@ -71,6 +76,11 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 .. code-block:: bash
 
     make SIM=verilator
+    # or
+    SIM=verilator [...] pytest [...]
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Verilator`.
 
 .. note::
 
@@ -128,8 +138,8 @@ The resulting file will be :file:`dump.fst` and can be opened by ``gtkwave dump.
 
 .. _sim-verilator-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:verilator <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Averilator>`_
 
@@ -144,13 +154,22 @@ In order to use this simulator, set :make:var:`SIM` to ``vcs``:
 .. code-block:: bash
 
     make SIM=vcs
+    # or
+    SIM=vcs [...] pytest [...]
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Vcs`.
+
+.. note::
+
+    A working installation of the simulator itself is required.
 
 cocotb currently only supports :term:`VPI` for Synopsys VCS, not :term:`VHPI`.
 
 .. _sim-vcs-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:vcs <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Avcs>`_
 
@@ -166,6 +185,15 @@ In order to use this simulator, set :make:var:`SIM` to ``riviera``:
 .. code-block:: bash
 
     make SIM=riviera
+    # or
+    SIM=riviera [...] pytest [...]
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Riviera`.
+
+.. note::
+
+    A working installation of the simulator itself is required.
 
 .. note::
 
@@ -182,8 +210,8 @@ this setting will be mirrored in the TCL ``license_queue`` variable to control r
 
 .. _sim-aldec-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:riviera <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Ariviera>`_
 
@@ -199,6 +227,12 @@ In order to use this simulator, set :make:var:`SIM` to ``activehdl``:
 
     make SIM=activehdl
 
+This simulator is not currently supported in the :ref:`Python Runner <howto-python-runner>` flow.
+
+.. note::
+
+    A working installation of the simulator itself is required.
+
 .. warning::
 
     cocotb does not work with some versions of Active-HDL (see :issue:`1494`).
@@ -210,8 +244,8 @@ In order to use this simulator, set :make:var:`SIM` to ``activehdl``:
 
 .. _sim-activehdl-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:activehdl <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aactivehdl>`_
 
@@ -226,6 +260,15 @@ In order to use this simulator, set :make:var:`SIM` to ``questa``:
 .. code-block:: bash
 
     make SIM=questa
+    # or
+    SIM=questa [...] pytest [...]
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Questa`.
+
+.. note::
+
+    A working installation of the simulator itself is required.
 
 Cocotb implements two flows for Questa.
 The most suitable flow is chosen based on the Questa version being used.
@@ -255,8 +298,8 @@ For more information, see :ref:`sim-modelsim`.
 
 .. _sim-questa-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:questa <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aquesta>`_
 
@@ -271,6 +314,12 @@ In order to use this simulator, set :make:var:`SIM` to ``modelsim``:
 .. code-block:: bash
 
     make SIM=modelsim
+
+This simulator is not currently supported in the :ref:`Python Runner <howto-python-runner>` flow.
+
+.. note::
+
+    A working installation of the simulator itself is required.
 
 Any ModelSim PE or ModelSim PE derivatives (like the ModelSim Microsemi, Intel, Lattice Editions) do not support the VHDL :term:`FLI` feature.
 If you try to use them with :term:`FLI`, you will see a ``vsim-FLI-3155`` error:
@@ -287,8 +336,8 @@ If you have previously launched a test without this setting, you might have to d
 
 .. _sim-modelsim-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:modelsim <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Amodelsim>`_
 
@@ -304,12 +353,18 @@ In order to use this simulator, set :make:var:`SIM` to ``ius``:
 
     make SIM=ius
 
+This simulator is not currently supported in the :ref:`Python Runner <howto-python-runner>` flow.
+
+.. note::
+
+    A working installation of the simulator itself is required.
+
 For more information, see :ref:`sim-xcelium`.
 
 .. _sim-incisive-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:ius <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aius>`_
 
@@ -324,6 +379,15 @@ In order to use this simulator, set :make:var:`SIM` to ``xcelium``:
 .. code-block:: bash
 
     make SIM=xcelium
+    # or
+    SIM=xcelium [...] pytest [...]
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Xcelium`.
+
+.. note::
+
+    A working installation of the simulator itself is required.
 
 The simulator automatically loads :term:`VPI` even when only :term:`VHPI` is requested.
 
@@ -331,8 +395,8 @@ Testing designs with VHDL toplevels is only supported with Xcelium 23.09.004 and
 
 .. _sim-xcelium-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:xcelium <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Axcelium>`_
 
@@ -353,6 +417,11 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 .. code-block:: bash
 
     make SIM=ghdl
+    # or
+    SIM=ghdl [...] pytest [...]
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Ghdl`.
 
 .. note::
 
@@ -366,8 +435,8 @@ To specify a VHDL architecture to simulate, set the ``ARCH`` make variable to th
 
 .. _sim-ghdl-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:ghdl <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aghdl>`_
 
@@ -414,11 +483,16 @@ In order to use this simulator, set :make:var:`SIM` to ``nvc``:
 .. code-block:: bash
 
     make SIM=nvc
+    # or
+    SIM=nvc [...] pytest [...]
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.Nvc`.
 
 .. _sim-nvc-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:nvc <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Anvc>`_
 
@@ -468,12 +542,18 @@ set :make:var:`SIM` to ``cvc``:
 
     make SIM=cvc
 
+This simulator is not currently supported in the :ref:`Python Runner <howto-python-runner>` flow.
+
+.. note::
+
+    A working installation of the simulator itself is required.
+
 Note that cocotb's makefile is using CVC's interpreted mode.
 
 .. _sim-cvc-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:cvc <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Acvc>`_
 
@@ -493,6 +573,11 @@ In order to use this simulator, set :make:var:`SIM` to ``dsim``:
 .. code-block:: bash
 
     make SIM=dsim
+    # or
+    SIM=dsim [...] pytest [...]
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.DSim`.
 
 .. note::
 
@@ -515,8 +600,8 @@ To enable VCD tracing, set :make:var:`WAVES` to ``1``.
 
 .. _sim-dsim-issues:
 
-Issues for this simulator
--------------------------
+Reported Issues for this Simulator
+----------------------------------
 
 * `All issues with label category:simulators:dsim <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Adsim>`_
 

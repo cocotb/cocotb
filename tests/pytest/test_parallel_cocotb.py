@@ -59,5 +59,5 @@ def test_cocotb_parallel(seed):
         test_module=module_name,
         test_args=sim_args,
         build_dir=sim_build,
-        timescale=timescale,
+        timescale=None if sim in ("xcelium",) else timescale,
     )
