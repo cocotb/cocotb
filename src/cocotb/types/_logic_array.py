@@ -1,6 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import warnings
 from math import ceil
 from typing import (
     Iterable,
@@ -14,6 +15,7 @@ from typing import (
 from cocotb._deprecation import deprecated
 from cocotb._py_compat import Literal, TypeAlias
 from cocotb.types._abstract_array import AbstractMutableArray
+from cocotb.types._indexing import IndexingChangedWarning
 from cocotb.types._logic import Logic, LogicConstructibleT, _str_literals
 from cocotb.types._range import Range
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
@@ -196,6 +198,7 @@ class LogicArray(AbstractMutableArray[Logic]):
     _value_as_int: Union[int, None]
     _value_as_str: Union[str, None]
     _range: Range
+    _warn_indexing: bool
 
     def __init__(
         self,
@@ -205,6 +208,7 @@ class LogicArray(AbstractMutableArray[Logic]):
         self._value_as_array = None
         self._value_as_int = None
         self._value_as_str = None
+        self._warn_indexing = False
 
         if isinstance(range, int):
             range = Range(range - 1, "downto", 0)
@@ -393,7 +397,7 @@ class LogicArray(AbstractMutableArray[Logic]):
         return LogicArray(value_as_int, range)
 
     @classmethod
-    def _from_handle(cls, value: str) -> "LogicArray":
+    def _from_handle(cls, value: str, warn_indexing: bool) -> "LogicArray":
         # Used by cocotb.handle classes to make LogicArray from values gotten from the
         # simulator which we expect to be well-formed.
         # Values are required to be uppercase.
@@ -402,6 +406,7 @@ class LogicArray(AbstractMutableArray[Logic]):
         self._value_as_int = None
         self._value_as_str = value
         self._range = Range(len(value) - 1, "downto", 0)
+        self._warn_indexing = warn_indexing
         return self
 
     @property
@@ -677,9 +682,23 @@ class LogicArray(AbstractMutableArray[Logic]):
     def __getitem__(self, item: Union[int, slice]) -> Union[Logic, "LogicArray"]:
         array = self._get_array()
         if isinstance(item, int):
+            if self._warn_indexing:
+                warnings.warn(
+                    f"Update index {item} to {self.range[item]}",
+                    IndexingChangedWarning,
+                    stacklevel=2,
+                )
             idx = self._translate_index(item)
             return array[idx]
         elif isinstance(item, slice):
+            if self._warn_indexing:
+                start = item.start if item.start is not None else 0
+                stop = item.stop if item.stop is not None else len(self) - 1
+                warnings.warn(
+                    f"Update slice {start}:{stop} to {self.range[start]}:{self.range[stop]}",
+                    IndexingChangedWarning,
+                    stacklevel=2,
+                )
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
             if item.step is not None:

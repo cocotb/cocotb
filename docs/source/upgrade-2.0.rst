@@ -374,17 +374,7 @@ Change bit indexing and slicing to use the indexing provided by the ``range`` ar
     assert val[3] == 1
     assert val[0] == 0
 
-.. note::
-    You can also use the :attr:`.LogicArray.range` object to translate ``0`` to ``len()-1`` indexing to the one used by :class:`!LogicArray`,
-    but this is rather inefficient.
-
-    .. code-block:: python
-        :class: new
-
-        val = LogicArray("1010", Range(3, 0))
-        assert val[0] == 0      # index 0 is right-most
-        ind = val.range[0]      # 0th range value is 3
-        assert val[ind] == "1"  # index 3 is left-most
+See :ref:`update-indexing` for more details on how to update indexing and slicing.
 
 ----
 
@@ -619,6 +609,8 @@ Integer representation is provided when converting to and from an integer.
     but assumes an unsigned and two's complement representation, respectively.
 
 
+.. _logic-handle-value-changes:
+
 **************************************************************************************************************************************
 Expect :class:`!LogicArray` and :class:`!Logic` instead of :class:`!BinaryValue` when getting values from logic-like simulator objects
 **************************************************************************************************************************************
@@ -628,39 +620,16 @@ Change
 
 Handles to logic-like simulator objects now return :class:`.LogicArray` or :class:`.Logic` instead of :external+cocotb19:py:class:`~cocotb.binary.BinaryValue`
 when getting their value with the :attr:`value <cocotb.handle.ValueObjectBase.value>` getter.
-Scalar logic-like simulator objects return :class:`!Logic`, and array logic-like simulator objects return :class:`!LogicArray`.
+Scalar logic-like simulator objects return :class:`!Logic`, and array-of-logic-like simulator objects return :class:`!LogicArray`.
 
 How to Upgrade
 ==============
 
-:ref:`logic-array-over-binary-value` when dealing with array logic-like simulator objects.
-Also, change indexing assumptions from always being ``0`` to ``length-1`` left-to-right, to following the arbitrary indexing scheme of the logic array as defined in HDL.
-
-.. code-block:: verilog
-    :caption: HDL signal being used
-
-    logic [7:0] signal;
-
-.. code-block:: python
-    :caption: Old way with :class:`!BinaryValue`\ s
-    :class: removed
-
-    dut.signal.value = "1010"
-    ...
-    val = dut.signal.value
-    assert val[0] == 1  # always left-most
-
-.. code-block:: python
-    :caption: New way with :class:`!LogicArray`\ s
-    :class: new
-
-    dut.signal.value = "1010"
-    ...
-    val = dut.signal.value
-    assert val[0] == 0  # uses HDL indexing, index 0 is right-most
-
-
+:ref:`logic-array-over-binary-value` when dealing with array-of-logic-like simulator objects.
 Change code when dealing with scalar logic-like simulator objects to work with :class:`!Logic`.
+
+Change indexing assumptions from always being ``0`` to ``length-1`` left-to-right, to following the arbitrary indexing scheme of the logic array as defined in HDL.
+See :ref:`update-indexing` for more details on how to update indexing and slicing.
 
 Rationale
 =========
@@ -695,6 +664,8 @@ while also providing a common API to enable writing backwards-compatible and hig
     dut.signal.value = True
 
 
+.. _array-handle-value-changes:
+
 ***************************************************************************************************
 Expect :class:`!Array` instead of :class:`!list` when getting values from arrayed simulator objects
 ***************************************************************************************************
@@ -708,33 +679,7 @@ How to Upgrade
 ==============
 
 Change indexing assumptions from always being ``0`` to ``length-1`` left-to-right, to following the arbitrary indexing scheme of the array as defined in HDL.
-For example, if the HDL defines an array with the indexing scheme ``[15:0]``, index ``15`` will be the left-most element of the array rather than the right-most.
-Change all negative indexing to use positive indexing.
-
-.. code-block:: verilog
-    :caption: HDL signal being used
-
-    integer array[1:-2];
-
-.. code-block:: python
-    :caption: Old way with :class:`!list`\ s
-    :class: removed
-
-    dut.array.value = [1, 2, 3, 4]
-    ...
-    val = dut.array.value
-    assert val[0] == 1  # always left-most
-    assert val[-1] == 4  # always right-most
-
-.. code-block:: python
-    :caption: New way with :class:`!Array`\ s
-    :class: new
-
-    dut.array.value = [1, 2, 3, 4]
-    ...
-    val = dut.array.value
-    assert val[0] == 2  # uses HDL indexing, index 0 is second element
-    assert val[-1] == 3  # uses HDL indexing, index -1 is third element
+See :ref:`update-indexing` for more details on how to update indexing and slicing.
 
 Rationale
 =========

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from ._abstract_array import AbstractArray, AbstractMutableArray
 from ._array import Array
+from ._indexing import IndexingChangedWarning
 from ._logic import Logic
 from ._logic_array import LogicArray
 from ._range import Range
@@ -17,6 +18,7 @@ __all__ = (
     "AbstractArray",
     "AbstractMutableArray",
     "Array",
+    "IndexingChangedWarning",
     "Logic",
     "LogicArray",
     "Range",
