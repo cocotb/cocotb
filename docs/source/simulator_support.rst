@@ -498,7 +498,6 @@ In order to use this simulator, set :make:var:`SIM` to ``dsim``:
 
     A working installation of `DSim <https://altair.com/dsim>`_ is required.
     You can install DSim simulator directly from `Altair Marketplace <https://altairone.com/Marketplace?tab=Info&app=dsim>`_ and find information regarding getting a free license.
-    See `Altair Learning <https://learn.altair.com/course/view.php?id=810&_gl=1*1rpezuc*_gcl_au*MjAzMDIwNjg5Ny4xNzQzNDI0MjQ5>`_ for an installation procedure.
 
 .. _sim-dsim-waveforms:
 
