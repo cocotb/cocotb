@@ -252,7 +252,7 @@ html_favicon = "_static/cocotb-favicon.svg"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_css_files = ["cocotb.css"]
-html_js_files = ["cocotb.js"]
+html_js_files = ["cocotb.js", "patch_pydata_scroll_behaviour.js"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
