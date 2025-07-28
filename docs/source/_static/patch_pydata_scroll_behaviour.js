@@ -1,4 +1,4 @@
-// from https://github.com/pydata/pydata-sphinx-theme/issues/1889#issuecomment-2523346100
+// based on https://github.com/pydata/pydata-sphinx-theme/issues/1889#issuecomment-2523346100
 document.addEventListener('DOMContentLoaded', function () {
   const sections = document.querySelectorAll('section'); // All content sections
   const tocLinks = document.querySelectorAll('.bd-toc li a'); // All TOC links
@@ -17,25 +17,34 @@ document.addEventListener('DOMContentLoaded', function () {
   document.body.appendChild(debugLine);
 
   /**
-   * Scroll event handler to determine the active section and update the TOC.
+   * Optimized scroll event handler using requestAnimationFrame.
    */
+  let ticking = false;
+
   window.addEventListener('scroll', function () {
-    const scrollPosition = window.scrollY + offset; // Adjusted scroll position with offset
-    let activeSection = null;
+    if (!ticking) {
+      window.requestAnimationFrame(function () {
+        const scrollPosition = window.scrollY + offset;
+        let activeSection = null;
 
-    // Determine which section is currently visible
-    sections.forEach(section => {
-      const rect = section.getBoundingClientRect();
-      const sectionTop = rect.top + window.scrollY; // Absolute position of the section
-      const sectionBottom = sectionTop + section.offsetHeight;
-      if (scrollPosition >= sectionTop && scrollPosition <= sectionBottom) {
-        activeSection = section;
-      }
-    });
+        sections.forEach(section => {
+          const rect = section.getBoundingClientRect();
+          const sectionTop = rect.top + window.scrollY;
+          const sectionBottom = sectionTop + section.offsetHeight;
 
-    // Update TOC if there's an active section
-    if (activeSection) {
-      activateTocForSection(activeSection);
+          if (scrollPosition >= sectionTop && scrollPosition <= sectionBottom) {
+            activeSection = section;
+          }
+        });
+
+        if (activeSection) {
+          activateTocForSection(activeSection);
+        }
+
+        ticking = false;
+      });
+
+      ticking = true;
     }
   });
 
