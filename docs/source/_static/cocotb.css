@@ -139,6 +139,7 @@ blockquote {
 
 div.admonition {
     border-radius: 0 !important;
+    border-color: var(--color-cocotb-blue) !important;
     box-shadow: none !important;
     padding-bottom: 0 !important;
 }
