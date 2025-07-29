@@ -2,8 +2,7 @@
 
 Sphinx >= 8.2
 breathe
-sphinx-book-theme == 1.1.4  # pin this to exact version to guard against any CSS changes
-git+https://github.com/pydata/pydata-sphinx-theme@151623d27c775a2706de7bbc7e8102f31fb76af5
+sphinx-nefertiti
 sphinx-design >= 0.6.1
 sphinxcontrib-svg2pdfconverter[CairoSVG]
 git+https://github.com/ktbarrett/domaintools.git
