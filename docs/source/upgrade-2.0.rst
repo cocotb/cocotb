@@ -350,8 +350,6 @@ Change bit indexing and slicing to use the indexing provided by the ``range`` ar
     This means index ``0`` will be the rightmost bit and not the leftmost bit like in :class:`BinaryValue`.
     Pass ``Range(0, range-1)`` when constructing :class:`!LogicArray` to retain the old indexing scheme, or update the indexing and slicing usage.
 
-Change all negative indexing to use positive indexing.
-
 .. code-block:: python
     :caption: Old way with :class:`!BinaryValue`
     :class: removed
@@ -359,7 +357,6 @@ Change all negative indexing to use positive indexing.
     val = BinaryValue(10, 4)
     assert val[0] == 1
     assert val[3] == 0
-    assert val[-2] == 1
 
 .. code-block:: python
     :caption: New way with :class:`!LogicArray`, specifying an ascending range
@@ -368,7 +365,6 @@ Change all negative indexing to use positive indexing.
     val = LogicArray(10, Range(0, 3))
     assert val[0] == 1
     assert val[3] == 0
-    assert val[3] == 1
 
 .. code-block:: python
     :caption: New way with :class:`!LogicArray`, changing indexing
@@ -377,7 +373,6 @@ Change all negative indexing to use positive indexing.
     val = LogicArray(10, 4)
     assert val[3] == 1
     assert val[0] == 0
-    assert val[1] == 1
 
 .. note::
     You can also use the :attr:`.LogicArray.range` object to translate ``0`` to ``len()-1`` indexing to the one used by :class:`!LogicArray`,
@@ -714,6 +709,7 @@ How to Upgrade
 
 Change indexing assumptions from always being ``0`` to ``length-1`` left-to-right, to following the arbitrary indexing scheme of the array as defined in HDL.
 For example, if the HDL defines an array with the indexing scheme ``[15:0]``, index ``15`` will be the left-most element of the array rather than the right-most.
+Change all negative indexing to use positive indexing.
 
 .. code-block:: verilog
     :caption: HDL signal being used
@@ -728,6 +724,7 @@ For example, if the HDL defines an array with the indexing scheme ``[15:0]``, in
     ...
     val = dut.array.value
     assert val[0] == 1  # always left-most
+    assert val[-1] == 4  # always right-most
 
 .. code-block:: python
     :caption: New way with :class:`!Array`\ s
@@ -737,6 +734,7 @@ For example, if the HDL defines an array with the indexing scheme ``[15:0]``, in
     ...
     val = dut.array.value
     assert val[0] == 2  # uses HDL indexing, index 0 is second element
+    assert val[-1] == 3  # uses HDL indexing, index -1 is third element
 
 Rationale
 =========
