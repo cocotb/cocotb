@@ -2,6 +2,13 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+#
+# DO NOT RENAME THIS FILE!
+# PyPi uploads use OIDC, aka Trusted Publishing, to avoid the need for API keys.
+# https://pypi.org/manage/project/cocotb/settings/publishing/ is configured to
+# allow uploads from the cocotb GitHub project and this exact file name.
+#
+
 name: Release
 
 concurrency:
@@ -109,5 +116,4 @@ jobs:
         merge-multiple: true
     - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc  # v1.12.4
-      with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
+      # Authentication to PyPi is done through OIDC ("Trusted Publishing").
