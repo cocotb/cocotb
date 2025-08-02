@@ -17,6 +17,7 @@ from typing import Callable, List, cast
 import cocotb
 import cocotb._profiling
 import cocotb.handle
+import cocotb.logging
 import cocotb.simulator
 from cocotb._scheduler import Scheduler
 from cocotb.regression import RegressionManager, RegressionMode
@@ -62,6 +63,7 @@ def init_package_from_simulation(argv: List[str]) -> None:
     # Add it back because users expect to be able to import files in their test directory.
     sys.path.insert(0, "")
 
+    cocotb.logging._init()
     _setup_logging()
 
     # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
