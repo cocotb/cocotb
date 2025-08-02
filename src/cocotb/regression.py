@@ -18,6 +18,7 @@ import warnings
 from enum import auto
 from importlib import import_module
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Coroutine,
     List,
@@ -28,7 +29,6 @@ import cocotb
 import cocotb._gpi_triggers
 import cocotb.handle
 from cocotb import _ANSI, simulator
-from cocotb._base_triggers import Trigger
 from cocotb._decorators import Parameterized, Test
 from cocotb._extended_awaitables import SimTimeoutError, with_timeout
 from cocotb._gpi_triggers import GPITrigger, Timer
@@ -45,6 +45,9 @@ from cocotb._utils import (
 from cocotb._xunit_reporter import XUnitReporter
 from cocotb.task import Task
 from cocotb.utils import get_sim_time
+
+if TYPE_CHECKING:
+    from cocotb._base_triggers import Trigger
 
 __all__ = (
     "Parameterized",

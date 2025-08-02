@@ -24,9 +24,11 @@ from typing import (
 import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import LogicObject, ValueObjectBase
-from cocotb.task import Task
 from cocotb.triggers import Event, FallingEdge, ReadOnly, RisingEdge, Trigger
 from cocotb.types import Array, LogicArray, Range
+
+if TYPE_CHECKING:
+    from cocotb.task import Task
 
 T = TypeVar("T")
 
