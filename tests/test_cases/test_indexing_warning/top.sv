@@ -6,12 +6,9 @@
 
 `timescale 1 ps / 1 ps
 
-module fatal (
-    input clk
+module top (
+    input logic [7:0] vec,
+    input logic [7:0] arr [1:4]
 );
-
-initial begin
-    #10 $fatal(1, "This is a fatal message that finishes the test");
-end
 
 endmodule

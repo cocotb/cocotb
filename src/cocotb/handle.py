@@ -45,6 +45,7 @@ from cocotb._py_compat import cached_property, insertion_ordered_dict
 from cocotb._utils import DocIntEnum
 from cocotb.task import Task
 from cocotb.types import Array, Logic, LogicArray, Range
+from cocotb.types._indexing import do_indexing_changed_warning, indexing_changed
 
 __all__ = (
     "ArrayObject",
@@ -1018,7 +1019,12 @@ class ArrayObject(
         | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``Array([arr[7].value, arr[6].value, arr[5].value, arr[4].value], range=Range(7, 'downto', 4))`` |
         +--------------+---------------------+--------------------------------------------------------------------------------------------------+
         """
-        return Array._from_handle([self[i].value for i in self.range], self.range)
+        r = self.range
+        return Array._from_handle(
+            value=[self[i].value for i in r],
+            range=r,
+            warn_indexing=indexing_changed(r) if do_indexing_changed_warning else False,
+        )
 
     def set(
         self,
@@ -1297,7 +1303,12 @@ class LogicArrayObject(
     def get(self) -> LogicArray:
         """Return the current value of the simulation object as a :class:`.LogicArray`."""
         binstr = self._handle.get_signal_val_binstr()
-        return LogicArray._from_handle(binstr)
+        return LogicArray._from_handle(
+            value=binstr,
+            warn_indexing=indexing_changed(self.range)
+            if do_indexing_changed_warning
+            else False,
+        )
 
     def set(
         self,
