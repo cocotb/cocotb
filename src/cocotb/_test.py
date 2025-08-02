@@ -89,7 +89,10 @@ class RunningTest:
 
         # Break into pdb on test end before all Tasks are killed.
         if _pdb_on_exception and isinstance(outcome, Error):
-            pdb.post_mortem(outcome.error.__traceback__)
+            try:
+                pdb.post_mortem(outcome.error.__traceback__)
+            except BaseException:
+                pdb.set_trace()
 
         # Set outcome and cancel Tasks.
         self._outcome = outcome
