@@ -1003,6 +1003,12 @@ decltype(VhpiIterator::iterate_over) VhpiIterator::iterate_over = [] {
         {vhpiIfGenerateK, gen_options},
         {vhpiBlockStmtK, gen_options},
 
+        {vhpiPackInstK,
+         {
+             vhpiConstDecls,
+             vhpiVarDecls,
+         }},
+
         {vhpiConstDeclK,
          {
              vhpiAttrSpecs,
@@ -1244,4 +1250,42 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
         return GpiIterator::NATIVE;
     } else
         return GpiIterator::NOT_NATIVE;
+}
+
+VhpiPackageIterator::VhpiPackageIterator(GpiImplInterface *impl)
+    : GpiIterator(impl, NULL), m_iterator(NULL) {
+    m_iterator = vhpi_iterator(vhpiPackInsts, NULL);
+    if (NULL == m_iterator) {
+        LOG_WARN(
+            "vhpi_iterate returned NULL for type vhpiPackInsts for object "
+            "NULL");
+        return;
+    }
+}
+
+VhpiPackageIterator::~VhpiPackageIterator() {
+    if (m_iterator && m_iter_obj) {
+        vhpi_release_handle(m_iterator);
+    }
+}
+
+GpiIterator::Status VhpiPackageIterator::next_handle(std::string &,
+                                                     GpiObjHdl **hdl, void **) {
+    if (NULL == m_iterator) return GpiIterator::END;
+
+    m_iter_obj = vhpi_scan(m_iterator);
+    if (NULL == m_iter_obj) return GpiIterator::END;
+
+    VhpiImpl *vpi_impl = reinterpret_cast<VhpiImpl *>(m_impl);
+    std::string name = vhpi_get_str(vhpiCaseNameP, m_iter_obj);
+    std::string fq_name = ":" + name;
+
+    GpiObjHdl *new_obj = new VhpiObjHdl(vpi_impl, m_iter_obj, GPI_PACKAGE);
+    new_obj->initialise(name, fq_name);
+
+    *hdl = new_obj;
+
+    LOG_DEBUG("VHPI: package found '%s' = '%s'", name.c_str(), fq_name.c_str());
+
+    return GpiIterator::NATIVE;
 }

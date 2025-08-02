@@ -6,8 +6,27 @@
 A set of tests that demonstrate package access
 """
 
+import os
+
 import cocotb
-from cocotb.handle import HierarchyObject, LogicArrayObject
+from cocotb.handle import (
+    HierarchyObject,
+    IntegerObject,
+    LogicArrayObject,
+    StringObject,
+)
+from cocotb_tools.sim_versions import NvcVersion
+
+SIM_NAME = cocotb.SIM_NAME.lower()
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+
+questa_vhpi = (
+    SIM_NAME.startswith("modelsim") and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
+)
+
+nvc_pre_1_16 = SIM_NAME.startswith("nvc") and (
+    NvcVersion(cocotb.SIM_VERSION) < NvcVersion("1.16")
+)
 
 
 # Riviera-PRO 2019.10 does not detect packages over GPI:
@@ -21,10 +40,11 @@ from cocotb.handle import HierarchyObject, LogicArrayObject
             and cocotb.SIM_VERSION.startswith("2019.10")
         )
         else ()
-    )
+    ),
+    skip=LANGUAGE in ["vhdl"],
 )
-async def test_package_access(_) -> None:
-    """Test package parameter access"""
+async def test_package_access_verilog(_) -> None:
+    """Test Verilog package parameter access"""
 
     pkg1 = cocotb.packages.cocotb_package_pkg_1
     assert isinstance(pkg1, HierarchyObject)
@@ -91,7 +111,32 @@ async def test_package_access(_) -> None:
     assert pkg2.eleven_int.value == 11
 
 
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera"))
+# Questa does not implement finding packages via iteration (gh-4693)
+# Xcelium does not implement finding packages via iteration (gh-4694)
+# GHDL does not implement finding packages via iteration (gh-4695)
+@cocotb.test(
+    expect_fail=SIM_NAME.startswith(("modelsim", "xmsim", "ghdl")) or nvc_pre_1_16,
+    skip=(LANGUAGE in ["verilog"]),
+)
+async def test_package_access_vhdl(_) -> None:
+    """Test VHDL package constant access"""
+
+    assert len(vars(cocotb.packages).keys()) > 0
+
+    pkg1 = cocotb.packages.cocotb_package_pkg_1
+    assert isinstance(pkg1, HierarchyObject)
+
+    assert isinstance(pkg1.five_int, IntegerObject)
+    assert pkg1.five_int.value == 5
+
+    assert isinstance(pkg1.eight_logic, LogicArrayObject)
+    assert pkg1.eight_logic.value == 8
+
+    assert isinstance(pkg1.hello_string, StringObject)
+    assert pkg1.hello_string.value == b"hello"
+
+
+@cocotb.test(skip=(SIM_NAME.startswith("riviera") or LANGUAGE in ["vhdl"]))
 async def test_dollar_unit(dut):
     """Test $unit scope"""
 
@@ -102,3 +147,10 @@ async def test_dollar_unit(dut):
     cocotb.log.info(f"Found $unit as {unit}")
     unit_pkg = getattr(cocotb.packages, unit)
     assert unit_pkg.unit_four_int.value == 4
+
+
+@cocotb.test(expect_error=AttributeError)
+async def test_invalid_package(dut):
+    """Invalid package name should raise an AttributeError"""
+    pkg1 = cocotb.packages.not_here
+    assert pkg1 is None
