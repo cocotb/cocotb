@@ -7,8 +7,8 @@ import inspect
 import logging
 import warnings
 from itertools import product
-from types import FrameType, FunctionType
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Coroutine,
     Dict,
@@ -24,6 +24,9 @@ from typing import (
 from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test
 from cocotb._typing import TimeUnit
+
+if TYPE_CHECKING:
+    from types import FrameType, FunctionType
 
 
 class TestFactory:

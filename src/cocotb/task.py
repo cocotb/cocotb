@@ -9,8 +9,8 @@ import traceback
 from asyncio import CancelledError, InvalidStateError
 from bdb import BdbQuit
 from enum import auto
-from types import CoroutineType
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Coroutine,
     Generator,
@@ -29,6 +29,9 @@ from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._py_compat import Self, cached_property
 from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
+
+if TYPE_CHECKING:
+    from types import CoroutineType
 
 #: Task result type
 ResultType = TypeVar("ResultType")
