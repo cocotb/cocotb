@@ -17,6 +17,7 @@ from typing import Callable, List, cast
 import cocotb
 import cocotb._profiling
 import cocotb.handle
+import cocotb.logging
 import cocotb.simulator
 from cocotb._scheduler import Scheduler
 from cocotb.regression import RegressionManager, RegressionMode
@@ -57,11 +58,13 @@ def init_package_from_simulation(argv: List[str]) -> None:
     cocotb.is_simulation = True
 
     cocotb.argv = argv
+    _process_plusargs()
 
     # sys.path normally includes "" (the current directory), but does not appear to when python is embedded.
     # Add it back because users expect to be able to import files in their test directory.
     sys.path.insert(0, "")
 
+    cocotb.logging._init()
     _setup_logging()
 
     # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
@@ -78,7 +81,6 @@ def init_package_from_simulation(argv: List[str]) -> None:
     cocotb._profiling.initialize()
     _register_shutdown_callback(cocotb._profiling.finalize)
 
-    _process_plusargs()
     _process_packages()
     _setup_random_seed()
     _setup_root_handle()

@@ -61,9 +61,6 @@ def default_config() -> None:
     An example of this can be found in the section on :ref:`rotating-logger`.
 
     .. versionadded:: 1.4
-
-    .. versionchanged:: 2.0
-        No longer set the log level of the ``cocotb`` and ``gpi`` loggers.
     """
     hdlr = logging.StreamHandler(sys.stdout)
     hdlr.addFilter(SimTimeContextFilter())
@@ -75,9 +72,17 @@ def default_config() -> None:
     logging.basicConfig()
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
+    logging.getLogger("cocotb").setLevel(logging.INFO)
+    logging.getLogger("gpi").setLevel(logging.INFO)
 
-def _init(_: object) -> None:
-    """Set cocotb and pygpi log levels."""
+
+def _init() -> None:
+    """cocotb-specific logging setup.
+
+    Initializes the GPI logger and sets up the GPI logging optimization.
+    Sets the log level of the ``"cocotb"`` and ``"gpi"`` loggers based on
+    :envvar:`COCOTB_LOG_LEVEL` and :envvar:`GPI_LOG_LEVEL`, respectively.
+    """
 
     # Monkeypatch "gpi" logger with function that also sets a PyGPI-local logger level
     # as an optimization.
@@ -95,8 +100,11 @@ def _init(_: object) -> None:
     simulator.initialize_logger(_log_from_c, logging.getLogger)
 
     # Set "cocotb" and "gpi" logger based on environment variables
-    def set_level(logger_name: str, envvar: str, default_level: str) -> None:
-        log_level = os.environ.get(envvar, default_level)
+    def set_level(logger_name: str, envvar: str) -> None:
+        log_level = os.environ.get(envvar)
+        if log_level is None:
+            return
+
         log_level = log_level.upper()
 
         logger = logging.getLogger(logger_name)
@@ -113,12 +121,12 @@ def _init(_: object) -> None:
                 f"levels: {valid_levels}"
             ) from None
 
-    set_level("gpi", "GPI_LOG_LEVEL", "INFO")
-    set_level("cocotb", "COCOTB_LOG_LEVEL", "INFO")
+    set_level("gpi", "GPI_LOG_LEVEL")
+    set_level("cocotb", "COCOTB_LOG_LEVEL")
 
 
-def _setup_formatter(_: object) -> None:
-    """Setup cocotb's logging formatter."""
+def _configure(_: object) -> None:
+    """Configure basic logging."""
     default_config()
 
 
