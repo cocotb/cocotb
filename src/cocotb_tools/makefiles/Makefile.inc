@@ -27,15 +27,6 @@ else ifneq (, $(findstring MSYS, $(OS)))
 endif
 export OS
 
-# this ensures we use the same python as the one cocotb was installed into
-# attempts to use cocotb_config entry script to get that info, falls back to "python"
-PYTHON_BIN_RES := $(shell cocotb-config --python-bin 2>>/dev/null; echo $$?)
-PYTHON_BIN_RC := $(lastword $(PYTHON_BIN_RES))
-PYTHON_BIN := $(strip $(subst $(PYTHON_BIN_RC)QQQQ,,$(PYTHON_BIN_RES)QQQQ))
-ifneq ($(PYTHON_BIN_RC),0)
-    PYTHON_BIN := python3
-endif
-
 export PYGPI_PYTHON_BIN := $(shell $(PYTHON_BIN) -m cocotb_tools.config --python-bin)
 
 # Directory containing the cocotb Makefiles
