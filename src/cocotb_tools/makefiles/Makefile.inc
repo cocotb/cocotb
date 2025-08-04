@@ -129,6 +129,9 @@ define check_lib_order
   fi;
 endef
 
+# NOTE: if the following simulator list is modified, update the sentence
+# "This flag is enabled by default for the GHDL, NVC and Verilator simulators."
+# in docs/source/building.rst accordingly.
 ifneq ($(filter $(SIM),nvc ghdl verilator),)
   COCOTB_TRUST_INERTIAL_WRITES ?= 1
 else
