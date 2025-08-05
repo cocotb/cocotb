@@ -5,18 +5,20 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import xml.etree.ElementTree as ET
-from typing import Union
+from typing import Dict, Union
 from xml.etree.ElementTree import Element, SubElement
 
 
 class XUnitReporter:
     last_testsuite: Element
     last_testcase: Element
+    _testsuite_stats: Dict[int, Dict[str, Union[int, float]]]
 
     def __init__(self, filename: str = "results.xml") -> None:
         self.results = Element("testsuites", name="results")
         self.filename = filename
         self._testsuite_stats = {}
+        self.add_testsuite()
 
     def add_testsuite(self, **kwargs: str) -> Element:
         """Initialize required JUnit attributes with defaults"""
@@ -79,12 +81,8 @@ class XUnitReporter:
     ) -> Element:
         if testsuite is None:
             testsuite = self.last_testsuite
-        self.last_property = SubElement(
-            testsuite.find("properties") or testsuite.insert(0, Element("properties")),
-            "property",
-            kwargs,
-        )
-        return self.last_property
+        properties = testsuite.find("properties") or SubElement(testsuite, "properties")
+        return SubElement(properties, "property", kwargs)
 
     def add_failure(self, testcase: Union[Element, None] = None, **kwargs: str) -> None:
         if testcase is None:
