@@ -70,7 +70,7 @@ Features
 - Makefile runners no longer need to specify :make:var:`SIM`, and have the simulator executable available, to run ``make clean``. (:pr:`4505`)
 - Added :meth:`~.HierarchyObject._get` which returns ``None`` on failure instead of raising an exception to aid with optional signal discovery. It also accepts the optional parameter ``discovery_method`` that takes :class:`~cocotb.handle.GPIDiscovery` to specialize object discovery. (:pr:`4517`)
 - Added :data:`cocotb.triggers.current_gpi_trigger` to allow the user to determine the last GPI trigger that fired. (:pr:`4549`)
-- Running Tasks are now :meth:`cancelled <cocotb.task.Task.cancel>` at the end of the Test, which throws :exc:`CancelledError` into the Task allowing them to do cleanup actions at test end. (:pr:`4574`)
+- Running Tasks are now :meth:`cancelled <cocotb.task.Task.cancel>` at the end of the Test, which throws :exc:`~asyncio.CancelledError` into the Task allowing them to do cleanup actions at test end. (:pr:`4574`)
 - Added :meth:`.Logic.resolve` and :meth:`.LogicArray.resolve` to resolve non-``0``/``1`` values on demand. (:pr:`4622`)
 - :class:`.LogicArray` now supports :class:`bool` casts and usage in conditionals (e.g. ``if dut.data.value: ...``). (:pr:`4622`)
 - The :make:var:`GUI` and :make:var:`WAVES` environment variables can be used to override the corresponding ``gui`` and ``waves`` arguments to pytest test benches. This means that they can be provided at run-time without modifying the test bench. (:pr:`4635`)

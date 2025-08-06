@@ -329,69 +329,15 @@ It may appear as one or more attributes here depending on the number of compilat
 Passing and failing tests
 =========================
 
-A cocotb test is considered to have `failed` if the test coroutine or any running :class:`~cocotb.task.Task`
-fails an :keyword:`assert` statement.
-Below are examples of `failing` tests.
+When cocotb tests complete execution, they have either `passed` or `failed`.
 
-.. code-block:: python
-
-    @cocotb.test()
-    async def test(dut):
-        assert 1 > 2, "Testing the obvious"
-
-    @cocotb.test()
-    async def test(dut):
-        async def fails_test():
-            assert 1 > 2
-        cocotb.start_soon(fails_test())
-        await Timer(10, 'ns')
-
-When a test fails, a stacktrace is printed.
-If :mod:`pytest` is installed and assert statements are used,
-a more informative stacktrace is printed which includes the values that caused the assert to fail.
-For example, see the output for the first test from above.
-
-.. code-block::
-
-    0.00ns ERROR    Test Failed: test (result was AssertionError)
-                    Traceback (most recent call last):
-                      File "test.py", line 3, in test
-                        assert 1 > 2, "Testing the obvious"
-                    AssertionError: Testing the obvious
-
-
-A cocotb test is considered to have `errored` if the test coroutine or any running :class:`~cocotb.task.Task`
-raises an exception that isn't considered a `failure`.
-Below are examples of `erroring` tests.
-
-.. code-block:: python
-
-    @cocotb.test()
-    async def test(dut):
-        await coro_that_does_not_exist()  # NameError
-
-    @cocotb.test()
-    async def test(dut):
-        async def coro_with_an_error():
-            dut.signal_that_does_not_exist.value = 1  # AttributeError
-        cocotb.start_soon(coro_with_an_error())
-        await Timer(10, 'ns')
-
-When a test ends with an error, a stacktrace is printed.
-For example, see the below output for the first test from above.
-
-.. code-block::
-
-    0.00ns ERROR    Test Failed: test (result was NameError)
-                    Traceback (most recent call last):
-                      File "test.py", line 3, in test
-                        await coro_that_does_not_exist()  # NameError
-                    NameError: name 'coro_that_does_not_exist' is not defined
-
-
-If a test coroutine completes without `failing` or `erroring`,
+In general, if a test coroutine completes without raising an :exc:`!Exception`,
 or if the test coroutine or any running :class:`~cocotb.task.Task` calls :func:`cocotb.pass_test`,
 the test is considered to have `passed`.
+Also, if a test raises a :exc:`~asyncio.CancelledError`,
+or is :keyword:`await`\ ing a :class:`!Task` that is cancelled and does not handle it (or re-raises it),
+the test will end immediately but it will have `passed`.
+
 Below are examples of `passing` tests.
 
 .. code-block:: python
@@ -412,18 +358,103 @@ Below are examples of `passing` tests.
         cocotb.start_soon(ends_test_with_pass())
         await Timer(10, 'ns')
 
+    @cocotb.test()
+    async def test(dut):
+        async def cancelled_after_time():
+            await Timer(1, unit='ns')
+            raise CancelledError
+        t = cocotb.start_soon(cancelled_after_time())
+        await t
+
 A passing test will print the following output.
 
 .. code-block::
 
     0.00ns INFO     Test Passed: test
 
+A cocotb test is considered to have `failed` if the test coroutine or any running :class:`~cocotb.task.Task`
+fails an :keyword:`assert` statement, fails :func:`pytest.raises` or :func:`pytest.warns` checks,
+or raises any other :exc:`!Exception` besides :exc:`!CancelledError`.
+
+Below are examples of `failed` tests that failed assertion statements.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def test(dut):
+        assert 1 > 2, "Testing the obvious"
+
+    @cocotb.test()
+    async def test(dut):
+        async def fails_test():
+            assert 1 > 2
+        cocotb.start_soon(fails_test())
+        await Timer(10, 'ns')
+
+When a test fails, a stacktrace is printed.
+
+If :mod:`pytest` is installed and assert statements are used,
+a more informative stacktrace is printed which includes the values that caused the assert to fail.
+For example, see the output for the first test from above.
+
+.. code-block::
+
+    0.00ns ERROR    Test Failed: test (result was AssertionError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test
+                        assert 1 > 2, "Testing the obvious"
+                    AssertionError: Testing the obvious
+
+Below are examples of `failed` tests that raised an :exc:`!Exception`.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def test(dut):
+        await coro_that_does_not_exist()  # NameError
+
+    @cocotb.test()
+    async def test(dut):
+        async def coro_with_an_error():
+            dut.signal_that_does_not_exist.value = 1  # AttributeError
+        cocotb.start_soon(coro_with_an_error())
+        await Timer(10, 'ns')
+
+When a test ends with an :exc:`!Exception`, a stacktrace is printed.
+For example, see the below output for the first test from above.
+
+.. code-block::
+
+    0.00ns ERROR    Test Failed: test (result was NameError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test
+                        await coro_that_does_not_exist()  # NameError
+                    NameError: name 'coro_that_does_not_exist' is not defined
+
+In summary:
+
++--------------+--------------------------------------------------------------------------+
+|| Test Passed || Test ends without raising :exc:`!Exception`.                            |
+||             || Test or Task calls :func:`cocotb.pass_test`.                            |
+||             || Test raises :exc:`~asyncio.CancelledError`.                             |
++--------------+--------------------------------------------------------------------------+
+|| Test Failed || Test fails an :keyword:`assert` statement.                              |
+||             || Test or Task raises :exc:`AssertionError`.                              |
+||             || Test or Task fails :func:`pytest.raises` or :func:`pytest.warns` check. |
+||             || Test or Task raises any other :exc:`!Exception`.                        |
++--------------+--------------------------------------------------------------------------+
+
+.. note::
+    For the purpose of denoting expected test failures that should be marked as passed,
+    and differentiating between specific types of failures,
+    see the ``expect_fail`` and ``expect_error`` arguments of the :func:`cocotb.test` decorator.
+
 
 Cleaning up resources
 =====================
 
 When you call :meth:`.Task.cancel` on a Task,
-a :exc:`CancelledError` will be raised which can be caught to run cleanup or end-of-test code.
+a :exc:`~asyncio.CancelledError` will be raised which can be caught to run cleanup or end-of-test code.
 This will also trigger the finalization routine of any :term:`context manager`.
 
 When a test ends, the cocotb runtime will call :meth:`.Task.cancel` on all running tasks started with :func:`cocotb.start_soon`,
@@ -453,5 +484,6 @@ allowing for end-of-test cleanup.
         # Do other stuff
 
 .. note::
-    If a :exc:`!CancelledError` is handled and not re-raised, the test will be considered to have failed.
+    If a :exc:`!CancelledError` is handled in a Task and not re-raised, the test will be considered to have :ref:`errored <passing_and_failing_tests>`.
+    This is to prevent Tasks from attempting to ignore cancellation.
     For that reason, it is recommended to use :keyword:`finally` rather than specifically catching :exc:`!CancelledError`.
