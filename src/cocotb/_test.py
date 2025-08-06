@@ -102,8 +102,8 @@ class RunningTest:
         self._test_complete_cb()
 
     def add_task(self, task: Task[Any]) -> None:
-        task._add_done_callback(self._task_done_callback)
         self.tasks.append(task)
+        task._add_done_callback(self._task_done_callback)
 
     def _task_done_callback(self, task: Task[Any]) -> None:
         self.tasks.remove(task)
