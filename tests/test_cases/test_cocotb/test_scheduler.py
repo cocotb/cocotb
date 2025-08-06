@@ -1051,3 +1051,49 @@ async def test_task_name(_: object) -> None:
         t = await cocotb.start(coro(), name="baz")
     assert t.get_name() == "baz"
     t.cancel()
+
+
+@cocotb.test
+async def test_start_again_finished_task(_: object) -> None:
+    async def coro():
+        await Timer(1, "ns")
+
+    a = cocotb.start_soon(coro())
+    await a
+
+    with pytest.raises(RuntimeError):
+        cocotb.start_soon(a)
+
+
+@cocotb.test
+async def test_start_again_cancelled_task(_: object) -> None:
+    async def coro():
+        await Timer(1, "ns")
+
+    a = cocotb.start_soon(coro())
+    await NullTrigger()
+    a.cancel()
+
+    with pytest.raises(CancelledError):
+        await a
+
+    with pytest.raises(RuntimeError):
+        cocotb.start_soon(a)
+
+
+carryover_task: Task
+
+
+@cocotb.test
+async def test_create_carryover_task(_: object) -> None:
+    async def coro():
+        await Timer(1, "ns")
+
+    global carryover_task
+    carryover_task = cocotb.create_task(coro())
+
+
+@cocotb.test
+async def test_start_carryover_task(_: object) -> None:
+    with pytest.raises(RuntimeError):
+        cocotb.start_soon(carryover_task)

@@ -289,6 +289,10 @@ class Scheduler:
 
         It is an error to attempt to queue a task that has already been queued.
         """
+        if task.done():
+            raise RuntimeError(
+                f"{task} has finished executing and can not be scheduled again. Did you call start_soon() on a finished Task?"
+            )
         if task in self._scheduled_tasks:
             return
         for tasks in self._trigger2tasks.values():
