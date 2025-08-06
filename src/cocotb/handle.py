@@ -464,7 +464,16 @@ class HierarchyObject(_HierarchyObjectBase[str]):
         if name.startswith("_"):
             return object.__setattr__(self, name, value)
 
-        raise AttributeError(f"{self._name} contains no object named {name}")
+        try:
+            getattr(self, name)
+        except AttributeError:
+            raise AttributeError(
+                f"Cannot set attribute {name!r} on simulation object {self._path}. No such object exists."
+            ) from None
+        else:
+            raise AttributeError(
+                f"Cannot set attribute {name!r} on simulation object {self._path}. Did you forget to add `.value`?"
+            )
 
     def __getattr__(self, name: str) -> SimHandleBase:
         if name.startswith("_"):

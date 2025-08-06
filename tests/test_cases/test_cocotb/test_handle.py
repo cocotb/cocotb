@@ -8,6 +8,7 @@ Tests for handles
 import logging
 import os
 import random
+from typing import Any
 
 import pytest
 
@@ -586,3 +587,11 @@ async def test_invalid_indexing(dut) -> None:
     # Slicing not supported by ArrayObject.
     with pytest.raises(TypeError):
         dut.array_7_downto_4[6:5]
+
+
+@cocotb.test(skip=SIM_NAME.startswith("icarus"))
+async def test_setattr_error_msg(dut: Any) -> None:
+    with pytest.raises(AttributeError, match=r"'example'.*[Nn]o.*exist"):
+        dut.example = 1
+    with pytest.raises(AttributeError, match=r"'stream_in_data'.*\.value"):
+        dut.stream_in_data = 1
