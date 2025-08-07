@@ -307,7 +307,7 @@ h6 + dl.py,
 }
 
 dl[class]:not(.option-list, .field-list, .footnote, .glossary, .simple) {
-  margin-bottom: 1rem !important;
+  margin-bottom: 0.5rem !important;
 }
 
 /* apidoc "[source]" link */
