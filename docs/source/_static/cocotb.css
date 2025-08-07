@@ -75,6 +75,10 @@ html {
     --pst-color-link-hover: var(--color-cocotb-blue-darker) !important;
 }
 
+body {
+    line-height: 1.5;
+}
+
 h1 {
     color: var(--color-cocotb-blue) !important;
     line-height: 60px !important;
