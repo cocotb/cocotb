@@ -146,6 +146,7 @@ div.admonition {
     border-color: var(--color-cocotb-blue) !important;
     box-shadow: none !important;
     padding-bottom: 0 !important;
+    margin: 1rem auto !important;
 }
 
 div.deprecated,
