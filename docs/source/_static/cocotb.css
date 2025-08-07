@@ -555,3 +555,10 @@ body.release-notes h3 {
   top: calc(3 * 48px);
   z-index: 970;
 }
+
+
+code.literal {
+  border: none;
+  background-color: unset;
+  padding: 0;
+}
