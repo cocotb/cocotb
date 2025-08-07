@@ -12,6 +12,7 @@ Test for scheduler and coroutine behavior
 import contextlib
 import logging
 import os
+import random
 import re
 from asyncio import CancelledError, InvalidStateError
 from typing import Any, Awaitable, Coroutine
@@ -21,7 +22,7 @@ from common import MyException, assert_takes
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.task import Task
+from cocotb.task import Task, current_task
 from cocotb.triggers import (
     Combine,
     Event,
@@ -1055,7 +1056,7 @@ async def test_task_name(_: object) -> None:
 
 @cocotb.test
 async def test_start_again_finished_task(_: object) -> None:
-    async def coro():
+    async def coro() -> None:
         await Timer(1, "ns")
 
     a = cocotb.start_soon(coro())
@@ -1067,7 +1068,7 @@ async def test_start_again_finished_task(_: object) -> None:
 
 @cocotb.test
 async def test_start_again_cancelled_task(_: object) -> None:
-    async def coro():
+    async def coro() -> None:
         await Timer(1, "ns")
 
     a = cocotb.start_soon(coro())
@@ -1086,7 +1087,7 @@ carryover_task: Task
 
 @cocotb.test
 async def test_create_carryover_task(_: object) -> None:
-    async def coro():
+    async def coro() -> None:
         await Timer(1, "ns")
 
     global carryover_task
@@ -1097,3 +1098,24 @@ async def test_create_carryover_task(_: object) -> None:
 async def test_start_carryover_task(_: object) -> None:
     with pytest.raises(RuntimeError):
         cocotb.start_soon(carryover_task)
+
+
+@cocotb.test
+async def test_task_local_variables(_: object) -> None:
+    """Test that task-local variables are not shared between tasks."""
+
+    def get_rng() -> random.Random:
+        try:
+            return current_task().locals.rng
+        except AttributeError:
+            rng = random.Random()
+            current_task().locals.rng = rng
+            return rng
+
+    async def coro() -> None:
+        exp = get_rng()
+        await Timer(1, "ns")
+        assert get_rng() is exp
+
+    task = cocotb.start_soon(coro())
+    await task
