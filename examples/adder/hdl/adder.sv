@@ -13,10 +13,4 @@ module adder #(
 
   assign X = A + B;
 
-  // Dump waves
-  initial begin
-    $dumpfile("dump.vcd");
-    $dumpvars(1, adder);
-  end
-
 endmodule
