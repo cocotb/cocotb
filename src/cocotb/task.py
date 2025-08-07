@@ -86,6 +86,7 @@ class Task(Generic[ResultType]):
     def __init__(
         self, inst: Coroutine[Trigger, None, ResultType], *, name: Optional[str] = None
     ) -> None:
+        self._native_coroutine: bool
         if inspect.iscoroutinefunction(inst):
             raise TypeError(
                 f"Coroutine function {inst} should be called prior to being scheduled."
@@ -95,7 +96,11 @@ class Task(Generic[ResultType]):
                 f"{inst.__qualname__} is an async generator, not a coroutine. "
                 "You likely used the yield keyword instead of await."
             )
-        elif not isinstance(inst, collections.abc.Coroutine):
+        elif inspect.iscoroutine(inst):
+            self._native_coroutine = True
+        elif isinstance(inst, collections.abc.Coroutine):
+            self._native_coroutine = False
+        else:
             raise TypeError(f"{inst} isn't a valid coroutine!")
 
         self._coro = inst
@@ -135,7 +140,12 @@ class Task(Generic[ResultType]):
 
     @cached_property
     def _log(self) -> logging.Logger:
-        return logging.getLogger(f"cocotb.{self._name}.{self._coro.__qualname__}")
+        coro_name: str
+        if self._native_coroutine:
+            coro_name = self._coro.__qualname__
+        else:
+            coro_name = type(self._coro).__qualname__
+        return logging.getLogger(f"cocotb.{self._name}.{coro_name}")
 
     def __str__(self) -> str:
         # TODO Do we really need this?
@@ -149,6 +159,11 @@ class Task(Generic[ResultType]):
         Raises:
             TypeError: If :attr:`_coro` is not a native Python coroutine object.
         """
+        if not self._native_coroutine:
+            raise TypeError(
+                "Task._get_coro_stack() can only be called on native Python coroutines."
+            )
+
         coro_stack = extract_coro_stack(
             cast("CoroutineType[Trigger, None, ResultType]", self._coro)
         )
@@ -160,7 +175,7 @@ class Task(Generic[ResultType]):
         return coro_stack
 
     def __repr__(self) -> str:
-        if inspect.iscoroutine(self._coro):
+        if self._native_coroutine:
             coro_stack = self._get_coro_stack()
             try:
                 coro_name = coro_stack[-1].name
