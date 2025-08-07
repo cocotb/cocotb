@@ -9,6 +9,7 @@ import traceback
 from asyncio import CancelledError, InvalidStateError
 from bdb import BdbQuit
 from enum import auto
+from types import SimpleNamespace
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -110,10 +111,39 @@ class Task(Generic[ResultType]):
         self._done_callbacks: List[Callable[[Task[ResultType]], None]] = []
         self._cancelled_msg: Union[str, None] = None
         self._must_cancel: bool = False
+        self._locals = SimpleNamespace()
 
         self._task_id = self._id_count
         type(self)._id_count += 1
         self._name = f"Task {self._task_id}" if name is None else name
+
+    @property
+    def locals(self) -> SimpleNamespace:
+        '''Task-local variables.
+
+        A modifiable namespace where any user-defined variables can be added.
+        Use :func:`~cocotb.task.current_task` to access the current Task's locals.
+
+        .. code-block:: python
+
+            def get_rng() -> random.Random:
+                """Get the random number generator for the current Task."""
+                try:
+                    return current_task().locals.rng
+                except AttributeError:
+                    rng = random.Random()
+                    current_task().locals.rng = rng
+                    return rng
+
+
+            # Use Task-local RNG to drive a signal
+            rng = get_rng()
+            for _ in range(10):
+                await drive(rng.randint(0, 100))
+
+        .. versionadded:: 2.0
+        '''
+        return self._locals
 
     def get_name(self) -> str:
         """Return the name of the :class:`!Task`.
