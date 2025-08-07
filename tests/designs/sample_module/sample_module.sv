@@ -6,7 +6,7 @@
 
 `ifndef NOTIMESCALE
 `timescale 1 ps / 1 ps
-`endif
+`endif  // `ifndef NOTIMESCALE
 
 `ifndef __ICARUS__
 
@@ -23,8 +23,7 @@ typedef struct packed
     logic value;
 } test_struct_packed;
 
-
-`endif
+`endif  // `ifndef __ICARUS__
 
 interface TestInterface ();
 
@@ -57,7 +56,7 @@ module sample_module #(
     input  test_struct_unpacked                 inout_if,
     input  test_struct_packed                   my_struct,
     input  string                               stream_in_string,
-`endif
+`endif  // `ifndef __ICARUS__
     input  [7:0]                                stream_in_data,
     input  [31:0]                               stream_in_data_dword,
     input  [38:0]                               stream_in_data_39bit,
@@ -77,7 +76,7 @@ localparam string STRING_LOCALPARAM = "TESTING_LOCALPARAM";
 
 var   string STRING_VAR   = "TESTING_VAR";
 const string STRING_CONST = "TESTING_CONST";
-`endif
+`endif  // `ifndef __ICARUS__
 
 always @(posedge clk)
     stream_out_data_registered <= stream_in_data;
@@ -192,7 +191,7 @@ reg _underscore_name;
     // to be visible to VPI in Icarus Verilog.
     // See https://github.com/steveicarus/iverilog/issues/322
     assign _underscore_name = 0;
-`endif
+`endif  // `ifdef __ICARUS__
 
 bit mybit;
 bit [1:0] mybits;

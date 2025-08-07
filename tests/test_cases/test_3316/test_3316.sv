@@ -5,7 +5,7 @@
 module test_3316 (
 `ifdef TEST_CLK_EXTERNAL
     input  logic clk,
-`endif
+`endif  // `ifdef TEST_CLK_EXTERNAL
     input  logic d,
     output logic q
 );
@@ -15,7 +15,7 @@ module test_3316 (
   bit clk;
   initial clk = 0;
   always #5 clk = ~clk;
-`endif
+`endif  // `ifndef TEST_CLK_EXTERNAL
 
   always_ff @(posedge clk) begin : proc_dff
     q <= d;

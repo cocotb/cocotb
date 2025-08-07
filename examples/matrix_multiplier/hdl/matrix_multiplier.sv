@@ -6,9 +6,9 @@
 
 `ifdef VERILATOR  // make parameter readable from VPI
   `define VL_RD /*verilator public_flat_rd*/
-`else
+`else  // `ifdef VERILATOR
   `define VL_RD
-`endif
+`endif  // `ifdef VERILATOR
 
 module matrix_multiplier #(
   parameter int DATA_WIDTH `VL_RD = 8,
