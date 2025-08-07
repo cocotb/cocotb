@@ -57,28 +57,4 @@ module matrix_multiplier #(
     end
   end
 
-  // Dump waves
-`ifndef VERILATOR
-  initial begin
-    integer idx;
-    $dumpfile("dump.vcd");
-    $dumpvars(1, matrix_multiplier);
-  `ifdef __ICARUS__
-      for (idx = 0; idx < (A_ROWS * A_COLUMNS_B_ROWS); idx++) begin
-        $dumpvars(1, a_i[idx]);
-      end
-      for (idx = 0; idx < (A_COLUMNS_B_ROWS * B_COLUMNS); idx++) begin
-        $dumpvars(1, b_i[idx]);
-      end
-      for (idx = 0; idx < (A_ROWS * B_COLUMNS); idx++) begin
-        $dumpvars(1, c_o[idx]);
-      end
-  `else
-    $dumpvars(1, a_i);
-    $dumpvars(1, b_i);
-    $dumpvars(1, c_o);
-  `endif
-  end
-`endif
-
 endmodule

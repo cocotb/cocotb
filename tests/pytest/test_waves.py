@@ -44,7 +44,6 @@ def run_simulation(sim, test_args=None):
         hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
         build_args=compile_args,
-        defines={"NODUMPFILE": 1},
         waves=False if sim in ("xcelium",) else True,
     )
 

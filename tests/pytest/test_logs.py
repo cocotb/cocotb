@@ -48,7 +48,6 @@ def run_simulation(sim, log_dir):
         hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
         build_args=compile_args,
-        defines={"NODUMPFILE": 1},
         log_file=log_dir / "build.log",
     )
 
