@@ -324,7 +324,7 @@ Logging
     The result of :func:`~cocotb.utils.get_sim_time` at the point the log was created (in simulation time).
     The formatter is responsible for converting this to something like nanoseconds via :func:`~cocotb.utils.get_time_from_sim_steps`.
 
-    This is added by :class:`cocotb.log.SimTimeContextFilter`.
+    This is added by :class:`~cocotb.logging.SimTimeContextFilter`.
 
 
 Simulator Objects

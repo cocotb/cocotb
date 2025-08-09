@@ -11,65 +11,62 @@ Everything related to logging
 import logging
 import os
 import sys
+import warnings
 from functools import wraps
 from pathlib import Path
-from typing import Union
+from typing import Optional, Tuple, Union
 
 from cocotb import _ANSI, simulator
 from cocotb._deprecation import deprecated
 from cocotb._utils import want_color_output
 from cocotb.utils import get_sim_time, get_time_from_sim_steps
 
-try:
-    _suppress = int(os.environ.get("COCOTB_REDUCED_LOG_FMT", "1"))
-except ValueError:
-    _suppress = 1
-
-# Column alignment
-_LEVEL_CHARS = len("CRITICAL")
-_RECORD_CHARS = 34
-_FILENAME_CHARS = 20
-_LINENO_CHARS = 4
-_FUNCNAME_CHARS = 31
-
-# Custom log level
-logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
-logging.addLevelName(5, "TRACE")
-
-
 __all__ = (
-    "SimColourLogFormatter",
     "SimLog",
     "SimLogFormatter",
     "SimTimeContextFilter",
     "default_config",
 )
 
+# Custom log level
+logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
+logging.addLevelName(5, "TRACE")
 
-def default_config() -> None:
+
+def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -> None:
     """Apply the default cocotb log formatting to the root logger.
 
-    This hooks up the logger to write to stdout, using either
-    :class:`SimColourLogFormatter` or :class:`SimLogFormatter` depending
-    on whether colored output is requested. It also adds a
-    :class:`SimTimeContextFilter` filter so that
-    :attr:`~logging.LogRecord.created_sim_time` is available to the formatter.
+    This hooks up the logger to write to stdout, using :class:`SimLogFormatter` for formatting.
+    It also adds a :class:`SimTimeContextFilter` filter so that the
+    :attr:`~logging.LogRecord.created_sim_time` attribute on :class:`~logging.LogRecords`
+    is available to the formatter.
 
     If desired, this logging configuration can be overwritten by calling
-    ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards), or by
-    manually resetting the root logger instance.
+    ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards),
+    or by manually resetting the root logger instance.
     An example of this can be found in the section on :ref:`rotating-logger`.
+
+    Args:
+        reduced_log_fmt:
+            If ``True``, use a reduced log format that does not include the
+            filename, line number, and function name in the log prefix.
+
+            .. versionadd:: 2.0
+
+        color:
+            If ``True``, use colored output in the log messages.
+
+            .. versionadded:: 2.0
 
     .. versionadded:: 1.4
     """
+    logging.basicConfig()
+
+    color = want_color_output() if color is None else color
+
     hdlr = logging.StreamHandler(sys.stdout)
     hdlr.addFilter(SimTimeContextFilter())
-    if want_color_output():
-        hdlr.setFormatter(SimColourLogFormatter())
-    else:
-        hdlr.setFormatter(SimLogFormatter())
-
-    logging.basicConfig()
+    hdlr.setFormatter(SimLogFormatter(reduced_log_fmt=reduced_log_fmt, color=color))
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
     logging.getLogger("cocotb").setLevel(logging.INFO)
@@ -127,7 +124,12 @@ def _init() -> None:
 
 def _configure(_: object) -> None:
     """Configure basic logging."""
-    default_config()
+    reduced_log_fmt = True
+    try:
+        reduced_log_fmt = bool(int(os.environ.get("COCOTB_REDUCED_LOG_FMT", "1")))
+    except ValueError:
+        pass
+    default_config(reduced_log_fmt=reduced_log_fmt)
 
 
 @deprecated('Use `logging.getLogger(f"{name}.0x{ident:x}")` instead')
@@ -161,11 +163,6 @@ class SimTimeContextFilter(logging.Filter):
     .. versionadded:: 1.4
     """
 
-    # needed to make our docs render well
-    def __init__(self) -> None:
-        """"""
-        super().__init__()
-
     def filter(self, record: logging.LogRecord) -> bool:
         try:
             record.created_sim_time = get_sim_time()
@@ -184,11 +181,23 @@ class SimLogFormatter(logging.Formatter):
     attached, which cocotb ensures by default.
     """
 
-    # Removes the arguments from the base class. Docstring needed to make
-    # sphinx happy.
-    def __init__(self) -> None:
-        """Takes no arguments."""
-        super().__init__()
+    loglevel2colour = {
+        logging.TRACE: "",  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
+        logging.DEBUG: "",
+        logging.INFO: "",
+        logging.WARNING: _ANSI.COLOR_WARNING,
+        logging.ERROR: _ANSI.COLOR_ERROR,
+        logging.CRITICAL: _ANSI.COLOR_CRITICAL,
+    }
+
+    def __init__(
+        self,
+        *,
+        reduced_log_fmt: bool = True,
+        color: bool = False,
+    ) -> None:
+        self._reduced_log_fmt = reduced_log_fmt
+        self.color = color
 
     # Justify and truncate
     @staticmethod
@@ -203,88 +212,93 @@ class SimLogFormatter(logging.Formatter):
             return ".." + string[(chars - 2) * -1 :]
         return string.rjust(chars)
 
-    def _format(
-        self, level: str, record: logging.LogRecord, msg: str, coloured: bool = False
-    ) -> str:
+    def formatPrefix(self, record: logging.LogRecord) -> Tuple[str, int]:
         sim_time = getattr(record, "created_sim_time", None)
         if sim_time is None:
             sim_time_str = "  -.--ns"
         else:
             time_ns = get_time_from_sim_steps(sim_time, "ns")
             sim_time_str = f"{time_ns:6.2f}ns"
-        prefix = (
-            sim_time_str.rjust(11)
-            + " "
-            + level
-            + " "
-            + self.ljust(record.name, _RECORD_CHARS)
-            + " "
-        )
-        if not _suppress:
-            prefix += (
-                self.rjust(Path(record.filename).name, _FILENAME_CHARS)
-                + ":"
-                + self.ljust(str(record.lineno), _LINENO_CHARS)
-                + " in "
-                + self.ljust(str(record.funcName), _FUNCNAME_CHARS)
-                + " "
-            )
 
-        # these lines are copied from the built-in logger
+        highlight_start = (
+            self.loglevel2colour.get(record.levelno, "") if self.color else ""
+        )
+        highlight_end = _ANSI.COLOR_DEFAULT if self.color else ""
+
+        prefix = f"{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {self.ljust(record.name, 34)} "
+
+        if not self._reduced_log_fmt:
+            prefix = f"{prefix}{self.rjust(Path(record.filename).name, 20)}:{record.lineno:<4} in {self.ljust(str(record.funcName), 31)} "
+
+        prefix_len = len(prefix) - len(highlight_start) - len(highlight_end)
+        return prefix, prefix_len
+
+    def formatMessage(self, record: logging.LogRecord) -> str:
+        msg = record.getMessage()
+
+        highlight_start = (
+            self.loglevel2colour.get(record.levelno, "") if self.color else ""
+        )
+        highlight_end = _ANSI.COLOR_DEFAULT if self.color else ""
+
+        msg = f"{highlight_start}{msg}{highlight_end}"
+
+        return msg
+
+    def formatExcInfo(self, record: logging.LogRecord) -> str:
+        msg = ""
+
+        # these lines are copied and updated from the built-in logger
         if record.exc_info:
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
             if not record.exc_text:
                 record.exc_text = self.formatException(record.exc_info)
         if record.exc_text:
-            if msg[-1:] != "\n":
-                msg = msg + "\n"
-            msg = msg + record.exc_text
+            msg += record.exc_text
+        if record.stack_info:
+            if not msg.endswith("\n"):
+                msg += "\n"
+            msg += self.formatStack(record.stack_info)
 
-        prefix_len = len(prefix)
-        if coloured:
-            prefix_len -= len(level) - _LEVEL_CHARS
-        pad = "\n" + " " * (prefix_len)
-        return prefix + pad.join(msg.split("\n"))
+        return msg
 
     def format(self, record: logging.LogRecord) -> str:
-        """Prettify the log output by annotating with simulation time."""
+        prefix, prefix_len = self.formatPrefix(record)
+        msg = self.formatMessage(record)
+        exc_info = self.formatExcInfo(record)
 
-        msg = record.getMessage()
-        level = record.levelname.ljust(_LEVEL_CHARS)
+        lines = msg.splitlines()
+        lines.extend(exc_info.splitlines())
 
-        return self._format(level, record, msg)
+        # add prefix to first line of message
+        lines[0] = prefix + lines[0]
+
+        # add padding to each line of message
+        pad = "\n" + " " * prefix_len
+        return pad.join(lines)
 
 
 class SimColourLogFormatter(SimLogFormatter):
-    """Log formatter to provide consistent log message handling."""
+    """Log formatter similar to :class:`SimLogFormatter`, but with colored output by default.
 
-    loglevel2colour = {
-        logging.TRACE: "%s",  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
-        logging.DEBUG: "%s",
-        logging.INFO: "%s",
-        logging.WARNING: _ANSI.COLOR_WARNING + "%s" + _ANSI.COLOR_DEFAULT,
-        logging.ERROR: _ANSI.COLOR_ERROR + "%s" + _ANSI.COLOR_DEFAULT,
-        logging.CRITICAL: _ANSI.COLOR_CRITICAL + "%s" + _ANSI.COLOR_DEFAULT,
-    }
+    .. deprecated:: 2.0
+        Use :class:`!SimLogFormatter` with ``color=True`` instead.
+    """
 
-    def format(self, record: logging.LogRecord) -> str:
-        """Prettify the log output by annotating with simulation time."""
-
-        msg = record.getMessage()
-
-        # Need to colour each line in case coloring is applied in the message
-        msg = "\n".join(
-            [
-                SimColourLogFormatter.loglevel2colour.get(record.levelno, "%s") % line
-                for line in msg.split("\n")
-            ]
+    def __init__(
+        self,
+        *,
+        reduced_log_fmt: bool = True,
+        color: bool = True,
+    ) -> None:
+        warnings.warn(
+            "SimColourLogFormatter is deprecated and will be removed in a future release. "
+            "Use SimLogFormatter with `color=True` instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
-        level = SimColourLogFormatter.loglevel2colour.get(
-            record.levelno, "%s"
-        ) % record.levelname.ljust(_LEVEL_CHARS)
-
-        return self._format(level, record, msg, coloured=True)
+        super().__init__(reduced_log_fmt=reduced_log_fmt, color=color)
 
 
 def _log_from_c(

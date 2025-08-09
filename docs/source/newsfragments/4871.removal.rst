@@ -1,0 +1,1 @@
+Deprecated :class:`SimColourLogFormatter`. Use :class:`SimLogFormatter` with ``color=True`` instead.
