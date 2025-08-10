@@ -441,6 +441,11 @@ Other Runtime Information
 
 .. autodata:: cocotb.is_simulation
 
+Debugging
+---------
+
+.. autodata:: cocotb.debug.DEBUG
+
 .. _combine-results:
 
 The ``combine_results`` script
