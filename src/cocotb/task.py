@@ -4,7 +4,6 @@
 import collections.abc
 import inspect
 import logging
-import os
 import traceback
 from asyncio import CancelledError, InvalidStateError
 from bdb import BdbQuit
@@ -34,13 +33,6 @@ from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
 if TYPE_CHECKING:
     from types import CoroutineType
 
-#: Task result type
-ResultType = TypeVar("ResultType")
-
-# Sadly the Python standard logging module is very slow so it's better not to
-# make any calls by testing a boolean flag first
-_debug = "COCOTB_SCHEDULER_DEBUG" in os.environ
-
 
 __all__ = (
     "Join",
@@ -54,6 +46,9 @@ __all__ = (
 # Set __module__ on re-exports
 bridge.__module__ = __name__
 resume.__module__ = __name__
+
+#: Task result type
+ResultType = TypeVar("ResultType")
 
 
 class _TaskState(DocEnum):
