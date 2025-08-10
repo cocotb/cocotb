@@ -7,6 +7,7 @@
 # the site module.
 # Do not fail on DeprecationWarning caused by attrs dropping 3.6 support
 export PYTHONWARNINGS = error,ignore::DeprecationWarning:site,ignore::DeprecationWarning:attr
+export COCOTB_SCHEDULER_DEBUG = 1
 
 REGRESSIONS :=  $(shell ls test_cases/)
 
