@@ -95,7 +95,7 @@ async def clock_generation_fixture(dut: Any) -> AsyncGenerator[None, None]:
     # Test setup (executed before test), create and start clock generation
     dut.clk.value = 0
 
-    Clock(dut.clk, 10, unit="ns").start(start_high=False)
+    Clock(dut.clk, 10, unit="ns", start_high=False).start()
 
     yield  # Calling test, yield is needed to keep clock generation alive
 

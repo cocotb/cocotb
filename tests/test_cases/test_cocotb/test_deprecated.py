@@ -392,3 +392,17 @@ async def test_cocotb_start_awaitable(_: object) -> None:
         task = await cocotb.start(AwaitableThing())
     result = await task
     assert result == 42
+
+
+@cocotb.test
+async def test_Clock_start_high_deprecated(dut: Any) -> None:
+    c = Clock(dut.clk, 10, "ns", start_high=True)
+    with pytest.warns(DeprecationWarning):
+        c.start(start_high=True)
+    c.stop()
+    with pytest.warns(DeprecationWarning):
+        c.start(start_high=False)
+
+    # ensure start_high does override the constructor argument
+    await Timer(1, "ns")
+    assert dut.clk.value == 0
