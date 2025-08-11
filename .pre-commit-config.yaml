@@ -6,7 +6,7 @@ exclude: "^.*/_vendor/"
 repos:
 # ruff with --fix should run before other formatting tools
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.12.7"
+  rev: "v0.12.8"
   hooks:
     # Run the linter.
     - id: "ruff"
@@ -24,7 +24,7 @@ repos:
     types_or: [c, c++]
 
 - repo: "https://github.com/pre-commit/pre-commit-hooks"
-  rev: "v5.0.0"
+  rev: "v6.0.0"
   hooks:
   - id: "trailing-whitespace"
   - id: "mixed-line-ending"
@@ -34,7 +34,7 @@ repos:
     exclude: "^docs/source/diagrams/(svg|xml)/"
 
 - repo: https://github.com/henryiii/validate-pyproject-schema-store
-  rev: "2025.07.28"
+  rev: "2025.08.07"
   hooks:
     - id: validate-pyproject
       files: pyproject.toml
