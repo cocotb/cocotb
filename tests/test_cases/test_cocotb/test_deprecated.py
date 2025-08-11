@@ -308,3 +308,16 @@ async def test_Task_kill_done(_: object) -> None:
 
     assert task.done()
     assert task.result() == 1
+
+
+async def test_Clock_start_high_deprecated(dut: Any) -> None:
+    c = Clock(dut.clk, 10, "ns", start_high=True)
+    with pytest.warns(DeprecationWarning):
+        c.start(start_high=True)
+    c.stop()
+    with pytest.warns(DeprecationWarning):
+        c.start(start_high=False)
+
+    # ensure start_high does override the constructor argument
+    await Timer(1, "ns")
+    assert dut.clk.value == 0
