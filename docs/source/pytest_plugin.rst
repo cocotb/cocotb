@@ -377,7 +377,7 @@ Example clock generation for all tests using the ``conftest.py`` file:
         # Test setup (executed before test), create and start clock generation
         dut.clk.value = 0
 
-        Clock(dut.clk, 10, unit="ns").start(start_high=False)
+        Clock(dut.clk, 10, unit="ns", start_high=False).start()
 
         yield  # Calling test, yield is needed to keep clock generation alive
 
