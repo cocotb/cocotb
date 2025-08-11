@@ -1,0 +1,1 @@
+Added ``start_high`` argument support to :class:`.Clock` constructor.
