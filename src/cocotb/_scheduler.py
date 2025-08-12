@@ -108,8 +108,6 @@ class Scheduler:
 
     def __init__(self) -> None:
         self.log = logging.getLogger("cocotb.scheduler")
-        if debug.DEBUG:
-            self.log.setLevel(logging.DEBUG)
 
         # A dictionary of pending tasks for each trigger,
         # indexed by trigger
