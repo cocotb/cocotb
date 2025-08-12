@@ -236,7 +236,7 @@ class Clock:
 
     @property
     def period_high(self) -> Union[float, Fraction, Decimal]:
-        """The period where the clock is ``1``.
+        """The period of time when the clock is driven to ``1``.
 
         The unit is :attr:`unit`.
 
