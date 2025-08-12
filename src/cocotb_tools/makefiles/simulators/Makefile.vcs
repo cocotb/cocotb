@@ -30,7 +30,7 @@ ifeq ($(PYTHON_ARCH),64bit)
 endif
 
 ifeq ($(GUI),1)
-    EXTRA_ARGS += -gui
+    EXTRA_ARGS += -gui -kdb
 endif
 
 # Avoid linker "undefined reference to" error
