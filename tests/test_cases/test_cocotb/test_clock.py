@@ -93,10 +93,11 @@ async def test_gpi_clock_error_timing(dut):
 
 
 @cocotb.test
-async def test_gpi_clock_error_start(dut):
-    clk = Clock(dut.clk, 1.0, unit="step", impl="gpi")
-    with pytest.raises(ValueError):
-        clk.start()
+async def test_bad_period(dut):
+    with pytest.raises(ValueError, match="Bad `period`"):
+        Clock(dut.clk, 1, unit="step", impl="gpi")
+    with pytest.raises(ValueError, match="Bad `period`"):
+        Clock(dut.clk, 1, unit="step", impl="py")
 
 
 @cocotb.test
@@ -191,3 +192,26 @@ async def test_set_action(dut: Any) -> None:
     assert dut.clk.value == 0
 
     assert c.set_action is Immediate
+
+
+@cocotb.test
+async def test_period_high(dut: Any) -> None:
+    # Check bad constructions
+    with pytest.raises(ValueError, match="Bad `period_high`"):
+        Clock(dut.clk, 2, unit="step", period_high=0.5, impl="gpi")
+    with pytest.raises(ValueError, match="Bad `period_high`"):
+        Clock(dut.clk, 2, unit="step", period_high=0.5, impl="py")
+    with pytest.raises(
+        ValueError, match="`period_high` must be strictly less than `period`"
+    ):
+        Clock(dut.clk, 2, unit="step", period_high=10)
+
+    # Check functionality
+    c = Clock(dut.clk, 9, "ns", period_high=7)
+    c.start()
+    await RisingEdge(dut.clk)
+    for _ in range(10):
+        with assert_takes(7, "ns"):
+            await FallingEdge(dut.clk)
+        with assert_takes(2, "ns"):
+            await RisingEdge(dut.clk)

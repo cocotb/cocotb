@@ -58,10 +58,10 @@ class Clock:
 
     Args:
         signal: The clock pin/signal to be driven.
-        period: The clock period.
+        period:
+            The clock period.
+            Must be a multiple of the time precision of the simulator.
 
-            .. note::
-                Must convert to an even number of timesteps.
         unit:
             One of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
             When *unit* is ``'step'``,
@@ -81,6 +81,13 @@ class Clock:
             One of :class:`.Immediate`, :class:`.Deposit`, or :class:`.Force`.
             Specify the action to use when setting the clock signal value.
             Defaults to the value of :attr:`default_set_action`.
+
+            .. versionadded:: 2.0
+
+        period_high:
+            The period of time when the clock is driven to ``1``.
+            Defaults to half of the *period*.
+            Must be a multiple of the time precision of the simulator and less than *period*.
 
             .. versionadded:: 2.0
 
@@ -158,9 +165,10 @@ class Clock:
         *,
         units: None = None,
         set_action: Union[Type[Immediate], Type[Deposit], Type[Force], None] = None,
+        period_high: Union[float, Fraction, Decimal, None] = None,
     ) -> None:
         self._signal = signal
-        self._period = period
+
         if units is not None:
             warnings.warn(
                 "The 'units' argument has been renamed to 'unit'.",
@@ -169,11 +177,18 @@ class Clock:
             )
             unit = units
         self._unit: TimeUnit = unit
+
+        self._period = period
+        try:
+            self._period_steps = get_sim_steps(self._period, self._unit)
+        except ValueError as e:
+            raise ValueError(f"Bad `period`: {e}") from None
+
         if set_action is None:
             set_action = type(self).default_set_action
         if set_action not in (Immediate, Deposit, Force):
             raise TypeError(
-                "Invalid value for *set_action*. *set_action* must be one of Immediate, Deposit, or Force"
+                "Invalid value for `set_action`. `set_action` must be one of Immediate, Deposit, or Force"
             )
         self._set_action = set_action
 
@@ -187,6 +202,23 @@ class Clock:
                 f"Invalid clock impl {impl!r}, must be one of: {valid_impls_str}"
             )
 
+        self._period_high: Union[float, Fraction, Decimal]
+        if period_high is not None:
+            if period_high >= self._period:
+                raise ValueError("`period_high` must be strictly less than `period`.")
+            self._period_high = period_high
+            try:
+                self._period_high_steps = get_sim_steps(self._period_high, self._unit)
+            except ValueError as e:
+                raise ValueError(f"Bad `period_high`: {e}") from None
+        else:
+            if self._period_steps % 2 != 0:
+                raise ValueError(
+                    "Bad `period`: Must be divisible by 2 if `period_high` is not given."
+                )
+            self._period_high = period / 2
+            self._period_high_steps = self._period_steps // 2
+
         self._task: Union[Task[None], None] = None
 
     @property
@@ -196,8 +228,21 @@ class Clock:
 
     @property
     def period(self) -> Union[float, Fraction, Decimal]:
-        """The clock period (unit-less)."""
+        """The clock period.
+
+        The unit is :attr:`unit`.
+        """
         return self._period
+
+    @property
+    def period_high(self) -> Union[float, Fraction, Decimal]:
+        """The period of time when the clock is driven to ``1``.
+
+        The unit is :attr:`unit`.
+
+        .. versionadded:: 2.0
+        """
+        return self._period_high
 
     @property
     def unit(self) -> TimeUnit:
@@ -256,9 +301,6 @@ class Clock:
         if self._task is not None:
             raise RuntimeError("Starting clock that has already been started.")
 
-        period = get_sim_steps(self._period, self._unit)
-        t_high = period // 2
-
         if self._impl == "gpi":
             clkobj = clock_create(self._signal._handle)
             set_action = {
@@ -266,7 +308,9 @@ class Clock:
                 Immediate: _GPISetAction.NO_DELAY,
                 Force: _GPISetAction.FORCE,
             }[self._set_action]
-            clkobj.start(period, t_high, start_high, set_action)
+            clkobj.start(
+                self._period_steps, self._period_high_steps, start_high, set_action
+            )
 
             async def drive() -> None:
                 # The clock is meant to toggle forever, so awaiting this should
@@ -280,8 +324,8 @@ class Clock:
         else:
 
             async def drive() -> None:
-                timer_high = Timer(t_high)
-                timer_low = Timer(period - t_high)
+                timer_high = Timer(self._period_high_steps)
+                timer_low = Timer(self._period_steps - self._period_high_steps)
                 if start_high:
                     self._signal.set(self._set_action(1))
                     await timer_high

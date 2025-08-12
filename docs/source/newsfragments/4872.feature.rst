@@ -1,0 +1,1 @@
+Added ``period_high`` argument to :class:`Clock` to allow the user to control the duty cycle of the generated clock.
