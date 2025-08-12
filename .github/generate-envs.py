@@ -191,7 +191,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.036",  # Latest release version.
+        "sim-version": "v5.038",  # Latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci-free",
@@ -245,7 +245,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.036",
+        "sim-version": "v5.038",
         "os": "macos-13",
         "python-version": "3.9",
         "group": "ci-free",
