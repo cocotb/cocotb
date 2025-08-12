@@ -178,6 +178,54 @@ ENVS = [
         "group": "experimental",
     },
     # Test NVC on Ubuntu
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.11.0",  # Minimum supported version
+        "os": "ubuntu-22.04",
+        "python-version": "3.10",
+        "group": "extended",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.12.2",
+        "os": "ubuntu-22.04",
+        "python-version": "3.10",
+        "group": "extended",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.13.3",
+        "os": "ubuntu-22.04",
+        "python-version": "3.10",
+        "group": "extended",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.14.2",
+        "os": "ubuntu-22.04",
+        "python-version": "3.10",
+        "group": "extended",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.15.2",
+        "os": "ubuntu-22.04",
+        "python-version": "3.10",
+        "group": "extended",
+    },
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.16.0",  # First version with --preserve-case
+        "os": "ubuntu-22.04",
+        "python-version": "3.10",
+        "group": "extended",
+    },
     # Testing latest release is covered by the Python version tests
     {
         "lang": "vhdl",

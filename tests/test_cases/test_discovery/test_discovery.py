@@ -21,7 +21,7 @@ from cocotb.handle import (
 )
 from cocotb.triggers import Timer
 from cocotb.types import LogicArray
-from cocotb_tools.sim_versions import RivieraVersion, VerilatorVersion
+from cocotb_tools.sim_versions import NvcVersion, RivieraVersion, VerilatorVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -509,6 +509,11 @@ async def discover_all_in_component_vhdl(dut):
     #   1   SAMPLE_BLOCK.clk_inv
     if sim.startswith("ghdl"):
         # finds SAMPLE_BLOCK twice
+        assert total_count == 10
+    elif sim.startswith("nvc") and NvcVersion(cocotb.SIM_VERSION) < NvcVersion(
+        "1.16.0"
+    ):
+        # old versions of NVC find clk_inv twice
         assert total_count == 10
     else:
         assert total_count == 9
