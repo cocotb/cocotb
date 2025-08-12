@@ -23,6 +23,7 @@ from cocotb.triggers import (
     RisingEdge,
     SimTimeoutError,
     Timer,
+    ValueChange,
     with_timeout,
 )
 
@@ -142,20 +143,29 @@ async def test_clock_stop_and_restart(dut) -> None:
 
 
 @cocotb.test
-async def test_clock_cycles(dut) -> None:
+async def test_clock_cycles(dut: Any) -> None:
     period_ns = 10
     cycles = 10
     c = Clock(dut.clk, 10, "ns")
     c.start()
 
+    with pytest.raises(ValueError):
+        await c.cycles(-5)
+
     # so we start at a consistent state for math below
     await RisingEdge(dut.clk)
+
+    with assert_takes(0, "ns"):
+        await c.cycles(0)
 
     with assert_takes(cycles * period_ns, "ns"):
         await c.cycles(cycles)
 
     with assert_takes((cycles * period_ns) - (period_ns // 2), "ns"):
         await c.cycles(cycles, FallingEdge)
+
+    with assert_takes((cycles * period_ns // 2), "ns"):
+        await c.cycles(cycles, ValueChange)
 
 
 @cocotb.test
