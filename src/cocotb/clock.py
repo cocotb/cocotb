@@ -31,9 +31,9 @@ from cocotb.handle import (
 from cocotb.simulator import clock_create
 from cocotb.task import Task
 from cocotb.triggers import (
-    ClockCycles,
     Event,
     FallingEdge,
+    NullTrigger,
     RisingEdge,
     Timer,
     ValueChange,
@@ -360,9 +360,44 @@ class Clock:
             Type[RisingEdge], Type[FallingEdge], Type[ValueChange]
         ] = RisingEdge,
     ) -> None:
-        """Wait for a number of clock cycles."""
-        # TODO Improve implementation to use a Timer to skip most of the cycles
-        await ClockCycles(self._signal, num_cycles, edge_type)
+        """Wait for a number of clock cycles.
+
+        Args:
+            num_cycles: The number of clock cycles to wait.
+            edge_type:
+                The edge of the clock to wait on.
+                Must be one of :class:`.RisingEdge`, :class:`.FallingEdge`, or :class:`.ValueChange`.
+
+        Raises:
+            ValueError: if *num_cycles* is negative.
+        """
+        if num_cycles == 0:
+            await NullTrigger()
+            return
+        elif num_cycles < 0:
+            raise ValueError("`num_cycles` cannot be negative")
+
+        # Synchronize first.
+        await edge_type(self._signal)
+        num_cycles -= 1
+
+        # Use Timer as an optimization if we are waiting long enough.
+        if num_cycles >= 2:
+            # NOTE: num_cycles must end 1 higher than expected because all edge_types occur
+            # strictly after beginning of time steps, so the last edge_type will jump within
+            # the same time step.
+            if edge_type is ValueChange:
+                # Make cycles_skipped the nearest even number so division by 2 doesn't cause issues.
+                cycles_skipped = (num_cycles // 2) * 2
+                await Timer(self._period_steps * cycles_skipped / 2, "step")
+                num_cycles = num_cycles - cycles_skipped + 1
+            else:
+                await Timer(self._period_steps * num_cycles, "step")
+                num_cycles = 1
+
+        # Run N edge_type trigger.
+        for _ in range(num_cycles):
+            await edge_type(self._signal)
 
     def __repr__(self) -> str:
         return self._repr
