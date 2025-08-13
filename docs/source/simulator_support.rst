@@ -19,6 +19,10 @@ open an issue at the `cocotb GitHub issue tracker <https://github.com/cocotb/coc
 Icarus Verilog
 ==============
 
+.. note::
+
+    **cocotb supports Icarus 11.0+.**
+
 In order to use this simulator, set :make:var:`SIM` to ``icarus``:
 
 .. code-block:: bash
@@ -67,7 +71,7 @@ Reported Issues for this Simulator
 Verilator
 =========
 
-.. warning::
+.. note::
 
     **cocotb supports Verilator 5.036+.**
 
@@ -406,11 +410,9 @@ Reported Issues for this Simulator
 GHDL
 ====
 
-.. warning::
+.. note::
 
-    GHDL support in cocotb is experimental.
-    Some features of cocotb may not work correctly or at all.
-    At least GHDL 2.0 is required.
+    **cocotb supports GHDL 2.0+.**
 
 In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 

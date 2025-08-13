@@ -115,7 +115,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v10_3",  # Minimum supported version
+        "sim-version": "v11_0",  # Minimum supported version
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "extended",
