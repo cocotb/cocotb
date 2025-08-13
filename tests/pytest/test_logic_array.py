@@ -2,6 +2,8 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+import copy
+
 import pytest
 
 from cocotb.types import Logic, LogicArray, Range
@@ -448,3 +450,14 @@ def test_resolve():
     assert LogicArray("01LH").resolve("random") == LogicArray("0101")
     array = LogicArray("UXZW-").resolve("random")
     assert all(elem in (Logic("0"), Logic("1")) for elem in array)
+
+
+def test_copy() -> None:
+    l = LogicArray("X01Z", Range(-2, "to", 1))
+
+    with pytest.raises(NotImplementedError):
+        copy.copy(l)
+
+    d = copy.deepcopy(l)
+    assert l == d
+    assert l.range == d.range

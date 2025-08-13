@@ -302,3 +302,9 @@ class Logic:
         .. versionadded:: 2.0
         """
         return (False, False, True, True, False, False, True, True, False)[self._repr]
+
+    def __copy__(self) -> "Logic":
+        return self
+
+    def __deepcopy__(self, memo: Dict[int, object]) -> "Logic":
+        return self

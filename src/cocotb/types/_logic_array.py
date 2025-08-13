@@ -1,9 +1,12 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import copy
 import warnings
 from math import ceil
 from typing import (
+    Any,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -857,3 +860,9 @@ class LogicArray(AbstractMutableArray[Logic]):
             TypeError: Unsupported *value* type.
         """
         return LogicArray(get_str_resolver(resolver)(str(self)), self.range)
+
+    def __copy__(self) -> "LogicArray":
+        raise NotImplementedError("`copy.copy` on LogicArray is not supported")
+
+    def __deepcopy__(self, memo: Dict[int, Any]) -> "LogicArray":
+        return LogicArray(self._get_str(), copy.deepcopy(self._range, memo=memo))
