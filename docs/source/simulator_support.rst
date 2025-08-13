@@ -19,6 +19,10 @@ open an issue at the `cocotb GitHub issue tracker <https://github.com/cocotb/coc
 Icarus Verilog
 ==============
 
+.. warning::
+
+    **cocotb supports Icarus 11.0+.**
+
 In order to use this simulator, set :make:var:`SIM` to ``icarus``:
 
 .. code-block:: bash
