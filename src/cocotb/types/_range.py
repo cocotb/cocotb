@@ -1,8 +1,9 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import copy
 from functools import lru_cache
-from typing import Iterator, Sequence, Union, overload
+from typing import Any, Dict, Iterator, Sequence, Union, overload
 
 from cocotb._utils import cached_method
 
@@ -164,6 +165,12 @@ class Range(Sequence[int]):
         return f"{type(self).__qualname__}({self.left!r}, {self.direction!r}, {self.right!r})"
 
     index = cached_method(Sequence.index)
+
+    def __copy__(self) -> "Range":
+        return Range.from_range(self._range)
+
+    def __deepcopy__(self, memo: Dict[int, Any]) -> "Range":
+        return Range.from_range(copy.deepcopy(self._range, memo=memo))
 
 
 def _guess_step(left: int, right: int) -> int:

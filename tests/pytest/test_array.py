@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import copy
+
 import pytest
 
 from cocotb.types import Array, Range
@@ -172,3 +174,15 @@ def test_changing_range():
         a.range = range(10)
     with pytest.raises(ValueError):
         a.range = Range(7, "downto", 0)
+
+
+def test_copy() -> None:
+    l = Array("abcd", Range(-2, "to", 1))
+
+    c = copy.copy(l)
+    assert l == c
+    assert l.range == c.range
+
+    d = copy.deepcopy(l)
+    assert l == d
+    assert l.range == d.range

@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import copy
+
 import pytest
 
 from cocotb.types import Logic
@@ -195,3 +197,9 @@ def test_logic_is_resolvable() -> None:
     assert not Logic("Z").is_resolvable
     assert not Logic("W").is_resolvable
     assert not Logic("-").is_resolvable
+
+
+def test_copy() -> None:
+    l = Logic("X")
+    assert l == copy.copy(l)
+    assert l == copy.deepcopy(l)

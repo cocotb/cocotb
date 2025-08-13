@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import copy
+
 import pytest
 
 from cocotb.types import Range
@@ -138,3 +140,9 @@ def test_bad_step():
 def test_bad_getitem():
     with pytest.raises(TypeError):
         Range(10, "downto", 4)["8"]
+
+
+def test_copy() -> None:
+    l = Range(-2, "to", 1)
+    assert l == copy.copy(l)
+    assert l == copy.deepcopy(l)

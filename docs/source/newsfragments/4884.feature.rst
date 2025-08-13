@@ -1,0 +1,1 @@
+Add support for :func:`copy.copy` and :func:`copy.deepcopy` on :class:`.Range`, :class:`.Array`, :class:`.Logic`.

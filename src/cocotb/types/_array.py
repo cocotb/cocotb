@@ -1,8 +1,9 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+import copy
 import warnings
-from typing import Iterable, Iterator, List, TypeVar, Union, cast, overload
+from typing import Any, Dict, Iterable, Iterator, List, TypeVar, Union, cast, overload
 
 from cocotb.types._abstract_array import AbstractMutableArray
 from cocotb.types._indexing import IndexingChangedWarning
@@ -284,3 +285,11 @@ class Array(AbstractMutableArray[T]):
             return self._range.index(item)
         except ValueError:
             raise IndexError(f"index {item} out of range") from None
+
+    def __copy__(self) -> "Array":
+        return Array(self._value, self._range)
+
+    def __deepcopy__(self, memo: Dict[int, Any]) -> "Array":
+        return Array(
+            copy.deepcopy(self._value, memo=memo), copy.deepcopy(self._range, memo=memo)
+        )
