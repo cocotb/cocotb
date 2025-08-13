@@ -115,6 +115,8 @@ class Logic:
 
     _repr: int
 
+    __slots__ = ("_repr",)
+
     @classmethod
     @lru_cache(maxsize=None)
     def _singleton(cls: Type["Logic"], _repr: int) -> "Logic":
