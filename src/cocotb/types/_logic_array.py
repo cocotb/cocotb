@@ -200,6 +200,14 @@ class LogicArray(AbstractMutableArray[Logic]):
     _range: Range
     _warn_indexing: bool
 
+    __slots__ = (
+        "_value_as_array",
+        "_value_as_int",
+        "_value_as_str",
+        "_range",
+        "_warn_indexing",
+    )
+
     def __init__(
         self,
         value: Union[int, str, Iterable[LogicConstructibleT]],

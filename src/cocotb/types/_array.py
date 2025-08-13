@@ -133,6 +133,8 @@ class Array(AbstractMutableArray[T]):
         TypeError: When invalid argument types are used.
     """
 
+    __slots__ = ("_value", "_range", "_warn_indexing")
+
     def __init__(
         self, value: Iterable[T], range: Union[Range, int, None] = None
     ) -> None:
