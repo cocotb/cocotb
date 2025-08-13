@@ -292,3 +292,11 @@ class Logic:
 
     def __len__(self) -> int:
         return 1
+
+    @property
+    def is_resolvable(self) -> bool:
+        """``True`` if value is ``0``, ``1``, ``L``, ``H``.
+
+        .. versionadded:: 2.0
+        """
+        return (False, False, True, True, False, False, True, True, False)[self._repr]

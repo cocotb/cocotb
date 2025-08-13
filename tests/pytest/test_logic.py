@@ -183,3 +183,15 @@ def test_resolve():
     assert Logic("L").resolve("random") == Logic("0")
     assert Logic("H").resolve("random") == Logic("1")
     assert Logic("-").resolve("random") in (Logic("0"), Logic("1"))
+
+
+def test_logic_is_resolvable() -> None:
+    assert Logic(False).is_resolvable
+    assert Logic(1).is_resolvable
+    assert Logic("L").is_resolvable
+    assert Logic("H").is_resolvable
+    assert not Logic("U").is_resolvable
+    assert not Logic("X").is_resolvable
+    assert not Logic("Z").is_resolvable
+    assert not Logic("W").is_resolvable
+    assert not Logic("-").is_resolvable

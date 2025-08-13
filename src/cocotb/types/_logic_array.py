@@ -519,9 +519,7 @@ class LogicArray(AbstractMutableArray[Logic]):
     @property
     def is_resolvable(self) -> bool:
         """``True`` if all elements are ``0``, ``1``, ``L``, ``H``."""
-        return all(
-            bit in (Logic("0"), Logic("1"), Logic("L"), Logic("H")) for bit in self
-        )
+        return all(bit.is_resolvable for bit in self)
 
     @property
     @deprecated(
