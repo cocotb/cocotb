@@ -51,7 +51,7 @@ parametrize.__module__ = __name__
 pass_test.__module__ = __name__
 
 
-__version__ = _version
+__version__: str = _version
 """The version of cocotb."""
 
 
