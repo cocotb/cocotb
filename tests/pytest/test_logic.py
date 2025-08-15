@@ -5,7 +5,7 @@ import copy
 
 import pytest
 
-from cocotb.types import Logic
+from cocotb.types import Bit, Logic
 
 
 def test_logic_conversions():
@@ -203,3 +203,39 @@ def test_copy() -> None:
     l = Logic("X")
     assert l == copy.copy(l)
     assert l == copy.deepcopy(l)
+
+
+def test_bit_constructor() -> None:
+    Bit(0)
+    Bit(False)
+    Bit("0")
+    Bit(Logic(0))
+    Bit(1)
+    Bit(True)
+    Bit("1")
+    Bit(Logic(1))
+    with pytest.raises(ValueError):
+        Bit("X")
+    with pytest.raises(ValueError):
+        Bit("L")
+    a = Logic("X")
+    with pytest.raises(ValueError):
+        Bit(a)
+
+
+def test_bit_ops() -> None:
+    assert Bit(1) | Bit(0) is Bit(1)
+    assert Bit(1) & Bit(0) is Bit(0)
+    assert Bit(1) ^ Bit(0) is Bit(1)
+    assert ~Bit(1) is Bit(0)
+
+
+def test_bit_with_logic_ops() -> None:
+    assert Logic(0) == Bit(0)
+    assert Bit(0) == Logic(0)
+    assert Logic(1) & Bit(1) is Logic(1)
+    assert Bit(1) & Logic(1) is Logic(1)
+    assert Logic(0) | Bit(1) is Logic(1)
+    assert Bit(0) | Logic(1) is Logic(1)
+    assert Logic(1) ^ Bit(1) is Logic(0)
+    assert Bit(1) ^ Logic(1) is Logic(0)

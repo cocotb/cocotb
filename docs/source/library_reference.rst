@@ -136,6 +136,9 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
 .. autoclass:: cocotb.types.Logic
     :members:
 
+.. autoclass:: cocotb.types.Bit
+    :members:
+
 .. autoclass:: cocotb.types.Range
     :members:
     :exclude-members: count, index
