@@ -31,18 +31,16 @@ ByteOrder: TypeAlias = Literal["big", "little"]
 
 
 class LogicArray(AbstractMutableArray[Logic]):
-    r"""Fixed-sized, arbitrarily-indexed, Array of Logics.
+    r"""Fixed-sized, arbitrarily-indexed, :class:`.Array` of :class:`.Logic`\ s.
 
-    .. currentmodule:: cocotb.types
-
-    An :class:`Array`, where all elements are enforced to be :class:`Logic`.
+    An :class:`!Array`, where all elements are enforced to be :class:`!Logic`.
     This allows the additional of bit-wise logical operators, conversions to integers and bytes, and ``X`` testing and mapping.
 
     :class:`!LogicArray`\ s can be constructed from an iterable of :class:`!Logic`\ s,
     or values constructible into :class:`!Logic`, like :class:`bool`, :class:`str`, or :class:`int`.
     Alternatively, they can be constructed from :class:`!str` or :class:`!int` literals.
 
-    Like :class:`Array`, if *range* is not given, the range ``Range(len(value)-1, "downto", 0)`` is used;
+    Like :class:`!Array`, if *range* is not given, the range ``Range(len(value)-1, "downto", 0)`` is used;
     and if an :class:`int` is passed for *range*, the range ``Range(range-1, "downto", 0)`` is used.
 
     .. code-block:: pycon3
@@ -80,7 +78,7 @@ class LogicArray(AbstractMutableArray[Logic]):
         >>> LogicArray.from_bytes(b"1n", byteorder="little")
         LogicArray('0110111000110001', Range(15, 'downto', 0))
 
-    :class:`!LogicArray`\ s support the same :class:`list`-like operations as :class:`Array`;
+    :class:`!LogicArray`\ s support the same :class:`list`-like operations as :class:`!Array`;
     however, it enforces the condition that all elements must be a :class:`!Logic`.
 
     .. code-block:: pycon3
@@ -98,7 +96,7 @@ class LogicArray(AbstractMutableArray[Logic]):
         >>> list(array)  # is an iterable
         [Logic('1'), Logic('0'), Logic('1'), Logic('0')]
 
-    When setting an element or slice, the *value* is first constructed into a :class:`Logic`.
+    When setting an element or slice, the *value* is first constructed into a :class:`!Logic`.
 
     .. code-block:: pycon3
 

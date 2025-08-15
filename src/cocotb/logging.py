@@ -51,7 +51,7 @@ def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -
             If ``True``, use a reduced log format that does not include the
             filename, line number, and function name in the log prefix.
 
-            .. versionadd:: 2.0
+            .. versionadded:: 2.0
 
         color:
             If ``True``, use colored output in the log messages.

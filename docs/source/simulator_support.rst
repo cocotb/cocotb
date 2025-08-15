@@ -515,7 +515,7 @@ For example, to collect statement and branch coverage:
 
     SIM_ARGS += --cover=statement,branch
 
-The ``covdb`` files will be placed in the :make:var:`RTL_LIBRARY` subdirectory of :make:var:`SIM_BUILD`.
+The ``covdb`` files will be placed in the :make:var:`TOPLEVEL_LIBRARY` subdirectory of :make:var:`SIM_BUILD`.
 For instructions on how to specify coverage types and produce a report, refer to `NVC's code coverage documentation <https://www.nickg.me.uk/nvc/manual.html#CODE_COVERAGE>`_.
 
 .. _sim-nvc-waveforms:

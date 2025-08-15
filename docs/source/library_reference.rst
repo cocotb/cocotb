@@ -25,8 +25,6 @@ Python Test Runner
 .. warning::
     Python runners and associated APIs are an experimental feature and subject to change.
 
-.. currentmodule:: cocotb_tools.runner
-
 .. module:: cocotb_tools.runner
     :synopsis: Build HDL and run cocotb tests.
 
@@ -83,7 +81,7 @@ File Utilities
 
 .. _writing-tests:
 
-Writing and Generating Tests
+Marking and Generating Tests
 ============================
 
 .. currentmodule:: None
@@ -96,15 +94,21 @@ Writing and Generating Tests
     :members:
     :member-order: bysource
 
-.. autofunction:: cocotb.regression.SimFailure
+.. autoclass:: cocotb.regression.SimFailure
 
-Interacting with the Simulator
-==============================
+Test Management
+===============
+
+.. currentmodule:: None
+
+.. autofunction:: cocotb.pass_test
 
 .. _task-management:
 
 Task Management
----------------
+===============
+
+.. currentmodule:: None
 
 .. autofunction:: cocotb.start_soon
 
@@ -112,49 +116,54 @@ Task Management
 
 .. autofunction:: cocotb.create_task
 
-.. autoclass:: cocotb.task.ResultType
+.. module:: cocotb.task
 
-.. autoclass:: cocotb.task.Task
+.. autoclass:: ResultType
+
+.. autoclass:: Task
     :members:
 
-.. autofunction:: cocotb.task.current_task
+.. autofunction:: current_task
 
-Dealing with non-``async`` code
--------------------------------
+Bridging through non-`async` code
+---------------------------------
 
-.. autofunction:: cocotb.task.bridge
+.. autofunction:: bridge
 
-.. autofunction:: cocotb.task.resume
+.. autofunction:: resume
+
 
 HDL Datatypes
--------------
+=============
 
 These are a set of datatypes that model the behavior of common HDL datatypes.
 
 .. versionadded:: 1.6
 
-.. autoclass:: cocotb.types.Logic
+.. module:: cocotb.types
+
+.. autoclass:: Logic
     :members:
 
-.. autoclass:: cocotb.types.Bit
+.. autoclass:: Bit
     :members:
 
-.. autoclass:: cocotb.types.Range
+.. autoclass:: Range
     :members:
     :exclude-members: count, index
 
-.. autoclass:: cocotb.types.AbstractArray
+.. autoclass:: AbstractArray
     :members:
 
-.. autoclass:: cocotb.types.AbstractMutableArray
+.. autoclass:: AbstractMutableArray
     :members:
     :show-inheritance:
 
-.. autoclass:: cocotb.types.Array
+.. autoclass:: Array
     :members:
     :inherited-members:
 
-.. autoclass:: cocotb.types.LogicArray
+.. autoclass:: LogicArray
     :members:
     :inherited-members:
 
@@ -165,44 +174,44 @@ Triggers
 
 .. module:: cocotb.triggers
 
-.. autofunction:: cocotb.triggers.current_gpi_trigger
+.. autofunction:: current_gpi_trigger
 
 .. _edge-triggers:
 
 Edge Triggers
 -------------
 
-.. autoclass:: cocotb.triggers.RisingEdge
+.. autoclass:: RisingEdge
     :members:
 
-.. autoclass:: cocotb.triggers.FallingEdge
+.. autoclass:: FallingEdge
     :members:
 
-.. autoclass:: cocotb.triggers.ClockCycles
+.. autoclass:: ClockCycles
     :members:
 
-.. autoclass:: cocotb.triggers.ValueChange
+.. autoclass:: ValueChange
     :members:
 
-.. autoclass:: cocotb.triggers.Edge
+.. autoclass:: Edge
     :members:
 
 
 Timing Triggers
 ---------------
 
-.. autoclass:: cocotb.triggers.Timer
+.. autoclass:: Timer
     :members:
 
     .. autoattribute:: round_mode
 
-.. autoclass:: cocotb.triggers.ReadOnly
+.. autoclass:: ReadOnly
     :members:
 
-.. autoclass:: cocotb.triggers.ReadWrite
+.. autoclass:: ReadWrite
     :members:
 
-.. autoclass:: cocotb.triggers.NextTimeStep
+.. autoclass:: NextTimeStep
     :members:
 
 
@@ -211,19 +220,23 @@ Concurrency Triggers
 
 Triggers dealing with Tasks or running multiple Tasks concurrently.
 
+.. currentmodule:: None
+
 .. autoclass:: cocotb.task.Join
     :members:
 
 .. autoclass:: cocotb.task.TaskComplete
     :members:
 
-.. autoclass:: cocotb.triggers.NullTrigger
+.. currentmodule:: cocotb.triggers
+
+.. autoclass:: NullTrigger
     :members:
 
-.. autoclass:: cocotb.triggers.Combine
+.. autoclass:: Combine
     :members:
 
-.. autoclass:: cocotb.triggers.First
+.. autoclass:: First
     :members:
 
 
@@ -233,17 +246,17 @@ Synchronization Triggers
 The following objects are not :class:`Trigger`\ s themselves, but contain methods that can be used as triggers.
 They are used to synchronize coroutines with each other.
 
-.. autoclass:: cocotb.triggers.Event
+.. autoclass:: Event
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.Lock
+.. autoclass:: Lock
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.SimTimeoutError
+.. autoclass:: SimTimeoutError
 
-.. autofunction:: cocotb.triggers.with_timeout
+.. autofunction:: with_timeout
 
 
 Abstract Triggers
@@ -251,15 +264,15 @@ Abstract Triggers
 
 The following are internal classes used within ``cocotb``.
 
-.. autoclass:: cocotb.triggers.Trigger
+.. autoclass:: Trigger
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.GPITrigger
+.. autoclass:: GPITrigger
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.Waitable
+.. autoclass:: Waitable
     :members:
     :member-order: bysource
     :private-members:
@@ -271,11 +284,10 @@ Test Utilities
 Clock Driver
 ------------
 
-.. module:: cocotb.clock
-
-.. autoclass:: cocotb.clock.Clock
+.. automodule:: cocotb.clock
     :members:
     :member-order: bysource
+    :synopsis: A single-ended clock driver.
 
 Asynchronous Queues
 -------------------
@@ -283,7 +295,7 @@ Asynchronous Queues
 .. automodule:: cocotb.queue
     :members:
     :member-order: bysource
-    :synopsis: Asynchronous queues.
+    :synopsis: Collection of asynchronous queues.
 
 
 Simulation Time Utilities
@@ -300,10 +312,10 @@ Simulation Time Utilities
 Logging
 =======
 
+.. autodata:: cocotb.log
+
 .. module:: cocotb.logging
     :synopsis: Classes for logging messages from cocotb during simulation.
-
-.. autodata:: cocotb.log
 
 .. autofunction:: default_config
 
@@ -416,18 +428,15 @@ Assignment Methods
 
 .. autoclass:: Release
 
-.. module:: None
-
 Miscellaneous
 =============
 
-Test Control
-------------
-
-.. autofunction:: cocotb.pass_test
-
 Other Runtime Information
 -------------------------
+
+.. currentmodule:: None
+
+.. autodata:: cocotb.__version__
 
 .. autodata:: cocotb.argv
 
@@ -448,7 +457,10 @@ Other Runtime Information
 Debugging
 ---------
 
-.. autodata:: cocotb.debug.DEBUG
+.. automodule:: cocotb.debug
+    :members:
+    :member-order: bysource
+    :synopsis: Features for debugging cocotb's concurrency system.
 
 .. _combine-results:
 

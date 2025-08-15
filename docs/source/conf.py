@@ -129,6 +129,7 @@ codeautolink_warn_on_failed_resolve = True
 codeautolink_autodoc_inject = True  # Inject an autolink-examples table to the end of all autodoc definitions
 # import statements that are often used in code examples
 codeautolink_global_preface = textwrap.dedent("""\
+    import random
     import cocotb
     from cocotb.clock import *
     from cocotb.handle import *
