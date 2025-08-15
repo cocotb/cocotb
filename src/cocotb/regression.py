@@ -65,7 +65,12 @@ TestFactory.__module__ = __name__
 
 
 class SimFailure(BaseException):
-    """A Test failure due to simulator failure."""
+    """A Test failure due to simulator failure.
+
+    .. caution::
+        Not to be raised or caught within a test.
+        Only used for marking expected failure with ``expect_error`` in :func:`cocotb.test`.
+    """
 
 
 _logger = logging.getLogger(__name__)
