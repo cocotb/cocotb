@@ -4,12 +4,10 @@
 from functools import lru_cache
 from typing import (
     Dict,
-    Set,
-    Type,
     Union,
 )
 
-from cocotb._py_compat import TypeAlias
+from cocotb._py_compat import Self, TypeAlias
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
 
 LogicLiteralT: TypeAlias = Union[str, int, bool]
@@ -55,21 +53,16 @@ _literal_repr: Dict[LogicLiteralT, int] = {
     "-": _D,
 }
 
-_str_literals: Set[str] = {k for k in _literal_repr if isinstance(k, str)}
-
 
 class Logic:
-    r"""
-    Model of a 9-value (``U``, ``X``, ``0``, ``1``, ``Z``, ``W``, ``L``, ``H``, ``-``) datatype commonly seen in VHDL.
+    r"""9-state digital signal value type.
 
-    .. currentmodule:: cocotb.types
+    This type is modeled after VHDL's ``std_ulogic`` type.
+    It can represent the values (``U``, ``X``, ``0``, ``1``, ``Z``, ``W``, ``L``, ``H``, ``-``).
+    (System)Verilog's 4-state ``logic`` type is a subset which only utilizes the ``X``, ``0``, ``1``, and ``Z`` values.
 
-    This is modeled after VHDL's ``std_ulogic`` type.
-    (System)Verilog's 4-value ``logic`` type only utilizes ``X``, ``0``, ``1``, and ``Z`` values.
-
-    :class:`Logic` can be converted to and from :class:`int`, :class:`str`, and :class:`bool`.
-    The list of values convertible to :class:`Logic` includes
-    ``"U"``, ``"X"``, ``"0"``, ``"1"``, ``"Z"``, ``"W"``, ``"L"``, ``"H"``, ``"-"``, ``0``, ``1``, ``True``, and ``False``.
+    :class:`!Logic` can be converted to and from :class:`int`, :class:`str`, :class:`bool` and :class:`Bit`.
+    String literals include ``"U"``, ``"X"``, ``"0"``, ``"1"``, ``"Z"``, ``"W"``, ``"L"``, ``"H"``, ``"-"``, and their lowercase values.
 
     .. code-block:: pycon3
 
@@ -91,8 +84,6 @@ class Logic:
 
         The :class:`int` and :class:`bool` conversions will raise :exc:`ValueError` if the value is not ``0``, ``1``, ``L``, or ``H``.
 
-    :class:`Logic` values are immutable and therefore hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
-
     :class:`Logic` supports the common logic operations ``&``, ``|``, ``^``, and ``~``.
 
     .. code-block:: pycon3
@@ -106,12 +97,14 @@ class Logic:
         (Logic('0'), Logic('1'))
 
     Args:
-        value: value to construct into a :class:`Logic`.
+        value: value to construct into a :class:`!Logic`.
 
     Raises:
-        ValueError: If the value if of the correct type, but cannot be constructed into a :class:`Logic`.
-        TypeError: If the value is of a type that can't be constructed into a :class:`Logic`.
+        ValueError: If the value if of the correct type, but cannot be constructed into a :class:`!Logic`.
+        TypeError: If the value is of a type that can't be constructed into a :class:`!Logic`.
     """
+
+    _values = {_U, _X, _0, _1, _Z, _W, _L, _H, _D}
 
     _repr: int
 
@@ -119,42 +112,39 @@ class Logic:
 
     @classmethod
     @lru_cache(maxsize=None)
-    def _singleton(cls: Type["Logic"], _repr: int) -> "Logic":
+    def _singleton(cls, _repr: int) -> Self:
         """Return the Logic object associated with the repr, enforcing singleton."""
         self = object.__new__(cls)
         self._repr = _repr
         return self
 
-    @classmethod
-    @lru_cache(maxsize=None)
-    def _map_literal(
-        cls: Type["Logic"],
-        value: LogicLiteralT,
-    ) -> "Logic":
-        """Convert and cache all literals."""
-        try:
-            _repr = _literal_repr[value]
-        except KeyError:
-            raise ValueError(
-                f"{value!r} is not convertible to a {cls.__qualname__}"
-            ) from None
-        obj = cls._singleton(_repr)
-        return obj
-
     def __new__(
-        cls: Type["Logic"],
+        cls,
         value: LogicConstructibleT,
-    ) -> "Logic":
+    ) -> Self:
         if isinstance(value, Logic):
-            return value
+            _repr = value._repr
         elif isinstance(value, (str, int)):
-            return cls._map_literal(value)
-        raise TypeError(f"Expected str, bool, or int, not {type(value).__qualname__}")
+            try:
+                _repr = _literal_repr[value]
+            except KeyError:
+                raise ValueError(
+                    f"{value!r} is not convertible to {cls.__qualname__}"
+                ) from None
+        else:
+            raise TypeError(
+                f"Expected str, bool, or int, not {type(value).__qualname__}"
+            )
 
-    def __and__(self, other: "Logic") -> "Logic":
-        if not isinstance(other, Logic):
+        if _repr not in cls._values:
+            raise ValueError(f"{value!r} is not a valid {cls.__qualname__}")
+
+        return cls._singleton(_repr)
+
+    def __and__(self, other: Self) -> Self:
+        if not isinstance(other, type(self)):
             return NotImplemented
-        return Logic(
+        return type(self)(
             (
                 # -----------------------------------------------------
                 # U    X    0    1    Z    W    L    H    -       |   |
@@ -171,10 +161,13 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __or__(self: "Logic", other: "Logic") -> "Logic":
-        if not isinstance(other, Logic):
+    def __rand__(self, other: Self) -> Self:
+        return self & other
+
+    def __or__(self, other: Self) -> Self:
+        if not isinstance(other, type(self)):
             return NotImplemented
-        return Logic(
+        return type(self)(
             (
                 # -----------------------------------------------------
                 # U    X    0    1    Z    W    L    H    -       |   |
@@ -191,10 +184,13 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __xor__(self: "Logic", other: "Logic") -> "Logic":
-        if not isinstance(other, Logic):
+    def __ror__(self, other: Self) -> Self:
+        return self | other
+
+    def __xor__(self, other: Self) -> Self:
+        if not isinstance(other, type(self)):
             return NotImplemented
-        return Logic(
+        return type(self)(
             (
                 # -----------------------------------------------------
                 # U    X    0    1    Z    W    L    H    -       |   |
@@ -211,12 +207,15 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __invert__(self: "Logic") -> "Logic":
-        return Logic(("U", "X", "1", "0", "X", "X", "1", "0", "X")[self._repr])
+    def __rxor__(self, other: Self) -> Self:
+        return self ^ other
+
+    def __invert__(self) -> Self:
+        return type(self)(("U", "X", "1", "0", "X", "X", "1", "0", "X")[self._repr])
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Logic):
-            return self is other
+            return self._repr == other._repr
         elif isinstance(other, (int, str, bool)):
             try:
                 other = Logic(other)
@@ -225,6 +224,8 @@ class Logic:
             return self == other
         else:
             return NotImplemented
+
+    __hash__: None  # type: ignore[assignment]
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({str(self)!r})"
@@ -261,7 +262,7 @@ class Logic:
     def __index__(self) -> int:
         return int(self)
 
-    def resolve(self, resolver: ResolverLiteral) -> "Logic":
+    def resolve(self, resolver: ResolverLiteral) -> Self:
         """Resolves non-0/1 values to 0/1.
 
         The possible values of the *resolver* argument are:
@@ -290,7 +291,7 @@ class Logic:
             ValueError: Invalid *resolver* value.
             TypeError: Unsupported *value* type.
         """
-        return Logic(get_str_resolver(resolver)(str(self)))
+        return type(self)(get_str_resolver(resolver)(str(self)))
 
     def __len__(self) -> int:
         return 1
@@ -308,3 +309,24 @@ class Logic:
 
     def __deepcopy__(self, memo: Dict[int, object]) -> "Logic":
         return self
+
+
+class Bit(Logic):
+    """2-state digital signal value type.
+
+    This is modeled after (System)Verilog's and VHDL's ``bit`` type.
+    It can represent only the values ``0`` and ``1``.
+    It can be converted to and from :class:`int`, :class:`str`, :class:`bool`, or :class:`Logic` values.
+
+    As a subtype of :class:`!Logic`, it supports all of the same operations
+    and can be used in operations interchangeably with :class:`!Logic`.
+
+    Args:
+        value: value to construct into a :class:`!Bit`.
+
+    Raises:
+        ValueError: If the value if of the correct type, but cannot be constructed into a :class:`!Bit`.
+        TypeError: If the value is of a type that can't be constructed into a :class:`!Bit`.
+    """
+
+    _values = {_0, _1}
