@@ -116,7 +116,6 @@ Deprecations and Removals
 - Support for generator-based coroutines, which used the ``cocotb.coroutine`` decorator and :keyword:`yield` syntax, has been removed. To update to the new syntax, remove all uses of the decorator and convert the function to a :term:`coroutine function` using the :keyword:`async` and :keyword:`await` syntax. (:pr:`3509`)
 - Removed the ``cocotb.memdebug`` module. (:pr:`3543`)
 - :external+cocotb19:class:`cocotb.utils.lazy_property` was removed. Use :func:`functools.cached_property` instead. (:pr:`3547`)
-- Removed :external+cocotb19:class:`cocotb.types.Bit`. (:pr:`3549`)
 - Removed ``cocotb.clock.BaseClock``. (:pr:`3550`)
 - The ``prefix`` and ``postfix`` arguments to :meth:`TestFactory.generate_tests() <cocotb.regression.TestFactory.generate_tests>` are deprecated in favor of the more flexible ``name`` argument. (:pr:`3578`)
 - Methods :external+cocotb19:meth:`~cocotb.simulator.gpi_sim_hdl.get_definition_name()` and :external+cocotb19:meth:`~cocotb.simulator.gpi_sim_hdl.get_definition_file()` of :class:`cocotb.handle.SimHandleBase` were removed in favor of :meth:`~cocotb.handle.SimHandleBase._def_name` and :meth:`~cocotb.handle.SimHandleBase._def_file`, respectively. (:pr:`3609`)
