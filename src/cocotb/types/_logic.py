@@ -55,17 +55,14 @@ _literal_repr: Dict[LogicLiteralT, int] = {
 
 
 class Logic:
-    r"""
-    Model of a 9-value (``U``, ``X``, ``0``, ``1``, ``Z``, ``W``, ``L``, ``H``, ``-``) datatype commonly seen in VHDL.
+    r"""9-state digital signal value type.
 
-    .. currentmodule:: cocotb.types
+    This type is modeled after VHDL's ``std_ulogic`` type.
+    It can represent the values (``U``, ``X``, ``0``, ``1``, ``Z``, ``W``, ``L``, ``H``, ``-``).
+    (System)Verilog's 4-value ``logic`` type is a subset which only utilizes the ``X``, ``0``, ``1``, and ``Z`` values.
 
-    This is modeled after VHDL's ``std_ulogic`` type.
-    (System)Verilog's 4-value ``logic`` type only utilizes ``X``, ``0``, ``1``, and ``Z`` values.
-
-    :class:`Logic` can be converted to and from :class:`int`, :class:`str`, and :class:`bool`.
-    The list of values convertible to :class:`Logic` includes
-    ``"U"``, ``"X"``, ``"0"``, ``"1"``, ``"Z"``, ``"W"``, ``"L"``, ``"H"``, ``"-"``, ``0``, ``1``, ``True``, and ``False``.
+    :class:`!Logic` can be converted to and from :class:`int`, :class:`str`, :class:`bool` and :class:`Bit`.
+    String literals include ``"U"``, ``"X"``, ``"0"``, ``"1"``, ``"Z"``, ``"W"``, ``"L"``, ``"H"``, ``"-"``, and their lowercase values.
 
     .. code-block:: pycon3
 
@@ -87,8 +84,6 @@ class Logic:
 
         The :class:`int` and :class:`bool` conversions will raise :exc:`ValueError` if the value is not ``0``, ``1``, ``L``, or ``H``.
 
-    :class:`Logic` values are immutable and therefore hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
-
     :class:`Logic` supports the common logic operations ``&``, ``|``, ``^``, and ``~``.
 
     .. code-block:: pycon3
@@ -102,11 +97,11 @@ class Logic:
         (Logic('0'), Logic('1'))
 
     Args:
-        value: value to construct into a :class:`Logic`.
+        value: value to construct into a :class:`!Logic`.
 
     Raises:
-        ValueError: If the value if of the correct type, but cannot be constructed into a :class:`Logic`.
-        TypeError: If the value is of a type that can't be constructed into a :class:`Logic`.
+        ValueError: If the value if of the correct type, but cannot be constructed into a :class:`!Logic`.
+        TypeError: If the value is of a type that can't be constructed into a :class:`!Logic`.
     """
 
     _values = {_U, _X, _0, _1, _Z, _W, _L, _H, _D}
@@ -227,6 +222,8 @@ class Logic:
             return self == other
         else:
             return NotImplemented
+
+    __hash__: None  # type: ignore[assignment]
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({str(self)!r})"
