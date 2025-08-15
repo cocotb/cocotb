@@ -134,6 +134,7 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
 .. versionadded:: 1.6
 
 .. autoclass:: cocotb.types.Logic
+    :members:
 
 .. autoclass:: cocotb.types.Range
     :members:
