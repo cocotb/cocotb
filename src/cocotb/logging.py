@@ -196,6 +196,11 @@ class SimLogFormatter(logging.Formatter):
         reduced_log_fmt: bool = True,
         color: bool = False,
     ) -> None:
+        """
+        Args:
+            reduced_log_fmt: Use less verbose log format.
+            color: Use ANSI color codes in log output.
+        """
         self._reduced_log_fmt = reduced_log_fmt
         self.color = color
 
