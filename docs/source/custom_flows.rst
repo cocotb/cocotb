@@ -114,8 +114,9 @@ Aldec Active-HDL
 Mentor/Siemens EDA Questa and Modelsim
 ======================================
 
-.. tab-set::
 Questa supports two different flows: the traditional flow using ``vsim``, which is also used by ModelSim, and a modern alternative using ``qrun``.
+
+.. tab-set::
 
    .. tab-item:: Design with a VHDL Toplevel
 

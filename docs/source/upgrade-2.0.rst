@@ -219,9 +219,9 @@ For all those reasons the :deco:`!cocotb.coroutine` decorator and generator-base
 
 .. _logic-array-over-binary-value:
 
-********************************************************
+*********************************************************
 Use :class:`!LogicArray` instead of :class:`!BinaryValue`
-********************************************************
+*********************************************************
 
 Change
 ======

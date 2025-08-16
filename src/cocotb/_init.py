@@ -173,19 +173,11 @@ def _start_user_coverage() -> None:
                 "Coverage collection requested but coverage module not available. Install it using `pip install coverage`."
             ) from None
         else:
-            config_filepath = os.getenv("COCOTB_COVERAGE_RCFILE")
-            if config_filepath is None:
-                config_filepath = os.getenv("COVERAGE_RCFILE")
-                if config_filepath is not None:
-                    warnings.warn(
-                        "COVERAGE_RCFILE is deprecated in favor of COCOTB_COVERAGE_RCFILE",
-                        DeprecationWarning,
-                        stacklevel=2,
-                    )
+            config_filepath = os.getenv("COVERAGE_RCFILE")
             if config_filepath is None:
                 # Exclude cocotb itself from coverage collection.
                 log.info(
-                    "Collecting coverage of user code. No coverage config file supplied via COCOTB_COVERAGE_RCFILE."
+                    "Collecting coverage of user code. No coverage config file supplied via COVERAGE_RCFILE."
                 )
                 cocotb_package_dir = Path(__file__).parent.absolute()
                 user_coverage = coverage.coverage(
