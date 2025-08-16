@@ -12,3 +12,11 @@ The interaction between Python and GPI is via a Python extension module called `
 traversing the hierarchy, getting/setting an object's value, registering callbacks etc.
 
 .. doxygenfile:: gpi.h
+   :sections: brief detaileddescription define typedef enum
+
+.. doxygengroup:: SimIntf
+.. doxygengroup:: ObjQuery
+.. doxygengroup:: ObjProps
+.. doxygengroup:: SigProps
+.. doxygengroup:: HandleIteration
+.. doxygengroup:: SimCallbacks
