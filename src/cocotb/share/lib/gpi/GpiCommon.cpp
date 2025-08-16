@@ -255,14 +255,14 @@ gpi_sim_hdl gpi_get_root_handle(const char *name) {
     }
 }
 
-static GpiObjHdl *gpi_get_handle_by_name_(GpiObjHdl *parent,
-                                          const std::string &name,
-                                          GpiImplInterface *skip_impl) {
+static GpiObjHdl *gpi_get_child_by_name(GpiObjHdl *parent,
+                                        const std::string &name,
+                                        GpiImplInterface *skip_impl) {
     LOG_DEBUG("Searching for %s", name.c_str());
 
     // check parent impl *first* if it's not skipped
     if (!skip_impl || (skip_impl != parent->m_impl)) {
-        auto hdl = parent->m_impl->native_check_create(name, parent);
+        auto hdl = parent->m_impl->get_child_by_name(name, parent);
         if (hdl) {
             return CHECK_AND_STORE(hdl);
         }
@@ -293,7 +293,7 @@ static GpiObjHdl *gpi_get_handle_by_name_(GpiObjHdl *parent,
            be seen discovered even if the parents implementation is not the same
            as the one that we are querying through */
 
-        auto hdl = (*iter)->native_check_create(name, parent);
+        auto hdl = (*iter)->get_child_by_name(name, parent);
         if (hdl) {
             LOG_DEBUG("Found %s via %s", name.c_str(), (*iter)->get_name_c());
             return CHECK_AND_STORE(hdl);
@@ -303,8 +303,8 @@ static GpiObjHdl *gpi_get_handle_by_name_(GpiObjHdl *parent,
     return NULL;
 }
 
-static GpiObjHdl *gpi_get_handle_by_raw(GpiObjHdl *parent, void *raw_hdl,
-                                        GpiImplInterface *skip_impl) {
+static GpiObjHdl *gpi_get_child_from_handle(GpiObjHdl *parent, void *raw_hdl,
+                                            GpiImplInterface *skip_impl) {
     vector<GpiImplInterface *>::iterator iter;
 
     GpiObjHdl *hdl = NULL;
@@ -316,7 +316,7 @@ static GpiObjHdl *gpi_get_handle_by_raw(GpiObjHdl *parent, void *raw_hdl,
             continue;
         }
 
-        if ((hdl = (*iter)->native_check_create(raw_hdl, parent))) {
+        if ((hdl = (*iter)->get_child_from_handle(raw_hdl, parent))) {
             LOG_DEBUG("Found %s via %s", hdl->get_name_str(),
                       (*iter)->get_name_c());
             break;
@@ -338,7 +338,7 @@ gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl base, const char *name,
     std::string s_name = name;
     GpiObjHdl *hdl = NULL;
     if (discovery_method == GPI_AUTO) {
-        hdl = gpi_get_handle_by_name_(base, s_name, NULL);
+        hdl = gpi_get_child_by_name(base, s_name, NULL);
         if (!hdl) {
             LOG_DEBUG(
                 "Failed to find a handle named %s via any registered "
@@ -350,7 +350,7 @@ gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl base, const char *name,
          * This can be useful when interfacing with
          * simulators that misbehave during (optional) signal discovery.
          */
-        hdl = base->m_impl->native_check_create(name, base);
+        hdl = base->m_impl->get_child_by_name(name, base);
         if (!hdl) {
             LOG_DEBUG(
                 "Failed to find a handle named %s via native implementation",
@@ -372,7 +372,7 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl base, int32_t index) {
      */
     LOG_DEBUG("Checking if index %d native through implementation %s ", index,
               intf->get_name_c());
-    hdl = intf->native_check_create(index, base);
+    hdl = intf->get_child_by_index(index, base);
 
     if (hdl)
         return CHECK_AND_STORE(hdl);
@@ -433,7 +433,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iter) {
                 LOG_DEBUG(
                     "Found a name but unable to create via native "
                     "implementation, trying others");
-                next = gpi_get_handle_by_name_(parent, name, iter->m_impl);
+                next = gpi_get_child_by_name(parent, name, iter->m_impl);
                 if (next) {
                     return next;
                 }
@@ -445,7 +445,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iter) {
                 LOG_DEBUG(
                     "Found an object but not accessible via %s, trying others",
                     iter->m_impl->get_name_c());
-                next = gpi_get_handle_by_raw(parent, raw_hdl, iter->m_impl);
+                next = gpi_get_child_from_handle(parent, raw_hdl, iter->m_impl);
                 if (next) {
                     return next;
                 }

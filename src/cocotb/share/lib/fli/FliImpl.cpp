@@ -217,7 +217,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl,
     return new_obj;
 }
 
-GpiObjHdl *FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *) {
+GpiObjHdl *FliImpl::get_child_from_handle(void *raw_hdl, GpiObjHdl *) {
     LOG_DEBUG("Trying to convert a raw handle to an FLI Handle.");
 
     const char *c_name = acc_fetch_name(raw_hdl);
@@ -239,12 +239,12 @@ GpiObjHdl *FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *) {
 }
 
 /**
- * @name    Native Check Create
- * @brief   Determine whether a simulation object is native to FLI and create
- *          a handle if it is
+ * @name    Get Child By Name
+ * @brief   Attempt to get child handle by name with FLI and create
+ *          a handle if it exists
  */
-GpiObjHdl *FliImpl::native_check_create(const std::string &name,
-                                        GpiObjHdl *parent) {
+GpiObjHdl *FliImpl::get_child_by_name(const std::string &name,
+                                      GpiObjHdl *parent) {
     bool search_rgn = false;
     bool search_sig = false;
     bool search_var = false;
@@ -355,11 +355,11 @@ GpiObjHdl *FliImpl::native_check_create(const std::string &name,
 }
 
 /**
- * @name    Native Check Create
- * @brief   Determine whether a simulation object is native to FLI and create
- *          a handle if it is
+ * @name    Get Child By Index
+ * @brief   Attempt to get child handle by index with FLI and create
+ *          a handle if it exists
  */
-GpiObjHdl *FliImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
+GpiObjHdl *FliImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     gpi_objtype obj_type = parent->get_type();
 
     HANDLE hdl;

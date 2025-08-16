@@ -279,10 +279,10 @@ class VhpiImpl : public GpiImplInterface {
                                          void *cb_data) override;
     GpiCbHdl *register_readwrite_callback(int (*function)(void *),
                                           void *cb_data) override;
-    GpiObjHdl *native_check_create(const std::string &name,
-                                   GpiObjHdl *parent) override;
-    GpiObjHdl *native_check_create(int32_t index, GpiObjHdl *parent) override;
-    GpiObjHdl *native_check_create(void *raw_hdl, GpiObjHdl *parent) override;
+    GpiObjHdl *get_child_by_name(const std::string &name,
+                                 GpiObjHdl *parent) override;
+    GpiObjHdl *get_child_by_index(int32_t index, GpiObjHdl *parent) override;
+    GpiObjHdl *get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) override;
 
     const char *reason_to_string(int reason) override;
     const char *format_to_string(int format);
