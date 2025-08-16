@@ -75,7 +75,7 @@ def _help_vars_text() -> str:
         COCOTB_TESTCASE           Test function(s) to run (comma-separated list)
         COCOTB_RESULTS_FILE       File name for xUnit XML tests results
         COCOTB_USER_COVERAGE      Collect Python user coverage (HDL for some simulators)
-        COCOTB_COVERAGE_RCFILE    Configuration for user code coverage
+        COVERAGE_RCFILE           Configuration for user code coverage
 
         GPI
         ---
