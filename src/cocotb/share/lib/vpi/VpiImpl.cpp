@@ -276,7 +276,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
     return new_obj;
 }
 
-GpiObjHdl *VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
+GpiObjHdl *VpiImpl::get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) {
     LOG_DEBUG("Trying to convert raw to VPI handle");
 
     vpiHandle new_hdl = (vpiHandle)raw_hdl;
@@ -300,8 +300,8 @@ GpiObjHdl *VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
     return new_obj;
 }
 
-GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
-                                        GpiObjHdl *parent) {
+GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
+                                      GpiObjHdl *parent) {
     const vpiHandle parent_hdl = parent->get_handle<vpiHandle>();
     std::string fq_name =
         parent->get_fullname() + get_type_delimiter(parent) + name;
@@ -410,7 +410,7 @@ GpiObjHdl *VpiImpl::native_check_create(const std::string &name,
     return new_obj;
 }
 
-GpiObjHdl *VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
+GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     vpiHandle vpi_hdl = parent->get_handle<vpiHandle>();
     vpiHandle new_hdl = NULL;
 
@@ -422,9 +422,8 @@ GpiObjHdl *VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
     if (obj_type == GPI_GENARRAY) {
         snprintf(buff, 14, "[%d]", index);
 
-        LOG_DEBUG(
-            "Native check create for index %d of parent '%s' (pseudo-region)",
-            index, parent->get_name_str());
+        LOG_DEBUG("VPI: Get child at index %d of parent '%s' (pseudo-region)",
+                  index, parent->get_name_str());
 
         std::string idx = buff;
         std::string hdl_name = parent->get_fullname() + idx;

@@ -496,7 +496,7 @@ static std::string fully_qualified_name(const std::string &name,
     return fq_name;
 }
 
-GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
+GpiObjHdl *VhpiImpl::get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) {
     LOG_DEBUG("VHPI: Trying to convert raw to VHPI handle");
 
     vhpiHandleT new_hdl = (vhpiHandleT)raw_hdl;
@@ -520,8 +520,8 @@ GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent) {
     return new_obj;
 }
 
-GpiObjHdl *VhpiImpl::native_check_create(const std::string &name,
-                                         GpiObjHdl *parent) {
+GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
+                                       GpiObjHdl *parent) {
     vhpiHandleT vhpi_hdl = parent->get_handle<vhpiHandleT>();
 
     vhpiHandleT new_hdl;
@@ -599,7 +599,7 @@ GpiObjHdl *VhpiImpl::native_check_create(const std::string &name,
     return new_obj;
 }
 
-GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
+GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     vhpiHandleT vhpi_hdl = parent->get_handle<vhpiHandleT>();
     std::string name = parent->get_name();
     std::string fq_name = parent->get_fullname();
@@ -611,7 +611,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
 
     if (obj_type == GPI_GENARRAY) {
         LOG_DEBUG(
-            "VHPI: Native check create for index %d of parent %s "
+            "VHPI: Get child at index %d of parent %s "
             "(pseudo-region)",
             index, parent->get_name_str());
 
@@ -627,8 +627,8 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent) {
         new_hdl = vhpi_handle_by_name(&writable[0], NULL);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
                obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
-        LOG_DEBUG("VHPI: Native check create for index %d of parent %s (%s)",
-                  index, parent->get_fullname_str(),
+        LOG_DEBUG("VHPI: Get child at index %d of parent %s (%s)", index,
+                  parent->get_fullname_str(),
                   vhpi_get_str(vhpiKindStrP, vhpi_hdl));
 
         snprintf(buff, sizeof(buff), "(%d)", index);
