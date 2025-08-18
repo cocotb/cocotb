@@ -206,7 +206,7 @@ class First(_AggregateWaitable[object]):
 class ClockCycles(Waitable["ClockCycles"]):
     r"""Finishes after *num_cycles* transitions of *signal*.
 
-    :keyword:`await`\ ing this Trigger returns the ClockCycle object.
+    :keyword:`await`\ ing this Trigger returns the :class:`!ClockCycles` object.
 
     Args:
         signal: The signal to monitor.
