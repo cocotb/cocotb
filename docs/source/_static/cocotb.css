@@ -266,9 +266,21 @@ dl.py.type dt.sig.sig-object,
 dl.py.data dt.sig.sig-object,
 dl.py.decorator dt.sig.sig-object,
 dl.py.function dt.sig.sig-object {
-  margin-top: 2.0rem !important;
+  padding-top: 1.0rem !important;
+  border-top: 1.5px solid var(--color-cocotb-blue);
+  margin-top: 1.0rem !important;
   font-size: 1.1rem !important;
   font-weight: bold !important;
+}
+
+/* remove line when this is the first element belonging to this group of classes */
+dl.py.class:first-of-type dt.sig.sig-object,
+dl.py.exception:first-of-type dt.sig.sig-object,
+dl.py.type:first-of-type dt.sig.sig-object,
+dl.py.data:first-of-type dt.sig.sig-object,
+dl.py.decorator:first-of-type dt.sig.sig-object,
+dl.py.function:first-of-type dt.sig.sig-object {
+  border-top: none;
 }
 
 dl.py.attribute dt.sig.sig-object,
@@ -277,6 +289,7 @@ dl.py.decoratormethod dt.sig.sig-object,
 dl.py.staticmethod dt.sig.sig-object,
 dl.py.method dt.sig.sig-object,
 dl.py.property dt.sig.sig-object {
+  border-top: none;
   margin-top: 0 !important;
   font-size: 1.0rem !important;
   /* font-weight: normal !important; */
