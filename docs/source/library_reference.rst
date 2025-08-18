@@ -282,6 +282,7 @@ Asynchronous Queues
 
 .. automodule:: cocotb.queue
     :members:
+    :inherited-members:
     :member-order: bysource
     :synopsis: Asynchronous queues.
 
