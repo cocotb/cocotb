@@ -836,7 +836,8 @@ class LogicArray(AbstractMutableArray[Logic]):
 
         The possible values of the *resolver* argument are:
 
-        * ``"weak"``: Weak values are resolved to their strong-valued equivalents.
+        * ``"weak"``:
+            Weak values are resolved to their strong-valued equivalents.
 
         * ``"zeros"``:
             ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
