@@ -670,12 +670,12 @@ class Force(Generic[_ValueT]):
         while ``variable`` writes are set immediately, regardless of using this class.
 
     .. note::
-        Verilog Forces are always immediate.
+        Verilog :class:`!Force`\ s are always immediate.
         This also means that if there are multiple cocotb Tasks or multiple ``always`` blocks writing to the same object,
         the resulting value is non-deterministic.
 
     .. note::
-        Issuing a Force and Release in the same evaluation cycle in VHDL will result in the Force "winning".
+        Issuing a :class:`!Force` and :class:`Release` in the same evaluation cycle in VHDL will result in the :class:`!Force` "winning".
     """
 
     def __init__(self, value: _ValueT) -> None:
@@ -695,17 +695,17 @@ class Freeze:
         while ``variable`` writes are set immediately, regardless of using this class.
 
     .. note::
-        Verilog Forces are always immediate.
+        Verilog :class:`Force`\ s are always immediate.
         This also means that if there are multiple cocotb Tasks or multiple ``always`` blocks writing to the same object,
         the resulting value is non-deterministic.
 
     .. note::
-        Issuing a Force and Release in the same evaluation cycle in VHDL will result in the Force "winning".
+        Issuing a :class:`!Force` and :class:`Release` in the same evaluation cycle in VHDL will result in the :class:`!Force` "winning".
     """
 
 
 class Release:
-    """:term:`Release <release>` a :term:`forced <force>` simulation object.
+    r""":term:`Release <release>` a :term:`forced <force>` simulation object.
 
     Does not change the current value of the simulation object.
     See :class:`Deposit` for information on behavior after this write completes.
@@ -716,18 +716,18 @@ class Release:
         while ``variable`` writes are set immediately, regardless of using this class.
 
     .. note::
-        Verilog Releases are always immediate.
+        Verilog :class:`!Release`\ s are always immediate.
         This also means that if there are multiple cocotb Tasks or multiple ``always`` blocks writing to the same object,
         the resulting value is non-deterministic.
 
     .. note::
-        Issuing a Force and Release in the same evaluation cycle in VHDL will result in the Force "winning".
+        Issuing a :class:`Force` and :class:`!Release` in the same evaluation cycle in VHDL will result in the :class:`!Force` "winning".
 
     .. note::
-        Releasing a ``reg`` or `logic` in Verilog will leave the current value.
+        Releasing a ``reg`` or ``logic`` in Verilog will leave the current value.
         Releasing a ``wire`` in Verilog will cause the value to be recomputed from the wire's drivers current values.
         Releasing a ``signal`` in VHDL will cause the value to be recomputed from the signal's drivers current value.
-        Unconnected ``in`` ports and unconnected internal signals have no drivers and their value after Release will be ``U`` in VHDL and ``X`` in Verilog.
+        Unconnected ``in`` ports and unconnected internal signals have no drivers and their value after :class:`!Release` will be ``U`` in VHDL and ``X`` in Verilog.
     """
 
 
