@@ -151,7 +151,7 @@ class LogicArray(AbstractMutableArray[Logic]):
         These operations assume the value is entirely ``0``, ``1``, ``L``, or ``H``, and will raise an exception otherwise.
 
     You can also convert :class:`!LogicArray`\ s to hexadecimal or binary strings using
-    the built-ins :func:`hex:` and :func:`bin`, respectively.
+    the built-ins :func:`hex` and :func:`bin`, respectively.
 
     .. code-block:: pycon3
 
@@ -834,7 +834,8 @@ class LogicArray(AbstractMutableArray[Logic]):
 
         The possible values of the *resolver* argument are:
 
-        * ``"weak"``: Weak values are resolved to their strong-valued equivalents.
+        * ``"weak"``:
+            Weak values are resolved to their strong-valued equivalents.
 
         * ``"zeros"``:
             ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.

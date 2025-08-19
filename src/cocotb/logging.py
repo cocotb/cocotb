@@ -134,7 +134,7 @@ def _configure(_: object) -> None:
 
 @deprecated('Use `logging.getLogger(f"{name}.0x{ident:x}")` instead')
 def SimLog(name: str, ident: Union[int, None] = None) -> logging.Logger:
-    """Like logging.getLogger, but append a numeric identifier to the name.
+    """Like :func:`logging.getLogger`, but append a numeric identifier to the name.
 
     Args:
         name: Logger name.

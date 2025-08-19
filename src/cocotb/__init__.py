@@ -77,7 +77,7 @@ argv: List[str]
 plusargs: Dict[str, Union[bool, str]]
 """A dictionary of "plusargs" handed to the simulation.
 
-See :make:var:`COCOTB_PLUSARGS` for details.
+See :envvar:`COCOTB_PLUSARGS` for details.
 """
 
 packages: "SimpleNamespace"

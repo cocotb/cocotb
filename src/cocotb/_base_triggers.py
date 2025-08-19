@@ -442,6 +442,7 @@ class NullTrigger(Trigger):
     **Do not** do this:
 
     .. code-block:: python
+       :class: removed
 
         transaction_data = None
 
@@ -469,6 +470,7 @@ class NullTrigger(Trigger):
     Instead use an :class:`!.Event` to explicitly synchronize the two Tasks, like so:
 
     .. code-block:: python
+       :class: new
 
         transaction_data = None
         transaction_event = Event()

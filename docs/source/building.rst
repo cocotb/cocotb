@@ -78,7 +78,7 @@ Cocotb
 
        make COCOTB_RANDOM_SEED=1377424946
 
-    See also: :make:var:`COCOTB_PLUSARGS`
+    See also: :envvar:`COCOTB_PLUSARGS`
 
     .. versionchanged:: 2.0
 
