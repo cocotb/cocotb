@@ -4,7 +4,7 @@
 
 import os
 
-DEBUG: bool = bool(os.getenv("COCOTB_SCHEDULER_DEBUG"))
+debug: bool = bool(os.getenv("COCOTB_SCHEDULER_DEBUG"))
 """Global flag to enable additional debugging functionality.
 
 Defaults to ``True`` if the :envvar:`COCOTB_SCHEDULER_DEBUG` environment variable is set,

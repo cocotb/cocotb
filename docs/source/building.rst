@@ -350,6 +350,9 @@ Scheduler
 
     Enable additional log output of the coroutine scheduler.
 
+    This will default the value of :data:`~cocotb.debug.debug`,
+    which can later be modified.
+
 
 GPI
 ---
