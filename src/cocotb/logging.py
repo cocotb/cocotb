@@ -10,12 +10,15 @@ Everything related to logging
 
 import logging
 import os
+import re
 import sys
+import time
 import warnings
 from functools import wraps
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
+import cocotb.utils
 from cocotb import _ANSI, simulator
 from cocotb._deprecation import deprecated
 from cocotb._utils import want_color_output
@@ -33,7 +36,11 @@ logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like addi
 logging.addLevelName(5, "TRACE")
 
 
-def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -> None:
+def default_config(
+    reduced_log_fmt: bool = True,
+    color: Optional[bool] = None,
+    prefix_format: Optional[str] = None,
+) -> None:
     """Apply the default cocotb log formatting to the root logger.
 
     This hooks up the logger to write to stdout, using :class:`SimLogFormatter` for formatting.
@@ -58,6 +65,11 @@ def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -
 
             .. versionadded:: 2.0
 
+        prefix_format:
+            An f-string to build a prefix for each log message.
+
+            .. versionadded:: 2.0
+
     .. versionadded:: 1.4
     """
     logging.basicConfig()
@@ -66,7 +78,11 @@ def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -
 
     hdlr = logging.StreamHandler(sys.stdout)
     hdlr.addFilter(SimTimeContextFilter())
-    hdlr.setFormatter(SimLogFormatter(reduced_log_fmt=reduced_log_fmt, color=color))
+    hdlr.setFormatter(
+        SimLogFormatter(
+            reduced_log_fmt=reduced_log_fmt, color=color, prefix_format=prefix_format
+        )
+    )
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
     logging.getLogger("cocotb").setLevel(logging.INFO)
@@ -129,7 +145,8 @@ def _configure(_: object) -> None:
         reduced_log_fmt = bool(int(os.environ.get("COCOTB_REDUCED_LOG_FMT", "1")))
     except ValueError:
         pass
-    default_config(reduced_log_fmt=reduced_log_fmt)
+    prefix_format = os.environ.get("COCOTB_LOG_PREFIX", None)
+    default_config(reduced_log_fmt=reduced_log_fmt, prefix_format=prefix_format)
 
 
 @deprecated('Use `logging.getLogger(f"{name}.0x{ident:x}")` instead')
@@ -190,11 +207,18 @@ class SimLogFormatter(logging.Formatter):
         logging.CRITICAL: _ANSI.COLOR_CRITICAL,
     }
 
+    prefix_func_globals = {
+        "time": time,
+        "simtime": cocotb.utils,
+        "ansi": _ANSI,
+    }
+
     def __init__(
         self,
         *,
         reduced_log_fmt: bool = True,
         color: bool = False,
+        prefix_format: Optional[str] = None,
     ) -> None:
         """
         Args:
@@ -203,6 +227,35 @@ class SimLogFormatter(logging.Formatter):
         """
         self._reduced_log_fmt = reduced_log_fmt
         self.color = color
+        self._reduced_log_fmt = reduced_log_fmt
+        self._prefix_func = (
+            eval(
+                f"lambda record: f'''{prefix_format}'''",
+                type(self).prefix_func_globals,
+            )
+            if prefix_format is not None
+            else None
+        )
+        self._ansi_escape_pattern = re.compile(
+            r"""
+                (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
+                    \x1B
+                    [@-Z\\-_]
+                |   # or a single 8-bit byte Fe (omitting CSI)
+                    [\x80-\x9A\x9C-\x9F]
+                |   # or CSI + control codes
+                    (?: # 7-bit CSI, ESC [
+                        \x1B\[
+                    |   # 8-bit CSI, 9B
+                        \x9B
+                    )
+                    [0-?]*  # Parameter bytes
+                    [ -/]*  # Intermediate bytes
+                    [@-~]   # Final byte
+                )
+            """,
+            re.VERBOSE,
+        )
 
     # Justify and truncate
     @staticmethod
@@ -230,13 +283,18 @@ class SimLogFormatter(logging.Formatter):
         )
         highlight_end = _ANSI.COLOR_DEFAULT if self.color else ""
 
-        prefix = f"{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {self.ljust(record.name, 34)} "
+        if self._prefix_func is not None:
+            prefix = self._prefix_func(record)
+            stripped_prefix = self._ansi_escape_pattern.sub("", prefix)
+            prefix_len = len(stripped_prefix)
+            return prefix, prefix_len
+        else:
+            prefix = f"{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {self.ljust(record.name, 34)} "
+            if not self._reduced_log_fmt:
+                prefix = f"{prefix}{self.rjust(Path(record.filename).name, 20)}:{record.lineno:<4} in {self.ljust(str(record.funcName), 31)} "
 
-        if not self._reduced_log_fmt:
-            prefix = f"{prefix}{self.rjust(Path(record.filename).name, 20)}:{record.lineno:<4} in {self.ljust(str(record.funcName), 31)} "
-
-        prefix_len = len(prefix) - len(highlight_start) - len(highlight_end)
-        return prefix, prefix_len
+            prefix_len = len(prefix) - len(highlight_start) - len(highlight_end)
+            return prefix, prefix_len
 
     def formatMessage(self, record: logging.LogRecord) -> str:
         msg = record.getMessage()
@@ -296,6 +354,7 @@ class SimColourLogFormatter(SimLogFormatter):
         *,
         reduced_log_fmt: bool = True,
         color: bool = True,
+        prefix_format: Optional[str] = None,
     ) -> None:
         warnings.warn(
             "SimColourLogFormatter is deprecated and will be removed in a future release. "
@@ -303,7 +362,9 @@ class SimColourLogFormatter(SimLogFormatter):
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(reduced_log_fmt=reduced_log_fmt, color=color)
+        super().__init__(
+            reduced_log_fmt=reduced_log_fmt, color=color, prefix_format=prefix_format
+        )
 
 
 def _log_from_c(
