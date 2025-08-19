@@ -132,7 +132,7 @@ class external_waiter(Generic[Result]):
 
     def _propagate_state(self, new_state: external_state) -> None:
         with self.cond:
-            if debug.DEBUG:
+            if debug.debug:
                 self._log.debug(
                     f"Changing state from {self.state} -> {new_state} from {threading.current_thread()}"
                 )
@@ -140,7 +140,7 @@ class external_waiter(Generic[Result]):
             self.cond.notify()
 
     def thread_done(self) -> None:
-        if debug.DEBUG:
+        if debug.debug:
             self._log.debug(f"Thread finished from {threading.current_thread()}")
         self._propagate_state(external_state.EXITED)
 
@@ -159,7 +159,7 @@ class external_waiter(Generic[Result]):
         self._propagate_state(external_state.RUNNING)
 
     def thread_wait(self) -> external_state:
-        if debug.DEBUG:
+        if debug.debug:
             self._log.debug(
                 f"Waiting for the condition lock {threading.current_thread()}"
             )
@@ -168,7 +168,7 @@ class external_waiter(Generic[Result]):
             while self.state == external_state.RUNNING:
                 self.cond.wait()
 
-            if debug.DEBUG:
+            if debug.debug:
                 if self.state == external_state.EXITED:
                     self._log.debug(
                         f"Thread {self.thread} has exited from {threading.current_thread()}"

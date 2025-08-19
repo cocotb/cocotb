@@ -150,7 +150,7 @@ class Scheduler:
 
         Finds all Tasks waiting on the Trigger that fired and queues them.
         """
-        if debug.DEBUG:
+        if debug.debug:
             self.log.debug("Trigger fired: %s", trigger)
 
         # find all tasks waiting on trigger that fired
@@ -166,11 +166,11 @@ class Scheduler:
             # For Python triggers this isn't actually an error - we might do
             # event.set() without knowing whether any tasks are actually
             # waiting on this event, for example
-            elif debug.DEBUG:
+            elif debug.debug:
                 self.log.debug("No tasks waiting on trigger that fired: %s", trigger)
             return
 
-        if debug.DEBUG:
+        if debug.debug:
             debugstr = "\n\t".join([str(task) for task in scheduling])
             if len(scheduling) > 0:
                 debugstr = "\n\t" + debugstr
@@ -201,10 +201,10 @@ class Scheduler:
         while self._scheduled_tasks:
             task, exc = self._scheduled_tasks.popitem(last=False)
 
-            if debug.DEBUG:
+            if debug.debug:
                 self.log.debug("Scheduling task %s", task)
             self._resume_task(task, exc)
-            if debug.DEBUG:
+            if debug.debug:
                 self.log.debug("Scheduled task %s", task)
 
             # remove our reference to the objects at the end of each loop,
@@ -214,14 +214,14 @@ class Scheduler:
 
             # Schedule may have queued up some events so we'll burn through those
             while self._pending_events:
-                if debug.DEBUG:
+                if debug.debug:
                     self.log.debug(
                         "Scheduling pending event %s", self._pending_events[0]
                     )
                 self._pending_events.pop(0).set()
 
         # no more pending tasks
-        if debug.DEBUG:
+        if debug.debug:
             self.log.debug("All tasks scheduled, handing control back to simulator")
 
     def _unschedule(self, task: Task[Any]) -> None:
@@ -357,7 +357,7 @@ class Scheduler:
 
         def execute_external() -> None:
             waiter._outcome = capture(func, *args, **kwargs)
-            if debug.DEBUG:
+            if debug.debug:
                 self.log.debug(
                     "Execution of external routine done %s", threading.current_thread()
                 )
@@ -400,13 +400,13 @@ class Scheduler:
             trigger = task._advance(exc)
 
             if task.done():
-                if debug.DEBUG:
+                if debug.debug:
                     self.log.debug("%s completed with %s", task, task._outcome)
                 assert trigger is None
                 self._unschedule(task)
 
             if not task.done():
-                if debug.DEBUG:
+                if debug.debug:
                     self.log.debug("%r yielded %s", task, trigger)
                 if not isinstance(trigger, Trigger):
                     e = TypeError(
@@ -424,14 +424,14 @@ class Scheduler:
             if self._main_thread is threading.current_thread():
                 for ext in self._pending_threads:
                     ext.thread_start()
-                    if debug.DEBUG:
+                    if debug.debug:
                         self.log.debug(
                             "Blocking from %s on %s",
                             threading.current_thread(),
                             ext.thread,
                         )
                     state = ext.thread_wait()
-                    if debug.DEBUG:
+                    if debug.debug:
                         self.log.debug(
                             "Back from wait on self %s with newstate %s",
                             threading.current_thread(),
