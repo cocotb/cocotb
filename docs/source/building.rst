@@ -130,19 +130,25 @@ Cocotb
     Logs will include simulation time, message type (``INFO``, ``WARNING``, ``ERROR``, ...), logger name, and the log message itself.
     If the value is set to ``0``, the filename and line number where a log function was called will be added between the logger name and the log message.
 
-.. envvar:: COCOTB_ATTACH
+.. envvar:: COCOTB_LOG_PREFIX
 
-    In order to give yourself time to attach a debugger to the simulator process before it starts to run,
-    you can set the environment variable :envvar:`COCOTB_ATTACH` to a pause time value in seconds.
-    If set, cocotb will print the process ID (PID) to attach to and wait the specified time before
-    actually letting the simulator run.
+    Customize the log message prefix.
+    The value of this variable should be in Python f-string syntax.
+    It has access to the following variables:
 
-.. envvar:: COCOTB_ENABLE_PROFILING
+    - ``record``: The :class:`~logging.LogRecord` being formatted. This includes the attribute ``created_sim_time``, which is the simulation time in steps.
+    - ``time``: The Python :mod:`time` module.
+    - ``simtime``: The cocotb :mod:`cocotb.simtime` module.
+    - ``ansi``: The cocotb :mod:`cocotb.ANSI` module, which contains ANSI escape codes for coloring the output.
 
-    Enable performance analysis of the Python portion of cocotb. When set, a file :file:`test_profile.pstat`
-    will be written which contains statistics about the cumulative time spent in the functions.
+    The following example is a color-less version of the default log prefix.
 
-    From this, a callgraph diagram can be generated with `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ and ``graphviz``.
+    .. code-block:: shell
+
+        COCOTB_LOG_PREFIX="{simtime.convert(record.created_sim_time, 'step', to='ns'):>9}ns {record.levelname:<8} {record.name[-34:]:<34} "
+
+    .. note::
+        If this variable is set, :envvar:`COCOTB_REDUCED_LOG_FMT` has no effect.
 
 .. envvar:: COCOTB_LOG_LEVEL
 
@@ -164,6 +170,20 @@ Cocotb
     This behaves similarly to ``INFO``.
 
     .. versionadded:: 2.0
+
+.. envvar:: COCOTB_ATTACH
+
+    In order to give yourself time to attach a debugger to the simulator process before it starts to run,
+    you can set the environment variable :envvar:`COCOTB_ATTACH` to a pause time value in seconds.
+    If set, cocotb will print the process ID (PID) to attach to and wait the specified time before
+    actually letting the simulator run.
+
+.. envvar:: COCOTB_ENABLE_PROFILING
+
+    Enable performance analysis of the Python portion of cocotb. When set, a file :file:`test_profile.pstat`
+    will be written which contains statistics about the cumulative time spent in the functions.
+
+    From this, a callgraph diagram can be generated with `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ and ``graphviz``.
 
 .. envvar:: COCOTB_RESOLVE_X
 
@@ -223,7 +243,6 @@ Cocotb
             make simulator_test SIM=<your simulator here> TOPLEVEL_LANG=<vhdl or verilog>
 
         If the tests pass, your simulator and version apply inertial writes as expected and you can turn on :envvar:`COCOTB_TRUST_INERTIAL_WRITES`.
-
 
 Regression Manager
 ~~~~~~~~~~~~~~~~~~

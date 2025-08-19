@@ -1,0 +1,1 @@
+Added :envvar:`COCOTB_LOG_PREFIX` environment variable to allow users to customize the log message prefix.
