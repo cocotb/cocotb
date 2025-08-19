@@ -11,13 +11,14 @@ from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
 from math import ceil, floor
-from typing import Union, overload
+from typing import Union, cast, overload
 
 from cocotb import simulator
 from cocotb._py_compat import Literal, TypeAlias
 from cocotb._typing import RoundMode, TimeUnit
 
 __all__ = (
+    "convert",
     "get_sim_steps",
     "get_sim_time",
     "get_time_from_sim_steps",
@@ -25,7 +26,45 @@ __all__ = (
 )
 
 
-# Simulator helper functions
+Steps: TypeAlias = Literal["step"]
+TimeUnitWithoutSteps: TypeAlias = Literal["fs", "ps", "ns", "us", "ms", "sec"]
+
+
+@overload
+def convert(value: int, unit: Steps, *, to: TimeUnit) -> float: ...
+
+
+@overload
+def convert(
+    value: Union[float, Fraction, Decimal], unit: TimeUnitWithoutSteps, *, to: TimeUnit
+) -> float: ...
+
+
+def convert(
+    value: Union[float, Decimal, Fraction], unit: TimeUnit, *, to: TimeUnit
+) -> float:
+    """Convert times in one unit to another unit.
+
+    Args:
+        value: The time value.
+        unit: The unit of *value*.
+        to: The unit to convert *value* to.
+
+    Returns:
+        The value scaled by the difference in units.
+
+    .. versionadded:: 2.0
+    """
+    if unit == "step":
+        steps = cast("int", value)
+    else:
+        steps = get_sim_steps(value, unit)
+    if to == "step":
+        return steps
+    else:
+        return get_time_from_sim_steps(steps, to)
+
+
 def get_sim_time(unit: TimeUnit = "step", *, units: None = None) -> float:
     """Retrieve the simulation time from the simulator.
 
@@ -191,9 +230,6 @@ def get_sim_steps(
         raise ValueError(f"Invalid round_mode specifier: {round_mode}")
 
     return result_rounded
-
-
-TimeUnitWithoutSteps: TypeAlias = Literal["fs", "ps", "ns", "us", "ms", "sec"]
 
 
 @lru_cache(maxsize=None)
