@@ -75,6 +75,10 @@ html {
     --pst-color-link-hover: var(--color-cocotb-blue-darker) !important;
 }
 
+body {
+    line-height: 1.5;
+}
+
 h1 {
     color: var(--color-cocotb-blue) !important;
     line-height: 60px !important;
@@ -142,6 +146,7 @@ div.admonition {
     border-color: var(--color-cocotb-blue) !important;
     box-shadow: none !important;
     padding-bottom: 0 !important;
+    margin: 1rem auto !important;
 }
 
 div.deprecated,
@@ -152,6 +157,7 @@ div.versionremoved {
     /* font-size: 0.75rem !important; */ /* TODO: decide on this */
     border-radius: 0 !important;
     box-shadow: none !important;
+    margin: 1.0rem auto;
 }
 
 .admonition.warning,
@@ -242,17 +248,80 @@ strong.command {
 
 .pre {
     color: var(--color-cocotb-blue) !important;
+    font-size: 16px;
 }
 
-/* normal font weight for .pre ... */
-.pre {
-    font-weight: normal;
+code.xref {
+  background-color: transparent;
+  font-weight: normal;
 }
-/* ... but restore bold when .pre is in headings
-   (a check for "not in headings" does not really exist in CSS)
-*/
-h1:has(.pre) .pre, h2:has(.pre) .pre, h3:has(.pre) .pre, h4:has(.pre) .pre, h5:has(.pre) .pre, h6:has(.pre) .pre {
-    font-weight: bold;
+
+h1:has(code.xref) code.xref, h2:has(code.xref) code.xref, h3:has(code.xref) code.xref, h4:has(code.xref) code.xref, h5:has(code.xref) code.xref, h6:has(code.xref) code.xref {
+  font-weight: bold !important;
+}
+
+dl.py.class dt.sig.sig-object,
+dl.py.exception dt.sig.sig-object,
+dl.py.type dt.sig.sig-object,
+dl.py.data dt.sig.sig-object,
+dl.py.decorator dt.sig.sig-object,
+dl.py.function dt.sig.sig-object {
+  padding-top: 1.0rem !important;
+  border-top: 1.5px solid var(--color-cocotb-blue);
+  margin-top: 1.0rem !important;
+  font-size: 1.1rem !important;
+  font-weight: bold !important;
+}
+
+/* remove line when this is the first element belonging to this group of classes */
+dl.py.class:first-of-type dt.sig.sig-object,
+dl.py.exception:first-of-type dt.sig.sig-object,
+dl.py.type:first-of-type dt.sig.sig-object,
+dl.py.data:first-of-type dt.sig.sig-object,
+dl.py.decorator:first-of-type dt.sig.sig-object,
+dl.py.function:first-of-type dt.sig.sig-object {
+  border-top: none;
+}
+
+dl.py.attribute dt.sig.sig-object,
+dl.py.classmethod dt.sig.sig-object,
+dl.py.decoratormethod dt.sig.sig-object,
+dl.py.staticmethod dt.sig.sig-object,
+dl.py.method dt.sig.sig-object,
+dl.py.property dt.sig.sig-object {
+  border-top: none;
+  margin-top: 0 !important;
+  font-size: 1.0rem !important;
+  /* font-weight: normal !important; */
+}
+
+dl.py.attribute dt.sig.sig-object .sig-name,
+dl.py.classmethod dt.sig.sig-object .sig-name,
+dl.py.decoratormethod dt.sig.sig-object .sig-name,
+dl.py.staticmethod dt.sig.sig-object .sig-name,
+dl.py.method dt.sig.sig-object .sig-name,
+dl.py.property dt.sig.sig-object .sig-name {
+  font-size: 1.0rem !important;
+  /* font-weight: normal !important; */
+}
+
+/* remove top margin if preceded by a heading, admonition or version modified */
+h1 + dl.py,
+h2 + dl.py,
+h3 + dl.py,
+h4 + dl.py,
+h5 + dl.py,
+h6 + dl.py,
+.admonition + dl.py,
+.versionadded + dl.py,
+.versionchanged + dl.py,
+.versionremoved + dl.py,
+.deprecated + dl.py {
+  margin-top: 0 !important;
+}
+
+dl[class]:not(.option-list, .field-list, .footnote, .glossary, .simple) {
+  margin-bottom: 0.5rem !important;
 }
 
 /* apidoc "[source]" link */
@@ -369,7 +438,6 @@ dl.py.exception,
 dl.py.function,
 dl.py.method,
 dl.py.property,
-dl.py.property,
 dl.py.staticmethod,
 dl.py.type {
     margin-bottom: 1rem;
@@ -388,7 +456,7 @@ dl.cpp.type,
 dl.cpp.union,
 dl.cpp.var,
 dl.cpp.macro {
-    margin-bottom: 1rem;
+    margin-bottom: 1rem !important;
 }
 
 dl.cpp.enumerator {
@@ -505,4 +573,11 @@ body.release-notes h2 {
 body.release-notes h3 {
   top: calc(3 * 48px);
   z-index: 970;
+}
+
+
+code.literal {
+  border: none;
+  background-color: unset;
+  padding: 0;
 }
