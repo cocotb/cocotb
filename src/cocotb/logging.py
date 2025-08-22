@@ -18,19 +18,27 @@ from typing import Optional, Tuple, Union
 
 from cocotb import _ANSI, simulator
 from cocotb._deprecation import deprecated
-from cocotb._utils import want_color_output
 from cocotb.utils import get_sim_time, get_time_from_sim_steps
 
 __all__ = (
     "SimLog",
     "SimLogFormatter",
     "SimTimeContextFilter",
+    "colored",
     "default_config",
 )
 
 # Custom log level
 logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
 logging.addLevelName(5, "TRACE")
+
+
+colored: bool = True
+"""Whether the log output should be colored using ANSI escape codes.
+
+Defaults to ``False`` if ``stdout`` is not a TTY and ``True`` otherwise;
+but can be overridden with the :envvar:`!NO_COLOR` or :envvar:`COCOTB_ANSI_OUTPUT` environment variable.
+"""
 
 
 def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -> None:
@@ -55,14 +63,13 @@ def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -
 
         color:
             If ``True``, use colored output in the log messages.
+            If ``None``, use the value of :data:`colored`.
 
             .. versionadded:: 2.0
 
     .. versionadded:: 1.4
     """
     logging.basicConfig()
-
-    color = want_color_output() if color is None else color
 
     hdlr = logging.StreamHandler(sys.stdout)
     hdlr.addFilter(SimTimeContextFilter())
@@ -76,10 +83,19 @@ def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -
 def _init() -> None:
     """cocotb-specific logging setup.
 
-    Initializes the GPI logger and sets up the GPI logging optimization.
-    Sets the log level of the ``"cocotb"`` and ``"gpi"`` loggers based on
-    :envvar:`COCOTB_LOG_LEVEL` and :envvar:`GPI_LOG_LEVEL`, respectively.
+    - Decides whether colored output is supported or desired by checking :ennvar:`!NO_COLOR` and :envvar:`COCOTB_ANSI_OUTPUT`.
+    - Initializes the GPI logger and sets up the GPI logging optimization.
+    - Sets the log level of the ``"cocotb"`` and ``"gpi"`` loggers based on
+      :envvar:`COCOTB_LOG_LEVEL` and :envvar:`GPI_LOG_LEVEL`, respectively.
     """
+    global colored
+    colored = sys.stdout.isatty()  # default to color for TTYs
+    if os.getenv("NO_COLOR") is not None:
+        colored = False
+    if os.getenv("COCOTB_ANSI_OUTPUT", default="0") == "1":
+        colored = True
+    if os.getenv("GUI", default="0") == "1":
+        colored = False
 
     # Monkeypatch "gpi" logger with function that also sets a PyGPI-local logger level
     # as an optimization.
@@ -194,7 +210,7 @@ class SimLogFormatter(logging.Formatter):
         self,
         *,
         reduced_log_fmt: bool = True,
-        color: bool = False,
+        color: Union[bool, None] = None,
     ) -> None:
         """
         Args:
@@ -202,7 +218,10 @@ class SimLogFormatter(logging.Formatter):
             color: Use ANSI color codes in log output.
         """
         self._reduced_log_fmt = reduced_log_fmt
-        self.color = color
+        self._color = color
+
+    def want_color_output(self) -> bool:
+        return colored if self._color is None else self._color
 
     # Justify and truncate
     @staticmethod
@@ -226,9 +245,11 @@ class SimLogFormatter(logging.Formatter):
             sim_time_str = f"{time_ns:6.2f}ns"
 
         highlight_start = (
-            self.loglevel2colour.get(record.levelno, "") if self.color else ""
+            self.loglevel2colour.get(record.levelno, "")
+            if self.want_color_output()
+            else ""
         )
-        highlight_end = _ANSI.COLOR_DEFAULT if self.color else ""
+        highlight_end = _ANSI.COLOR_DEFAULT if self.want_color_output() else ""
 
         prefix = f"{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {self.ljust(record.name, 34)} "
 
@@ -242,9 +263,11 @@ class SimLogFormatter(logging.Formatter):
         msg = record.getMessage()
 
         highlight_start = (
-            self.loglevel2colour.get(record.levelno, "") if self.color else ""
+            self.loglevel2colour.get(record.levelno, "")
+            if self.want_color_output()
+            else ""
         )
-        highlight_end = _ANSI.COLOR_DEFAULT if self.color else ""
+        highlight_end = _ANSI.COLOR_DEFAULT if self.want_color_output() else ""
 
         msg = f"{highlight_start}{msg}{highlight_end}"
 
@@ -295,7 +318,7 @@ class SimColourLogFormatter(SimLogFormatter):
         self,
         *,
         reduced_log_fmt: bool = True,
-        color: bool = True,
+        color: Union[bool, None] = True,
     ) -> None:
         warnings.warn(
             "SimColourLogFormatter is deprecated and will be removed in a future release. "
