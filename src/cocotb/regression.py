@@ -547,8 +547,8 @@ class RegressionManager:
 
     def _log_test_start(self) -> None:
         """Called by :meth:`_execute` to log that a test is starting."""
-        hilight_start = _ANSI.COLOR_TEST if cocotb_logging.colored else ""
-        hilight_end = _ANSI.COLOR_DEFAULT if cocotb_logging.colored else ""
+        hilight_start = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_TEST
+        hilight_end = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_DEFAULT
         self.log.info(
             "%srunning%s %s (%d/%d)%s",
             hilight_start,
@@ -581,8 +581,8 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test is skipped."""
 
         # log test results
-        hilight_start = _ANSI.COLOR_SKIPPED if cocotb_logging.colored else ""
-        hilight_end = _ANSI.COLOR_DEFAULT if cocotb_logging.colored else ""
+        hilight_start = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_SKIPPED
+        hilight_end = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_DEFAULT
         self.log.info(
             "%sskipping%s %s (%d/%d)%s",
             hilight_start,
@@ -624,8 +624,8 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test initialization fails."""
 
         # log test results
-        hilight_start = _ANSI.COLOR_FAILED if cocotb_logging.colored else ""
-        hilight_end = _ANSI.COLOR_DEFAULT if cocotb_logging.colored else ""
+        hilight_start = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_FAILED
+        hilight_end = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_DEFAULT
         self.log.exception(
             "%sFailed to initialize%s %s! (%d/%d)%s",
             hilight_start,
@@ -670,8 +670,8 @@ class RegressionManager:
         result: Union[Exception, None],
         msg: Union[str, None],
     ) -> None:
-        start_hilight = _ANSI.COLOR_PASSED if cocotb_logging.colored else ""
-        stop_hilight = _ANSI.COLOR_DEFAULT if cocotb_logging.colored else ""
+        start_hilight = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_PASSED
+        stop_hilight = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_DEFAULT
         if msg is None:
             rest = ""
         else:
@@ -723,8 +723,8 @@ class RegressionManager:
         result: Union[BaseException, None],
         msg: Union[str, None],
     ) -> None:
-        start_hilight = _ANSI.COLOR_FAILED if cocotb_logging.colored else ""
-        stop_hilight = _ANSI.COLOR_DEFAULT if cocotb_logging.colored else ""
+        start_hilight = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_FAILED
+        stop_hilight = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_DEFAULT
         if msg is None:
             rest = ""
         else:
@@ -830,27 +830,25 @@ class RegressionManager:
 
         test_line = "** {a:<{a_len}}  {start}{b:^{b_len}}{end}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}}  **\n"
         for result in self._test_results:
-            hilite = ""
-            lolite = ""
-
             if result.passed is None:
                 ratio = "-.--"
                 pass_fail_str = "SKIP"
-                if cocotb_logging.colored:
-                    hilite = _ANSI.COLOR_SKIPPED
-                    lolite = _ANSI.COLOR_DEFAULT
+                hilite = _ANSI.COLOR_SKIPPED
+                lolite = _ANSI.COLOR_DEFAULT
             elif result.passed:
                 ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "PASS"
-                if cocotb_logging.colored:
-                    hilite = _ANSI.COLOR_PASSED
-                    lolite = _ANSI.COLOR_DEFAULT
+                hilite = _ANSI.COLOR_PASSED
+                lolite = _ANSI.COLOR_DEFAULT
             else:
                 ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "FAIL"
-                if cocotb_logging.colored:
-                    hilite = _ANSI.COLOR_FAILED
-                    lolite = _ANSI.COLOR_DEFAULT
+                hilite = _ANSI.COLOR_FAILED
+                lolite = _ANSI.COLOR_DEFAULT
+
+            if cocotb_logging.strip_ansi:
+                hilite = ""
+                lolite = ""
 
             test_dict = {
                 "a": result.test_fullname,

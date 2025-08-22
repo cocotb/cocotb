@@ -5,9 +5,42 @@
 Tests for the cocotb logger
 """
 
+import contextlib
 import logging
+from typing import Generator, Union
 
 import cocotb
+import cocotb._ANSI as ansi
+import cocotb.logging as cocotb_logging
+
+
+class LogCaptureHandler(logging.Handler):
+    def __init__(self) -> None:
+        super().__init__()
+        self.records: list[logging.LogRecord] = []
+        self.msgs: list[str] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
+        msg = self.format(record)
+        self.msgs.append(msg)
+
+
+@contextlib.contextmanager
+def capture_logs(
+    logger_name: Union[str, None] = None,
+    formatter: Union[logging.Formatter, None] = None,
+) -> Generator[LogCaptureHandler, None, None]:
+    handler = LogCaptureHandler()
+    if formatter is None:
+        formatter = cocotb_logging.SimLogFormatter()
+    handler.setFormatter(formatter)
+    logger = logging.getLogger(logger_name)
+    logger.addHandler(handler)
+    try:
+        yield handler
+    finally:
+        logger.removeHandler(handler)
 
 
 class StrCallCounter:
@@ -42,4 +75,18 @@ async def test_custom_logging_levels(dut):
     logging.addLevelName(5, "SUPER_DEBUG")
     logger = logging.getLogger("name")
     logger.setLevel(5)
-    logger.log(5, "SUPER DEBUG MESSAGE!")
+    with capture_logs() as logs:
+        logger.log(5, "SUPER DEBUG MESSAGE!")
+    assert len(logs.msgs) == 1
+    assert "SUPER DEBUG MESSAGE!" in logs.msgs[0]
+
+
+@cocotb.test
+async def test_ansi_stripping(_: object) -> None:
+    cocotb_logging.strip_ansi = True
+    with capture_logs() as logs:
+        cocotb.log.info(
+            f"{ansi.YELLOW_FG}That {ansi.GREEN_BG}boy {ansi.BLUE_FG}ain't {ansi.BRIGHT_RED_BG}right.{ansi.DEFAULT_FG}"
+        )
+    assert len(logs.msgs) == 1
+    assert logs.msgs[0].endswith("That boy ain't right.")
