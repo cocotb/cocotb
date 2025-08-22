@@ -11,28 +11,60 @@ from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
 from math import ceil, floor
-from typing import Union, overload
+from typing import Union, cast, overload
 
 from cocotb import simulator
 from cocotb._py_compat import Literal, TypeAlias
 from cocotb._typing import RoundMode, TimeUnit
 
 __all__ = (
+    "convert",
     "get_sim_steps",
     "get_sim_time",
     "get_time_from_sim_steps",
+    "time_precision",
 )
 
 
-def _get_simulator_precision() -> int:
-    # cache and replace this function
-    precision = simulator.get_precision()
-    global _get_simulator_precision
-    _get_simulator_precision = precision.__int__
-    return _get_simulator_precision()
+Steps: TypeAlias = Literal["step"]
+TimeUnitWithoutSteps: TypeAlias = Literal["fs", "ps", "ns", "us", "ms", "sec"]
 
 
-# Simulator helper functions
+@overload
+def convert(value: int, unit: Steps, *, to: TimeUnit) -> float: ...
+
+
+@overload
+def convert(
+    value: Union[float, Fraction, Decimal], unit: TimeUnitWithoutSteps, *, to: TimeUnit
+) -> float: ...
+
+
+def convert(
+    value: Union[float, Decimal, Fraction], unit: TimeUnit, *, to: TimeUnit
+) -> float:
+    """Convert times in one unit to another unit.
+
+    Args:
+        value: The time value.
+        unit: The unit of *value*.
+        to: The unit to convert *value* to.
+
+    Returns:
+        The value scaled by the difference in units.
+
+    .. versionadded:: 2.0
+    """
+    if unit == "step":
+        steps = cast("int", value)
+    else:
+        steps = get_sim_steps(value, unit)
+    if to == "step":
+        return steps
+    else:
+        return get_time_from_sim_steps(steps, to)
+
+
 def get_sim_time(unit: TimeUnit = "step", *, units: None = None) -> float:
     """Retrieve the simulation time from the simulator.
 
@@ -126,7 +158,7 @@ def get_time_from_sim_steps(
         raise TypeError("Missing required argument 'unit'")
     if unit == "step":
         return steps
-    return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(unit))
+    return _ldexp10(steps, time_precision - _get_log_time_scale(unit))
 
 
 def get_sim_steps(
@@ -178,16 +210,15 @@ def get_sim_steps(
         unit = units
     result: Union[float, Fraction, Decimal]
     if unit != "step":
-        result = _ldexp10(time, _get_log_time_scale(unit) - _get_simulator_precision())
+        result = _ldexp10(time, _get_log_time_scale(unit) - time_precision)
     else:
         result = time
 
     if round_mode == "error":
         result_rounded = floor(result)
         if result_rounded != result:
-            precision = _get_simulator_precision()
             raise ValueError(
-                f"Unable to accurately represent {time}({unit}) with the simulator precision of 1e{precision}"
+                f"Unable to accurately represent {time}({unit}) with the simulator precision of 1e{time_precision}"
             )
     elif round_mode == "ceil":
         result_rounded = ceil(result)
@@ -199,9 +230,6 @@ def get_sim_steps(
         raise ValueError(f"Invalid round_mode specifier: {round_mode}")
 
     return result_rounded
-
-
-TimeUnitWithoutSteps: TypeAlias = Literal["fs", "ps", "ns", "us", "ms", "sec"]
 
 
 @lru_cache(maxsize=None)
@@ -228,3 +256,18 @@ def _get_log_time_scale(unit: TimeUnitWithoutSteps) -> int:
         raise ValueError(f"Invalid unit ({unit}) provided")
     else:
         return scale[unit_lwr]
+
+
+time_precision: int = _get_log_time_scale("fs")
+"""The precision of time in the current simulation.
+
+The value is seconds in powers of tens,
+i.e. ``-15`` is ``10**-15`` seconds or 1 femtosecond.
+
+.. versionadded:: 2.0
+"""
+
+
+def _init() -> None:
+    global time_precision
+    time_precision = simulator.get_precision()
