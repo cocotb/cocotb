@@ -92,10 +92,12 @@ def _init() -> None:
     colored = sys.stdout.isatty()  # default to color for TTYs
     if os.getenv("NO_COLOR") is not None:
         colored = False
-    if os.getenv("COCOTB_ANSI_OUTPUT", default="0") == "1":
-        colored = True
-    if os.getenv("GUI", default="0") == "1":
-        colored = False
+    ansi_output = os.getenv("COCOTB_ANSI_OUTPUT")
+    if ansi_output is not None:
+        colored = bool(int(ansi_output))
+    in_gui = os.getenv("GUI")
+    if in_gui is not None:
+        colored = not int(in_gui)
 
     # Monkeypatch "gpi" logger with function that also sets a PyGPI-local logger level
     # as an optimization.
