@@ -10,6 +10,7 @@ Everything related to logging
 
 import logging
 import os
+import re
 import sys
 import warnings
 from functools import wraps
@@ -221,6 +222,26 @@ class SimLogFormatter(logging.Formatter):
         """
         self._reduced_log_fmt = reduced_log_fmt
         self._color = color
+        self._ansi_escape_pattern = re.compile(
+            r"""
+                (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
+                    \x1B
+                    [@-Z\\-_]
+                |   # or a single 8-bit byte Fe (omitting CSI)
+                    [\x80-\x9A\x9C-\x9F]
+                |   # or CSI + control codes
+                    (?: # 7-bit CSI, ESC [
+                        \x1B\[
+                    |   # 8-bit CSI, 9B
+                        \x9B
+                    )
+                    [0-?]*  # Parameter bytes
+                    [ -/]*  # Intermediate bytes
+                    [@-~]   # Final byte
+                )
+            """,
+            re.VERBOSE,
+        )
 
     def want_color_output(self) -> bool:
         return colored if self._color is None else self._color
@@ -246,12 +267,12 @@ class SimLogFormatter(logging.Formatter):
             time_ns = get_time_from_sim_steps(sim_time, "ns")
             sim_time_str = f"{time_ns:6.2f}ns"
 
-        highlight_start = (
-            self.loglevel2colour.get(record.levelno, "")
-            if self.want_color_output()
-            else ""
-        )
-        highlight_end = _ANSI.COLOR_DEFAULT if self.want_color_output() else ""
+        if self.want_color_output():
+            highlight_start = self.loglevel2colour.get(record.levelno, "")
+            highlight_end = _ANSI.COLOR_DEFAULT
+        else:
+            highlight_start = ""
+            highlight_end = ""
 
         prefix = f"{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {self.ljust(record.name, 34)} "
 
@@ -264,12 +285,13 @@ class SimLogFormatter(logging.Formatter):
     def formatMessage(self, record: logging.LogRecord) -> str:
         msg = record.getMessage()
 
-        highlight_start = (
-            self.loglevel2colour.get(record.levelno, "")
-            if self.want_color_output()
-            else ""
-        )
-        highlight_end = _ANSI.COLOR_DEFAULT if self.want_color_output() else ""
+        if self.want_color_output():
+            highlight_start = self.loglevel2colour.get(record.levelno, "")
+            highlight_end = _ANSI.COLOR_DEFAULT
+        else:
+            highlight_start = ""
+            highlight_end = ""
+            msg = self._ansi_escape_pattern.sub("", msg)
 
         msg = f"{highlight_start}{msg}{highlight_end}"
 
