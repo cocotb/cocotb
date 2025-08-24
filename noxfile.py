@@ -69,7 +69,7 @@ def env_vars_for_test(
     sim: str, toplevel_lang: str, gpi_interface: str
 ) -> Dict[str, str]:
     """Prepare the environment variables controlling the test run."""
-    e = {"SIM": sim, "TOPLEVEL_LANG": toplevel_lang, "HDL_TOPLEVEL_LANG": toplevel_lang}
+    e = {"SIM": sim, "TOPLEVEL_LANG": toplevel_lang}
 
     assert not (toplevel_lang == "verilog" and gpi_interface != "vpi")
     if toplevel_lang == "vhdl":

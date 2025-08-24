@@ -33,7 +33,7 @@ module_name = [
     "test_sim_time_utils",
 ]
 
-hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
 vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
 if hdl_toplevel_lang == "verilog":
