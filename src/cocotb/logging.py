@@ -72,6 +72,10 @@ def default_config(
             .. versionadded:: 2.0
 
     .. versionadded:: 1.4
+
+    .. versionchanged:: 2.0
+        Now captures warnings and outputs them through the logging system using
+        :func:`logging.captureWarnings`.
     """
     logging.basicConfig()
 
@@ -84,6 +88,8 @@ def default_config(
 
     logging.getLogger("cocotb").setLevel(logging.INFO)
     logging.getLogger("gpi").setLevel(logging.INFO)
+
+    logging.captureWarnings(True)
 
 
 def _init() -> None:
