@@ -89,7 +89,7 @@ def default_config(
 def _init() -> None:
     """cocotb-specific logging setup.
 
-    - Decides whether colored output is supported or desired by checking :ennvar:`!NO_COLOR` and :envvar:`COCOTB_ANSI_OUTPUT`.
+    - Decides whether colored output is supported or desired by checking :envvar:`!NO_COLOR` and :envvar:`COCOTB_ANSI_OUTPUT`.
     - Initializes the GPI logger and sets up the GPI logging optimization.
     - Sets the log level of the ``"cocotb"`` and ``"gpi"`` loggers based on
       :envvar:`COCOTB_LOG_LEVEL` and :envvar:`GPI_LOG_LEVEL`, respectively.
