@@ -35,7 +35,7 @@ logging.addLevelName(5, "TRACE")
 
 
 strip_ansi: bool = False
-"""Whether the default formatter should strip ANSI escape codes from log messages.
+"""Whether the default formatter should strip ANSI (color) escape codes from log messages.
 
 Defaults to ``True`` if ``stdout`` is not a TTY and ``False`` otherwise;
 but can be overridden with the :envvar:`!NO_COLOR` or :envvar:`COCOTB_ANSI_OUTPUT` environment variable.
@@ -65,7 +65,7 @@ def default_config(
             .. versionadded:: 2.0
 
         strip_ansi:
-            If ``True``, strip ANSI escape codes in log messages.
+            If ``True``, strip ANSI (color) escape codes in log messages.
             If ``False``, do not strip ANSI escape codes in log messages.
             If ``None``, use the value of :data:`strip_ansi`.
 
@@ -89,7 +89,7 @@ def default_config(
 def _init() -> None:
     """cocotb-specific logging setup.
 
-    - Decides whether colored output is supported or desired by checking :envvar:`!NO_COLOR` and :envvar:`COCOTB_ANSI_OUTPUT`.
+    - Decides whether ANSI escape code stripping is desired by checking :envvar:`!NO_COLOR` and :envvar:`COCOTB_ANSI_OUTPUT`.
     - Initializes the GPI logger and sets up the GPI logging optimization.
     - Sets the log level of the ``"cocotb"`` and ``"gpi"`` loggers based on
       :envvar:`COCOTB_LOG_LEVEL` and :envvar:`GPI_LOG_LEVEL`, respectively.
