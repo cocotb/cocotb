@@ -78,6 +78,7 @@ int main(int argc, char** argv) {
     const char* traceFile = "dump.vcd";
 #endif
     bool traceOn = false;
+    bool traceFlush = false;
 
     for (int i = 1; i < argc; i++) {
         std::string arg = std::string(argv[i]);
@@ -90,6 +91,8 @@ int main(int argc, char** argv) {
                     "support\n");
             return -1;
 #endif
+        } else if (arg == "--trace-flush") {
+            traceFlush = true;
         } else if (arg == "--trace-file") {
             if (++i < argc) {
                 traceFile = argv[i];
@@ -98,16 +101,18 @@ int main(int argc, char** argv) {
                 return -1;
             }
         } else if (arg == "--help") {
-            fprintf(stderr,
-                    "usage: %s [--trace] [--trace-file TRACEFILE]\n"
-                    "\n"
-                    "Cocotb + Verilator sim\n"
-                    "\n"
-                    "options:\n"
-                    "  --trace      Enables tracing (VCD or FST)\n"
-                    "  --trace-file Specifies the trace file name (%s by "
-                    "default)\n",
-                    basename(argv[0]), traceFile);
+            fprintf(
+                stderr,
+                "usage: %s [--trace] [--trace-flush] [--trace-file TRACEFILE]\n"
+                "\n"
+                "Cocotb + Verilator sim\n"
+                "\n"
+                "options:\n"
+                "  --trace       Enables tracing (VCD or FST)\n"
+                "  --trace-flush Flush trace at each time step (slow)\n"
+                "  --trace-file  Specifies the trace file name (%s by "
+                "default)\n",
+                basename(argv[0]), traceFile);
             return 0;
         }
     }
@@ -162,6 +167,9 @@ int main(int argc, char** argv) {
 #if VM_TRACE
         if (tfp) {
             tfp->dump(main_time);
+            if (traceFlush) {
+                tfp->flush();
+            }
         }
 #endif
         // cocotb controls the clock inputs using cbAfterDelay so
