@@ -318,6 +318,8 @@ Logging
 .. module:: cocotb.logging
     :synopsis: Classes for logging messages from cocotb during simulation.
 
+.. autodata:: strip_ansi
+
 .. autofunction:: default_config
 
 .. autofunction:: SimLog

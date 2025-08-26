@@ -10,6 +10,7 @@ Everything related to logging
 
 import logging
 import os
+import re
 import sys
 import warnings
 from functools import wraps
@@ -18,7 +19,6 @@ from typing import Optional, Tuple, Union
 
 from cocotb import _ANSI, simulator
 from cocotb._deprecation import deprecated
-from cocotb._utils import want_color_output
 from cocotb.utils import get_sim_time, get_time_from_sim_steps
 
 __all__ = (
@@ -26,6 +26,7 @@ __all__ = (
     "SimLogFormatter",
     "SimTimeContextFilter",
     "default_config",
+    "strip_ansi",
 )
 
 # Custom log level
@@ -33,7 +34,17 @@ logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like addi
 logging.addLevelName(5, "TRACE")
 
 
-def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -> None:
+strip_ansi: bool = False
+"""Whether the default formatter should strip ANSI (color) escape codes from log messages.
+
+Defaults to ``True`` if ``stdout`` is not a TTY and ``False`` otherwise;
+but can be overridden with the :envvar:`!NO_COLOR` or :envvar:`COCOTB_ANSI_OUTPUT` environment variable.
+"""
+
+
+def default_config(
+    reduced_log_fmt: bool = True, strip_ansi: Optional[bool] = None
+) -> None:
     """Apply the default cocotb log formatting to the root logger.
 
     This hooks up the logger to write to stdout, using :class:`SimLogFormatter` for formatting.
@@ -53,8 +64,10 @@ def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -
 
             .. versionadded:: 2.0
 
-        color:
-            If ``True``, use colored output in the log messages.
+        strip_ansi:
+            If ``True``, strip ANSI (color) escape codes in log messages.
+            If ``False``, do not strip ANSI escape codes in log messages.
+            If ``None``, use the value of :data:`strip_ansi`.
 
             .. versionadded:: 2.0
 
@@ -62,11 +75,11 @@ def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -
     """
     logging.basicConfig()
 
-    color = want_color_output() if color is None else color
-
     hdlr = logging.StreamHandler(sys.stdout)
     hdlr.addFilter(SimTimeContextFilter())
-    hdlr.setFormatter(SimLogFormatter(reduced_log_fmt=reduced_log_fmt, color=color))
+    hdlr.setFormatter(
+        SimLogFormatter(reduced_log_fmt=reduced_log_fmt, strip_ansi=strip_ansi)
+    )
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
     logging.getLogger("cocotb").setLevel(logging.INFO)
@@ -76,10 +89,21 @@ def default_config(reduced_log_fmt: bool = True, color: Optional[bool] = None) -
 def _init() -> None:
     """cocotb-specific logging setup.
 
-    Initializes the GPI logger and sets up the GPI logging optimization.
-    Sets the log level of the ``"cocotb"`` and ``"gpi"`` loggers based on
-    :envvar:`COCOTB_LOG_LEVEL` and :envvar:`GPI_LOG_LEVEL`, respectively.
+    - Decides whether ANSI escape code stripping is desired by checking :envvar:`!NO_COLOR` and :envvar:`COCOTB_ANSI_OUTPUT`.
+    - Initializes the GPI logger and sets up the GPI logging optimization.
+    - Sets the log level of the ``"cocotb"`` and ``"gpi"`` loggers based on
+      :envvar:`COCOTB_LOG_LEVEL` and :envvar:`GPI_LOG_LEVEL`, respectively.
     """
+    global strip_ansi
+    strip_ansi = not sys.stdout.isatty()  # default to color for TTYs
+    if os.getenv("NO_COLOR") is not None:
+        strip_ansi = True
+    ansi_output = os.getenv("COCOTB_ANSI_OUTPUT")
+    if ansi_output is not None:
+        strip_ansi = not int(ansi_output)
+    in_gui = os.getenv("GUI")
+    if in_gui is not None:
+        strip_ansi = bool(int(in_gui))
 
     # Monkeypatch "gpi" logger with function that also sets a PyGPI-local logger level
     # as an optimization.
@@ -156,9 +180,8 @@ class SimTimeContextFilter(logging.Filter):
     """
     A filter to inject simulator times into the log records.
 
-    This uses the approach described in the :ref:`Python logging cookbook <python:filters-contextual>`.
-
-    This adds the :attr:`~logging.LogRecord.created_sim_time` attribute.
+    This uses the approach described in the :ref:`Python logging cookbook <python:filters-contextual>`
+    which adds the :attr:`~logging.LogRecord.created_sim_time` attribute.
 
     .. versionadded:: 1.4
     """
@@ -194,15 +217,41 @@ class SimLogFormatter(logging.Formatter):
         self,
         *,
         reduced_log_fmt: bool = True,
-        color: bool = False,
+        strip_ansi: Union[bool, None] = None,
     ) -> None:
         """
         Args:
             reduced_log_fmt: Use less verbose log format.
-            color: Use ANSI color codes in log output.
+            strip_ansi:
+                Strip ANSI control codes from messages.
+
+                If ``None`` use the value of :data:`strip_ansi`.
         """
         self._reduced_log_fmt = reduced_log_fmt
-        self.color = color
+        self._strip_ansi = strip_ansi
+        self._ansi_escape_pattern = re.compile(
+            r"""
+                (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
+                    \x1B
+                    [@-Z\\-_]
+                |   # or a single 8-bit byte Fe (omitting CSI)
+                    [\x80-\x9A\x9C-\x9F]
+                |   # or CSI + control codes
+                    (?: # 7-bit CSI, ESC [
+                        \x1B\[
+                    |   # 8-bit CSI, 9B
+                        \x9B
+                    )
+                    [0-?]*  # Parameter bytes
+                    [ -/]*  # Intermediate bytes
+                    [@-~]   # Final byte
+                )
+            """,
+            re.VERBOSE,
+        )
+
+    def strip_ansi(self) -> bool:
+        return strip_ansi if self._strip_ansi is None else self._strip_ansi
 
     # Justify and truncate
     @staticmethod
@@ -225,10 +274,12 @@ class SimLogFormatter(logging.Formatter):
             time_ns = get_time_from_sim_steps(sim_time, "ns")
             sim_time_str = f"{time_ns:6.2f}ns"
 
-        highlight_start = (
-            self.loglevel2colour.get(record.levelno, "") if self.color else ""
-        )
-        highlight_end = _ANSI.COLOR_DEFAULT if self.color else ""
+        if self.strip_ansi():
+            highlight_start = ""
+            highlight_end = ""
+        else:
+            highlight_start = self.loglevel2colour.get(record.levelno, "")
+            highlight_end = _ANSI.COLOR_DEFAULT
 
         prefix = f"{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {self.ljust(record.name, 34)} "
 
@@ -241,10 +292,13 @@ class SimLogFormatter(logging.Formatter):
     def formatMessage(self, record: logging.LogRecord) -> str:
         msg = record.getMessage()
 
-        highlight_start = (
-            self.loglevel2colour.get(record.levelno, "") if self.color else ""
-        )
-        highlight_end = _ANSI.COLOR_DEFAULT if self.color else ""
+        if self.strip_ansi():
+            highlight_start = ""
+            highlight_end = ""
+            msg = self._ansi_escape_pattern.sub("", msg)
+        else:
+            highlight_start = self.loglevel2colour.get(record.levelno, "")
+            highlight_end = _ANSI.COLOR_DEFAULT
 
         msg = f"{highlight_start}{msg}{highlight_end}"
 
@@ -288,22 +342,22 @@ class SimColourLogFormatter(SimLogFormatter):
     """Log formatter similar to :class:`SimLogFormatter`, but with colored output by default.
 
     .. deprecated:: 2.0
-        Use :class:`!SimLogFormatter` with ``color=True`` instead.
+        Use :class:`!SimLogFormatter` with ``strip_ansi=False`` instead.
     """
 
     def __init__(
         self,
         *,
         reduced_log_fmt: bool = True,
-        color: bool = True,
+        strip_ansi: Union[bool, None] = False,
     ) -> None:
         warnings.warn(
             "SimColourLogFormatter is deprecated and will be removed in a future release. "
-            "Use SimLogFormatter with `color=True` instead.",
+            "Use SimLogFormatter with `strip_ansi=False` instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(reduced_log_fmt=reduced_log_fmt, color=color)
+        super().__init__(reduced_log_fmt=reduced_log_fmt, strip_ansi=strip_ansi)
 
 
 def _log_from_c(

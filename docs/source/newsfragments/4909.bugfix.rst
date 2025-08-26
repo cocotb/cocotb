@@ -1,0 +1,1 @@
+:data:`ANSI escape code stripping <cocotb.logging.strip_ansi>` is now correctly disabled when :envvar:`COCOTB_ANSI_OUTPUT` is set to ``0``.

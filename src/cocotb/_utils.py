@@ -6,12 +6,10 @@
 
 """Utilities for implementors."""
 
-import os
-import sys
 import traceback
 import types
 from enum import Enum, IntEnum
-from functools import lru_cache, update_wrapper, wraps
+from functools import update_wrapper, wraps
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -26,26 +24,6 @@ from typing import (
     cast,
     overload,
 )
-
-
-@lru_cache(maxsize=None)
-def want_color_output() -> bool:
-    """Return ``True`` if colored output is possible/requested and not running in GUI.
-
-    Colored output can be explicitly requested in a cocotb-specific way
-    by setting :envvar:`COCOTB_ANSI_OUTPUT` to  ``1``.
-
-    Returns: Whether color output is wanted and supported.
-    """
-    want_color = sys.stdout.isatty()  # default to color for TTYs
-    if os.getenv("NO_COLOR") is not None:
-        want_color = False
-    if os.getenv("COCOTB_ANSI_OUTPUT", default="0") == "1":
-        want_color = True
-    if os.getenv("GUI", default="0") == "1":
-        want_color = False
-    return want_color
-
 
 ExceptionTuple = Tuple[
     Type[BaseException], BaseException, TracebackType
