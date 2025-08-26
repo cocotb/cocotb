@@ -7,14 +7,15 @@
 #ifndef COCOTB_GPI_H_
 #define COCOTB_GPI_H_
 
-/** \file gpi.h
+/** @file gpi.h
 
-Generic Language Interface
-==========================
+Generic Procedural Interface
+============================
 
-This header file defines a Generic Language Interface into any simulator.
+This header file defines the GPI to interface with any simulator that supports
+VPI, VHPI, or FLI.
+
 Implementations need to implement the underlying functions in `gpi_priv.h`.
-
 The functions are essentially a limited subset of VPI/VHPI/FLI.
 
 Implementation-specific notes
@@ -76,62 +77,13 @@ typedef struct GpiIterator *gpi_iterator_hdl;
 extern "C" {
 #endif
 
-// Forward declaration for types needed in function signatures
+/** Object discovery method when searching by name. */
 typedef enum gpi_discovery_e {
     GPI_AUTO = 0,
     GPI_NATIVE = 1,
 } gpi_discovery;
 
-// Functions for controlling/querying the simulation state
-
-/**
- * Return if there is a registered GPI implementation.
- * Useful for checking if a simulator is running.
- *
- * @return `1` if there is a registered GPI implementation, `0` otherwise.
- */
-GPI_EXPORT bool gpi_has_registered_impl(void);
-
-/**
- * Stop the simulator.
- */
-GPI_EXPORT void gpi_sim_end(void);
-
-/**
- * Return simulation time as two uints. Unit is the default sim unit.
- */
-GPI_EXPORT void gpi_get_sim_time(uint32_t *high, uint32_t *low);
-GPI_EXPORT void gpi_get_sim_precision(int32_t *precision);
-
-/**
- * Return a string with the running simulator product information.
- *
- * @return The simulator product string.
- */
-GPI_EXPORT const char *gpi_get_simulator_product(void);
-
-/**
- * Return a string with the running simulator version.
- *
- * @return The simulator version string.
- */
-GPI_EXPORT const char *gpi_get_simulator_version(void);
-
-// Functions for extracting a gpi_sim_hdl to an object
-
-/**
- * Returns a handle to the root simulation object.
- */
-GPI_EXPORT gpi_sim_hdl gpi_get_root_handle(const char *name);
-GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent,
-                                              const char *name,
-                                              gpi_discovery discovery_method);
-GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent,
-                                               int32_t index);
-
-/**
- * Types that can be passed to the iterator.
- */
+/** GPI simulation object types. */
 // Note these are strikingly similar to the VPI types...
 typedef enum gpi_objtype_e {
     GPI_UNKNOWN = 0,
@@ -153,9 +105,7 @@ typedef enum gpi_objtype_e {
     GPI_LOGIC_ARRAY = 16,
 } gpi_objtype;
 
-/**
- * When iterating, we can chose to either get child objects, drivers or loads.
- */
+/** Types of child objects to search for when iterating. */
 typedef enum gpi_iterator_sel_e {
     GPI_OBJECTS = 1,
     GPI_DRIVERS = 2,
@@ -163,6 +113,7 @@ typedef enum gpi_iterator_sel_e {
     GPI_PACKAGE_SCOPES = 4,
 } gpi_iterator_sel;
 
+/** Action to use when setting object value. */
 typedef enum gpi_set_action_e {
     GPI_DEPOSIT = 0,
     GPI_FORCE = 1,
@@ -170,115 +121,311 @@ typedef enum gpi_set_action_e {
     GPI_NO_DELAY = 3,
 } gpi_set_action;
 
+/** Direction of range constraint of an object. */
 typedef enum gpi_range_dir_e {
     GPI_RANGE_DOWN = -1,
     GPI_RANGE_NO_DIR = 0,
     GPI_RANGE_UP = 1,
 } gpi_range_dir;
 
+/** Type of value change to match when registering for callback. */
 typedef enum gpi_edge_e {
     GPI_RISING,
     GPI_FALLING,
     GPI_VALUE_CHANGE,
 } gpi_edge;
 
-// Functions for iterating over entries of a handle
+/** @defgroup SimIntf Simulator Control and Interrogation
+ * These functions are for controlling and querying
+ * simulator state and information.
+ * @{
+ */
 
-/**
- * Return an iterator handle which can then be used in `gpi_next` calls.
+/** Check if there is a registered GPI implementation.
  *
- * Unlike `vpi_iterate` the iterator handle may only be `NULL` if the `type` is
- * not supported, If no objects of the requested type are found, an empty
- * iterator is returned.
+ * Useful for checking if a simulator is running.
+ *
+ * @return `1` if there is a registered GPI implementation, `0` otherwise.
  */
-GPI_EXPORT gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base,
-                                        gpi_iterator_sel type);
+GPI_EXPORT bool gpi_has_registered_impl(void);
 
-/**
- * @return `NULL` when there are no more objects.
- */
-GPI_EXPORT gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
+/** Stop the simulation after control returns to the GPI. */
+GPI_EXPORT void gpi_sim_end(void);
 
-/**
- * @return The number of objects in the collection of the handle.
+/** Get the simulation time as two 32-bit uints.
+ *
+ * The value is in default simulation time units,
+ * which can be retrieved with @ref gpi_get_sim_precision.
+ *
+ * @param high  Location to return high bits of current simulation time.
+ * @param low   Location to return low bits of current simulation time.
  */
+GPI_EXPORT void gpi_get_sim_time(uint32_t *high, uint32_t *low);
+
+/** Get the simulation time precision.
+ *
+ * @param precision  Location to return time precision.
+ *                   The value is scientific notation in terms of seconds.
+ *                   So a value of `-9` is nanosecond precision.
+ */
+GPI_EXPORT void gpi_get_sim_precision(int32_t *precision);
+
+/** Get the running simulator product information.
+ *
+ * @return The simulator product string.
+ */
+GPI_EXPORT const char *gpi_get_simulator_product(void);
+
+/** Get the running simulator version string.
+ *
+ * @return The simulator version string.
+ */
+GPI_EXPORT const char *gpi_get_simulator_version(void);
+
+/** @} */  // End of group SimIntf
+
+/** @defgroup ObjQuery Simulation Object Query
+ * These functions are for getting handles to simulation objects.
+ * @{
+ */
+
+/** Get a handle to the root simulation object.
+ *
+ * @param name  Name of the root object, or `NULL`.
+ * @return      Handle to simulation object or `NULL` if not found.
+ */
+GPI_EXPORT gpi_sim_hdl gpi_get_root_handle(const char *name);
+
+/** Get a handle to a child simulation object by its name.
+ *
+ * @param parent            Parent object handle.
+ * @param name              Name of the child object.
+ *                          This should not be a path,
+ *                          but only the name of a direct child object.
+ * @param discovery_method  Object discovery method.
+ * @return                  Handle to simulation object or `NULL` if not found.
+ */
+GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent,
+                                              const char *name,
+                                              gpi_discovery discovery_method);
+
+/** Get a handle to a child simulation object by its index.
+ *
+ * @param parent    Parent indexable object handle.
+ * @param index     Index of the child object.
+ * @return          Handle to simulation object or `NULL` if not found.
+ */
+GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent,
+                                               int32_t index);
+
+/** @} */  // End of group ObjQuery
+
+/** @defgroup ObjProps General Object Properties
+ * These functions are for getting and setting properties of a simulation
+ * object.
+ * @{
+ */
+
+/** @return The @ref gpi_objtype "type" of the simulation object. */
+GPI_EXPORT gpi_objtype gpi_get_object_type(gpi_sim_hdl gpi_hdl);
+
+/** @return Definition name of the simulation object. */
+GPI_EXPORT const char *gpi_get_definition_name(gpi_sim_hdl gpi_hdl);
+
+/** @return Definition file of the simulation object. */
+GPI_EXPORT const char *gpi_get_definition_file(gpi_sim_hdl gpi_hdl);
+
+/** @return The number of objects in the collection of the handle. */
 GPI_EXPORT int gpi_get_num_elems(gpi_sim_hdl gpi_sim_hdl);
 
-/**
- * @return The left side of the range constraint.
- */
+/** @return The left side of the range constraint. */
 GPI_EXPORT int gpi_get_range_left(gpi_sim_hdl gpi_sim_hdl);
 
-/**
- * @return The right side of the range constraint.
- */
+/** @return The right side of the range constraint. */
 GPI_EXPORT int gpi_get_range_right(gpi_sim_hdl gpi_sim_hdl);
 
-/**
- * @return The direction of the range constraint:
+/** @return The direction of the range constraint:
  *         `+1` for ascending, `-1` for descending, `0` for undefined.
  */
 GPI_EXPORT gpi_range_dir gpi_get_range_dir(gpi_sim_hdl gpi_sim_hdl);
 
-// Functions for querying the properties of a handle
-
-/**
- * This is all slightly verbose but it saves having to enumerate various value
- * types. We only care about a limited subset of values.
- */
-GPI_EXPORT const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
-GPI_EXPORT const char *gpi_get_signal_value_str(gpi_sim_hdl gpi_hdl);
-GPI_EXPORT double gpi_get_signal_value_real(gpi_sim_hdl gpi_hdl);
-GPI_EXPORT long gpi_get_signal_value_long(gpi_sim_hdl gpi_hdl);
-GPI_EXPORT const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
-GPI_EXPORT const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
-
-/**
- * @return One of the types defined above.
- */
-GPI_EXPORT gpi_objtype gpi_get_object_type(gpi_sim_hdl gpi_hdl);
-
-/**
- * Get information about the definition of a handle.
- */
-GPI_EXPORT const char *gpi_get_definition_name(gpi_sim_hdl gpi_hdl);
-GPI_EXPORT const char *gpi_get_definition_file(gpi_sim_hdl gpi_hdl);
-
-/**
- * Determine whether an object value is constant (parameters / generics etc).
+/** Determine whether an object value is constant (parameters / generics etc).
+ *
+ * @return `1` if the object value is constant, `0` otherwise.
  */
 GPI_EXPORT int gpi_is_constant(gpi_sim_hdl gpi_hdl);
 
-/**
- * Determine whether an object is indexable.
+/** Determine whether an object is indexable.
+ *
+ * @return `1` if the object value is indexable, `0` otherwise.
  */
 GPI_EXPORT int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
 
-// Functions for setting the properties of a handle
+/** @} */  // End of group ObjProps
 
+/** @defgroup SigProps Signal Object Properties
+ * These functions are for getting and setting properties of a signal object.
+ * @{
+ */
+
+// Getting properties
+
+/** Get signal object value as a binary string.
+ * @param gpi_hdl   Signal object handle.
+ * @return          Object value.
+ */
+GPI_EXPORT const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
+
+/** Get signal object value as a byte array.
+ * @param gpi_hdl   Signal object handle.
+ * @return          Object value. Null-terminated byte array.
+ */
+GPI_EXPORT const char *gpi_get_signal_value_str(gpi_sim_hdl gpi_hdl);
+
+/** Get signal object value as a real.
+ * @param gpi_hdl   Signal object handle.
+ * @return          Object value.
+ */
+GPI_EXPORT double gpi_get_signal_value_real(gpi_sim_hdl gpi_hdl);
+
+/** Get signal object value as a long.
+ * @param gpi_hdl   Signal object handle.
+ * @return          Object value.
+ */
+GPI_EXPORT long gpi_get_signal_value_long(gpi_sim_hdl gpi_hdl);
+
+/** Get signal object name.
+ * @param gpi_hdl   Signal object handle.
+ * @return          Object name.
+ */
+GPI_EXPORT const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
+
+/** Get signal object type as a string.
+ * @param gpi_hdl   Signal object handle.
+ * @return          Object type as a string.
+ */
+GPI_EXPORT const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
+
+// Setting properties
+
+/** Set signal object value with a real.
+ * @param gpi_hdl   Signal object handle.
+ * @param value     Object value.
+ * @param action    Action to use.
+ */
 GPI_EXPORT void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value,
                                           gpi_set_action action);
+
+/** Set signal object value with an int.
+ * @param gpi_hdl   Signal object handle.
+ * @param value     Object value.
+ * @param action    Action to use.
+ */
 GPI_EXPORT void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int32_t value,
                                          gpi_set_action action);
-GPI_EXPORT void gpi_set_signal_value_binstr(
-    gpi_sim_hdl gpi_hdl, const char *str,
-    gpi_set_action action);  // String of binary char(s) [1, 0, x, z]
-GPI_EXPORT void gpi_set_signal_value_str(
-    gpi_sim_hdl gpi_hdl, const char *str,
-    gpi_set_action action);  // String of ASCII char(s)
 
-// The callback registering functions
+/** Set signal object value with a binary string.
+ * @param gpi_hdl   Signal object handle.
+ * @param str       Object value. Null-terminated string of binary characters
+ *                  in [`1`, `0`, `x`, `z`].
+ * @param action    Action to use.
+ */
+GPI_EXPORT void gpi_set_signal_value_binstr(gpi_sim_hdl gpi_hdl,
+                                            const char *str,
+                                            gpi_set_action action);
 
+/** Set signal object value with a byte array.
+ * @param gpi_hdl   Signal object handle.
+ * @param str       Object value. Null-terminated byte array.
+ * @param action    Action to use.
+ */
+GPI_EXPORT void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str,
+                                         gpi_set_action action);
+
+/** @} */  // End of group SigProps
+
+/** @defgroup HandleIteration Simulation Object Iteration
+ * These functions are for iterating over simulation object handles
+ * to discover child objects.
+ * @{
+ */
+
+/** Start iteration on a simulation object.
+ *
+ * Unlike `vpi_iterate()` the iterator handle may only be `NULL` if the `type`
+ * is not supported. If no objects of the requested type are found, an empty
+ * iterator is returned.
+ * @param base  Simulation object to iterate over.
+ * @param type  Iteration type.
+ * @return      An iterator handle which can then be used with @ref gpi_next.
+ */
+GPI_EXPORT gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base,
+                                        gpi_iterator_sel type);
+
+/** Get next object in iteration.
+ *
+ * @param iterator  Iterator handle.
+ * @return          Object handle, or `NULL` when there are no more objects.
+ */
+GPI_EXPORT gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
+
+/** @} */  // End of group HandleIteration
+
+/** @defgroup SimCallbacks Simulation Callbacks
+ * These functions are for registering and controlling callbacks.
+ * @{
+ */
+
+/** Register a timed callback.
+ *
+ * @param gpi_function  Callback function pointer.
+ * @param gpi_cb_data   Pointer to user data to be passed to callback function.
+ * @param time          Time delay in simulation time units.
+ * @return              Handle to callback object.
+ */
 GPI_EXPORT gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
                                                   void *gpi_cb_data,
                                                   uint64_t time);
+
+/** Register a value change callback.
+ *
+ * @param gpi_function  Callback function pointer.
+ * @param gpi_cb_data   Pointer to user data to be passed to callback function.
+ * @param gpi_hdl       Simulation object to monitor for value change.
+ * @param edge          Type of value change to monitor for.
+ * @return              Handle to callback object.
+ */
 GPI_EXPORT gpi_cb_hdl gpi_register_value_change_callback(
     int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl,
     gpi_edge edge);
+
+/** Register a readonly simulation phase callback.
+ *
+ * Callback will be called when simulation next enters the readonly phase.
+ * @param gpi_function  Callback function pointer.
+ * @param gpi_cb_data   Pointer to user data to be passed to callback function.
+ * @return              Handle to callback object.
+ */
 GPI_EXPORT gpi_cb_hdl
 gpi_register_readonly_callback(int (*gpi_function)(void *), void *gpi_cb_data);
+
+/** Register a next timestep simulation phase callback.
+ *
+ * Callback will be called when simulation next enters the next timestep.
+ * @param gpi_function  Callback function pointer.
+ * @param gpi_cb_data   Pointer to user data to be passed to callback function.
+ * @return              Handle to callback object.
+ */
 GPI_EXPORT gpi_cb_hdl
 gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gpi_cb_data);
+
+/** Register a readwrite simulation phase callback.
+ *
+ * Callback will be called when simulation next enters the readwrite phase.
+ * @param gpi_function  Callback function pointer.
+ * @param gpi_cb_data   Pointer to user data to be passed to callback function.
+ * @return              Handle to callback object.
+ */
 GPI_EXPORT gpi_cb_hdl
 gpi_register_readwrite_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 
@@ -302,6 +449,8 @@ GPI_EXPORT int gpi_remove_cb(gpi_cb_hdl cb_hdl);
  */
 GPI_EXPORT void gpi_get_cb_info(gpi_cb_hdl cb_hdl, int (**cb_func)(void *),
                                 void **cb_data);
+
+/** @} */  // End of group SimCallbacks
 
 #ifdef __cplusplus
 }
