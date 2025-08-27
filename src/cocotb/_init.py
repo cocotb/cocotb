@@ -207,10 +207,14 @@ def _setup_random_seed() -> None:
             warnings.warn(
                 "RANDOM_SEED is deprecated in favor of COCOTB_RANDOM_SEED",
                 DeprecationWarning,
-                stacklevel=2,
             )
     if seed_envvar is None:
         if "ntb_random_seed" in cocotb.plusargs:
+            warnings.warn(
+                "Passing +ntb_random_seed will not be used to seed Python's random number generator in the future. "
+                "Ensure you also set `COCOTB_RANDOM_SEED`.",
+                FutureWarning,
+            )
             plusarg_seed = cocotb.plusargs["ntb_random_seed"]
             if not isinstance(plusarg_seed, str):
                 raise TypeError("ntb_random_seed plusarg is not a valid seed value.")
@@ -219,6 +223,11 @@ def _setup_random_seed() -> None:
                 raise TypeError("ntb_random_seed plusargs is not a valid seed value.")
             cocotb.RANDOM_SEED = seed
         elif "seed" in cocotb.plusargs:
+            warnings.warn(
+                "Passing +seed will not be used to seed Python's random number generator in the future. "
+                "Ensure you also set `COCOTB_RANDOM_SEED`.",
+                FutureWarning,
+            )
             plusarg_seed = cocotb.plusargs["seed"]
             if not isinstance(plusarg_seed, str):
                 raise TypeError("seed plusarg is not a valid seed value.")
