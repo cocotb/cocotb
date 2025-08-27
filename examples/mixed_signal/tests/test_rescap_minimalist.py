@@ -20,7 +20,7 @@ async def rescap_minimalist_test(tb_hdl):
         await Timer(
             1, unit="ps"
         )  # waiting time needed for the analog values to be updated
-        tb_hdl._log.info(
+        cocotb.log.info(
             "tb_hdl.i_analog_probe@{}={:.4} V  {:.4} A".format(
                 tb_hdl.i_analog_probe.node_to_probe.value.decode("ascii"),
                 tb_hdl.i_analog_probe.voltage.value,

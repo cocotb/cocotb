@@ -20,12 +20,14 @@ async def dff_simple_test(dut):
     # Set initial input value to prevent it from floating
     dut.d.value = 0
 
-    clock = Clock(dut.clk, 10, unit="us")  # Create a 10us period clock on port clk
+    # Create a 10us period clock driver on port `clk`
+    clock = Clock(dut.clk, 10, unit="us")
     # Start the clock. Start it low to avoid issues on the first RisingEdge
-    cocotb.start_soon(clock.start(start_high=False))
+    clock.start(start_high=False)
 
-    # Synchronize with the clock. This will regisiter the initial `d` value
+    # Synchronize with the clock. This will register the initial `d` value
     await RisingEdge(dut.clk)
+
     expected_val = 0  # Matches initial input value
     for i in range(10):
         val = random.randint(0, 1)
