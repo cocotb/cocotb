@@ -20,7 +20,7 @@ async def dff_simple_test(dut):
     # Set initial input value to prevent it from floating
     dut.d.value = 0
 
-    # Create a 10us period clock driver on port `clk``
+    # Create a 10us period clock driver on port `clk`
     clock = Clock(dut.clk, 10, unit="us")
     # Start the clock. Start it low to avoid issues on the first RisingEdge
     clock.start(start_high=False)
