@@ -17,8 +17,8 @@ async def my_first_test(dut):
         dut.clk.value = 1
         await Timer(1, unit="ns")
 
-    dut._log.info("my_signal_1 is %s", dut.my_signal_1.value)
-    assert dut.my_signal_2.value == 0, "my_signal_2 is not 0!"
+    cocotb.log.info("my_signal_1 is %s", dut.my_signal_1.value)
+    assert dut.my_signal_2.value == 0
 
 
 # test_my_design.py (extended)
@@ -46,5 +46,5 @@ async def my_second_test(dut):
     await Timer(5, unit="ns")  # wait a bit
     await FallingEdge(dut.clk)  # wait for falling edge/"negedge"
 
-    dut._log.info("my_signal_1 is %s", dut.my_signal_1.value)
-    assert dut.my_signal_2.value == 0, "my_signal_2 is not 0!"
+    cocotb.log.info("my_signal_1 is %s", dut.my_signal_1.value)
+    assert dut.my_signal_2.value == 0

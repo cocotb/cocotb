@@ -36,7 +36,7 @@ class ResCap_TB:
             voltage=self.analog_probe.voltage.value,
             current=self.analog_probe.current.value * 1000.0,  # in mA
         )
-        self.tb_hdl._log.debug(
+        cocotb.log.debug(
             "{}={:.4} V, {:.4} mA".format(
                 self.analog_probe.node_to_probe.value.decode("ascii"),
                 dataset.voltage,
@@ -118,7 +118,7 @@ class ResCap_TB:
         fig.set_size_inches(11, 6)
         fig.legend(loc="upper right", bbox_to_anchor=(0.8, 0.9), frameon=False)
 
-        self.tb_hdl._log.info(f"Writing file {graphfile}")
+        cocotb.log.info(f"Writing file {graphfile}")
         fig.savefig(graphfile)
 
 
@@ -136,14 +136,14 @@ async def run_test(tb_hdl):
     vdd = 0.0
     tb_py.tb_hdl.vdd_val.value = vdd
     tb_py.tb_hdl.vss_val.value = 0.0
-    tb_py.tb_hdl._log.info(f"Setting vdd={vdd:.4} V")
+    cocotb.log.info(f"Setting vdd={vdd:.4} V")
     # dummy read appears to be necessary for the analog solver
     _ = await tb_py.get_sample_data(nodes=nodes_to_probe)
 
     for vdd in [5.55, -3.33]:
         tb_py.tb_hdl.vdd_val.value = vdd
         tb_py.tb_hdl.vss_val.value = 0.0
-        tb_py.tb_hdl._log.info(f"Setting vdd={vdd:.4} V")
+        cocotb.log.info(f"Setting vdd={vdd:.4} V")
         data = await tb_py.get_sample_data(num=60, delay_ns=5, nodes=nodes_to_probe)
         for node in nodes_to_probe:
             probedata[node].extend(data[node])
