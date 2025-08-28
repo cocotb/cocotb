@@ -108,9 +108,9 @@ int main(int argc, char** argv) {
                 "Cocotb + Verilator sim\n"
                 "\n"
                 "options:\n"
-                "  --trace       Enables tracing (VCD or FST)\n"
+                "  --trace       Enable tracing (VCD or FST)\n"
                 "  --trace-flush Flush trace at each time step (slow)\n"
-                "  --trace-file  Specifies the trace file name (%s by "
+                "  --trace-file  Specify the trace file name (%s by "
                 "default)\n",
                 basename(argv[0]), traceFile);
             return 0;
