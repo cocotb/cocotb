@@ -11,24 +11,81 @@ from decimal import Decimal
 from fractions import Fraction
 from functools import lru_cache
 from math import ceil, floor
-from typing import Union, overload
+from typing import Union, cast, overload
 
 from cocotb import simulator
 from cocotb._py_compat import Literal, TypeAlias
 from cocotb._typing import RoundMode, TimeUnit
 
 __all__ = (
+    "convert",
     "get_sim_time",
     "time_precision",
 )
 
 
-def _get_simulator_precision() -> int:
-    # cache and replace this function
-    precision = simulator.get_precision()
-    global _get_simulator_precision
-    _get_simulator_precision = precision.__int__
-    return _get_simulator_precision()
+Steps: TypeAlias = Literal["step"]
+TimeUnitWithoutSteps: TypeAlias = Literal["fs", "ps", "ns", "us", "ms", "sec"]
+
+
+@overload
+def convert(
+    value: Union[float, Fraction, Decimal],
+    unit: TimeUnit,
+    *,
+    to: Steps,
+    round_mode: RoundMode = "error",
+) -> int: ...
+
+
+@overload
+def convert(
+    value: Union[float, Fraction, Decimal],
+    unit: TimeUnit,
+    *,
+    to: TimeUnitWithoutSteps,
+    round_mode: RoundMode = "error",
+) -> float: ...
+
+
+def convert(
+    value: Union[float, Decimal, Fraction],
+    unit: TimeUnit,
+    *,
+    to: TimeUnit,
+    round_mode: RoundMode = "error",
+) -> float:
+    """Convert time values from one unit to another unit.
+
+    Args:
+        value: The time value.
+
+        unit: The unit of *value* (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+
+        to: The unit to convert *value* to (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+
+        round_mode:
+            How to handle non-integral step values (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
+
+            When *round_mode* is ``"error"``, a :exc:`ValueError` is thrown if the value cannot
+            be accurately represented in terms of simulator time steps.
+            When *round_mode* is ``"round"``, ``"ceil"``, or ``"floor"``, the corresponding
+            rounding function from the standard library will be used to round to a simulator
+            time step.
+
+    Returns:
+        The value scaled by the difference in units.
+
+    .. versionadded:: 2.0
+    """
+    if unit == "step":
+        steps = cast("int", value)
+    else:
+        steps = _get_sim_steps(value, unit, round_mode=round_mode)
+    if to == "step":
+        return steps
+    else:
+        return _get_time_from_sim_steps(steps, to)
 
 
 def get_sim_time(unit: TimeUnit = "step", *, units: None = None) -> float:
@@ -130,9 +187,6 @@ def _get_sim_steps(
         raise ValueError(f"Invalid round_mode specifier: {round_mode}")
 
     return result_rounded
-
-
-TimeUnitWithoutSteps: TypeAlias = Literal["fs", "ps", "ns", "us", "ms", "sec"]
 
 
 @lru_cache(maxsize=None)
