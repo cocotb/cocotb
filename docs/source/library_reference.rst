@@ -318,8 +318,6 @@ Logging
 .. module:: cocotb.logging
     :synopsis: Classes for logging messages from cocotb during simulation.
 
-.. autodata:: strip_ansi
-
 .. autofunction:: default_config
 
 .. autofunction:: SimLog
@@ -336,6 +334,8 @@ Logging
     :show-inheritance:
     :no-members:
 
+.. autodata:: strip_ansi
+
 .. currentmodule:: None
 
 .. attribute:: logging.LogRecord.created_sim_time
@@ -344,6 +344,12 @@ Logging
     The formatter is responsible for converting this to something like nanoseconds via :func:`~cocotb.utils.get_time_from_sim_steps`.
 
     This is added by :class:`~cocotb.logging.SimTimeContextFilter`.
+
+Log Coloring
+------------
+
+.. automodule:: cocotb.ANSI
+    :synopsis: ANSI escape codes for coloring log output.
 
 
 Simulator Objects

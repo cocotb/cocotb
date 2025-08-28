@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Optional, Tuple, Union
 
 import cocotb.utils
-from cocotb import _ANSI, simulator
+from cocotb import ANSI, simulator
 from cocotb._deprecation import deprecated
 from cocotb.utils import get_sim_time, get_time_from_sim_steps
 
@@ -228,15 +228,15 @@ class SimLogFormatter(logging.Formatter):
         logging.TRACE: "",  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
         logging.DEBUG: "",
         logging.INFO: "",
-        logging.WARNING: _ANSI.COLOR_WARNING,
-        logging.ERROR: _ANSI.COLOR_ERROR,
-        logging.CRITICAL: _ANSI.COLOR_CRITICAL,
+        logging.WARNING: ANSI.COLOR_WARNING,
+        logging.ERROR: ANSI.COLOR_ERROR,
+        logging.CRITICAL: ANSI.COLOR_CRITICAL,
     }
 
     prefix_func_globals = {
         "time": time,
         "simtime": cocotb.utils,
-        "ansi": _ANSI,
+        "ansi": ANSI,
     }
 
     def __init__(
@@ -314,7 +314,7 @@ class SimLogFormatter(logging.Formatter):
             highlight_end = ""
         else:
             highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = _ANSI.COLOR_DEFAULT
+            highlight_end = ANSI.COLOR_DEFAULT
 
         if self._prefix_func is not None:
             prefix = self._prefix_func(record)
@@ -338,7 +338,7 @@ class SimLogFormatter(logging.Formatter):
             msg = self._ansi_escape_pattern.sub("", msg)
         else:
             highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = _ANSI.COLOR_DEFAULT
+            highlight_end = ANSI.COLOR_DEFAULT
 
         msg = f"{highlight_start}{msg}{highlight_end}"
 

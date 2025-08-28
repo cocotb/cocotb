@@ -4,11 +4,18 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""
-Some constants for doing ANSI stuff.
+"""ANSI escape codes for coloring output.
+
+Variables that end in ``_FG`` will color the character or symbol ("foreground")
+and variables that end in ``_BG`` will color the background.
+
+Foreground and background colors can be combined together.
+Setting a new foreground color will override the previous foreground, likewise with background colors.
+
+Use ``DEFAULT_FG`` and ``DEFAULT_BG`` to reset the coloring to the default colors for the foreground and background, respectively.
+Or use ``DEFAULT`` to reset both.
 """
 
-# flake8: noqa (skip this file for flake8: pypi.python.org/pypi/flake8)
 _ESCAPE = "\033["
 
 # see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
