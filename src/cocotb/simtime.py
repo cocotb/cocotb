@@ -17,7 +17,10 @@ from cocotb import simulator
 from cocotb._py_compat import Literal, TypeAlias
 from cocotb._typing import RoundMode, TimeUnit
 
-__all__ = ("get_sim_time",)
+__all__ = (
+    "get_sim_time",
+    "time_precision",
+)
 
 
 def _get_simulator_precision() -> int:
@@ -96,7 +99,7 @@ def _get_time_from_sim_steps(
 ) -> float:
     if unit == "step":
         return steps
-    return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(unit))
+    return _ldexp10(steps, time_precision - _get_log_time_scale(unit))
 
 
 def _get_sim_steps(
@@ -107,16 +110,15 @@ def _get_sim_steps(
 ) -> int:
     result: Union[float, Fraction, Decimal]
     if unit != "step":
-        result = _ldexp10(time, _get_log_time_scale(unit) - _get_simulator_precision())
+        result = _ldexp10(time, _get_log_time_scale(unit) - time_precision)
     else:
         result = time
 
     if round_mode == "error":
         result_rounded = floor(result)
         if result_rounded != result:
-            precision = _get_simulator_precision()
             raise ValueError(
-                f"Unable to accurately represent {time}({unit}) with the simulator precision of 1e{precision}"
+                f"Unable to accurately represent {time}({unit}) with the simulator precision of 1e{time_precision}"
             )
     elif round_mode == "ceil":
         result_rounded = ceil(result)
@@ -157,3 +159,18 @@ def _get_log_time_scale(unit: TimeUnitWithoutSteps) -> int:
         raise ValueError(f"Invalid unit ({unit}) provided")
     else:
         return scale[unit_lwr]
+
+
+time_precision: int = _get_log_time_scale("fs")
+"""The precision of time in the current simulation.
+
+The value is seconds in powers of tens,
+i.e. ``-15`` is ``10**-15`` seconds or 1 femtosecond.
+
+.. versionadded:: 2.0
+"""
+
+
+def _init() -> None:
+    global time_precision
+    time_precision = simulator.get_precision()

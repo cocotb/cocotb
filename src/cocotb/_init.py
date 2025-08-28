@@ -18,6 +18,7 @@ import cocotb
 import cocotb._profiling
 import cocotb.handle
 import cocotb.logging
+import cocotb.simtime
 import cocotb.simulator
 from cocotb._scheduler import Scheduler
 from cocotb.regression import RegressionManager, RegressionMode
@@ -85,6 +86,8 @@ def init_package_from_simulation(argv: List[str]) -> None:
     _setup_random_seed()
     _setup_root_handle()
     _start_user_coverage()
+
+    cocotb.simtime._init()
 
     log.info(
         "Initialized cocotb v%s from %s",
