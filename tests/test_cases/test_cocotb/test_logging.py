@@ -11,7 +11,7 @@ import warnings
 from typing import Generator, Union
 
 import cocotb
-import cocotb._ANSI as ansi
+import cocotb.ANSI as ansi
 import cocotb.logging as cocotb_logging
 
 

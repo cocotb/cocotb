@@ -28,7 +28,7 @@ from typing import (
 import cocotb
 import cocotb._gpi_triggers
 import cocotb.handle
-from cocotb import _ANSI, simulator
+from cocotb import ANSI, simulator
 from cocotb import logging as cocotb_logging
 from cocotb._decorators import Parameterized, Test
 from cocotb._extended_awaitables import SimTimeoutError, with_timeout
@@ -547,8 +547,8 @@ class RegressionManager:
 
     def _log_test_start(self) -> None:
         """Called by :meth:`_execute` to log that a test is starting."""
-        hilight_start = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_TEST
-        hilight_end = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_DEFAULT
+        hilight_start = "" if cocotb_logging.strip_ansi else ANSI.COLOR_TEST
+        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.COLOR_DEFAULT
         self.log.info(
             "%srunning%s %s (%d/%d)%s",
             hilight_start,
@@ -581,8 +581,8 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test is skipped."""
 
         # log test results
-        hilight_start = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_SKIPPED
-        hilight_end = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_DEFAULT
+        hilight_start = "" if cocotb_logging.strip_ansi else ANSI.COLOR_SKIPPED
+        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.COLOR_DEFAULT
         self.log.info(
             "%sskipping%s %s (%d/%d)%s",
             hilight_start,
@@ -624,8 +624,8 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test initialization fails."""
 
         # log test results
-        hilight_start = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_FAILED
-        hilight_end = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_DEFAULT
+        hilight_start = "" if cocotb_logging.strip_ansi else ANSI.COLOR_FAILED
+        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.COLOR_DEFAULT
         self.log.exception(
             "%sFailed to initialize%s %s! (%d/%d)%s",
             hilight_start,
@@ -670,8 +670,8 @@ class RegressionManager:
         result: Union[Exception, None],
         msg: Union[str, None],
     ) -> None:
-        start_hilight = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_PASSED
-        stop_hilight = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_DEFAULT
+        start_hilight = "" if cocotb_logging.strip_ansi else ANSI.COLOR_PASSED
+        stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.COLOR_DEFAULT
         if msg is None:
             rest = ""
         else:
@@ -723,8 +723,8 @@ class RegressionManager:
         result: Union[BaseException, None],
         msg: Union[str, None],
     ) -> None:
-        start_hilight = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_FAILED
-        stop_hilight = "" if cocotb_logging.strip_ansi else _ANSI.COLOR_DEFAULT
+        start_hilight = "" if cocotb_logging.strip_ansi else ANSI.COLOR_FAILED
+        stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.COLOR_DEFAULT
         if msg is None:
             rest = ""
         else:
@@ -833,18 +833,18 @@ class RegressionManager:
             if result.passed is None:
                 ratio = "-.--"
                 pass_fail_str = "SKIP"
-                hilite = _ANSI.COLOR_SKIPPED
-                lolite = _ANSI.COLOR_DEFAULT
+                hilite = ANSI.COLOR_SKIPPED
+                lolite = ANSI.COLOR_DEFAULT
             elif result.passed:
                 ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "PASS"
-                hilite = _ANSI.COLOR_PASSED
-                lolite = _ANSI.COLOR_DEFAULT
+                hilite = ANSI.COLOR_PASSED
+                lolite = ANSI.COLOR_DEFAULT
             else:
                 ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "FAIL"
-                hilite = _ANSI.COLOR_FAILED
-                lolite = _ANSI.COLOR_DEFAULT
+                hilite = ANSI.COLOR_FAILED
+                lolite = ANSI.COLOR_DEFAULT
 
             if cocotb_logging.strip_ansi:
                 hilite = ""

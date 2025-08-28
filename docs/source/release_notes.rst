@@ -137,7 +137,6 @@ Deprecations and Removals
 - ``Event.fired`` attribute was made private. Use :meth:`.Event.is_set`. (:pr:`3851`)
 - Removed ``cocotb.triggers.PythonTrigger``. Use ``not isinstance(trigger, cocotb.triggers.GPITrigger)`` instead. (:pr:`3851`)
 - Made ``cocotb.triggers.Trigger.primed``, ``cocotb.triggers.GPITrigger.cbhdl``, and ``cocotb.triggers.Timer.sim_steps`` private. (:pr:`3851`)
-- Made ``cocotb.ANSI`` module private. (:pr:`3852`)
 - ``cocotb.result.TestComplete`` was removed. (:pr:`3864`)
 - ``cocotb.result.ExternalException`` was removed. (:pr:`3864`)
 - ``cocotb.triggers.Join.retval`` was removed. (:pr:`3931`)
