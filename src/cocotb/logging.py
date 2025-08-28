@@ -21,7 +21,8 @@ from typing import Optional, Tuple, Union
 import cocotb.utils
 from cocotb import ANSI, simulator
 from cocotb._deprecation import deprecated
-from cocotb.utils import get_sim_time, get_time_from_sim_steps
+from cocotb.simtime import get_sim_time
+from cocotb.utils import get_time_from_sim_steps
 
 __all__ = (
     "SimLog",
