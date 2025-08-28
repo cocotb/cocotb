@@ -38,7 +38,7 @@ strip_ansi: bool = False
 """Whether the default formatter should strip ANSI (color) escape codes from log messages.
 
 Defaults to ``True`` if ``stdout`` is not a TTY and ``False`` otherwise;
-but can be overridden with the :envvar:`!NO_COLOR` or :envvar:`COCOTB_ANSI_OUTPUT` environment variable.
+but can be overridden with the :envvar:`NO_COLOR` or :envvar:`COCOTB_ANSI_OUTPUT` environment variable.
 """
 
 
@@ -49,7 +49,7 @@ def default_config(
 
     This hooks up the logger to write to stdout, using :class:`SimLogFormatter` for formatting.
     It also adds a :class:`SimTimeContextFilter` filter so that the
-    :attr:`~logging.LogRecord.created_sim_time` attribute on :class:`~logging.LogRecords`
+    :attr:`~logging.LogRecord.created_sim_time` attribute on :class:`~logging.LogRecord`
     is available to the formatter.
 
     If desired, this logging configuration can be overwritten by calling
@@ -95,7 +95,8 @@ def default_config(
 def _init() -> None:
     """cocotb-specific logging setup.
 
-    - Decides whether ANSI escape code stripping is desired by checking :envvar:`!NO_COLOR` and :envvar:`COCOTB_ANSI_OUTPUT`.
+    - Decides whether ANSI escape code stripping is desired by checking
+      :envvar:`NO_COLOR` and :envvar:`COCOTB_ANSI_OUTPUT`.
     - Initializes the GPI logger and sets up the GPI logging optimization.
     - Sets the log level of the ``"cocotb"`` and ``"gpi"`` loggers based on
       :envvar:`COCOTB_LOG_LEVEL` and :envvar:`GPI_LOG_LEVEL`, respectively.

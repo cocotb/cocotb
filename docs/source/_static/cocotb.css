@@ -260,6 +260,7 @@ h1:has(code.xref) code.xref, h2:has(code.xref) code.xref, h3:has(code.xref) code
   font-weight: bold !important;
 }
 
+/* horizontal rule above */
 dl.py.class dt.sig.sig-object,
 dl.py.exception dt.sig.sig-object,
 dl.py.type dt.sig.sig-object,
@@ -273,7 +274,7 @@ dl.py.function dt.sig.sig-object {
   font-weight: bold !important;
 }
 
-/* remove line when this is the first element belonging to this group of classes */
+/* remove horizontal rule when this is the first element belonging to this group of classes */
 dl.py.class:first-of-type dt.sig.sig-object,
 dl.py.exception:first-of-type dt.sig.sig-object,
 dl.py.type:first-of-type dt.sig.sig-object,
