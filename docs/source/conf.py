@@ -114,10 +114,11 @@ is_rtd_tag = 'READTHEDOCS' in os.environ and os.environ.get('READTHEDOCS_VERSION
 if is_rtd_tag:
     tags.add('is_release_build')
 
-autoclass_content = "both"
+autoclass_content = "class"
 
-autodoc_typehints = "description"  # show type hints in the list of parameters
+autodoc_typehints = "signature"  # show type hints in the list of parameters
 autodoc_typehints_description_target = "documented"
+maximum_signature_line_length = 78
 
 # use short "a | b" syntax for Literal types
 python_display_short_literal_types = True
