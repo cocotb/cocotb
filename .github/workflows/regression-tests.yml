@@ -79,15 +79,28 @@ jobs:
         # A fetch depth of 2 provides enough information without fetching the entire history.
         fetch-depth: 2
 
-    - name: setup ccache
-      uses: hendrikmuhs/ccache-action@63069e3931dedbf3b63792097479563182fe70d1 # v1.2
+    - name: setup ccache (MacOS and Ubuntu)
       if: ${{ !startsWith(matrix.os, 'windows') }}
+      uses: hendrikmuhs/ccache-action@63069e3931dedbf3b63792097479563182fe70d1 # v1.2
       with:
-        key: ${{ matrix.os }}-${{matrix.cc || 'gcc'}}
-    - name: setup ccache path
+        key: ${{matrix.os}}-${{matrix.sim}}-${{matrix.cc || 'gcc'}}
+    - name: setup ccache path (MacOS and Ubuntu)
       if: ${{ !startsWith(matrix.os, 'windows') }}
       run: |
         echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
+
+    - name: setup ccache (Windows)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      uses: hendrikmuhs/ccache-action@63069e3931dedbf3b63792097479563182fe70d1 # v1.2
+      with:
+        key: ${{matrix.sim}}-${{matrix.cc || 'gcc'}}
+    - name: setup ccache path (MacOS and Ubuntu)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      run: |
+        mkdir .ccachepath
+        New-Item -ItemType SymbolicLink -Path .ccachepath/gcc -Target "$(where.exe ccache)"
+        New-Item -ItemType SymbolicLink -Path .ccachepath/g++ -Target "$(where.exe ccache)"
+        Add-Content $env:GITHUB_PATH "$(pwd)/.ccachepath"
 
      # Use the ccache cache for all compilers.
 
