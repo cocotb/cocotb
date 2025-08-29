@@ -139,7 +139,7 @@ Cocotb
     - ``record``: The :class:`~logging.LogRecord` being formatted. This includes the attribute ``created_sim_time``, which is the simulation time in steps.
     - ``time``: The Python :mod:`time` module.
     - ``simtime``: The cocotb :mod:`cocotb.simtime` module.
-    - ``ansi``: The cocotb :mod:`cocotb.ANSI` module, which contains ANSI escape codes for coloring the output.
+    - ``ANSI``: The cocotb :class:`cocotb.logging.ANSI` enum, which contains ANSI escape codes for coloring the output.
 
     The following example is a color-less version of the default log prefix.
 

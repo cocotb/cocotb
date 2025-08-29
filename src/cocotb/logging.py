@@ -18,19 +18,23 @@ from functools import wraps
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
-import cocotb.utils
-from cocotb import ANSI, simulator
+import cocotb.simtime
+from cocotb import simulator
+from cocotb._ANSI import ANSI
 from cocotb._deprecation import deprecated
 from cocotb.simtime import get_sim_time
 from cocotb.utils import get_time_from_sim_steps
 
 __all__ = (
+    "ANSI",
     "SimLog",
     "SimLogFormatter",
     "SimTimeContextFilter",
     "default_config",
     "strip_ansi",
 )
+
+ANSI.__module__ = __name__
 
 # Custom log level
 logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
@@ -232,15 +236,15 @@ class SimLogFormatter(logging.Formatter):
         logging.TRACE: "",  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
         logging.DEBUG: "",
         logging.INFO: "",
-        logging.WARNING: ANSI.COLOR_WARNING,
-        logging.ERROR: ANSI.COLOR_ERROR,
-        logging.CRITICAL: ANSI.COLOR_CRITICAL,
+        logging.WARNING: ANSI.YELLOW_FG,
+        logging.ERROR: ANSI.RED_FG,
+        logging.CRITICAL: ANSI.RED_BG + ANSI.BLACK_FG,
     }
 
     prefix_func_globals = {
         "time": time,
-        "simtime": cocotb.utils,
-        "ansi": ANSI,
+        "simtime": cocotb.simtime,
+        "ANSI": ANSI,
     }
 
     def __init__(
@@ -310,7 +314,7 @@ class SimLogFormatter(logging.Formatter):
             highlight_end = ""
         else:
             highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = ANSI.COLOR_DEFAULT
+            highlight_end = ANSI.DEFAULT
 
         if self._prefix_func is not None:
             prefix = self._prefix_func(record)
@@ -334,7 +338,7 @@ class SimLogFormatter(logging.Formatter):
             msg = self._ansi_escape_pattern.sub("", msg)
         else:
             highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = ANSI.COLOR_DEFAULT
+            highlight_end = ANSI.DEFAULT
 
         msg = f"{highlight_start}{msg}{highlight_end}"
 

@@ -20,6 +20,7 @@ __all__ = (
     "ParamSpec",
     "Protocol",
     "Self",
+    "StrEnum",
     "TypeAlias",
     "cached_property",
     "insertion_ordered_dict",
@@ -135,3 +136,12 @@ if sys.version_info >= (3, 11):
     from typing import Self
 else:
     Self = ""
+
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    from enum import Enum
+
+    class StrEnum(str, Enum):
+        pass

@@ -28,8 +28,8 @@ from typing import (
 import cocotb
 import cocotb._gpi_triggers
 import cocotb.handle
-from cocotb import ANSI, simulator
 from cocotb import logging as cocotb_logging
+from cocotb import simulator
 from cocotb._decorators import Parameterized, Test
 from cocotb._extended_awaitables import SimTimeoutError, with_timeout
 from cocotb._gpi_triggers import GPITrigger, Timer
@@ -43,6 +43,7 @@ from cocotb._utils import (
     safe_divide,
 )
 from cocotb._xunit_reporter import XUnitReporter
+from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
 from cocotb.task import Task
 
@@ -135,6 +136,11 @@ class RegressionManager:
     Until the regression is started, :attr:`total_tests`, :attr:`count`, :attr:`passed`,
     :attr:`skipped`, and :attr:`failures` hold placeholder values.
     """
+
+    COLOR_TEST = ANSI.BLUE_FG
+    COLOR_PASSED = ANSI.GREEN_FG
+    COLOR_SKIPPED = ANSI.YELLOW_FG
+    COLOR_FAILED = ANSI.RED_FG
 
     _timer1 = Timer(1)
 
@@ -255,7 +261,7 @@ class RegressionManager:
         Must be called before all modules containing tests are imported.
         """
         try:
-            import pytest  # noqa: PLC0415
+            import pytest
         except ImportError:
             _logger.info(
                 "pytest not found, install it to enable better AssertionError messages"
@@ -264,8 +270,8 @@ class RegressionManager:
         try:
             # Install the assertion rewriting hook, which must be done before we
             # import the test modules.
-            from _pytest.assertion import install_importhook  # noqa: PLC0415
-            from _pytest.config import Config  # noqa: PLC0415
+            from _pytest.assertion import install_importhook
+            from _pytest.config import Config
 
             python_files = os.getenv("COCOTB_REWRITE_ASSERTION_FILES", "*.py").strip()
             if not python_files:
@@ -424,7 +430,7 @@ class RegressionManager:
 
         # TODO refactor initialization and finalization into their own module
         # to prevent circular imports requiring local imports
-        from cocotb._init import _shutdown_testbench  # noqa: PLC0415
+        from cocotb._init import _shutdown_testbench
 
         _shutdown_testbench()
 
@@ -547,8 +553,8 @@ class RegressionManager:
 
     def _log_test_start(self) -> None:
         """Called by :meth:`_execute` to log that a test is starting."""
-        hilight_start = "" if cocotb_logging.strip_ansi else ANSI.COLOR_TEST
-        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.COLOR_DEFAULT
+        hilight_start = "" if cocotb_logging.strip_ansi else self.COLOR_TEST
+        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         self.log.info(
             "%srunning%s %s (%d/%d)%s",
             hilight_start,
@@ -581,8 +587,8 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test is skipped."""
 
         # log test results
-        hilight_start = "" if cocotb_logging.strip_ansi else ANSI.COLOR_SKIPPED
-        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.COLOR_DEFAULT
+        hilight_start = "" if cocotb_logging.strip_ansi else self.COLOR_SKIPPED
+        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         self.log.info(
             "%sskipping%s %s (%d/%d)%s",
             hilight_start,
@@ -624,8 +630,8 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test initialization fails."""
 
         # log test results
-        hilight_start = "" if cocotb_logging.strip_ansi else ANSI.COLOR_FAILED
-        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.COLOR_DEFAULT
+        hilight_start = "" if cocotb_logging.strip_ansi else self.COLOR_FAILED
+        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         self.log.exception(
             "%sFailed to initialize%s %s! (%d/%d)%s",
             hilight_start,
@@ -670,8 +676,8 @@ class RegressionManager:
         result: Union[Exception, None],
         msg: Union[str, None],
     ) -> None:
-        start_hilight = "" if cocotb_logging.strip_ansi else ANSI.COLOR_PASSED
-        stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.COLOR_DEFAULT
+        start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_PASSED
+        stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         if msg is None:
             rest = ""
         else:
@@ -723,8 +729,8 @@ class RegressionManager:
         result: Union[BaseException, None],
         msg: Union[str, None],
     ) -> None:
-        start_hilight = "" if cocotb_logging.strip_ansi else ANSI.COLOR_FAILED
-        stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.COLOR_DEFAULT
+        start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_FAILED
+        stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         if msg is None:
             rest = ""
         else:
@@ -829,22 +835,24 @@ class RegressionManager:
         summary += LINE_SEP
 
         test_line = "** {a:<{a_len}}  {start}{b:^{b_len}}{end}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}}  **\n"
+        hilite: str
+        lolite: str
         for result in self._test_results:
             if result.passed is None:
                 ratio = "-.--"
                 pass_fail_str = "SKIP"
-                hilite = ANSI.COLOR_SKIPPED
-                lolite = ANSI.COLOR_DEFAULT
+                hilite = self.COLOR_SKIPPED
+                lolite = ANSI.DEFAULT
             elif result.passed:
                 ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "PASS"
-                hilite = ANSI.COLOR_PASSED
-                lolite = ANSI.COLOR_DEFAULT
+                hilite = self.COLOR_PASSED
+                lolite = ANSI.DEFAULT
             else:
                 ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "FAIL"
-                hilite = ANSI.COLOR_FAILED
-                lolite = ANSI.COLOR_DEFAULT
+                hilite = self.COLOR_FAILED
+                lolite = ANSI.DEFAULT
 
             if cocotb_logging.strip_ansi:
                 hilite = ""

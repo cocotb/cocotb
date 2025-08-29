@@ -11,8 +11,8 @@ import warnings
 from typing import Generator, Union
 
 import cocotb
-import cocotb.ANSI as ansi
 import cocotb.logging as cocotb_logging
+from cocotb.logging import ANSI
 
 
 class LogCaptureHandler(logging.Handler):
@@ -87,7 +87,7 @@ async def test_ansi_stripping(_: object) -> None:
     cocotb_logging.strip_ansi = True
     with capture_logs() as logs:
         cocotb.log.info(
-            f"{ansi.YELLOW_FG}That {ansi.GREEN_BG}boy {ansi.BLUE_FG}ain't {ansi.BRIGHT_RED_BG}right.{ansi.DEFAULT_FG}"
+            f"{ANSI.YELLOW_FG}That {ANSI.GREEN_BG}boy {ANSI.BLUE_FG}ain't {ANSI.BRIGHT_RED_BG}right.{ANSI.DEFAULT_FG}"
         )
     assert len(logs.msgs) == 1
     assert logs.msgs[0].endswith("That boy ain't right.")
