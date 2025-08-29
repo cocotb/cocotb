@@ -15,18 +15,18 @@ from test_cocotb import (
     tests_dir,
 )
 
-from cocotb.utils import _get_log_time_scale
+from cocotb.simtime import _get_log_time_scale
 from cocotb_tools.runner import get_runner
 
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 
 cocotb_test_contents = """
 import cocotb
-from cocotb.utils import _get_simulator_precision
+from cocotb.simtime import time_precision
 
 @cocotb.test()
 async def check_timescale(dut):
-    assert _get_simulator_precision() == {precision}
+    assert time_precision == {precision}
 """
 
 

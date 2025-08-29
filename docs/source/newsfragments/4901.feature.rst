@@ -1,0 +1,1 @@
+Added :data:`cocotb.simtime.time_precision` to allow users to set simulated time precision when not operating with a simulator.

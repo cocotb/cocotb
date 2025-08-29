@@ -43,8 +43,8 @@ from cocotb._utils import (
     safe_divide,
 )
 from cocotb._xunit_reporter import XUnitReporter
+from cocotb.simtime import get_sim_time
 from cocotb.task import Task
-from cocotb.utils import get_sim_time
 
 if TYPE_CHECKING:
     from cocotb._base_triggers import Trigger

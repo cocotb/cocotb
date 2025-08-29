@@ -302,11 +302,16 @@ Asynchronous Queues
 Simulation Time Utilities
 =========================
 
+.. automodule:: cocotb.simtime
+    :members:
+    :member-order: bysource
+    :synopsis: Tools for dealing with simulated time.
+
 .. automodule:: cocotb.utils
     :members:
     :member-order: bysource
-    :synopsis: Various utilities for dealing with simulation time.
-
+    :synopsis: Tools for dealing with simulated time.
+    :ignore-module-all:
 
 .. _logging-reference-section:
 

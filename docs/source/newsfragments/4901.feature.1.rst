@@ -1,0 +1,1 @@
+Added :func:`cocotb.simtime.convert` to replace :func:`~cocotb.utils.get_time_from_sim_steps` and :func:`~cocotb.utils.get_sim_steps` with a single intuitive interface.
