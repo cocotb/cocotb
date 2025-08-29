@@ -8,7 +8,7 @@ import logging
 from typing import Generator, List
 
 import cocotb
-import cocotb.ANSI as ansi
+from cocotb.logging import ANSI
 
 
 class LogCaptureData:
@@ -43,5 +43,5 @@ async def test_log_prefix(_: object) -> None:
         logger.info("Test log message")
     assert (
         logs.msgs[0]
-        == f"{ansi.YELLOW_FG}abc{ansi.DEFAULT_FG} INFO 0       exam Test log message{ansi.DEFAULT}"
+        == f"{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} INFO 0       exam Test log message{ANSI.DEFAULT}"
     )

@@ -40,6 +40,6 @@ def test_indexing_warning() -> None:
         hdl_toplevel_lang=LANG,
         test_args=test_args,
         extra_env={
-            "COCOTB_LOG_PREFIX": "{ansi.YELLOW_FG}abc{ansi.DEFAULT_FG} {record.levelname} {record.created_sim_time} {record.name[:4]:>10} "
+            "COCOTB_LOG_PREFIX": "{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} {record.levelname} {record.created_sim_time} {record.name[:4]:>10} "
         },
     )
