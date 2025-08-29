@@ -224,6 +224,8 @@ class SimLogFormatter(logging.Formatter):
     This will only add simulator timestamps if the handler object this
     formatter is attached to has a :class:`SimTimeContextFilter` filter
     attached, which cocotb ensures by default.
+
+    See :func:`.default_config` for a description of the arguments.
     """
 
     loglevel2colour = {
@@ -248,14 +250,6 @@ class SimLogFormatter(logging.Formatter):
         strip_ansi: Union[bool, None] = None,
         prefix_format: Optional[str] = None,
     ) -> None:
-        """
-        Args:
-            reduced_log_fmt: Use less verbose log format.
-            strip_ansi:
-                Strip ANSI control codes from messages.
-
-                If ``None`` use the value of :data:`strip_ansi`.
-        """
         self._reduced_log_fmt = reduced_log_fmt
         self._strip_ansi = strip_ansi
         self._prefix_func = (
