@@ -118,7 +118,7 @@ autoclass_content = "class"
 
 autodoc_typehints = "signature"  # show type hints in the list of parameters
 autodoc_typehints_description_target = "documented"
-maximum_signature_line_length = 80
+maximum_signature_line_length = 78
 
 # use short "a | b" syntax for Literal types
 python_display_short_literal_types = True
