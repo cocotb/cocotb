@@ -442,18 +442,18 @@ class NullTrigger(Trigger):
     **Do not** do this:
 
     .. code-block:: python
-       :class: removed
+        :class: removed
 
         transaction_data = None
 
 
-        def monitor():
+        def monitor(dut):
             while dut.valid.value != 1 and dut.ready.value != 1:
                 await RisingEdge(dut.clk)
             transaction_data = dut.data.value
 
 
-        def use_transaction():
+        def use_transaction(dut):
             while True:
                 await RisingEdge(dut.clk)
                 # We need the NullTrigger here because both Tasks react to RisingEdge,
@@ -464,34 +464,34 @@ class NullTrigger(Trigger):
                     process(transaction_data)
 
 
-        use_task = cocotb.start_soon(use_transaction())
-        monitor_task = cocotb.start_soon(monitor())
+        use_task = cocotb.start_soon(use_transaction(cocotb.top))
+        monitor_task = cocotb.start_soon(monitor(cocotb.top))
 
-    Instead use an :class:`!.Event` to explicitly synchronize the two Tasks, like so:
+    Instead use an :class:`!Event` to explicitly synchronize the two Tasks, like so:
 
     .. code-block:: python
-       :class: new
+        :class: new
 
         transaction_data = None
         transaction_event = Event()
 
 
-        def monitor():
+        def monitor(dut):
             while dut.valid.value != 1 and dut.ready.value != 1:
                 await RisingEdge(dut.clk)
             transaction_data = dut.data.value
             transaction_event.set()
 
 
-        def use_transaction():
+        def use_transaction(dut):
             # Now we don't need the NullTrigger.
             # This Task will wake up *strictly* after `monitor_task` sets the transaction.
             await transaction_event.wait()
             process(transaction_data)
 
 
-        use_task = cocotb.start_soon(use_transaction())
-        monitor_task = cocotb.start_soon(monitor())
+        use_task = cocotb.start_soon(use_transaction(cocotb.top))
+        monitor_task = cocotb.start_soon(monitor(cocotb.top))
 
     .. versionremoved:: 2.0
         The *outcome* parameter was removed. There is no alternative.
