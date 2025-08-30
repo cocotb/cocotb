@@ -31,7 +31,7 @@ import cocotb.handle
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
 from cocotb._decorators import Parameterized, Test
-from cocotb._extended_awaitables import SimTimeoutError, with_timeout
+from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import GPITrigger, Timer
 from cocotb._outcomes import Error, Outcome
 from cocotb._test import RunningTest
@@ -379,13 +379,7 @@ class RegressionManager:
 
             @functools.wraps(f)
             async def func(*args: object, **kwargs: object) -> None:
-                running_co = Task(f(*args, **kwargs))
-
-                try:
-                    await with_timeout(running_co, timeout, self._test.timeout_unit)
-                except SimTimeoutError:
-                    running_co.cancel()
-                    raise
+                await with_timeout(f(*args, **kwargs), timeout, self._test.timeout_unit)
         else:
             func = self._test.func
 
