@@ -331,7 +331,8 @@ class Scheduler:
             event.set()
 
         event = threading.Event()
-        self._schedule_task_internal(Task(wrapper()))
+        # must register this with test as there's no way to clean up with threading
+        self._schedule_task_internal(cocotb.start_soon(wrapper()))
         # The scheduler thread blocks in `thread_wait`, and is woken when we
         # call `thread_suspend` - so we need to make sure the task is
         # queued before that.
