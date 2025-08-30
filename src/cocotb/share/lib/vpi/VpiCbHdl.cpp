@@ -83,7 +83,7 @@ int VpiCbHdl::arm() {
     if (!new_hdl) {
         LOG_ERROR(
             "VPI: Unable to register a callback handle for VPI type %s(%d)",
-            m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+            VpiImpl::reason_to_string(cb_data.reason), cb_data.reason);
         check_vpi_error();
         return -1;
     }

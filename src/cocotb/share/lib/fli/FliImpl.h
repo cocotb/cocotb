@@ -443,9 +443,6 @@ class FliImpl : public GpiImplInterface {
                                           void *cb_data) override;
 
     /* Method to provide strings from operation types */
-    const char *reason_to_string(int reason) override;
-
-    /* Method to provide strings from operation types */
     GpiObjHdl *create_gpi_obj_from_handle(void *hdl, const std::string &name,
                                           const std::string &fq_name,
                                           int accType, int accFullType);
