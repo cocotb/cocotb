@@ -705,3 +705,66 @@ This was done deliberately to reduce the number of changes required.
     assert len(dut.array.value) == 4
     for actual, expected in zip(dut.array.value, [1, 2, 3, 4]):
         assert actual == expected
+
+
+****************************************************************
+Use :deco:`!cocotb.parametrize` instead of :class:`!TestFactory`
+****************************************************************
+
+Change
+======
+
+:class:`cocotb.parametrize` was added to replace :class:`.TestFactory`, which was deprecated.
+
+How to Upgrade
+==============
+
+Replace all instances of :class:`!TestFactory` with a :deco:`!cocotb.parametrize` decorator on the function being parameterized.
+
+Replace calls to :meth:`.TestFactory.add_option` with arguments to :deco:`!cocotb.parametrize`.
+
+Remove all calls to :meth:`.TestFactory.generate_tests` and move any arguments to the :deco:`cocotb.test` decorator.
+
+.. code-block:: python
+    :caption: Old way with :class:`!TestFactory`
+    :class: removed
+
+    async def my_test(param_a, param_b):
+        ...
+
+    tf = TestFactory(my_test)
+    tf.add_option("param_a", [1, 2, 3])
+    tf.add_option("param_b", ["sample", "text"])
+    tf.generate_tests(timeout_time=10, timeout_unit="us")
+
+.. code-block:: python
+    :caption: New way with :deco:`!cocotb.parametrize`
+    :class: new
+
+    @cocotb.test(timeout_time=10, timeout_unit="us")
+    @cocotb.parametrize(
+        param_a=[1, 2, 3],
+        param_b=["sample", "text"]
+    )
+    async def my_test(param_a, param_b):
+        ...
+
+.. note::
+
+    If you are using the ``prefix`` or ``postfix`` arguments to :meth:`!TestFactory.generate_tests`,
+    replace them with the use of the new ``name`` argument.
+
+Rationale
+=========
+
+:class:`!TestFactory` was defined separately from the test declaration, hurting readability,
+and making it prone to issues such as parameters being out of sync
+and :deco:`cocotb.test` inadvertently being applied to the parameterized function.
+Additionally it worked by injecting test objects into the module of the calling scope,
+which led to feature creep (``stacklevel`` arg to :meth:`!TestFactory.generate_tests`)
+and made issues hard to diagnose.
+Next, the test names generated were *not* descriptive and did not lend themselves to being filtered with a regular expression.
+Finally, it doesn't compose well with future test marking features.
+
+:deco:`!cocotb.parametrize` has none of those issues and should be familiar to users of :mod:`pytest`.
+Generated test names are descriptive and can be easily filtered with a regular expression.
