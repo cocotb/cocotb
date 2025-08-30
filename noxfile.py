@@ -376,23 +376,11 @@ def release_build_bdist(session: nox.Session) -> None:
     # Pin a version to ensure reproducible builds.
     session.run("pip", "install", f"cibuildwheel=={cibuildwheel_version}")
 
-    flags = " ".join(
-        [
-            "-O2",  # O3 is unnecessary with the virtual-call-heavy code in the GPI and may bloat binary size
-            "-g",  # Include debug information so users can debug
-        ],
-    )
-
-    env = session.env.copy()
-    env["CFLAGS"] = flags
-    env["CXXFLAGS"] = flags
-
     session.log("Building binary distribution (wheels)")
     session.run(
         "cibuildwheel",
         "--output-dir",
         dist_dir,
-        env=env,
     )
 
     session.log(f"Binary distribution in release mode built into {dist_dir!r}")
