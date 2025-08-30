@@ -768,3 +768,56 @@ Finally, it doesn't compose well with future test marking features.
 
 :deco:`!cocotb.parametrized` has none of those issues and should be familiar to users of :mod:`pytest`.
 Generated test names are descriptive and can be easily filtered with a regular expression.
+
+**********************************************************
+Move away from :data:`!Event.data` and :data:`!Event.name`
+**********************************************************
+
+Change
+======
+
+The :data:`.Event.data` attribute and ``data`` argument to the :meth:`.Event.set` method,
+and the :data:`.Event.name` attribute and ``name`` argument to the :class:`.Event` constructor were deprecated.
+
+How to Upgrade
+==============
+
+Remove all passing of the ``name`` argument to the :class:`!Event` constructor.
+
+Remove all passing of the ``data`` argument to the :meth:`!Event.set` method and uses of the :data:`!Event.data` attribute.
+Replace with adjacent variables or classes which contain both an :class:`!Event` and data.
+
+.. code-block:: python
+    :caption: Old way using :data:`!Event.data`
+    :class: removed
+
+    monitor_event = Event()
+
+    ... # in monitor
+    monitor_event.set(b"\xBA\xD0\xCA\xFE")
+
+    ...  # in user code
+    await monitor_event.wait()
+    recv = monitor_event.data
+
+.. code-block:: python
+    :caption: New way using
+    :class: new
+
+    monitor_event = Event()
+    monitor_data = None
+
+    ... # in monitor
+    monitor_data = b"\xBA\xD0\xCA\xFE"
+    monitor_event.set()
+
+    ...  # in user code
+    await monitor_event.wait()
+    recv = monitor_data
+
+Rationale
+=========
+
+These features were removed to better align cocotb's :class:`!Event` with :class:`asyncio.Event`.
+There is hope to one day replace cocotb's custom coroutine scheduler with :mod:`asyncio`,
+which would reduce maintenance burden and offer users the expanded functionality and tools already available to that system.
