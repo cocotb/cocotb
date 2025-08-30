@@ -14,12 +14,14 @@ from typing import (
 )
 
 import cocotb
+import cocotb.event_loop
+from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._test_functions import TestSuccess
 from cocotb.task import ResultType, Task
-from cocotb.triggers import NullTrigger, Trigger
+from cocotb.triggers import NullTrigger
 
 _pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
@@ -67,8 +69,8 @@ class RunningTest:
             self.abort(Error(e))
 
     def start(self) -> None:
-        cocotb._scheduler_inst._schedule_task_internal(self._main_task)
-        cocotb._scheduler_inst._event_loop()
+        self._main_task._start()
+        cocotb.event_loop._inst.run()
 
     def result(self) -> Outcome[None]:
         if self._outcome is None:  # pragma: no cover
@@ -111,7 +113,7 @@ class RunningTest:
         if task.cancelled():
             return
         # if there's a Task awaiting this one, don't fail
-        if task.complete in cocotb._scheduler_inst._trigger2tasks:
+        if task.complete._callbacks:
             return
         # if no failure, do nothing
         e = task.exception()
@@ -150,7 +152,7 @@ def start_soon(
     .. versionadded:: 1.6
     """
     task = create_task(coro, name=name)
-    cocotb._scheduler_inst._schedule_task(task)
+    task._start()
     return task
 
 
