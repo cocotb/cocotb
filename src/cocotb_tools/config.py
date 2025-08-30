@@ -47,11 +47,11 @@ def _get_version() -> str:
 
 def _help_vars_text() -> str:
     if "dev" in _get_version():
-        doclink = "https://docs.cocotb.org/en/development/building.html"
+        doclink = "https://docs.cocotb.org/en/development/library_reference.html"
     else:
-        doclink = f"https://docs.cocotb.org/en/v{_get_version()}/building.html"
+        doclink = f"https://docs.cocotb.org/en/v{_get_version()}/library_reference.html"
 
-    # NOTE: make sure to keep "helpmsg" aligned with ../../docs/source/building.rst
+    # NOTE: make sure to keep "helpmsg" aligned with docs/source/library_reference.rst
     helpmsg = textwrap.dedent(
         """\
         The following variables are environment variables:
