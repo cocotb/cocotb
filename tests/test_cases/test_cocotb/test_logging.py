@@ -84,13 +84,17 @@ async def test_custom_logging_levels(dut):
 
 @cocotb.test
 async def test_ansi_stripping(_: object) -> None:
+    old_string_ansi = cocotb_logging.strip_ansi
     cocotb_logging.strip_ansi = True
-    with capture_logs() as logs:
-        cocotb.log.info(
-            f"{ANSI.YELLOW_FG}That {ANSI.GREEN_BG}boy {ANSI.BLUE_FG}ain't {ANSI.BRIGHT_RED_BG}right.{ANSI.DEFAULT_FG}"
-        )
-    assert len(logs.msgs) == 1
-    assert logs.msgs[0].endswith("That boy ain't right.")
+    try:
+        with capture_logs() as logs:
+            cocotb.log.info(
+                f"{ANSI.YELLOW_FG}That {ANSI.GREEN_BG}boy {ANSI.BLUE_FG}ain't {ANSI.BRIGHT_RED_BG}right.{ANSI.DEFAULT_FG}"
+            )
+        assert len(logs.msgs) == 1
+        assert logs.msgs[0].endswith("That boy ain't right.")
+    finally:
+        cocotb_logging.strip_ansi = old_string_ansi
 
 
 @cocotb.test

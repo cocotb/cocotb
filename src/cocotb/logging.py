@@ -121,7 +121,7 @@ def _init() -> None:
     """
     global strip_ansi
     strip_ansi = not sys.stdout.isatty()  # default to color for TTYs
-    if os.getenv("NO_COLOR") is not None:
+    if os.getenv("NO_COLOR", ""):
         strip_ansi = True
     ansi_output = os.getenv("COCOTB_ANSI_OUTPUT")
     if ansi_output is not None:
