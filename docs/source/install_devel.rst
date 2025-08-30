@@ -90,3 +90,24 @@ The development version of cocotb can be installed by running
 
 After installation, you should be able to execute ``cocotb-config``.
 If it is not found, you need to append its location to the ``PATH`` environment variable.
+
+
+Passing Flags to cocotb Library Build
+=====================================
+
+You may want to pass additional flags when building cocotb's C++ libraries.
+These libraries are built during the ``pip install`` call when installing from a source distribution,
+e.g. a local clone, from Github directly, or from an sdist tarball.
+
+You can pass additional options to the library build process using the
+`conventional variables <https://www.gnu.org/software/make/manual/html_node/Catalogue-of-Rules.html>`_
+for C and C++ compilation and linking: ``CFLAGS``, ``CPPFLAGS``, and ``LDFLAGS`` when building with GCC or Clang,
+and `CL <https://learn.microsoft.com/en-us/cpp/build/reference/cl-environment-variables>`_ when building with MSVC.
+
+.. code-block:: shell
+
+    $ CFLAGS="-O2 -g" LDFLAGS="-O2 -g" pip install git+https://github.com/cocotb/cocotb@master
+
+.. note::
+
+    `CXXFLAGS`, `LDLIBS` are not supported by the distutils/pip build system.
