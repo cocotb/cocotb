@@ -819,3 +819,60 @@ Rationale
 =========
 
 These features were removed to better align cocotb's :class:`!Event` with :class:`asyncio.Event`.
+
+
+*********************************************************
+Use :func:`!cocotb.start_soon` over :func:`!cocotb.start`
+*********************************************************
+
+Change
+======
+
+:func:`cocotb.start` was deprecated.
+
+How to Upgrade
+==============
+
+Replace :func:`!cocotb.start` with :func:`cocotb.start_soon` and remove the :keyword:`await` before it.
+
+.. code-block:: python
+    :caption: Old way using :func:`!cocotb.start`
+    :class: removed
+
+    async def my_coro():
+        ...  # do stuff
+
+    my_task = await cocotb.start(my_coro())
+
+.. code-block:: python
+    :caption: New way using :func:`!cocotb.start_soon`
+    :class: new
+
+    async def my_coro():
+        ...  # do stuff
+
+    my_task = cocotb.start_soon(my_coro())
+
+.. note::
+
+    If you need the Task being started to run *immediately*,
+    :keyword:`await` a :class:`.NullTrigger` immediately after calling :func:`!cocotb.start_soon`.
+    This is not common.
+
+    .. code-block:: python
+        :caption: Using :class:`!NullTrigger` to force a new Task to run
+        :class: new
+
+            async def my_coro():
+                ...  # do stuff
+
+            my_task = cocotb.start_soon(my_coro())
+            # my_task isn't running
+            await NullTrigger()
+            # my_task is now running
+
+Rationale
+=========
+
+Many new users were confused on when to use one vs the other,
+so :func:`!cocotb.start` will be removed to prevent any confusion.
