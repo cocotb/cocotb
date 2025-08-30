@@ -705,3 +705,175 @@ This was done deliberately to reduce the number of changes required.
     assert len(dut.array.value) == 4
     for actual, expected in zip(dut.array.value, [1, 2, 3, 4]):
         assert actual == expected
+
+
+****************************************************************
+Use :deco:`!cocotb.parametrize` instead of :class:`!TestFactory`
+****************************************************************
+
+Change
+======
+
+:class:`cocotb.parametrize` was added to replace :class:`.TestFactory`, which was deprecated.
+
+How to Upgrade
+==============
+
+Replace all instances of :class:`!TestFactory` with a :deco:`!cocotb.parametrized` decorator on the function being parameterized.
+
+Replace calls to :meth:`.TestFactory.add_option` with arguments to :deco:`!cocotb.parametrized`.
+
+Remove all calls to :meth:`.TestFactory.generate_tests` and move any arguments to the :deco:`cocotb.test` decorator.
+
+.. code-block:: python
+    :caption: Old way with :class:`!TestFactory`
+    :class: removed
+
+    async def my_test(param_a, param_b):
+        ...
+
+    tf = TestFactory(my_test)
+    tf.add_option("param_a", [1, 2, 3])
+    tf.add_option("param_b", ["sample", "text"])
+    tf.generate_tests(timeout_time=10, timeout_unit="us")
+
+.. code-block:: python
+    :caption: New way with :deco:`!cocotb.parametrized`
+    :class: new
+
+    @cocotb.test(timeout_time=10, timeout_unit="us")
+    @cocotb.parametrized(
+        param_a=[1, 2, 3],
+        param_b=["sample", "text"]
+    )
+    async def my_test(param_a, param_b):
+        ...
+
+.. note::
+
+    If you are using the ``prefix`` or ``postfix`` arguments to :meth:`!TestFactory.generate_tests`,
+    replace them with the use of the new ``name`` argument.
+
+Rationale
+=========
+
+:class:`!TestFactory` was defined separately from the test declaration, hurting readability,
+and making it prone to issues such as parameters being out of sync
+and :deco:`cocotb.test` inadvertently being applied to the parameterized function.
+Additionally it worked by injecting test objects into the module of the calling scope,
+which led to feature creep (``stacklevel`` arg to :meth:`!TestFactory.generate_tests`)
+and made issues hard to diagnose.
+Next, the test names generated were *not* descriptive and did not lend themselves to being filtered with a regular expression.
+Finally, it doesn't compose well with future test marking features.
+
+:deco:`!cocotb.parametrized` has none of those issues and should be familiar to users of :mod:`pytest`.
+Generated test names are descriptive and can be easily filtered with a regular expression.
+
+**********************************************************
+Move away from :data:`!Event.data` and :data:`!Event.name`
+**********************************************************
+
+Change
+======
+
+The :data:`.Event.data` attribute and ``data`` argument to the :meth:`.Event.set` method,
+and the :data:`.Event.name` attribute and ``name`` argument to the :class:`.Event` constructor were deprecated.
+
+How to Upgrade
+==============
+
+Remove all passing of the ``name`` argument to the :class:`!Event` constructor.
+
+Remove all passing of the ``data`` argument to the :meth:`!Event.set` method and uses of the :data:`!Event.data` attribute.
+Replace with adjacent variables or classes which contain both an :class:`!Event` and data.
+
+.. code-block:: python
+    :caption: Old way using :data:`!Event.data`
+    :class: removed
+
+    monitor_event = Event()
+
+    ... # in monitor
+    monitor_event.set(b"\xBA\xD0\xCA\xFE")
+
+    ...  # in user code
+    await monitor_event.wait()
+    recv = monitor_event.data
+
+.. code-block:: python
+    :caption: New way using
+    :class: new
+
+    monitor_event = Event()
+    monitor_data = None
+
+    ... # in monitor
+    monitor_data = b"\xBA\xD0\xCA\xFE"
+    monitor_event.set()
+
+    ...  # in user code
+    await monitor_event.wait()
+    recv = monitor_data
+
+Rationale
+=========
+
+These features were removed to better align cocotb's :class:`!Event` with :class:`asyncio.Event`.
+There is hope to one day replace cocotb's custom coroutine scheduler with :mod:`asyncio`,
+which would reduce maintenance burden and offer users the expanded functionality and tools already available to that system.
+
+*********************************************************
+Use :func:`!cocotb.start_soon` over :func:`!cocotb.start`
+*********************************************************
+
+Change
+======
+
+:func:`cocotb.start` was deprecated.
+
+How to Upgrade
+==============
+
+Replace :func:`!cocotb.start` with :func:`cocotb.start_soon` and remove the :keyword:`await` before it.
+
+.. code-block:: python
+    :caption: Old way using :func:`!cocotb.start`
+    :class: removed
+
+    async def my_coro():
+        ... # do stuff
+
+    my_task = await cocotb.start(my_coro())
+
+.. code-block:: python
+    :caption: New way using :func:`!cocotb.start_soon`
+    :class: new
+
+    async def my_coro():
+        ... # do stuff
+
+    my_task = cocotb.start_soon(my_coro())
+
+.. note::
+
+    If you need the Task being started to run *immediately*.
+    :keyword:`await` a :class:`.NullTrigger` immediately after calling :func:`!cocotb.start_soon`.
+    This is not common.
+
+    .. code-block::
+        :caption: Using :class:`!NullTrigger` to force a new Task to run
+        :class: new
+
+            async def my_coro():
+                ... # do stuff
+
+            my_task = cocotb.start_soon(my_coro())
+            # my_task isn't running
+            await NullTrigger()
+            # my_task is now running
+
+Rationale
+=========
+
+Many new users were confused on when to use one vs the other,
+so :func:`!cocotb.start` will be removed to prevent any confusion.
