@@ -110,4 +110,4 @@ and `CL <https://learn.microsoft.com/en-us/cpp/build/reference/cl-environment-va
 
 .. note::
 
-    `CXXFLAGS`, `LDLIBS` are not supported by the distutils/pip build system.
+    ``CXXFLAGS``, ``LDLIBS`` are not supported by the distutils/pip build system.
