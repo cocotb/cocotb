@@ -239,7 +239,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.038",  # Latest release version.
+        "sim-version": "v5.040",  # Latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci-free",
@@ -251,6 +251,14 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "experimental",
+    },
+    {
+        "lang": "verilog",
+        "sim": "verilator",
+        "sim-version": "v5.038",
+        "os": "ubuntu-22.04",
+        "python-version": "3.10",
+        "group": "extended",
     },
     {
         "lang": "verilog",
@@ -293,7 +301,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.038",
+        "sim-version": "v5.038",  # not latest, but v5.040 is broken on MacOS
         "os": "macos-13",
         "python-version": "3.9",
         "group": "ci-free",
