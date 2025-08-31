@@ -274,7 +274,7 @@ ENVS = [
         "lang": "verilog",
         "sim": "icarus",
         "sim-version": "homebrew-stable",
-        "os": "macos-13",
+        "os": "macos-14",
         "python-version": "3.9",
         "group": "ci-free",
     },
@@ -283,7 +283,7 @@ ENVS = [
         "lang": "verilog",
         "sim": "icarus",
         "sim-version": "homebrew-HEAD",
-        "os": "macos-13",
+        "os": "macos-14",
         "python-version": "3.9",
         "group": "experimental",
     },
@@ -292,7 +292,7 @@ ENVS = [
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "master",
-        "os": "macos-13",
+        "os": "macos-14",
         "python-version": "3.9",
         "group": "experimental",
         "may-fail": True,  # verilator/verilator#5404
@@ -302,7 +302,7 @@ ENVS = [
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "v5.038",  # not latest, but v5.040 is broken on MacOS
-        "os": "macos-13",
+        "os": "macos-14",
         "python-version": "3.9",
         "group": "ci-free",
         "may-fail": True,  # verilator/verilator#5404
