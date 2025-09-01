@@ -821,6 +821,91 @@ Rationale
 These features were removed to better align cocotb's :class:`!Event` with :class:`asyncio.Event`.
 
 
+****************************************************
+Remove uses of :class:`!Join` and :meth:`!Task.join`
+****************************************************
+
+Change
+======
+
+:class:`.Join` and :meth:`.Task.join` have been deprecated.
+
+How to Upgrade
+==============
+
+Remove :class:`!Join` and :meth:`!Task.join` and simply :keyword:`await` the :class:`!Task` being joined,
+or pass the :class:`!Task` directly into the function that will :keyword:`await` it.
+
+.. code-block:: python
+    :caption: Example Task
+
+    async def example():
+        ...
+
+    task = cocotb.start_soon()
+
+.. code-block:: python
+    :caption: Old way using :class:`!Join`
+    :class: removed
+
+    await Join(task)
+    # or
+    await First(Join(task), RisingEdge(cocotb.top.clk))
+
+.. code-block:: python
+    :caption: Old way using :meth:`!Task.join`
+    :class: removed
+
+    await task.join()
+    # or
+    await First(task.join(), RisingEdge(cocotb.top.clk))
+
+.. code-block:: python
+    :caption: New way using :class:`!Task` directly
+    :class: new
+
+    await task
+    # or
+    await First(task, RisingEdge(cocotb.top.clk))
+
+Rationale
+=========
+
+There were multiple synonyms for the same functionality, so we deprecated all but the least verbose.
+This also better aligns cocotb's :class:`!Task`\ s with :class:`asyncio.Task`.
+
+Additional Details
+==================
+
+:keyword:`await`\ ing a :class:`!Task` (or previously a :class:`!Join` trigger) returns the result of the :class:`!Task`, not the task/trigger.
+This can make it difficult to determine which :class:`!Task` finished when waiting on multiple, such as with a :class:`.First` trigger.
+:class:`.TaskComplete` was added to solve this.
+Use :attr:`.Task.complete` to get the :class:`!TaskComplete` trigger associated with each :class:`!Task`.
+
+.. code-block:: python
+    :caption: Using :class:`!TaskComplete` to disambiguate which :class:`!Task` finished.
+    :class: new
+
+    async def coro1():
+        await Timer(1, 'us')
+
+    async def coro2():
+        await RisingEdge(cocotb.top.done)
+
+    task1 = cocotb.start_soon(coro1())
+    task2 = cocotb.start_soon(coro2())
+
+    # res = await First(task1, task2)
+    # res is `None` is either case, which fired?
+
+    res = await First(task1.complete, task2.complete)
+
+    if res is task1.complete:
+        cocotb.log.info("Reached deadline!")
+    else:
+        cocotb.log.info("Processing finished!")
+
+
 *********************************************************
 Use :func:`!cocotb.start_soon` over :func:`!cocotb.start`
 *********************************************************
