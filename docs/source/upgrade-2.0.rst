@@ -906,9 +906,9 @@ Use :attr:`.Task.complete` to get the :class:`!TaskComplete` trigger associated 
         cocotb.log.info("Processing finished!")
 
 
-*********************************************************
-Use :func:`!cocotb.start_soon` over :func:`!cocotb.start`
-*********************************************************
+*************************************************************
+Replace :func:`!cocotb.start` with :func:`!cocotb.start_soon`
+*************************************************************
 
 Change
 ======
@@ -940,13 +940,12 @@ Replace :func:`!cocotb.start` with :func:`cocotb.start_soon` and remove the :key
 
 .. note::
 
-    If you need the Task being started to run *immediately*,
-    :keyword:`await` a :class:`.NullTrigger` immediately after calling :func:`!cocotb.start_soon`.
+    If you need the started Task to run *immediately* rather than *soon*,
+    :keyword:`!await` a :class:`.NullTrigger` immediately after calling :func:`!cocotb.start_soon`.
     This is not common.
 
     .. code-block:: python
         :caption: Using :class:`!NullTrigger` to force a new Task to run
-        :class: new
 
             async def my_coro():
                 ...  # do stuff
