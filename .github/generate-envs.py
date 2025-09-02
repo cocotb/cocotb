@@ -18,6 +18,7 @@ Optional fields:
 - cc: C compiler and linker to use. Default: gcc.
 - cxx: C++ compiler and linker to use. Default: g++.
 - extra_name: Additional tag prepended to computed name for test. Default: <none>.
+- test_nosim: Runs tests that do not require a simulator in addition to tests that do. Default: False.
 
 What tests belong in what groups:
 - ci-free: The most recent stable release of a given free simulator, all supported versions of Python, and all supported operating systems. Run on all PRs and master pushes.
@@ -44,6 +45,7 @@ ENVS = [
         "python-version": "3.6",
         "group": "ci-free",
         "setup_python": "pyenv",
+        "test_nosim": True,
     },
     {
         "lang": "vhdl",
@@ -53,6 +55,7 @@ ENVS = [
         "python-version": "3.7",
         "group": "ci-free",
         "setup_python": "pyenv",
+        "test_nosim": True,
     },
     {
         "lang": "vhdl",
@@ -61,6 +64,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.8",
         "group": "ci-free",
+        "test_nosim": True,
     },
     {
         "lang": "vhdl",
@@ -69,6 +73,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci-free",
+        "test_nosim": True,
     },
     {
         "lang": "vhdl",
@@ -77,6 +82,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci-free",
+        "test_nosim": True,
     },
     {
         "lang": "vhdl",
@@ -85,6 +91,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.11",
         "group": "ci-free",
+        "test_nosim": True,
     },
     {
         "lang": "vhdl",
@@ -93,6 +100,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.12",
         "group": "ci-free",
+        "test_nosim": True,
     },
     {
         "lang": "vhdl",
@@ -101,6 +109,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.13",
         "group": "ci-free",
+        "test_nosim": True,
     },
     # A single test for the upcoming Python version.
     {
@@ -110,6 +119,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.14-dev",
         "group": "experimental",
+        "test_nosim": True,
     },
     # Test Icarus on Ubuntu
     {

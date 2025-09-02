@@ -147,7 +147,9 @@ jobs:
     - name: Install Python testing dependencies
       run: |
         pip install nox
+
     - name: Run tests without simulators
+      if: ${{ matrix.test_nosim }}
       run: nox -s "${{ inputs.nox_session_test_nosim }}"
       continue-on-error: ${{matrix.may-fail || false}}
 
