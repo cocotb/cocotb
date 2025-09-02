@@ -906,6 +906,152 @@ Use :attr:`.Task.complete` to get the :class:`!TaskComplete` trigger associated 
         cocotb.log.info("Processing finished!")
 
 
+****************************************************
+Replace :meth:`!Task.kill` with :meth:`!Task.cancel`
+****************************************************
+
+Change
+======
+
+:meth:`.Task.kill` was replaced with :meth:`.Task.cancel`.
+
+How to Upgrade
+==============
+
+Replace calls of :meth:`!Task.kill` with :meth:`!Task.cancel`.
+
+.. code-block:: python
+    :caption: Old way using :meth:`!Task.kill`
+    :class: removed
+
+    task.kill()
+
+.. code-block:: python
+    :caption: New way using :meth:`!Task.cancel`
+    :class: new
+
+    task.cancel()
+
+Rationale
+=========
+
+:meth:`!Task.kill` stopped a :class:`.Task` from executing immediately,
+which required re-entering the scheduler from a user context.
+Scheduler re-entrance has been the cause of several hard to diagnose bugs.
+:meth:`!Task.cancel` *schedules* stopping a :class:`!Task`,
+preventing scheduler re-entrancy and sidestepping an entire class of bugs.
+
+Additionally, :meth:`!Task.cancel` throws a :exc:`!CancelledError` into the task during cancellation,
+allowing cleanup code to be executed, which was not the case with :meth:`Task.kill`.
+
+Additional Details
+==================
+
+:class:`!Task`\ s don't become "done" immediately
+-------------------------------------------------
+
+There is a slight change in behavior when moving to :meth:`!Task.cancel` since it *schedules* a cancellation.
+:class:`!Task`\ s don't become "done" immediately, but only after control is returned to the scheduler.
+
+.. code-block:: python
+    :caption: Old way using :meth:`!Task.kill`
+    :class: removed
+
+    task.kill()
+    assert task.done()
+
+.. code-block:: python
+    :caption: New way using :meth:`!Task.cancel`
+    :class: new
+
+    task.cancel()
+    assert not task.done()
+    await NullTrigger()
+    assert task.done()
+
+This can cause a change in scheduling when :keyword:`await`\ ing a :class:`!Task` to finish if it is cancelled instead of killed.
+
+:exc:`!CancelledError` is thrown into cancelled :class:`Task`\ s
+----------------------------------------------------------------
+
+When a :class:`!Task` is cancelled by calling :meth:`!Task.cancel`,
+a :exc:`asyncio.CancelledError` is thrown into the task.
+This ensures cleanup is performed.
+:term:`context manager`\ s doing cleanup on exit and any :keyword:`finally` blocks in your tasks
+will now be executed when the task is cancelled.
+Otherwise, the exception will bubble up through your code and be handled appropriately by :class:`!Task` internals,
+so there is nothing else you have to do.
+
+All :class:`!Task`\ s created with :func:`cocotb.start_soon`, :func:`cocotb.start`, or :func:`cocotb.create_task`
+that are still running at the end of the test will be cancelled to ensure end-of-test cleanup.
+
+.. code-block:: python
+    :caption: Example of how :exc:`!CancelledError` ensures cleanup
+
+    async def stimulus():
+        try:
+            with open("transactions.log", "w") as f:
+                transaction = 123
+                f.write(transaction)
+            # The context manager exited here, so the file was closed. This happens
+            # whether it exited normally, threw an exception, the task was cancelled,
+            # or the test ended.
+        finally:
+            # The finally block is always executed. This happens whether the try block
+            # exited normally, an exception was thrown, the task was cancelled, or the test ended.
+            cocotb.log.info("Ending stimulus!")
+
+:exc:`!CancelledError` thrown during cancellation cannot be squashed
+--------------------------------------------------------------------
+
+Unlike :mod:`asyncio`, task cancellation *cannot* be ignored.
+When a test ends all tasks *must* be cancelled,
+otherwise they would continue running into the next test.
+To ensure that users don't inadvertently ignore cancellation,
+cocotb forces the task to end with :exc:`RuntimeError` if it detects a :exc:`!CancelledError` is squashed.
+
+When upgrading code to 2.0, there may be existing code which causes this condition to fire.
+The most common offender is user code catching :exc:`BaseException`.
+
+.. code-block:: python
+    :caption: Code which will accidentally squash :exc:`!CancelledError`
+    :class: removed
+
+    async def example():
+        try:
+            ...
+        except BaseException as e:
+            cocotb.log.info("Saw error!", exc_info=e)
+
+:exc:`!BaseException` is generally reserved for runtime implementation details.
+Instead catch only :exc:`Exception`.
+
+.. code-block:: python
+    :caption: Resolving issue by catching only :exc:`!Exception`
+    :class: new
+
+    async def example():
+        try:
+            ...
+        except Exception as e:
+            cocotb.log.info("Saw error!", exc_info=e)
+
+If narrowing your exception handling to :exc:`Exception` isn't possible,
+explicitly catch :exc:`!CancelledError` and re-raise it in an except clause placed *before* the :exc:`!BaseException` clause.
+
+.. code-block:: python
+    :caption: Resolving issue by explicitly catching :exc:`!CancelledError`
+    :class: new
+
+    async def example():
+        try:
+            ...
+        except asyncio.CancelledError:
+            raise
+        except BaseException as e:
+            cocotb.log.info("Saw error!", exc_info=e)
+
+
 *************************************************************
 Replace :func:`!cocotb.start` with :func:`!cocotb.start_soon`
 *************************************************************
