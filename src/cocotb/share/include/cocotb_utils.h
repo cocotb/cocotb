@@ -19,9 +19,9 @@
 #define xstr(a) str(a)
 #define str(a) #a
 
-extern "C" COCOTBUTILS_EXPORT void* utils_dyn_open(const char* lib_name);
-extern "C" COCOTBUTILS_EXPORT void* utils_dyn_sym(void* handle,
-                                                  const char* sym_name);
+extern "C" COCOTBUTILS_EXPORT void *utils_dyn_open(const char *lib_name);
+extern "C" COCOTBUTILS_EXPORT void *utils_dyn_sym(void *handle,
+                                                  const char *sym_name);
 extern "C" COCOTBUTILS_EXPORT int is_python_context;
 
 // to_python and to_simulator are implemented as macros instead of functions so

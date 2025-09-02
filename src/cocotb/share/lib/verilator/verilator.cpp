@@ -25,7 +25,7 @@ using verilated_trace_t = VerilatedFstC;
 #include <verilated_vcd_c.h>
 using verilated_trace_t = VerilatedVcdC;
 #endif
-static verilated_trace_t* tfp;
+static verilated_trace_t *tfp;
 #endif
 
 static vluint64_t main_time = 0;  // Current simulation time
@@ -71,11 +71,11 @@ void wrap_up() {
 #endif
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
 #if VM_TRACE_FST
-    const char* traceFile = "dump.fst";
+    const char *traceFile = "dump.fst";
 #else
-    const char* traceFile = "dump.vcd";
+    const char *traceFile = "dump.vcd";
 #endif
     bool traceOn = false;
     bool traceFlush = false;
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
 #endif
 
     vlog_startup_routines_bootstrap();
-    Verilated::addExitCb([](void*) { wrap_up(); }, nullptr);
+    Verilated::addExitCb([](void *) { wrap_up(); }, nullptr);
     VerilatedVpi::callCbs(cbStartOfSimulation);
     settle_value_callbacks();
 
