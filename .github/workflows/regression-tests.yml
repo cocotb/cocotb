@@ -240,13 +240,13 @@ jobs:
     - name: Set up Verilator (MacOS - source)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'verilator'
       run: |
-        brew install autoconf automake help2man
+        brew install autoconf help2man
         git clone https://github.com/verilator/verilator.git
         cd verilator
         git reset --hard ${{matrix.sim-version}}
         autoconf
         ./configure
-        make -j $(nproc)
+        make -j $(sysctl -n hw.logicalcpu)
         sudo make install
 
       # Windows Testing
