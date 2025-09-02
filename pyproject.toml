@@ -118,7 +118,7 @@ build = "cp*-manylinux_x86_64 cp*-manylinux_i686 cp*-win_amd64 cp*-win32 cp*-mac
 # -O2   Enables reasonable optimizations. -O3 is unnecessary with the virtual-call-heavy code in the GPI and may bloat binary size.
 # -g    Generate standard debugging info.
 # -flto Enable LTO which can reduce binary size and improve inlining.
-environment = {CFLAGS = "-O2 -g -flto", CXXFLAGS = "-02 -g -flto", LDFLAGS = "-O2 -g -flto"}
+environment = {CFLAGS = "-O2 -g -flto", CPPFLAGS = "-O2 -g -flto", LDFLAGS = "-O2 -g -flto"}
 
 # By default, build on manylinux2014 for compatibility with CentOS/RHEL 7+ (once
 # the user updates Python) and Ubuntu 20.04+ (with system Python).
