@@ -295,7 +295,6 @@ ENVS = [
         "os": "macos-14",
         "python-version": "3.9",
         "group": "experimental",
-        "may-fail": True,  # verilator/verilator#5404
     },
     # Verilator macOS latest release
     {
@@ -305,7 +304,6 @@ ENVS = [
         "os": "macos-14",
         "python-version": "3.9",
         "group": "ci-free",
-        "may-fail": True,  # verilator/verilator#5404
     },
     # Icarus windows from source
     {
