@@ -102,7 +102,7 @@ Make Variables
 
       Any argument to be passed to the "first" invocation of a simulator that runs via a TCL script.
       One motivating usage is to pass `-noautoldlibpath` to Questa to prevent it from loading the out-of-date libraries it ships with.
-      Used by Riviera-PRO and Questa simulator.
+      Used by the Riviera-PRO and Questa simulators.
 
 .. make:var:: EXTRA_ARGS
 

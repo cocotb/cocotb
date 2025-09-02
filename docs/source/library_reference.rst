@@ -864,7 +864,7 @@ The Regression Manager
 PyGPI and the ``cocotb.simulator`` module
 -----------------------------------------
 
-The PyGPI is a Python wrapper around the GPI.
+The PyGPI is a Python wrapper around the :term:`GPI` (Generic Procedural Interface).
 
 .. envvar:: PYGPI_PYTHON_BIN
 

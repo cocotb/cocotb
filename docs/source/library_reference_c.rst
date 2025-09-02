@@ -16,7 +16,7 @@ Environment Variables
 
     The absolute path to the Python library associated with the current Python installation;
     i.e. ``libpython.so`` or ``python.dll`` on Windows.
-    This is determined with ``cocotb-config --libpython`` in cocotb's makefiles.
+    This is determined with ``cocotb-config --libpython`` during build.
 
 .. envvar:: GPI_EXTRA
 
