@@ -23,8 +23,8 @@ extern "C" {
 extern COCOTB_EMBED_EXPORT void embed_init_python(void);
 extern COCOTB_EMBED_EXPORT void embed_sim_cleanup(void);
 extern COCOTB_EMBED_EXPORT int embed_sim_init(int argc,
-                                              char const* const* argv);
-extern COCOTB_EMBED_EXPORT void embed_sim_event(const char* msg);
+                                              char const *const *argv);
+extern COCOTB_EMBED_EXPORT void embed_sim_event(const char *msg);
 
 #ifdef __cplusplus
 }

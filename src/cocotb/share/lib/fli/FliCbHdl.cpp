@@ -9,13 +9,13 @@
 #include "_vendor/fli/mti.h"
 
 // Main re-entry point for callbacks from simulator
-void handle_fli_callback(void* data) {
+void handle_fli_callback(void *data) {
     gpi_to_user();
 
     // TODO Add why?
     fflush(stderr);
 
-    FliCbHdl* cb_hdl = (FliCbHdl*)data;
+    FliCbHdl *cb_hdl = (FliCbHdl *)data;
 
     // LCOV_EXCL_START
     if (!cb_hdl) {
@@ -137,27 +137,27 @@ int FliSimPhaseCbHdl::remove() {
 }
 
 void FliSignalCbHdl::release() {
-    dynamic_cast<FliImpl*>(m_impl)->m_value_change_cache.release(this);
+    dynamic_cast<FliImpl *>(m_impl)->m_value_change_cache.release(this);
 }
 
 void FliTimedCbHdl::release() {
-    dynamic_cast<FliImpl*>(m_impl)->m_timer_cache.release(this);
+    dynamic_cast<FliImpl *>(m_impl)->m_timer_cache.release(this);
 }
 
 void FliReadOnlyCbHdl::release() {
-    dynamic_cast<FliImpl*>(m_impl)->m_read_only_cache.release(this);
+    dynamic_cast<FliImpl *>(m_impl)->m_read_only_cache.release(this);
 }
 
 void FliReadWriteCbHdl::release() {
-    dynamic_cast<FliImpl*>(m_impl)->m_read_write_cache.release(this);
+    dynamic_cast<FliImpl *>(m_impl)->m_read_write_cache.release(this);
 }
 
 void FliNextPhaseCbHdl::release() {
-    dynamic_cast<FliImpl*>(m_impl)->m_next_phase_cache.release(this);
+    dynamic_cast<FliImpl *>(m_impl)->m_next_phase_cache.release(this);
 }
 
 int FliStartupCbHdl::arm() {
-    mti_AddLoadDoneCB(handle_fli_callback, (void*)this);
+    mti_AddLoadDoneCB(handle_fli_callback, (void *)this);
     return 0;
 }
 
@@ -168,13 +168,13 @@ int FliStartupCbHdl::run() {
 }
 
 int FliStartupCbHdl::remove() {
-    mti_RemoveLoadDoneCB(handle_fli_callback, (void*)this);
+    mti_RemoveLoadDoneCB(handle_fli_callback, (void *)this);
     delete this;
     return 0;
 }
 
 int FliShutdownCbHdl::arm() {
-    mti_AddQuitCB(handle_fli_callback, (void*)this);
+    mti_AddQuitCB(handle_fli_callback, (void *)this);
     return 0;
 }
 
@@ -185,7 +185,7 @@ int FliShutdownCbHdl::run() {
 }
 
 int FliShutdownCbHdl::remove() {
-    mti_RemoveQuitCB(handle_fli_callback, (void*)this);
+    mti_RemoveQuitCB(handle_fli_callback, (void *)this);
     delete this;
     return 0;
 }

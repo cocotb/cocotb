@@ -19,12 +19,12 @@
 extern "C" {
 #endif
 
-PYGPILOG_EXPORT void py_gpi_logger_initialize(PyObject* handler,
-                                              PyObject* get_logger);
+PYGPILOG_EXPORT void py_gpi_logger_initialize(PyObject *handler,
+                                              PyObject *get_logger);
 
 PYGPILOG_EXPORT void py_gpi_logger_finalize();
 
-extern PYGPILOG_EXPORT PyObject* pEventFn;  // This is gross but I don't care
+extern PYGPILOG_EXPORT PyObject *pEventFn;  // This is gross but I don't care
 
 #ifdef __cplusplus
 }
