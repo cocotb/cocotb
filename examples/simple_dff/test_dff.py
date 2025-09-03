@@ -10,7 +10,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
 from cocotb_tools.runner import get_runner
 
-LANGUAGE = os.getenv("HDL_TOPLEVEL_LANG", "verilog").lower().strip()
+LANGUAGE = os.getenv("TOPLEVEL_LANG", "verilog").lower().strip()
 
 
 @cocotb.test()
