@@ -112,7 +112,7 @@ known-third-party = [
 # - CPython on Linux i686 and x86_64 with glibc
 # - CPython on Windows i686 and x86_64
 # - CPython on macOS x86_64
-build = "cp*-manylinux_x86_64 cp*-manylinux_i686 cp*-win_amd64 cp*-win32 cp*-macosx_x86_64"
+build = "cp*-manylinux_x86_64 cp*-manylinux_i686 cp*-win_amd64 cp*-win32 cp*-macosx_x86_64 cp*-macosx_arm64"
 
 # Build with optimizations and debugging
 # -O2   Enables reasonable optimizations. -O3 is unnecessary with the virtual-call-heavy code in the GPI and may bloat binary size.
