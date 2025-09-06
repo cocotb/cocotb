@@ -1,0 +1,1 @@
+Removed Windows and Linux 32-bit release builds.
