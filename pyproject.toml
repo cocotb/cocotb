@@ -107,13 +107,11 @@ known-third-party = [
 
 [tool.cibuildwheel]
 # Build for supported platforms only.
-# Even though we only support 64 bit operating systems, we still support 32 bit
-# userspace applications (Python and simulators) on Windows and Linux.
 #
-# - CPython on Linux i686 and x86_64 with glibc
-# - CPython on Windows i686 and x86_64
-# - CPython on macOS x86_64
-build = "cp*-manylinux_x86_64 cp*-manylinux_i686 cp*-win_amd64 cp*-win32 cp*-macosx_x86_64 cp*-macosx_arm64"
+# - CPython on Linux x86_64 with glibc
+# - CPython on Windows x86_64
+# - CPython on macOS x86_64 and arm64
+build = "cp*-manylinux_x86_64 cp*-win_amd64 cp*-macosx_x86_64 cp*-macosx_arm64"
 
 # Build with optimizations and debugging
 # -O2   Enables reasonable optimizations. -O3 is unnecessary with the virtual-call-heavy code in the GPI and may bloat binary size.
@@ -124,7 +122,6 @@ environment = {CFLAGS = "-O2 -g -flto", CPPFLAGS = "-O2 -g -flto", LDFLAGS = "-O
 # By default, build on manylinux2014 for compatibility with CentOS/RHEL 7+ (once
 # the user updates Python) and Ubuntu 20.04+ (with system Python).
 manylinux-x86_64-image = "manylinux2014"
-manylinux-i686-image = "manylinux2014"
 
 # Build with optimizations and debugging (Windows)
 # /O2   Enables reasonable optimizations.
@@ -139,7 +136,6 @@ environment = {CL = "/O2 /Z7 /Zo /LTCG"}
 # and CentOS/RHEL 8 with their default Python 3.6/pip 9 installation.
 select = "cp36-*"
 manylinux-x86_64-image = "manylinux1"
-manylinux-i686-image = "manylinux1"
 
 [tool.pytest.ini_options]
 # Note: Do *not* add files within the cocotb/ tree here. Add them to the
