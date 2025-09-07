@@ -166,7 +166,9 @@ jobs:
         cd iverilog
         git reset --hard ${{matrix.sim-version}}
         bash ./autoconf.sh
-        bash ./configure
+        # Icarus 11.0 fails to configure under Ubuntu 22.04 without explicitly
+        # telling it where to find the preprocessor.
+        CXXCPP=/usr/bin/cpp bash ./configure
         make -j $(nproc)
         sudo make install
     - name: Set up Icarus (Windows - source)
