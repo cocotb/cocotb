@@ -309,7 +309,10 @@ class Clock:
                 Force: _GPISetAction.FORCE,
             }[self._set_action]
             clkobj.start(
-                self._period_steps, self._period_high_steps, start_high, set_action
+                self._period_steps,
+                self._period_high_steps,
+                start_high,
+                set_action.value,
             )
 
             async def drive() -> None:
