@@ -629,11 +629,12 @@ class HierarchyArrayObject(
             yield self[i]
 
 
-class _GPISetAction(enum.IntEnum):
+class _GPISetAction(enum.Enum):
     DEPOSIT = 0
     FORCE = 1
     RELEASE = 2
     NO_DELAY = 3
+    OLD_IMMEDIATE = 0
 
 
 _ValueT = TypeVar("_ValueT")
@@ -753,6 +754,11 @@ class Immediate(Generic[_ValueT]):
         self.value = value
 
 
+class _OldImmediate(Generic[_ValueT]):
+    def __init__(self, value: _ValueT) -> None:
+        self.value = value
+
+
 _trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
 
 # A dictionary of pending (write_func, args), keyed by handle.
@@ -816,7 +822,7 @@ else:
         if isinstance(current_gpi_trigger(), ReadWrite):
             # If we are already in the ReadWrite phase, apply writes immediately as an optimization.
             write_func(action.value, value)
-        elif action == _GPISetAction.DEPOSIT:
+        elif action is _GPISetAction.DEPOSIT:
             # Queue write for the beginning of the next ReadWrite phase because we can't trust the simulator. =(
             if handle in _write_calls:
                 del _write_calls[handle]
@@ -914,6 +920,8 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             self._set_value(cast("ValueSetT", self.get()), _GPISetAction.RELEASE)
         elif isinstance(value, Immediate):
             self._set_value(value.value, _GPISetAction.NO_DELAY)
+        elif isinstance(value, _OldImmediate):
+            self._set_value(value.value, _GPISetAction.OLD_IMMEDIATE)
         else:
             self._set_value(value, _GPISetAction.DEPOSIT)
 
@@ -940,11 +948,12 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
 
         .. deprecated:: 2.0
             "Use `handle.set(Immediate(...))` or `handle.value = Immediate(...)` instead.
+            This could result in a change in behavior because prior to 2.0 this function did not set values immediately.
         """
         if isinstance(value, Deposit):
-            value = Immediate(value.value)
+            value = _OldImmediate(value.value)  # type: ignore
         elif not isinstance(value, (Force, Freeze, Release, Immediate)):
-            value = Immediate(value)
+            value = _OldImmediate(value)  # type: ignore
         self.set(value)
 
     @cached_property
