@@ -2,7 +2,7 @@
 
 Sphinx >= 8.2
 breathe
-sphinx-book-theme == 1.1.3  # pin this to exact version to guard against any CSS changes
+sphinx-rtd-theme >= 3.0.2
 sphinx-design >= 0.6.1
 sphinxcontrib-svg2pdfconverter[CairoSVG]
 git+https://github.com/ktbarrett/domaintools.git
