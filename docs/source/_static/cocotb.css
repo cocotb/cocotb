@@ -39,7 +39,7 @@ on e.g. .. code-block:: in the "Upgrading to cocotb 2.0" section
 }
 
 
-/* a manually inserted horizontal rule */
+/* A manually inserted horizontal rule */
 hr.docutils {
     border: 0;
     border-top: 1.5px solid black;
@@ -48,8 +48,7 @@ hr.docutils {
 }
 
 
-/* add badges for links that point to docs of specific cocotb versions */
-/* Common styles for all cocotb version badges */
+/* Add badges for links that point to docs of specific cocotb versions */
 a[href*="docs.cocotb.org"]::after {
     background-color: var(--color-cocotb-blue);
     color: white;
@@ -87,4 +86,10 @@ a[href*="docs.cocotb.org"][href*="v1.2"]::after {
 }
 a[href*="docs.cocotb.org"][href*="v1.1"]::after {
     content: "v1.1";
+}
+
+
+/* Increase small typewriter text (75% in RTD original) */
+.rst-content code, .rst-content tt, code {
+    font-size: 90%;
 }
