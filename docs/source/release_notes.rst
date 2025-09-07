@@ -87,7 +87,6 @@ Bugfixes
 --------
 
 - Fixes handling of escaped identifiers containing characters that are special in regular expressions (e.g. dots). (:pr:`1610`)
-- Updated :meth:`.ValueObjectBase.setimmediatevalue` to use ``GPI_NO_DELAY`` to set values, so values are *actually* set immediately and can be read back immediately. (:pr:`4068`)
 - Support reading and writing all possible 9-state values in VHDL; ``W``, ``H``, and ``L`` were missing before. (Note that GHDL only supports 4-state values.) (:pr:`4299`)
 - Fixed several memory and callback leaks in the GPI. Simulations may use less memory and run slightly faster. (:pr:`4392`)
 - Passing no triggers to :class:`~cocotb.triggers.First` previously hung the simulation indefinitely. Now, doing so raises a :exc:`ValueError` exception. (:pr:`4409`)
