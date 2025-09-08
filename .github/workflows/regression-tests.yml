@@ -296,7 +296,7 @@ jobs:
 
     - name: Upload to codecov
       if: inputs.collect_coverage
-      uses: codecov/codecov-action@fdcc8476540edceab3de004e990f80d881c6cc00  # v5.5.0
+      uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7  # v5.5.1
       env:
         # https://community.codecov.com/t/upload-issues-unable-to-locate-build-via-github-actions-api/3954
         CODECOV_TOKEN: 669f2048-851e-479e-a618-8fa64f3736cc
