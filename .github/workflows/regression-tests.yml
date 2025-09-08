@@ -179,7 +179,7 @@ jobs:
         git reset --hard ${{matrix.sim-version}}
         bash ./autoconf.sh
         bash ./configure --host=x86_64-w64-mingw32 --prefix=/c/iverilog
-        make -j $(nproc) install
+        make -j 2 install
         echo "C:\iverilog\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
     - name: Set up Icarus (MacOS - homebrew --HEAD)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-HEAD'
