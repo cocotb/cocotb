@@ -13,7 +13,7 @@ LANG = os.getenv("TOPLEVEL_LANG", "verilog")
 
 
 @pytest.mark.skipif(LANG != "verilog", reason="This test only supports Verilog")
-def test_indexing_warning() -> None:
+def test_log_prefix() -> None:
     sim = os.getenv("SIM", "icarus")
     runner = get_runner(sim)
 
