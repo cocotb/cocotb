@@ -9,6 +9,12 @@ from typing import Generator, List
 
 import cocotb
 from cocotb.logging import ANSI
+from cocotb_tools.sim_versions import RivieraVersion
+
+is_riviera_before_2024_04 = (
+    cocotb.SIM_NAME.lower().startswith("riviera")
+    and RivieraVersion(cocotb.SIM_VERSION) < "2024.04"
+)
 
 
 class LogCaptureData:
@@ -35,7 +41,8 @@ def capture_logs(handler: logging.Handler) -> Generator[LogCaptureData, None, No
         handler.emit = old_emit  # type: ignore[method-assign]
 
 
-@cocotb.test
+# Riviera-PRO before 2024.04 swallows the ANSI.DEFAULT in the end.
+@cocotb.test(expect_error=AssertionError if is_riviera_before_2024_04 else ())
 async def test_log_prefix(_: object) -> None:
     logger = logging.getLogger("example")
     logger.setLevel(logging.INFO)
