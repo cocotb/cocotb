@@ -604,3 +604,19 @@ dl.std.envvar > dt::before {
 dl.std.envvar > dt {
     margin-top: 1.5rem;
 }
+
+/* Make sure typewriter text has the same font size as the surrounding headings */
+h1 .pre,
+h2 .pre,
+h3 .pre,
+h4 .pre,
+h5 .pre,
+h6 .pre,
+h1 code,
+h2 code,
+h3 code,
+h4 code,
+h5 code,
+h6 code {
+    font-size: inherit;
+}
