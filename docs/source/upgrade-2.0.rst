@@ -1108,6 +1108,50 @@ Many new users were confused on when to use one vs the other,
 so :func:`!cocotb.start` will be removed to prevent any confusion.
 
 
+********************************************************************
+Use :func:`!cocotb.pass_test` instead of raising :exc:`!TestSuccess`
+********************************************************************
+
+Change
+======
+
+:external+cocotb19:py:exc:`~cocotb.result.TestSuccess` was deprecated and replaced with :func:`cocotb.pass_test`.
+
+How To Upgrade
+==============
+
+Replace ``raise TestSuccess(msg)`` with a call to :func:`!cocotb.pass_test`.
+
+.. code-block:: python
+    :caption: Old way with :exc:`!TestSuccess`
+    :class: removed
+
+    if cocotb.top.error.value == 0:
+        raise TestSuccess("Test finished without DUT erroring")
+
+.. code-block:: python
+    :caption: New way with :func:`!cocotb.pass_test`
+    :class: new
+
+    if cocotb.top.error.value == 0:
+        cocotb.pass_test("Test finished without DUT erroring")
+
+Rationale
+=========
+
+cocotb needs a way to end a test with a pass from any Task, not just the main test Task.
+:exc:`!TestSuccess` was created for that purpose.
+But being an exception, it has an additional implied interface:
+
+- It is acceptable to catch it.
+- It will propagate through Tasks like other exceptions do.
+
+However, neither of these implied behaviors is actually supported.
+
+:func:`!cocotb.pass_test` being a function call avoids these implicit interfaces.
+It also parallels the design of :func:`sys.exit`.
+
+
 ****************************************************************************************************
 Use ``sources`` argument in :meth:`Runner.build` instead of ``vhdl_sources`` and ``verilog_sources``
 ****************************************************************************************************
