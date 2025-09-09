@@ -1108,6 +1108,53 @@ Many new users were confused on when to use one vs the other,
 so :func:`!cocotb.start` will be removed to prevent any confusion.
 
 
+*********************************************************************************
+Replace ``handle.setimmediatevalue(value)`` with ``handle.set(Immediate(value))``
+*********************************************************************************
+
+Change
+======
+
+:meth:`handle.setimmediatevalue() <cocotb.handle.ValueObjectBase.setimmediatevalue>` was deprecated.
+
+How To Upgrade
+==============
+
+Replace the call to :meth:`!handle.setimmediatevalue` with a value set using the :meth:`~cocotb.handle.Immediate` action wrapper.
+
+.. code-block:: python
+    :caption: Old way with ``handle.setimmediatevalue(value)``
+    :class: removed
+
+    cocotb.top.iface.valid.setimmediatevalue(0)
+
+.. code-block:: python
+    :caption: New way with ``handle.set(Immediate(value))``
+    :class: new
+
+    cocotb.top.iface.valid.set(Immediate(0))
+
+Rationale
+=========
+
+:meth:`!handle.setimmediatevalue` does not actually set the object's value immediately.
+It sets the value inertially, but immediately,
+without it being scheduled for the next :ref:`ReadWrite sync phase <values-settle>`.
+This means signals get their value at delta N+1 (N being where you currently are in the time step).
+This is unexpected and generally not useful.
+
+:class:`!Immediate` applies values immediately, such that they can be read back after writing.
+
+.. code-block:: python
+    :caption: Read back value written immediately
+    :class: new
+
+    assert cocotb.top.data.value == 100
+    cocotb.top.data.set(Immediate(0))
+    # new value can be read back immediately
+    assert cocotb.top.data.value == 0
+
+
 ********************************************************************
 Use :func:`!cocotb.pass_test` instead of raising :exc:`!TestSuccess`
 ********************************************************************
