@@ -421,7 +421,7 @@ class HierarchyObject(_HierarchyObjectBase[str]):
 
     - the name cannot start with a number
     - the name cannot start with a ``_`` character
-    - the name can only contain ASCII letters, numbers, and the ``_`` character
+    - the name can only contain ASCII letters, numbers, and the ``_`` character.
 
     Any possible name of an object is supported with the index syntax,
     but it can be more verbose.
@@ -641,7 +641,7 @@ _ValueT = TypeVar("_ValueT")
 
 
 class Deposit(Generic[_ValueT]):
-    r""":term:`Inertially deposits <inertial deposit>` the given value on a simulator object.
+    r""":term:`Inertially deposit <inertial deposit>` the given value on a simulator object.
 
     If another :term:`deposit` comes after this deposit, the newer deposit overwrites the old value.
     If an HDL process is :term:`driving` the signal/net/register where a deposit from cocotb is made,
@@ -947,7 +947,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         Passing :class:`Deposit`\ s and unwrapped values is equivalent to passing an :class:`Immediate` to :meth:`set`.
 
         .. deprecated:: 2.0
-            "Use `handle.set(Immediate(...))` or `handle.value = Immediate(...)` instead.
+            Use ``handle.set(Immediate(...))`` or ``handle.value = Immediate(...)`` instead.
             This could result in a change in behavior because prior to 2.0 this function did not set values immediately.
         """
         if isinstance(value, Deposit):
@@ -1072,9 +1072,9 @@ class ArrayObject(
         Raises:
             TypeError: If *value* is of a type that can't be assigned to the simulation object.
 
-            .. warning::
-                Exceptions from array element :meth:`.ValueObjectBase.set` calls will be propagated up,
-                so the actual set of exceptions possible is greater than this list.
+        .. warning::
+            Exceptions from array element :meth:`.ValueObjectBase.set` calls will be propagated up,
+            so the actual set of exceptions possible is greater than this list.
         """
         super().set(value)
 

@@ -411,9 +411,19 @@ dl > dd > dl:not(.field-list.simple) {
 }
 
 /* fix for extra linebreak in apidoc (https://github.com/pydata/pydata-sphinx-theme/issues/2098) */
-dl.field-list.simple > dd > p,
-dl.field-list.simple > dd > ul.simple > li > p {
-    display: inline !important;
+simple li p:first-child, .simple dd p:first-child {
+    display: inline;
+}
+.simple li p:first-child + p, .simple dd p:first-child + p {
+    display: inline;
+}
+.simple li p + p + p, .simple dd p + p + p {
+    display: block;
+}
+
+/* add space between consecutive paragraphs */
+p + p {
+    margin-top: 0.5rem !important;
 }
 
 /* reduce distance after paragraphs a bit */
@@ -581,4 +591,32 @@ code.literal {
   border: none;
   background-color: unset;
   padding: 0;
+}
+
+
+/* add text "envvar" before environment variable definitions */
+dl.std.envvar > dt::before {
+    content: "envvar ";
+    color: var(--color-cocotb-blue);
+    font-style: italic;
+}
+
+dl.std.envvar > dt {
+    margin-top: 1.5rem;
+}
+
+/* Make sure typewriter text has the same font size as the surrounding headings */
+h1 .pre,
+h2 .pre,
+h3 .pre,
+h4 .pre,
+h5 .pre,
+h6 .pre,
+h1 code,
+h2 code,
+h3 code,
+h4 code,
+h5 code,
+h6 code {
+    font-size: inherit;
 }

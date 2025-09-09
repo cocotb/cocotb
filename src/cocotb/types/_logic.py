@@ -263,11 +263,12 @@ class Logic:
         return int(self)
 
     def resolve(self, resolver: ResolverLiteral) -> Self:
-        """Resolves non-0/1 values to 0/1.
+        """Resolve non-``0``/``1`` values to ``0``/``1``.
 
         The possible values of the *resolver* argument are:
 
-        * ``"weak"``: Weak values are resolved to their strong-valued equivalents.
+        * ``"weak"``:
+            Weak values are resolved to their strong-valued equivalents.
 
         * ``"zeros"``:
             ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
