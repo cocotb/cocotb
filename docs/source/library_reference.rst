@@ -529,9 +529,9 @@ Log Coloring
     ANSI color codes if the output is a terminal (``isatty()``).
 
     ``COCOTB_ANSI_OUTPUT=1``
-       forces output to be ANSI-colored regardless of the type of ``stdout`` or the presence of :envvar:`NO_COLOR`
+       Forces output to be ANSI-colored regardless of the type of ``stdout`` or the presence of :envvar:`NO_COLOR`.
     ``COCOTB_ANSI_OUTPUT=0``
-       suppresses the ANSI color output in the log messages
+       Suppresses the ANSI color output in the log messages.
 
 .. envvar:: NO_COLOR
 

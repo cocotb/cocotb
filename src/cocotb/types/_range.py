@@ -41,7 +41,7 @@ class Range(Sequence[int]):
 
     :class:`Range` supports "null" ranges as seen in VHDL.
     "null" ranges occur when a left bound cannot reach a right bound with the given direction.
-    They have a length of 0, but the :attr:`left`, :attr:`right`, and :attr:`direction` values remain as given.
+    They have a length of ``0``, but the :attr:`left`, :attr:`right`, and :attr:`direction` values remain as given.
 
     .. code-block:: pycon3
 
@@ -62,9 +62,9 @@ class Range(Sequence[int]):
     The typical use case of this type is in conjunction with :class:`~cocotb.types.Array`.
 
     Args:
-        left: leftmost bound of range
-        direction: ``'to'`` if values are ascending, ``'downto'`` if descending
-        right: rightmost bound of range (inclusive)
+        left: Leftmost bound of range.
+        direction: ``'to'`` if values are ascending, ``'downto'`` if descending.
+        right: Rightmost bound of range (inclusive).
     """
 
     @overload

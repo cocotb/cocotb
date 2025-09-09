@@ -421,7 +421,7 @@ class HierarchyObject(_HierarchyObjectBase[str]):
 
     - the name cannot start with a number
     - the name cannot start with a ``_`` character
-    - the name can only contain ASCII letters, numbers, and the ``_`` character
+    - the name can only contain ASCII letters, numbers, and the ``_`` character.
 
     Any possible name of an object is supported with the index syntax,
     but it can be more verbose.
@@ -947,7 +947,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         Passing :class:`Deposit`\ s and unwrapped values is equivalent to passing an :class:`Immediate` to :meth:`set`.
 
         .. deprecated:: 2.0
-            "Use `handle.set(Immediate(...))` or `handle.value = Immediate(...)` instead.
+            Use ``handle.set(Immediate(...))`` or ``handle.value = Immediate(...)`` instead.
             This could result in a change in behavior because prior to 2.0 this function did not set values immediately.
         """
         if isinstance(value, Deposit):
