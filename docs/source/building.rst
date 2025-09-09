@@ -41,6 +41,8 @@ Make Variables
 
 .. make:var:: SIM
 
+      Set this to the desired value from :ref:`Supported Simulators <simulator-support>`.
+
       In the makefile flow, selects which simulator Makefile to use.
       Attempts to include a simulator specific makefile from :file:`src/cocotb/share/makefiles/simulators/makefile.$(SIM)`
 
