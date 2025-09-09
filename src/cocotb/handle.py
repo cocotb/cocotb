@@ -641,7 +641,7 @@ _ValueT = TypeVar("_ValueT")
 
 
 class Deposit(Generic[_ValueT]):
-    r""":term:`Inertially deposits <inertial deposit>` the given value on a simulator object.
+    r""":term:`Inertially deposit <inertial deposit>` the given value on a simulator object.
 
     If another :term:`deposit` comes after this deposit, the newer deposit overwrites the old value.
     If an HDL process is :term:`driving` the signal/net/register where a deposit from cocotb is made,
@@ -1072,9 +1072,9 @@ class ArrayObject(
         Raises:
             TypeError: If *value* is of a type that can't be assigned to the simulation object.
 
-            .. warning::
-                Exceptions from array element :meth:`.ValueObjectBase.set` calls will be propagated up,
-                so the actual set of exceptions possible is greater than this list.
+        .. warning::
+            Exceptions from array element :meth:`.ValueObjectBase.set` calls will be propagated up,
+            so the actual set of exceptions possible is greater than this list.
         """
         super().set(value)
 
