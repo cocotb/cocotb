@@ -1106,3 +1106,67 @@ Rationale
 
 Many new users were confused on when to use one vs the other,
 so :func:`!cocotb.start` will be removed to prevent any confusion.
+
+
+****************************************************************************************************
+Use ``sources`` argument in :meth:`Runner.build` instead of ``vhdl_sources`` and ``verilog_sources``
+****************************************************************************************************
+
+Change
+======
+
+The ``vhdl_sources`` and ``verilog_sources`` arguments to :meth:`.Runner.build` have been deprecated and replaced with the ``sources`` argument.
+
+How to Upgrade
+==============
+
+Instead of splitting your sources between the ``vhdl_sources`` and ``verilog_sources`` arguments,
+pass all sources via the ``sources`` argument.
+Sources will be compiled in the given order, left-to-right.
+
+.. code-block:: python
+    :caption: Old way with ``vhdl_sources`` and ``verilog_sources``
+    :class: removed
+
+    runner = get_runner()
+    runner.build(
+        vhdl_sources=["top.vhdl"],
+        verilog_sources=["ip_core.sv"],
+    )
+
+.. code-block:: python
+    :caption: New way with ``sources``
+    :class: new
+
+    runner = get_runner()
+    runner.build(
+        sources=["ip_core.sv", "top.vhdl"],
+    )
+
+.. note::
+    If you are unsure about the order the sources should be compiled in with mixed-language simulators,
+    prefer compiling all VHDL sources, then all Verilog sources.
+    This is the order of compilation when using separate ``vhdl_sources`` and ``verilog_sources`` arguments.
+
+Rationale
+=========
+
+Splitting the two types of sources made arbitrary build ordering of VHDL and Verilog sources impossible.
+This approach also reduces verbosity and hidden assumptions about compilation order.
+
+Additional Details
+==================
+
+Source files are judged to be either VHDL or Verilog sources and compiled appropriately for your simulator.
+The runner uses the file extension to determine whether the source file is VHDL or Verilog
+(see :meth:`.Runner.build` for details).
+If you use custom file extensions,
+you can use the :class:`~cocotb_tools.runner.VHDL` and :class:`~cocotb_tools.runner.Verilog` tag classes
+to mark the sources as either VHDL or Verilog, respectively.
+
+.. code-block:: python
+
+    runner = get_runner()
+    runner.build(
+        sources=[Verilog("ip_core.gen"), "top.vhdl"],
+    )
