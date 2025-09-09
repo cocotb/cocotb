@@ -421,6 +421,11 @@ simple li p:first-child, .simple dd p:first-child {
     display: block;
 }
 
+/* add space between consecutive paragraphs */
+p + p {
+    margin-top: 0.5rem !important;
+}
+
 /* reduce distance after paragraphs a bit */
 p {
     margin-bottom: 0.5rem !important;
