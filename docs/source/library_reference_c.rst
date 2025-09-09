@@ -7,7 +7,7 @@ that is an abstraction layer for the VPI, VHPI, and FLI simulator interfaces.
 
 .. image:: diagrams/svg/cocotb_overview.svg
 
-The interaction between cocotb's Python and GPI is via a Python extension module called the :ref:`PyGPI <_pygpi>`.
+The interaction between cocotb's Python and GPI is via a Python extension module called the :ref:`PyGPI <pygpi>`.
 
 Environment Variables
 =====================
