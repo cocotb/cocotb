@@ -411,9 +411,14 @@ dl > dd > dl:not(.field-list.simple) {
 }
 
 /* fix for extra linebreak in apidoc (https://github.com/pydata/pydata-sphinx-theme/issues/2098) */
-dl.field-list.simple > dd > p,
-dl.field-list.simple > dd > ul.simple > li > p {
-    display: inline !important;
+simple li p:first-child, .simple dd p:first-child {
+    display: inline;
+}
+.simple li p:first-child + p, .simple dd p:first-child + p {
+    display: inline;
+}
+.simple li p + p + p, .simple dd p + p + p {
+    display: block;
 }
 
 /* reduce distance after paragraphs a bit */
