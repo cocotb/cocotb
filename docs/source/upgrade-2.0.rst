@@ -1152,6 +1152,43 @@ However, neither of these implied behaviors is actually supported.
 It also parallels the design of :func:`sys.exit`.
 
 
+*******************************************************************
+Fail tests using :keyword:`!assert` rather than :exc:`!TestFailure`
+*******************************************************************
+
+Change
+======
+
+:external+cocotb19:py:exc:`~cocotb.result.TestFailure` was removed.
+
+How to Upgrade
+==============
+
+Replace ``raise TestFailure(msg)`` with an :keyword:`assert` statement.
+Move any exception message to the optional message clause of the :keyword:`!assert` statement.
+
+.. code-block:: python
+    :caption: Old way with :exc:`!TestFailure`
+    :class: removed
+
+    if cocotb.top.error.value != 0:
+        raise TestFailure("DUT errored")
+
+.. code-block:: python
+    :caption: New way with :keyword:`!assert`
+    :class: new
+
+    assert cocotb.top.error.value == 0, "DUT errored"
+
+Rationale
+=========
+
+cocotb had far too many competing ways to fail a test, so they were reduced to one.
+:keyword:`assert` is already familiar to those who have ever used :mod:`pytest`,
+and :mod:`!pytest` functionality can be leveraged to rewrite the :exc:`AssertionError`\ s coming from failing :keyword:`!assert`\ s
+with more contextual information as to why the :keyword:`!assert` failed.
+
+
 ****************************************************************************************************
 Use ``sources`` argument in :meth:`Runner.build` instead of ``vhdl_sources`` and ``verilog_sources``
 ****************************************************************************************************
