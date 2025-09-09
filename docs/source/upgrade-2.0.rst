@@ -1189,6 +1189,45 @@ and :mod:`!pytest` functionality can be leveraged to rewrite the :exc:`Assertion
 with more contextual information as to why the :keyword:`!assert` failed.
 
 
+*********************************
+Replace uses of :exc:`!TestError`
+*********************************
+
+Change
+======
+
+:external+cocotb19:py:exc:`~cocotb.result.TestError` was removed.
+
+How to Upgrade
+==============
+
+Replace :exc:`!TestError` with an :external+python:ref:`exception of the appropriate type <concrete-exceptions>`.
+
+.. code-block:: python
+    :caption: Old way with :exc:`!TestError`
+    :class: removed
+
+    def drive(pkt):
+        if not isinstance(pkt, bytes):
+            raise TestError("packet must be bytes")
+        ...
+
+.. code-block:: python
+    :caption: New way with more appropriate exception type
+    :class: new
+
+    def drive(pkt):
+        if not isinstance(pkt, bytes):
+            raise TypeError("packet must be bytes")
+        ...
+
+Rationale
+=========
+
+:exc:`TestError` is unnecessarily cocotb-specific and another redundant way to fail the test with an error,
+so it was removed.
+
+
 ****************************************************************************************************
 Use ``sources`` argument in :meth:`Runner.build` instead of ``vhdl_sources`` and ``verilog_sources``
 ****************************************************************************************************
