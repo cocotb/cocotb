@@ -592,3 +592,15 @@ code.literal {
   background-color: unset;
   padding: 0;
 }
+
+
+/* add text "envvar" before environment variable definitions */
+dl.std.envvar > dt::before {
+    content: "envvar ";
+    color: var(--color-cocotb-blue);
+    font-style: italic;
+}
+
+dl.std.envvar > dt {
+    margin-top: 1.5rem;
+}
