@@ -505,7 +505,7 @@ on e.g. .. code-block:: in the "Upgrading to cocotb 2.0" section
     border-color: var(--color-cocotb-green);
 }
 
-/* a manually inserted horizontal rule */
+/* A manually inserted horizontal rule */
 hr.docutils {
     border: 0;
     border-top: 1.5px solid var(--color-cocotb-blue);
@@ -513,18 +513,19 @@ hr.docutils {
     opacity: 1.0;
 }
 
-/* add badges for links that point to docs of specific cocotb versions */
-/* Common styles for all cocotb version badges */
+/* Add badges for links that point to docs of specific cocotb versions */
 a[href*="docs.cocotb.org"]::after {
-    background-color: var(--color-cocotb-blue);
-    color: white;
+    background-color: white;
+    color: var(--color-cocotb-blue);
+    border: 1px solid;
+    border-radius: 4px;
     font-size: 0.6rem;
+    font-weight: bold;
     padding: 0px 3px;
     margin-left: 0.1rem;
-    border-radius: 4px;
     vertical-align: super;
-    text-decoration: none;
     display: inline-block;
+    text-decoration: none;
 }
 
 a[href*="docs.cocotb.org"][href*="v1.9"]::after {
