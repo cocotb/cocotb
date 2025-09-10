@@ -274,7 +274,7 @@ see :class:`cocotb_tools.runner.Questa`.
 
     A working installation of the simulator itself is required.
 
-Cocotb implements two flows for Questa.
+cocotb implements two flows for Questa.
 The most suitable flow is chosen based on the Questa version being used.
 
 The newer **QIS/Qrun flow** uses the Questa Information System (QIS) together with the ``qrun`` command.

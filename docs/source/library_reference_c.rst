@@ -2,7 +2,7 @@
 GPI Library Reference
 *********************
 
-Cocotb contains a native library called :term:`GPI` (Generic Procedural Interface)
+cocotb contains a native library called :term:`GPI` (Generic Procedural Interface)
 that is an abstraction layer for the VPI, VHPI, and FLI simulator interfaces.
 
 .. image:: diagrams/svg/cocotb_overview.svg

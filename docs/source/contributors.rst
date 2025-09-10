@@ -21,7 +21,7 @@ legal and administrative support, and holds cocotb assets.
 Maintainers
 ===========
 
-Cocotb uses a shared maintainer model.
+cocotb uses a shared maintainer model.
 Most maintainers are experts in part of the cocotb codebase, and are primarily responsible for reviews in this area.
 
 - Kaleb Barrett (@ktbarrett)

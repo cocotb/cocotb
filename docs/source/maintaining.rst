@@ -93,7 +93,7 @@ cocotb explicitly uses no priority labels, as experience indicates that they pro
 Issues and pull requests which are invalid, or where feedback is lacking for four weeks, should be closed.
 
 
-Cocotb Releases
+cocotb Releases
 ===============
 
 cocotb aims to keep the ``master`` branch always in a releasable state.
