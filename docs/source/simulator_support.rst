@@ -281,7 +281,7 @@ The newer **QIS/Qrun flow** uses the Questa Information System (QIS) together wi
 One of the most visible user-facing benefits of the ``qrun`` flow is the ability to automatically order VHDL sources.
 The use of the QIS should reduce the overhead from accessing design internals at runtime and mandates the use of Visualizer as GUI.
 
-The QIS/qrun flow is chosen automatically if Questa 2025.2 or newer is detected.
+The QIS/Qrun flow is chosen automatically if Questa 2025.2 or newer is detected.
 Users can explicitly use the QIS/Qrun flow with :make:var:`SIM=questa-qisqrun <SIM>`.
 If you are passing simulator-specific arguments to the Makefile, we recommend not relying on the automatic flow selection and instead explicitly selecting a flow by using either ``SIM=questa-qisqrun`` or ``SIM=questa-compat`` to ensure they are interpreted as expected.
 
