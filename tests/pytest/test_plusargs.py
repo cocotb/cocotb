@@ -22,7 +22,7 @@ sys.path.insert(0, str(test_module_path))
 
 
 def test_toplevel_library():
-    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+    hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
     sim = os.getenv("SIM", "icarus" if hdl_toplevel_lang == "verilog" else "nvc")
 
