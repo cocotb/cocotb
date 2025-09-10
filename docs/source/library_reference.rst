@@ -39,6 +39,23 @@ Python Test Runner
 
 .. autodata:: MAX_PARALLEL_BUILD_JOBS
 
+.. envvar:: GUI
+
+    Set this to 1 to enable the GUI mode in the simulator (if supported).
+
+.. envvar:: WAVES
+
+    Set this to 1 to enable wave traces dump for the
+    Aldec Riviera-PRO, Mentor Graphics Questa, and Icarus Verilog simulators.
+    To get wave traces in Verilator see :ref:`sim-verilator-waveforms`.
+
+.. envvar:: COCOTB_WAVEFORM_VIEWER
+
+    The name of the waveform viewer executable to use (like ``surfer``) when GUI mode is enabled
+    for simulators that do not have a built-in waveform viewer (like Verilator).
+    The executable name will be called with the name of the waveform file as the argument.
+
+
 .. _api-runner-sim:
 
 Simulator Runners
