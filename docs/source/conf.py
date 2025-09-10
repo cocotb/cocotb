@@ -97,7 +97,7 @@ release = cocotb.__version__
 # The short X.Y version.
 v_major, v_minor = LooseVersion(release).version[:2]
 version = "{}.{}".format(v_major, v_minor)
-# Cocotb commit ID
+# cocotb commit ID
 try:
     commit_id = (
         subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("ascii")

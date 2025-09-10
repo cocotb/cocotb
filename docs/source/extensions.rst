@@ -4,7 +4,7 @@ Writing cocotb Extensions
 
 This guide explains how to write cocotb extensions, with a focus on the conventions that should be followed.
 
-Cocotb gives its users a framework to build Python testbenches for hardware designs.
+cocotb gives its users a framework to build Python testbenches for hardware designs.
 But sometimes the functionality provided by cocotb is too low-level.
 One common example are bus drivers and monitors:
 instead of creating a bus adapter from scratch for each new project, wouldn't it be nice to share this component, and build on top it?
@@ -19,7 +19,7 @@ Additionally, the cocotb community has agreed on a set of conventions to make ex
 Naming conventions
 ==================
 
-Cocotb extensions are normal Python modules which follow these naming conventions.
+cocotb extensions are normal Python modules which follow these naming conventions.
 
 Assuming an extension named ``EXTNAME`` (all lower-case),
 

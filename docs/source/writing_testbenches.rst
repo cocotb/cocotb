@@ -8,7 +8,7 @@ Writing Testbenches
 Logging
 =======
 
-Cocotb uses Python's :mod:`logging` library, with the configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
+cocotb uses Python's :mod:`logging` library, with the configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
 ``cocotb.log.info`` is a good stand-in for :func:`print`,
 but user are encouraged to create their own loggers and logger hierarchy by calling :func:`logging.getLogger` and/or :meth:`.Logger.getChild`.
 
@@ -121,7 +121,7 @@ Signed and unsigned values
 --------------------------
 
 Both signed and unsigned values can be assigned to signals using a Python int.
-Cocotb makes no assumptions regarding the signedness of the signal. It only
+cocotb makes no assumptions regarding the signedness of the signal. It only
 considers the width of the signal, so it will allow values in the range from
 the minimum negative value for a signed number up to the maximum positive
 value for an unsigned number: ``-2**(Nbits - 1) <= value <= 2**Nbits - 1``
@@ -180,7 +180,7 @@ The Python type of a value depends on the handle's HDL type:
 Identifying tests
 =================
 
-Cocotb tests are identified using the :deco:`cocotb.test` decorator.
+cocotb tests are identified using the :deco:`cocotb.test` decorator.
 Using this decorator will tell cocotb that this function is a special type of coroutine that is meant
 to either pass or fail.
 The :deco:`cocotb.test` decorator supports several keyword arguments (see section :ref:`writing-tests`).

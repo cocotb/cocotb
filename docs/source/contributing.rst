@@ -10,16 +10,16 @@ All processes in this document are designed to streamline the development effort
 Feeling lost?
 =============
 
-Cocotb is a diverse and challenging project to contribute to.
+cocotb is a diverse and challenging project to contribute to.
 If you ever feel lost, out of your depth, or simply want to know more, the `cocotb Gitter channel <https://gitter.im/cocotb/Lobby>`__ is actively watched by many cocotb users, contributors, and maintainers.
 It is a good idea if you are unsure whether your problem or question is worthy of a Github Issue to first post it to the Gitter channel.
 You may also ask questions in `Github issues <https://github.com/cocotb/cocotb/issues>`_.
 If you don't receive any response on the Gitter channel or a Github issue, or you want help privately, you may directly contact a maintainer.
 
-Architecture and Scope of Cocotb
+Architecture and Scope of cocotb
 ================================
 
-Cocotb has seen adoption in a wide variety of scenarios with sometimes conflicting requirements.
+cocotb has seen adoption in a wide variety of scenarios with sometimes conflicting requirements.
 To foster experimentation and to decentralize the development process the architecture of cocotb is highly modular.
 A solid core forms the foundation upon which extensions can provide higher-level functionality.
 
@@ -47,14 +47,14 @@ They including the following:
 -  Managing Github issues and the Gitter channel
 -  Testing and coverage improvements
 
-Cocotb is still not perfect.
+cocotb is still not perfect.
 There are plenty of `bug fixes <https://github.com/cocotb/cocotb/issues?q=is%3Aopen+is%3Aissue+label%3Atype%3Abug>`__ and `features <https://github.com/cocotb/cocotb/issues?q=is%3Aopen+is%3Aissue+label%3Atype%3Afeature>`__ that can be worked on.
 Most of these are recorded as Github issues.
 
 Documentation
 -------------
 
-Cocotb's documentation is always open to improvements.
+cocotb's documentation is always open to improvements.
 Improving documentation will help users better understand and use cocotb;
 and may decrease the number of questions the Gitter channel and Github issue page.
 Updating documentation requires knowledge of:
@@ -109,14 +109,14 @@ If you can duplicate the bug or confirm the bug report is invalid, that helps ma
 Tests and Coverage
 ------------------
 
-Cocotb has a suite of unit tests (located in the ``tests`` directory) and examples (located in the ``examples`` directory) which are functional acceptance tests.
+cocotb has a suite of unit tests (located in the ``tests`` directory) and examples (located in the ``examples`` directory) which are functional acceptance tests.
 If a pull request cannot pass *all* of these tests, it will likely be rejected.
 To ensure cocotb only includes the highest quality code, these test should be exhaustive.
 We use code coverage as a quantifiable metric of the "exhaustiveness" of these tests, and wish to improve this metric.
 
 Working on this task requires a familiarity with:
 
--  Cocotb's core functionality
+-  cocotb's core functionality
 -  How to write Verilog and VHDL
 -  How to write cocotb tests in Python
 -  (Optionally) `codecov <https://docs.codecov.io/docs>`__; coverage aggregator and Github bot
@@ -124,7 +124,7 @@ Working on this task requires a familiarity with:
 -  (Optionally) `gcov <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`__, for C++ code coverage
 -  (Optionally) `Github Actions <https://docs.github.com/en/free-pro-team@latest/actions>`__, for automatic acceptance testing
 
-Cocotb's regression tests can be improved by:
+cocotb's regression tests can be improved by:
 
 -  Testing more of cocotb's core functionality
 -  Testing corner cases left out of the current set of tests (identified by looking at code coverage)
@@ -136,9 +136,9 @@ Please see the `guidelines on submitting pull requests <#patch-requirements>`__.
 Features
 --------
 
-Cocotb is still in development and new features are still welcome and appreciated;
-as long as they stay `in scope <#Architecture-and-Scope-of-Cocotb>`__.
-Cocotb is comprised of several major codebases, each requiring different sets of skills and development process.
+cocotb is still in development and new features are still welcome and appreciated;
+as long as they stay `in scope <#Architecture-and-Scope-of-cocotb>`__.
+cocotb is comprised of several major codebases, each requiring different sets of skills and development process.
 Instead of including that breakdown here, it is done in the `internal documentation <https://github.com/cocotb/cocotb/wiki/cocotb-Internals>`__.
 
 Small improvements to existing features generally do not require maintainer pre-approval.
@@ -213,7 +213,7 @@ Details on how to debug cocotb can be found on the `Wiki <https://github.com/coc
 Deprecations and Removals
 -------------------------
 
-Cocotb's treatment of deprecations and removal follows guidelines laid out `here <https://symfony.com/doc/current/setup/upgrade_major.html#1-make-your-code-deprecation-free>`__.
+cocotb's treatment of deprecations and removal follows guidelines laid out `here <https://symfony.com/doc/current/setup/upgrade_major.html#1-make-your-code-deprecation-free>`__.
 Deprecations serve the following purposes:
 
 -  Remove legacy code that has been deemed out of scope
@@ -246,7 +246,7 @@ How to Get Changes Merged
 =========================
 
 Have you fixed a bug in cocotb, or want to add new functionality to it?
-Cocotb follows the typical `GitHub flow <https://guides.github.com/introduction/flow/>`__ and makes use of pull requests and reviews.
+cocotb follows the typical `GitHub flow <https://guides.github.com/introduction/flow/>`__ and makes use of pull requests and reviews.
 Follow the steps below to get your changes merged, i.e. integrated into the main cocotb codebase.
 
 1. Create an issue ticket on `cocotb's GitHub issue tracker <https://github.com/cocotb/cocotb/issues>`__ describing the problem.

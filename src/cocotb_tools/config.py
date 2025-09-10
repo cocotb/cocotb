@@ -56,7 +56,7 @@ def _help_vars_text() -> str:
         """\
         The following variables are environment variables:
 
-        Cocotb
+        cocotb
         ------
         COCOTB_TOPLEVEL           Instance in the hierarchy to use as the DUT
         COCOTB_RANDOM_SEED        Random seed, to recreate a previous test stimulus

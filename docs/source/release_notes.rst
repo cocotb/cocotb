@@ -327,7 +327,7 @@ Features
 - Add support for :class:`fractions.Fraction` and :class:`decimal.Decimal` to the ``period`` argument of :external+cocotb18:class:`cocotb.clock.Clock`. (:pr:`3045`)
 - This release adds the :external+cocotb18:ref:`Python Test Runner <howto-python-runner>`, an experimental replacement for the traditional Makefile-based build and run flow. (:pr:`3103`)
 - Incisive now supports compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`3261`)
-- Cocotb can now correctly drive Verilator when its new ``--timing`` flag is used. (:pr:`3316`)
+- cocotb can now correctly drive Verilator when its new ``--timing`` flag is used. (:pr:`3316`)
 - Creating an FST waveform dump in Icarus Verilog can now be done by setting the :external+cocotb18:make:var:`WAVES` environment variable. Icarus-specific Verilog code is no longer required. (:pr:`3324`)
 
 
@@ -625,7 +625,7 @@ Features
 - Add support for distinguishing between ``net`` (``vpiNet``) and ``reg`` (``vpiReg``) type when using the VPI interface. (:pr:`1107`)
 - Support for dropping into :mod:`pdb` upon failure, via the new :external+cocotb14:envvar:`COCOTB_PDB_ON_EXCEPTION` environment variable. (:pr:`1180`)
 - Simulators run through a Tcl script (Aldec Riviera Pro and Mentor simulators) now support a new :external+cocotb14:make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime. (:pr:`1244`)
-- Cocotb now supports the following example of forking a *non-decorated* :external+cocotb14:ref:`async coroutine <async_functions>`.
+- cocotb now supports the following example of forking a *non-decorated* :external+cocotb14:ref:`async coroutine <async_functions>`.
 
   .. code-block:: python
 
@@ -655,7 +655,7 @@ Features
   .. consume the towncrier issue number on this line. (:pr:`1266`)
 - Support for ``vpiRealNet``. (:pr:`1282`)
 - The colored output can now be disabled by the :external+cocotb14:envvar:`NO_COLOR` environment variable. (:pr:`1309`)
-- Cocotb now supports deposit/force/release/freeze actions on simulator handles, exposing functionality similar to the respective Verilog/VHDL assignments.
+- cocotb now supports deposit/force/release/freeze actions on simulator handles, exposing functionality similar to the respective Verilog/VHDL assignments.
 
   .. code-block:: python
 
@@ -747,7 +747,7 @@ Deprecations and Removals
 Changes
 -------
 
-- Cocotb no longer supports Python 2, at least Python 3.5 is now required.
+- cocotb no longer supports Python 2, at least Python 3.5 is now required.
   Users of Python 2.7 can still use cocotb 1.3, but are heavily encouraged to update.
   It is recommended to use the latest release of Python 3 for improved performance over older Python 3 versions. (:pr:`767`)
 - Mentor Questa, Aldec Riviera-PRO and GHDL are now started in the directory containing the Makefile and also save :file:`results.xml` there, bringing them in line with the behavior used by other simulators. (:pr:`1598`) (:pr:`1599`) (:pr:`1063`)
@@ -756,7 +756,7 @@ Changes
   The interface libraries ``libcocotbvpi`` and ``libcocotbvhpi`` have been renamed to have a ``_simulator_name`` postfix.
   The ``simulator`` module has moved to :external+cocotb14:mod:`cocotb.simulator`.
   The ``LD_LIBRARY_PATH`` environment variable no longer needs to be set by the makefiles, as the libraries now discover each other via ``RPATH`` settings. (:pr:`1425`)
-- Cocotb must now be :external+cocotb14:ref:`installed <installation-via-pip>` before it can be used. (:pr:`1445`)
+- cocotb must now be :external+cocotb14:ref:`installed <installation-via-pip>` before it can be used. (:pr:`1445`)
 - ``cocotb.handle.NonHierarchyIndexableObject.value`` is now a list in left-to-right range order of the underlying simulation object.
   Previously the list was always ordered low-to-high. (:pr:`1507`)
 - Various binary representations have changed type from :class:`str` to :class:`bytes`. These include:

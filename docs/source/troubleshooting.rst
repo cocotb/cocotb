@@ -208,7 +208,7 @@ Users of cocotb with more than one installation of a single Python version (incl
 must take care not to reuse cached versions of the installed cocotb package.
 If this isn't done, running simulations fails with errors like ``libpython3.7m.so.1.0: cannot open shared object file: No such file or directory``.
 
-Cocotb builds binary libraries during its installation process.
+cocotb builds binary libraries during its installation process.
 These libraries are tailored to the installation of Python used when installing cocotb.
 When switching between Python installations, cocotb needs to be re-installed without using cached build artifacts, e.g. with ``pip install --no-cache-dir cocotb``.
 

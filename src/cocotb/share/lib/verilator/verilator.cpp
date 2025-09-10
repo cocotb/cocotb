@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
                 stderr,
                 "usage: %s [--trace] [--trace-flush] [--trace-file TRACEFILE]\n"
                 "\n"
-                "Cocotb + Verilator sim\n"
+                "cocotb + Verilator sim\n"
                 "\n"
                 "options:\n"
                 "  --trace       Enable tracing (VCD or FST)\n"
