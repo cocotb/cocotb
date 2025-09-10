@@ -27,7 +27,7 @@ Make Phases
 ===========
 
 Typically the makefiles provided with cocotb for various simulators use a separate ``compile`` and ``run`` target.
-This allows for a rapid re-running of a simulator if none of the :term:`RTL` source files have changed and therefore the simulator does not need to recompile the :term:`RTL`.
+This allows for a rapid re-running of a simulator if none of the :term:`RTL` source files have changed and therefore the simulator does not need to recompile the RTL.
 
 Make Variables
 ==============
@@ -57,7 +57,7 @@ Make Variables
 .. make:var:: TOPLEVEL_LANG
 
     Used to inform the makefile scripts which :term:`HDL` language the top-level design element is written in.
-    Currently it supports the values ``verilog`` for Verilog or SystemVerilog tops, and ``vhdl`` for VHDL tops.
+    Currently it supports the values ``verilog`` for Verilog or SystemVerilog toplevels, and ``vhdl`` for VHDL toplevels.
     This is used by simulators that support more than one interface (:term:`VPI`, :term:`VHPI`, or :term:`FLI`) to select the appropriate interface to start cocotb.
 
 .. make:var:: VHDL_GPI_INTERFACE
@@ -103,7 +103,7 @@ Make Variables
 .. make:var:: RUN_ARGS
 
       Any argument to be passed to the "first" invocation of a simulator that runs via a TCL script.
-      One motivating usage is to pass `-noautoldlibpath` to Questa to prevent it from loading the out-of-date libraries it ships with.
+      One motivating usage is to pass ``-noautoldlibpath`` to Questa to prevent it from loading the out-of-date libraries it ships with.
       Used by the Riviera-PRO and Questa simulators.
 
 .. make:var:: EXTRA_ARGS

@@ -277,7 +277,7 @@ class Runner(ABC):
             clean: Delete *build_dir* before building.
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
-            waves: Record signal traces. Overridden by the ``WAVES`` environment variable.
+            waves: Record signal traces. Overridden by the :envvar:`WAVES` environment variable.
             log_file: File to write the build log to.
 
         .. deprecated:: 2.0
@@ -370,14 +370,14 @@ class Runner(ABC):
             test_args: A list of extra arguments for the simulator.
             plusargs: 'plusargs' to set for the simulator.
             extra_env: Extra environment variables to set.
-            waves: Record signal traces. Overridden by the ``WAVES`` environment variable.
-            gui: Run with simulator GUI. Overridden by the ``GUI`` environment variable.
+            waves: Record signal traces. Overridden by the :envvar:`WAVES` environment variable.
+            gui: Run with simulator GUI. Overridden by the :envvar:`GUI` environment variable.
             parameters: Verilog parameters or VHDL generics.
             build_dir: Directory the build step has been run in.
             test_dir: Directory to run the tests in.
             results_xml: Name of xUnit XML file to store test results in.
                 If an absolute path is provided it will be used as-is,
-                ``{build_dir}/results.xml`` otherwise.
+                :file:`{build_dir}/results.xml` otherwise.
                 This argument should not be set when run with ``pytest``.
             verbose: Enable verbose messages.
             pre_cmd: Commands to run before simulation begins.

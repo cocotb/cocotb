@@ -85,9 +85,9 @@ Generate waveforms
 ==================
 
 For many simulators it is possible to generate simulation waveforms.
-This can be done by setting the *waves* argument to True in the
+This can be done by setting the *waves* argument to ``True`` in the
 :meth:`Runner.build <cocotb_tools.runner.Runner.build>` and :meth:`Runner.test <cocotb_tools.runner.Runner.test>` functions.
-It is also possible to set the environment variable ``WAVES`` to
+It is also possible to set the environment variable :envvar:`WAVES` to
 a non-zero value to generate waveform files at run-time without modifying the test code, e.g.,
 
 .. code-block:: bash
@@ -102,16 +102,16 @@ Starting in GUI mode/viewing waveforms
 
 To start the simulator GUI or, for simulators not having a GUI, view
 the waveform file in a waveform viewer after the simulation, it is possible
-to set the *gui* argument to True in :meth:`Runner.test <cocotb_tools.runner.Runner.test>`.
-It is also possible to set the ``GUI`` environment variable to a non-zero value, e.g.,
+to set the *gui* argument to ``True`` in :meth:`Runner.test <cocotb_tools.runner.Runner.test>`.
+It is also possible to set the :envvar:`GUI` environment variable to a non-zero value, e.g.,
 
 .. code-block:: bash
 
     GUI=1 pytest examples/simple_dff/test_dff.py
 
 For simulators without a GUI, cocotb will open a waveform viewer. Either `Surfer <https://surfer-project.org/>`_
-or `GTKWave <https://gtkwave.github.io/gtkwave/>`, in that order, if available in the system path.
-To specify preferred waveform viewer, the ``COCOTB_WAVEFORM_VIEWER`` environment variable
+or `GTKWave <https://gtkwave.github.io/gtkwave/>`_, in that order, if available in the system path.
+To specify preferred waveform viewer, the :envvar:`COCOTB_WAVEFORM_VIEWER` environment variable
 can be used. This can also be used to set, e.g., the ``surfer.sh`` startup script for WSL.
 
 API
