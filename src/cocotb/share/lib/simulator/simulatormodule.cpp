@@ -1068,7 +1068,7 @@ static PyMethodDef SimulatorMethods[] = {
      PyDoc_STR("package_iterate(/)\n"
                "--\n\n"
                "package_iterate() -> cocotb.simulator.gpi_iterator_hdl\n"
-               "Get an iterator handle to loop over all packages.\n"
+               "Get an iterator handle to loop over all HDL packages.\n"
                "\n"
                ".. versionadded:: 2.0")},
     {"register_timed_callback", register_timed_callback, METH_VARARGS,
@@ -1090,7 +1090,7 @@ static PyMethodDef SimulatorMethods[] = {
                "--\n\n"
                "register_readonly_callback(func: Callable[..., Any], *args: "
                "Any) -> cocotb.simulator.gpi_cb_hdl\n"
-               "Register a callback for the read-only section.")},
+               "Register a callback for the read-only phase.")},
     {"register_nextstep_callback", register_nextstep_callback, METH_VARARGS,
      PyDoc_STR("register_nextstep_callback(func, /, *args)\n"
                "--\n\n"
@@ -1102,7 +1102,7 @@ static PyMethodDef SimulatorMethods[] = {
                "--\n\n"
                "register_rwsynch_callback(func: Callable[..., Any], *args: "
                "Any) -> cocotb.simulator.gpi_cb_hdl\n"
-               "Register a callback for the read-write section.")},
+               "Register a callback for the read-write phase.")},
     {"stop_simulator", stop_simulator, METH_VARARGS,
      PyDoc_STR("stop_simulator()\n"
                "--\n\n"
@@ -1127,8 +1127,8 @@ static PyMethodDef SimulatorMethods[] = {
                "get_sim_time() -> Tuple[int, int]\n"
                "Get the current simulation time.\n"
                "\n"
-               "Time is represented as a tuple of 32 bit integers ([low32, "
-               "high32]) comprising a single 64 bit integer.")},
+               "Time is represented as a tuple of 32-bit integers (``(low32, "
+               "high32)``) comprising a single 64-bit integer.")},
     {"get_precision", get_precision, METH_NOARGS,
      PyDoc_STR("get_precision()\n"
                "--\n\n"
@@ -1287,14 +1287,15 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
                "get_definition_file() -> str\n"
                "Get the file that sources the object's definition.")},
     {"get_handle_by_name", (PyCFunction)get_handle_by_name, METH_VARARGS,
-     PyDoc_STR("get_handle_by_name($self, name, discovery_method/)\n"
-               "--\n\n"
-               "get_handle_by_name(name: str, discovery_method: "
-               "cocotb.handle._GPIDiscovery) -> "
-               "cocotb.simulator.gpi_sim_hdl\n"
-               "Get a handle to a child object by name.\n"
-               "Specify discovery_method to determine the signal discovery "
-               "strategy. AUTO by default.")},
+     PyDoc_STR(
+         "get_handle_by_name($self, name, discovery_method/)\n"
+         "--\n\n"
+         "get_handle_by_name(name: str, discovery_method: "
+         "cocotb.handle._GPIDiscovery) -> "
+         "cocotb.simulator.gpi_sim_hdl\n"
+         "Get a handle to a child object by name.\n"
+         "Specify *discovery_method* to determine the signal discovery "
+         "strategy. :data:`~cocotb.handle.GPIDiscovery.AUTO` by default.")},
     {"get_handle_by_index", (PyCFunction)get_handle_by_index, METH_VARARGS,
      PyDoc_STR(
          "get_handle_by_index($self, index, /)\n"
@@ -1354,7 +1355,7 @@ PyTypeObject gpi_hdl_Object<gpi_sim_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_sim_hdl>();
     type.tp_name = "cocotb.simulator.gpi_sim_hdl";
     type.tp_doc =
-        "GPI object handle\n"
+        "GPI object handle.\n"
         "\n"
         "Contains methods for getting and setting the value of a GPI object, "
         "and introspection.";
@@ -1385,7 +1386,7 @@ template <>
 PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_cb_hdl>();
     type.tp_name = "cocotb.simulator.gpi_cb_hdl";
-    type.tp_doc = "GPI callback handle";
+    type.tp_doc = "GPI callback handle.";
     type.tp_methods = gpi_cb_hdl_methods;
     return type;
 }();

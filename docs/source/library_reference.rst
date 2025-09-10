@@ -905,7 +905,7 @@ The PyGPI is a Python wrapper around the :term:`GPI` (Generic Procedural Interfa
     * ``entry_function(argv: List[str]) -> None``
 
     .. versionchanged:: 1.8
-        ``level`` argument to ``_sim_event`` is no longer passed, it is assumed to be `SIM_FAIL` (2).
+        ``level`` argument to ``_sim_event`` is no longer passed, it is assumed to be ``SIM_FAIL`` (2).
 
     .. versionchanged:: 2.0
         The entry-module-level functions ``_sim_event``, ``_log_from_c``, and ``_filter_from_c`` are no longer required.

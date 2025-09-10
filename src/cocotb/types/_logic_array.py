@@ -163,8 +163,8 @@ class LogicArray(AbstractMutableArray[Logic]):
         '0b1111010'
 
     .. warning::
-        Using :func:`hex` or :func:`bin` first turns the LogicArray into an :class:`int`.
-        This means the exact length of the LogicArray is lost.
+        Using :func:`hex` or :func:`bin` first turns the :class:`!LogicArray` into an :class:`int`.
+        This means the exact length of the :class:`!LogicArray` is lost.
         It also means that these expressions will raise an exception if the value is not entirely ``0``, ``1``, ``L``, or ``H``.
 
     :class:`!LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
@@ -183,12 +183,12 @@ class LogicArray(AbstractMutableArray[Logic]):
         LogicArray('1110', Range(3, 'downto', 0))
 
     Args:
-        value: Initial value for the LogicArray.
-        range: The indexing scheme of the LogicArray.
+        value: Initial value for the :class:`!LogicArray`.
+        range: The indexing scheme of the :class:`!LogicArray`.
 
     Raises:
         TypeError: When invalid argument types are used.
-        ValueError: When *value* will not fit in a LogicArray of the given *range*.
+        ValueError: When *value* will not fit in a :class:`!LogicArray` of the given *range*.
     """
 
     # These three attribute contain the current value of the array in one or more of
@@ -313,7 +313,7 @@ class LogicArray(AbstractMutableArray[Logic]):
 
         Args:
             value: The integer to convert.
-            range: Indexing scheme for the LogicArray.
+            range: Indexing scheme for the :class:`!LogicArray`.
 
         Returns:
             A :class:`!LogicArray` equivalent to the *value*.
@@ -339,7 +339,7 @@ class LogicArray(AbstractMutableArray[Logic]):
 
         Args:
             value: The integer to convert.
-            range: Indexing scheme for the LogicArray.
+            range: Indexing scheme for the :class:`!LogicArray`.
 
         Returns:
             A :class:`!LogicArray` equivalent to the *value*.
@@ -385,7 +385,7 @@ class LogicArray(AbstractMutableArray[Logic]):
 
         Args:
             value: The bytes to convert.
-            range: Indexing scheme for the LogicArray.
+            range: Indexing scheme for the :class:`!LogicArray`.
             byteorder: The endianness used to construct the intermediate integer, either ``"big"`` or ``"little"``.
 
         Returns:
