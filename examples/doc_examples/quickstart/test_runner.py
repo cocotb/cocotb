@@ -9,21 +9,26 @@ from pathlib import Path
 from cocotb_tools.runner import get_runner
 
 
-def test_my_design_runner():
-    sim = os.getenv("SIM", "icarus")
-
+def test_simple_counter():
     proj_path = Path(__file__).resolve().parent
 
-    sources = [proj_path / "my_design.sv"]
+    sources = [proj_path / "simple_counter.sv"]
 
+    sim = os.getenv("SIM", "icarus")
     runner = get_runner(sim)
+
     runner.build(
         sources=sources,
-        hdl_toplevel="my_design",
+        hdl_toplevel="simple_counter",
+        waves=True,
     )
 
-    runner.test(hdl_toplevel="my_design", test_module="test_my_design,")
+    runner.test(
+        hdl_toplevel="simple_counter",
+        test_module="simple_counter_testcases,",
+        waves=True,
+    )
 
 
 if __name__ == "__main__":
-    test_my_design_runner()
+    test_simple_counter()
