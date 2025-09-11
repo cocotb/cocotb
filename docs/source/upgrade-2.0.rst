@@ -1248,7 +1248,7 @@ Change
 How to Upgrade
 ==============
 
-Replace :exc:`!TestError` with an :external+python:ref:`exception of the appropriate type <concrete-exceptions>`.
+Replace :exc:`!TestError` with a `more appropriate exception type <https://docs.python.org/3/library/exceptions.html#concrete-exceptions>`_.
 
 .. code-block:: python
     :caption: Old way with :exc:`!TestError`
