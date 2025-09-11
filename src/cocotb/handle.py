@@ -897,7 +897,6 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
 
         Args:
             value: The value to set the simulation object to. This may include type conversion.
-            action: How to set the value. See :class:`Action` for more details.
 
         Raises:
             TypeError: If the *value* is of a type that cannot be converted to a simulation value,
@@ -948,7 +947,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
 
         .. deprecated:: 2.0
             Use ``handle.set(Immediate(...))`` or ``handle.value = Immediate(...)`` instead.
-            This could result in a change in behavior because prior to 2.0 this function did not set values immediately.
+            This could result in a change in behavior because prior to version 2.0 this function did not set values immediately.
         """
         if isinstance(value, Deposit):
             value = _OldImmediate(value.value)  # type: ignore
