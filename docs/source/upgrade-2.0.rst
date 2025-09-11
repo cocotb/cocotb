@@ -1389,3 +1389,42 @@ The ``"cocotb"`` logging namespace was reserved for cocotb internal use
 so that it can offer users better control over the verbosity of those messages.
 As a result, the :data:`!cocotb.log` logger name was changed from ``"cocotb"``
 and all loggers on cocotb internal objects were made private (these loggers were in the ``"cocotb"`` namespace).
+
+
+****************************************************************
+Use :meth:`!handle.is_const` instead of :class:`!ConstantObject`
+****************************************************************
+
+Change
+======
+
+:external+cocotb19:py:class:`~cocotb.handle.ConstantObject` was removed.
+:attr:`handle.is_const <cocotb.handle.ValueObjectBase.is_const>` was added to replace it.
+
+How to Upgrade
+==============
+
+Replace uses of ``isinstance(handle, ConstantObject)`` as a way to check the constant-ness of a simulator object
+with checking the handle's :attr:`is_const` attribute.
+
+.. code-block:: python
+    :caption: Old way with :class:`!ConstantObject`
+    :class: removed
+
+    if isinstance(cocotb.top.PARAM, ConstantObject):
+        ...
+
+.. code-block:: python
+    :caption: New way with :attr:`is_const`
+    :class: new
+
+    if cocotb.top.PARAM.is_const:
+        ...
+
+
+Rationale
+=========
+
+:class:`!ConstantObject` was a single type that serviced all constant objects regardless of their data type.
+This made it fragile to users getting the data type incorrect and values being applied incorrectly or causing crashes.
+Now constant objects are mapped to the appropriate handle type and these issues can't occur.
