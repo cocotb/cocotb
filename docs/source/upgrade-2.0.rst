@@ -1428,3 +1428,41 @@ Rationale
 :class:`!ConstantObject` was a single type that serviced all constant objects regardless of their data type.
 This made it fragile to users getting the data type incorrect and values being applied incorrectly or causing crashes.
 Now constant objects are mapped to the appropriate handle type and these issues can't occur.
+
+
+*************************************************
+Use getitem syntax instead of :meth:`!handle._id`
+*************************************************
+
+Change
+======
+
+:external+cocotb19:py:meth:`handle._id() <cocotb.handle.HierarchyObject._id>` was deprecated.
+
+How to Upgrade
+==============
+
+Replace calls to :meth:`!handle._id` with ``handle["child"]`` syntax.
+If the ``extended`` argument is ``True``, ensure to add a ``\`` character before and after the name.
+
+.. code-block:: python
+    :caption: Old way with :meth:`handle._id`
+    :class: removed
+
+    cocotb.top._id("!special-name", extended=True)
+
+    cocotb.top._id("_name_starts_with_underscore", extended=False)
+
+.. code-block:: python
+    :caption: New way with getitem syntax
+    :class: new
+
+    cocotb.top["\\!special-name\\"]
+
+    cocotb.top["_name_starts_with_underscore"]
+
+Rationale
+=========
+
+The getitem syntax is a more Pythonic way to index into maps,
+such as named collections of child simulator objects.
