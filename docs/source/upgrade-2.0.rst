@@ -1337,3 +1337,55 @@ to mark the sources as either VHDL or Verilog, respectively.
     runner.build(
         sources=[Verilog("ip_core.gen"), "top.vhdl"],
     )
+
+
+********************************************************************
+Use :data:`!cocotb.log` over loggers on handles, tasks, and triggers
+********************************************************************
+
+Change
+======
+
+``handle._log``,
+``Task.log``,
+and ``Trigger.log`` were made private.
+All loggers in the ``"cocotb"`` namespace were reserved for internal use only.
+:data:`cocotb.log` was changed to be the ``"test"`` logger.
+
+How To Upgrade
+==============
+
+Replace all uses of the loggers on cocotb objects with :data:`!cocotb.log`.
+Use the :func:`repr` of the object in the message if desired.
+
+.. code-block:: python
+    :caption: Old way with ``"cocotb"`` namespace loggers.
+    :class: removed
+
+    cocotb.top.signal._log.info("logging from a handle")
+
+    task = cocotb.start_soon(example())
+    task.log.info("logging from a task")
+
+    trigger = Timer(10, 'ns')
+    trigger.log.info("logging from a trigger")
+
+.. code-block:: python
+    :caption: New way with :data:`!cocotb.log`
+    :class: new
+
+    cocotb.log.info("%r: logging from a handle", cocotb.top.signal)
+
+    task = cocotb.start_soon(example())
+    cocotb.log.info("%r: logging from a task", task)
+
+    trigger = Timer(10, 'ns')
+    cocotb.log.info("%r: logging from a trigger", trigger)
+
+Rationale
+=========
+
+The ``"cocotb"`` logging namespace was reserved for cocotb internal use
+so that it can offer users better control over the verbosity of those messages.
+As a result, the :data:`!cocotb.log` logger name was changed from ``"cocotb"``
+and all loggers on cocotb internal objects were made private (these loggers were in the ``"cocotb"`` namespace).
