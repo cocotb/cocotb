@@ -1,1 +1,0 @@
-Added ``strip_ansi`` and ``reduced_log_fmt`` parameters to :func:`.default_config` to control log formatting.

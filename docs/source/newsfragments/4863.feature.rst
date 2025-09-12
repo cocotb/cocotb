@@ -1,1 +1,0 @@
-Added :attr:`.Task.locals` namespace for Task-local user variables.

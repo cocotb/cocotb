@@ -46,7 +46,7 @@ def package_files(directory):
 
 
 version_file_path = path.join("src", "cocotb", "_version.py")
-__version__ = "2.0.0.dev1"
+__version__ = "2.0.0rc1"
 if "dev" in __version__:
     try:
         rev = subprocess.check_output(

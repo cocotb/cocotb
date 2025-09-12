@@ -1,1 +1,0 @@
-Warnings emitted by the :mod:`warnings` module are now captured and redirected to the logging system using :func:`logging.captureWarnings`.

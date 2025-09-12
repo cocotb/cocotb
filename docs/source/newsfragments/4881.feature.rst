@@ -1,1 +1,0 @@
-Added :attr:`.Logic.is_resolvable` to mirror the method available on :class:`.LogicArray`.

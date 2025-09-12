@@ -1,1 +1,0 @@
-:external+cocotb19:py:func:`~cocotb.utils.get_sim_time` was moved from :external+cocotb19:py:mod:`cocotb.utils` to :mod:`cocotb.simtime`.

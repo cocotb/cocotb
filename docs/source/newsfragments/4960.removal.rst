@@ -1,1 +1,0 @@
-Removed the deprecated :external+cocotb19:py:class:`cocotb.result.TestComplete`, :external+cocotb19:py:class:`cocotb.result.TestError`, and :external+cocotb19:py:class:`cocotb.result.TestFailure`.
