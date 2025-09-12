@@ -7,11 +7,7 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
-.. include:: master-notes.rst
-
-.. towncrier release notes start
-
-Cocotb 2.0.0 (2025-09-12)
+cocotb 2.0.0 (2025-09-12)
 =========================
 
 cocotb 2.0 is a major release of cocotb and includes a lot of changes.
