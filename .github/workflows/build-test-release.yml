@@ -102,6 +102,8 @@ jobs:
     - test_release
     - test_release_licensed
     - test_sdist
+    permissions:
+      id-token: write
     runs-on: ubuntu-22.04
     # Only upload tagged releases.
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
