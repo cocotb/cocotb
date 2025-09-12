@@ -1,1 +1,0 @@
-Added :class:`cocotb.logging.ANSI` enum class for ANSI escape codes.

@@ -1,1 +1,0 @@
-:data:`cocotb.logging.strip_ansi` was added to allow the user to programmatically control ANSI escape code stripping in :class:`~cocotb.logging.SimLogFormatter`.

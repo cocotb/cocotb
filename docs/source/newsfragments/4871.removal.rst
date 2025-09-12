@@ -1,1 +1,0 @@
-Deprecated :class:`.SimColourLogFormatter`. Use :class:`.SimLogFormatter` with ``strip_ansi=False`` instead.

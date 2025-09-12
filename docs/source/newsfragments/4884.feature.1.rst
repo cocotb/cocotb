@@ -1,1 +1,0 @@
-Added support for :func:`copy.deepcopy` on :class:`.LogicArray`. :func:`copy.copy` is not supported.

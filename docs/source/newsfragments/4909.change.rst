@@ -1,1 +1,0 @@
-Logging colorization is now :data:`ANSI escape code stripping <cocotb.logging.strip_ansi>`. This will strip any ANSI escape codes, including colorization, from both the logging prefix and messages.

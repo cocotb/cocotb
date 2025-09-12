@@ -11,6 +11,52 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+Cocotb 2.0.0 (2025-09-12)
+=========================
+
+cocotb 2.0 is a major release of cocotb and includes a lot of changes.
+As indicated by the version number, this new version contains API-breaking changes that may require updates to existing testbenches.
+Refer to :doc:`upgrade-2.0` for a more high-level summary of the changes in cocotb 2.0 and to guide you through the upgrade process.
+
+Features
+--------
+
+- Added :attr:`.Task.locals` namespace for Task-local user variables. (:pr:`4863`)
+- Added :data:`~cocotb.debug.debug` to allow users to programmatically control the collection of additional debugging information. (:pr:`4867`)
+- Added ``strip_ansi`` and ``reduced_log_fmt`` parameters to :func:`.default_config` to control log formatting. (:pr:`4871`)
+- Added ``period_high`` argument to :class:`.Clock` to allow the user to control the duty cycle of the generated clock. (:pr:`4872`)
+- Added :attr:`.Logic.is_resolvable` to mirror the method available on :class:`.LogicArray`. (:pr:`4881`)
+- Added support for :func:`copy.deepcopy` on :class:`.LogicArray`. :func:`copy.copy` is not supported. (:pr:`4884`)
+- Add support for :func:`copy.copy` and :func:`copy.deepcopy` on :class:`.Range`, :class:`.Array`, :class:`.Logic`. (:pr:`4884`)
+- Added :envvar:`COCOTB_LOG_PREFIX` environment variable to allow users to customize the log message prefix. (:pr:`4900`)
+- Added :func:`cocotb.simtime.convert` to replace :func:`~cocotb.utils.get_time_from_sim_steps` and :func:`~cocotb.utils.get_sim_steps` with a single intuitive interface. (:pr:`4901`)
+- Added :data:`cocotb.simtime.time_precision` to allow users to set simulated time precision when not operating with a simulator. (:pr:`4901`)
+- :data:`cocotb.logging.strip_ansi` was added to allow the user to programmatically control ANSI escape code stripping in :class:`~cocotb.logging.SimLogFormatter`. (:pr:`4909`)
+- Added :class:`cocotb.logging.ANSI` enum class for ANSI escape codes. (:pr:`4926`)
+
+
+Bugfixes
+--------
+
+- :data:`ANSI escape code stripping <cocotb.logging.strip_ansi>` is now correctly disabled when :envvar:`COCOTB_ANSI_OUTPUT` is set to ``0``. (:pr:`4909`)
+
+
+Deprecations and Removals
+-------------------------
+
+- Deprecated :class:`.SimColourLogFormatter`. Use :class:`.SimLogFormatter` with ``strip_ansi=False`` instead. (:pr:`4871`)
+- Removed :mod:`!cocotb.ANSI` module. (:pr:`4926`)
+- Removed the deprecated :external+cocotb19:py:class:`cocotb.result.TestComplete`, :external+cocotb19:py:class:`cocotb.result.TestError`, and :external+cocotb19:py:class:`cocotb.result.TestFailure`. (:pr:`4960`)
+
+
+Changes
+-------
+
+- :external+cocotb19:py:func:`~cocotb.utils.get_sim_time` was moved from :external+cocotb19:py:mod:`cocotb.utils` to :mod:`cocotb.simtime`. (:pr:`4901`)
+- Logging colorization is now :data:`ANSI escape code stripping <cocotb.logging.strip_ansi>`. This will strip any ANSI escape codes, including colorization, from both the logging prefix and messages. (:pr:`4909`)
+- Warnings emitted by the :mod:`warnings` module are now captured and redirected to the logging system using :func:`logging.captureWarnings`. (:pr:`4914`)
+
+
 cocotb 2.0.0b1 (2025-07-12)
 ===========================
 
