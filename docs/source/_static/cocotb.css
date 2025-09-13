@@ -621,3 +621,16 @@ h5 code,
 h6 code {
     font-size: inherit;
 }
+
+
+/* Unset highlight in page TOC that pydata-sphinx-theme sets */
+.toc-entry a.nav-link.active {
+    box-shadow: unset;
+    font-weight: unset;
+}
+
+/* Use "data-pagetoc-active" attribute that our pagetoc.js sets to highlight current position on page */
+.bd-toc-nav a.nav-link[data-pagetoc-active] {
+    box-shadow: inset max(3px,.1875rem,.12em) 0 0 var(--pst-color-primary);
+    font-weight: bold;
+}
