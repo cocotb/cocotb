@@ -163,7 +163,7 @@ async def quickstart_3(dut):
     await RisingEdge(clk)
     try:
         assert dut.counter.value == input_value, (
-            "This looks fine in the waveform! Why does this fail?"
+            "This looks fine in the waveform, why does this fail?\n"
             "It is asserted to the exact same value that was assigned. Makes no sense?!"
         )
     except AssertionError as e:
