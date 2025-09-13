@@ -81,7 +81,7 @@ Example 2 - Coroutines
 Often it is useful to have several routines running in parallel.
 This can be done with :keyword:`async` functions.
 In cocotb an :keyword:`async` function should always be started with the :func:`cocotb.start_soon`,
-and ´can be :keyword:`await`-ed if desired. See :ref:`coroutines` for more info.
+and can be :keyword:`await`-ed if desired. See :ref:`coroutines` for more info.
 
 As long as the couroutines are not decorated with `@`:func:`cocotb.test()` they are not automatically called and can be used as helper functions in the actual testcase decorated with `@`:func:`cocotb.test()`.
 
@@ -131,8 +131,8 @@ Running a Test
 ==============
 The cocotb testcases can be run in two ways.
 
-- Using `make <https://www.gnu.org/software/make/>`_ with a Makefile. :ref:`quickstart_makefile`
-- Using the :class:`cocotb_tools.runner.Runner :ref:`howto-python-runner`. :ref:`quickstart_runner`
+- Using `make <https://www.gnu.org/software/make/>`_ with a Makefile, see section :ref:`quickstart_makefile`
+- Using the :class:`cocotb_tools.runner.Runner`, see :ref:`quickstart_runner`
 
 All the generated / compiled files ends up in the `sim_build/` unless otherwise specified.
 
