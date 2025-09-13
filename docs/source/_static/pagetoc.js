@@ -1,8 +1,48 @@
-export class TocObserver {
+class TocObserver {
   constructor() {
     this.doc;
     this.toc;
     this.section_observer;
+    this.mutationObserver;
+  }
+
+  _setupMutationObserver = () => {
+    // Create a mutation observer to watch for external changes to active classes
+    this.mutationObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        console.log(`[MutationObserver] Detected change on:`, mutation.target, `attribute: ${mutation.attributeName}`);
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const target = mutation.target;
+          console.log(`[MutationObserver] Class change on:`, target.tagName, target.className, target.href);
+          if (target.matches('a.nav-link') && target.closest('.bd-toc-nav')) {
+            console.log(`[MutationObserver] TOC nav-link detected, active:`, target.classList.contains('active'), `pagetoc-active:`, target.dataset.pagetocActive);
+            // Check if external code added 'active' class
+            if (target.classList.contains('active') && !target.dataset.pagetocActive) {
+              console.log(`[TocObserver] External script added active to: ${target.href} - removing it`);
+              target.classList.remove('active');
+            }
+          }
+        }
+      });
+    });
+
+    // Start observing the TOC for attribute changes
+    if (this.toc) {
+      this.mutationObserver.observe(this.toc, {
+        attributes: true,
+        attributeFilter: ['class'],
+        subtree: true
+      });
+      console.log("[TocObserver] Mutation observer started to prevent external active state changes");
+
+      // Also observe the entire document to catch broader changes
+      this.mutationObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class'],
+        subtree: true
+      });
+      console.log("[TocObserver] Also observing entire document for class changes");
+    }
   }
 
   _sectionsObservationHandler = (entries) => {
@@ -11,8 +51,12 @@ export class TocObserver {
       const target = this.toc.querySelector(`a.nav-link[href='#${sec.id}']`);
       if (item.isIntersecting === true) {
         target?.classList.add("active");
+        target?.setAttribute('data-pagetoc-active', 'true');
+        console.log(`[TocObserver] Added active to section: ${sec.id}`);
       } else {
         target?.classList.remove("active");
+        target?.removeAttribute('data-pagetoc-active');
+        console.log(`[TocObserver] Removed active from section: ${sec.id}`);
       }
     });
   }
@@ -28,11 +72,17 @@ export class TocObserver {
     );
 
     // For text:
-    for (const element of this.doc.querySelectorAll(":scope section")) {
+    const sections = this.doc.querySelectorAll(":scope section");
+    console.log(`[TocObserver] Found ${sections.length} sections to observe`);
+    for (const element of sections) {
+      console.log(`[TocObserver] Observing section:`, element.id, element.tagName);
       this.section_observer.observe(element);
     }
     // APIs have <dl><dt>... entries listed in the TOC.
-    for (const element of this.doc.querySelectorAll(":scope dl dt")) {
+    const dlElements = this.doc.querySelectorAll(":scope dl dt");
+    console.log(`[TocObserver] Found ${dlElements.length} dl dt elements to observe`);
+    for (const element of dlElements) {
+      console.log(`[TocObserver] Observing dl dt:`, element.id, element.textContent?.slice(0, 50));
       this.section_observer.observe(element);
     }
   }
@@ -64,9 +114,15 @@ export class TocObserver {
     // in each moment. Therefore, I remove here the "active"
     // class from all anchors in the toc.
     const anchors = this.toc.querySelectorAll("a.nav-link");
+    console.log(`[TocObserver] Found ${anchors.length} nav-link anchors in TOC`);
     for (const anchor of anchors) {
+      console.log(`[TocObserver] Initial anchor state:`, anchor.href, `classes:`, anchor.className, `active:`, anchor.classList.contains('active'));
       anchor.classList.remove("active");
+      anchor.removeAttribute('data-pagetoc-active');
     }
+
+    // Set up mutation observer to prevent external interference
+    this._setupMutationObserver();
 
     this._initializeSectionsObserver(root_margin);
     return 0;
@@ -74,7 +130,7 @@ export class TocObserver {
 }
 
 
-export class LocationHashHandler {
+class LocationHashHandler {
   constructor() {
     this.toc = document.querySelector(".bd-toc-nav");
     window.addEventListener("hashchange", this.hashChanged);
@@ -99,7 +155,9 @@ export class LocationHashHandler {
     const anchors = this.toc?.querySelectorAll("a.nav-link") || [];
     for (const anchor of anchors) {
       anchor.classList.remove("active");
+      anchor.removeAttribute('data-pagetoc-active');
     }
+    console.log("[LocationHashHandler] Cleared all active states");
 
     const ubits = window.location.href.split("#");
     if (ubits.length > 1) {
@@ -107,11 +165,16 @@ export class LocationHashHandler {
       const toc_ref_elem = this.toc?.querySelector(toc_ref);
       if (toc_ref_elem) {
         toc_ref_elem.classList.add("active");
+        toc_ref_elem.setAttribute('data-pagetoc-active', 'true');
+        console.log(`[LocationHashHandler] Added active to hash section: ${ubits[1]}`);
         if (!this.isInViewport(toc_ref_elem)) {
           toc_ref_elem.scrollIntoView({
             behavior: "smooth", block: "center"
           });
+          console.log(`[LocationHashHandler] Scrolled to hash section: ${ubits[1]}`);
         }
+      } else {
+        console.log(`[LocationHashHandler] No TOC element found for hash: ${ubits[1]}`);
       }
     }
   }
