@@ -8,12 +8,11 @@ export class TocObserver {
   _sectionsObservationHandler = (entries) => {
     entries.map(item => {
       const sec = item.target;
-      const target = this.toc.querySelector(`a[href='#${sec.id}']`);
-      const parent = target?.parentElement;
+      const target = this.toc.querySelector(`a.nav-link[href='#${sec.id}']`);
       if (item.isIntersecting === true) {
-        parent?.classList.add("active");
+        target?.classList.add("active");
       } else {
-        parent?.classList.remove("active");
+        target?.classList.remove("active");
       }
     });
   }
@@ -39,8 +38,8 @@ export class TocObserver {
   }
 
   init = () => {
-    this.doc = document.querySelector("#content");
-    this.toc = document.querySelector("#TableOfContents");
+    this.doc = document.querySelector("#main-content");
+    this.toc = document.querySelector(".bd-toc-nav");
     if (this.doc == undefined || this.toc == undefined) {
       return -1;
     }
@@ -53,7 +52,7 @@ export class TocObserver {
     // of the first header with class="headerlink", and then update
     // the first link in the toc.
     const document_1a = this.doc.querySelector("section a.headerlink");
-    const toc_1a = this.toc.querySelector("a.reference[href='#']");
+    const toc_1a = this.toc.querySelector("a.nav-link[href='#']");
     if (document_1a != undefined && toc_1a != undefined) {
       toc_1a.setAttribute("href", document_1a.getAttribute("href"));
     }
@@ -64,7 +63,7 @@ export class TocObserver {
     // IntersectionObserver to handle what is the section active
     // in each moment. Therefore, I remove here the "active"
     // class from all anchors in the toc.
-    const anchors = this.toc.querySelectorAll("a.reference");
+    const anchors = this.toc.querySelectorAll("a.nav-link");
     for (const anchor of anchors) {
       anchor.classList.remove("active");
     }
@@ -77,7 +76,7 @@ export class TocObserver {
 
 export class LocationHashHandler {
   constructor() {
-    this.toc = document.querySelector("#TableOfContents");
+    this.toc = document.querySelector(".bd-toc-nav");
     window.addEventListener("hashchange", this.hashChanged);
     this.hashChanged();
   }
@@ -97,14 +96,14 @@ export class LocationHashHandler {
   }
 
   hashChanged = (_) => {
-    const anchors = this.toc?.querySelectorAll("a.reference.internal") || [];
+    const anchors = this.toc?.querySelectorAll("a.nav-link") || [];
     for (const anchor of anchors) {
       anchor.classList.remove("active");
     }
 
     const ubits = window.location.href.split("#");
     if (ubits.length > 1) {
-      const toc_ref = `a.reference.internal[href='#${ubits[1]}']`;
+      const toc_ref = `a.nav-link[href='#${ubits[1]}']`;
       const toc_ref_elem = this.toc?.querySelector(toc_ref);
       if (toc_ref_elem) {
         toc_ref_elem.classList.add("active");
@@ -117,3 +116,14 @@ export class LocationHashHandler {
     }
   }
 }
+
+// Initialize the functionality when the DOM is loaded
+document.addEventListener("DOMContentLoaded", function() {
+  const tocObserver = new TocObserver();
+  if (tocObserver.init() === 0) {
+    console.log("TocObserver initialized successfully");
+  }
+
+  const locationHandler = new LocationHashHandler();
+  console.log("LocationHashHandler initialized");
+});
