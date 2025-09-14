@@ -125,7 +125,7 @@ Discovering Tests
     For example: ``COCOTB_TEST_MODULES="directed_tests,random_tests,error_injection_tests"``.
     All tests will be run from each specified module in order of the module's appearance in this list.
 
-    The is the only environment variable that is **required** for cocotb, all others are optional.
+    This is the only environment variable that is **required** for cocotb, all others are optional.
 
     .. versionchanged:: 2.0
 
