@@ -5,7 +5,7 @@ import glob
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, List, Tuple, cast
+from typing import cast
 
 import nox
 
@@ -13,15 +13,8 @@ import nox
 nox.options.sessions = ["dev_test"]
 
 test_deps = ["pytest>=6"]
-coverage_deps = ["coverage[toml]>=5.0", "pytest-cov"]
-# gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See
-# https://github.com/gcovr/gcovr/issues/596
-# When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an
-# Exception is raised during html report generation.
-# See https://github.com/gcovr/gcovr/pull/576
-# gcovr 5.2 would solve these issues, but has dropped Python 3.6 support.
-# TODO: Switch to the latest gcovr version once we drop Python 3.6 support.
-coverage_report_deps = ["coverage[toml]>=5.0", "jinja2<3.1", "gcovr==5.0"]
+coverage_deps = ["coverage[toml]>=7.2", "pytest-cov"]
+coverage_report_deps = ["coverage[toml]>=7.2", "gcovr"]
 
 dev_deps = [
     "mypy",
@@ -39,7 +32,7 @@ cibuildwheel_version = "2.20.0"
 #
 
 
-def simulator_support_matrix() -> List[Tuple[str, str, str]]:
+def simulator_support_matrix() -> list[tuple[str, str, str]]:
     """
     Get a list of supported simulator/toplevel-language/GPI-interface tuples.
     """
@@ -67,7 +60,7 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
 
 def env_vars_for_test(
     sim: str, toplevel_lang: str, gpi_interface: str
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Prepare the environment variables controlling the test run."""
     env = {
         "SIM": sim,
@@ -95,7 +88,7 @@ def env_vars_for_test(
     return env
 
 
-def stringify_dict(d: Dict[str, str]) -> str:
+def stringify_dict(d: dict[str, str]) -> str:
     return ", ".join(f"{k}={v}" for k, v in d.items())
 
 

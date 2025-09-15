@@ -23,9 +23,6 @@ The following versions of Python, and all associated patch releases (except wher
 cocotb depends on CPython APIs;
 alternative Python implementations like PyPy or Jython are not supported.
 
-* CPython 3.6  (requires 3.6.2+)
-* CPython 3.7
-* CPython 3.8
 * CPython 3.9
 * CPython 3.10
 * CPython 3.11
