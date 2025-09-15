@@ -3,7 +3,8 @@
 ****************
 Quickstart Guide
 ****************
-The following sections describe, in short with examples, how to setup a few minimal cocotb testcases, how to run the simulation and how to view the generated waveform. For a more thorough and complete explanations about some of the intricacies of cocotb testbenches refer to the :ref:`writing_tbs` page.
+The following sections describe, in short with examples, how to setup a few minimal cocotb testcases, how to run the simulation and how to view the generated waveform.
+For a more thorough and complete explanations about some of the intricacies of cocotb testbenches refer to the :ref:`writing_tbs` page.
 
 Prerequisites
 =============
@@ -12,7 +13,9 @@ cocotb itself: ``pip install cocotb``
 
 Run ``cocotb-config --version`` in a terminal window to verify that cocotb is installed.
 
-The examples described are made to work with the `icarus <https://steveicarus.github.io/iverilog/>`_. However, another verilog simulator can probably be used as well. See :ref:`simulator-support` for a comprehensive list of the cocotb supported simulators.
+The examples described are made to work with the `icarus <https://steveicarus.github.io/iverilog/>`_.
+However, another supported verilog simulator can be used as well.
+See :ref:`simulator-support` for a comprehensive list of the cocotb supported simulators.
 
 The code for the following example is available in the cocotb sources:
 :reposrc:`examples/doc_examples/quickstart <examples/doc_examples/quickstart>`.
@@ -30,11 +33,10 @@ The files can also be downloaded directly here:
 Creating a Test
 ===============
 A typical cocotb testbench requires no additional :term:`HDL` code.
-The :term:`DUT` is instantiated as the toplevel in the simulator
-without any HDL wrapper code.
+The :term:`DUT` is instantiated as the toplevel in the simulator without any HDL wrapper code.
 The input stimuli and output checking is done in Python.
 
-To create a cocotb testcase, the cocotb function decorator :deco:`cocotb.test()` must be used to decorate an keyword:`async` Python function.
+To create a cocotb testcase, the cocotb function decorator :deco:`cocotb.test()` must be used to decorate an :keyword:`async` functions. Python function.
 The decorated function must take a ``dut`` argument, this is the entry point to the HDL toplevel.
 
 The ``dut`` argument gives access to all internals of the HDL toplevel.
@@ -114,12 +116,12 @@ for more information on such concurrent processes.
 
 Example 3 - Reading a value can be quirky
 -----------------------------------------
-Due to how the cocotb :ref:`timing-model` works,
-when awaiting for a :func:`cocotb.triggers.RisingEdge` the values you want to check directly after
-might not be as expected due to the incompleted :ref:`values-change` and :ref:`values-settle` phases.
-Therefore, the :ref:`end-of-time-step` phase should be entered by awaiting the :func:`cocotb.triggers.ReadOnly` trigger.
-After awaiting the :ref:`end-of-time-step`, the :ref:`beginning-of-time-step` phase shall be entered to again be able to set values.
-This can be done by awaiting either :func:`cocotb.triggers.Timer`, :func:`cocotb.triggers.NextTimeStep` or any of the triggers allowed in the :ref:`end-of-time-step` phase.
+The :func:`cocotb.triggers.RisingEdge` trigger return precisely after the signal changes.
+No sensitive processes have run to update any signals yet.
+Therefore, one must await the :func:`cocotb.triggers.ReadOnly` before sampling a signal.
+To escape the ReadOnly after sampling a signal, the :func:`cocotb.triggers.NextTimeStep`, among others, can be awaited.
+More on this in :ref:`timing-model` chapter.
+
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/simple_counter_testcases.py
    :language: python
@@ -132,8 +134,8 @@ This can be done by awaiting either :func:`cocotb.triggers.Timer`, :func:`cocotb
    :end-before: # END QUICKSTART 3
 
 Things to note:
-   * Use ``async`` create a function that can be used as a coroutine.
-   * Use ``start_soon()`` to start any coroutine. This lets cocotb schedule it correctly.
+   * Use :func:`cocotb.triggers.ReadOnly` before sampling a signal.
+   * Use :func:`cocotb.triggers.NextTimeStep` to escape the ReadOnly phase.
 
 .. _quickstart_running_a_test:
 
@@ -165,8 +167,8 @@ In order to run a test with a Makefile the following must be specified:
 
 .. _quickstart_running_a_makefile:
 
-Running a Test with Makefile
-___________________________
+Running a Test with a Makefile
+------------------------------
 The Makefile can be invoked by running:
 
 .. code-block:: bash
@@ -193,7 +195,7 @@ Creating a Runner
 .. warning::
     Python runners and associated APIs are an experimental feature and subject to change.
 
-An alternative to the :ref:`quickstart_makefile is to use the :class:`cocotb_tools.Runner`, or "runner" for short.
+An alternative to the :ref:`quickstart_makefile` is to use the :class:`cocotb_tools.Runner`, or "runner" for short.
 
 The runner has three steps:
    1. Instantiation of the runner with: `get_runner(sim)`
@@ -209,7 +211,7 @@ A minimal test runner can look like:
    :start-at: # test_runner.py
 
 Running a test with a runner
-____________________________
+----------------------------
 The test runner can be invoked by calling the ``test_simple_counter()``, in this case by running it with Python directly:
 
 .. code-block:: bash
@@ -218,7 +220,7 @@ The test runner can be invoked by calling the ``test_simple_counter()``, in this
 
 However, one of the benefits of using the runner is that it can be used with `pytest <https://pytest.org>`_,
 as long as the function name is detectable by pytest, e.g. prefixing the function with the ``test_`` prefix.
-Refer to the pytest documentation for a more comprehensive guide.
+Refer to the `pytest <https://pytest.org>`_ documentation for a more comprehensive guide.
 
 To run the cooctb test runner with pytest:
 
@@ -238,6 +240,7 @@ The waveform fileformat generated will vary depending on the simulator used.
 Not all fileformats are supported by all waveform viewers.
 Some fileformats allow easy conversion back and forth. Mileage may vary.
 
-Two free waveform viewers commonly used are `GTKWave <https://gtkwave.github.io/gtkwave/index.html>`_ or the newer `Surfer <https://surfer-project.org>`_. Both should be fine to use. Surfer can be used directly in browser, should it be undesirable to install it.
+Two free waveform viewers commonly used are `GTKWave <https://gtkwave.github.io/gtkwave/index.html>`_ or the newer `Surfer <https://surfer-project.org>`_.
 
-This example is using the `Icarus Verilog <https://steveicarus.github.io/iverilog/>`_ simulator, where the ``.fst`` file format is generated by default and can be opened with either GTKWave or Surfer.
+This example is by default using the `Icarus Verilog <https://steveicarus.github.io/iverilog/>`_ simulator.
+``.fst`` file format is generated by default and can be opened with either GTKWave or Surfer.
