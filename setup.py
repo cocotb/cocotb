@@ -5,21 +5,9 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-import sys
-
-if sys.version_info[:3] < (3, 6, 2):  # noqa: UP036 | bug in ruff
-    version_str = ".".join(sys.version_info[:3])
-    msg = [
-        "This version of cocotb requires at least Python 3.6.2,",
-        f"you are running Python {version_str}."
-        "For more information please refer to the documentation at ",
-        "https://cocotb.readthedocs.io.",
-    ]
-
-    raise SystemExit("\n".join(msg))
-
 import logging
 import subprocess
+import sys
 from io import StringIO
 from os import path, walk
 
@@ -29,6 +17,7 @@ from setuptools import find_packages, setup
 # We can still import other files next to setup.py, as long as they're in MANIFEST.in
 # The below line is necessary for PEP517 support
 sys.path.append(path.dirname(__file__))
+
 from cocotb_build_libs import build_ext, get_ext
 
 
@@ -89,7 +78,7 @@ setup(
     install_requires=[
         "find_libpython",
     ],
-    python_requires=">=3.6.2",
+    python_requires=">=3.9",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     package_data={
@@ -109,9 +98,6 @@ setup(
     platforms="any",
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",

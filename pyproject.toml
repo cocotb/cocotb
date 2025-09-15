@@ -45,7 +45,7 @@ extend-exclude = [
     "_vendor",
     ".nox/",
 ]
-target-version = "py37"
+target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -85,7 +85,6 @@ ignore = [
     "PLW0603", # Using the global statement (preference)
     "PLR0911", # Too many return statements (preference)
     "PLW1641", # __eq__ without __hash__ (mypy compatibility)
-    "UP021",   # subprocess.run() universal_newlines => text (not supported in 3.6)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -130,12 +129,6 @@ manylinux-x86_64-image = "manylinux2014"
 # /LTCG Enables LTO which can reduce binary size and improve inlining.
 [tool.cibuildwheel.windows]
 environment = {CL = "/O2 /Z7 /Zo /LTCG"}
-
-[[tool.cibuildwheel.overrides]]
-# Build CPython 3.6 wheels on manylinux1 to support Ubuntu 18.04, CentOS/RHEL 7
-# and CentOS/RHEL 8 with their default Python 3.6/pip 9 installation.
-select = "cp36-*"
-manylinux-x86_64-image = "manylinux1"
 
 [tool.pytest.ini_options]
 # Note: Do *not* add files within the cocotb/ tree here. Add them to the

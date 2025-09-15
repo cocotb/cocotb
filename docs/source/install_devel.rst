@@ -18,7 +18,7 @@ The development version of cocotb has different prerequisites
 than the stable version (see below).
 Namely, it requires the Python development headers and a C/C++ compiler.
 
-* Python 3.6.2+
+* Python 3.9+
 * Python development packages
 * GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
 * On Linux: A static build of the C++ standard library ``libstdc++``.

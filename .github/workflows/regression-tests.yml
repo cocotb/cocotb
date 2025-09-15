@@ -110,17 +110,6 @@ jobs:
       with:
         python-version: ${{matrix.python-version}}
         allow-prereleases: true
-    - name: Set up Python ${{matrix.python-version}} (pyenv pt.1)
-      if: matrix.setup_python == 'pyenv' && (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos'))
-      uses: gabrielfalcao/pyenv-action@a1fc55906be92612782934c70e3985b940bd0165  # v18
-      with:
-        default: ${{matrix.python-version}}
-        command: pip install -U pip  # upgrade pip after installing python
-    - name: Set up Python ${{matrix.python-version}} (pyenv pt.2)
-      if: matrix.setup_python == 'pyenv' && (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos'))
-      run: |
-        pyenv install ${{matrix.python-version}}
-        pyenv global ${{matrix.python-version}}
 
     - name: Install msys2 (Windows)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
