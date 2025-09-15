@@ -13,7 +13,7 @@ module simple_counter (
   timeunit 1ns;
   timeprecision 1ns;
 
-  always_ff @(posedge clk or edge rst) begin
+  always_ff @(posedge clk) begin
     if (rst) begin
       counter <= 8'd0;
     end else begin
