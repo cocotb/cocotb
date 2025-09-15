@@ -17,6 +17,8 @@ Global variables:
     libs_dir: str, path where the cocotb interface libraries are located
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import sys

@@ -6,20 +6,21 @@
 
 """A collection of triggers which a testbench can :keyword:`await`."""
 
+from __future__ import annotations
+
 import logging
+import sys
 import warnings
-from typing import (
-    AsyncContextManager,
-    Callable,
-    Generator,
-    List,
-    Optional,
-    Union,
-)
+from collections.abc import Generator
+from contextlib import AbstractAsyncContextManager
+from functools import cached_property
+from typing import Callable
 
 from cocotb._deprecation import deprecated
-from cocotb._py_compat import Self, cached_property
 from cocotb._utils import pointer_str
+
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 
 class Trigger:
@@ -32,7 +33,7 @@ class Trigger:
     def _log(self) -> logging.Logger:
         return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self, callback: Callable[[Self], None]) -> None:
         """Set a callback to be invoked when the trigger fires.
 
         The callback will be invoked with a single argument, `self`.
@@ -67,7 +68,7 @@ class Trigger:
         # Clear _primed so this Trigger can be re-primed.
         self._primed = False
 
-    def __await__(self) -> Generator["Self", None, "Self"]:
+    def __await__(self) -> Generator[Self, None, Self]:
         yield self
         return self
 
@@ -79,13 +80,13 @@ class _Event(Trigger):
     can maintain a unique mapping of triggers to tasks.
     """
 
-    _callback: Callable[["_Event"], None]
+    _callback: Callable[[_Event], None]
 
-    def __init__(self, parent: "Event") -> None:
+    def __init__(self, parent: Event) -> None:
         super().__init__()
         self._parent = parent
 
-    def _prime(self, callback: Callable[["_Event"], None]) -> None:
+    def _prime(self, callback: Callable[[_Event], None]) -> None:
         if self._primed:
             return
         if self._parent.is_set():
@@ -141,9 +142,9 @@ class Event:
         and the *name* attribute and argument to the constructor.
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
+    def __init__(self, name: str | None = None) -> None:
         self._event: _Event = _Event(self)
-        self._name: Union[str, None] = None
+        self._name: str | None = None
         if name is not None:
             warnings.warn(
                 "The 'name' argument will be removed in a future release.",
@@ -156,7 +157,7 @@ class Event:
 
     @property
     @deprecated("The 'name' field will be removed in a future release.")
-    def name(self) -> Union[str, None]:
+    def name(self) -> str | None:
         """Name of the Event.
 
         .. deprecated:: 2.0
@@ -166,7 +167,7 @@ class Event:
 
     @name.setter
     @deprecated("The 'name' field will be removed in a future release.")
-    def name(self, new_name: Union[str, None]) -> None:
+    def name(self, new_name: str | None) -> None:
         self._name = new_name
 
     @property
@@ -185,7 +186,7 @@ class Event:
     def data(self, new_data: object) -> None:
         self._data = new_data
 
-    def set(self, data: Optional[object] = None) -> None:
+    def set(self, data: object | None = None) -> None:
         """Set the Event and unblock all Tasks blocked on this Event."""
         self._fired = True
         if data is not None:
@@ -240,10 +241,10 @@ class _InternalEvent(Trigger):
     def __init__(self, parent: object) -> None:
         super().__init__()
         self._parent = parent
-        self._callback: Optional[Callable[[_InternalEvent], None]] = None
+        self._callback: Callable[[_InternalEvent], None] | None = None
         self.fired: bool = False
 
-    def _prime(self, callback: Callable[["_InternalEvent"], None]) -> None:
+    def _prime(self, callback: Callable[[_InternalEvent], None]) -> None:
         if self._primed:
             raise RuntimeError("This Trigger may only be awaited once")
         self._callback = callback
@@ -266,9 +267,7 @@ class _InternalEvent(Trigger):
         """Return true if event has been set."""
         return self.fired
 
-    def __await__(
-        self,
-    ) -> Generator["Self", None, "Self"]:
+    def __await__(self) -> Generator[Self, None, Self]:
         if self._primed:
             raise RuntimeError("Only one Task may await this Trigger")
         yield self
@@ -285,11 +284,11 @@ class _Lock(Trigger):
     can maintain a unique mapping of triggers to tasks.
     """
 
-    def __init__(self, parent: "Lock") -> None:
+    def __init__(self, parent: Lock) -> None:
         super().__init__()
         self._parent = parent
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self, callback: Callable[[Self], None]) -> None:
         if self._primed:
             raise RuntimeError(
                 "Lock.acquire() result can only be used by one task at a time"
@@ -308,7 +307,7 @@ class _Lock(Trigger):
         return f"<{self._parent!r}.acquire() at {pointer_str(self)}>"
 
 
-class Lock(AsyncContextManager[None]):
+class Lock(AbstractAsyncContextManager[None]):
     """A mutual exclusion lock.
 
     Guarantees fair scheduling.
@@ -342,9 +341,9 @@ class Lock(AsyncContextManager[None]):
         :keyword:`async with` statement
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
-        self._pending_primed: List[_Lock] = []
-        self._name: Union[str, None] = None
+    def __init__(self, name: str | None = None) -> None:
+        self._pending_primed: list[_Lock] = []
+        self._name: str | None = None
         if name is not None:
             warnings.warn(
                 "The 'name' argument will be removed in a future release.",
@@ -356,7 +355,7 @@ class Lock(AsyncContextManager[None]):
 
     @property
     @deprecated("The 'name' field will be removed in a future release.")
-    def name(self) -> Union[str, None]:
+    def name(self) -> str | None:
         """Name of the Lock.
 
         .. deprecated:: 2.0
@@ -366,7 +365,7 @@ class Lock(AsyncContextManager[None]):
 
     @name.setter
     @deprecated("The 'name' field will be removed in a future release.")
-    def name(self, new_name: Union[str, None]) -> None:
+    def name(self, new_name: str | None) -> None:
         self._name = new_name
 
     def locked(self) -> bool:
@@ -497,11 +496,11 @@ class NullTrigger(Trigger):
         The *outcome* parameter was removed. There is no alternative.
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
+    def __init__(self, name: str | None = None) -> None:
         super().__init__()
         self.name = name
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self, callback: Callable[[Self], None]) -> None:
         if self._primed:
             return
         callback(self)

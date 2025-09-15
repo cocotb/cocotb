@@ -1,6 +1,8 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
 # Simple tests for an adder module
+from __future__ import annotations
+
 import os
 import random
 import sys

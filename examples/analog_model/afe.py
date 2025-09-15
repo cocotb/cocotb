@@ -1,7 +1,6 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
-
-from typing import Optional
+from __future__ import annotations
 
 import cocotb
 from cocotb.queue import Queue
@@ -26,8 +25,8 @@ class PGA:
     def __init__(
         self,
         gain: float = 5.0,
-        in_queue: Optional[Queue] = None,
-        out_queue: Optional[Queue] = None,
+        in_queue: Queue | None = None,
+        out_queue: Queue | None = None,
     ) -> None:
         self._gain = gain
         self.in_queue = in_queue
@@ -61,8 +60,8 @@ class ADC:
         self,
         ref_val_V: float = 2.0,
         n_bits: int = 13,
-        in_queue: Optional[Queue] = None,
-        out_queue: Optional[Queue] = None,
+        in_queue: Queue | None = None,
+        out_queue: Queue | None = None,
     ) -> None:
         self.ref_val_V = ref_val_V
         self.min_val = 0
@@ -92,7 +91,7 @@ class AFE:
     """
 
     def __init__(
-        self, in_queue: Optional[Queue] = None, out_queue: Optional[Queue] = None
+        self, in_queue: Queue | None = None, out_queue: Queue | None = None
     ) -> None:
         self.in_queue = in_queue
         self.out_queue = out_queue

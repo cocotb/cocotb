@@ -5,6 +5,8 @@
 Tests of cocotb.regression.TestFactory functionality
 """
 
+from __future__ import annotations
+
 from collections.abc import Coroutine
 
 import cocotb

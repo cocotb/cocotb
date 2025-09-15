@@ -1,7 +1,9 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Any, Dict, TypeVar
+from __future__ import annotations
+
+from typing import Any, TypeVar
 
 import IPython
 from IPython.terminal.ipapp import load_default_config
@@ -31,7 +33,7 @@ class SimTimePrompt(Prompts):
         return tokens
 
 
-async def embed(user_ns: Dict[str, Any] = {}) -> None:
+async def embed(user_ns: dict[str, Any] = {}) -> None:
     """
     Start an IPython shell in the current coroutine.
 
