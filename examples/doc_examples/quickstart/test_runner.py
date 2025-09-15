@@ -1,7 +1,7 @@
-"""
-This file is public domain, it can be freely copied without restrictions."
-SPDX-License-Identifier: CC0-1.0
-"""
+# This file is public domain, it can be freely copied without restrictions."
+# SPDX-License-Identifier: CC0-1.0
+
+"""This module contains the cocotb python test runner used to test simple_counter"""
 
 # test_runner.py
 
@@ -13,7 +13,7 @@ from cocotb_tools.runner import get_runner
 
 def test_simple_counter():
     """Test for the simple counter.
-    
+
     Creates sources list, gets a cocotb Python Runner,
     Builds HDL, runs cocotb testcases.
     """

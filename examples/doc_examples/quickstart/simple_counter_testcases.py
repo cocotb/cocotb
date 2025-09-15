@@ -1,7 +1,7 @@
-"""
-This file is public domain, it can be freely copied without restrictions.
-SPDX-License-Identifier: CC0-1.0
-"""
+# This file is public domain, it can be freely copied without restrictions.
+# SPDX-License-Identifier: CC0-1.0
+
+"""This module contains testcases for the simple_counter"""
 
 # Imports for all Quickstart examples
 import cocotb
