@@ -103,6 +103,7 @@ known-first-party = [
 known-third-party = [
     "pytest",
 ]
+required-imports = ["from __future__ import annotations"]
 
 [tool.cibuildwheel]
 # Build for supported platforms only.
