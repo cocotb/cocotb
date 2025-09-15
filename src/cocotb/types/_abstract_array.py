@@ -1,10 +1,15 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 from abc import abstractmethod
-from typing import Generic, Iterable, Iterator, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Generic, TypeVar, overload
 
 from cocotb.types._range import Range
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 T_co = TypeVar("T_co", covariant=True)
 T = TypeVar("T")
@@ -78,18 +83,16 @@ class AbstractArray(Generic[T_co]):
     def __getitem__(self, item: int) -> T_co: ...
 
     @overload
-    def __getitem__(self, item: slice) -> "AbstractArray[T_co]": ...
+    def __getitem__(self, item: slice) -> AbstractArray[T_co]: ...
 
     @abstractmethod
-    def __getitem__(
-        self, item: Union[int, slice]
-    ) -> Union[T_co, "AbstractArray[T_co]"]: ...
+    def __getitem__(self, item: int | slice) -> T_co | AbstractArray[T_co]: ...
 
     def index(
         self,
         value: object,
-        start: Optional[int] = None,
-        stop: Optional[int] = None,
+        start: int | None = None,
+        stop: int | None = None,
     ) -> int:
         """Find first occurrence of value.
 
@@ -146,6 +149,4 @@ class AbstractMutableArray(AbstractArray[T]):
     def __setitem__(self, item: slice, value: Iterable[T]) -> None: ...
 
     @abstractmethod
-    def __setitem__(
-        self, item: Union[int, slice], value: Union[T, Iterable[T]]
-    ) -> None: ...
+    def __setitem__(self, item: int | slice, value: T | Iterable[T]) -> None: ...

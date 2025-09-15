@@ -8,6 +8,8 @@ The Makefile in this folder is specially set up to squash any error code due
 to a failing test and ensures the failing test is reported properly.
 """
 
+from __future__ import annotations
+
 import cocotb
 
 

@@ -3,9 +3,9 @@
 # Copyright (c) 2013 SolarFlare Communications Inc
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import xml.etree.ElementTree as ET
-from typing import Union
 from xml.etree.ElementTree import Element, SubElement
 
 
@@ -21,28 +21,24 @@ class XUnitReporter:
         self.last_testsuite = SubElement(self.results, "testsuite", kwargs)
         return self.last_testsuite
 
-    def add_testcase(
-        self, testsuite: Union[Element, None] = None, **kwargs: str
-    ) -> Element:
+    def add_testcase(self, testsuite: Element | None = None, **kwargs: str) -> Element:
         if testsuite is None:
             testsuite = self.last_testsuite
         self.last_testcase = SubElement(testsuite, "testcase", kwargs)
         return self.last_testcase
 
-    def add_property(
-        self, testsuite: Union[Element, None] = None, **kwargs: str
-    ) -> Element:
+    def add_property(self, testsuite: Element | None = None, **kwargs: str) -> Element:
         if testsuite is None:
             testsuite = self.last_testsuite
         self.last_property = SubElement(testsuite, "property", kwargs)
         return self.last_property
 
-    def add_failure(self, testcase: Union[Element, None] = None, **kwargs: str) -> None:
+    def add_failure(self, testcase: Element | None = None, **kwargs: str) -> None:
         if testcase is None:
             testcase = self.last_testcase
         SubElement(testcase, "failure", kwargs)
 
-    def add_skipped(self, testcase: Union[Element, None] = None, **kwargs: str) -> None:
+    def add_skipped(self, testcase: Element | None = None, **kwargs: str) -> None:
         if testcase is None:
             testcase = self.last_testcase
         SubElement(testcase, "skipped", kwargs)

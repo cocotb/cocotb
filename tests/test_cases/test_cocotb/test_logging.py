@@ -5,14 +5,19 @@
 Tests for the cocotb logger
 """
 
+from __future__ import annotations
+
 import contextlib
 import logging
 import warnings
-from typing import Generator, Union
+from typing import TYPE_CHECKING
 
 import cocotb
 import cocotb.logging as cocotb_logging
 from cocotb.logging import ANSI
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class LogCaptureHandler(logging.Handler):
@@ -29,8 +34,8 @@ class LogCaptureHandler(logging.Handler):
 
 @contextlib.contextmanager
 def capture_logs(
-    logger_name: Union[str, None] = None,
-    formatter: Union[logging.Formatter, None] = None,
+    logger_name: str | None = None,
+    formatter: logging.Formatter | None = None,
 ) -> Generator[LogCaptureHandler, None, None]:
     handler = LogCaptureHandler()
     if formatter is None:

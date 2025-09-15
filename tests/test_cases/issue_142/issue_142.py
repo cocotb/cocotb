@@ -1,4 +1,5 @@
 # A set of regression tests for open issues
+from __future__ import annotations
 
 import cocotb
 from cocotb.clock import Clock

@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import functools
 import logging
 import threading
@@ -8,29 +10,30 @@ from enum import IntEnum
 from typing import (
     TYPE_CHECKING,
     Callable,
-    Coroutine,
     Generic,
     TypeVar,
-    Union,
 )
 
 import cocotb
 from cocotb import debug
 from cocotb._base_triggers import Event, Trigger
 from cocotb._exceptions import InternalError
-from cocotb._py_compat import ParamSpec
 
 if TYPE_CHECKING:
+    from collections.abc import Coroutine
+    from typing import ParamSpec
+
     from cocotb._outcomes import Outcome
 
-P = ParamSpec("P")
+    P = ParamSpec("P")
+
 
 Result = TypeVar("Result")
 
 
 def resume(
-    func: "Callable[P, Coroutine[Trigger, None, Result]]",
-) -> "Callable[P, Result]":
+    func: Callable[P, Coroutine[Trigger, None, Result]],
+) -> Callable[P, Result]:
     """Converts a coroutine function into a blocking function.
 
     This allows a :term:`coroutine function` that awaits cocotb triggers to be
@@ -60,15 +63,15 @@ def resume(
     """
 
     @functools.wraps(func)
-    def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> Result:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Result:
         return cocotb._scheduler_inst._queue_function(func(*args, **kwargs))
 
     return wrapper
 
 
 def bridge(
-    func: "Callable[P, Result]",
-) -> "Callable[P, Coroutine[Trigger, None, Result]]":
+    func: Callable[P, Result],
+) -> Callable[P, Coroutine[Trigger, None, Result]]:
     r"""Converts a blocking function into a coroutine function.
 
     This function converts a :term:`blocking function` into a :term:`coroutine function`
@@ -100,9 +103,7 @@ def bridge(
     """
 
     @functools.wraps(func)
-    def wrapper(
-        *args: "P.args", **kwargs: "P.kwargs"
-    ) -> Coroutine[Trigger, None, Result]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Coroutine[Trigger, None, Result]:
         return cocotb._scheduler_inst._run_in_executor(func, *args, **kwargs)
 
     return wrapper
@@ -117,7 +118,7 @@ class external_state(IntEnum):
 
 class external_waiter(Generic[Result]):
     def __init__(self) -> None:
-        self._outcome: Union[Outcome[Result], None] = None
+        self._outcome: Outcome[Result] | None = None
         self.thread: threading.Thread
         self.event = Event()
         self.state = external_state.INIT

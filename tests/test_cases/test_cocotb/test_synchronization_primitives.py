@@ -5,9 +5,11 @@
 Tests for synchronization primitives like Lock and Event
 """
 
+from __future__ import annotations
+
 import random
 import re
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from common import assert_takes
@@ -192,7 +194,7 @@ async def test_Lock_fair_scheduling(_) -> None:
         await Timer(waiter_ns, "ns")
         lock.release()
 
-    tasks: List[Task[None]] = []
+    tasks: list[Task[None]] = []
 
     for i in range(n_waiters):
         tasks.append(cocotb.start_soon(waiter(i)))
