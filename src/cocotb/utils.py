@@ -6,17 +6,22 @@
 
 """Tools for dealing with simulated time."""
 
-import warnings
-from decimal import Decimal
-from fractions import Fraction
-from typing import Union
+from __future__ import annotations
 
-from cocotb._typing import RoundMode, TimeUnit
+import warnings
+from typing import TYPE_CHECKING
+
 from cocotb.simtime import (
     _get_sim_steps,
     _get_time_from_sim_steps,
     get_sim_time,
 )
+
+if TYPE_CHECKING:
+    from decimal import Decimal
+    from fractions import Fraction
+
+    from cocotb._typing import RoundMode, TimeUnit
 
 __all__ = (
     "get_sim_steps",
@@ -27,7 +32,7 @@ __all__ = (
 
 def get_time_from_sim_steps(
     steps: int,
-    unit: Union[TimeUnit, None] = None,
+    unit: TimeUnit | None = None,
     *,
     units: None = None,
 ) -> float:
@@ -61,7 +66,7 @@ def get_time_from_sim_steps(
 
 
 def get_sim_steps(
-    time: Union[float, Fraction, Decimal],
+    time: float | Fraction | Decimal,
     unit: TimeUnit = "step",
     *,
     round_mode: RoundMode = "error",

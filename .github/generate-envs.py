@@ -31,6 +31,8 @@ The current test in the "ci-free"/"ci-licensed" group should be moved to "extend
 and the new version should be added to "ci-free"/"ci-licensed" and any changes in behavior recorded with expectations to make CI pass.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys

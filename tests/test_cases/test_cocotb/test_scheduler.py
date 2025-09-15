@@ -9,13 +9,16 @@ Test for scheduler and coroutine behavior
 * kill
 """
 
+from __future__ import annotations
+
 import contextlib
 import logging
 import os
 import random
 import re
 from asyncio import CancelledError, InvalidStateError
-from typing import Any, Awaitable, Coroutine
+from collections.abc import Awaitable, Coroutine
+from typing import Any
 
 import pytest
 from common import MyException, assert_takes

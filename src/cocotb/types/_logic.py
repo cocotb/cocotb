@@ -1,14 +1,18 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from functools import lru_cache
+from __future__ import annotations
+
+from functools import cache
 from typing import (
-    Dict,
+    TYPE_CHECKING,
     Union,
 )
 
-from cocotb._py_compat import Self, TypeAlias
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
+
+if TYPE_CHECKING:
+    from typing import Self, TypeAlias
 
 LogicLiteralT: TypeAlias = Union[str, int, bool]
 LogicConstructibleT: TypeAlias = Union[LogicLiteralT, "Logic"]
@@ -24,7 +28,7 @@ _L = 6
 _H = 7
 _D = 8
 
-_literal_repr: Dict[LogicLiteralT, int] = {
+_literal_repr: dict[LogicLiteralT, int] = {
     # unassigned
     "U": _U,
     "u": _U,
@@ -88,7 +92,7 @@ class Logic:
 
     .. code-block:: pycon3
 
-        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> Tuple[Logic, Logic]:
+        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> tuple[Logic, Logic]:
         ...     res = a ^ b ^ carry
         ...     carry_out = (a & b) | (b & carry) | (a & carry)
         ...     return res, carry_out
@@ -111,7 +115,7 @@ class Logic:
     __slots__ = ("_repr",)
 
     @classmethod
-    @lru_cache(maxsize=None)
+    @cache
     def _singleton(cls, _repr: int) -> Self:
         """Return the Logic object associated with the repr, enforcing singleton."""
         self = object.__new__(cls)
@@ -305,10 +309,10 @@ class Logic:
         """
         return (False, False, True, True, False, False, True, True, False)[self._repr]
 
-    def __copy__(self) -> "Logic":
+    def __copy__(self) -> Logic:
         return self
 
-    def __deepcopy__(self, memo: Dict[int, object]) -> "Logic":
+    def __deepcopy__(self, memo: dict[int, object]) -> Logic:
         return self
 
 

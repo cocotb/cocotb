@@ -8,6 +8,8 @@
 Everything related to logging
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import re
@@ -16,7 +18,6 @@ import time
 import warnings
 from functools import wraps
 from pathlib import Path
-from typing import Optional, Tuple, Union
 
 import cocotb.simtime
 from cocotb import simulator
@@ -51,8 +52,8 @@ but can be overridden with the :envvar:`NO_COLOR` or :envvar:`COCOTB_ANSI_OUTPUT
 
 def default_config(
     reduced_log_fmt: bool = True,
-    strip_ansi: Optional[bool] = None,
-    prefix_format: Optional[str] = None,
+    strip_ansi: bool | None = None,
+    prefix_format: str | None = None,
 ) -> None:
     """Apply the default cocotb log formatting to the root logger.
 
@@ -136,7 +137,7 @@ def _init() -> None:
     old_setLevel = gpi_logger.setLevel
 
     @wraps(old_setLevel)
-    def setLevel(level: Union[int, str]) -> None:
+    def setLevel(level: int | str) -> None:
         old_setLevel(level)
         simulator.set_gpi_log_level(gpi_logger.getEffectiveLevel())
 
@@ -183,7 +184,7 @@ def _configure(_: object) -> None:
 
 
 @deprecated('Use `logging.getLogger(f"{name}.0x{ident:x}")` instead')
-def SimLog(name: str, ident: Union[int, None] = None) -> logging.Logger:
+def SimLog(name: str, ident: int | None = None) -> logging.Logger:
     """Like :func:`logging.getLogger`, but append a numeric identifier to the name.
 
     Args:
@@ -251,8 +252,8 @@ class SimLogFormatter(logging.Formatter):
         self,
         *,
         reduced_log_fmt: bool = True,
-        strip_ansi: Union[bool, None] = None,
-        prefix_format: Optional[str] = None,
+        strip_ansi: bool | None = None,
+        prefix_format: str | None = None,
     ) -> None:
         self._reduced_log_fmt = reduced_log_fmt
         self._strip_ansi = strip_ansi
@@ -301,7 +302,7 @@ class SimLogFormatter(logging.Formatter):
             return ".." + string[(chars - 2) * -1 :]
         return string.rjust(chars)
 
-    def formatPrefix(self, record: logging.LogRecord) -> Tuple[str, int]:
+    def formatPrefix(self, record: logging.LogRecord) -> tuple[str, int]:
         sim_time = getattr(record, "created_sim_time", None)
         if sim_time is None:
             sim_time_str = "  -.--ns"
@@ -389,8 +390,8 @@ class SimColourLogFormatter(SimLogFormatter):
         self,
         *,
         reduced_log_fmt: bool = True,
-        strip_ansi: Union[bool, None] = False,
-        prefix_format: Optional[str] = None,
+        strip_ansi: bool | None = False,
+        prefix_format: str | None = None,
     ) -> None:
         warnings.warn(
             "SimColourLogFormatter is deprecated and will be removed in a future release. "
