@@ -14,10 +14,12 @@ from cocotb.triggers import FallingEdge, NextTimeStep, ReadOnly, RisingEdge, Tim
 
 @cocotb.test()
 async def quickstart_1(dut):
+    """Quickstart Example 1 - Showcasing a single sequential routine
+
+    Keyword arguments:
+    dut -- the hdl toplevel
     """
-    Quickstart Example 1
-    Showcasing a single sequential routine
-    """
+
     # Initial value.
     dut.ena.value = 0
 
@@ -54,10 +56,14 @@ async def quickstart_1(dut):
 
 
 async def reset_and_start_clock(reset, clock, cycles=10):
-    """
-    Coroutine to active reset, and start a clock
+    """Coroutine to active reset, and start a clock
+
     Activate reset for a few cycles before deactivating and returning
     Signals can be passed as arguments.
+    Keyword arguments:
+    reset -- the reset signal in the dut
+    clock -- the clock signal in the dut
+    cycles -- how many cycles to activate reset (default 10)
     """
     reset.value = 1
     input_clock = Clock(clock, 10, unit="ns")
@@ -68,9 +74,12 @@ async def reset_and_start_clock(reset, clock, cycles=10):
 
 
 async def enable_counter(dut, cycles=10):
-    """
-    Activate dut.ena for some clock cycles, before deactivating.
-    Signals do not have to be passed as arguments,
+    """Activate dut.ena for some clock cycles, before deactivating.
+
+    Signals do not have to be passed as arguments.
+    Keyword arguments:
+    dut -- the hdl toplevel
+    cycles -- number of cycles to keep dut.ena high (default 10)
     """
     await FallingEdge(dut.clk)
     dut.ena.value = 1
@@ -82,9 +91,11 @@ async def enable_counter(dut, cycles=10):
 
 
 async def check_counter(dut, start_value):
-    """
-    A run forever coroutine that continuously checks the value of the
-    counter on every rising edge of the clock.
+    """A run forever coroutine,  continuously checks the counter on every rising edge of the clock.
+
+    Keyword arguments:
+    dut -- the hdl toplevel
+    start_value -- the expected value of the counter when this coroutine is started.
     """
     expected_counter_value = start_value
     assert dut.counter.value == expected_counter_value
@@ -103,10 +114,8 @@ async def check_counter(dut, start_value):
 
 @cocotb.test()
 async def quickstart_2(dut):
-    """
-    Quickstart Example 2
-    Showcasing coroutines
-    """
+    """Quickstart Example 2 - Showcasing coroutines"""
+
     # Signals in the dut can be assigned to variables for easier use.
     # Can be useful for more complicated signal names.
     rst = dut.rst
@@ -140,10 +149,8 @@ async def quickstart_2(dut):
 
 @cocotb.test()
 async def quickstart_3(dut):
-    """
-    Quickstart Example 3
-    Showcasing ReadOnly phase / delta cycles
-    """
+    """Quickstart Example 3 - Showcasing reading a signal before assertion"""
+
     # Same starting sequence as in Quickstart 2.
     rst = dut.rst
     clk = dut.clk
