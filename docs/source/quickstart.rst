@@ -3,14 +3,14 @@
 ****************
 Quickstart Guide
 ****************
-The following sections describe, in short with examples, how to setup a few minimal cocotb testcases, how to run the simulation and how to view the generated waveform. For a more thorough and complete explanations about some of the intricacies of cocotb testbenches refer to the :ref:`writing_tbs`.
+The following sections describe, in short with examples, how to setup a few minimal cocotb testcases, how to run the simulation and how to view the generated waveform. For a more thorough and complete explanations about some of the intricacies of cocotb testbenches refer to the :ref:`writing_tbs` page.
 
 Prerequisites
 =============
 Before starting, install the :ref:`prerequisites<install-prerequisites>` and
-cocotb itself: *pip install cocotb*
+cocotb itself: ``pip install cocotb``
 
-Run *cocotb-config --version* in a terminal window to verify that cocotb is installed.
+Run ``cocotb-config --version`` in a terminal window to verify that cocotb is installed.
 
 The examples described are made to work with the `icarus <https://steveicarus.github.io/iverilog/>`_. However, another verilog simulator can probably be used as well. See :ref:`simulator-support` for a comprehensive list of the cocotb supported simulators.
 
@@ -28,16 +28,18 @@ The files can also be downloaded directly here:
 .. _quickstart_creating_a_test:
 
 Creating a Test
-=============
+===============
 A typical cocotb testbench requires no additional :term:`HDL` code.
 The :term:`DUT` is instantiated as the toplevel in the simulator
 without any HDL wrapper code.
 The input stimuli and output checking is done in Python.
 
-To create a cocotb testcase, the cocotb function decorator `@`:func:`cocotb.test()` must be used to decorate a async Python function.
-The decorated function must take a `dut` argument, this is the entry point to the HDL toplevel.
+To create a cocotb testcase, the cocotb function decorator :deco:`cocotb.test()` must be used to decorate an keyword:`async` Python function.
+The decorated function must take a ``dut`` argument, this is the entry point to the HDL toplevel.
 
-The `dut` argument gives access to all internals of the HDL toplevel. Meaning any port, signal, parameter, as well as other submodules inside the toplevel. It is possible to "dot" you way through the entire hierarchy of the toplevel and access every signal inside every submodule if so desired.
+The ``dut`` argument gives access to all internals of the HDL toplevel.
+This means any port, signal, parameter, as well as other submodules inside the toplevel.
+It is possible to "dot" your way through the entire hierarchy of the toplevel and access every signal inside every submodule if so desired.
 
 .. code-block:: python3
 
@@ -45,18 +47,20 @@ The `dut` argument gives access to all internals of the HDL toplevel. Meaning an
    async def testcase(dut):
       do_something()
 
-All examples described in this section can be found in the ``simple_counter_testcases.py``, the filename does not really matter as long as it is consistent with the value of ``COCOTB_TEST_MODULES`` in the Makefile and the ``test_module`` argument to *cocotb_tools.Runner.test(...)*
+All examples described in this section can be found in the :file:`simple_counter_testcases.py` file.
+The filename does not really matter as long as it is consistent with the value of :envvar:`COCOTB_TEST_MODULES` in the Makefile and the ``test_module`` argument to :meth:`cocotb_tools.Runner.test`.
 
 Example 1 - Sequential
 ----------------------
-In this first example there are only one sequential routine.
-The routine starts by setting a default value to the `ena` signal,
+In this first example there is only one sequential routine.
+The routine starts by setting a default value to the ``ena`` signal,
 activating the reset signal, instantiates and starts a :class:`cocotb.clock.Clock` to easily generate a clock input.
 Then some time is awaited before deactivating the reset signal,
-to exit out of the reset state of the `dut`.
-Then the `ena` signal is `activated` for ten clock cycles,
+to exit out of the reset state of the ``dut``.
+Then the ``ena`` signal is `activated` for ten clock cycles,
 before verifying that the counter in the module has the value ten.
-Then the `ena` signal is `deactivated` and some time is awaited, before checking the counter value again to verify that it was not incrementing while `ena` was low.
+Then the ``ena`` signal is `deactivated` and some time is awaited,
+before checking the counter value again to verify that it was not incrementing while ``ena`` was low.
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/simple_counter_testcases.py
    :language: python
@@ -80,12 +84,15 @@ Example 2 - Coroutines
 ----------------------
 Often it is useful to have several routines running in parallel.
 This can be done with :keyword:`async` functions.
-In cocotb an :keyword:`async` function should always be started with the :func:`cocotb.start_soon`,
+In cocotb an :keyword:`!async` function should always be started with the :func:`cocotb.start_soon`,
 and can be :keyword:`await`-ed if desired. See :ref:`coroutines` for more info.
 
-As long as the couroutines are not decorated with `@`:func:`cocotb.test()` they are not automatically called and can be used as helper functions in the actual testcase decorated with `@`:func:`cocotb.test()`.
+As long as the coroutines are not decorated with :deco:`cocotb.test` they are not automatically called
+and can be used as helper functions in the actual testcase decorated with :deco:`!cocotb.test`.
 
-The following example is similar to Example 1, but does continuous checking of the counter value by starting a coroutine that is always running. Stimuli is done by starting a different coroutine.
+The following example is similar to Example 1,
+but does continuous checking of the counter value by starting a coroutine that is always running.
+Stimulus is done by starting a different coroutine.
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/simple_counter_testcases.py
    :language: python
@@ -107,9 +114,12 @@ for more information on such concurrent processes.
 
 Example 3 - Reading a value can be quirky
 -----------------------------------------
-Due to how the cocotb :ref:`timing-model` works, when awaiting for a :func:`cocotb.triggers.RisingEdge` the values you want to check directly after might not be as expected due to incompleted the :ref:`values-change` and :ref:`values-settle` phases.
-Therefore, the :ref:`end-of-time-step` should be entered by awaiting the :func:`cocotb.triggers.ReadOnly` trigger.
-After awaiting the :ref:`end-of-time-step`, the :ref:`beginning-of-time-step` shall be entered to again be able to set values. This can be done by awaiting either Timer, NextTimeStep or any of the triggers allowed in the :ref:`end-of-time-step`.
+Due to how the cocotb :ref:`timing-model` works,
+when awaiting for a :func:`cocotb.triggers.RisingEdge` the values you want to check directly after
+might not be as expected due to the incompleted :ref:`values-change` and :ref:`values-settle` phases.
+Therefore, the :ref:`end-of-time-step` phase should be entered by awaiting the :func:`cocotb.triggers.ReadOnly` trigger.
+After awaiting the :ref:`end-of-time-step`, the :ref:`beginning-of-time-step` phase shall be entered to again be able to set values.
+This can be done by awaiting either :func:`cocotb.triggers.Timer`, :func:`cocotb.triggers.NextTimeStep` or any of the triggers allowed in the :ref:`end-of-time-step` phase.
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/simple_counter_testcases.py
    :language: python
@@ -129,12 +139,11 @@ Things to note:
 
 Running a Test
 ==============
-The cocotb testcases can be run in two ways.
+The cocotb testcases can be run in two ways:
+- Using `make <https://www.gnu.org/software/make/>`_ with a Makefile, see section :ref:`quickstart_makefile`.
+- Using the :class:`cocotb_tools.runner.Runner`, see :ref:`quickstart_runner`.
 
-- Using `make <https://www.gnu.org/software/make/>`_ with a Makefile, see section :ref:`quickstart_makefile`
-- Using the :class:`cocotb_tools.runner.Runner`, see :ref:`quickstart_runner`
-
-All the generated / compiled files ends up in the `sim_build/` unless otherwise specified.
+All the generated/compiled files end up in the :file:`sim_build/` directory unless otherwise specified.
 
 .. _quickstart_makefile:
 
@@ -168,7 +177,8 @@ Icarus Verilog will be used to simulate the Verilog implementation of the DUT be
 we defined these as the default values.
 
 Values can be set in the command line to differ from the default defined in the Makefile.
-For example to run the simulation with Siemens Questa and without waveform generation, make can be invoked as such:
+For example to run the simulation with Siemens Questa and without waveform generation,
+make can be invoked as follows:
 
 .. code-block:: bash
 
@@ -178,7 +188,7 @@ For example to run the simulation with Siemens Questa and without waveform gener
 .. _quickstart_runner:
 
 Creating a Runner
-----------------
+-----------------
 
 .. warning::
     Python runners and associated APIs are an experimental feature and subject to change.
@@ -200,14 +210,14 @@ A minimal test runner can look like:
 
 Running a test with a runner
 ____________________________
-The test runner can be invoked by calling the `test_simple_counter()`, in this case by running it with python directly:
+The test runner can be invoked by calling the ``test_simple_counter()``, in this case by running it with Python directly:
 
 .. code-block:: bash
 
    python test_runner.py
 
-However, one of the benefits of using the runner is that it can be used with: `pytest <https://pytest.org>`_,
-as long as the function name is detecatble by pytest, e.g. prefixing the function with the `test_` prefix.
+However, one of the benefits of using the runner is that it can be used with `pytest <https://pytest.org>`_,
+as long as the function name is detectable by pytest, e.g. prefixing the function with the ``test_`` prefix.
 Refer to the pytest documentation for a more comprehensive guide.
 
 To run the cooctb test runner with pytest:
@@ -220,13 +230,14 @@ To run the cooctb test runner with pytest:
 Viewing the waveform
 ===================
 To view a waveform it must be generated by the simulator, this is not enabled by default.
-This "flag" can be set with `WAVES=1` with make,
-or the `waves=True` argument for the runner.
+This "flag" can be set with ``WAVES=1`` with make,
+or the ``waves=True`` argument for the runner.
 
-The generated waveform file will be located in the `sim_build/` unless otherwise specified.
+The generated waveform file will be located in the :file:`sim_build/` directory unless otherwise specified.
 The waveform fileformat generated will vary depending on the simulator used.
-Not all fileformats are supported by all waveform viewers, some fileformats allow easy conversion back and forth. Mileage may vary.
+Not all fileformats are supported by all waveform viewers.
+Some fileformats allow easy conversion back and forth. Mileage may vary.
 
 Two free waveform viewers commonly used are `GTKWave <https://gtkwave.github.io/gtkwave/index.html>`_ or the newer `Surfer <https://surfer-project.org>`_. Both should be fine to use. Surfer can be used directly in browser, should it be undesirable to install it.
 
-This example is using the `icarus <https://steveicarus.github.io/iverilog/>`_ simulator, where `.fst` file is generated by default and can be opened with either GTKWave or Surfer.
+This example is using the `Icarus Verilog <https://steveicarus.github.io/iverilog/>`_ simulator, where the ``.fst`` file format is generated by default and can be opened with either GTKWave or Surfer.
