@@ -52,6 +52,8 @@ It is possible to "dot" your way through the entire hierarchy of the toplevel an
 All examples described in this section can be found in the :file:`simple_counter_testcases.py` file.
 The filename does not really matter as long as it is consistent with the value of :envvar:`COCOTB_TEST_MODULES` in the Makefile and the ``test_module`` argument to :meth:`cocotb_tools.Runner.test`.
 
+.. _quickstart-example1:
+
 Example 1 - Sequential
 ----------------------
 In this first example there is only one sequential routine.
@@ -92,7 +94,7 @@ and can be :keyword:`await`-ed if desired. See :ref:`coroutines` for more info.
 As long as the coroutines are not decorated with :deco:`cocotb.test` they are not automatically called
 and can be used as helper functions in the actual testcase decorated with :deco:`!cocotb.test`.
 
-The following example is similar to Example 1,
+The following example is similar to :ref:`quickstart-example1`,
 but does continuous checking of the counter value by starting a coroutine that is always running.
 Stimulus is done by starting a different coroutine.
 
