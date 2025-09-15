@@ -193,10 +193,10 @@ class PriorityQueue(AbstractQueue[T]):
         self._queue: List[T] = []
 
     def _put(self, item: T) -> None:
-        heapq.heappush(self._queue, item)
+        heapq.heappush(self._queue, item)  # type: ignore[type-var]
 
     def _get(self) -> T:
-        return heapq.heappop(self._queue)
+        return heapq.heappop(self._queue)  # type: ignore[type-var]
 
     def _size(self) -> int:
         return len(self._queue)
