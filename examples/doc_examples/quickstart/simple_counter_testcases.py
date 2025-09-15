@@ -18,10 +18,10 @@ async def quickstart_1(dut):
     Quickstart Example 1
     Showcasing a single sequential routine
     """
-    # Initial value
+    # Initial value.
     dut.ena.value = 0
 
-    # Reset sequence and clock start
+    # Reset sequence and clock start.
     dut.rst.value = 1
     input_clock = Clock(dut.clk, 10, unit="ns")
     input_clock.start()
@@ -104,7 +104,7 @@ async def check_counter(dut, start_value):
 @cocotb.test()
 async def quickstart_2(dut):
     """
-    Qucikstart Example 2
+    Quickstart Example 2
     Showcasing coroutines
     """
     # Signals in the dut can be assigned to variables for easier use.
@@ -114,13 +114,13 @@ async def quickstart_2(dut):
     # Starting reset sequence and clock
     start_soon(reset_and_start_clock(rst, clk))
 
-    # Wait until the reset is inactive
+    # Wait until the reset is inactive.
     await FallingEdge(rst)
 
-    # Quick check after reset
+    # Quick check after reset.
     assert dut.counter.value == 0
 
-    # Start the check_couter()
+    # Start the check_counter().
     start_soon(check_counter(dut, start_value=0))
 
     # Start and wait for completion.
@@ -144,13 +144,13 @@ async def quickstart_3(dut):
     Quickstart Example 3
     Showcasing ReadOnly phase / delta cycles
     """
-    # Same starting sequence as in Quickstart 2
+    # Same starting sequence as in Quickstart 2.
     rst = dut.rst
     clk = dut.clk
     start_soon(reset_and_start_clock(rst, clk))
     await FallingEdge(rst)
 
-    # Quick check after reset
+    # Quick check after reset.
     assert dut.counter.value == 0
 
     # Setting some stimuli on the falling edge.

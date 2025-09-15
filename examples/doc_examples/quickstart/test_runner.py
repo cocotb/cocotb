@@ -12,7 +12,8 @@ from cocotb_tools.runner import get_runner
 
 
 def test_simple_counter():
-    """
+    """Test for the simple counter.
+    
     Creates sources list, gets a cocotb Python Runner,
     Builds HDL, runs cocotb testcases.
     """
