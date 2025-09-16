@@ -229,7 +229,7 @@ async def test_results_deprecated(_: Any) -> None:
         from cocotb.result import SimTimeoutError  # noqa: F401, PLC0415
 
 
-@cocotb.test
+@cocotb.test(skip=sys.version_info < (3, 7))
 async def test_triggers_Join_import_deprecated(_: Any) -> None:
     with pytest.warns(DeprecationWarning):
         from cocotb.triggers import Join  # noqa: F401, PLC0415
