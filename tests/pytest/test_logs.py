@@ -64,8 +64,8 @@ def run_simulation(sim, log_dir):
 
 @pytest.mark.simulator_required
 def test_wave_dump():
-    temp_dir = TemporaryDirectory()
-    log_dir = Path(temp_dir.name)
-    run_simulation(sim=sim, log_dir=log_dir)
-    assert (log_dir / "build.log").exists()
-    assert (log_dir / "test.log").exists()
+    with TemporaryDirectory() as temp_dir:
+        log_dir = Path(temp_dir)
+        run_simulation(sim=sim, log_dir=log_dir)
+        assert (log_dir / "build.log").exists()
+        assert (log_dir / "test.log").exists()
