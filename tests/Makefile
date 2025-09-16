@@ -3,12 +3,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Do not fail on DeprecationWarning caused by virtualenv, which might come from
-# the site module.
-# Do not fail on DeprecationWarning caused by attrs dropping 3.6 support
-export PYTHONWARNINGS = error,ignore::DeprecationWarning:site,ignore::DeprecationWarning:attr
-export COCOTB_SCHEDULER_DEBUG = 1
-
 REGRESSIONS :=  $(shell ls test_cases/)
 
 all: $(REGRESSIONS)

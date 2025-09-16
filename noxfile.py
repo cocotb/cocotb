@@ -69,13 +69,30 @@ def env_vars_for_test(
     sim: str, toplevel_lang: str, gpi_interface: str
 ) -> Dict[str, str]:
     """Prepare the environment variables controlling the test run."""
-    e = {"SIM": sim, "TOPLEVEL_LANG": toplevel_lang, "HDL_TOPLEVEL_LANG": toplevel_lang}
+    env = {
+        "SIM": sim,
+        "TOPLEVEL_LANG": toplevel_lang,
+        "HDL_TOPLEVEL_LANG": toplevel_lang,
+    }
 
     assert not (toplevel_lang == "verilog" and gpi_interface != "vpi")
     if toplevel_lang == "vhdl":
-        e["VHDL_GPI_INTERFACE"] = gpi_interface
+        env["VHDL_GPI_INTERFACE"] = gpi_interface
 
-    return e
+    # Do not fail on DeprecationWarning caused by virtualenv, which might come from
+    # the site module.
+    # Do not fail on DeprecationWarning caused by attrs dropping < 3.8 support
+    # Do not fail on FutureWarning on Python < 3.9
+    env["PYTHONWARNINGS"] = (
+        "error,ignore::DeprecationWarning:site,"
+        "ignore::DeprecationWarning:attr,"
+        "ignore:Support for Python versions:FutureWarning:cocotb,"
+    )
+    # Test with debug enabled, but log level still set low. That way we can test the code
+    # without slowing everything down by emitting roughly 1 million logs.
+    env["COCOTB_SCHEDULER_DEBUG"] = "1"
+
+    return env
 
 
 def stringify_dict(d: Dict[str, str]) -> str:
@@ -87,6 +104,7 @@ def configure_env_for_dev_test(session: nox.Session) -> None:
 
     - Enable coverage collection.
     """
+    # Collect coverage of cocotb
     session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
 
 
@@ -189,7 +207,11 @@ def dev_test_sim(
         cast(
             "str",
             session.run(
-                "python", "-c", "import cocotb; print(cocotb.__file__)", silent=True
+                "python",
+                "-c",
+                "import cocotb; print(cocotb.__file__)",
+                env={"PYTHONWARNINGS": "ignore"},
+                silent=True,
             ),
         ).strip()
     ).parent
