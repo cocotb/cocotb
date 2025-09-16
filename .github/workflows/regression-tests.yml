@@ -127,6 +127,13 @@ jobs:
       if: startsWith(matrix.os, 'windows')
       run: conda install --yes python=${{matrix.python-version}}
 
+    - name: Ensure correct Python version
+      shell: bash
+      run: |
+        PYTHON_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+        echo "Python Version: $PYTHON_VER"
+        [[ "$PYTHON_VER" == "${{matrix.python-version}}" ]] || exit 1
+
       # Windows-specific: Setup mingw as default compiler
     - name: Setup mingw as default compiler (Windows, mingw)
       if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
