@@ -168,8 +168,12 @@ omit = [
     "*/cocotb_tools/*",
     "*/_vendor/*",
 ]
-exclude_also = [
-    "@(typing\\.)?overload",
+exclude_lines = [
+    # copy-pasted from coveragepy source
+    # TODO when we can move to a newer version of coverage
+    "#\\s*(pragma|PRAGMA)[:\\s]?\\s*(no|NO)\\s*(cover|COVER)",
+    "^\\s*(((async )?def .*?)?\\)(\\s*->.*?)?:\\s*)?\\.\\.\\.\\s*(#|$)",
+    "if (typing\\.)?TYPE_CHECKING:",
 ]
 
 [tool.codespell]

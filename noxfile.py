@@ -13,7 +13,7 @@ import nox
 nox.options.sessions = ["dev_test"]
 
 test_deps = ["pytest>=6"]
-coverage_deps = ["coverage[toml]>=7.2", "pytest-cov"]
+coverage_deps = ["coverage[toml]>=5.0", "pytest-cov"]
 # gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See
 # https://github.com/gcovr/gcovr/issues/596
 # When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an
@@ -21,7 +21,7 @@ coverage_deps = ["coverage[toml]>=7.2", "pytest-cov"]
 # See https://github.com/gcovr/gcovr/pull/576
 # gcovr 5.2 would solve these issues, but has dropped Python 3.6 support.
 # TODO: Switch to the latest gcovr version once we drop Python 3.6 support.
-coverage_report_deps = ["coverage[toml]>=7.2", "jinja2<3.1", "gcovr==5.0"]
+coverage_report_deps = ["coverage[toml]>=5.0", "jinja2<3.1", "gcovr==5.0"]
 
 dev_deps = [
     "mypy",
