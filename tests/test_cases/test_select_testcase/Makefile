@@ -11,5 +11,5 @@ COCOTB_TESTCASE := y_test
 
 # override PYTHONWARNINGS to prevent DeprecationWarning causing an error with use of COCOTB_TESTCASE
 ifdef PYTHONWARNINGS
-override PYTHONWARNINGS = error,ignore::DeprecationWarning:site,always::FutureWarning:cocotb._scheduler,ignore::DeprecationWarning:attr,ignore::DeprecationWarning:cocotb._init
+override PYTHONWARNINGS += ignore::DeprecationWarning:cocotb._init,
 endif
