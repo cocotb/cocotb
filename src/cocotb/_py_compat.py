@@ -104,9 +104,11 @@ if sys.version_info >= (3, 8):
 else:
     from typing import Any
 
-    class FakeGetItemType:
-        def __class_getitem__(self, a: object) -> Any:
+    class FakeGetItemMetatype(type):
+        def __getitem__(cls, a: object) -> Any:
             return Any
+
+    class FakeGetItemType(metaclass=FakeGetItemMetatype): ...
 
     Final = FakeGetItemType
     Literal = FakeGetItemType
