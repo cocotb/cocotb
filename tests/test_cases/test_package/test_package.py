@@ -6,6 +6,8 @@
 A set of tests that demonstrate package access
 """
 
+from __future__ import annotations
+
 import cocotb
 from cocotb.handle import HierarchyObject, LogicArrayObject
 

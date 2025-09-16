@@ -5,19 +5,22 @@ An outcome is similar to the built-in :any:`concurrent.futures.Future`
 or :any:`asyncio.Future`, but without being tied to a particular task model.
 """
 
-import abc
-from typing import Callable, Generic, TypeVar
+from __future__ import annotations
 
-from cocotb._py_compat import ParamSpec
+import abc
+from typing import TYPE_CHECKING, Callable, Generic, TypeVar
+
 from cocotb._utils import remove_traceback_frames
 
+if TYPE_CHECKING:
+    from typing import ParamSpec
+
+    P = ParamSpec("P")
+
 T = TypeVar("T")
-P = ParamSpec("P")
 
 
-def capture(
-    fn: "Callable[P, T]", *args: "P.args", **kwargs: "P.kwargs"
-) -> "Outcome[T]":
+def capture(fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> Outcome[T]:
     """Obtain an `Outcome` representing the result of a function call."""
     try:
         return Value(fn(*args, **kwargs))

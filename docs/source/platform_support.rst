@@ -23,9 +23,6 @@ The following versions of Python, and all associated patch releases (except wher
 cocotb depends on CPython APIs;
 alternative Python implementations like PyPy or Jython are not supported.
 
-* CPython 3.6  (requires 3.6.2+)
-* CPython 3.7
-* CPython 3.8
 * CPython 3.9
 * CPython 3.10
 * CPython 3.11
@@ -44,9 +41,6 @@ We encourage especially users less experienced with Linux to use one of the supp
 Linux distributions typically ship a default version of Python called "system Python".
 This version of Python can be used with cocotb unless noted otherwise.
 
-* **Red Hat Enterprise Linux (RHEL) 8 amd64**,
-  shipping with Python 3.6 (newer versions of Python are available), pip 9, and glibc 2.28.
-  `Upstream support until May 2029 <https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates>`_.
 * **Red Hat Enterprise Linux (RHEL) 9 amd64**,
   shipping with Python 3.9 (newer versions of Python are available), pip 21, and glibc 2.34.
   `Upstream support until May 2032 <https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates>`_.
@@ -74,9 +68,9 @@ Supported Windows Versions
 Supported macOS Versions
 ========================
 
-* **macOS 13 (Ventura) x86_64**
-* **macOS 14 (Sonoma) x86_64**
-* **macOS 15 (Sequoia) x86_64**
+* **macOS 13 (Ventura) ARM64**
+* **macOS 14 (Sonoma) ARM64**
+* **macOS 15 (Sequoia) ARM64**
 
 .. _platform-support-policy:
 
@@ -121,4 +115,3 @@ As such, we try to match the support matrix of major EDA tools to enable a seaml
 Additionally, cocotb should work on the latest version of Windows, Linux, and macOS to ensure users can update their operating system freely without being blocked by cocotb.
 
 cocotb only supports x86_64 architectures and requires a 64-bit operating system.
-(Note: 32-bit x86 applications can be run on 64-bit operating systems.)

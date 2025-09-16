@@ -6,6 +6,8 @@
 
 """All things relating to regression capabilities."""
 
+from __future__ import annotations
+
 import functools
 import hashlib
 import inspect
@@ -20,9 +22,6 @@ from importlib import import_module
 from typing import (
     TYPE_CHECKING,
     Callable,
-    Coroutine,
-    List,
-    Union,
 )
 
 import cocotb
@@ -48,6 +47,8 @@ from cocotb.simtime import get_sim_time
 from cocotb.task import Task
 
 if TYPE_CHECKING:
+    from collections.abc import Coroutine
+
     from cocotb._base_triggers import Trigger
 
 __all__ = (
@@ -77,7 +78,7 @@ class SimFailure(BaseException):
 _logger = logging.getLogger(__name__)
 
 
-def _format_doc(docstring: Union[str, None]) -> str:
+def _format_doc(docstring: str | None) -> str:
     if docstring is None:
         return ""
     else:
@@ -105,7 +106,7 @@ class _TestResults:
     def __init__(
         self,
         test_fullname: str,
-        passed: Union[None, bool],
+        passed: None | bool,
         wall_time_s: float,
         sim_time_ns: float,
     ) -> None:
@@ -149,7 +150,7 @@ class RegressionManager:
         self._running_test: RunningTest
         self.log = _logger
         self._regression_start_time: float
-        self._test_results: List[_TestResults] = []
+        self._test_results: list[_TestResults] = []
         self.total_tests = 0
         """Total number of tests that will be run or skipped."""
         self.count = 0
@@ -161,11 +162,11 @@ class RegressionManager:
         self.failures = 0
         """The current number of failed tests."""
         self._tearing_down = False
-        self._test_queue: List[Test] = []
-        self._filters: List[re.Pattern[str]] = []
+        self._test_queue: list[Test] = []
+        self._filters: list[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
-        self._included: List[bool]
-        self._sim_failure: Union[Error[None], None] = None
+        self._included: list[bool]
+        self._sim_failure: Error[None] | None = None
 
         # Setup XUnit
         ###################
@@ -386,7 +387,7 @@ class RegressionManager:
         main_task = Task(func(cocotb.top), name=f"Test {self._test.name}")
         return RunningTest(self._test_complete, main_task)
 
-    def _schedule_next_test(self, trigger: Union[GPITrigger, None] = None) -> None:
+    def _schedule_next_test(self, trigger: GPITrigger | None = None) -> None:
         if trigger is not None:
             # TODO move to Trigger object
             cocotb._gpi_triggers._current_gpi_trigger = trigger
@@ -458,8 +459,8 @@ class RegressionManager:
 
         # score test
         passed: bool
-        msg: Union[str, None]
-        exc: Union[BaseException, None]
+        msg: str | None
+        exc: BaseException | None
         try:
             outcome.get()
         except BaseException as e:
@@ -667,8 +668,8 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[Exception, None],
-        msg: Union[str, None],
+        result: Exception | None,
+        msg: str | None,
     ) -> None:
         start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_PASSED
         stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
@@ -720,8 +721,8 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[BaseException, None],
-        msg: Union[str, None],
+        result: BaseException | None,
+        msg: str | None,
     ) -> None:
         start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_FAILED
         stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT

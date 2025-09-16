@@ -1,10 +1,13 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import os
+from typing import TYPE_CHECKING
 
-from cocotb.types._range import Range
+if TYPE_CHECKING:
+    from cocotb.types._range import Range
 
 do_indexing_changed_warning = os.environ.get("COCOTB_INDEXING_CHANGED_WARNING")
 

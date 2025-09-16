@@ -2,6 +2,8 @@
 A set of tests that demonstrate Array structure support
 """
 
+from __future__ import annotations
+
 import logging
 import os
 
