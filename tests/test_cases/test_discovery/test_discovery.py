@@ -146,7 +146,7 @@ async def recursive_discover(dut):
         if not isinstance(obj, (HierarchyObject, HierarchyArrayObject, ArrayObject)):
             return
         for thing in obj:
-            dut._log.debug("Found %s (%s)", thing._name, type(thing))
+            cocotb.log.debug("Found %s (%s)", thing._name, type(thing))
             _discover(thing)
 
     _discover(dut)
@@ -489,7 +489,7 @@ async def discover_all_in_component_vhdl(dut):
         count = 0
         for thing in obj:
             count += 1
-            dut._log.info("Found %s (%s)", thing._path, type(thing))
+            cocotb.log.info("Found %s (%s)", thing._path, type(thing))
             count += _discover(thing)
         return count
 

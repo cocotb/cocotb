@@ -9,7 +9,7 @@ from cocotb.utils import get_sim_time
 async def sample_coroutine(dut):
     """Very simple coroutine that waits 5 ns."""
     await Timer(5, "ns")
-    dut._log.info("Sample coroutine yielded.")
+    cocotb.log.info("Sample coroutine yielded.")
 
 
 @cocotb.test()

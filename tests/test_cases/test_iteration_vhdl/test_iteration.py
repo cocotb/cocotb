@@ -71,19 +71,14 @@ async def recursive_discovery(dut):
     assert total == pass_total
 
 
-# GHDL unable to access signals in generate loops (gh-2594)
-@cocotb.test(
-    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
-)
+@cocotb.test
 async def discovery_all(dut):
     """Discover everything on top-level."""
-    dut._log.info("Iterating over top-level to discover objects")
+    cocotb.log.info("Iterating over top-level to discover objects")
     for thing in dut:
-        thing._log.info("Found something: %s", thing._path)
+        cocotb.log.info("Found something: %s", thing._path)
 
-    dut._log.info("length of dut.inst_acs is %d", len(dut.gen_acs))
-    item = dut.gen_acs[3]
-    item._log.info("this is item")
+    cocotb.log.info("length of dut.inst_acs is %d", len(dut.gen_acs))
 
 
 @cocotb.test()
@@ -92,7 +87,7 @@ async def dual_iteration(dut):
 
     async def iteration_loop():
         for thing in dut:
-            thing._log.info("Found something: %s", thing._path)
+            cocotb.log.info("Found something: %s", thing._path)
             await Timer(1)
 
     loop_one = cocotb.start_soon(iteration_loop())

@@ -25,7 +25,7 @@ async def await_two_clock_edges(dut):
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
     await Timer(1, unit="ns")
-    dut._log.info("Returning from await_two_clock_edges")
+    cocotb.log.info("Returning from await_two_clock_edges")
     return 2
 
 
@@ -111,11 +111,11 @@ async def test_consecutive_bridges(dut):
     Test that multiple @bridge functions can be called in the same test
     """
     value = await bridge(return_two)(dut)
-    dut._log.info("First one completed")
+    cocotb.log.info("First one completed")
     assert value == 2
 
     value = await bridge(return_two)(dut)
-    dut._log.info("Second one completed")
+    cocotb.log.info("Second one completed")
     assert value == 2
 
 
@@ -126,7 +126,7 @@ async def test_bridge_from_readonly(dut):
     can be called from ReadOnly state
     """
     await ReadOnly()
-    dut._log.info("In readonly")
+    cocotb.log.info("In readonly")
     value = await bridge(return_two)(dut)
     assert value == 2
 
@@ -140,7 +140,7 @@ async def test_resume_from_readonly(dut):
     cocotb.start_soon(Clock(dut.clk, 100, unit="ns").start())
 
     await ReadOnly()
-    dut._log.info("In readonly")
+    cocotb.log.info("In readonly")
     value = await bridge(calls_resume)(dut)
     assert value == 2
 
@@ -194,13 +194,13 @@ async def test_bridge_from_start_soon(dut):
     coro1 = cocotb.start_soon(run_function(dut))
     value = await coro1
     assert value == 2
-    dut._log.info("Back from join 1")
+    cocotb.log.info("Back from join 1")
 
     value = 0
     coro2 = cocotb.start_soon(run_bridge(dut))
     value = await coro2
     assert value == 2
-    dut._log.info("Back from join 2")
+    cocotb.log.info("Back from join 2")
 
 
 @cocotb.test()

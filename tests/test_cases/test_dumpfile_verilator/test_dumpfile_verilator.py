@@ -14,7 +14,7 @@ async def reset_dut(reset_n, duration_ns):
     reset_n.value = 0
     await Timer(duration_ns)
     reset_n.value = 1
-    reset_n._log.debug("Reset complete")
+    cocotb.log.debug("Reset complete")
 
 
 @cocotb.test()
