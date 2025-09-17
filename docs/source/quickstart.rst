@@ -13,9 +13,9 @@ cocotb itself: ``pip install cocotb``
 
 Run ``cocotb-config --version`` in a terminal window to verify that cocotb is installed.
 
-The examples described are made to work with the `icarus <https://steveicarus.github.io/iverilog/>`_.
-However, another supported verilog simulator can be used as well.
-See :ref:`simulator-support` for a comprehensive list of the cocotb supported simulators.
+The examples described are made to work with the `Icarus Verilog <https://steveicarus.github.io/iverilog/>`_ simulator.
+However, any other supported Verilog simulator can be used as well.
+See :ref:`simulator-support` for a comprehensive list of the supported simulators.
 
 The code for the following example is available in the cocotb sources:
 :reposrc:`examples/doc_examples/quickstart <examples/doc_examples/quickstart>`.
@@ -34,13 +34,12 @@ Creating a Test
 ===============
 A typical cocotb testbench requires no additional :term:`HDL` code.
 The :term:`DUT` is instantiated as the toplevel in the simulator without any HDL wrapper code.
-The input stimuli and output checking is done in Python.
+The input stimulus and output checking is done in Python.
 
-To create a cocotb testcase, the cocotb function decorator :deco:`cocotb.test()` must be used to decorate an :keyword:`async` functions. Python function.
+To create a cocotb testcase, the function decorator :deco:`cocotb.test()` must be used to decorate an :keyword:`async` Python function.
 The decorated function must take a ``dut`` argument, this is the entry point to the HDL toplevel.
 
-The ``dut`` argument gives access to all internals of the HDL toplevel.
-This means any port, signal, parameter, as well as other submodules inside the toplevel.
+The ``dut`` argument gives access to all internals of the HDL toplevel, that is, any port, signal, parameter, as well as other submodules.
 It is possible to "dot" your way through the entire hierarchy of the toplevel and access every signal inside every submodule if so desired.
 
 .. code-block:: python3
@@ -58,11 +57,11 @@ Example 1 - Sequential
 ----------------------
 In this first example there is only one sequential routine.
 The routine starts by setting a default value to the ``ena`` signal,
-activating the reset signal, instantiates and starts a :class:`cocotb.clock.Clock` to easily generate a clock input.
+activating the reset signal, instantiating and starting a :class:`cocotb.clock.Clock` to easily generate a clock input.
 Then some time is awaited before deactivating the reset signal,
 to exit out of the reset state of the ``dut``.
-Then the ``ena`` signal is `activated` for ten clock cycles,
-before verifying that the counter in the module has the value ten.
+Then the ``ena`` signal is `activated` for 10 clock cycles,
+before verifying that the counter in the module has the value 10.
 Then the ``ena`` signal is `deactivated` and some time is awaited,
 before checking the counter value again to verify that it was not incrementing while ``ena`` was low.
 
@@ -78,18 +77,18 @@ before checking the counter value again to verify that it was not incrementing w
 
 Things to note:
    * Use ``dut.`` to access anything in the HDL toplevel.
-   * Use ``dut.<signal>`` to get a signal in the HDL toplevel.
+   * Use ``dut.<signal>`` to get a *reference* to a signal in the HDL toplevel.
    * Use ``dut.<signal>.value`` to get the signal *value*.
    * Use ``dut.<signal>.value = some_value`` to set the signal *value*.
-   * Use ``await`` to wait for any :ref:`triggers` (Timer, RisingEdge, etc.).
-   * Use ``assert`` to verify that a value or condition is as expected.
+   * Use :keyword:`!await` to wait for any :ref:`trigger <triggers>` (:class:`~cocotb.trigger.Timer`, :class:`~cocotb.trigger.RisingEdge`, etc.).
+   * Use :keyword:`!assert` to verify that a value or condition is as expected.
 
 Example 2 - Coroutines
 ----------------------
 Often it is useful to have several routines running in parallel.
 This can be done with :keyword:`async` functions.
-In cocotb an :keyword:`!async` function should always be started with the :func:`cocotb.start_soon`,
-and can be :keyword:`await`-ed if desired. See :ref:`coroutines` for more info.
+In cocotb an :keyword:`!async` function should always be started with :func:`cocotb.start_soon`,
+and can be :keyword:`await`-ed if desired. See :ref:`coroutines` for more information.
 
 As long as the coroutines are not decorated with :deco:`cocotb.test` they are not automatically called
 and can be used as helper functions in the actual testcase decorated with :deco:`!cocotb.test`.
@@ -110,7 +109,7 @@ Stimulus is done by starting a different coroutine.
 
 Things to note:
    * Use :keyword:`async` to create a function that can be used as a coroutine.
-   * Use :func:`cocotb.start_soon` to start a coroutine. This lets cocotb schedule it correctly.
+   * Use :func:`cocotb.start_soon` to start a coroutine.
 
 See the sections :ref:`writing_tbs_concurrent_sequential` and :ref:`coroutines`
 for more information on such concurrent processes.
@@ -120,7 +119,7 @@ Example 3 - Reading a value can be quirky
 -----------------------------------------
 The :func:`cocotb.triggers.RisingEdge` trigger return precisely after the signal changes.
 No sensitive processes have run to update any signals yet.
-Therefore, one must await the :func:`cocotb.triggers.ReadOnly` before sampling a signal.
+Therefore, one must await the :func:`~cocotb.triggers.ReadOnly` trigger before sampling a signal.
 To escape the ReadOnly after sampling a signal, the :func:`cocotb.triggers.NextTimeStep`, among others, can be awaited.
 More on this in :ref:`timing-model` chapter.
 
@@ -143,11 +142,12 @@ Things to note:
 
 Running a Test
 ==============
-The cocotb testcases can be run in two ways:
+cocotb testcases can be run in three ways:
 - Using `make <https://www.gnu.org/software/make/>`_ with a Makefile, see section :ref:`quickstart_makefile`.
 - Using the :class:`cocotb_tools.runner.Runner`, see :ref:`quickstart_runner`.
+- Using a self-defined custom flow, see :ref:`custom-flows`.
 
-All the generated/compiled files end up in the :file:`sim_build/` directory unless otherwise specified.
+All the files produced during simulation end up in the :file:`sim_build/` directory unless otherwise specified.
 
 .. _quickstart_makefile:
 
@@ -197,12 +197,12 @@ Creating a Runner
 .. warning::
     Python runners and associated APIs are an experimental feature and subject to change.
 
-An alternative to the :ref:`quickstart_makefile` is to use the :class:`cocotb_tools.Runner`, or "runner" for short.
+An alternative to :ref:`quickstart_makefile` is to use the :class:`cocotb_tools.Runner`, or "runner" for short.
 
-The runner has three steps:
-   1. Instantiation of the runner with: `get_runner(sim)`
-   2. Build where the HDL are compiled: `runner.build(...)`
-   3. Test where cocotb testcases are run: `runner.test(...)`
+Using the runner involves three steps:
+   1. *Instantiation* of the runner with: `get_runner(sim)`
+   2. *Build*, where the HDL are compiled: `runner.build(...)`
+   3. *Test*, where cocotb testcases are run: `runner.test(...)`
 
 See the section :ref:`howto-python-runner` for more details.
 
@@ -221,7 +221,7 @@ The test runner can be invoked by calling the ``test_simple_counter()``, in this
    python test_runner.py
 
 However, one of the benefits of using the runner is that it can be used with `pytest <https://pytest.org>`_,
-as long as the function name is detectable by pytest, e.g. prefixing the function with the ``test_`` prefix.
+as long as the function name is discoverable by pytest, e.g. by prefixing the function with the ``test_`` prefix.
 Refer to the `pytest <https://pytest.org>`_ documentation for a more comprehensive guide.
 
 To run the cooctb test runner with pytest:
@@ -234,15 +234,17 @@ To run the cooctb test runner with pytest:
 Viewing the waveform
 ===================
 To view a waveform it must be generated by the simulator, this is not enabled by default.
-This "flag" can be set with ``WAVES=1`` with make,
+This "flag" can be set with :make:var:`WAVES` (``WAVES=1``) with make,
 or the ``waves=True`` argument for the runner.
 
 The generated waveform file will be located in the :file:`sim_build/` directory unless otherwise specified.
-The waveform fileformat generated will vary depending on the simulator used.
-Not all fileformats are supported by all waveform viewers.
-Some fileformats allow easy conversion back and forth. Mileage may vary.
+The waveform file format generated will vary depending on the simulator used.
+Not all file formats are supported by all waveform viewers.
+Some file formats allow easy conversion back and forth. Mileage may vary.
 
-Two free waveform viewers commonly used are `GTKWave <https://gtkwave.github.io/gtkwave/index.html>`_ or the newer `Surfer <https://surfer-project.org>`_.
+For simulators that do not have a built-in waveform viewer,
+`GTKWave <https://gtkwave.github.io/gtkwave/index.html>`_ or the newer `Surfer <https://surfer-project.org>`_
+exist as an alternative.
 
 This example is by default using the `Icarus Verilog <https://steveicarus.github.io/iverilog/>`_ simulator.
-``.fst`` file format is generated by default and can be opened with either GTKWave or Surfer.
+The ``.fst`` file format is generated by default and can be opened with either GTKWave or Surfer.
