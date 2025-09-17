@@ -27,7 +27,10 @@ async def quickstart_1(dut):
     dut.rst.value = 1
     input_clock = Clock(dut.clk, 10, unit="ns")
     input_clock.start()
-    await Timer(20, "ns")
+    await Timer(5, "ns")
+
+    # Re-synchronize with the clock
+    await RisingEdge(dut.clk)
     dut.rst.value = 0
 
     # Activating the dut.ena input signal, to enable the counter.
