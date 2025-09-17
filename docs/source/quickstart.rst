@@ -119,9 +119,9 @@ Example 3 - Reading a value can be quirky
 -----------------------------------------
 The :func:`cocotb.triggers.RisingEdge` trigger returns directly after the signal changes.
 No sensitive processes have run to update any signals yet.
-Therefore, one must await the :func:`~cocotb.triggers.ReadOnly` trigger before sampling a signal.
+Therefore, one must :keyword:`!await` the :func:`~cocotb.triggers.ReadOnly` trigger before sampling a signal.
 To continue after sampling a signal in the ReadOnly phase,
-the :func:`cocotb.triggers.NextTimeStep`, among others, can be awaited.
+the :func:`cocotb.triggers.NextTimeStep`, among others, can be :keyword:`await`-ed.
 More on this in :ref:`timing-model` chapter.
 
 
