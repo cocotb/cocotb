@@ -1361,13 +1361,20 @@ class Verilator(Runner):
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-G{name}={value}" for name, value in parameters.items()]
 
+    def _is_vlt_source(self, source: PathLike) -> bool:
+        source_as_path = Path(source)
+        return source_as_path.suffix == ".vlt"
+
+    def _valid_verilator_source(self, source: PathLike) -> bool:
+        return is_verilog_source(source) or self._is_vlt_source(source)
+
     def _build_command(self) -> List[_Command]:
         self._simulator_in_path_build_only()
 
         for source in self.sources:
-            if not is_verilog_source(source):
+            if not self._valid_verilator_source(source):
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports Verilog. {str(source)!r} cannot be compiled."
+                    f"{type(self).__qualname__} only supports Verilog and Verilator Control Files. {str(source)!r} cannot be compiled."
                 )
         for arg in self.build_args:
             if type(arg) not in (str, Verilog):
@@ -1418,7 +1425,11 @@ class Verilator(Runner):
             + self._get_include_options(self.includes)
             + self._get_parameter_options(self.parameters)
             + [verilator_cpp]
-            + [str(source) for source in self.sources if is_verilog_source(source)]
+            + [
+                str(source)
+                for source in self.sources
+                if self._valid_verilator_source(source)
+            ]
             + [str(source) for source in self.verilog_sources]
         )
 
