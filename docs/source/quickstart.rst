@@ -3,24 +3,23 @@
 ****************
 Quickstart Guide
 ****************
-The following sections describe, in short with examples, how to setup a few minimal cocotb testcases, how to run the simulation and how to view the generated waveform.
-For a thorough explanation about the cooctb testbench concepts used in this quickstart guide, refer to the :ref:`writing_tbs` page.
+This guide describe some minimal cocotb testcase examples, with instructions for running simulations, and steps to view the generated waveforms. For a thorough explanation about the cooctb testbench concepts used in this quickstart guide, refer to the :ref:`writing_tbs` page.
 
 Prerequisites
 =============
 Before starting, install the :ref:`prerequisites<install-prerequisites>` and
 cocotb itself: ``pip install cocotb``
 
-Run ``cocotb-config --version`` in a terminal window to verify that cocotb is installed.
+Verify installation and version with the ``cocotb-config --version`` command.
 
-The examples described are made to work with the `Icarus Verilog <https://steveicarus.github.io/iverilog/>`_ simulator.
-However, any other supported Verilog simulator can be used as well.
+Examples use `Icarus Verilog <https://steveicarus.github.io/iverilog/>`_ for simulation,
+but any supported Verilog simulator can be used.
 See :ref:`simulator-support` for a comprehensive list of the supported simulators.
 
 The code for the following example is available in the cocotb sources:
 :reposrc:`examples/doc_examples/quickstart <examples/doc_examples/quickstart>`.
 
-The files can also be downloaded directly here:
+The files can be downloaded directly here:
 
    * :download:`simple_module.sv <../../examples/doc_examples/quickstart/simple_counter.sv>`
    * :download:`cocotb_test_simple_module.py <../../examples/doc_examples/quickstart/simple_counter_testcases.py>`
@@ -36,8 +35,9 @@ A typical cocotb testbench requires no additional :term:`HDL` code.
 The :term:`DUT` is instantiated as the toplevel in the simulator without any HDL wrapper code.
 The input stimulus and output checking is done in Python.
 
-To create a cocotb testcase, the function decorator :deco:`cocotb.test()` must be used to decorate an :keyword:`async` Python function.
-The decorated function must take a ``dut`` argument, this is the entry point to the HDL toplevel.
+Create a cocotb testcase by decorating an :keyword:`async` Python function with :deco:`cocotb.test()`.
+The function must accept at least the ``dut`` argument,
+which gives access to the HDL toplevel.
 
 The ``dut`` argument gives access to all internals of the HDL toplevel, that is, any port, signal, parameter, as well as other submodules.
 It is possible to "dot" your way through the entire hierarchy of the toplevel and access every signal inside every submodule if so desired.
@@ -55,15 +55,13 @@ The filename does not really matter as long as it is consistent with the value o
 
 Example 1 - Sequential
 ----------------------
-In this first example there is only one sequential routine.
-The routine starts by setting a default value to the ``ena`` signal,
-activating the reset signal, instantiating and starting a :class:`cocotb.clock.Clock` to easily generate a clock input.
-Then some time is awaited before deactivating the reset signal,
-to exit out of the reset state of the ``dut``.
-Then the ``ena`` signal is `activated` for 10 clock cycles,
-before verifying that the counter in the module has the value 10.
-Then the ``ena`` signal is `deactivated` and some time is awaited,
-before checking the counter value again to verify that it was not incrementing while ``ena`` was low.
+This example demonstrates a single sequential test routine:
+
+- Set default values for the signals ``ena`` and ``rst``.
+- Start a Clock for stimulus
+- Wait and deactivate ``rst``
+- Hold ``ena`` active for 10 clock cycles then verify ``counter`` equals 10
+- Deactivate ``ena``, wait, and verify ``counter`` does not increment
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/simple_counter_testcases.py
    :language: python
@@ -76,12 +74,12 @@ before checking the counter value again to verify that it was not incrementing w
    :end-before: # END QUICKSTART 1
 
 Things to note:
-   * Use ``dut.`` to access anything in the HDL toplevel.
-   * Use ``dut.<signal>`` to get a *reference* to a signal in the HDL toplevel.
-   * Use ``dut.<signal>.value`` to get the signal *value*.
-   * Use ``dut.<signal>.value = some_value`` to set the signal *value*.
-   * Use :keyword:`!await` to wait for any :ref:`trigger <triggers>` (:class:`~cocotb.trigger.Timer`, :class:`~cocotb.trigger.RisingEdge`, etc.).
-   * Use :keyword:`!assert` to verify that a value or condition is as expected.
+   * ``dut.`` to access anything in the HDL toplevel.
+   * ``dut.<signal>`` to get a *reference* to a signal in the HDL toplevel.
+   * ``dut.<signal>.value`` to get the signal *value*.
+   * ``dut.<signal>.value = some_value`` to set the signal *value*.
+   * :keyword:`!await` to wait for any :ref:`trigger <triggers>` (:class:`~cocotb.trigger.Timer`, :class:`~cocotb.trigger.RisingEdge`, etc.).
+   * :keyword:`!assert` to verify that a value or condition is as expected.
 
 Example 2 - Coroutines
 ----------------------
@@ -117,13 +115,11 @@ for more information on such concurrent processes.
 
 Example 3 - Reading a value can be quirky
 -----------------------------------------
-The :func:`cocotb.triggers.RisingEdge` trigger returns directly after the signal changes.
-No sensitive processes have run to update any signals yet.
-Therefore, one must :keyword:`!await` the :func:`~cocotb.triggers.ReadOnly` trigger before sampling a signal.
-To continue after sampling a signal in the ReadOnly phase,
-the :func:`cocotb.triggers.NextTimeStep`, among others, can be :keyword:`await`-ed.
+:func:`cocotb.triggers.RisingEdge` trigger returns immediately after a signal change,
+before any signal updates propagate.
+To sample stable values, :keyword:`!await` the :func:`~cocotb.triggers.ReadOnly` before reading a signal.
+To resume after the ReadOnly phase, use :keyword:`!await` :func:`cocotb.triggers.NextTimeStep`.
 More on this in :ref:`timing-model` chapter.
-
 
 .. literalinclude:: ../../examples/doc_examples/quickstart/simple_counter_testcases.py
    :language: python
@@ -145,9 +141,9 @@ Running a Test
 ==============
 cocotb testcases can be run in three ways:
 
-- Using `make <https://www.gnu.org/software/make/>`_ with a Makefile, see section :ref:`quickstart_makefile`.
-- Using the :class:`cocotb_tools.runner.Runner`, see :ref:`quickstart_runner`.
-- Using a self-defined custom flow, see :ref:`custom-flows`.
+1. `make <https://www.gnu.org/software/make/>`_ with a Makefile, see section :ref:`quickstart_makefile`.
+2. The :class:`cocotb_tools.runner.Runner`, see :ref:`quickstart_runner`.
+3. A self-defined custom flow, see :ref:`custom-flows`.
 
 All the files produced during simulation end up in the :file:`sim_build/` directory unless otherwise specified.
 
@@ -197,7 +193,7 @@ Creating a Runner
 -----------------
 
 .. warning::
-    Python runners and associated APIs are an experimental feature and subject to change.
+    Python runner and associated APIs are experimental and subject to change.
 
 An alternative to :ref:`quickstart_makefile` is to use the :class:`cocotb_tools.Runner`, or "runner" for short.
 
