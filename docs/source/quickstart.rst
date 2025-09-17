@@ -144,6 +144,7 @@ Things to note:
 Running a Test
 ==============
 cocotb testcases can be run in three ways:
+
 - Using `make <https://www.gnu.org/software/make/>`_ with a Makefile, see section :ref:`quickstart_makefile`.
 - Using the :class:`cocotb_tools.runner.Runner`, see :ref:`quickstart_runner`.
 - Using a self-defined custom flow, see :ref:`custom-flows`.
