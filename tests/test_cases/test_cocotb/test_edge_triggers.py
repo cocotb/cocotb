@@ -40,15 +40,15 @@ async def count_edges_cycles(signal, edges):
     edge = RisingEdge(signal)
     for i in range(edges):
         await edge
-        signal._log.info("Rising edge %d detected", i)
-    signal._log.info("Finished, returning %d", edges)
+        cocotb.log.info("Rising edge %d detected", i)
+    cocotb.log.info("Finished, returning %d", edges)
     return edges
 
 
 async def do_single_edge_check(dut, level):
     """Do test for rising edge"""
     old_value = dut.clk.value
-    dut._log.info("Value of %s is %d", dut.clk._path, old_value)
+    cocotb.log.info("Value of %s is %d", dut.clk._path, old_value)
     assert old_value != level
     if level == 1:
         await RisingEdge(dut.clk)
@@ -129,7 +129,7 @@ async def test_fork_and_monitor(dut, period=1000, clocks=6):
         result = await First(timer, task)
         assert count <= expect, "Task didn't complete in expected time"
         if result is timer:
-            dut._log.info("Count %d: Task still running", count)
+            cocotb.log.info("Count %d: Task still running", count)
             count += 1
         else:
             break

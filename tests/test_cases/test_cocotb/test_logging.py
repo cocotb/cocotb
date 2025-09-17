@@ -56,18 +56,18 @@ class StrCallCounter:
 @cocotb.test()
 async def test_logging_with_args(dut):
     counter = StrCallCounter()
-    dut._log.setLevel(
+    cocotb.log.setLevel(
         logging.INFO
     )  # To avoid logging debug message, to make next line run without error
-    dut._log.debug("%s", counter)
+    cocotb.log.debug("%s", counter)
     assert counter.str_counter == 0
 
-    dut._log.info("%s", counter)
+    cocotb.log.info("%s", counter)
     assert counter.str_counter == 1
 
-    dut._log.info("No substitution")
+    cocotb.log.info("No substitution")
 
-    dut._log.warning("Testing multiple line\nmessage")
+    cocotb.log.warning("Testing multiple line\nmessage")
 
 
 @cocotb.test()
