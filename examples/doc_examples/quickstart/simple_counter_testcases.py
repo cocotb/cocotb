@@ -81,9 +81,10 @@ async def enable_counter(dut, cycles=10):
     """Activate ``dut.ena`` for some clock cycles, before deactivating.
 
     Signals do not have to be passed as arguments.
-    Keyword arguments:
-    dut -- the hdl toplevel
-    cycles -- number of cycles to keep dut.ena high (default 10)
+
+    Args:
+        dut: the hdl toplevel
+        cycles: number of cycles to keep dut.ena high (default 10)
     """
     await FallingEdge(dut.clk)
     dut.ena.value = 1
@@ -97,9 +98,9 @@ async def enable_counter(dut, cycles=10):
 async def check_counter(dut, start_value):
     """A run forever coroutine,  continuously checks the counter on every rising edge of the clock.
 
-    Keyword arguments:
-    dut -- the hdl toplevel
-    start_value -- the expected value of the counter when this coroutine is started.
+    Args:
+        dut: the hdl toplevel
+        start_value: the expected value of the counter when this coroutine is started.
     """
     expected_counter_value = start_value
     assert dut.counter.value == expected_counter_value
@@ -118,7 +119,11 @@ async def check_counter(dut, start_value):
 
 @cocotb.test()
 async def quickstart_2(dut):
-    """Quickstart Example 2 - Showcasing coroutines."""
+    """Quickstart Example 2 - Showcasing coroutines.
+
+    Args:
+        dut: the hdl toplevel
+    """
 
     # Signals in the dut can be assigned to variables for easier use.
     # Can be useful for more complicated signal names.
@@ -153,7 +158,11 @@ async def quickstart_2(dut):
 
 @cocotb.test()
 async def quickstart_3(dut):
-    """Quickstart Example 3 - Showcasing reading a signal before assertion."""
+    """Quickstart Example 3 - Showcasing reading a signal before assertion.
+
+    Args:
+        dut: the hdl toplevel
+    """
 
     # Same starting sequence as in Quickstart 2.
     rst = dut.rst
