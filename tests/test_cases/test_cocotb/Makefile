@@ -25,6 +25,7 @@ COCOTB_TEST_MODULES := "\
 	test_queues,\
 	test_sim_time_utils,\
 	test_start_soon,\
+	test_ci,\
 	"
 
 # test_timing_triggers.py requires a 1ps time precision.
