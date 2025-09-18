@@ -116,10 +116,10 @@ is_simulation: bool = False
 """``True`` if cocotb was loaded in a simulation."""
 
 
-if sys.version_info < (3, 8):
+if sys.version_info < (3, 9):
     import warnings
 
     warnings.warn(
-        "Support for Python versions < 3.8 will be dropped in version 2.1",
+        "Support for Python versions < 3.9 will be dropped in version 2.1",
         FutureWarning,
     )
