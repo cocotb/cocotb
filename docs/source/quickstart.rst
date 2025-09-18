@@ -26,21 +26,20 @@ The files can be downloaded directly here:
    * :download:`test_runner.py <../../examples/doc_examples/quickstart/test_runner.py>`
    * :download:`Makefile <../../examples/doc_examples/quickstart/Makefile>`
 
-
 .. _quickstart_creating_a_test:
 
 Creating a Test
 ===============
 A typical cocotb testbench requires no additional :term:`HDL` code.
 The :term:`DUT` is instantiated as the toplevel in the simulator without any HDL wrapper code.
-The input stimulus and output checking is done in Python.
+The input stimulus and output checking is done with Python.
 
 Create a cocotb testcase by decorating an :keyword:`async` Python function with :deco:`cocotb.test()`.
 The function must accept at least the ``dut`` argument,
 which gives access to the HDL toplevel.
 
-The ``dut`` argument gives access to all internals of the HDL toplevel, that is, any port, signal, parameter, as well as other submodules.
-It is possible to "dot" your way through the entire hierarchy of the toplevel and access every signal inside every submodule if so desired.
+The ``dut`` argument gives access to all internals of the HDL toplevel, that is, any port, signal, parameter/generic, as well as submodules.
+It is possible to "dot" your way through the entire hierarchy of the toplevel and access every signal inside every submodule.
 
 .. code-block:: python3
 
@@ -85,7 +84,7 @@ Example 2 - Coroutines
 ----------------------
 Often it is useful to have several routines running in parallel.
 This can be done with :keyword:`async` functions.
-In cocotb an :keyword:`!async` function should always be started with :func:`cocotb.start_soon`,
+With cocotb an :keyword:`!async` function should always be started with :func:`cocotb.start_soon`,
 and can be :keyword:`await`-ed if desired. See :ref:`coroutines` for more information.
 
 As long as the coroutines are not decorated with :deco:`cocotb.test` they are not automatically called
@@ -112,12 +111,11 @@ Things to note:
 See the sections :ref:`writing_tbs_concurrent_sequential` and :ref:`coroutines`
 for more information on such concurrent processes.
 
-
 Example 3 - Reading a value can be quirky
 -----------------------------------------
 :func:`cocotb.triggers.RisingEdge` trigger returns immediately after a signal change,
 before any signal updates propagate.
-To sample stable values, :keyword:`!await` the :func:`~cocotb.triggers.ReadOnly` before reading a signal.
+To sample stable values, :keyword:`!await` the :func:`~cocotb.triggers.ReadOnly` trigger before reading a signal.
 To resume after the ReadOnly phase, use :keyword:`!await` :func:`cocotb.triggers.NextTimeStep`.
 More on this in :ref:`timing-model` chapter.
 
@@ -133,7 +131,7 @@ More on this in :ref:`timing-model` chapter.
 
 Things to note:
    * Use :func:`cocotb.triggers.ReadOnly` before sampling a signal.
-   * Use :func:`cocotb.triggers.NextTimeStep` to escape the ReadOnly phase.
+   * Use :func:`cocotb.triggers.NextTimeStep` to resume after the ReadOnly phase.
 
 .. _quickstart_running_a_test:
 
@@ -164,7 +162,6 @@ In order to run a test with a Makefile the following must be specified:
    :language: make
    :start-at: # Makefile
 
-
 .. _quickstart_running_a_makefile:
 
 Running a Test with a Makefile
@@ -185,7 +182,6 @@ make can be invoked as follows:
 .. code-block:: bash
 
     make SIM=questa WAVES=0
-
 
 .. _quickstart_runner:
 
@@ -227,7 +223,6 @@ To run the cooctb test runner with pytest:
 .. code-block:: bash
 
    pytest
-
 
 Viewing the waveform
 ===================
