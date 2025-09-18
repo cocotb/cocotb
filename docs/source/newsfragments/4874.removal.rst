@@ -1,0 +1,1 @@
+Deprecated ``start_high`` argument to :meth:`.Clock.start`. Pass ``start_high`` to the :class:`!Clock`` constructor instead.
