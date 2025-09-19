@@ -85,6 +85,7 @@ ignore = [
     "PLW0603", # Using the global statement (preference)
     "PLR0911", # Too many return statements (preference)
     "PLW1641", # __eq__ without __hash__ (mypy compatibility)
+    "UP021",   # subprocess.run() universal_newlines => text (not supported in 3.6)
 ]
 
 [tool.ruff.lint.per-file-ignores]
