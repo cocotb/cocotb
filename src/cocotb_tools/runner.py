@@ -114,6 +114,10 @@ class Verilog(str):
     """Tags source files and build arguments to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` as Verilog-specific."""
 
 
+class VerilatorControlFile(str):
+    """Tags source files to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` as Verilator control files."""
+
+
 class Runner(ABC):
     supported_gpi_interfaces: Dict[str, List[str]] = {}
 
@@ -215,7 +219,7 @@ class Runner(ABC):
         hdl_library: str = "top",
         verilog_sources: Sequence[PathLike] = [],
         vhdl_sources: Sequence[PathLike] = [],
-        sources: Sequence[Union[PathLike, VHDL, Verilog]] = [],
+        sources: Sequence[Union[PathLike, VHDL, Verilog, VerilatorControlFile]] = [],
         includes: Sequence[PathLike] = [],
         defines: Mapping[str, object] = {},
         parameters: Mapping[str, object] = {},
@@ -1362,6 +1366,8 @@ class Verilator(Runner):
         return [f"-G{name}={value}" for name, value in parameters.items()]
 
     def _is_vlt_source(self, source: PathLike) -> bool:
+        if isinstance(source, VerilatorControlFile):
+            return True
         source_as_path = Path(source)
         return source_as_path.suffix == ".vlt"
 
