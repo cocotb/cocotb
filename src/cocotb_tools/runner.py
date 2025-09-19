@@ -959,7 +959,7 @@ class Ghdl(Runner):
         result = subprocess.run(
             ["ghdl", "--version"],
             check=True,
-            text=True,
+            universal_newlines=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
@@ -1077,7 +1077,7 @@ class Nvc(Runner):
         version_str = subprocess.run(
             ["nvc", "--version"],
             check=True,
-            text=True,
+            universal_newlines=True,
             stdout=subprocess.PIPE,
         ).stdout
         version = NvcVersion.from_commandline(version_str)
