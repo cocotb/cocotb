@@ -1,0 +1,1 @@
+Added support for Verilator control files in the sources list of the :class:`~cocotb_tools.runner.Verilator` class.
