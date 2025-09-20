@@ -105,7 +105,7 @@ jobs:
 
       # Install Python
     - name: Set up Python ${{matrix.python-version}} (setup-python)
-      if: matrix.setup_python == '' && (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos'))
+      if: matrix.setup_python == ''
       uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c  # v6.0.0
       with:
         python-version: ${{matrix.python-version}}
@@ -121,26 +121,17 @@ jobs:
       run: |
         pyenv install ${{matrix.python-version}}
         pyenv global ${{matrix.python-version}}
-    - name: Set up Anaconda ${{matrix.python-version}} (Windows)
-      if: startsWith(matrix.os, 'windows')
-      uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f  # v3.2.0
-      with:
-        python-version: ${{ matrix.python-version }}
-        # Use base environment to properly import _sqlite3 DLL - see gh-3166
-        auto-activate-base: false
-        activate-environment: true
 
-      # Windows-specific: Setup mingw as default compiler
-    - name: Setup mingw as default compiler (Windows, mingw)
-      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
-      run: |
-        "[build]`ncompiler=mingw32`nforce=1`n[build_ext]`ncompiler=mingw32`nforce=1" | Out-File -Encoding ASCII -FilePath $Env:USERPROFILE\pydistutils.cfg
-    - name: Install cocotb build dependencies (Windows, mingw)
-      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
-      run: conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython
-    - name: Install cocotb runtime dependencies (Windows, msvc)
-      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
-      run: conda install --yes -c msys2 m2-base m2-make
+    - name: Install msys2 (Windows)
+      if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >
+          base-devel
+          gperf
+          mingw-w64-x86_64-toolchain
 
       # Install
     - name: Install XML-dependencies for Python 3.14
@@ -174,18 +165,32 @@ jobs:
         CXXCPP=/usr/bin/cpp bash ./configure
         make -j $(nproc)
         sudo make install
-    - name: Set up Icarus (Windows - source)
+    - name: Set up Icarus (Windows - source - pt. 1)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
-      timeout-minutes: 15
       run: |
-        conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain
+        git config --global core.autocrlf input
         git clone https://github.com/steveicarus/iverilog.git
         cd iverilog
         git reset --hard ${{matrix.sim-version}}
-        bash ./autoconf.sh
-        bash ./configure --host=x86_64-w64-mingw32 --prefix=/c/iverilog
-        make -j 2 install
-        echo "C:\iverilog\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+    - name: Set up Icarus (Windows - source - pt. 2)
+      if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
+      timeout-minutes: 10
+      shell: msys2 {0}
+      env:
+        MINGW_ARCH: MINGW64
+      run: |
+        cd iverilog
+        cd msys2
+        makepkg-mingw --noconfirm --noprogressbar -sCLf
+    - name: Set up Icarus (Windows - source - pt. 3)
+      if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
+      timeout-minutes: 10
+      shell: msys2 {0}
+      env:
+        MINGW_ARCH: MINGW64
+      run: |
+        pacman -U --noconfirm iverilog/msys2/*.zst
+        echo "$(dirname $(cygpath -m $(which iverilog)))" >> $GITHUB_PATH
     - name: Set up Icarus (MacOS - homebrew --HEAD)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-HEAD'
       run: |
@@ -261,12 +266,11 @@ jobs:
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
       continue-on-error: ${{matrix.may-fail || false}}
-      # Virtual environments don't work on Windows with cocotb. Avoid using them
-      # in nox testing.
       run: |
-        nox --no-venv -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+        nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
         COCOTB_ANSI_OUTPUT: 1
+        COCOTB_CI_SKIP_MAKE: 1
 
       # Ubuntu / MacOS Testing
     - name: Install cocotb build dependencies (Ubuntu - g++)

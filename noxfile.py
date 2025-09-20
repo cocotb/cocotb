@@ -2,6 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import glob
+import os
 import shutil
 from contextlib import suppress
 from pathlib import Path
@@ -193,8 +194,9 @@ def dev_test_sim(
     with suppress(FileNotFoundError):
         coverage_file.unlink()
 
-    session.log(f"Running 'make test' against a simulator {config_str}")
-    session.run("make", "-k", "test", external=True, env=env)
+    if "COCOTB_CI_SKIP_MAKE" not in os.environ:
+        session.log(f"Running 'make test' against a simulator {config_str}")
+        session.run("make", "-k", "test", external=True, env=env)
 
     # Run pytest for files which can only be tested in the source tree, not in
     # the installed binary (otherwise we get an "import file mismatch" error
