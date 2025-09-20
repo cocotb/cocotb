@@ -129,6 +129,7 @@ jobs:
         update: true
         install: >
           base-devel
+          gperf
           mingw-w64-x86_64-toolchain
 
       # Install
@@ -276,6 +277,7 @@ jobs:
         nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
         COCOTB_ANSI_OUTPUT: 1
+        COCOTB_CI_SKIP_MAKE: 1
 
       # Ubuntu / MacOS Testing
     - name: Install cocotb build dependencies (Ubuntu - g++)

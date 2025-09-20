@@ -2,6 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import glob
+import os
 import shutil
 from contextlib import suppress
 from pathlib import Path
@@ -193,7 +194,7 @@ def dev_test_sim(
     with suppress(FileNotFoundError):
         coverage_file.unlink()
 
-    if "OS" not in env or not env["OS"].startswith("windows"):
+    if "COCOTB_CI_SKIP_MAKE" not in os.environ:
         session.log(f"Running 'make test' against a simulator {config_str}")
         session.run("make", "-k", "test", external=True, env=env)
 
