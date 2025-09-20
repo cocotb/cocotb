@@ -268,11 +268,10 @@ jobs:
       id: windowstesting
       continue-on-error: ${{matrix.may-fail || false}}
       shell: msys2 {0}
-      env:
-        MINGW_ARCH: MINGW64
       run: |
         nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
+        MINGW_ARCH: MINGW64
         COCOTB_ANSI_OUTPUT: 1
 
       # Ubuntu / MacOS Testing
