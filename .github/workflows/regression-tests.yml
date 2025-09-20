@@ -187,7 +187,9 @@ jobs:
       shell: msys2 {0}
       env:
         MINGW_ARCH: MINGW64
-      run: pacman -U --noconfirm iverilog/msys2/*.zst
+      run: |
+        pacman -U --noconfirm iverilog/msys2/*.zst
+        echo "$(which iverilog)"
     - name: Set up Icarus (MacOS - homebrew --HEAD)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-HEAD'
       run: |
