@@ -166,6 +166,7 @@ jobs:
     - name: Set up Icarus (Windows - source - pt. 1)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
       run: |
+        git config --global core.autocrlf input
         git clone https://github.com/steveicarus/iverilog.git
         cd iverilog
         git reset --hard ${{matrix.sim-version}}
