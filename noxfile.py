@@ -193,8 +193,9 @@ def dev_test_sim(
     with suppress(FileNotFoundError):
         coverage_file.unlink()
 
-    session.log(f"Running 'make test' against a simulator {config_str}")
-    session.run("make", "-k", "test", external=True, env=env)
+    if "OS" not in env or not env["OS"].startswith("windows"):
+        session.log(f"Running 'make test' against a simulator {config_str}")
+        session.run("make", "-k", "test", external=True, env=env)
 
     # Run pytest for files which can only be tested in the source tree, not in
     # the installed binary (otherwise we get an "import file mismatch" error

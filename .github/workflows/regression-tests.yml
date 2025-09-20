@@ -165,17 +165,21 @@ jobs:
         sudo make install
     - name: Set up Icarus (Windows - source - pt. 1)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
+      run: |
+        git clone https://github.com/steveicarus/iverilog.git
+        cd iverilog
+        git reset --hard ${{matrix.sim-version}}
+    - name: Set up Icarus (Windows - source - pt. 2)
+      if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
       timeout-minutes: 10
       shell: msys2 {0}
       env:
         MINGW_ARCH: MINGW64
       run: |
-        git clone https://github.com/steveicarus/iverilog.git
         cd iverilog
-        git reset --hard ${{matrix.sim-version}}
         cd msys2
         makepkg-mingw --noconfirm --noprogressbar -sCLf
-    - name: Set up Icarus (Windows - source - pt. 2)
+    - name: Set up Icarus (Windows - source - pt. 3)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
       timeout-minutes: 10
       shell: msys2 {0}
@@ -267,11 +271,9 @@ jobs:
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
       continue-on-error: ${{matrix.may-fail || false}}
-      shell: msys2 {0}
       run: |
         nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
-        MINGW_ARCH: MINGW64
         COCOTB_ANSI_OUTPUT: 1
 
       # Ubuntu / MacOS Testing
