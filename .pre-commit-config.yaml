@@ -6,7 +6,7 @@ exclude: "^.*/_vendor/"
 repos:
 # ruff with --fix should run before other formatting tools
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.13.0"
+  rev: "v0.13.1"
   hooks:
     # Run the linter.
     - id: "ruff"
@@ -17,7 +17,7 @@ repos:
     - id: ruff-format
 
 - repo: "https://github.com/pre-commit/mirrors-clang-format"
-  rev: "v21.1.0"
+  rev: "v21.1.1"
   hooks:
   - id: "clang-format"
     exclude: "^src/cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
@@ -56,7 +56,7 @@ repos:
       - tomli
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.18.1
+  rev: v1.18.2
   hooks:
   - id: mypy
     additional_dependencies:
