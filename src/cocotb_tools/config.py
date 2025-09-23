@@ -106,6 +106,7 @@ def lib_name(interface: str, simulator: str) -> str:
     simulator_name = simulator.lower()
     supported_sims = [
         "icarus",
+        "verilator",
         "questa",
         "modelsim",
         "ius",
