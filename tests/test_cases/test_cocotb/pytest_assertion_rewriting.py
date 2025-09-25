@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """Tests relating to pytest integration"""
 
+from __future__ import annotations
+
 import pytest
 
 import cocotb

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 # test_my_design.py (simple)
+from __future__ import annotations
 
 import cocotb
 from cocotb.triggers import Timer

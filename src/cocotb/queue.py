@@ -1,22 +1,24 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import asyncio.queues
 import collections
 import heapq
 from abc import abstractmethod
 from typing import (
-    Deque,
+    TYPE_CHECKING,
     Generic,
-    List,
-    Tuple,
     TypeVar,
 )
 
 import cocotb
 from cocotb._utils import pointer_str
-from cocotb.task import Task
 from cocotb.triggers import Event
+
+if TYPE_CHECKING:
+    from cocotb.task import Task
 
 __all__ = (
     "AbstractQueue",
@@ -49,8 +51,12 @@ class AbstractQueue(Generic[T]):
 
     def __init__(self, maxsize: int = 0) -> None:
         self._maxsize: int = maxsize
-        self._getters: Deque[Tuple[Event, Task[object]]] = collections.deque()
-        self._putters: Deque[Tuple[Event, Task[object]]] = collections.deque()
+        self._getters: collections.deque[tuple[Event, Task[object]]] = (
+            collections.deque()
+        )
+        self._putters: collections.deque[tuple[Event, Task[object]]] = (
+            collections.deque()
+        )
 
     @abstractmethod
     def _get(self) -> T:
@@ -68,7 +74,9 @@ class AbstractQueue(Generic[T]):
     def _repr(self) -> str:
         """Return a string representation of the state of the queue."""
 
-    def _wakeup_next(self, waiters: Deque[Tuple[Event, Task[object]]]) -> None:
+    def _wakeup_next(
+        self, waiters: collections.deque[tuple[Event, Task[object]]]
+    ) -> None:
         while waiters:
             event, task = waiters.popleft()
             if not task.done():
@@ -167,7 +175,7 @@ class Queue(AbstractQueue[T]):
 
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
-        self._queue: Deque[T] = collections.deque()
+        self._queue: collections.deque[T] = collections.deque()
 
     def _put(self, item: T) -> None:
         self._queue.append(item)
@@ -190,7 +198,7 @@ class PriorityQueue(AbstractQueue[T]):
 
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
-        self._queue: List[T] = []
+        self._queue: list[T] = []
 
     def _put(self, item: T) -> None:
         heapq.heappush(self._queue, item)  # type: ignore[type-var]
@@ -210,7 +218,7 @@ class LifoQueue(AbstractQueue[T]):
 
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
-        self._queue: Deque[T] = collections.deque()
+        self._queue: collections.deque[T] = collections.deque()
 
     def _put(self, item: T) -> None:
         self._queue.append(item)

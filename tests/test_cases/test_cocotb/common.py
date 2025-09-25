@@ -5,14 +5,20 @@
 Common utilities shared by many tests in this directory
 """
 
+from __future__ import annotations
+
 import operator
 import re
 import traceback
 from contextlib import contextmanager
-from typing import Callable, Generator
+from typing import TYPE_CHECKING, Callable
 
-from cocotb._typing import TimeUnit
 from cocotb.utils import get_sim_steps, get_sim_time, get_time_from_sim_steps
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from cocotb._typing import TimeUnit
 
 
 async def _check_traceback(running_coro, exc_type, pattern, *match_args):

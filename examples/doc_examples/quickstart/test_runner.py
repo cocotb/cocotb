@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 # test_runner.py
+from __future__ import annotations
 
 import os
 from pathlib import Path

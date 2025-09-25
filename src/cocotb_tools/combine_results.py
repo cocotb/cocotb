@@ -6,13 +6,19 @@
 Simple script to combine JUnit test results into a single XML file.
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
 import sys
 from pathlib import Path
-from typing import Iterable, Pattern
+from re import Pattern
+from typing import TYPE_CHECKING
 from xml.etree import ElementTree as ET
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def _find_all(name: Pattern, path: Path) -> Iterable[Path]:

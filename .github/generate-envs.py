@@ -31,41 +31,14 @@ The current test in the "ci-free"/"ci-licensed" group should be moved to "extend
 and the new version should be added to "ci-free"/"ci-licensed" and any changes in behavior recorded with expectations to make CI pass.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys
 
 ENVS = [
     # Test different Python versions with package managed Icarus on Ubuntu
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.6",
-        "group": "ci-free",
-        "setup_python": "pyenv",
-        "test_nosim": True,
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.7",
-        "group": "ci-free",
-        "setup_python": "pyenv",
-        "test_nosim": True,
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.8",
-        "group": "ci-free",
-        "test_nosim": True,
-    },
     {
         "lang": "vhdl",
         "sim": "nvc",
