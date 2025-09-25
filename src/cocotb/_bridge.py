@@ -191,7 +191,6 @@ class external_waiter(Generic[Result]):
 
 
 pending_threads: List[external_waiter[Any]] = []
-main_thread = threading.current_thread()
 
 
 def queue_function(task: Coroutine[Trigger, None, Result]) -> Result:
@@ -285,22 +284,21 @@ def run_bridge_threads() -> None:
     # from the main thread, this seems like it could be problematic in cases
     # where a sim might change what this thread is.
 
-    if main_thread is threading.current_thread():
-        for ext in pending_threads:
-            ext.thread_start()
-            if debug.debug:
-                ext._log.debug(
-                    "Blocking from %s on %s",
-                    threading.current_thread(),
-                    ext.thread,
-                )
-            state = ext.thread_wait()
-            if debug.debug:
-                ext._log.debug(
-                    "Back from wait on self %s with newstate %s",
-                    threading.current_thread(),
-                    state,
-                )
-            if state == external_state.EXITED:
-                pending_threads.remove(ext)
-                ext.event.set()
+    for ext in pending_threads:
+        ext.thread_start()
+        if debug.debug:
+            ext._log.debug(
+                "Blocking from %s on %s",
+                threading.current_thread(),
+                ext.thread,
+            )
+        state = ext.thread_wait()
+        if debug.debug:
+            ext._log.debug(
+                "Back from wait on self %s with newstate %s",
+                threading.current_thread(),
+                state,
+            )
+        if state == external_state.EXITED:
+            pending_threads.remove(ext)
+            ext.event.set()
