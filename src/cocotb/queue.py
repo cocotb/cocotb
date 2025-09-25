@@ -5,18 +5,23 @@ import asyncio.queues
 import collections
 import heapq
 from abc import abstractmethod
-from typing import (
-    Deque,
-    Generic,
-    List,
-    Tuple,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Deque, Generic, List, Tuple, TypeVar
 
 import cocotb
 from cocotb._utils import pointer_str
 from cocotb.task import Task
 from cocotb.triggers import Event
+
+if TYPE_CHECKING:
+    from typing import Protocol, Self
+
+    class SupportsRichComparison(Protocol):
+        def __eq__(self, other: object) -> bool: ...
+        def __lt__(self, other: Self) -> bool: ...
+        def __le__(self, other: Self) -> bool: ...
+        def __gt__(self, other: Self) -> bool: ...
+        def __ge__(self, other: Self) -> bool: ...
+
 
 __all__ = (
     "AbstractQueue",
@@ -182,7 +187,12 @@ class Queue(AbstractQueue[T]):
         return repr(self._queue)
 
 
-class PriorityQueue(AbstractQueue[T]):
+SupportsRichComparisonT = TypeVar(
+    "SupportsRichComparisonT", bound="SupportsRichComparison"
+)
+
+
+class PriorityQueue(AbstractQueue[SupportsRichComparisonT]):
     r"""A subclass of :class:`AbstractQueue`; retrieves entries in priority order (smallest item first).
 
     Entries are typically tuples of the form ``(priority number, data)``.
@@ -190,13 +200,13 @@ class PriorityQueue(AbstractQueue[T]):
 
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
-        self._queue: List[T] = []
+        self._queue: List[SupportsRichComparisonT] = []
 
-    def _put(self, item: T) -> None:
-        heapq.heappush(self._queue, item)  # type: ignore[type-var]
+    def _put(self, item: SupportsRichComparisonT) -> None:
+        heapq.heappush(self._queue, item)
 
-    def _get(self) -> T:
-        return heapq.heappop(self._queue)  # type: ignore[type-var]
+    def _get(self) -> SupportsRichComparisonT:
+        return heapq.heappop(self._queue)
 
     def _size(self) -> int:
         return len(self._queue)
