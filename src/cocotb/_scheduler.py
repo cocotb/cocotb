@@ -16,7 +16,7 @@ import cocotb
 import cocotb._gpi_triggers
 import cocotb.handle
 from cocotb import debug
-from cocotb._base_triggers import Event, Trigger
+from cocotb._base_triggers import Trigger
 from cocotb._bridge import external_state, external_waiter
 from cocotb._exceptions import InternalError
 from cocotb._gpi_triggers import (
@@ -119,7 +119,6 @@ class Scheduler:
             OrderedDict()
         )
         self._pending_threads: List[external_waiter[Any]] = []
-        self._pending_events: List[Event] = []
 
         self._main_thread = threading.current_thread()
 
@@ -214,14 +213,6 @@ class Scheduler:
             # to try and avoid them being destroyed at a weird time (as
             # happened in gh-957)
             del task
-
-            # Schedule may have queued up some events so we'll burn through those
-            while self._pending_events:
-                if debug.debug:
-                    self.log.debug(
-                        "Scheduling pending event %s", self._pending_events[0]
-                    )
-                self._pending_events.pop(0).set()
 
         # no more pending tasks
         if debug.debug:
@@ -443,6 +434,6 @@ class Scheduler:
                         )
                     if state == external_state.EXITED:
                         self._pending_threads.remove(ext)
-                        self._pending_events.append(ext.event)
+                        ext.event.set()
         finally:
             self._current_task = None
