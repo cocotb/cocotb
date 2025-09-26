@@ -1,0 +1,1 @@
+Made :deco:`cocotb.test` and :deco:`cocotb.parametrize` stackable. Applying the decorator multiple times to the same test will combine the values of each decoration into a single test generation.
