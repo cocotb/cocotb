@@ -61,10 +61,13 @@ async def test_string_handle_takes_bytes(dut):
 
 # iverilog fails to discover string inputs (gh-2585)
 # GHDL fails to discover string input properly (gh-2584)
+@cocotb.skipif(
+    LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
+    reason="Riviera is unhappy for an unknown reason",
+)
 @cocotb.test(
     expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
     expect_fail=SIM_NAME.startswith("ghdl"),
-    skip=LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
 )
 async def test_string_ansi_color(dut):
     """Check how different simulators treat ANSI-colored strings, see gh-2328"""
@@ -335,8 +338,10 @@ async def test_real_assign_int(dut):
     assert got == val, "Values didn't match!"
 
 
-# identifiers starting with `_` are illegal in VHDL
-@cocotb.test(skip=LANGUAGE in ("vhdl"))
+@cocotb.skipif(
+    LANGUAGE == "vhdl", reason="identifiers starting with `_` are illegal in VHDL"
+)
+@cocotb.test
 async def test_access_underscore_name(dut):
     """Test accessing HDL name starting with an underscore"""
     # direct access does not work because we consider such names cocotb-internal
@@ -375,14 +380,14 @@ async def test_assign_Logic(dut):
         dut.stream_in_data.value = Logic("U")  # not the correct size
 
 
-# Run the test on GHDL, which uses VPI.
-# Skip the test on Verilator, which can only deal with 2-state values.
-@cocotb.test(
-    skip=(
-        (LANGUAGE != "verilog" and not SIM_NAME.startswith("ghdl"))
-        or SIM_NAME.startswith("verilator")
-    )
+@cocotb.skipif(
+    LANGUAGE != "verilog" and not SIM_NAME.startswith("ghdl"),
+    reason="For testing Verilog simulators, or GHDL which uses VPI",
 )
+@cocotb.skipif(
+    SIM_NAME.startswith("verilator"), reason="Verilator only supports 2-state values."
+)
+@cocotb.test
 async def test_assign_Logic_4value(dut):
     for value in ["X", "0", "1", "Z"]:
         dut.stream_in_ready.value = Logic(value)
@@ -390,8 +395,9 @@ async def test_assign_Logic_4value(dut):
         assert dut.stream_in_ready.value == value
 
 
-# GHDL uses VPI and hence can only deal with 4-state values.
-@cocotb.test(skip=LANGUAGE != "vhdl" or SIM_NAME.startswith("ghdl"))
+@cocotb.skipif(LANGUAGE != "vhdl", reason="For testing VHDL simulators.")
+@cocotb.skipif(SIM_NAME.startswith("ghdl"), reason="GHDL only supports 4-state values.")
+@cocotb.test
 async def test_assign_Logic_9value(dut):
     for value in ["U", "X", "0", "1", "Z", "W", "L", "H", "-"]:
         dut.stream_in_ready.value = Logic(value)
@@ -399,8 +405,9 @@ async def test_assign_Logic_9value(dut):
         assert dut.stream_in_ready.value == value
 
 
-# GHDL uses VPI and hence can only deal with 4-state values.
-@cocotb.test(skip=LANGUAGE != "vhdl" or SIM_NAME.startswith("ghdl"))
+@cocotb.skipif(LANGUAGE != "vhdl", reason="For testing VHDL simulators.")
+@cocotb.skipif(SIM_NAME.startswith("ghdl"), reason="GHDL only supports 4-state values.")
+@cocotb.test
 async def test_assign_LogicArray_9value(dut):
     # Reset to zero.
     dut.stream_in_data.value = LogicArray(0, 8)
@@ -428,9 +435,8 @@ async def test_assign_string(dut):
     assert dut.stream_in_data.value == "10101010"
 
 
-@cocotb.test(
-    skip=LANGUAGE in ["vhdl"],
-)
+@cocotb.skipif(LANGUAGE == "vhdl", reason="VHDL does not support immediate assignment.")
+@cocotb.test
 async def test_assign_immediate(dut):
     dut.mybits_uninitialized.value = Immediate(2)
     assert dut.mybits_uninitialized.value == 2
@@ -442,9 +448,8 @@ async def test_assign_immediate(dut):
     assert dut.mybits_uninitialized.value == LogicArray("11")
 
 
-@cocotb.test(
-    skip=LANGUAGE in ["vhdl"],
-)
+@cocotb.skipif(LANGUAGE == "vhdl", reason="VHDL does not support immediate assignment.")
+@cocotb.test
 async def test_immediate_reentrace(dut):
     dut.mybits_uninitialized.value = 0
     await Timer(1, "ns")
@@ -474,7 +479,7 @@ async def test_immediate_reentrace(dut):
 @cocotb.test(
     # GHDL uses the VPI, which does not have a way to infer null ranges
     # Questa's implementation of the VHPI sets vhpiIsUpP incorrectly
-    skip=SIM_NAME.startswith("ghdl")
+    expect_fail=SIM_NAME.startswith("ghdl")
     or (
         SIM_NAME.startswith("modelsim")
         and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
@@ -592,7 +597,7 @@ async def test_invalid_indexing(dut) -> None:
         dut.array_7_downto_4[6:5]
 
 
-@cocotb.test(skip=SIM_NAME.startswith("icarus"))
+@cocotb.test
 async def test_setattr_error_msg(dut: Any) -> None:
     with pytest.raises(AttributeError, match=r"'example'.*[Nn]o.*exist"):
         dut.example = 1

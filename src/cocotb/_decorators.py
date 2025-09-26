@@ -483,3 +483,38 @@ def parametrize(
         return f
 
     return wrapper
+
+
+def skipif(
+    condition: bool, *, reason: str | None = None
+) -> Callable[[TestFuncType | TestGenerator], TestGenerator]:
+    """Marks a test as skipped if the condition is ``True``.
+
+    This acts as an alternative to the ``skip`` option to :dec:`cocotb.test`.
+
+    .. code-block:: python
+
+        @cocotb.skipif(
+            cocotb.top.USE_MY_FEATURE.value != 1,
+            reason="The design doesn't support my feature.",
+        )
+        @cocotb.test
+        async def test_my_feature(dut) -> None: ...
+
+    Args:
+        condition: The condition as to whether the test should be skipped. Defaults to ``True``.
+        reason: A string giving the reason as to why this test was skipped.
+
+            This argument is purely for documentation purposes.
+
+    Returns:
+        A decorator function to mark the test.
+    """
+
+    def decorator(obj: TestFuncType | TestGenerator) -> TestGenerator:
+        if not isinstance(obj, TestGenerator):
+            obj = TestGenerator(obj)
+        obj.skip |= condition
+        return obj
+
+    return decorator

@@ -94,7 +94,7 @@ class RegressionMode(DocEnum):
 
 
 class _TestResults:
-    # TODO Replace with dataclass in Python 3.7+
+    # TODO merge into Test object
 
     def __init__(
         self,

@@ -109,6 +109,8 @@ Marking and Generating Tests
 
 .. autofunction:: cocotb.parametrize
 
+.. autofunction:: cocotb.skipif
+
 .. autoclass:: cocotb.regression.TestFactory
     :members:
     :member-order: bysource
