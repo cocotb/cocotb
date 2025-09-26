@@ -6,7 +6,7 @@
 import sys
 from typing import TYPE_CHECKING, Dict, List, Union
 
-from cocotb._decorators import parametrize, skipif, test
+from cocotb._decorators import parametrize, skipif, test, xfail
 from cocotb._test import create_task, start, start_soon
 from cocotb._test_functions import pass_test
 
@@ -37,6 +37,7 @@ __all__ = (
     "start_soon",
     "test",
     "top",
+    "xfail",
 )
 
 # Set __module__ on re-exports
@@ -44,6 +45,7 @@ for thing in [
     test,
     parametrize,
     skipif,
+    xfail,
     start_soon,
     start,
     create_task,
