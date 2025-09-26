@@ -6,10 +6,7 @@
 import sys
 from typing import TYPE_CHECKING, Dict, List, Union
 
-from cocotb._decorators import (
-    parametrize,
-    test,
-)
+from cocotb._decorators import parametrize, skipif, test
 from cocotb._test import create_task, start, start_soon
 from cocotb._test_functions import pass_test
 
@@ -43,12 +40,16 @@ __all__ = (
 )
 
 # Set __module__ on re-exports
-test.__module__ = __name__
-start_soon.__module__ = __name__
-start.__module__ = __name__
-create_task.__module__ = __name__
-parametrize.__module__ = __name__
-pass_test.__module__ = __name__
+for thing in [
+    test,
+    parametrize,
+    skipif,
+    start_soon,
+    start,
+    create_task,
+    pass_test,
+]:
+    thing.__module__ = __name__
 
 
 __version__: str = _version
