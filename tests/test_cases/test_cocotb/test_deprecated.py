@@ -245,3 +245,17 @@ async def test_Lock_name_deprecated(_: object) -> None:
         l.name = "foobar"
     with pytest.warns(DeprecationWarning):
         assert l.name == "foobar"
+
+
+@cocotb.test
+async def test_Clock_start_high_deprecated(dut: Any) -> None:
+    c = Clock(dut.clk, 10, "ns", start_high=True)
+    with pytest.warns(DeprecationWarning):
+        c.start(start_high=True)
+    c.stop()
+    with pytest.warns(DeprecationWarning):
+        c.start(start_high=False)
+
+    # ensure start_high does override the constructor argument
+    await Timer(1, "ns")
+    assert dut.clk.value == 0
