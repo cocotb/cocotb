@@ -14,6 +14,7 @@ from typing import (
 )
 
 import cocotb
+import cocotb.event_loop
 from cocotb._base_triggers import NullTrigger, Trigger
 from cocotb._deprecation import deprecated
 from cocotb._exceptions import InternalError
@@ -67,8 +68,8 @@ class RunningTest:
             self.abort(Error(e))
 
     def start(self) -> None:
-        cocotb._scheduler_inst._schedule_task_internal(self._main_task)
-        cocotb._scheduler_inst._event_loop()
+        self._main_task._ensure_started()
+        cocotb.event_loop._inst.run()
 
     def result(self) -> Outcome[None]:
         if self._outcome is None:  # pragma: no cover
@@ -111,7 +112,7 @@ class RunningTest:
         if task.cancelled():
             return
         # if there's a Task awaiting this one, don't fail
-        if task.complete in cocotb._scheduler_inst._trigger2tasks:
+        if task.complete._callbacks:
             return
         # if no failure, do nothing
         e = task.exception()
@@ -149,9 +150,16 @@ def start_soon(
 
     .. versionadded:: 1.6
     """
-    task = create_task(coro, name=name)
-    cocotb._scheduler_inst._schedule_task(task)
-    return task
+    if not isinstance(coro, Task):
+        coro = create_task(coro, name=name)
+    # If a task is passed in, we it to:
+    # - start if unstarted
+    # - fail if it's already done
+    # - do nothing otherwise
+    if coro.done():
+        raise RuntimeError("Cannot start a finished Task")
+    coro._ensure_started()
+    return coro
 
 
 @deprecated("Use ``cocotb.start_soon`` instead.")
@@ -203,7 +211,7 @@ async def start(
 
 
 def create_task(
-    coro: Union[Task[ResultType], Coroutine[Trigger, None, ResultType]],
+    coro: Coroutine[Trigger, None, ResultType],
     *,
     name: Optional[str] = None,
 ) -> Task[ResultType]:
@@ -213,7 +221,7 @@ def create_task(
     The task can later be scheduled with :func:`cocotb.start` or :func:`cocotb.start_soon`.
 
     Args:
-        coro: A :class:`!Task` or a :term:`!coroutine` to be turned into a :class:`!Task`.
+        coro: A :term:`!coroutine` to be turned into a test-managed :class:`!Task`.
         name:
             The task's name.
 
@@ -224,11 +232,7 @@ def create_task(
 
     .. versionadded:: 1.6
     """
-    if isinstance(coro, Task):
-        if name is not None:
-            coro.set_name(name)
-        return coro
-    elif isinstance(coro, Coroutine):
+    if isinstance(coro, Coroutine):
         task = Task[ResultType](coro, name=name)
         cocotb._regression_manager._running_test.add_task(task)
         return task

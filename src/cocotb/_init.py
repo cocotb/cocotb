@@ -20,7 +20,6 @@ import cocotb.handle
 import cocotb.logging
 import cocotb.simtime
 import cocotb.simulator
-from cocotb._scheduler import Scheduler
 from cocotb.regression import RegressionManager, RegressionMode
 
 log: logging.Logger
@@ -100,9 +99,6 @@ def run_regression(_: object) -> None:
     """Setup and run a regression."""
 
     _setup_regression_manager()
-
-    # setup global scheduler system
-    cocotb._scheduler_inst = Scheduler()
 
     # start Regression Manager
     log.info("Running tests")
