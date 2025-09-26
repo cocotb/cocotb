@@ -67,11 +67,8 @@ p_testfactory_test_names = set()
 p_testfactory_test_args = set()
 
 
-@cocotb.test()
-@cocotb.parametrize(
-    arg1=["a1v1", "a1v2"],
-    arg2=["a2v1", "a2v2"],
-)
+@cocotb.parametrize(arg1=["a1v1", "a1v2"])
+@cocotb.parametrize(arg2=["a2v1", "a2v2"])
 async def p_run_testfactory_test(dut, arg1, arg2):
     p_testfactory_test_names.add(cocotb._regression_manager._test.name)
     p_testfactory_test_args.add((arg1, arg2))

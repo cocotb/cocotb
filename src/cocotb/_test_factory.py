@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import functools
 import inspect
 import logging
 import warnings
@@ -268,14 +267,6 @@ class TestFactory:
             kwargs = self.kwargs_constant.copy()
             kwargs.update(testoptions_split)
 
-            @functools.wraps(self.test_function)
-            async def _my_test(dut: object, kwargs: dict[str, object] = kwargs) -> None:
-                await self.test_function(dut, *self.args, **kwargs)
-
-            _my_test.__doc__ = doc
-            _my_test.__name__ = name
-            _my_test.__qualname__ = name
-
             if name in glbs:
                 self._log.error(
                     "Overwriting %s in module %s. "
@@ -285,12 +276,19 @@ class TestFactory:
                     glbs["__name__"],
                 )
 
+            timeout = (timeout_time, timeout_unit) if timeout_time is not None else None
+
+            if isinstance(expect_error, type):
+                expect_error = (expect_error,)
+
             test = Test(
-                func=_my_test,
+                func=self.test_function,
+                args=self.args,
+                kwargs=kwargs,
                 name=name,
                 module=glbs["__name__"],
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
+                doc=doc,
+                timeout=timeout,
                 expect_fail=expect_fail,
                 expect_error=expect_error,
                 skip=skip,

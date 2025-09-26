@@ -27,7 +27,7 @@ import cocotb._event_loop
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
 from cocotb._base_triggers import Trigger
-from cocotb._decorators import Parameterized, Test
+from cocotb._decorators import Test, TestGenerator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._outcomes import Error, Outcome
@@ -45,16 +45,16 @@ from cocotb.simtime import get_sim_time
 from cocotb.task import Task
 
 __all__ = (
-    "Parameterized",
     "RegressionManager",
     "RegressionMode",
     "SimFailure",
     "Test",
     "TestFactory",
+    "TestGenerator",
 )
 
 # Set __module__ on re-exports
-Parameterized.__module__ = __name__
+TestGenerator.__module__ = __name__
 Test.__module__ = __name__
 TestFactory.__module__ = __name__
 
@@ -190,7 +190,7 @@ class RegressionManager:
                 if isinstance(obj, Test):
                     found_test = True
                     self.register_test(obj)
-                elif isinstance(obj, Parameterized):
+                elif isinstance(obj, TestGenerator):
                     found_test = True
                     generated_tests: bool = False
                     for test in obj.generate_tests():
@@ -198,7 +198,7 @@ class RegressionManager:
                         self.register_test(test)
                     if not generated_tests:
                         warnings.warn(
-                            f"Parametrize object generated no tests: {module_name}.{obj_name}",
+                            f"TestGenerator generated no tests: {module_name}.{obj_name}",
                             stacklevel=2,
                         )
 
@@ -367,17 +367,18 @@ class RegressionManager:
     def _init_test(self) -> RunningTest:
         # wrap test function in timeout
         func: Callable[..., Coroutine[Trigger, None, None]]
-        timeout = self._test.timeout_time
+        timeout = self._test.timeout
         if timeout is not None:
             f = self._test.func
 
             @functools.wraps(f)
             async def func(*args: object, **kwargs: object) -> None:
-                await with_timeout(f(*args, **kwargs), timeout, self._test.timeout_unit)
+                await with_timeout(f(*args, **kwargs), *timeout)
         else:
             func = self._test.func
 
-        main_task = Task(func(cocotb.top), name=f"Test {self._test.name}")
+        coro = func(cocotb.top, *self._test.args, **self._test.kwargs)
+        main_task = Task(coro, name=f"Test {self._test.name}")
         return RunningTest(self._test_complete, main_task)
 
     def _schedule_next_test(self) -> None:
