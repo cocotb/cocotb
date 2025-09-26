@@ -1,0 +1,1 @@
+Added :deco:`cocotb.skipif` to mark a test as conditionally skipped, with an optional reason string.
