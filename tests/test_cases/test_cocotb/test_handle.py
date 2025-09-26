@@ -44,12 +44,16 @@ async def test_bad_attr(dut):
         assert False, "Expected AttributeError"
 
 
-# iverilog fails to discover string inputs (gh-2585)
-# GHDL fails to discover string input properly (gh-2584)
-@cocotb.test(
-    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
-    expect_fail=SIM_NAME.startswith("ghdl"),
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="iverilog fails to discover string inputs (gh-2585)",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL fails to discover string input properly (gh-2584)",
+)
+@cocotb.test
 async def test_string_handle_takes_bytes(dut):
     assert isinstance(dut.stream_in_string, StringObject)
     dut.stream_in_string.value = b"bytes"
@@ -59,15 +63,18 @@ async def test_string_handle_takes_bytes(dut):
     assert val == b"bytes"
 
 
-# iverilog fails to discover string inputs (gh-2585)
-# GHDL fails to discover string input properly (gh-2584)
 @cocotb.skipif(
     LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
     reason="Riviera is unhappy for an unknown reason",
 )
-@cocotb.test(
-    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
-    expect_fail=SIM_NAME.startswith("ghdl"),
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="iverilog fails to discover string inputs (gh-2585)",
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL fails to discover string input properly (gh-2584)",
 )
 async def test_string_ansi_color(dut):
     """Check how different simulators treat ANSI-colored strings, see gh-2328"""
@@ -243,8 +250,9 @@ def gen_int_unfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
         return signed_min - 1
 
 
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
+@cocotb.xfail(SIM_NAME.startswith("icarus"), raises=AttributeError)
 @cocotb.parametrize(("setimmediate", [True, False]))
+@cocotb.test
 async def test_integer(dut, setimmediate: bool) -> None:
     """Test access to integers."""
     if (LANGUAGE in ["verilog"] and riviera_before_2025_04) or SIM_NAME.startswith(
@@ -257,7 +265,7 @@ async def test_integer(dut, setimmediate: bool) -> None:
     await int_values_test(dut.stream_in_int, 32, setimmediate, limits)
 
 
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
+@cocotb.xfail(SIM_NAME.startswith("icarus"), raises=AttributeError)
 @cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer_overflow(dut, setimmediate: bool) -> None:
     """Test integer overflow."""
@@ -271,7 +279,7 @@ async def test_integer_overflow(dut, setimmediate: bool) -> None:
     await int_overflow_test(dut.stream_in_int, 32, "ovfl", setimmediate, limits)
 
 
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
+@cocotb.xfail(SIM_NAME.startswith("icarus"), raises=AttributeError)
 @cocotb.parametrize(("setimmediate", [True, False]))
 async def test_integer_underflow(dut, setimmediate: bool) -> None:
     """Test integer underflow."""
@@ -285,15 +293,17 @@ async def test_integer_underflow(dut, setimmediate: bool) -> None:
     await int_overflow_test(dut.stream_in_int, 32, "unfl", setimmediate, limits)
 
 
-# GHDL unable to find real signals (gh-2589)
-# iverilog unable to find real signals (gh-2590)
-@cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith("icarus")
-    else AttributeError
-    if SIM_NAME.startswith("ghdl")
-    else ()
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="iverilog unable to find real signals (gh-2590)",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    raises=AttributeError,
+    reason="GHDL unable to find real signals (gh-2589)",
+)
+@cocotb.test
 async def test_real_assign_double(dut):
     """
     Assign a random floating point value, read it back from the DUT and check
@@ -312,15 +322,17 @@ async def test_real_assign_double(dut):
     assert got == val, "Values didn't match!"
 
 
-# GHDL unable to find real signals (gh-2589)
-# iverilog unable to find real signals (gh-2590)
-@cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith("icarus")
-    else AttributeError
-    if SIM_NAME.startswith("ghdl")
-    else ()
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="iverilog unable to find real signals (gh-2590)",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    raises=AttributeError,
+    reason="GHDL unable to find real signals (gh-2589)",
+)
+@cocotb.test
 async def test_real_assign_int(dut):
     """Assign a random integer value to ensure we can write types convertible to
     int, read it back from the DUT and check it matches what we assigned.
@@ -369,9 +381,11 @@ async def test_assign_LogicArray(dut):
         dut.stream_in_data.value = LogicArray("010")  # not the correct size
 
 
-# verilator does not support 4-state signals
-# see https://veripool.org/guide/latest/languages.html#unknown-states
-@cocotb.test(expect_error=AssertionError if SIM_NAME.startswith("verilator") else ())
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="verilator does not support 4-state signals",
+)
+@cocotb.test
 async def test_assign_Logic(dut):
     dut.stream_in_ready.value = Logic("X")
     await Timer(1, "ns")
@@ -476,15 +490,16 @@ async def test_immediate_reentrace(dut):
     assert seen == 1
 
 
-@cocotb.test(
-    # GHDL uses the VPI, which does not have a way to infer null ranges
-    # Questa's implementation of the VHPI sets vhpiIsUpP incorrectly
-    expect_fail=SIM_NAME.startswith("ghdl")
-    or (
-        SIM_NAME.startswith("modelsim")
-        and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
-    ),
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL uses the VPI, which does not have a way to infer null ranges.",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("modelsim")
+    and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi",
+    reason="Questa's implementation of the VHPI sets vhpiIsUpP incorrectly",
+)
+@cocotb.test
 async def test_null_range_width(dut):
     # Normal arrays should have the same length regardless of language
     assert len(dut.array_7_downto_4) == 4
@@ -535,8 +550,7 @@ async def test_assign_str_logic_scalar(dut) -> None:
         assert dut.stream_in_valid.value == "H"
 
 
-# verilator extended identifier names are not regular (gh-3754)
-@cocotb.test(expect_fail=cocotb.SIM_NAME.startswith("verilator"))
+@cocotb.test
 async def test_extended_identifiers(dut):
     if LANGUAGE == "vhdl":
         names = [

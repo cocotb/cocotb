@@ -518,3 +518,55 @@ def skipif(
         return obj
 
     return decorator
+
+
+def xfail(
+    condition: bool = True,
+    *,
+    reason: str | None = None,
+    raises: type[BaseException] | Iterable[type[BaseException]] | None = None,
+) -> Callable[[TestFuncType | TestGenerator], TestGenerator]:
+    """Marks a test as expected to fail if the condition is ``True``.
+
+    This acts as an alternative to the ``expect_fail`` option to :dec:`cocotb.test` if *raises* is not given.
+    Or as an alternative to ``expect_error`` if *raises* is given.
+
+    .. code-block:: python
+
+        @cocotb.xfail(reason="The HDL does not behave as expected.")
+        @cocotb.test
+        async def test_design(dut): ...
+
+
+        @cocotb.xfail(
+            cocotb.top.USE_MY_FEATURE.value != 0,
+            raises=IndexError,
+            reason="My design is not configured to use the new feature, so the model will eventually fail",
+        )
+        @cocotb.test
+        async def test_design_feature(dut): ...
+
+    Args:
+        condition: The condition as to whether the test is expected to fail. Defaults to ``True``.
+        reason: A string giving the reason as to why this test is expected to fail.
+
+            This argument is purely for documentation purposes.
+
+        raises: An exception, or iterable of exceptions to expect the test to fail with.
+    """
+
+    def decorator(obj: TestFuncType | TestGenerator) -> TestGenerator:
+        if not isinstance(obj, TestGenerator):
+            obj = TestGenerator(obj)
+        if condition:
+            if raises is not None:
+                if isinstance(raises, type):
+                    obj.expect_error.add(raises)
+                else:
+                    for exc in raises:
+                        obj.expect_error.add(exc)
+            else:
+                obj.expect_fail = True
+        return obj
+
+    return decorator

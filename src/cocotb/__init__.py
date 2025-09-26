@@ -8,7 +8,7 @@ from __future__ import annotations
 from logging import Logger
 from types import SimpleNamespace
 
-from cocotb._decorators import parametrize, skipif, test
+from cocotb._decorators import parametrize, skipif, test, xfail
 from cocotb._test import create_task, start, start_soon
 from cocotb._test_functions import pass_test
 from cocotb.handle import SimHandleBase
@@ -33,6 +33,7 @@ __all__ = (
     "start_soon",
     "test",
     "top",
+    "xfail",
 )
 
 # Set __module__ on re-exports
@@ -40,6 +41,7 @@ for thing in [
     test,
     parametrize,
     skipif,
+    xfail,
     start_soon,
     start,
     create_task,

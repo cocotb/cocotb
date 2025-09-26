@@ -111,6 +111,8 @@ Marking and Generating Tests
 
 .. autofunction:: cocotb.skipif
 
+.. autofunction:: cocotb.xfail
+
 .. autoclass:: cocotb.regression.TestFactory
     :members:
     :member-order: bysource
