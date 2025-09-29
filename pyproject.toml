@@ -85,6 +85,11 @@ ignore = [
     "PLW0603", # Using the global statement (preference)
     "PLR0911", # Too many return statements (preference)
     "PLW1641", # __eq__ without __hash__ (mypy compatibility)
+    # The following 3 are ignored because sphinx doesn't set TYPE_CHECKING,
+    # so it would fail to resolve any names imported in those blocks
+    "TC001",   # typing-only first party import
+    "TC002",   # typing-only third party import
+    "TC003",   # typing-only standard library import
 ]
 
 [tool.ruff.lint.per-file-ignores]
