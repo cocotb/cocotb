@@ -93,7 +93,6 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
     LOG_INFO("Using Python %s interpreter at %ls", PY_VERSION,
              interpreter_path);
 
-#if PY_VERSION_HEX >= 0x3080000
     /* Use the new Python Initialization Configuration from Python 3.8. */
     PyConfig config;
     PyStatus status;
@@ -130,12 +129,6 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
         return;
         // LCOV_EXCL_STOP
     }
-#else
-    /* Use the old API. */
-    Py_SetProgramName(interpreter_path);
-    Py_Initialize();
-    PySys_SetArgvEx(1, argv, 0);
-#endif
 
     /* Sanity check: make sure sys.executable was initialized to
      * interpreter_path. */
