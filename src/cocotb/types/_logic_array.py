@@ -252,6 +252,15 @@ class LogicArray(AbstractMutableArray[Logic]):
                 )
             self._value_as_int = value
             self._range = range
+        elif isinstance(value, LogicArray):
+            array = value._value_as_array
+            self._value_as_array = list(array) if array is not None else None
+            self._value_as_int = value._value_as_int
+            self._value_as_str = value._value_as_str
+            if range is None:
+                self._range = value._range
+            else:
+                self._range = range
         else:
             self._value_as_array = [Logic(v) for v in value]
             if range is not None:
