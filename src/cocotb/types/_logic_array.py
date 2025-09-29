@@ -875,4 +875,10 @@ class LogicArray(AbstractMutableArray[Logic]):
         raise NotImplementedError("`copy.copy` on LogicArray is not supported")
 
     def __deepcopy__(self, memo: Dict[int, Any]) -> "LogicArray":
-        return LogicArray(self._get_str(), copy.deepcopy(self._range, memo=memo))
+        res = LogicArray.__new__(LogicArray)
+        res._value_as_array = copy.deepcopy(self._value_as_array, memo=memo)
+        res._value_as_int = self._value_as_int
+        res._value_as_str = self._value_as_str
+        res._range = copy.deepcopy(self._range, memo=memo)
+        res._warn_indexing = self._warn_indexing
+        return res
