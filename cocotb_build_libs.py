@@ -424,7 +424,7 @@ class build_ext(_build_ext):
         load the DLL (.a) based on module definition files (.def)
         """
 
-        for sim in ["icarus", "modelsim", "aldec", "ghdl"]:
+        for sim in ["icarus", "modelsim", "aldec", "ghdl", "nvcvhpi"]:
             if self._uses_msvc():
                 subprocess.run(
                     [
@@ -822,12 +822,17 @@ def get_ext():
     #
     # NVC
     #
-    if os.name == "posix":
-        logger.info("Compiling libraries for NVC")
-        nvc_vhpi_ext = _get_vhpi_lib_ext(
-            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="NVC"
-        )
-        ext.append(nvc_vhpi_ext)
+    nvc_extra_lib = []
+    if os.name == "nt":
+        nvc_extra_lib = ["nvcvhpi"]
+    logger.info("Compiling libraries for NVC")
+    nvc_vhpi_ext = _get_vhpi_lib_ext(
+        include_dirs=include_dirs,
+        share_lib_dir=share_lib_dir,
+        sim_define="NVC",
+        extra_lib=nvc_extra_lib,
+    )
+    ext.append(nvc_vhpi_ext)
 
     #
     # DSim
