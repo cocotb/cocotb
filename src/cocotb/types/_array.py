@@ -290,6 +290,8 @@ class Array(AbstractMutableArray[T]):
         return Array(self._value, self._range)
 
     def __deepcopy__(self, memo: Dict[int, Any]) -> "Array":
-        return Array(
-            copy.deepcopy(self._value, memo=memo), copy.deepcopy(self._range, memo=memo)
-        )
+        res = Array.__new__(Array)
+        res._value = copy.deepcopy(self._value, memo=memo)
+        res._range = copy.deepcopy(self._range, memo=memo)
+        res._warn_indexing = self._warn_indexing
+        return res
