@@ -1,0 +1,1 @@
+Added plugin facility that will allow to extend or override the :class:`~cocotb.regression.RegressionManager` to fully support `pytest <https://docs.pytest.org>`_.
