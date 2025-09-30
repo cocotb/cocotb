@@ -1,17 +1,13 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import inspect
 import os
 import pdb
-from typing import (
-    Any,
-    Callable,
-    Coroutine,
-    List,
-    Optional,
-    Union,
-)
+from collections.abc import Coroutine
+from typing import Any, Callable
 
 import cocotb
 from cocotb._base_triggers import NullTrigger, Trigger
@@ -43,9 +39,9 @@ class RunningTest:
         self._main_task: Task[None] = main_task
         self._main_task._add_done_callback(self._test_done_callback)
 
-        self.tasks: List[Task[Any]] = [main_task]
+        self.tasks: list[Task[Any]] = [main_task]
 
-        self._outcome: Union[None, Outcome[None]] = None
+        self._outcome: None | Outcome[None] = None
         self._shutdown_errors: list[Outcome[None]] = []
 
     def _test_done_callback(self, task: Task[None]) -> None:
@@ -127,9 +123,9 @@ class RunningTest:
 
 
 def start_soon(
-    coro: Union[Task[ResultType], Coroutine[Trigger, None, ResultType]],
+    coro: Task[ResultType] | Coroutine[Trigger, None, ResultType],
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
 ) -> Task[ResultType]:
     """
     Schedule a :term:`coroutine` to be run concurrently in a :class:`~cocotb.task.Task`.
@@ -156,9 +152,9 @@ def start_soon(
 
 @deprecated("Use ``cocotb.start_soon`` instead.")
 async def start(
-    coro: Union[Task[ResultType], Coroutine[Trigger, None, ResultType]],
+    coro: Task[ResultType] | Coroutine[Trigger, None, ResultType],
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
 ) -> Task[ResultType]:
     """
     Schedule a :term:`coroutine` to be run concurrently, then yield control to allow pending tasks to execute.
@@ -203,9 +199,9 @@ async def start(
 
 
 def create_task(
-    coro: Union[Task[ResultType], Coroutine[Trigger, None, ResultType]],
+    coro: Task[ResultType] | Coroutine[Trigger, None, ResultType],
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
 ) -> Task[ResultType]:
     """
     Construct a :term:`!coroutine` into a :class:`~cocotb.task.Task` without scheduling the task.

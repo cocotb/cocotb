@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """Collection of functions to control a running test and related exceptions."""
 
-from typing import NoReturn, Type, Union
+from __future__ import annotations
 
-Failed: Type[BaseException]
+from typing import NoReturn
+
+Failed: type[BaseException]
 try:
     import pytest
 except ModuleNotFoundError:
@@ -26,12 +28,12 @@ class TestSuccess(BaseException):
     Users are *not* intended to catch this exception type.
     """
 
-    def __init__(self, msg: Union[str, None]) -> None:
+    def __init__(self, msg: str | None) -> None:
         super().__init__(msg)
         self.msg = msg
 
 
-def pass_test(msg: Union[str, None] = None) -> NoReturn:
+def pass_test(msg: str | None = None) -> NoReturn:
     """Force a test to pass.
 
     The test will end and enter termination phase when this is called.

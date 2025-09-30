@@ -1,20 +1,23 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-
+from __future__ import annotations
 
 import contextlib
 import logging
-from typing import Generator, List
+from typing import TYPE_CHECKING
 
 import cocotb
 from cocotb.logging import ANSI
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 class LogCaptureData:
     def __init__(self) -> None:
-        self.records: List[logging.LogRecord] = []
-        self.msgs: List[str] = []
+        self.records: list[logging.LogRecord] = []
+        self.msgs: list[str] = []
 
 
 @contextlib.contextmanager

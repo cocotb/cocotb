@@ -1,18 +1,14 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import os
 
 import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import _trust_inertial
-from cocotb.triggers import (
-    ReadOnly,
-    ReadWrite,
-    RisingEdge,
-    Timer,
-    with_timeout,
-)
+from cocotb.triggers import ReadOnly, ReadWrite, RisingEdge, Timer, with_timeout
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 vhdl = os.environ.get("TOPLEVEL_LANG", "verilog").lower() == "vhdl"

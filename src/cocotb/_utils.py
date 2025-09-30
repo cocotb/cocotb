@@ -6,52 +6,42 @@
 
 """Utilities for implementors."""
 
+from __future__ import annotations
+
 import traceback
 import types
+from collections.abc import Iterable
 from enum import Enum, IntEnum
 from functools import update_wrapper, wraps
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
-ExceptionTuple = Tuple[
-    Type[BaseException], BaseException, TracebackType
+ExceptionTuple = tuple[
+    type[BaseException], BaseException, TracebackType
 ]  # TypeAlias in Python 3.10
 
 
 @overload
 def remove_traceback_frames(
-    tb_or_exc: ExceptionTuple, frame_names: List[str]
+    tb_or_exc: ExceptionTuple, frame_names: list[str]
 ) -> ExceptionTuple: ...
 
 
 @overload
 def remove_traceback_frames(
-    tb_or_exc: BaseException, frame_names: List[str]
+    tb_or_exc: BaseException, frame_names: list[str]
 ) -> BaseException: ...
 
 
 @overload
 def remove_traceback_frames(
-    tb_or_exc: TracebackType, frame_names: List[str]
+    tb_or_exc: TracebackType, frame_names: list[str]
 ) -> TracebackType: ...
 
 
 def remove_traceback_frames(
-    tb_or_exc: Union[ExceptionTuple, BaseException, TracebackType],
-    frame_names: List[str],
-) -> Union[ExceptionTuple, BaseException, TracebackType]:
+    tb_or_exc: ExceptionTuple | BaseException | TracebackType, frame_names: list[str]
+) -> ExceptionTuple | BaseException | TracebackType:
     """
     Strip leading frames from a traceback
 
@@ -90,8 +80,8 @@ def remove_traceback_frames(
 
 
 def walk_coro_stack(
-    coro: "types.CoroutineType[Any, Any, Any]",
-) -> Iterable[Tuple[types.FrameType, int]]:
+    coro: types.CoroutineType[Any, Any, Any],
+) -> Iterable[tuple[types.FrameType, int]]:
     """Walk down the coroutine stack, starting at *coro*.
 
     Args:
@@ -100,7 +90,7 @@ def walk_coro_stack(
     Yields:
         Frame and line number of each frame in the coroutine.
     """
-    c: Optional[types.CoroutineType[Any, Any, Any]] = coro
+    c: types.CoroutineType[Any, Any, Any] | None = coro
     while c is not None:
         try:
             f = c.cr_frame
@@ -113,7 +103,7 @@ def walk_coro_stack(
 
 
 def extract_coro_stack(
-    coro: "types.CoroutineType[Any, Any, Any]", limit: Optional[int] = None
+    coro: types.CoroutineType[Any, Any, Any], limit: int | None = None
 ) -> traceback.StackSummary:
     r"""Create a list of pre-processed entries from the coroutine stack.
 
@@ -159,7 +149,7 @@ class DocEnum(Enum):
     as recommended by the ``enum_tools`` documentation.
     """
 
-    def __new__(cls: Type[EnumT], value: object, doc: Optional[str] = None) -> EnumT:
+    def __new__(cls: type[EnumT], value: object, doc: str | None = None) -> EnumT:
         # super().__new__() assumes the value is already an enum value
         # so we side step that and create a raw object and fill in _value_
         self = object.__new__(cls)
@@ -175,7 +165,7 @@ IntEnumT = TypeVar("IntEnumT", bound=IntEnum)
 class DocIntEnum(IntEnum):
     """Like DocEnum but for :class:`IntEnum` enum types."""
 
-    def __new__(cls: Type[IntEnumT], value: int, doc: Optional[str] = None) -> IntEnumT:
+    def __new__(cls: type[IntEnumT], value: int, doc: str | None = None) -> IntEnumT:
         self = int.__new__(cls, value)
         self._value_ = value
         if doc is not None:
@@ -183,10 +173,12 @@ class DocIntEnum(IntEnum):
         return self
 
 
-if TYPE_CHECKING:
-    F = TypeVar("F")
+T = TypeVar("T")
 
-    def cached_method(f: F) -> F: ...
+
+if TYPE_CHECKING:
+
+    def cached_method(f: T) -> T: ...
 
 else:
 
@@ -219,9 +211,6 @@ else:
         def __call__(self, instance, *args, **kwargs):
             func = getattr(instance, self._method.__name__)
             return func(*args, **kwargs)
-
-
-T = TypeVar("T")
 
 
 if TYPE_CHECKING:

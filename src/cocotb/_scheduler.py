@@ -6,11 +6,15 @@
 
 """Task scheduler."""
 
+from __future__ import annotations
+
 import logging
+import sys
 import threading
 from bdb import BdbQuit
 from collections import OrderedDict
-from typing import Any, Callable, Coroutine, Dict, List, TypeVar, Union
+from collections.abc import Coroutine
+from typing import Any, Callable, TypeVar
 
 import cocotb
 import cocotb._gpi_triggers
@@ -19,19 +23,17 @@ from cocotb import debug
 from cocotb._base_triggers import Event, Trigger
 from cocotb._bridge import external_state, external_waiter
 from cocotb._exceptions import InternalError
-from cocotb._gpi_triggers import (
-    GPITrigger,
-    NextTimeStep,
-    ReadWrite,
-)
+from cocotb._gpi_triggers import GPITrigger, NextTimeStep, ReadWrite
 from cocotb._outcomes import Error, Outcome, Value, capture
 from cocotb._profiling import profiling_context
-from cocotb._py_compat import ParamSpec, insertion_ordered_dict
 from cocotb.task import Task, _TaskState
 
-T = TypeVar("T")
+if sys.version_info >= (3, 10):
+    from typing import ParamSpec
 
-P = ParamSpec("P")
+    P = ParamSpec("P")
+
+T = TypeVar("T")
 
 
 class Scheduler:
@@ -111,19 +113,17 @@ class Scheduler:
 
         # A dictionary of pending tasks for each trigger,
         # indexed by trigger
-        self._trigger2tasks: Dict[Trigger, list[Task[object]]] = (
-            insertion_ordered_dict()
-        )
+        self._trigger2tasks: dict[Trigger, list[Task[object]]] = {}
 
-        self._scheduled_tasks: OrderedDict[Task[object], Union[BaseException, None]] = (
+        self._scheduled_tasks: OrderedDict[Task[object], BaseException | None] = (
             OrderedDict()
         )
-        self._pending_threads: List[external_waiter[Any]] = []
-        self._pending_events: List[Event] = []
+        self._pending_threads: list[external_waiter[Any]] = []
+        self._pending_events: list[Event] = []
 
         self._main_thread = threading.current_thread()
 
-        self._current_task: Union[Task[object], None] = None
+        self._current_task: Task[object] | None = None
 
     def _sim_react(self, trigger: GPITrigger) -> None:
         """Called when a :class:`~cocotb.triggers.GPITrigger` fires.
@@ -290,7 +290,7 @@ class Scheduler:
         self._schedule_task_internal(task)
 
     def _schedule_task_internal(
-        self, task: Task[Any], exc: Union[BaseException, None] = None
+        self, task: Task[Any], exc: BaseException | None = None
     ) -> None:
         # TODO Move state tracking into Task
         task._state = _TaskState.SCHEDULED
@@ -311,7 +311,7 @@ class Scheduler:
         # each entry always has a unique thread.
         (t,) = matching_threads
 
-        outcome: Union[Outcome[T], None] = None
+        outcome: Outcome[T] | None = None
 
         async def wrapper() -> None:
             nonlocal outcome
@@ -346,7 +346,7 @@ class Scheduler:
         return outcome.get()
 
     def _run_in_executor(
-        self, func: "Callable[P, T]", *args: "P.args", **kwargs: "P.kwargs"
+        self, func: Callable[P, T], *args: P.args, **kwargs: P.kwargs
     ) -> Coroutine[Trigger, None, T]:
         """Run the task in a separate execution thread
         and return an awaitable object for the caller.
@@ -383,7 +383,7 @@ class Scheduler:
 
         return wrapper()
 
-    def _resume_task(self, task: Task[object], exc: Union[BaseException, None]) -> None:
+    def _resume_task(self, task: Task[object], exc: BaseException | None) -> None:
         """Resume *task* with *outcome*.
 
         Args:

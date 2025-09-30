@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """Test getting and setting values of arrays"""
 
+from __future__ import annotations
+
 import logging
 import os
 

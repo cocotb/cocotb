@@ -6,16 +6,25 @@
 
 """Tools for dealing with simulated time."""
 
+from __future__ import annotations
+
+import sys
 import warnings
 from decimal import Decimal
 from fractions import Fraction
-from functools import lru_cache
+from functools import cache
 from math import ceil, floor
-from typing import Union, cast, overload
+from typing import Literal, cast, overload
 
 from cocotb import simulator
-from cocotb._py_compat import Literal, TypeAlias
 from cocotb._typing import RoundMode, TimeUnit
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
+
+
+Steps: TypeAlias = Literal["step"]
+TimeUnitWithoutSteps: TypeAlias = Literal["fs", "ps", "ns", "us", "ms", "sec"]
 
 __all__ = (
     "convert",
@@ -24,13 +33,9 @@ __all__ = (
 )
 
 
-Steps: TypeAlias = Literal["step"]
-TimeUnitWithoutSteps: TypeAlias = Literal["fs", "ps", "ns", "us", "ms", "sec"]
-
-
 @overload
 def convert(
-    value: Union[float, Fraction, Decimal],
+    value: float | Fraction | Decimal,
     unit: TimeUnit,
     *,
     to: Steps,
@@ -40,7 +45,7 @@ def convert(
 
 @overload
 def convert(
-    value: Union[float, Fraction, Decimal],
+    value: float | Fraction | Decimal,
     unit: TimeUnit,
     *,
     to: TimeUnitWithoutSteps,
@@ -49,7 +54,7 @@ def convert(
 
 
 def convert(
-    value: Union[float, Decimal, Fraction],
+    value: float | Decimal | Fraction,
     unit: TimeUnit,
     *,
     to: TimeUnit,
@@ -138,9 +143,7 @@ def _ldexp10(frac: Fraction, exp: int) -> Fraction: ...
 def _ldexp10(frac: Decimal, exp: int) -> Decimal: ...
 
 
-def _ldexp10(
-    frac: Union[float, Fraction, Decimal], exp: int
-) -> Union[float, Fraction, Decimal]:
+def _ldexp10(frac: float | Fraction | Decimal, exp: int) -> float | Fraction | Decimal:
     """Like :func:`math.ldexp`, but base 10."""
     # using * or / separately prevents rounding errors if `frac` is a
     # high-precision type
@@ -150,22 +153,19 @@ def _ldexp10(
         return frac / (10**-exp)
 
 
-def _get_time_from_sim_steps(
-    steps: int,
-    unit: TimeUnit,
-) -> float:
+def _get_time_from_sim_steps(steps: int, unit: TimeUnit) -> float:
     if unit == "step":
         return steps
     return _ldexp10(steps, time_precision - _get_log_time_scale(unit))
 
 
 def _get_sim_steps(
-    time: Union[float, Fraction, Decimal],
+    time: float | Fraction | Decimal,
     unit: TimeUnit = "step",
     *,
     round_mode: RoundMode = "error",
 ) -> int:
-    result: Union[float, Fraction, Decimal]
+    result: float | Fraction | Decimal
     if unit != "step":
         result = _ldexp10(time, _get_log_time_scale(unit) - time_precision)
     else:
@@ -189,7 +189,7 @@ def _get_sim_steps(
     return result_rounded
 
 
-@lru_cache(maxsize=None)
+@cache
 def _get_log_time_scale(unit: TimeUnitWithoutSteps) -> int:
     """Retrieve the ``log10()`` of the scale factor for a given time unit.
 

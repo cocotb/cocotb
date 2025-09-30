@@ -3,14 +3,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """Checks if a JUnit results file exists and whether there was failing tests."""
 
+from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
-from typing import Tuple
 from xml.etree import ElementTree
 
 
-def get_results(results_xml_file: Path) -> Tuple[int, int]:
+def get_results(results_xml_file: Path) -> tuple[int, int]:
     """Return number of tests and fails in *results_xml_file*.
 
     Returns:

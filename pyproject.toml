@@ -45,7 +45,7 @@ extend-exclude = [
     "_vendor",
     ".nox/",
 ]
-target-version = "py37"
+target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -85,7 +85,11 @@ ignore = [
     "PLW0603", # Using the global statement (preference)
     "PLR0911", # Too many return statements (preference)
     "PLW1641", # __eq__ without __hash__ (mypy compatibility)
-    "UP021",   # subprocess.run() universal_newlines => text (not supported in 3.6)
+    # The following 3 are ignored because sphinx doesn't set TYPE_CHECKING,
+    # so it would fail to resolve any names imported in those blocks
+    "TC001",   # typing-only first party import
+    "TC002",   # typing-only third party import
+    "TC003",   # typing-only standard library import
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -104,16 +108,15 @@ known-first-party = [
 known-third-party = [
     "pytest",
 ]
+required-imports = ["from __future__ import annotations"]
 
 [tool.cibuildwheel]
 # Build for supported platforms only.
-# Even though we only support 64 bit operating systems, we still support 32 bit
-# userspace applications (Python and simulators) on Windows and Linux.
 #
-# - CPython on Linux i686 and x86_64 with glibc
-# - CPython on Windows i686 and x86_64
-# - CPython on macOS x86_64
-build = "cp*-manylinux_x86_64 cp*-manylinux_i686 cp*-win_amd64 cp*-win32 cp*-macosx_x86_64 cp*-macosx_arm64"
+# - CPython on Linux x86_64 with glibc
+# - CPython on Windows x86_64
+# - CPython on macOS arm64
+build = "cp*-manylinux_x86_64 cp*-win_amd64 cp*-macosx_arm64"
 
 # Build with optimizations and debugging
 # -O2   Enables reasonable optimizations. -O3 is unnecessary with the virtual-call-heavy code in the GPI and may bloat binary size.
@@ -124,7 +127,6 @@ environment = {CFLAGS = "-O2 -g -flto", CPPFLAGS = "-O2 -g -flto", LDFLAGS = "-O
 # By default, build on manylinux2014 for compatibility with CentOS/RHEL 7+ (once
 # the user updates Python) and Ubuntu 20.04+ (with system Python).
 manylinux-x86_64-image = "manylinux2014"
-manylinux-i686-image = "manylinux2014"
 
 # Build with optimizations and debugging (Windows)
 # /O2   Enables reasonable optimizations.
@@ -133,13 +135,6 @@ manylinux-i686-image = "manylinux2014"
 # /LTCG Enables LTO which can reduce binary size and improve inlining.
 [tool.cibuildwheel.windows]
 environment = {CL = "/O2 /Z7 /Zo /LTCG"}
-
-[[tool.cibuildwheel.overrides]]
-# Build CPython 3.6 wheels on manylinux1 to support Ubuntu 18.04, CentOS/RHEL 7
-# and CentOS/RHEL 8 with their default Python 3.6/pip 9 installation.
-select = "cp36-*"
-manylinux-x86_64-image = "manylinux1"
-manylinux-i686-image = "manylinux1"
 
 [tool.pytest.ini_options]
 # Note: Do *not* add files within the cocotb/ tree here. Add them to the

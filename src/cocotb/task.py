@@ -1,37 +1,30 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import collections.abc
 import inspect
 import logging
+import sys
 import traceback
 from asyncio import CancelledError, InvalidStateError
 from bdb import BdbQuit
+from collections.abc import Coroutine, Generator
 from enum import auto
-from types import SimpleNamespace
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Coroutine,
-    Generator,
-    Generic,
-    List,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from functools import cached_property
+from types import CoroutineType, SimpleNamespace
+from typing import Callable, Generic, TypeVar, cast
 
 import cocotb
 from cocotb._base_triggers import Trigger
 from cocotb._bridge import bridge, resume
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
-from cocotb._py_compat import Self, cached_property
 from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
 
-if TYPE_CHECKING:
-    from types import CoroutineType
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 
 __all__ = (
@@ -80,7 +73,7 @@ class Task(Generic[ResultType]):
     _id_count = 0  # used by the scheduler for debug
 
     def __init__(
-        self, inst: Coroutine[Trigger, None, ResultType], *, name: Optional[str] = None
+        self, inst: Coroutine[Trigger, None, ResultType], *, name: str | None = None
     ) -> None:
         self._native_coroutine: bool
         if inspect.iscoroutinefunction(inst):
@@ -101,10 +94,10 @@ class Task(Generic[ResultType]):
 
         self._coro = inst
         self._state: _TaskState = _TaskState.UNSTARTED
-        self._outcome: Union[Outcome[ResultType], None] = None
-        self._trigger: Union[Trigger, None] = None
-        self._done_callbacks: List[Callable[[Task[ResultType]], None]] = []
-        self._cancelled_msg: Union[str, None] = None
+        self._outcome: Outcome[ResultType] | None = None
+        self._trigger: Trigger | None = None
+        self._done_callbacks: list[Callable[[Task[ResultType]], None]] = []
+        self._cancelled_msg: str | None = None
         self._must_cancel: bool = False
         self._locals = SimpleNamespace()
 
@@ -244,7 +237,7 @@ class Task(Generic[ResultType]):
         cocotb._scheduler_inst._react(self.complete)
         cocotb._scheduler_inst._react(self._join)
 
-    def _advance(self, exc: Union[BaseException, None]) -> Union[Trigger, None]:
+    def _advance(self, exc: BaseException | None) -> Trigger | None:
         """Resume execution of the Task.
 
         Runs until the coroutine ends, raises, or yields a Trigger.
@@ -305,7 +298,7 @@ class Task(Generic[ResultType]):
             else:
                 return trigger
 
-    def _schedule_resume(self, exc: Optional[BaseException] = None) -> None:
+    def _schedule_resume(self, exc: BaseException | None = None) -> None:
         cocotb._scheduler_inst._unschedule(self)
         cocotb._scheduler_inst._schedule_task_internal(self, exc)
 
@@ -335,7 +328,7 @@ class Task(Generic[ResultType]):
         self._set_outcome(Value(None))  # type: ignore  # `kill()` sets the result to None regardless of the ResultType
 
     @cached_property
-    def complete(self) -> "TaskComplete[ResultType]":
+    def complete(self) -> TaskComplete[ResultType]:
         r"""Trigger which fires when the Task completes.
 
         Unlike :meth:`join`, this Trigger does not return the result of the Task when :keyword:`await`\ ed.
@@ -356,7 +349,7 @@ class Task(Generic[ResultType]):
     @deprecated(
         "Using `task` directly is preferred to `task.join()` in all situations where the latter could be used."
     )
-    def join(self) -> "Join[ResultType]":
+    def join(self) -> Join[ResultType]:
         r"""Block until the Task completes and return the result.
 
         Equivalent to calling :class:`Join(self) <cocotb.task.Join>`.
@@ -382,10 +375,10 @@ class Task(Generic[ResultType]):
         return self._join
 
     @cached_property
-    def _join(self) -> "Join[ResultType]":
+    def _join(self) -> Join[ResultType]:
         return Join._make(self)
 
-    def cancel(self, msg: Optional[str] = None) -> bool:
+    def cancel(self, msg: str | None = None) -> bool:
         """Cancel a Task's further execution.
 
         When a Task is cancelled, a :exc:`asyncio.CancelledError` is thrown into the Task.
@@ -405,7 +398,7 @@ class Task(Generic[ResultType]):
         self._must_cancel = True
         return True
 
-    def _cancel_now(self, msg: Optional[str] = None) -> bool:
+    def _cancel_now(self, msg: str | None = None) -> bool:
         """Like cancel(), but throws CancelledError into the Task and puts it into a "done" state immediately.
 
         Not safe to be called from a running Task.
@@ -451,7 +444,7 @@ class Task(Generic[ResultType]):
         else:
             raise InvalidStateError("result is not yet available")
 
-    def exception(self) -> Optional[BaseException]:
+    def exception(self) -> BaseException | None:
         """Return the exception of the Task.
 
         If the Task ran to completion, ``None`` is returned.
@@ -469,9 +462,7 @@ class Task(Generic[ResultType]):
         else:
             raise InvalidStateError("result is not yet available")
 
-    def _add_done_callback(
-        self, callback: Callable[["Task[ResultType]"], None]
-    ) -> None:
+    def _add_done_callback(self, callback: Callable[[Task[ResultType]], None]) -> None:
         """Add *callback* to the list of callbacks to be run once the Task becomes "done".
 
         Args:
@@ -522,19 +513,19 @@ class TaskComplete(Trigger, Generic[ResultType]):
 
     _task: Task[ResultType]
 
-    def __new__(cls, task: Task[ResultType]) -> "TaskComplete[ResultType]":
+    def __new__(cls, task: Task[ResultType]) -> TaskComplete[ResultType]:
         raise NotImplementedError(
             "TaskComplete cannot be instantiated in this way. Use the `task.complete` attribute."
         )
 
     @classmethod
-    def _make(cls, task: Task[ResultType]) -> "Self":
+    def _make(cls, task: Task[ResultType]) -> Self:
         self = super().__new__(cls)
         super().__init__(self)
         self._task = task
         return self
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self, callback: Callable[[Self], None]) -> None:
         if self._task.done():
             callback(self)
         else:
@@ -579,12 +570,12 @@ class Join(TaskComplete[ResultType]):
     @deprecated(
         "Using `task` directly is preferred to `Join(task)` in all situations where the latter could be used."
     )
-    def __new__(cls, task: Task[ResultType]) -> "Join[ResultType]":
+    def __new__(cls, task: Task[ResultType]) -> Join[ResultType]:
         return task._join
 
     def __init__(self, task: Task[ResultType]) -> None:
         pass
 
-    def __await__(self) -> Generator["Self", None, ResultType]:  # type: ignore[override]
+    def __await__(self) -> Generator[Self, None, ResultType]:  # type: ignore[override]
         yield self
         return self._task.result()

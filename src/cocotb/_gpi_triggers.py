@@ -6,19 +6,13 @@
 
 """A collection of triggers which a testbench can :keyword:`await`."""
 
+from __future__ import annotations
+
+import sys
 import warnings
 from decimal import Decimal
 from fractions import Fraction
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Generic,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, ClassVar, Generic, TypeVar
 
 import cocotb
 import cocotb.handle
@@ -29,8 +23,8 @@ from cocotb._typing import RoundMode, TimeUnit
 from cocotb._utils import pointer_str, singleton
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
-if TYPE_CHECKING:
-    from cocotb._py_compat import Self
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 
 class GPITrigger(Trigger):
@@ -38,7 +32,7 @@ class GPITrigger(Trigger):
 
     def __init__(self) -> None:
         super().__init__()
-        self._cbhdl: Optional[simulator.gpi_cb_hdl] = None
+        self._cbhdl: simulator.gpi_cb_hdl | None = None
 
     def _unprime(self) -> None:
         """Disable a primed trigger, can be re-primed."""
@@ -129,10 +123,10 @@ class Timer(GPITrigger):
 
     def __init__(
         self,
-        time: Union[float, Fraction, Decimal],
+        time: float | Fraction | Decimal,
         unit: TimeUnit = "step",
         *,
-        round_mode: Optional[RoundMode] = None,
+        round_mode: RoundMode | None = None,
         units: None = None,
     ) -> None:
         super().__init__()
@@ -153,7 +147,7 @@ class Timer(GPITrigger):
         if self._sim_steps == 0:
             self._sim_steps = 1
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self, callback: Callable[[Self], None]) -> None:
         """Register for a timed callback."""
         if self._cbhdl is None:
             self._cbhdl = simulator.register_timed_callback(
@@ -181,7 +175,7 @@ class ReadOnly(GPITrigger):
     Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
     """
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self, callback: Callable[[Self], None]) -> None:
         if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadOnly in ReadOnly phase"
@@ -200,7 +194,7 @@ class ReadOnly(GPITrigger):
 class ReadWrite(GPITrigger):
     """Fires when the read-write simulation phase is reached."""
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self, callback: Callable[[Self], None]) -> None:
         if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadWrite in ReadOnly phase"
@@ -219,7 +213,7 @@ class ReadWrite(GPITrigger):
 class NextTimeStep(GPITrigger):
     """Fires when the next time step is started."""
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self, callback: Callable[[Self], None]) -> None:
         if self._cbhdl is None:
             self._cbhdl = simulator.register_nextstep_callback(callback, self)
             if self._cbhdl is None:
@@ -240,7 +234,7 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
     signal: _SignalType
 
     @classmethod
-    def _make(cls, signal: _SignalType) -> "Self":
+    def _make(cls, signal: _SignalType) -> Self:
         self = GPITrigger.__new__(cls)
         GPITrigger.__init__(self)
         self.signal = signal
@@ -249,7 +243,7 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
     def __init__(self, _: _SignalType) -> None:
         pass
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self, callback: Callable[[Self], None]) -> None:
         if self._cbhdl is None:
             self._cbhdl = simulator.register_value_change_callback(
                 self.signal._handle, callback, type(self)._edge_type, self
@@ -283,7 +277,7 @@ class RisingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
 
     _edge_type = simulator.RISING
 
-    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "RisingEdge":
+    def __new__(cls, signal: cocotb.handle.LogicObject) -> RisingEdge:
         if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
                 f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
@@ -312,7 +306,7 @@ class FallingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
 
     _edge_type = simulator.FALLING
 
-    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "FallingEdge":
+    def __new__(cls, signal: cocotb.handle.LogicObject) -> FallingEdge:
         if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
                 f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
@@ -338,8 +332,8 @@ class ValueChange(_EdgeBase["cocotb.handle._NonIndexableValueObjectBase[Any, Any
     _edge_type = simulator.VALUE_CHANGE
 
     def __new__(
-        cls, signal: "cocotb.handle._NonIndexableValueObjectBase[Any, Any]"
-    ) -> "ValueChange":
+        cls, signal: cocotb.handle._NonIndexableValueObjectBase[Any, Any]
+    ) -> ValueChange:
         if not isinstance(signal, cocotb.handle._NonIndexableValueObjectBase):
             raise TypeError(
                 f"{cls.__qualname__} requires a simulation object derived from ValueObjectBase. "
@@ -364,8 +358,8 @@ class Edge(ValueChange):
 
     @deprecated("Use `signal.value_change` instead.")
     def __new__(
-        cls, signal: "cocotb.handle._NonIndexableValueObjectBase[Any, Any]"
-    ) -> "Edge":
+        cls, signal: cocotb.handle._NonIndexableValueObjectBase[Any, Any]
+    ) -> Edge:
         if not isinstance(signal, cocotb.handle._NonIndexableValueObjectBase):
             raise TypeError(
                 f"{cls.__qualname__} requires a simulation object derived from ValueObjectBase. "
@@ -375,7 +369,7 @@ class Edge(ValueChange):
 
 
 # The initializer is a lie, but a useful one. Perhaps one day this can be something like `StartupTrigger`.`
-_current_gpi_trigger = Timer(1, "step")  # type: Union[None, GPITrigger]
+_current_gpi_trigger: GPITrigger | None = Timer(1, "step")
 
 
 def current_gpi_trigger() -> GPITrigger:
