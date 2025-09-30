@@ -1,3 +1,5 @@
+.. _timing-model:
+
 ****************
 The Timing Model
 ****************
