@@ -176,7 +176,9 @@ class RegressionManager:
 
         self.xunit = XUnitReporter(filename=results_filename)
         self.xunit.add_testsuite(name=suite_name, package=package_name)
-        self.xunit.add_property(name="random_seed", value=str(cocotb.RANDOM_SEED))
+        self.xunit.add_property(
+            name="random_seed", value=str(getattr(cocotb, "RANDOM_SEED", 0))
+        )
 
     def discover_tests(self, *modules: str) -> None:
         """Discover tests in files automatically.
@@ -892,5 +894,8 @@ class RegressionManager:
 
     def _fail_simulation(self, msg: str) -> None:
         self._sim_failure = Error(SimFailure(msg))
-        self._running_test.abort(self._sim_failure)
+
+        if hasattr(self, "_running_test"):
+            self._running_test.abort(self._sim_failure)
+
         cocotb._scheduler_inst._event_loop()

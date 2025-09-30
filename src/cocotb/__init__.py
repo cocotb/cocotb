@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from types import SimpleNamespace
 
     from cocotb._scheduler import Scheduler
+    from cocotb.factory import Factory
     from cocotb.handle import SimHandleBase
     from cocotb.regression import RegressionManager
 
@@ -70,6 +71,9 @@ _scheduler_inst: "Scheduler"
 
 _regression_manager: "RegressionManager"
 """The global regression manager instance."""
+
+_factory: "Factory"
+"""The global factory instance to create other objects."""
 
 argv: List[str]
 """The argument list as seen by the simulator."""

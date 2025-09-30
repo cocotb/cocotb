@@ -21,6 +21,7 @@ import cocotb.logging
 import cocotb.simtime
 import cocotb.simulator
 from cocotb._scheduler import Scheduler
+from cocotb.factory import Factory
 from cocotb.regression import RegressionManager, RegressionMode
 
 log: logging.Logger
@@ -50,8 +51,15 @@ def _shutdown_testbench() -> None:
         cb()
 
 
+def _setup_factory() -> None:
+    """Setup factory instance."""
+    cocotb._factory = Factory()
+
+
 def init_package_from_simulation(argv: List[str]) -> None:
     """Initialize the cocotb package from a simulation context."""
+
+    _setup_factory()
 
     # register a callback to be called if the simulation fails
     cocotb.simulator.set_sim_event_callback(_sim_event)
@@ -270,7 +278,7 @@ def _setup_root_handle() -> None:
 
 
 def _setup_regression_manager() -> None:
-    cocotb._regression_manager = RegressionManager()
+    cocotb._regression_manager = cocotb._factory.create(RegressionManager)
 
     # discover tests
     module_str = os.getenv("COCOTB_TEST_MODULES", "")
