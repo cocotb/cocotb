@@ -3,7 +3,7 @@
 ****************
 Quickstart Guide
 ****************
-This guide describe some minimal cocotb testcase examples, with instructions for running simulations, and steps to view the generated waveforms. For a thorough explanation about the cooctb testbench concepts used in this quickstart guide, refer to the :ref:`writing_tbs` page.
+This guide describe some minimal cocotb testcase examples, with instructions for running simulations, and steps to view the generated waveforms. For a thorough explanation about the cocotb testbench concepts used in this quickstart guide, refer to the :ref:`writing_tbs` page.
 
 Prerequisites
 =============
@@ -48,7 +48,7 @@ It is possible to "dot" your way through the entire hierarchy of the toplevel an
       do_something()
 
 All examples described in this section can be found in the :file:`simple_counter_testcases.py` file.
-The filename does not really matter as long as it is consistent with the value of :envvar:`COCOTB_TEST_MODULES` in the Makefile and the ``test_module`` argument to :meth:`cocotb_tools.Runner.test`.
+The filename does not really matter as long as it is consistent with the value of :envvar:`COCOTB_TEST_MODULES` in the Makefile and the ``test_module`` argument to :meth:`~cocotb_tools.runner.Runner.test`.
 
 .. _quickstart-example1:
 
@@ -194,9 +194,9 @@ Creating a Runner
 An alternative to :ref:`quickstart_makefile` is to use the :class:`cocotb_tools.Runner`, or "runner" for short.
 
 Using the runner involves three steps:
-   1. *Instantiation* of the runner with: `get_runner(sim)`
-   2. *Build*, where the HDL are compiled: `runner.build(...)`
-   3. *Test*, where cocotb testcases are run: `runner.test(...)`
+   1. *Instantiation* of the runner with: ``get_runner(sim)``
+   2. *Build*, where the HDL files are compiled: ``runner.build(...)``
+   3. *Test*, where cocotb testcases are run: ``runner.test(...)``
 
 See the section :ref:`howto-python-runner` for more details.
 
@@ -218,7 +218,7 @@ However, one of the benefits of using the runner is that it can be used with `py
 as long as the function name is discoverable by pytest, e.g. by prefixing the function with the ``test_`` prefix.
 Refer to the `pytest <https://pytest.org>`_ documentation for a more comprehensive guide.
 
-To run the cooctb test runner with pytest:
+To run the cocotb test runner with pytest:
 
 .. code-block:: bash
 
