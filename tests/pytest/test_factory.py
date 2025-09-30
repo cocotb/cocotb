@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+import cocotb.handle  # noqa: F401 TODO: workaround for cocotb circular dependency
 from cocotb.factory import Factory
 from cocotb.regression import RegressionManager
 
