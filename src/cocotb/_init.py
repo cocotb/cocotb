@@ -67,12 +67,6 @@ def init_package_from_simulation(argv: List[str]) -> None:
     cocotb.logging._init()
     _setup_logging()
 
-    # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
-    # If the user doesn't want to see these, they can always change the global
-    # warning settings in their test module.
-    if not sys.warnoptions:
-        warnings.simplefilter("default")
-
     cocotb.SIM_NAME = cocotb.simulator.get_simulator_product().strip()
     cocotb.SIM_VERSION = cocotb.simulator.get_simulator_version().strip()
 
