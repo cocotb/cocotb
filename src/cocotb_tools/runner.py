@@ -605,17 +605,25 @@ def outdated(output: Path, dependencies: Sequence[Path]) -> bool:
     return dep_mtime > output_mtime
 
 
-def get_abs_path(path: PathLike) -> Path:
+def get_abs_path(path: Union[PathLike, VHDL, Verilog]) -> Union[Path, VHDL, Verilog]:
     """Return *path* in absolute form."""
 
-    path = Path(path)
-    if path.is_absolute():
-        return path.resolve()
+    workpath = Path(path)
+    if workpath.is_absolute():
+        workpath = workpath.resolve()
     else:
-        return Path(Path.cwd() / path).resolve()
+        workpath = Path(Path.cwd() / workpath).resolve()
+
+    if isinstance(path, VHDL):
+        return VHDL(workpath)
+    if isinstance(path, Verilog):
+        return Verilog(workpath)
+    return workpath
 
 
-def get_abs_paths(paths: Sequence[PathLike]) -> List[Path]:
+def get_abs_paths(
+    paths: Sequence[Union[PathLike, VHDL, Verilog]],
+) -> List[Union[Path, VHDL, Verilog]]:
     """Return list of *paths* in absolute form."""
 
     return [get_abs_path(path) for path in paths]
