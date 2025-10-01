@@ -220,7 +220,11 @@ jobs:
       uses: nickg/setup-nvc@v1
       with:
         version: ${{matrix.sim-version}}
-
+    - name: Set up NVC (Windows, release)
+      if: startsWith(matrix.os, 'windows') && matrix.sim == 'nvc'
+      uses: nickg/setup-nvc@v1
+      with:
+        version: ${{matrix.sim-version}}
     - name: Set up NVC (Ubuntu, source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'nvc' && (!startsWith(matrix.sim-version, 'r') || matrix.cc == 'clang')
       run: |
