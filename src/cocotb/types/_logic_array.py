@@ -257,7 +257,7 @@ class LogicArray(AbstractMutableArray[Logic]):
             if range is not None:
                 if len(self._value_as_array) != len(range):
                     raise ValueError(
-                        f"Value of length {len(self._value_as_array)} will not fit in {range!r}"
+                        f"Value of length {len(self._value_as_array)} does not match bounds: {range!r}"
                     )
                 self._range = range
             else:
