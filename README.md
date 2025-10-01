@@ -13,5 +13,3 @@
 * Join the discussion in the [Gitter chat room](https://gitter.im/cocotb/Lobby)
 * [Ask a question](https://github.com/cocotb/cocotb/discussions)
 * [Raise a bug / request an enhancement](https://github.com/cocotb/cocotb/issues/new)
-
-**Note: The current `master` branch of the cocotb repository is expected to be released as cocotb 2.0, which contains API-breaking changes from previous 1.x releases.**
