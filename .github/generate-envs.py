@@ -337,6 +337,15 @@ ENVS = [
         "extra-name": "msvc",
         "group": "ci-free",
     },
+    # NVC on windows
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.17.1",
+        "os": "windows-latest",
+        "python-version": "3.11",
+        "group": "ci-free",
+    },
     # Other
     # use clang instead of gcc
     {
