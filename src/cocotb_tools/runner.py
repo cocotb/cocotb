@@ -194,6 +194,12 @@ class Runner(ABC):
         self.env["COCOTB_TEST_MODULES"] = self.test_module
         self.env["TOPLEVEL_LANG"] = self.hdl_toplevel_lang
 
+    def _get_env_var_as_bool(self, name, default) -> bool:
+        if not name in os.environ:
+            return default
+
+        return os.environ.get(name) == '1'
+
     @abstractmethod
     def _build_command(self) -> Sequence[_Command]:
         """Return command to build the HDL sources."""
@@ -445,8 +451,8 @@ class Runner(ABC):
             self.env["COCOTB_RANDOM_SEED"] = str(seed)
 
         self.log_file = log_file
-        self.waves = bool(os.getenv("WAVES", waves))
-        self.gui = bool(os.getenv("GUI", gui))
+        self.waves = self._get_env_var_as_bool("WAVES", waves)
+        self.gui = self._get_env_var_as_bool("GUI", gui)
         self.timescale = timescale
 
         if verbose is not None:
