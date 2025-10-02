@@ -65,7 +65,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 
 	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        $(SIM_CMD_PREFIX) $(ICARUS_BIN_DIR)/vvp -M $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-dir) -m $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name vpi icarus) $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(FST) $(SIM_CMD_SUFFIX)
+        $(SIM_CMD_PREFIX) $(ICARUS_BIN_DIR)/vvp -M $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-dir) -m $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name vpi icarus) $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(FST) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
 
 	$(call check_results)
 
@@ -73,7 +73,7 @@ debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 	$(RM) -r $(COCOTB_RESULTS_FILE)
 
 	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        $(SIM_CMD_PREFIX) gdb --args $(ICARUS_BIN_DIR)/vvp -M $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-dir) -m $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name vpi icarus) $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(FST) $(SIM_CMD_SUFFIX)
+        $(SIM_CMD_PREFIX) gdb --args $(ICARUS_BIN_DIR)/vvp -M $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-dir) -m $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name vpi icarus) $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(FST) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
 
 	$(call check_results)
 
