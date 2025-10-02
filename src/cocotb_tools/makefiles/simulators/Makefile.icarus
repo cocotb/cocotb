@@ -42,7 +42,7 @@ ifeq ($(WAVES), 1)
     VERILOG_SOURCES += $(SIM_BUILD)/cocotb_iverilog_dump.v
     COMPILE_ARGS += -s cocotb_iverilog_dump
     FST = -fst
-else
+else ifeq ($(WAVES), disable)
     # Disable waveform output
     FST = -none
 endif
