@@ -195,10 +195,10 @@ class Runner(ABC):
         self.env["TOPLEVEL_LANG"] = self.hdl_toplevel_lang
 
     def _get_env_var_as_bool(self, name, default) -> bool:
-        if not name in os.environ:
+        if name not in os.environ:
             return default
 
-        return os.environ.get(name) == '1'
+        return os.environ.get(name) == "1"
 
     @abstractmethod
     def _build_command(self) -> Sequence[_Command]:
