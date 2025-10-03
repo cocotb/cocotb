@@ -91,8 +91,10 @@ def convert(
 @overload
 def get_sim_time(unit: Steps = "step", *, units: None = None) -> int: ...
 
+
 @overload
 def get_sim_time(unit: TimeUnitWithoutSteps, *, units: None = None) -> float: ...
+
 
 def get_sim_time(unit: TimeUnit = "step", *, units: None = None) -> float:
     """Retrieve the simulation time from the simulator.
