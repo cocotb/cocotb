@@ -166,7 +166,7 @@ async def test_trigger_with_failing_prime(dut):
         def __init__(self):
             super().__init__()
 
-        def _prime(self, callback):
+        def _prime(self):
             raise RuntimeError("oops")
 
     await Timer(1, "ns")
@@ -562,34 +562,6 @@ async def test_start_soon_async(_):
 
 
 @cocotb.test()
-async def test_start_soon_scheduling(dut):
-    """Test order of scheduling when using start_soon."""
-    coro_scheduled = False
-
-    def react_wrapper(trigger):
-        """Function to prime trigger with."""
-        log = logging.getLogger("cocotb.test")
-        log.debug("react_wrapper start")
-        assert coro_scheduled is False
-        cocotb._scheduler_inst._sim_react(trigger)
-        assert coro_scheduled is True
-        log.debug("react_wrapper end")
-
-    async def coro():
-        nonlocal coro_scheduled
-        coro_scheduled = True
-
-    t = Timer(1, "step")
-    # pre-prime with wrapper function instead of letting scheduler prime it normally
-    t._prime(react_wrapper)
-    await t
-    # react_wrapper is now on the stack
-    cocotb.start_soon(coro())  # coro() should run before returning to the simulator
-    await Timer(1, "step")  # await a GPITrigger to ensure control returns to simulator
-    assert coro_scheduled is True
-
-
-@cocotb.test()
 async def test_await_start_soon(_):
     """Test awaiting start_soon queued coroutine before it starts."""
 
@@ -677,41 +649,6 @@ async def test_start(_) -> None:
     await NullTrigger()
     assert task6.done()
     assert await task6 == 1
-
-
-@cocotb.test
-async def test_start_scheduling(_) -> None:
-    """Test that start resumes calling task before control is yielded to simulator."""
-    sim_resumed = False
-    coro_started = False
-
-    def react_wrapper(trigger):
-        """Function to prime trigger with."""
-        nonlocal sim_resumed
-        log = logging.getLogger("cocotb.test")
-        log.debug("react_wrapper start")
-        sim_resumed = False
-        cocotb._scheduler_inst._sim_react(trigger)
-        sim_resumed = True
-        log.debug("react_wrapper end")
-
-    async def coro():
-        nonlocal coro_started
-        coro_started = True
-
-    t = Timer(1, "step")
-    # pre-prime with wrapper function instead of letting scheduler prime it normally
-    t._prime(react_wrapper)
-    await t
-    # react_wrapper is now on the stack
-    assert sim_resumed is False
-    cocotb.start_soon(coro())
-    assert coro_started is False
-    await NullTrigger()
-    assert sim_resumed is False
-    assert coro_started is True
-    await Timer(1, "step")  # await a GPITrigger to ensure control returns to simulator
-    assert sim_resumed is True
 
 
 @cocotb.test()

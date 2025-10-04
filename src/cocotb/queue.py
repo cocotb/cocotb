@@ -8,6 +8,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Deque, Generic, List, Tuple, TypeVar
 
 import cocotb
+import cocotb.task
 from cocotb._utils import pointer_str
 from cocotb.task import Task
 from cocotb.triggers import Event
