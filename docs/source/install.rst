@@ -33,8 +33,6 @@ The current stable version of cocotb requires:
 
 .. versionchanged:: 1.4 Dropped Python 2 support
 
-.. note:: In order to use a 32-bit simulator you need to use a 32-bit version of Python.
-
 .. note:: Type checking cocotb code requires Python 3.11+.
 
 The installation instructions vary depending on your operating system:

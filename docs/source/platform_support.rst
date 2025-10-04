@@ -74,9 +74,9 @@ Supported Windows Versions
 Supported macOS Versions
 ========================
 
-* **macOS 13 (Ventura) x86_64**
-* **macOS 14 (Sonoma) x86_64**
-* **macOS 15 (Sequoia) x86_64**
+* **macOS 13 (Ventura) ARM64**
+* **macOS 14 (Sonoma) ARM64**
+* **macOS 15 (Sequoia) ARM64**
 
 .. _platform-support-policy:
 
@@ -121,4 +121,3 @@ As such, we try to match the support matrix of major EDA tools to enable a seaml
 Additionally, cocotb should work on the latest version of Windows, Linux, and macOS to ensure users can update their operating system freely without being blocked by cocotb.
 
 cocotb only supports x86_64 architectures and requires a 64-bit operating system.
-(Note: 32-bit x86 applications can be run on 64-bit operating systems.)
