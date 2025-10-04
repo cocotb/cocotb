@@ -1,0 +1,18 @@
+LIBRARY "nvc.exe"
+EXPORTS
+vhpi_handle
+vhpi_register_cb
+vhpi_iterator
+vhpi_get_value
+vhpi_get_str
+vhpi_scan
+vhpi_put_value
+vhpi_remove_cb
+vhpi_check_error
+vhpi_release_handle
+vhpi_get
+vhpi_handle_by_name
+vhpi_handle_by_index
+vhpi_get_phys
+vhpi_get_time
+vhpi_control
