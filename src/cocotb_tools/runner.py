@@ -21,9 +21,11 @@ import tempfile
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import suppress
+from itertools import chain
 from pathlib import Path
 from typing import (
     Dict,
+    Generic,
     Iterable,
     List,
     Mapping,
@@ -32,6 +34,7 @@ from typing import (
     TextIO,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -41,10 +44,13 @@ import cocotb_tools.config
 from cocotb_tools.check_results import get_results
 from cocotb_tools.sim_versions import NvcVersion
 
-PathLike = Union["os.PathLike[str]", str]  # TODO use TypeAlias in Python 3.10
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
+
+PathLike: "TypeAlias" = Union["os.PathLike[str]", str]
 "A path that can be passed to :class:`pathlib.Path` or :func:`open`"
 
-_Command = List[str]
+_Command: "TypeAlias" = List[str]
 
 _magic_re = re.compile(r"([\\{}])")
 _space_re = re.compile(r"([\s])", re.ASCII)
@@ -106,16 +112,59 @@ def _shlex_join(split_command: Iterable[str]) -> str:
     return " ".join(shlex.quote(arg) for arg in split_command)
 
 
-class VHDL(str):
+_T = TypeVar("_T")
+
+
+class _Tag(Generic[_T]):
+    def __init__(self, value: _T) -> None:
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}({self.value!r})"
+
+
+class _ValueAndTag(Generic[_T]):
+    def __init__(self, value: _T, tag: Type[_Tag]) -> None:
+        self.value = value
+        self.tag = tag
+
+
+class _ValueAndOptionalTag(Generic[_T]):
+    def __init__(self, value: _T, tag: Union[Type[_Tag], None]) -> None:
+        self.value = value
+        self.tag = tag
+
+
+class VHDL(_Tag):
     """Tags source files and build arguments to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` as VHDL-specific."""
 
 
-class Verilog(str):
+class Verilog(_Tag):
     """Tags source files and build arguments to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` as Verilog-specific."""
 
 
-class VerilatorControlFile(str):
+class VerilatorControlFile(_Tag):
     """Tags source files to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` as Verilator control files."""
+
+
+_verilog_extensions = (".v", ".sv", ".vh", ".svh")
+_vhdl_extensions = (".vhd", ".vhdl")
+
+
+def _determine_file_type(
+    filename: PathLike,
+) -> Union[Type[Verilog], Type[VHDL], Type[VerilatorControlFile]]:
+    ext = Path(filename).suffix
+    if ext in _verilog_extensions:
+        return Verilog
+    elif ext in _vhdl_extensions:
+        return VHDL
+    elif ext == "vlt":
+        return VerilatorControlFile
+    else:
+        raise ValueError(
+            f"Can't determine source file type of {filename}. Use the `VHDL`, `Verilog`, or `VerilatorControlFile` tags."
+        )
 
 
 class Runner(ABC):
@@ -151,17 +200,21 @@ class Runner(ABC):
             ValueError: *hdl_toplevel_lang* is not supported by the simulator.
         """
         if hdl_toplevel_lang is None:
-            if self.vhdl_sources and not self.verilog_sources and not self.sources:
+            if self._vhdl_sources and not self._verilog_sources and not self._sources:
                 lang = "vhdl"
-            elif self.verilog_sources and not self.vhdl_sources and not self.sources:
+            elif self._verilog_sources and not self._vhdl_sources and not self._sources:
                 lang = "verilog"
-            elif self.sources and not self.vhdl_sources and not self.verilog_sources:
-                if is_vhdl_source(self.sources[-1]):
+            elif self._sources and not self._vhdl_sources and not self._verilog_sources:
+                top_source = self._sources[-1]
+                if top_source.tag is VHDL:
                     lang = "vhdl"
-                elif is_verilog_source(self.sources[-1]):
+                elif top_source.tag is Verilog:
                     lang = "verilog"
                 else:
-                    raise UnknownFileExtension(self.sources[-1])
+                    raise ValueError(
+                        "First argument to *sources* must be a VHDL or Verilog file. "
+                        f"Got a {top_source.tag.__qualname__} file: {top_source.value}"
+                    )
             else:
                 raise ValueError(
                     f"{type(self).__qualname__}: Must specify a hdl_toplevel_lang in a mixed-language design"
@@ -217,8 +270,8 @@ class Runner(ABC):
     def build(
         self,
         hdl_library: str = "top",
-        verilog_sources: Sequence[PathLike] = [],
-        vhdl_sources: Sequence[PathLike] = [],
+        verilog_sources: Sequence[Union[PathLike, Verilog]] = [],
+        vhdl_sources: Sequence[Union[PathLike, VHDL]] = [],
         sources: Sequence[Union[PathLike, VHDL, Verilog, VerilatorControlFile]] = [],
         includes: Sequence[PathLike] = [],
         defines: Mapping[str, object] = {},
@@ -306,19 +359,21 @@ class Runner(ABC):
                 DeprecationWarning,
                 stacklevel=2,
             )
-        self.verilog_sources: List[Path] = get_abs_paths(verilog_sources)
+        self._set_verilog_sources(verilog_sources)
         if vhdl_sources:
             warnings.warn(
                 "Simulator.build *vhdl_sources* parameter is deprecated. Use the language-agnostic *sources* parameter instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-        self.vhdl_sources: List[Path] = get_abs_paths(vhdl_sources)
-        self.sources: List[Path] = get_abs_paths(sources)
-        self.includes: List[Path] = get_abs_paths(includes)
+        self._set_vhdl_sources(vhdl_sources)
+        self._set_sources(sources)
+        self.includes: List[Path] = [
+            get_abs_path(include_dir) for include_dir in includes
+        ]
         self.defines = dict(defines)
         self.parameters = dict(parameters)
-        self.build_args = list(build_args)
+        self._set_build_args(build_args)
         self.always: bool = always
         self.hdl_toplevel: Optional[str] = hdl_toplevel
         self.verbose: bool = verbose
@@ -588,8 +643,103 @@ class Runner(ABC):
             self.log.info("Removing: %s", build_dir)
             shutil.rmtree(build_dir, ignore_errors=True)
 
+    @property
+    def verilog_sources(self) -> List[Path]:
+        return [source.value for source in self._verilog_sources]
 
-def outdated(output: Path, dependencies: Sequence[Path]) -> bool:
+    @verilog_sources.setter
+    def verilog_sources(self, value: List[Path]) -> None:
+        self._set_verilog_sources(value)
+
+    def _set_verilog_sources(
+        self, sources: Sequence[Union[PathLike, Verilog, VerilatorControlFile]]
+    ) -> None:
+        verilog_sources: List[_ValueAndTag] = []
+        for source in sources:
+            if isinstance(source, _Tag):
+                if isinstance(source, (Verilog, VerilatorControlFile)):
+                    abs_path = get_abs_path(source.value)
+                    verilog_sources.append(_ValueAndTag(abs_path, type(source)))
+                else:
+                    raise ValueError(f"Unsupported file type: {source}")
+            else:
+                tag = _determine_file_type(source)
+                abs_path = get_abs_path(source)
+                verilog_sources.append(_ValueAndTag(abs_path, tag))
+        self._verilog_sources = verilog_sources
+
+    @property
+    def vhdl_sources(self) -> List[Path]:
+        return [source.value for source in self._vhdl_sources]
+
+    @vhdl_sources.setter
+    def vhdl_sources(self, value: List[Path]) -> None:
+        self._set_vhdl_sources(value)
+
+    def _set_vhdl_sources(self, sources: Sequence[Union[PathLike, VHDL]]) -> None:
+        vhdl_sources: List[_ValueAndTag] = []
+        for source in sources:
+            if isinstance(source, _Tag):
+                if isinstance(source, VHDL):
+                    abs_path = get_abs_path(source.value)
+                    vhdl_sources.append(_ValueAndTag(abs_path, type(source)))
+                else:
+                    raise ValueError(f"Unsupported file type: {source}")
+            else:
+                tag = _determine_file_type(source)
+                abs_path = get_abs_path(source)
+                vhdl_sources.append(_ValueAndTag(abs_path, tag))
+        self._vhdl_sources = vhdl_sources
+
+    @property
+    def sources(self) -> List[Path]:
+        return [source.value for source in self._sources]
+
+    @sources.setter
+    def sources(self, value: List[Path]) -> None:
+        self._set_sources(value)
+
+    def _set_sources(
+        self, sources: Sequence[Union[PathLike, Verilog, VHDL, VerilatorControlFile]]
+    ) -> None:
+        sources_: List[_ValueAndTag] = []
+        for source in sources:
+            if isinstance(source, _Tag):
+                if isinstance(source, (Verilog, VHDL, VerilatorControlFile)):
+                    abs_path = get_abs_path(source.value)
+                    sources_.append(_ValueAndTag(abs_path, type(source)))
+                else:
+                    raise ValueError(f"Unsupported file type: {source}")
+            else:
+                tag = _determine_file_type(source)
+                abs_path = get_abs_path(source)
+                sources_.append(_ValueAndTag(abs_path, tag))
+        self._sources = sources_
+
+    @property
+    def build_args(self) -> List[str]:
+        return [arg.value for arg in self._build_args]
+
+    @build_args.setter
+    def build_args(self, value: List[str]) -> None:
+        self._set_build_args(value)
+
+    def _set_build_args(self, build_args: Sequence[Union[str, Verilog, VHDL]]) -> None:
+        build_args_: List[_ValueAndOptionalTag] = []
+        for build_arg in build_args:
+            if isinstance(build_arg, _Tag):
+                if isinstance(build_arg, (Verilog, VHDL)):
+                    build_args_.append(
+                        _ValueAndOptionalTag(build_arg.value, type(build_arg))
+                    )
+                else:
+                    raise ValueError(f"Unsupported tag type: {build_arg}")
+            else:
+                build_args_.append(_ValueAndOptionalTag(build_arg, None))
+        self._build_args = build_args_
+
+
+def outdated(output: Path, dependencies: Iterable[Path]) -> bool:
     """Return ``True`` if any source files in *dependencies* are newer than the *output* directory.
 
     Returns:
@@ -619,46 +769,6 @@ def get_abs_path(path: PathLike) -> Path:
         return Path(Path.cwd() / path).resolve()
 
 
-def get_abs_paths(paths: Sequence[PathLike]) -> List[Path]:
-    """Return list of *paths* in absolute form."""
-
-    return [get_abs_path(path) for path in paths]
-
-
-_verilog_extensions = (".v", ".sv", ".vh", ".svh")
-_vhdl_extensions = (".vhd", ".vhdl")
-
-_vhdl_extensions_s = ", ".join(f"`{c}`" for c in _vhdl_extensions)
-_verilog_extensions_s = ", ".join(f"`{c}`" for c in _verilog_extensions)
-
-
-class UnknownFileExtension(ValueError):
-    """Raised when a source file type cannot be determined from the file extension.
-
-    See :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` for details on supported standard file extensions and the use of :class:`VHDL` and :class:`Verilog` for specifying file type."""
-
-    def __init__(self, source: PathLike) -> None:
-        super().__init__(
-            f"Can't determine if {source} is a VHDL or Verilog file. "
-            f"Use a standard file extension ({_vhdl_extensions_s} for VHDL files and {_verilog_extensions_s} for Verilog files) "
-            "or tag the source with `VHDL(source)` or `Verilog(source)`."
-        )
-
-
-def is_vhdl_source(source: PathLike) -> bool:
-    if isinstance(source, VHDL):
-        return True
-    source_as_path = Path(source)
-    return source_as_path.suffix in _vhdl_extensions
-
-
-def is_verilog_source(source: PathLike) -> bool:
-    if isinstance(source, Verilog):
-        return True
-    source_as_path = Path(source)
-    return source_as_path.suffix in _verilog_extensions
-
-
 class Icarus(Runner):
     """Implementation of :class:`Runner` for Icarus Verilog.
 
@@ -683,7 +793,6 @@ class Icarus(Runner):
         return [f"-D{name}={_as_sv_literal(value)}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
-        assert self.hdl_toplevel is not None
         return [
             f"-P{self.hdl_toplevel}.{name}={value}"
             for name, value in parameters.items()
@@ -730,20 +839,24 @@ class Icarus(Runner):
         return self.build_dir / "cmds.f"
 
     def _build_command(self) -> List[_Command]:
-        assert self.hdl_toplevel is not None
+        if self.hdl_toplevel is None:
+            raise ValueError("hdl_toplevel argument is required for all Icarus builds")
 
-        for source in self.sources:
-            if not is_verilog_source(source):
+        sources = self._sources + self._verilog_sources
+
+        for source in sources:
+            if source.tag is not Verilog:
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports Verilog. {str(source)!r} cannot be compiled."
-                )
-        for arg in self.build_args:
-            if type(arg) not in (str, Verilog):
-                raise ValueError(
-                    f"{type(self).__qualname__} only supports Verilog. build_args {arg!r} cannot be applied."
+                    f"{type(self).__qualname__} only supports Verilog. {str(source.value)!r} cannot be compiled."
                 )
 
-        build_args = list(self.build_args)
+        for arg in self._build_args:
+            if arg.tag not in (Verilog, None):
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports Verilog. build_args {arg.value!r} cannot be applied."
+                )
+
+        build_args = [arg.value for arg in self._build_args]
         if self.waves:
             self._create_iverilog_dump_file()
             build_args += ["-s", "cocotb_iverilog_dump"]
@@ -753,10 +866,7 @@ class Icarus(Runner):
             build_args += ["-f", str(self.cmds_file)]
 
         cmds: list[_Command] = []
-        sources = [
-            source for source in self.sources if is_verilog_source(source)
-        ] + self.verilog_sources
-        if outdated(self.sim_file, sources) or self.always:
+        if outdated(self.sim_file, (source.value for source in sources)) or self.always:
             cmds = [
                 [
                     "iverilog",
@@ -770,7 +880,7 @@ class Icarus(Runner):
                 + self._get_include_options(self.includes)
                 + self._get_parameter_options(self.parameters)
                 + [arg for arg in build_args if type(arg) in (str, Verilog)]
-                + [str(source_file) for source_file in sources]
+                + [str(source_file.value) for source_file in sources]
                 + [
                     str(source_file)
                     for source_file in [self.iverilog_dump_file]
@@ -837,39 +947,50 @@ class Questa(Runner):
         cmds = []
 
         cmds.append(["vlib", _as_tcl_value(self.hdl_library)])
-        for source in self.sources:
-            if is_vhdl_source(source):
-                cmds.append(self._build_vhdl_command(source))
-            elif is_verilog_source(source):
-                cmds.append(self._build_verilog_command(source))
+
+        vhdl_args = [
+            _as_tcl_value(arg.value)
+            for arg in self._build_args
+            if arg.tag in (VHDL, None)
+        ]
+        verilog_args = [
+            _as_tcl_value(arg.value)
+            for arg in self._build_args
+            if arg.tag in (Verilog, None)
+        ]
+        hdl_library = _as_tcl_value(self.hdl_library)
+        defines = self._get_define_options(self.defines)
+        includes = self._get_include_options(self.includes)
+
+        for source in chain(self._sources, self._vhdl_sources, self._verilog_sources):
+            if source.tag is VHDL:
+                cmds.append(
+                    [
+                        "vcom",
+                        "-work",
+                        hdl_library,
+                        *vhdl_args,
+                        _as_tcl_value(str(source.value)),
+                    ]
+                )
+            elif source.tag is Verilog:
+                cmds.append(
+                    [
+                        "vlog",
+                        *([] if self.always else ["-incr"]),
+                        "-work",
+                        hdl_library,
+                        "-sv",
+                        *defines,
+                        *includes,
+                        *verilog_args,
+                        _as_tcl_value(str(source.value)),
+                    ]
+                )
             else:
-                raise UnknownFileExtension(source)
-        for source in self.vhdl_sources:
-            cmds.append(self._build_vhdl_command(source))
-        for source in self.verilog_sources:
-            cmds.append(self._build_verilog_command(source))
+                raise ValueError(f"Unsupported file type: {source.value}")
 
         return cmds
-
-    def _build_vhdl_command(self, source: PathLike) -> _Command:
-        return (
-            ["vcom"]
-            + ["-work", _as_tcl_value(self.hdl_library)]
-            + [_as_tcl_value(v) for v in self.build_args if type(v) in (str, VHDL)]
-            + [_as_tcl_value(str(source))]
-        )
-
-    def _build_verilog_command(self, source: PathLike) -> _Command:
-        return (
-            ["vlog"]
-            + ([] if self.always else ["-incr"])
-            + ["-work", _as_tcl_value(self.hdl_library)]
-            + ["-sv"]
-            + self._get_define_options(self.defines)
-            + self._get_include_options(self.includes)
-            + [_as_tcl_value(v) for v in self.build_args if type(v) in (str, Verilog)]
-            + [_as_tcl_value(str(source))]
-        )
 
     def _test_command(self) -> List[_Command]:
         cmds = []
@@ -985,23 +1106,25 @@ class Ghdl(Runner):
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
     def _build_command(self) -> List[_Command]:
-        for source in self.sources:
-            if not is_vhdl_source(source):
+        sources = self._sources + self._vhdl_sources
+
+        for source in sources:
+            if source.tag is not VHDL:
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports VHDL. {str(source)!r} cannot be compiled."
+                    f"{type(self).__qualname__} only supports VHDL. {str(source.value)!r} cannot be compiled."
                 )
-        for arg in self.build_args:
-            if type(arg) not in (str, VHDL):
+
+        for arg in self._build_args:
+            if arg.tag not in (VHDL, None):
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports VHDL. build_args {arg!r} will not be applied."
+                    f"{type(self).__qualname__} only supports VHDL. build_args {arg.value!r} will not be applied."
                 )
 
         cmds = [
             ["ghdl", "-i"]
             + [f"--work={self.hdl_library}"]
-            + [arg for arg in self.build_args if type(arg) in (str, VHDL)]
-            + [str(source) for source in self.sources if is_vhdl_source(source)]
-            + [str(source) for source in self.vhdl_sources]
+            + [arg.value for arg in self._build_args]
+            + [str(source.value) for source in sources]
         ]
 
         if self.hdl_toplevel is not None:
@@ -1010,7 +1133,7 @@ class Ghdl(Runner):
                     "ghdl",
                     "-m",
                     f"--work={self.hdl_library}",
-                    *self.build_args,
+                    *(arg.value for arg in self._build_args),
                     self.hdl_toplevel,
                 ]
             ]
@@ -1115,15 +1238,18 @@ class Nvc(Runner):
         return f"{self.hdl_toplevel}.fst"
 
     def _build_command(self) -> List[_Command]:
-        for source in self.sources:
-            if not is_vhdl_source(source):
+        sources = self._sources + self._vhdl_sources
+
+        for source in sources:
+            if source.tag is not VHDL:
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports VHDL. {str(source)!r} cannot be compiled."
+                    f"{type(self).__qualname__} only supports VHDL. {str(source.value)!r} cannot be compiled."
                 )
-        for arg in self.build_args:
-            if type(arg) not in (str, VHDL):
+
+        for arg in self._build_args:
+            if arg.tag not in (VHDL, None):
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports VHDL. build_args {arg!r} will not be applied."
+                    f"{type(self).__qualname__} only supports VHDL. build_args {arg.value!r} will not be applied."
                 )
 
         cmds = [
@@ -1133,10 +1259,9 @@ class Nvc(Runner):
                 "-L",
                 str(get_abs_path(self.build_dir)),
             ]
-            + [arg for arg in self.build_args if type(arg) in (str, VHDL)]
+            + [arg.value for arg in self._build_args]
             + ["-a"]
-            + [str(source) for source in self.sources if is_vhdl_source(source)]
-            + [str(source) for source in self.vhdl_sources]
+            + [str(source.value) for source in sources]
             + self._preserve_case
         ]
 
@@ -1151,7 +1276,7 @@ class Nvc(Runner):
                 "-L",
                 str(get_abs_path(self.build_dir)),
             ]
-            + self.build_args
+            + [arg.value for arg in self._build_args]
             + ["-e", self.sim_hdl_toplevel, "--no-save", "--jit"]
             + self.elab_args
             + self._get_parameter_options(self.parameters)
@@ -1213,20 +1338,37 @@ class Riviera(Runner):
 
         out_file = self.build_dir / self.hdl_library / f"{self.hdl_library}.lib"
 
-        if outdated(out_file, self.verilog_sources + self.vhdl_sources) or self.always:
-            do_script.append(f"alib {_as_tcl_value(self.hdl_library)}")
+        sources = self._sources + self._vhdl_sources + self._verilog_sources
 
-            for source in self.sources:
-                if is_verilog_source(source):
-                    do_script.append(self._build_verilog_source(source))
-                elif is_vhdl_source(source):
-                    do_script.append(self._build_vhdl_source(source))
+        if outdated(out_file, (source.value for source in sources)) or self.always:
+            vhdl_args = [
+                arg.value for arg in self._build_args if arg.tag in (VHDL, None)
+            ]
+            verilog_args = [
+                arg.value for arg in self._build_args if arg.tag in (Verilog, None)
+            ]
+            defines = " ".join(self._get_define_options(self.defines))
+            includes = " ".join(self._get_include_options(self.includes))
+            verilog_args_str = " ".join(_as_tcl_value(v) for v in verilog_args)
+            vhdl_args_str = " ".join(_as_tcl_value(v) for v in vhdl_args)
+            hdl_library = _as_tcl_value(self.hdl_library)
+            ext_name = _as_tcl_value(
+                cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
+            )
+
+            do_script.append(f"alib {hdl_library}")
+
+            for source in sources:
+                if source.tag is Verilog:
+                    do_script.append(
+                        f"alog -work {hdl_library} -pli {ext_name} -sv {defines} {includes} {verilog_args_str} {_as_tcl_value(str(source.value))}"
+                    )
+                elif source.tag is VHDL:
+                    do_script.append(
+                        f"acom -work {hdl_library} {vhdl_args_str} {_as_tcl_value(str(source.value))}"
+                    )
                 else:
-                    raise UnknownFileExtension(source)
-            for source in self.vhdl_sources:
-                do_script.append(self._build_vhdl_source(source))
-            for source in self.verilog_sources:
-                do_script.append(self._build_verilog_source(source))
+                    raise ValueError(f"Unsupported file type: {source.value}")
 
         # Explicitly exit the script at the end. In batch mode, which is invoked
         # implicitly by redirecting STDOUT/STDERR of the alog/acom commands,
@@ -1239,29 +1381,6 @@ class Riviera(Runner):
             do_file.write("\n".join(do_script).encode())
 
         return [["vsimsa", "-do", "do", do_file.name]]
-
-    def _build_vhdl_source(self, source: PathLike) -> str:
-        return "acom -work {RTL_LIBRARY} {EXTRA_ARGS} {VHDL_SOURCES}".format(
-            RTL_LIBRARY=_as_tcl_value(self.hdl_library),
-            VHDL_SOURCES=_as_tcl_value(str(source)),
-            EXTRA_ARGS=" ".join(
-                _as_tcl_value(v) for v in self.build_args if type(v) in (str, VHDL)
-            ),
-        )
-
-    def _build_verilog_source(self, source: PathLike) -> str:
-        return "alog -work {RTL_LIBRARY} -pli {EXT_NAME} -sv {DEFINES} {INCDIR} {EXTRA_ARGS} {VERILOG_SOURCES}".format(
-            RTL_LIBRARY=_as_tcl_value(self.hdl_library),
-            EXT_NAME=_as_tcl_value(
-                cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
-            ),
-            VERILOG_SOURCES=_as_tcl_value(str(source)),
-            DEFINES=" ".join(self._get_define_options(self.defines)),
-            INCDIR=" ".join(self._get_include_options(self.includes)),
-            EXTRA_ARGS=" ".join(
-                _as_tcl_value(v) for v in self.build_args if type(v) in (str, Verilog)
-            ),
-        )
 
     def _test_command(self) -> List[_Command]:
         if self.pre_cmd is not None:
@@ -1365,27 +1484,21 @@ class Verilator(Runner):
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-G{name}={value}" for name, value in parameters.items()]
 
-    def _is_vlt_source(self, source: PathLike) -> bool:
-        if isinstance(source, VerilatorControlFile):
-            return True
-        source_as_path = Path(source)
-        return source_as_path.suffix == ".vlt"
-
-    def _valid_verilator_source(self, source: PathLike) -> bool:
-        return is_verilog_source(source) or self._is_vlt_source(source)
-
     def _build_command(self) -> List[_Command]:
         self._simulator_in_path_build_only()
 
-        for source in self.sources:
-            if not self._valid_verilator_source(source):
+        sources = self._sources + self._verilog_sources
+
+        for source in sources:
+            if source.tag not in (Verilog, VerilatorControlFile):
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports Verilog and Verilator Control Files. {str(source)!r} cannot be compiled."
+                    f"{type(self).__qualname__} only supports Verilog and Verilator Control Files. {str(source.value)!r} cannot be compiled."
                 )
-        for arg in self.build_args:
-            if type(arg) not in (str, Verilog):
+
+        for arg in self._build_args:
+            if arg.tag not in (Verilog, None):
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports Verilog. build_args {arg!r} will not be applied."
+                    f"{type(self).__qualname__} only supports Verilog. build_args {arg.value!r} will not be applied."
                 )
 
         if self.hdl_toplevel is None:
@@ -1421,7 +1534,7 @@ class Verilator(Runner):
                 f"-Wl,-rpath,{cocotb_tools.config.libs_dir} -L{cocotb_tools.config.libs_dir} -lcocotbvpi_verilator",
             ]
             + (["--trace"] if self.waves else [])
-            + [arg for arg in self.build_args if type(arg) in (str, Verilog)]
+            + [arg.value for arg in self._build_args]
             + (
                 ["--timescale", "{}/{}".format(*self.timescale)]
                 if self.timescale is not None
@@ -1431,12 +1544,7 @@ class Verilator(Runner):
             + self._get_include_options(self.includes)
             + self._get_parameter_options(self.parameters)
             + [verilator_cpp]
-            + [
-                str(source)
-                for source in self.sources
-                if self._valid_verilator_source(source)
-            ]
-            + [str(source) for source in self.verilog_sources]
+            + [str(source.value) for source in sources]
         )
 
         cmds.append(
@@ -1518,7 +1626,8 @@ class Xcelium(Runner):
                 "waves is not supported in the build step. Please set it in the test step."
             )
 
-        assert self.hdl_toplevel, "A HDL toplevel is required in all Xcelium compiles."
+        if self.hdl_toplevel is None:
+            raise ValueError("A HDL toplevel is required in all Xcelium compiles.")
 
         verbosity_opts = []
         if self.verbose:
@@ -1535,8 +1644,14 @@ class Xcelium(Runner):
             verbosity_opts += ["-quiet"]
             verbosity_opts += ["-plinowarn"]
 
+        sources = self._sources + self._vhdl_sources + self._verilog_sources
+
+        for source in sources:
+            if source.tag not in (VHDL, Verilog):
+                raise ValueError(f"Unsupported file type: {source.value}")
+
         vhpi_opts = []
-        if self.vhdl_sources or any(is_vhdl_source(src) for src in self.sources):
+        if any(source.tag is VHDL for source in sources):
             # Xcelium 23.09.004 fixes cocotb issue #1076 as long as the
             # following define is set.
             vhpi_opts.append("-NEW_VHPI_PROPAGATE_DELAY")
@@ -1566,17 +1681,12 @@ class Xcelium(Runner):
                 if self.timescale is not None
                 else []
             )
-            + self.build_args
+            + [arg.value for arg in self._build_args]
             + self._get_include_options(self.includes)
             + self._get_define_options(self.defines)
             + self._get_parameter_options(self.parameters)
             + [f"-top {self.hdl_toplevel}"]
-            + [
-                str(source_file)
-                for source_file in (
-                    self.sources + self.vhdl_sources + self.verilog_sources
-                )
-            ]
+            + [str(source_file.value) for source_file in sources]
         ]
 
         return cmds
@@ -1624,8 +1734,10 @@ class Xcelium(Runner):
         else:
             input_tcl = ["-input", "@run; exit;"]
 
+        sources = self._sources + self._vhdl_sources + self._verilog_sources
+
         vhpi_opts = []
-        if self.vhdl_sources or any(is_vhdl_source(src) for src in self.sources):
+        if any(source.tag is VHDL for source in sources):
             # Xcelium 23.09.004 fixes cocotb issue #1076 as long as the
             # following define is set.
             vhpi_opts.append("-NEW_VHPI_PROPAGATE_DELAY")
@@ -1683,7 +1795,8 @@ class Vcs(Runner):
         ]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
-        assert self.hdl_toplevel is not None
+        if self.hdl_toplevel is None:
+            raise ValueError("A HDL toplevel is required in all VCS compiles.")
         return [
             f"-pvalue+{self.hdl_toplevel}.{name}={value}"
             for name, value in parameters.items()
@@ -1713,19 +1826,23 @@ class Vcs(Runner):
 
     def _build_command(self) -> List[_Command]:
         cmds: List[_Command] = []
-        sources = list(self.sources + self.vhdl_sources + self.verilog_sources)
+        sources = self._sources + self._vhdl_sources + self._verilog_sources
 
-        if outdated(self.sim_file, sources) or self.always:
+        for source in sources:
+            if source.tag not in (VHDL, Verilog):
+                raise ValueError(f"Unsupported file type: {source.value}")
+
+        if outdated(self.sim_file, (source.value for source in sources)) or self.always:
             cmds = [
                 ["vcs"]
                 + self._build_opts
                 + ["-load", cocotb_tools.config.lib_name_path("vpi", "vcs").as_posix()]
-                + self.build_args
+                + [arg.value for arg in self._build_args]
                 + self._get_include_options(self.includes)
                 + self._get_define_options(self.defines)
                 + self._get_parameter_options(self.parameters)
                 + ["-top", f"{self.hdl_toplevel}"]
-                + [str(source) for source in sources]
+                + [str(source.value) for source in sources]
                 + ["-o", str(self.sim_file)]
             ]
         else:
@@ -1813,24 +1930,22 @@ class Dsim(Runner):
         ]
 
     def _build_command(self) -> List[_Command]:
-        for source in self.sources:
-            if not is_verilog_source(source):
+        sources = self._sources + self._verilog_sources
+
+        for source in sources:
+            if source.tag is not Verilog:
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports Verilog. {str(source)!r} cannot be compiled."
+                    f"{type(self).__qualname__} only supports Verilog. {str(source.value)!r} cannot be compiled."
                 )
-        for arg in self.build_args:
-            if type(arg) not in (str, Verilog):
+
+        for arg in self._build_args:
+            if arg.tag not in (Verilog, None):
                 raise ValueError(
                     f"{type(self).__qualname__} only supports Verilog. build_args {arg!r} cannot be applied."
                 )
 
-        build_args = list(self.build_args)
-
         cmds: list[_Command] = []
-        sources = [
-            source for source in self.sources if is_verilog_source(source)
-        ] + self.verilog_sources
-        if outdated(self.sim_file, sources) or self.always:
+        if outdated(self.sim_file, (source.value for source in sources)) or self.always:
             cmds = [
                 [
                     "dsim",
@@ -1845,8 +1960,8 @@ class Dsim(Runner):
                 + self._get_define_options(self.defines)
                 + self._get_include_options(self.includes)
                 + self._get_parameter_options(self.parameters)
-                + [arg for arg in build_args if type(arg) in (str, Verilog)]
-                + [str(source_file) for source_file in sources]
+                + [arg.value for arg in self._build_args]
+                + [str(source_file.value) for source_file in sources]
             ]
 
         else:
