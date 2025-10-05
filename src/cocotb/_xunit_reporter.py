@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import re
+import sys
 import xml.etree.ElementTree as ET
 from typing import Union
 from xml.etree.ElementTree import Element, SubElement
@@ -37,6 +38,26 @@ def bin_xml_escape(arg: object) -> str:
         "[^\u0009\u000a\u000d\u0020-\u007e\u0080-\ud7ff\ue000-\ufffd\u10000-\u10ffff]"
     )
     return re.sub(illegal_xml_re, repl, str(arg))
+
+
+if sys.version_info < (3, 9):
+
+    def indent(elem: Element, level: int = 0) -> None:
+        i = "\n" + level * "  "
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = i + "  "
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+            for sub_elem in elem:
+                indent(sub_elem, level + 1)
+            if not sub_elem.tail or not sub_elem.tail.strip():
+                sub_elem.tail = i
+        elif level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+else:
+    from xml.etree.ElementTree import indent
 
 
 class XUnitReporter:
@@ -77,20 +98,6 @@ class XUnitReporter:
             testcase = self.last_testcase
         SubElement(testcase, "skipped", kwargs)
 
-    def indent(self, elem: Element, level: int = 0) -> None:
-        i = "\n" + level * "  "
-        if len(elem):
-            if not elem.text or not elem.text.strip():
-                elem.text = i + "  "
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-            for sub_elem in elem:
-                self.indent(sub_elem, level + 1)
-            if not sub_elem.tail or not sub_elem.tail.strip():
-                sub_elem.tail = i
-        elif level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
-
     def write(self) -> None:
-        self.indent(self.results)
+        indent(self.results)
         ET.ElementTree(self.results).write(self.filename, encoding="UTF-8")
