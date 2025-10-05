@@ -1,0 +1,1 @@
+Added filter to ``results.xml`` output to ensure only valid XML characters are emitted.
