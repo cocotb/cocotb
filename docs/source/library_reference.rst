@@ -37,6 +37,8 @@ Python Test Runner
 
 .. autoclass:: Verilog
 
+.. autoclass:: VerilatorControlFile
+
 .. autodata:: MAX_PARALLEL_BUILD_JOBS
 
 .. envvar:: GUI
