@@ -497,8 +497,9 @@ def release_test_sim(
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
 
-    session.log(f"Running tests against a simulator: {config_str}")
-    session.run("make", "-k", "test", external=True, env=env)
+    if "COCOTB_CI_SKIP_MAKE" not in os.environ:
+        session.log(f"Running tests against a simulator: {config_str}")
+        session.run("make", "-k", "test", external=True, env=env)
 
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
