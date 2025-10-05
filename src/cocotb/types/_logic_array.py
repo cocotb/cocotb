@@ -34,7 +34,8 @@ class LogicArray(AbstractMutableArray[Logic]):
     r"""Fixed-sized, arbitrarily-indexed, :class:`.Array` of :class:`.Logic`\ s.
 
     An :class:`!Array`, where all elements are enforced to be :class:`!Logic`.
-    This allows the additional of bit-wise logical operators, conversions to integers and bytes, and ``X`` testing and mapping.
+    Additionally, this type supports bit-wise logical operators, conversions to integers and bytes,
+    and ``X`` testing and mapping.
 
     :class:`!LogicArray`\ s can be constructed from an iterable of :class:`!Logic`\ s,
     or values constructible into :class:`!Logic`, like :class:`bool`, :class:`str`, or :class:`int`.
@@ -233,9 +234,7 @@ class LogicArray(AbstractMutableArray[Logic]):
             self._value_as_str = value.upper()
             if range is not None:
                 if len(value) != len(range):
-                    raise ValueError(
-                        f"Value of length {len(self._value_as_str)} will not fit in {range!r}"
-                    )
+                    raise ValueError(f"Length of {value!r} does not match {range!r}")
                 self._range = range
             else:
                 self._range = Range(len(self._value_as_str) - 1, "downto", 0)
@@ -248,7 +247,7 @@ class LogicArray(AbstractMutableArray[Logic]):
             bitlen = max(1, int.bit_length(value))
             if bitlen > len(range):
                 raise ValueError(
-                    f"{value!r} will not fit in a LogicArray with bounds: {range!r}"
+                    f"{value!r} is too large to fit in LogicArray with {range!r}"
                 )
             self._value_as_int = value
             self._range = range
