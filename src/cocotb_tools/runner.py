@@ -294,7 +294,8 @@ class Runner(ABC):
         followed by *vhdl_sources* and *verilog_sources*, respectively.
 
         If your source files use an atypical file extension,
-        use :class:`VHDL` and :class:`Verilog` to tag the path as a VHDL or Verilog source file, respectively.
+        use :class:`VHDL`, :class:`Verilog`, or :class:`VerilatorControlFile`
+        to tag the path as a VHDL, Verilog, or Verilator control file source file, respectively.
         If the filepaths aren't tagged, the extension is used to determine if they are VHDL or Verilog files.
 
         +----------+------------------------------------+
