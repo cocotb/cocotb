@@ -42,7 +42,7 @@ from cocotb._utils import (
     remove_traceback_frames,
     safe_divide,
 )
-from cocotb._xunit_reporter import XUnitReporter
+from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
 from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
 from cocotb.task import Task
@@ -750,7 +750,9 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
-        self.xunit.add_failure(error_type=type(result).__name__, error_msg=str(result))
+        self.xunit.add_failure(
+            error_type=type(result).__name__, error_msg=bin_xml_escape(result)
+        )
 
         # update running passed/failed/skipped counts
         self.failures += 1
