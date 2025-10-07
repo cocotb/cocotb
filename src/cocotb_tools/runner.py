@@ -1350,8 +1350,8 @@ class AldecBase(Runner):
             ]
             defines = " ".join(self._get_define_options(self.defines))
             includes = " ".join(self._get_include_options(self.includes))
-            verilog_args_str = " ".join(_as_tcl_value(v) for v in verilog_args)
-            vhdl_args_str = " ".join(_as_tcl_value(v) for v in vhdl_args)
+            verilog_args_str = " ".join(v for v in verilog_args)
+            vhdl_args_str = " ".join(v for v in vhdl_args)
             hdl_library = _as_tcl_value(self.hdl_library)
             ext_name = _as_tcl_value(
                 cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
