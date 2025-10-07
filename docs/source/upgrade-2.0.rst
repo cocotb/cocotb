@@ -1108,6 +1108,120 @@ Many new users were confused on when to use one vs the other,
 so :func:`!cocotb.start` will be removed to prevent any confusion.
 
 
+**********************************************************
+Operate on full values of packed structs and packed arrays
+**********************************************************
+
+Change
+======
+
+Accessing fields of packed structs and elements of packed arrays was removed.
+Packed objects now act as a single composite logic vector.
+
+How to Upgrade
+==============
+
+Instead of accessing fields of packed structs or elements of packed arrays,
+get the full value of the object and index into the resulting :class:`!LogicArray`.
+
+.. code-block:: verilog
+    :caption: Verilog definitions of packed objects
+
+    struct packed {
+        logic [3:0] a;
+        logic [7:0] b;
+    } my_struct;
+
+    logic my_array [0:3];
+
+When trying to get the value of a packed struct field or packed array element:
+1. Read the whole packed object value.
+2. Slice it to get the field you are interested in.
+
+.. code-block:: python
+    :caption: Old way accessing packed object fields
+    :class: removed
+
+    _ = dut.my_struct.a.value
+    _ = dut.my_array[2].value
+
+.. code-block:: python
+    :caption: New way accessing packed object fields
+    :class: new
+
+    def get_packed_field(handle, start, stop=None):
+        full_value = handle.value
+        if stop is None:
+            return full_value[start]
+        else:
+            return full_value[start:stop]
+
+    get_packed_field(dut.my_struct, 11, 8)
+    get_packed_field(dut.my_array, 2)
+
+When setting the value of a packed object:
+1. Read the whole packed value.
+2. Set the bits corresponding to the field you want to change.
+3. Write the whole modified packed value back.
+
+.. code-block:: python
+    :caption: Old way setting packed object fields
+    :class: removed
+
+    dut.my_struct.a.value = 0b1010
+    dut.my_array[2].value = 1
+
+.. code-block:: python
+    :caption: New way setting packed object fields
+
+    def set_packed_field(handle, start, stop=None, *, value):
+        full_value = handle.value
+        if stop is None:
+            full_value[start] = value
+        else:
+            full_value[start:stop] = value
+        handle.value = full_value
+
+    set_packed_field(dut.my_struct, 11, 8, value=0b1010)
+    set_packed_field(dut.my_array, 2, value=1)
+
+When waiting for a value change on a packed object:
+1. Get the current value of the field you care about.
+2. Wait for a value change on the whole packed object.
+3. Read the whole packed object and slice it to get the field you are interested in.
+4. Compare it against the saved value from step 1 to see if the field changed.
+
+.. code-block:: python
+    :caption: Old way waiting for packed object field to change
+    :class: removed
+
+    await ValueChange(dut.my_struct.a)
+    await ValueChange(dut.my_array[2])
+
+.. code-block:: python
+    :caption: New way waiting for packed object field to change
+    :class: new
+
+    async def value_change_packed_field(handle, start, stop=None):
+        value_changed = False
+        while value_changed:
+            old_value = get_packed_field(handle, start, stop)
+            await ValueChange(handle)
+            new_value = get_packed_field(handle, start, stop)
+            value_changed = new_value != old_value
+
+    await value_change_packed_field(dut.my_struct, 11, 8)
+    await value_change_packed_field(dut.my_array, 2)
+
+Rationale
+=========
+
+Accessing packed struct fields or packed array elements was not well supported across all simulators.
+Even in simulators that appeared to support it, there were many edge cases that didn't work as expected.
+And the implementation leveraged VPI calls which violated the VPI spec.
+To prevent users from running into these issues, this feature was removed.
+
+
 *********************************************************************************
 Replace ``handle.setimmediatevalue(value)`` with ``handle.set(Immediate(value))``
 *********************************************************************************
