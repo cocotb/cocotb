@@ -1381,7 +1381,7 @@ class AldecBase(Runner):
         with tempfile.NamedTemporaryFile(delete=False) as do_file:
             do_file.write("\n".join(do_script).encode())
 
-        return [["vsimsa", "-do", "do", do_file.name]]
+        return [["vsimsa", "-do", do_file.name]]
 
     def _test_command(self) -> List[_Command]:
         if self.pre_cmd is not None:
@@ -1441,7 +1441,7 @@ class AldecBase(Runner):
         with tempfile.NamedTemporaryFile(delete=False) as do_file:
             do_file.write(do_script.encode())
 
-        return [["vsimsa", "-do", "do", do_file.name]]
+        return [["vsimsa", "-do", do_file.name]]
 
 
 class Verilator(Runner):
