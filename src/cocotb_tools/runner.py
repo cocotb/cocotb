@@ -1291,8 +1291,8 @@ class Nvc(Runner):
         return cmds
 
 
-class Riviera(Runner):
-    """Implementation of :class:`Runner` for Aldec Riviera-PRO.
+class AldecBase(Runner):
+    """Implementation of :class:`Runner` for Aldec VsimSA.
 
     .. admonition:: Simulator-specific Usage
 
@@ -1985,7 +1985,8 @@ def get_runner(simulator_name: str) -> Runner:
         "icarus": Icarus,
         "questa": Questa,
         "ghdl": Ghdl,
-        "riviera": Riviera,
+        "riviera": AldecBase,
+        "activehdl": AldecBase,
         "verilator": Verilator,
         "xcelium": Xcelium,
         "nvc": Nvc,
