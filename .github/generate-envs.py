@@ -279,7 +279,7 @@ ENVS = [
         "group": "extended",
     },
     # Test other OSes
-    # Icarus homebrew
+    # Icarus homebrew (ARM64)
     {
         "lang": "verilog",
         "sim": "icarus",
@@ -288,7 +288,7 @@ ENVS = [
         "python-version": "3.9",
         "group": "ci-free",
     },
-    # Icarus homebrew (HEAD/master)
+    # Icarus homebrew (ARM64) (HEAD/master)
     {
         "lang": "verilog",
         "sim": "icarus",
@@ -297,7 +297,7 @@ ENVS = [
         "python-version": "3.9",
         "group": "experimental",
     },
-    # Verilator macOS HEAD
+    # Verilator macOS (ARM64) HEAD
     {
         "lang": "verilog",
         "sim": "verilator",
@@ -306,12 +306,21 @@ ENVS = [
         "python-version": "3.9",
         "group": "experimental",
     },
-    # Verilator macOS latest release
+    # Verilator macOS (ARM64) latest release
     {
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "v5.038",  # not latest, but v5.040 is broken on MacOS
         "os": "macos-14",
+        "python-version": "3.9",
+        "group": "ci-free",
+    },
+    # Icarus homebrew (x86)
+    {
+        "lang": "verilog",
+        "sim": "icarus",
+        "sim-version": "homebrew-stable",
+        "os": "macos-15-intel",
         "python-version": "3.9",
         "group": "ci-free",
     },
