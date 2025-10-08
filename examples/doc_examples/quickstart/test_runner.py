@@ -4,6 +4,7 @@
 """This module contains the cocotb Python test runner used to test ``simple_counter``."""
 
 # test_runner.py
+from __future__ import annotations
 
 import os
 from pathlib import Path

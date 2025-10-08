@@ -8,6 +8,7 @@
 # TODO: create a short README and a .gitignore (content: "*") in both build_dir and test_dir? (Some other tools do this.)
 # TODO: support timescale on all simulators
 # TODO: support custom dependencies
+from __future__ import annotations
 
 import logging
 import multiprocessing
@@ -20,20 +21,13 @@ import sys
 import tempfile
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Mapping, Sequence
 from contextlib import suppress
 from itertools import chain
 from pathlib import Path
 from typing import (
-    Dict,
     Generic,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
     TextIO,
-    Tuple,
-    Type,
     TypeVar,
     Union,
 )
@@ -47,10 +41,10 @@ from cocotb_tools.sim_versions import NvcVersion
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
 
-PathLike: "TypeAlias" = Union["os.PathLike[str]", str]
+PathLike: TypeAlias = Union["os.PathLike[str]", str]
 "A path that can be passed to :class:`pathlib.Path` or :func:`open`"
 
-_Command: "TypeAlias" = List[str]
+_Command: TypeAlias = list[str]
 
 _magic_re = re.compile(r"([\\{}])")
 _space_re = re.compile(r"([\s])", re.ASCII)
@@ -124,13 +118,13 @@ class _Tag(Generic[_T]):
 
 
 class _ValueAndTag(Generic[_T]):
-    def __init__(self, value: _T, tag: Type[_Tag]) -> None:
+    def __init__(self, value: _T, tag: type[_Tag]) -> None:
         self.value = value
         self.tag = tag
 
 
 class _ValueAndOptionalTag(Generic[_T]):
-    def __init__(self, value: _T, tag: Union[Type[_Tag], None]) -> None:
+    def __init__(self, value: _T, tag: type[_Tag] | None) -> None:
         self.value = value
         self.tag = tag
 
@@ -153,7 +147,7 @@ _vhdl_extensions = (".vhd", ".vhdl")
 
 def _determine_file_type(
     filename: PathLike,
-) -> Union[Type[Verilog], Type[VHDL], Type[VerilatorControlFile]]:
+) -> type[Verilog] | type[VHDL] | type[VerilatorControlFile]:
     ext = Path(filename).suffix
     if ext in _verilog_extensions:
         return Verilog
@@ -168,12 +162,12 @@ def _determine_file_type(
 
 
 class Runner(ABC):
-    supported_gpi_interfaces: Dict[str, List[str]] = {}
+    supported_gpi_interfaces: dict[str, list[str]] = {}
 
     def __init__(self) -> None:
         self._simulator_in_path()
 
-        self.env: Dict[str, str] = {}
+        self.env: dict[str, str] = {}
 
         # for running test() independently of build()
         self.build_dir: Path = get_abs_path("sim_build")
@@ -190,7 +184,7 @@ class Runner(ABC):
             SystemExit: Simulator executable does not exist in :envvar:`PATH`.
         """
 
-    def _check_hdl_toplevel_lang(self, hdl_toplevel_lang: Optional[str]) -> str:
+    def _check_hdl_toplevel_lang(self, hdl_toplevel_lang: str | None) -> str:
         """Return *hdl_toplevel_lang* if supported by simulator, raise exception otherwise.
 
         Returns:
@@ -263,28 +257,28 @@ class Runner(ABC):
         """Return if an external viewer should be called after simulation when ``gui=True``."""
         return False
 
-    def _waves_file(self) -> Optional[str]:
+    def _waves_file(self) -> str | None:
         """Return file name of the generated waveform file for use with external viewer."""
         return None
 
     def build(
         self,
         hdl_library: str = "top",
-        verilog_sources: Sequence[Union[PathLike, Verilog]] = [],
-        vhdl_sources: Sequence[Union[PathLike, VHDL]] = [],
-        sources: Sequence[Union[PathLike, VHDL, Verilog, VerilatorControlFile]] = [],
+        verilog_sources: Sequence[PathLike | Verilog] = [],
+        vhdl_sources: Sequence[PathLike | VHDL] = [],
+        sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] = [],
         includes: Sequence[PathLike] = [],
         defines: Mapping[str, object] = {},
         parameters: Mapping[str, object] = {},
-        build_args: Sequence[Union[str, VHDL, Verilog]] = [],
-        hdl_toplevel: Optional[str] = None,
+        build_args: Sequence[str | VHDL | Verilog] = [],
+        hdl_toplevel: str | None = None,
         always: bool = False,
         build_dir: PathLike = "sim_build",
         clean: bool = False,
         verbose: bool = False,
-        timescale: Optional[Tuple[str, str]] = None,
+        timescale: tuple[str, str] | None = None,
         waves: bool = False,
-        log_file: Optional[PathLike] = None,
+        log_file: PathLike | None = None,
     ) -> None:
         """Build the HDL sources.
 
@@ -369,17 +363,17 @@ class Runner(ABC):
             )
         self._set_vhdl_sources(vhdl_sources)
         self._set_sources(sources)
-        self.includes: List[Path] = [
+        self.includes: list[Path] = [
             get_abs_path(include_dir) for include_dir in includes
         ]
         self.defines = dict(defines)
         self.parameters = dict(parameters)
         self._set_build_args(build_args)
         self.always: bool = always
-        self.hdl_toplevel: Optional[str] = hdl_toplevel
+        self.hdl_toplevel: str | None = hdl_toplevel
         self.verbose: bool = verbose
-        self.timescale: Optional[Tuple[str, str]] = timescale
-        self.log_file: Optional[PathLike] = log_file
+        self.timescale: tuple[str, str] | None = timescale
+        self.log_file: PathLike | None = log_file
 
         self.waves = bool(os.getenv("WAVES", waves))
 
@@ -390,28 +384,28 @@ class Runner(ABC):
 
     def test(
         self,
-        test_module: Union[str, Sequence[str]],
+        test_module: str | Sequence[str],
         hdl_toplevel: str,
         hdl_toplevel_library: str = "top",
-        hdl_toplevel_lang: Optional[str] = None,
-        gpi_interfaces: Optional[List[str]] = None,
-        testcase: Optional[Union[str, Sequence[str]]] = None,
-        seed: Optional[Union[str, int]] = None,
+        hdl_toplevel_lang: str | None = None,
+        gpi_interfaces: list[str] | None = None,
+        testcase: str | Sequence[str] | None = None,
+        seed: str | int | None = None,
         elab_args: Sequence[str] = [],
         test_args: Sequence[str] = [],
         plusargs: Sequence[str] = [],
         extra_env: Mapping[str, str] = {},
         waves: bool = False,
         gui: bool = False,
-        parameters: Optional[Mapping[str, object]] = None,
-        build_dir: Optional[PathLike] = None,
-        test_dir: Optional[PathLike] = None,
-        results_xml: Optional[str] = None,
-        pre_cmd: Optional[List[str]] = None,
+        parameters: Mapping[str, object] | None = None,
+        build_dir: PathLike | None = None,
+        test_dir: PathLike | None = None,
+        results_xml: str | None = None,
+        pre_cmd: list[str] | None = None,
         verbose: bool = False,
-        timescale: Optional[Tuple[str, str]] = None,
-        log_file: Optional[PathLike] = None,
-        test_filter: Optional[str] = None,
+        timescale: tuple[str, str] | None = None,
+        log_file: PathLike | None = None,
+        test_filter: str | None = None,
     ) -> Path:
         """Run the tests.
 
@@ -520,7 +514,7 @@ class Runner(ABC):
         else:
             self.current_test_name = "test"
 
-        results_xml_path: Union[None, Path] = (
+        results_xml_path: None | Path = (
             Path(results_xml) if results_xml is not None else None
         )
 
@@ -624,7 +618,7 @@ class Runner(ABC):
                 self._execute_cmds(cmds, cwd, f)
 
     def _execute_cmds(
-        self, cmds: Sequence[_Command], cwd: PathLike, stdout: Optional[TextIO] = None
+        self, cmds: Sequence[_Command], cwd: PathLike, stdout: TextIO | None = None
     ) -> None:
         __tracebackhide__ = True  # Hide the traceback when using PyTest.
 
@@ -645,17 +639,17 @@ class Runner(ABC):
             shutil.rmtree(build_dir, ignore_errors=True)
 
     @property
-    def verilog_sources(self) -> List[Path]:
+    def verilog_sources(self) -> list[Path]:
         return [source.value for source in self._verilog_sources]
 
     @verilog_sources.setter
-    def verilog_sources(self, value: List[Path]) -> None:
+    def verilog_sources(self, value: list[Path]) -> None:
         self._set_verilog_sources(value)
 
     def _set_verilog_sources(
-        self, sources: Sequence[Union[PathLike, Verilog, VerilatorControlFile]]
+        self, sources: Sequence[PathLike | Verilog | VerilatorControlFile]
     ) -> None:
-        verilog_sources: List[_ValueAndTag] = []
+        verilog_sources: list[_ValueAndTag] = []
         for source in sources:
             if isinstance(source, _Tag):
                 if isinstance(source, (Verilog, VerilatorControlFile)):
@@ -670,15 +664,15 @@ class Runner(ABC):
         self._verilog_sources = verilog_sources
 
     @property
-    def vhdl_sources(self) -> List[Path]:
+    def vhdl_sources(self) -> list[Path]:
         return [source.value for source in self._vhdl_sources]
 
     @vhdl_sources.setter
-    def vhdl_sources(self, value: List[Path]) -> None:
+    def vhdl_sources(self, value: list[Path]) -> None:
         self._set_vhdl_sources(value)
 
-    def _set_vhdl_sources(self, sources: Sequence[Union[PathLike, VHDL]]) -> None:
-        vhdl_sources: List[_ValueAndTag] = []
+    def _set_vhdl_sources(self, sources: Sequence[PathLike | VHDL]) -> None:
+        vhdl_sources: list[_ValueAndTag] = []
         for source in sources:
             if isinstance(source, _Tag):
                 if isinstance(source, VHDL):
@@ -693,17 +687,17 @@ class Runner(ABC):
         self._vhdl_sources = vhdl_sources
 
     @property
-    def sources(self) -> List[Path]:
+    def sources(self) -> list[Path]:
         return [source.value for source in self._sources]
 
     @sources.setter
-    def sources(self, value: List[Path]) -> None:
+    def sources(self, value: list[Path]) -> None:
         self._set_sources(value)
 
     def _set_sources(
-        self, sources: Sequence[Union[PathLike, Verilog, VHDL, VerilatorControlFile]]
+        self, sources: Sequence[PathLike | Verilog | VHDL | VerilatorControlFile]
     ) -> None:
-        sources_: List[_ValueAndTag] = []
+        sources_: list[_ValueAndTag] = []
         for source in sources:
             if isinstance(source, _Tag):
                 if isinstance(source, (Verilog, VHDL, VerilatorControlFile)):
@@ -718,15 +712,15 @@ class Runner(ABC):
         self._sources = sources_
 
     @property
-    def build_args(self) -> List[str]:
+    def build_args(self) -> list[str]:
         return [arg.value for arg in self._build_args]
 
     @build_args.setter
-    def build_args(self, value: List[str]) -> None:
+    def build_args(self, value: list[str]) -> None:
         self._set_build_args(value)
 
-    def _set_build_args(self, build_args: Sequence[Union[str, Verilog, VHDL]]) -> None:
-        build_args_: List[_ValueAndOptionalTag] = []
+    def _set_build_args(self, build_args: Sequence[str | Verilog | VHDL]) -> None:
+        build_args_: list[_ValueAndOptionalTag] = []
         for build_arg in build_args:
             if isinstance(build_arg, _Tag):
                 if isinstance(build_arg, (Verilog, VHDL)):
@@ -802,7 +796,7 @@ class Icarus(Runner):
     def _use_external_viewer(self) -> bool:
         return True
 
-    def _waves_file(self) -> Optional[str]:
+    def _waves_file(self) -> str | None:
         return f"{self.hdl_toplevel}.fst"
 
     def _create_cmd_file(self) -> None:
@@ -839,7 +833,7 @@ class Icarus(Runner):
     def cmds_file(self) -> Path:
         return self.build_dir / "cmds.f"
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         if self.hdl_toplevel is None:
             raise ValueError("hdl_toplevel argument is required for all Icarus builds")
 
@@ -894,7 +888,7 @@ class Icarus(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Icarus Verilog.")
 
@@ -944,7 +938,7 @@ class Questa(Runner):
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         cmds = []
 
         cmds.append(["vlib", _as_tcl_value(self.hdl_library)])
@@ -993,7 +987,7 @@ class Questa(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         cmds = []
 
         if self.pre_cmd is not None:
@@ -1085,7 +1079,7 @@ class Ghdl(Runner):
         result = subprocess.run(
             ["ghdl", "--version"],
             check=True,
-            universal_newlines=True,
+            text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
@@ -1094,7 +1088,7 @@ class Ghdl(Runner):
     def _use_external_viewer(self) -> bool:
         return True
 
-    def _waves_file(self) -> Optional[str]:
+    def _waves_file(self) -> str | None:
         return f"{self.hdl_toplevel}.ghw"
 
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
@@ -1106,7 +1100,7 @@ class Ghdl(Runner):
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         sources = self._sources + self._vhdl_sources
 
         for source in sources:
@@ -1141,7 +1135,7 @@ class Ghdl(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for GHDL.")
 
@@ -1205,7 +1199,7 @@ class Nvc(Runner):
         version_str = subprocess.run(
             ["nvc", "--version"],
             check=True,
-            universal_newlines=True,
+            text=True,
             stdout=subprocess.PIPE,
         ).stdout
         version = NvcVersion.from_commandline(version_str)
@@ -1235,10 +1229,10 @@ class Nvc(Runner):
     def _use_external_viewer(self) -> bool:
         return True
 
-    def _waves_file(self) -> Optional[str]:
+    def _waves_file(self) -> str | None:
         return f"{self.hdl_toplevel}.fst"
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         sources = self._sources + self._vhdl_sources
 
         for source in sources:
@@ -1268,7 +1262,7 @@ class Nvc(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         work_library = str(get_abs_path(self.build_dir / self.hdl_toplevel_library))
         cmds = [
             [
@@ -1334,8 +1328,8 @@ class Riviera(Runner):
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
-        do_script: List[str] = ["onerror {\n quit -code 1 \n}"]
+    def _build_command(self) -> list[_Command]:
+        do_script: list[str] = ["onerror {\n quit -code 1 \n}"]
 
         out_file = self.build_dir / self.hdl_library / f"{self.hdl_library}.lib"
 
@@ -1383,7 +1377,7 @@ class Riviera(Runner):
 
         return [["vsimsa", "-do", "do", do_file.name]]
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Riviera.")
 
@@ -1467,7 +1461,7 @@ class Verilator(Runner):
     def _use_external_viewer(self) -> bool:
         return True
 
-    def _waves_file(self) -> Optional[str]:
+    def _waves_file(self) -> str | None:
         return "dump.vcd"
 
     def _simulator_in_path_build_only(self) -> None:
@@ -1485,7 +1479,7 @@ class Verilator(Runner):
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-G{name}={value}" for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         self._simulator_in_path_build_only()
 
         sources = self._sources + self._verilog_sources
@@ -1563,7 +1557,7 @@ class Verilator(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Verilator.")
 
@@ -1619,7 +1613,7 @@ class Xcelium(Runner):
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f'-gpg "{name} => {value}"' for name, value in parameters.items()]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         self.env["CDS_AUTO_64BIT"] = "all"
 
         if self.waves:
@@ -1692,7 +1686,7 @@ class Xcelium(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Xcelium.")
 
@@ -1808,7 +1802,7 @@ class Vcs(Runner):
         return self.build_dir / "simv"
 
     @property
-    def _build_opts(self) -> List[str]:
+    def _build_opts(self) -> list[str]:
         opts = [
             "-full64",
             "-debug_access+all",
@@ -1825,8 +1819,8 @@ class Vcs(Runner):
 
         return opts
 
-    def _build_command(self) -> List[_Command]:
-        cmds: List[_Command] = []
+    def _build_command(self) -> list[_Command]:
+        cmds: list[_Command] = []
         sources = self._sources + self._vhdl_sources + self._verilog_sources
 
         for source in sources:
@@ -1851,7 +1845,7 @@ class Vcs(Runner):
 
         return cmds
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Vcs.")
 
@@ -1901,10 +1895,10 @@ class Dsim(Runner):
     def _use_external_viewer(self) -> bool:
         return True
 
-    def _waves_file(self) -> Optional[str]:
+    def _waves_file(self) -> str | None:
         return "file.vcd"
 
-    def _test_command(self) -> List[_Command]:
+    def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for DSim.")
 
@@ -1930,7 +1924,7 @@ class Dsim(Runner):
             ]
         ]
 
-    def _build_command(self) -> List[_Command]:
+    def _build_command(self) -> list[_Command]:
         sources = self._sources + self._verilog_sources
 
         for source in sources:
@@ -1981,7 +1975,7 @@ def get_runner(simulator_name: str) -> Runner:
         ValueError: If *simulator_name* is not one of the supported simulators or an alias of one.
     """
 
-    supported_sims: Dict[str, Type[Runner]] = {
+    supported_sims: dict[str, type[Runner]] = {
         "icarus": Icarus,
         "questa": Questa,
         "ghdl": Ghdl,

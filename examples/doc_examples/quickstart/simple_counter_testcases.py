@@ -4,6 +4,8 @@
 """This module contains testcases for the simple_counter"""
 
 # Imports for all Quickstart examples
+from __future__ import annotations
+
 import cocotb
 from cocotb import start_soon
 from cocotb.clock import Clock

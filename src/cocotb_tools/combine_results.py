@@ -6,12 +6,15 @@
 Simple script to combine JUnit test results into a single XML file.
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Pattern
+from re import Pattern
 from xml.etree import ElementTree as ET
 
 

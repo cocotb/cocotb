@@ -3,11 +3,10 @@
 # Copyright (c) 2013 SolarFlare Communications Inc
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import re
-import sys
 import xml.etree.ElementTree as ET
-from typing import Union
 from xml.etree.ElementTree import Element, SubElement
 
 
@@ -24,7 +23,7 @@ def bin_xml_escape(arg: object) -> str:
     The idea is to escape visually for the user rather than for XML itself.
     """
 
-    def repl(matchobj: "re.Match[str]") -> str:
+    def repl(matchobj: re.Match[str]) -> str:
         i = ord(matchobj.group())
         if i <= 0xFF:
             return f"#x{i:02X}"
@@ -40,24 +39,7 @@ def bin_xml_escape(arg: object) -> str:
     return re.sub(illegal_xml_re, repl, str(arg))
 
 
-if sys.version_info < (3, 9):
-
-    def indent(elem: Element, level: int = 0) -> None:
-        i = "\n" + level * "  "
-        if len(elem):
-            if not elem.text or not elem.text.strip():
-                elem.text = i + "  "
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-            for sub_elem in elem:
-                indent(sub_elem, level + 1)
-            if not sub_elem.tail or not sub_elem.tail.strip():
-                sub_elem.tail = i
-        elif level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
-
-else:
-    from xml.etree.ElementTree import indent
+from xml.etree.ElementTree import indent
 
 
 class XUnitReporter:
@@ -72,28 +54,24 @@ class XUnitReporter:
         self.last_testsuite = SubElement(self.results, "testsuite", kwargs)
         return self.last_testsuite
 
-    def add_testcase(
-        self, testsuite: Union[Element, None] = None, **kwargs: str
-    ) -> Element:
+    def add_testcase(self, testsuite: Element | None = None, **kwargs: str) -> Element:
         if testsuite is None:
             testsuite = self.last_testsuite
         self.last_testcase = SubElement(testsuite, "testcase", kwargs)
         return self.last_testcase
 
-    def add_property(
-        self, testsuite: Union[Element, None] = None, **kwargs: str
-    ) -> Element:
+    def add_property(self, testsuite: Element | None = None, **kwargs: str) -> Element:
         if testsuite is None:
             testsuite = self.last_testsuite
         self.last_property = SubElement(testsuite, "property", kwargs)
         return self.last_property
 
-    def add_failure(self, testcase: Union[Element, None] = None, **kwargs: str) -> None:
+    def add_failure(self, testcase: Element | None = None, **kwargs: str) -> None:
         if testcase is None:
             testcase = self.last_testcase
         SubElement(testcase, "failure", kwargs)
 
-    def add_skipped(self, testcase: Union[Element, None] = None, **kwargs: str) -> None:
+    def add_skipped(self, testcase: Element | None = None, **kwargs: str) -> None:
         if testcase is None:
             testcase = self.last_testcase
         SubElement(testcase, "skipped", kwargs)

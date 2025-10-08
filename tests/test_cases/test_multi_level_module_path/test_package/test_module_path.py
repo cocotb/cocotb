@@ -4,6 +4,8 @@
 
 """Test for multi-level module path in MODULE"""
 
+from __future__ import annotations
+
 import cocotb
 
 

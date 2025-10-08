@@ -5,6 +5,8 @@
 Tests relating to cocotb.clock.Clock
 """
 
+from __future__ import annotations
+
 import decimal
 import fractions
 import os

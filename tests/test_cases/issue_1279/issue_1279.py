@@ -2,6 +2,8 @@
 Test that once a simulation failure occurs, no further tests are run
 """
 
+from __future__ import annotations
+
 import cocotb
 from cocotb.regression import SimFailure
 from cocotb.triggers import RisingEdge

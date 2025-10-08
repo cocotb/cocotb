@@ -5,6 +5,8 @@ An outcome is similar to the built-in :any:`concurrent.futures.Future`
 or :any:`asyncio.Future`, but without being tied to a particular task model.
 """
 
+from __future__ import annotations
+
 import abc
 from typing import Callable, Generic, TypeVar
 
@@ -15,9 +17,7 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-def capture(
-    fn: "Callable[P, T]", *args: "P.args", **kwargs: "P.kwargs"
-) -> "Outcome[T]":
+def capture(fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> Outcome[T]:
     """Obtain an `Outcome` representing the result of a function call."""
     try:
         return Value(fn(*args, **kwargs))

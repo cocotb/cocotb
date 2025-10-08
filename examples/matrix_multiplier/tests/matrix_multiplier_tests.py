@@ -1,24 +1,19 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
+from __future__ import annotations
 
 import logging
 import math
 import os
 import random
 from collections import deque
+from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Deque,
-    Dict,
     Generic,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
     TypeVar,
-    Union,
 )
 
 import cocotb
@@ -37,7 +32,7 @@ class Mailbox(Generic[T]):
     """A deque with signals for use in testbench components."""
 
     def __init__(self) -> None:
-        self._queue: Deque[T] = deque()
+        self._queue: deque[T] = deque()
         self._event = Event()
 
     def put(self, item: T) -> None:
@@ -83,7 +78,7 @@ class DataValidMonitor(Generic[T]):
         name: str,
         clk: LogicObject,
         rst: LogicObject,
-        datas: Dict[str, ValueObjectBase[T, Any]],
+        datas: dict[str, ValueObjectBase[T, Any]],
         valid: LogicObject,
     ) -> None:
         self.name = name
@@ -92,10 +87,10 @@ class DataValidMonitor(Generic[T]):
         self._rst = rst
         self._datas = datas
         self._valid = valid
-        self._callbacks: List[Callable[[Dict[str, T]], Any]] = []
-        self._task: Union[Task[None], None] = None
+        self._callbacks: list[Callable[[dict[str, T]], Any]] = []
+        self._task: Task[None] | None = None
 
-    def add_callback(self, callback: Callable[[Dict], Any]) -> None:
+    def add_callback(self, callback: Callable[[dict], Any]) -> None:
         """Add callback to be called with transaction data when a transaction is observed."""
         self._callbacks.append(callback)
 
@@ -132,7 +127,7 @@ class DataValidMonitor(Generic[T]):
             for cb in self._callbacks:
                 cb(transaction)
 
-    def _sample(self) -> Dict[str, T]:
+    def _sample(self) -> dict[str, T]:
         """Samples the data signals and builds a transaction object."""
         return {name: handle.value for name, handle in self._datas.items()}
 
@@ -145,9 +140,9 @@ class DataValidDriver(Generic[T]):
         name: str,
         clk: LogicObject,
         rst: LogicObject,
-        datas: Dict[str, ValueObjectBase[Any, T]],
+        datas: dict[str, ValueObjectBase[Any, T]],
         valid: LogicObject,
-        initial_values: Optional[Dict[str, T]] = None,
+        initial_values: dict[str, T] | None = None,
     ) -> None:
         self.name = name
         self.log = logging.getLogger(name)
@@ -156,10 +151,10 @@ class DataValidDriver(Generic[T]):
         self._datas = datas
         self._valid = valid
         self._initial_values = initial_values
-        self._task: Union[Task[None], None] = None
-        self._mb = Mailbox[Tuple[Dict[str, T], Event]]()
+        self._task: Task[None] | None = None
+        self._mb = Mailbox[tuple[dict[str, T], Event]]()
 
-    def send(self, data: Dict[str, T]) -> Trigger:
+    def send(self, data: dict[str, T]) -> Trigger:
         """Send data to driver.
 
         Args:
@@ -214,7 +209,7 @@ class DataValidDriver(Generic[T]):
             self.log.debug("Applied: %r", data)
             e.set()
 
-    def _apply(self, data: Dict[str, T]) -> None:
+    def _apply(self, data: dict[str, T]) -> None:
         """Apply data to the interface."""
         for name, handle in self._datas.items():
             handle.value = data[name]
@@ -244,9 +239,9 @@ class MatrixMultiplierModel:
             0,
         )
 
-        self._output_callbacks: List[Callable[[List[LogicArray]], None]] = []
+        self._output_callbacks: list[Callable[[list[LogicArray]], None]] = []
 
-    def add_output_callback(self, callback: Callable[[List[LogicArray]], None]) -> None:
+    def add_output_callback(self, callback: Callable[[list[LogicArray]], None]) -> None:
         """Add callback to be called with output data when a transaction is produced."""
         self._output_callbacks.append(callback)
 
@@ -301,13 +296,13 @@ class InOrderChecker(Generic[T]):
         self,
         name: str,
         fail_on_error: bool = True,
-        cmp: "CompareFunc" = lambda expected, actual: expected == actual,
+        cmp: CompareFunc = lambda expected, actual: expected == actual,
     ) -> None:
         self.name = name
         self.log = logging.getLogger(name)
         self._fail_on_error = fail_on_error
         self._cmp = cmp
-        self._expected_queue: Deque[T] = deque()
+        self._expected_queue: deque[T] = deque()
         self.errors: int = 0
 
     def addExpected(self, expected: T) -> None:
@@ -338,7 +333,7 @@ class MatrixMultiplierTestbench:
         matrix_multiplier_entity: handle to an instance of matrix_multiplier
     """
 
-    def __init__(self, dut: Any, name: Optional[str] = None) -> None:
+    def __init__(self, dut: Any, name: str | None = None) -> None:
         self.dut = dut
         self.name = name if name is not None else type(self).__qualname__
         self.log = logging.getLogger(self.name)
@@ -400,7 +395,7 @@ class MatrixMultiplierTestbench:
         self.model.add_output_callback(self.checker.addExpected)
         self.output_mon.add_callback(lambda datas: self.checker.addActual(datas["C"]))
 
-    def create_a_matrix(self, func: Callable[[], int]) -> List[LogicArray]:
+    def create_a_matrix(self, func: Callable[[], int]) -> list[LogicArray]:
         """Create a matrix of the size of input A.
 
         Takes a function to generate values.
@@ -411,7 +406,7 @@ class MatrixMultiplierTestbench:
             for _ in range(self.A_ROWS * self.A_COLUMNS_B_ROWS)
         ]
 
-    def create_b_matrix(self, func: Callable[[], int]) -> List[LogicArray]:
+    def create_b_matrix(self, func: Callable[[], int]) -> list[LogicArray]:
         """Create a matrix of the size of input B.
 
         Takes a function to generate values.

@@ -5,6 +5,8 @@
 Test function and substitutability of async coroutines
 """
 
+from __future__ import annotations
+
 import pytest
 from common import MyException
 

@@ -4,6 +4,8 @@
 
 """Tests the Force/Freeze/Release features."""
 
+from __future__ import annotations
+
 import os
 
 import cocotb

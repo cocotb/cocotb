@@ -4,6 +4,8 @@
 
 """Test for comparing handle classes"""
 
+from __future__ import annotations
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import SimHandleBase, ValueObjectBase

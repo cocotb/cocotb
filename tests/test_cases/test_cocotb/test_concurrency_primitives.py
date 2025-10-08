@@ -5,6 +5,8 @@
 Tests for concurrency primitives like First and Combine
 """
 
+from __future__ import annotations
+
 import contextlib
 import re
 from collections import deque

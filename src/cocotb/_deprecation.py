@@ -1,16 +1,17 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import functools
 import warnings
-from typing import Callable, Type, TypeVar
+from typing import Callable, TypeVar
 
 AnyCallableT = TypeVar("AnyCallableT", bound=Callable[..., object])
 
 
 def deprecated(
-    msg: str, category: Type[Warning] = DeprecationWarning
+    msg: str, category: type[Warning] = DeprecationWarning
 ) -> Callable[[AnyCallableT], AnyCallableT]:
     """Emits a DeprecationWarning when the decorated function is called.
 

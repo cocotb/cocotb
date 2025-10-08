@@ -5,11 +5,14 @@
 Common utilities shared by many tests in this directory
 """
 
+from __future__ import annotations
+
 import operator
 import re
 import traceback
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Callable, Generator
+from typing import Callable
 
 from cocotb._typing import TimeUnit
 from cocotb.utils import get_sim_steps, get_sim_time, get_time_from_sim_steps

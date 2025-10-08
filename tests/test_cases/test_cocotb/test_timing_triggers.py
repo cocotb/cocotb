@@ -11,6 +11,8 @@ Tests related to timing triggers
 * with_timeout
 """
 
+from __future__ import annotations
+
 import os
 import re
 from decimal import Decimal
