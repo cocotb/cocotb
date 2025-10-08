@@ -1056,3 +1056,29 @@ async def test_task_local_variables(_: object) -> None:
 
     task = cocotb.start_soon(coro())
     await task
+
+
+@cocotb.test(expect_error=RuntimeError)
+async def test_Task_ignored_CancelledError_return(_: object) -> None:
+    async def bad() -> None:
+        try:
+            await Timer(10, "ns")
+        except CancelledError:
+            return
+
+    task = cocotb.start_soon(bad())
+    await Timer(1)
+    task.cancel()
+
+
+@cocotb.test(expect_error=RuntimeError)
+async def test_Task_ignored_CancelledError_await(_: object) -> None:
+    async def bad() -> None:
+        try:
+            await Timer(10, "ns")
+        except CancelledError:
+            await Timer(1)
+
+    task = cocotb.start_soon(bad())
+    await Timer(1)
+    task.cancel()
