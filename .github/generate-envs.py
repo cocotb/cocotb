@@ -84,16 +84,24 @@ ENVS = [
         "group": "ci-free",
         "test_nosim": True,
     },
-    # A single test for the upcoming Python version.
     {
         "lang": "vhdl",
         "sim": "nvc",
         "sim-version": "r1.18.1",
         "os": "ubuntu-22.04",
-        "python-version": "3.14-dev",
-        "group": "experimental",
+        "python-version": "3.14",
+        "group": "ci-free",
         "test_nosim": True,
     },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.17.1",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.15",
+    #     "group": "experimental",
+    #     "test_nosim": True,
+    # },
     # Test Icarus on Ubuntu
     {
         "lang": "verilog",
