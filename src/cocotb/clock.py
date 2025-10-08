@@ -9,18 +9,15 @@
 from __future__ import annotations
 
 import logging
+import sys
 import warnings
 from decimal import Decimal
 from fractions import Fraction
+from functools import cached_property
 from logging import Logger
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 import cocotb
-from cocotb._py_compat import (
-    Literal,
-    TypeAlias,
-    cached_property,
-)
 from cocotb._typing import TimeUnit
 from cocotb.handle import (
     Deposit,
@@ -41,6 +38,9 @@ from cocotb.triggers import (
     ValueChange,
 )
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
 
 __all__ = ("Clock",)
 

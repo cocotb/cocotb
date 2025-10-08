@@ -6,11 +6,11 @@ from __future__ import annotations
 import logging
 import sys
 from collections import deque
+from functools import cached_property
 from typing import Callable
 
 from cocotb import debug
 from cocotb._bridge import run_bridge_threads
-from cocotb._py_compat import cached_property
 
 if sys.version_info >= (3, 10):
     from typing import ParamSpec

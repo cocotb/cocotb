@@ -5,12 +5,12 @@ from __future__ import annotations
 
 import functools
 import logging
+import sys
 import threading
 from bdb import BdbQuit
 from collections.abc import Coroutine
 from enum import IntEnum
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Generic,
@@ -21,13 +21,12 @@ import cocotb
 from cocotb import debug
 from cocotb._base_triggers import Event, Trigger
 from cocotb._exceptions import InternalError
-from cocotb._outcomes import Error, Value, capture
-from cocotb._py_compat import ParamSpec
+from cocotb._outcomes import Error, Outcome, Value, capture
 
-if TYPE_CHECKING:
-    from cocotb._outcomes import Outcome
+if sys.version_info >= (3, 10):
+    from typing import ParamSpec
 
-P = ParamSpec("P")
+    P = ParamSpec("P")
 
 Result = TypeVar("Result")
 

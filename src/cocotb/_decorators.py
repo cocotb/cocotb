@@ -7,18 +7,17 @@ from __future__ import annotations
 
 import functools
 import inspect
+import sys
 from collections.abc import Coroutine, Iterable, Sequence
 from enum import Enum
 from itertools import product
-from typing import (
-    Callable,
-    cast,
-    overload,
-)
+from typing import Callable, Protocol, cast, overload
 
 from cocotb._base_triggers import Trigger
-from cocotb._py_compat import Protocol, TypeAlias
 from cocotb._typing import TimeUnit
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
 
 
 class Test:
