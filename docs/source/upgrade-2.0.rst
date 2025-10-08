@@ -1214,6 +1214,10 @@ When waiting for a value change on a packed object:
     await value_change_packed_field(dut.my_array, 2)
 
 .. note::
+    A library like `packtype <https://github.com/Intuity/packtype>`_ could help define Python types that mimic HDL packed structures and arrays,
+    allowing you to use struct field names and array indexes rather than bit offsets.
+
+.. note::
     Alternatively, you could might be able to remove the `packed` specifier.
 
 Rationale
