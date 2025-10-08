@@ -1213,6 +1213,9 @@ When waiting for a value change on a packed object:
     await value_change_packed_field(dut.my_struct, 11, 8)
     await value_change_packed_field(dut.my_array, 2)
 
+.. note::
+    Alternatively, you could might be able to remove the `packed` specifier.
+
 Rationale
 =========
 
