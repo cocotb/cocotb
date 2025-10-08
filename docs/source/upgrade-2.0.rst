@@ -1204,7 +1204,7 @@ When waiting for a value change on a packed object:
 
     async def value_change_packed_field(handle, start, stop=None):
         value_changed = False
-        while value_changed:
+        while not value_changed:
             old_value = get_packed_field(handle, start, stop)
             await ValueChange(handle)
             new_value = get_packed_field(handle, start, stop)
