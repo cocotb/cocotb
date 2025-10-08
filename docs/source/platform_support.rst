@@ -73,10 +73,8 @@ Supported Windows Versions
 Supported macOS Versions
 ========================
 
-* **macOS 13 (Ventura) x86_64**
 * **macOS 14 (Sonoma) x86_64**
 * **macOS 15 (Sequoia) x86_64**
-* **macOS 13 (Ventura) ARM64**
 * **macOS 14 (Sonoma) ARM64**
 * **macOS 15 (Sequoia) ARM64**
 
