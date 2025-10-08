@@ -9,6 +9,8 @@ Tests of cocotb.test functionality
 * timeout
 """
 
+from __future__ import annotations
+
 from collections.abc import Coroutine
 
 import pytest

@@ -1,11 +1,12 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import logging
 import sys
 from collections import deque
-from typing import Callable, Deque
+from typing import Callable
 
 from cocotb import debug
 from cocotb._bridge import run_bridge_threads
@@ -21,7 +22,7 @@ class ScheduledCallback:
     __slots__ = ("_func", "_args", "_kwargs", "_cancelled")
 
     def __init__(
-        self, func: "Callable[P, object]", *args: "P.args", **kwargs: "P.kwargs"
+        self, func: Callable[P, object], *args: P.args, **kwargs: P.kwargs
     ) -> None:
         self._func = func
         self._args = args
@@ -34,7 +35,7 @@ class ScheduledCallback:
 
 class EventLoop:
     def __init__(self) -> None:
-        self._callbacks: Deque[ScheduledCallback] = deque()
+        self._callbacks: deque[ScheduledCallback] = deque()
         self._cycles: int = 0
 
     @cached_property
@@ -74,7 +75,7 @@ class EventLoop:
             run_bridge_threads()
 
     def schedule(
-        self, func: "Callable[P, object]", *args: "P.args", **kwargs: "P.kwargs"
+        self, func: Callable[P, object], *args: P.args, **kwargs: P.kwargs
     ) -> ScheduledCallback:
         if debug.debug:
             self.log.debug("Scheduling %s with args=%s, kwargs=%s)", func, args, kwargs)

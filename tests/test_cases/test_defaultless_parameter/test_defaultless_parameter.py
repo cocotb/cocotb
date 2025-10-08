@@ -6,6 +6,8 @@
 A test to demonstrate defaultless parameter access
 """
 
+from __future__ import annotations
+
 import logging
 
 import cocotb

@@ -1,12 +1,14 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import glob
 import os
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, List, Tuple, cast
+from typing import cast
 
 import nox
 
@@ -33,7 +35,7 @@ cibuildwheel_version = "2.20.0"
 #
 
 
-def simulator_support_matrix() -> List[Tuple[str, str, str]]:
+def simulator_support_matrix() -> list[tuple[str, str, str]]:
     """
     Get a list of supported simulator/toplevel-language/GPI-interface tuples.
     """
@@ -61,7 +63,7 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
 
 def env_vars_for_test(
     sim: str, toplevel_lang: str, gpi_interface: str
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Prepare the environment variables controlling the test run."""
     env = {
         "SIM": sim,
@@ -89,7 +91,7 @@ def env_vars_for_test(
     return env
 
 
-def stringify_dict(d: Dict[str, str]) -> str:
+def stringify_dict(d: dict[str, str]) -> str:
     return ", ".join(f"{k}={v}" for k, v in d.items())
 
 

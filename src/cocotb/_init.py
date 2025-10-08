@@ -3,6 +3,8 @@
 # Copyright (c) 2013 SolarFlare Communications Inc
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import ast
 import logging
 import os
@@ -12,7 +14,7 @@ import time
 import warnings
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Callable, List, cast
+from typing import Callable, cast
 
 import cocotb
 import cocotb._profiling
@@ -33,7 +35,7 @@ def _setup_logging() -> None:
     log = logging.getLogger("cocotb")
 
 
-_shutdown_callbacks: List[Callable[[], None]] = []
+_shutdown_callbacks: list[Callable[[], None]] = []
 """List of callbacks to be called when cocotb shuts down."""
 
 
@@ -49,7 +51,7 @@ def _shutdown_testbench() -> None:
         cb()
 
 
-def init_package_from_simulation(argv: List[str]) -> None:
+def init_package_from_simulation(argv: list[str]) -> None:
     """Initialize the cocotb package from a simulation context."""
 
     # register a callback to be called if the simulation fails

@@ -5,6 +5,8 @@
 Tests relating to cocotb.queue.Queue, cocotb.queue.LifoQueue, cocotb.queue.PriorityQueue
 """
 
+from __future__ import annotations
+
 import pytest
 
 import cocotb

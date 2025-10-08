@@ -3,22 +3,15 @@
 # Copyright (c) 2013 SolarFlare Communications Inc
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import functools
 import inspect
+from collections.abc import Coroutine, Iterable, Sequence
 from enum import Enum
 from itertools import product
 from typing import (
     Callable,
-    Coroutine,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
     cast,
     overload,
 )
@@ -74,13 +67,13 @@ class Test:
         self,
         *,
         func: Callable[..., Coroutine[Trigger, None, None]],
-        name: Optional[str] = None,
-        module: Optional[str] = None,
-        doc: Optional[str] = None,
-        timeout_time: Optional[float] = None,
+        name: str | None = None,
+        module: str | None = None,
+        doc: str | None = None,
+        timeout_time: float | None = None,
         timeout_unit: TimeUnit = "step",
         expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
+        expect_error: type[BaseException] | tuple[type[BaseException], ...] = (),
         skip: bool = False,
         stage: int = 0,
     ) -> None:
@@ -109,25 +102,23 @@ class Parameterized:
     def __init__(
         self,
         test_function: TestFuncType,
-        options: List[
-            Union[
-                Tuple[str, Sequence[object]],
-                Tuple[Sequence[str], Sequence[Sequence[object]]],
-            ]
+        options: list[
+            tuple[str, Sequence[object]]
+            | tuple[Sequence[str], Sequence[Sequence[object]]]
         ],
     ) -> None:
         self.test_template = Test(func=test_function)
         self.options = options
         # we are assuming the input checking is done in parametrize()
 
-        self._option_reprs: Dict[str, List[str]] = {}
+        self._option_reprs: dict[str, list[str]] = {}
 
         for name, values in options:
             if isinstance(name, str):
                 self._option_reprs[name] = _reprs(values)
             else:
                 # transform to Dict[name, values]
-                transformed: Dict[str, List[object]] = {}
+                transformed: dict[str, list[object]] = {}
                 for nam_idx, nam in enumerate(name):
                     transformed[nam] = []
                     for value_array in cast("Sequence[Sequence[object]]", values):
@@ -145,8 +136,8 @@ class Parameterized:
 
         # go through the cartesian product of all values of all options
         for selected_options in product(*option_indexes):
-            test_kwargs: Dict[str, object] = {}
-            test_name_pieces: List[str] = [test_func_name]
+            test_kwargs: dict[str, object] = {}
+            test_name_pieces: list[str] = [test_func_name]
             for option_idx, select_idx in enumerate(selected_options):
                 option_name, option_values = self.options[option_idx]
                 selected_value = option_values[select_idx]
@@ -172,7 +163,7 @@ class Parameterized:
             # create wrapper function to bind kwargs
             @functools.wraps(test_func)
             async def _my_test(
-                dut: object, kwargs: Dict[str, object] = test_kwargs
+                dut: object, kwargs: dict[str, object] = test_kwargs
             ) -> None:
                 await test_func(dut, **kwargs)
 
@@ -188,8 +179,8 @@ class Parameterized:
             )
 
 
-def _reprs(values: Sequence[object]) -> List[str]:
-    result: List[str] = []
+def _reprs(values: Sequence[object]) -> list[str]:
+    result: list[str] = []
     for value in values:
         value_repr = _repr(value)
         if value_repr is None:
@@ -200,7 +191,7 @@ def _reprs(values: Sequence[object]) -> List[str]:
     return result
 
 
-def _repr(v: object) -> Optional[str]:
+def _repr(v: object) -> str | None:
     if isinstance(v, Enum):
         return v.name
     elif isinstance(v, str):
@@ -237,31 +228,27 @@ def test(obj: Parameterized) -> Parameterized: ...
 @overload
 def test(
     *,
-    timeout_time: Optional[float] = None,
+    timeout_time: float | None = None,
     timeout_unit: TimeUnit = "step",
     expect_fail: bool = False,
-    expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
+    expect_error: type[BaseException] | tuple[type[BaseException], ...] = (),
     skip: bool = False,
     stage: int = 0,
-    name: Optional[str] = None,
+    name: str | None = None,
 ) -> TestDecoratorType: ...
 
 
 def test(
-    obj: Optional[Union[TestFuncType, Parameterized]] = None,
+    obj: TestFuncType | Parameterized | None = None,
     *,
-    timeout_time: Optional[float] = None,
+    timeout_time: float | None = None,
     timeout_unit: TimeUnit = "step",
     expect_fail: bool = False,
-    expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
+    expect_error: type[BaseException] | tuple[type[BaseException], ...] = (),
     skip: bool = False,
     stage: int = 0,
-    name: Optional[str] = None,
-) -> Union[
-    Test,
-    Parameterized,
-    TestDecoratorType,
-]:
+    name: str | None = None,
+) -> Test | Parameterized | TestDecoratorType:
     r"""
     Decorator to register a Callable which returns a Coroutine as a test.
 
@@ -386,7 +373,7 @@ def test(
     @overload
     def wrapper(obj: Parameterized) -> Parameterized: ...
 
-    def wrapper(obj: Union[TestFuncType, Parameterized]) -> Union[Test, Parameterized]:
+    def wrapper(obj: TestFuncType | Parameterized) -> Test | Parameterized:
         if isinstance(obj, Parameterized):
             obj.test_template = Test(
                 func=obj.test_template.func,
@@ -415,9 +402,8 @@ def test(
 
 
 def parametrize(
-    *options_by_tuple: Union[
-        Tuple[str, Sequence[object]], Tuple[Sequence[str], Sequence[Sequence[object]]]
-    ],
+    *options_by_tuple: tuple[str, Sequence[object]]
+    | tuple[Sequence[str], Sequence[Sequence[object]]],
     **options_by_name: Sequence[object],
 ) -> Callable[[TestFuncType], Parameterized]:
     """Decorator to generate parametrized tests from a single test function.

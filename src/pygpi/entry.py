@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import importlib
 import operator
 import os
-from typing import Callable, List, Tuple
+from typing import Callable
 
 
-def load_entry(argv: List[str]) -> None:
+def load_entry(argv: list[str]) -> None:
     """Gather entry point information by parsing :envvar:`PYGPI_USERS`."""
 
     entry_point_str = os.environ.get(
@@ -21,7 +23,7 @@ def load_entry(argv: List[str]) -> None:
 
     # Parse the entry point string of the form "module:func,module:func,...".
     # Any failure prevents any entry points from being loaded.
-    entry_points: List[Tuple[str, str]] = []
+    entry_points: list[tuple[str, str]] = []
     try:
         entry_points_str = entry_point_str.split(",")
         for entry_point_str in entry_points_str:
@@ -36,7 +38,7 @@ def load_entry(argv: List[str]) -> None:
     # Expect failure to stop the loading of any additional entry points.
     for entry_module_str, entry_func_str in entry_points:
         entry_module = importlib.import_module(entry_module_str)
-        entry_func: Callable[[List[str]], object] = operator.attrgetter(entry_func_str)(
+        entry_func: Callable[[list[str]], object] = operator.attrgetter(entry_func_str)(
             entry_module
         )
         entry_func(argv)

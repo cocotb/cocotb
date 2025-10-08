@@ -6,18 +6,14 @@
 
 """A collection of triggers which a testbench can :keyword:`await`."""
 
+from __future__ import annotations
+
 from abc import abstractmethod
+from collections.abc import Awaitable, Coroutine, Generator
 from decimal import Decimal
 from typing import (
     Any,
-    Awaitable,
-    Coroutine,
-    Generator,
-    List,
-    Optional,
-    Type,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -48,7 +44,7 @@ class Waitable(Awaitable[T]):
 class _AggregateWaitable(Waitable[T]):
     """Base class for :class:`Combine` and :class:`First`."""
 
-    def __init__(self, *trigger: Union[Trigger, Waitable[Any], Task[Any]]) -> None:
+    def __init__(self, *trigger: Trigger | Waitable[Any] | Task[Any]) -> None:
         self._triggers = trigger
 
         # Do some basic type-checking up front, rather than waiting until we
@@ -87,16 +83,16 @@ class Combine(_AggregateWaitable["Combine"]):
         TypeError: When an unsupported *trigger* object is passed.
     """
 
-    async def _wait(self) -> "Combine":
+    async def _wait(self) -> Combine:
         if len(self._triggers) == 0:
             await NullTrigger()
         elif len(self._triggers) == 1:
             await self._triggers[0]
         else:
-            waiters: List[Task[object]] = []
-            completed: List[Task[object]] = []
+            waiters: list[Task[object]] = []
+            completed: list[Task[object]] = []
             done = _InternalEvent(self)
-            exception: Union[BaseException, None] = None
+            exception: BaseException | None = None
 
             def on_done(
                 task: Task[object],
@@ -168,7 +164,7 @@ class First(_AggregateWaitable[object]):
         coroutines.
     """
 
-    def __init__(self, *trigger: Union[Trigger, Waitable[Any], Task[Any]]) -> None:
+    def __init__(self, *trigger: Trigger | Waitable[Any] | Task[Any]) -> None:
         if not trigger:
             raise ValueError("First() requires at least one Trigger or Task argument")
         super().__init__(*trigger)
@@ -177,9 +173,9 @@ class First(_AggregateWaitable[object]):
         if len(self._triggers) == 1:
             return await self._triggers[0]
 
-        waiters: List[Task[object]] = []
+        waiters: list[Task[object]] = []
         done = _InternalEvent(self)
-        completed: List[Task[object]] = []
+        completed: list[Task[object]] = []
 
         def on_done(task: Task[object]) -> None:
             completed.append(task)
@@ -226,38 +222,41 @@ class ClockCycles(Waitable["ClockCycles"]):
     @overload
     def __init__(
         self,
-        signal: "cocotb.handle.LogicObject",
+        signal: cocotb.handle.LogicObject,
         num_cycles: int,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        signal: "cocotb.handle.LogicObject",
+        signal: cocotb.handle.LogicObject,
         num_cycles: int,
-        edge_type: Union[
-            Type[RisingEdge], Type[FallingEdge], Type[ValueChange], None
-        ] = None,
+        edge_type: type[RisingEdge]
+        | type[FallingEdge]
+        | type[ValueChange]
+        | None = None,
     ) -> None: ...
 
     @overload
     def __init__(
-        self, signal: "cocotb.handle.LogicObject", num_cycles: int, *, rising: bool
+        self, signal: cocotb.handle.LogicObject, num_cycles: int, *, rising: bool
     ) -> None: ...
 
     def __init__(
         self,
-        signal: "cocotb.handle.LogicObject",
+        signal: cocotb.handle.LogicObject,
         num_cycles: int,
-        edge_type: Union[
-            bool, Type[RisingEdge], Type[FallingEdge], Type[ValueChange], None
-        ] = None,
+        edge_type: bool
+        | type[RisingEdge]
+        | type[FallingEdge]
+        | type[ValueChange]
+        | None = None,
         *,
-        rising: Union[bool, None] = None,
+        rising: bool | None = None,
     ) -> None:
         self._signal = signal
         self._num_cycles = num_cycles
-        self._edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[ValueChange]]
+        self._edge_type: type[RisingEdge] | type[FallingEdge] | type[ValueChange]
         if edge_type is not None and rising is not None:
             raise TypeError("Passed more than one edge selection argument.")
         elif edge_type is True:
@@ -273,7 +272,7 @@ class ClockCycles(Waitable["ClockCycles"]):
             self._edge_type = RisingEdge
 
     @property
-    def signal(self) -> "cocotb.handle.LogicObject":
+    def signal(self) -> cocotb.handle.LogicObject:
         """The signal being monitored."""
         return self._signal
 
@@ -285,11 +284,11 @@ class ClockCycles(Waitable["ClockCycles"]):
     @property
     def edge_type(
         self,
-    ) -> Union[Type[RisingEdge], Type[FallingEdge], Type[ValueChange]]:
+    ) -> type[RisingEdge] | type[FallingEdge] | type[ValueChange]:
         """The type of edge trigger used."""
         return self._edge_type
 
-    async def _wait(self) -> "ClockCycles":
+    async def _wait(self) -> ClockCycles:
         trigger = self._edge_type(self._signal)
         for _ in range(self._num_cycles):
             await trigger
@@ -309,45 +308,45 @@ TriggerT = TypeVar("TriggerT", bound=Trigger)
 @overload
 async def with_timeout(
     trigger: TriggerT,
-    timeout_time: Union[float, Decimal],
+    timeout_time: float | Decimal,
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[RoundMode] = None,
+    round_mode: RoundMode | None = None,
 ) -> TriggerT: ...
 
 
 @overload
 async def with_timeout(
     trigger: Waitable[T],
-    timeout_time: Union[float, Decimal],
+    timeout_time: float | Decimal,
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[RoundMode] = None,
+    round_mode: RoundMode | None = None,
 ) -> T: ...
 
 
 @overload
 async def with_timeout(
     trigger: Task[T],
-    timeout_time: Union[float, Decimal],
+    timeout_time: float | Decimal,
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[RoundMode] = None,
+    round_mode: RoundMode | None = None,
 ) -> T: ...
 
 
 @overload
 async def with_timeout(
     trigger: Coroutine[Trigger, None, T],
-    timeout_time: Union[float, Decimal],
+    timeout_time: float | Decimal,
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[RoundMode] = None,
+    round_mode: RoundMode | None = None,
 ) -> T: ...
 
 
 async def with_timeout(
-    trigger: Union[TriggerT, Waitable[T], Task[T], Coroutine[Trigger, None, T]],
-    timeout_time: Union[float, Decimal],
+    trigger: TriggerT | Waitable[T] | Task[T] | Coroutine[Trigger, None, T],
+    timeout_time: float | Decimal,
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[RoundMode] = None,
-) -> Union[T, TriggerT]:
+    round_mode: RoundMode | None = None,
+) -> T | TriggerT:
     r"""Wait on triggers or coroutines, throw an exception if it waits longer than the given time.
 
     When a :term:`python:coroutine` is passed,

@@ -1,5 +1,6 @@
 # Test case for issue 588- yielding both coroutines and triggers in a list.
 # This is a very simple test; it just makes sure we can yield a list of both.
+from __future__ import annotations
 
 import cocotb
 from cocotb.triggers import First, Timer

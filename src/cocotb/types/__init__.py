@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 from ._abstract_array import AbstractArray, AbstractMutableArray
 from ._array import Array
 from ._indexing import IndexingChangedWarning

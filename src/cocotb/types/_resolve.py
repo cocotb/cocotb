@@ -1,10 +1,12 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import os
-from functools import lru_cache
+from functools import cache
 from random import getrandbits
-from typing import Callable, Dict, Union
+from typing import Callable
 
 from cocotb._py_compat import Final, Literal, TypeAlias
 
@@ -14,7 +16,7 @@ ResolverLiteral: TypeAlias = Literal["weak", "zeros", "ones", "random"]
 _ord_0 = ord("0")
 
 
-class _random_resolve_table(Dict[int, int]):
+class _random_resolve_table(dict[int, int]):
     def __init__(self) -> None:
         self[ord("0")] = ord("0")
         self[ord("1")] = ord("1")
@@ -25,7 +27,7 @@ class _random_resolve_table(Dict[int, int]):
         return getrandbits(1) + _ord_0
 
 
-_resolve_tables: Dict[str, Dict[int, int]] = {
+_resolve_tables: dict[str, dict[int, int]] = {
     "error": {},
     "weak": str.maketrans("LHW", "01X"),
     "zeros": str.maketrans("LHUXZW-", "0100000"),
@@ -39,7 +41,7 @@ _VALID_RESOLVERS_ERR_MSG = (
 )
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_str_resolver(resolver: ResolverLiteral) -> Callable[[str], str]:
     if resolver not in _VALID_RESOLVERS:
         raise ValueError(f"Invalid resolver: {resolver!r}. {_VALID_RESOLVERS_ERR_MSG}")
@@ -52,7 +54,7 @@ def get_str_resolver(resolver: ResolverLiteral) -> Callable[[str], str]:
     return resolve_func
 
 
-def _init() -> Union[Callable[[str], str], None]:
+def _init() -> Callable[[str], str] | None:
     _envvar = os.getenv("COCOTB_RESOLVE_X", None)
 
     # no resolver

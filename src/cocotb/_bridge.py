@@ -1,20 +1,20 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import functools
 import logging
 import threading
 from bdb import BdbQuit
+from collections.abc import Coroutine
 from enum import IntEnum
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Coroutine,
     Generic,
-    List,
     TypeVar,
-    Union,
 )
 
 import cocotb
@@ -33,8 +33,8 @@ Result = TypeVar("Result")
 
 
 def resume(
-    func: "Callable[P, Coroutine[Trigger, None, Result]]",
-) -> "Callable[P, Result]":
+    func: Callable[P, Coroutine[Trigger, None, Result]],
+) -> Callable[P, Result]:
     """Converts a coroutine function into a blocking function.
 
     This allows a :term:`coroutine function` that awaits cocotb triggers to be
@@ -64,15 +64,15 @@ def resume(
     """
 
     @functools.wraps(func)
-    def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> Result:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Result:
         return queue_function(func(*args, **kwargs))
 
     return wrapper
 
 
 def bridge(
-    func: "Callable[P, Result]",
-) -> "Callable[P, Coroutine[Trigger, None, Result]]":
+    func: Callable[P, Result],
+) -> Callable[P, Coroutine[Trigger, None, Result]]:
     r"""Converts a blocking function into a coroutine function.
 
     This function converts a :term:`blocking function` into a :term:`coroutine function`
@@ -104,9 +104,7 @@ def bridge(
     """
 
     @functools.wraps(func)
-    def wrapper(
-        *args: "P.args", **kwargs: "P.kwargs"
-    ) -> Coroutine[Trigger, None, Result]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Coroutine[Trigger, None, Result]:
         return run_in_executor(func, *args, **kwargs)
 
     return wrapper
@@ -121,7 +119,7 @@ class external_state(IntEnum):
 
 class external_waiter(Generic[Result]):
     def __init__(self) -> None:
-        self._outcome: Union[Outcome[Result], None] = None
+        self._outcome: Outcome[Result] | None = None
         self.thread: threading.Thread
         self.event = Event()
         self.state = external_state.INIT
@@ -190,7 +188,7 @@ class external_waiter(Generic[Result]):
         return self.state
 
 
-pending_threads: List[external_waiter[Any]] = []
+pending_threads: list[external_waiter[Any]] = []
 
 
 def queue_function(task: Coroutine[Trigger, None, Result]) -> Result:
@@ -206,7 +204,7 @@ def queue_function(task: Coroutine[Trigger, None, Result]) -> Result:
     # each entry always has a unique thread.
     (t,) = matching_threads
 
-    outcome: Union[Outcome[Result], None] = None
+    outcome: Outcome[Result] | None = None
 
     async def wrapper() -> None:
         nonlocal outcome
@@ -242,7 +240,7 @@ def queue_function(task: Coroutine[Trigger, None, Result]) -> Result:
 
 
 def run_in_executor(
-    func: "Callable[P, Result]", *args: "P.args", **kwargs: "P.kwargs"
+    func: Callable[P, Result], *args: P.args, **kwargs: P.kwargs
 ) -> Coroutine[Trigger, None, Result]:
     """Run the task in a separate execution thread and return an awaitable object for the caller."""
     # Create a thread

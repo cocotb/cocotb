@@ -4,6 +4,8 @@
 
 
 # Debug mode controlled by environment variables
+from __future__ import annotations
+
 import cProfile
 import os
 import pstats

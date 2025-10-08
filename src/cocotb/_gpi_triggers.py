@@ -6,18 +6,18 @@
 
 """A collection of triggers which a testbench can :keyword:`await`."""
 
+from __future__ import annotations
+
 import warnings
+from collections.abc import Generator
 from decimal import Decimal
 from fractions import Fraction
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Generator,
     Generic,
-    Optional,
     TypeVar,
-    Union,
 )
 
 import cocotb
@@ -40,7 +40,7 @@ class GPITrigger(Trigger):
 
     def __init__(self) -> None:
         super().__init__()
-        self._cbhdl: Optional[simulator.gpi_cb_hdl] = None
+        self._cbhdl: simulator.gpi_cb_hdl | None = None
 
     def _react(self) -> None:
         if debug.debug:
@@ -137,10 +137,10 @@ class Timer(GPITrigger):
 
     def __init__(
         self,
-        time: Union[float, Fraction, Decimal],
+        time: float | Fraction | Decimal,
         unit: TimeUnit = "step",
         *,
-        round_mode: Optional[RoundMode] = None,
+        round_mode: RoundMode | None = None,
         units: None = None,
     ) -> None:
         super().__init__()
@@ -189,7 +189,7 @@ class ReadOnly(GPITrigger):
         if self._cbhdl is None:
             raise RuntimeError(f"Unable set up {self} Trigger")
 
-    def __await__(self) -> "Generator[Self, None, Self]":
+    def __await__(self) -> Generator[Self, None, Self]:
         if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadOnly in ReadOnly phase"
@@ -215,7 +215,7 @@ class ReadWrite(GPITrigger):
         cocotb.handle._apply_scheduled_writes()
         return super()._do_callbacks()
 
-    def __await__(self) -> "Generator[Self, None, Self]":
+    def __await__(self) -> Generator[Self, None, Self]:
         if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadWrite in ReadOnly phase"
@@ -249,7 +249,7 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
     signal: _SignalType
 
     @classmethod
-    def _make(cls, signal: _SignalType) -> "Self":
+    def _make(cls, signal: _SignalType) -> Self:
         self = GPITrigger.__new__(cls)
         GPITrigger.__init__(self)
         self.signal = signal
@@ -290,7 +290,7 @@ class RisingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
 
     _edge_type = simulator.RISING
 
-    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "RisingEdge":
+    def __new__(cls, signal: cocotb.handle.LogicObject) -> RisingEdge:
         if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
                 f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
@@ -319,7 +319,7 @@ class FallingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
 
     _edge_type = simulator.FALLING
 
-    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "FallingEdge":
+    def __new__(cls, signal: cocotb.handle.LogicObject) -> FallingEdge:
         if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
                 f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
@@ -345,8 +345,8 @@ class ValueChange(_EdgeBase["cocotb.handle._NonIndexableValueObjectBase[Any, Any
     _edge_type = simulator.VALUE_CHANGE
 
     def __new__(
-        cls, signal: "cocotb.handle._NonIndexableValueObjectBase[Any, Any]"
-    ) -> "ValueChange":
+        cls, signal: cocotb.handle._NonIndexableValueObjectBase[Any, Any]
+    ) -> ValueChange:
         if not isinstance(signal, cocotb.handle._NonIndexableValueObjectBase):
             raise TypeError(
                 f"{cls.__qualname__} requires a simulation object derived from ValueObjectBase. "
@@ -371,8 +371,8 @@ class Edge(ValueChange):
 
     @deprecated("Use `signal.value_change` instead.")
     def __new__(
-        cls, signal: "cocotb.handle._NonIndexableValueObjectBase[Any, Any]"
-    ) -> "Edge":
+        cls, signal: cocotb.handle._NonIndexableValueObjectBase[Any, Any]
+    ) -> Edge:
         if not isinstance(signal, cocotb.handle._NonIndexableValueObjectBase):
             raise TypeError(
                 f"{cls.__qualname__} requires a simulation object derived from ValueObjectBase. "

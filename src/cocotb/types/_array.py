@@ -1,9 +1,12 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import copy
 import warnings
-from typing import Any, Dict, Iterable, Iterator, List, TypeVar, Union, cast, overload
+from collections.abc import Iterable, Iterator
+from typing import Any, TypeVar, cast, overload
 
 from cocotb.types._abstract_array import AbstractMutableArray
 from cocotb.types._indexing import IndexingChangedWarning
@@ -136,9 +139,7 @@ class Array(AbstractMutableArray[T]):
 
     __slots__ = ("_value", "_range", "_warn_indexing")
 
-    def __init__(
-        self, value: Iterable[T], range: Union[Range, int, None] = None
-    ) -> None:
+    def __init__(self, value: Iterable[T], range: Range | int | None = None) -> None:
         self._warn_indexing = False
         self._value = list(value)
         if range is None:
@@ -160,8 +161,8 @@ class Array(AbstractMutableArray[T]):
 
     @classmethod
     def _from_handle(
-        cls, value: List[T], range: Range, warn_indexing: bool
-    ) -> "Array[T]":
+        cls, value: list[T], range: Range, warn_indexing: bool
+    ) -> Array[T]:
         self = cls.__new__(cls)
         self._warn_indexing = warn_indexing
         self._value = value
@@ -207,9 +208,9 @@ class Array(AbstractMutableArray[T]):
     def __getitem__(self, item: int) -> T: ...
 
     @overload
-    def __getitem__(self, item: slice) -> "Array[T]": ...
+    def __getitem__(self, item: slice) -> Array[T]: ...
 
-    def __getitem__(self, item: Union[int, slice]) -> Union[T, "Array[T]"]:
+    def __getitem__(self, item: int | slice) -> T | Array[T]:
         if isinstance(item, int):
             if self._warn_indexing:
                 warnings.warn(
@@ -249,9 +250,7 @@ class Array(AbstractMutableArray[T]):
     @overload
     def __setitem__(self, item: slice, value: Iterable[T]) -> None: ...
 
-    def __setitem__(
-        self, item: Union[int, slice], value: Union[T, Iterable[T]]
-    ) -> None:
+    def __setitem__(self, item: int | slice, value: T | Iterable[T]) -> None:
         if isinstance(item, int):
             idx = self._translate_index(item)
             self._value[idx] = cast("T", value)
@@ -286,10 +285,10 @@ class Array(AbstractMutableArray[T]):
         except ValueError:
             raise IndexError(f"index {item} out of range") from None
 
-    def __copy__(self) -> "Array":
+    def __copy__(self) -> Array:
         return Array(self._value, self._range)
 
-    def __deepcopy__(self, memo: Dict[int, Any]) -> "Array":
+    def __deepcopy__(self, memo: dict[int, Any]) -> Array:
         res = Array.__new__(Array)
         res._value = copy.deepcopy(self._value, memo=memo)
         res._range = copy.deepcopy(self._range, memo=memo)
