@@ -1218,14 +1218,14 @@ When waiting for a value change on a packed object:
     allowing you to use struct field names and array indexes rather than bit offsets.
 
 .. note::
-    Alternatively, you could might be able to remove the `packed` specifier.
+    Alternatively, you might be able to remove the Verilog `packed` specifier.
 
 Rationale
 =========
 
 Accessing packed struct fields or packed array elements was not well supported across all simulators.
 Even in simulators that appeared to support it, there were many edge cases that didn't work as expected.
-And the implementation leveraged VPI calls which violated the VPI spec.
+Finally, this functionality leveraged VPI calls which appeared to violate the VPI spec.
 To prevent users from running into these issues, this feature was removed.
 
 
