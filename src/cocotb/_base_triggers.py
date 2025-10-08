@@ -13,17 +13,21 @@ import sys
 import warnings
 from abc import abstractmethod
 from collections.abc import Generator
-from typing import AsyncContextManager, Callable
+from contextlib import AbstractAsyncContextManager
+from functools import cached_property
+from typing import Callable
 
 from cocotb import debug
 from cocotb._deprecation import deprecated
-from cocotb._py_compat import Self, cached_property, insertion_ordered_dict
 from cocotb._utils import pointer_str
 
 if sys.version_info >= (3, 10):
     from typing import ParamSpec
 
     P = ParamSpec("P")
+
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 
 class TriggerCallback:
@@ -51,7 +55,7 @@ class Trigger:
     """A future event that a Task can wait upon."""
 
     def __init__(self) -> None:
-        self._callbacks: dict[TriggerCallback, None] = insertion_ordered_dict()
+        self._callbacks: dict[TriggerCallback, None] = {}
 
     @cached_property
     def _log(self) -> logging.Logger:
@@ -94,7 +98,7 @@ class Trigger:
             self._unprime()
 
     def _do_callbacks(self) -> None:
-        callbacks, self._callbacks = self._callbacks, insertion_ordered_dict()
+        callbacks, self._callbacks = self._callbacks, {}
         for cb in callbacks:
             if debug.debug:
                 self._log.debug(
@@ -350,7 +354,7 @@ class _Lock(Trigger):
         return f"<{self._parent!r}.acquire() at {pointer_str(self)}>"
 
 
-class Lock(AsyncContextManager[None]):
+class Lock(AbstractAsyncContextManager[None]):
     """A mutual exclusion lock.
 
     Guarantees fair scheduling.

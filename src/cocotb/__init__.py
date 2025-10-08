@@ -5,8 +5,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import sys
-from typing import TYPE_CHECKING, Dict, List, Union
+from typing import TYPE_CHECKING
 
 from cocotb._decorators import (
     parametrize,

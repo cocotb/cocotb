@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import os
+import sys
 from functools import cache
 from random import getrandbits
-from typing import Callable
+from typing import Callable, Final, Literal
 
-from cocotb._py_compat import Final, Literal, TypeAlias
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
 
 ResolverLiteral: TypeAlias = Literal["weak", "zeros", "ones", "random"]
 

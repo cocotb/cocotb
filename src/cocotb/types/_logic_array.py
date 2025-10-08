@@ -4,22 +4,26 @@
 from __future__ import annotations
 
 import copy
+import sys
 import warnings
 from collections.abc import Iterable, Iterator
 from math import ceil
 from typing import (
     Any,
+    Literal,
     cast,
     overload,
 )
 
 from cocotb._deprecation import deprecated
-from cocotb._py_compat import Literal, TypeAlias
 from cocotb.types._abstract_array import AbstractMutableArray
 from cocotb.types._indexing import IndexingChangedWarning
 from cocotb.types._logic import Logic, LogicConstructibleT
 from cocotb.types._range import Range
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
 
 _resolve_lh_table = str.maketrans({"L": "0", "H": "1"})
 _str_literals = frozenset("uUxX01zZwWlLhH-")

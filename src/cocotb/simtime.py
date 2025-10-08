@@ -8,16 +8,19 @@
 
 from __future__ import annotations
 
+import sys
 import warnings
 from decimal import Decimal
 from fractions import Fraction
 from functools import cache
 from math import ceil, floor
-from typing import cast, overload
+from typing import Literal, cast, overload
 
 from cocotb import simulator
-from cocotb._py_compat import Literal, TypeAlias
 from cocotb._typing import RoundMode, TimeUnit
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
 
 __all__ = (
     "convert",

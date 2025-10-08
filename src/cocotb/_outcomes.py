@@ -8,13 +8,17 @@ or :any:`asyncio.Future`, but without being tied to a particular task model.
 from __future__ import annotations
 
 import abc
+import sys
 from typing import Callable, Generic, TypeVar
 
-from cocotb._py_compat import ParamSpec
 from cocotb._utils import remove_traceback_frames
 
 T = TypeVar("T")
-P = ParamSpec("P")
+
+if sys.version_info >= (3, 10):
+    from typing import ParamSpec
+
+    P = ParamSpec("P")
 
 
 def capture(fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> Outcome[T]:

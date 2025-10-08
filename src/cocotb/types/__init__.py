@@ -10,12 +10,6 @@ from ._logic import Bit, Logic
 from ._logic_array import LogicArray
 from ._range import Range
 
-# isort: split
-# These are imports for doctests in the submodules. Since we fix up the `__module__`
-# attribute, `--doctest-modules` thinks this is the module the types were defined in
-# and will evaluate this module first before running tests.
-from typing import Tuple  # noqa: F401
-
 __all__ = (
     "AbstractArray",
     "AbstractMutableArray",

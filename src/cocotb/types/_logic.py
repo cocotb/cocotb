@@ -3,13 +3,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import sys
 from functools import cache
-from typing import (
-    Union,
-)
+from typing import Union
 
-from cocotb._py_compat import Self, TypeAlias
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
+
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 LogicLiteralT: TypeAlias = Union[str, int, bool]
 LogicConstructibleT: TypeAlias = Union[LogicLiteralT, "Logic"]
@@ -89,7 +93,7 @@ class Logic:
 
     .. code-block:: pycon3
 
-        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> Tuple[Logic, Logic]:
+        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> tuple[Logic, Logic]:
         ...     res = a ^ b ^ carry
         ...     carry_out = (a & b) | (b & carry) | (a & carry)
         ...     return res, carry_out

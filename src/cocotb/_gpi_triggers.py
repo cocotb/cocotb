@@ -8,12 +8,12 @@
 
 from __future__ import annotations
 
+import sys
 import warnings
 from collections.abc import Generator
 from decimal import Decimal
 from fractions import Fraction
 from typing import (
-    TYPE_CHECKING,
     Any,
     ClassVar,
     Generic,
@@ -31,8 +31,8 @@ from cocotb._typing import RoundMode, TimeUnit
 from cocotb._utils import pointer_str, singleton
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
-if TYPE_CHECKING:
-    from cocotb._py_compat import Self
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 
 class GPITrigger(Trigger):
@@ -382,7 +382,7 @@ class Edge(ValueChange):
 
 
 # The initializer is a lie, but a useful one. Perhaps one day this can be something like `StartupTrigger`.`
-_current_gpi_trigger = Timer(1, "step")  # type: Union[None, GPITrigger]
+_current_gpi_trigger: GPITrigger | None = Timer(1, "step")
 
 
 def current_gpi_trigger() -> GPITrigger:

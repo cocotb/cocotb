@@ -11,7 +11,7 @@ import os
 import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
-from functools import cache
+from functools import cache, cached_property
 from logging import Logger
 from typing import (
     Any,
@@ -35,7 +35,6 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
-from cocotb._py_compat import cached_property, insertion_ordered_dict
 from cocotb._utils import DocIntEnum
 from cocotb.types import Array, Logic, LogicArray, Range
 from cocotb.types._indexing import do_indexing_changed_warning, indexing_changed
@@ -773,7 +772,7 @@ else:
     # Only the last scheduled write to a particular handle in a timestep is performed.
     _write_calls: dict[
         ValueObjectBase[Any, Any], tuple[Callable[[int, Any], None], _GPISetAction, Any]
-    ] = insertion_ordered_dict()
+    ] = {}
 
     _apply_writes_cb: TriggerCallback | None = None
 

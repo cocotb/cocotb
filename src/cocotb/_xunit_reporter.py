@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import Element, SubElement
+from xml.etree.ElementTree import Element, SubElement, indent
 
 
 # Shamelessly ripped from pytest source code.
@@ -37,9 +37,6 @@ def bin_xml_escape(arg: object) -> str:
         "[^\u0009\u000a\u000d\u0020-\u007e\u0080-\ud7ff\ue000-\ufffd\u10000-\u10ffff]"
     )
     return re.sub(illegal_xml_re, repl, str(arg))
-
-
-from xml.etree.ElementTree import indent
 
 
 class XUnitReporter:

@@ -6,14 +6,16 @@ from __future__ import annotations
 import collections.abc
 import inspect
 import logging
+import sys
 import traceback
 from asyncio import CancelledError, InvalidStateError
 from bdb import BdbQuit
 from collections.abc import Coroutine, Generator
 from enum import auto
-from types import SimpleNamespace
+from functools import cached_property
+from types import CoroutineType, SimpleNamespace
 from typing import (
-    TYPE_CHECKING,
+    Any,
     Callable,
     Generic,
     TypeVar,
@@ -27,15 +29,10 @@ from cocotb._base_triggers import Trigger, TriggerCallback
 from cocotb._bridge import bridge, resume
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
-from cocotb._py_compat import Self, cached_property
 from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
 
-if TYPE_CHECKING:
-    from types import CoroutineType
-    from typing import Any  # noqa: F401
-
-    from cocotb._event_loop import ScheduledCallback
-
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 __all__ = (
     "Join",
@@ -106,7 +103,7 @@ class Task(Generic[ResultType]):
         self._state: _TaskState = _TaskState.UNSTARTED
         self._outcome: Outcome[ResultType] | None = None
         self._trigger: Trigger
-        self._schedule_callback: ScheduledCallback
+        self._schedule_callback: cocotb._event_loop.ScheduledCallback
         self._trigger_callback: TriggerCallback
         self._done_callbacks: list[Callable[[Task[ResultType]], None]] = []
         self._cancelled_msg: str | None = None
@@ -545,7 +542,7 @@ class Task(Generic[ResultType]):
         return self.result()
 
 
-_current_task = None  # type: Union[None, Task[Any]]
+_current_task: Task[Any] | None = None
 
 
 def current_task() -> Task[object]:
