@@ -15,8 +15,7 @@ import sys
 import time
 import warnings
 from functools import wraps
-from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 import cocotb.simtime
 from cocotb import simulator
@@ -222,6 +221,19 @@ class SimTimeContextFilter(logging.Filter):
         return True
 
 
+# Justify and truncate
+def _ljust(string: str, chars: int) -> str:
+    if len(string) > chars:
+        return ".." + string[(chars - 2) * -1 :]
+    return string.ljust(chars)
+
+
+def _rjust(string: str, chars: int) -> str:
+    if len(string) > chars:
+        return ".." + string[(chars - 2) * -1 :]
+    return string.rjust(chars)
+
+
 class SimLogFormatter(logging.Formatter):
     """Log formatter to provide consistent log message handling.
 
@@ -245,6 +257,8 @@ class SimLogFormatter(logging.Formatter):
         "time": time,
         "simtime": cocotb.simtime,
         "ANSI": ANSI,
+        "ljust": _ljust,
+        "rjust": _rjust,
     }
 
     def __init__(
@@ -253,12 +267,13 @@ class SimLogFormatter(logging.Formatter):
         reduced_log_fmt: bool = True,
         strip_ansi: Union[bool, None] = None,
         prefix_format: Optional[str] = None,
+        ansi_strip_heuristic: bool = False,
     ) -> None:
         self._reduced_log_fmt = reduced_log_fmt
         self._strip_ansi = strip_ansi
         self._prefix_func = (
             eval(
-                f"lambda record: f'''{prefix_format}'''",
+                f"lambda record, sim_time_str, highlight_start, highlight_end: f'''{prefix_format}'''",
                 type(self).prefix_func_globals,
             )
             if prefix_format is not None
@@ -284,65 +299,45 @@ class SimLogFormatter(logging.Formatter):
             """,
             re.VERBOSE,
         )
+        self._no_ansi_heuristic = not ansi_strip_heuristic
 
     def strip_ansi(self) -> bool:
         return strip_ansi if self._strip_ansi is None else self._strip_ansi
 
+    def strip_escape_patterns(self, string: str) -> str:
+        if self._no_ansi_heuristic or (cocotb._ANSI._ESCAPE in string):
+            return self._ansi_escape_pattern.sub("", string)
+        return string
+
     # Justify and truncate
     @staticmethod
     def ljust(string: str, chars: int) -> str:
-        if len(string) > chars:
-            return ".." + string[(chars - 2) * -1 :]
-        return string.ljust(chars)
+        return _ljust(string, chars)
 
     @staticmethod
     def rjust(string: str, chars: int) -> str:
-        if len(string) > chars:
-            return ".." + string[(chars - 2) * -1 :]
-        return string.rjust(chars)
+        return _rjust(string, chars)
 
-    def formatPrefix(self, record: logging.LogRecord) -> Tuple[str, int]:
+    def formatPrefix(
+        self, record: logging.LogRecord, highlight_start: str, highlight_end: str
+    ) -> str:
         sim_time = getattr(record, "created_sim_time", None)
         if sim_time is None:
-            sim_time_str = "  -.--ns"
+            sim_time_str = "-.--ns"
         else:
             time_ns = get_time_from_sim_steps(sim_time, "ns")
-            sim_time_str = f"{time_ns:6.2f}ns"
-
-        if self.strip_ansi():
-            highlight_start = ""
-            highlight_end = ""
-        else:
-            highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = ANSI.DEFAULT
+            sim_time_str = f"{time_ns:.2f}ns"
 
         if self._prefix_func is not None:
-            prefix = self._prefix_func(record)
-            stripped_prefix = self._ansi_escape_pattern.sub("", prefix)
-            prefix_len = len(stripped_prefix)
-            return prefix, prefix_len
+            prefix = self._prefix_func(
+                record, sim_time_str, highlight_start, highlight_end
+            )
         else:
             prefix = f"{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {self.ljust(record.name, 34)} "
             if not self._reduced_log_fmt:
-                prefix = f"{prefix}{self.rjust(Path(record.filename).name, 20)}:{record.lineno:<4} in {self.ljust(str(record.funcName), 31)} "
+                prefix = f"{prefix}{self.rjust(record.filename, 20)}:{record.lineno:<4} in {self.ljust(str(record.funcName), 31)} "
 
-            prefix_len = len(prefix) - len(highlight_start) - len(highlight_end)
-            return prefix, prefix_len
-
-    def formatMessage(self, record: logging.LogRecord) -> str:
-        msg = record.getMessage()
-
-        if self.strip_ansi():
-            highlight_start = ""
-            highlight_end = ""
-            msg = self._ansi_escape_pattern.sub("", msg)
-        else:
-            highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = ANSI.DEFAULT
-
-        msg = f"{highlight_start}{msg}{highlight_end}"
-
-        return msg
+        return prefix
 
     def formatExcInfo(self, record: logging.LogRecord) -> str:
         msg = ""
@@ -363,18 +358,45 @@ class SimLogFormatter(logging.Formatter):
         return msg
 
     def format(self, record: logging.LogRecord) -> str:
-        prefix, prefix_len = self.formatPrefix(record)
-        msg = self.formatMessage(record)
+        if self.strip_ansi():
+            highlight_start = ""
+            highlight_end = ""
+        else:
+            highlight_start = self.loglevel2colour.get(record.levelno, "")
+            highlight_end = ANSI.DEFAULT if highlight_start else ""
+
+        prefix = self.formatPrefix(record, highlight_start, highlight_end)
+
+        msg = record.getMessage()
+
+        if self.strip_ansi():
+            output = f"{prefix}{self.strip_escape_patterns(msg)}"
+        elif highlight_start:
+            # NOTE: this assumes that ANSI.DEFAULT is used to go back to normal,
+            # which is what we do but it can be not true in general.
+            output = f"{prefix}{highlight_start}{msg.replace(ANSI.DEFAULT, highlight_start)}{highlight_end}"
+        else:
+            output = f"{prefix}{msg}"
+
         exc_info = self.formatExcInfo(record)
+        if exc_info:
+            multiline = True
+            output = f"{output}\n{exc_info}"
+        else:
+            multiline = "\n" in msg
 
-        lines = msg.splitlines()
-        lines.extend(exc_info.splitlines())
+        if getattr(record, "no_padding", False) or (not multiline):
+            return output
 
-        # add prefix to first line of message
-        lines[0] = prefix + lines[0]
+        lines = output.splitlines()
 
         # add padding to each line of message
+        if self._prefix_func is not None:
+            prefix_len = len(self.strip_escape_patterns(prefix))
+        else:
+            prefix_len = len(prefix) - len(highlight_start) - len(highlight_end)
         pad = "\n" + " " * prefix_len
+
         return pad.join(lines)
 
 
