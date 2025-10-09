@@ -138,16 +138,19 @@ def _process_packages() -> None:
         cocotb.packages = SimpleNamespace()
         return
 
+    # Icarus doesn't support named access to package objects:
+    # https://github.com/steveicarus/iverilog/issues/1038
+    # so we cannot lazily create handles.
+    # Riviera VHPI seems to have the same issue.
+    needs_discover_all = cocotb.SIM_NAME.lower().startswith(("icarus", "riviera"))
+
     for pkg in pkgs:
         handle = cast(
             "cocotb.handle.HierarchyObject", cocotb.handle._make_sim_object(pkg)
         )
         name = handle._name
 
-        # Icarus doesn't support named access to package objects:
-        # https://github.com/steveicarus/iverilog/issues/1038
-        # so we cannot lazily create handles
-        if cocotb.SIM_NAME == "Icarus Verilog":
+        if needs_discover_all:
             handle._discover_all()
         pkg_dict[name] = handle
 
