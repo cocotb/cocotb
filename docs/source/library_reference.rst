@@ -528,13 +528,18 @@ Log Formatting
     - ``record``: The :class:`~logging.LogRecord` being formatted. This includes the attribute ``created_sim_time``, which is the simulation time in steps.
     - ``time``: The Python :mod:`time` module.
     - ``simtime``: The cocotb :mod:`cocotb.simtime` module.
+    - ``sim_time_str``: The simulation time, formatted as ``f"{t:.2f}ns"`` if available, or as ``"-.--ns"`` if not.
     - ``ANSI``: The cocotb :class:`cocotb.logging.ANSI` enum, which contains ANSI escape codes for coloring the output.
+    - ``highlight_start``: The ANSI escape code to start highlighting according to the log level.
+    - ``highlight_end``: The ANSI escape code to end highlighting according to the log level.
+    - ``ljust``: A helper function ``ljust(s,c)``, equivalent to ``s.ljust(c)`` after shortening ``s`` from the left to a length at most ``c`` and prepending ``..`` if anything was cut.
+    - ``rjust``: A helper function ``rjust(s,c)``, equivalent to ``s.rjust(c)`` after shortening in the same way as ``ljust``.
 
     The following example is a color-less version of the default log prefix.
 
     .. code-block:: shell
 
-        COCOTB_LOG_PREFIX="{simtime.convert(record.created_sim_time, 'step', to='ns'):>9}ns {record.levelname:<8} {record.name[-34:]:<34} "
+        COCOTB_LOG_PREFIX="{simtime.convert(record.created_sim_time, 'step', to='ns'):>9}ns {record.levelname:<8} {ljust(record.name, 34)} "
 
     .. note::
         If this variable is set, :envvar:`COCOTB_REDUCED_LOG_FMT` has no effect.
