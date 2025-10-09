@@ -43,5 +43,5 @@ async def test_log_prefix(_: object) -> None:
         logger.info("Test log message")
     assert (
         logs.msgs[0]
-        == f"{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} INFO 0       exam Test log message{ANSI.DEFAULT}"
+        == f"{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} INFO 0       exam Test log message"
     )
