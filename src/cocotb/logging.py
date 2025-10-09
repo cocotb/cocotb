@@ -306,7 +306,7 @@ class SimLogFormatter(logging.Formatter):
         return strip_ansi if self._strip_ansi is None else self._strip_ansi
 
     def strip_escape_patterns(self, string: str) -> str:
-        if self._no_ansi_heuristic or ("\x1b" in string):
+        if self._no_ansi_heuristic or (cocotb._ANSI._ESCAPE in string):
             return self._ansi_escape_pattern.sub("", string)
         return string
 
@@ -321,26 +321,24 @@ class SimLogFormatter(logging.Formatter):
 
     def formatPrefix(
         self, record: logging.LogRecord, highlight_start: str, highlight_end: str
-    ) -> tuple[str, int | None]:
+    ) -> str:
         sim_time = getattr(record, "created_sim_time", None)
         if sim_time is None:
-            sim_time_str = "  -.--ns"
+            sim_time_str = "-.--ns"
         else:
             time_ns = get_time_from_sim_steps(sim_time, "ns")
-            sim_time_str = f"{time_ns:6.2f}ns"
+            sim_time_str = f"{time_ns:.2f}ns"
 
         if self._prefix_func is not None:
             prefix = self._prefix_func(
                 record, sim_time_str, highlight_start, highlight_end
             )
-            return prefix, None
         else:
             prefix = f"{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {self.ljust(record.name, 34)} "
             if not self._reduced_log_fmt:
                 prefix = f"{prefix}{self.rjust(record.filename, 20)}:{record.lineno:<4} in {self.ljust(str(record.funcName), 31)} "
 
-            prefix_len = len(prefix) - len(highlight_start) - len(highlight_end)
-            return prefix, prefix_len
+        return prefix
 
     def formatExcInfo(self, record: logging.LogRecord) -> str:
         msg = ""
@@ -366,50 +364,39 @@ class SimLogFormatter(logging.Formatter):
             highlight_end = ""
         else:
             highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = ANSI.DEFAULT
+            highlight_end = ANSI.DEFAULT if highlight_start else ""
 
-        prefix, prefix_len = self.formatPrefix(record, highlight_start, highlight_end)
+        prefix = self.formatPrefix(record, highlight_start, highlight_end)
 
         msg = record.getMessage()
 
         if self.strip_ansi():
-            msg = self.strip_escape_patterns(msg)
+            output = f"{prefix}{self.strip_escape_patterns(msg)}"
         elif highlight_start:
             # NOTE: this assumes that ANSI.DEFAULT is used to go back to normal,
             # which is what we do but it can be not true in general.
-            msg = msg.replace(ANSI.DEFAULT, highlight_start)
-
-        # Break the message into lines
-        if highlight_start:
-            # Colorize each line separately, so that if a custom background is set
-            # it won't get applied to the padding used for alignment.
-            lines = [
-                f"{highlight_start}{line}{highlight_end}" for line in msg.splitlines()
-            ]
+            output = f"{prefix}{highlight_start}{msg.replace(ANSI.DEFAULT, highlight_start)}{highlight_end}"
         else:
-            lines = msg.splitlines()
+            output = f"{prefix}{msg}"
 
-        lines.extend(self.formatExcInfo(record).splitlines())
-
-        if len(lines) == 0:
-            lines.append("")
-
-        if len(lines) == 1:
-            # fast path for single line messages
-            return prefix + lines[0]
-
-        if not msg.startswith("\n"):
-            # add padding to each line of message
-            if prefix_len is None:
-                prefix_len = len(self.strip_escape_patterns(prefix))
-            pad = "\n" + " " * prefix_len
+        exc_info = self.formatExcInfo(record)
+        if exc_info:
+            multiline = True
+            output = f"{output}\n{exc_info}"
         else:
-            # special case: first line empty, i.e. message starts with newline,
-            # go to next line and leave padding to the caller.
-            pad = "\n"
+            multiline = "\n" in msg
 
-        # add prefix to first line of message
-        lines[0] = prefix + lines[0]
+        if getattr(record, "no_padding", False) or (not multiline):
+            return output
+
+        lines = output.splitlines()
+
+        # add padding to each line of message
+        if self._prefix_func is not None:
+            prefix_len = len(self.strip_escape_patterns(prefix))
+        else:
+            prefix_len = len(prefix) - len(highlight_start) - len(highlight_end)
+        pad = "\n" + " " * prefix_len
 
         return pad.join(lines)
 
