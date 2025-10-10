@@ -17,6 +17,7 @@ import sys
 import time
 import warnings
 from functools import wraps
+from typing import Callable
 
 import cocotb.simtime
 from cocotb import simulator
@@ -268,45 +269,42 @@ class SimLogFormatter(logging.Formatter):
         reduced_log_fmt: bool = True,
         strip_ansi: bool | None = None,
         prefix_format: str | None = None,
-        ansi_strip_heuristic: bool = False,
+        prefix_length: int | Callable[[str], int] | None = None,
     ) -> None:
         self._reduced_log_fmt = reduced_log_fmt
         self._strip_ansi = strip_ansi
-        self._prefix_func = (
-            eval(
-                f"lambda record, sim_time_str, highlight_start, highlight_end: f'''{prefix_format}'''",
-                type(self).prefix_func_globals,
-            )
-            if prefix_format is not None
-            else None
+        if prefix_format is None:
+            prefix_format = "{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {ljust(record.name, 34)} "
+            prefix_length = 56
+            if not self._reduced_log_fmt:
+                prefix_format = "{prefix}{rjust(record.filename, 20)}:{record.lineno:<4} in {ljust(str(record.funcName), 31)} "
+                prefix_length += 61
+
+        self._prefix_func = eval(
+            f"lambda record, sim_time_str, highlight_start, highlight_end: f'''{prefix_format}'''",
+            type(self).prefix_func_globals,
         )
+        if prefix_length is None:
+            self._prefix_len: int | Callable[[str], int] = lambda s: len(
+                self.strip_escape_patterns(s)
+            )
+        else:
+            self._prefix_len = prefix_length
         self._ansi_escape_pattern = re.compile(
             r"""
-                (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
-                    \x1B
-                    [@-Z\\-_]
-                |   # or a single 8-bit byte Fe (omitting CSI)
-                    [\x80-\x9A\x9C-\x9F]
-                |   # or CSI + control codes
-                    (?: # 7-bit CSI, ESC [
-                        \x1B\[
-                    |   # 8-bit CSI, 9B
-                        \x9B
-                    )
-                    [0-?]*  # Parameter bytes
-                    [ -/]*  # Intermediate bytes
-                    [@-~]   # Final byte
-                )
+                \x1B\[  # 7-bit CSI, ESC [
+                [0-?]*  # Parameter bytes
+                [ -/]*  # Intermediate bytes
+                [@-~]   # Final byte
             """,
             re.VERBOSE,
         )
-        self._no_ansi_heuristic = not ansi_strip_heuristic
 
     def strip_ansi(self) -> bool:
         return strip_ansi if self._strip_ansi is None else self._strip_ansi
 
     def strip_escape_patterns(self, string: str) -> str:
-        if self._no_ansi_heuristic or (cocotb._ANSI._ESCAPE in string):
+        if cocotb._ANSI._ESCAPE in string:
             return self._ansi_escape_pattern.sub("", string)
         return string
 
@@ -329,16 +327,7 @@ class SimLogFormatter(logging.Formatter):
             time_ns = get_time_from_sim_steps(sim_time, "ns")
             sim_time_str = f"{time_ns:.2f}ns"
 
-        if self._prefix_func is not None:
-            prefix = self._prefix_func(
-                record, sim_time_str, highlight_start, highlight_end
-            )
-        else:
-            prefix = f"{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {self.ljust(record.name, 34)} "
-            if not self._reduced_log_fmt:
-                prefix = f"{prefix}{self.rjust(record.filename, 20)}:{record.lineno:<4} in {self.ljust(str(record.funcName), 31)} "
-
-        return prefix
+        return self._prefix_func(record, sim_time_str, highlight_start, highlight_end)
 
     def formatExcInfo(self, record: logging.LogRecord) -> str:
         msg = ""
@@ -364,7 +353,7 @@ class SimLogFormatter(logging.Formatter):
             highlight_end = ""
         else:
             highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = ANSI.DEFAULT if highlight_start else ""
+            highlight_end = ANSI.DEFAULT
 
         prefix = self.formatPrefix(record, highlight_start, highlight_end)
 
@@ -373,11 +362,15 @@ class SimLogFormatter(logging.Formatter):
         if self.strip_ansi():
             output = f"{prefix}{self.strip_escape_patterns(msg)}"
         elif highlight_start:
-            # NOTE: this assumes that ANSI.DEFAULT is used to go back to normal,
-            # which is what we do but it can be not true in general.
+            # NOTE: this handles the case where the string to log applies some
+            # custom coloring, but then reverts to default. The default should
+            # be this log level's default and not the terminal's. This assumes
+            # that ANSI.DEFAULT is used to revert.
             output = f"{prefix}{highlight_start}{msg.replace(ANSI.DEFAULT, highlight_start)}{highlight_end}"
         else:
-            output = f"{prefix}{msg}"
+            # Just in case the log message itself contains ANSI codes,
+            # always revert to default at the end.
+            output = f"{prefix}{msg}{highlight_end}"
 
         exc_info = self.formatExcInfo(record)
         if exc_info:
@@ -392,10 +385,10 @@ class SimLogFormatter(logging.Formatter):
         lines = output.splitlines()
 
         # add padding to each line of message
-        if self._prefix_func is not None:
-            prefix_len = len(self.strip_escape_patterns(prefix))
+        if isinstance(self._prefix_len, int):
+            prefix_len = self._prefix_len
         else:
-            prefix_len = len(prefix) - len(highlight_start) - len(highlight_end)
+            prefix_len = self._prefix_len(prefix)
         pad = "\n" + " " * prefix_len
 
         return pad.join(lines)
