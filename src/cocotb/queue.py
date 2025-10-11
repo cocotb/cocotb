@@ -6,8 +6,9 @@ from __future__ import annotations
 import asyncio.queues
 import collections
 import heapq
+import sys
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import Generic, Protocol, TypeVar
 
 import cocotb
 import cocotb.task
@@ -15,16 +16,8 @@ from cocotb._utils import pointer_str
 from cocotb.task import Task
 from cocotb.triggers import Event
 
-if TYPE_CHECKING:
-    from typing import Protocol, Self
-
-    class SupportsRichComparison(Protocol):
-        def __eq__(self, other: object) -> bool: ...
-        def __lt__(self, other: Self) -> bool: ...
-        def __le__(self, other: Self) -> bool: ...
-        def __gt__(self, other: Self) -> bool: ...
-        def __ge__(self, other: Self) -> bool: ...
-
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 __all__ = (
     "AbstractQueue",
@@ -194,6 +187,14 @@ class Queue(AbstractQueue[T]):
 
     def _repr(self) -> str:
         return repr(self._queue)
+
+
+class SupportsRichComparison(Protocol):
+    def __eq__(self, other: object) -> bool: ...
+    def __lt__(self, other: Self) -> bool: ...
+    def __le__(self, other: Self) -> bool: ...
+    def __gt__(self, other: Self) -> bool: ...
+    def __ge__(self, other: Self) -> bool: ...
 
 
 SupportsRichComparisonT = TypeVar(

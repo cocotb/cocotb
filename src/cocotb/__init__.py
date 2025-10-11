@@ -5,7 +5,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from logging import Logger
+from types import SimpleNamespace
 
 from cocotb._decorators import (
     parametrize,
@@ -13,15 +14,10 @@ from cocotb._decorators import (
 )
 from cocotb._test import create_task, start, start_soon
 from cocotb._test_functions import pass_test
+from cocotb.handle import SimHandleBase
+from cocotb.regression import RegressionManager
 
 from ._version import __version__ as _version
-
-if TYPE_CHECKING:
-    from logging import Logger
-    from types import SimpleNamespace
-
-    from cocotb.handle import SimHandleBase
-    from cocotb.regression import RegressionManager
 
 __all__ = (
     "RANDOM_SEED",

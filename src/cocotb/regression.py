@@ -20,15 +20,13 @@ import warnings
 from collections.abc import Coroutine
 from enum import auto
 from importlib import import_module
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-)
+from typing import Callable
 
 import cocotb
 import cocotb._event_loop
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
+from cocotb._base_triggers import Trigger
 from cocotb._decorators import Parameterized, Test
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
@@ -45,9 +43,6 @@ from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
 from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
 from cocotb.task import Task
-
-if TYPE_CHECKING:
-    from cocotb._base_triggers import Trigger
 
 __all__ = (
     "Parameterized",

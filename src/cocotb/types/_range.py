@@ -167,7 +167,7 @@ class Range(Sequence[int]):
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({self.left!r}, {self.direction!r}, {self.right!r})"
 
-    index = cached_method(Sequence.index)
+    index = cached_method(Sequence[int].index)
 
     def __copy__(self) -> Range:
         return Range.from_range(self._range)
