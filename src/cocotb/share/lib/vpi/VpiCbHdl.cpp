@@ -152,6 +152,10 @@ int VpiCbHdl::run() {
     else {
         delete this;
     }
+#else
+    // For other simulators: VPI spec says one-shot callbacks auto-cleanup
+    // their handle after firing. We just need to delete the C++ object.
+    delete this;
 #endif
 
     return res;
