@@ -9,19 +9,12 @@ import logging
 import warnings
 from collections.abc import Coroutine, Sequence
 from itertools import product
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    cast,
-    overload,
-)
+from types import FrameType, FunctionType
+from typing import Callable, cast, overload
 
 from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test
 from cocotb._typing import TimeUnit
-
-if TYPE_CHECKING:
-    from types import FrameType, FunctionType
 
 
 class TestFactory:
