@@ -193,7 +193,7 @@ ResultT = TypeVar("ResultT")
 InstanceT = TypeVar("InstanceT")
 
 
-class cached_method(Generic[InstanceT, "Params", ResultT]):
+class cached_method(Generic[InstanceT, Params, ResultT]):
     def __init__(
         self, method: Callable[Concatenate[InstanceT, Params], ResultT]
     ) -> None:

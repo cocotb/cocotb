@@ -9,21 +9,19 @@ import random
 from collections import deque
 from collections.abc import Sequence
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Generic,
+    Protocol,
     TypeVar,
 )
 
 import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import LogicObject, ValueObjectBase
+from cocotb.task import Task
 from cocotb.triggers import Event, FallingEdge, ReadOnly, RisingEdge, Trigger
 from cocotb.types import Array, LogicArray, Range
-
-if TYPE_CHECKING:
-    from cocotb.task import Task
 
 T = TypeVar("T")
 
@@ -269,19 +267,17 @@ class MatrixMultiplierModel:
             cb(result)
 
 
-if TYPE_CHECKING:
-    from typing import Protocol
+T_contra = TypeVar("T_contra", contravariant=True)
 
-    T_contra = TypeVar("T_contra", contravariant=True)
 
-    class CompareFunc(Protocol[T_contra]):
-        """Type for a function that compares two values of the same type.
+class CompareFunc(Protocol[T_contra]):
+    """Type for a function that compares two values of the same type.
 
-        *expected* and *actual* are passed as keyword arguments.
-        """
+    *expected* and *actual* are passed as keyword arguments.
+    """
 
-        def __call__(self, *, expected: T_contra, actual: T_contra) -> bool:
-            pass
+    def __call__(self, *, expected: T_contra, actual: T_contra) -> bool:
+        pass
 
 
 class InOrderChecker(Generic[T]):
