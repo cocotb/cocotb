@@ -327,7 +327,7 @@ class Runner(ABC):
             hdl_toplevel: The name of the HDL toplevel module.
             always: Always run the build step.
             build_dir: Directory to run the build step in.
-            cwd: Directory to execute the build command(s) in. Defaults to build_dir.
+            cwd: Directory to execute the build command(s) in. Defaults to *build_dir*.
             clean: Delete *build_dir* before building.
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
@@ -376,10 +376,7 @@ class Runner(ABC):
         self.verbose: bool = verbose
         self.timescale: tuple[str, str] | None = timescale
         self.log_file: PathLike | None = log_file
-
-        self.cwd = cwd
-        if cwd == None:
-            self.cwd = self.build_dir
+        self.cwd = self.build_dir if cwd is None else cwd
 
         self.waves = bool(os.getenv("WAVES", waves))
 
