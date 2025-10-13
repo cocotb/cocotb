@@ -274,6 +274,7 @@ class Runner(ABC):
         hdl_toplevel: str | None = None,
         always: bool = False,
         build_dir: PathLike = "sim_build",
+        cwd: PathLike | None = None,
         clean: bool = False,
         verbose: bool = False,
         timescale: tuple[str, str] | None = None,
@@ -326,6 +327,7 @@ class Runner(ABC):
             hdl_toplevel: The name of the HDL toplevel module.
             always: Always run the build step.
             build_dir: Directory to run the build step in.
+            cwd: Directory to execute the build command(s) in. Defaults to build_dir.
             clean: Delete *build_dir* before building.
             verbose: Enable verbose messages.
             timescale: Tuple containing time unit and time precision for simulation.
@@ -375,12 +377,16 @@ class Runner(ABC):
         self.timescale: tuple[str, str] | None = timescale
         self.log_file: PathLike | None = log_file
 
+        self.cwd = cwd
+        if cwd == None:
+            self.cwd = self.build_dir
+
         self.waves = bool(os.getenv("WAVES", waves))
 
         self.env.update(os.environ)
 
         cmds: Sequence[_Command] = self._build_command()
-        self._execute(cmds, cwd=self.build_dir)
+        self._execute(cmds, cwd=self.cwd)
 
     def test(
         self,
