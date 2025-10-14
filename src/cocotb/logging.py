@@ -286,10 +286,15 @@ class SimLogFormatter(logging.Formatter):
         )
         self._ansi_escape_pattern = re.compile(
             r"""
-                \x1B\[  # 7-bit CSI, ESC [
-                [0-?]*  # Parameter bytes
-                [ -/]*  # Intermediate bytes
-                [@-~]   # Final byte
+                \x1B
+                (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
+                    [@-Z\\-_]
+                | # or 7-bit CSI (ESC [) + control codes
+                    \[
+                    [0-?]*  # Parameter bytes
+                    [ -/]*  # Intermediate bytes
+                    [@-~]   # Final byte
+                )
             """,
             re.VERBOSE,
         )
@@ -350,10 +355,7 @@ class SimLogFormatter(logging.Formatter):
             highlight_end = ""
         else:
             highlight_start = self.loglevel2colour.get(record.levelno, "")
-            if highlight_start or (cocotb._ANSI._ESCAPE in msg):
-                highlight_end = ANSI.DEFAULT
-            else:
-                highlight_end = ""
+            highlight_end = ANSI.DEFAULT
 
         prefix = self.formatPrefix(record, highlight_start, highlight_end)
 
