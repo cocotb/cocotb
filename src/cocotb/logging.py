@@ -284,12 +284,6 @@ class SimLogFormatter(logging.Formatter):
             f"lambda record, sim_time_str, highlight_start, highlight_end: f'''{prefix_format}'''",
             type(self).prefix_func_globals,
         )
-        if prefix_length is None:
-            self._prefix_len: int | Callable[[str], int] = lambda s: len(
-                self.strip_escape_patterns(s)
-            )
-        else:
-            self._prefix_len = prefix_length
         self._ansi_escape_pattern = re.compile(
             r"""
                 \x1B\[  # 7-bit CSI, ESC [
@@ -299,14 +293,15 @@ class SimLogFormatter(logging.Formatter):
             """,
             re.VERBOSE,
         )
+        if prefix_length is None:
+            self._prefix_len: int | Callable[[str], int] = lambda s: len(
+                self._ansi_escape_pattern.sub("", s)
+            )
+        else:
+            self._prefix_len = prefix_length
 
     def strip_ansi(self) -> bool:
         return strip_ansi if self._strip_ansi is None else self._strip_ansi
-
-    def strip_escape_patterns(self, string: str) -> str:
-        if cocotb._ANSI._ESCAPE in string:
-            return self._ansi_escape_pattern.sub("", string)
-        return string
 
     # Justify and truncate
     @staticmethod
@@ -348,19 +343,22 @@ class SimLogFormatter(logging.Formatter):
         return msg
 
     def format(self, record: logging.LogRecord) -> str:
+        msg = record.getMessage()
+
         if self.strip_ansi():
             highlight_start = ""
             highlight_end = ""
         else:
             highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = ANSI.DEFAULT
+            if highlight_start or (cocotb._ANSI._ESCAPE in msg):
+                highlight_end = ANSI.DEFAULT
+            else:
+                highlight_end = ""
 
         prefix = self.formatPrefix(record, highlight_start, highlight_end)
 
-        msg = record.getMessage()
-
         if self.strip_ansi():
-            output = f"{prefix}{self.strip_escape_patterns(msg)}"
+            output = self._ansi_escape_pattern.sub("", f"{prefix}{msg}")
         elif highlight_start:
             # NOTE: this handles the case where the string to log applies some
             # custom coloring, but then reverts to default. The default should
