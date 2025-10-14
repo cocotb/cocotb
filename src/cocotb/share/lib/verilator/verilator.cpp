@@ -21,7 +21,11 @@
 #if VM_TRACE_FST
 #include <verilated_fst_c.h>
 using verilated_trace_t = VerilatedFstC;
+#elif VM_TRACE_SAIF
+#include <verilated_saif_c.h>
+using verilated_trace_t = VerilatedSaifC;
 #else
+// VM_TRACE_VCD
 #include <verilated_vcd_c.h>
 using verilated_trace_t = VerilatedVcdC;
 #endif
@@ -74,6 +78,8 @@ void wrap_up() {
 int main(int argc, char **argv) {
 #if VM_TRACE_FST
     const char *traceFile = "dump.fst";
+#elif VM_TRACE_SAIF
+    const char *traceFile = "dump.saif";
 #else
     const char *traceFile = "dump.vcd";
 #endif
@@ -108,7 +114,7 @@ int main(int argc, char **argv) {
                 "cocotb + Verilator sim\n"
                 "\n"
                 "options:\n"
-                "  --trace       Enable tracing (VCD or FST)\n"
+                "  --trace       Enable tracing (VCD, SAIF or FST)\n"
                 "  --trace-flush Flush trace at each time step (slow)\n"
                 "  --trace-file  Specify the trace file name (%s by "
                 "default)\n",
