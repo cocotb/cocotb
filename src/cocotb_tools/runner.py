@@ -1444,6 +1444,24 @@ class AldecBase(Runner):
         return [["vsimsa", "-do", do_file.name]]
 
 
+class Riviera(AldecBase):
+    """Implementation of :class:`Runner` for Aldec Riviera-Pro.
+    .. admonition:: Simulator-specific Usage
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+       * Does not support the ``gui`` argument to :meth:`.test`.
+       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
+    """
+
+
+class ActiveHDL(AldecBase):
+    """Implementation of :class:`Runner` for Aldec Active-HDL.
+    .. admonition:: Simulator-specific Usage
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+       * Does not support the ``gui`` argument to :meth:`.test`.
+       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
+    """
+    
+
 class Verilator(Runner):
     """Implementation of :class:`Runner` for Verilator.
 
@@ -1985,8 +2003,8 @@ def get_runner(simulator_name: str) -> Runner:
         "icarus": Icarus,
         "questa": Questa,
         "ghdl": Ghdl,
-        "riviera": AldecBase,
-        "activehdl": AldecBase,
+        "riviera": Riviera,
+        "activehdl": ActiveHDL,
         "verilator": Verilator,
         "xcelium": Xcelium,
         "nvc": Nvc,
