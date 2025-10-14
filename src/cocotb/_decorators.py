@@ -14,7 +14,7 @@ from itertools import product
 from typing import Callable, Protocol, cast, overload
 
 from cocotb._base_triggers import Trigger
-from cocotb._typing import TimeUnit
+from cocotb.simtime import TimeUnit
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias

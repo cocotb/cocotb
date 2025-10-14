@@ -14,7 +14,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Callable
 
-from cocotb._typing import TimeUnit
+from cocotb.simtime import TimeUnit
 from cocotb.utils import get_sim_steps, get_sim_time, get_time_from_sim_steps
 
 

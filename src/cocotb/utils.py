@@ -12,8 +12,9 @@ import warnings
 from decimal import Decimal
 from fractions import Fraction
 
-from cocotb._typing import RoundMode, TimeUnit
 from cocotb.simtime import (
+    RoundMode,
+    TimeUnit,
     _get_sim_steps,
     _get_time_from_sim_steps,
     get_sim_time,

@@ -14,7 +14,7 @@ from typing import Callable, cast, overload
 
 from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test
-from cocotb._typing import TimeUnit
+from cocotb.simtime import TimeUnit
 
 
 class TestFactory:
