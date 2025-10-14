@@ -41,7 +41,12 @@ async def test_log_prefix(_: object) -> None:
     logger.setLevel(logging.INFO)
     with capture_logs(logging.getLogger().handlers[0]) as logs:
         logger.info("Test log message")
+        logger.info("Test log %smessage", ANSI.GREEN_FG)
     assert (
         logs.msgs[0]
-        == f"{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} INFO 0       exam Test log message{ANSI.DEFAULT}"
+        == f"{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} INFO 0       exam Test log message"
+    )
+    assert (
+        logs.msgs[1]
+        == f"{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} INFO 0       exam Test log {ANSI.GREEN_FG}message{ANSI.DEFAULT}"
     )
