@@ -17,20 +17,40 @@ from math import ceil, floor
 from typing import Literal, cast, overload
 
 from cocotb import simulator
-from cocotb._typing import RoundMode, TimeUnit
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
 
 __all__ = (
+    "RoundMode",
+    "TimeUnit",
     "convert",
     "get_sim_time",
     "time_precision",
 )
 
+RoundMode: TypeAlias = Literal["error", "round", "ceil", "floor"]
+"""
+How to handle non-integral step values when quantizing to simulator time steps.
 
-Steps: TypeAlias = Literal["step"]
-TimeUnitWithoutSteps: TypeAlias = Literal["fs", "ps", "ns", "us", "ms", "sec"]
+One of ``'error'``, ``'round'``, ``'ceil'``, or ``'floor'``.
+
+When *round_mode* is ``"error"``, a :exc:`ValueError` is thrown if the value cannot
+be accurately represented in terms of simulator time steps.
+When *round_mode* is ``"round"``, ``"ceil"``, or ``"floor"``, the corresponding
+rounding function from the standard library will be used to round to a simulator
+time step.
+"""
+
+TimeUnit: TypeAlias = Literal["step", "fs", "ps", "ns", "us", "ms", "sec"]
+"""Unit of simulated time.
+
+One of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, or ``'sec'``.
+
+``'step'`` represents a quanta of simulated time,
+as defined by the precision specified in ``timescale`` pragmas in Verilog source code,
+or by :make:var:`COCOTB_HDL_TIMEPRECISION`.
+"""
 
 
 @overload
@@ -38,7 +58,7 @@ def convert(
     value: float | Fraction | Decimal,
     unit: TimeUnit,
     *,
-    to: Steps,
+    to: Literal["step"],
     round_mode: RoundMode = "error",
 ) -> int: ...
 
@@ -48,7 +68,7 @@ def convert(
     value: float | Fraction | Decimal,
     unit: TimeUnit,
     *,
-    to: TimeUnitWithoutSteps,
+    to: Literal["fs", "ps", "ns", "us", "ms", "sec"],
     round_mode: RoundMode = "error",
 ) -> float: ...
 
@@ -94,11 +114,13 @@ def convert(
 
 
 @overload
-def get_sim_time(unit: Steps = "step", *, units: None = None) -> int: ...
+def get_sim_time(unit: Literal["step"] = "step", *, units: None = None) -> int: ...
 
 
 @overload
-def get_sim_time(unit: TimeUnitWithoutSteps, *, units: None = None) -> float: ...
+def get_sim_time(
+    unit: Literal["fs", "ps", "ns", "us", "ms", "sec"], *, units: None = None
+) -> float: ...
 
 
 def get_sim_time(unit: TimeUnit = "step", *, units: None = None) -> float:
@@ -201,7 +223,7 @@ def _get_sim_steps(
 
 
 @cache
-def _get_log_time_scale(unit: TimeUnitWithoutSteps) -> int:
+def _get_log_time_scale(unit: Literal["fs", "ps", "ns", "us", "ms", "sec"]) -> int:
     """Retrieve the ``log10()`` of the scale factor for a given time unit.
 
     Args:

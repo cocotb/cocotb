@@ -13,12 +13,7 @@ import warnings
 from collections.abc import Generator
 from decimal import Decimal
 from fractions import Fraction
-from typing import (
-    Any,
-    ClassVar,
-    Generic,
-    TypeVar,
-)
+from typing import Any, ClassVar, Generic, TypeVar
 
 import cocotb
 import cocotb._event_loop
@@ -27,8 +22,8 @@ from cocotb import debug, simulator
 from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
 from cocotb._profiling import profiling_context
-from cocotb._typing import RoundMode, TimeUnit
 from cocotb._utils import pointer_str, singleton
+from cocotb.simtime import RoundMode, TimeUnit
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 if sys.version_info >= (3, 11):

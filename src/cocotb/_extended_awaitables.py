@@ -11,17 +11,12 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Awaitable, Coroutine, Generator
 from decimal import Decimal
-from typing import (
-    Any,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import Any, TypeVar, cast, overload
 
 import cocotb.handle
 from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
-from cocotb._typing import RoundMode, TimeUnit
+from cocotb.simtime import RoundMode, TimeUnit
 from cocotb.task import Task
 
 T = TypeVar("T")

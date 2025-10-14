@@ -18,7 +18,6 @@ from logging import Logger
 from typing import ClassVar, Literal
 
 import cocotb
-from cocotb._typing import TimeUnit
 from cocotb.handle import (
     Deposit,
     Force,
@@ -27,6 +26,7 @@ from cocotb.handle import (
     _GPISetAction,
     _trust_inertial,
 )
+from cocotb.simtime import TimeUnit
 from cocotb.simulator import clock_create
 from cocotb.task import Task
 from cocotb.triggers import (
