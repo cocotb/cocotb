@@ -1461,6 +1461,7 @@ class ActiveHDL(AldecBase):
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
+
 class Verilator(Runner):
     """Implementation of :class:`Runner` for Verilator.
 
