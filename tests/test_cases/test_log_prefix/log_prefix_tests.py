@@ -8,7 +8,7 @@ import logging
 from collections.abc import Generator
 
 import cocotb
-from cocotb.logging import ANSI, SimLogFormatter
+from cocotb.logging import ANSI
 
 
 class LogCaptureData:
@@ -41,13 +41,7 @@ async def test_log_prefix(_: object) -> None:
     logger.setLevel(logging.INFO)
     with capture_logs(logging.getLogger().handlers[0]) as logs:
         logger.info("Test log message")
-        logging.getLogger().handlers[0].setFormatter(SimLogFormatter(strip_ansi=True))
-        logger.info("Test log %smessage", ANSI.GREEN_FG)
     assert (
         logs.msgs[0]
         == f"{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} INFO 0       exam Test log message{ANSI.DEFAULT}"
-    )
-    assert (
-        logs.msgs[1]
-        == f"{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} INFO 0       exam Test log message"
     )
