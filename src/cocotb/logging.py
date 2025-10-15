@@ -15,7 +15,6 @@ import sys
 import time
 import warnings
 from functools import wraps
-from pathlib import Path
 from typing import Optional, Tuple, Union
 
 import cocotb.simtime
@@ -266,17 +265,11 @@ class SimLogFormatter(logging.Formatter):
         )
         self._ansi_escape_pattern = re.compile(
             r"""
+                \x1B
                 (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
-                    \x1B
                     [@-Z\\-_]
-                |   # or a single 8-bit byte Fe (omitting CSI)
-                    [\x80-\x9A\x9C-\x9F]
-                |   # or CSI + control codes
-                    (?: # 7-bit CSI, ESC [
-                        \x1B\[
-                    |   # 8-bit CSI, 9B
-                        \x9B
-                    )
+                | # or 7-bit CSI (ESC [) + control codes
+                    \[
                     [0-?]*  # Parameter bytes
                     [ -/]*  # Intermediate bytes
                     [@-~]   # Final byte
@@ -324,7 +317,7 @@ class SimLogFormatter(logging.Formatter):
         else:
             prefix = f"{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {self.ljust(record.name, 34)} "
             if not self._reduced_log_fmt:
-                prefix = f"{prefix}{self.rjust(Path(record.filename).name, 20)}:{record.lineno:<4} in {self.ljust(str(record.funcName), 31)} "
+                prefix = f"{prefix}{self.rjust(record.filename, 20)}:{record.lineno:<4} in {self.ljust(str(record.funcName), 31)} "
 
             prefix_len = len(prefix) - len(highlight_start) - len(highlight_end)
             return prefix, prefix_len
