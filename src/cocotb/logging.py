@@ -54,6 +54,8 @@ def default_config(
     reduced_log_fmt: bool = True,
     strip_ansi: bool | None = None,
     prefix_format: str | None = None,
+    strip_method: Callable[[str], str] | None = None,
+    multiline_indent: int | Callable[[str], int] | None = None,
 ) -> None:
     """Apply the default cocotb log formatting to the root logger.
 
@@ -86,6 +88,31 @@ def default_config(
 
             .. versionadded:: 2.0
 
+        strip_method:
+            A function used to remove nonprintable sequences from a string.
+            If ``None``, it defaults to a basic implementation that removes
+            at least all the ANSI sequences used by cocotb for coloring.
+
+            .. versionadded:: 2.1
+
+        multiline_indent:
+            Controls the indentation of subsequent log lines in a multiline
+            log message.
+            If the argument is a callable, it will be called every time with
+            the stripped formatted prefix string and should return the number
+            of spaces to indent.
+            If a non-negative integer, it will be used directly as the number
+            of spaces to indent.
+            If a negative integer, the indentation will be the length of the
+            stripped prefix, when formatted with an empty LogRecord. This is
+            calculated only on initialization, so it's fast but assumes that
+            the prefix length does not change.
+            If ``None``, a default length (for builtin prefixes) or a default
+            method taking the length of the stripped prefix (for custom
+            ``prefix_format``) will be used.
+
+            .. versionadded:: 2.1
+
     .. versionadded:: 1.4
 
     .. versionchanged:: 2.0
@@ -101,6 +128,8 @@ def default_config(
             reduced_log_fmt=reduced_log_fmt,
             strip_ansi=strip_ansi,
             prefix_format=prefix_format,
+            strip_method=strip_method,
+            multiline_indent=multiline_indent,
         )
     )
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
@@ -269,57 +298,59 @@ class SimLogFormatter(logging.Formatter):
         reduced_log_fmt: bool = True,
         strip_ansi: bool | None = None,
         prefix_format: str | None = None,
-        prefix_length: int | Callable[[str], int] | None = None,
-        prefix_strip: Callable[[str], str] | None = None,
+        strip_method: Callable[[str], str] | None = None,
+        multiline_indent: int | Callable[[str], int] | None = None,
     ) -> None:
         self._reduced_log_fmt = reduced_log_fmt
         self._strip_ansi = strip_ansi
+
+        if strip_method is not None:
+            self._strip_method = strip_method
+        else:
+            ansi_escape_pattern = re.compile(
+                r"""
+                    \x1B
+                    (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
+                        [@-Z\\-_]
+                    | # or 7-bit CSI (ESC [) + control codes
+                        \[
+                        [0-?]*  # Parameter bytes
+                        [ -/]*  # Intermediate bytes
+                        [@-~]   # Final byte
+                    )
+                """,
+                re.VERBOSE,
+            )
+            self._strip_method = lambda s: ansi_escape_pattern.sub("", s)
+
         if prefix_format is None:
             prefix_format = "{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {ljust(record.name, 34)} "
             if not self._reduced_log_fmt:
                 prefix_format = "{prefix}{rjust(record.filename, 20)}:{record.lineno:<4} in {ljust(str(record.funcName), 31)} "
-            prefix_length = -1
-
-            def passthrough(s: str) -> str:
-                return s
-
-            prefix_strip = passthrough
+            if multiline_indent is None:
+                # The default prefix_formats length is fixed, so unless explicitly
+                # overridden, precompute indentation on initialization.
+                multiline_indent = -1
 
         self._prefix_func = eval(
             f"lambda record, sim_time_str, highlight_start, highlight_end: f'''{prefix_format}'''",
             type(self).prefix_func_globals,
         )
-        self._ansi_escape_pattern = re.compile(
-            r"""
-                \x1B
-                (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
-                    [@-Z\\-_]
-                | # or 7-bit CSI (ESC [) + control codes
-                    \[
-                    [0-?]*  # Parameter bytes
-                    [ -/]*  # Intermediate bytes
-                    [@-~]   # Final byte
-                )
-            """,
-            re.VERBOSE,
-        )
-        if isinstance(prefix_length, int) and prefix_length < 0:
+
+        if isinstance(multiline_indent, int) and multiline_indent < 0:
+            # Compute the indentation based on the length of the prefix
+            # when formatted with an empty LogRecord.
             record = logging.getLogger().makeRecord(
                 "", logging.INFO, "", 0, "", (), None, func=""
             )
-            prefix_length = len(
-                self._ansi_escape_pattern.sub("", self._prefix_func(record, "", "", ""))
+            multiline_indent = len(
+                self._strip_method(self._prefix_func(record, "", "", ""))
             )
-        if prefix_length is None:
-            self._prefix_len: int | Callable[[str], int] = len
+
+        if multiline_indent is None:
+            self._multiline_indent: int | Callable[[str], int] = len
         else:
-            self._prefix_len = prefix_length
-        if prefix_strip is None:
-            self._prefix_strip: Callable[[str], str] = (
-                lambda s: self._ansi_escape_pattern.sub("", s)
-            )
-        else:
-            self._prefix_strip = prefix_strip
+            self._multiline_indent = multiline_indent
 
     def strip_ansi(self) -> bool:
         return strip_ansi if self._strip_ansi is None else self._strip_ansi
@@ -379,8 +410,7 @@ class SimLogFormatter(logging.Formatter):
         prefix = self.formatPrefix(record, highlight_start, highlight_end)
 
         if self.strip_ansi():
-            prefix = self._prefix_strip(prefix)
-            output = f"{prefix}{self._ansi_escape_pattern.sub('', msg)}"
+            output = self._strip_method(f"{prefix}{msg}")
         elif highlight_start:
             # NOTE: this handles the case where the string to log applies some
             # custom coloring, but then reverts to default. The default should
@@ -399,17 +429,17 @@ class SimLogFormatter(logging.Formatter):
         else:
             multiline = "\n" in msg
 
-        if (not multiline) or (self._prefix_len == 0):
+        if (not multiline) or (self._multiline_indent == 0):
             return output
 
         lines = output.splitlines()
 
         # add padding to each line of message
-        if isinstance(self._prefix_len, int):
-            prefix_len = self._prefix_len
+        if isinstance(self._multiline_indent, int):
+            indent = self._multiline_indent
         else:
-            prefix_len = self._prefix_len(self._prefix_strip(prefix))
-        pad = "\n" + " " * prefix_len
+            indent = self._multiline_indent(self._strip_method(prefix))
+        pad = "\n" + " " * indent
 
         return pad.join(lines)
 
