@@ -40,7 +40,7 @@ def test_log_prefix() -> None:
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
-        testcase="test_log_prefix_custom",
+        test_filter="test_log_prefix_custom",
         extra_env={
             "COCOTB_LOG_PREFIX": "{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} {record.levelname} {record.created_sim_time} {record.name[:4]:>10} "
         },
@@ -51,7 +51,7 @@ def test_log_prefix() -> None:
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
-        testcase="test_log_prefix_default",
+        test_filter="test_log_prefix_default",
     )
 
     runner.test(
@@ -59,6 +59,6 @@ def test_log_prefix() -> None:
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
-        testcase="test_log_prefix_default",
+        test_filter="test_log_prefix_default",
         extra_env={"COCOTB_REDUCED_LOG_FMT": "0"},
     )
