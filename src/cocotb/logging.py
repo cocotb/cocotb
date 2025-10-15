@@ -270,15 +270,20 @@ class SimLogFormatter(logging.Formatter):
         strip_ansi: bool | None = None,
         prefix_format: str | None = None,
         prefix_length: int | Callable[[str], int] | None = None,
+        prefix_strip: Callable[[str], str] | None = None,
     ) -> None:
         self._reduced_log_fmt = reduced_log_fmt
         self._strip_ansi = strip_ansi
         if prefix_format is None:
             prefix_format = "{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {ljust(record.name, 34)} "
-            prefix_length = 56
             if not self._reduced_log_fmt:
                 prefix_format = "{prefix}{rjust(record.filename, 20)}:{record.lineno:<4} in {ljust(str(record.funcName), 31)} "
-                prefix_length += 61
+            prefix_length = -1
+
+            def passthrough(s: str) -> str:
+                return s
+
+            prefix_strip = passthrough
 
         self._prefix_func = eval(
             f"lambda record, sim_time_str, highlight_start, highlight_end: f'''{prefix_format}'''",
@@ -298,12 +303,23 @@ class SimLogFormatter(logging.Formatter):
             """,
             re.VERBOSE,
         )
-        if prefix_length is None:
-            self._prefix_len: int | Callable[[str], int] = lambda s: len(
-                self._ansi_escape_pattern.sub("", s)
+        if isinstance(prefix_length, int) and prefix_length < 0:
+            record = logging.getLogger().makeRecord(
+                "", logging.INFO, "", 0, "", (), None, func=""
             )
+            prefix_length = len(
+                self._ansi_escape_pattern.sub("", self._prefix_func(record, "", "", ""))
+            )
+        if prefix_length is None:
+            self._prefix_len: int | Callable[[str], int] = len
         else:
             self._prefix_len = prefix_length
+        if prefix_strip is None:
+            self._prefix_strip: Callable[[str], str] = (
+                lambda s: self._ansi_escape_pattern.sub("", s)
+            )
+        else:
+            self._prefix_strip = prefix_strip
 
     def strip_ansi(self) -> bool:
         return strip_ansi if self._strip_ansi is None else self._strip_ansi
@@ -318,7 +334,10 @@ class SimLogFormatter(logging.Formatter):
         return _rjust(string, chars)
 
     def formatPrefix(
-        self, record: logging.LogRecord, highlight_start: str, highlight_end: str
+        self,
+        record: logging.LogRecord,
+        highlight_start: str,
+        highlight_end: str,
     ) -> str:
         sim_time = getattr(record, "created_sim_time", None)
         if sim_time is None:
@@ -355,22 +374,23 @@ class SimLogFormatter(logging.Formatter):
             highlight_end = ""
         else:
             highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = ANSI.DEFAULT
+            highlight_end = ANSI.DEFAULT if highlight_start else ""
 
         prefix = self.formatPrefix(record, highlight_start, highlight_end)
 
         if self.strip_ansi():
-            output = self._ansi_escape_pattern.sub("", f"{prefix}{msg}")
+            prefix = self._prefix_strip(prefix)
+            output = f"{prefix}{self._ansi_escape_pattern.sub('', msg)}"
         elif highlight_start:
             # NOTE: this handles the case where the string to log applies some
             # custom coloring, but then reverts to default. The default should
             # be this log level's default and not the terminal's. This assumes
             # that ANSI.DEFAULT is used to revert.
-            output = f"{prefix}{highlight_start}{msg.replace(ANSI.DEFAULT, highlight_start)}{highlight_end}"
+            output = f"{prefix}{highlight_start}{msg.replace(ANSI.DEFAULT, highlight_start)}{ANSI.DEFAULT}"
         else:
             # Just in case the log message itself contains ANSI codes,
             # always revert to default at the end.
-            output = f"{prefix}{msg}{highlight_end}"
+            output = f"{prefix}{msg}{ANSI.DEFAULT}"
 
         exc_info = self.formatExcInfo(record)
         if exc_info:
@@ -379,7 +399,7 @@ class SimLogFormatter(logging.Formatter):
         else:
             multiline = "\n" in msg
 
-        if getattr(record, "no_padding", False) or (not multiline):
+        if (not multiline) or (self._prefix_len == 0):
             return output
 
         lines = output.splitlines()
@@ -388,7 +408,7 @@ class SimLogFormatter(logging.Formatter):
         if isinstance(self._prefix_len, int):
             prefix_len = self._prefix_len
         else:
-            prefix_len = self._prefix_len(prefix)
+            prefix_len = self._prefix_len(self._prefix_strip(prefix))
         pad = "\n" + " " * prefix_len
 
         return pad.join(lines)
