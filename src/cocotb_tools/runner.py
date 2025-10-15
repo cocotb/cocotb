@@ -1288,8 +1288,8 @@ class Nvc(Runner):
         return cmds
 
 
-class Riviera(Runner):
-    """Implementation of :class:`Runner` for Aldec Riviera-PRO.
+class AldecBase(Runner):
+    """Implementation of :class:`Runner` for Aldec VsimSA.
 
     .. admonition:: Simulator-specific Usage
 
@@ -1347,8 +1347,8 @@ class Riviera(Runner):
             ]
             defines = " ".join(self._get_define_options(self.defines))
             includes = " ".join(self._get_include_options(self.includes))
-            verilog_args_str = " ".join(_as_tcl_value(v) for v in verilog_args)
-            vhdl_args_str = " ".join(_as_tcl_value(v) for v in vhdl_args)
+            verilog_args_str = " ".join(v for v in verilog_args)
+            vhdl_args_str = " ".join(v for v in vhdl_args)
             hdl_library = _as_tcl_value(self.hdl_library)
             ext_name = _as_tcl_value(
                 cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
@@ -1378,7 +1378,7 @@ class Riviera(Runner):
         with tempfile.NamedTemporaryFile(delete=False) as do_file:
             do_file.write("\n".join(do_script).encode())
 
-        return [["vsimsa", "-do", "do", do_file.name]]
+        return [["vsimsa", "-do", do_file.name]]
 
     def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
@@ -1438,7 +1438,25 @@ class Riviera(Runner):
         with tempfile.NamedTemporaryFile(delete=False) as do_file:
             do_file.write(do_script.encode())
 
-        return [["vsimsa", "-do", "do", do_file.name]]
+        return [["vsimsa", "-do", do_file.name]]
+
+
+class Riviera(AldecBase):
+    """Implementation of :class:`Runner` for Aldec Riviera-Pro.
+    .. admonition:: Simulator-specific Usage
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+       * Does not support the ``gui`` argument to :meth:`.test`.
+       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
+    """
+
+
+class ActiveHDL(AldecBase):
+    """Implementation of :class:`Runner` for Aldec Active-HDL.
+    .. admonition:: Simulator-specific Usage
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+       * Does not support the ``gui`` argument to :meth:`.test`.
+       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
+    """
 
 
 class Verilator(Runner):
@@ -1983,6 +2001,7 @@ def get_runner(simulator_name: str) -> Runner:
         "questa": Questa,
         "ghdl": Ghdl,
         "riviera": Riviera,
+        "activehdl": ActiveHDL,
         "verilator": Verilator,
         "xcelium": Xcelium,
         "nvc": Nvc,

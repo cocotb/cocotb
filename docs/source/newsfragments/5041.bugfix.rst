@@ -1,0 +1,1 @@
+Improve VsimSA simulator support (adds Active-HDL support and updates Riviera-Pro support).
