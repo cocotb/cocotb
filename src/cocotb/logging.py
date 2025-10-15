@@ -324,16 +324,19 @@ class SimLogFormatter(logging.Formatter):
             self._strip_method = lambda s: ansi_escape_pattern.sub("", s)
 
         if prefix_format is None:
-            prefix_format = "{sim_time_str:>11} {highlight_start}{record.levelname:<8}{highlight_end} {ljust(record.name, 34)} "
+            prefix_format = "{simtime_ns:>11} {level_color_start}{record.levelname:<8}{level_color_end} {ljust(record.name, 34)} "
             if not self._reduced_log_fmt:
-                prefix_format = "{prefix}{rjust(record.filename, 20)}:{record.lineno:<4} in {ljust(str(record.funcName), 31)} "
+                prefix_format = (
+                    prefix_format
+                    + "{rjust(record.filename, 20)}:{record.lineno:<4} in {ljust(str(record.funcName), 31)} "
+                )
             if multiline_indent is None:
                 # The default prefix_formats length is fixed, so unless explicitly
                 # overridden, precompute indentation on initialization.
                 multiline_indent = -1
 
         self._prefix_func = eval(
-            f"lambda record, sim_time_str, highlight_start, highlight_end: f'''{prefix_format}'''",
+            f"lambda record, simtime_ns, level_color_start, level_color_end: f'''{prefix_format}'''",
             type(self).prefix_func_globals,
         )
 
@@ -367,17 +370,17 @@ class SimLogFormatter(logging.Formatter):
     def formatPrefix(
         self,
         record: logging.LogRecord,
-        highlight_start: str,
-        highlight_end: str,
+        level_color_start: str,
+        level_color_end: str,
     ) -> str:
         sim_time = getattr(record, "created_sim_time", None)
         if sim_time is None:
-            sim_time_str = "-.--ns"
+            simtime_ns = "-.--ns"
         else:
             time_ns = get_time_from_sim_steps(sim_time, "ns")
-            sim_time_str = f"{time_ns:.2f}ns"
+            simtime_ns = f"{time_ns:.2f}ns"
 
-        return self._prefix_func(record, sim_time_str, highlight_start, highlight_end)
+        return self._prefix_func(record, simtime_ns, level_color_start, level_color_end)
 
     def formatExcInfo(self, record: logging.LogRecord) -> str:
         msg = ""
@@ -401,22 +404,22 @@ class SimLogFormatter(logging.Formatter):
         msg = record.getMessage()
 
         if self.strip_ansi():
-            highlight_start = ""
-            highlight_end = ""
+            level_color_start = ""
+            level_color_end = ""
         else:
-            highlight_start = self.loglevel2colour.get(record.levelno, "")
-            highlight_end = ANSI.DEFAULT if highlight_start else ""
+            level_color_start = self.loglevel2colour.get(record.levelno, "")
+            level_color_end = ANSI.DEFAULT if level_color_start else ""
 
-        prefix = self.formatPrefix(record, highlight_start, highlight_end)
+        prefix = self.formatPrefix(record, level_color_start, level_color_end)
 
         if self.strip_ansi():
             output = self._strip_method(f"{prefix}{msg}")
-        elif highlight_start:
+        elif level_color_start:
             # NOTE: this handles the case where the string to log applies some
             # custom coloring, but then reverts to default. The default should
             # be this log level's default and not the terminal's. This assumes
             # that ANSI.DEFAULT is used to revert.
-            output = f"{prefix}{highlight_start}{msg.replace(ANSI.DEFAULT, highlight_start)}{ANSI.DEFAULT}"
+            output = f"{prefix}{level_color_start}{msg.replace(ANSI.DEFAULT, level_color_start)}{ANSI.DEFAULT}"
         else:
             # Just in case the log message itself contains ANSI codes,
             # always revert to default at the end.

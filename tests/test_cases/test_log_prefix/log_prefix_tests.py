@@ -36,7 +36,7 @@ def capture_logs(handler: logging.Handler) -> Generator[LogCaptureData, None, No
 
 
 @cocotb.test
-async def test_log_prefix(_: object) -> None:
+async def test_log_prefix_custom(_: object) -> None:
     logger = logging.getLogger("example")
     logger.setLevel(logging.INFO)
     with capture_logs(logging.getLogger().handlers[0]) as logs:
@@ -45,3 +45,26 @@ async def test_log_prefix(_: object) -> None:
         logs.msgs[0]
         == f"{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} INFO 0       exam Test log message{ANSI.DEFAULT}"
     )
+
+
+@cocotb.test
+async def test_log_prefix_default(_: object) -> None:
+    logger = logging.getLogger("example")
+    logger.setLevel(logging.INFO)
+    with capture_logs(logging.getLogger().handlers[0]) as logs:
+        logger.warning("First line\nsecond line")
+        cocotb.logging.strip_ansi = True
+        logger.warning("First line\nsecond line")
+
+    lines_colored = logs.msgs[0].splitlines()
+    assert len(lines_colored) == 2
+    assert lines_colored[0].endswith("First line")
+    assert lines_colored[1].endswith(f"second line{ANSI.DEFAULT}")
+
+    lines_stripped = logs.msgs[1].splitlines()
+    assert len(lines_stripped) == 2
+    assert lines_stripped[0].endswith("First line")
+    assert lines_stripped[1].endswith("second line")
+
+    assert lines_stripped[0].find("First line") == lines_stripped[1].find("second line")
+    assert lines_colored[1].find("second line") == lines_stripped[1].find("second line")
