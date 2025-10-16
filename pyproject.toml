@@ -164,8 +164,8 @@ build = "cp*-manylinux_x86_64 cp*-win_amd64 cp*-macosx_x86_64 cp*-macosx_arm64"
 # -flto Enable LTO which can reduce binary size and improve inlining.
 environment = {CFLAGS = "-O2 -g -flto", CPPFLAGS = "-O2 -g -flto", LDFLAGS = "-O2 -g -flto"}
 
-# By default, build on manylinux2014 for compatibility with CentOS/RHEL 7+ (once
-# the user updates Python) and Ubuntu 20.04+ (with system Python).
+# By default, build on manylinux2014 for compatibility with CentOS/RHEL 8+
+# and Ubuntu 20.04+ (with system Python).
 manylinux-x86_64-image = "manylinux2014"
 
 # Build with optimizations and debugging (Windows)
@@ -175,6 +175,9 @@ manylinux-x86_64-image = "manylinux2014"
 # /LTCG Enables LTO which can reduce binary size and improve inlining.
 [tool.cibuildwheel.windows]
 environment = {CL = "/O2 /Z7 /Zo /LTCG"}
+
+[tool.cibuildwheel.macos]
+repair-wheel-command = "delocate-wheel --no-sanitize-rpaths --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
 
 [tool.pytest.ini_options]
 # Note: Do *not* add files within the cocotb/ tree here. Add them to the
