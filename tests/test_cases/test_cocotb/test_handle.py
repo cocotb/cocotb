@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import pickle
 import random
 from typing import Any
 
@@ -597,3 +598,9 @@ async def test_setattr_error_msg(dut: Any) -> None:
         dut.example = 1
     with pytest.raises(AttributeError, match=r"'stream_in_data'.*\.value"):
         dut.stream_in_data = 1
+
+
+@cocotb.test
+async def test_pickling_prohibited(dut: object) -> None:
+    with pytest.raises(NotImplementedError):
+        pickle.dumps(dut)
