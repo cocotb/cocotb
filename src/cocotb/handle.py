@@ -173,6 +173,9 @@ class SimHandleBase(ABC):
             "This object cannot be cast to bool or used in conditionals. Use `obj is not None` check in conditionals."
         )
 
+    def __getstate__(self) -> NoReturn:
+        raise NotImplementedError("Cannot pickle simulator objects")
+
 
 class _RangeableObjectMixin(SimHandleBase):
     """Base class for simulation objects that have a range."""
