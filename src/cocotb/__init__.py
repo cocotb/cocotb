@@ -89,11 +89,13 @@ SIM_VERSION: str
 """The version of the running simulator."""
 
 RANDOM_SEED: int
-"""
-The value passed to the Python global random number generator.
+"""The last value used to seed the global PRNG.
 
-See :envvar:`COCOTB_RANDOM_SEED` for details on how the value is computed.
-This is guaranteed to hold a value at test time.
+During test collection, this is set to the value provided by :envvar:`COCOTB_RANDOM_SEED`,
+if given, or a random value based on the state of the operating system.
+
+During test run, this is set to a new value computed by combining the value used during test collection,
+with the full test name (e.g. ``my_test_module.my_test``).
 """
 
 top: SimHandleBase
