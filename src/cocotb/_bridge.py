@@ -20,7 +20,6 @@ from typing import (
 import cocotb
 from cocotb import debug
 from cocotb._base_triggers import Event, Trigger
-from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome, Value, capture
 
 if sys.version_info >= (3, 10):
@@ -128,7 +127,7 @@ class external_waiter(Generic[Result]):
     @property
     def result(self) -> Result:
         if self._outcome is None:
-            raise InternalError("Got result of external before it finished")
+            raise RuntimeError("Got result of external before it finished")
         return self._outcome.get()
 
     def _propagate_state(self, new_state: external_state) -> None:

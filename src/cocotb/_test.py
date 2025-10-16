@@ -16,7 +16,6 @@ import cocotb
 import cocotb._event_loop
 from cocotb._base_triggers import NullTrigger, Trigger
 from cocotb._deprecation import deprecated
-from cocotb._exceptions import InternalError
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._test_functions import TestSuccess
 from cocotb.task import ResultType, Task
@@ -72,7 +71,7 @@ class RunningTest:
 
     def result(self) -> Outcome[None]:
         if self._outcome is None:  # pragma: no cover
-            raise InternalError("Getting result before test is completed")
+            raise RuntimeError("Getting result before test is completed")
 
         if not isinstance(self._outcome, Error) and self._shutdown_errors:
             return self._shutdown_errors[0]
