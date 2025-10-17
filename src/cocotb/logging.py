@@ -54,7 +54,6 @@ def default_config(
     reduced_log_fmt: bool = True,
     strip_ansi: bool | None = None,
     prefix_format: str | None = None,
-    strip_method: Callable[[str], str] | None = None,
     multiline_indent: int | Callable[[str], int] | None = None,
 ) -> None:
     """Apply the default cocotb log formatting to the root logger.
@@ -88,13 +87,6 @@ def default_config(
 
             .. versionadded:: 2.0
 
-        strip_method:
-            A function used to remove nonprintable sequences from a string.
-            If ``None``, it defaults to a basic implementation that removes
-            at least all the ANSI sequences used by cocotb for coloring.
-
-            .. versionadded:: 2.1
-
         multiline_indent:
             Controls the indentation of subsequent log lines in a multiline
             log message.
@@ -107,9 +99,7 @@ def default_config(
             stripped prefix, when formatted with an empty LogRecord. This is
             calculated only on initialization, so it's fast but assumes that
             the prefix length does not change.
-            If ``None``, a default length (for builtin prefixes) or a default
-            method taking the length of the stripped prefix (for custom
-            ``prefix_format``) will be used.
+            If ``None``, the length of the stripped prefix will be used.
 
             .. versionadded:: 2.1
 
@@ -128,7 +118,6 @@ def default_config(
             reduced_log_fmt=reduced_log_fmt,
             strip_ansi=strip_ansi,
             prefix_format=prefix_format,
-            strip_method=strip_method,
             multiline_indent=multiline_indent,
         )
     )
@@ -265,6 +254,15 @@ def _rjust(string: str, chars: int) -> str:
     return string.rjust(chars)
 
 
+# Default simtime formatter
+def _simtime_fmt(record: logging.LogRecord) -> str:
+    sim_time = getattr(record, "created_sim_time", None)
+    if sim_time is None:
+        return "-.--ns"
+    time_ns = get_time_from_sim_steps(sim_time, "ns")
+    return f"{time_ns:.2f}ns"
+
+
 class SimLogFormatter(logging.Formatter):
     """Log formatter to provide consistent log message handling.
 
@@ -290,6 +288,7 @@ class SimLogFormatter(logging.Formatter):
         "ANSI": ANSI,
         "ljust": _ljust,
         "rjust": _rjust,
+        "simtime_fmt": _simtime_fmt,
     }
 
     def __init__(
@@ -298,33 +297,27 @@ class SimLogFormatter(logging.Formatter):
         reduced_log_fmt: bool = True,
         strip_ansi: bool | None = None,
         prefix_format: str | None = None,
-        strip_method: Callable[[str], str] | None = None,
         multiline_indent: int | Callable[[str], int] | None = None,
     ) -> None:
         self._reduced_log_fmt = reduced_log_fmt
         self._strip_ansi = strip_ansi
-
-        if strip_method is not None:
-            self._strip_method = strip_method
-        else:
-            ansi_escape_pattern = re.compile(
-                r"""
-                    \x1B
-                    (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
-                        [@-Z\\-_]
-                    | # or 7-bit CSI (ESC [) + control codes
-                        \[
-                        [0-?]*  # Parameter bytes
-                        [ -/]*  # Intermediate bytes
-                        [@-~]   # Final byte
-                    )
-                """,
-                re.VERBOSE,
-            )
-            self._strip_method = lambda s: ansi_escape_pattern.sub("", s)
+        self._ansi_escape_pattern = re.compile(
+            r"""
+                \x1B
+                (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
+                    [@-Z\\-_]
+                | # or 7-bit CSI (ESC [) + control codes
+                    \[
+                    [0-?]*  # Parameter bytes
+                    [ -/]*  # Intermediate bytes
+                    [@-~]   # Final byte
+                )
+            """,
+            re.VERBOSE,
+        )
 
         if prefix_format is None:
-            prefix_format = "{simtime_ns:>11} {level_color_start}{record.levelname:<8}{level_color_end} {ljust(record.name, 34)} "
+            prefix_format = "{simtime_fmt(record):>11} {level_color_start}{record.levelname:<8}{level_color_end} {ljust(record.name, 34)} "
             if not self._reduced_log_fmt:
                 prefix_format = (
                     prefix_format
@@ -336,7 +329,7 @@ class SimLogFormatter(logging.Formatter):
                 multiline_indent = -1
 
         self._prefix_func = eval(
-            f"lambda record, simtime_ns, level_color_start, level_color_end: f'''{prefix_format}'''",
+            f"lambda record, level_color_start, level_color_end: f'''{prefix_format}'''",
             type(self).prefix_func_globals,
         )
 
@@ -347,7 +340,7 @@ class SimLogFormatter(logging.Formatter):
                 "", logging.INFO, "", 0, "", (), None, func=""
             )
             multiline_indent = len(
-                self._strip_method(self._prefix_func(record, "", "", ""))
+                self._ansi_escape_pattern.sub("", self._prefix_func(record, "", ""))
             )
 
         if multiline_indent is None:
@@ -366,21 +359,6 @@ class SimLogFormatter(logging.Formatter):
     @staticmethod
     def rjust(string: str, chars: int) -> str:
         return _rjust(string, chars)
-
-    def formatPrefix(
-        self,
-        record: logging.LogRecord,
-        level_color_start: str,
-        level_color_end: str,
-    ) -> str:
-        sim_time = getattr(record, "created_sim_time", None)
-        if sim_time is None:
-            simtime_ns = "-.--ns"
-        else:
-            time_ns = get_time_from_sim_steps(sim_time, "ns")
-            simtime_ns = f"{time_ns:.2f}ns"
-
-        return self._prefix_func(record, simtime_ns, level_color_start, level_color_end)
 
     def formatExcInfo(self, record: logging.LogRecord) -> str:
         msg = ""
@@ -410,10 +388,10 @@ class SimLogFormatter(logging.Formatter):
             level_color_start = self.loglevel2colour.get(record.levelno, "")
             level_color_end = ANSI.DEFAULT if level_color_start else ""
 
-        prefix = self.formatPrefix(record, level_color_start, level_color_end)
+        prefix = self._prefix_func(record, level_color_start, level_color_end)
 
         if self.strip_ansi():
-            output = self._strip_method(f"{prefix}{msg}")
+            output = self._ansi_escape_pattern.sub("", f"{prefix}{msg}")
         elif level_color_start:
             # NOTE: this handles the case where the string to log applies some
             # custom coloring, but then reverts to default. The default should
@@ -441,7 +419,7 @@ class SimLogFormatter(logging.Formatter):
         if isinstance(self._multiline_indent, int):
             indent = self._multiline_indent
         else:
-            indent = self._multiline_indent(self._strip_method(prefix))
+            indent = self._multiline_indent(self._ansi_escape_pattern.sub("", prefix))
         pad = "\n" + " " * indent
 
         return pad.join(lines)
