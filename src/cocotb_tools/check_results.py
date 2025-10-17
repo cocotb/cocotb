@@ -28,17 +28,28 @@ def get_results(results_xml_file: Path) -> tuple[int, int]:
             f"ERROR: Simulation terminated abnormally. Results file {results_xml_file} not found."
         )
 
+    # pytest --junit-xml=<file> is generating proper JUnit XML report file
+    # It is using errors attribute as indicator for failed tests without execution but
+    # also as indicator for failed pytest (invalid arguments, configuration, setup, ...)
     num_tests = 0
-    num_failed = 0
+    num_failed = 0  # Failed tests during execution (including setup and call)
+    num_errors = 0  # Errors in pytest configuration, fixtures, setup, tests
 
     tree = ElementTree.parse(results_xml_file)
     for ts in tree.iter("testsuite"):
-        for tc in ts.iter("testcase"):
-            num_tests += 1
-            for _ in tc.iter("failure"):
-                num_failed += 1
+        if "tests" in ts.attrib:  # pytest, compatible with JUnit XML specification
+            num_tests += int(ts.attrib.get("tests", 0))
+            num_failed += int(ts.attrib.get("failures", 0))
+            num_errors += int(ts.attrib.get("errors", 0))
 
-    return (num_tests, num_failed)
+        else:  # cocotb, non-compatible with Junit XML specification
+            # TODO: Remove that when XUnitReporter will be aligned with XUnit schema
+            for tc in ts.iter("testcase"):
+                num_tests += 1
+                for _ in tc.iter("failure"):
+                    num_failed += 1
+
+    return (num_tests, num_failed + num_errors)
 
 
 def _get_parser() -> argparse.ArgumentParser:

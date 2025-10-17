@@ -121,6 +121,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    custom_flows
    rotating_logger
    extensions
+   pytest
    upgrade-2.0
    update_indexing
 
