@@ -23,6 +23,7 @@ import cocotb.simtime
 from cocotb import simulator
 from cocotb._ANSI import ANSI
 from cocotb._deprecation import deprecated
+from cocotb._typing import TimeUnit
 from cocotb.simtime import get_sim_time
 from cocotb.utils import get_time_from_sim_steps
 
@@ -255,12 +256,12 @@ def _rjust(string: str, chars: int) -> str:
 
 
 # Default simtime formatter
-def _simtime_fmt(record: logging.LogRecord) -> str:
+def _simtime_fmt(record: logging.LogRecord, unit: TimeUnit) -> str:
     sim_time = getattr(record, "created_sim_time", None)
     if sim_time is None:
-        return "-.--ns"
-    time_ns = get_time_from_sim_steps(sim_time, "ns")
-    return f"{time_ns:.2f}ns"
+        return f"-.--{unit}"
+    time_ns = get_time_from_sim_steps(sim_time, unit)
+    return f"{time_ns:.2f}{unit}"
 
 
 class SimLogFormatter(logging.Formatter):
