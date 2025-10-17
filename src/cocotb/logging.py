@@ -23,8 +23,7 @@ import cocotb.simtime
 from cocotb import simulator
 from cocotb._ANSI import ANSI
 from cocotb._deprecation import deprecated
-from cocotb._typing import TimeUnit
-from cocotb.simtime import get_sim_time
+from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb.utils import get_time_from_sim_steps
 
 __all__ = (
@@ -318,7 +317,7 @@ class SimLogFormatter(logging.Formatter):
         )
 
         if prefix_format is None:
-            prefix_format = "{simtime_fmt(record):>11} {level_color_start}{record.levelname:<8}{level_color_end} {ljust(record.name, 34)} "
+            prefix_format = "{simtime_fmt(record,'ns'):>11} {level_color_start}{record.levelname:<8}{level_color_end} {ljust(record.name, 34)} "
             if not self._reduced_log_fmt:
                 prefix_format = (
                     prefix_format
