@@ -79,7 +79,7 @@ setup(
     install_requires=[
         "find_libpython",
     ],
-    python_requires=">=3.9",
+    python_requires=">=3.9,<3.15",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     package_data={
@@ -98,12 +98,6 @@ setup(
     },
     platforms="any",
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.13",
         "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
         "Framework :: cocotb",
     ],

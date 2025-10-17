@@ -28,7 +28,7 @@ dev_deps = [
 ]
 
 # Version of the cibuildwheel package used to build wheels.
-cibuildwheel_version = "2.20.0"
+cibuildwheel_version = "3.2"
 
 #
 # Helpers for use within this file.
@@ -406,7 +406,7 @@ def release_build_bdist(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
 
     # Pin a version to ensure reproducible builds.
-    session.run("pip", "install", f"cibuildwheel=={cibuildwheel_version}")
+    session.run("pip", "install", f"cibuildwheel~={cibuildwheel_version}")
 
     session.log("Building binary distribution (wheels)")
     session.run(
