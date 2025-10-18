@@ -12,7 +12,7 @@ from collections import deque
 from collections.abc import AsyncGenerator, Generator, Iterable
 from functools import wraps
 from multiprocessing.connection import Client
-from typing import Any, Callable, Literal, Tuple, Type, Union
+from typing import Any, Callable, Literal, Optional, Type, Union
 
 from _pytest.config import default_plugins
 from pytest import (
@@ -80,7 +80,7 @@ class RegressionManager:
         self._scheduled: bool = False
         self._index: int = 0
         self._finished: bool = False
-        self._call_start: float | None = None
+        self._call_start: Optional[float] = None
         self._sim_time_start: float = 0
         self._nodeid: str = env.as_str("COCOTB_PYTEST_NODEID") + "::"
         self._keywords: list[str] = env.as_list("COCOTB_PYTEST_KEYWORDS")
@@ -131,14 +131,16 @@ class RegressionManager:
 
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_pycollect_makeitem(
-        self, collector: Module | Class, name: str, obj: object
-    ) -> Generator[None | Item | Collector | list[Item | Collector], None, None]:
-        result: None | Item | Collector | list[Item | Collector] = yield
+        self, collector: Union[Module, Class], name: str, obj: object
+    ) -> Generator[
+        Optional[Union[Item, Collector, list[Union[Item, Collector]]]], None, None
+    ]:
+        result: Optional[Union[Item, Collector, list[Union[Item, Collector]]]] = yield
 
         if result is None:
             return None
 
-        items: Iterable[Item | Collector] = (
+        items: Iterable[Union[Item, Collector]] = (
             result if isinstance(result, list) else (result,)
         )
 
@@ -163,7 +165,7 @@ class RegressionManager:
         return True
 
     @hookimpl(tryfirst=True)
-    def pytest_runtest_protocol(self, item: Item, nextitem: Item | None) -> bool:
+    def pytest_runtest_protocol(self, item: Item, nextitem: Optional[Item]) -> bool:
         item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
         self._setup()
 
@@ -175,15 +177,15 @@ class RegressionManager:
         return self._session.items[self._index]
 
     @property
-    def _nextitem(self) -> Item | None:
+    def _nextitem(self) -> Optional[Item]:
         """Get next pytest item (test) needed by test teardown phase."""
         index: int = self._index + 1
 
         return self._session.items[index] if index < len(self._session.items) else None
 
     def _collect(
-        self, items: Iterable[Item | Collector]
-    ) -> Generator[Item | Collector, None, None]:
+        self, items: Iterable[Union[Item, Collector]]
+    ) -> Generator[Union[Item, Collector], None, None]:
         for item in items:
             if not isinstance(item, Function):
                 yield item
@@ -203,14 +205,14 @@ class RegressionManager:
                     item.add_marker("skip")
 
                 if kwargs.get("expect_fail"):
-                    raises: BaseException | tuple[BaseException] | None = kwargs.get(
-                        "expect_error"
+                    raises: Optional[Union[BaseException, tuple[BaseException]]] = (
+                        kwargs.get("expect_error")
                     )
                     item.add_marker(
                         mark.xfail(raises=raises if raises else None, strict=True)
                     )
 
-                timeout: float | int = kwargs.get("timeout_time", 0)
+                timeout: Union[float, int] = kwargs.get("timeout_time", 0)
 
                 if timeout:
                     unit: TimeUnit = kwargs.get("timeout_unit", "step")
@@ -230,7 +232,7 @@ class RegressionManager:
         self,
         item: Item,
         when: Literal["setup", "call", "teardown"],
-        func: Callable[..., None] | None = None,
+        func: Optional[Callable[..., None]] = None,
         **kwargs,
     ) -> bool:
         if not func:
@@ -238,7 +240,7 @@ class RegressionManager:
             kwargs["item"] = item
             self._call_start = None
 
-        reraise: Tuple[Type[BaseException], ...] = ()
+        reraise: tuple[Type[BaseException], ...] = ()
 
         if not item.config.getoption("usepdb", False):
             reraise += (KeyboardInterrupt,)
@@ -286,7 +288,7 @@ class RegressionManager:
         return False
 
     @finish_on_exception
-    def _setup(self, task: Task | None = None) -> None:
+    def _setup(self, task: Optional[Task] = None) -> None:
         item: Item = self._item
         func = task.result if task else None
         passed: bool = self._call_and_report(item, "setup", func=func)
@@ -299,7 +301,7 @@ class RegressionManager:
             self._teardown()
 
     @finish_on_exception
-    def _call(self, task: Task | None = None) -> None:
+    def _call(self, task: Optional[Task] = None) -> None:
         item: Item = self._item
         func = task.result if task else None
         self._call_and_report(item, "call", func=func)
@@ -310,9 +312,9 @@ class RegressionManager:
             self._teardown()
 
     @finish_on_exception
-    def _teardown(self, task: Task | None = None) -> None:
+    def _teardown(self, task: Optional[Task] = None) -> None:
         item: Item = self._item
-        nextitem: Item | None = self._nextitem
+        nextitem: Optional[Item] = self._nextitem
 
         if task:
             self._call_and_report(item, "teardown", func=task.result)
@@ -330,10 +332,10 @@ class RegressionManager:
         else:
             self._finish()
 
-    def _get_item(self) -> tuple[Item, Item | None]:
+    def _get_item(self) -> tuple[Item, Optional[Item]]:
         return self._item, self._nextitem
 
-    def _pop_item(self) -> tuple[Item, Item | None]:
+    def _pop_item(self) -> tuple[Item, Optional[Item]]:
         self._index += 1
 
         return self._get_item()
@@ -371,7 +373,7 @@ class RegressionManager:
         self,
         fixturedef: FixtureDef[Any],
         request,
-    ) -> object | None:
+    ) -> Optional[object]:
         """Execution of fixture setup."""
         fixturefunc = fixturedef.func
         is_coroutine: bool = inspect.iscoroutinefunction(fixturefunc)
@@ -410,7 +412,7 @@ class RegressionManager:
         return True
 
     @hookimpl(tryfirst=True)
-    def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
+    def pytest_pyfunc_call(self, pyfuncitem: Function) -> Optional[object]:
         testfunction = pyfuncitem.obj
 
         if not inspect.iscoroutinefunction(testfunction):

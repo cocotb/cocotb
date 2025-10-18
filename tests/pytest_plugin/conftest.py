@@ -7,7 +7,7 @@
 import os
 from pathlib import Path
 from shutil import which
-from typing import Callable
+from typing import Callable, Optional
 
 from pytest import Parser, PytestPluginManager, TempPathFactory, fixture, hookimpl
 
@@ -146,7 +146,7 @@ def hdl_toplevel_fixture(hdl_sources: list[Path]) -> str:
 
 
 @fixture(name="hdl_timescale", scope="session")
-def hdl_timescale_fixture(hdl_simulator: str) -> tuple[str, str] | None:
+def hdl_timescale_fixture(hdl_simulator: str) -> Optional[tuple[str, str]]:
     """Get timescale for HDL simulator.
 
     Args:
@@ -221,7 +221,7 @@ def cocotb_build_fixture(
     tmp_path_factory: TempPathFactory,
     hdl_sources: list[Path],
     hdl_toplevel: str,
-    hdl_timescale: tuple[str, str] | None,
+    hdl_timescale: Optional[tuple[str, str]],
     hdl_compile_args: list[str],
 ) -> Runner:
     """Compile HDL using cocotb runner (HDL simulator)."""
@@ -242,7 +242,7 @@ def cocotb_run_fixture(
     hdl_toplevel_lang: str,
     hdl_toplevel: str,
     hdl_sim_args: list[str],
-    hdl_timescale: tuple[str, str] | None,
+    hdl_timescale: Optional[tuple[str, str]],
     gpi_interfaces: list[str],
 ) -> Callable[..., None]:
     """Run cocotb using cocotb runner (HDL simulator)."""

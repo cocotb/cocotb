@@ -7,6 +7,7 @@
 import inspect
 import os
 from collections.abc import Generator, Iterable
+from typing import Optional, Union
 
 from pytest import (
     Class,
@@ -48,7 +49,7 @@ class Controller:
         junitxml = config.pluginmanager.getplugin("junitxml")
 
         if junitxml:
-            key: StashKey | None = getattr(junitxml, "xml_key", None)
+            key: Optional[StashKey] = getattr(junitxml, "xml_key", None)
             self._junitxml = config.stash.get(key, None) if key else None
 
     @hookimpl(tryfirst=True)
@@ -59,14 +60,16 @@ class Controller:
 
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_pycollect_makeitem(
-        self, collector: Module | Class, name: str, obj: object
-    ) -> Generator[None | Item | Collector | list[Item | Collector], None, None]:
-        result: None | Item | Collector | list[Item | Collector] = yield
+        self, collector: Union[Module, Class], name: str, obj: object
+    ) -> Generator[
+        Optional[Union[Item, Collector, list[Union[Item, Collector]]]], None, None
+    ]:
+        result: Optional[Union[Item, Collector, list[Union[Item, Collector]]]] = yield
 
         if result is None:
             return None
 
-        items: Iterable[Item | Collector] = (
+        items: Iterable[Union[Item, Collector]] = (
             result if isinstance(result, list) else (result,)
         )
 
@@ -79,13 +82,13 @@ class Controller:
 
     @hookimpl(trylast=True)
     def pytest_runtest_logfinish(
-        self, nodeid: str, location: tuple[str, int | None, str]
+        self, nodeid: str, location: tuple[str, Optional[int], str]
     ) -> None:
         config: Config = self._config
         hook = config.hook
 
         for data in self._reporter:
-            report: CollectReport | TestReport | None = (
+            report: Optional[Union[CollectReport, TestReport]] = (
                 hook.pytest_report_from_serializable(config=config, data=data)
             )
 
@@ -106,10 +109,10 @@ class Controller:
             yield
 
     def _collect(
-        self, collector: Collector, items: Iterable[Item | Collector]
-    ) -> Generator[Item | Collector, None, None]:
+        self, collector: Collector, items: Iterable[Union[Item, Collector]]
+    ) -> Generator[Union[Item, Collector], None, None]:
         collectonly: bool = collector.config.option.collectonly
-        runner: Runner | None = collector.getparent(Runner)
+        runner: Optional[Runner] = collector.getparent(Runner)
 
         for item in items:
             if isinstance(item, Function) and item.get_closest_marker("cocotb"):
@@ -120,7 +123,7 @@ class Controller:
                     elif collectonly:
                         yield item
                 elif not runner:
-                    modules: Iterable[str] | None = None
+                    modules: Optional[Iterable[str]] = None
 
                     for marker in item.iter_markers("cocotb"):
                         if marker.args:
@@ -145,13 +148,13 @@ class Controller:
     ) -> None:
         if config.option.collectonly:
             for item in items:
-                keywords: set[str] | None = self._keywords.get(item.nodeid)
+                keywords: Optional[set[str]] = self._keywords.get(item.nodeid)
 
                 if keywords:
                     item.extra_keyword_matches.update(keywords)
 
     def _add_keywords(self, nodeid: str, keywords: Iterable[str]):
-        entries: set[str] | None = self._keywords.get(nodeid)
+        entries: Optional[set[str]] = self._keywords.get(nodeid)
 
         if entries is None:
             self._keywords[nodeid] = set(keywords)

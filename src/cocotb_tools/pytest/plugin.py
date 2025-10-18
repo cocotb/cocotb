@@ -11,7 +11,7 @@ import shlex
 from collections.abc import Sequence
 from pathlib import Path
 from time import time
-from typing import Any
+from typing import Any, Optional, Union
 
 from pytest import (
     Class,
@@ -46,7 +46,7 @@ ENTRY_POINTS: dict[str, str] = {
 
 
 @fixture(name="dut", scope="session")
-def dut_fixture() -> SimHandleBase | None:
+def dut_fixture() -> Optional[SimHandleBase]:
     return getattr(cocotb, "top", None)
 
 
@@ -356,7 +356,7 @@ def pytest_configure(config: Config) -> None:
     if option.cocotb_regression_manager is None:
         option.cocotb_regression_manager = config.getini("cocotb_regression_manager")
 
-    entry_point: str | None = ENTRY_POINTS.get(option.cocotb_regression_manager)
+    entry_point: Optional[str] = ENTRY_POINTS.get(option.cocotb_regression_manager)
 
     if entry_point and entry_point not in option.pygpi_users:
         option.pygpi_users.append(entry_point)
@@ -407,7 +407,7 @@ def pytest_configure(config: Config) -> None:
     if option.cocotb_waves:
         os.environ["WAVES"] = "1"
 
-    coverage_rcfile: str | None = getattr(option, "cov_config", None)
+    coverage_rcfile: Optional[str] = getattr(option, "cov_config", None)
 
     if coverage_rcfile and Path(coverage_rcfile).exists():
         os.environ["COVERAGE_RCFILE"] = coverage_rcfile
@@ -416,7 +416,7 @@ def pytest_configure(config: Config) -> None:
         config.pluginmanager.register(Controller(config), "cocotb_controller")
 
 
-def _unwrap_obj(obj: object, markers: list[Mark] | None = None) -> object:
+def _unwrap_obj(obj: object, markers: Optional[list[Mark]] = None) -> object:
     if markers is None:
         markers = []
 
@@ -477,8 +477,8 @@ def _unwrap_obj(obj: object, markers: list[Mark] | None = None) -> object:
 
 @hookimpl(tryfirst=True)
 def pytest_pycollect_makeitem(
-    collector: Module | Class, name: str, obj: object
-) -> None | Item | Collector | list[Item | Collector]:
+    collector: Union[Module, Class], name: str, obj: object
+) -> Optional[Union[Item, Collector, list[Union[Item, Collector]]]]:
     if isinstance(obj, (Parameterized, Test)):
         obj = _unwrap_obj(obj)
 
@@ -489,7 +489,7 @@ def pytest_pycollect_makeitem(
         )
 
     if inspect.isfunction(obj):
-        markers: list[Mark] | None = getattr(obj, "pytestmark", None)
+        markers: Optional[list[Mark]] = getattr(obj, "pytestmark", None)
 
         if any(marker.name == "cocotb" for marker in markers or ()):
             setattr(obj, "__test__", True)

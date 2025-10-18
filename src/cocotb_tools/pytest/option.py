@@ -5,7 +5,7 @@
 """Generic option used as command line argument and entry in configuration file."""
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from pytest import OptionGroup, Parser
 
@@ -19,13 +19,13 @@ class Option:
         self,
         name: str,
         default: Any = None,
-        default_in_help: str | None = None,
+        default_in_help: Optional[str] = None,
         **kwargs,
     ):
         self.name: str = name
         self.extra: dict[str, Any] = dict(kwargs)
         self.default: Any = default
-        self.default_in_help: str | None = default_in_help
+        self.default_in_help: Optional[str] = default_in_help
 
     def get(self, key: str, default: Any = None) -> None:
         return self.extra.get(key, default)
@@ -43,8 +43,8 @@ class Option:
         environment: str = self.name.upper()
         argument: str = "--" + self.name.replace("_", "-")
         default: Any = self.default
-        action: str | None = self.get("action")
-        nargs: str | None = self.get("nargs")
+        action: Optional[str] = self.get("action")
+        nargs: Optional[str] = self.get("nargs")
         extra: dict[str, Any] = {}
         kind: str = ""
 

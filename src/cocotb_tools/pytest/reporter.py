@@ -11,7 +11,7 @@ from collections.abc import Generator
 from multiprocessing.connection import Client, Listener
 from queue import Empty, SimpleQueue
 from threading import Thread
-from typing import Any
+from typing import Any, Optional
 
 
 class Reporter:
@@ -24,7 +24,7 @@ class Reporter:
         while True:
             try:
                 with self._listener.accept() as connection:
-                    data: dict[str, Any] | None = connection.recv()
+                    data: Optional[dict[str, Any]] = connection.recv()
 
                     if data:
                         self._reports.put(data)

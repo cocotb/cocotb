@@ -4,7 +4,7 @@
 
 """Helper classes to support cocotb coroutines with pytest fixtures."""
 
-from typing import Any
+from typing import Any, Optional
 
 from cocotb.task import Task
 
@@ -38,7 +38,7 @@ class AsyncFixtureCachedResult(tuple):
         if not task.done() or index == 1:
             return super().__getitem__(index)
 
-        exception: BaseException | None = task.exception()
+        exception: Optional[BaseException] = task.exception()
 
         if index == 0:
             return None if exception else task.result()
