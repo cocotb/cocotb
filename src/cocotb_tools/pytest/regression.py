@@ -4,6 +4,8 @@
 
 """Pytest regression manager for cocotb."""
 
+from __future__ import annotations
+
 import hashlib
 import inspect
 import random
@@ -12,7 +14,7 @@ from collections import deque
 from collections.abc import AsyncGenerator, Generator, Iterable
 from functools import wraps
 from multiprocessing.connection import Client
-from typing import Any, Callable, Literal, Optional, Type, Union
+from typing import Any, Callable, Literal
 
 from _pytest.config import default_plugins
 from pytest import (
@@ -33,11 +35,9 @@ from pytest import (
 )
 
 import cocotb
-import cocotb._gpi_triggers
-import cocotb.handle
 from cocotb import simulator
 from cocotb._extended_awaitables import with_timeout
-from cocotb._gpi_triggers import GPITrigger, Timer
+from cocotb._gpi_triggers import Timer
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb.task import Task
 from cocotb_tools.pytest import env
@@ -80,7 +80,7 @@ class RegressionManager:
         self._scheduled: bool = False
         self._index: int = 0
         self._finished: bool = False
-        self._call_start: Optional[float] = None
+        self._call_start: float | None = None
         self._sim_time_start: float = 0
         self._nodeid: str = env.as_str("COCOTB_PYTEST_NODEID") + "::"
         self._keywords: list[str] = env.as_list("COCOTB_PYTEST_KEYWORDS")
@@ -131,16 +131,14 @@ class RegressionManager:
 
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_pycollect_makeitem(
-        self, collector: Union[Module, Class], name: str, obj: object
-    ) -> Generator[
-        Optional[Union[Item, Collector, list[Union[Item, Collector]]]], None, None
-    ]:
-        result: Optional[Union[Item, Collector, list[Union[Item, Collector]]]] = yield
+        self, collector: Module | Class, name: str, obj: object
+    ) -> Generator[Item | Collector | list[Item | Collector] | None, None, None]:
+        result: Item | Collector | list[Item | Collector] | None = yield
 
         if result is None:
             return None
 
-        items: Iterable[Union[Item, Collector]] = (
+        items: Iterable[Item | Collector] = (
             result if isinstance(result, list) else (result,)
         )
 
@@ -165,7 +163,7 @@ class RegressionManager:
         return True
 
     @hookimpl(tryfirst=True)
-    def pytest_runtest_protocol(self, item: Item, nextitem: Optional[Item]) -> bool:
+    def pytest_runtest_protocol(self, item: Item, nextitem: Item | None) -> bool:
         item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
         self._setup()
 
@@ -177,15 +175,15 @@ class RegressionManager:
         return self._session.items[self._index]
 
     @property
-    def _nextitem(self) -> Optional[Item]:
+    def _nextitem(self) -> Item | None:
         """Get next pytest item (test) needed by test teardown phase."""
         index: int = self._index + 1
 
         return self._session.items[index] if index < len(self._session.items) else None
 
     def _collect(
-        self, items: Iterable[Union[Item, Collector]]
-    ) -> Generator[Union[Item, Collector], None, None]:
+        self, items: Iterable[Item | Collector]
+    ) -> Generator[Item | Collector, None, None]:
         for item in items:
             if not isinstance(item, Function):
                 yield item
@@ -205,14 +203,14 @@ class RegressionManager:
                     item.add_marker("skip")
 
                 if kwargs.get("expect_fail"):
-                    raises: Optional[Union[BaseException, tuple[BaseException]]] = (
-                        kwargs.get("expect_error")
+                    raises: BaseException | tuple[BaseException] | None = kwargs.get(
+                        "expect_error"
                     )
                     item.add_marker(
                         mark.xfail(raises=raises if raises else None, strict=True)
                     )
 
-                timeout: Union[float, int] = kwargs.get("timeout_time", 0)
+                timeout: float | int = kwargs.get("timeout_time", 0)
 
                 if timeout:
                     unit: TimeUnit = kwargs.get("timeout_unit", "step")
@@ -232,7 +230,7 @@ class RegressionManager:
         self,
         item: Item,
         when: Literal["setup", "call", "teardown"],
-        func: Optional[Callable[..., None]] = None,
+        func: Callable[..., None] | None = None,
         **kwargs,
     ) -> bool:
         if not func:
@@ -240,7 +238,7 @@ class RegressionManager:
             kwargs["item"] = item
             self._call_start = None
 
-        reraise: tuple[Type[BaseException], ...] = ()
+        reraise: tuple[type[BaseException], ...] = ()
 
         if not item.config.getoption("usepdb", False):
             reraise += (KeyboardInterrupt,)
@@ -288,7 +286,7 @@ class RegressionManager:
         return False
 
     @finish_on_exception
-    def _setup(self, task: Optional[Task] = None) -> None:
+    def _setup(self, task: Task | None = None) -> None:
         item: Item = self._item
         func = task.result if task else None
         passed: bool = self._call_and_report(item, "setup", func=func)
@@ -301,7 +299,7 @@ class RegressionManager:
             self._teardown()
 
     @finish_on_exception
-    def _call(self, task: Optional[Task] = None) -> None:
+    def _call(self, task: Task | None = None) -> None:
         item: Item = self._item
         func = task.result if task else None
         self._call_and_report(item, "call", func=func)
@@ -312,9 +310,9 @@ class RegressionManager:
             self._teardown()
 
     @finish_on_exception
-    def _teardown(self, task: Optional[Task] = None) -> None:
+    def _teardown(self, task: Task | None = None) -> None:
         item: Item = self._item
-        nextitem: Optional[Item] = self._nextitem
+        nextitem: Item | None = self._nextitem
 
         if task:
             self._call_and_report(item, "teardown", func=task.result)
@@ -332,10 +330,10 @@ class RegressionManager:
         else:
             self._finish()
 
-    def _get_item(self) -> tuple[Item, Optional[Item]]:
+    def _get_item(self) -> tuple[Item, Item | None]:
         return self._item, self._nextitem
 
-    def _pop_item(self) -> tuple[Item, Optional[Item]]:
+    def _pop_item(self) -> tuple[Item, Item | None]:
         self._index += 1
 
         return self._get_item()
@@ -373,7 +371,7 @@ class RegressionManager:
         self,
         fixturedef: FixtureDef[Any],
         request,
-    ) -> Optional[object]:
+    ) -> object | None:
         """Execution of fixture setup."""
         fixturefunc = fixturedef.func
         is_coroutine: bool = inspect.iscoroutinefunction(fixturefunc)
@@ -412,7 +410,7 @@ class RegressionManager:
         return True
 
     @hookimpl(tryfirst=True)
-    def pytest_pyfunc_call(self, pyfuncitem: Function) -> Optional[object]:
+    def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
         testfunction = pyfuncitem.obj
 
         if not inspect.iscoroutinefunction(testfunction):
@@ -476,7 +474,7 @@ class RegressionManager:
         return finalizer
 
     @property
-    def _running_test(self) -> "RegressionManager":
+    def _running_test(self) -> RegressionManager:
         return self
 
     def add_task(self, task: Task) -> None:
@@ -493,25 +491,16 @@ class RegressionManager:
         self._task = task
 
         if self._scheduled:
-            self._timer1._prime(self._schedule_next_task)
+            self._timer1._register(self._schedule_next_task)
         else:
-            cocotb.handle._start_write_scheduler()
             self._scheduled = True
             self._schedule_next_task()
 
-    def _schedule_next_task(self, trigger: Union[GPITrigger, None] = None) -> None:
-        if trigger is not None:
-            # TODO move to Trigger object
-            cocotb._gpi_triggers._current_gpi_trigger = trigger
-            trigger._cleanup()
-
-        cocotb._scheduler_inst._schedule_task_internal(self._task)
-        cocotb._scheduler_inst._event_loop()
+    def _schedule_next_task(self) -> None:
+        self._task._ensure_started()
+        cocotb._event_loop._inst.run()
 
     def _shutdown(self) -> None:
-        # stop the write scheduler
-        cocotb.handle._stop_write_scheduler()
-
         # TODO refactor initialization and finalization into their own module
         # to prevent circular imports requiring local imports
         from cocotb._init import _shutdown_testbench  # noqa: PLC0415

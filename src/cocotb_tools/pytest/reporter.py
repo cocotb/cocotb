@@ -4,6 +4,8 @@
 
 """Receiving test reports from cocotb using IPC (Inter-Process Communication)."""
 
+from __future__ import annotations
+
 import os
 import sys
 import traceback
@@ -11,7 +13,7 @@ from collections.abc import Generator
 from multiprocessing.connection import Client, Listener
 from queue import Empty, SimpleQueue
 from threading import Thread
-from typing import Any, Optional
+from typing import Any
 
 
 class Reporter:
@@ -24,7 +26,7 @@ class Reporter:
         while True:
             try:
                 with self._listener.accept() as connection:
-                    data: Optional[dict[str, Any]] = connection.recv()
+                    data: dict[str, Any] | None = connection.recv()
 
                     if data:
                         self._reports.put(data)

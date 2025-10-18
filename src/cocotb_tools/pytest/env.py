@@ -4,6 +4,8 @@
 
 """Handling environment variables in friendly way."""
 
+from __future__ import annotations
+
 import os
 from collections.abc import Iterable
 from pathlib import Path

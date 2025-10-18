@@ -4,11 +4,12 @@
 
 """Module related with handling cocotb runners and collecting cocotb tests from these runners."""
 
+from __future__ import annotations
+
 import os
 from collections.abc import Iterable
 from importlib import import_module
 from pathlib import Path
-from typing import Optional, Union
 
 from pytest import Collector, Item, Module
 
@@ -20,7 +21,7 @@ class Runner(Collector):
     def __init__(
         self,
         item: Item,
-        modules: Optional[Iterable[str]] = None,
+        modules: Iterable[str] | None = None,
         *args,
         **kwargs,
     ):
@@ -30,7 +31,7 @@ class Runner(Collector):
         self.modules: list[str] = list(modules) if modules else []
         item.extra_keyword_matches.add("runner")
 
-    def collect(self) -> Iterable[Union[Item, Collector]]:
+    def collect(self) -> Iterable[Item | Collector]:
         if not self.modules:
             yield Module.from_parent(self, name=self.path.stem, path=self.path)
 

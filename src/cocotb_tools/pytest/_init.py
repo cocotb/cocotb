@@ -4,10 +4,11 @@
 
 """Loaded by simulator."""
 
+from __future__ import annotations
+
 import shlex
 
 import cocotb
-from cocotb._scheduler import Scheduler
 from cocotb_tools.pytest import env
 from cocotb_tools.pytest.regression import RegressionManager
 
@@ -23,6 +24,5 @@ def run_regression(_: object) -> None:
     if env.exists("COCOTB_TEST_MODULES"):
         args.append("--pyargs")
 
-    cocotb._scheduler_inst = Scheduler()
     cocotb._regression_manager = RegressionManager(*args)
     cocotb._regression_manager.start_regression()

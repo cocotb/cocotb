@@ -4,6 +4,8 @@
 
 """Pytest plugin to integrate pytest with cocotb."""
 
+from __future__ import annotations
+
 import inspect
 import os
 import re
@@ -11,7 +13,7 @@ import shlex
 from collections.abc import Sequence
 from pathlib import Path
 from time import time
-from typing import Any, Optional, Union
+from typing import Any
 
 from pytest import (
     Class,
@@ -34,7 +36,7 @@ from pytest import (
 
 import cocotb
 import cocotb.handle
-from cocotb._decorators import Parameterized, Test
+from cocotb._decorators import Test, TestGenerator
 from cocotb.handle import SimHandleBase
 from cocotb_tools.pytest.controller import Controller
 from cocotb_tools.pytest.option import Option, add_options_to_parser, is_cocotb_option
@@ -46,7 +48,7 @@ ENTRY_POINTS: dict[str, str] = {
 
 
 @fixture(name="dut", scope="session")
-def dut_fixture() -> Optional[SimHandleBase]:
+def dut_fixture() -> SimHandleBase | None:
     return getattr(cocotb, "top", None)
 
 
@@ -356,7 +358,7 @@ def pytest_configure(config: Config) -> None:
     if option.cocotb_regression_manager is None:
         option.cocotb_regression_manager = config.getini("cocotb_regression_manager")
 
-    entry_point: Optional[str] = ENTRY_POINTS.get(option.cocotb_regression_manager)
+    entry_point: str | None = ENTRY_POINTS.get(option.cocotb_regression_manager)
 
     if entry_point and entry_point not in option.pygpi_users:
         option.pygpi_users.append(entry_point)
@@ -407,7 +409,7 @@ def pytest_configure(config: Config) -> None:
     if option.cocotb_waves:
         os.environ["WAVES"] = "1"
 
-    coverage_rcfile: Optional[str] = getattr(option, "cov_config", None)
+    coverage_rcfile: str | None = getattr(option, "cov_config", None)
 
     if coverage_rcfile and Path(coverage_rcfile).exists():
         os.environ["COVERAGE_RCFILE"] = coverage_rcfile
@@ -416,11 +418,11 @@ def pytest_configure(config: Config) -> None:
         config.pluginmanager.register(Controller(config), "cocotb_controller")
 
 
-def _unwrap_obj(obj: object, markers: Optional[list[Mark]] = None) -> object:
+def _unwrap_obj(obj: object, markers: list[Mark] | None = None) -> object:
     if markers is None:
         markers = []
 
-    if isinstance(obj, Parameterized):
+    if isinstance(obj, TestGenerator):
         # Create dictionary of named arguments with values defined for function parametrization
         # @cocotb.parametrize(x=[1, 2], y=[3, 4]) -> {"x": [1, 2], "y": [3, 4]}
         args: dict[str, list[Any]] = {}
@@ -445,7 +447,7 @@ def _unwrap_obj(obj: object, markers: Optional[list[Mark]] = None) -> object:
         )
         markers.append(mark.cocotb().mark)
 
-        # Process cocotb Test from cocotb Parameterized
+        # Process cocotb Test from cocotb TestGenerator
         return _unwrap_obj(obj.test_template.func, markers)
 
     if isinstance(obj, Test):
@@ -477,9 +479,9 @@ def _unwrap_obj(obj: object, markers: Optional[list[Mark]] = None) -> object:
 
 @hookimpl(tryfirst=True)
 def pytest_pycollect_makeitem(
-    collector: Union[Module, Class], name: str, obj: object
-) -> Optional[Union[Item, Collector, list[Union[Item, Collector]]]]:
-    if isinstance(obj, (Parameterized, Test)):
+    collector: Module | Class, name: str, obj: object
+) -> Item | Collector | list[Item | Collector] | None:
+    if isinstance(obj, (Test, TestGenerator)):
         obj = _unwrap_obj(obj)
 
         setattr(collector.obj, name, obj)
@@ -489,7 +491,7 @@ def pytest_pycollect_makeitem(
         )
 
     if inspect.isfunction(obj):
-        markers: Optional[list[Mark]] = getattr(obj, "pytestmark", None)
+        markers: list[Mark] | None = getattr(obj, "pytestmark", None)
 
         if any(marker.name == "cocotb" for marker in markers or ()):
             setattr(obj, "__test__", True)
