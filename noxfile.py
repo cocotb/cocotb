@@ -247,6 +247,20 @@ def dev_test_sim(
     )
     Path(".coverage").rename(".coverage.pytest")
 
+    # We need to run it separately to avoid loading pytest cocotb plugin for other tests
+    session.log(f"Running pytest plugin tests against a simulator {config_str}")
+    session.run(
+        "pytest",
+        "-v",
+        "--cov=cocotb",
+        "--cov-branch",
+        # Don't display coverage report here
+        "--cov-report=",
+        "tests/pytest_plugin",
+        env=env,
+    )
+    Path(".coverage").rename(".coverage.pytest_plugin")
+
     session.log(f"Running examples against a simulator {config_str}")
     pytest_example_tree = [
         "examples/adder",
@@ -271,6 +285,7 @@ def dev_test_sim(
             "No coverage files found. Something went wrong during the test execution."
         )
     coverage_files.append(".coverage.pytest")
+    coverage_files.append(".coverage.pytest_plugin")
     session.run("coverage", "combine", "--append", *coverage_files)
     Path(".coverage").rename(coverage_file)
 
