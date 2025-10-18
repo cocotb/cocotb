@@ -310,6 +310,7 @@ async def test_Task_kill_done(_: object) -> None:
     assert task.result() == 1
 
 
+@cocotb.test
 async def test_Clock_start_high_deprecated(dut: Any) -> None:
     c = Clock(dut.clk, 10, "ns", start_high=True)
     with pytest.warns(DeprecationWarning):
