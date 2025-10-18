@@ -8,6 +8,8 @@ The Makefile in this folder is specially set up to squash any error code due
 to a failing test and ensures the failing test is reported properly.
 """
 
+from __future__ import annotations
+
 import cocotb
 
 
@@ -34,3 +36,8 @@ async def test_wrong_error(_):
 @cocotb.test(expect_fail=True)
 async def test_expect_fail_but_errors(_):
     raise Exception()
+
+
+@cocotb.test
+async def test_exception_with_nonprintable_characters(_: object) -> None:
+    raise Exception("This is bad! \x00\x0b\x80")

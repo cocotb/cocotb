@@ -1,27 +1,29 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import copy
+import sys
 import warnings
+from collections.abc import Iterable, Iterator
 from math import ceil
 from typing import (
     Any,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Union,
+    Literal,
     cast,
     overload,
 )
 
 from cocotb._deprecation import deprecated
-from cocotb._py_compat import Literal, TypeAlias
 from cocotb.types._abstract_array import AbstractMutableArray
 from cocotb.types._indexing import IndexingChangedWarning
 from cocotb.types._logic import Logic, LogicConstructibleT
 from cocotb.types._range import Range
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
 
 _resolve_lh_table = str.maketrans({"L": "0", "H": "1"})
 _str_literals = frozenset("uUxX01zZwWlLhH-")
@@ -34,7 +36,8 @@ class LogicArray(AbstractMutableArray[Logic]):
     r"""Fixed-sized, arbitrarily-indexed, :class:`.Array` of :class:`.Logic`\ s.
 
     An :class:`!Array`, where all elements are enforced to be :class:`!Logic`.
-    This allows the additional of bit-wise logical operators, conversions to integers and bytes, and ``X`` testing and mapping.
+    Additionally, this type supports bit-wise logical operators, conversions to integers and bytes,
+    and ``X`` testing and mapping.
 
     :class:`!LogicArray`\ s can be constructed from an iterable of :class:`!Logic`\ s,
     or values constructible into :class:`!Logic`, like :class:`bool`, :class:`str`, or :class:`int`.
@@ -196,9 +199,9 @@ class LogicArray(AbstractMutableArray[Logic]):
     # implementations are faster for particular operations.
     # Each implementation can be present, or None if the implementation has not been
     # computed or has been invalidated by a mutating operation.
-    _value_as_array: Union[List[Logic], None]
-    _value_as_int: Union[int, None]
-    _value_as_str: Union[str, None]
+    _value_as_array: list[Logic] | None
+    _value_as_int: int | None
+    _value_as_str: str | None
     _range: Range
     _warn_indexing: bool
 
@@ -212,8 +215,8 @@ class LogicArray(AbstractMutableArray[Logic]):
 
     def __init__(
         self,
-        value: Union[int, str, Iterable[LogicConstructibleT]],
-        range: Union[Range, int, None] = None,
+        value: int | str | Iterable[LogicConstructibleT],
+        range: Range | int | None = None,
     ) -> None:
         self._value_as_array = None
         self._value_as_int = None
@@ -233,9 +236,7 @@ class LogicArray(AbstractMutableArray[Logic]):
             self._value_as_str = value.upper()
             if range is not None:
                 if len(value) != len(range):
-                    raise ValueError(
-                        f"Value of length {len(self._value_as_str)} will not fit in {range!r}"
-                    )
+                    raise ValueError(f"Length of {value!r} does not match {range!r}")
                 self._range = range
             else:
                 self._range = Range(len(self._value_as_str) - 1, "downto", 0)
@@ -248,22 +249,33 @@ class LogicArray(AbstractMutableArray[Logic]):
             bitlen = max(1, int.bit_length(value))
             if bitlen > len(range):
                 raise ValueError(
-                    f"{value!r} will not fit in a LogicArray with bounds: {range!r}"
+                    f"{value!r} is too large to fit in LogicArray with {range!r}"
                 )
             self._value_as_int = value
             self._range = range
+        elif isinstance(value, LogicArray):
+            array = value._value_as_array
+            self._value_as_array = list(array) if array is not None else None
+            self._value_as_int = value._value_as_int
+            self._value_as_str = value._value_as_str
+            if range is None:
+                self._range = value._range
+            else:
+                if len(range) != len(value):
+                    raise ValueError(f"Length of {value!r} does not match {range!r}")
+                self._range = range
         else:
             self._value_as_array = [Logic(v) for v in value]
             if range is not None:
                 if len(self._value_as_array) != len(range):
                     raise ValueError(
-                        f"Value of length {len(self._value_as_array)} will not fit in {range!r}"
+                        f"Value of length {len(self._value_as_array)} does not match range: {range!r}"
                     )
                 self._range = range
             else:
                 self._range = Range(len(self._value_as_array) - 1, "downto", 0)
 
-    def _get_array(self) -> List[Logic]:
+    def _get_array(self) -> list[Logic]:
         if self._value_as_array is None:
             # May convert int to str before to converting to array.
             self._value_as_array = [Logic(v) for v in self._get_str()]
@@ -275,7 +287,7 @@ class LogicArray(AbstractMutableArray[Logic]):
                 self._value_as_str = format(self._value_as_int, f"0{len(self)}b")
             else:
                 self._value_as_str = "".join(
-                    str(v) for v in cast("List[Logic]", self._value_as_array)
+                    str(v) for v in cast("list[Logic]", self._value_as_array)
                 )
         return self._value_as_str
 
@@ -304,8 +316,8 @@ class LogicArray(AbstractMutableArray[Logic]):
     def from_unsigned(
         cls,
         value: int,
-        range: Union[Range, int],
-    ) -> "LogicArray":
+        range: Range | int,
+    ) -> LogicArray:
         """Construct a :class:`!LogicArray` from an :class:`int` with unsigned representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with unsigned representation where the left-most bit is the most significant bit.
@@ -330,8 +342,8 @@ class LogicArray(AbstractMutableArray[Logic]):
     def from_signed(
         cls,
         value: int,
-        range: Union[Range, int],
-    ) -> "LogicArray":
+        range: Range | int,
+    ) -> LogicArray:
         """Construct a :class:`!LogicArray` from an :class:`int` with two's complement representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with two's complement representation where the left-most bit is the most significant bit.
@@ -373,11 +385,11 @@ class LogicArray(AbstractMutableArray[Logic]):
     @classmethod
     def from_bytes(
         cls,
-        value: Union[bytes, bytearray],
-        range: Union[Range, int, None] = None,
+        value: bytes | bytearray,
+        range: Range | int | None = None,
         *,
         byteorder: ByteOrder,
-    ) -> "LogicArray":
+    ) -> LogicArray:
         """Construct a :class:`!LogicArray` from :class:`bytes`.
 
         The :class:`bytes` is first converted to an unsigned integer using *byteorder*-endian representation,
@@ -407,7 +419,7 @@ class LogicArray(AbstractMutableArray[Logic]):
         return LogicArray(value_as_int, range)
 
     @classmethod
-    def _from_handle(cls, value: str, warn_indexing: bool) -> "LogicArray":
+    def _from_handle(cls, value: str, warn_indexing: bool) -> LogicArray:
         # Used by cocotb.handle classes to make LogicArray from values gotten from the
         # simulator which we expect to be well-formed.
         # Values are required to be uppercase.
@@ -685,9 +697,9 @@ class LogicArray(AbstractMutableArray[Logic]):
     def __getitem__(self, item: int) -> Logic: ...
 
     @overload
-    def __getitem__(self, item: slice) -> "LogicArray": ...
+    def __getitem__(self, item: slice) -> LogicArray: ...
 
-    def __getitem__(self, item: Union[int, slice]) -> Union[Logic, "LogicArray"]:
+    def __getitem__(self, item: int | slice) -> Logic | LogicArray:
         array = self._get_array()
         if isinstance(item, int):
             if self._warn_indexing:
@@ -727,13 +739,13 @@ class LogicArray(AbstractMutableArray[Logic]):
 
     @overload
     def __setitem__(
-        self, item: slice, value: Union[str, Iterable[LogicConstructibleT], int]
+        self, item: slice, value: str | Iterable[LogicConstructibleT] | int
     ) -> None: ...
 
     def __setitem__(
         self,
-        item: Union[int, slice],
-        value: Union[LogicConstructibleT, Iterable[LogicConstructibleT]],
+        item: int | slice,
+        value: LogicConstructibleT | Iterable[LogicConstructibleT],
     ) -> None:
         array = self._get_array()
         # invalid other impls
@@ -779,7 +791,7 @@ class LogicArray(AbstractMutableArray[Logic]):
     def __index__(self) -> int:
         return int(self)
 
-    def __and__(self, other: "LogicArray") -> "LogicArray":
+    def __and__(self, other: LogicArray) -> LogicArray:
         if not isinstance(other, LogicArray):
             return NotImplemented
         if len(self) != len(other):
@@ -790,7 +802,7 @@ class LogicArray(AbstractMutableArray[Logic]):
             )
         return LogicArray(a & b for a, b in zip(self, other))
 
-    def __or__(self, other: "LogicArray") -> "LogicArray":
+    def __or__(self, other: LogicArray) -> LogicArray:
         if not isinstance(other, LogicArray):
             return NotImplemented
         if len(self) != len(other):
@@ -801,7 +813,7 @@ class LogicArray(AbstractMutableArray[Logic]):
             )
         return LogicArray(a | b for a, b in zip(self, other))
 
-    def __xor__(self, other: "LogicArray") -> "LogicArray":
+    def __xor__(self, other: LogicArray) -> LogicArray:
         if not isinstance(other, LogicArray):
             return NotImplemented
         if len(self) != len(other):
@@ -812,7 +824,7 @@ class LogicArray(AbstractMutableArray[Logic]):
             )
         return LogicArray(a ^ b for a, b in zip(self, other))
 
-    def __invert__(self) -> "LogicArray":
+    def __invert__(self) -> LogicArray:
         return LogicArray(~v for v in self)
 
     if RESOLVE_X is None:
@@ -829,7 +841,7 @@ class LogicArray(AbstractMutableArray[Logic]):
                 return False
             return any(bool(bit) for bit in self)
 
-    def resolve(self, resolver: ResolverLiteral) -> "LogicArray":
+    def resolve(self, resolver: ResolverLiteral) -> LogicArray:
         """Resolves non-0/1 values to 0/1.
 
         The possible values of the *resolver* argument are:
@@ -861,8 +873,14 @@ class LogicArray(AbstractMutableArray[Logic]):
         """
         return LogicArray(get_str_resolver(resolver)(str(self)), self.range)
 
-    def __copy__(self) -> "LogicArray":
+    def __copy__(self) -> LogicArray:
         raise NotImplementedError("`copy.copy` on LogicArray is not supported")
 
-    def __deepcopy__(self, memo: Dict[int, Any]) -> "LogicArray":
-        return LogicArray(self._get_str(), copy.deepcopy(self._range, memo=memo))
+    def __deepcopy__(self, memo: dict[int, Any]) -> LogicArray:
+        res = LogicArray.__new__(LogicArray)
+        res._value_as_array = copy.deepcopy(self._value_as_array, memo=memo)
+        res._value_as_int = self._value_as_int
+        res._value_as_str = self._value_as_str
+        res._range = copy.deepcopy(self._range, memo=memo)
+        res._warn_indexing = self._warn_indexing
+        return res

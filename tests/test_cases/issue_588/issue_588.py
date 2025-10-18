@@ -1,5 +1,6 @@
 # Test case for issue 588- yielding both coroutines and triggers in a list.
 # This is a very simple test; it just makes sure we can yield a list of both.
+from __future__ import annotations
 
 import cocotb
 from cocotb.triggers import First, Timer
@@ -9,7 +10,7 @@ from cocotb.utils import get_sim_time
 async def sample_coroutine(dut):
     """Very simple coroutine that waits 5 ns."""
     await Timer(5, "ns")
-    dut._log.info("Sample coroutine yielded.")
+    cocotb.log.info("Sample coroutine yielded.")
 
 
 @cocotb.test()

@@ -23,7 +23,7 @@ Installation of Prerequisites
 
 The current stable version of cocotb requires:
 
-* Python 3.6.2+
+* Python 3.9+
 * GNU Make 3+
 * A Verilog or VHDL simulator, depending on your :term:`RTL` source code
 
@@ -32,8 +32,6 @@ The current stable version of cocotb requires:
 .. versionchanged:: 1.6 Dropped Python 3.5 support
 
 .. versionchanged:: 1.4 Dropped Python 2 support
-
-.. note:: In order to use a 32-bit simulator you need to use a 32-bit version of Python.
 
 .. note:: Type checking cocotb code requires Python 3.11+.
 

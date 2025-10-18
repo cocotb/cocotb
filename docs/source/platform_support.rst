@@ -23,9 +23,6 @@ The following versions of Python, and all associated patch releases (except wher
 cocotb depends on CPython APIs;
 alternative Python implementations like PyPy or Jython are not supported.
 
-* CPython 3.6  (requires 3.6.2+)
-* CPython 3.7
-* CPython 3.8
 * CPython 3.9
 * CPython 3.10
 * CPython 3.11
@@ -70,13 +67,13 @@ Supported Windows Versions
 * **Windows 10 x86_64**
 * **Windows 11 x86_64**
 
-
 Supported macOS Versions
 ========================
 
-* **macOS 13 (Ventura) x86_64**
 * **macOS 14 (Sonoma) x86_64**
 * **macOS 15 (Sequoia) x86_64**
+* **macOS 14 (Sonoma) ARM64**
+* **macOS 15 (Sequoia) ARM64**
 
 .. _platform-support-policy:
 
@@ -112,6 +109,7 @@ Additionally, the Python version a supported Linux distribution ships with (syst
 as long as it receives updates by the operating system vendor (e.g. Red Hat, Debian, or Canonical).
 
 Only the standard CPython implementation is supported, the alternatives are not supported.
+Only 64-bit versions of Python are supported.
 
 Operating System Support
 ------------------------
@@ -120,5 +118,15 @@ cocotb aims to support all operating systems commonly used by our users.
 As such, we try to match the support matrix of major EDA tools to enable a seamless interaction between simulators and cocotb.
 Additionally, cocotb should work on the latest version of Windows, Linux, and macOS to ensure users can update their operating system freely without being blocked by cocotb.
 
-cocotb only supports x86_64 architectures and requires a 64-bit operating system.
-(Note: 32-bit x86 applications can be run on 64-bit operating systems.)
+Only 64-bit operating systems are supported.
+
+Simulator Support
+-----------------
+
+cocotb aims to support all major simulators on all operating systems where that simulator is supported.
+Our official support is limited to what we can test in our CI system.
+cocotb's build systems (:ref:`Makefiles <building>` or :ref:`Python runners <api-runner>`) support more simulators,
+and cocotb can theoretically work with any simulator that supports the :term:`VPI` or :term:`VHPI`;
+however, such simulators are not officially supported.
+
+Only 64-bit simulators are supported.

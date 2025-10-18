@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import os
 import sys
 import warnings
@@ -245,3 +247,64 @@ async def test_Lock_name_deprecated(_: object) -> None:
         l.name = "foobar"
     with pytest.warns(DeprecationWarning):
         assert l.name == "foobar"
+
+
+@cocotb.test
+async def test_Task_kill_unstarted(_: object) -> None:
+    async def example() -> None:
+        await Timer(10, "ns")
+
+    task = cocotb.create_task(example())
+
+    with pytest.warns(DeprecationWarning):
+        task.kill()
+
+    assert task.done()
+    assert task.result() is None
+
+
+@cocotb.test
+async def test_Task_kill_scheduled(_: object) -> None:
+    async def example() -> None:
+        await Timer(10, "ns")
+
+    task = cocotb.start_soon(example())
+
+    with pytest.warns(DeprecationWarning):
+        task.kill()
+
+    assert task.done()
+    assert task.result() is None
+
+
+@cocotb.test
+async def test_Task_kill_pending(_: object) -> None:
+    async def example() -> None:
+        await Timer(10, "ns")
+
+    task = cocotb.start_soon(example())
+    await Timer(1)
+
+    with pytest.warns(DeprecationWarning):
+        task.kill()
+
+    assert task.done()
+    assert task.result() is None
+
+
+@cocotb.test
+async def test_Task_kill_done(_: object) -> None:
+    async def example() -> int:
+        return 1
+
+    task = cocotb.start_soon(example())
+    await Timer(1)
+
+    assert task.done()
+    assert task.result() == 1
+
+    with pytest.warns(DeprecationWarning):
+        task.kill()
+
+    assert task.done()
+    assert task.result() == 1

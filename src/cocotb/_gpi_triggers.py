@@ -6,31 +6,28 @@
 
 """A collection of triggers which a testbench can :keyword:`await`."""
 
+from __future__ import annotations
+
+import sys
 import warnings
+from collections.abc import Generator
 from decimal import Decimal
 from fractions import Fraction
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Generic,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Any, ClassVar, Generic, TypeVar
 
 import cocotb
+import cocotb._event_loop
 import cocotb.handle
-from cocotb import simulator
+from cocotb import debug, simulator
 from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
-from cocotb._typing import RoundMode, TimeUnit
+from cocotb._profiling import profiling_context
 from cocotb._utils import pointer_str, singleton
+from cocotb.simtime import RoundMode, TimeUnit
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
-if TYPE_CHECKING:
-    from cocotb._py_compat import Self
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 
 class GPITrigger(Trigger):
@@ -38,17 +35,23 @@ class GPITrigger(Trigger):
 
     def __init__(self) -> None:
         super().__init__()
-        self._cbhdl: Optional[simulator.gpi_cb_hdl] = None
+        self._cbhdl: simulator.gpi_cb_hdl | None = None
+
+    def _react(self) -> None:
+        if debug.debug:
+            self._log.debug("Fired %s", self)
+        with profiling_context:
+            global _current_gpi_trigger
+            _current_gpi_trigger = self
+            if debug.debug and not self._callbacks:
+                self._log.error("No callbacks on GPITrigger that fired")
+            self._do_callbacks()
+            cocotb._event_loop._inst.run()
 
     def _unprime(self) -> None:
-        """Disable a primed trigger, can be re-primed."""
-        if self._cbhdl is not None:
-            self._cbhdl.deregister()
-        return super()._unprime()
-
-    def _cleanup(self) -> None:
+        assert self._cbhdl is not None
+        self._cbhdl.deregister()
         self._cbhdl = None
-        return super()._cleanup()
 
 
 class Timer(GPITrigger):
@@ -129,10 +132,10 @@ class Timer(GPITrigger):
 
     def __init__(
         self,
-        time: Union[float, Fraction, Decimal],
+        time: float | Fraction | Decimal,
         unit: TimeUnit = "step",
         *,
-        round_mode: Optional[RoundMode] = None,
+        round_mode: RoundMode | None = None,
         units: None = None,
     ) -> None:
         super().__init__()
@@ -153,15 +156,10 @@ class Timer(GPITrigger):
         if self._sim_steps == 0:
             self._sim_steps = 1
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
-        """Register for a timed callback."""
+    def _prime(self) -> None:
+        self._cbhdl = simulator.register_timed_callback(self._sim_steps, self._react)
         if self._cbhdl is None:
-            self._cbhdl = simulator.register_timed_callback(
-                self._sim_steps, callback, self
-            )
-            if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {self!s} Trigger")
-        super()._prime(callback)
+            raise RuntimeError(f"Unable set up {self} Trigger")
 
     def __repr__(self) -> str:
         return "<{} of {:1.2f}ps at {}>".format(
@@ -181,16 +179,17 @@ class ReadOnly(GPITrigger):
     Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
     """
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self) -> None:
+        self._cbhdl = simulator.register_readonly_callback(self._react)
+        if self._cbhdl is None:
+            raise RuntimeError(f"Unable set up {self} Trigger")
+
+    def __await__(self) -> Generator[Self, None, Self]:
         if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadOnly in ReadOnly phase"
             )
-        if self._cbhdl is None:
-            self._cbhdl = simulator.register_readonly_callback(callback, self)
-            if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {self!s} Trigger")
-        super()._prime(callback)
+        return (yield from super().__await__())
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}()"
@@ -200,16 +199,23 @@ class ReadOnly(GPITrigger):
 class ReadWrite(GPITrigger):
     """Fires when the read-write simulation phase is reached."""
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self) -> None:
+        self._cbhdl = simulator.register_rwsynch_callback(self._react)
+        if self._cbhdl is None:
+            raise RuntimeError(f"Unable set up {self} Trigger")
+
+    def _do_callbacks(self) -> None:
+        # Force scheduled writes to occur first for those simulators where inertial
+        # writes are applied immediately when in ReadWrite mode.
+        cocotb.handle._apply_scheduled_writes()
+        return super()._do_callbacks()
+
+    def __await__(self) -> Generator[Self, None, Self]:
         if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError(
                 "Attempted illegal transition: awaiting ReadWrite in ReadOnly phase"
             )
-        if self._cbhdl is None:
-            self._cbhdl = simulator.register_rwsynch_callback(callback, self)
-            if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {self!s} Trigger")
-        super()._prime(callback)
+        return (yield from super().__await__())
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}()"
@@ -219,12 +225,10 @@ class ReadWrite(GPITrigger):
 class NextTimeStep(GPITrigger):
     """Fires when the next time step is started."""
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self) -> None:
+        self._cbhdl = simulator.register_nextstep_callback(self._react)
         if self._cbhdl is None:
-            self._cbhdl = simulator.register_nextstep_callback(callback, self)
-            if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {self!s} Trigger")
-        super()._prime(callback)
+            raise RuntimeError(f"Unable set up {self} Trigger")
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}()"
@@ -240,7 +244,7 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
     signal: _SignalType
 
     @classmethod
-    def _make(cls, signal: _SignalType) -> "Self":
+    def _make(cls, signal: _SignalType) -> Self:
         self = GPITrigger.__new__(cls)
         GPITrigger.__init__(self)
         self.signal = signal
@@ -249,14 +253,12 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
     def __init__(self, _: _SignalType) -> None:
         pass
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
+    def _prime(self) -> None:
+        self._cbhdl = simulator.register_value_change_callback(
+            self.signal._handle, self._react, type(self)._edge_type
+        )
         if self._cbhdl is None:
-            self._cbhdl = simulator.register_value_change_callback(
-                self.signal._handle, callback, type(self)._edge_type, self
-            )
-            if self._cbhdl is None:
-                raise RuntimeError(f"Unable set up {self!s} Trigger")
-        super()._prime(callback)
+            raise RuntimeError(f"Unable set up {self} Trigger")
 
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({self.signal!r})"
@@ -283,7 +285,7 @@ class RisingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
 
     _edge_type = simulator.RISING
 
-    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "RisingEdge":
+    def __new__(cls, signal: cocotb.handle.LogicObject) -> RisingEdge:
         if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
                 f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
@@ -312,7 +314,7 @@ class FallingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
 
     _edge_type = simulator.FALLING
 
-    def __new__(cls, signal: "cocotb.handle.LogicObject") -> "FallingEdge":
+    def __new__(cls, signal: cocotb.handle.LogicObject) -> FallingEdge:
         if not (isinstance(signal, cocotb.handle.LogicObject)):
             raise TypeError(
                 f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
@@ -338,8 +340,8 @@ class ValueChange(_EdgeBase["cocotb.handle._NonIndexableValueObjectBase[Any, Any
     _edge_type = simulator.VALUE_CHANGE
 
     def __new__(
-        cls, signal: "cocotb.handle._NonIndexableValueObjectBase[Any, Any]"
-    ) -> "ValueChange":
+        cls, signal: cocotb.handle._NonIndexableValueObjectBase[Any, Any]
+    ) -> ValueChange:
         if not isinstance(signal, cocotb.handle._NonIndexableValueObjectBase):
             raise TypeError(
                 f"{cls.__qualname__} requires a simulation object derived from ValueObjectBase. "
@@ -364,8 +366,8 @@ class Edge(ValueChange):
 
     @deprecated("Use `signal.value_change` instead.")
     def __new__(
-        cls, signal: "cocotb.handle._NonIndexableValueObjectBase[Any, Any]"
-    ) -> "Edge":
+        cls, signal: cocotb.handle._NonIndexableValueObjectBase[Any, Any]
+    ) -> Edge:
         if not isinstance(signal, cocotb.handle._NonIndexableValueObjectBase):
             raise TypeError(
                 f"{cls.__qualname__} requires a simulation object derived from ValueObjectBase. "
@@ -375,7 +377,7 @@ class Edge(ValueChange):
 
 
 # The initializer is a lie, but a useful one. Perhaps one day this can be something like `StartupTrigger`.`
-_current_gpi_trigger = Timer(1, "step")  # type: Union[None, GPITrigger]
+_current_gpi_trigger: GPITrigger | None = Timer(1, "step")
 
 
 def current_gpi_trigger() -> GPITrigger:

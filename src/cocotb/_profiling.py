@@ -4,11 +4,12 @@
 
 
 # Debug mode controlled by environment variables
+from __future__ import annotations
+
 import cProfile
 import os
 import pstats
-
-from cocotb._py_compat import AbstractContextManager, nullcontext
+from contextlib import AbstractContextManager, nullcontext
 
 profiling_context: AbstractContextManager[None, None]
 

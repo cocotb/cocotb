@@ -1,6 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import distutils
 import logging
@@ -11,7 +12,6 @@ import sysconfig
 import textwrap
 from distutils.ccompiler import get_default_compiler
 from distutils.file_util import copy_file
-from typing import List
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext as _build_ext
@@ -51,7 +51,7 @@ _extra_defines = [("__STDC_FORMAT_MACROS", "")]
 
 
 def create_sxs_assembly_manifest(
-    name: str, filename: str, libraries: List[str], dependency_only=False
+    name: str, filename: str, libraries: list[str], dependency_only=False
 ) -> str:
     """
     Create side-by-side (sxs) assembly manifest
@@ -424,7 +424,7 @@ class build_ext(_build_ext):
         load the DLL (.a) based on module definition files (.def)
         """
 
-        for sim in ["icarus", "modelsim", "aldec", "ghdl"]:
+        for sim in ["icarus", "modelsim", "aldec", "ghdl", "nvcvhpi"]:
             if self._uses_msvc():
                 subprocess.run(
                     [
@@ -822,12 +822,17 @@ def get_ext():
     #
     # NVC
     #
-    if os.name == "posix":
-        logger.info("Compiling libraries for NVC")
-        nvc_vhpi_ext = _get_vhpi_lib_ext(
-            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="NVC"
-        )
-        ext.append(nvc_vhpi_ext)
+    nvc_extra_lib = []
+    if os.name == "nt":
+        nvc_extra_lib = ["nvcvhpi"]
+    logger.info("Compiling libraries for NVC")
+    nvc_vhpi_ext = _get_vhpi_lib_ext(
+        include_dirs=include_dirs,
+        share_lib_dir=share_lib_dir,
+        sim_define="NVC",
+        extra_lib=nvc_extra_lib,
+    )
+    ext.append(nvc_vhpi_ext)
 
     #
     # DSim

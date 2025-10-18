@@ -1,32 +1,19 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
-import functools
 import inspect
 import logging
 import warnings
+from collections.abc import Coroutine, Sequence
 from itertools import product
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Coroutine,
-    Dict,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-    overload,
-)
+from types import FrameType, FunctionType
+from typing import Callable, cast, overload
 
 from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test
-from cocotb._typing import TimeUnit
-
-if TYPE_CHECKING:
-    from types import FrameType, FunctionType
+from cocotb.simtime import TimeUnit
 
 
 class TestFactory:
@@ -107,9 +94,9 @@ class TestFactory:
         self.test_function = test_function
         self.args = args
         self.kwargs_constant = kwargs
-        self.kwargs: Dict[
-            Union[str, Sequence[str]],
-            Union[Sequence[object], Sequence[Sequence[object]]],
+        self.kwargs: dict[
+            str | Sequence[str],
+            Sequence[object] | Sequence[Sequence[object]],
         ] = {}
         self._log = logging.getLogger(f"TestFactory({self.test_function.__name__})")
 
@@ -123,8 +110,8 @@ class TestFactory:
 
     def add_option(
         self,
-        name: Union[str, Sequence[str]],
-        optionlist: Union[Sequence[object], Sequence[Sequence[object]]],
+        name: str | Sequence[str],
+        optionlist: Sequence[object] | Sequence[Sequence[object]],
     ) -> None:
         """Add a named option to the test.
 
@@ -153,14 +140,14 @@ class TestFactory:
     def generate_tests(
         self,
         *,
-        prefix: Optional[str] = None,
-        postfix: Optional[str] = None,
+        prefix: str | None = None,
+        postfix: str | None = None,
         stacklevel: int = 0,
-        name: Optional[str] = None,
-        timeout_time: Optional[float] = None,
+        name: str | None = None,
+        timeout_time: float | None = None,
         timeout_unit: TimeUnit = "step",
         expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
+        expect_error: type[BaseException] | tuple[type[BaseException], ...] = (),
         skip: bool = False,
         stage: int = 0,
     ) -> None:
@@ -254,7 +241,7 @@ class TestFactory:
             doc: str = "Automatically generated test\n\n"
 
             # preprocess testoptions to split tuples
-            testoptions_split: Dict[str, Sequence[object]] = {}
+            testoptions_split: dict[str, Sequence[object]] = {}
             for optname, optvalue in testoptions.items():
                 if isinstance(optname, str):
                     optvalue = cast("Sequence[object]", optvalue)
@@ -280,14 +267,6 @@ class TestFactory:
             kwargs = self.kwargs_constant.copy()
             kwargs.update(testoptions_split)
 
-            @functools.wraps(self.test_function)
-            async def _my_test(dut: object, kwargs: Dict[str, object] = kwargs) -> None:
-                await self.test_function(dut, *self.args, **kwargs)
-
-            _my_test.__doc__ = doc
-            _my_test.__name__ = name
-            _my_test.__qualname__ = name
-
             if name in glbs:
                 self._log.error(
                     "Overwriting %s in module %s. "
@@ -297,12 +276,19 @@ class TestFactory:
                     glbs["__name__"],
                 )
 
+            timeout = (timeout_time, timeout_unit) if timeout_time is not None else None
+
+            if isinstance(expect_error, type):
+                expect_error = (expect_error,)
+
             test = Test(
-                func=_my_test,
+                func=self.test_function,
+                args=self.args,
+                kwargs=kwargs,
                 name=name,
                 module=glbs["__name__"],
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
+                doc=doc,
+                timeout=timeout,
                 expect_fail=expect_fail,
                 expect_error=expect_error,
                 skip=skip,

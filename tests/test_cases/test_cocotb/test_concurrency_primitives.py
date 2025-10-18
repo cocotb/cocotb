@@ -5,6 +5,8 @@
 Tests for concurrency primitives like First and Combine
 """
 
+from __future__ import annotations
+
 import contextlib
 import re
 from collections import deque
@@ -25,7 +27,7 @@ class MyTrigger(Trigger):
         self.primed = 0
         self.unprimed = 0
 
-    def _prime(self, _: Any) -> None:
+    def _prime(self) -> None:
         self.primed += 1
 
     def _unprime(self) -> None:

@@ -31,41 +31,14 @@ The current test in the "ci-free"/"ci-licensed" group should be moved to "extend
 and the new version should be added to "ci-free"/"ci-licensed" and any changes in behavior recorded with expectations to make CI pass.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys
 
 ENVS = [
     # Test different Python versions with package managed Icarus on Ubuntu
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.6",
-        "group": "ci-free",
-        "setup_python": "pyenv",
-        "test_nosim": True,
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.7",
-        "group": "ci-free",
-        "setup_python": "pyenv",
-        "test_nosim": True,
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.8",
-        "group": "ci-free",
-        "test_nosim": True,
-    },
     {
         "lang": "vhdl",
         "sim": "nvc",
@@ -279,7 +252,7 @@ ENVS = [
         "group": "extended",
     },
     # Test other OSes
-    # Icarus homebrew
+    # Icarus homebrew (ARM64)
     {
         "lang": "verilog",
         "sim": "icarus",
@@ -288,7 +261,7 @@ ENVS = [
         "python-version": "3.9",
         "group": "ci-free",
     },
-    # Icarus homebrew (HEAD/master)
+    # Icarus homebrew (ARM64) (HEAD/master)
     {
         "lang": "verilog",
         "sim": "icarus",
@@ -297,7 +270,7 @@ ENVS = [
         "python-version": "3.9",
         "group": "experimental",
     },
-    # Verilator macOS HEAD
+    # Verilator macOS (ARM64) HEAD
     {
         "lang": "verilog",
         "sim": "verilator",
@@ -306,12 +279,21 @@ ENVS = [
         "python-version": "3.9",
         "group": "experimental",
     },
-    # Verilator macOS latest release
+    # Verilator macOS (ARM64) latest release
     {
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "v5.038",  # not latest, but v5.040 is broken on MacOS
         "os": "macos-14",
+        "python-version": "3.9",
+        "group": "ci-free",
+    },
+    # Icarus homebrew (x86)
+    {
+        "lang": "verilog",
+        "sim": "icarus",
+        "sim-version": "homebrew-stable",
+        "os": "macos-15-intel",
         "python-version": "3.9",
         "group": "ci-free",
     },
@@ -335,6 +317,15 @@ ENVS = [
         "python-version": "3.11",
         "toolchain": "msvc",
         "extra-name": "msvc",
+        "group": "ci-free",
+    },
+    # NVC on windows
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.17.1",
+        "os": "windows-latest",
+        "python-version": "3.11",
         "group": "ci-free",
     },
     # Other

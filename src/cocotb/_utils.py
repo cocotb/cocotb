@@ -6,52 +6,58 @@
 
 """Utilities for implementors."""
 
+from __future__ import annotations
+
+import sys
 import traceback
 import types
+from collections.abc import Iterable
 from enum import Enum, IntEnum
 from functools import update_wrapper, wraps
 from types import TracebackType
 from typing import (
-    TYPE_CHECKING,
     Any,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
+    Callable,
+    Generic,
     TypeVar,
-    Union,
     cast,
     overload,
 )
 
-ExceptionTuple = Tuple[
-    Type[BaseException], BaseException, TracebackType
-]  # TypeAlias in Python 3.10
+if sys.version_info >= (3, 10):
+    from typing import Concatenate, ParamSpec, TypeAlias
+
+    Params = ParamSpec("Params")
+
+else:
+    # hack to make 3.9 happy
+    Params = TypeVar("Params")
+
+ExceptionTuple: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 
 
 @overload
 def remove_traceback_frames(
-    tb_or_exc: ExceptionTuple, frame_names: List[str]
+    tb_or_exc: ExceptionTuple, frame_names: list[str]
 ) -> ExceptionTuple: ...
 
 
 @overload
 def remove_traceback_frames(
-    tb_or_exc: BaseException, frame_names: List[str]
+    tb_or_exc: BaseException, frame_names: list[str]
 ) -> BaseException: ...
 
 
 @overload
 def remove_traceback_frames(
-    tb_or_exc: TracebackType, frame_names: List[str]
+    tb_or_exc: TracebackType, frame_names: list[str]
 ) -> TracebackType: ...
 
 
 def remove_traceback_frames(
-    tb_or_exc: Union[ExceptionTuple, BaseException, TracebackType],
-    frame_names: List[str],
-) -> Union[ExceptionTuple, BaseException, TracebackType]:
+    tb_or_exc: ExceptionTuple | BaseException | TracebackType,
+    frame_names: list[str],
+) -> ExceptionTuple | BaseException | TracebackType:
     """
     Strip leading frames from a traceback
 
@@ -90,8 +96,8 @@ def remove_traceback_frames(
 
 
 def walk_coro_stack(
-    coro: "types.CoroutineType[Any, Any, Any]",
-) -> Iterable[Tuple[types.FrameType, int]]:
+    coro: types.CoroutineType[Any, Any, Any],
+) -> Iterable[tuple[types.FrameType, int]]:
     """Walk down the coroutine stack, starting at *coro*.
 
     Args:
@@ -100,7 +106,7 @@ def walk_coro_stack(
     Yields:
         Frame and line number of each frame in the coroutine.
     """
-    c: Optional[types.CoroutineType[Any, Any, Any]] = coro
+    c: types.CoroutineType[Any, Any, Any] | None = coro
     while c is not None:
         try:
             f = c.cr_frame
@@ -113,7 +119,7 @@ def walk_coro_stack(
 
 
 def extract_coro_stack(
-    coro: "types.CoroutineType[Any, Any, Any]", limit: Optional[int] = None
+    coro: types.CoroutineType[Any, Any, Any], limit: int | None = None
 ) -> traceback.StackSummary:
     r"""Create a list of pre-processed entries from the coroutine stack.
 
@@ -159,7 +165,7 @@ class DocEnum(Enum):
     as recommended by the ``enum_tools`` documentation.
     """
 
-    def __new__(cls: Type[EnumT], value: object, doc: Optional[str] = None) -> EnumT:
+    def __new__(cls: type[EnumT], value: object, doc: str | None = None) -> EnumT:
         # super().__new__() assumes the value is already an enum value
         # so we side step that and create a raw object and fill in _value_
         self = object.__new__(cls)
@@ -175,7 +181,7 @@ IntEnumT = TypeVar("IntEnumT", bound=IntEnum)
 class DocIntEnum(IntEnum):
     """Like DocEnum but for :class:`IntEnum` enum types."""
 
-    def __new__(cls: Type[IntEnumT], value: int, doc: Optional[str] = None) -> IntEnumT:
+    def __new__(cls: type[IntEnumT], value: int, doc: str | None = None) -> IntEnumT:
         self = int.__new__(cls, value)
         self._value_ = value
         if doc is not None:
@@ -183,74 +189,85 @@ class DocIntEnum(IntEnum):
         return self
 
 
-if TYPE_CHECKING:
-    F = TypeVar("F")
+ResultT = TypeVar("ResultT")
+InstanceT = TypeVar("InstanceT")
 
-    def cached_method(f: F) -> F: ...
 
-else:
+class cached_method(Generic[InstanceT, Params, ResultT]):
+    def __init__(
+        self, method: Callable[Concatenate[InstanceT, Params], ResultT]
+    ) -> None:
+        self._method = method
+        update_wrapper(self, method)
 
-    class cached_method:
-        def __init__(self, method):
-            self._method = method
-            update_wrapper(self, method)
+    @overload
+    def __get__(
+        self, instance: None, objtype: object = None
+    ) -> Callable[Concatenate[InstanceT, Params], ResultT]: ...
 
-        def __get__(self, instance, objtype=None):
-            if instance is None:
-                return self
+    @overload
+    def __get__(
+        self, instance: InstanceT, objtype: object = None
+    ) -> Callable[Params, ResultT]: ...
 
-            cache = {}
+    def __get__(
+        self, instance: None | InstanceT, objtype: object = None
+    ) -> Callable[Concatenate[InstanceT, Params], ResultT] | Callable[Params, ResultT]:
+        if instance is None:
+            return self
 
-            @wraps(self._method)
-            def lookup(*args, **kwargs):
-                key = (args, tuple(kwargs.items()))
-                try:
-                    return cache[key]
-                except KeyError:
-                    res = self._method(instance, *args, **kwargs)
-                    cache[key] = res
-                    return res
+        cache: dict[
+            tuple[tuple[object, ...], tuple[tuple[str, object], ...]], ResultT
+        ] = {}
 
-            lookup.cache = cache
+        @wraps(self._method)
+        def lookup(*args: Params.args, **kwargs: Params.kwargs) -> ResultT:
+            key = (args, tuple(kwargs.items()))
+            try:
+                return cache[key]
+            except KeyError:
+                res = self._method(instance, *args, **kwargs)
+                cache[key] = res
+                return res
 
-            setattr(instance, self._method.__name__, lookup)
-            return lookup
+        lookup.cache = cache  # type: ignore[attr-defined]
 
-        def __call__(self, instance, *args, **kwargs):
-            func = getattr(instance, self._method.__name__)
-            return func(*args, **kwargs)
+        setattr(instance, self._method.__name__, lookup)
+        return lookup
+
+    def __call__(
+        self, instance: InstanceT, *args: Params.args, **kwargs: Params.kwargs
+    ) -> ResultT:
+        func = getattr(instance, self._method.__name__)
+        return func(*args, **kwargs)
 
 
 T = TypeVar("T")
 
 
-if TYPE_CHECKING:
+def singleton(orig_cls: type[T]) -> type[T]:
+    """Class decorator which turns a type into a Singleton type."""
+    orig_new = orig_cls.__new__
+    orig_init = orig_cls.__init__
+    instance = None
 
-    def singleton(orig_cls: T) -> T: ...
+    @wraps(orig_cls.__new__)
+    def __new__(cls: type[T], *args: object, **kwargs: object) -> T:
+        nonlocal instance
+        if instance is None:
+            instance = orig_new(cls, *args, **kwargs)
+            orig_init(instance, *args, **kwargs)
+        return instance
 
-else:
+    @wraps(orig_cls.__init__)
+    def __init__(self: T, *args: object, **kwargs: object) -> None:
+        pass
 
-    def singleton(orig_cls):
-        """Class decorator which turns a type into a Singleton type."""
-        orig_new = orig_cls.__new__
-        orig_init = orig_cls.__init__
-        instance = None
-
-        @wraps(orig_cls.__new__)
-        def __new__(cls, *args, **kwargs):
-            nonlocal instance
-            if instance is None:
-                instance = orig_new(cls, *args, **kwargs)
-                orig_init(instance, *args, **kwargs)
-            return instance
-
-        @wraps(orig_cls.__init__)
-        def __init__(self, *args, **kwargs):
-            pass
-
-        orig_cls.__new__ = __new__
-        orig_cls.__init__ = __init__
-        return orig_cls
+    # I'd like to get rid of type ignoring "assignment", but I'm not sure how to convince
+    # mypy that the new function definitions are compatible with the old.
+    orig_cls.__new__ = __new__  # type: ignore[method-assign, assignment]
+    orig_cls.__init__ = __init__  # type: ignore[method-assign, assignment]
+    return orig_cls
 
 
 def pointer_str(obj: object) -> str:

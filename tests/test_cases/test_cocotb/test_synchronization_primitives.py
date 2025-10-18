@@ -5,15 +5,18 @@
 Tests for synchronization primitives like Lock and Event
 """
 
+from __future__ import annotations
+
 import random
 import re
-from typing import TYPE_CHECKING, Any, List
+from typing import Any
 
 import pytest
 from common import assert_takes
 
 import cocotb
 from cocotb._base_triggers import Trigger, _InternalEvent
+from cocotb.task import Task
 from cocotb.triggers import (
     Event,
     Lock,
@@ -22,9 +25,6 @@ from cocotb.triggers import (
     Timer,
     with_timeout,
 )
-
-if TYPE_CHECKING:
-    from cocotb.task import Task
 
 
 @cocotb.test()
@@ -192,7 +192,7 @@ async def test_Lock_fair_scheduling(_) -> None:
         await Timer(waiter_ns, "ns")
         lock.release()
 
-    tasks: List[Task[None]] = []
+    tasks: list[Task[None]] = []
 
     for i in range(n_waiters):
         tasks.append(cocotb.start_soon(waiter(i)))

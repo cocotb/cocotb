@@ -6,6 +6,8 @@
 
 """All things relating to regression capabilities."""
 
+from __future__ import annotations
+
 import functools
 import hashlib
 import inspect
@@ -15,24 +17,19 @@ import random
 import re
 import time
 import warnings
+from collections.abc import Coroutine
 from enum import auto
 from importlib import import_module
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Coroutine,
-    List,
-    Union,
-)
+from typing import Any, Callable
 
 import cocotb
-import cocotb._gpi_triggers
-import cocotb.handle
+import cocotb._event_loop
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
-from cocotb._decorators import Parameterized, Test
+from cocotb._base_triggers import Trigger
+from cocotb._decorators import Test, TestGenerator
 from cocotb._extended_awaitables import with_timeout
-from cocotb._gpi_triggers import GPITrigger, Timer
+from cocotb._gpi_triggers import Timer
 from cocotb._outcomes import Error, Outcome
 from cocotb._test import RunningTest
 from cocotb._test_factory import TestFactory
@@ -42,25 +39,22 @@ from cocotb._utils import (
     remove_traceback_frames,
     safe_divide,
 )
-from cocotb._xunit_reporter import XUnitReporter
+from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
 from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
 from cocotb.task import Task
 
-if TYPE_CHECKING:
-    from cocotb._base_triggers import Trigger
-
 __all__ = (
-    "Parameterized",
     "RegressionManager",
     "RegressionMode",
     "SimFailure",
     "Test",
     "TestFactory",
+    "TestGenerator",
 )
 
 # Set __module__ on re-exports
-Parameterized.__module__ = __name__
+TestGenerator.__module__ = __name__
 Test.__module__ = __name__
 TestFactory.__module__ = __name__
 
@@ -77,7 +71,7 @@ class SimFailure(BaseException):
 _logger = logging.getLogger(__name__)
 
 
-def _format_doc(docstring: Union[str, None]) -> str:
+def _format_doc(docstring: str | None) -> str:
     if docstring is None:
         return ""
     else:
@@ -100,12 +94,12 @@ class RegressionMode(DocEnum):
 
 
 class _TestResults:
-    # TODO Replace with dataclass in Python 3.7+
+    # TODO merge into Test object
 
     def __init__(
         self,
         test_fullname: str,
-        passed: Union[None, bool],
+        passed: None | bool,
         wall_time_s: float,
         sim_time_ns: float,
     ) -> None:
@@ -149,7 +143,7 @@ class RegressionManager:
         self._running_test: RunningTest
         self.log = _logger
         self._regression_start_time: float
-        self._test_results: List[_TestResults] = []
+        self._test_results: list[_TestResults] = []
         self.total_tests = 0
         """Total number of tests that will be run or skipped."""
         self.count = 0
@@ -161,11 +155,13 @@ class RegressionManager:
         self.failures = 0
         """The current number of failed tests."""
         self._tearing_down = False
-        self._test_queue: List[Test] = []
-        self._filters: List[re.Pattern[str]] = []
+        self._test_queue: list[Test] = []
+        self._filters: list[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
-        self._included: List[bool]
-        self._sim_failure: Union[Error[None], None] = None
+        self._included: list[bool]
+        self._sim_failure: Error[None] | None = None
+        self._regression_seed = cocotb.RANDOM_SEED
+        self._random_state: Any
 
         # Setup XUnit
         ###################
@@ -194,7 +190,7 @@ class RegressionManager:
                 if isinstance(obj, Test):
                     found_test = True
                     self.register_test(obj)
-                elif isinstance(obj, Parameterized):
+                elif isinstance(obj, TestGenerator):
                     found_test = True
                     generated_tests: bool = False
                     for test in obj.generate_tests():
@@ -202,7 +198,7 @@ class RegressionManager:
                         self.register_test(test)
                     if not generated_tests:
                         warnings.warn(
-                            f"Parametrize object generated no tests: {module_name}.{obj_name}",
+                            f"TestGenerator generated no tests: {module_name}.{obj_name}",
                             stacklevel=2,
                         )
 
@@ -315,9 +311,6 @@ class RegressionManager:
                 ", ".join(f.pattern for f in self._filters),
             )
 
-        # start write scheduler
-        cocotb.handle._start_write_scheduler()
-
         # start test loop
         self._regression_start_time = time.time()
         self._first_test = True
@@ -366,37 +359,37 @@ class RegressionManager:
                 self._first_test = False
                 return self._schedule_next_test()
             else:
-                return self._timer1._prime(self._schedule_next_test)
+                self._timer1._register(self._schedule_next_test)
+                return
 
         return self._tear_down()
 
     def _init_test(self) -> RunningTest:
         # wrap test function in timeout
         func: Callable[..., Coroutine[Trigger, None, None]]
-        timeout = self._test.timeout_time
+        timeout = self._test.timeout
         if timeout is not None:
             f = self._test.func
 
             @functools.wraps(f)
             async def func(*args: object, **kwargs: object) -> None:
-                await with_timeout(f(*args, **kwargs), timeout, self._test.timeout_unit)
+                await with_timeout(f(*args, **kwargs), *timeout)
         else:
             func = self._test.func
 
-        main_task = Task(func(cocotb.top), name=f"Test {self._test.name}")
+        coro = func(cocotb.top, *self._test.args, **self._test.kwargs)
+        main_task = Task(coro, name=f"Test {self._test.name}")
         return RunningTest(self._test_complete, main_task)
 
-    def _schedule_next_test(self, trigger: Union[GPITrigger, None] = None) -> None:
-        if trigger is not None:
-            # TODO move to Trigger object
-            cocotb._gpi_triggers._current_gpi_trigger = trigger
-            trigger._cleanup()
-
+    def _schedule_next_test(self) -> None:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
         hasher = hashlib.sha1()
         hasher.update(self._test.fullname.encode())
-        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
-        random.seed(seed)
+        test_seed = self._regression_seed + int(hasher.hexdigest(), 16)
+
+        cocotb.RANDOM_SEED = test_seed
+        self._random_state = random.getstate()
+        random.seed(test_seed)
 
         self._start_sim_time = get_sim_time("ns")
         self._start_time = time.time()
@@ -412,9 +405,6 @@ class RegressionManager:
             return
 
         assert not self._test_queue
-
-        # stop the write scheduler
-        cocotb.handle._stop_write_scheduler()
 
         # Write out final log messages
         self._log_test_summary()
@@ -438,6 +428,9 @@ class RegressionManager:
         wall_time = time.time() - self._start_time
         sim_time_ns = get_sim_time("ns") - self._start_sim_time
 
+        cocotb.RANDOM_SEED = self._regression_seed
+        random.setstate(self._random_state)
+
         # Judge and record pass/fail.
         self._score_test(
             self._running_test.result(),
@@ -458,8 +451,8 @@ class RegressionManager:
 
         # score test
         passed: bool
-        msg: Union[str, None]
-        exc: Union[BaseException, None]
+        msg: str | None
+        exc: BaseException | None
         try:
             outcome.get()
         except BaseException as e:
@@ -667,8 +660,8 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[Exception, None],
-        msg: Union[str, None],
+        result: Exception | None,
+        msg: str | None,
     ) -> None:
         start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_PASSED
         stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
@@ -720,8 +713,8 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[BaseException, None],
-        msg: Union[str, None],
+        result: BaseException | None,
+        msg: str | None,
     ) -> None:
         start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_FAILED
         stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
@@ -750,7 +743,9 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
-        self.xunit.add_failure(error_type=type(result).__name__, error_msg=str(result))
+        self.xunit.add_failure(
+            error_type=type(result).__name__, error_msg=bin_xml_escape(result)
+        )
 
         # update running passed/failed/skipped counts
         self.failures += 1
@@ -893,4 +888,4 @@ class RegressionManager:
     def _fail_simulation(self, msg: str) -> None:
         self._sim_failure = Error(SimFailure(msg))
         self._running_test.abort(self._sim_failure)
-        cocotb._scheduler_inst._event_loop()
+        cocotb._event_loop._inst.run()

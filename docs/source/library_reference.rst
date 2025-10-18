@@ -37,6 +37,8 @@ Python Test Runner
 
 .. autoclass:: Verilog
 
+.. autoclass:: VerilatorControlFile
+
 .. autodata:: MAX_PARALLEL_BUILD_JOBS
 
 .. envvar:: GUI
@@ -106,6 +108,10 @@ Marking and Generating Tests
 .. autofunction:: cocotb.test
 
 .. autofunction:: cocotb.parametrize
+
+.. autofunction:: cocotb.skipif
+
+.. autofunction:: cocotb.xfail
 
 .. autoclass:: cocotb.regression.TestFactory
     :members:

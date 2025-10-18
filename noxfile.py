@@ -1,11 +1,14 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import glob
+import os
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, List, Tuple, cast
+from typing import cast
 
 import nox
 
@@ -13,15 +16,8 @@ import nox
 nox.options.sessions = ["dev_test"]
 
 test_deps = ["pytest>=6"]
-coverage_deps = ["coverage[toml]>=5.0", "pytest-cov"]
-# gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See
-# https://github.com/gcovr/gcovr/issues/596
-# When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an
-# Exception is raised during html report generation.
-# See https://github.com/gcovr/gcovr/pull/576
-# gcovr 5.2 would solve these issues, but has dropped Python 3.6 support.
-# TODO: Switch to the latest gcovr version once we drop Python 3.6 support.
-coverage_report_deps = ["coverage[toml]>=5.0", "jinja2<3.1", "gcovr==5.0"]
+coverage_deps = ["coverage[toml]>=7.2", "pytest-cov"]
+coverage_report_deps = ["coverage[toml]>=7.2", "gcovr"]
 
 dev_deps = [
     "mypy",
@@ -39,7 +35,7 @@ cibuildwheel_version = "2.20.0"
 #
 
 
-def simulator_support_matrix() -> List[Tuple[str, str, str]]:
+def simulator_support_matrix() -> list[tuple[str, str, str]]:
     """
     Get a list of supported simulator/toplevel-language/GPI-interface tuples.
     """
@@ -67,7 +63,7 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
 
 def env_vars_for_test(
     sim: str, toplevel_lang: str, gpi_interface: str
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Prepare the environment variables controlling the test run."""
     env = {
         "SIM": sim,
@@ -95,7 +91,7 @@ def env_vars_for_test(
     return env
 
 
-def stringify_dict(d: Dict[str, str]) -> str:
+def stringify_dict(d: dict[str, str]) -> str:
     return ", ".join(f"{k}={v}" for k, v in d.items())
 
 
@@ -193,8 +189,9 @@ def dev_test_sim(
     with suppress(FileNotFoundError):
         coverage_file.unlink()
 
-    session.log(f"Running 'make test' against a simulator {config_str}")
-    session.run("make", "-k", "test", external=True, env=env)
+    if "COCOTB_CI_SKIP_MAKE" not in os.environ:
+        session.log(f"Running 'make test' against a simulator {config_str}")
+        session.run("make", "-k", "test", external=True, env=env)
 
     # Run pytest for files which can only be tested in the source tree, not in
     # the installed binary (otherwise we get an "import file mismatch" error
@@ -341,7 +338,7 @@ def dev_coverage_combine(session: nox.Session) -> None:
 
     session.log("Wrote combined coverage database for all tests to '.coverage'.")
 
-    session.notify("dev_coverage_report")
+    session.notify("dev_coverage_report", session.posargs)
 
 
 @nox.session
@@ -356,13 +353,21 @@ def dev_coverage_report(session: nox.Session) -> None:
     session.run("coverage", "xml", "-o", str(coverage_python_xml))
     assert coverage_python_xml.is_file()
 
+    if session.posargs:
+        gcov_executable_args = [
+            "--gcov-executable",
+            session.posargs[0],
+        ]
+    else:
+        gcov_executable_args = []
     coverage_cpp_xml = Path(".cpp_coverage.xml")
     session.run(
         "gcovr",
-        "--xml",
+        "--cobertura",
         "--output",
         str(coverage_cpp_xml),
         ".",
+        *gcov_executable_args,
     )
     assert coverage_cpp_xml.is_file()
 
@@ -375,7 +380,12 @@ def dev_coverage_report(session: nox.Session) -> None:
     session.run("coverage", "report")
 
     session.log("Library coverage")
-    session.run("gcovr", "--print-summary", "--txt")
+    session.run(
+        "gcovr",
+        "--print-summary",
+        "--txt",
+        *gcov_executable_args,
+    )
 
 
 #
@@ -510,8 +520,9 @@ def release_test_sim(
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
 
-    session.log(f"Running tests against a simulator: {config_str}")
-    session.run("make", "-k", "test", external=True, env=env)
+    if "COCOTB_CI_SKIP_MAKE" not in os.environ:
+        session.log(f"Running tests against a simulator: {config_str}")
+        session.run("make", "-k", "test", external=True, env=env)
 
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
