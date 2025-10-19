@@ -244,15 +244,6 @@ def dev_test_sim(
     )
     Path(".coverage").rename(".coverage.pytest")
 
-    # We need to run it separately to avoid loading pytest cocotb plugin for other tests
-    session.log(f"Running tests for pytest plugin against a simulator {config_str}")
-    session.run(
-        "pytest",
-        "-v",
-        "tests/pytest_plugin",
-        env=env,
-    )
-
     session.log(f"Running examples against a simulator {config_str}")
     pytest_example_tree = [
         "examples/adder",
@@ -264,6 +255,15 @@ def dev_test_sim(
         "pytest",
         "-v",
         *pytest_example_tree,
+        env=env,
+    )
+
+    # We need to run it separately to avoid loading pytest cocotb plugin for other tests
+    session.log(f"Running tests for pytest plugin against a simulator {config_str}")
+    session.run(
+        "pytest",
+        "-v",
+        "tests/pytest_plugin",
         env=env,
     )
 
