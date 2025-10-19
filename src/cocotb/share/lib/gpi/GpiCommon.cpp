@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <cocotb_utils.h>
+#include <gpi.h>
 #include <sys/types.h>
 
 #include <algorithm>
@@ -12,14 +13,11 @@
 #include <string>
 #include <vector>
 
-#include "gpi.h"
-#include "gpi_priv.h"
+#include "./gpi_priv.h"
 
 using namespace std;
 
 static vector<GpiImplInterface *> registered_impls;
-
-#ifdef SINGLETON_HANDLES
 
 class GpiHandleStore {
   public:
@@ -62,13 +60,6 @@ static GpiHandleStore unique_handles;
 
 #define CHECK_AND_STORE(_x) unique_handles.check_and_store(_x)
 #define CLEAR_STORE() unique_handles.clear()
-
-#else
-
-#define CHECK_AND_STORE(_x) _x
-#define CLEAR_STORE() (void)0  // No-op
-
-#endif
 
 static bool sim_ending = false;
 

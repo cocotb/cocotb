@@ -4,8 +4,8 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef COCOTB_GPI_H_
-#define COCOTB_GPI_H_
+#ifndef GPI_H_
+#define GPI_H_
 
 /** @file gpi.h
 
