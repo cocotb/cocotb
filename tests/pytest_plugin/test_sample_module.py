@@ -11,7 +11,7 @@ from typing import Callable
 import pytest
 
 from cocotb.clock import Clock
-from cocotb.triggers import FallingEdge, RisingEdge
+from cocotb.triggers import FallingEdge
 
 
 # cocotb marker is optional but it helps pytest-cocotb plugin to identify this function as cocotb runner and
@@ -36,7 +36,7 @@ async def setup_teardown_fixture(dut):
     Clock(dut.clk, 10, unit="ns").start(start_high=False)
 
     for _ in range(2):
-        await RisingEdge(dut.clk)
+        await FallingEdge(dut.clk)
 
     yield  # Calling test
 
@@ -44,6 +44,11 @@ async def setup_teardown_fixture(dut):
     dut.stream_in_valid.value = 0
     dut.stream_in_data.value = 0
     dut.stream_out_ready.value = 0
+
+    # NOTE: Without it, Icarus simulator will crash with unexpected segmentation fault
+    # at the end of the simulation. This also happen using built-in regression manager.
+    # All other HDL simulators are fine, only Icarus is buggy
+    await FallingEdge(dut.clk)
 
 
 async def test_sample_module_pass(dut) -> None:
