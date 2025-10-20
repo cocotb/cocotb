@@ -10,6 +10,7 @@ import hashlib
 import inspect
 import random
 import sys
+import traceback
 from collections import deque
 from collections.abc import AsyncGenerator, Generator, Iterable
 from functools import wraps
@@ -54,7 +55,9 @@ def finish_on_exception(method):
         try:
             return method(self, *args, **kwargs)
         except BaseException as e:
-            self._finish()
+            sys.stderr.write(traceback.format_exc())
+            sys.stderr.flush()
+            self._finish(ExitCode.INTERNAL_ERROR)
             raise e
 
     return wrapper
@@ -82,7 +85,8 @@ class RegressionManager:
         self._finished: bool = False
         self._call_start: float | None = None
         self._sim_time_start: float = 0
-        self._nodeid: str = env.as_str("COCOTB_PYTEST_NODEID") + "::"
+        self._sim_time_unit: TimeUnit = "step"
+        self._nodeid: str = env.as_str("COCOTB_PYTEST_NODEID")
         self._keywords: list[str] = env.as_list("COCOTB_PYTEST_KEYWORDS")
 
         pluginmanager = PytestPluginManager()
@@ -191,9 +195,6 @@ class RegressionManager:
             elif "cocotb" in item.keywords and inspect.iscoroutinefunction(
                 item.function
             ):
-                if not item.nodeid.startswith(self._nodeid):
-                    setattr(item, "_nodeid", self._nodeid + item.nodeid)
-
                 kwargs: dict[str, Any] = {}
 
                 for marker in reversed(list(item.iter_markers("cocotb"))):
@@ -249,35 +250,18 @@ class RegressionManager:
             reraise=reraise,
         )
 
-        sim_time_unit: TimeUnit = self._session.config.option.cocotb_sim_time_unit
-
         if self._call_start is None:
             self._call_start = call.start
-            self._sim_time_start = get_sim_time(sim_time_unit)
+            self._sim_time_unit = self._session.config.option.cocotb_sim_time_unit
+            self._sim_time_start = get_sim_time(self._sim_time_unit)
         else:
             call.start = self._call_start
             call.duration = call.stop - call.start
 
         if call.excinfo or not self._tasks:
-            sim_time_start: float = self._sim_time_start
-            sim_time_stop: float = get_sim_time(sim_time_unit)
-            sim_time_duration: float = sim_time_stop - sim_time_start
-
             report: TestReport = item.ihook.pytest_runtest_makereport(
                 item=item, call=call
             )
-
-            properties: dict[str, Any] = {
-                "cocotb": True,
-                "sim_time_start": sim_time_start,
-                "sim_time_stop": sim_time_stop,
-                "sim_time_duration": sim_time_duration,
-                "sim_time_unit": sim_time_unit,
-                "random_seed": cocotb.RANDOM_SEED,
-            }
-
-            report.__dict__.update(properties)
-            report.user_properties.extend(properties.items())
 
             item.ihook.pytest_runtest_logreport(report=report)
 
@@ -338,7 +322,7 @@ class RegressionManager:
 
         return self._get_item()
 
-    def _finish(self) -> None:
+    def _finish(self, exitstatus: ExitCode | None = None) -> None:
         if self._finished:  # this method must be called once
             return
 
@@ -346,7 +330,7 @@ class RegressionManager:
 
         self._session.config.hook.pytest_sessionfinish(
             session=self._session,
-            exitstatus=self._session.exitstatus,
+            exitstatus=exitstatus if exitstatus else self._session.exitstatus,
         )
 
         self._session.config._ensure_unconfigure()
@@ -435,6 +419,58 @@ class RegressionManager:
 
         return True
 
+    @hookimpl(trylast=True, wrapper=True)
+    def pytest_runtest_makereport(
+        self, item: Item, call: CallInfo[None]
+    ) -> Generator[None, TestReport, TestReport]:
+        """Called to create a :class:`~pytest.TestReport` for each of
+        the setup, call and teardown runtest phases of a test item.
+
+        Created test report will contain additional properties about simulation and cocotb:
+
+        * `cocotb`: Mark test report as cocotb test report. Always set to True.
+        * `sim_time_start`: Simulation time when specific test phase started.
+        * `sim_time_stop`: Simulation time when specific test phase ended.
+        * `sim_time_duration`: Simulation duration (stop - start) for specific test phase.
+        * `sim_time_unit`: Time unit for simulation time. Possible values: `step`, `fs`, `ps`,
+          `ns`, `us`, `ms` or `sec` (seconds).
+        * `runner_nodeid`: Node identifier of cocotb runner (test to run simulator by pytest parent process).
+        * `random_seed`: Value of seed used for randomization.
+
+        Above properties are accessible from generated test report and they will be available from
+        various generated test report outputs like JUnit XML report.
+
+        Args:
+            item: The item (test).
+            call: The :class:`~pytest.CallInfo` for the test phase (setup, call, teardown).
+
+        Returns:
+            New object of test report with additional properties about simulation and cocotb.
+        """
+        report: TestReport = yield  # get generated test report from other plugins
+
+        sim_time_stop: float = get_sim_time(self._sim_time_unit)
+
+        # Additional properties that will be included with generated test report
+        properties: dict[str, Any] = {
+            "cocotb": True,
+            "sim_time_start": self._sim_time_start,
+            "sim_time_stop": sim_time_stop,
+            "sim_time_duration": sim_time_stop - self._sim_time_start,
+            "sim_time_unit": self._sim_time_unit,
+            "runner_nodeid": self._nodeid,  # identify cocotb runner
+            "random_seed": getattr(cocotb, "RANDOM_SEED", 0),
+        }
+
+        # Make properties available for other plugins. The `extra` argument from pytest.TestReport
+        # __init__(self, ..., **extra) constructor is doing the same
+        report.__dict__.update(properties)
+
+        # Make properties available in generated test reports like JUnit XML report
+        report.user_properties.extend(properties.items())
+
+        return report
+
     @hookimpl(tryfirst=True)
     def pytest_runtest_logreport(self, report: TestReport) -> None:
         address: str = env.as_str("COCOTB_PYTEST_REPORTER_ADDRESS")
@@ -483,8 +519,7 @@ class RegressionManager:
     def _fail_simulation(self, msg: str) -> None:
         sys.stderr.write(msg + "\n")
         sys.stderr.flush()
-        self._session.exitstatus = ExitCode.INTERNAL_ERROR
-        self._finish()
+        self._finish(ExitCode.INTERNAL_ERROR)
 
     def _execute(self, done_callback: Callable[..., None], task: Task) -> None:
         task._add_done_callback(done_callback)

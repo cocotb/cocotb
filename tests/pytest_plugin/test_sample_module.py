@@ -48,7 +48,7 @@ async def setup_teardown_fixture(dut):
     # NOTE: Without it, Icarus simulator will crash with unexpected segmentation fault
     # at the end of the simulation. This also happen using built-in regression manager.
     # All other HDL simulators are fine, only Icarus is buggy
-    await FallingEdge(dut.clk)
+    # await FallingEdge(dut.clk)
 
 
 async def test_sample_module_pass(dut) -> None:

@@ -9,6 +9,7 @@ from __future__ import annotations
 import inspect
 import os
 from collections.abc import Generator, Iterable
+from pathlib import PosixPath
 
 from pytest import (
     Class,
@@ -92,15 +93,65 @@ class Controller:
             )
 
             if isinstance(report, TestReport):
-                if self._junitxml:
-                    address = report.nodeid.replace("/", ".").replace(".py::", ".")
-                    classname, _, name = address.rpartition(".")
-                    reporter = self._junitxml.node_reporter(report)
+                report.nodeid = self._get_mangled_nodeid(report)
 
-                    reporter.add_attribute("classname", classname)
-                    reporter.add_attribute("name", name)
+                if self._junitxml:
+                    self._attach_properties_to_junit_xml(report)
 
                 hook.pytest_runtest_logreport(report=report)
+
+    @staticmethod
+    def _split_nodeid(nodeid: str) -> tuple[PosixPath, str]:
+        """Split provided node identifier to path and function name.
+
+        Args:
+            nodeid: Item nodeid in form of ``<path_to_file>::[<class_name>::]<function_name>``.
+
+        Returns:
+            Two-elements tuple with path to file and name of function with scope.
+        """
+        (path, _, function) = nodeid.partition("::")
+
+        return PosixPath(path), function
+
+    def _get_mangled_nodeid(self, report: TestReport) -> str:
+        """Get mangled address of test node identifier as combination of node identifiers from cocotb runner and test.
+
+        Pytest is always using ``/`` as path separator (compatible with POSIX).
+        Node identifier is mostly represented as: ``<path_to_file>::[<class_name>::]<function_name>``
+
+        To get unique test identifier for cocotb test from various different cocotb runners,
+        we need to combine node identifier from cocotb runner and cocotb test.
+
+        Args:
+            report: Test report from simulator (pytest sub-process).
+
+        Returns:
+            Mangled node identifer.
+        """
+        runner_nodeid: str = getattr(report, "runner_nodeid", "")
+        runner_path, runner_function = self._split_nodeid(runner_nodeid)
+        item_path, item_function = self._split_nodeid(report.nodeid)
+
+        if runner_path.parts == item_path.parts:
+            return f"{runner_nodeid}::{item_function}"
+
+        try:
+            relative: PosixPath = item_path.relative_to(runner_path.parent)
+            parts: tuple[str, ...] = relative.parent.parts
+            packages: str = ".".join(parts) + "." if parts else ""
+
+            return f"{runner_nodeid}::{packages}{relative.stem}::{item_function}"
+        except ValueError:
+            return f"{runner_nodeid}::{report.nodeid}"
+
+    def _attach_properties_to_junit_xml(self, report: TestReport) -> None:
+        address = report.nodeid.replace("/", ".").replace(".py::", ".")
+        classname, _, name = address.rpartition("::")
+        reporter = self._junitxml.node_reporter(report)
+
+        reporter.add_attribute("classname", classname)
+        reporter.add_attribute("name", name)
 
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_runtestloop(self, session: Session) -> Generator[None, None, None]:
