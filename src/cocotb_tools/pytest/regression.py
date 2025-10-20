@@ -365,8 +365,6 @@ class RegressionManager:
             return None
 
         async def func() -> Any:
-            self._subtasks = []
-
             kwargs: dict[str, Any] = {
                 argname: resolve_fixture_arg(request.getfixturevalue(argname))
                 for argname in fixturedef.argnames
@@ -385,10 +383,8 @@ class RegressionManager:
                 fixturedef.addfinalizer(self._create_tasks_finalizer())
 
         task: Task = AsyncFixture(func())
-
         cache_key = fixturedef.cache_key(request)
         fixturedef.cached_result = AsyncFixtureCachedResult((task, cache_key, None))
-
         self._tasks.append(task)
 
         return True
@@ -402,7 +398,6 @@ class RegressionManager:
 
         async def func() -> None:
             funcargs = pyfuncitem.funcargs
-            self._subtasks = []
 
             kwargs: dict[str, Any] = {
                 argname: resolve_fixture_arg(funcargs[argname])
@@ -414,7 +409,6 @@ class RegressionManager:
             finally:
                 pyfuncitem.addfinalizer(self._create_tasks_finalizer())
 
-        self._tasks.clear()
         self._tasks.append(Task(func()))
 
         return True
@@ -487,25 +481,30 @@ class RegressionManager:
     def _create_async_finalizer(
         self, iterator: AsyncGenerator[Any, None]
     ) -> Callable[[], object]:
+        tasks: list[Task] = self._subtasks
+        self._subtasks = []
+
         def finalizer() -> None:
             async def func() -> None:
                 try:
                     await iterator.__anext__()
                 except StopAsyncIteration:
                     pass
+                finally:
+                    for task in reversed(tasks):
+                        task._cancel_now()
 
             self._tasks.append(Task(func()))
 
         return finalizer
 
     def _create_tasks_finalizer(self) -> Callable[[], object]:
-        def finalizer() -> None:
-            tasks: list[Task] = self._subtasks
+        tasks: list[Task] = self._subtasks
+        self._subtasks = []
 
+        def finalizer() -> None:
             for task in reversed(tasks):
                 task._cancel_now()
-
-        self._subtasks = []
 
         return finalizer
 
