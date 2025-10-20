@@ -9,7 +9,7 @@ from __future__ import annotations
 import inspect
 import os
 from collections.abc import Generator, Iterable
-from pathlib import PosixPath
+from pathlib import PurePosixPath
 
 from pytest import (
     Class,
@@ -101,7 +101,7 @@ class Controller:
                 hook.pytest_runtest_logreport(report=report)
 
     @staticmethod
-    def _split_nodeid(nodeid: str) -> tuple[PosixPath, str]:
+    def _split_nodeid(nodeid: str) -> tuple[PurePosixPath, str]:
         """Split provided node identifier to path and function name.
 
         Args:
@@ -112,7 +112,7 @@ class Controller:
         """
         (path, _, function) = nodeid.partition("::")
 
-        return PosixPath(path), function
+        return PurePosixPath(path), function
 
     def _get_mangled_nodeid(self, report: TestReport) -> str:
         """Get mangled address of test node identifier as combination of node identifiers from cocotb runner and test.
@@ -137,7 +137,7 @@ class Controller:
             return f"{runner_nodeid}::{item_function}"
 
         try:
-            relative: PosixPath = item_path.relative_to(runner_path.parent)
+            relative: PurePosixPath = item_path.relative_to(runner_path.parent)
             parts: tuple[str, ...] = relative.parent.parts
             packages: str = ".".join(parts) + "." if parts else ""
 
