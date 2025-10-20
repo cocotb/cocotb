@@ -89,10 +89,10 @@ async def test_ansi_stripping(_: object) -> None:
     try:
         with capture_logs() as logs:
             cocotb.log.info(
-                f"{ANSI.YELLOW_FG}That {ANSI.GREEN_BG}boy {ANSI.BLUE_FG}ain't {ANSI.BRIGHT_RED_BG}right.{ANSI.DEFAULT_FG}"
+                f"{ANSI.YELLOW_FG}That {ANSI.GREEN_BG}boy\xa0{ANSI.BLUE_FG}ain't {ANSI.BRIGHT_RED_BG}right. \U0001f920{ANSI.DEFAULT_FG}"
             )
         assert len(logs.msgs) == 1
-        assert logs.msgs[0].endswith("That boy ain't right.")
+        assert logs.msgs[0].endswith("That boy\xa0ain't right. \U0001f920")
     finally:
         cocotb_logging.strip_ansi = old_string_ansi
 
