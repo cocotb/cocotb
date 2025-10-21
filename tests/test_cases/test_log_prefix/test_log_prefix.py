@@ -42,7 +42,8 @@ def test_log_prefix() -> None:
         test_args=test_args,
         test_filter="test_log_prefix_custom",
         extra_env={
-            "COCOTB_LOG_PREFIX": "{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} {record.levelname} {record.created_sim_time} {record.name[:4]:>10} "
+            "COCOTB_LOG_PREFIX": "{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} {record.levelname} {record.created_sim_time} {record.name[:4]:>10} ",
+            "COCOTB_ANSI_OUTPUT": "1",
         },
     )
 

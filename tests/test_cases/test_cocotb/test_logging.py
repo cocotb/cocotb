@@ -106,3 +106,15 @@ async def test_warning_capture(_: object) -> None:
         warnings.warn("This is a test warning", UserWarning)
     assert len(logs.msgs) == 1
     assert "This is a test warning" in logs.msgs[0]
+
+
+@cocotb.test
+async def test_ljust_rjust(_: object) -> None:
+    ljust = cocotb_logging.SimLogFormatter.ljust
+    rjust = cocotb_logging.SimLogFormatter.rjust
+    assert ljust("0123", 5) == "0123 "
+    assert rjust("0123", 5) == " 0123"
+    assert ljust("01234", 5) == "01234"
+    assert rjust("01234", 5) == "01234"
+    assert ljust("012345", 5) == "..345"
+    assert rjust("012345", 5) == "..345"

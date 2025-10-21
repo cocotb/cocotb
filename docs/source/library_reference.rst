@@ -528,7 +528,7 @@ Log Formatting
     - ``record``: The :class:`~logging.LogRecord` being formatted. This includes the attribute ``created_sim_time``, which is the simulation time in steps.
     - ``time``: The Python :mod:`time` module.
     - ``simtime``: The cocotb :mod:`cocotb.simtime` module.
-    - ``simtime_fmt``: Function which, given a ``LogRecord``, returns the formatted simulation time as ``f"{t:.2f}ns"`` if available, or as ``"-.--ns"`` if not.
+    - ``simtime_fmt``: Function which, given a ``LogRecord`` and ``TimeUnit``, returns the simulation time in the requested units as a string with the default formatting.
     - ``ANSI``: The cocotb :class:`cocotb.logging.ANSI` enum, which contains ANSI escape codes for coloring the output.
     - ``level_color_start``: The ANSI escape code to start highlighting according to the log level.
     - ``level_color_end``: The ANSI escape code to end highlighting according to the log level.
