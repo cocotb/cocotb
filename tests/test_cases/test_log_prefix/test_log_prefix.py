@@ -19,7 +19,6 @@ def test_log_prefix() -> None:
     runner = get_runner(sim)
 
     pwd = Path(__file__).parent.absolute()
-    coverage_file = pwd / ".coverage.cocotb"
 
     # select args
     build_args = []
@@ -34,47 +33,42 @@ def test_log_prefix() -> None:
         sources=[pwd / "top.sv"],
         hdl_toplevel="top",
         build_args=build_args,
-        hdl_library="test",
-        hdl_toplevel_library="test",
     )
 
+    run_dir = pwd / "custom_prefix"
+    run_dir.mkdir(exist_ok=True)
     runner.test(
         test_module="log_prefix_tests",
-        hdl_toplevel_library="test",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
         test_filter="test_log_prefix_custom",
-        test_dir=pwd,
+        test_dir=run_dir,
         extra_env={
             "COCOTB_LOG_PREFIX": "{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} {record.levelname} {record.created_sim_time} {record.name[:4]:>10} ",
             "COCOTB_ANSI_OUTPUT": "1",
         },
     )
-    if coverage_file.exists():
-        coverage_file.replace(pwd / ".coverage.cocotb.custom_prefix")
 
+    run_dir = pwd / "reduced_prefix"
+    run_dir.mkdir(exist_ok=True)
     runner.test(
         test_module="log_prefix_tests",
-        hdl_toplevel_library="test",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
         test_filter="test_log_prefix_default",
-        test_dir=pwd,
+        test_dir=run_dir,
     )
-    if coverage_file.exists():
-        coverage_file.replace(pwd / ".coverage.cocotb.reduced_prefix")
 
+    run_dir = pwd / "full_prefix"
+    run_dir.mkdir(exist_ok=True)
     runner.test(
         test_module="log_prefix_tests",
-        hdl_toplevel_library="test",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
         test_filter="test_log_prefix_default",
-        test_dir=pwd,
+        test_dir=run_dir,
         extra_env={"COCOTB_REDUCED_LOG_FMT": "0"},
     )
-    if coverage_file.exists():
-        coverage_file.replace(pwd / ".coverage.cocotb.full_prefix")

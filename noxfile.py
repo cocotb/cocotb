@@ -262,7 +262,7 @@ def dev_test_sim(
 
     # Combine coverage produced during the test runs, and place it in a file
     # with a name specific to this invocation of dev_test_sim().
-    coverage_files = glob.glob("**/.coverage.cocotb*", recursive=True)
+    coverage_files = glob.glob("**/.coverage.cocotb", recursive=True)
     if not coverage_files:
         session.error(
             "No coverage files found. Something went wrong during the test execution."
