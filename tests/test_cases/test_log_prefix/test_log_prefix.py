@@ -35,40 +35,37 @@ def test_log_prefix() -> None:
         build_args=build_args,
     )
 
-    run_dir = pwd / "custom_prefix"
-    run_dir.mkdir(exist_ok=True)
     runner.test(
         test_module="log_prefix_tests",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
+        hdl_toplevel_library="",
         test_args=test_args,
+        test_dir=pwd / "custom_prefix",
         test_filter="test_log_prefix_custom",
-        test_dir=run_dir,
         extra_env={
             "COCOTB_LOG_PREFIX": "{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} {record.levelname} {record.created_sim_time} {record.name[:4]:>10} ",
             "COCOTB_ANSI_OUTPUT": "1",
         },
     )
 
-    run_dir = pwd / "reduced_prefix"
-    run_dir.mkdir(exist_ok=True)
     runner.test(
         test_module="log_prefix_tests",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
+        hdl_toplevel_library="",
         test_args=test_args,
+        test_dir=pwd / "reduced_prefix",
         test_filter="test_log_prefix_default",
-        test_dir=run_dir,
     )
 
-    run_dir = pwd / "full_prefix"
-    run_dir.mkdir(exist_ok=True)
     runner.test(
         test_module="log_prefix_tests",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
+        hdl_toplevel_library="",
         test_args=test_args,
+        test_dir=pwd / "full_prefix",
         test_filter="test_log_prefix_default",
-        test_dir=run_dir,
         extra_env={"COCOTB_REDUCED_LOG_FMT": "0"},
     )
