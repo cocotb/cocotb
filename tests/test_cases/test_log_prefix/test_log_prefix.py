@@ -35,6 +35,7 @@ def test_log_prefix() -> None:
         hdl_toplevel="top",
         build_args=build_args,
         hdl_library="test",
+        hdl_toplevel_library="test",
     )
 
     runner.test(
