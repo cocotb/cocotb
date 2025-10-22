@@ -30,16 +30,15 @@ def test_log_prefix() -> None:
         build_args = ["-v93"]
 
     runner.build(
-        sources=[pwd / "top.sv"],
-        hdl_toplevel="top",
+        sources=[pwd / "tb.sv"],
+        hdl_toplevel="tb",
         build_args=build_args,
     )
 
     runner.test(
         test_module="log_prefix_tests",
-        hdl_toplevel="top",
+        hdl_toplevel="tb",
         hdl_toplevel_lang=LANG,
-        hdl_toplevel_library="",
         test_args=test_args,
         test_dir=pwd / "custom_prefix",
         test_filter="test_log_prefix_custom",
@@ -51,9 +50,8 @@ def test_log_prefix() -> None:
 
     runner.test(
         test_module="log_prefix_tests",
-        hdl_toplevel="top",
+        hdl_toplevel="tb",
         hdl_toplevel_lang=LANG,
-        hdl_toplevel_library="",
         test_args=test_args,
         test_dir=pwd / "reduced_prefix",
         test_filter="test_log_prefix_default",
@@ -61,9 +59,8 @@ def test_log_prefix() -> None:
 
     runner.test(
         test_module="log_prefix_tests",
-        hdl_toplevel="top",
+        hdl_toplevel="tb",
         hdl_toplevel_lang=LANG,
-        hdl_toplevel_library="",
         test_args=test_args,
         test_dir=pwd / "full_prefix",
         test_filter="test_log_prefix_default",
