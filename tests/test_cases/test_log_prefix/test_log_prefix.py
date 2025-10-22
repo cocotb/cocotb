@@ -39,7 +39,7 @@ def test_log_prefix() -> None:
 
     runner.test(
         test_module="log_prefix_tests",
-        hdl_library="test",
+        hdl_toplevel_library="test",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
@@ -55,7 +55,7 @@ def test_log_prefix() -> None:
 
     runner.test(
         test_module="log_prefix_tests",
-        hdl_library="test",
+        hdl_toplevel_library="test",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
@@ -67,7 +67,7 @@ def test_log_prefix() -> None:
 
     runner.test(
         test_module="log_prefix_tests",
-        hdl_library="test",
+        hdl_toplevel_library="test",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
