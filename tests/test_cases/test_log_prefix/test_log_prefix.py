@@ -30,19 +30,17 @@ def test_log_prefix() -> None:
         build_args = ["-v93"]
 
     build_dir = runner.build_dir
-    subdir = build_dir / "custom_prefix"
     runner.build(
         sources=[pwd / "top.sv"],
         hdl_toplevel="top",
         build_args=build_args,
-        build_dir=subdir,
+        build_dir=build_dir / "custom_prefix",
     )
     runner.test(
         test_module="log_prefix_tests",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
-        test_dir=subdir,
         test_filter="test_log_prefix_custom",
         extra_env={
             "COCOTB_LOG_PREFIX": "{ANSI.YELLOW_FG}abc{ANSI.DEFAULT_FG} {record.levelname} {record.created_sim_time} {record.name[:4]:>10} ",
@@ -50,35 +48,31 @@ def test_log_prefix() -> None:
         },
     )
 
-    subdir = build_dir / "reduced_prefix"
     runner.build(
         sources=[pwd / "top.sv"],
         hdl_toplevel="top",
         build_args=build_args,
-        build_dir=subdir,
+        build_dir=build_dir / "reduced_prefix",
     )
     runner.test(
         test_module="log_prefix_tests",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
-        test_dir=subdir,
         test_filter="test_log_prefix_default",
     )
 
-    subdir = build_dir / "full_prefix"
     runner.build(
         sources=[pwd / "top.sv"],
         hdl_toplevel="top",
         build_args=build_args,
-        build_dir=subdir,
+        build_dir=build_dir / "full_prefix",
     )
     runner.test(
         test_module="log_prefix_tests",
         hdl_toplevel="top",
         hdl_toplevel_lang=LANG,
         test_args=test_args,
-        test_dir=subdir,
         test_filter="test_log_prefix_default",
         extra_env={"COCOTB_REDUCED_LOG_FMT": "0"},
     )
