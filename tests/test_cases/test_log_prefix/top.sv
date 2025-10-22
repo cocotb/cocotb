@@ -4,7 +4,7 @@
 
 `timescale 1 ps / 1 ps
 
-module tb (
+module top (
     input logic placeholder
 );
 
