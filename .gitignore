@@ -123,6 +123,15 @@ examples/*/tests/verilog.log
 dsim*
 metrics.db
 
+#BPSim
+sim_build
+bpsim.db
+s2c.db 
+pegasim.env
+bpsim.env
+pegasim.log
+bpsim.log
+
 # Build artifacts
 /dist/
 

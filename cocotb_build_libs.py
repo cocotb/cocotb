@@ -753,4 +753,14 @@ def get_ext():
         )
         ext.append(dsim_vpi_ext)
 
+    #
+    # BPSim
+    #
+    if os.name == "posix":
+        logger.info("Compiling libraries for BPSim")
+        bpsim_vpi_ext = _get_vpi_lib_ext(
+            include_dirs=include_dirs, share_lib_dir=share_lib_dir, sim_define="BPSim"
+        )
+        ext.append(bpsim_vpi_ext)
+
     return ext

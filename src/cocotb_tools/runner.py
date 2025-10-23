@@ -2376,6 +2376,109 @@ class Dsim(Runner):
 
         return cmds
 
+class BPSim(Runner):
+    """Implementation of :class:`Runner` for Blue Pearl Solutions BPSim.
+
+    .. admonition:: Simulator-specific Usage
+
+       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
+    """
+
+    supported_gpi_interfaces = {"verilog": ["vpi"]}
+
+    def _simulator_in_path(self) -> None:
+        if shutil.which("bpsim") is None:
+            raise SystemExit("ERROR: bpsim executable not found!")
+
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
+        return [f"+incdir+{include}" for include in includes]
+
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
+        return [
+            f"+define+{name}={_as_sv_literal(value)}" for name, value in defines.items()
+        ]
+
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
+        return [
+            f"-defparam {name}={_as_sv_literal(value)}"
+            for name, value in parameters.items()
+        ]
+
+    @property
+    def sim_file(self) -> Path:
+        return self.build_dir / "image.so"
+
+    def _use_external_viewer(self) -> bool:
+        return True
+
+    def _waves_file(self) -> str | None:
+        return "file.vcd"
+
+    def _test_command(self) -> list[_Command]:
+        if self.pre_cmd is not None:
+            raise RuntimeError("pre_cmd is not implemented for BPSim.")
+
+        plusargs = self.plusargs
+        if self.waves or self.gui:
+            plusargs += [f"-waves {self._waves_file()}"]
+
+        if self.timescale:
+            plusargs += ["-timescale {}/{}".format(*self.timescale)]
+
+        return [
+            [
+                "bpsim",
+                "-work",
+                str(self.build_dir),
+                "-pli_lib",
+                cocotb_tools.config.lib_name_path("vpi", "bpsim").as_posix(),
+                "+acc+rwcbfsWF",
+                "-image",
+                "image",
+                *self.test_args,
+                *plusargs,
+            ]
+        ]
+
+    def _build_command(self) -> list[_Command]:
+        sources = self._sources + self._verilog_sources
+
+        for source in sources:
+            if source.tag is not Verilog:
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports Verilog. {str(source.value)!r} cannot be compiled."
+                )
+
+        for arg in self._build_args:
+            if arg.tag not in (Verilog, None):
+                raise ValueError(
+                    f"{type(self).__qualname__} only supports Verilog. build_args {arg!r} cannot be applied."
+                )
+
+        cmds: list[_Command] = []
+        if outdated(self.sim_file, (source.value for source in sources)) or self.always:
+            cmds = [
+                [
+                    "bpsim",
+                    "-work",
+                    str(self.build_dir),
+                    "-pli_lib",
+                    cocotb_tools.config.lib_name_path("vpi", "bpsim").as_posix(),
+                    "+acc+rwcbfsWF",
+                    "-genimage",
+                    "image",
+                ]
+                + self._get_define_options(self.defines)
+                + self._get_include_options(self.includes)
+                + self._get_parameter_options(self.parameters)
+                + [arg.value for arg in self._build_args]
+                + [str(source_file.value) for source_file in sources]
+            ]
+
+        else:
+            self.log.warning("Skipping compilation of %s", self.sim_file)
+
+        return cmds
 
 SUPPORTED_RUNNERS: dict[str, type[Runner]] = {
     "icarus": Icarus,
@@ -2389,6 +2492,7 @@ SUPPORTED_RUNNERS: dict[str, type[Runner]] = {
     "nvc": Nvc,
     "vcs": Vcs,
     "dsim": Dsim,
+    "bpsim": BPSim,
 }
 """
 Dictionary mapping of simulator names to corresponding Python runners.
@@ -2415,3 +2519,4 @@ def get_runner(simulator_name: str) -> Runner:
         raise ValueError(
             f"Simulator {simulator_name!r} is not in supported list: {', '.join(SUPPORTED_RUNNERS)}"
         ) from None
+
