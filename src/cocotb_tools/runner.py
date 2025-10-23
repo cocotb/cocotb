@@ -153,7 +153,7 @@ def _determine_file_type(
         return Verilog
     elif ext in _vhdl_extensions:
         return VHDL
-    elif ext == "vlt":
+    elif ext == ".vlt":
         return VerilatorControlFile
     else:
         raise ValueError(
