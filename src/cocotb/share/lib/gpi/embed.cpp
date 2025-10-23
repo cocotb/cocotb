@@ -66,6 +66,7 @@ void embed_init_python(void) {
     if (!loaded) {
         // LCOV_EXCL_START
         init_failed = true;
+        LOG_ERROR("0");
         return;
         // LCOV_EXCL_STOP
     }
@@ -74,6 +75,7 @@ void embed_init_python(void) {
     if (!act_ctx.hModule) {
         // LCOV_EXCL_START
         init_failed = true;
+        LOG_ERROR("1");
         return;
         // LCOV_EXCL_STOP
     }
@@ -82,6 +84,7 @@ void embed_init_python(void) {
     if (hact_ctx == INVALID_HANDLE_VALUE) {
         // LCOV_EXCL_START
         init_failed = true;
+        LOG_ERROR("2");
         return;
         // LCOV_EXCL_STOP
     }
@@ -90,6 +93,7 @@ void embed_init_python(void) {
     if (!ActivateActCtx(hact_ctx, &Cookie)) {
         // LCOV_EXCL_START
         init_failed = true;
+        LOG_ERROR("3");
         return;
         // LCOV_EXCL_STOP
     }
@@ -100,6 +104,7 @@ void embed_init_python(void) {
     if (!(embed_impl_lib_handle = utils_dyn_open(EMBED_IMPL_LIB_STR))) {
         // LCOV_EXCL_START
         init_failed = true;
+        LOG_ERROR("4");
         return;
         // LCOV_EXCL_STOP
     }
@@ -107,6 +112,7 @@ void embed_init_python(void) {
               utils_dyn_sym(embed_impl_lib_handle, "_embed_init_python")))) {
         // LCOV_EXCL_START
         init_failed = true;
+        LOG_ERROR("5");
         return;
         // LCOV_EXCL_STOP
     }
@@ -114,6 +120,7 @@ void embed_init_python(void) {
               utils_dyn_sym(embed_impl_lib_handle, "_embed_sim_cleanup")))) {
         // LCOV_EXCL_START
         init_failed = true;
+        LOG_ERROR("6");
         return;
         // LCOV_EXCL_STOP
     }
@@ -121,6 +128,7 @@ void embed_init_python(void) {
               utils_dyn_sym(embed_impl_lib_handle, "_embed_sim_init")))) {
         // LCOV_EXCL_START
         init_failed = true;
+        LOG_ERROR("7");
         return;
         // LCOV_EXCL_STOP
     }
@@ -128,6 +136,7 @@ void embed_init_python(void) {
               utils_dyn_sym(embed_impl_lib_handle, "_embed_sim_event")))) {
         // LCOV_EXCL_START
         init_failed = true;
+        LOG_ERROR("8");
         return;
         // LCOV_EXCL_STOP
     }
@@ -136,6 +145,7 @@ void embed_init_python(void) {
     if (!DeactivateActCtx(0, Cookie)) {
         // LCOV_EXCL_START
         init_failed = true;
+        LOG_ERROR("9");
         return;
         // LCOV_EXCL_STOP
     }
