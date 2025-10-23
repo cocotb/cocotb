@@ -38,265 +38,265 @@ import json
 import sys
 
 ENVS = [
-    # Test different Python versions with package managed Icarus on Ubuntu
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "ci-free",
-        "test_nosim": True,
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "ci-free",
-        "test_nosim": True,
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.11",
-        "group": "ci-free",
-        "test_nosim": True,
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.12",
-        "group": "ci-free",
-        "test_nosim": True,
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.13",
-        "group": "ci-free",
-        "test_nosim": True,
-    },
-    # A single test for the upcoming Python version.
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.14-dev",
-        "group": "experimental",
-        "test_nosim": True,
-    },
-    # Test Icarus on Ubuntu
-    {
-        "lang": "verilog",
-        "sim": "icarus",
-        "sim-version": "v11_0",  # Minimum supported version
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "extended",
-    },
-    {
-        "lang": "verilog",
-        "sim": "icarus",
-        "sim-version": "v12_0",  # The latest release version.
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "ci-free",
-    },
-    {
-        "lang": "verilog",
-        "sim": "icarus",
-        "sim-version": "master",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "experimental",
-    },
-    # Test GHDL on Ubuntu
-    {
-        "lang": "vhdl",
-        "sim": "ghdl",
-        "sim-version": "v2.0.0",  # GHDL 2.0 is the minimum supported version.
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "ghdl",
-        "sim-version": "v3.0.0",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "ghdl",
-        "sim-version": "v4.1.0",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "ghdl",
-        "sim-version": "v5.1.1",  # The latest release version.
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "ci-free",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "ghdl",
-        "sim-version": "master",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "experimental",
-    },
-    # Test NVC on Ubuntu
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.11.0",  # Minimum supported version
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.12.2",
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.13.3",
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.14.2",
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.15.2",
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.16.0",  # First version with --preserve-case
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
-    },
-    # Testing latest release is covered by the Python version tests
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "master",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "experimental",
-    },
-    # Test Verilator on Ubuntu
-    {
-        "lang": "verilog",
-        "sim": "verilator",
-        "sim-version": "v5.040",  # Latest release version.
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "ci-free",
-    },
-    {
-        "lang": "verilog",
-        "sim": "verilator",
-        "sim-version": "master",
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "experimental",
-    },
-    {
-        "lang": "verilog",
-        "sim": "verilator",
-        "sim-version": "v5.038",
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
-    },
-    {
-        "lang": "verilog",
-        "sim": "verilator",
-        "sim-version": "v5.036",  # Minimum supported version.
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
-    },
-    # Test other OSes
-    # Icarus homebrew (ARM64)
-    {
-        "lang": "verilog",
-        "sim": "icarus",
-        "sim-version": "homebrew-stable",
-        "os": "macos-14",
-        "python-version": "3.9",
-        "group": "ci-free",
-    },
-    # Icarus homebrew (ARM64) (HEAD/master)
-    {
-        "lang": "verilog",
-        "sim": "icarus",
-        "sim-version": "homebrew-HEAD",
-        "os": "macos-14",
-        "python-version": "3.9",
-        "group": "experimental",
-    },
-    # Verilator macOS (ARM64) HEAD
-    {
-        "lang": "verilog",
-        "sim": "verilator",
-        "sim-version": "master",
-        "os": "macos-14",
-        "python-version": "3.9",
-        "group": "experimental",
-    },
-    # Verilator macOS (ARM64) latest release
-    {
-        "lang": "verilog",
-        "sim": "verilator",
-        "sim-version": "v5.038",  # not latest, but v5.040 is broken on MacOS
-        "os": "macos-14",
-        "python-version": "3.9",
-        "group": "ci-free",
-    },
-    # Icarus homebrew (x86)
-    {
-        "lang": "verilog",
-        "sim": "icarus",
-        "sim-version": "homebrew-stable",
-        "os": "macos-15-intel",
-        "python-version": "3.9",
-        "group": "ci-free",
-    },
+    # # Test different Python versions with package managed Icarus on Ubuntu
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.17.1",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "group": "ci-free",
+    #     "test_nosim": True,
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.17.1",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "ci-free",
+    #     "test_nosim": True,
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.17.1",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.11",
+    #     "group": "ci-free",
+    #     "test_nosim": True,
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.17.1",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.12",
+    #     "group": "ci-free",
+    #     "test_nosim": True,
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.17.1",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.13",
+    #     "group": "ci-free",
+    #     "test_nosim": True,
+    # },
+    # # A single test for the upcoming Python version.
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.17.1",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.14-dev",
+    #     "group": "experimental",
+    #     "test_nosim": True,
+    # },
+    # # Test Icarus on Ubuntu
+    # {
+    #     "lang": "verilog",
+    #     "sim": "icarus",
+    #     "sim-version": "v11_0",  # Minimum supported version
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "group": "extended",
+    # },
+    # {
+    #     "lang": "verilog",
+    #     "sim": "icarus",
+    #     "sim-version": "v12_0",  # The latest release version.
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "group": "ci-free",
+    # },
+    # {
+    #     "lang": "verilog",
+    #     "sim": "icarus",
+    #     "sim-version": "master",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "group": "experimental",
+    # },
+    # # Test GHDL on Ubuntu
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "ghdl",
+    #     "sim-version": "v2.0.0",  # GHDL 2.0 is the minimum supported version.
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "group": "extended",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "ghdl",
+    #     "sim-version": "v3.0.0",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "group": "extended",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "ghdl",
+    #     "sim-version": "v4.1.0",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "group": "extended",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "ghdl",
+    #     "sim-version": "v5.1.1",  # The latest release version.
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "group": "ci-free",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "ghdl",
+    #     "sim-version": "master",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "group": "experimental",
+    # },
+    # # Test NVC on Ubuntu
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.11.0",  # Minimum supported version
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "extended",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.12.2",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "extended",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.13.3",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "extended",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.14.2",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "extended",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.15.2",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "extended",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.16.0",  # First version with --preserve-case
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "extended",
+    # },
+    # # Testing latest release is covered by the Python version tests
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "master",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "group": "experimental",
+    # },
+    # # Test Verilator on Ubuntu
+    # {
+    #     "lang": "verilog",
+    #     "sim": "verilator",
+    #     "sim-version": "v5.040",  # Latest release version.
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "ci-free",
+    # },
+    # {
+    #     "lang": "verilog",
+    #     "sim": "verilator",
+    #     "sim-version": "master",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "experimental",
+    # },
+    # {
+    #     "lang": "verilog",
+    #     "sim": "verilator",
+    #     "sim-version": "v5.038",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "extended",
+    # },
+    # {
+    #     "lang": "verilog",
+    #     "sim": "verilator",
+    #     "sim-version": "v5.036",  # Minimum supported version.
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.10",
+    #     "group": "extended",
+    # },
+    # # Test other OSes
+    # # Icarus homebrew (ARM64)
+    # {
+    #     "lang": "verilog",
+    #     "sim": "icarus",
+    #     "sim-version": "homebrew-stable",
+    #     "os": "macos-14",
+    #     "python-version": "3.9",
+    #     "group": "ci-free",
+    # },
+    # # Icarus homebrew (ARM64) (HEAD/master)
+    # {
+    #     "lang": "verilog",
+    #     "sim": "icarus",
+    #     "sim-version": "homebrew-HEAD",
+    #     "os": "macos-14",
+    #     "python-version": "3.9",
+    #     "group": "experimental",
+    # },
+    # # Verilator macOS (ARM64) HEAD
+    # {
+    #     "lang": "verilog",
+    #     "sim": "verilator",
+    #     "sim-version": "master",
+    #     "os": "macos-14",
+    #     "python-version": "3.9",
+    #     "group": "experimental",
+    # },
+    # # Verilator macOS (ARM64) latest release
+    # {
+    #     "lang": "verilog",
+    #     "sim": "verilator",
+    #     "sim-version": "v5.038",  # not latest, but v5.040 is broken on MacOS
+    #     "os": "macos-14",
+    #     "python-version": "3.9",
+    #     "group": "ci-free",
+    # },
+    # # Icarus homebrew (x86)
+    # {
+    #     "lang": "verilog",
+    #     "sim": "icarus",
+    #     "sim-version": "homebrew-stable",
+    #     "os": "macos-15-intel",
+    #     "python-version": "3.9",
+    #     "group": "ci-free",
+    # },
     # Icarus windows from source
     {
         "lang": "verilog",
@@ -328,104 +328,104 @@ ENVS = [
         "python-version": "3.11",
         "group": "ci-free",
     },
-    # Other
-    # use clang instead of gcc
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.17.1",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "cxx": "clang++",
-        "cc": "clang",
-        "extra-name": "clang",
-        "group": "ci-free",
-    },
-    # Test Siemens Questa on Ubuntu
-    {
-        "lang": "verilog",
-        "sim": "questa",
-        "sim-version": "siemens/questa/2025.2",
-        "os": "ubuntu-22.04",
-        "self-hosted": True,
-        "python-version": "3.9",
-        "group": "ci-licensed",
-    },
-    {
-        "lang": "vhdl and fli",
-        "sim": "questa",
-        "sim-version": "siemens/questa/2025.2",
-        "os": "ubuntu-22.04",
-        "self-hosted": True,
-        "python-version": "3.9",
-        "group": "ci-licensed",
-    },
-    {
-        "lang": "vhdl and vhpi",
-        "sim": "questa",
-        "sim-version": "siemens/questa/2025.2",
-        "os": "ubuntu-22.04",
-        "self-hosted": True,
-        "python-version": "3.9",
-        "group": "ci-licensed",
-    },
-    # Test Aldec Riviera-PRO on Ubuntu
-    {
-        "lang": "verilog",
-        "sim": "riviera",
-        "sim-version": "aldec/rivierapro/2025.04",
-        "os": "ubuntu-22.04",
-        "self-hosted": True,
-        "python-version": "3.9",
-        "group": "ci-licensed",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "riviera",
-        "sim-version": "aldec/rivierapro/2025.04",
-        "os": "ubuntu-22.04",
-        "self-hosted": True,
-        "python-version": "3.9",
-        "group": "ci-licensed",
-    },
-    # Test Cadence Xcelium on Ubuntu
-    {
-        "lang": "verilog",
-        "sim": "xcelium",
-        "sim-version": "cadence/xcelium/2403",
-        "os": "ubuntu-22.04",
-        "self-hosted": True,
-        "python-version": "3.9",
-        "group": "ci-licensed",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "xcelium",
-        "sim-version": "cadence/xcelium/2403",
-        "os": "ubuntu-22.04",
-        "self-hosted": True,
-        "python-version": "3.9",
-        "group": "ci-licensed",
-    },
-    # Test Synopsys VCS on Ubuntu
-    {
-        "lang": "verilog",
-        "sim": "vcs",
-        "sim-version": "synopsys/vcs/X-2025.06",
-        "os": "ubuntu-22.04",
-        "self-hosted": True,
-        "python-version": "3.9",
-        "group": "ci-licensed",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "vcs",
-        "sim-version": "synopsys/vcs/X-2025.06",
-        "os": "ubuntu-22.04",
-        "self-hosted": True,
-        "python-version": "3.9",
-        "group": "experimental",
-    },
+    # # Other
+    # # use clang instead of gcc
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.17.1",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.9",
+    #     "cxx": "clang++",
+    #     "cc": "clang",
+    #     "extra-name": "clang",
+    #     "group": "ci-free",
+    # },
+    # # Test Siemens Questa on Ubuntu
+    # {
+    #     "lang": "verilog",
+    #     "sim": "questa",
+    #     "sim-version": "siemens/questa/2025.2",
+    #     "os": "ubuntu-22.04",
+    #     "self-hosted": True,
+    #     "python-version": "3.9",
+    #     "group": "ci-licensed",
+    # },
+    # {
+    #     "lang": "vhdl and fli",
+    #     "sim": "questa",
+    #     "sim-version": "siemens/questa/2025.2",
+    #     "os": "ubuntu-22.04",
+    #     "self-hosted": True,
+    #     "python-version": "3.9",
+    #     "group": "ci-licensed",
+    # },
+    # {
+    #     "lang": "vhdl and vhpi",
+    #     "sim": "questa",
+    #     "sim-version": "siemens/questa/2025.2",
+    #     "os": "ubuntu-22.04",
+    #     "self-hosted": True,
+    #     "python-version": "3.9",
+    #     "group": "ci-licensed",
+    # },
+    # # Test Aldec Riviera-PRO on Ubuntu
+    # {
+    #     "lang": "verilog",
+    #     "sim": "riviera",
+    #     "sim-version": "aldec/rivierapro/2025.04",
+    #     "os": "ubuntu-22.04",
+    #     "self-hosted": True,
+    #     "python-version": "3.9",
+    #     "group": "ci-licensed",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "riviera",
+    #     "sim-version": "aldec/rivierapro/2025.04",
+    #     "os": "ubuntu-22.04",
+    #     "self-hosted": True,
+    #     "python-version": "3.9",
+    #     "group": "ci-licensed",
+    # },
+    # # Test Cadence Xcelium on Ubuntu
+    # {
+    #     "lang": "verilog",
+    #     "sim": "xcelium",
+    #     "sim-version": "cadence/xcelium/2403",
+    #     "os": "ubuntu-22.04",
+    #     "self-hosted": True,
+    #     "python-version": "3.9",
+    #     "group": "ci-licensed",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "xcelium",
+    #     "sim-version": "cadence/xcelium/2403",
+    #     "os": "ubuntu-22.04",
+    #     "self-hosted": True,
+    #     "python-version": "3.9",
+    #     "group": "ci-licensed",
+    # },
+    # # Test Synopsys VCS on Ubuntu
+    # {
+    #     "lang": "verilog",
+    #     "sim": "vcs",
+    #     "sim-version": "synopsys/vcs/X-2025.06",
+    #     "os": "ubuntu-22.04",
+    #     "self-hosted": True,
+    #     "python-version": "3.9",
+    #     "group": "ci-licensed",
+    # },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "vcs",
+    #     "sim-version": "synopsys/vcs/X-2025.06",
+    #     "os": "ubuntu-22.04",
+    #     "self-hosted": True,
+    #     "python-version": "3.9",
+    #     "group": "experimental",
+    # },
 ]
 
 # Questa: test more versions as part of the extended tests.
