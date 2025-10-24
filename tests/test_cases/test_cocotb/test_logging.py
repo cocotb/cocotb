@@ -106,3 +106,40 @@ async def test_warning_capture(_: object) -> None:
         warnings.warn("This is a test warning", UserWarning)
     assert len(logs.msgs) == 1
     assert "This is a test warning" in logs.msgs[0]
+
+
+@cocotb.test
+async def test_ljust_rjust(_: object) -> None:
+    ljust = cocotb_logging.SimLogFormatter.ljust
+    rjust = cocotb_logging.SimLogFormatter.rjust
+    assert ljust("0123", 5) == "0123 "
+    assert rjust("0123", 5) == " 0123"
+    assert ljust("01234", 5) == "01234"
+    assert rjust("01234", 5) == "01234"
+    assert ljust("012345", 5) == "..345"
+    assert rjust("012345", 5) == "..345"
+
+
+@cocotb.test
+async def test_multiline_indent(_: object) -> None:
+    stripped_formatter = cocotb_logging.SimLogFormatter(strip_ansi=True)
+    with capture_logs(formatter=stripped_formatter) as logs:
+        cocotb.log.info("First line\nSecond line")
+    assert len(logs.msgs) == 1
+    lines = logs.msgs[0].splitlines()
+    assert len(lines) == 2
+    first_index = lines[0].find("First line")
+    second_index = lines[1].find("Second line")
+    assert first_index == second_index
+    assert first_index != -1
+
+    indent_formatter = cocotb_logging.SimLogFormatter(
+        strip_ansi=True, multiline_indent=first_index + 1
+    )
+    with capture_logs(formatter=indent_formatter) as logs:
+        cocotb.log.info("First line\nSecond line")
+    assert len(logs.msgs) == 1
+    lines = logs.msgs[0].splitlines()
+    assert len(lines) == 2
+    assert lines[0].find("First line") == first_index
+    assert lines[1].find("Second line") == first_index + 1
