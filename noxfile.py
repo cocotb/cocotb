@@ -258,6 +258,15 @@ def dev_test_sim(
         env=env,
     )
 
+    # We need to run it separately to avoid loading pytest cocotb plugin for other tests
+    session.log(f"Running tests for pytest plugin against a simulator {config_str}")
+    session.run(
+        "pytest",
+        "-v",
+        "tests/pytest_plugin",
+        env=env,
+    )
+
     session.log(f"All tests and examples passed with configuration {config_str}!")
 
     # Combine coverage produced during the test runs, and place it in a file
