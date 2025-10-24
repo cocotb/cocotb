@@ -3,17 +3,16 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef COCOTB_GPI_PRIV_H_
-#define COCOTB_GPI_PRIV_H_
+#ifndef GPI_PRIV_H_
+#define GPI_PRIV_H_
 
-#include <exports.h>
+#include <cocotb_exports.h>
 #ifdef GPI_EXPORTS
 #define GPI_EXPORT COCOTB_EXPORT
 #else
 #define GPI_EXPORT COCOTB_IMPORT
 #endif
 
-#include <embed.h>
 #include <gpi.h>
 
 #include <string>
@@ -273,6 +272,14 @@ GPI_EXPORT void gpi_embed_end();
 GPI_EXPORT void gpi_entry_point();
 GPI_EXPORT void gpi_to_user();
 GPI_EXPORT void gpi_to_simulator();
+
+void *utils_dyn_open(const char *lib_name);
+void *utils_dyn_sym(void *handle, const char *sym_name);
+
+extern void embed_init_python(void);
+extern void embed_sim_cleanup(void);
+extern int embed_sim_init(int argc, char const *const *argv);
+extern void embed_sim_event(const char *msg);
 
 typedef void (*layer_entry_func)();
 

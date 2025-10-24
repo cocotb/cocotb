@@ -12,13 +12,13 @@
  */
 
 #include <Python.h>
+#include <cocotb_utils.h>  // DEFER
+#include <gpi.h>
+#include <gpi_logging.h>
 
-#include <cerrno>
 #include <cstdint>
 
-#include "cocotb_utils.h"  // to_python to_simulator
-#include "gpi.h"
-#include "py_gpi_logging.h"  // py_gpi_logger_set_level
+#include "./pygpi_priv.h"  // py_gpi_logger_set_level, to_python to_simulator
 
 // This file defines the routines available to Python
 
