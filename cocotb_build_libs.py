@@ -587,7 +587,6 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         define_macros=[
             ("GPI_EXPORTS", ""),
             ("LIB_EXT", _get_lib_ext_name()),
-            ("SINGLETON_HANDLES", ""),
             *_extra_defines,
         ],
         include_dirs=include_dirs,
