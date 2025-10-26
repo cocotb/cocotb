@@ -20,8 +20,6 @@ using namespace std;
 
 static vector<GpiImplInterface *> registered_impls;
 
-#ifdef SINGLETON_HANDLES
-
 class GpiHandleStore {
   public:
     GpiObjHdl *check_and_store(GpiObjHdl *hdl) {
@@ -63,13 +61,6 @@ static GpiHandleStore unique_handles;
 
 #define CHECK_AND_STORE(_x) unique_handles.check_and_store(_x)
 #define CLEAR_STORE() unique_handles.clear()
-
-#else
-
-#define CHECK_AND_STORE(_x) _x
-#define CLEAR_STORE() (void)0  // No-op
-
-#endif
 
 static bool gpi_finalizing = false;
 
