@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "abstract.h"
 #include "cocotb_utils.h"  // DEFER
 #include "exports.h"       // COCOTB_EXPORT
 #include "gpi_logging.h"   // LOG_* macros
@@ -271,7 +272,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     return 0;
 }
 
-extern "C" COCOTB_EXPORT void _embed_sim_event(const char *msg) {
+extern "C" COCOTB_EXPORT void _embed_sim_event() {
     /* Indicate to the upper layer that a sim event occurred */
 
     if (pEventFn) {
@@ -279,11 +280,7 @@ extern "C" COCOTB_EXPORT void _embed_sim_event(const char *msg) {
         to_python();
         gstate = PyGILState_Ensure();
 
-        if (msg == NULL) {
-            msg = "No message provided";
-        }
-
-        PyObject *pValue = PyObject_CallFunction(pEventFn, "s", msg);
+        PyObject *pValue = PyObject_CallNoArgs(pEventFn);
         if (pValue == NULL) {
             // Printing a SystemExit calls exit(1), which we don't want.
             if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
