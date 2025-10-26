@@ -722,13 +722,12 @@ static int startup_callback(void *) {
     }
     // LCOV_EXCL_STOP
 
-    gpi_embed_init(info.argc, info.argv);
-
+    gpi_start_of_sim_time(info.argc, info.argv);
     return 0;
 }
 
 static int shutdown_callback(void *) {
-    gpi_embed_end();
+    gpi_end_of_sim_time();
     return 0;
 }
 

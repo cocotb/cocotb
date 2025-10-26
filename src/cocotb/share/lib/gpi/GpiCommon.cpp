@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "embed.h"
 #include "gpi.h"
 #include "gpi_priv.h"
 
@@ -70,7 +71,7 @@ static GpiHandleStore unique_handles;
 
 #endif
 
-static bool sim_ending = false;
+static bool gpi_finalizing = false;
 
 static size_t gpi_print_registered_impl() {
     vector<GpiImplInterface *>::iterator iter;
@@ -97,27 +98,27 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
 
 bool gpi_has_registered_impl() { return registered_impls.size() > 0; }
 
-void gpi_embed_init(int argc, char const *const *argv) {
-    if (embed_sim_init(argc, argv)) {
-        gpi_embed_end();
+void gpi_start_of_sim_time(int argc, char const *const *argv) {
+    if (embed_start_of_sim_time(argc, argv)) {
+        gpi_end_of_sim_time();
     }
 }
 
-void gpi_embed_end() {
-    embed_sim_event();
-    gpi_sim_end();
+void gpi_end_of_sim_time() {
+    embed_end_of_sim_time();
+    gpi_finish();
 }
 
-void gpi_sim_end() {
-    if (!sim_ending) {
+void gpi_finish() {
+    if (!gpi_finalizing) {
         registered_impls[0]->sim_end();
-        sim_ending = true;
+        gpi_finalizing = true;
     }
 }
 
-void gpi_cleanup(void) {
+void gpi_finalize(void) {
     CLEAR_STORE();
-    embed_sim_cleanup();
+    embed_finalize();
 }
 
 static void gpi_load_libs(std::vector<std::string> to_load) {
@@ -201,7 +202,7 @@ void gpi_entry_point() {
     }
 
     /* Finally embed Python */
-    embed_init_python();
+    embed_entry_point();
     gpi_print_registered_impl();
 }
 
@@ -642,8 +643,8 @@ const string &GpiImplInterface::get_name_s() { return m_name; }
 void gpi_to_user() { LOG_TRACE("Passing control to GPI user"); }
 
 void gpi_to_simulator() {
-    if (sim_ending) {
-        gpi_cleanup();
+    if (gpi_finalizing) {
+        gpi_finalize();
     }
     LOG_TRACE("Returning control to simulator");
 }
