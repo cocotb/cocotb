@@ -93,6 +93,13 @@ def _help_vars_text() -> str:
     return helpmsg
 
 
+def pygpi_entry_point() -> str:
+    for possible_name in ("libcocotb.so", "cocotb.dll", "libcocotb.dll"):
+        if (possible_lib_path := (libs_dir / possible_name)).exists():
+            return f"{possible_lib_path},initialize"
+    raise RuntimeError("No libcocotb found")
+
+
 def lib_name(interface: str, simulator: str) -> str:
     """
     Return the name of interface library for given interface (VPI/VHPI/FLI) and simulator.
@@ -209,6 +216,11 @@ def _get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print the version of cocotb",
     )
+    group.add_argument(
+        "--pygpi-entry-point",
+        action="store_true",
+        help="Print the PYGPI entry point for use in GPI_USERS",
+    )
 
     return parser
 
@@ -236,6 +248,8 @@ def main() -> None:
         print(lib_name(*args.lib_name))
     elif args.lib_name_path:
         print(lib_name_path(*args.lib_name_path).as_posix())
+    elif args.pygpi_entry_point:
+        print(pygpi_entry_point())
     elif args.version:
         print(_get_version())
 
