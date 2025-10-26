@@ -1166,8 +1166,8 @@ static PyMethodDef SimulatorMethods[] = {
     {"set_sim_event_callback", set_sim_event_callback, METH_VARARGS,
      PyDoc_STR("set_sim_event_callback(sim_event_callback, /)\n"
                "--\n\n"
-               "set_sim_event_callback(sim_event_callback: Callable[[str], "
-               "None]) -> None\n"
+               "set_sim_event_callback(sim_event_callback: Callable[[], "
+               "object]) -> None\n"
                "Set the callback for simulator events.")},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
