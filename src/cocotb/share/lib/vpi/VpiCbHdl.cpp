@@ -21,14 +21,14 @@ static int32_t handle_vpi_callback_(GpiCbHdl *cb_hdl) {
     // LCOV_EXCL_START
     if (!cb_hdl) {
         LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
-        gpi_embed_end();
+        gpi_end_of_sim_time();
         return -1;
     }
     // LCOV_EXCL_STOP
 
     if (cb_hdl->run()) {
         // sim failed, so call shutdown
-        gpi_embed_end();
+        gpi_end_of_sim_time();
         return 0;
     }
 

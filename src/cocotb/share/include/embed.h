@@ -20,11 +20,11 @@
 extern "C" {
 #endif
 
-extern COCOTB_EMBED_EXPORT void embed_init_python(void);
-extern COCOTB_EMBED_EXPORT void embed_sim_cleanup(void);
-extern COCOTB_EMBED_EXPORT int embed_sim_init(int argc,
-                                              char const *const *argv);
-extern COCOTB_EMBED_EXPORT void embed_sim_event(void);
+extern COCOTB_EMBED_EXPORT void embed_entry_point(void);
+extern COCOTB_EMBED_EXPORT void embed_finalize(void);
+extern COCOTB_EMBED_EXPORT int embed_start_of_sim_time(int argc,
+                                                       char const *const *argv);
+extern COCOTB_EMBED_EXPORT void embed_end_of_sim_time(void);
 
 #ifdef __cplusplus
 }

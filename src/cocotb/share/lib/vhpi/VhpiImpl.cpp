@@ -1082,14 +1082,14 @@ static int startup_callback(void *) {
         vhpi_release_handle(tool);
     }
 
-    gpi_embed_init(tool_argc, tool_argv);
+    gpi_start_of_sim_time(tool_argc, tool_argv);
     delete[] tool_argv;
 
     return 0;
 }
 
 static int shutdown_callback(void *) {
-    gpi_embed_end();
+    gpi_end_of_sim_time();
     return 0;
 }
 

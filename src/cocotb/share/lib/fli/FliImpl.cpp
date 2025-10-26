@@ -1109,13 +1109,13 @@ static int startup_callback(void *) {
     int argc = static_cast<int>(argv_storage.size());
     const char **argv = argv_cstr.data();
 
-    gpi_embed_init(argc, argv);
+    gpi_start_of_sim_time(argc, argv);
 
     return 0;
 }
 
 static int shutdown_callback(void *) {
-    gpi_embed_end();
+    gpi_end_of_sim_time();
     return 0;
 }
 

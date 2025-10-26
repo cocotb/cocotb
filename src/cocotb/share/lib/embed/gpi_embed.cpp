@@ -72,7 +72,7 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
 }
 
 /** Initialize the Python interpreter */
-extern "C" COCOTB_EXPORT void _embed_init_python(void) {
+extern "C" COCOTB_EXPORT void initialize(void) {
     if (python_init_called) {
         // LCOV_EXCL_START
         LOG_ERROR("PyGPI library initialized again!");
@@ -192,7 +192,7 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
  *
  * Cleans up reference counts for Python objects and calls Py_Finalize function.
  */
-extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void) {
+extern "C" COCOTB_EXPORT void finalize(void) {
     // If initialization fails, this may be called twice:
     // Before the initial callback returns and in the final callback.
     // So we check if Python is still initialized before doing cleanup.
@@ -207,8 +207,8 @@ extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void) {
     }
 }
 
-extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
-                                             char const *const *_argv) {
+extern "C" COCOTB_EXPORT int start_of_sim_time(int argc,
+                                               char const *const *_argv) {
     // Check that we are not already initialized
     if (embed_init_called) {
         // LCOV_EXCL_START
@@ -272,7 +272,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     return 0;
 }
 
-extern "C" COCOTB_EXPORT void _embed_sim_event() {
+extern "C" COCOTB_EXPORT void end_of_sim_time() {
     /* Indicate to the upper layer that a sim event occurred */
 
     if (pEventFn) {
