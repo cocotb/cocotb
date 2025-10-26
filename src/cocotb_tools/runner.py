@@ -946,6 +946,10 @@ class Questa(Runner):
 
         cmds.append(["vlib", _as_tcl_value(self.hdl_library)])
 
+        verbosity_opts = []
+        if not self.verbose:
+            verbosity_opts += ["-quiet"]
+
         vhdl_args = [
             _as_tcl_value(arg.value)
             for arg in self._build_args
@@ -965,6 +969,7 @@ class Questa(Runner):
                 cmds.append(
                     [
                         "vcom",
+                        *verbosity_opts,
                         "-work",
                         hdl_library,
                         *vhdl_args,
@@ -975,6 +980,7 @@ class Questa(Runner):
                 cmds.append(
                     [
                         "vlog",
+                        *verbosity_opts,
                         *([] if self.always else ["-incr"]),
                         "-work",
                         hdl_library,
@@ -992,6 +998,10 @@ class Questa(Runner):
 
     def _test_command(self) -> list[_Command]:
         cmds = []
+
+        verbosity_opts = []
+        if not self.verbose:
+            verbosity_opts += ["-quiet"]
 
         if self.pre_cmd is not None:
             pre_cmd = ["-do", *self.pre_cmd]
@@ -1033,6 +1043,7 @@ class Questa(Runner):
 
         cmds.append(
             ["vsim"]
+            + verbosity_opts
             + ["-gui" if self.gui else "-c"]
             + ["-onfinish", "stop" if self.gui else "exit"]
             + lib_opts
