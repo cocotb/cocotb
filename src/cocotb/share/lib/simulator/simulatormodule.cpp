@@ -745,7 +745,7 @@ static PyObject *stop_simulator(PyObject *, PyObject *) {
         return NULL;
     }
 
-    gpi_sim_end();
+    gpi_finish();
     Py_RETURN_NONE;
 }
 

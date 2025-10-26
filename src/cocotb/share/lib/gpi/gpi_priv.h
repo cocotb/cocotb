@@ -268,8 +268,12 @@ class GPI_EXPORT GpiImplInterface {
 /* Called from implementation layers back up the stack */
 GPI_EXPORT int gpi_register_impl(GpiImplInterface *func_tbl);
 
-GPI_EXPORT void gpi_embed_init(int argc, char const *const *argv);
-GPI_EXPORT void gpi_embed_end();
+// GpiImpls are currently expected to register single callbacks with the
+// interface for the start and end of simulation time. These functions are
+// called by the GpiImpls. The GPI layer will do the callback muxing.
+GPI_EXPORT void gpi_start_of_sim_time(int argc, char const *const *argv);
+GPI_EXPORT void gpi_end_of_sim_time();
+
 GPI_EXPORT void gpi_entry_point();
 GPI_EXPORT void gpi_to_user();
 GPI_EXPORT void gpi_to_simulator();

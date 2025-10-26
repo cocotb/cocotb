@@ -150,7 +150,7 @@ typedef enum gpi_edge_e {
 GPI_EXPORT bool gpi_has_registered_impl(void);
 
 /** Stop the simulation after control returns to the GPI. */
-GPI_EXPORT void gpi_sim_end(void);
+GPI_EXPORT void gpi_finish(void);
 
 /** Get the simulation time as two 32-bit uints.
  *

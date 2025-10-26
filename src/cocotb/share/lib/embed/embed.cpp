@@ -53,7 +53,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID) {
 }
 #endif
 
-extern "C" void embed_init_python(void) {
+extern "C" void embed_entry_point(void) {
     // preload python library
     char const *libpython_path = getenv("LIBPYTHON_LOC");
     if (!libpython_path) {
@@ -102,28 +102,28 @@ extern "C" void embed_init_python(void) {
         // LCOV_EXCL_STOP
     }
     if (!(_embed_init_python = reinterpret_cast<decltype(_embed_init_python)>(
-              utils_dyn_sym(embed_impl_lib_handle, "_embed_init_python")))) {
+              utils_dyn_sym(embed_impl_lib_handle, "initialize")))) {
         // LCOV_EXCL_START
         init_failed = true;
         return;
         // LCOV_EXCL_STOP
     }
     if (!(_embed_sim_cleanup = reinterpret_cast<decltype(_embed_sim_cleanup)>(
-              utils_dyn_sym(embed_impl_lib_handle, "_embed_sim_cleanup")))) {
+              utils_dyn_sym(embed_impl_lib_handle, "finalize")))) {
         // LCOV_EXCL_START
         init_failed = true;
         return;
         // LCOV_EXCL_STOP
     }
     if (!(_embed_sim_init = reinterpret_cast<decltype(_embed_sim_init)>(
-              utils_dyn_sym(embed_impl_lib_handle, "_embed_sim_init")))) {
+              utils_dyn_sym(embed_impl_lib_handle, "start_of_sim_time")))) {
         // LCOV_EXCL_START
         init_failed = true;
         return;
         // LCOV_EXCL_STOP
     }
     if (!(_embed_sim_event = reinterpret_cast<decltype(_embed_sim_event)>(
-              utils_dyn_sym(embed_impl_lib_handle, "_embed_sim_event")))) {
+              utils_dyn_sym(embed_impl_lib_handle, "end_of_sim_time")))) {
         // LCOV_EXCL_START
         init_failed = true;
         return;
@@ -145,13 +145,13 @@ extern "C" void embed_init_python(void) {
     _embed_init_python();
 }
 
-extern "C" void embed_sim_cleanup(void) {
+extern "C" void embed_finalize(void) {
     if (!init_failed) {
         _embed_sim_cleanup();
     }
 }
 
-extern "C" int embed_sim_init(int argc, char const *const *argv) {
+extern "C" int embed_start_of_sim_time(int argc, char const *const *argv) {
     if (init_failed) {
         // LCOV_EXCL_START
         return -1;
@@ -161,7 +161,7 @@ extern "C" int embed_sim_init(int argc, char const *const *argv) {
     }
 }
 
-extern "C" void embed_sim_event() {
+extern "C" void embed_end_of_sim_time() {
     if (!init_failed) {
         _embed_sim_event();
     }
