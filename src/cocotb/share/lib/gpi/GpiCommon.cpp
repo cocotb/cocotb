@@ -5,20 +5,24 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <cocotb_utils.h>
+#include <gpi.h>
 #include <sys/types.h>
 
 #include <algorithm>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
-#include "embed.h"
-#include "gpi.h"
 #include "gpi_priv.h"
 
 using namespace std;
 
 static vector<GpiImplInterface *> registered_impls;
+static vector<std::pair<int (*)(void *, int, char const *const *), void *>>
+    start_of_sim_time_cbs;
+static vector<std::pair<void (*)(void *), void *>> end_of_sim_time_cbs;
+static vector<std::pair<void (*)(void *), void *>> finalize_cbs;
 
 class GpiHandleStore {
   public:
@@ -90,13 +94,20 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
 bool gpi_has_registered_impl() { return registered_impls.size() > 0; }
 
 void gpi_start_of_sim_time(int argc, char const *const *argv) {
-    if (embed_start_of_sim_time(argc, argv)) {
-        gpi_end_of_sim_time();
+    for (auto &cb_info : start_of_sim_time_cbs) {
+        // start_of_sime_time should never fail, this should be moved to
+        // gpi_load_users, as should the (argc,argv)
+        if (cb_info.first(cb_info.second, argc, argv)) {
+            gpi_end_of_sim_time();
+        }
     }
 }
 
 void gpi_end_of_sim_time() {
-    embed_end_of_sim_time();
+    for (auto &cb_info : end_of_sim_time_cbs) {
+        cb_info.first(cb_info.second);
+    }
+    // always request simulation termination at end_of_sim_time
     gpi_finish();
 }
 
@@ -109,7 +120,9 @@ void gpi_finish() {
 
 void gpi_finalize(void) {
     CLEAR_STORE();
-    embed_finalize();
+    for (auto it = finalize_cbs.rbegin(); it != finalize_cbs.rend(); it++) {
+        it->first(it->second);
+    }
 }
 
 static void gpi_load_libs(std::vector<std::string> to_load) {
@@ -153,6 +166,70 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
     }
 }
 
+static int gpi_load_users() {
+    auto users = getenv("GPI_USERS");
+    if (!users) {
+        LOG_ERROR("No GPI_USERS specified, exiting...");
+    }
+    // I would have loved to use istringstream and getline, but it causes a
+    // compilation issue when compiling with newer GCCs against C++11.
+    std::string users_str = users;
+    std::string::size_type start_idx = 0;
+    bool done = false;
+    while (!done) {
+        auto next_delim = users_str.find(';', start_idx);
+        if (next_delim == std::string::npos) {
+            done = true;
+            next_delim = users_str.length();
+        }
+        auto user = users_str.substr(start_idx, next_delim - start_idx);
+        start_idx = next_delim + 1;
+
+        auto split_idx = user.rfind(',');
+
+        std::string lib_name;
+        std::string func_name;
+        if (split_idx == std::string::npos) {
+            lib_name = std::move(user);
+        } else {
+            lib_name = user.substr(0, split_idx);
+            func_name = user.substr(split_idx + 1, std::string::npos);
+        }
+
+        void *lib_handle = utils_dyn_open(lib_name.c_str());
+        if (!lib_handle) {
+            LOG_ERROR("Error loading library '%s'", lib_name.c_str());
+            gpi_finish();
+            return -1;
+        }
+
+        if (split_idx != std::string::npos) {
+            void *func_handle = utils_dyn_sym(lib_handle, func_name.c_str());
+            if (!func_handle) {
+                LOG_ERROR(
+                    "Error getting entry func '%s' from loaded library '%s'",
+                    func_name.c_str(), lib_name.c_str());
+                gpi_finish();
+                return -1;
+            }
+
+            LOG_INFO("Running entry func '%s' from loaded library '%s'",
+                     func_name.c_str(), lib_name.c_str());
+
+            auto entry_func = (void (*)(void))func_handle;
+            entry_func();
+        }
+    }
+
+    return 0;
+}
+
+#ifndef PYTHON_LIB
+#error "Name of Python library required"
+#else
+#define PYTHON_LIB_STR xstr(PYTHON_LIB)
+#endif
+
 void gpi_entry_point() {
     const char *log_level = getenv("GPI_LOG_LEVEL");
     if (log_level) {
@@ -192,8 +269,24 @@ void gpi_entry_point() {
         gpi_load_libs(to_load);
     }
 
+    // preload Python library
+    char const *libpython_path = getenv("LIBPYTHON_LOC");
+    if (!libpython_path) {
+        // default to libpythonX.X.so
+        libpython_path = PYTHON_LIB_STR;
+    }
+    auto loaded = utils_dyn_open(libpython_path);
+    // LCOV_EXCL_START
+    if (!loaded) {
+        LOG_ERROR("Failed to preload Python library: %s", libpython_path);
+        return;
+    }
+    // LCOV_EXCL_STOP
+
     /* Finally embed Python */
-    embed_entry_point();
+    if (!gpi_load_users()) {
+        return;
+    }
     gpi_print_registered_impl();
 }
 
@@ -638,4 +731,22 @@ void gpi_to_simulator() {
         gpi_finalize();
     }
     LOG_TRACE("Returning control to simulator");
+}
+
+GPI_EXPORT int gpi_register_start_of_sim_time_callback(
+    int (*cb)(void *, int, char const *const *), void *cb_data) {
+    start_of_sim_time_cbs.push_back(std::make_pair(cb, cb_data));
+    return 0;
+}
+
+GPI_EXPORT int gpi_register_end_of_sim_time_callback(void (*cb)(void *),
+                                                     void *cb_data) {
+    end_of_sim_time_cbs.push_back(std::make_pair(cb, cb_data));
+    return 0;
+}
+
+GPI_EXPORT int gpi_register_finalize_callback(void (*cb)(void *),
+                                              void *cb_data) {
+    finalize_cbs.push_back(std::make_pair(cb, cb_data));
+    return 0;
 }

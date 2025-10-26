@@ -12,6 +12,32 @@ The interaction between cocotb's Python and GPI is via a Python extension module
 Environment Variables
 =====================
 
+.. envvar:: GPI_USERS
+
+    A list of native libraries to load, and optionally functions in those libraries to call,
+    once the GPI is initialized.
+
+    This list is ``;``-separated.
+    Each element of the list contains a path to a library to load.
+    These paths can be full paths (e.g. ``/usr/local/lib/libstuff.so``), in which case the exact library will be loaded,
+    or the basename (e.g. ``libstuff.so``), in which case your operating system's dynamic library lookup will be used.
+
+    Optionally, after the path in each element, a function in that library to call can be specified by name
+    by suffixing the path with a ``,`` character followed by the function name.
+
+    For example:
+
+    * ``GPI_USERS=/usr/local/lib/libstuff.so;libotherstuff.so,entry_func``
+
+    .. attention::
+        This means that paths which contain the characters ``;`` and ``,`` cannot be used in this variable.
+        Instead of using a full path, use the basename, and use environment variables like ``PATH`` or ``LD_LIBRARY_PATH``
+        to modify your operating system's library search path.
+
+    When using the :ref:`building` or :ref:`api-runner` this defaults to load the PyGPI entry point.
+    You can get the default PyGPI entry point at other times by calling ``cocotb-config --pygpi-entry-point`` from the shell
+    or :func:`cocotb_tools.config.pygpi_entry_point` from Python.
+
 .. envvar:: LIBPYTHON_LOC
 
     The absolute path to the Python library associated with the current Python installation;

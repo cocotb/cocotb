@@ -140,6 +140,9 @@ endif
 
 export COCOTB_TRUST_INERTIAL_WRITES
 
+GPI_USERS ?= $(shell $(PYTHON_BIN) -m cocotb_tools.config --pygpi-entry-point)
+export GPI_USERS
+
 
 # Universal
 clean::
