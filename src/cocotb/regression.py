@@ -885,7 +885,15 @@ class RegressionManager:
 
         self.log.info(summary)
 
-    def _fail_simulation(self, msg: str) -> None:
-        self._sim_failure = Error(SimFailure(msg))
+    def _on_sim_end(self) -> None:
+        # We assume if we get this, the simulation ended unexpectedly due to an assertion failure,
+        # or due to an end of events from the simulator.
+        self._sim_failure = Error(
+            SimFailure(
+                "cocotb expected it would shut down the simulation, but the simulation ended prematurely. "
+                "This could be due to an assertion failure or a call to an exit routine in the HDL, "
+                "or due to the simulator running out of events to process (is your clock running?)."
+            )
+        )
         self._running_test.abort(self._sim_failure)
         cocotb._event_loop._inst.run()
