@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import inspect
 import os
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Sequence
 from pathlib import PurePosixPath
 
 from pytest import (
@@ -18,11 +18,13 @@ from pytest import (
     Config,
     Function,
     Item,
+    MarkDecorator,
     Module,
     Session,
     StashKey,
     TestReport,
     hookimpl,
+    mark,
 )
 
 import cocotb
@@ -173,12 +175,33 @@ class Controller:
                     elif collectonly:
                         yield item
                 elif not runner:
-                    modules: Iterable[str] | None = None
+                    test_module: Sequence[str] | str = ""
 
                     for marker in item.iter_markers("cocotb"):
-                        if marker.args:
-                            modules = marker.args
+                        test_module = marker.kwargs.get("test_module", marker.args)
+
+                        if test_module:
                             break
+
+                    if not test_module:
+                        test_module = item.path.name.partition(".")[0]
+
+                    hdl_toplevel: str = (
+                        test_module if isinstance(test_module, str) else test_module[0]
+                    )
+
+                    if hdl_toplevel.startswith("test_"):
+                        hdl_toplevel = hdl_toplevel.removeprefix("test_")
+                    elif hdl_toplevel.endswith("_test"):
+                        hdl_toplevel = hdl_toplevel.removesuffix("_test")
+
+                    marker: MarkDecorator = mark.cocotb(
+                        test_module=test_module,
+                        hdl_toplevel=hdl_toplevel,
+                        # TODO: test_dir=os.path.join(build_dir, test_dir),
+                    )
+
+                    item.add_marker(marker)
 
                     yield item
 
@@ -187,7 +210,7 @@ class Controller:
                             item.parent,
                             name=item.name,
                             item=item,
-                            modules=modules,
+                            test_module=test_module,
                         )
             else:
                 yield item

@@ -9,11 +9,10 @@ from __future__ import annotations
 import hashlib
 import inspect
 import random
-import sys
-import traceback
 from collections import deque
 from collections.abc import AsyncGenerator, Generator, Iterable
 from functools import wraps
+from importlib import import_module
 from multiprocessing.connection import Client
 from typing import Any, Callable, Literal
 
@@ -23,6 +22,7 @@ from pytest import (
     Class,
     Collector,
     Config,
+    ExceptionInfo,
     ExitCode,
     FixtureDef,
     Function,
@@ -49,16 +49,19 @@ from cocotb_tools.pytest.fixture import (
 )
 
 
+class FailSimulation(RuntimeError):
+    pass
+
+
 def finish_on_exception(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs) -> Any:
         try:
             return method(self, *args, **kwargs)
-        except BaseException as e:
-            sys.stderr.write(traceback.format_exc())
-            sys.stderr.flush()
-            self._finish(ExitCode.INTERNAL_ERROR)
-            raise e
+        except BaseException:
+            # Notify pytest and plugins about exception. Finish pytest and simulation
+            self._notify_exception(ExceptionInfo.from_current())
+            self._finish()
 
     return wrapper
 
@@ -117,7 +120,13 @@ class RegressionManager:
         )
 
         if env.exists("COCOTB_TEST_MODULES"):
-            config.args = env.as_list("COCOTB_TEST_MODULES")
+            # https://github.com/pytest-dev/pytest/issues/1596
+            # We cannot use --pyargs to load Python modules directly because conftest.py will be not loaded
+            config.option.pyargs = False
+            config.args = [
+                str(import_module(test_module).__file__)
+                for test_module in env.as_list("COCOTB_TEST_MODULES")
+            ]
 
         # Create session context for tests
         self._session: Session = Session.from_config(config)
@@ -203,23 +212,29 @@ class RegressionManager:
                 if kwargs.get("skip"):
                     item.add_marker("skip")
 
-                if kwargs.get("expect_fail"):
-                    raises: BaseException | tuple[BaseException] | None = kwargs.get(
-                        "expect_error"
-                    )
+                expect_error: (
+                    type[BaseException] | Iterable[type[BaseException], ...] | None
+                ) = kwargs.get("expect_error")
+
+                expect_fail: bool = kwargs.get("expect_fail", False)
+
+                if expect_fail or expect_error:
+                    if isinstance(expect_error, Iterable):
+                        # raises from @pytest.mark.xfail supports None, type and tuple[type, ...]
+                        expect_error = tuple(expect_error)
+
                     item.add_marker(
-                        mark.xfail(raises=raises if raises else None, strict=True)
+                        mark.xfail(raises=expect_error or None, strict=True)
                     )
 
-                timeout: float | int = kwargs.get("timeout_time", 0)
+                timeout: tuple[float, TimeUnit] | None = kwargs.get("timeout")
 
                 if timeout:
-                    unit: TimeUnit = kwargs.get("timeout_unit", "step")
                     f = item.obj
 
                     @wraps(f)
                     async def func(*args: object, **kwargs: object) -> None:
-                        await with_timeout(f(*args, **kwargs), timeout, unit)
+                        await with_timeout(f(*args, **kwargs), timeout[0], timeout[1])
 
                     item.obj = func
 
@@ -322,7 +337,11 @@ class RegressionManager:
 
         return self._get_item()
 
-    def _finish(self, exitstatus: ExitCode | None = None) -> None:
+    def _notify_exception(self, excinfo: ExceptionInfo) -> None:
+        self._session.exitstatus = ExitCode.INTERNAL_ERROR
+        self._session.config.notify_exception(excinfo, self._session.config.option)
+
+    def _finish(self) -> None:
         if self._finished:  # this method must be called once
             return
 
@@ -330,7 +349,7 @@ class RegressionManager:
 
         self._session.config.hook.pytest_sessionfinish(
             session=self._session,
-            exitstatus=exitstatus if exitstatus else self._session.exitstatus,
+            exitstatus=self._session.exitstatus,
         )
 
         self._session.config._ensure_unconfigure()
@@ -503,10 +522,13 @@ class RegressionManager:
         self._subtasks = []
 
         def finalizer() -> None:
-            for task in reversed(tasks):
-                task._cancel_now()
+            async def func() -> None:
+                for task in reversed(tasks):
+                    task._cancel_now()
 
-        return finalizer
+            self._tasks.append(Task(func()))
+
+        return finalizer if tasks else lambda: None
 
     @property
     def _running_test(self) -> RegressionManager:
@@ -516,9 +538,12 @@ class RegressionManager:
         self._subtasks.append(task)
 
     def _fail_simulation(self, msg: str) -> None:
-        sys.stderr.write(msg + "\n")
-        sys.stderr.flush()
-        self._finish(ExitCode.INTERNAL_ERROR)
+        try:
+            raise FailSimulation(msg)
+        except BaseException:
+            self._notify_exception(ExceptionInfo.from_current())
+        finally:
+            self._finish()
 
     def _execute(self, done_callback: Callable[..., None], task: Task) -> None:
         task._add_done_callback(done_callback)

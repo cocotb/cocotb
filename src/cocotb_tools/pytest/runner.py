@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from importlib import import_module
 from pathlib import Path
 
@@ -21,26 +21,26 @@ class Runner(Collector):
     def __init__(
         self,
         item: Item,
-        modules: Iterable[str] | None = None,
+        test_module: Sequence[str] | str = "",
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
 
+        if isinstance(test_module, str):
+            test_module = [test_module] if test_module else []
+
         self.item: Item = item
-        self.modules: list[str] = list(modules) if modules else []
+        self.test_modules: Sequence[str] = test_module
         item.extra_keyword_matches.add("runner")
 
     def collect(self) -> Iterable[Item | Collector]:
-        if not self.modules:
-            yield Module.from_parent(self, name=self.path.stem, path=self.path)
-
-        for module in self.modules:
+        for test_module in self.test_modules:
             path: Path = self.path.parent / Path(
-                module.replace(".", os.path.pathsep) + ".py"
+                test_module.replace(".", os.path.pathsep) + ".py"
             )
 
             if not path.exists():
-                path = Path(str(import_module(module).__file__))
+                path = Path(str(import_module(test_module).__file__))
 
             yield Module.from_parent(self, name=path.stem, path=path)

@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+import shlex
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -22,12 +24,14 @@ class Option:
         name: str,
         default: Any = None,
         default_in_help: str | None = None,
+        environment: str | None = None,
         **kwargs,
     ):
         self.name: str = name
         self.extra: dict[str, Any] = dict(kwargs)
         self.default: Any = default
         self.default_in_help: str | None = default_in_help
+        self.environment: str = environment if environment else name.upper()
 
     def get(self, key: str, default: Any = None) -> None:
         return self.extra.get(key, default)
@@ -42,7 +46,6 @@ class Option:
         return item in self.extra
 
     def add_to_parser(self, parser: Parser, group: OptionGroup) -> None:
-        environment: str = self.name.upper()
         argument: str = "--" + self.name.replace("_", "-")
         default: Any = self.default
         action: str | None = self.get("action")
@@ -51,22 +54,26 @@ class Option:
         kind: str = ""
 
         if action == "store_true":
-            default = env.as_bool(environment, default)
+            default = env.as_bool(self.environment, default)
             kind = "bool"
         elif nargs:
-            default = env.as_list(environment, default)
+            default = env.as_list(self.environment, default)
             extra["metavar"] = "NAME"
             kind = "args"
         elif isinstance(default, int):
-            default = env.as_int(environment, default)
+            default = env.as_int(self.environment, default)
             extra = {"type": int, "metavar": "INTEGER"}
             kind = "int"
         elif isinstance(default, Path):
-            default = env.as_path(environment, default)
+            default = env.as_path(self.environment, default)
             extra = {"type": Path, "metavar": "PATH"}
             kind = "paths"
+        elif isinstance(default, list):
+            default = shlex.split(env.as_str(self.environment, default))
+            extra = {"type": shlex.split, "metavar": "ARGUMENTS"}
+            kind = "args"
         else:
-            default = env.as_str(environment, default)
+            default = env.as_str(self.environment, default)
             extra["type"] = str
             kind = "string"
 
@@ -82,7 +89,7 @@ class Option:
 
         extra.update(self.extra)
         extra["help"] += (
-            f"\nEnvironment variable: {environment}\nDefault: {default_in_help}"
+            f"\nEnvironment variable: {self.environment}\nDefault: {default_in_help}"
         )
         parser.addini(
             self.name, help=f"Default value for {argument}", type=kind, default=default
@@ -90,7 +97,7 @@ class Option:
         group.addoption(argument, **extra)
 
 
-def add_options_to_parser(parser: Parser, name: str, *options: Option) -> None:
+def add_options_to_parser(parser: Parser, name: str, options: Iterable[Option]) -> None:
     group: OptionGroup = parser.getgroup(name, description=f"{name} options")
 
     for option in options:

@@ -21,8 +21,5 @@ def run_regression(_: object) -> None:
     if results_file:
         args.append(f"--junit-xml={results_file}")
 
-    if env.exists("COCOTB_TEST_MODULES"):
-        args.append("--pyargs")
-
     cocotb._regression_manager = RegressionManager(*args)
     cocotb._regression_manager.start_regression()
