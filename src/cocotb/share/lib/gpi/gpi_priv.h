@@ -13,7 +13,6 @@
 #define GPI_EXPORT COCOTB_IMPORT
 #endif
 
-#include <embed.h>
 #include <gpi.h>
 
 #include <string>

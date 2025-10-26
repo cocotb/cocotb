@@ -7,16 +7,15 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
+#include <cocotb_utils.h>  // DEFER
+#include <exports.h>       // COCOTB_EXPORT
+#include <gpi.h>           // gpi_register_*
+#include <gpi_logging.h>   // LOG_* macros
+#include <py_gpi_logging.h>  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
 
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-
-#include "abstract.h"
-#include "cocotb_utils.h"  // DEFER
-#include "exports.h"       // COCOTB_EXPORT
-#include "gpi_logging.h"   // LOG_* macros
-#include "py_gpi_logging.h"  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -71,7 +70,10 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
     return 0;
 }
 
-/** Initialize the Python interpreter */
+static int start_of_sim_time(void *, int, char const *const *);
+static void end_of_sim_time(void *);
+static void finalize(void *);
+
 extern "C" COCOTB_EXPORT void initialize(void) {
     if (python_init_called) {
         // LCOV_EXCL_START
@@ -150,6 +152,10 @@ extern "C" COCOTB_EXPORT void initialize(void) {
         // LCOV_EXCL_STOP
     }
 
+    gpi_register_start_of_sim_time_callback(start_of_sim_time, nullptr);
+    gpi_register_end_of_sim_time_callback(end_of_sim_time, nullptr);
+    gpi_register_finalize_callback(finalize, nullptr);
+
     /* Before returning we check if the user wants pause the simulator thread
        such that they can attach */
     const char *pause = getenv("COCOTB_ATTACH");
@@ -179,20 +185,7 @@ extern "C" COCOTB_EXPORT void initialize(void) {
     }
 }
 
-/**
- * @name    Simulator cleanup
- * @brief   Called by the simulator on shutdown.
- * @ingroup python_c_api
- *
- * GILState before calling: Not held
- *
- * GILState after calling: Not held
- *
- * Makes one call to PyGILState_Ensure and one call to Py_Finalize.
- *
- * Cleans up reference counts for Python objects and calls Py_Finalize function.
- */
-extern "C" COCOTB_EXPORT void finalize(void) {
+static void finalize(void *) {
     // If initialization fails, this may be called twice:
     // Before the initial callback returns and in the final callback.
     // So we check if Python is still initialized before doing cleanup.
@@ -207,8 +200,7 @@ extern "C" COCOTB_EXPORT void finalize(void) {
     }
 }
 
-extern "C" COCOTB_EXPORT int start_of_sim_time(int argc,
-                                               char const *const *_argv) {
+static int start_of_sim_time(void *, int argc, char const *const *_argv) {
     // Check that we are not already initialized
     if (embed_init_called) {
         // LCOV_EXCL_START
@@ -272,7 +264,7 @@ extern "C" COCOTB_EXPORT int start_of_sim_time(int argc,
     return 0;
 }
 
-extern "C" COCOTB_EXPORT void end_of_sim_time() {
+static void end_of_sim_time(void *) {
     /* Indicate to the upper layer that a sim event occurred */
 
     if (pEventFn) {

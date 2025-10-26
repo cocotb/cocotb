@@ -224,11 +224,11 @@ class Runner(ABC):
                 f"in supported list: {', '.join(self.supported_gpi_interfaces)}"
             )
 
-    def _set_env(self) -> None:
-        """Set environment variables for sub-processes."""
+    def _set_env_common(self) -> None:
+        # We have to set all environment variables before building because Xcelium and VCS load VPI for some reason.
+        # TODO: Remove this. Why are Xcelium and VCS loading VPI during build?
 
-        for e in os.environ:
-            self.env[e] = os.environ[e]
+        self.env.update(os.environ)
 
         if "LIBPYTHON_LOC" not in self.env:
             libpython_path = find_libpython.find_libpython()
@@ -238,9 +238,21 @@ class Runner(ABC):
                 )
             self.env["LIBPYTHON_LOC"] = libpython_path
 
+        # TODO the following line reappends the path on every call to build() or test(). This needs to not be an attribute.
+        # Most of the stuff on this class really shouldn't be an attribute, but that's a non-trivial and API-breaking refactor.
         self.env["PATH"] += os.pathsep + str(cocotb_tools.config.libs_dir)
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
         self.env["PYGPI_PYTHON_BIN"] = sys.executable
+        if "GPI_USERS" not in self.env:
+            self.env["GPI_USERS"] = cocotb_tools.config.pygpi_entry_point()
+
+    def _set_env_build(self) -> None:
+        self._set_env_common()
+
+    def _set_env_test(self) -> None:
+        """Set environment variables for sub-processes."""
+        self._set_env_common()
+
         self.env["COCOTB_TOPLEVEL"] = self.sim_hdl_toplevel
         self.env["COCOTB_TEST_MODULES"] = self.test_module
         self.env["TOPLEVEL_LANG"] = self.hdl_toplevel_lang
@@ -380,7 +392,7 @@ class Runner(ABC):
 
         self.waves = bool(os.getenv("WAVES", waves))
 
-        self.env.update(os.environ)
+        self._set_env_build()
 
         cmds: Sequence[_Command] = self._build_command()
         self._execute(cmds, cwd=self.cwd)
@@ -543,7 +555,7 @@ class Runner(ABC):
             results_xml_file.unlink()
 
         # transport the settings to cocotb via environment variables
-        self._set_env()
+        self._set_env_test()
         self.env["COCOTB_RESULTS_FILE"] = str(results_xml_file)
 
         cmds: Sequence[_Command] = self._test_command()
@@ -1079,8 +1091,8 @@ class Ghdl(Runner):
 
     supported_gpi_interfaces = {"vhdl": ["vpi"]}
 
-    def _set_env(self) -> None:
-        super()._set_env()
+    def _set_env_test(self) -> None:
+        super()._set_env_test()
         if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
             self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
 
@@ -1222,8 +1234,8 @@ class Nvc(Runner):
         else:
             self._preserve_case = []
 
-    def _set_env(self) -> None:
-        super()._set_env()
+    def _set_env_test(self) -> None:
+        super()._set_env_test()
         if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
             self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
 
@@ -1481,8 +1493,8 @@ class Verilator(Runner):
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
 
-    def _set_env(self) -> None:
-        super()._set_env()
+    def _set_env_test(self) -> None:
+        super()._set_env_test()
         if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
             self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
 
