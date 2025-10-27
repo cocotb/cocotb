@@ -43,6 +43,14 @@ from cocotb_tools.pytest.option import Option, add_options_to_parser, is_cocotb_
 
 
 def timescale(value: str) -> tuple[str, str]:
+    """Split string containing timescale to time unit and time precision.
+
+    Args:
+        value: Timescale in format of ``UNIT[/PRECISION]``.
+
+    Returns:
+        Time unit and time precision based on provided timescale.
+    """
     time_unit, _, time_precision = value.partition("/")
 
     time_unit = time_unit.strip()
@@ -423,8 +431,7 @@ OPTIONS: tuple[Option, ...] = (
         "cocotb_timescale",
         default="1ns/1ns",
         metavar="UNIT[/PRECISION]",
-        type=timescale,
-        help="Tuple containing time unit and time precision for simulation.",
+        help="Timescale containing time unit and time precision for simulation.",
     ),
     Option(
         "cocotb_log_file",
@@ -509,6 +516,8 @@ def pytest_configure(config: Config) -> None:
     if entry_point and entry_point not in option.pygpi_users:
         option.pygpi_users.append(entry_point)
 
+    # Iterate over all command line arguments, load default value from configuration files,
+    # set or unset environment variables
     for name, optval in vars(option).items():
         if is_cocotb_option(name):
             value: Any = optval
@@ -528,6 +537,9 @@ def pytest_configure(config: Config) -> None:
                 os.environ[environment] = ",".join(value)
             else:
                 os.environ[environment] = str(value)
+
+    if isinstance(option.cocotb_timescale, str):
+        option.cocotb_timescale = timescale(option.cocotb_timescale)
 
     os.environ["COCOTB_PYTEST_DIR"] = (
         str(Path(option.cocotb_pytest_dir).resolve())
