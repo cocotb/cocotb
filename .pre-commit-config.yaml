@@ -6,7 +6,7 @@ exclude: "^.*/_vendor/"
 repos:
 # ruff with --fix should run before other formatting tools
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.14.0"
+  rev: "v0.14.1"
   hooks:
     # Run the linter.
     - id: "ruff"
