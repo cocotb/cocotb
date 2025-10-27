@@ -74,7 +74,7 @@ def hdl_build_fixture(request: FixtureRequest) -> HDL:
     else:
         sources = (DESIGNS / "sample_module" / "sample_module.sv",)
 
-    hdl.build(sources=sources)
+    hdl.build(sources=sources, hdl_toplevel="sample_module")
 
     return hdl
 
