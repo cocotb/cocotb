@@ -264,6 +264,12 @@ def dev_test_sim(
         "pytest",
         "-v",
         "tests/pytest_plugin",
+        "--cocotb-simulator",
+        sim,
+        "--cocotb-gpi-interfaces",
+        gpi_interface,
+        "--cocotb-hdl-toplevel-lang",
+        toplevel_lang,
         env=env,
     )
 
