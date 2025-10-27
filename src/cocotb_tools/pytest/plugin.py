@@ -271,7 +271,7 @@ OPTIONS: tuple[Option, ...] = (
     ),
     Option(
         "cocotb_simulator",
-        choices=("auto", *tuple(SIMULATORS)),
+        choices=("auto", *tuple(SIMULATORS.values())),
         default="auto",
         help="""
             Select HDL simulator for cocotb. The ``auto`` option will automatically pick one of available HDL
