@@ -57,7 +57,7 @@ def get_simulator(config: Config) -> str:
 
 
 class HDL:
-    """It allows to build HDL design and run test againts specific HDL top level.
+    """It allows to build HDL design and run test against specific HDL top level.
 
     HDL build and test
     """

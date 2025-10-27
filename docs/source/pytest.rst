@@ -189,7 +189,7 @@ Using ``@pytest.mark.cocotb`` marker to mark test function as cocotb test is opt
 for test functions that are starting with ``test_*`` prefix name, are coroutine functions (``async def``) and
 and with ``dut`` argument. Normal functions (non-coroutines) with ``@pytest.mark.cocotb`` marker are
 marked as cocotb runner that should run HDL simulator by invoking
-:py:func:`cocotb_tools.pytest.hdl.HDL.test`, :py:func:`cocotb_tools.runner.Runner.test` or similiar method.
+:py:func:`cocotb_tools.pytest.hdl.HDL.test`, :py:func:`cocotb_tools.runner.Runner.test` or similar method.
 
 Marker can also help plugin to identify and bind cocotb tests to cocotb runners. This is done by plugin
 based on information from provided positional arguments (or cocotb ``test_module`` argument) supplied into

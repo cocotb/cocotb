@@ -12,7 +12,7 @@ Main responsibilities for this internal plugin are:
 * Binding collected cocotb tests to cocotb runners
 * Handling ``test_module`` and ``hdl_toplevel`` options from ``@pytest.mark.cocotb`` marker
 * Handling test reports received from pytest sub-process (simulator) over IPC (Inter-Process Communication)
-* Combining (mangling) identifers from cocotb runner with cocotb test to generate new unique identifier
+* Combining (mangling) identifiers from cocotb runner with cocotb test to generate new unique identifier
 * Attaching additional properties about cocotb tests in JUnit XML tests report
 """
 
@@ -194,7 +194,7 @@ class Controller:
             report: Test report from simulator (pytest sub-process).
 
         Returns:
-            Mangled node identifer.
+            Mangled node identifier.
         """
         runner_nodeid: str = getattr(report, "runner_nodeid", "")
         runner_path, runner_function = self._split_nodeid(runner_nodeid)

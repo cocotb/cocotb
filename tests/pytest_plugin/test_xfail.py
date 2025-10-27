@@ -32,7 +32,7 @@ async def test_raises_2(dut) -> None:
 @pytest.mark.xfail(raises=RuntimeError, strict=True)
 async def test_raises_strict(dut) -> None:
     """Test ``@pytest.mark.xfail`` with raises and strict."""
-    raise RuntimeError("expeting runtime error")
+    raise RuntimeError("expecting runtime error")
 
 
 @pytest.mark.xfail(strict=True)
