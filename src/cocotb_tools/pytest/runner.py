@@ -15,8 +15,8 @@ from pytest import Collector, Item, Module
 
 
 class Runner(Collector):
-    """Collector that will collect cocotb tests from cocotb runners based on
-    modules names defined in ``x``."""
+    """Collector that will collect cocotb tests from cocotb runner based on
+    provided ``test_module`` argument."""
 
     def __init__(
         self,
@@ -25,6 +25,15 @@ class Runner(Collector):
         *args,
         **kwargs,
     ):
+        """Create new instance of collector to collect cocotb tests
+        from Python module(s) that will be run by cocotb runner.
+
+        Args:
+            item:        Cocotb runner test function.
+            test_module: Name of Python module with cocotb tests.
+            args:        Additional positional arguments for pytest collector.
+            kwargs:      Additional named arguments for pytest collector.
+        """
         super().__init__(*args, **kwargs)
 
         if isinstance(test_module, str):
@@ -35,6 +44,7 @@ class Runner(Collector):
         item.extra_keyword_matches.add("runner")
 
     def collect(self) -> Iterable[Item | Collector]:
+        """Collect cocotb tests from Python module(s) that will be run by cocotb runner."""
         for test_module in self.test_modules:
             path: Path = self.path.parent / Path(
                 test_module.replace(".", os.path.pathsep) + ".py"

@@ -19,6 +19,9 @@ PREFIXES: tuple[str, ...] = ("cocotb_", "gpi_", "pygpi_")
 
 
 class Option:
+    """Representation of single cocotb option that can be set from
+    configuration file, environment variable or command line."""
+
     def __init__(
         self,
         name: str,

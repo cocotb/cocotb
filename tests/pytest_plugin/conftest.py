@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 from pytest import FixtureRequest, Parser, PytestPluginManager, fixture, hookimpl
@@ -81,6 +81,18 @@ def hdl_build_fixture(request: FixtureRequest) -> HDL:
 
 @fixture(name="hdl")
 def hdl_fixture(hdl_build: HDL, request: FixtureRequest) -> HDL:
+    """Get instance of HDL with fixture request bind to test function scope.
+
+    This will allow ``@pytest.mark.cocotb`` marker used with test function to configure
+    internals of called :py:func:`cocotb_tools.pytest.hdl.HDL.test` method.
+
+    Args:
+        hdl_build: Built HDL design.
+        request:   Fixture request with test function scope.
+
+    Returns:
+        Instance of HDL with fixture request bind to test function scope.
+    """
     return hdl_build.from_request(request)
 
 
@@ -93,7 +105,7 @@ async def clock_generation_fixture(dut) -> None:
 
 
 @fixture(name="sample_module")
-async def sample_module_fixture(dut, clock_generation) -> Generator[None, None]:
+async def sample_module_fixture(dut, clock_generation) -> AsyncGenerator[None, None]:
     """Setup/teardown sample module."""
     # Test setup (executed before test)
     dut.stream_in_valid.value = 0

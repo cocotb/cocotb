@@ -1,3 +1,9 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+"""Build and test HDL designs."""
+
 from __future__ import annotations
 
 import inspect
@@ -5,7 +11,7 @@ from pathlib import Path
 from shutil import which
 from typing import Any
 
-from pytest import FixtureRequest
+from pytest import Config, FixtureRequest
 
 from cocotb_tools.runner import (
     Runner,
@@ -13,6 +19,7 @@ from cocotb_tools.runner import (
 )
 
 # Name of HDL simulator per executable
+# TODO: Move to cocotb_tools.runner?
 SIMULATORS: dict[str, str] = {
     # open-source simulators first
     "verilator": "verilator",
@@ -30,14 +37,36 @@ BUILD_OPTIONS: tuple[str, ...] = tuple(inspect.signature(Runner.build).parameter
 TEST_OPTIONS: tuple[str, ...] = tuple(inspect.signature(Runner.test).parameters)
 
 
+def get_simulator(config: Config) -> str:
+    """Get name of HDL simulator.
+
+    Args:
+        config: Pytest configuration object.
+
+    Returns:
+        Name of HDL simulator.
+    """
+    simulator: str = config.option.cocotb_simulator
+
+    if not simulator or simulator == "auto":
+        for command, name in SIMULATORS.items():
+            if which(command):
+                return name
+
+    return simulator
+
+
 class HDL:
+    """It allows to build HDL design and run test againts specific HDL top level.
+
+    HDL build and test
+    """
+
     def __init__(self, request: FixtureRequest, runner: Runner | None = None):
         super().__init__()
 
-        simulator: str = request.config.option.cocotb_simulator
-
         self.request: FixtureRequest = request
-        self.runner: Runner = runner or self._get_runner(simulator)
+        self.runner: Runner = runner or self._get_runner(request.config)
 
     @property
     def simulator(self) -> str:
@@ -62,14 +91,8 @@ class HDL:
         return self.runner.test(*args, **options)
 
     @staticmethod
-    def _get_runner(simulator: str) -> Runner:
-        if not simulator or simulator == "auto":
-            for command, name in SIMULATORS.items():
-                if which(command):
-                    simulator = name
-                    break
-
-        return get_runner(simulator)
+    def _get_runner(config: Config) -> Runner:
+        return get_runner(get_simulator(config))
 
     def _get_options(self, names: tuple[str, ...]) -> dict[str, Any]:
         request: FixtureRequest = self.request

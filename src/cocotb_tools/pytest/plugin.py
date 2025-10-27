@@ -490,7 +490,12 @@ def pytest_configure(config: Config) -> None:
 
     config.addinivalue_line(
         "markers",
-        "cocotb: mark coroutine function as cocotb test and normal function as cocotb runner",
+        "cocotb(*test_module, ...): mark coroutine function as cocotb test and normal function as cocotb runner. "
+        "``test_module`` is a Python module with defined cocotb tests that will be loaded by cocotb runner. "
+        "Marker is using the same named arguments as "
+        ":py:func:`cocotb.test` decorator, "
+        ":py:func:`cocotb_tools.runner.Runner.build` and "
+        ":py:func:`cocotb_tools.runner.Runner.test` methods.",
     )
 
     if option.pygpi_users is None:

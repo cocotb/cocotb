@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Testing sample module."""
+"""Test ``@pytest.mark.parametrize`` for cocotb tests."""
 
 from __future__ import annotations
 

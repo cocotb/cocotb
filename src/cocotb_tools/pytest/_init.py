@@ -14,8 +14,13 @@ from cocotb_tools.pytest.regression import RegressionManager
 
 
 def run_regression(_: object) -> None:
+    """Run regression using pytest as regression manager for cocotb tests."""
+    # Use the same command line arguments as from the main pytest parent process
     args: list[str] = shlex.split(env.as_str("COCOTB_PYTEST_ARGS"))
 
+    # Cocotb runner is using generated JUnit XML results file to determine
+    # if executed cocotb tests passed or failed. Test function (cocotb runner)
+    # from the main pytest parent process will also fail if any of cocotb test failed.
     results_file: str = env.as_str("COCOTB_RESULTS_FILE")
 
     if results_file:
