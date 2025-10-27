@@ -25,7 +25,7 @@ SIMULATORS: dict[str, str] = {
     "verilator": "verilator",
     "nvc": "nvc",
     "ghdl": "ghdl",
-    "iverilog": "icarus",
+    "icarus": "icarus",
     # proprietary simulators
     "xrun": "xcelium",
     "vcs": "vcs",
