@@ -7,15 +7,13 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
+#include <cocotb_exports.h>  // PYGPI_EXPORT
+#include <cocotb_utils.h>    // DEFER
+#include <gpi_logging.h>     // LOG_* macros
 
-#include <cassert>
-#include <cstdlib>
-#include <cstring>
+#include <cstdlib>  // getenv
 
-#include "cocotb_utils.h"  // DEFER
-#include "exports.h"       // COCOTB_EXPORT
-#include "gpi_logging.h"   // LOG_* macros
-#include "py_gpi_logging.h"  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
+#include "./pygpi_priv.h"  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -26,6 +24,12 @@
 #endif
 #else
 #include <unistd.h>
+#endif
+
+#ifdef PYGPI_EXPORTS
+#define PYGPI_EXPORT COCOTB_EXPORT
+#else
+#define PYGPI_EXPORT COCOTB_IMPORT
 #endif
 
 static bool python_init_called = 0;
@@ -71,7 +75,7 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
 }
 
 /** Initialize the Python interpreter */
-extern "C" COCOTB_EXPORT void _embed_init_python(void) {
+extern "C" PYGPI_EXPORT void _embed_init_python(void) {
     if (python_init_called) {
         // LCOV_EXCL_START
         LOG_ERROR("PyGPI library initialized again!");
@@ -191,7 +195,7 @@ extern "C" COCOTB_EXPORT void _embed_init_python(void) {
  *
  * Cleans up reference counts for Python objects and calls Py_Finalize function.
  */
-extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void) {
+extern "C" PYGPI_EXPORT void _embed_sim_cleanup(void) {
     // If initialization fails, this may be called twice:
     // Before the initial callback returns and in the final callback.
     // So we check if Python is still initialized before doing cleanup.
@@ -206,8 +210,8 @@ extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void) {
     }
 }
 
-extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
-                                             char const *const *_argv) {
+extern "C" PYGPI_EXPORT int _embed_sim_init(int argc,
+                                            char const *const *_argv) {
     // Check that we are not already initialized
     if (embed_init_called) {
         // LCOV_EXCL_START
@@ -271,7 +275,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     return 0;
 }
 
-extern "C" COCOTB_EXPORT void _embed_sim_event(const char *msg) {
+extern "C" PYGPI_EXPORT void _embed_sim_event(const char *msg) {
     /* Indicate to the upper layer that a sim event occurred */
 
     if (pEventFn) {
@@ -298,3 +302,6 @@ extern "C" COCOTB_EXPORT void _embed_sim_event(const char *msg) {
         to_simulator();
     }
 }
+
+// Tracks if we are in the context of Python or Simulator
+int is_python_context = 0;

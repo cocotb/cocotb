@@ -143,7 +143,7 @@ def lib_name(interface: str, simulator: str) -> str:
         lib_ext = ".so"
 
     # check if compiled with msvc
-    if (libs_dir / "cocotb.dll").is_file():
+    if (libs_dir / "gpi.dll").is_file():
         lib_prefix = ""
     else:
         lib_prefix = "lib"
