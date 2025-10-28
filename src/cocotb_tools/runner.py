@@ -1734,15 +1734,9 @@ class Xcelium(Runner):
             verbosity_opts += ["-messages"]
             verbosity_opts += ["-status"]
             verbosity_opts += ["-gverbose"]  # print assigned generics/parameters
-            verbosity_opts += ["-pliverbose"]
-            verbosity_opts += ["-plidebug"]  # Enhance the profile output with PLI info
-            verbosity_opts += [
-                "-plierr_verbose"
-            ]  # Expand handle info in PLI/VPI/VHPI messages
 
         else:
             verbosity_opts += ["-quiet"]
-            verbosity_opts += ["-plinowarn"]
 
         sources = self._sources + self._vhdl_sources + self._verilog_sources
 
@@ -1766,7 +1760,6 @@ class Xcelium(Runner):
             + ["-licqueue"]
             + (["-clean"] if self.always else [])
             + verbosity_opts
-            # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
             + ["-access +rwc"]
             + vhpi_opts
             + [f"-work {self.hdl_library}"]
@@ -1844,6 +1837,7 @@ class Xcelium(Runner):
                 f"xrun_{self.current_test_name}.log",
                 "-xmlibdirname",
                 f"{self.build_dir}/xrun_snapshot",
+                # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
                 "-loadvpisim",
                 cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
                 + ":vlog_startup_routines_bootstrap",
