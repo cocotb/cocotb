@@ -107,6 +107,9 @@ class HDL:
         self.test_filter: str | None = option.cocotb_test_filter
 
         for marker in reversed(list(request.node.iter_markers("cocotb"))):
+            if marker.args:
+                self.test_module = marker.args
+
             for name, value in marker.kwargs.items():
                 if hasattr(self, name):
                     setattr(self, name, value)
