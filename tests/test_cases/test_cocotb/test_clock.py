@@ -193,10 +193,10 @@ async def test_bad_set_action(dut: Any) -> None:
 # and checking just one is sufficient to know it works.
 @cocotb.test(skip=not cocotb.SIM_NAME.lower().startswith("verilator"))
 async def test_set_action(dut: Any) -> None:
-    c = Clock(dut.clk, 10, "ns", set_action=Immediate)
+    c = Clock(dut.clk, 10, "ns", set_action=Immediate, start_high=True)
 
-    c.start(start_high=True)
-    await NullTrigger()
+    c.start()
+    await Timer(1)
     assert dut.clk.value == 1
 
     await Timer(5, "ns")
@@ -227,3 +227,21 @@ async def test_period_high(dut: Any) -> None:
             await FallingEdge(dut.clk)
         with assert_takes(2, "ns"):
             await RisingEdge(dut.clk)
+
+
+@cocotb.test
+async def test_start_high(dut: Any) -> None:
+    dut.clk.value = 1
+    await Timer(1)
+
+    c = Clock(dut.clk, 10, "ns", start_high=False)
+    assert c.start_high is False
+    c.start()
+
+    # ensure it starts low in the first half-period
+    await Timer(1, "ns")
+    assert dut.clk.value == 0
+
+    # and it transitions and otherwise works as expected
+    await Timer(5, "ns")
+    assert dut.clk.value == 1
