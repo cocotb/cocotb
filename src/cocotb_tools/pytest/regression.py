@@ -14,6 +14,7 @@ from collections.abc import AsyncGenerator, Generator, Iterable
 from functools import wraps
 from importlib import import_module
 from multiprocessing.connection import Client
+from time import sleep
 from typing import Any, Callable, Literal
 
 from _pytest.config import default_plugins
@@ -47,6 +48,9 @@ from cocotb_tools.pytest.fixture import (
     AsyncFixtureCachedResult,
     resolve_fixture_arg,
 )
+
+RETRIES: int = 10
+INTERVAL: float = 0.1  # seconds
 
 
 class FailSimulation(RuntimeError):
@@ -491,11 +495,20 @@ class RegressionManager:
         if address:
             config: Config = self._session.config
 
-            with Client(address) as client:
-                data: dict[str, Any] = config.hook.pytest_report_to_serializable(
-                    config=config, report=report
-                )
-                client.send(data)
+            data: dict[str, Any] = config.hook.pytest_report_to_serializable(
+                config=config, report=report
+            )
+
+            for retry in range(RETRIES, -1, -1):
+                try:
+                    with Client(address) as client:
+                        client.send(data)
+                    return
+                except BaseException:
+                    if retry:
+                        sleep(INTERVAL)
+                    else:
+                        self._notify_exception(ExceptionInfo.from_current())
 
     def _create_async_finalizer(
         self, iterator: AsyncGenerator[Any, None]
