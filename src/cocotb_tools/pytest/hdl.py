@@ -151,7 +151,6 @@ class HDL:
         """Build and test HDL design."""
         self.test_dir.mkdir(0o750, parents=True, exist_ok=True)
         results_xml: Path = self.test_dir / "results.xml"
-        log_file: Path = self.test_dir / "test.log"
 
         self.runner.build(
             hdl_library=self.library,
@@ -168,7 +167,6 @@ class HDL:
             verbose=self.verbose,
             timescale=self.timescale,
             waves=self.waves,
-            log_file=log_file,
         )
 
         return self.runner.test(
@@ -192,6 +190,5 @@ class HDL:
             pre_cmd=self.pre_cmd or None,
             verbose=self.verbose,
             timescale=None if self.simulator in ("xcelium",) else self.timescale,
-            log_file=log_file,
             test_filter=self.test_filter or None,
         )
