@@ -13,6 +13,7 @@ Pytest Support
 * `marks`_ to easily set metadata on cocotb test functions.
 * filtering cocotb tests with `pytest`_ ``-k '<expression>'`` and ``-m '<markers>'`` options.
 * reporting all executed cocotb tests.
+* parallel execution of cococtb runners by using `pytest-xdist`_ plugin
 
 Enabling Plugin
 ===============
@@ -79,15 +80,12 @@ Building and Testing
 ====================
 
 :py:class:`cocotb_tools.pytest.hdl.HDL` wraps :py:class:`cocotb_tools.runner.Runner`
-and allows to fully configure it by using command line arguments ``--cocotb-*``,
-configuration files like `pyproject.toml`_ or `fixture`_ arguments. This is possible
-by binding `pytest`_ built-in `request`_ fixture that is providing information of the requesting
-test function including current configuration of `pytest`_.
+allowing to fully configure cocotb runner by using command line arguments ``--cocotb-*``,
+configuration files like `pyproject.toml`_ or `fixture`_ arguments.
 
-In most cases, we want to build HDL design only once before we will start invoking tests.
-This can be achieved by using scoped `fixture`_ that will be set to ``session``.
-We can create ``conftest.py`` file that will contain defined `fixture`_ and make them
-available for all tests defined in ``test_*.py`` files in the same directory.
+Plugin includes own ``hdl`` fixture that will create new instance of :py:class:`cocotb_tools.pytest.hdl.HDL`
+with `pytest`_ built-in `request`_ fixture that is providing information of the requesting test function
+including current configuration of `pytest`_.
 
 Example content of ``conftest.py`` file:
 
@@ -97,51 +95,25 @@ Example content of ``conftest.py`` file:
    from cocotb_tools.pytest.hdl import HDL
 
 
-   @pytest.fixture(name="hdl_build", scope="session")
-   def hdl_build_fixture(request: pytest.FixtureRequest) -> HDL:
-       """Build HDL design only once before invoking all tests.
+   @pytest.fixture(name="sample_module")
+   def sample_module_fixture(hdl: HDL) -> HDL:
+       """Define HDL design by adding HDL source files to it.
 
        Args:
-           request: Used to bind fixture request with session scope to
-                    new HDL design instance. Needed to support configuration
-                    including command line arguments ``--cocotb-*``,
-                    configuration files or fixture arguments but limited to session scope only.
+           hdl: Fixture created by cocotb plugin, representing HDL design.
 
        Returns:
-           New instance of HDL design with HDL runner to build design and run tests.
+           Representation of HDL design with added HDL source files.
        """
-       hdl: HDL = HDL(request)  # bind provided fixture request with session scope
-
-       # It will invoke cocotb_tools.runner.Runner.build() method
-       # but with configuration information from fixture request object
-       hdl.build(
-           sources=(
-               # List HDL source files,
-               "dut.sv",
-           ),
+       hdl.sources = (
+           # List HDL source files,
+           "sample_module.sv",
        )
 
        return hdl
 
 
-    @pytest.fixture(name="hdl")
-    def hdl_fixture(hdl_build: HDL, request: pytest.FixtureRequest) -> HDL:
-        """Bind fixture request object but from function scope.
-
-        Fixture required later to invoke test for HDL top level design.
-
-        Args:
-            hdl_build: User defined fixture that built HDL design.
-            request:   Fixture request but with function scope (default) that can
-                       access to all fixtures and markers from all other scopes.
-
-        Returns:
-            New instance of HDL design but with function scope (test).
-        """
-        return hdl.from_request(request)
-
-
-Example content of ``test_dut.py`` file:
+Example content of ``test_sample_module.py`` file:
 
 .. code:: python
 
@@ -151,16 +123,16 @@ Example content of ``test_dut.py`` file:
 
    # Without providing positional arguments or test_module option to cocotb decorator,
    # plugin will use current file as cocotb testbench (Python file with cocotb tests).
-   # If hdl_toplevel option was not provided, it will be based on name of first test_module
+   # If toplevel option was not provided, it will be based on name of first test_module
    # but with removed test_* prefix or *_test suffix.
-   @pytest.mark.cocotb  # equivalent to @pytest.mark.cocotb("test_dut", hdl_toplevel="dut")
-   def test_dut(hdl: HDL) -> None:
-       """Run HDL simulator with built HDL design and start invoking defined cocotb tests.
+   @pytest.mark.cocotb  # equivalent to @pytest.mark.cocotb("test_dut", toplevel="dut")
+   def test_sample_module(sample_module: HDL) -> None:
+       """Build HDL design and run HDL simulator to execute cocotb tests.
 
        Args:
-           hdl: Instance of built HDL design ready to run.
+           sample_module: Instance of defined HDL design.
        """
-       hdl.test()
+       sample_module.test()
 
 
    # @pytest.mark.cocotb or @cocotb.test decorator is not required if test function
@@ -181,13 +153,13 @@ If no positional arguments were provided to ``@pytest.mark.cocotb`` or ``test_mo
 plugin will load current Python module where ``@pytest.mark.cocotb`` was used as cocotb testbench (Python file with
 cocotb tests).
 
-If ``hdl_toplevel`` argument is empty/non-set, plugin will use name of first test module but without
+If ``toplevel`` argument is empty/non-set, plugin will use name of first test module but without
 ``test_*`` prefix or ``*_test`` suffix. For example, if test module was ``test_dut`` then
 name of HDL top level design will be ``dut``.
 
 Using ``@pytest.mark.cocotb`` marker to mark test function as cocotb test is optional
 for test functions that are starting with ``test_*`` prefix name, are coroutine functions (``async def``) and
-and with ``dut`` argument. Normal functions (non-coroutines) with ``@pytest.mark.cocotb`` marker are
+with ``dut`` argument. Normal functions (non-coroutines) with ``@pytest.mark.cocotb`` marker are
 marked as cocotb runner that should run HDL simulator by invoking
 :py:func:`cocotb_tools.pytest.hdl.HDL.test`, :py:func:`cocotb_tools.runner.Runner.test` or similar method.
 
@@ -204,7 +176,8 @@ when using `pytest`_ ``-k '<expression>'`` or ``-m '<markers>'`` options.
 
    @pytest.mark.cocotb  # needed by cocotb runners
    def hdl_runner(hdl: HDL) -> None:
-       """Run HDL simulator with built HDL design and start invoking defined cocotb tests."""
+       """Build HDL design and run HDL simulator that will execute cocotb tests."""
+       hdl.test()
 
 
    async def test_something(dut) -> None:
@@ -222,8 +195,7 @@ Thanks to :py:mod:`cocotb_tools.pytest.plugin`, cocotb can be configured in many
 
 Precedence order of configuring cocotb from the highest to the lowest priority:
 
-1. Using named arguments when invoking :py:func:`cocotb_tools.pytest.hdl.HDL.build` or
-   :py:func:`cocotb_tools.pytest.hdl.HDL.test` methods.
+1. :py:func:`cocotb_tools.pytest.hdl.HDL` attributes set at fixutre or test function level
 2. ``@pytest.mark.cocotb`` marker used with test functions.
 3. ``--cocotb-*`` command line arguments when invoking them with `pytest`_ command line interface.
 4. ``COCOTB_*`` environment variables.
@@ -339,6 +311,16 @@ To see more verbose information about test, add the ``-v`` option:
 
    pytest -s -v
 
+To run cocotb runners in parallel:
+
+.. code:: shell
+
+   pytest -n auto
+
+.. note::
+
+   `pytest-xdist`_ plugin must be installed and enabled.
+
 Tests Reporting
 ---------------
 
@@ -366,17 +348,6 @@ To generate JUnit XML tests report file for CI:
    file path and line number of executed test function (testcase) in generated JUnit XML tests report.
    These information can be used by CI environments like GitLab CI.
 
-pytest-xdist
-============
-
-Support for the `pytest-xdist`_ plugin is planned. It will require few things before it can be safely used:
-
-* HDL simulators defined in :py:mod:`cocotb_tools.runner` module must properly handle
-  their build directory and test directories in that way where builds and tests are immutable
-  and can be safely executed in parallel without any unexpected side affects between them.
-  This condition is not met for some HDL simulators support.
-* `Making session scoped fixtures execute only once`_ for HDL builds
-
 .. _pytest: https://docs.pytest.org/en/stable/contents.html
 .. _fixture: https://docs.pytest.org/en/stable/explanation/fixtures.html#about-fixtures
 .. _plugins: https://docs.pytest.org/en/stable/reference/plugin_list.html#plugin-list
@@ -385,5 +356,3 @@ Support for the `pytest-xdist`_ plugin is planned. It will require few things be
 .. _marks: https://docs.pytest.org/en/stable/how-to/mark.html
 .. _request: https://docs.pytest.org/en/stable/reference/reference.html#request
 .. _pytest-xdist: https://github.com/pytest-dev/pytest-xdist
-.. _Making session scoped fixtures execute only once:
-   https://pytest-xdist.readthedocs.io/en/stable/how-to.html#making-session-scoped-fixtures-execute-only-once

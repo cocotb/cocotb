@@ -15,13 +15,11 @@ from pytest import Collector, Item, Module
 
 
 class Runner(Collector):
-    """Collector that will collect cocotb tests from cocotb runner based on
-    provided ``test_module`` argument."""
+    """Collector that will collect cocotb tests from cocotb runner."""
 
     def __init__(
         self,
         item: Item,
-        test_module: Sequence[str] | str = "",
         *args,
         **kwargs,
     ):
@@ -30,22 +28,32 @@ class Runner(Collector):
 
         Args:
             item:        Cocotb runner test function.
-            test_module: Name of Python module with cocotb tests.
             args:        Additional positional arguments for pytest collector.
             kwargs:      Additional named arguments for pytest collector.
         """
         super().__init__(*args, **kwargs)
 
-        if isinstance(test_module, str):
-            test_module = [test_module] if test_module else []
-
         self.item: Item = item
-        self.test_modules: Sequence[str] = test_module
         item.extra_keyword_matches.add("runner")
 
     def collect(self) -> Iterable[Item | Collector]:
         """Collect cocotb tests from Python module(s) that will be run by cocotb runner."""
-        for test_module in self.test_modules:
+        test_modules: str | Sequence[str] = []
+
+        for marker in self.item.iter_markers("cocotb"):
+            # test_module can be retrieved from positional arguments or named argument
+            test_modules = marker.kwargs.get("test_module", marker.args)
+
+            if test_modules:
+                break
+
+        if isinstance(test_modules, str):
+            test_modules = [test_modules]
+
+        if not test_modules:
+            yield Module.from_parent(self, name=self.path.stem, path=self.path)
+
+        for test_module in test_modules:
             path: Path = self.path.parent / Path(
                 test_module.replace(".", os.path.pathsep) + ".py"
             )

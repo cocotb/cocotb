@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
-from pytest import FixtureRequest, Parser, PytestPluginManager, fixture, hookimpl
+from pytest import Parser, PytestPluginManager, fixture, hookimpl
 
 from cocotb.clock import Clock
 from cocotb.triggers import FallingEdge
@@ -41,9 +41,9 @@ def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None
         pluginmanager.import_plugin(PLUGIN)  # import and register plugin
 
 
-@fixture(name="hdl_build", scope="session")
-def hdl_build_fixture(request: FixtureRequest) -> HDL:
-    """Build HDL design.
+@fixture(name="sample_module")
+def sample_module_fixture(hdl: HDL) -> HDL:
+    """Define HDL design by adding HDL source files.
 
     To run cocotb tests for HDL design:
 
@@ -53,47 +53,27 @@ def hdl_build_fixture(request: FixtureRequest) -> HDL:
        from cocotb_tools.pytest.hdl import HDL
 
        @pytest.mark.cocotb
-       def test_sample_module(hdl: HDL) -> None:
-           hdl.test()
+       def test_sample_module(sample_module: HDL) -> None:
+           sample_module.test()
 
     Args:
-        request: Fixture request.
+        hdl: HDL design.
 
     Returns:
-        Compiled HDL design.
+        Defined HDL design with added HDL source files.
     """
-    hdl_toplevel_lang: str = request.config.option.cocotb_hdl_toplevel_lang
-    hdl: HDL = HDL(request)
+    hdl.toplevel = "sample_module"
 
-    if hdl_toplevel_lang == "vhdl" or hdl.simulator in ("ghdl", "nvc"):
-        sources = (
+    if hdl.toplevel_lang == "vhdl":
+        hdl.sources = (
             DESIGNS / "sample_module" / "sample_module_package.vhdl",
             DESIGNS / "sample_module" / "sample_module_1.vhdl",
             DESIGNS / "sample_module" / "sample_module.vhdl",
         )
     else:
-        sources = (DESIGNS / "sample_module" / "sample_module.sv",)
-
-    hdl.build(sources=sources, hdl_toplevel="sample_module")
+        hdl.sources = (DESIGNS / "sample_module" / "sample_module.sv",)
 
     return hdl
-
-
-@fixture(name="hdl")
-def hdl_fixture(hdl_build: HDL, request: FixtureRequest) -> HDL:
-    """Get instance of HDL with fixture request bind to test function scope.
-
-    This will allow ``@pytest.mark.cocotb`` marker used with test function to configure
-    internals of called :py:func:`cocotb_tools.pytest.hdl.HDL.test` method.
-
-    Args:
-        hdl_build: Built HDL design.
-        request:   Fixture request with test function scope.
-
-    Returns:
-        Instance of HDL with fixture request bind to test function scope.
-    """
-    return hdl_build.from_request(request)
 
 
 @fixture(name="clock_generation", scope="session")
@@ -104,8 +84,10 @@ async def clock_generation_fixture(dut) -> None:
     Clock(dut.clk, 10, unit="ns").start(start_high=False)
 
 
-@fixture(name="sample_module")
-async def sample_module_fixture(dut, clock_generation) -> AsyncGenerator[None, None]:
+@fixture(name="sample_module_setup")
+async def sample_module_setup_fixture(
+    dut, clock_generation
+) -> AsyncGenerator[None, None]:
     """Setup/teardown sample module."""
     # Test setup (executed before test)
     dut.stream_in_valid.value = 0

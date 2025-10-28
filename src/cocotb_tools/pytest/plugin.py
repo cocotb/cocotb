@@ -10,6 +10,7 @@ import inspect
 import os
 import re
 import shlex
+from collections.abc import Iterable
 from pathlib import Path
 from time import time
 from typing import Any
@@ -19,6 +20,7 @@ from pytest import (
     Collector,
     Config,
     ExitCode,
+    FixtureRequest,
     Function,
     Item,
     Mark,
@@ -38,11 +40,11 @@ import cocotb.handle
 from cocotb._decorators import Test, TestGenerator
 from cocotb.handle import SimHandleBase
 from cocotb_tools.pytest.controller import Controller
-from cocotb_tools.pytest.hdl import SIMULATORS
+from cocotb_tools.pytest.hdl import HDL, SIMULATORS
 from cocotb_tools.pytest.option import Option, add_options_to_parser, is_cocotb_option
 
 
-def timescale(value: str) -> tuple[str, str]:
+def to_timescale(value: str) -> tuple[str, str]:
     """Split string containing timescale to time unit and time precision.
 
     Args:
@@ -57,6 +59,24 @@ def timescale(value: str) -> tuple[str, str]:
     time_precision = time_precision.strip()
 
     return time_unit, time_precision or time_unit
+
+
+def to_dict(items: Iterable[str]) -> dict[str, object]:
+    """Convert list of items into dictionary.
+
+    Args:
+        items: List of items in form of ``NAME=VALUE``.
+
+    Returns:
+        List of items as dictionary.
+    """
+    result: dict[str, object] = {}
+
+    for item in items:
+        name, _, value = item.partition("=")
+        result[name] = value
+
+    return result
 
 
 ENTRY_POINTS: dict[str, str] = {
@@ -243,9 +263,8 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_test_module",
+        "cocotb_test_modules",
         nargs="*",
-        environment="COCOTB_TEST_MODULES",
         help="""
             The name of the Python module(s) to search for test functions - if your tests are in a file called
             test_mydesign.py, --cocotb-test-module would be set to test_mydesign. All tests will be run from each
@@ -258,7 +277,7 @@ OPTIONS: tuple[Option, ...] = (
         help="A list of tests to run. Does an exact match on the test name.",
     ),
     Option(
-        "cocotb_hdl_toplevel",
+        "cocotb_toplevel",
         help="""
             Use this to indicate the instance in the hierarchy to use as the DUT. If this isn’t defined then the
             first root instance is used. Leading and trailing whitespace are automatically discarded. The DUT is
@@ -267,7 +286,7 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_hdl_toplevel_lang",
+        "cocotb_toplevel_lang",
         choices=("auto", "verilog", "vhdl"),
         default="auto",
         help="""
@@ -397,7 +416,7 @@ OPTIONS: tuple[Option, ...] = (
         help="Verilog parameters or VHDL generics.",
     ),
     Option(
-        "cocotb_hdl_library",
+        "cocotb_library",
         default="top",
         help="The library name to compile into.",
     ),
@@ -410,12 +429,6 @@ OPTIONS: tuple[Option, ...] = (
         "cocotb_always",
         action="store_true",
         help="Always run the build step.",
-    ),
-    Option(
-        "cocotb_cwd",
-        metavar="PATH",
-        default_in_help="to --cocotb-build-dir",
-        help="Directory to execute the build command(s) in.",
     ),
     Option(
         "cocotb_clean",
@@ -434,18 +447,13 @@ OPTIONS: tuple[Option, ...] = (
         help="Timescale containing time unit and time precision for simulation.",
     ),
     Option(
-        "cocotb_log_file",
-        metavar="PATH",
-        help="File to write the build log to.",
-    ),
-    Option(
-        "cocotb_extra_env",
+        "cocotb_env",
         metavar="NAME[=VALUE]",
         nargs="*",
         help="Extra environment variables to set.",
     ),
     Option(
-        "cocotb_hdl_toplevel_library",
+        "cocotb_toplevel_library",
         default="top",
         help="The library name for HDL toplevel module.",
     ),
@@ -465,16 +473,6 @@ OPTIONS: tuple[Option, ...] = (
         help="Extra arguments for the simulator.",
     ),
     Option(
-        "cocotb_test_dir",
-        metavar="PATH",
-        help="Directory to run the tests in.",
-    ),
-    Option(
-        "cocotb_results_xml",
-        metavar="PATH",
-        help="Name of xUnit XML file to store test results in.",
-    ),
-    Option(
         "cocotb_pre_cmd",
         default=[],
         help="Commands to run before simulation begins.",
@@ -484,7 +482,14 @@ OPTIONS: tuple[Option, ...] = (
 
 @fixture(name="dut", scope="session")
 def dut_fixture() -> SimHandleBase | None:
+    """Simulation handle to DUT."""
     return getattr(cocotb, "top", None)
+
+
+@fixture(name="hdl")
+def hdl_fixture(request: FixtureRequest) -> HDL:
+    """HDL design."""
+    return HDL(request)
 
 
 def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None:
@@ -539,7 +544,16 @@ def pytest_configure(config: Config) -> None:
                 os.environ[environment] = str(value)
 
     if isinstance(option.cocotb_timescale, str):
-        option.cocotb_timescale = timescale(option.cocotb_timescale)
+        option.cocotb_timescale = to_timescale(option.cocotb_timescale)
+
+    if isinstance(option.cocotb_env, list):
+        option.cocotb_env = to_dict(option.cocotb_env)
+
+    if isinstance(option.cocotb_defines, list):
+        option.cocotb_defines = to_dict(option.cocotb_defines)
+
+    if isinstance(option.cocotb_parameters, list):
+        option.cocotb_parameters = to_dict(option.cocotb_parameters)
 
     os.environ["COCOTB_PYTEST_DIR"] = (
         str(Path(option.cocotb_pytest_dir).resolve())

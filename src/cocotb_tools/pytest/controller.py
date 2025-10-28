@@ -10,7 +10,7 @@ pytest sub-process (simulator).
 Main responsibilities for this internal plugin are:
 
 * Binding collected cocotb tests to cocotb runners
-* Handling ``test_module`` and ``hdl_toplevel`` options from ``@pytest.mark.cocotb`` marker
+* Handling ``test_module`` and ``toplevel`` options from ``@pytest.mark.cocotb`` marker
 * Handling test reports received from pytest sub-process (simulator) over IPC (Inter-Process Communication)
 * Combining (mangling) identifiers from cocotb runner with cocotb test to generate new unique identifier
 * Attaching additional properties about cocotb tests in JUnit XML tests report
@@ -20,29 +20,31 @@ from __future__ import annotations
 
 import inspect
 import os
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Generator, Iterable
+from multiprocessing.connection import Client, Listener
 from pathlib import PurePosixPath
+from threading import RLock, Thread
+from typing import Any
 
 from pytest import (
     Class,
     Collector,
     CollectReport,
     Config,
+    ExceptionInfo,
+    ExitCode,
     Function,
     Item,
-    MarkDecorator,
     Module,
     Session,
     StashKey,
     TestReport,
     hookimpl,
-    mark,
 )
 
 import cocotb
 from cocotb_tools.pytest.handle import MockSimHandle
 from cocotb_tools.pytest.hdl import get_simulator
-from cocotb_tools.pytest.reporter import Reporter
 from cocotb_tools.pytest.runner import Runner
 
 
@@ -55,9 +57,6 @@ class Controller:
         Args:
             config: Configuration object.
         """
-        # It handles receiving cocotb test reports
-        self._reporter: Reporter = Reporter()
-
         # Pytest configuration object
         self._config: Config = config
 
@@ -76,6 +75,15 @@ class Controller:
             # is stored in JUnix XML plugin
             key: StashKey | None = getattr(junitxml, "xml_key", None)
             self._junitxml = config.stash.get(key, None) if key else None
+
+        self._listener: Listener | None = None
+        self._thread: Thread | None = None
+        self._lock = RLock()
+
+        if "COCOTB_PYTEST_REPORTER_ADDRESS" not in os.environ:
+            self._listener = Listener()
+            self._thread = Thread(target=self._handle_test_reports)
+            os.environ["COCOTB_PYTEST_REPORTER_ADDRESS"] = str(self._listener.address)
 
     @hookimpl(tryfirst=True)
     def pytest_configure(self, config: Config) -> None:
@@ -138,35 +146,6 @@ class Controller:
         os.environ["COCOTB_PYTEST_NODEID"] = item.nodeid
         os.environ["COCOTB_PYTEST_KEYWORDS"] = ",".join(item.keywords)
 
-    @hookimpl(trylast=True)
-    def pytest_runtest_logfinish(
-        self, nodeid: str, location: tuple[str, int | None, str]
-    ) -> None:
-        """Process all received test reports (cocotb tests) over IPC (Inter-Process Communication)
-        from pytest sub-process (simulator) that was started as test function (cocotb runner)
-        from the main pytest parent process.
-
-        Args:
-            nodeid: Node identifier, in case of received test reports from cocotb tests,
-                    cocotb runner.
-            location: Path to file and line number of item (test).
-        """
-        config: Config = self._config
-        hook = config.hook
-
-        for data in self._reporter:
-            report: CollectReport | TestReport | None = (
-                hook.pytest_report_from_serializable(config=config, data=data)
-            )
-
-            if isinstance(report, TestReport):
-                report.nodeid = self._get_mangled_nodeid(report)
-
-                if self._junitxml:
-                    self._attach_properties_to_junit_xml(report)
-
-                hook.pytest_runtest_logreport(report=report)
-
     @staticmethod
     def _split_nodeid(nodeid: str) -> tuple[PurePosixPath, str]:
         """Split provided node identifier to path and function name.
@@ -221,19 +200,23 @@ class Controller:
         reporter.add_attribute("classname", classname)
         reporter.add_attribute("name", name)
 
-    @hookimpl(tryfirst=True, wrapper=True)
-    def pytest_runtestloop(self, session: Session) -> Generator[None, None, None]:
-        """Run the main test loop with reporter instance in background (separate thread) to
-        collect received cocotb test reports from pytest sub-process (simulator).
+    @hookimpl(tryfirst=True)
+    def pytest_sessionstart(self, session: Session) -> None:
+        """Start thread to receive test reports from pytest sub-process (simulator)."""
+        if self._thread:
+            self._thread.start()
 
-        Args:
-            session: Pytest session object.
+    @hookimpl(tryfirst=True)
+    def pytest_sessionfinish(
+        self, session: Session, exitstatus: int | ExitCode
+    ) -> None:
+        """Stop started thread."""
+        if self._listener and self._thread:
+            with Client(address=self._listener.address) as client:
+                client.send(None)  # notify _run thread to exit
 
-        Yields:
-            Run the main test loop.
-        """
-        with self._reporter:
-            yield
+            self._thread.join()
+            self._listener.close()
 
     def _collect(
         self, collector: Collector, items: Iterable[Item | Collector]
@@ -263,42 +246,6 @@ class Controller:
                         # If test item is not under cocotb runner, show it during pytest --co
                         yield item
                 elif not runner:
-                    # Get test_module from @pytest.mark.cocotb(test_module) marker
-                    test_module: Sequence[str] | str = ""
-
-                    for marker in item.iter_markers("cocotb"):
-                        # test_module can be retrieved from positional arguments or named argument
-                        test_module = marker.kwargs.get("test_module", marker.args)
-
-                        if test_module:
-                            break
-
-                    if not test_module:
-                        # If not set via @pytest.mark.cocotb() marker, use name of Python file
-                        # test_dut.extra_ext.py -> test_dut
-                        test_module = item.path.name.partition(".")[0]
-
-                    # Default value for HDL top level: test_dut -> dut
-                    hdl_toplevel: str = (
-                        test_module if isinstance(test_module, str) else test_module[0]
-                    )
-
-                    if hdl_toplevel.startswith("test_"):
-                        hdl_toplevel = hdl_toplevel.removeprefix("test_")
-                    elif hdl_toplevel.endswith("_test"):
-                        hdl_toplevel = hdl_toplevel.removesuffix("_test")
-
-                    # Create @pytest.mark.cocotb() marker with some default initial values
-                    # that can be later overridden by user
-                    marker: MarkDecorator = mark.cocotb(
-                        test_module=test_module,
-                        hdl_toplevel=hdl_toplevel,
-                        # TODO: test_dir=os.path.join(build_dir, test_dir),
-                    )
-
-                    # Add it to cocotb test function
-                    item.add_marker(marker)
-
                     yield item
 
                     if item.parent:
@@ -306,7 +253,6 @@ class Controller:
                             item.parent,
                             name=item.name,
                             item=item,
-                            test_module=test_module,
                         )
             else:
                 yield item
@@ -330,6 +276,41 @@ class Controller:
                 if keywords:
                     item.extra_keyword_matches.update(keywords)
 
+    @hookimpl(tryfirst=True, wrapper=True)
+    def pytest_runtest_logreport(
+        self, report: TestReport
+    ) -> Generator[None, None, None]:
+        with self._lock:
+            yield
+
+    def _handle_test_reports(self) -> None:
+        """Main thread for receiving cocotb test reports from pytest sub-process (simulator)."""
+        config: Config = self._config
+        hook = config.hook
+
+        while True:
+            try:
+                with self._listener.accept() as connection:
+                    data: dict[str, Any] | None = connection.recv()
+
+                    if data is None:
+                        return  # terminate thread
+
+                    report: CollectReport | TestReport | None = (
+                        hook.pytest_report_from_serializable(config=config, data=data)
+                    )
+
+                    if isinstance(report, TestReport):
+                        report.nodeid = self._get_mangled_nodeid(report)
+
+                        if self._junitxml:
+                            self._attach_properties_to_junit_xml(report)
+
+                        hook.pytest_runtest_logreport(report=report)
+
+            except BaseException:
+                self._notify_exception(ExceptionInfo.from_current())
+
     def _add_keywords(self, nodeid: str, keywords: Iterable[str]) -> None:
         """Store item keywords per node identifier.
 
@@ -343,3 +324,6 @@ class Controller:
             self._keywords[nodeid] = set(keywords)
         else:
             entries.update(keywords)
+
+    def _notify_exception(self, excinfo: ExceptionInfo) -> None:
+        self._config.notify_exception(excinfo, self._config.option)

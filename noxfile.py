@@ -268,7 +268,7 @@ def dev_test_sim(
         sim,
         "--cocotb-gpi-interfaces",
         gpi_interface,
-        "--cocotb-hdl-toplevel-lang",
+        "--cocotb-toplevel-lang",
         toplevel_lang,
         env=env,
     )
