@@ -73,6 +73,15 @@ def sample_module_fixture(hdl: HDL) -> HDL:
     else:
         hdl.sources = (DESIGNS / "sample_module" / "sample_module.sv",)
 
+    if hdl.simulator == "questa":
+        hdl.build_args = ["+acc"]
+
+    elif hdl.simulator == "xcelium":
+        hdl.build_args = ["-v93"]
+
+    elif hdl.simulator == "nvc":
+        hdl.build_args = ["--std=08"]
+
     return hdl
 
 
