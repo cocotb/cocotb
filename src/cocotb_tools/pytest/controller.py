@@ -60,9 +60,6 @@ class Controller:
         # Pytest configuration object
         self._config: Config = config
 
-        # Used to cache keywords per nodeid
-        self._keywords: dict[str, set[str]] = {}
-
         # Instance of JUnit XML from built-in pytest junitxml plugin
         self._junitxml = None
 
@@ -240,7 +237,7 @@ class Controller:
                         # Add cocotb runner keywords to cocotb test and vice versa
                         # This will allow to use pytest -k <expression> to select
                         # specific cocotb tests from specific cocotb runner and vice versa
-                        self._add_keywords(item.nodeid, runner.item.keywords)
+                        item.extra_keyword_matches.update(runner.item.keywords)
                         runner.item.extra_keyword_matches.update(item.keywords)
                     elif collectonly:
                         # If test item is not under cocotb runner, show it during pytest --co
@@ -256,25 +253,6 @@ class Controller:
                         )
             else:
                 yield item
-
-    @hookimpl(tryfirst=True)
-    def pytest_collection_modifyitems(
-        self, session: Session, config: Config, items: list[Item]
-    ) -> None:
-        """Add cocotb runner keywords to collected cocotb tests.
-
-        Args:
-            session: Pytest session object.
-            config: Pytest configuration object.
-            items: List of collected test items by collectors.
-        """
-        if config.option.collectonly:
-            for item in items:
-                # Add cocotb runner keywords to collected cocotb test
-                keywords: set[str] | None = self._keywords.get(item.nodeid)
-
-                if keywords:
-                    item.extra_keyword_matches.update(keywords)
 
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_runtest_logreport(
