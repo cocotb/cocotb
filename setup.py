@@ -82,13 +82,16 @@ setup(
     python_requires=">=3.9",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
+    include_package_data=False,
     package_data={
-        "cocotb": (
-            package_files("src/cocotb/share/include")
-            + package_files("src/cocotb/share/def")
-            + package_files("src/cocotb/share/lib/verilator")
-        ),
-        "cocotb_tools": (package_files("src/cocotb_tools/makefiles")),
+        "cocotb": [
+            "share/lib/verilator/*",
+            "share/include/*.h",
+            "share/def/*.def",
+        ],
+        "cocotb_tools": [
+            "makefiles/**/*",
+        ],
     },
     ext_modules=get_ext(),
     entry_points={
