@@ -4,7 +4,7 @@ Pytest Support
 
 :py:mod:`cocotb_tools.pytest.plugin` provides full `pytest`_ integration with cocotb. Including:
 
-* `fixture`_ to cleanly setup and teardown cocotb tests and designs under test.
+* `fixture`_ to cleanly set up and tear down cocotb tests and designs under test.
 * `plugins`_ that can extend cocotb testing capabilities.
 * `configuration`_ facilities to configure cocotb testing environment using command line arguments
   ``--cocotb-*``, configuration files like `pyproject.toml`_ or `fixture`_ arguments for fine
