@@ -6,35 +6,35 @@ Pytest Support
 
 * `fixture`_ to cleanly set up and tear down cocotb tests and designs under test.
 * `plugins`_ that can extend cocotb testing capabilities.
-* `configuration`_ facilities to configure cocotb testing environment using command line arguments
+* `configuration`_ facilities to configure the cocotb testing environment using command line arguments
   ``--cocotb-*``, configuration files like `pyproject.toml`_ or `fixture`_ arguments for fine
   control per test, class, module or session.
 * listing all available cocotb tests and their relationship with :py:mod:`cocotb_tools.runner`.
 * `marks`_ to easily set metadata on cocotb test functions.
 * filtering cocotb tests with `pytest`_ ``-k '<expression>'`` and ``-m '<markers>'`` options.
 * reporting all executed cocotb tests.
-* parallel execution of cococtb runners by using `pytest-xdist`_ plugin
+* parallel execution of cocotb runners by using the `pytest-xdist`_ plugin
 
-Enabling Plugin
-===============
+Enabling the Plugin
+===================
 
 :py:mod:`cocotb_tools.pytest.plugin` can be enabled in various ways.
 
-When using `pyproject.toml`_ file (recommended way):
+When using the `pyproject.toml`_ file (recommended way):
 
 .. code:: toml
 
    [project.entry-points.pytest11]
    cocotb = "cocotb_tools.pytest.plugin"
 
-When using ``pytest.ini`` file:
+When using the ``pytest.ini`` file:
 
 .. code:: ini
 
    [pytest]
    addopts = -p cocotb_tools.pytest.plugin
 
-When using ``setup.cfg`` file:
+When using the ``setup.cfg`` file:
 
 .. code:: ini
 
@@ -42,7 +42,7 @@ When using ``setup.cfg`` file:
    pytest11 =
      cocotb = cocotb_tools.pytest.plugin
 
-When using ``setup.py`` file:
+When using the ``setup.py`` file:
 
 .. code:: python
 
@@ -57,8 +57,8 @@ When using ``setup.py`` file:
        },
    )
 
-By defining the global variable ``pytest_plugins`` when using ``conftest.py`` file
-(it must be located in the root of the project):
+By defining the global variable ``pytest_plugins`` when using a ``conftest.py`` file
+(which must be located in the root of the project):
 
 .. code:: python
 
@@ -70,7 +70,7 @@ By defining the ``PYTEST_PLUGINS`` environment variable:
 
    export PYTEST_PLUGINS="cocotb_tools.pytest.plugin"
 
-By using ``-p <plugin>`` option when invoking `pytest`_ command line interface:
+By using the ``-p <plugin>`` option when invoking the `pytest`_ command line interface:
 
 .. code:: shell
 
@@ -80,14 +80,14 @@ Building and Testing
 ====================
 
 :py:class:`cocotb_tools.pytest.hdl.HDL` wraps :py:class:`cocotb_tools.runner.Runner`
-allowing to fully configure cocotb runner by using command line arguments ``--cocotb-*``,
+allowing to fully configure the cocotb runner by using the command line arguments ``--cocotb-*``,
 configuration files like `pyproject.toml`_ or `fixture`_ arguments.
 
-Plugin includes own ``hdl`` fixture that will create new instance of :py:class:`cocotb_tools.pytest.hdl.HDL`
-with `pytest`_ built-in `request`_ fixture that is providing information of the requesting test function
-including current configuration of `pytest`_.
+The plugin provides a ``hdl`` fixture that will create a new instance of :py:class:`cocotb_tools.pytest.hdl.HDL`
+with the `pytest`_ built-in `request`_ fixture that is providing information of the requesting test function
+including the current configuration of `pytest`_.
 
-Example content of ``conftest.py`` file:
+Example content of a ``conftest.py`` file:
 
 .. code:: python
 
@@ -100,7 +100,7 @@ Example content of ``conftest.py`` file:
        """Define HDL design by adding HDL source files to it.
 
        Args:
-           hdl: Fixture created by cocotb plugin, representing HDL design.
+           hdl: Fixture created by the cocotb pytest plugin, representing a HDL design.
 
        Returns:
            Representation of HDL design with added HDL source files.
@@ -113,7 +113,7 @@ Example content of ``conftest.py`` file:
        return hdl
 
 
-Example content of ``test_sample_module.py`` file:
+Example content of the ``test_sample_module.py`` file:
 
 .. code:: python
 
@@ -121,30 +121,31 @@ Example content of ``test_sample_module.py`` file:
    from cocotb_tools.pytest.hdl import HDL
 
 
-   # Without providing positional arguments or test_module option to cocotb decorator,
-   # plugin will use current file as cocotb testbench (Python file with cocotb tests).
-   # If toplevel option was not provided, it will be based on name of first test_module
-   # but with removed test_* prefix or *_test suffix.
+   # Without providing positional arguments or  the test_module option to the cocotb decorator,
+   # the plugin will use the current file as the cocotb testbench (a Python file with cocotb tests).
+   # If the 'toplevel' option was not provided, it will be derived from the name of the first test_module
+   # but with a removed 'test_*' prefix or '*_test' suffix.
    @pytest.mark.cocotb  # equivalent to @pytest.mark.cocotb("test_dut", toplevel="dut")
    def test_sample_module(sample_module: HDL) -> None:
        """Build HDL design and run HDL simulator to execute cocotb tests.
 
        Args:
-           sample_module: Instance of defined HDL design.
+           sample_module: An instance of a defined HDL design.
        """
        sample_module.test()
 
 
-   # @pytest.mark.cocotb or @cocotb.test decorator is not required if test function
-   # starts with test_* prefix, is coroutine function (``async``) and with ``dut`` argument.
+   # A @pytest.mark.cocotb or @cocotb.test decorator is not required if the test function
+   # starts with a 'test_*' prefix, is a coroutine function (``async``) and has a ``dut`` argument.
    async def test_some_dut_feature(dut) -> None:
-        """Cocotb test for DUT."""
+        """cocotb test for DUT."""
 
 @pytest.mark.cocotb
 ===================
 
-Provided ``@pytest.mark.cocotb`` marker by :py:mod:`cocotb_tools.pytest.plugin` allows
-to configure all aspects of cocotb test and cocotb runner. Marker recognizes all
+The plugin provides the marker ``@pytest.mark.cocotb`` which allows
+to configure all aspects of cocotb test and cocotb runner.
+The marker recognizes all
 named arguments from :py:func:`cocotb.test` and :py:class:`cocotb_tools.runner.Runner`.
 Additionally, positional arguments of ``@pytest.mark.cocotb`` marker are equivalent to
 ``test_module`` argument from :py:func:`cocotb.test`.
@@ -181,12 +182,12 @@ when using `pytest`_ ``-k '<expression>'`` or ``-m '<markers>'`` options.
 
 
    async def test_something(dut) -> None:
-       """Test DUT with standard name for test function defined by pytest."""
+       """Function that is picked up by pytest discovery does not need a decorator."""
 
 
-   @pytest.mark.cocotb  # needed by cocotb tests using non-standard names
+   @pytest.mark.cocotb
    async def name_without_test_prefix(dut) -> None:
-       """Test DUT with non-standard name for test function."""
+       """Function that is not picked up by pytest discovery needs a decorator to count as a test."""
 
 Configuration
 =============
@@ -195,7 +196,7 @@ Thanks to :py:mod:`cocotb_tools.pytest.plugin`, cocotb can be configured in many
 
 Precedence order of configuring cocotb from the highest to the lowest priority:
 
-1. :py:func:`cocotb_tools.pytest.hdl.HDL` attributes set at fixutre or test function level
+1. :py:func:`cocotb_tools.pytest.hdl.HDL` attributes set at fixture or test function level
 2. ``@pytest.mark.cocotb`` marker used with test functions.
 3. ``--cocotb-*`` command line arguments when invoking them with `pytest`_ command line interface.
 4. ``COCOTB_*`` environment variables.
