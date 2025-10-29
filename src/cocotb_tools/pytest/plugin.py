@@ -354,15 +354,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "pygpi_python_bin",
-        help="""
-            The Python binary in the Python environment to use with cocotb. This is set to the result of
-            cocotb-config --python-bin in the Makefiles and Python Runner. You will likely only need to set this
-            manually if you are using a Python environment other than the currently activated environment, or if you
-            are using a custom flow.
-        """,
-    ),
-    Option(
         "pygpi_users",
         nargs="*",
         metavar="MODULE:FUNCTION",
