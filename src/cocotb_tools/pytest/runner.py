@@ -11,7 +11,9 @@ from collections.abc import Iterable, Sequence
 from importlib import import_module
 from pathlib import Path
 
-from pytest import Collector, Item, Module
+from pytest import Collector, Item
+
+from cocotb_tools.pytest.testbench import Testbench
 
 
 class Runner(Collector):
@@ -50,10 +52,7 @@ class Runner(Collector):
         if isinstance(test_modules, str):
             test_modules = [test_modules]
 
-        if not test_modules:
-            yield Module.from_parent(self, name=self.path.stem, path=self.path)
-
-        for test_module in test_modules:
+        for test_module in test_modules or (self.path.stem,):
             path: Path = self.path.parent / Path(
                 test_module.replace(".", os.path.pathsep) + ".py"
             )
@@ -61,4 +60,4 @@ class Runner(Collector):
             if not path.exists():
                 path = Path(str(import_module(test_module).__file__))
 
-            yield Module.from_parent(self, name=path.stem, path=path)
+            yield Testbench.from_parent(self, name=path.stem, path=path)

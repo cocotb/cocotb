@@ -89,18 +89,16 @@ class Controller:
         Args:
             config: Pytest configuration object.
         """
-        # Mock cocotb module for the main pytes parent process
-        # Otherwise pytest can raise an exception when collecting test items
+        # Mock cocotb module for the main pytest parent process
+        # Otherwise pytest can raise an exception when loading Python module
         #
-        # Fun fact, this will not effect collection of test items done by pytest sub-process (simulator),
-        # because collection of test items is done independently from it and with valid cocotb.top
+        # When invoking pytest with --collect-only option, markers like
+        # @pytest.mark.skip() or @pytest.mark.skipif() are ignored anyway because
+        # test will be skipped during runtime (pytest without --collect-only).
         #
-        # This may effect collected items when invoking pytest --collect-only
-        # Some tests could be wrongly deselected when using boolean condition like this
-        # @pytest.mark.skipif(cocotb.top.PARAMETER == 1) but this harmless
-        #
-        # TODO: Get version of HDL simulator, mostly: <command> --version
-        # TODO: Get names and values of HDL parameters/generics, parse HDL source files?
+        # There is no need for the main pytest process to collect tests from HDL simulators.
+        # Cocotb tests will be properly collected and executed with valid cocotb.top simulation handle by
+        # pytest instance that is running from HDL simulator and report back to the main pytest process.
         setattr(cocotb, "SIM_NAME", get_simulator(config))
         setattr(cocotb, "SIM_VERSION", "")
         setattr(cocotb, "top", MockSimHandle())
@@ -218,7 +216,26 @@ class Controller:
     def _collect(
         self, collector: Collector, items: Iterable[Item | Collector]
     ) -> Generator[Item | Collector, None, None]:
-        """Collect and modify test items including cocotb runners and cocotb tests.
+        """Collect test items including cocotb runners and cocotb tests.
+
+        It will help to build hierarchy tree of cocotb runners and cocotb tests.
+
+        When invoking ``pytest`` with ``--collect-only`` option::
+
+            <Dir tests>
+                <Module test_sample_module.py>
+                    <Runner test_sample_module>
+                        <Testbench test_sample_module>
+                            <Function test_feature>
+
+        When invoking ``pytest`` without ``--collect-only`` option::
+
+            <Dir tests>
+                <Module test_sample_module.py>
+                    <Function test_sample_module>
+
+        Tree created with ``--collect-only`` option is to help users to visualize
+        hierarchy tree of cocotb runners and cocotb tests.
 
         Args:
             collector: Collector used to collect test items, mostly Python module.
@@ -234,23 +251,34 @@ class Controller:
             if isinstance(item, Function) and item.get_closest_marker("cocotb"):
                 if inspect.iscoroutinefunction(item.function):
                     if runner:
-                        # Add cocotb runner keywords to cocotb test and vice versa
-                        # This will allow to use pytest -k <expression> to select
-                        # specific cocotb tests from specific cocotb runner and vice versa
-                        item.extra_keyword_matches.update(runner.item.keywords)
-                        runner.item.extra_keyword_matches.update(item.keywords)
-                    elif collectonly:
-                        # If test item is not under cocotb runner, show it during pytest --co
-                        yield item
-                elif not runner:
-                    yield item
+                        # Collected cocotb test must be always under cocotb runner
+                        if collectonly:
+                            # Show collected cocotb test under cocotb runner when invoking pytest --collect-only
+                            # It will help user to visualize hierarchy tree of cocotb tests and cocotb runners
+                            yield item
+                        else:
+                            # Add cocotb test keywords to cocotb runner
+                            # This will allow to run cocotb runner by using keywords associated with cocotb test
+                            runner.item.extra_keyword_matches.update(item.keywords)
+                            # Skip cocotb test here, it will be collected by pytest that is running from HDL simulator
 
-                    if item.parent:
-                        yield Runner.from_parent(
-                            item.parent,
-                            name=item.name,
-                            item=item,
-                        )
+                elif not runner:
+                    # Avoid recursion of cocotb runners
+
+                    if not collectonly:
+                        # Don't show collected cocotb runner as <Function> because it will be duplicated with <Runner>
+                        # <Module file>
+                        #   <Function name>       <--- cocotb runner as test function (it will be not showed)
+                        #   <Runner name>         <--- cocotb runner as collector of cocotb tests
+                        #     <Testbench name>    <--- test module aka testbench (Python module with cocotb tests)
+                        #       <Function name>   <--- cocotb test
+                        yield item
+
+                    yield Runner.from_parent(
+                        item.parent,
+                        name=item.name,
+                        item=item,
+                    )
             else:
                 yield item
 

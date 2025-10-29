@@ -23,6 +23,10 @@ class MockSimHandle:
         """Mock nested access to attribute ``obj.a.b.c``."""
         return MockSimHandle()
 
+    def __call__(self, *args: object, **kwargs: object) -> MockSimHandle:
+        """Mock calling methods."""
+        return self
+
     def __len__(self) -> int:
         """Mock collections."""
         return 0
