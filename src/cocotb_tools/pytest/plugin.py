@@ -162,14 +162,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_indexing_changed_warning",
-        action="store_true",
-        help="""
-            Enable to cause a warning to be emitted on all LogicArray and Array indexing and slicing operations if
-            the indexing would have changed between cocotb 1.x and 2.x.
-        """,
-    ),
-    Option(
         "cocotb_log_level",
         choices=("trace", "debug", "info", "warning", "error", "critical"),
         help="""
