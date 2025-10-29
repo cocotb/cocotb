@@ -330,12 +330,14 @@ OPTIONS: tuple[Option, ...] = (
     ),
     Option(
         "cocotb_pytest_args",
-        default_in_help="passing arguments as-is from main pytest to subprocess pytest",
         default=[],
         help="""
-            Override command line arguments for pytest used as regression manager (subprocess).
-            By default, it will use the same arguments as main pytest (parent process).
-            Example: pytest --capture=no -v --cocotb-pytest-args='--capture=fd -vv -rA'
+            By default, instance of pytest that is running from HDL simulator as regression manager for cocotb tests,
+            will be called with the same command line arguments as pytest invoked by user from command line that
+            is starting cocotb runners (HDL simulators). This option allows user to override it and pass own
+            arguments to pytest instance that is running from HDL simulator process. For example,
+            it can be used to set different verbosity levels or capture modes between them.
+            Example: pytest -v --capture=no --cocotb-pytest-args='-vv --capture=fd'
         """,
     ),
     Option(
