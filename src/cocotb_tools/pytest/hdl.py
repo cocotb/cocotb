@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import re
 from collections.abc import Mapping, Sequence
+from copy import deepcopy
 from pathlib import Path
 from shutil import which
 
@@ -80,11 +81,11 @@ class HDL:
         # Build options
         self.library: str = option.cocotb_library
         self.sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] = []
-        self.includes: Sequence[PathLike] = option.cocotb_includes
-        self.defines: Mapping[str, object] = option.cocotb_defines
-        self.parameters: Mapping[str, object] = option.cocotb_parameters
-        self.build_args: Sequence[str | VHDL | Verilog] = option.cocotb_build_args
-        self.toplevel: str | None = option.cocotb_toplevel
+        self.includes: Sequence[PathLike] = []
+        self.defines: Mapping[str, object] = {}
+        self.parameters: Mapping[str, object] = {}
+        self.build_args: Sequence[str | VHDL | Verilog] = []
+        self.toplevel: str | None = None
         self.always: bool = option.cocotb_always
         self.clean: bool = option.cocotb_clean
         self.verbose: bool = option.cocotb_verbose
@@ -92,19 +93,20 @@ class HDL:
         self.waves: bool = option.cocotb_waves
 
         # Test options
-        self.test_module: str | Sequence[str] = option.cocotb_test_modules
+        self.test_module: str | Sequence[str] = ""
         self.toplevel_library: str = option.cocotb_toplevel_library
-        self.toplevel_lang: str | None = option.cocotb_toplevel_lang
+        self.toplevel_lang: str | None = None
         self.gpi_interfaces: list[str] | None = option.cocotb_gpi_interfaces
-        self.testcase: str | Sequence[str] | None = option.cocotb_testcase
         self.seed: str | int | None = option.cocotb_seed
-        self.elab_args: Sequence[str] = option.cocotb_elab_args
-        self.test_args: Sequence[str] = option.cocotb_test_args
-        self.plusargs: Sequence[str] = option.cocotb_plusargs
-        self.env: Mapping[str, str] = option.cocotb_env
+        self.elab_args: Sequence[str] = []
+        self.test_args: Sequence[str] = []
+        self.plusargs: Sequence[str] = []
+        self.env: Mapping[str, str] = {}
         self.gui: bool = option.cocotb_gui
-        self.pre_cmd: list[str] | None = option.cocotb_pre_cmd
-        self.test_filter: str | None = option.cocotb_test_filter
+        self.pre_cmd: list[str] | None = []
+
+        # Store reference to command line options
+        self._option = option
 
         for marker in reversed(list(request.node.iter_markers("cocotb"))):
             if marker.args:
@@ -114,13 +116,11 @@ class HDL:
                 if hasattr(self, name):
                     setattr(self, name, value)
 
-        if self.toplevel_lang == "auto":
+        if not self.toplevel_lang:
             if self.simulator in ("verilator", "icarus"):
                 self.toplevel_lang = "verilog"
             elif self.simulator in ("nvc", "ghdl"):
                 self.toplevel_lang = "vhdl"
-            else:
-                self.toplevel_lang = None
 
         if not self.test_module:
             self.test_module = request.path.name.partition(".")[0]
@@ -152,16 +152,35 @@ class HDL:
 
     def test(self) -> Path:
         """Build and test HDL design."""
+        option = self._option
+
         self.test_dir.mkdir(0o750, parents=True, exist_ok=True)
         results_xml: Path = self.test_dir / "results.xml"
+
+        # Allow to extend build, elab, test and + arguments from cli and configs
+        build_args: Sequence[str] = self.build_args + option.cocotb_build_args
+        elab_args: Sequence[str] = self.elab_args + option.cocotb_elab_args
+        test_args: Sequence[str] = self.test_args + option.cocotb_test_args
+        plusargs: Sequence[str] = self.plusargs + option.cocotb_plusargs
+        includes: Sequence[str] = self.includes + option.cocotb_includes
+        self.pre_cmd + option.cocotb_pre_cmd
+
+        # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
+        parameters: dict[str, object] = dict(deepcopy(self.parameters))
+        extra_env: dict[str, str] = dict(deepcopy(self.env))
+        defines: dict[str, object] = dict(deepcopy(self.defines))
+
+        parameters.update(option.cocotb_parameters)
+        extra_env.update(option.cocotb_env)
+        defines.update(option.cocotb_defines)
 
         self.runner.build(
             hdl_library=self.library,
             sources=self.sources,
-            includes=self.includes,
-            defines=self.defines,
-            parameters=self.parameters,
-            build_args=self.build_args,
+            includes=includes,
+            defines=defines,
+            parameters=parameters,
+            build_args=build_args,
             hdl_toplevel=self.toplevel or None,
             always=self.always,
             build_dir=self.test_dir,
@@ -178,20 +197,18 @@ class HDL:
             hdl_toplevel_library=self.toplevel_library,
             hdl_toplevel_lang=self.toplevel_lang or None,
             gpi_interfaces=self.gpi_interfaces or None,
-            testcase=self.testcase or None,
             seed=self.seed,
-            elab_args=self.elab_args,
-            test_args=self.test_args,
-            plusargs=self.plusargs,
-            extra_env=self.env,
+            elab_args=elab_args,
+            test_args=test_args,
+            plusargs=plusargs,
+            extra_env=extra_env,
             waves=self.waves,
             gui=self.gui,
-            parameters=self.parameters or None,
+            parameters=parameters or None,
             build_dir=self.test_dir,
             test_dir=self.test_dir,
             results_xml=results_xml,
             pre_cmd=self.pre_cmd or None,
             verbose=self.verbose,
             timescale=None if self.simulator in ("xcelium",) else self.timescale,
-            test_filter=self.test_filter or None,
         )

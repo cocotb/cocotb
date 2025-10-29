@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import inspect
 import os
-import re
 import shlex
 from collections.abc import Iterable
 from pathlib import Path
@@ -27,7 +26,6 @@ from pytest import (
     Module,
     Parser,
     PytestPluginManager,
-    Session,
     TerminalReporter,
     TestReport,
     fixture,
@@ -316,19 +314,19 @@ OPTIONS: tuple[Option, ...] = (
         "cocotb_defines",
         nargs="*",
         metavar="NAME[=VALUE]",
-        help="Defines to set.",
+        help="Extra defines to set.",
     ),
     Option(
         "cocotb_includes",
         nargs="*",
         metavar="PATH",
-        help="Verilog include directories.",
+        help="Extra Verilog include directories.",
     ),
     Option(
         "cocotb_parameters",
         nargs="*",
         metavar="NAME[=VALUE]",
-        help="Verilog parameters or VHDL generics.",
+        help="Extra Verilog parameters or VHDL generics.",
     ),
     Option(
         "cocotb_library",
@@ -390,7 +388,7 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_pre_cmd",
         default=[],
-        help="Commands to run before simulation begins.",
+        help="Extra commands to run before simulation begins.",
     ),
 )
 
@@ -606,35 +604,6 @@ def is_cocotb_test(item: Item) -> bool:
         and "cocotb" in item.keywords
         and inspect.iscoroutinefunction(item.function)
     )
-
-
-@hookimpl(tryfirst=True)
-def pytest_collection_modifyitems(
-    session: Session, config: Config, items: list[Item]
-) -> None:
-    testcases: list[str] = config.option.cocotb_testcase
-    test_filter: str = config.option.cocotb_test_filter
-
-    if not testcases and not test_filter:
-        return
-
-    pattern: re.Pattern | None = re.compile(test_filter) if test_filter else None
-
-    selected_items: list[Item] = []
-    deselected_items: list[Item] = []
-
-    for item in items:
-        if (
-            not is_cocotb_test(item)
-            or item.name in testcases
-            or (pattern and pattern.search(item.name))
-        ):
-            selected_items.append(item)
-        else:
-            deselected_items.append(item)
-
-    items[:] = selected_items
-    config.hook.pytest_deselected(items=deselected_items)
 
 
 def is_cocotb_test_report(item: Any) -> bool:
