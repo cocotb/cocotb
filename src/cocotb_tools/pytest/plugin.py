@@ -232,15 +232,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_test_modules",
-        nargs="*",
-        help="""
-            The name of the Python module(s) to search for test functions - if your tests are in a file called
-            test_mydesign.py, --cocotb-test-module would be set to test_mydesign. All tests will be run from each
-            specified module in order of the module’s appearance in this list.
-        """,
-    ),
-    Option(
         "cocotb_testcase",
         nargs="*",
         help="A list of tests to run. Does an exact match on the test name.",
