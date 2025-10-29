@@ -224,11 +224,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_results_file",
-        default=Path("results.xml"),
-        help="The file name where xUnit XML tests results are stored.",
-    ),
-    Option(
         "cocotb_rewrite_assertion_files",
         default="*.py",
         help="""
