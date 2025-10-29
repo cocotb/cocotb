@@ -51,7 +51,7 @@ from cocotb_tools.pytest.runner import Runner
 class Controller:
     """Internal cocotb plugin for pytest dedicated for the main pytest parent process."""
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         """Create new instance of internal cocotb plugin for pytest.
 
         Args:

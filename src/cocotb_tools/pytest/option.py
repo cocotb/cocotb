@@ -29,7 +29,7 @@ class Option:
         default_in_help: str | None = None,
         environment: str | None = None,
         **kwargs,
-    ):
+    ) -> None:
         self.name: str = name
         self.extra: dict[str, Any] = dict(kwargs)
         self.default: Any = default

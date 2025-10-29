@@ -22,7 +22,7 @@ class Runner(Collector):
         item: Item,
         *args,
         **kwargs,
-    ):
+    ) -> None:
         """Create new instance of collector to collect cocotb tests
         from Python module(s) that will be run by cocotb runner.
 

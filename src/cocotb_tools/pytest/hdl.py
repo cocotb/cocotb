@@ -63,7 +63,7 @@ def get_simulator(config: Config) -> str:
 class HDL:
     """Build HDL design and run test against specific HDL top level."""
 
-    def __init__(self, request: FixtureRequest):
+    def __init__(self, request: FixtureRequest) -> None:
         option = request.config.option
         nodeid: str = request.node.nodeid
 

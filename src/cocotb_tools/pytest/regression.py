@@ -83,7 +83,7 @@ class RegressionManager:
 
     _timer1 = Timer(1)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self._task: Task
         self._tasks: deque[Task] = deque[Task]()
         self._subtasks: list[Task] = []
