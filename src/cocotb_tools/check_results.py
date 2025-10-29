@@ -43,6 +43,7 @@ def get_results(results_xml_file: Path) -> tuple[int, int]:
             num_errors += int(ts.attrib.get("errors", 0))
 
         else:  # cocotb, non-compatible with Junit XML specification
+            # TODO: Remove that when XUnitReporter will be aligned with XUnit schema
             for tc in ts.iter("testcase"):
                 num_tests += 1
                 for _ in tc.iter("failure"):
