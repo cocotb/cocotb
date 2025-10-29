@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
-from pytest import Parser, PytestPluginManager, fixture, hookimpl
+from pytest import FixtureRequest, Parser, PytestPluginManager, fixture, hookimpl
 
 from cocotb.clock import Clock
 from cocotb.triggers import FallingEdge
@@ -37,12 +37,18 @@ def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None
         parser: Instance of command line arguments parser used by pytest.
         pluginmanager: Instance of pytest plugin manager.
     """
+    parser.addoption(
+        "--hdl-toplevel-lang",
+        choices=("vhdl", "verilog"),
+        help="Select language for top level.",
+    )
+
     if not pluginmanager.has_plugin(PLUGIN):
         pluginmanager.import_plugin(PLUGIN)  # import and register plugin
 
 
 @fixture(name="sample_module")
-def sample_module_fixture(hdl: HDL) -> HDL:
+def sample_module_fixture(hdl: HDL, request: FixtureRequest) -> HDL:
     """Define HDL design by adding HDL source files.
 
     To run cocotb tests for HDL design:
@@ -63,8 +69,9 @@ def sample_module_fixture(hdl: HDL) -> HDL:
         Defined HDL design with added HDL source files.
     """
     hdl.toplevel = "sample_module"
+    hdl_toplevel_lang: str | None = request.config.option.hdl_toplevel_lang
 
-    if hdl.toplevel_lang == "vhdl":
+    if hdl_toplevel_lang == "vhdl" or hdl.simulator in ("nvc", "ghdl"):
         hdl.sources = (
             DESIGNS / "sample_module" / "sample_module_package.vhdl",
             DESIGNS / "sample_module" / "sample_module_1.vhdl",

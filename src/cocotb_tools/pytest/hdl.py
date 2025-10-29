@@ -95,7 +95,6 @@ class HDL:
         # Test options
         self.test_module: str | Sequence[str] = ""
         self.toplevel_library: str = option.cocotb_toplevel_library
-        self.toplevel_lang: str | None = None
         self.gpi_interfaces: list[str] | None = option.cocotb_gpi_interfaces
         self.seed: str | int | None = option.cocotb_seed
         self.elab_args: Sequence[str] = []
@@ -115,12 +114,6 @@ class HDL:
             for name, value in marker.kwargs.items():
                 if hasattr(self, name):
                     setattr(self, name, value)
-
-        if not self.toplevel_lang:
-            if self.simulator in ("verilator", "icarus"):
-                self.toplevel_lang = "verilog"
-            elif self.simulator in ("nvc", "ghdl"):
-                self.toplevel_lang = "vhdl"
 
         if not self.test_module:
             self.test_module = request.path.name.partition(".")[0]
@@ -163,7 +156,7 @@ class HDL:
         test_args: Sequence[str] = self.test_args + option.cocotb_test_args
         plusargs: Sequence[str] = self.plusargs + option.cocotb_plusargs
         includes: Sequence[str] = self.includes + option.cocotb_includes
-        self.pre_cmd + option.cocotb_pre_cmd
+        pre_cmd: list[str] = self.pre_cmd + option.cocotb_pre_cmd
 
         # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
         parameters: dict[str, object] = dict(deepcopy(self.parameters))
@@ -195,7 +188,6 @@ class HDL:
             test_module=self.test_module,
             hdl_toplevel=self.toplevel,
             hdl_toplevel_library=self.toplevel_library,
-            hdl_toplevel_lang=self.toplevel_lang or None,
             gpi_interfaces=self.gpi_interfaces or None,
             seed=self.seed,
             elab_args=elab_args,
@@ -208,7 +200,7 @@ class HDL:
             build_dir=self.test_dir,
             test_dir=self.test_dir,
             results_xml=results_xml,
-            pre_cmd=self.pre_cmd or None,
+            pre_cmd=pre_cmd or None,
             verbose=self.verbose,
             timescale=None if self.simulator in ("xcelium",) else self.timescale,
         )
