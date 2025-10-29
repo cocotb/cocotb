@@ -232,11 +232,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_testcase",
-        nargs="*",
-        help="A list of tests to run. Does an exact match on the test name.",
-    ),
-    Option(
         "cocotb_toplevel",
         help="""
             Use this to indicate the instance in the hierarchy to use as the DUT. If this isn’t defined then the
