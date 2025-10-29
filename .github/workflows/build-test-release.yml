@@ -23,6 +23,9 @@ on:
       - "stable/**"
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - master
 
 jobs:
   build_release:
