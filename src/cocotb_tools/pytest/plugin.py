@@ -232,15 +232,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_toplevel",
-        help="""
-            Use this to indicate the instance in the hierarchy to use as the DUT. If this isn’t defined then the
-            first root instance is used. Leading and trailing whitespace are automatically discarded. The DUT is
-            available in cocotb tests as a Python object at cocotb.top; and is also passed to all cocotb tests as
-            the first and only parameter.
-        """,
-    ),
-    Option(
         "cocotb_toplevel_lang",
         choices=("auto", "verilog", "vhdl"),
         default="auto",
