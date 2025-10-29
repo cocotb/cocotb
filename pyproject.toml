@@ -2,6 +2,46 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "cocotb"
+description = "Python-based chip (RTL) verification"
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = [
+    "LICENSE"
+]
+authors = [
+    {name = "Chris Higgs"},
+    {name = "Stuart Hodgson"},
+]
+maintainers = [
+    {name = "Kaleb Barrett"},
+    {name = "Tomasz Hemperek"},
+    {name = "Marlon James"},
+    {name = "Colin Marquardt"},
+    {name = "Philipp Wagner"},
+]
+dependencies = [
+    "find_libpython",
+]
+requires-python = ">= 3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+    "Framework :: cocotb",
+]
+dynamic = ["version"]
+
+[project.scripts]
+cocotb-config = "cocotb_tools.config:main"
+
+[project.urls]
+Homepage = "https://www.cocotb.org"
+Documentation = "https://docs.cocotb.org"
+Repository = "https://github.com/cocotb/cocotb"
+Issues = "https://github.com/cocotb/cocotb/issues"
+
+
 [tool.towncrier]
     package = "cocotb"
     directory = "docs/source/newsfragments"
