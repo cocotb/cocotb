@@ -232,15 +232,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_test_filter",
-        metavar="REGEXP",
-        help="""
-            A regular expression matching names of test function(s) to run. If this is not defined, cocotb
-            discovers and executes all functions decorated with the @cocotb.test or @pytest.mark.cocotb decorator in
-            the supplied --cocotb-test-modules list.
-        """,
-    ),
-    Option(
         "cocotb_test_modules",
         nargs="*",
         help="""
