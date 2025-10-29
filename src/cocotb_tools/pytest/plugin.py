@@ -232,17 +232,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_toplevel_lang",
-        choices=("auto", "verilog", "vhdl"),
-        default="auto",
-        help="""
-            Determine language for HDL top level design. This information is needed to select proper GPI
-            interface to HDL top level design and in some cases, to apply proper options for HDL simulator.
-            The ``auto`` option will determine language automatically based on list of HDL source files and
-            other factors like used HDL simulator.
-        """,
-    ),
-    Option(
         "cocotb_simulator",
         choices=("auto", *tuple(SIMULATORS.values())),
         default="auto",
