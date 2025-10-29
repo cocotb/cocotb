@@ -354,19 +354,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "gpi_extra",
-        nargs="*",
-        metavar="LIBRARY:FUNCTION",
-        help="""
-            List of extra libraries that are dynamically loaded at runtime. A function from each of these libraries
-            will be called as an entry point prior to elaboration, allowing these libraries to register system
-            functions and callbacks. Note that HDL objects cannot be accessed at this time. An entry point function
-            must be named following a : separator, which follows an existing simulator convention.
-            For example: --gpi-extra libnameA.so:entryA libnameB.so:entryB will first load libnameA.so with entry
-            point entryA, then load libnameB.so with entry point entryB.
-        """,
-    ),
-    Option(
         "pygpi_python_bin",
         help="""
             The Python binary in the Python environment to use with cocotb. This is set to the result of
