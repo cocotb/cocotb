@@ -224,15 +224,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_rewrite_assertion_files",
-        default="*.py",
-        help="""
-            Select the Python files to apply pytest’s assertion rewriting to. This is useful to get more
-            informative assertion error messages in cocotb tests. Specify using a space-separated list of file
-            globs, e.g. test_*.py testbench_common/**/*.py. Set to the empty string to disable assertion rewriting.
-        """,
-    ),
-    Option(
         "cocotb_scheduler_debug",
         action="store_true",
         help="""
