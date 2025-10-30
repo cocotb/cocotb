@@ -9,13 +9,25 @@ from __future__ import annotations
 import shlex
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pytest import OptionGroup, Parser
 
 from cocotb_tools.pytest import env
 
 PREFIXES: tuple[str, ...] = ("cocotb_", "gpi_", "pygpi_")
+
+
+IniType = Literal[
+    "string",
+    "paths",
+    "pathlist",
+    "args",
+    "linelist",
+    "bool",
+    "int",
+    "float",
+]
 
 
 class Option:
@@ -25,82 +37,106 @@ class Option:
     def __init__(
         self,
         name: str,
-        default: Any = None,
+        description: str,
+        default: object | None = None,
         default_in_help: str | None = None,
         environment: str | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
+        """Create new instance of single option.
+
+        Args:
+            name: Name of option.
+            description: Help description of option.
+            default: Default value for option.
+            default_in_help: Message used in option help instead of default value.
+            environment: Name of environment variable.
+            kwargs: Additional name arguments passed to :py:func:`argparse.ArgumentParser.add_argument`.
+        """
         self.name: str = name
+        self.description: str = description
         self.extra: dict[str, Any] = dict(kwargs)
         self.default: Any = default
         self.default_in_help: str | None = default_in_help
         self.environment: str = environment if environment else name.upper()
 
-    def get(self, key: str, default: Any = None) -> None:
-        return self.extra.get(key, default)
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        self.extra[key] = value
-
-    def __getitem__(self, key: str) -> Any:
-        return self.extra[key]
-
-    def __contains__(self, item: str) -> bool:
-        return item in self.extra
-
     def add_to_parser(self, parser: Parser, group: OptionGroup) -> None:
         argument: str = "--" + self.name.replace("_", "-")
         default: Any = self.default
-        action: str | None = self.get("action")
-        nargs: str | None = self.get("nargs")
-        extra: dict[str, Any] = {}
-        kind: str = ""
+        choices: tuple[str, ...] | None = self.extra.get("choices")
+        argtype: type | None = self.extra.get("type")
+        action: str | None = self.extra.get("action")
+        nargs: str | None = self.extra.get("nargs")
+        ini_type: IniType | None = None
 
+        # Map command line argument to option in configuration file
+        # Environment variable set by user can override default value for option
         if action == "store_true":
             default = env.as_bool(self.environment, default)
-            kind = "bool"
+            ini_type = "bool"
         elif nargs:
             default = env.as_list(self.environment, default)
-            extra["metavar"] = "NAME"
-            kind = "args"
-        elif isinstance(default, int):
+            ini_type = "paths" if argtype == Path else "args"
+        elif argtype is int:
             default = env.as_int(self.environment, default)
-            extra = {"type": int, "metavar": "INTEGER"}
-            kind = "int"
-        elif isinstance(default, Path):
+            ini_type = "int"
+        elif argtype is Path:
             default = env.as_path(self.environment, default)
-            extra = {"type": Path, "metavar": "PATH"}
-            kind = "paths"
-        elif isinstance(default, list):
+            ini_type = "string"
+        elif argtype is shlex.split:
             default = shlex.split(env.as_str(self.environment, default))
-            extra = {"type": shlex.split, "metavar": "ARGUMENTS"}
-            kind = "args"
+            ini_type = "args"
+        elif choices:
+            default = env.as_str(self.environment, default).lower()
+            ini_type = "string"
+
+            # Resolve values passed from environment variables
+            if not default or default in choices:
+                pass
+            elif "yes" in choices and default in ("1", "y", "on", "true", "enable"):
+                default = "yes"
+            elif "no" in choices and default in ("0", "n", "off", "false", "disable"):
+                default = "no"
+            else:
+                raise ValueError(
+                    f"Invalid value '{default}' for environment variable {self.environment}. "
+                    f"Expecting one of {(*choices,)}"
+                )
         else:
             default = env.as_str(self.environment, default)
-            extra["type"] = str
-            kind = "string"
+            ini_type = "string"
 
-            if "choices" not in self.extra:
-                if default == "1":
-                    default = "yes"
-                elif default == "0":
-                    default = "no"
-
-                extra["metavar"] = "NAME"
-
+        # Use custom message or value in default
         default_in_help: Any = self.default_in_help if self.default_in_help else default
 
-        extra.update(self.extra)
-        extra["help"] += (
-            f"\nEnvironment variable: {self.environment}\nDefault: {default_in_help}"
-        )
+        # Add option entry to configuration files (pyproject.toml, pytest.ini, ...)
         parser.addini(
-            self.name, help=f"Default value for {argument}", type=kind, default=default
+            self.name,
+            help=f"Default value for {argument}",
+            type=ini_type,
+            default=default,
         )
-        group.addoption(argument, **extra)
+
+        # Add option as command line argument
+        group.addoption(
+            argument,
+            help=(
+                f"{self.description}\n"
+                f"Environment variable: {self.environment}\n"
+                f"Default: {default_in_help}"
+            ),
+            **self.extra,
+        )
 
 
 def add_options_to_parser(parser: Parser, name: str, options: Iterable[Option]) -> None:
+    """Add options to parser.
+
+    Args:
+        parser:  Pytest parser.
+        name:    Name of group for options.
+        options: List of options to be added to parser.
+    """
     group: OptionGroup = parser.getgroup(name, description=f"{name} options")
 
     for option in options:
@@ -114,6 +150,6 @@ def is_cocotb_option(name: str) -> bool:
         name: Name of option (command line argument, entry from configuration file, ...).
 
     Returns:
-        ``True`` if option is cococtb option. Otherwise ``False``.
+        True if option is cococtb option. Otherwise False.
     """
     return any(name.startswith(prefix) for prefix in PREFIXES)
