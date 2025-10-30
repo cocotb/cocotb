@@ -24,57 +24,57 @@ When using the `pyproject.toml`_ file (recommended way):
 
 .. code:: toml
 
-   [project.entry-points.pytest11]
-   cocotb = "cocotb_tools.pytest.plugin"
+    [project.entry-points.pytest11]
+    cocotb = "cocotb_tools.pytest.plugin"
 
 When using the ``pytest.ini`` file:
 
 .. code:: ini
 
-   [pytest]
-   addopts = -p cocotb_tools.pytest.plugin
+    [pytest]
+    addopts = -p cocotb_tools.pytest.plugin
 
 When using the ``setup.cfg`` file:
 
 .. code:: ini
 
-   [options.entry_points]
-   pytest11 =
-     cocotb = cocotb_tools.pytest.plugin
+    [options.entry_points]
+    pytest11 =
+      cocotb = cocotb_tools.pytest.plugin
 
 When using the ``setup.py`` file:
 
 .. code:: python
 
-   from setuptools import setup
+    from setuptools import setup
 
-   setup(
-       # ...,
-       entry_points={
-           "pytest11": [
-               "cocotb = cocotb_tools.pytest.plugin",
-           ],
-       },
-   )
+    setup(
+        # ...,
+        entry_points={
+            "pytest11": [
+                "cocotb = cocotb_tools.pytest.plugin",
+            ],
+        },
+    )
 
 By defining the global variable ``pytest_plugins`` when using a ``conftest.py`` file
 (which must be located in the root of the project):
 
 .. code:: python
 
-   pytest_plugins = ("cocotb_tools.pytest.plugin",)
+    pytest_plugins = ("cocotb_tools.pytest.plugin",)
 
 By defining the ``PYTEST_PLUGINS`` environment variable:
 
 .. code:: shell
 
-   export PYTEST_PLUGINS="cocotb_tools.pytest.plugin"
+    export PYTEST_PLUGINS="cocotb_tools.pytest.plugin"
 
 By using the ``-p <plugin>`` option when invoking the `pytest`_ command line interface:
 
 .. code:: shell
 
-   pytest -p cocotb_tools.pytest.plugin ...
+    pytest -p cocotb_tools.pytest.plugin ...
 
 Building and Testing
 ====================
@@ -91,53 +91,53 @@ Example content of a ``conftest.py`` file:
 
 .. code:: python
 
-   import pytest
-   from cocotb_tools.pytest.hdl import HDL
+    import pytest
+    from cocotb_tools.pytest.hdl import HDL
 
 
-   @pytest.fixture(name="sample_module")
-   def sample_module_fixture(hdl: HDL) -> HDL:
-       """Define HDL design by adding HDL source files to it.
+    @pytest.fixture(name="sample_module")
+    def sample_module_fixture(hdl: HDL) -> HDL:
+        """Define HDL design by adding HDL source files to it.
 
-       Args:
-           hdl: Fixture created by the cocotb pytest plugin, representing a HDL design.
+        Args:
+            hdl: Fixture created by the cocotb pytest plugin, representing a HDL design.
 
-       Returns:
-           Representation of HDL design with added HDL source files.
-       """
-       hdl.sources = (
-           # List HDL source files,
-           "sample_module.sv",
-       )
+        Returns:
+            Representation of HDL design with added HDL source files.
+        """
+        hdl.sources = (
+            # List HDL source files,
+            "sample_module.sv",
+        )
 
-       return hdl
+        return hdl
 
 
 Example content of the ``test_sample_module.py`` file:
 
 .. code:: python
 
-   import pytest
-   from cocotb_tools.pytest.hdl import HDL
+    import pytest
+    from cocotb_tools.pytest.hdl import HDL
 
 
-   # Without providing positional arguments or  the test_module option to the cocotb decorator,
-   # the plugin will use the current file as the cocotb testbench (a Python file with cocotb tests).
-   # If the 'toplevel' option was not provided, it will be derived from the name of the first test_module
-   # but with a removed 'test_*' prefix or '*_test' suffix.
-   @pytest.mark.cocotb  # equivalent to @pytest.mark.cocotb("test_dut", toplevel="dut")
-   def test_sample_module(sample_module: HDL) -> None:
-       """Build HDL design and run HDL simulator to execute cocotb tests.
+    # Without providing positional arguments or  the test_module option to the cocotb decorator,
+    # the plugin will use the current file as the cocotb testbench (a Python file with cocotb tests).
+    # If the 'toplevel' option was not provided, it will be derived from the name of the first test_module
+    # but with a removed 'test_*' prefix or '*_test' suffix.
+    @pytest.mark.cocotb  # equivalent to @pytest.mark.cocotb("test_dut", toplevel="dut")
+    def test_sample_module(sample_module: HDL) -> None:
+        """Build HDL design and run HDL simulator to execute cocotb tests.
 
-       Args:
-           sample_module: An instance of a defined HDL design.
-       """
-       sample_module.test()
+        Args:
+            sample_module: An instance of a defined HDL design.
+        """
+        sample_module.test()
 
 
-   # A @pytest.mark.cocotb or @cocotb.test decorator is not required if the test function
-   # starts with a 'test_*' prefix, is a coroutine function (``async``) and has a ``dut`` argument.
-   async def test_some_dut_feature(dut) -> None:
+    # A @pytest.mark.cocotb or @cocotb.test decorator is not required if the test function
+    # starts with a 'test_*' prefix, is a coroutine function (``async``) and has a ``dut`` argument.
+    async def test_some_dut_feature(dut) -> None:
         """cocotb test for DUT."""
 
 @pytest.mark.cocotb
@@ -171,23 +171,23 @@ when using `pytest`_ ``-k '<expression>'`` or ``-m '<markers>'`` options.
 
 .. code:: python
 
-   import pytest
-   from cocotb_tools.pytest.hdl import HDL
+    import pytest
+    from cocotb_tools.pytest.hdl import HDL
 
 
-   @pytest.mark.cocotb  # needed by cocotb runners
-   def hdl_runner(hdl: HDL) -> None:
-       """Build HDL design and run HDL simulator that will execute cocotb tests."""
-       hdl.test()
+    @pytest.mark.cocotb  # needed by cocotb runners
+    def hdl_runner(hdl: HDL) -> None:
+        """Build HDL design and run HDL simulator that will execute cocotb tests."""
+        hdl.test()
 
 
-   async def test_something(dut) -> None:
-       """Function that is picked up by pytest discovery does not need a decorator."""
+    async def test_something(dut) -> None:
+        """Function that is picked up by pytest discovery does not need a decorator."""
 
 
-   @pytest.mark.cocotb
-   async def name_without_test_prefix(dut) -> None:
-       """Function that is not picked up by pytest discovery needs a decorator to count as a test."""
+    @pytest.mark.cocotb
+    async def name_without_test_prefix(dut) -> None:
+        """Function that is not picked up by pytest discovery needs a decorator to count as a test."""
 
 Configuration
 =============
@@ -208,15 +208,15 @@ used to configure cocotb testing environment, can be listed by invoking `pytest`
 
 .. code:: shell
 
-   pytest --help
+    pytest --help
 
 Command Line Usage
 ==================
 
 .. note::
 
-   :py:mod:`cocotb_tools.pytest.plugin` must be enabled for `pytest`_ to show all
-   available command line arguments `--cocotb-*`, markers and fixtures for cocotb.
+    :py:mod:`cocotb_tools.pytest.plugin` must be enabled for `pytest`_ to show all
+    available command line arguments `--cocotb-*`, markers and fixtures for cocotb.
 
 Help
 ----
@@ -225,19 +225,19 @@ Show all available command line arguments:
 
 .. code:: shell
 
-   pytest --help
+    pytest --help
 
 Show all available markers:
 
 .. code:: shell
 
-   pytest --markers
+    pytest --markers
 
 Show all available fixtures:
 
 .. code:: shell
 
-   pytest --fixtures
+    pytest --fixtures
 
 Tests Discovering
 -----------------
@@ -246,44 +246,44 @@ To list all available tests, use the ``--co`` or alternatively the ``--collect-o
 
 .. code:: shell
 
-   pytest --co
+    pytest --co
 
 To show also docstring when listing tests, add the ``-v`` option:
 
 .. code:: shell
 
-   pytest --co -v
+    pytest --co -v
 
 To list only cocotb tests and cocotb runners, use the ``-k cocotb`` option:
 
 .. code:: shell
 
-   pytest --co -k cocotb
+    pytest --co -k cocotb
 
 To list only cocotb tests without cocotb runners, use the ``-k 'cocotb and not runner'`` option:
 
 .. code:: shell
 
-   pytest --co -k 'cocotb and not runner'
+    pytest --co -k 'cocotb and not runner'
 
 
 To list only cocotb runners without cocotb tests, use the ``-k 'cocotb and runner'`` option:
 
 .. code:: shell
 
-   pytest --co -k 'cocotb and runner'
+    pytest --co -k 'cocotb and runner'
 
 To list only cocotb tests that will be run by specific cocotb runner, add name of cocotb runner test function:
 
 .. code:: shell
 
-   pytest --co -k 'cocotb and not runner and <name-of-cocotb-runner-test-function>'
+    pytest --co -k 'cocotb and not runner and <name-of-cocotb-runner-test-function>'
 
 To list which cocotb runners will run specific cocotb test(s), add name of cocotb test function:
 
 .. code:: shell
 
-   pytest --co -k 'cocotb and runner and <name-of-cocotb-test-function>'
+    pytest --co -k 'cocotb and runner and <name-of-cocotb-test-function>'
 
 Running Tests
 -------------
@@ -292,35 +292,35 @@ To run all tests (including cocotb and non-cocotb tests):
 
 .. code:: shell
 
-   pytest
+    pytest
 
 To run only cocotb tests:
 
 .. code:: shell
 
-   pytest -k cocotb
+    pytest -k cocotb
 
 To see output from tests in real-time, disable capture mode with the ``-s`` option or the ``--capture=no`` option:
 
 .. code:: shell
 
-   pytest -s
+    pytest -s
 
 To see more verbose information about test, add the ``-v`` option:
 
 .. code:: shell
 
-   pytest -s -v
+    pytest -s -v
 
 To run cocotb runners in parallel:
 
 .. code:: shell
 
-   pytest -n auto
+    pytest -n auto
 
 .. note::
 
-   `pytest-xdist`_ plugin must be installed and enabled.
+    `pytest-xdist`_ plugin must be installed and enabled.
 
 Tests Reporting
 ---------------
@@ -329,25 +329,25 @@ To show extra test summary from all tests regardless of passed or failed status:
 
 .. code:: shell
 
-   pytes -rA
+    pytes -rA
 
 To show classic cocotb tests summary report:
 
 .. code:: shell
 
-   pytest --cocotb-summary
+    pytest --cocotb-summary
 
 To generate JUnit XML tests report file for CI:
 
 .. code:: shell
 
-   pytest --junit-xml=junit.xml -o junit_family=xunit1
+    pytest --junit-xml=junit.xml -o junit_family=xunit1
 
 .. note::
 
-   Changing JUnit family to ``xunit1`` will tell built-in `pytest`_ JUnit XML plugin to include also
-   file path and line number of executed test function (testcase) in generated JUnit XML tests report.
-   These information can be used by CI environments like GitLab CI.
+    Changing JUnit family to ``xunit1`` will tell built-in `pytest`_ JUnit XML plugin to include also
+    file path and line number of executed test function (testcase) in generated JUnit XML tests report.
+    These information can be used by CI environments like GitLab CI.
 
 .. _pytest: https://docs.pytest.org/en/stable/contents.html
 .. _fixture: https://docs.pytest.org/en/stable/explanation/fixtures.html#about-fixtures
