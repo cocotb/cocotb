@@ -73,10 +73,27 @@ class Controller:
             key: StashKey | None = getattr(junitxml, "xml_key", None)
             self._junitxml = config.stash.get(key, None) if key else None
 
+        # Pytest is printing test results in real-time when test finished execution
+        # With default capturing mode (fd), it will print '.', 's', 'x', 'F', 'E' per test
+        # The main pytest process will run test functions that will run HDL simulations (aka runners)
+        # Each HDL simulation will take some time and it will execute N cocotb tests
+        # To print test results in real-time from running cocotb tests,
+        # we need a separate single thread that will run in parallel to running HDL simulation and
+        # receive test reports from it
+        # On top of that, xdist will schedule HDL simulations in separate processes
+        # producing cocotb test reports in parallel and independently to each other
         self._listener: Listener | None = None
         self._thread: Thread | None = None
+
+        # RLock (Reentrant Lock) is needed to protect resources in other plugins
+        # when the running thread will invoke the pytest_runtest_logreport hook to
+        # notify other plugins about new cocotb test result received from HDL simulator
+        # Pytest hooks can be wrapped and called recursively
         self._lock = RLock()
 
+        # Create only a single reporter service in the main parent process
+        # In case when plugin is used with xdist, it must be created within xdist dsession to
+        # receive test results from xdist workers
         if "COCOTB_PYTEST_REPORTER_ADDRESS" not in os.environ:
             self._listener = Listener()
             self._thread = Thread(target=self._handle_test_reports)
