@@ -88,7 +88,7 @@ OPTIONS: tuple[Option, ...] = (
         "cocotb_regression_manager",
         choices=("pytest", "cocotb", "none"),
         default="pytest",
-        help="""
+        description="""
             Regression manager that will be used to run cocotb tests.
             - pytest: Use pytest as regression manager to manage and run cocotb tests.
             - cocotb: Use built-in cocotb regression manager to manage and run cocotb tests.
@@ -97,28 +97,29 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_summary",
         action="store_true",
-        help="Show cocotb test summary info.",
+        description="Show cocotb test summary info.",
     ),
     Option(
         "cocotb_sim_time_unit",
         choices=("step", "fs", "ps", "ns", "us", "ms", "sec"),
         default="ns",
-        help="Simulation time unit that will be used during tests reporting.",
+        description="Simulation time unit that will be used during tests reporting.",
     ),
     Option(
         "cocotb_gui",
         action="store_true",
-        help="Enable the GUI mode in the simulator (if supported).",
+        description="Enable the GUI mode in the simulator (if supported).",
     ),
     Option(
         "cocotb_waves",
         action="store_true",
-        help="Enable wave traces dump for simulator (if supported).",
+        description="Enable wave traces dump for simulator (if supported).",
     ),
     Option(
         "cocotb_waveform_viewer",
+        metavar="NAME",
         default="surfer",
-        help="""
+        description="""
             The name of the waveform viewer executable to use (like surfer) when GUI mode is enabled for simulators
             that do not have a built-in waveform viewer (like Verilator) The executable name will be called with the
             name of the waveform file as the argument.
@@ -126,16 +127,18 @@ OPTIONS: tuple[Option, ...] = (
     ),
     Option(
         "cocotb_seed",
+        metavar="INTEGER",
         default=int(time()),
         default_in_help="current epoch time in seconds",
         environment="COCOTB_RANDOM_SEED",
-        help="Seed the Python random module to recreate a previous test stimulus.",
+        type=int,
+        description="Seed the Python random module to recreate a previous test stimulus.",
     ),
     Option(
         "cocotb_ansi_output",
         choices=("yes", "no", "auto"),
         default="auto",
-        help="""
+        description="""
             Override the default behavior of annotating cocotb output with ANSI color codes if the output is a terminal.
             - yes: Forces output to be ANSI-colored regardless of the type of stdout or the presence of NO_COLOR.
             - no:  Suppresses the ANSI color output in the log messages.
@@ -143,8 +146,10 @@ OPTIONS: tuple[Option, ...] = (
     ),
     Option(
         "cocotb_attach",
+        metavar="SECONDS",
         default=0,
-        help="""
+        type=int,
+        description="""
             Pause time value in seconds before the simulator start. If set to non-zero value, cocotb will print the
             process ID (PID) to attach to and wait the specified time in seconds before actually letting the
             simulator run.
@@ -153,7 +158,7 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_enable_profiling",
         action="store_true",
-        help="""
+        description="""
             Enable performance analysis of the Python portion of cocotb. When enabled, a file test_profile.pstat
             will be written which contains statistics about the cumulative time spent in the functions. From this,
             a callgraph diagram can be generated with gprof2dot and graphviz.
@@ -162,7 +167,7 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_log_level",
         choices=("trace", "debug", "info", "warning", "error", "critical"),
-        help="""
+        description="""
             The default log level of all "cocotb" Python loggers. The default is unset, which means that the log
             level is inherited from the root logger. This behaves similarly to INFO.
         """,
@@ -170,7 +175,7 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_log_prefix",
         metavar="FORMAT",
-        help="""
+        description="""
             Customize the log message prefix. The value of this variable should be in Python f-string syntax.
             It has access to the following variables:
             - record:  The LogRecord being formatted. This includes the attribute created_sim_time, which is the simulation time in steps.
@@ -182,7 +187,7 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_pdb_on_exception",
         action="store_true",
-        help="""
+        description="""
             If enabled, cocotb will drop into the Python debugger (pdb) if a test fails with an exception.
             See also the Python subsection of Attaching a Debugger.
         """,
@@ -190,7 +195,7 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_plusargs",
         nargs="*",
-        help="""
+        description="""
             Plusargs are options that are starting with a plus (+) sign.  They are passed to the simulator and are
             also available within cocotb as cocotb.plusargs. In the simulator, they can be read by the
             Verilog/SystemVerilog system functions $test$plusargs and $value$plusargs.
@@ -200,7 +205,7 @@ OPTIONS: tuple[Option, ...] = (
         "cocotb_reduced_log_fmt",
         choices=("yes", "no"),
         default="yes",
-        help="""
+        description="""
             - yes: Logs will include simulation time, message type (INFO, WARNING, ERROR, ...), logger name, and the log message itself.
             - no:  The filename and line number where a log function was called will be added between the logger name and the log message.
         """,
@@ -208,7 +213,7 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_resolve_x",
         choices=("error", "weak", "zeros", "ones", "random"),
-        help="""
+        description="""
             Defines how to resolve bits with a value of X, Z, U, W, or - when being converted to integer. Valid settings are:
             - error:  Resolves nothing.
             - weak:   Resolves L to 0 and H to 1.
@@ -224,7 +229,7 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_scheduler_debug",
         action="store_true",
-        help="""
+        description="""
             Enable additional log output of the coroutine scheduler. This will default the value of debug, which
             can later be modified.
         """,
@@ -233,7 +238,8 @@ OPTIONS: tuple[Option, ...] = (
         "cocotb_simulator",
         choices=("auto", *tuple(SIMULATORS.values())),
         default="auto",
-        help="""
+        metavar="NAME",
+        description="""
             Select HDL simulator for cocotb. The ``auto`` option will automatically pick one of available HDL
             simulators where precedence order is based on available choices for this argument, from the highest priority
             (most left) to the lowest priority (most right).
@@ -242,7 +248,7 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_trust_inertial_writes",
         action="store_true",
-        help="""
+        description="""
             It enables a mode which allows cocotb to trust that VPI/VHPI/FLI inertial writes are applied properly
             according to the respective standards. This mode can lead to noticeable performance improvements, and
             also includes some behavioral difference that are considered by the cocotb maintainers to be “better”.
@@ -255,7 +261,7 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_user_coverage",
         action="store_true",
-        help="""
+        description="""
             Enable to collect Python coverage data for user code. For some simulators, this will also report HDL
             coverage. If coverage configuration file doesn't exist, branch coverage is collected and files in the
             cocotb package directory are excluded. This needs the coverage Python module to be installed.
@@ -263,8 +269,10 @@ OPTIONS: tuple[Option, ...] = (
     ),
     Option(
         "cocotb_pytest_args",
+        type=shlex.split,
         default=[],
-        help="""
+        metavar="ARGS",
+        description="""
             By default, instance of pytest that is running from HDL simulator as regression manager for cocotb tests,
             will be called with the same command line arguments as pytest invoked by user from command line that
             is starting cocotb runners (HDL simulators). This option allows user to override it and pass own
@@ -277,12 +285,13 @@ OPTIONS: tuple[Option, ...] = (
         "cocotb_pytest_dir",
         default_in_help="current working directory",
         metavar="PATH",
-        help="Override path from where pytest was invoked.",
+        type=Path,
+        description="Override path from where pytest was invoked.",
     ),
     Option(
         "gpi_log_level",
         choices=("trace", "debug", "info", "warning", "error", "critical"),
-        help="""
+        description="""
             The default log level of all "gpi" (the low-level simulator interface) loggers, including both Python
             and the native GPI logger. The default is unset, which means that the log level is inherited from the
             root logger. This behaves similarly to INFO.
@@ -297,7 +306,7 @@ OPTIONS: tuple[Option, ...] = (
             "cocotb.logging:_configure",
             "cocotb._init:init_package_from_simulation",
         ),
-        help="""
+        description="""
             The Python module and callable that starts up the Python cosimulation environment. User overloads can be
             used to enter alternative Python frameworks or to hook existing cocotb functionality. It is formatted as
             path.to.entry.module:entry_point.function,other_module:other_func. The string before the colon is the
@@ -308,92 +317,111 @@ OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_build_dir",
         default="sim_build",
-        help="Directory to run the build step in.",
+        metavar="PATH",
+        type=Path,
+        description="Directory to run the build step in.",
     ),
     Option(
         "cocotb_defines",
         nargs="*",
         metavar="NAME[=VALUE]",
-        help="Extra defines to set.",
+        default=[],
+        description="Extra defines to set.",
     ),
     Option(
         "cocotb_includes",
         nargs="*",
         metavar="PATH",
-        help="Extra Verilog include directories.",
+        default=[],
+        type=Path,
+        description="Extra Verilog include directories.",
     ),
     Option(
         "cocotb_parameters",
         nargs="*",
         metavar="NAME[=VALUE]",
-        help="Extra Verilog parameters or VHDL generics.",
+        default=[],
+        description="Extra Verilog parameters or VHDL generics.",
     ),
     Option(
         "cocotb_library",
         default="top",
-        help="The library name to compile into.",
-    ),
-    Option(
-        "cocotb_build_args",
-        default=[],
-        help="Extra build arguments for the simulator.",
+        metavar="NAME",
+        description="The library name to compile into.",
     ),
     Option(
         "cocotb_always",
         action="store_true",
-        help="Always run the build step.",
+        description="Always run the build step.",
     ),
     Option(
         "cocotb_clean",
         action="store_true",
-        help="Delete build directory before building.",
+        description="Delete build directory before building.",
     ),
     Option(
         "cocotb_verbose",
         action="store_true",
-        help="Enable verbose messages.",
+        description="Enable verbose messages.",
     ),
     Option(
         "cocotb_timescale",
         default="1ns/1ns",
         metavar="UNIT[/PRECISION]",
-        help="Timescale containing time unit and time precision for simulation.",
+        description="Timescale containing time unit and time precision for simulation.",
     ),
     Option(
         "cocotb_env",
         metavar="NAME[=VALUE]",
         nargs="*",
-        help="Extra environment variables to set.",
+        default=[],
+        description="Extra environment variables to set.",
     ),
     Option(
         "cocotb_toplevel_library",
         default="top",
-        help="The library name for HDL toplevel module.",
+        metavar="NAME",
+        description="The library name for HDL toplevel module.",
     ),
     Option(
         "cocotb_gpi_interfaces",
         nargs="*",
-        help="List of GPI interfaces to use, with the first one being the entry point.",
+        metavar="NAME",
+        default=[],
+        description="List of GPI interfaces to use, with the first one being the entry point.",
+    ),
+    Option(
+        "cocotb_build_args",
+        nargs="*",
+        metavar="ARG",
+        default=[],
+        description="Extra build arguments for the simulator.",
     ),
     Option(
         "cocotb_elab_args",
+        nargs="*",
+        metavar="ARG",
         default=[],
-        help="Extra elaboration arguments for the simulator.",
+        description="Extra elaboration arguments for the simulator.",
     ),
     Option(
         "cocotb_test_args",
+        nargs="*",
+        metavar="ARG",
         default=[],
-        help="Extra arguments for the simulator.",
+        description="Extra arguments for the simulator.",
     ),
     Option(
         "cocotb_pre_cmd",
+        nargs="*",
+        metavar="ARG",
         default=[],
-        help="Extra commands to run before simulation begins.",
+        description="Extra commands to run before simulation begins.",
     ),
 )
 
 
-@fixture(name="dut", scope="session")
+@fixture(name="dut")
 def dut_fixture() -> SimHandleBase | None:
     """Simulation handle to DUT."""
     return getattr(cocotb, "top", None)
@@ -446,6 +474,7 @@ def pytest_configure(config: Config) -> None:
 
             environment: str = name.upper()
 
+            # Set value of environment variable to be understable by cocotb
             if value in (True, "yes"):
                 os.environ[environment] = "1"
             elif value in (False, "no", "none", "auto", "", []):
@@ -473,8 +502,6 @@ def pytest_configure(config: Config) -> None:
         if option.cocotb_pytest_dir
         else str(config.invocation_params.dir)
     )
-
-    shlex.join(option.cocotb_pytest_args)
 
     os.environ["COCOTB_PYTEST_ARGS"] = shlex.join(
         option.cocotb_pytest_args or config.invocation_params.args
@@ -538,7 +565,7 @@ def _unwrap_obj(obj: object, markers: list[Mark] | None = None) -> object:
         # @cocotb.test(...) -> @pytest.mark.cocotb(...)
         # @cocotb.mark.<name2>
         # async def func(dut) -> None:
-        kwargs: dict[str, Any] = {
+        kwargs = {
             name: value
             for name, value in vars(obj).items()
             if not name.startswith("_") and name != "func"
@@ -686,8 +713,8 @@ def pytest_terminal_summary(
                     summary[3].append(f"{real_time:.2f} ")
                     summary[4].append(f"{ratio:.2f} ")
 
-                    for index, width in enumerate(widths):
-                        widths[index] = max(width, len(summary[index][-1]))
+                    for index, column_width in enumerate(widths):
+                        widths[index] = max(column_width, len(summary[index][-1]))
 
     sum_ratio = sum_sim_time / sum_real_time if sum_real_time else 0
     passed: int = count["PASS"]
