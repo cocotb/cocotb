@@ -10,12 +10,12 @@ import hashlib
 import inspect
 import random
 from collections import deque
-from collections.abc import AsyncGenerator, Generator, Iterable
+from collections.abc import AsyncGenerator, Awaitable, Generator, Iterable
 from functools import wraps
 from importlib import import_module
 from multiprocessing.connection import Client
 from time import sleep
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Literal, cast
 
 from _pytest.config import default_plugins
 from pytest import (
@@ -52,14 +52,18 @@ from cocotb_tools.pytest.fixture import (
 RETRIES: int = 10
 INTERVAL: float = 0.1  # seconds
 
+AsyncFunction = Callable[..., Awaitable]
+
 
 class FailSimulation(RuntimeError):
-    pass
+    """Event triggered by simulator."""
 
 
-def finish_on_exception(method):
+def finish_on_exception(method: Callable[..., Any]) -> Callable[..., Any]:
+    """Wrap class method, capture exception, notify pytest and plugins, finish simulation."""
+
     @wraps(method)
-    def wrapper(self, *args, **kwargs) -> Any:
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
         try:
             return method(self, *args, **kwargs)
         except BaseException:
@@ -83,7 +87,12 @@ class RegressionManager:
 
     _timer1 = Timer(1)
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: str) -> None:
+        """Create new instance of regression manager for cocotb tests.
+
+        Args:
+            args: Command line arguments for pytest.
+        """
         self._task: Task
         self._tasks: deque[Task] = deque[Task]()
         self._subtasks: list[Task] = []
@@ -149,7 +158,11 @@ class RegressionManager:
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_pycollect_makeitem(
         self, collector: Module | Class, name: str, obj: object
-    ) -> Generator[Item | Collector | list[Item | Collector] | None, None, None]:
+    ) -> Generator[
+        None,
+        Item | Collector | list[Item | Collector] | None,
+        list[Item | Collector] | None,
+    ]:
         result: Item | Collector | list[Item | Collector] | None = yield
 
         if result is None:
@@ -217,7 +230,7 @@ class RegressionManager:
                     item.add_marker("skip")
 
                 expect_error: (
-                    type[BaseException] | Iterable[type[BaseException], ...] | None
+                    type[BaseException] | Iterable[type[BaseException]] | None
                 ) = kwargs.get("expect_error")
 
                 expect_fail: bool = kwargs.get("expect_fail", False)
@@ -251,7 +264,7 @@ class RegressionManager:
         item: Item,
         when: Literal["setup", "call", "teardown"],
         func: Callable[..., None] | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> bool:
         if not func:
             func = getattr(item.ihook, f"pytest_runtest_{when}")
@@ -377,7 +390,7 @@ class RegressionManager:
     def pytest_fixture_setup(
         self,
         fixturedef: FixtureDef[Any],
-        request,
+        request: Any,  # NOTE: type not available in public pytest API
     ) -> object | None:
         """Execution of fixture setup."""
         fixturefunc = fixturedef.func
@@ -395,11 +408,14 @@ class RegressionManager:
 
             try:
                 if is_async_generator:
-                    iterator: AsyncGenerator[Any, None] = fixturefunc(**kwargs)
+                    iterator: AsyncGenerator[Any, None] = cast(
+                        "AsyncGenerator", fixturefunc(**kwargs)
+                    )
+
                     result = await iterator.__anext__()
                     fixturedef.addfinalizer(self._create_async_finalizer(iterator))
                 else:
-                    result = await fixturefunc(**kwargs)
+                    result = await cast("AsyncFunction", fixturefunc)(**kwargs)
 
                 return result
             finally:
