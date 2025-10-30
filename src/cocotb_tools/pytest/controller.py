@@ -61,7 +61,7 @@ class Controller:
         self._config: Config = config
 
         # Instance of JUnit XML from built-in pytest junitxml plugin
-        self._junitxml = None
+        self._junitxml: Any = None  # NOTE: Type not available in public pytest API
 
         # Get handler to built-in pytest Junit XML plugin
         # This will be needed to add custom properties about cocotb tests and simulation
@@ -82,7 +82,7 @@ class Controller:
         # receive test reports from it
         # On top of that, xdist will schedule HDL simulations in separate processes
         # producing cocotb test reports in parallel and independently to each other
-        self._listener: Listener | None = None
+        self._listener: Listener
         self._thread: Thread | None = None
 
         # RLock (Reentrant Lock) is needed to protect resources in other plugins
@@ -123,7 +123,11 @@ class Controller:
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_pycollect_makeitem(
         self, collector: Module | Class, name: str, obj: object
-    ) -> Generator[Item | Collector | list[Item | Collector] | None, None, None]:
+    ) -> Generator[
+        None,
+        Item | Collector | list[Item | Collector] | None,
+        list[Item | Collector] | None,
+    ]:
         """Collect cocotb runners and cocotb tests from Python modules.
 
         Args:
@@ -223,7 +227,7 @@ class Controller:
         self, session: Session, exitstatus: int | ExitCode
     ) -> None:
         """Stop started thread."""
-        if self._listener and self._thread:
+        if self._thread:
             with Client(address=self._listener.address) as client:
                 client.send(None)  # notify _run thread to exit
 
@@ -291,11 +295,12 @@ class Controller:
                         #       <Function name>   <--- cocotb test
                         yield item
 
-                    yield Runner.from_parent(
-                        item.parent,
-                        name=item.name,
-                        item=item,
-                    )
+                    if item.parent:
+                        yield Runner.from_parent(
+                            item.parent,
+                            name=item.name,
+                            item=item,
+                        )
             else:
                 yield item
 
@@ -333,20 +338,6 @@ class Controller:
 
             except BaseException:
                 self._notify_exception(ExceptionInfo.from_current())
-
-    def _add_keywords(self, nodeid: str, keywords: Iterable[str]) -> None:
-        """Store item keywords per node identifier.
-
-        Args:
-            nodeid: Node identifier of test item.
-            keywords: List of test item keywords to stored under provided nodeid.
-        """
-        entries: set[str] | None = self._keywords.get(nodeid)
-
-        if entries is None:
-            self._keywords[nodeid] = set(keywords)
-        else:
-            entries.update(keywords)
 
     def _notify_exception(self, excinfo: ExceptionInfo) -> None:
         self._config.notify_exception(excinfo, self._config.option)
