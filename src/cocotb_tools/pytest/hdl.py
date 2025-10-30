@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, MutableMapping, Sequence
 from copy import deepcopy
 from pathlib import Path
 from shutil import which
@@ -83,7 +83,7 @@ class HDL:
         self.sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] = []
         self.includes: Sequence[PathLike] = []
         self.defines: Mapping[str, object] = {}
-        self.parameters: Mapping[str, object] = {}
+        self.parameters: MutableMapping[str, object] = {}
         self.build_args: Sequence[str | VHDL | Verilog] = []
         self.toplevel: str | None = None
         self.always: bool = option.cocotb_always
@@ -186,7 +186,7 @@ class HDL:
 
         return self.runner.test(
             test_module=self.test_module,
-            hdl_toplevel=self.toplevel,
+            hdl_toplevel=self.toplevel or "",
             hdl_toplevel_library=self.toplevel_library,
             gpi_interfaces=self.gpi_interfaces or None,
             seed=self.seed,
@@ -199,7 +199,7 @@ class HDL:
             parameters=parameters or None,
             build_dir=self.test_dir,
             test_dir=self.test_dir,
-            results_xml=results_xml,
+            results_xml=str(results_xml),
             pre_cmd=pre_cmd or None,
             verbose=self.verbose,
             timescale=None if self.simulator in ("xcelium",) else self.timescale,
