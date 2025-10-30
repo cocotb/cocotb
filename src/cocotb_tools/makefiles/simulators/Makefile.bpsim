@@ -35,10 +35,10 @@ else
 endif
 
 ifneq ($(VHDL_SOURCES),)
-	SV = "-sv"
+	SV = -sv
 endif
 
-WORK = "work."
+WORK = work.
 TOPMODULE_ARG = -top $(WORK)$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL)
 COMMON_ARGS = -nc -l bpsim.log -work $(SIM_BUILD)
 BPSIM_ARGS = $(COMMON_ARGS) -pli_lib $(shell cocotb-config --lib-name-path vpi bpsim) -lib work +acc+rwcbfsWF
@@ -64,7 +64,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/image.so $(CUSTOM_SIM_DEPS)
 	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
 	GPI_EXTRA=$(GPI_EXTRA) \
 	TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS) 
 	$(call check_results)
 
 endif
