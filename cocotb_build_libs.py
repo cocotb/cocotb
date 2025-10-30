@@ -763,11 +763,4 @@ def get_ext():
         )
         ext.append(bpsim_vpi_ext)
 
-        bpsim_vhpi_ext = _get_vhpi_lib_ext(
-            include_dirs=include_dirs,
-            share_lib_dir=share_lib_dir,
-            sim_define="BPSim",
-        )
-        ext.append(bpsim_vhpi_ext)
-
     return ext

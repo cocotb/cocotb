@@ -3,37 +3,68 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 CMD_BIN := bpsim
-
+VHDL_COMP_BIN := bpvhcom
+V_COMP_BIN := bpvlcom
 ifdef BPSIM_BIN_DIR
     CMD := $(shell :; command -v $(BPSIM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    VHDL_COMP = $(shell :; command -v $(BPSIM_BIN_DIR)/$(VHDL_COMP_BIN) 2>/dev/null)
+    V_COMP = $(shell :; command -v $(BPSIM_BIN_DIR)/$(V_COMP_BIN) 2>/dev/null)
 else
     # auto-detect bin dir from system path
     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+    VHDL_COMP = $(shell :; command -v $(VHDL_COMP_BIN) 2>/dev/null)
+    V_COMP = $(shell :; command -v $(V_COMP_BIN) 2>/dev/null)
+
 endif
+
+ifneq ($(TOPLEVEL_LANG),verilog)
+
+$(COCOTB_RESULTS_FILE):
+	@echo "Skipping simulation as only Verilog top level is supported on simulator=$(SIM)"
+
+else
 
 ifeq (, $(CMD))
     $(error Unable to locate command >$(CMD_BIN)<)
 endif
 
-ifeq ($(WAVES), 1)
-    WAVE_ARG := -waves file.vcd
+ifdef WAVES
+    WAVE_ARG := -waves $(WAVES)
 else
     WAVE_ARG :=
 endif
 
-TOPMODULE_ARG = -top $(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL)
+ifneq ($(VHDL_SOURCES),)
+	SV = "-sv"
+endif
 
-BPSIM_ARGS = -nc -work $(SIM_BUILD) -pli_lib $(shell cocotb-config --lib-name-path vpi bpsim) +acc+rwcbfsWF
-COMP_ARGS = $(BPSIM_ARGS) -genimage image -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
-RUN_ARGS = $(BPSIM_ARGS) -image image $(WAVE_ARG)
+WORK = "work."
+TOPMODULE_ARG = -top $(WORK)$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL)
+COMMON_ARGS = -nc -l bpsim.log -work $(SIM_BUILD)
+BPSIM_ARGS = $(COMMON_ARGS) -pli_lib $(shell cocotb-config --lib-name-path vpi bpsim) -lib work +acc+rwcbfsWF
+# COMP_ARGS = $(BPSIM_ARGS) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
+COMP_ARGS = $(COMMON_ARGS) $(SV) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
+GENIMAGE_ARGS = $(COMMON_ARGS) -genimage image -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
+RUN_ARGS = $(BPSIM_ARGS) -image image $(WAVE_ARG) 
+VHDL_COMP_ARGS = $(COMMON_ARGS) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
-$(SIM_BUILD)/image.so: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
-	$(SIM_CMD_PREFIX) $(CMD) $(COMP_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+
+$(SIM_BUILD)/image.so: $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)  | $(SIM_BUILD)
+ifneq ($(VHDL_SOURCES),)
+	$(SIM_CMD_PREFIX) $(VHDL_COMP) $(VHDL_COMP_ARGS) $(EXTRA_ARGS) $(VHDL_SOURCES)
+endif	
+	$(SIM_CMD_PREFIX) $(V_COMP) $(COMP_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+	$(SIM_CMD_PREFIX) $(CMD) $(GENIMAGE_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS) 
 
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/image.so $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
-	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
-	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) \
+   	COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) \
+       	COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) \
+	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
+	GPI_EXTRA=$(GPI_EXTRA) \
+	TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS) $(VERILOG_SOURCES)
-
 	$(call check_results)
+
+endif
