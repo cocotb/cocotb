@@ -421,7 +421,7 @@ OPTIONS: tuple[Option, ...] = (
 )
 
 
-@fixture(name="dut")
+@fixture(name="dut", scope="session")
 def dut_fixture() -> SimHandleBase | None:
     """Simulation handle to DUT."""
     return getattr(cocotb, "top", None)
