@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import shlex
+from typing import cast
 
 import cocotb
 from cocotb_tools.pytest import env
@@ -26,5 +27,8 @@ def run_regression(_: object) -> None:
     if results_file:
         args.append(f"--junit-xml={results_file}")
 
-    cocotb._regression_manager = RegressionManager(*args)
+    cocotb._regression_manager = cast(
+        "cocotb.regression.RegressionManager", RegressionManager(*args)
+    )
+
     cocotb._regression_manager.start_regression()
