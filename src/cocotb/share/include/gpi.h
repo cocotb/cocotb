@@ -150,7 +150,7 @@ typedef enum gpi_edge_e {
 GPI_EXPORT bool gpi_has_registered_impl(void);
 
 /** Stop the simulation after control returns to the GPI. */
-GPI_EXPORT void gpi_sim_end(void);
+GPI_EXPORT void gpi_finish(void);
 
 /** Get the simulation time as two 32-bit uints.
  *
@@ -428,6 +428,56 @@ gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gpi_cb_data);
  */
 GPI_EXPORT gpi_cb_hdl
 gpi_register_readwrite_callback(int (*gpi_function)(void *), void *gpi_cb_data);
+
+/** Type of a start of simulation time callback.
+ *
+ * @param cb_data   Pointer to user data to be passed to callback function.
+ * @param argc      Number of command line arguments.
+ * @param argv      Command line arguments.
+ * @return          `0` on success, non-zero on error which will abort
+ * simulation.
+ */
+typedef int (*gpi_start_of_sim_time_callback)(void *cb_data, int argc,
+                                              char const *const *argv);
+
+/** Register a callback to run at the start of simulation time.
+ *
+ * @param cb        Callback function pointer.
+ * @param cb_data   Pointer to user data to be passed to callback function.
+ * @return          Handle to callback object.
+ */
+GPI_EXPORT int gpi_register_start_of_sim_time_callback(
+    gpi_start_of_sim_time_callback cb, void *cb_data);
+
+/** Type of an end of simulation time callback.
+ *
+ * @param cb_data   Pointer to user data to be passed to callback function.
+ */
+typedef void (*gpi_end_of_sim_time_callback)(void *cbd_data);
+
+/** Register a callback to run at the end of simulation time.
+ *
+ * @param cb        Callback function pointer.
+ * @param cb_data   Pointer to user data to be passed to callback function.
+ * @return          Handle to callback object.
+ */
+GPI_EXPORT int gpi_register_end_of_sim_time_callback(
+    gpi_end_of_sim_time_callback cb, void *cb_data);
+
+/** Type of a GPI finalization callback.
+ *
+ * @param cb_data   Pointer to user data to be passed to callback function.
+ */
+typedef void (*gpi_finalize_callback)(void *cbd_data);
+
+/** Register a callback to run just before the GPI terminates.
+ *
+ * @param cb        Callback function pointer.
+ * @param cb_data   Pointer to user data to be passed to callback function.
+ * @return          Handle to callback object.
+ */
+GPI_EXPORT int gpi_register_finalize_callback(gpi_finalize_callback cb,
+                                              void *cb_data);
 
 /** Remove callback.
  *

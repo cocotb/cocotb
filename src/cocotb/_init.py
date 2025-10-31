@@ -107,14 +107,13 @@ def run_regression(_: object) -> None:
     cocotb._regression_manager.start_regression()
 
 
-def _sim_event(msg: str) -> None:
+def _sim_event() -> None:
     """Function that can be called externally to signal an event."""
     # We simply return here as the simulator will exit
     # so no cleanup is needed
     if hasattr(cocotb, "_regression_manager"):
-        cocotb._regression_manager._fail_simulation(msg)
+        cocotb._regression_manager._on_sim_end()
     else:
-        log.error(msg)
         _shutdown_testbench()
 
 
