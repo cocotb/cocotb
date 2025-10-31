@@ -11,6 +11,12 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+TRUE: tuple[str, ...] = ("1", "yes", "y", "on", "true", "enable")
+"""List of expected values for environment variable to be evaluated as True."""
+
+FALSE: tuple[str, ...] = ("0", "no", "n", "off", "false", "disable")
+"""List of expected values for environment variable to be evaluated as False."""
+
 
 def exists(name: str) -> bool:
     """Check if environment variable was defined.
@@ -48,7 +54,7 @@ def as_str(name: str, default: Any = None) -> str:
     return value if value else default
 
 
-def as_bool(name: str, default: Any = None) -> bool:
+def as_bool(name: str, default: bool = False) -> bool:
     """Convert value of environment variable to Python boolean type.
 
     Function is case-insensitive.
@@ -58,10 +64,29 @@ def as_bool(name: str, default: Any = None) -> bool:
         default: Default value of environment variable.
 
     Returns:
-        ``True`` if environment variable is ``1``, ``true``, ``yes``, ``y``, ``enable``, ``on``.
-        Otherwise ``False``.
+        True if environment variable is ``1``, ``yes``, ``y``, ``on``, ``true`` or ``enable``.
+        False if environment variable is ``0``, ``no``, ``n``, ``off``, ``false`` or ``disable``.
+        Default value if environment variable was not set or it is empty.
+
+    Raises:
+        :py:exc:`ValueError` for unexpected value from environment variable.
     """
-    return as_str(name, default).lower() in ("1", "true", "yes", "y", "enable", "on")
+    envvar: str = as_str(name)  # Keep original case for ValueError
+    value: str = envvar.lower()
+
+    if not value:
+        return default
+
+    if value in TRUE:
+        return True
+
+    if value in FALSE:
+        return False
+
+    raise ValueError(
+        f"Unexpected value '{envvar}' for environment variable: {name}. "
+        f"Expecting one of {(*TRUE,)} or {(*FALSE,)}"
+    )
 
 
 def as_list(name: str, default: Any = None) -> list[str]:
