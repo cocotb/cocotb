@@ -72,13 +72,13 @@ class Option:
         # Map command line argument to option in configuration file
         # Environment variable set by user can override default value for option
         if action == "store_true":
-            default = env.as_bool(self.environment, default)
+            default = env.as_bool(self.environment, default or False)
             ini_type = "bool"
         elif nargs:
             default = env.as_list(self.environment, default)
             ini_type = "paths" if argtype == Path else "args"
         elif argtype is int:
-            default = env.as_int(self.environment, default)
+            default = env.as_int(self.environment, default or 0)
             ini_type = "int"
         elif argtype is Path:
             default = env.as_path(self.environment, default)
