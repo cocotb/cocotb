@@ -10,7 +10,7 @@ import logging
 import subprocess
 import sys
 from io import StringIO
-from os import path, walk
+from os import path
 
 from setuptools import find_packages, setup
 
@@ -25,14 +25,6 @@ from cocotb_build_libs import build_ext, get_ext
 def read_file(fname):
     with open(path.join(path.dirname(__file__), fname), encoding="utf8") as f:
         return f.read()
-
-
-def package_files(directory):
-    paths = []
-    for fpath, _, filenames in walk(directory):
-        for filename in filenames:
-            paths.append(path.join("..", "..", fpath, filename))
-    return paths
 
 
 version_file_path = path.join("src", "cocotb", "_version.py")
@@ -65,54 +57,23 @@ log.setLevel(logging.INFO)
 log.addHandler(handler)
 
 setup(
-    name="cocotb",
     cmdclass={"build_ext": build_ext},
     version=__version__,
-    description="cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.",
-    url="https://www.cocotb.org",
-    license="BSD-3-Clause",
-    long_description=read_file("README.md"),
-    long_description_content_type="text/markdown",
-    author="Chris Higgs, Stuart Hodgson",
-    maintainer="cocotb contributors",
-    maintainer_email="cocotb@lists.librecores.org",
-    install_requires=[
-        "find_libpython",
-    ],
-    python_requires=">=3.9",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
+    include_package_data=False,
     package_data={
-        "cocotb": (
-            package_files("src/cocotb/share/include")
-            + package_files("src/cocotb/share/def")
-            + package_files("src/cocotb/share/lib/verilator")
-        ),
-        "cocotb_tools": (package_files("src/cocotb_tools/makefiles")),
+        "cocotb": [
+            "share/lib/verilator/*",
+            "share/include/*.h",
+            "share/def/*.def",
+        ],
+        "cocotb_tools": [
+            "makefiles/**/*",
+        ],
     },
     ext_modules=get_ext(),
-    entry_points={
-        "console_scripts": [
-            "cocotb-config=cocotb_tools.config:main",
-        ]
-    },
     platforms="any",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.13",
-        "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
-        "Framework :: cocotb",
-    ],
-    # these appear in the sidebar on PyPI
-    project_urls={
-        "Bug Tracker": "https://github.com/cocotb/cocotb/issues",
-        "Source Code": "https://github.com/cocotb/cocotb",
-        "Documentation": "https://docs.cocotb.org",
-    },
 )
 
 print(log_stream.getvalue())
