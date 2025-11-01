@@ -13,6 +13,15 @@ from pytest import MonkeyPatch, raises
 from cocotb_tools.pytest import env
 
 
+def test_env_exists(monkeypatch: MonkeyPatch) -> None:
+    """Test :py:func:`cocotb_tools.pytest.env.exists`."""
+    monkeypatch.setenv("TEST_EXISTS", "")
+    assert env.exists("TEST_EXISTS")
+
+    monkeypatch.delenv("TEST_EXISTS")
+    assert not env.exists("TEST_EXISTS")
+
+
 def test_env_as_bool(monkeypatch: MonkeyPatch) -> None:
     """Test :py:func:`cocotb_tools.pytest.env.as_bool`."""
     monkeypatch.setenv("TEST_BOOL", "")
