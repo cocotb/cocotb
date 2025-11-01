@@ -21,7 +21,6 @@ import inspect
 import os
 from collections.abc import Generator, Iterable
 from multiprocessing.connection import Client, Listener
-from pathlib import PurePosixPath
 from threading import RLock, Thread
 from typing import Any
 
@@ -161,20 +160,6 @@ class Controller:
         os.environ["COCOTB_PYTEST_NODEID"] = item.nodeid
         os.environ["COCOTB_PYTEST_KEYWORDS"] = ",".join(item.keywords)
 
-    @staticmethod
-    def _split_nodeid(nodeid: str) -> tuple[PurePosixPath, str]:
-        """Split provided node identifier to path and function name.
-
-        Args:
-            nodeid: Item nodeid in form of ``<path_to_file>::[<class_name>::]<function_name>``.
-
-        Returns:
-            Two-elements tuple with path to file and name of function with scope.
-        """
-        (path, _, function) = nodeid.partition("::")
-
-        return PurePosixPath(path), function
-
     def _get_mangled_nodeid(self, report: TestReport) -> str:
         """Get mangled address of test node identifier as combination of node identifiers from cocotb runner and test.
 
@@ -191,20 +176,28 @@ class Controller:
             Mangled node identifier.
         """
         runner_nodeid: str = getattr(report, "runner_nodeid", "")
-        runner_path, runner_function = self._split_nodeid(runner_nodeid)
-        item_path, item_function = self._split_nodeid(report.nodeid)
+        runner_path, _, runner_function = runner_nodeid.partition("::")
+        item_path, _, item_function = report.nodeid.partition("::")
 
-        if runner_path.parts == item_path.parts:
+        if runner_path == item_path:
+            # We don't need to include path from item because it is already present in runner
             return f"{runner_nodeid}::{item_function}"
 
-        try:
-            relative: PurePosixPath = item_path.relative_to(runner_path.parent)
-            parts: tuple[str, ...] = relative.parent.parts
-            packages: str = ".".join(parts) + "." if parts else ""
+        # Pytest is always using / as separator regadless of OS environment
+        runner_dir: str = runner_path.rpartition("/")[0]
+        item_dir: str = item_path.rpartition("/")[0]
 
-            return f"{runner_nodeid}::{packages}{relative.stem}::{item_function}"
-        except ValueError:
-            return f"{runner_nodeid}::{report.nodeid}"
+        if item_dir.startswith(runner_dir):
+            test_module: str = (
+                item_path.removeprefix(runner_dir)
+                .removesuffix(".py")
+                .strip("/")
+                .replace("/", ".")
+            )
+
+            return f"{runner_nodeid}::{test_module}::{item_function}"
+
+        return f"{runner_nodeid}::{report.nodeid}"
 
     def _attach_properties_to_junit_xml(self, report: TestReport) -> None:
         # Pytest is always using "/" as path separator for nodes regadless of current OS environment
