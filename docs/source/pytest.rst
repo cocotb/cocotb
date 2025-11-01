@@ -347,6 +347,13 @@ To generate JUnit XML tests report file for CI:
     file path and line number of executed test function (testcase) in generated JUnit XML tests report.
     These information can be used by CI environments like GitLab CI.
 
+Options
+=======
+
+.. argparse::
+   :module: cocotb_tools.pytest.plugin
+   :func: options_for_documentation
+
 .. _pytest: https://docs.pytest.org/en/stable/contents.html
 .. _fixture: https://docs.pytest.org/en/stable/explanation/fixtures.html#about-fixtures
 .. _plugins: https://docs.pytest.org/en/stable/reference/plugin_list.html#plugin-list

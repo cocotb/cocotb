@@ -60,8 +60,13 @@ class Option:
         self.default_in_help: str | None = default_in_help
         self.environment: str = environment if environment else name.upper()
 
+    @property
+    def argument(self) -> str:
+        """Command line argument."""
+        return "--" + self.name.replace("_", "-")
+
     def add_to_parser(self, parser: Parser, group: OptionGroup) -> None:
-        argument: str = "--" + self.name.replace("_", "-")
+        argument: str = self.argument
         default: Any = self.default
         choices: tuple[str, ...] | None = self.extra.get("choices")
         argtype: type | None = self.extra.get("type")
@@ -106,9 +111,6 @@ class Option:
             default = env.as_str(self.environment, default)
             ini_type = "string"
 
-        # Use custom message or value in default
-        default_in_help: Any = self.default_in_help if self.default_in_help else default
-
         # Add option entry to configuration files (pyproject.toml, pytest.ini, ...)
         parser.addini(
             self.name,
@@ -123,7 +125,7 @@ class Option:
             help=(
                 f"{self.description}\n"
                 f"Environment variable: {self.environment}\n"
-                f"Default: {default_in_help}"
+                f"Default: {self.default_in_help or default}"
             ),
             **self.extra,
         )

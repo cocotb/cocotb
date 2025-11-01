@@ -9,6 +9,8 @@ from __future__ import annotations
 import inspect
 import os
 import shlex
+import textwrap
+from argparse import ArgumentParser
 from collections.abc import Iterable
 from pathlib import Path
 from time import time
@@ -93,9 +95,10 @@ OPTIONS: tuple[Option, ...] = (
         choices=("pytest", "cocotb", "none"),
         default="pytest",
         description="""
-            Regression manager that will be used to run cocotb tests.
-            - pytest: Use pytest as regression manager to manage and run cocotb tests.
-            - cocotb: Use built-in cocotb regression manager to manage and run cocotb tests.
+            Regression manager that will be used to run cocotb tests:
+
+            * ``pytest``: Use pytest as regression manager to manage and run cocotb tests.
+            * ``cocotb``: Use built-in cocotb regression manager to manage and run cocotb tests.
         """,
     ),
     Option(
@@ -143,9 +146,10 @@ OPTIONS: tuple[Option, ...] = (
         choices=("yes", "no", "auto"),
         default="auto",
         description="""
-            Override the default behavior of annotating cocotb output with ANSI color codes if the output is a terminal.
-            - yes: Forces output to be ANSI-colored regardless of the type of stdout or the presence of NO_COLOR.
-            - no:  Suppresses the ANSI color output in the log messages.
+            Override the default behavior of annotating cocotb output with ANSI color codes if the output is a terminal:
+
+            * ``yes``: Forces output to be ANSI-colored regardless of the type of stdout or the presence of :envvar:`NO_COLOR`.
+            * ``no``:  Suppresses the ANSI color output in the log messages.
         """,
     ),
     Option(
@@ -173,7 +177,7 @@ OPTIONS: tuple[Option, ...] = (
         choices=("trace", "debug", "info", "warning", "error", "critical"),
         description="""
             The default log level of all "cocotb" Python loggers. The default is unset, which means that the log
-            level is inherited from the root logger. This behaves similarly to INFO.
+            level is inherited from the root logger. This behaves similarly to :py:const:`logging.INFO`.
         """,
     ),
     Option(
@@ -182,19 +186,21 @@ OPTIONS: tuple[Option, ...] = (
         description="""
             Customize the log message prefix. The value of this variable should be in Python f-string syntax.
             It has access to the following variables:
-            - record:  The LogRecord being formatted. This includes the attribute created_sim_time, which is the simulation time in steps.
-            - time:    The Python time module.
-            - simtime: The cocotb cocotb.simtime module.
-            - ANSI:    The cocotb cocotb.logging.ANSI enum, which contains ANSI escape codes for coloring the output.
+
+            * ``record``:  The :py:class:`logging.LogRecord` being formatted. This includes the attribute ``created_sim_time``, which is the simulation time in steps.
+            * ``time``:    The Python :py:mod:`time` module.
+            * ``simtime``: The cocotb :py:mod:`cocotb.simtime` module.
+            * ``ANSI``:    The cocotb :py:const:`cocotb.logging.ANSI` enum, which contains ANSI escape codes for coloring the output.
         """,
     ),
     Option(
         "cocotb_plusargs",
         nargs="*",
+        default=[],
         description="""
-            Plusargs are options that are starting with a plus (+) sign.  They are passed to the simulator and are
+            Plusargs are options that are starting with a plus (``+``) sign.  They are passed to the simulator and are
             also available within cocotb as cocotb.plusargs. In the simulator, they can be read by the
-            Verilog/SystemVerilog system functions $test$plusargs and $value$plusargs.
+            Verilog/SystemVerilog system functions ``$test$plusargs`` and ``$value$plusargs``.
         """,
     ),
     Option(
@@ -202,20 +208,22 @@ OPTIONS: tuple[Option, ...] = (
         choices=("yes", "no"),
         default="yes",
         description="""
-            - yes: Logs will include simulation time, message type (INFO, WARNING, ERROR, ...), logger name, and the log message itself.
-            - no:  The filename and line number where a log function was called will be added between the logger name and the log message.
+            * ``yes``: Logs will include simulation time, message type (INFO, WARNING, ERROR, ...), logger name, and the log message itself.
+            * ``no``:  The filename and line number where a log function was called will be added between the logger name and the log message.
         """,
     ),
     Option(
         "cocotb_resolve_x",
         choices=("error", "weak", "zeros", "ones", "random"),
         description="""
-            Defines how to resolve bits with a value of X, Z, U, W, or - when being converted to integer. Valid settings are:
-            - error:  Resolves nothing.
-            - weak:   Resolves L to 0 and H to 1.
-            - zeros:  Like weak, but resolves all other non-0/1 values to 0.
-            - ones:   Like weak, but resolves all other non-0/1 values to 1.
-            - random: Like weak, but resolves all other non-0/1 values randomly to either 0 or 1.
+            Defines how to resolve bits with a value of ``X``, ``Z``, ``U``, ``W``, or ``-`` when being converted to integer. Valid settings are:
+
+            * ``error``:  Resolves nothing.
+            * ``weak``:   Resolves ``L`` to 0 and ``H`` to 1.
+            * ``zeros``:  Like weak, but resolves all other non-0/1 values to ``0``.
+            * ``ones``:   Like weak, but resolves all other non-0/1 values to ``1``.
+            * ``random``: Like weak, but resolves all other non-0/1 values randomly to either 0 or 1.
+
             There is also a slight difference in behavior of bool(logic).
             When this is set, bool(logic) treats all non-0/1 values as equivalent to 0.
             When this is not set, bool(logic) will fail on non-0/1 values.
@@ -249,7 +257,7 @@ OPTIONS: tuple[Option, ...] = (
             according to the respective standards. This mode can lead to noticeable performance improvements, and
             also includes some behavioral difference that are considered by the cocotb maintainers to be “better”.
             Not all simulators handle inertial writes properly, so use with caution. This is achieved by not
-            scheduling writes to occur at the beginning of the ReadWrite mode, but instead trusting that the
+            scheduling writes to occur at the beginning of the ``ReadWrite`` mode, but instead trusting that the
             simulator’s inertial write mechanism is correct. This allows cocotb to avoid a VPI callback into Python
             to apply writes.
         """,
@@ -274,7 +282,7 @@ OPTIONS: tuple[Option, ...] = (
             is starting cocotb runners (HDL simulators). This option allows user to override it and pass own
             arguments to pytest instance that is running from HDL simulator process. For example,
             it can be used to set different verbosity levels or capture modes between them.
-            Example: pytest -v --capture=no --cocotb-pytest-args='-vv --capture=fd'
+            Example: ``pytest -v --capture=no --cocotb-pytest-args='-vv --capture=fd'``
         """,
     ),
     Option(
@@ -283,32 +291,6 @@ OPTIONS: tuple[Option, ...] = (
         metavar="PATH",
         type=Path,
         description="Override path from where pytest was invoked.",
-    ),
-    Option(
-        "gpi_log_level",
-        choices=("trace", "debug", "info", "warning", "error", "critical"),
-        description="""
-            The default log level of all "gpi" (the low-level simulator interface) loggers, including both Python
-            and the native GPI logger. The default is unset, which means that the log level is inherited from the
-            root logger. This behaves similarly to INFO.
-        """,
-    ),
-    Option(
-        "pygpi_users",
-        nargs="*",
-        metavar="MODULE:FUNCTION",
-        default=(
-            "cocotb_tools._coverage:start_cocotb_library_coverage",
-            "cocotb.logging:_configure",
-            "cocotb._init:init_package_from_simulation",
-        ),
-        description="""
-            The Python module and callable that starts up the Python cosimulation environment. User overloads can be
-            used to enter alternative Python frameworks or to hook existing cocotb functionality. It is formatted as
-            path.to.entry.module:entry_point.function,other_module:other_func. The string before the colon is the
-            Python module to import and the string following the colon is the object to call as the entry function.
-            The entry function must be a callable matching this form: entry_function(argv: List[str]) -> None
-        """,
     ),
     Option(
         "cocotb_build_dir",
@@ -414,7 +396,62 @@ OPTIONS: tuple[Option, ...] = (
         default=[],
         description="Extra commands to run before simulation begins.",
     ),
+    Option(
+        "gpi_log_level",
+        choices=("trace", "debug", "info", "warning", "error", "critical"),
+        description="""
+            The default log level of all "gpi" (the low-level simulator interface) loggers, including both Python
+            and the native GPI logger. The default is unset, which means that the log level is inherited from the
+            root logger. This behaves similarly to :py:const:`logging.INFO`.
+        """,
+    ),
+    Option(
+        "pygpi_users",
+        nargs="*",
+        metavar="MODULE:FUNCTION",
+        default=(
+            "cocotb_tools._coverage:start_cocotb_library_coverage",
+            "cocotb.logging:_configure",
+            "cocotb._init:init_package_from_simulation",
+        ),
+        description="""
+            The Python module and callable that starts up the Python cosimulation environment. User overloads can be
+            used to enter alternative Python frameworks or to hook existing cocotb functionality. It is formatted as
+            ``path.to.entry.module:entry_point.function,other_module:other_func``. The string before the colon is the
+            Python module to import and the string following the colon is the object to call as the entry function.
+            The entry function must be a callable matching this form: ``entry_function(argv: List[str]) -> None``
+        """,
+    ),
 )
+
+
+def options_for_documentation() -> ArgumentParser:
+    """It helps to attach plugin options into Sphinx documentation using the sphinx-argparse extension."""
+    parser: ArgumentParser = ArgumentParser(
+        prog="pytest",
+        description="Plugin options",
+    )
+
+    for option in OPTIONS:
+        default: Any
+
+        if option.extra.get("action") == "store_true":
+            default = False
+        else:
+            default = option.default_in_help or option.default
+
+        parser.add_argument(
+            option.argument,
+            help=(
+                f"{textwrap.dedent(option.description)}\n\n"
+                f"Configuration option: ``{option.name}``\n\n"
+                f"Environment variable: :envvar:`{option.environment}`"
+            ),
+            default=default,
+            **option.extra,
+        )
+
+    return parser
 
 
 @fixture(name="dut", scope="session")
