@@ -189,14 +189,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_pdb_on_exception",
-        action="store_true",
-        description="""
-            If enabled, cocotb will drop into the Python debugger (pdb) if a test fails with an exception.
-            See also the Python subsection of Attaching a Debugger.
-        """,
-    ),
-    Option(
         "cocotb_plusargs",
         nargs="*",
         description="""

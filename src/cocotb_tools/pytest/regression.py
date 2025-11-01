@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import bdb
 import hashlib
 import inspect
 import random
@@ -18,6 +19,7 @@ from time import sleep
 from typing import Any, Callable, Literal, cast
 
 from _pytest.config import default_plugins
+from _pytest.outcomes import Exit, Skipped
 from pytest import (
     CallInfo,
     Class,
@@ -244,7 +246,7 @@ class RegressionManager:
             kwargs["item"] = item
             self._call_start = None
 
-        reraise: tuple[type[BaseException], ...] = ()
+        reraise: tuple[type[BaseException], ...] = (Exit,)
 
         if not item.config.getoption("usepdb", False):
             reraise += (KeyboardInterrupt,)
@@ -269,6 +271,9 @@ class RegressionManager:
             )
 
             item.ihook.pytest_runtest_logreport(report=report)
+
+            if _check_interactive_exception(call, report):
+                _interactive_exception(item, call, report)
 
             return report.passed
 
@@ -564,3 +569,23 @@ class RegressionManager:
 
         # Setup simulator finalization
         simulator.stop_simulator()
+
+
+def _check_interactive_exception(call: CallInfo, report: TestReport) -> bool:
+    """Check whether the call raised an exception that should be reported as interactive."""
+    if call.excinfo is None:
+        return False  # Didn't raise.
+
+    if hasattr(report, "wasxfail"):
+        return False  # Exception was expected.
+
+    # Special control flow exception.
+    return not isinstance(call.excinfo.value, (Skipped, bdb.BdbQuit))
+
+
+def _interactive_exception(item: Item, call: CallInfo, report: TestReport) -> None:
+    """Interactive exception using Python Debugger (pdb)."""
+    try:
+        item.ihook.pytest_exception_interact(node=item, call=call, report=report)
+    except Exit:
+        pass
