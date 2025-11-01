@@ -153,19 +153,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_log_prefix",
-        metavar="FORMAT",
-        description="""
-            Customize the log message prefix. The value of this variable should be in Python f-string syntax.
-            It has access to the following variables:
-
-            * ``record``:  The :py:class:`logging.LogRecord` being formatted. This includes the attribute ``created_sim_time``, which is the simulation time in steps.
-            * ``time``:    The Python :py:mod:`time` module.
-            * ``simtime``: The cocotb :py:mod:`cocotb.simtime` module.
-            * ``ANSI``:    The cocotb :py:const:`cocotb.logging.ANSI` enum, which contains ANSI escape codes for coloring the output.
-        """,
-    ),
-    Option(
         "cocotb_plusargs",
         nargs="*",
         default=[],
@@ -174,15 +161,6 @@ OPTIONS: tuple[Option, ...] = (
             Plusargs are options that are starting with a plus (``+``) sign.  They are passed to the simulator and are
             also available within cocotb as cocotb.plusargs. In the simulator, they can be read by the
             Verilog/SystemVerilog system functions ``$test$plusargs`` and ``$value$plusargs``.
-        """,
-    ),
-    Option(
-        "cocotb_reduced_log_fmt",
-        choices=("yes", "no"),
-        default="yes",
-        description="""
-            * ``yes``: Logs will include simulation time, message type (INFO, WARNING, ERROR, ...), logger name, and the log message itself.
-            * ``no``:  The filename and line number where a log function was called will be added between the logger name and the log message.
         """,
     ),
     Option(
@@ -372,11 +350,7 @@ OPTIONS: tuple[Option, ...] = (
         "pygpi_users",
         nargs="*",
         metavar="MODULE:FUNCTION",
-        default=(
-            "cocotb_tools._coverage:start_cocotb_library_coverage",
-            "cocotb.logging:_configure",
-            "cocotb._init:init_package_from_simulation",
-        ),
+        default=("cocotb._init:init_package_from_simulation",),
         description="""
             The Python module and callable that starts up the Python cosimulation environment. User overloads can be
             used to enter alternative Python frameworks or to hook existing cocotb functionality. It is formatted as
@@ -497,20 +471,6 @@ def pytest_configure(config: Config) -> None:
     os.environ["COCOTB_PYTEST_ARGS"] = shlex.join(
         option.cocotb_pytest_args or config.invocation_params.args
     )
-
-    if option.color == "yes":
-        os.environ["COCOTB_ANSI_OUTPUT"] = "1"
-    elif option.color == "no":
-        os.environ["COCOTB_ANSI_OUTPUT"] = "0"
-
-    if option.cocotb_reduced_log_fmt == "no":
-        os.environ["COCOTB_REDUCED_LOG_FMT"] = "0"
-
-    if option.cocotb_gui:
-        os.environ["GUI"] = "1"
-
-    if option.cocotb_waves:
-        os.environ["WAVES"] = "1"
 
     coverage_rcfile: str | None = getattr(option, "cov_config", None)
 
