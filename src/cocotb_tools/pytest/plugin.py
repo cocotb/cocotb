@@ -197,6 +197,7 @@ OPTIONS: tuple[Option, ...] = (
         "cocotb_plusargs",
         nargs="*",
         default=[],
+        metavar="PLUSARG",
         description="""
             Plusargs are options that are starting with a plus (``+``) sign.  They are passed to the simulator and are
             also available within cocotb as cocotb.plusargs. In the simulator, they can be read by the
@@ -370,30 +371,30 @@ OPTIONS: tuple[Option, ...] = (
     ),
     Option(
         "cocotb_build_args",
-        nargs="*",
-        metavar="ARG",
+        type=shlex.split,
         default=[],
+        metavar="ARGS",
         description="Extra build arguments for the simulator.",
     ),
     Option(
         "cocotb_elab_args",
-        nargs="*",
-        metavar="ARG",
+        type=shlex.split,
         default=[],
+        metavar="ARGS",
         description="Extra elaboration arguments for the simulator.",
     ),
     Option(
         "cocotb_test_args",
-        nargs="*",
-        metavar="ARG",
+        type=shlex.split,
         default=[],
+        metavar="ARGS",
         description="Extra arguments for the simulator.",
     ),
     Option(
         "cocotb_pre_cmd",
-        nargs="*",
-        metavar="ARG",
+        type=shlex.split,
         default=[],
+        metavar="ARGS",
         description="Extra commands to run before simulation begins.",
     ),
     Option(
