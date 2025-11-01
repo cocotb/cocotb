@@ -142,17 +142,6 @@ OPTIONS: tuple[Option, ...] = (
         description="Seed the Python random module to recreate a previous test stimulus.",
     ),
     Option(
-        "cocotb_ansi_output",
-        choices=("yes", "no", "auto"),
-        default="auto",
-        description="""
-            Override the default behavior of annotating cocotb output with ANSI color codes if the output is a terminal:
-
-            * ``yes``: Forces output to be ANSI-colored regardless of the type of stdout or the presence of :envvar:`NO_COLOR`.
-            * ``no``:  Suppresses the ANSI color output in the log messages.
-        """,
-    ),
-    Option(
         "cocotb_attach",
         metavar="SECONDS",
         default=0,
@@ -528,7 +517,7 @@ def pytest_configure(config: Config) -> None:
 
     if option.color == "yes":
         os.environ["COCOTB_ANSI_OUTPUT"] = "1"
-    elif option.color == "no" or option.cocotb_ansi_output == "no":
+    elif option.color == "no":
         os.environ["COCOTB_ANSI_OUTPUT"] = "0"
 
     if option.cocotb_reduced_log_fmt == "no":
