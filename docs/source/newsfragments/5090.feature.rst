@@ -1,0 +1,1 @@
+Added :py:mod:`cocotb_tools.pytest.plugin` that allow to use pytest as regression manager for cocotb tests.
