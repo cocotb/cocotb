@@ -30,7 +30,7 @@ def exists(name: str) -> bool:
     return name in os.environ
 
 
-def as_str(name: str, default: Any = None) -> str:
+def as_str(name: str, default: str | None = None) -> str:
     """Convert value of environment variable to Python string type.
 
     Args:
@@ -40,21 +40,10 @@ def as_str(name: str, default: Any = None) -> str:
     Returns:
         Striped string of environment variable.
     """
-    if default is None:
-        default = ""
-    elif isinstance(default, str):
-        pass
-    elif isinstance(default, Iterable):
-        default = ",".join(default)
-    else:
-        default = str(default)
-
-    value: str = os.environ.get(name, default).strip()
-
-    return value if value else default
+    return os.environ.get(name, "").strip() or default or ""
 
 
-def as_bool(name: str, default: bool = False) -> bool:
+def as_bool(name: str, default: bool | None = None) -> bool:
     """Convert value of environment variable to Python boolean type.
 
     Function is case-insensitive.
@@ -75,7 +64,7 @@ def as_bool(name: str, default: bool = False) -> bool:
     value: str = envvar.lower()
 
     if not value:
-        return default
+        return default or False
 
     if value in TRUE:
         return True
@@ -89,22 +78,27 @@ def as_bool(name: str, default: bool = False) -> bool:
     )
 
 
-def as_list(name: str, default: Any = None) -> list[str]:
+def as_list(
+    name: str, default: Iterable[str] | None = None, separator: str = ","
+) -> list[str]:
     """Convert value of environment variable to Python list of strings type.
 
-    Values are comma ``,`` separated.
+    Values by default are comma ``,`` separated.
 
     Args:
         name: Name of environment variable.
         default: Default value of environment variable.
+        separator: Used separator between values.
 
     Returns:
         List of striped and non-empty strings.
     """
-    return list(filter(None, map(str.strip, as_str(name, default).split(","))))
+    items: list[str] = list(filter(None, map(str.strip, as_str(name).split(separator))))
+
+    return list(items or default or ())
 
 
-def as_int(name: str, default: Any = 0) -> int:
+def as_int(name: str, default: int | None = None) -> int:
     """Convert value of environment variable to Python integer type.
 
     Args:
@@ -114,10 +108,12 @@ def as_int(name: str, default: Any = 0) -> int:
     Returns:
         Integer.
     """
-    return int(as_str(name, default))
+    value: str = as_str(name)
+
+    return int(value or default or 0)
 
 
-def as_path(name: str, default: Any = None) -> Path:
+def as_path(name: str, default: Path | str | None = None) -> Path:
     """Convert value of environment variable to Python path type.
 
     Args:
@@ -127,4 +123,6 @@ def as_path(name: str, default: Any = None) -> Path:
     Returns:
         Path type.
     """
-    return Path(as_str(name, default))
+    value: str = as_str(name)
+
+    return Path(value or default or "")
