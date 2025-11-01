@@ -91,12 +91,8 @@ def _as_pytest_marks(
             markers.append(mark.parametrize(",".join(names), values).mark)
 
     if stage:
-        collector.warn(
-            UserWarning(
-                "The stage is not supported by cocotb_tools.pytest.plugin. "
-                "Please use dedicated pytest plugin for that like pytest-order"
-            )
-        )
+        # Supported by external plugin: pytest-order
+        markers.append(mark.order(stage).mark)
 
     if skip:
         markers.append(mark.skip().mark)
