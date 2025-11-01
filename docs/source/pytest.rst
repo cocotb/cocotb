@@ -145,27 +145,63 @@ Example content of the ``test_sample_module.py`` file:
 
 The plugin provides the marker ``@pytest.mark.cocotb`` which allows
 to configure all aspects of cocotb test and cocotb runner.
+
+.. code:: python
+
+    @pytest.mark.cocotb(timescale=("1ns", "1ps"))
+    def test_dut_using_different_timescale(sample_module: HDL) -> None:
+        """Test DUT using different timescale."""
+        sample_module.test()
+
+    @pytest.mark.cocotb(timeout=(200, "ns"))
+    async def test_dut_feature_with_timeout(dut) -> None:
+        """Test DUT feature. It must finish within 200 nanoseconds."""
+
 Additionally, positional arguments of ``@pytest.mark.cocotb`` marker are equivalent to
 ``test_module`` argument from :py:func:`cocotb.test`.
+
+.. code:: python
+
+    @pytest.mark.cocotb("test_dut_tb_1", "test_dut_tb_2")
+    def test_dut_using_different_testbenches(sample_module: HDL) -> None:
+        """Use cocotb tests from ``test_dut_tb_1.py`` and ``test_dut_tb_2.py`` files to test DUT."""
+        sample_module.test()
 
 If no positional arguments were provided to ``@pytest.mark.cocotb``,
 plugin will load current Python module where ``@pytest.mark.cocotb`` was used as cocotb testbench (Python file with
 cocotb tests).
 
+.. code:: python
+
+    @pytest.mark.cocotb
+    def test_dut_using_default_testbench(sample_module: HDL) -> None:
+        """Test DUT with cocotb tests defined in the same Python file as this test function."""
+        sample_module.test()
+
+    async def test_dut_feature_1(dut) -> None:
+        """Test DUT feature 1."""
+
 If ``toplevel`` argument is empty/non-set, plugin will use name of first test module but without
 ``test_*`` prefix or ``*_test`` suffix. For example, if test module was ``test_dut`` then
 name of HDL top level design will be ``dut``.
+
+.. code:: python
+
+    @pytest.mark.cocotb
+    def test_dut_using_default_toplevel(sample_module: HDL) -> None:
+        """Test DUT with default top level associated with name of test file as this test function."""
+        sample_module.test()
+
+    @pytest.mark.cocotb(toplevel="sample_submodule")
+    def test_dut_using_different_toplevel(sample_module: HDL) -> None:
+        """Test DUT with different top level that was set at fixture level."""
+        sample_module.test()
 
 Using ``@pytest.mark.cocotb`` marker to mark test function as cocotb test is optional
 for test functions that are starting with ``test_*`` prefix name, are coroutine functions (``async def``) and
 with ``dut`` argument. Normal functions (non-coroutines) with ``@pytest.mark.cocotb`` marker are
 marked as cocotb runner that should run HDL simulator by invoking
 :py:func:`cocotb_tools.pytest.hdl.HDL.test`, :py:func:`cocotb_tools.runner.Runner.test` or similar method.
-
-Marker can also help plugin to identify and bind cocotb tests to cocotb runners. This is done by plugin
-based on information from provided positional arguments supplied into
-``@pytest.mark.cocotb`` decorator. This helps plugin to properly filter tests out
-when using `pytest`_ ``-k '<expression>'`` or ``-m '<markers>'`` options.
 
 .. code:: python
 
@@ -187,6 +223,98 @@ when using `pytest`_ ``-k '<expression>'`` or ``-m '<markers>'`` options.
     async def name_without_test_prefix(dut) -> None:
         """Function that is not picked up by pytest discovery needs a decorator to count as a test."""
 
+Marker can also help plugin to identify and bind cocotb tests to cocotb runners. This is done by plugin
+based on information from provided positional arguments supplied into
+``@pytest.mark.cocotb`` decorator. This helps plugin to properly filter tests out
+when using `pytest`_ ``-k '<expression>'`` or ``-m '<markers>'`` options.
+
+List tree hierarchy of cocotb tests related to cocotb runners and cocotb testbenches:
+
+.. code:: shell
+
+   pytest --collect-only
+
+Example output::
+
+    <Dir tests>
+      <Module test_sample_module.py>
+        <Runner test_sample_module>
+          <Testbench test_sample_module>
+            <Function test_dut_feature_1>
+            <Function test_dut_feature_2>
+
+Run specific test(s) based on output from ``pytest --collect-only``:
+
+.. code:: shell
+
+   pytest -k 'test_sample_module and test_dut_feature_2'
+
+Fixtures
+========
+
+Usage:
+
+* Automatically generate clock for all tests
+* Automatically set up (reset, configure) and tear down DUT per each test
+
+Example of automatically generating clock for all tests using the ``conftest.py`` file:
+
+.. code:: python
+
+    import pytest
+    from cocotb.clock import Clock
+
+
+    @pytest.fixture(scope="session", autouse=True)
+    async def clock_generation(dut) -> None:
+        """Generate clock for all tests using session scope."""
+        dut.clk.value = 0
+
+        Clock(dut.clk, 10, unit="ns").start(start_high=False)
+
+
+Example of automatically set up (reset, configure) and tear down DUT per each test defined in ``test_*.py`` file:
+
+.. code:: python
+
+    from collections.abc import AsyncGenerator
+
+    import pytest
+    from cocotb.triggers import FallingEdge
+
+
+    @pytest.fixture(autouse=True)
+    async def setup_sample_module(dut) -> AsyncGenerator[None, None]:
+    """Set up and tear down sample module."""
+        # Test setup (executed before test)
+        dut.rst.value = 1
+        dut.stream_in_valid.value = 0
+        dut.stream_in_data.value = 0
+        dut.stream_out_ready.value = 0
+
+        for _ in range(2):
+            await FallingEdge(dut.clk)
+
+        dut.rst.value = 0
+
+        yield  # Calling test
+
+        # Test teardown (executed after test)
+        dut.stream_in_valid.value = 0
+        dut.stream_in_data.value = 0
+        dut.stream_out_ready.value = 0
+
+        await FallingEdge(dut.clk)
+
+
+    async def test_dut_feature_1(dut) -> None:
+        """Test DUT feature 1. DUT will be always correctly reset and configured."""
+
+
+    async def test_dut_feature_2(dut) -> None:
+        """Test DUT feature 2. DUT will be always correctly reset and configured."""
+
+
 Configuration
 =============
 
@@ -207,145 +335,6 @@ used to configure cocotb testing environment, can be listed by invoking `pytest`
 .. code:: shell
 
     pytest --help
-
-Command Line Usage
-==================
-
-.. note::
-
-    :py:mod:`cocotb_tools.pytest.plugin` must be enabled for `pytest`_ to show all
-    available command line arguments `--cocotb-*`, markers and fixtures for cocotb.
-
-Help
-----
-
-Show all available command line arguments:
-
-.. code:: shell
-
-    pytest --help
-
-Show all available markers:
-
-.. code:: shell
-
-    pytest --markers
-
-Show all available fixtures:
-
-.. code:: shell
-
-    pytest --fixtures
-
-Tests Discovering
------------------
-
-To list all available tests, use the ``--co`` or alternatively the ``--collect-only`` option:
-
-.. code:: shell
-
-    pytest --co
-
-To show also docstring when listing tests, add the ``-v`` option:
-
-.. code:: shell
-
-    pytest --co -v
-
-To list only cocotb tests and cocotb runners, use the ``-k cocotb`` option:
-
-.. code:: shell
-
-    pytest --co -k cocotb
-
-To list only cocotb tests without cocotb runners, use the ``-k 'cocotb and not runner'`` option:
-
-.. code:: shell
-
-    pytest --co -k 'cocotb and not runner'
-
-
-To list only cocotb runners without cocotb tests, use the ``-k 'cocotb and runner'`` option:
-
-.. code:: shell
-
-    pytest --co -k 'cocotb and runner'
-
-To list only cocotb tests that will be run by specific cocotb runner, add name of cocotb runner test function:
-
-.. code:: shell
-
-    pytest --co -k 'cocotb and not runner and <name-of-cocotb-runner-test-function>'
-
-To list which cocotb runners will run specific cocotb test(s), add name of cocotb test function:
-
-.. code:: shell
-
-    pytest --co -k 'cocotb and runner and <name-of-cocotb-test-function>'
-
-Running Tests
--------------
-
-To run all tests (including cocotb and non-cocotb tests):
-
-.. code:: shell
-
-    pytest
-
-To run only cocotb tests:
-
-.. code:: shell
-
-    pytest -k cocotb
-
-To see output from tests in real-time, disable capture mode with the ``-s`` option or the ``--capture=no`` option:
-
-.. code:: shell
-
-    pytest -s
-
-To see more verbose information about test, add the ``-v`` option:
-
-.. code:: shell
-
-    pytest -s -v
-
-To run cocotb runners in parallel:
-
-.. code:: shell
-
-    pytest -n auto
-
-.. note::
-
-    `pytest-xdist`_ plugin must be installed and enabled.
-
-Tests Reporting
----------------
-
-To show extra test summary from all tests regardless of passed or failed status:
-
-.. code:: shell
-
-    pytes -rA
-
-To show classic cocotb tests summary report:
-
-.. code:: shell
-
-    pytest --cocotb-summary
-
-To generate JUnit XML tests report file for CI:
-
-.. code:: shell
-
-    pytest --junit-xml=junit.xml -o junit_family=xunit1
-
-.. note::
-
-    Changing JUnit family to ``xunit1`` will tell built-in `pytest`_ JUnit XML plugin to include also
-    file path and line number of executed test function (testcase) in generated JUnit XML tests report.
-    These information can be used by CI environments like GitLab CI.
 
 Options
 =======
