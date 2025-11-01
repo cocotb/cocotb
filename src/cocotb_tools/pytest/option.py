@@ -93,9 +93,9 @@ class Option:
             # Resolve values passed from environment variables
             if not default or default in choices:
                 pass
-            elif "yes" in choices and default in ("1", "y", "on", "true", "enable"):
+            elif "yes" in choices and default in env.TRUE:
                 default = "yes"
-            elif "no" in choices and default in ("0", "n", "off", "false", "disable"):
+            elif "no" in choices and default in env.FALSE:
                 default = "no"
             else:
                 raise ValueError(
