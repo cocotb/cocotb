@@ -35,7 +35,6 @@ from pytest import (
     Item,
     Module,
     Session,
-    StashKey,
     TestReport,
     hookimpl,
 )
@@ -43,6 +42,7 @@ from pytest import (
 import cocotb
 from cocotb_tools.pytest.handle import MockSimHandle
 from cocotb_tools.pytest.hdl import get_simulator
+from cocotb_tools.pytest.junitxml import JUnitXML
 from cocotb_tools.pytest.runner import Runner
 
 
@@ -57,19 +57,6 @@ class Controller:
         """
         # Pytest configuration object
         self._config: Config = config
-
-        # Instance of JUnit XML from built-in pytest junitxml plugin
-        self._junitxml: Any = None  # NOTE: Type not available in public pytest API
-
-        # Get handler to built-in pytest Junit XML plugin
-        # This will be needed to add custom properties about cocotb tests and simulation
-        junitxml = config.pluginmanager.getplugin("junitxml")
-
-        if junitxml:
-            # Instance of JUnit XML is stored in pytest stash where stash key to it
-            # is stored in JUnix XML plugin
-            key: StashKey | None = getattr(junitxml, "xml_key", None)
-            self._junitxml = config.stash.get(key, None) if key else None
 
         # Pytest is printing test results in real-time when test finished execution
         # With default capturing mode (fd), it will print '.', 's', 'x', 'F', 'E' per test
@@ -199,18 +186,11 @@ class Controller:
 
         return f"{runner_nodeid}::{report.nodeid}"
 
-    def _attach_properties_to_junit_xml(self, report: TestReport) -> None:
-        # Pytest is always using "/" as path separator for nodes regadless of current OS environment
-        address = report.nodeid.replace("/", ".").replace(".py::", ".")
-        classname, _, name = address.rpartition("::")
-        reporter = self._junitxml.node_reporter(report)
-
-        reporter.add_attribute("classname", classname)
-        reporter.add_attribute("name", name)
-
     @hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
         """Start thread to receive test reports from pytest sub-process (simulator)."""
+        JUnitXML.register(session.config)
+
         if self._thread:
             self._thread.start()
 
@@ -322,10 +302,6 @@ class Controller:
 
                     if isinstance(report, TestReport):
                         report.nodeid = self._get_mangled_nodeid(report)
-
-                        if self._junitxml:
-                            self._attach_properties_to_junit_xml(report)
-
                         hook.pytest_runtest_logreport(report=report)
 
             except BaseException:
