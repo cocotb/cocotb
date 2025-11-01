@@ -520,7 +520,7 @@ class RegressionManager:
                     with Client(address) as client:
                         client.send(data)
                     return
-                except BaseException:
+                except Exception:
                     if retry:
                         sleep(INTERVAL)
                     else:
