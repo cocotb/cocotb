@@ -17,11 +17,11 @@ class MockSimHandle:
 
     def __getitem__(self, key: str) -> MockSimHandle:
         """Mock nested access to item ``obj[a][b][c]``."""
-        return MockSimHandle()
+        return self
 
     def __getattr__(self, key: str) -> MockSimHandle:
         """Mock nested access to attribute ``obj.a.b.c``."""
-        return MockSimHandle()
+        return self
 
     def __call__(self, *args: object, **kwargs: object) -> MockSimHandle:
         """Mock calling methods."""
