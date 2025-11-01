@@ -31,6 +31,7 @@ from pytest import (
     Config,
     ExceptionInfo,
     ExitCode,
+    FixtureDef,
     Function,
     Item,
     Module,
@@ -275,6 +276,30 @@ class Controller:
                         )
             else:
                 yield item
+
+    def pytest_fixture_setup(
+        self, fixturedef: FixtureDef, request: Any
+    ) -> object | None:
+        """Skip applying async fixture to non-async test functions when fixture autouse was used.
+
+        Args:
+            fixturedef: The fixture definition object.
+            request: The fixture request object.
+
+        Returns:
+            True when async fixture will be skipped. Otherwise None and continue with next plugin.
+        """
+        fixturefunc = fixturedef.func
+        is_coroutine: bool = inspect.iscoroutinefunction(fixturefunc)
+        is_async_generator: bool = inspect.isasyncgenfunction(fixturefunc)
+        autouse: bool = getattr(fixturedef, "_autouse", False)
+
+        if autouse and (is_coroutine or is_async_generator):
+            cache_key = fixturedef.cache_key(request)
+            fixturedef.cached_result = (None, cache_key, None)
+            return True
+
+        return None
 
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_runtest_logreport(

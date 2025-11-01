@@ -32,7 +32,7 @@ async def test_skip_false(dut) -> None:
 
 
 @cocotb.test(timeout_time=100, timeout_unit="ns", expect_error=SimTimeoutError)
-async def test_timeout(dut, clock_generation) -> None:
+async def test_timeout(dut) -> None:
     """Test timeout from @cocotb.test decorator."""
     for _ in range(100):
         await FallingEdge(dut.clk)

@@ -6,11 +6,37 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+
 import pytest
 
 import cocotb
 from cocotb.triggers import FallingEdge
 from cocotb_tools.pytest.hdl import HDL
+
+
+@pytest.fixture(autouse=True)
+async def sample_module_fixture(dut) -> AsyncGenerator[None, None]:
+    """Setup/teardown sample module."""
+    # Test setup (executed before test)
+    dut.stream_in_valid.value = 0
+    dut.stream_in_data.value = 0
+    dut.stream_out_ready.value = 0
+
+    for _ in range(2):
+        await FallingEdge(dut.clk)
+
+    yield  # Calling test
+
+    # Test teardown (executed after test)
+    dut.stream_in_valid.value = 0
+    dut.stream_in_data.value = 0
+    dut.stream_out_ready.value = 0
+
+    # NOTE: Without it, Icarus simulator will crash with unexpected segmentation fault
+    # at the end of the simulation. This also happen using built-in regression manager.
+    # All other HDL simulators are fine, only Icarus is buggy
+    await FallingEdge(dut.clk)
 
 
 # cocotb marker is optional but it helps pytest-cocotb plugin to identify this function as cocotb runner and
@@ -57,9 +83,7 @@ async def test_pass(dut) -> None:
     pass
 
 
-async def test_simple(
-    dut, sample_module_setup, start: int = 0, stop: int = 1, step: int = 1
-) -> None:
+async def test_simple(dut, start: int = 0, stop: int = 1, step: int = 1) -> None:
     """Test sample module with simple data transfer."""
     dut.stream_in_valid.value = 1
     dut.stream_out_ready.value = 1
@@ -72,51 +96,47 @@ async def test_simple(
         assert dut.stream_out_data_registered.value == data
 
 
-async def test_setup_only(dut, clock_generation) -> None:
+async def test_setup_only(dut) -> None:
     """Test sample module with simple data transfer."""
-    await test_simple(dut, clock_generation)
+    await test_simple(dut)
 
 
 @pytest.mark.parametrize("start", [0, 4])
 @pytest.mark.parametrize("stop", [6, 8, 10])
 @pytest.mark.parametrize("step", [1, 2])
-async def test_parametrize_matrix(
-    dut, sample_module_setup, start: int, stop: int, step: int
-) -> None:
+async def test_parametrize_matrix(dut, start: int, stop: int, step: int) -> None:
     """Test sample module with simple data transfer."""
-    await test_simple(dut, sample_module_setup, start, stop, step)
+    await test_simple(dut, start, stop, step)
 
 
 @pytest.mark.parametrize("start,stop,step", [(0, 4, 1), (2, 8, 2)])
-async def test_parametrize_series(
-    dut, sample_module_setup, start: int, stop: int, step: int
-) -> None:
+async def test_parametrize_series(dut, start: int, stop: int, step: int) -> None:
     """Test sample module with simple data transfer."""
-    await test_simple(dut, sample_module_setup, start, stop, step)
+    await test_simple(dut, start, stop, step)
 
 
 @pytest.mark.parametrize("num", [1, 4, 8])
-async def test_parametrize_single(dut, sample_module_setup, num: int) -> None:
+async def test_parametrize_single(dut, num: int) -> None:
     """Test sample module with simple data transfer."""
-    await test_simple(dut, sample_module_setup, stop=num)
+    await test_simple(dut, stop=num)
 
 
 @pytest.mark.xfail(raises=RuntimeError, strict=True)
-async def test_xfail_raises_string(dut, sample_module_setup) -> None:
+async def test_xfail_raises_string(dut) -> None:
     """Test sample module with simple data transfer."""
-    await test_simple(dut, sample_module_setup)
+    await test_simple(dut)
     raise RuntimeError("runtime error")
 
 
 @pytest.mark.xfail(strict=True)
-async def test_xfail_any(dut, sample_module_setup) -> None:
+async def test_xfail_any(dut) -> None:
     """Test sample module with simple data transfer."""
-    await test_simple(dut, sample_module_setup)
+    await test_simple(dut)
     raise ValueError("value error")
 
 
 @cocotb.xfail(raises=RuntimeError)
-async def test_xfail_raises(dut, sample_module_setup) -> None:
+async def test_xfail_raises(dut) -> None:
     """Test sample module with simple data transfer."""
-    await test_simple(dut, sample_module_setup)
+    await test_simple(dut)
     raise RuntimeError("runtime error")

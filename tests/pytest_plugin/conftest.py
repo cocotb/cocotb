@@ -6,13 +6,11 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
 from pathlib import Path
 
 from pytest import FixtureRequest, Parser, PytestPluginManager, fixture, hookimpl
 
 from cocotb.clock import Clock
-from cocotb.triggers import FallingEdge
 from cocotb_tools.pytest.hdl import HDL
 
 PLUGIN: str = "cocotb_tools.pytest.plugin"
@@ -92,35 +90,9 @@ def sample_module_fixture(hdl: HDL, request: FixtureRequest) -> HDL:
     return hdl
 
 
-@fixture(name="clock_generation", scope="session")
+@fixture(name="clock_generation", scope="session", autouse=True)
 async def clock_generation_fixture(dut) -> None:
     """Generate clock for all tests using session scope."""
     dut.clk.value = 0
 
     Clock(dut.clk, 10, unit="ns").start(start_high=False)
-
-
-@fixture(name="sample_module_setup")
-async def sample_module_setup_fixture(
-    dut, clock_generation
-) -> AsyncGenerator[None, None]:
-    """Setup/teardown sample module."""
-    # Test setup (executed before test)
-    dut.stream_in_valid.value = 0
-    dut.stream_in_data.value = 0
-    dut.stream_out_ready.value = 0
-
-    for _ in range(2):
-        await FallingEdge(dut.clk)
-
-    yield  # Calling test
-
-    # Test teardown (executed after test)
-    dut.stream_in_valid.value = 0
-    dut.stream_in_data.value = 0
-    dut.stream_out_ready.value = 0
-
-    # NOTE: Without it, Icarus simulator will crash with unexpected segmentation fault
-    # at the end of the simulation. This also happen using built-in regression manager.
-    # All other HDL simulators are fine, only Icarus is buggy
-    await FallingEdge(dut.clk)
