@@ -345,7 +345,6 @@ OPTIONS: tuple[Option, ...] = (
     ),
     Option(
         "cocotb_timescale",
-        default="1ns/1ns",
         metavar="UNIT[/PRECISION]",
         description="Timescale containing time unit and time precision for simulation.",
     ),
@@ -511,7 +510,10 @@ def pytest_configure(config: Config) -> None:
             else:
                 os.environ[environment] = str(value)
 
-    if isinstance(option.cocotb_timescale, str):
+    if not option.cocotb_timescale:
+        option.cocotb_timescale = None
+
+    elif isinstance(option.cocotb_timescale, str):
         option.cocotb_timescale = to_timescale(option.cocotb_timescale)
 
     if isinstance(option.cocotb_env, list):
