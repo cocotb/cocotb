@@ -10,7 +10,6 @@ pytest sub-process (simulator).
 Main responsibilities for this internal plugin are:
 
 * Binding collected cocotb tests to cocotb runners
-* Handling ``test_module`` and ``toplevel`` options from ``@pytest.mark.cocotb`` marker
 * Handling test reports received from pytest sub-process (simulator) over IPC (Inter-Process Communication)
 * Combining (mangling) identifiers from cocotb runner with cocotb test to generate new unique identifier
 * Attaching additional properties about cocotb tests in JUnit XML tests report

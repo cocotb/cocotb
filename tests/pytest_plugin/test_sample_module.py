@@ -45,18 +45,6 @@ def test_sample_module_2(sample_module: HDL) -> None:
     sample_module.test()
 
 
-@pytest.mark.cocotb(test_module="test_sample_module_1")
-def test_sample_module_3(sample_module: HDL) -> None:
-    """Running HDL simulator using cocotb runner for sample module."""
-    sample_module.test()
-
-
-@pytest.mark.cocotb(test_module=("test_sample_module_1", "test_sample_module_2"))
-def test_sample_module_4(sample_module: HDL) -> None:
-    """Running HDL simulator using cocotb runner for sample module."""
-    sample_module.test()
-
-
 @pytest.mark.cocotb("test_sample_module_1", "test_sample_module_2")
 @pytest.mark.parametrize("int_param", (1, 4, 8))
 def test_sample_module_parametrize(sample_module: HDL, int_param: int) -> None:

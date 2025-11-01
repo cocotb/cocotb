@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from importlib import import_module
 from pathlib import Path
 from typing import Any
@@ -45,17 +45,12 @@ class Runner(Collector):
         Yields:
             Collected item or collector.
         """
-        test_modules: str | Sequence[str] = []
+        test_modules: Iterable[str] | None = None
 
         for marker in self.item.iter_markers("cocotb"):
-            # test_module can be retrieved from positional arguments or named argument
-            test_modules = marker.kwargs.get("test_module", marker.args)
-
-            if test_modules:
+            if marker.args:
+                test_modules = marker.args
                 break
-
-        if isinstance(test_modules, str):
-            test_modules = [test_modules]
 
         for test_module in test_modules or (self.path.stem,):
             # Check if test_module exists as Python file

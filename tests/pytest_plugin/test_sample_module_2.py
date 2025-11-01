@@ -10,7 +10,7 @@ from cocotb.triggers import FallingEdge
 
 
 async def test_dut(dut, sample_module_setup) -> None:
-    """Test used to test DUT from other test module via ``test_module`` argument."""
+    """Test used to test DUT from other test module."""
     dut.stream_in_data.value = 2
     await FallingEdge(dut.clk)
     assert dut.stream_out_data_registered.value == 2

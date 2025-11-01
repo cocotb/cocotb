@@ -121,9 +121,9 @@ Example content of the ``test_sample_module.py`` file:
     from cocotb_tools.pytest.hdl import HDL
 
 
-    # Without providing positional arguments or  the test_module option to the cocotb decorator,
+    # Without providing positional arguments to the cocotb decorator,
     # the plugin will use the current file as the cocotb testbench (a Python file with cocotb tests).
-    # If the 'toplevel' option was not provided, it will be derived from the name of the first test_module
+    # If the 'toplevel' option was not provided, it will be derived from the name of the first positional argument
     # but with a removed 'test_*' prefix or '*_test' suffix.
     @pytest.mark.cocotb  # equivalent to @pytest.mark.cocotb("test_dut", toplevel="dut")
     def test_sample_module(sample_module: HDL) -> None:
@@ -145,12 +145,10 @@ Example content of the ``test_sample_module.py`` file:
 
 The plugin provides the marker ``@pytest.mark.cocotb`` which allows
 to configure all aspects of cocotb test and cocotb runner.
-The marker recognizes all
-named arguments from :py:func:`cocotb.test` and :py:class:`cocotb_tools.runner.Runner`.
 Additionally, positional arguments of ``@pytest.mark.cocotb`` marker are equivalent to
 ``test_module`` argument from :py:func:`cocotb.test`.
 
-If no positional arguments were provided to ``@pytest.mark.cocotb`` or ``test_module`` argument is empty/non-set,
+If no positional arguments were provided to ``@pytest.mark.cocotb``,
 plugin will load current Python module where ``@pytest.mark.cocotb`` was used as cocotb testbench (Python file with
 cocotb tests).
 
@@ -165,7 +163,7 @@ marked as cocotb runner that should run HDL simulator by invoking
 :py:func:`cocotb_tools.pytest.hdl.HDL.test`, :py:func:`cocotb_tools.runner.Runner.test` or similar method.
 
 Marker can also help plugin to identify and bind cocotb tests to cocotb runners. This is done by plugin
-based on information from provided positional arguments (or cocotb ``test_module`` argument) supplied into
+based on information from provided positional arguments supplied into
 ``@pytest.mark.cocotb`` decorator. This helps plugin to properly filter tests out
 when using `pytest`_ ``-k '<expression>'`` or ``-m '<markers>'`` options.
 

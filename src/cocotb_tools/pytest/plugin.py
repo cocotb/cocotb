@@ -35,10 +35,14 @@ from pytest import (
 
 import cocotb
 import cocotb.handle
-from cocotb._decorators import Test, TestGenerator
 from cocotb.handle import SimHandleBase
+from cocotb_tools.pytest.compat import (
+    cocotb_decorator_as_pytest_marks,
+    is_cocotb_decorator,
+)
 from cocotb_tools.pytest.controller import Controller
 from cocotb_tools.pytest.hdl import HDL, SIMULATORS
+from cocotb_tools.pytest.mark import register_markers
 from cocotb_tools.pytest.option import Option, add_options_to_parser, is_cocotb_option
 
 
@@ -441,15 +445,7 @@ def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None
 def pytest_configure(config: Config) -> None:
     option = config.option
 
-    config.addinivalue_line(
-        "markers",
-        "cocotb(*test_module, ...): mark coroutine function as cocotb test and normal function as cocotb runner. "
-        "``test_module`` is a Python module with defined cocotb tests that will be loaded by cocotb runner. "
-        "Marker is using the same named arguments as "
-        ":py:func:`cocotb.test` decorator, "
-        ":py:func:`cocotb_tools.runner.Runner.build` and "
-        ":py:func:`cocotb_tools.runner.Runner.test` methods.",
-    )
+    register_markers(config)
 
     if option.pygpi_users is None:
         option.pygpi_users = config.getini("pygpi_users")
@@ -530,68 +526,12 @@ def pytest_configure(config: Config) -> None:
         config.pluginmanager.register(Controller(config), "cocotb_controller")
 
 
-def _unwrap_obj(obj: object, markers: list[Mark] | None = None) -> object:
-    if markers is None:
-        markers = []
-
-    if isinstance(obj, TestGenerator):
-        # Replace @cocotb.parametrize(...) decorator with equivalent @pytest.mark.parametrize(...) markers
-        # @cocotb.parametrize(x=[1, 2], y=[3, 4])
-        # vvv
-        # @pytest.parametrize("x", [1, 2])
-        # @pytest.parametrize("y", [3, 4])
-        for names, values in obj.options:
-            if isinstance(names, str):
-                markers.append(mark.parametrize(names, values).mark)
-            else:
-                markers.append(mark.parametrize(",".join(names), values).mark)
-
-        kwargs: dict[str, Any] = {
-            name: value
-            for name, value in vars(obj).items()
-            if not name.startswith("_") and name != "func"
-        }
-
-        markers.append(mark.cocotb(**kwargs).mark)
-
-        # Process cocotb Test from cocotb TestGenerator
-        return _unwrap_obj(obj.func, markers)
-
-    if isinstance(obj, Test):
-        # Concate pytest markers from Test object and test function
-        # Replace @cocotb.test decorator with @pytest.mark.cocotb marker
-        #
-        # @pytest.mark.<name1>
-        # @cocotb.test(...) -> @pytest.mark.cocotb(...)
-        # @cocotb.mark.<name2>
-        # async def func(dut) -> None:
-        kwargs = {
-            name: value
-            for name, value in vars(obj).items()
-            if not name.startswith("_") and name != "func"
-        }
-
-        markers.append(mark.cocotb(**kwargs).mark)
-
-        return _unwrap_obj(obj.func, markers)
-
-    if not getattr(obj, "__test__", False):
-        markers.extend(getattr(obj, "pytestmark", ()))
-        setattr(obj, "pytestmark", markers)
-        setattr(obj, "__test__", True)
-
-    # Process cocotb test function from cocotb Test
-    return obj
-
-
 @hookimpl(tryfirst=True)
 def pytest_pycollect_makeitem(
     collector: Module | Class, name: str, obj: object
 ) -> Item | Collector | list[Item | Collector] | None:
-    if isinstance(obj, (Test, TestGenerator)):
-        obj = _unwrap_obj(obj)
-
-        setattr(collector.obj, name, obj)
+    if is_cocotb_decorator(obj):
+        obj = cocotb_decorator_as_pytest_marks(collector, name, obj)
 
         return collector.config.hook.pytest_pycollect_makeitem(
             collector=collector, name=name, obj=obj

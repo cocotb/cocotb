@@ -33,7 +33,6 @@ from pytest import (
     Session,
     TestReport,
     hookimpl,
-    mark,
 )
 
 import cocotb
@@ -72,14 +71,6 @@ def finish_on_exception(method: Callable[..., Any]) -> Callable[..., Any]:
             self._finish()
 
     return wrapper
-
-
-def per_stage(item: Item) -> int:
-    for marker in item.iter_markers("cocotb"):
-        if "stage" in marker.kwargs:
-            return marker.kwargs["stage"]
-
-    return 0
 
 
 class RegressionManager:
@@ -226,24 +217,6 @@ class RegressionManager:
                 for marker in reversed(list(item.iter_markers("cocotb"))):
                     kwargs.update(marker.kwargs)
 
-                if kwargs.get("skip"):
-                    item.add_marker("skip")
-
-                expect_error: (
-                    type[BaseException] | Iterable[type[BaseException]] | None
-                ) = kwargs.get("expect_error")
-
-                expect_fail: bool = kwargs.get("expect_fail", False)
-
-                if expect_fail or expect_error:
-                    if isinstance(expect_error, Iterable):
-                        # raises from @pytest.mark.xfail supports None, type and tuple[type, ...]
-                        expect_error = tuple(expect_error)
-
-                    item.add_marker(
-                        mark.xfail(raises=expect_error or None, strict=True)
-                    )
-
                 timeout: tuple[float, TimeUnit] | None = kwargs.get("timeout")
 
                 if timeout:
@@ -371,12 +344,6 @@ class RegressionManager:
 
         self._session.config._ensure_unconfigure()
         self._shutdown()
-
-    @hookimpl(tryfirst=True)
-    def pytest_collection_modifyitems(
-        self, session: Session, config: Config, items: list[Item]
-    ) -> None:
-        items[:] = sorted(items, key=per_stage)
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_setup(self, item: Item) -> None:
