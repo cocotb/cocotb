@@ -7,9 +7,9 @@
 from __future__ import annotations
 
 import os
+import shlex
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
 
 TRUE: tuple[str, ...] = ("1", "yes", "y", "on", "true", "enable")
 """List of expected values for environment variable to be evaluated as True."""
@@ -126,3 +126,18 @@ def as_path(name: str, default: Path | str | None = None) -> Path:
     value: str = as_str(name)
 
     return Path(value or default or "")
+
+
+def as_args(name: str, default: str | None = None) -> list[str]:
+    """Convert value of environment variable to list of arguments respecting shell syntax.
+
+    Args:
+        name: Name of environment variable.
+        default: Default value of environment variable.
+
+    Returns:
+        List of arguments split based on shell syntax.
+    """
+    value: str = as_str(name)
+
+    return shlex.split(value or default or "")
