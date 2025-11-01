@@ -153,15 +153,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_enable_profiling",
-        action="store_true",
-        description="""
-            Enable performance analysis of the Python portion of cocotb. When enabled, a file test_profile.pstat
-            will be written which contains statistics about the cumulative time spent in the functions. From this,
-            a callgraph diagram can be generated with gprof2dot and graphviz.
-        """,
-    ),
-    Option(
         "cocotb_log_level",
         choices=("trace", "debug", "info", "warning", "error", "critical"),
         description="""
