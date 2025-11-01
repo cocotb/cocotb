@@ -264,15 +264,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_user_coverage",
-        action="store_true",
-        description="""
-            Enable to collect Python coverage data for user code. For some simulators, this will also report HDL
-            coverage. If coverage configuration file doesn't exist, branch coverage is collected and files in the
-            cocotb package directory are excluded. This needs the coverage Python module to be installed.
-        """,
-    ),
-    Option(
         "cocotb_pytest_args",
         type=shlex.split,
         default=[],
