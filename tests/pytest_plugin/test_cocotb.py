@@ -38,11 +38,6 @@ async def test_timeout(dut, clock_generation) -> None:
         await FallingEdge(dut.clk)
 
 
-@cocotb.test(stage=10)
-async def test_stage(dut) -> None:
-    """Test stage set to 10 from @cocotb.test decorator."""
-
-
 @cocotb.test(expect_fail=True)
 async def test_expect_fail_true(dut) -> None:
     """Test expect fail from @cocotb.test decorator."""
