@@ -341,7 +341,10 @@ OPTIONS: tuple[Option, ...] = (
         "pygpi_users",
         nargs="*",
         metavar="MODULE:FUNCTION",
-        default=("cocotb._init:init_package_from_simulation",),
+        default=(
+            "cocotb_tools.pytest.logging:_configure",
+            "cocotb._init:init_package_from_simulation",
+        ),
         description="""
             The Python module and callable that starts up the Python cosimulation environment. User overloads can be
             used to enter alternative Python frameworks or to hook existing cocotb functionality. It is formatted as
