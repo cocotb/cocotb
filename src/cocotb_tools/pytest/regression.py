@@ -9,13 +9,11 @@ from __future__ import annotations
 import bdb
 import hashlib
 import inspect
-import logging
 import random
 from collections import deque
 from collections.abc import AsyncGenerator, Awaitable, Generator, Iterable
 from functools import wraps
 from importlib import import_module
-from logging import Logger, getLogger
 from multiprocessing.connection import Client
 from time import sleep
 from typing import Any, Callable, Literal, cast
@@ -51,7 +49,6 @@ from cocotb_tools.pytest.fixture import (
     AsyncFixtureCachedResult,
     resolve_fixture_arg,
 )
-from cocotb_tools.pytest.logging import SimTimeContextFilter
 
 RETRIES: int = 10
 INTERVAL: float = 0.1  # seconds
@@ -150,18 +147,6 @@ class RegressionManager:
         self._session.config.hook.pytest_sessionstart(session=self._session)
         self._session.config.hook.pytest_collection(session=self._session)
         self._session.config.hook.pytest_runtestloop(session=self._session)
-
-    @hookimpl(tryfirst=True)
-    def pytest_configure(self, config: Config) -> None:
-        """Configure logger."""
-        sim_time_context_filter = SimTimeContextFilter(config)
-
-        root_logger: Logger = getLogger()
-        root_logger.addFilter(sim_time_context_filter)
-
-        for name in logging.root.manager.loggerDict:
-            logger: Logger = getLogger(name)
-            logger.addFilter(sim_time_context_filter)
 
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_pycollect_makeitem(
