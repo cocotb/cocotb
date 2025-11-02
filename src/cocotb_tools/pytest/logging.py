@@ -6,13 +6,10 @@
 
 from __future__ import annotations
 
-from functools import wraps
-from logging import Filter, Logger, LogRecord, getLogger
+from logging import Filter, LogRecord
 
 from pytest import Config
 
-from cocotb import simulator
-from cocotb.logging import _log_from_c
 from cocotb.simtime import TimeUnit, get_sim_time
 
 
@@ -40,18 +37,3 @@ class SimTimeContextFilter(Filter):
             # get_sim_time may try to log - if that happens, we can't attach a simulator time to this message.
             record.sim_time = None
         return True
-
-
-def _configure(_: object) -> None:
-    gpi_logger: Logger = getLogger("gpi")
-    old_setLevel = gpi_logger.setLevel
-
-    @wraps(old_setLevel)
-    def setLevel(level: int | str) -> None:
-        old_setLevel(level)
-        simulator.set_gpi_log_level(gpi_logger.getEffectiveLevel())
-
-    gpi_logger.setLevel = setLevel  # type: ignore[method-assign]
-
-    # Initialize PyGPI logging
-    simulator.initialize_logger(_log_from_c, getLogger)
