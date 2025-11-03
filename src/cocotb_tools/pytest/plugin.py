@@ -161,19 +161,6 @@ OPTIONS: tuple[Option, ...] = (
         """,
     ),
     Option(
-        "cocotb_log_prefix",
-        metavar="FORMAT",
-        description="""
-            Customize the log message prefix. The value of this variable should be in Python f-string syntax.
-            It has access to the following variables:
-
-            * ``record``:  The :py:class:`logging.LogRecord` being formatted. This includes the attribute ``created_sim_time``, which is the simulation time in steps.
-            * ``time``:    The Python :py:mod:`time` module.
-            * ``simtime``: The cocotb :py:mod:`cocotb.simtime` module.
-            * ``ANSI``:    The cocotb :py:const:`cocotb.logging.ANSI` enum, which contains ANSI escape codes for coloring the output.
-        """,
-    ),
-    Option(
         "cocotb_plusargs",
         nargs="*",
         default=[],
