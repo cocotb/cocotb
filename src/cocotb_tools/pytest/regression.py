@@ -44,7 +44,6 @@ from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb.task import Task
-from cocotb_tools.pytest import env
 from cocotb_tools.pytest.fixture import (
     AsyncFixture,
     AsyncFixtureCachedResult,
@@ -84,15 +83,23 @@ class RegressionManager:
     def __init__(
         self,
         *args: str,
+        nodeid: str = "",
+        reporter_address: str = "",
         xmlpath: str | None = None,
+        keywords: Iterable[str] | None = None,
         test_modules: Iterable[str] | None = None,
+        invocation_dir: Path | str | None = None,
     ) -> None:
         """Create new instance of regression manager for cocotb tests.
 
         Args:
             args: Command line arguments for pytest.
+            nodeid: Node identifier of cocotb runner.
             xmlpath: Override the ``--junit-xml`` option.
+            keywords: List of cocotb runner keywords.
             test_modules: List of test modules (Python modules with cocotb tests) to be loaded.
+            invocation_dir: Path to directory location from where pytest was invoked.
+            reporter_address: IPC address (Unix socket, Windows pipe, TCP, ...) to tests reporter.
         """
         self._task: Task
         self._tasks: deque[Task] = deque[Task]()
@@ -103,8 +110,9 @@ class RegressionManager:
         self._call_start: float | None = None
         self._sim_time_start: float = 0
         self._sim_time_unit: TimeUnit = "step"
-        self._nodeid: str = env.as_str("COCOTB_PYTEST_NODEID")
-        self._keywords: list[str] = env.as_list("COCOTB_PYTEST_KEYWORDS")
+        self._nodeid: str = nodeid
+        self._keywords: list[str] = list(keywords) if keywords else []
+        self._reporter_address: str = reporter_address
 
         pluginmanager = PytestPluginManager()
 
@@ -114,7 +122,7 @@ class RegressionManager:
             invocation_params=Config.InvocationParams(
                 args=args,
                 plugins=None,
-                dir=env.as_path("COCOTB_PYTEST_DIR"),
+                dir=Path(invocation_dir) if invocation_dir else Path.cwd(),
             ),
         )
 
@@ -495,9 +503,7 @@ class RegressionManager:
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_logreport(self, report: TestReport) -> None:
-        address: str = env.as_str("COCOTB_PYTEST_REPORTER_ADDRESS")
-
-        if address:
+        if self._reporter_address:
             config: Config = self._session.config
 
             data: dict[str, Any] = config.hook.pytest_report_to_serializable(
@@ -506,7 +512,7 @@ class RegressionManager:
 
             for retry in range(RETRIES, -1, -1):
                 try:
-                    with Client(address) as client:
+                    with Client(self._reporter_address) as client:
                         client.send(data)
                     return
                 except Exception:
