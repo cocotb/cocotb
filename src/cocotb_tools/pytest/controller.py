@@ -96,18 +96,34 @@ class Controller:
         """
         option = config.option
 
+        invocation_dir: Path | str = (
+            option.cocotb_pytest_dir or config.invocation_params.dir or Path.cwd()
+        )
+
+        invocation_args: Iterable[str] = (
+            option.cocotb_pytest_args or config.invocation_params.args or ()
+        )
+
         # Populate environment variables for cocotb runners that will run HDL simulators
-        os.environ["PYGPI_USERS"] = ",".join(config.option.pygpi_users)
+        os.environ["PYGPI_USERS"] = ",".join(option.pygpi_users)
+        os.environ["COCOTB_RANDOM_SEED"] = str(option.cocotb_seed)
+        os.environ["COCOTB_PYTEST_DIR"] = str(Path(invocation_dir).resolve())
+        os.environ["COCOTB_PYTEST_ARGS"] = shlex.join(invocation_args)
 
-        os.environ["COCOTB_PYTEST_DIR"] = (
-            str(Path(option.cocotb_pytest_dir).resolve())
-            if option.cocotb_pytest_dir
-            else str(config.invocation_params.dir)
-        )
+        if option.cocotb_waveform_viewer:
+            os.environ["COCOTB_WAVEFORM_VIEWER"] = option.cocotb_waveform_viewer
 
-        os.environ["COCOTB_PYTEST_ARGS"] = shlex.join(
-            option.cocotb_pytest_args or config.invocation_params.args
-        )
+        if option.cocotb_attach:
+            os.environ["COCOTB_ATTACH"] = str(option.cocotb_attach)
+
+        if option.cocotb_resolve_x:
+            os.environ["COCOTB_RESOLVE_X"] = option.cocotb_resolve_x
+
+        if option.cocotb_scheduler_debug:
+            os.environ["COCOTB_SCHEDULER_DEBUG"] = "1"
+
+        if option.cocotb_trust_inertial_writes:
+            os.environ["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
 
         # Mock cocotb module for the main pytest parent process
         # Otherwise pytest can raise an exception when loading Python module
