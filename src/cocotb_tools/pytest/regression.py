@@ -196,11 +196,24 @@ class RegressionManager:
             session: The pytest session object.
         """
         self._logging_plugin = session.config.pluginmanager.get_plugin("logging-plugin")
-        log: Logger = getLogger("cocotb")
 
-        log.info("Running on %s version %s", cocotb.SIM_NAME, cocotb.SIM_VERSION)
-        log.info("Seeding Python random module with %d", cocotb.RANDOM_SEED)
-        log.info("Top level: %s", self._toplevel)
+    @hookimpl(tryfirst=True)
+    def pytest_report_header(self, config: Config, start_path: Path) -> str | list[str]:
+        """Return a string or list of strings to be displayed as header info for terminal reporting.
+
+        Args:
+            config: The pytest config object.
+            start_path: The starting dir.
+
+        Returns:
+            Lines returned by a plugin are displayed before those of plugins which ran before it.
+        """
+        return [
+            f"Running on {cocotb.SIM_NAME} version {cocotb.SIM_VERSION}",
+            f"Initialized cocotb v{cocotb.__version__} from {Path(__file__).parent.resolve()}",
+            f"Seeding Python random module with {cocotb.RANDOM_SEED}",
+            f"Top level set to {self._toplevel!r}",
+        ]
 
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_pycollect_makeitem(

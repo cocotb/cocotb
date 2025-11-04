@@ -99,7 +99,7 @@ class Logging:
         setLogRecordFactory(log_record_factory)
 
         if option.cocotb_log_level:
-            getLogger("cocotb").setLevel(get_level(option.cocotb_log_level))
+            getLogger("test").setLevel(get_level(option.cocotb_log_level))
 
         if option.gpi_log_level:
             getLogger("gpi").setLevel(get_level(option.gpi_log_level))
