@@ -79,15 +79,12 @@ By using the ``-p <plugin>`` option when invoking the `pytest`_ command line int
 Building and Testing
 ====================
 
-:py:class:`cocotb_tools.pytest.hdl.HDL` wraps :py:class:`cocotb_tools.runner.Runner`
-allowing to fully configure the cocotb runner by using the command line arguments ``--cocotb-*``,
+:py:class:`cocotb_tools.pytest.hdl.HDL` interfaces with the :ref:`Python runners <howto-python-runner>` to build designs and run simulations. The :class:`!Runner` is fully configurable by using ``--cocotb-*`` command line arguments,
 configuration files like `pyproject.toml`_ or `fixture`_ arguments.
 
-The plugin provides a ``hdl`` fixture that will create a new instance of :py:class:`cocotb_tools.pytest.hdl.HDL`
-with the `pytest`_ built-in `request`_ fixture that is providing information of the requesting test function
-including the current configuration of `pytest`_.
+The plugin provides an ``hdl`` fixture that will create a new instance of :py:class:`cocotb_tools.pytest.hdl.HDL` that can be customized and then used in tests.
 
-Example content of a ``conftest.py`` file:
+An example is provided below, located in a project ``conftest.py`` file:
 
 .. code:: python
 
@@ -113,32 +110,6 @@ Example content of a ``conftest.py`` file:
         return hdl
 
 
-Example content of the ``test_sample_module.py`` file:
-
-.. code:: python
-
-    import pytest
-    from cocotb_tools.pytest.hdl import HDL
-
-
-    # Without providing positional arguments to the cocotb decorator,
-    # the plugin will use the current file as the cocotb testbench (a Python file with cocotb tests).
-    # If the 'toplevel' option was not provided, it will be derived from the name of the first positional argument
-    # but with a removed 'test_*' prefix or '*_test' suffix.
-    @pytest.mark.cocotb  # equivalent to @pytest.mark.cocotb("test_dut", toplevel="dut")
-    def test_sample_module(sample_module: HDL) -> None:
-        """Build HDL design and run HDL simulator to execute cocotb tests.
-
-        Args:
-            sample_module: An instance of a defined HDL design.
-        """
-        sample_module.test()
-
-
-    # A @pytest.mark.cocotb or @cocotb.test decorator is not required if the test function
-    # starts with a 'test_*' prefix, is a coroutine function (``async``) and has a ``dut`` argument.
-    async def test_some_dut_feature(dut) -> None:
-        """cocotb test for DUT."""
 
 @pytest.mark.cocotb
 ===================
@@ -197,11 +168,14 @@ name of HDL top level design will be ``dut``.
         """Test DUT with different top level that was set at fixture level."""
         sample_module.test()
 
-Using ``@pytest.mark.cocotb`` marker to mark test function as cocotb test is optional
-for test functions that are starting with ``test_*`` prefix name, are coroutine functions (``async def``) and
-with ``dut`` argument. Normal functions (non-coroutines) with ``@pytest.mark.cocotb`` marker are
-marked as cocotb runner that should run HDL simulator by invoking
-:py:func:`cocotb_tools.pytest.hdl.HDL.test`, :py:func:`cocotb_tools.runner.Runner.test` or similar method.
+Using the ``@pytest.mark.cocotb`` marker is optional for test functions if they meet the following criteria:
+* start with ``test_``
+* is a coroutine function (``async def``)
+* have the first positional argument name match the ``toplevel`` (such as ``dut``)
+
+Non-``async`` functions marked with ``@pytest.mark.cocotb`` are control functions run by pytest.
+They can run simulations by invoking :py:func:`cocotb_tools.pytest.hdl.HDL.test`
+or :py:func:`cocotb_tools.runner.Runner.test`.
 
 .. code:: python
 
@@ -223,10 +197,9 @@ marked as cocotb runner that should run HDL simulator by invoking
     async def name_without_test_prefix(dut) -> None:
         """Function that is not picked up by pytest discovery needs a decorator to count as a test."""
 
-Marker can also help plugin to identify and bind cocotb tests to cocotb runners. This is done by plugin
-based on information from provided positional arguments supplied into
-``@pytest.mark.cocotb`` decorator. This helps plugin to properly filter tests out
-when using `pytest`_ ``-k '<expression>'`` or ``-m '<markers>'`` options.
+Markers can also help the plugin identify and bind cocotb tests to cocotb runners.
+This is done based on positional arguments supplied to the ``@pytest.mark.cocotb`` decorator.
+Users can filter tests when invoking `pytest`_  with ``-k '<expression>'`` or ``-m '<markers>'`` options.
 
 List tree hierarchy of cocotb tests related to cocotb runners and cocotb testbenches:
 
@@ -255,9 +228,14 @@ Fixtures
 Usage:
 
 * Automatically generate clock for all tests
+``pytest`` fixtures can provide useful test functionality, and can use the fixtures provided by the cocotb plugin.
+
+Some examples include:
+
+* Automatically generate a clock.
 * Automatically set up (reset, configure) and tear down DUT per each test
 
-Example of automatically generating clock for all tests using the ``conftest.py`` file:
+Example clock generation for all tests using the ``conftest.py`` file:
 
 .. code:: python
 
@@ -273,7 +251,7 @@ Example of automatically generating clock for all tests using the ``conftest.py`
         Clock(dut.clk, 10, unit="ns").start(start_high=False)
 
 
-Example of automatically set up (reset, configure) and tear down DUT per each test defined in ``test_*.py`` file:
+Example set up and tear down fixture:
 
 .. code:: python
 
