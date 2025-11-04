@@ -81,11 +81,16 @@ class RegressionManager:
 
     _timer1 = Timer(1)
 
-    def __init__(self, *args: str) -> None:
+    def __init__(
+        self,
+        *args: str,
+        xmlpath: str | None = None,
+    ) -> None:
         """Create new instance of regression manager for cocotb tests.
 
         Args:
             args: Command line arguments for pytest.
+            xmlpath: Override the ``--junit-xml`` option.
         """
         self._task: Task
         self._tasks: deque[Task] = deque[Task]()
@@ -132,6 +137,9 @@ class RegressionManager:
         # Unify it to current working directory where cocotb runner is running to avoid overriding it
         if log_file:
             config.option.log_file = Path(log_file).name
+
+        if xmlpath:
+            config.option.xmlpath = xmlpath
 
         if env.exists("COCOTB_TEST_MODULES"):
             # https://github.com/pytest-dev/pytest/issues/1596
