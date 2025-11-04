@@ -301,6 +301,8 @@ class RegressionManager:
             call.duration = call.stop - call.start
 
         if call.excinfo or not self._tasks:
+            self._update_report_section(item, when)
+
             report: TestReport = item.ihook.pytest_runtest_makereport(
                 item=item, call=call
             )
@@ -323,10 +325,8 @@ class RegressionManager:
         if self._tasks:
             self._execute(self._setup, self._tasks.popleft())
         elif passed:
-            self._update_report_section(item, "setup")
             self._call()
         else:
-            self._update_report_section(item, "setup")
             self._teardown()
 
     @finish_on_exception
@@ -338,7 +338,6 @@ class RegressionManager:
         if self._tasks:
             self._execute(self._call, self._tasks.popleft())
         else:
-            self._update_report_section(item, "call")
             self._teardown()
 
     @finish_on_exception
@@ -354,7 +353,6 @@ class RegressionManager:
         if self._tasks:
             return self._execute(self._teardown, self._tasks.popleft())
 
-        self._update_report_section(item, "teardown")
         item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
 
         if nextitem:
