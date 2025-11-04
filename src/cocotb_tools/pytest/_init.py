@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import shlex
 from typing import cast
 
 import cocotb
@@ -18,7 +17,7 @@ def run_regression(_: object) -> None:
     """Run regression using pytest as regression manager for cocotb tests."""
     manager: RegressionManager = RegressionManager(
         # Use the same command line arguments as from the main pytest parent process
-        *shlex.split(env.as_str("COCOTB_PYTEST_ARGS")),
+        *env.as_args("COCOTB_PYTEST_ARGS"),
         # Provide list of test modules (Python modules with cocotb tests) to be loaded
         test_modules=env.as_list("COCOTB_TEST_MODULES"),
         # Cocotb runner is using generated JUnit XML results file to determine
