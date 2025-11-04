@@ -312,6 +312,12 @@ class RegressionManager:
             if _check_interactive_exception(call, report):
                 _interactive_exception(item, call, report)
 
+            # Cancel remaining tasks when exception was raised (excinfo)
+            for task in self._tasks:
+                task.cancel()
+
+            self._tasks.clear()
+
             return report.passed
 
         return False
