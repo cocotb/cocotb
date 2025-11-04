@@ -14,12 +14,14 @@ from collections import deque
 from collections.abc import AsyncGenerator, Awaitable, Generator, Iterable
 from functools import wraps
 from importlib import import_module
+from logging import Logger, getLogger
 from multiprocessing.connection import Client
 from pathlib import Path
 from time import sleep
 from typing import Any, Callable, Literal, cast
 
 from _pytest.config import default_plugins
+from _pytest.logging import LoggingPlugin
 from _pytest.outcomes import Exit, Skipped
 from pytest import (
     CallInfo,
@@ -113,6 +115,10 @@ class RegressionManager:
         self._nodeid: str = nodeid
         self._keywords: list[str] = list(keywords) if keywords else []
         self._reporter_address: str = reporter_address
+        self._logging_plugin: LoggingPlugin | None = None
+        self._logging_root_level: int = getLogger().level
+        self._logging_level: int = 0
+        self._logging_restored: bool = False
 
         pluginmanager = PytestPluginManager()
 
@@ -172,6 +178,16 @@ class RegressionManager:
         self._session.config.hook.pytest_sessionstart(session=self._session)
         self._session.config.hook.pytest_collection(session=self._session)
         self._session.config.hook.pytest_runtestloop(session=self._session)
+
+    @hookimpl(tryfirst=True)
+    def pytest_sessionstart(self, session: Session) -> None:
+        """Called after the :py:class:`pytest.Session` object has been created and
+        before performing collection and entering the run test loop.
+
+        Args:
+            session: The pytest session object.
+        """
+        self._logging_plugin = session.config.pluginmanager.get_plugin("logging-plugin")
 
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_pycollect_makeitem(
@@ -244,16 +260,9 @@ class RegressionManager:
                 for marker in reversed(list(item.iter_markers("cocotb"))):
                     kwargs.update(marker.kwargs)
 
-                timeout: tuple[float, TimeUnit] | None = kwargs.get("timeout")
-
-                if timeout:
-                    f = item.obj
-
-                    @wraps(f)
-                    async def func(*args: object, **kwargs: object) -> None:
-                        await with_timeout(f(*args, **kwargs), timeout[0], timeout[1])
-
-                    item.obj = func
+                item.obj = self._wrap_async_function(
+                    item.obj, timeout=kwargs.get("timeout")
+                )
 
                 item.extra_keyword_matches.update(self._keywords)
 
@@ -267,6 +276,7 @@ class RegressionManager:
         **kwargs: object,
     ) -> bool:
         if not func:
+            self._logging_root_level = getLogger().level
             func = getattr(item.ihook, f"pytest_runtest_{when}")
             kwargs["item"] = item
             self._call_start = None
@@ -313,8 +323,10 @@ class RegressionManager:
         if self._tasks:
             self._execute(self._setup, self._tasks.popleft())
         elif passed:
+            self._update_report_section(item, "setup")
             self._call()
         else:
+            self._update_report_section(item, "setup")
             self._teardown()
 
     @finish_on_exception
@@ -326,6 +338,7 @@ class RegressionManager:
         if self._tasks:
             self._execute(self._call, self._tasks.popleft())
         else:
+            self._update_report_section(item, "call")
             self._teardown()
 
     @finish_on_exception
@@ -341,6 +354,7 @@ class RegressionManager:
         if self._tasks:
             return self._execute(self._teardown, self._tasks.popleft())
 
+        self._update_report_section(item, "teardown")
         item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
 
         if nextitem:
@@ -377,11 +391,37 @@ class RegressionManager:
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_setup(self, item: Item) -> None:
+        """Called to perform the setup phase for a test item.
+
+        Args:
+            item: The pytest item (test function).
+        """
+        self._save_logging_state()
+
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
         hasher = hashlib.sha1()
         hasher.update(item.nodeid.encode())
         seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
         random.seed(seed)
+
+    @hookimpl(tryfirst=True)
+    def pytest_runtest_call(self, item: Item) -> None:
+        """Called to run the test for test item (the call phase).
+
+        Args:
+            item: The pytest item (test function).
+        """
+        self._save_logging_state()
+
+    @hookimpl(tryfirst=True)
+    def pytest_runtest_teardown(self, item: Item, nextitem: Item | None = None) -> None:
+        """Called to perform the teardown phase for a test item.
+
+        Args:
+            item: The pytest item (test function).
+            nextitem: The scheduled-to-be-next pytest item (next test function).
+        """
+        self._save_logging_state()
 
     @hookimpl(tryfirst=True)
     def pytest_fixture_setup(
@@ -553,6 +593,80 @@ class RegressionManager:
             self._tasks.append(Task(func()))
 
         return finalizer if tasks else lambda: None
+
+    def _save_logging_state(self) -> None:
+        """Save state of logging including log handlers and current log level."""
+        self._logging_level = getLogger().level
+        self._logging_restored = False
+
+    def _restore_logging_state(self) -> None:
+        """Restore log handlers needed by pytest capture mechanism.
+
+        These log handlers were unnecessary removed by using context manager in pytest logging plugin.
+        Because how everything is working when using async functions, context manager exists immediately
+        after scheduling async function to cocotb scheduler.
+        """
+        if not self._logging_restored and self._logging_plugin:
+            root_logger: Logger = getLogger()
+            root_logger.setLevel(self._logging_level)
+            root_logger.addHandler(self._logging_plugin.log_file_handler)
+            root_logger.addHandler(self._logging_plugin.log_cli_handler)
+            root_logger.addHandler(self._logging_plugin.caplog_handler)
+            root_logger.addHandler(self._logging_plugin.report_handler)
+            self._logging_restored = True
+
+    def _update_report_section(
+        self, item: Item, when: Literal["setup", "call", "teardown"]
+    ) -> None:
+        """Update report section in item.
+
+        Args:
+            item: Test function.
+            when: Test phase.
+        """
+        if self._logging_plugin:
+            log: str = self._logging_plugin.report_handler.stream.getvalue().strip()
+
+            # Update the latest log section
+            for index, section in reversed(list(enumerate(item._report_sections))):
+                if section[0] == when and section[1] == "log":
+                    item._report_sections[index] = (when, "log", log)
+                    break
+
+            # These log handlers are per test function phase, no needed anymore
+            root_logger: Logger = getLogger()
+            root_logger.setLevel(self._logging_root_level)
+            root_logger.removeHandler(self._logging_plugin.caplog_handler)
+            root_logger.removeHandler(self._logging_plugin.report_handler)
+
+    def _wrap_async_function(
+        self,
+        func: Callable[..., Awaitable],
+        timeout: tuple[float, TimeUnit] | None = None,
+    ) -> Callable[..., Awaitable]:
+        """Wrap provided async function (fixture, test, ...).
+
+        Args:
+            func: Async function (fixture, test, ...) to be wrapped.
+            timeout: Optional timeout for async function.
+
+        Returns:
+            Wrapped async function with restoring logging state and optional timeout.
+        """
+        if timeout:
+
+            @wraps(func)
+            async def wrapped(*args: object, **kwargs: object) -> Any:
+                self._restore_logging_state()
+                return await with_timeout(func(*args, **kwargs), timeout[0], timeout[1])
+        else:
+
+            @wraps(func)
+            async def wrapped(*args: object, **kwargs: object) -> Any:
+                self._restore_logging_state()
+                return await func(*args, **kwargs)
+
+        return wrapped
 
     @property
     def _running_test(self) -> RegressionManager:
