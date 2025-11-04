@@ -15,6 +15,7 @@ from collections.abc import AsyncGenerator, Awaitable, Generator, Iterable
 from functools import wraps
 from importlib import import_module
 from multiprocessing.connection import Client
+from pathlib import Path
 from time import sleep
 from typing import Any, Callable, Literal, cast
 
@@ -124,6 +125,13 @@ class RegressionManager:
         config = config.pluginmanager.hook.pytest_cmdline_parse(
             pluginmanager=config.pluginmanager, args=list(args)
         )
+
+        # Get log file option from command line or from configuration file(s)
+        log_file: str | None = config.getoption("log_file") or config.getini("log_file")
+
+        # Unify it to current working directory where cocotb runner is running to avoid overriding it
+        if log_file:
+            config.option.log_file = Path(log_file).name
 
         if env.exists("COCOTB_TEST_MODULES"):
             # https://github.com/pytest-dev/pytest/issues/1596
