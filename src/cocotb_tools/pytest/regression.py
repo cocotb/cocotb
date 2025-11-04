@@ -86,6 +86,7 @@ class RegressionManager:
         self,
         *args: str,
         nodeid: str = "",
+        toplevel: str = "",
         reporter_address: str = "",
         xmlpath: str | None = None,
         keywords: Iterable[str] | None = None,
@@ -97,12 +98,14 @@ class RegressionManager:
         Args:
             args: Command line arguments for pytest.
             nodeid: Node identifier of cocotb runner.
+            toplevel: Name of HDL top level design.
             xmlpath: Override the ``--junit-xml`` option.
             keywords: List of cocotb runner keywords.
             test_modules: List of test modules (Python modules with cocotb tests) to be loaded.
             invocation_dir: Path to directory location from where pytest was invoked.
             reporter_address: IPC address (Unix socket, Windows pipe, TCP, ...) to tests reporter.
         """
+        self._toplevel: str = toplevel
         self._task: Task
         self._tasks: deque[Task] = deque[Task]()
         self._subtasks: list[Task] = []
@@ -179,6 +182,11 @@ class RegressionManager:
         self._session.config.hook.pytest_collection(session=self._session)
         self._session.config.hook.pytest_runtestloop(session=self._session)
 
+    def pytest_configure(self, config: Config) -> None:
+        """Configure regression manager."""
+        if getattr(cocotb, "top", None) is None:
+            raise FailSimulation(f"Can not find root handle {self._toplevel!r}")
+
     @hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
         """Called after the :py:class:`pytest.Session` object has been created and
@@ -188,6 +196,11 @@ class RegressionManager:
             session: The pytest session object.
         """
         self._logging_plugin = session.config.pluginmanager.get_plugin("logging-plugin")
+        log: Logger = getLogger("cocotb")
+
+        log.info("Running on %s version %s", cocotb.SIM_NAME, cocotb.SIM_VERSION)
+        log.info("Seeding Python random module with %d", cocotb.RANDOM_SEED)
+        log.info("Top level: %s", self._toplevel)
 
     @hookimpl(tryfirst=True, wrapper=True)
     def pytest_pycollect_makeitem(

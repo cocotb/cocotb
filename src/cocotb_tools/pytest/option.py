@@ -11,7 +11,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, Literal
 
-from pytest import OptionGroup, Parser
+from pytest import Config, OptionGroup, Parser
 
 from cocotb_tools.pytest import env
 
@@ -143,6 +143,20 @@ def add_options_to_parser(parser: Parser, name: str, options: Iterable[Option]) 
 
     for option in options:
         option.add_to_parser(parser, group)
+
+
+def populate_ini_to_options(config: Config, options: Iterable[Option]) -> None:
+    """Populate values from configuration files to command line options.
+
+    Args:
+        config: The pytest configuration object.
+        options: List of options.
+    """
+    for option in options:
+        value: Any = config.getoption(option.name)
+
+        if value is None:
+            setattr(config.option, option.name, config.getini(option.name))
 
 
 def is_cocotb_option(name: str) -> bool:

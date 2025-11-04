@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import inspect
-import os
 import shlex
 import textwrap
 from argparse import ArgumentParser
@@ -44,8 +43,15 @@ from cocotb_tools.pytest.compat import (
 )
 from cocotb_tools.pytest.controller import Controller
 from cocotb_tools.pytest.hdl import HDL, SIMULATORS
+from cocotb_tools.pytest.logging import Logging
 from cocotb_tools.pytest.mark import register_markers
-from cocotb_tools.pytest.option import Option, add_options_to_parser, is_cocotb_option
+from cocotb_tools.pytest.option import (
+    Option,
+    add_options_to_parser,
+    populate_ini_to_options,
+)
+
+ENTRY_POINT: str = "cocotb_tools.pytest._init:run_regression"
 
 
 def to_timescale(value: str) -> tuple[str, str]:
@@ -83,24 +89,7 @@ def to_dict(items: Iterable[str]) -> dict[str, object]:
     return result
 
 
-ENTRY_POINTS: dict[str, str] = {
-    "pytest": "cocotb_tools.pytest._init:run_regression",
-    "cocotb": "cocotb._init:run_regression",
-}
-
-
 OPTIONS: tuple[Option, ...] = (
-    Option(
-        "cocotb_regression_manager",
-        choices=("pytest", "cocotb", "none"),
-        default="pytest",
-        description="""
-            Regression manager that will be used to run cocotb tests:
-
-            * ``pytest``: Use pytest as regression manager to manage and run cocotb tests.
-            * ``cocotb``: Use built-in cocotb regression manager to manage and run cocotb tests.
-        """,
-    ),
     Option(
         "cocotb_summary",
         action="store_true",
@@ -157,7 +146,7 @@ OPTIONS: tuple[Option, ...] = (
         choices=("trace", "debug", "info", "warning", "error", "critical"),
         description="""
             The default log level of all "cocotb" Python loggers. The default is unset, which means that the log
-            level is inherited from the root logger. This behaves similarly to :py:const:`logging.INFO`.
+            level is inherited from the root logger. This behaves similarly to :py:const:`logging.NOTSET`.
         """,
     ),
     Option(
@@ -351,17 +340,14 @@ OPTIONS: tuple[Option, ...] = (
         description="""
             The default log level of all "gpi" (the low-level simulator interface) loggers, including both Python
             and the native GPI logger. The default is unset, which means that the log level is inherited from the
-            root logger. This behaves similarly to :py:const:`logging.INFO`.
+            root logger. This behaves similarly to :py:const:`logging.NOTSET`.
         """,
     ),
     Option(
         "pygpi_users",
         nargs="*",
         metavar="MODULE:FUNCTION",
-        default=(
-            "cocotb.logging:_configure",
-            "cocotb._init:init_package_from_simulation",
-        ),
+        default=(ENTRY_POINT,),
         description="""
             The Python module and callable that starts up the Python cosimulation environment. User overloads can be
             used to enter alternative Python frameworks or to hook existing cocotb functionality. It is formatted as
@@ -423,40 +409,7 @@ def pytest_configure(config: Config) -> None:
     option = config.option
 
     register_markers(config)
-
-    if option.pygpi_users is None:
-        option.pygpi_users = config.getini("pygpi_users")
-
-    if option.cocotb_regression_manager is None:
-        option.cocotb_regression_manager = config.getini("cocotb_regression_manager")
-
-    entry_point: str | None = ENTRY_POINTS.get(option.cocotb_regression_manager)
-
-    if entry_point and entry_point not in option.pygpi_users:
-        option.pygpi_users.append(entry_point)
-
-    # Iterate over all command line arguments, load default value from configuration files,
-    # set or unset environment variables
-    for name, optval in vars(option).items():
-        if is_cocotb_option(name):
-            value: Any = optval
-
-            if value is None:
-                value = config.getini(name)
-                setattr(option, name, value)
-
-            environment: str = name.upper()
-
-            # Set value of environment variable to be understable by cocotb
-            if value in (True, "yes"):
-                os.environ[environment] = "1"
-            elif value in (False, "no", "none", "auto", "", []):
-                if environment in os.environ:
-                    del os.environ[environment]
-            elif isinstance(value, list):
-                os.environ[environment] = ",".join(value)
-            else:
-                os.environ[environment] = str(value)
+    populate_ini_to_options(config, OPTIONS)
 
     if not option.cocotb_timescale:
         option.cocotb_timescale = None
@@ -473,17 +426,9 @@ def pytest_configure(config: Config) -> None:
     if isinstance(option.cocotb_parameters, list):
         option.cocotb_parameters = to_dict(option.cocotb_parameters)
 
-    os.environ["COCOTB_PYTEST_DIR"] = (
-        str(Path(option.cocotb_pytest_dir).resolve())
-        if option.cocotb_pytest_dir
-        else str(config.invocation_params.dir)
-    )
+    config.pluginmanager.register(Logging(config), "cocotb_logging")
 
-    os.environ["COCOTB_PYTEST_ARGS"] = shlex.join(
-        option.cocotb_pytest_args or config.invocation_params.args
-    )
-
-    if not config.pluginmanager.hasplugin("cocotb_regression_manager"):
+    if not getattr(cocotb, "is_simulation", False):
         config.pluginmanager.register(Controller(config), "cocotb_controller")
 
 

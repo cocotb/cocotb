@@ -19,8 +19,10 @@ from __future__ import annotations
 
 import inspect
 import os
+import shlex
 from collections.abc import Generator, Iterable
 from multiprocessing.connection import Client, Listener
+from pathlib import Path
 from threading import RLock, Thread
 from typing import Any
 
@@ -92,6 +94,21 @@ class Controller:
         Args:
             config: Pytest configuration object.
         """
+        option = config.option
+
+        # Populate environment variables for cocotb runners that will run HDL simulators
+        os.environ["PYGPI_USERS"] = ",".join(config.option.pygpi_users)
+
+        os.environ["COCOTB_PYTEST_DIR"] = (
+            str(Path(option.cocotb_pytest_dir).resolve())
+            if option.cocotb_pytest_dir
+            else str(config.invocation_params.dir)
+        )
+
+        os.environ["COCOTB_PYTEST_ARGS"] = shlex.join(
+            option.cocotb_pytest_args or config.invocation_params.args
+        )
+
         # Mock cocotb module for the main pytest parent process
         # Otherwise pytest can raise an exception when loading Python module
         #

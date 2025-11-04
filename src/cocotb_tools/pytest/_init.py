@@ -6,15 +6,24 @@
 
 from __future__ import annotations
 
+import sys
+from logging import getLogger
+from random import seed
+from time import time
 from typing import cast
 
 import cocotb
+from cocotb import simtime, simulator
+from cocotb._init import _process_packages, _process_plusargs
+from cocotb.logging import _setup_gpi_logger
 from cocotb_tools.pytest import env
 from cocotb_tools.pytest.regression import RegressionManager
 
 
-def run_regression(_: object) -> None:
+def run_regression(argv: list[str]) -> None:
     """Run regression using pytest as regression manager for cocotb tests."""
+    _setup_simulation_environment(argv)
+
     manager: RegressionManager = RegressionManager(
         # Use the same command line arguments as from the main pytest parent process
         *env.as_args("COCOTB_PYTEST_ARGS"),
@@ -32,7 +41,59 @@ def run_regression(_: object) -> None:
         invocation_dir=env.as_path("COCOTB_PYTEST_DIR"),
         # IPC address (Unix socket, Windows pipe, TCP, ...) to tests reporter
         reporter_address=env.as_str("COCOTB_PYTEST_REPORTER_ADDRESS"),
+        # Name of HDL top level design
+        toplevel=env.as_str("COCOTB_TOPLEVEL"),
     )
 
     cocotb._regression_manager = cast("cocotb.regression.RegressionManager", manager)
     cocotb._regression_manager.start_regression()
+
+
+def _setup_simulation_environment(argv: list[str] | None = None) -> None:
+    """Setup minimal required simulation environment for pytest and cocotb."""
+    cocotb.log = getLogger("test")
+    cocotb.simulator.set_sim_event_callback(_sim_event)
+    _setup_gpi_logger()
+
+    cocotb.argv = argv or []
+    cocotb.is_simulation = True
+
+    # sys.path normally includes "" (the current directory), but does not appear to when python is embedded.
+    # Add it back because users expect to be able to import files in their test directory.
+    sys.path.insert(0, "")
+
+    cocotb.RANDOM_SEED = env.as_int("COCOTB_RANDOM_SEED", int(time()))
+    cocotb.SIM_NAME = simulator.get_simulator_product().strip()
+    cocotb.SIM_VERSION = simulator.get_simulator_version().strip()
+
+    _process_plusargs()
+    _process_packages()
+    _setup_root_handle()
+
+    simtime._init()
+    seed(cocotb.RANDOM_SEED)
+
+
+def _setup_root_handle() -> None:
+    """Function that will set the :py:var:`cocotb.top` handler."""
+    root_name: str = env.as_str("COCOTB_TOPLEVEL")
+
+    if "." in root_name:
+        # Skip any library component of the toplevel
+        root_name = root_name.split(".", 1)[1]
+
+    handle = simulator.get_root_handle(root_name)
+
+    if handle:
+        cocotb.top = cocotb.handle._make_sim_object(handle)
+
+    # If None, pytest will raise an exception
+
+
+def _sim_event(msg: str) -> None:
+    """Function that can be called externally to signal an event."""
+    if hasattr(cocotb, "_regression_manager"):
+        cocotb._regression_manager._fail_simulation(msg)
+    else:
+        # Early stage when logging is not yet configured by pytest logging plugin
+        print(msg, file=sys.stderr, flush=True)
