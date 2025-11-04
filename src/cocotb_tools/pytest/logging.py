@@ -54,22 +54,26 @@ class SimContextFilter(Filter):
     def filter(self, record: LogRecord) -> bool:
         """Attach information about simulation to log record."""
         if not hasattr(record, "sim_time"):
+            sim_time: int | float | None = self._get_sim_time()
             record.sim_time_unit = self._sim_time_unit
 
-            if self._is_simulation:
-                try:
-                    sim_time: float | int = get_sim_time(self._sim_time_unit)
-                    record.sim_time = sim_time
-                    record.sim_time_str = f"{sim_time:.2f}"
-                except RecursionError:
-                    # If get_sim_time will try to log
-                    record.sim_time = 0
-                    record.sim_time_str = "-.--"
-            else:
+            if sim_time is None:
                 record.sim_time = 0
                 record.sim_time_str = "-.--"
+            else:
+                record.sim_time = sim_time
+                record.sim_time_str = f"{sim_time:.2f}"
 
         return True
+
+    def _get_sim_time(self) -> int | float | None:
+        if self._is_simulation:
+            try:
+                return get_sim_time(self._sim_time_unit)
+            except RecursionError:
+                pass  # If get_sim_time will try to log
+
+        return None
 
 
 class Logging:
