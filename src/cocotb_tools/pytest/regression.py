@@ -85,12 +85,14 @@ class RegressionManager:
         self,
         *args: str,
         xmlpath: str | None = None,
+        test_modules: Iterable[str] | None = None,
     ) -> None:
         """Create new instance of regression manager for cocotb tests.
 
         Args:
             args: Command line arguments for pytest.
             xmlpath: Override the ``--junit-xml`` option.
+            test_modules: List of test modules (Python modules with cocotb tests) to be loaded.
         """
         self._task: Task
         self._tasks: deque[Task] = deque[Task]()
@@ -141,13 +143,12 @@ class RegressionManager:
         if xmlpath:
             config.option.xmlpath = xmlpath
 
-        if env.exists("COCOTB_TEST_MODULES"):
+        if test_modules:
             # https://github.com/pytest-dev/pytest/issues/1596
             # We cannot use --pyargs to load Python modules directly because conftest.py will be not loaded
             config.option.pyargs = False
             config.args = [
-                str(import_module(test_module).__file__)
-                for test_module in env.as_list("COCOTB_TEST_MODULES")
+                str(import_module(test_module).__file__) for test_module in test_modules
             ]
 
         # Create session context for tests
