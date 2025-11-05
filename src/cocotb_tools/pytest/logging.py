@@ -101,6 +101,9 @@ class Logging:
         if option.gpi_log_level:
             getLogger("gpi").setLevel(get_level(option.gpi_log_level))
 
+        if option.cocotb_log_level:
+            getLogger("cocotb").setLevel(get_level(option.cocotb_log_level))
+
     @hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
         """Called after the :py:class:`pytest.Session` object has been created and before performing collection and

@@ -327,6 +327,14 @@ OPTIONS: tuple[Option, ...] = (
         description="Extra commands to run before simulation begins.",
     ),
     Option(
+        "cocotb_log_level",
+        choices=("trace", "debug", "info", "warning", "error", "critical"),
+        description="""
+            The default log level of all "cocotb" Python loggers. The default is unset, which means that the log
+            level is inherited from the root logger. This behaves similarly to :py:const:`logging.NOTSET`.
+        """,
+    ),
+    Option(
         "gpi_log_level",
         choices=("trace", "debug", "info", "warning", "error", "critical"),
         description="""
