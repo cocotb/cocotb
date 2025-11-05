@@ -27,6 +27,34 @@ class MockSimHandle:
         """Mock calling methods."""
         return self
 
+    def __int__(self) -> int:
+        """Mock casting to integer."""
+        return 0
+
+    def __eq__(self, other: object) -> bool:
+        """Mock ``==``."""
+        return False
+
+    def __nq__(self, other: object) -> bool:
+        """Mock ``!=``."""
+        return False
+
+    def __le__(self, other: object) -> bool:
+        """Mock ``<=``."""
+        return False
+
+    def __lt__(self, other: object) -> bool:
+        """Mock ``<``."""
+        return False
+
+    def __ge__(self, other: object) -> bool:
+        """Mock ``>=``."""
+        return False
+
+    def __gt__(self, other: object) -> bool:
+        """Mock ``>``."""
+        return False
+
     def __len__(self) -> int:
         """Mock collections."""
         return 0

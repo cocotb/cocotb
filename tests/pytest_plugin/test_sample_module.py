@@ -51,6 +51,7 @@ def test_sample_module(sample_module: HDL) -> None:
 
 @pytest.mark.cocotb(
     "test_cocotb",
+    "test_cocotb_top",
     "test_parametrize",
     "test_xfail",
     "test_caplog",
