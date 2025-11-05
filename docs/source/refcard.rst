@@ -51,12 +51,11 @@ Reference Card
 +------------------------+-----------------------------------------------------------------+
 | Wait for signal edge   | | ``await cocotb.triggers.RisingEdge(dut.mysignal)``            |
 |                        | | ``await cocotb.triggers.FallingEdge(dut.mysignal)``           |
-|                        | | ``await cocotb.triggers.Edge(dut.mysignal)``                  |
+|                        | | ``await cocotb.triggers.ValueChange(dut.mysignal)``           |
 +------------------------+-----------------------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+
-| Run coros concurrently | | ``task_0 = await cocotb.start(coro_0())``  (start coro now)   |
-|                        | | ``task_1 = cocotb.start_soon(coro)``                          |
+| Run coros concurrently | | ``task_1 = cocotb.start_soon(coro)``                          |
 |                        | | ``result = await task_0``                                     |
 +------------------------+-----------------------------------------------------------------+
 | Cancel task            | ``task_0.cancel()``                                             |
