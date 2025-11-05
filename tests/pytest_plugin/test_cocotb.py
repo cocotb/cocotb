@@ -130,6 +130,12 @@ async def test_parametrize_matrix(dut, x: int, y: int) -> None:
     assert y in (3, 4, 5)
 
 
+@cocotb.parametrize((("a", "b"), [(1, 2), (3, 4)]))
+async def test_parametrize_series_1(dut, a: int, b: int) -> None:
+    """Test @cocotb.parametrize decorator."""
+    assert (a == 1 and b == 2) or (a == 3 and b == 4)
+
+
 @cocotb.parametrize(
     (
         ("x", "y"),
@@ -140,7 +146,7 @@ async def test_parametrize_matrix(dut, x: int, y: int) -> None:
         (5, 6),
     ),
 )
-async def test_parametrize_series(dut, x: int, y: int, z: int) -> None:
+async def test_parametrize_series_2(dut, x: int, y: int, z: int) -> None:
     """Test @cocotb.parametrize decorator."""
     assert x in (1, 3)
     assert y in (2, 4)
