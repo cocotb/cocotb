@@ -20,6 +20,9 @@ Enabling the Plugin
 
 :py:mod:`cocotb_tools.pytest.plugin` can be enabled in various ways.
 
+In a Python project
+-------------------
+
 When using the `pyproject.toml`_ file (recommended way):
 
 .. code:: toml
@@ -56,6 +59,9 @@ When using the ``setup.py`` file:
             ],
         },
     )
+
+In a non-Python project
+-----------------------
 
 By defining the global variable ``pytest_plugins`` when using a ``conftest.py`` file
 (which must be located in the root of the project):
@@ -110,11 +116,10 @@ An example is provided below, located in a project ``conftest.py`` file:
         return hdl
 
 
+:deco:`!pytest.mark.cocotb`
+===========================
 
-@pytest.mark.cocotb
-===================
-
-The plugin provides the marker ``@pytest.mark.cocotb`` which allows
+The plugin provides the marker :deco:`!pytest.mark.cocotb` which allows
 to configure all aspects of cocotb test and cocotb runner.
 
 .. code:: python
