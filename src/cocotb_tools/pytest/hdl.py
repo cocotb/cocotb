@@ -380,8 +380,6 @@ class HDL:
         test_dir = test_dir or self.test_dir
         Path(test_dir).mkdir(0o755, parents=True, exist_ok=True)
 
-        results_xml: Path = Path(test_dir) / "results.xml"
-
         # Allow to extend build, elab, test and + arguments from cli and configs
         elab_args = (elab_args or self.elab_args) + option.cocotb_elab_args
         test_args = (test_args or self.test_args) + option.cocotb_test_args
@@ -411,7 +409,7 @@ class HDL:
             parameters=parameters or None,
             build_dir=build_dir,
             test_dir=test_dir,
-            results_xml=str(results_xml),
+            results_xml=str(Path(test_dir) / "results.xml"),
             pre_cmd=pre_cmd or None,
             verbose=verbose or self.verbose,
             timescale=None if self.simulator in ("xcelium",) else timescale,
