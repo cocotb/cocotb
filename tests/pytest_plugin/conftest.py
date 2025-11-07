@@ -87,6 +87,8 @@ def sample_module_fixture(hdl: HDL, request: FixtureRequest) -> HDL:
     elif hdl.simulator == "nvc":
         hdl.build_args = ["--std=08"]
 
+    hdl.build()
+
     return hdl
 
 

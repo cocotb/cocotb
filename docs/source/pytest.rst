@@ -115,6 +115,9 @@ An example is provided below, located in a project ``conftest.py`` file:
             "sample_module.sv",
         )
 
+        # Build HDL design
+        hdl.build()
+
         return hdl
 
 
@@ -196,7 +199,7 @@ or :py:func:`cocotb_tools.runner.Runner.test`.
 
     @pytest.mark.cocotb  # needed by cocotb runners
     def hdl_runner(hdl: HDL) -> None:
-        """Build HDL design and run HDL simulator that will execute cocotb tests."""
+        """Run HDL simulator that will execute cocotb tests."""
         hdl.test()
 
 

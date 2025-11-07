@@ -201,26 +201,19 @@ class HDL:
         """Get HDL parameter/generic."""
         return self.parameters[key]
 
-    def test(self) -> Path:
-        """Build and test HDL design."""
+    def build(self) -> None:
+        """Build HDL design."""
         option = self._option
-        results_xml: Path = self.test_dir / "results.xml"
 
         # Allow to extend build, elab, test and + arguments from cli and configs
         build_args: Sequence[str] = self.build_args + option.cocotb_build_args
-        elab_args: Sequence[str] = self.elab_args + option.cocotb_elab_args
-        test_args: Sequence[str] = self.test_args + option.cocotb_test_args
-        plusargs: Sequence[str] = self.plusargs + option.cocotb_plusargs
         includes: Sequence[str] = self.includes + option.cocotb_includes
-        pre_cmd: list[str] = self.pre_cmd + option.cocotb_pre_cmd
 
         # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
         parameters: dict[str, object] = dict(deepcopy(self.parameters))
-        extra_env: dict[str, str] = dict(deepcopy(self.env))
         defines: dict[str, object] = dict(deepcopy(self.defines))
 
         parameters.update(option.cocotb_parameters)
-        extra_env.update(option.cocotb_env)
         defines.update(option.cocotb_defines)
 
         self.runner.build(
@@ -239,6 +232,24 @@ class HDL:
             timescale=self.timescale,
             waves=self.waves,
         )
+
+    def test(self) -> Path:
+        """Test HDL design."""
+        option = self._option
+        results_xml: Path = self.test_dir / "results.xml"
+
+        # Allow to extend build, elab, test and + arguments from cli and configs
+        elab_args: Sequence[str] = self.elab_args + option.cocotb_elab_args
+        test_args: Sequence[str] = self.test_args + option.cocotb_test_args
+        plusargs: Sequence[str] = self.plusargs + option.cocotb_plusargs
+        pre_cmd: list[str] = self.pre_cmd + option.cocotb_pre_cmd
+
+        # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
+        parameters: dict[str, object] = dict(deepcopy(self.parameters))
+        extra_env: dict[str, str] = dict(deepcopy(self.env))
+
+        parameters.update(option.cocotb_parameters)
+        extra_env.update(option.cocotb_env)
 
         return self.runner.test(
             test_module=self.test_module,
