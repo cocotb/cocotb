@@ -80,8 +80,8 @@ class HDL:
         if os.path.sep != "/":
             nodeid = nodeid.replace("/", os.path.sep)
 
-        self._test_dir: Path = Path(option.cocotb_build_dir).resolve() / nodeid
-        self._test_dir.mkdir(0o750, parents=True, exist_ok=True)
+        self.test_dir: PathLike = Path(option.cocotb_build_dir).resolve() / nodeid
+        """Directory to run the tests in."""
 
         self.runner: Runner = get_runner(get_simulator(request.config))
         """Instance that allows to build HDL and run cocotb tests."""
@@ -122,6 +122,12 @@ class HDL:
 
         self.waves: bool = option.cocotb_waves
         """Record signal traces."""
+
+        self.build_dir: PathLike = self.test_dir
+        """Directory to run the build step in."""
+
+        self.cwd: PathLike = self.build_dir
+        """Directory to execute the build command(s) in."""
 
         # Test options
         self.test_module: str | Sequence[str] = ""
@@ -185,11 +191,6 @@ class HDL:
         """Name of HDL simulator."""
         return str(self.runner.__class__.__name__).lower()
 
-    @property
-    def test_dir(self) -> Path:
-        """Directory to run the tests in."""
-        return self._test_dir
-
     def __setitem__(self, key: str, value: object) -> None:
         """Set HDL parameter/generic in HDL design."""
         self.parameters[key] = value
@@ -213,6 +214,8 @@ class HDL:
         verbose: bool = False,
         timescale: tuple[str, str] | None = None,
         waves: bool = False,
+        build_dir: PathLike | None = None,
+        cwd: PathLike | None = None,
     ) -> None:
         """Build HDL design.
 
@@ -252,8 +255,17 @@ class HDL:
 
             waves:
                 Record signal traces.
+
+            build_dir:
+                Directory to run the build step in.
+
+            cwd:
+                Directory to execute the build command(s) in.
         """
         option = self._option
+
+        build_dir = build_dir or self.build_dir
+        Path(build_dir).mkdir(0o755, parents=True, exist_ok=True)
 
         # Allow to extend build, elab, test and + arguments from cli and configs
         build_args = (build_args or self.build_args) + option.cocotb_build_args
@@ -275,8 +287,8 @@ class HDL:
             build_args=build_args,
             hdl_toplevel=toplevel or self.toplevel or None,
             always=always or self.always,
-            build_dir=self.test_dir,
-            cwd=self.test_dir,
+            build_dir=build_dir,
+            cwd=cwd or build_dir,
             clean=clean or self.clean,
             verbose=verbose or self.verbose,
             timescale=timescale or self.timescale,
@@ -300,6 +312,8 @@ class HDL:
         verbose: bool = False,
         pre_cmd: list[str] | None = None,
         timescale: tuple[str, str] | None = None,
+        build_dir: PathLike | None = None,
+        test_dir: PathLike | None = None,
     ) -> Path:
         """Test HDL design.
 
@@ -349,11 +363,24 @@ class HDL:
             timescale:
                 Tuple containing time unit and time precision for simulation.
 
+            build_dir:
+                Directory to run the build step in.
+
+            test_dir:
+                Directory to run the tests in.
+
         Returns:
             Path to created results file with cocotb tests in JUnit XML format.
         """
         option = self._option
-        results_xml: Path = self.test_dir / "results.xml"
+
+        build_dir = build_dir or self.build_dir
+        Path(build_dir).mkdir(0o755, parents=True, exist_ok=True)
+
+        test_dir = test_dir or self.test_dir
+        Path(test_dir).mkdir(0o755, parents=True, exist_ok=True)
+
+        results_xml: Path = Path(test_dir) / "results.xml"
 
         # Allow to extend build, elab, test and + arguments from cli and configs
         elab_args = (elab_args or self.elab_args) + option.cocotb_elab_args
@@ -382,8 +409,8 @@ class HDL:
             waves=waves or self.waves,
             gui=gui or self.gui,
             parameters=parameters or None,
-            build_dir=self.test_dir,
-            test_dir=self.test_dir,
+            build_dir=build_dir,
+            test_dir=test_dir,
             results_xml=str(results_xml),
             pre_cmd=pre_cmd or None,
             verbose=verbose or self.verbose,
