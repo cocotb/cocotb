@@ -63,6 +63,36 @@ def cocotb(
 def cocotb(*test_module: str, **kwargs: object) -> MarkDecorator:
     """Mark coroutine function as cocotb test and normal function as cocotb runner.
 
+    Example usage:
+
+    .. code:: python
+
+        import pytest
+        from cocotb_tools.pytest.hdl import HDL
+
+        @pytest.fixture(name="sample_module")
+        def sample_module_fixture(hdl: HDL) -> HDL:
+            hdl.toplevel = "sample_module"
+            hdl.sources = (DESIGNS / "sample_module.sv",)
+            hdl.build()
+
+            return hdl
+
+        @pytest.mark.cocotb
+        def test_dut(sample_module: HDL) -> None:
+            sample_module.test()
+
+        async def test_dut_feature(dut) -> None:
+            ...
+
+        @pytest.mark.cocotb
+        async def non_canonical_test_name(dut) -> None:
+            ...
+
+        @pytest.mark.cocotb(timeout=(200, "ns"))
+        async def test_dut_feature_with_timeout(dut) -> None:
+            ...
+
     Args:
         test_module:
             Name of Python module with cocotb tests to be loaded by cocotb :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner`.

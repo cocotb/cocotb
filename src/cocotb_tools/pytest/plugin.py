@@ -394,7 +394,7 @@ def dut() -> SimHandleBase:
 
     Provided simulation handle is the same as :py:data:`cocotb.top`.
 
-    Example:
+    Example usage:
 
     .. code:: python
 
@@ -427,7 +427,7 @@ def hdl(request: FixtureRequest) -> HDL:
 
     Please refer to available public members of :py:class:`~cocotb_tools.pytest.hdl.HDL` that can be used to define own HDL design.
 
-    Example:
+    Example usage:
 
     .. code:: python
 
