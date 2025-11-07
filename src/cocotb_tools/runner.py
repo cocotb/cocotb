@@ -772,9 +772,9 @@ class Icarus(Runner):
 
     .. admonition:: Simulator-specific Usage
 
-       * ``hdl_toplevel`` argument to :meth:`.build` is *required*.
-       * ``waves=True`` *must* be given to :meth:`.build` if either ``waves`` or ``gui`` are to be used during :meth:`Runner.test`.
-       * ``timescale`` argument to :meth:`.build` must be given to support dumping the command file.
+       * ``hdl_toplevel`` argument to :meth:`Runner.build` is *required*.
+       * ``waves=True`` *must* be given to :meth:`Runner.build` if either ``waves`` or ``gui`` are to be used during :meth:`Runner.test`.
+       * ``timescale`` argument to :meth:`Runner.build` must be given to support dumping the command file.
        * Does not support the ``pre_cmd`` argument to :meth:`Runner.test`.
     """
 
@@ -921,7 +921,7 @@ class Questa(Runner):
 
     .. admonition:: Simulator-specific Usage
 
-       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`Runner.test`.
+       * Does not support the ``timescale`` argument to :meth:`Runner.build` or :meth:`Runner.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["fli", "vhpi"]}
@@ -1202,7 +1202,7 @@ class Nvc(Runner):
     .. admonition:: Simulator-specific Usage
 
        * Does not support the ``pre_cmd`` argument to :meth:`Runner.test`.
-       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`Runner.test`.
+       * Does not support the ``timescale`` argument to :meth:`Runner.build` or :meth:`Runner.test`.
     """
 
     supported_gpi_interfaces = {"vhdl": ["vhpi"]}
@@ -1306,7 +1306,7 @@ class AldecBase(Runner):
 
        * Does not support the ``pre_cmd`` argument to :meth:`Runner.test`.
        * Does not support the ``gui`` argument to :meth:`Runner.test`.
-       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`Runner.test`.
+       * Does not support the ``timescale`` argument to :meth:`Runner.build` or :meth:`Runner.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
@@ -1457,7 +1457,7 @@ class Riviera(AldecBase):
     .. admonition:: Simulator-specific Usage
        * Does not support the ``pre_cmd`` argument to :meth:`Runner.test`.
        * Does not support the ``gui`` argument to :meth:`Runner.test`.
-       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`Runner.test`.
+       * Does not support the ``timescale`` argument to :meth:`Runner.build` or :meth:`Runner.test`.
     """
 
 
@@ -1466,7 +1466,7 @@ class ActiveHDL(AldecBase):
     .. admonition:: Simulator-specific Usage
        * Does not support the ``pre_cmd`` argument to :meth:`Runner.test`.
        * Does not support the ``gui`` argument to :meth:`Runner.test`.
-       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`Runner.test`.
+       * Does not support the ``timescale`` argument to :meth:`Runner.build` or :meth:`Runner.test`.
     """
 
 
@@ -1475,7 +1475,7 @@ class Verilator(Runner):
 
     .. admonition:: Simulator-specific Usage
 
-       * ``waves=True`` *must* be given to :meth:`.build` if either ``waves`` or ``gui`` are to be used during :meth:`Runner.test`.
+       * ``waves=True`` *must* be given to :meth:`Runner.build` if either ``waves`` or ``gui`` are to be used during :meth:`Runner.test`.
        * Does not support the ``pre_cmd`` argument to :meth:`Runner.test`.
     """
 
@@ -1607,7 +1607,7 @@ class Xcelium(Runner):
 
     .. admonition:: Simulator-specific Usage
 
-       * Does not support the ``waves`` argument to :meth:`.build` (must be set in :meth:`Runner.test` instead).
+       * Does not support the ``waves`` argument to :meth:`Runner.build` (must be set in :meth:`Runner.test` instead).
        * Does not support the ``pre_cmd`` argument to :meth:`Runner.test`.
        * Does not support the ``timescale`` argument to :meth:`Runner.test`.
     """
@@ -1804,7 +1804,7 @@ class Vcs(Runner):
 
        * Does not support the ``pre_cmd`` argument to :meth:`Runner.test`.
        * Does not support VHDL.
-       * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`Runner.test`.
+       * Does not support the ``timescale`` argument to :meth:`Runner.build` or :meth:`Runner.test`.
     """
 
     supported_gpi_interfaces = {"verilog": ["vpi"]}
