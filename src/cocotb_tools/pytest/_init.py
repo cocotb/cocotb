@@ -51,17 +51,16 @@ def run_regression(argv: list[str]) -> None:
 
 def _setup_simulation_environment(argv: list[str] | None = None) -> None:
     """Setup minimal required simulation environment for pytest and cocotb."""
-    cocotb.log = getLogger("test")
     cocotb.simulator.set_sim_event_callback(_sim_event)
     _setup_gpi_logger()
-
-    cocotb.argv = argv or []
-    cocotb.is_simulation = True
 
     # sys.path normally includes "" (the current directory), but does not appear to when python is embedded.
     # Add it back because users expect to be able to import files in their test directory.
     sys.path.insert(0, "")
 
+    cocotb.argv = argv or []
+    cocotb.is_simulation = True
+    cocotb.log = getLogger("test")
     cocotb.RANDOM_SEED = env.as_int("COCOTB_RANDOM_SEED", int(time()))
     cocotb.SIM_NAME = simulator.get_simulator_product().strip()
     cocotb.SIM_VERSION = simulator.get_simulator_version().strip()
