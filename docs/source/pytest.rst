@@ -197,8 +197,20 @@ or :py:func:`cocotb_tools.runner.Runner.test`.
     from cocotb_tools.pytest.hdl import HDL
 
 
-    @pytest.mark.cocotb  # needed by cocotb runners
-    def hdl_runner(hdl: HDL) -> None:
+    # First, define new HDL design, add HDL source files to it and build it
+    @pytest.fixture(name="sample_module")
+    def sample_module_fixture(hdl: HDL) -> HDL:
+        """Define new HDL design by adding HDL source files to it."""
+        hdl.toplevel = "sample_module"
+        hdl.sources = (DESIGNS / "sample_module.sv",)
+        hdl.build()
+
+        return hdl
+
+
+    # Request for defined HDL design by using fixture
+    @pytest.mark.cocotb  # needed to mark this test function as cocotb runner
+    def hdl_runner(sample_module: HDL) -> None:
         """Run HDL simulator that will execute cocotb tests."""
         hdl.test()
 
