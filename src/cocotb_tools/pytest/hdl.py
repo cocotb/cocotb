@@ -65,6 +65,11 @@ class HDL:
     """Build HDL design and run test against specific HDL top level."""
 
     def __init__(self, request: FixtureRequest) -> None:
+        """Create new instance of HDL design.
+
+        Args:
+            request: The pytest fixture request.
+        """
         option = request.config.option
         nodeid: str = request.node.nodeid
 
@@ -75,34 +80,77 @@ class HDL:
         if os.path.sep != "/":
             nodeid = nodeid.replace("/", os.path.sep)
 
-        self.test_dir: Path = Path(option.cocotb_build_dir).resolve() / nodeid
-        self.runner: Runner = get_runner(get_simulator(request.config))
+        self._runner: Runner = get_runner(get_simulator(request.config))
+        self._test_dir: Path = Path(option.cocotb_build_dir).resolve() / nodeid
+        self._test_dir.mkdir(0o750, parents=True, exist_ok=True)
 
         # Build options
         self.library: str = option.cocotb_library
+        """The library name to compile into."""
+
         self.sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] = []
+        """Language-agnostic list of source files to build."""
+
         self.includes: Sequence[PathLike] = []
+        """Verilog include directories."""
+
         self.defines: Mapping[str, object] = {}
+        """Defines to set."""
+
         self.parameters: MutableMapping[str, object] = {}
+        """Verilog parameters or VHDL generics."""
+
         self.build_args: Sequence[str | VHDL | Verilog] = []
+        """Extra build arguments for the simulator."""
+
         self.toplevel: str | None = None
+        """Name of the HDL toplevel module."""
+
         self.always: bool = option.cocotb_always
+        """Always run the build step."""
+
         self.clean: bool = option.cocotb_clean
+        """Delete *build_dir* before building."""
+
         self.verbose: bool = option.cocotb_verbose
+        """Enable verbose messages."""
+
         self.timescale: tuple[str, str] | None = option.cocotb_timescale
+        """Tuple containing time unit and time precision for simulation."""
+
         self.waves: bool = option.cocotb_waves
+        """Record signal traces."""
 
         # Test options
         self.test_module: str | Sequence[str] = ""
+        """Name(s) of the Python module(s) containing the tests to run."""
+
         self.toplevel_library: str = option.cocotb_toplevel_library
+        """The library name for HDL toplevel module."""
+
         self.gpi_interfaces: list[str] | None = option.cocotb_gpi_interfaces
+        """List of GPI interfaces to use, with the first one being the entry point."""
+
         self.seed: str | int | None = option.cocotb_seed
+        """A specific random seed to use."""
+
         self.elab_args: Sequence[str] = []
+        """A list of elaboration arguments for the simulator."""
+
         self.test_args: Sequence[str] = []
+        """A list of extra arguments for the simulator."""
+
         self.plusargs: Sequence[str] = []
+        """'plusargs' to set for the simulator."""
+
         self.env: Mapping[str, str] = {}
+        """Extra environment variables to set."""
+
         self.gui: bool = option.cocotb_gui
+        """Run with simulator GUI."""
+
         self.pre_cmd: list[str] | None = []
+        """Commands to run before simulation begins. Typically Tcl commands for simulators that support them."""
 
         # Store reference to command line options
         self._option = option
@@ -112,7 +160,7 @@ class HDL:
                 self.test_module = marker.args
 
             for name, value in marker.kwargs.items():
-                if hasattr(self, name):
+                if not name.startswith("_") and hasattr(self, name):
                     setattr(self, name, value)
 
         if not self.test_module:
@@ -135,6 +183,16 @@ class HDL:
         """Name of HDL simulator."""
         return str(self.runner.__class__.__name__).lower()
 
+    @property
+    def runner(self) -> Runner:
+        """Instance that allows to build HDL and run cocotb tests."""
+        return self._runner
+
+    @property
+    def test_dir(self) -> Path:
+        """Directory to run the tests in."""
+        return self._test_dir
+
     def __setitem__(self, key: str, value: object) -> None:
         """Set HDL parameter/generic in HDL design."""
         self.parameters[key] = value
@@ -146,8 +204,6 @@ class HDL:
     def test(self) -> Path:
         """Build and test HDL design."""
         option = self._option
-
-        self.test_dir.mkdir(0o750, parents=True, exist_ok=True)
         results_xml: Path = self.test_dir / "results.xml"
 
         # Allow to extend build, elab, test and + arguments from cli and configs

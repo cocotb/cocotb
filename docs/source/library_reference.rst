@@ -17,6 +17,45 @@ Library Reference
 
 .. module:: cocotb
 
+.. _api-pytest-plugin:
+
+Pytest Plugin
+=============
+
+
+.. _api-pytest-plugin-fixtures:
+
+Fixtures
+--------
+
+.. module:: cocotb_tools.pytest.plugin
+
+.. autofixture:: dut
+
+.. autofixture:: hdl
+
+
+.. _api-pytest-plugin-markers:
+
+Markers
+-------
+
+.. module:: cocotb_tools.pytest.mark
+
+.. autodecorator:: cocotb
+
+
+.. _api-pytest-plugin-hdl:
+
+HDL Fixture Request
+-------------------
+
+.. module:: cocotb_tools.pytest.hdl
+
+.. autoclass:: HDL
+    :members:
+
+
 .. _api-runner:
 
 Python Test Runner

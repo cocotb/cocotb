@@ -49,6 +49,7 @@ extensions = [
     "enum_tools.autoenum",
     "sphinx_codeautolink",
     "sphinxarg.ext",
+    "sphinx_autofixture",
 ]
 
 intersphinx_mapping = {

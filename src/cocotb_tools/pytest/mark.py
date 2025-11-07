@@ -6,38 +6,138 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, MutableMapping, Sequence
 from inspect import Parameter, signature
-from typing import Callable
+from typing import Callable, overload
 
 from pytest import Config, MarkDecorator, mark
 
 from cocotb.simtime import TimeUnit
+from cocotb_tools.runner import (
+    VHDL,
+    PathLike,
+    VerilatorControlFile,
+    Verilog,
+)
 
 
+@overload
+def cocotb() -> MarkDecorator: ...
+
+
+@overload
+def cocotb(*test_module: str) -> MarkDecorator: ...
+
+
+@overload
+def cocotb(*, timeout: tuple[float, TimeUnit] | None = None) -> MarkDecorator: ...
+
+
+@overload
 def cocotb(
     *test_module: str,
-    timeout: tuple[float, TimeUnit] | None = None,
-    **kwargs: object,
-) -> MarkDecorator:
+    library: str = "top",
+    sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] = [],
+    includes: Sequence[PathLike] = [],
+    defines: Mapping[str, object] = {},
+    parameters: MutableMapping[str, object] = {},
+    build_args: Sequence[str | VHDL | Verilog] = [],
+    toplevel: str | None = None,
+    always: bool = False,
+    clean: bool = False,
+    verbose: bool = False,
+    timescale: tuple[str, str] | None = None,
+    waves: bool = False,
+    toplevel_library: str = "top",
+    gpi_interfaces: list[str] | None = None,
+    seed: str | int | None = None,
+    elab_args: Sequence[str] = [],
+    test_args: Sequence[str] = [],
+    plusargs: Sequence[str] = [],
+    env: Mapping[str, str] = {},
+    gui: bool = False,
+    pre_cmd: list[str] | None = [],
+) -> MarkDecorator: ...
+
+
+def cocotb(*test_module: str, **kwargs: object) -> MarkDecorator:
     """Mark coroutine function as cocotb test and normal function as cocotb runner.
 
     Args:
         test_module:
-            Name of Python module with cocotb tests to be loaded by cocotb runner.
+            Name of Python module with cocotb tests to be loaded by cocotb :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner`.
 
         timeout:
             Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
-            A tuple of the timeout value and unit.
-            Accepts any unit that :class:`~cocotb.triggers.Timer` does.
+            A tuple of the timeout value and unit. Accepts any unit that :class:`~cocotb.triggers.Timer` does.
 
-        kwargs:
-            Additional named arguments passed to :py:class:`cocotb_tools.pytest.hdl.HDL` instance.
+        library:
+            The library name to compile into.
+
+        sources:
+            Language-agnostic list of source files to build.
+
+        includes:
+            Verilog include directories.
+
+        defines:
+            Defines to set.
+
+        parameters:
+            Verilog parameters or VHDL generics.
+
+        build_args:
+            Extra build arguments for the simulator.
+
+        toplevel:
+            Name of the HDL toplevel module.
+
+        always:
+            Always run the build step.
+
+        clean:
+            Delete *build_dir* before building.
+
+        verbose:
+            Enable verbose messages.
+
+        timescale:
+            Tuple containing time unit and time precision for simulation.
+
+        waves:
+            Record signal traces.
+
+        toplevel_library:
+            The library name for HDL toplevel module.
+
+        gpi_interfaces:
+            List of GPI interfaces to use, with the first one being the entry point.
+
+        seed:
+            A specific random seed to use.
+
+        elab_args:
+            A list of elaboration arguments for the simulator.
+
+        test_args:
+            A list of extra arguments for the simulator.
+
+        plusargs:
+            'plusargs' to set for the simulator.
+
+        env:
+            Extra environment variables to set.
+
+        gui:
+            Run with simulator GUI.
+
+        pre_cmd:
+            Commands to run before simulation begins. Typically Tcl commands for simulators that support them.
+
+    Returns:
+        Decorated test function.
     """
-    return mark.cocotb(
-        *test_module,
-        timeout=timeout,
-        **kwargs,
-    )
+    return mark.cocotb(*test_module, **kwargs)
 
 
 def marker_description(marker: Callable[..., MarkDecorator]) -> str:
@@ -71,7 +171,9 @@ def marker_description(marker: Callable[..., MarkDecorator]) -> str:
 
         args.append(arg)
 
-    return f"{marker.__name__}({', '.join(args)}):\n    {marker.__doc__}".rstrip()
+    description: str = str(marker.__doc__).lstrip().splitlines()[0]
+
+    return f"{marker.__name__}({', '.join(args)}): {description}".rstrip()
 
 
 def register_markers(config: Config) -> None:
