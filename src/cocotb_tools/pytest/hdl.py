@@ -80,9 +80,11 @@ class HDL:
         if os.path.sep != "/":
             nodeid = nodeid.replace("/", os.path.sep)
 
-        self._runner: Runner = get_runner(get_simulator(request.config))
         self._test_dir: Path = Path(option.cocotb_build_dir).resolve() / nodeid
         self._test_dir.mkdir(0o750, parents=True, exist_ok=True)
+
+        self.runner: Runner = get_runner(get_simulator(request.config))
+        """Instance that allows to build HDL and run cocotb tests."""
 
         # Build options
         self.library: str = option.cocotb_library
@@ -182,11 +184,6 @@ class HDL:
     def simulator(self) -> str:
         """Name of HDL simulator."""
         return str(self.runner.__class__.__name__).lower()
-
-    @property
-    def runner(self) -> Runner:
-        """Instance that allows to build HDL and run cocotb tests."""
-        return self._runner
 
     @property
     def test_dir(self) -> Path:
