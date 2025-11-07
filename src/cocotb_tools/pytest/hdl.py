@@ -201,73 +201,194 @@ class HDL:
         """Get HDL parameter/generic."""
         return self.parameters[key]
 
-    def build(self) -> None:
-        """Build HDL design."""
+    def build(
+        self,
+        library: str | None = None,
+        sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile]
+        | None = None,
+        includes: Sequence[PathLike] | None = None,
+        defines: Mapping[str, object] | None = None,
+        parameters: MutableMapping[str, object] | None = None,
+        build_args: Sequence[str | VHDL | Verilog] | None = None,
+        toplevel: str | None = None,
+        always: bool = False,
+        clean: bool = False,
+        verbose: bool = False,
+        timescale: tuple[str, str] | None = None,
+        waves: bool = False,
+    ) -> None:
+        """Build HDL design.
+
+        Args:
+            library:
+                The library name to compile into.
+
+            sources:
+                Language-agnostic list of source files to build.
+
+            includes:
+                Verilog include directories.
+
+            defines:
+                Defines to set.
+
+            parameters:
+                Verilog parameters or VHDL generics.
+
+            build_args:
+                Extra build arguments for the simulator.
+
+            toplevel:
+                Name of the HDL toplevel module.
+
+            always:
+                Always run the build step.
+
+            clean:
+                Delete *build_dir* before building.
+
+            verbose:
+                Enable verbose messages.
+
+            timescale:
+                Tuple containing time unit and time precision for simulation.
+
+            waves:
+                Record signal traces.
+        """
         option = self._option
 
         # Allow to extend build, elab, test and + arguments from cli and configs
-        build_args: Sequence[str] = self.build_args + option.cocotb_build_args
-        includes: Sequence[str] = self.includes + option.cocotb_includes
+        build_args = (build_args or self.build_args) + option.cocotb_build_args
+        includes = (includes or self.includes) + option.cocotb_includes
 
         # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
-        parameters: dict[str, object] = dict(deepcopy(self.parameters))
-        defines: dict[str, object] = dict(deepcopy(self.defines))
+        parameters = dict(deepcopy(parameters or self.parameters))
+        defines = dict(deepcopy(defines or self.defines))
 
         parameters.update(option.cocotb_parameters)
         defines.update(option.cocotb_defines)
 
         self.runner.build(
-            hdl_library=self.library,
-            sources=self.sources,
+            hdl_library=library or self.library,
+            sources=sources or self.sources,
             includes=includes,
             defines=defines,
             parameters=parameters,
             build_args=build_args,
-            hdl_toplevel=self.toplevel or None,
-            always=self.always,
+            hdl_toplevel=toplevel or self.toplevel or None,
+            always=always or self.always,
             build_dir=self.test_dir,
             cwd=self.test_dir,
-            clean=self.clean,
-            verbose=self.verbose,
-            timescale=self.timescale,
-            waves=self.waves,
+            clean=clean or self.clean,
+            verbose=verbose or self.verbose,
+            timescale=timescale or self.timescale,
+            waves=waves or self.waves,
         )
 
-    def test(self) -> Path:
-        """Test HDL design."""
+    def test(
+        self,
+        test_module: str | Sequence[str] | None = None,
+        toplevel: str | None = None,
+        toplevel_library: str | None = None,
+        gpi_interfaces: list[str] | None = None,
+        parameters: MutableMapping[str, object] | None = None,
+        seed: str | int | None = None,
+        elab_args: Sequence[str] | None = None,
+        test_args: Sequence[str] | None = None,
+        plusargs: Sequence[str] | None = None,
+        env: Mapping[str, str] | None = None,
+        gui: bool = False,
+        waves: bool = False,
+        verbose: bool = False,
+        pre_cmd: list[str] | None = None,
+        timescale: tuple[str, str] | None = None,
+    ) -> Path:
+        """Test HDL design.
+
+        Args:
+            test_module:
+                Name(s) of the Python module(s) containing the tests to run.
+
+            toplevel:
+                Name of the HDL toplevel module.
+
+            toplevel_library:
+                The library name for HDL toplevel module.
+
+            gpi_interfaces:
+                List of GPI interfaces to use, with the first one being the entry point.
+
+            parameters:
+                Verilog parameters or VHDL generics.
+
+            seed:
+                A specific random seed to use.
+
+            elab_args:
+                A list of elaboration arguments for the simulator.
+
+            test_args:
+                A list of extra arguments for the simulator.
+
+            plusargs:
+                'plusargs' to set for the simulator.
+
+            env:
+                Extra environment variables to set.
+
+            gui:
+                Run with simulator GUI.
+
+            waves:
+                Record signal traces.
+
+            verbose:
+                Enable verbose messages.
+
+            pre_cmd:
+                Commands to run before simulation begins. Typically Tcl commands for simulators that support them.
+
+            timescale:
+                Tuple containing time unit and time precision for simulation.
+
+        Returns:
+            Path to created results file with cocotb tests in JUnit XML format.
+        """
         option = self._option
         results_xml: Path = self.test_dir / "results.xml"
 
         # Allow to extend build, elab, test and + arguments from cli and configs
-        elab_args: Sequence[str] = self.elab_args + option.cocotb_elab_args
-        test_args: Sequence[str] = self.test_args + option.cocotb_test_args
-        plusargs: Sequence[str] = self.plusargs + option.cocotb_plusargs
-        pre_cmd: list[str] = self.pre_cmd + option.cocotb_pre_cmd
+        elab_args = (elab_args or self.elab_args) + option.cocotb_elab_args
+        test_args = (test_args or self.test_args) + option.cocotb_test_args
+        plusargs = (plusargs or self.plusargs) + option.cocotb_plusargs
+        pre_cmd = (pre_cmd or self.pre_cmd) + option.cocotb_pre_cmd
+        timescale = timescale or option.cocotb_timescale
 
         # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
-        parameters: dict[str, object] = dict(deepcopy(self.parameters))
-        extra_env: dict[str, str] = dict(deepcopy(self.env))
+        parameters = dict(deepcopy(parameters or self.parameters))
+        extra_env: dict[str, str] = dict(deepcopy(env or self.env))
 
         parameters.update(option.cocotb_parameters)
         extra_env.update(option.cocotb_env)
 
         return self.runner.test(
-            test_module=self.test_module,
-            hdl_toplevel=self.toplevel or "",
-            hdl_toplevel_library=self.toplevel_library,
-            gpi_interfaces=self.gpi_interfaces or None,
-            seed=self.seed,
+            test_module=test_module or self.test_module,
+            hdl_toplevel=toplevel or self.toplevel or "",
+            hdl_toplevel_library=toplevel_library or self.toplevel_library,
+            gpi_interfaces=gpi_interfaces or self.gpi_interfaces or None,
+            seed=seed or self.seed,
             elab_args=elab_args,
             test_args=test_args,
             plusargs=plusargs,
             extra_env=extra_env,
-            waves=self.waves,
-            gui=self.gui,
+            waves=waves or self.waves,
+            gui=gui or self.gui,
             parameters=parameters or None,
             build_dir=self.test_dir,
             test_dir=self.test_dir,
             results_xml=str(results_xml),
             pre_cmd=pre_cmd or None,
-            verbose=self.verbose,
-            timescale=None if self.simulator in ("xcelium",) else self.timescale,
+            verbose=verbose or self.verbose,
+            timescale=None if self.simulator in ("xcelium",) else timescale,
         )
