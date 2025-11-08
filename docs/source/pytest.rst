@@ -1,3 +1,5 @@
+.. _pytest-support:
+
 **************
 Pytest Support
 **************
