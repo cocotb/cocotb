@@ -91,11 +91,7 @@ File Utilities
 
 .. autofunction:: get_abs_path
 
-.. autofunction:: get_abs_paths
-
 .. autofunction:: outdated
-
-.. autoclass:: UnknownFileExtension
 
 
 .. _writing-tests:

@@ -1467,6 +1467,7 @@ class AldecBase(Runner):
 class Riviera(AldecBase):
     """Implementation of :class:`Runner` for Aldec Riviera-Pro.
     .. admonition:: Simulator-specific Usage
+
        * Does not support the ``pre_cmd`` argument to :meth:`.test`.
        * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
@@ -1476,6 +1477,7 @@ class Riviera(AldecBase):
 class ActiveHDL(AldecBase):
     """Implementation of :class:`Runner` for Aldec Active-HDL.
     .. admonition:: Simulator-specific Usage
+
        * Does not support the ``pre_cmd`` argument to :meth:`.test`.
        * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.

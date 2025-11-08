@@ -490,7 +490,7 @@ def skipif(
 ) -> Callable[[TestFuncType | TestGenerator], TestGenerator]:
     """Marks a test as skipped if the condition is ``True``.
 
-    This acts as an alternative to the ``skip`` option to :dec:`cocotb.test`.
+    This acts as an alternative to the ``skip`` option to :deco:`cocotb.test`.
 
     .. code-block:: python
 
@@ -528,7 +528,7 @@ def xfail(
 ) -> Callable[[TestFuncType | TestGenerator], TestGenerator]:
     """Marks a test as expected to fail if the condition is ``True``.
 
-    This acts as an alternative to the ``expect_fail`` option to :dec:`cocotb.test` if *raises* is not given.
+    This acts as an alternative to the ``expect_fail`` option to :deco:`cocotb.test` if *raises* is not given.
     Or as an alternative to ``expect_error`` if *raises* is given.
 
     .. code-block:: python
