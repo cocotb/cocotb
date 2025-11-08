@@ -175,7 +175,7 @@ class HDL:
             if len(self.runner.supported_gpi_interfaces) == 1:
                 self.toplevel_lang = list(self.runner.supported_gpi_interfaces)[0]
             else:
-                # HDL simulator supports multiple-language
+                # HDL simulator supports multiple languages
                 self.toplevel_lang = None
 
         for marker in reversed(list(request.node.iter_markers("cocotb"))):
