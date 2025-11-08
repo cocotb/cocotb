@@ -45,6 +45,7 @@ from cocotb import simulator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_functions import TestSuccess
+from cocotb.regression import SimFailure
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb.task import Task
 from cocotb_tools.pytest.fixture import (
@@ -57,10 +58,6 @@ RETRIES: int = 10
 INTERVAL: float = 0.1  # seconds
 
 AsyncFunction = Callable[..., Awaitable]
-
-
-class FailSimulation(RuntimeError):
-    """Event triggered by simulator."""
 
 
 def finish_on_exception(method: Callable[..., Any]) -> Callable[..., Any]:
@@ -186,7 +183,7 @@ class RegressionManager:
     def pytest_configure(self, config: Config) -> None:
         """Configure regression manager."""
         if getattr(cocotb, "top", None) is None:
-            raise FailSimulation(f"Can not find root handle {self._toplevel!r}")
+            raise SimFailure(f"Can not find root handle {self._toplevel!r}")
 
     @hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
@@ -705,9 +702,13 @@ class RegressionManager:
     def add_task(self, task: Task) -> None:
         self._subtasks.append(task)
 
-    def _fail_simulation(self, msg: str) -> None:
+    def _on_sim_end(self) -> None:
         try:
-            raise FailSimulation(msg)
+            raise SimFailure(
+                "cocotb expected it would shut down the simulation, but the simulation ended prematurely. "
+                "This could be due to an assertion failure or a call to an exit routine in the HDL, "
+                "or due to the simulator running out of events to process (is your clock running?)."
+            )
         except BaseException:
             self._notify_exception(ExceptionInfo.from_current())
         finally:

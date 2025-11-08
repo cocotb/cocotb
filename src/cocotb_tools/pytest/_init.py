@@ -89,10 +89,7 @@ def _setup_root_handle() -> None:
     # If None, pytest will raise an exception
 
 
-def _sim_event(msg: str) -> None:
+def _sim_event() -> None:
     """Function that can be called externally to signal an event."""
     if hasattr(cocotb, "_regression_manager"):
-        cocotb._regression_manager._fail_simulation(msg)
-    else:
-        # Early stage when logging is not yet configured by pytest logging plugin
-        print(msg, file=sys.stderr, flush=True)
+        cocotb._regression_manager._on_sim_end()
