@@ -321,6 +321,78 @@ Example set up and tear down fixture:
         """Test DUT feature 2. DUT will be always correctly reset and configured."""
 
 
+Integrating with Existing Build Flows
+=====================================
+
+First, you should follow the chapter about :ref:`custom-flows` to learn how to integrate cocotb into your existing build flow.
+
+The most straightforward usage with the plugin is to directly invoke build system from a test function.
+Example with a custom ``Makefile`` that is defining the ``sample_module`` make recipe:
+
+.. code:: python
+
+    import pytest
+    import subprocess
+
+    @pytest.mark.cocotb
+    def test_sample_module() -> None:
+        """Build and run HDL design."""
+        subprocess.run(["make", "sample_module"], check=True)
+
+
+You may also consider to use command line arguments from pytest to configure build system:
+
+.. code:: python
+
+    import pytest
+    import subprocess
+
+    @pytest.mark.cocotb
+    def test_sample_module(request: pytest.FixtureRequest) -> None:
+        args: list[str] = ["make", "sample_module"]
+
+        # Add additional arguments based on request.config.option.cocotb_* options or
+        # from fixtures request.node.iter_markers() like "cocotb" marker
+        if request.config.option.cocotb_verbose:
+            args.append("VERBOSE=1")
+
+        subprocess.run(args, check=True)
+
+
+And make it reusable for other projects/teams by packaging is as a new plugin for pytest:
+
+.. code:: python
+
+    import pytest
+    import subprocess
+
+    class MyBuildSystem:
+        def __init__(self, request: pytest.FixtureRequest) -> None:
+            # Handle request.config.option.cocotb_* options and fixtures request.node.iter_markers() like "cocotb" marker
+            self.args: list[str] = ["make"]
+
+        def build_and_run(self) -> None:
+            # Compile HDL design and run simulator
+            subprocess.run(args, check=True)
+
+
+    @pytest.fixture
+    def my_build_system(request: pytest.FixtureRequest) -> MyBuildSystem:
+        return MyBuildSystem(request)
+
+
+So others can use it in their projects:
+
+.. code:: python
+
+    import pytest
+    from pytest_cocotb_my_build_system import MyBuildSystem
+
+    @pytest.mark.cocotb
+    def test_sample_module(my_build_system: MyBuildSystem) -> None:
+        my_build_system.build_and_run()
+
+
 Configuration
 =============
 
