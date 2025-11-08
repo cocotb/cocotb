@@ -441,7 +441,7 @@ def hdl(request: FixtureRequest) -> HDL:
 
             hdl.sources = (
                 # Add more HDL source files here
-                ...
+                # ...
                 DIR / "my_hdl_module.sv",
             )
 

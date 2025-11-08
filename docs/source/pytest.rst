@@ -144,7 +144,7 @@ to configure all aspects of cocotb test and cocotb runner.
         """Test DUT feature. It must finish within 200 nanoseconds."""
 
 Additionally, positional arguments of :py:deco:`pytest.mark.cocotb` marker are equivalent to
-``test_module`` argument from :py:func:`cocotb.runner.Runner.test`.
+``test_module`` argument from :py:meth:`.Runner.test`.
 
 .. code:: python
 
@@ -291,7 +291,7 @@ Example set up and tear down fixture:
 
     @pytest.fixture(autouse=True)
     async def setup_sample_module(dut) -> AsyncGenerator[None, None]:
-    """Set up and tear down sample module."""
+        """Set up and tear down sample module."""
         # Test setup (executed before test)
         dut.rst.value = 1
         dut.stream_in_valid.value = 0
@@ -423,6 +423,7 @@ Options
 .. argparse::
    :module: cocotb_tools.pytest.plugin
    :func: options_for_documentation
+   :prog: pytest
 
 .. _pytest: https://docs.pytest.org/en/stable/contents.html
 .. _fixture: https://docs.pytest.org/en/stable/explanation/fixtures.html#about-fixtures
