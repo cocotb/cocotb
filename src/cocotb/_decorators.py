@@ -392,6 +392,7 @@ def parametrize(
     The call to ``parametrize`` should include the name of each test parameter and the possible values each parameter can hold.
     This will generate a test for each of the Cartesian products of the parameters and their values.
 
+    .. autolink-skip::
     .. code-block:: python
 
         @cocotb.test(
@@ -405,6 +406,7 @@ def parametrize(
 
     The above is equivalent to the following.
 
+    .. autolink-skip::
     .. code-block:: python
 
         @cocotb.test(skip=False)
@@ -434,6 +436,7 @@ def parametrize(
     either by supplying tuples of the parameter name to values,
     or a sequence of variable names and a sequence of values.
 
+    .. autolink-skip::
     .. code-block:: python
 
         @cocotb.parametrize(
@@ -492,6 +495,7 @@ def skipif(
 
     This acts as an alternative to the ``skip`` option to :deco:`cocotb.test`.
 
+    .. autolink-skip::
     .. code-block:: python
 
         @cocotb.skipif(
@@ -531,6 +535,7 @@ def xfail(
     This acts as an alternative to the ``expect_fail`` option to :deco:`cocotb.test` if *raises* is not given.
     Or as an alternative to ``expect_error`` if *raises* is given.
 
+    .. autolink-skip::
     .. code-block:: python
 
         @cocotb.xfail(reason="The HDL does not behave as expected.")
