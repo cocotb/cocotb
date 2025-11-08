@@ -172,15 +172,10 @@ class HDL:
         self._option = option
 
         if not self.toplevel_lang or self.toplevel_lang == "auto":
-            simulator: str = self.simulator
-
-            if simulator in ("verilator", "icarus"):
-                self.toplevel_lang = "verilog"
-
-            elif simulator in ("nvc", "ghdl"):
-                self.toplevel_lang = "vhdl"
-
+            if len(self.runner.supported_gpi_interfaces) == 1:
+                self.toplevel_lang = list(self.runner.supported_gpi_interfaces)[0]
             else:
+                # HDL simulator supports multiple-language
                 self.toplevel_lang = None
 
         for marker in reversed(list(request.node.iter_markers("cocotb"))):
