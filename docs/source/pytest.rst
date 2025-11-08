@@ -168,8 +168,8 @@ cocotb tests).
         """Test DUT feature 1."""
 
 If ``toplevel`` argument is empty/non-set, plugin will use name of first test module but without
-``test_*`` prefix or ``*_test`` suffix. For example, if test module was ``test_dut`` then
-name of HDL top level design will be ``dut``.
+``test_*`` prefix or ``*_test`` suffix. For example, if test module was ``test_design`` then
+name of HDL top level design will be ``design``.
 
 .. code:: python
 
@@ -250,12 +250,9 @@ Run specific test(s) based on output from ``pytest --collect-only``:
 
    pytest -k 'test_sample_module and test_dut_feature_2'
 
-Fixtures
-========
+User Fixtures
+=============
 
-Usage:
-
-* Automatically generate clock for all tests
 ``pytest`` fixtures can provide useful test functionality, and can use the fixtures provided by the cocotb plugin.
 
 Some examples include:
