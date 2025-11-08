@@ -84,7 +84,7 @@ command line arguments.
 
 
     @pytest.fixture(name="dff")
-    def dff_fixture(hdl: HDL, request: pytest.FixtureRequest) -> HDL:
+    def dff_fixture(hdl: HDL) -> HDL:
         """Define new HDL design by using pytest fixture."""
         hdl.toplevel = "dff"
 
