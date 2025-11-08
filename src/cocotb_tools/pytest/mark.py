@@ -72,6 +72,7 @@ def cocotb(*test_module: str, **kwargs: object) -> MarkDecorator:
 
         @pytest.fixture(name="sample_module")
         def sample_module_fixture(hdl: HDL) -> HDL:
+            # Define HDL design and build it
             hdl.toplevel = "sample_module"
             hdl.sources = (DESIGNS / "sample_module.sv",)
             hdl.build()
@@ -80,17 +81,21 @@ def cocotb(*test_module: str, **kwargs: object) -> MarkDecorator:
 
         @pytest.mark.cocotb
         def test_dut(sample_module: HDL) -> None:
+            # Run HDL simulator with cocotb tests
             sample_module.test()
 
         async def test_dut_feature(dut) -> None:
+            # Test DUT feature
             ...
 
         @pytest.mark.cocotb
         async def non_canonical_test_name(dut) -> None:
+            # Test DUT feature but from a test function that doesn't follow with the pytest naming convention
             ...
 
         @pytest.mark.cocotb(timeout=(200, "ns"))
         async def test_dut_feature_with_timeout(dut) -> None:
+            # Test DUT feature with timeout configured from cocotb marker
             ...
 
     Args:
