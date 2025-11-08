@@ -496,7 +496,7 @@ def hdl_session(request: FixtureRequest) -> HDL:
 
 
 @fixture
-def hdl(request: FixtureRequest) -> HDL:
+def hdl(request: FixtureRequest, hdl_session: HDL) -> HDL:
     """A cocotb fixture that is providing a helper instance to define own HDL design, built it and
     run set of cocotb tests from test modules (testbenches) against selected top level design.
 
@@ -551,11 +551,22 @@ def hdl(request: FixtureRequest) -> HDL:
         request: The pytest fixture request that is providing plugin :ref:`options <pytest-plugin-options>`
                  to this fixture. These options will be used to configure own instance of
                  :py:class:`~cocotb_tools.runner.Runner`.
+        hdl_session: HDL design defined at global ``session`` scope level.
 
     Returns:
         Instance that allows to build and test HDL design.
     """
-    return HDL(request)
+    instance: HDL = HDL(request)
+
+    # Runner in test() method is checking for hdl_toplevel_lang,
+    # if missing then it will retrieve this information from list of HDL source files
+    # Unfortunately, they are not set in Runner created during function scope when build() was not called
+    if hasattr(hdl_session.runner, "_sources"):
+        instance.runner._sources = hdl_session.runner._sources
+        instance.runner._vhdl_sources = hdl_session.runner._vhdl_sources
+        instance.runner._verilog_sources = hdl_session.runner._verilog_sources
+
+    return instance
 
 
 def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None:

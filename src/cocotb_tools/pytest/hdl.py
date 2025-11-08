@@ -123,9 +123,7 @@ class HDL:
         self.waves: bool = option.cocotb_waves
         """Record signal traces."""
 
-        self.build_dir: PathLike = (
-            self.test_dir if request.scope == "function" else option.cocotb_build_dir
-        )
+        self.build_dir: PathLike = self.test_dir
         """Directory to run the build step in."""
 
         self.cwd: PathLike = self.build_dir
@@ -173,13 +171,13 @@ class HDL:
                 if not name.startswith("_") and hasattr(self, name):
                     setattr(self, name, value)
 
-        if not self.test_module:
+        if not self.test_module and request.scope != "session":
             self.test_module = request.path.name.partition(".")[0]
 
-        if not self.toplevel:
+        if not self.toplevel and self.test_module:
             if isinstance(self.test_module, str):
                 self.toplevel = self.test_module
-            else:
+            elif isinstance(self.test_module, Sequence):
                 self.toplevel = self.test_module[0]
 
             if self.toplevel.startswith("test_"):
