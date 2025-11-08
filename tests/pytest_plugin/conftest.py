@@ -35,12 +35,6 @@ def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None
         parser: Instance of command line arguments parser used by pytest.
         pluginmanager: Instance of pytest plugin manager.
     """
-    parser.addoption(
-        "--hdl-toplevel-lang",
-        choices=("vhdl", "verilog"),
-        help="Select language for top level.",
-    )
-
     if not pluginmanager.has_plugin(PLUGIN):
         pluginmanager.import_plugin(PLUGIN)  # import and register plugin
 
@@ -67,9 +61,10 @@ def sample_module_fixture(hdl: HDL, request: FixtureRequest) -> HDL:
         Defined HDL design with added HDL source files.
     """
     hdl.toplevel = "sample_module"
-    hdl_toplevel_lang: str | None = request.config.option.hdl_toplevel_lang
 
-    if hdl_toplevel_lang == "vhdl" or hdl.simulator in ("nvc", "ghdl"):
+    # Selected based on command line argument --cocotb-toplevel-lang=<verilog|vhdl>
+    # or enforced by HDL simulator choice --cocotb-simulator=<name>
+    if hdl.toplevel_lang == "vhdl":
         hdl.sources = (
             DESIGNS / "sample_module" / "sample_module_package.vhdl",
             DESIGNS / "sample_module" / "sample_module_1.vhdl",

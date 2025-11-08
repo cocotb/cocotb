@@ -171,6 +171,18 @@ class HDL:
         # Store reference to command line options
         self._option = option
 
+        if not self.toplevel_lang or self.toplevel_lang == "auto":
+            simulator: str = self.simulator
+
+            if simulator in ("verilator", "icarus"):
+                self.toplevel_lang = "verilog"
+
+            elif simulator in ("nvc", "ghdl"):
+                self.toplevel_lang = "vhdl"
+
+            else:
+                self.toplevel_lang = None
+
         for marker in reversed(list(request.node.iter_markers("cocotb"))):
             if marker.args:
                 self.test_module = marker.args

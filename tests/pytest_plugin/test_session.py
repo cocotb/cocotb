@@ -19,12 +19,12 @@ DESIGNS: Path = Path(__file__).parent.parent.resolve() / "designs"
 @fixture(name="my_hdl_project", scope="session")
 def my_hdl_project_fixture(hdl_session: HDL, request: FixtureRequest) -> HDL:
     """Define HDL design with all HDL modules and build it."""
-    hdl_toplevel_lang: str | None = request.config.option.hdl_toplevel_lang
-
     # NOTE: Icarus/Xcelium runners are requiring a defined top level
     hdl_session.toplevel = "sample_module"
 
-    if hdl_toplevel_lang == "vhdl" or hdl_session.simulator in ("nvc", "ghdl"):
+    # Selected based on command line argument --cocotb-toplevel-lang=<verilog|vhdl>
+    # or enforced by HDL simulator choice --cocotb-simulator=<name>
+    if hdl_session.toplevel_lang == "vhdl":
         hdl_session.sources = (
             DESIGNS / "array_module" / "array_module_pack.vhd",
             DESIGNS / "array_module" / "array_module.vhd",

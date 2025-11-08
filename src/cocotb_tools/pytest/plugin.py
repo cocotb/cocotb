@@ -292,6 +292,20 @@ OPTIONS: tuple[Option, ...] = (
         description="The library name for HDL toplevel module.",
     ),
     Option(
+        "cocotb_toplevel_lang",
+        choices=("auto", "verilog", "vhdl"),
+        default="auto",
+        description="""
+            Language of the HDL toplevel module.
+            Can be set to notify tests about preferred language in multi-language HDL design.
+            This is also used by simulators that support more than one interface
+            (:term:`VPI`, :term:`VHPI`, or :term:`FLI`) to select the appropriate interface to start cocotb.
+            When set to ``auto``, value will be automatically evaluated based on selected HDL simulator or
+            list of HDL source files provided during build stage in :py:meth:`cocotb_tools.pytest.hdl.HDL.build` or
+            :py:meth:`cocotb_tools.runner.Runner.build` methods.
+        """,
+    ),
+    Option(
         "cocotb_gpi_interfaces",
         nargs="*",
         metavar="NAME",
@@ -413,7 +427,7 @@ def dut() -> SimHandleBase:
 
 @fixture(scope="session")
 def hdl_session(request: FixtureRequest) -> HDL:
-    """A cocotb fixture that is providing a helper instance to define own HDL design and built it.
+    """A cocotb fixture that is providing a helper instance to define own HDL design and to build it.
 
     .. note::
 
@@ -492,12 +506,14 @@ def hdl_session(request: FixtureRequest) -> HDL:
     Returns:
         Instance that allows to build and test HDL design.
     """
-    return HDL(request)
+    option = request.config.option
+
+    return HDL(request, toplevel_lang=option.cocotb_toplevel_lang)
 
 
 @fixture
 def hdl(request: FixtureRequest, hdl_session: HDL) -> HDL:
-    """A cocotb fixture that is providing a helper instance to define own HDL design, built it and
+    """A cocotb fixture that is providing a helper instance to define own HDL design, to build it and
     run set of cocotb tests from test modules (testbenches) against selected top level design.
 
     .. note::
