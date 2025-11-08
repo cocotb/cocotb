@@ -123,7 +123,9 @@ class HDL:
         self.waves: bool = option.cocotb_waves
         """Record signal traces."""
 
-        self.build_dir: PathLike = self.test_dir
+        self.build_dir: PathLike = (
+            self.test_dir if request.scope == "function" else option.cocotb_build_dir
+        )
         """Directory to run the build step in."""
 
         self.cwd: PathLike = self.build_dir

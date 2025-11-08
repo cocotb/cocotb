@@ -411,16 +411,20 @@ def dut() -> SimHandleBase:
     return cocotb.top
 
 
-@fixture
-def hdl(request: FixtureRequest) -> HDL:
-    """A cocotb fixture that is providing a helper instance to define own HDL design, built it and
-    run set of cocotb tests from test modules (testbenches) against selected top level design.
+@fixture(scope="session")
+def hdl_session(request: FixtureRequest) -> HDL:
+    """A cocotb fixture that is providing a helper instance to define own HDL design and built it.
+
+    .. note::
+
+        This fixture is scoped to global ``session`` scope.
+        It can be useful to build the whole HDL project with different HDL modules at once not per test.
 
     It contains own instance of :py:class:`~cocotb_tools.runner.Runner` that can be accessed directly
     from :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner` member.
 
-    Defined HDL design can be build and test by invoking the :py:meth:`~cocotb_tools.pytest.hdl.HDL.test()` method
-    from **non-async** test functions. This method will invoke build and test steps from :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner` member.
+    Defined HDL design can be build by invoking the :py:meth:`~cocotb_tools.pytest.hdl.HDL.build()` method
+    from **non-async** test functions. This method will invoke build step from :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner` member.
 
     Requested fixture will pass various plugin :ref:`options <pytest-plugin-options>`
     to own instance of :py:class:`~cocotb_tools.runner.Runner`. Like setting a desired verbosity level for cocotb runner.
@@ -435,8 +439,95 @@ def hdl(request: FixtureRequest) -> HDL:
         from cocotb_tools.pytest.hdl import HDL
 
 
-        @pytest.fixture
-        def my_hdl_module(hdl: HDL) -> HDL:
+        @pytest.fixture(scope="session")
+        def my_hdl_project(hdl_session: HDL) -> HDL:
+            # Build whole HDL design with all HDL modules at once
+            hdl_session.sources = (
+                # Add more HDL source files here
+                # ...
+                DIR / "my_hdl_module_1.sv",
+                DIR / "my_hdl_module_2.sv",
+            )
+
+            hdl_session.build()
+
+            return hdl_session
+
+
+        @pytest.fixture(name="my_hdl_module_1")
+        def my_hdl_module_1_fixture(hdl: HDL, my_hdl_project: HDL) -> HDL:
+            # Define HDL module 1
+            hdl.build_dir = my_hdl_project.build_dir
+            hdl.toplevel = "my_hdl_module_1"
+
+            return hdl
+
+
+        @pytest.fixture(name="my_hdl_module_2")
+        def my_hdl_module_2_fixture(hdl: HDL, my_hdl_project: HDL) -> HDL:
+            # Define HDL module 2
+            hdl.build_dir = my_hdl_project.build_dir
+            hdl.toplevel = "my_hdl_module_2"
+
+            return hdl
+
+
+        @pytest.mark.cocotb
+        def test_dut_1(my_hdl_module_1: HDL) -> None:
+            # Run HDL simulator with cocotb tests
+            my_hdl_module_1.test()
+
+
+        @pytest.mark.cocotb
+        def test_dut_2(my_hdl_module_2: HDL) -> None:
+            # Run HDL simulator with cocotb tests
+            my_hdl_module_2.test()
+
+
+    Args:
+        request: The pytest fixture request that is providing plugin :ref:`options <pytest-plugin-options>`
+                 to this fixture. These options will be used to configure own instance of
+                 :py:class:`~cocotb_tools.runner.Runner`.
+
+    Returns:
+        Instance that allows to build and test HDL design.
+    """
+    return HDL(request)
+
+
+@fixture
+def hdl(request: FixtureRequest) -> HDL:
+    """A cocotb fixture that is providing a helper instance to define own HDL design, built it and
+    run set of cocotb tests from test modules (testbenches) against selected top level design.
+
+    .. note::
+
+        This fixture is scoped to default ``function`` scope.
+        It can help to build HDL module per test and run tests for defined HDL top level.
+
+    It contains own instance of :py:class:`~cocotb_tools.runner.Runner` that can be accessed directly
+    from :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner` member.
+
+    Defined HDL design can be build by invoking the :py:meth:`~cocotb_tools.pytest.hdl.HDL.build()` method and
+    test by invoking the :py:meth:`~cocotb_tools.pytest.hdl.HDL.test()` method from **non-async** test functions.
+    These methods will invoke build and test steps from :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner` member.
+
+    Requested fixture will pass various plugin :ref:`options <pytest-plugin-options>`
+    to own instance of :py:class:`~cocotb_tools.runner.Runner`. Like setting a desired verbosity level for cocotb runner.
+
+    Please refer to available public members of :py:class:`~cocotb_tools.pytest.hdl.HDL` that can be used to define own HDL design.
+
+    Example usage:
+
+    .. code:: python
+
+        import pytest
+        from cocotb_tools.pytest.hdl import HDL
+
+
+        @pytest.fixture(name="my_hdl_module")
+        def my_hdl_module_fixture(hdl: HDL) -> HDL:
+            # Build HDL module per test
             hdl.toplevel = "my_hdl_module"
 
             hdl.sources = (
@@ -445,12 +536,16 @@ def hdl(request: FixtureRequest) -> HDL:
                 DIR / "my_hdl_module.sv",
             )
 
+            hdl.build()
+
             return hdl
 
 
         @pytest.mark.cocotb
         def test_dut(my_hdl_module: HDL) -> None:
+            # Run HDL simulator with cocotb tests
             my_hdl_module.test()
+
 
     Args:
         request: The pytest fixture request that is providing plugin :ref:`options <pytest-plugin-options>`

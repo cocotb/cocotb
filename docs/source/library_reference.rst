@@ -32,6 +32,8 @@ Fixtures
 
 .. autofixture:: dut
 
+.. autofixture:: hdl_session
+
 .. autofixture:: hdl
 
 
