@@ -55,6 +55,7 @@ def test_sample_module(sample_module: HDL) -> None:
     "test_parametrize",
     "test_xfail",
     "test_caplog",
+    "test_pass",
 )
 def test_sample_module_extra(sample_module: HDL) -> None:
     """Running HDL simulator using cocotb runner for sample module."""

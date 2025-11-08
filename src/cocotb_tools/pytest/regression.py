@@ -44,6 +44,7 @@ import cocotb
 from cocotb import simulator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
+from cocotb._test_functions import TestSuccess
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb.task import Task
 from cocotb_tools.pytest.fixture import (
@@ -684,17 +685,16 @@ class RegressionManager:
             Wrapped async function with restoring logging state and optional timeout.
         """
         if timeout:
+            func = _wrap_async_function_with_timeout(func, timeout)
 
-            @wraps(func)
-            async def wrapped(*args: object, **kwargs: object) -> Any:
-                self._restore_logging_state()
-                return await with_timeout(func(*args, **kwargs), timeout[0], timeout[1])
-        else:
+        @wraps(func)
+        async def wrapped(*args: object, **kwargs: object) -> Any:
+            self._restore_logging_state()
 
-            @wraps(func)
-            async def wrapped(*args: object, **kwargs: object) -> Any:
-                self._restore_logging_state()
+            try:
                 return await func(*args, **kwargs)
+            except TestSuccess:
+                pass
 
         return wrapped
 
@@ -756,3 +756,16 @@ def _interactive_exception(item: Item, call: CallInfo, report: TestReport) -> No
         item.ihook.pytest_exception_interact(node=item, call=call, report=report)
     except Exit:
         pass
+
+
+def _wrap_async_function_with_timeout(
+    func: Callable[..., Awaitable],
+    timeout: tuple[float, TimeUnit],
+) -> Callable[..., Awaitable]:
+    """Wrap async test function (setup, call, teardown) with timeout."""
+
+    @wraps(func)
+    async def wrapped(*args: object, **kwargs: object) -> Any:
+        return await with_timeout(func(*args, **kwargs), timeout[0], timeout[1])
+
+    return wrapped
