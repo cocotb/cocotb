@@ -210,7 +210,7 @@ class HDL:
                 if not name.startswith("_") and hasattr(self, name):
                     setattr(self, name, value)
 
-        if not self.test_module and request.scope != "session":
+        if not self.test_module and not self._is_session_scoped:
             self.test_module = request.path.name.partition(".")[0]
 
         if not self.toplevel and self.test_module:
