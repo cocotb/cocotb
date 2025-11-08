@@ -64,11 +64,16 @@ def get_simulator(config: Config) -> str:
 class HDL:
     """Build HDL design and run test against specific HDL top level."""
 
-    def __init__(self, request: FixtureRequest) -> None:
+    def __init__(
+        self,
+        request: FixtureRequest,
+        toplevel_lang: str | None = None,
+    ) -> None:
         """Create new instance of HDL design.
 
         Args:
             request: The pytest fixture request.
+            toplevel_lang: Language of the HDL toplevel module.
         """
         option = request.config.option
         nodeid: str = request.node.nodeid
@@ -135,6 +140,9 @@ class HDL:
 
         self.toplevel_library: str = option.cocotb_toplevel_library
         """The library name for HDL toplevel module."""
+
+        self.toplevel_lang: str | None = toplevel_lang
+        """Language of the HDL toplevel module."""
 
         self.gpi_interfaces: list[str] | None = option.cocotb_gpi_interfaces
         """List of GPI interfaces to use, with the first one being the entry point."""
@@ -300,6 +308,7 @@ class HDL:
         test_module: str | Sequence[str] | None = None,
         toplevel: str | None = None,
         toplevel_library: str | None = None,
+        toplevel_lang: str | None = None,
         gpi_interfaces: list[str] | None = None,
         parameters: MutableMapping[str, object] | None = None,
         seed: str | int | None = None,
@@ -326,6 +335,9 @@ class HDL:
 
             toplevel_library:
                 The library name for HDL toplevel module.
+
+            toplevel_lang:
+                Language of the HDL toplevel module.
 
             gpi_interfaces:
                 List of GPI interfaces to use, with the first one being the entry point.
@@ -397,6 +409,7 @@ class HDL:
         return self.runner.test(
             test_module=test_module or self.test_module,
             hdl_toplevel=toplevel or self.toplevel or "",
+            hdl_toplevel_lang=toplevel_lang or self.toplevel_lang,
             hdl_toplevel_library=toplevel_library or self.toplevel_library,
             gpi_interfaces=gpi_interfaces or self.gpi_interfaces or None,
             seed=seed or self.seed,

@@ -556,17 +556,15 @@ def hdl(request: FixtureRequest, hdl_session: HDL) -> HDL:
     Returns:
         Instance that allows to build and test HDL design.
     """
-    instance: HDL = HDL(request)
-
     # Runner in test() method is checking for hdl_toplevel_lang,
     # if missing then it will retrieve this information from list of HDL source files
     # Unfortunately, they are not set in Runner created during function scope when build() was not called
-    if hasattr(hdl_session.runner, "_sources"):
-        instance.runner._sources = hdl_session.runner._sources
-        instance.runner._vhdl_sources = hdl_session.runner._vhdl_sources
-        instance.runner._verilog_sources = hdl_session.runner._verilog_sources
+    toplevel_lang: str | None = hdl_session.toplevel_lang
 
-    return instance
+    if not toplevel_lang and hasattr(hdl_session.runner, "_sources"):
+        toplevel_lang = hdl_session.runner._check_hdl_toplevel_lang(toplevel_lang)
+
+    return HDL(request, toplevel_lang=toplevel_lang)
 
 
 def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None:
