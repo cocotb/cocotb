@@ -14,7 +14,7 @@ from typing import cast
 
 import cocotb
 from cocotb import simtime, simulator
-from cocotb._init import _process_packages, _process_plusargs
+from cocotb._init import _process_packages, _process_plusargs, _sim_event
 from cocotb.logging import _setup_gpi_logger
 from cocotb_tools.pytest import env
 from cocotb_tools.pytest.regression import RegressionManager
@@ -87,9 +87,3 @@ def _setup_root_handle() -> None:
         cocotb.top = cocotb.handle._make_sim_object(handle)
 
     # If None, pytest will raise an exception
-
-
-def _sim_event() -> None:
-    """Function that can be called externally to signal an event."""
-    if hasattr(cocotb, "_regression_manager"):
-        cocotb._regression_manager._on_sim_end()
