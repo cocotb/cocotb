@@ -21,6 +21,9 @@ def my_hdl_project_fixture(hdl_session: HDL, request: FixtureRequest) -> HDL:
     """Define HDL design with all HDL modules and build it."""
     hdl_toplevel_lang: str | None = request.config.option.hdl_toplevel_lang
 
+    # NOTE: Icarus/Xcelium runners are requiring a defined top level
+    hdl_session.toplevel = "sample_module"
+
     if hdl_toplevel_lang == "vhdl" or hdl_session.simulator in ("nvc", "ghdl"):
         hdl_session.sources = (
             DESIGNS / "array_module" / "array_module_pack.vhd",
