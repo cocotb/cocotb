@@ -187,7 +187,7 @@ Using the :py:deco:`pytest.mark.cocotb` marker is optional for test functions if
 
 * start with ``test_``
 * is a coroutine function (``async def``)
-* have the first positional argument name match the ``toplevel`` (such as ``dut``)
+* has a positional argument ``dut`` to use the :fixture:`~cocotb_tools.pytest.plugin.dut` fixture
 
 Non-``async`` functions marked with :py:deco:`pytest.mark.cocotb` are control functions run by pytest.
 They can run simulations by invoking :py:func:`cocotb_tools.pytest.hdl.HDL.test`
