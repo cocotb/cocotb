@@ -180,11 +180,6 @@ class RegressionManager:
         self._session.config.hook.pytest_collection(session=self._session)
         self._session.config.hook.pytest_runtestloop(session=self._session)
 
-    def pytest_configure(self, config: Config) -> None:
-        """Configure regression manager."""
-        if getattr(cocotb, "top", None) is None:
-            raise SimFailure(f"Can not find root handle {self._toplevel!r}")
-
     @hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
         """Called after the :py:class:`pytest.Session` object has been created and

@@ -14,7 +14,12 @@ from typing import cast
 
 import cocotb
 from cocotb import simtime, simulator
-from cocotb._init import _process_packages, _process_plusargs, _sim_event
+from cocotb._init import (
+    _process_packages,
+    _process_plusargs,
+    _setup_root_handle,
+    _sim_event,
+)
 from cocotb.logging import _setup_gpi_logger
 from cocotb_tools.pytest import env
 from cocotb_tools.pytest.regression import RegressionManager
@@ -71,19 +76,3 @@ def _setup_simulation_environment(argv: list[str] | None = None) -> None:
 
     simtime._init()
     seed(cocotb.RANDOM_SEED)
-
-
-def _setup_root_handle() -> None:
-    """Function that will set the :py:var:`cocotb.top` handler."""
-    root_name: str = env.as_str("COCOTB_TOPLEVEL")
-
-    if "." in root_name:
-        # Skip any library component of the toplevel
-        root_name = root_name.split(".", 1)[1]
-
-    handle = simulator.get_root_handle(root_name)
-
-    if handle:
-        cocotb.top = cocotb.handle._make_sim_object(handle)
-
-    # If None, pytest will raise an exception
