@@ -83,25 +83,14 @@ command line arguments.
     from cocotb_tools.pytest.hdl import HDL
 
 
-    def pytest_addoption(parser: pytest.Parser, pluginmanager: pytest.PytestPluginManager) -> None:
-        """Add additional command line arguments to pytest instead of using environment variables."""
-        parser.addoption(
-            "--hdl-toplevel-lang",
-            choices=("vhdl", "verilog"),
-            help="Select language for top level.",
-        )
-
-
     @pytest.fixture(name="dff")
     def dff_fixture(hdl: HDL, request: pytest.FixtureRequest) -> HDL:
         """Define new HDL design by using pytest fixture."""
-        # Get option from passed command line argument pytest --hdl-toplevel-lang=<vhdl|verilog>
-        hdl_toplevel_lang: str = request.config.option.hdl_toplevel_lang
         hdl.toplevel = "dff"
 
         proj_path = Path(__file__).resolve().parent
 
-        if hdl_toplevel_lang == "verilog" or hdl.simulator in ("verilator", "icarus"):
+        if hdl.toplevel_lang == "verilog":
             hdl.sources = (proj_path / "dff.sv",)
         else:
             hdl.sources = (proj_path / "dff.vhdl",)
@@ -126,7 +115,7 @@ To run it:
 
 .. code:: shell
 
-    pytest examples/simple_dff/test_dff.py -s --hdl-toplevel-lang=vhdl --cocotb-simulator=questa
+    pytest examples/simple_dff/test_dff.py -s --cocotb-toplevel-lang=vhdl --cocotb-simulator=questa
 
 
 Direct usage
