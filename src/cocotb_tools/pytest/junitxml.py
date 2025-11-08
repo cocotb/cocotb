@@ -6,33 +6,26 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from pytest import Config, StashKey, TestReport, hookimpl
+from _pytest.junitxml import LogXML, xml_key
+from pytest import Config, TestReport, hookimpl
 
 
 class JUnitXML:
-    def __init__(self, plugin: Any) -> None:
+    def __init__(self, log_xml: LogXML) -> None:
         """Create new instance of JUnit XML.
 
         Args:
             plugin: Handler to built-in pytest ``junitxml`` plugin.
         """
-        self._plugin: Any = plugin  # NOTE: Type not available in public pytest API
+        self._log_xml: LogXML = log_xml
 
     @staticmethod
     def register(config: Config) -> None:
         """Register new instance of JUnit XML if ``junitxml`` plugin was activated."""
-        plugin: Any = config.pluginmanager.getplugin("junitxml")
+        log_xml: LogXML | None = config.stash.get(xml_key, None)
 
-        if plugin:
-            # Instance of JUnit XML is stored in pytest stash where stash key to it
-            # is stored in JUnix XML plugin
-            key: StashKey | None = getattr(plugin, "xml_key", None)
-            plugin = config.stash.get(key, None) if key else None
-
-            if plugin:
-                config.pluginmanager.register(JUnitXML(plugin))
+        if log_xml:
+            config.pluginmanager.register(JUnitXML(log_xml))
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_logreport(self, report: TestReport) -> None:
@@ -42,7 +35,7 @@ class JUnitXML:
             report.nodeid.replace("/", ".").replace(".py::", ".").replace("::", ".")
         )
         classname, _, name = address.rpartition(".")
-        reporter = self._plugin.node_reporter(report)
+        reporter = self._log_xml.node_reporter(report)
 
         reporter.add_attribute("classname", classname)
         reporter.add_attribute("name", name)
