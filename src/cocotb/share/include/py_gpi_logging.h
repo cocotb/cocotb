@@ -29,6 +29,8 @@ PYGPILOG_EXPORT void py_gpi_logger_finalize();
 extern PYGPILOG_EXPORT PyObject *pEventFn;  // This is gross but I don't care
 
 extern "C" PYGPILOG_EXPORT int pygpi_debug_enabled;
+extern "C" PYGPILOG_EXPORT int python_context_tracing_enabled;
+extern "C" PYGPILOG_EXPORT int is_python_context;
 
 #define PYGPI_LOG_(level, ...) \
     gpi_log_("pygpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__)
@@ -65,6 +67,36 @@ extern "C" PYGPILOG_EXPORT int pygpi_debug_enabled;
  * Automatically populates arguments using information in the called context.
  */
 #define PYGPI_LOG_CRITICAL(...) PYGPI_LOG_(GPI_CRITICAL, __VA_ARGS__)
+
+// c_to_python and python_to_c are implemented as macros instead of functions so
+// that the logs reference the user's lineno and filename
+
+#define c_to_python()                                                  \
+    do {                                                               \
+        if (python_context_tracing_enabled) {                          \
+            if (is_python_context) {                                   \
+                PYGPI_LOG_CRITICAL(                                    \
+                    "FATAL: Trying C => Python but already in Python " \
+                    "context");                                        \
+                exit(1);                                               \
+            }                                                          \
+            ++is_python_context;                                       \
+            PYGPI_LOG_TRACE("C => Python");                            \
+        }                                                              \
+    } while (0)
+
+#define python_to_c()                                                      \
+    do {                                                                   \
+        if (python_context_tracing_enabled) {                              \
+            if (!is_python_context) {                                      \
+                PYGPI_LOG_CRITICAL(                                        \
+                    "FATAL: Trying Python => C but already in C context"); \
+                exit(1);                                                   \
+            }                                                              \
+            --is_python_context;                                           \
+            PYGPI_LOG_TRACE("Python => C");                                \
+        }                                                                  \
+    } while (0)
 
 #ifdef __cplusplus
 }

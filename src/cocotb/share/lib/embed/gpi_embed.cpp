@@ -77,6 +77,7 @@ static void pygpi_init_debug() {
         // If it's explicitly set to 0, don't enable
         if (pygpi_debug != "0") {
             pygpi_debug_enabled = 1;
+            python_context_tracing_enabled = 1;
         }
     }
 }
@@ -210,13 +211,13 @@ static void finalize(void *) {
     // Before the initial callback returns and in the final callback.
     // So we check if Python is still initialized before doing cleanup.
     if (Py_IsInitialized()) {
-        to_python();
+        c_to_python();
         PyGILState_Ensure();  // Don't save state as we are calling Py_Finalize
         Py_XDECREF(pEventFn);
         pEventFn = NULL;
         py_gpi_logger_finalize();
         Py_Finalize();
-        to_simulator();
+        python_to_c();
     }
 }
 
@@ -237,8 +238,8 @@ static int start_of_sim_time(void *, int argc, char const *const *_argv) {
     auto gstate = PyGILState_Ensure();
     DEFER(PyGILState_Release(gstate));
 
-    to_python();
-    DEFER(to_simulator());
+    c_to_python();
+    DEFER(python_to_c());
 
     auto entry_utility_module = PyImport_ImportModule("pygpi.entry");
     if (!entry_utility_module) {
@@ -295,7 +296,7 @@ static void end_of_sim_time(void *) {
 
     if (pEventFn) {
         PyGILState_STATE gstate;
-        to_python();
+        c_to_python();
         gstate = PyGILState_Ensure();
 
         PyObject *pValue = PyObject_CallNoArgs(pEventFn);
@@ -310,6 +311,6 @@ static void end_of_sim_time(void *) {
         }
         Py_XDECREF(pValue);
         PyGILState_Release(gstate);
-        to_simulator();
+        python_to_c();
     }
 }
