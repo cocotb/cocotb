@@ -31,6 +31,8 @@ as well as users of the GPI.
 extern "C" {
 #endif
 
+extern GPILOG_EXPORT int gpi_debug_enabled;
+
 /** Named logging level
  *
  *  The native logger only logs level names at these log level values.
@@ -69,9 +71,15 @@ enum gpi_log_level {
     gpi_log_("gpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
 /** Logs a message at TRACE log level using the current log handler.
+ * Only logs if GPI debug is enabled.
  * Automatically populates arguments using information in the called context.
  */
-#define LOG_TRACE(...) LOG_(GPI_TRACE, __VA_ARGS__)
+#define LOG_TRACE(...)                    \
+    do {                                  \
+        if (gpi_debug_enabled) {          \
+            LOG_(GPI_TRACE, __VA_ARGS__); \
+        }                                 \
+    } while (0)
 
 /** Logs a message at DEBUG log level using the current log handler.
  * Automatically populates arguments using information in the called context.

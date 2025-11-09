@@ -273,6 +273,7 @@ GPI_EXPORT void gpi_end_of_sim_time();
 GPI_EXPORT void gpi_entry_point();
 GPI_EXPORT void gpi_to_user();
 GPI_EXPORT void gpi_to_simulator();
+GPI_EXPORT void gpi_init_logging_and_debug();
 
 typedef void (*layer_entry_func)();
 

@@ -14,6 +14,9 @@
 
 #include "cocotb_utils.h"  // DEFER
 
+// Disabled by default
+int gpi_debug_enabled = 0;
+
 static gpi_log_handler_ftype current_handler = nullptr;
 static gpi_log_filter_ftype current_filter = nullptr;
 static gpi_log_set_level_ftype current_set_level = nullptr;

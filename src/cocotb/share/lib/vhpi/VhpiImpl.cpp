@@ -1126,11 +1126,13 @@ void VhpiImpl::main() noexcept {
     gpi_entry_point();
 }
 
+// This is run by the simulator at startup when this is the main GPI entrypoint
 static void vhpi_main() {
     auto vhpi_table = new VhpiImpl("VHPI");
     vhpi_table->main();
 }
 
+// This is run by GPI when requested for mixed-language simulations
 static void register_impl() {
     auto vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
@@ -1138,10 +1140,14 @@ static void register_impl() {
 
 // pre-defined VHPI registration table
 extern "C" {
-COCOTBVHPI_EXPORT void (*vhpi_startup_routines[])() = {vhpi_main, nullptr};
+COCOTBVHPI_EXPORT void (*vhpi_startup_routines[])() = {
+    gpi_init_logging_and_debug, vhpi_main, nullptr};
 
 // For non-VHPI compliant applications that cannot find vhpi_startup_routines
-COCOTBVHPI_EXPORT void vhpi_startup_routines_bootstrap() { vhpi_main(); }
+COCOTBVHPI_EXPORT void vhpi_startup_routines_bootstrap() {
+    gpi_init_logging_and_debug();
+    vhpi_main();
+}
 }
 
 GPI_ENTRY_POINT(cocotbvhpi, register_impl)

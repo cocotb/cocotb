@@ -480,6 +480,16 @@ Logging
 
     .. versionadded:: 2.0
 
+.. envvar:: GPI_DEBUG
+
+    Enable additional debug functionality in the GPI.
+    Includes verbose log messages tracing the code execution path through the GPI.
+    The messages are logged at GPI log level ``TRACE``,
+    so :envvar:`GPI_LOG_LEVEL` must be set to ``TRACE`` in order to see
+    tracing messages during early GPI startup.
+
+    .. versionadded:: 2.1
+
 Adding Simulation Time to Logs
 ------------------------------
 

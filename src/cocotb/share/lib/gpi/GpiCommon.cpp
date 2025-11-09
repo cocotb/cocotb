@@ -72,7 +72,7 @@ static size_t gpi_print_registered_impl() {
     vector<GpiImplInterface *>::iterator iter;
     for (iter = registered_impls.begin(); iter != registered_impls.end();
          iter++) {
-        LOG_INFO("%s registered", (*iter)->get_name_c());
+        LOG_INFO("GPI: %s support registered", (*iter)->get_name_c());
     }
     return registered_impls.size();
 }
@@ -82,7 +82,7 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
     for (iter = registered_impls.begin(); iter != registered_impls.end();
          iter++) {
         if ((*iter)->get_name_s() == func_tbl->get_name_s()) {
-            LOG_WARN("%s already registered, check GPI_EXTRA",
+            LOG_WARN("GPI: %s support already registered, check GPI_EXTRA",
                      func_tbl->get_name_c());
             return -1;
         }
@@ -231,22 +231,6 @@ static int gpi_load_users() {
 #endif
 
 void gpi_entry_point() {
-    const char *log_level = getenv("GPI_LOG_LEVEL");
-    if (log_level) {
-        static const std::map<std::string, int> log_level_str_table = {
-            {"CRITICAL", GPI_CRITICAL}, {"ERROR", GPI_ERROR},
-            {"WARNING", GPI_WARNING},   {"INFO", GPI_INFO},
-            {"DEBUG", GPI_DEBUG},       {"TRACE", GPI_TRACE}};
-        auto it = log_level_str_table.find(log_level);
-        if (it != log_level_str_table.end()) {
-            gpi_native_logger_set_level(it->second);
-        } else {
-            // LCOV_EXCL_START
-            LOG_ERROR("Invalid log level: %s", log_level);
-            // LCOV_EXCL_STOP
-        }
-    }
-
     /* Lets look at what other libs we were asked to load too */
     char *lib_env = getenv("GPI_EXTRA");
 
@@ -287,7 +271,35 @@ void gpi_entry_point() {
     if (!gpi_load_users()) {
         return;
     }
+
     gpi_print_registered_impl();
+}
+
+GPI_EXPORT void gpi_init_logging_and_debug() {
+    char *debug_env = getenv("GPI_DEBUG");
+    if (debug_env) {
+        std::string gpi_debug = debug_env;
+        // If it's explicitly set to 0, don't enable
+        if (gpi_debug != "0") {
+            gpi_debug_enabled = 1;
+        }
+    }
+
+    const char *log_level = getenv("GPI_LOG_LEVEL");
+    if (log_level) {
+        static const std::map<std::string, int> log_level_str_table = {
+            {"CRITICAL", GPI_CRITICAL}, {"ERROR", GPI_ERROR},
+            {"WARNING", GPI_WARNING},   {"INFO", GPI_INFO},
+            {"DEBUG", GPI_DEBUG},       {"TRACE", GPI_TRACE}};
+        auto it = log_level_str_table.find(log_level);
+        if (it != log_level_str_table.end()) {
+            gpi_native_logger_set_level(it->second);
+        } else {
+            // LCOV_EXCL_START
+            LOG_ERROR("Invalid log level: %s", log_level);
+            // LCOV_EXCL_STOP
+        }
+    }
 }
 
 void gpi_get_sim_time(uint32_t *high, uint32_t *low) {
