@@ -75,7 +75,7 @@ async def test_logging_with_args(dut):
 @cocotb.test()
 async def test_custom_logging_levels(dut):
     logging.basicConfig(level=logging.NOTSET)
-    logging.addLevelName(5, "SUPER_DEBUG")
+    logging.addLevelName(7, "SUPER_DEBUG")
     logger = logging.getLogger("name")
     logger.setLevel(5)
     with capture_logs() as logs:
