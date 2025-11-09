@@ -1146,13 +1146,16 @@ void FliImpl::main() noexcept {
     gpi_entry_point();
 }
 
+// This is run by GPI when requested for mixed-language simulations
 static void register_impl() {
     auto fli_table = new FliImpl("FLI");
     gpi_register_impl(fli_table);
 }
 
 extern "C" {
+// This is run by the simulator at startup when this is the main GPI entrypoint
 COCOTBFLI_EXPORT void cocotb_init() {
+    gpi_init_logging_and_debug();
     auto fli_table = new FliImpl("FLI");
     fli_table->main();
 }

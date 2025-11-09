@@ -764,6 +764,7 @@ void VpiImpl::main() noexcept {
     gpi_entry_point();
 }
 
+// This is run by the simulator at startup when this is the main GPI entrypoint
 static void vpi_main() {
 #ifdef VCS
     // VCS loads the entry point both during compilation and again at
@@ -779,17 +780,22 @@ static void vpi_main() {
     vpi_table->main();
 }
 
+// This is run by GPI when requested for mixed-language simulations
 static void register_impl() {
     auto vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
 }
 
 extern "C" {
-COCOTBVPI_EXPORT void (*vlog_startup_routines[])() = {vpi_main, nullptr};
+COCOTBVPI_EXPORT void (*vlog_startup_routines[])() = {
+    gpi_init_logging_and_debug, vpi_main, nullptr};
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines
 // symbol
-COCOTBVPI_EXPORT void vlog_startup_routines_bootstrap() { vpi_main(); }
+COCOTBVPI_EXPORT void vlog_startup_routines_bootstrap() {
+    gpi_init_logging_and_debug();
+    vpi_main();
+}
 }
 
 GPI_ENTRY_POINT(cocotbvpi, register_impl)
