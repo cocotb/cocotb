@@ -253,9 +253,6 @@ class GPI_EXPORT GpiImplInterface {
     virtual GpiCbHdl *register_readwrite_callback(int (*gpi_function)(void *),
                                                   void *gpi_cb_data) = 0;
 
-    /* Method to provide strings from operation types */
-    virtual const char *reason_to_string(int reason) = 0;
-
   private:
     std::string m_name;
 
