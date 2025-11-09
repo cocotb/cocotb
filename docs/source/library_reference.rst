@@ -933,6 +933,16 @@ The PyGPI is a Python wrapper around the :term:`GPI` (Generic Procedural Interfa
     .. versionchanged:: 2.0
         Renamed from ``PYGPI_ENTRY_POINT``.
 
+.. envvar:: PYGPI_DEBUG
+
+    Enable additional debug functionality in the PyGPI.
+    Includes verbose log messages tracing the code execution path through the PyGPI.
+    The messages are logged at GPI log level ``TRACE``,
+    so :envvar:`GPI_LOG_LEVEL` must be set to ``TRACE`` in order to see
+    tracing messages during early PyGPI startup.
+
+    .. versionadded:: 2.1
+
 The ``cocotb.simulator`` module is the Python :keyword:`import`-able interface to the PyGPI.
 It should not be considered public API, but is documented here for developers of cocotb.
 

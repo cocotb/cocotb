@@ -7,15 +7,16 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
-#include <cocotb_utils.h>  // DEFER
-#include <exports.h>       // COCOTB_EXPORT
-#include <gpi.h>           // gpi_register_*
-#include <gpi_logging.h>   // LOG_* macros
-#include <py_gpi_logging.h>  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
+#include <cocotb_utils.h>    // DEFER
+#include <exports.h>         // COCOTB_EXPORT
+#include <gpi.h>             // gpi_register_*
+#include <gpi_logging.h>     // LOG_* macros
+#include <py_gpi_logging.h>  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize, tracing macros
 
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -70,11 +71,24 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
     return 0;
 }
 
+static void pygpi_init_debug() {
+    char *debug_env = getenv("PYGPI_DEBUG");
+    if (debug_env) {
+        std::string pygpi_debug = debug_env;
+        // If it's explicitly set to 0, don't enable
+        if (pygpi_debug != "0") {
+            pygpi_debug_enabled = 1;
+        }
+    }
+}
+
 static int start_of_sim_time(void *, int, char const *const *);
 static void end_of_sim_time(void *);
 static void finalize(void *);
 
 extern "C" COCOTB_EXPORT void initialize(void) {
+    pygpi_init_debug();
+
     if (python_init_called) {
         // LCOV_EXCL_START
         LOG_ERROR("PyGPI library initialized again!");
