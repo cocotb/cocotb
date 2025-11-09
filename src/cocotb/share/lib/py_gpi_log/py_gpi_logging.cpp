@@ -200,3 +200,7 @@ PyObject *pEventFn = NULL;
 
 // Disabled by default
 int pygpi_debug_enabled = 0;
+int python_context_tracing_enabled = 0;
+
+// Tracks if we are in the context of Python or Simulator
+int is_python_context = 0;

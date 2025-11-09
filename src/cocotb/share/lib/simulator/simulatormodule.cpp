@@ -16,9 +16,9 @@
 #include <cerrno>
 #include <cstdint>
 
-#include "cocotb_utils.h"  // to_python to_simulator
+#include "cocotb_utils.h"  // DEFER
 #include "gpi.h"
-#include "py_gpi_logging.h"  // py_gpi_logger_set_level
+#include "py_gpi_logging.h"  // py_gpi_logger_set_level, c_to_python, python_to_c
 
 // This file defines the routines available to Python
 
@@ -162,6 +162,8 @@ struct sim_time {
 int handle_gpi_callback(void *user_data) {
     PYGPI_LOG_TRACE("GPI => [ PYGPI (cocotb.simulator) ]");
     DEFER(PYGPI_LOG_TRACE("[ PYGPI (cocotb.simulator) ] => GPI"));
+    c_to_python();
+    DEFER(python_to_c());
 
     PyGILState_STATE gstate = PyGILState_Ensure();
     DEFER(PyGILState_Release(gstate));
