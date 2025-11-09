@@ -22,19 +22,15 @@ from cocotb_tools.runner import (
 
 
 @overload
-def cocotb() -> MarkDecorator: ...
+def cocotb_runner() -> MarkDecorator: ...
 
 
 @overload
-def cocotb(*test_module: str) -> MarkDecorator: ...
+def cocotb_runner(*test_module: str) -> MarkDecorator: ...
 
 
 @overload
-def cocotb(*, timeout: tuple[float, TimeUnit] | None = None) -> MarkDecorator: ...
-
-
-@overload
-def cocotb(
+def cocotb_runner(
     *test_module: str,
     library: str = "top",
     sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] = [],
@@ -43,6 +39,7 @@ def cocotb(
     parameters: MutableMapping[str, object] = {},
     build_args: Sequence[str | VHDL | Verilog] = [],
     toplevel: str | None = None,
+    toplevel_lang: str | None = None,
     always: bool = False,
     clean: bool = False,
     verbose: bool = False,
@@ -60,8 +57,8 @@ def cocotb(
 ) -> MarkDecorator: ...
 
 
-def cocotb(*test_module: str, **kwargs: object) -> MarkDecorator:
-    """Mark coroutine function as cocotb test and normal function as cocotb runner.
+def cocotb_runner(*test_module: str, **option: object) -> MarkDecorator:
+    """Mark test function as cocotb runner.
 
     Example usage:
 
@@ -79,32 +76,14 @@ def cocotb(*test_module: str, **kwargs: object) -> MarkDecorator:
 
             return hdl
 
-        @pytest.mark.cocotb
+        @pytest.mark.cocotb_runner
         def test_dut(sample_module: HDL) -> None:
             # Run HDL simulator with cocotb tests
             sample_module.test()
 
-        async def test_dut_feature(dut) -> None:
-            # Test DUT feature
-            ...
-
-        @pytest.mark.cocotb
-        async def non_canonical_test_name(dut) -> None:
-            # Test DUT feature but from a test function that doesn't follow with the pytest naming convention
-            ...
-
-        @pytest.mark.cocotb(timeout=(200, "ns"))
-        async def test_dut_feature_with_timeout(dut) -> None:
-            # Test DUT feature with timeout configured from cocotb marker
-            ...
-
     Args:
         test_module:
             Name of Python module with cocotb tests to be loaded by cocotb :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner`.
-
-        timeout:
-            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
-            A tuple of the timeout value and unit. Accepts any unit that :class:`~cocotb.triggers.Timer` does.
 
         library:
             The library name to compile into.
@@ -170,9 +149,42 @@ def cocotb(*test_module: str, **kwargs: object) -> MarkDecorator:
             Commands to run before simulation begins. Typically Tcl commands for simulators that support them.
 
     Returns:
-        Decorated test function.
+        Decorated test function as cocotb runner.
     """
-    return mark.cocotb(*test_module, **kwargs)
+    return mark.cocotb_runner(*test_module, **option)
+
+
+def cocotb_test(*, timeout: tuple[float, TimeUnit] | None = None) -> MarkDecorator:
+    """Mark coroutine function as cocotb test.
+
+    Example usage:
+
+    .. code:: python
+
+        # NOTE: decorator is not needed if coroutine function starts with the test_ prefix and it uses dut fixture
+        async def test_dut_feature(dut) -> None:
+            # Test DUT feature
+            ...
+
+        @pytest.mark.cocotb_test
+        async def non_canonical_test_name(dut) -> None:
+            # Test DUT feature but from a test function that doesn't follow with the pytest naming convention
+            ...
+
+        @pytest.mark.cocotb_test(timeout=(200, "ns"))
+        async def test_dut_feature_with_timeout(dut) -> None:
+            # Test DUT feature with timeout configured from cocotb marker
+            ...
+
+    Args:
+        timeout:
+            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
+            A tuple of the timeout value and unit. Accepts any unit that :class:`~cocotb.triggers.Timer` does.
+
+    Returns:
+        Decorated coroutine function as cocotb test.
+    """
+    return mark.cocotb_test(timeout=timeout)
 
 
 def marker_description(marker: Callable[..., MarkDecorator]) -> str:
@@ -186,25 +198,25 @@ def marker_description(marker: Callable[..., MarkDecorator]) -> str:
     """
     args: list[str] = []
 
-    for name, parameter in signature(cocotb).parameters.items():
+    for name, parameter in signature(marker).parameters.items():
         arg: str = ""
 
-        if parameter.kind == Parameter.VAR_POSITIONAL:
-            arg = f"*{name}"
-
-        elif parameter.kind == Parameter.VAR_KEYWORD:
-            arg = f"**{name}"
+        if parameter.kind == Parameter.VAR_KEYWORD:
+            arg = f"{name}=..."
 
         else:
             arg = name
 
-        if parameter.annotation != Parameter.empty:
-            arg += f": {parameter.annotation}"
-
         if parameter.default != Parameter.empty:
-            arg += f" = {parameter.default}"
+            arg += f"={parameter.default}"
+
+        if parameter.kind == Parameter.KEYWORD_ONLY and "*" not in args:
+            args.append("*")
 
         args.append(arg)
+
+        if parameter.kind == Parameter.VAR_POSITIONAL:
+            args.extend(("...", "*"))
 
     description: str = str(marker.__doc__).lstrip().splitlines()[0]
 
@@ -217,4 +229,5 @@ def register_markers(config: Config) -> None:
     Args:
         config: Pytest configuration object.
     """
-    config.addinivalue_line("markers", marker_description(cocotb))
+    config.addinivalue_line("markers", marker_description(cocotb_runner))
+    config.addinivalue_line("markers", marker_description(cocotb_test))

@@ -490,9 +490,25 @@ class RegressionManager:
 
         timeout: tuple[float, TimeUnit] | None = None
 
-        for marker in reversed(list(pyfuncitem.iter_markers("cocotb"))):
-            if not timeout:
-                timeout = marker.kwargs.get("timeout")
+        for marker in reversed(list(pyfuncitem.iter_markers("cocotb_test"))):
+            if marker.args:
+                pyfuncitem.warn(
+                    UserWarning(
+                        f"Unsupported @pytest.mark.cocotb_test{(*marker.args,)} "
+                        f"positional argument(s) applied on {pyfuncitem.nodeid!r}"
+                    )
+                )
+
+            for name, value in marker.kwargs.items():
+                if name == "timeout":
+                    timeout = value
+                else:
+                    pyfuncitem.warn(
+                        UserWarning(
+                            f"Unsupported @pytest.mark.cocotb_test({name}={value}) "
+                            f"option applied on {pyfuncitem.nodeid!r}"
+                        )
+                    )
 
         if timeout:
             testfunction = _wrap_with_timeout(testfunction, timeout)

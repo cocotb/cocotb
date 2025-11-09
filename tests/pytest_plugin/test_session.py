@@ -70,14 +70,14 @@ def sample_module_fixture(hdl: HDL, my_hdl_project: HDL) -> HDL:
     return hdl
 
 
-@pytest.mark.cocotb
+@pytest.mark.cocotb_runner
 def test_array_module(array_module: HDL) -> None:
     """Run HDL simulator to test ``array_module``."""
     # TODO: Not all runners are supporting build_dir != test_dir :( For now, run only build stage
     # array_module.test()
 
 
-@pytest.mark.cocotb
+@pytest.mark.cocotb_runner
 def test_sample_module(sample_module: HDL) -> None:
     """Run HDL simulator to test ``sample_module``."""
     # TODO: Not all runners are supporting build_dir != test_dir :( For now, run only build stage

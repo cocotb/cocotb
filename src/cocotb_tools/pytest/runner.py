@@ -47,7 +47,7 @@ class Runner(Collector):
         """
         test_modules: Iterable[str] | None = None
 
-        for marker in self.item.iter_markers("cocotb"):
+        for marker in self.item.iter_markers("cocotb_runner"):
             if marker.args:
                 test_modules = marker.args
                 break

@@ -44,8 +44,9 @@ Markers
 
 .. module:: cocotb_tools.pytest.mark
 
-.. autodecorator:: cocotb
+.. autodecorator:: cocotb_runner
 
+.. autodecorator:: cocotb_test
 
 .. _api-pytest-plugin-hdl:
 

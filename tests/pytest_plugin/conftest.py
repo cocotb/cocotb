@@ -50,7 +50,7 @@ def sample_module_fixture(hdl: HDL, request: FixtureRequest) -> HDL:
        import pytest
        from cocotb_tools.pytest.hdl import HDL
 
-       @pytest.mark.cocotb
+       @pytest.mark.cocotb_runner
        def test_sample_module(sample_module: HDL) -> None:
            sample_module.test()
 

@@ -200,13 +200,20 @@ class HDL:
                 # HDL simulator supports multiple languages
                 self.toplevel_lang = None
 
-        for marker in reversed(list(request.node.iter_markers("cocotb"))):
+        for marker in reversed(list(request.node.iter_markers("cocotb_runner"))):
             if marker.args:
                 self.test_module = marker.args
 
             for name, value in marker.kwargs.items():
                 if not name.startswith("_") and hasattr(self, name):
                     setattr(self, name, value)
+                else:
+                    request.node.warn(
+                        UserWarning(
+                            f"Unsupported @pytest.mark.cocotb_runner({name}={value}) "
+                            f"option applied on {request.node.nodeid!r}"
+                        )
+                    )
 
         if not self.test_module and not self._is_session_scoped:
             self.test_module = request.path.name.partition(".")[0]

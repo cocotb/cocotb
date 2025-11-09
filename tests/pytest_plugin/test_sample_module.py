@@ -43,13 +43,13 @@ async def sample_module_fixture(dut) -> AsyncGenerator[None, None]:
 # bind collected cocotb tests to cocotb runner during pytest tests collection:
 # pytest --collect-only (in short: pytest --co)
 # With that, user can use pytest -k '<expression>' to quickly filter tests that will be run by particular runner
-@pytest.mark.cocotb
+@pytest.mark.cocotb_runner
 def test_sample_module(sample_module: HDL) -> None:
     """Running HDL simulator using cocotb runner for sample module."""
     sample_module.test()
 
 
-@pytest.mark.cocotb(
+@pytest.mark.cocotb_runner(
     "test_cocotb",
     "test_cocotb_top",
     "test_parametrize",
@@ -62,19 +62,19 @@ def test_sample_module_extra(sample_module: HDL) -> None:
     sample_module.test()
 
 
-@pytest.mark.cocotb("test_sample_module_1")
+@pytest.mark.cocotb_runner("test_sample_module_1")
 def test_sample_module_1(sample_module: HDL) -> None:
     """Running HDL simulator using cocotb runner for sample module."""
     sample_module.test()
 
 
-@pytest.mark.cocotb("test_sample_module_1", "test_sample_module_2")
+@pytest.mark.cocotb_runner("test_sample_module_1", "test_sample_module_2")
 def test_sample_module_2(sample_module: HDL) -> None:
     """Running HDL simulator using cocotb runner for sample module."""
     sample_module.test()
 
 
-@pytest.mark.cocotb("test_sample_module_1", "test_sample_module_2")
+@pytest.mark.cocotb_runner("test_sample_module_1", "test_sample_module_2")
 @pytest.mark.parametrize("int_param", (1, 4, 8))
 def test_sample_module_parametrize(sample_module: HDL, int_param: int) -> None:
     """Running HDL simulator using cocotb runner for sample module."""

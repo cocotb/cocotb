@@ -100,13 +100,13 @@ command line arguments.
         return hdl
 
 
-    @pytest.mark.cocotb  # NOTE: mark this test function as cocotb runner
+    @pytest.mark.cocotb_runner  # NOTE: mark this test function as cocotb runner
     def test_simple_dff_runner(dff: HDL) -> None:
         """Run HDL simulator with cocotb tests to test DFF."""
         dff.test()
 
 
-    # NOTE: When using plugin, there is no need for using @pytest.mark.cocotb or @cocotb.test decorators
+    # NOTE: When using plugin, there is no need for using @pytest.mark.cocotb_test or @cocotb.test decorators
     async def test_simple_dff_feature_1(dut) -> None:
         """Test DFF feature 1."""
 

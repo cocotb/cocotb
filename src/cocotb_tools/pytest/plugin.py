@@ -488,13 +488,13 @@ def hdl_session(request: FixtureRequest) -> HDL:
             return hdl
 
 
-        @pytest.mark.cocotb
+        @pytest.mark.cocotb_runner
         def test_dut_1(my_hdl_module_1: HDL) -> None:
             # Run HDL simulator with cocotb tests
             my_hdl_module_1.test()
 
 
-        @pytest.mark.cocotb
+        @pytest.mark.cocotb_runner
         def test_dut_2(my_hdl_module_2: HDL) -> None:
             # Run HDL simulator with cocotb tests
             my_hdl_module_2.test()
@@ -557,7 +557,7 @@ def hdl(request: FixtureRequest, hdl_session: HDL) -> HDL:
             return hdl
 
 
-        @pytest.mark.cocotb
+        @pytest.mark.cocotb_runner
         def test_dut(my_hdl_module: HDL) -> None:
             # Run HDL simulator with cocotb tests
             my_hdl_module.test()
@@ -666,14 +666,16 @@ def pytest_pycollect_makeitem(
     if inspect.isfunction(obj):
         markers: list[Mark] | None = getattr(obj, "pytestmark", None)
 
-        if any(marker.name == "cocotb" for marker in markers or ()):
+        if any(
+            marker.name in ("cocotb_runner", "cocotb_test") for marker in markers or ()
+        ):
             setattr(obj, "__test__", True)
 
         elif (
             inspect.iscoroutinefunction(obj)
             and "dut" in inspect.signature(obj).parameters
         ):
-            marker: Mark = mark.cocotb().mark
+            marker: Mark = mark.cocotb_test().mark
 
             if markers is None:
                 setattr(obj, "pytestmark", [marker])

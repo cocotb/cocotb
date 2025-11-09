@@ -275,8 +275,18 @@ class Controller:
         runner: Runner | None = collector.getparent(Runner)
 
         for item in items:
-            if isinstance(item, Function) and item.get_closest_marker("cocotb"):
-                if inspect.iscoroutinefunction(item.function):
+            if not isinstance(item, Function):
+                yield item
+
+            elif inspect.iscoroutinefunction(item.function):
+                if item.get_closest_marker("cocotb_runner"):
+                    item.warn(
+                        UserWarning(
+                            "You have applied @pytest.mark.cocotb_runner marker on coroutine function. "
+                            f"This is an usage mistake. Please remove it from {item.nodeid!r}"
+                        )
+                    )
+                elif item.get_closest_marker("cocotb_test"):
                     if runner:
                         # Collected cocotb test must be always under cocotb runner
                         if collectonly:
@@ -288,10 +298,19 @@ class Controller:
                             # This will allow to run cocotb runner by using keywords associated with cocotb test
                             runner.item.extra_keyword_matches.update(item.keywords)
                             # Skip cocotb test here, it will be collected by pytest that is running from HDL simulator
+                else:
+                    yield item  # some coroutine test function that is not part of cocotb
 
-                elif not runner:
-                    # Avoid recursion of cocotb runners
-
+            elif item.get_closest_marker("cocotb_test"):
+                item.warn(
+                    UserWarning(
+                        "You have applied @pytest.mark.cocotb_test marker on non-async test function. "
+                        f"This is an usage mistake. Please remove it from {item.nodeid!r}"
+                    )
+                )
+            elif item.get_closest_marker("cocotb_runner"):
+                # Avoid recursion of cocotb runners
+                if not runner:
                     if not collectonly:
                         # Don't show collected cocotb runner as <Function> because it will be duplicated with <Runner>
                         # <Module file>
@@ -308,7 +327,7 @@ class Controller:
                             item=item,
                         )
             else:
-                yield item
+                yield item  # some test function that is not part of cocotb
 
     def pytest_fixture_setup(
         self, fixturedef: FixtureDef, request: Any
