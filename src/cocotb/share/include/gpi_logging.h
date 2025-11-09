@@ -7,6 +7,15 @@
 #ifndef COCOTB_GPI_LOGGING_H_
 #define COCOTB_GPI_LOGGING_H_
 
+/** @file gpi_logging.h
+
+GPI Logging
+===========
+
+This header file defines how to produce logs for GPI implementations
+as well as users of the GPI.
+*/
+
 #include <cstdarg>  // va_list
 #include <cstring>  // strlen
 
@@ -47,40 +56,46 @@ enum gpi_log_level {
                        ///< shutdown.
 };
 
+/** Logs a message at a given log level using the current log handler.
+ * The caller provides explicit location information.
+ */
 #define LOG_EXPLICIT(logger, level, file, func, lineno, ...) \
     gpi_log_(logger, level, file, func, lineno, __VA_ARGS__)
 
+/** Logs a message at a given log level using the current log handler.
+ * Automatically populates arguments using information in the called context.
+ */
 #define LOG_(level, ...) \
     gpi_log_("gpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
 /** Logs a message at TRACE log level using the current log handler.
- Automatically populates arguments using information in the called context.
-*/
+ * Automatically populates arguments using information in the called context.
+ */
 #define LOG_TRACE(...) LOG_(GPI_TRACE, __VA_ARGS__)
 
 /** Logs a message at DEBUG log level using the current log handler.
- Automatically populates arguments using information in the called context.
-*/
+ * Automatically populates arguments using information in the called context.
+ */
 #define LOG_DEBUG(...) LOG_(GPI_DEBUG, __VA_ARGS__)
 
 /** Logs a message at INFO log level using the current log handler.
- Automatically populates arguments using information in the called context.
-*/
+ * Automatically populates arguments using information in the called context.
+ */
 #define LOG_INFO(...) LOG_(GPI_INFO, __VA_ARGS__)
 
 /** Logs a message at WARN log level using the current log handler.
- Automatically populates arguments using information in the called context.
-*/
+ * Automatically populates arguments using information in the called context.
+ */
 #define LOG_WARN(...) LOG_(GPI_WARNING, __VA_ARGS__)
 
 /** Logs a message at ERROR log level using the current log handler.
- Automatically populates arguments using information in the called context.
-*/
+ * Automatically populates arguments using information in the called context.
+ */
 #define LOG_ERROR(...) LOG_(GPI_ERROR, __VA_ARGS__)
 
 /** Logs a message at CRITICAL log level using the current log handler.
- Automatically populates arguments using information in the called context.
-*/
+ * Automatically populates arguments using information in the called context.
+ */
 #define LOG_CRITICAL(...) LOG_(GPI_CRITICAL, __VA_ARGS__)
 
 #define MAKE_LOG_NAME_(extra_name) \
