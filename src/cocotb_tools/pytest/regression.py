@@ -274,15 +274,6 @@ class RegressionManager:
             elif "cocotb" in item.keywords and inspect.iscoroutinefunction(
                 item.function
             ):
-                kwargs: dict[str, Any] = {}
-
-                for marker in reversed(list(item.iter_markers("cocotb"))):
-                    kwargs.update(marker.kwargs)
-
-                item.obj = self._wrap_async_function(
-                    item.obj, timeout=kwargs.get("timeout")
-                )
-
                 item.extra_keyword_matches.update(self._keywords)
 
                 yield item
@@ -461,6 +452,8 @@ class RegressionManager:
             return None
 
         async def func() -> Any:
+            self._restore_logging_state()
+
             kwargs: dict[str, Any] = {
                 argname: resolve_fixture_arg(request.getfixturevalue(argname))
                 for argname in fixturedef.argnames
@@ -495,7 +488,17 @@ class RegressionManager:
         if not inspect.iscoroutinefunction(testfunction):
             return None
 
+        timeout: tuple[float, TimeUnit] | None = None
+
+        for marker in reversed(list(pyfuncitem.iter_markers("cocotb"))):
+            if not timeout:
+                timeout = marker.kwargs.get("timeout")
+
+        if timeout:
+            testfunction = _wrap_with_timeout(testfunction, timeout)
+
         async def func() -> None:
+            self._restore_logging_state()
             funcargs = pyfuncitem.funcargs
 
             kwargs: dict[str, Any] = {
@@ -505,6 +508,8 @@ class RegressionManager:
 
             try:
                 await testfunction(**kwargs)
+            except TestSuccess:
+                pass
             finally:
                 pyfuncitem.addfinalizer(self._create_tasks_finalizer())
 
@@ -592,6 +597,8 @@ class RegressionManager:
 
         def finalizer() -> None:
             async def func() -> None:
+                self._restore_logging_state()
+
                 try:
                     await iterator.__anext__()
                 except StopAsyncIteration:
@@ -662,34 +669,6 @@ class RegressionManager:
             root_logger.removeHandler(self._logging_plugin.caplog_handler)
             root_logger.removeHandler(self._logging_plugin.report_handler)
 
-    def _wrap_async_function(
-        self,
-        func: Callable[..., Awaitable],
-        timeout: tuple[float, TimeUnit] | None = None,
-    ) -> Callable[..., Awaitable]:
-        """Wrap provided async function (fixture, test, ...).
-
-        Args:
-            func: Async function (fixture, test, ...) to be wrapped.
-            timeout: Optional timeout for async function.
-
-        Returns:
-            Wrapped async function with restoring logging state and optional timeout.
-        """
-        if timeout:
-            func = _wrap_async_function_with_timeout(func, timeout)
-
-        @wraps(func)
-        async def wrapped(*args: object, **kwargs: object) -> Any:
-            self._restore_logging_state()
-
-            try:
-                return await func(*args, **kwargs)
-            except TestSuccess:
-                pass
-
-        return wrapped
-
     @property
     def _running_test(self) -> RegressionManager:
         return self
@@ -754,7 +733,7 @@ def _interactive_exception(item: Item, call: CallInfo, report: TestReport) -> No
         pass
 
 
-def _wrap_async_function_with_timeout(
+def _wrap_with_timeout(
     func: Callable[..., Awaitable],
     timeout: tuple[float, TimeUnit],
 ) -> Callable[..., Awaitable]:
