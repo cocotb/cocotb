@@ -713,6 +713,7 @@ const char *VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
 static int startup_callback(void *) {
     s_vpi_vlog_info info;
 
+    LOG_TRACE("GPI => [ GPI (VPI startup) ]");
     auto pass = vpi_get_vlog_info(&info);
     // LCOV_EXCL_START
     if (!pass) {
@@ -723,11 +724,15 @@ static int startup_callback(void *) {
     // LCOV_EXCL_STOP
 
     gpi_start_of_sim_time(info.argc, info.argv);
+
+    LOG_TRACE("[ GPI (VPI startup) ] => GPI");
     return 0;
 }
 
 static int shutdown_callback(void *) {
+    LOG_TRACE("GPI => [ GPI (VPI shutdown) ]");
     gpi_end_of_sim_time();
+    LOG_TRACE("[ GPI (VPI shutdown) ] => GPI");
     return 0;
 }
 
@@ -764,8 +769,12 @@ void VpiImpl::main() noexcept {
     gpi_entry_point();
 }
 
+static bool from_bootstrap = false;
+
 // This is run by the simulator at startup when this is the main GPI entrypoint
 static void vpi_main() {
+    LOG_TRACE("%s => [ VPI (vpi_main) ]",
+              from_bootstrap ? "Bootstrap" : "Sim (vlog_startup_routines)");
 #ifdef VCS
     // VCS loads the entry point both during compilation and again at
     // simulation. Only during simulation are most of the VPI routines
@@ -778,12 +787,16 @@ static void vpi_main() {
 #endif
     auto vpi_table = new VpiImpl("VPI");
     vpi_table->main();
+    LOG_TRACE("[ VPI (vpi_main) ] => %s",
+              from_bootstrap ? "Bootstrap" : "Sim (vlog_startup_routines)");
 }
 
 // This is run by GPI when requested for mixed-language simulations
 static void register_impl() {
+    LOG_TRACE("GPI Init => [ VPI (register_impl) ]");
     auto vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
+    LOG_TRACE("[ VPI (register_impl) ] => GPI Init");
 }
 
 extern "C" {
@@ -794,7 +807,10 @@ COCOTBVPI_EXPORT void (*vlog_startup_routines[])() = {
 // symbol
 COCOTBVPI_EXPORT void vlog_startup_routines_bootstrap() {
     gpi_init_logging_and_debug();
+    LOG_TRACE("Sim => [ VPI (vlog_startup_routines_bootstrap) ]");
+    from_bootstrap = true;
     vpi_main();
+    LOG_TRACE("[ VPI (vlog_startup_routines_bootstrap) ] => Sim");
 }
 }
 

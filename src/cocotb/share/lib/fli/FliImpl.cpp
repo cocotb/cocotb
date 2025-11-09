@@ -1097,6 +1097,7 @@ static std::vector<std::string> get_argv() {
 }
 
 static int startup_callback(void *) {
+    LOG_TRACE("GPI => [ GPI (FLI startup) ]");
     std::vector<std::string> const argv_storage = get_argv();
     std::vector<const char *> argv_cstr;
     for (const auto &arg : argv_storage) {
@@ -1107,11 +1108,14 @@ static int startup_callback(void *) {
 
     gpi_start_of_sim_time(argc, argv);
 
+    LOG_TRACE("[ GPI (FLI startup) ] => GPI");
     return 0;
 }
 
 static int shutdown_callback(void *) {
+    LOG_TRACE("GPI => [ GPI (FLI shutdown) ]");
     gpi_end_of_sim_time();
+    LOG_TRACE("[ GPI (FLI shutdown) ] => GPI");
     return 0;
 }
 
@@ -1121,7 +1125,7 @@ void FliImpl::main() noexcept {
     // LCOV_EXCL_START
     if (err) {
         LOG_CRITICAL(
-            "VHPI: Unable to register startup callback! Simulation will end.");
+            "FLI: Unable to register startup callback! Simulation will end.");
         delete startup_cb;
         exit(1);
     }
@@ -1133,7 +1137,7 @@ void FliImpl::main() noexcept {
     // LCOV_EXCL_START
     if (err) {
         LOG_CRITICAL(
-            "VHPI: Unable to register shutdown callback! Simulation will end.");
+            "FLI: Unable to register shutdown callback! Simulation will end.");
         startup_cb->remove();
         delete shutdown_cb;
         exit(1);
@@ -1148,16 +1152,20 @@ void FliImpl::main() noexcept {
 
 // This is run by GPI when requested for mixed-language simulations
 static void register_impl() {
+    LOG_TRACE("GPI Init => [ FLI (register_impl) ]");
     auto fli_table = new FliImpl("FLI");
     gpi_register_impl(fli_table);
+    LOG_TRACE("[ FLI (register_impl) ] => GPI Init");
 }
 
 extern "C" {
 // This is run by the simulator at startup when this is the main GPI entrypoint
 COCOTBFLI_EXPORT void cocotb_init() {
     gpi_init_logging_and_debug();
+    LOG_TRACE("Sim => [ FLI (cocotb_init) ]");
     auto fli_table = new FliImpl("FLI");
     fli_table->main();
+    LOG_TRACE("[ FLI (cocotb_init) ] => Sim");
 }
 }
 

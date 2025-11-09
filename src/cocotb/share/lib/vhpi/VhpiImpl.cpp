@@ -1064,6 +1064,7 @@ static int startup_callback(void *) {
     int tool_argc = 0;
     int i = 0;
 
+    LOG_TRACE("GPI => [ GPI (VHPI startup) ]");
     tool = vhpi_handle(vhpiTool, NULL);
     if (tool) {
         tool_argc = static_cast<int>(vhpi_get(vhpiArgcP, tool));
@@ -1085,11 +1086,14 @@ static int startup_callback(void *) {
     gpi_start_of_sim_time(tool_argc, tool_argv);
     delete[] tool_argv;
 
+    LOG_TRACE("[ GPI (VHPI startup) ] => GPI");
     return 0;
 }
 
 static int shutdown_callback(void *) {
+    LOG_TRACE("GPI => [ GPI (VHPI shutdown) ]");
     gpi_end_of_sim_time();
+    LOG_TRACE("[ GPI (VHPI shutdown) ] => GPI");
     return 0;
 }
 
@@ -1126,16 +1130,24 @@ void VhpiImpl::main() noexcept {
     gpi_entry_point();
 }
 
+static bool from_bootstrap = false;
+
 // This is run by the simulator at startup when this is the main GPI entrypoint
 static void vhpi_main() {
+    LOG_TRACE("%s => [ VHPI (vhpi_main) ]",
+              from_bootstrap ? "Bootstrap" : "Sim (vhpi_startup_routines)");
     auto vhpi_table = new VhpiImpl("VHPI");
     vhpi_table->main();
+    LOG_TRACE("[ VHPI (vhpi_main) ] => %s",
+              from_bootstrap ? "Bootstrap" : "Sim (vhpi_startup_routines)");
 }
 
 // This is run by GPI when requested for mixed-language simulations
 static void register_impl() {
+    LOG_TRACE("GPI Init => [ VHPI (register_impl) ]");
     auto vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
+    LOG_TRACE("[ VHPI (register_impl) ] => GPI Init");
 }
 
 // pre-defined VHPI registration table
@@ -1146,7 +1158,10 @@ COCOTBVHPI_EXPORT void (*vhpi_startup_routines[])() = {
 // For non-VHPI compliant applications that cannot find vhpi_startup_routines
 COCOTBVHPI_EXPORT void vhpi_startup_routines_bootstrap() {
     gpi_init_logging_and_debug();
+    LOG_TRACE("Sim => [ VHPI (vhpi_startup_routines_bootstrap) ]");
+    from_bootstrap = true;
     vhpi_main();
+    LOG_TRACE("[ VHPI (vhpi_startup_routines_bootstrap) ] => Sim");
 }
 }
 

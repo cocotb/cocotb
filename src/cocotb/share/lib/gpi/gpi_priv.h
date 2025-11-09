@@ -17,6 +17,8 @@
 
 #include <string>
 
+#include "cocotb_utils.h"  // xstr
+
 class GpiCbHdl;
 class GpiImplInterface;
 class GpiIterator;
@@ -271,9 +273,21 @@ GPI_EXPORT void gpi_start_of_sim_time(int argc, char const *const *argv);
 GPI_EXPORT void gpi_end_of_sim_time();
 
 GPI_EXPORT void gpi_entry_point();
-GPI_EXPORT void gpi_to_user();
-GPI_EXPORT void gpi_to_simulator();
+GPI_EXPORT void gpi_check_cleanup();
 GPI_EXPORT void gpi_init_logging_and_debug();
+
+#define GPI_TO_USER_CB(impl) LOG_TRACE("[ " xstr(impl) " ] => User Callback")
+
+#define USER_CB_TO_GPI(impl) LOG_TRACE("User Callback => [ " xstr(impl) " ]")
+
+#define SIM_TO_GPI(impl, cb_reason) \
+    LOG_TRACE("Sim => [ " xstr(impl) " for %s ]", cb_reason)
+
+#define GPI_TO_SIM(impl)                        \
+    do {                                        \
+        gpi_check_cleanup();                    \
+        LOG_TRACE("[ " xstr(impl) " ] => Sim"); \
+    } while (0)
 
 typedef void (*layer_entry_func)();
 
