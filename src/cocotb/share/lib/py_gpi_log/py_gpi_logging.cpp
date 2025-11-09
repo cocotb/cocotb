@@ -197,3 +197,6 @@ extern "C" void py_gpi_logger_finalize() {
 }
 
 PyObject *pEventFn = NULL;
+
+// Disabled by default
+int pygpi_debug_enabled = 0;
