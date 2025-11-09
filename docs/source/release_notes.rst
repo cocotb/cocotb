@@ -673,6 +673,7 @@ Features
 - Simulators run through a Tcl script (Aldec Riviera Pro and Mentor simulators) now support a new :external+cocotb14:make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime. (:pr:`1244`)
 - cocotb now supports the following example of forking a *non-decorated* :external+cocotb14:ref:`async coroutine <async_functions>`.
 
+  .. autolink-skip::
   .. code-block:: python
 
      async def example():
@@ -687,16 +688,19 @@ Features
   Issue (:pr:`1255`)
 - The cocotb log configuration is now less intrusive, and only configures the root logger instance, ``logging.getLogger()``, as part of :external+cocotb14:func:`cocotb.log.default_config` (:pr:`1266`).
 
-  As such, it is now possible to override the default cocotb logging behavior with something like::
+  As such, it is now possible to override the default cocotb logging behavior with something like:
 
-      # remove the cocotb log handler and formatting
-      root = logging.getLogger()
-      for h in root.handlers[:]:
-          root.remove_handler(h)
-          h.close()
+  .. autolink-skip::
+  .. code-block:: python
 
-      # add your own
-      logging.basicConfig()
+     # remove the cocotb log handler and formatting
+     root = logging.getLogger()
+     for h in root.handlers[:]:
+         root.remove_handler(h)
+         h.close()
+
+     # add your own
+     logging.basicConfig()
 
   .. consume the towncrier issue number on this line. (:pr:`1266`)
 - Support for ``vpiRealNet``. (:pr:`1282`)
