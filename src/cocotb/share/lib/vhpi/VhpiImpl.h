@@ -129,6 +129,8 @@ class VhpiStartupCbHdl : public VhpiCbHdl {
         int res = 0;
         if (!m_removed) {
             res = m_cb_func(m_cb_data);
+        } else {
+            LOG_TRACE("[ VHPI (startup) ] callback is removed");
         }
         delete this;
         return res;
@@ -151,6 +153,8 @@ class VhpiShutdownCbHdl : public VhpiCbHdl {
         int res = 0;
         if (!m_removed) {
             res = m_cb_func(m_cb_data);
+        } else {
+            LOG_TRACE("[ VHPI (shutdown) ] callback is removed");
         }
         delete this;
         return res;
