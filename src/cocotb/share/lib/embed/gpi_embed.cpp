@@ -10,8 +10,7 @@
 #include <cocotb_utils.h>    // DEFER
 #include <exports.h>         // COCOTB_EXPORT
 #include <gpi.h>             // gpi_register_*
-#include <gpi_logging.h>     // LOG_* macros
-#include <py_gpi_logging.h>  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize, tracing macros
+#include <py_gpi_logging.h>  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize, LOG_* macros
 
 #include <cassert>
 #include <cstdlib>
@@ -39,7 +38,7 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
     const char *path_c = getenv("PYGPI_PYTHON_BIN");
     if (!path_c) {
         // LCOV_EXCL_START
-        LOG_ERROR(
+        PYGPI_LOG_ERROR(
             "PYGPI_PYTHON_BIN variable not set. Can't initialize Python "
             "interpreter!");
         return -1;
@@ -49,10 +48,10 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
     auto path_temp = Py_DecodeLocale(path_c, NULL);
     if (path_temp == NULL) {
         // LCOV_EXCL_START
-        LOG_ERROR(
+        PYGPI_LOG_ERROR(
             "Unable to set Python Program Name. "
             "Decoding error in Python executable path.");
-        LOG_INFO("Python executable path: %s", path_c);
+        PYGPI_LOG_INFO("Python executable path: %s", path_c);
         return -1;
         // LCOV_EXCL_STOP
     }
@@ -61,9 +60,9 @@ static int get_interpreter_path(wchar_t *path, size_t path_size) {
     wcsncpy(path, path_temp, path_size / sizeof(wchar_t));
     if (path[(path_size / sizeof(wchar_t)) - 1]) {
         // LCOV_EXCL_START
-        LOG_ERROR(
+        PYGPI_LOG_ERROR(
             "Unable to set Python Program Name. Path to interpreter too long");
-        LOG_INFO("Python executable path: %s", path_c);
+        PYGPI_LOG_INFO("Python executable path: %s", path_c);
         return -1;
         // LCOV_EXCL_STOP
     }
@@ -89,9 +88,12 @@ static void finalize(void *);
 extern "C" COCOTB_EXPORT void initialize(void) {
     pygpi_init_debug();
 
+    PYGPI_LOG_TRACE("GPI Init => [ PYGPI Init ]");
+    DEFER(PYGPI_LOG_TRACE("[ PYGPI Init ] => GPI Init"));
+
     if (python_init_called) {
         // LCOV_EXCL_START
-        LOG_ERROR("PyGPI library initialized again!");
+        PYGPI_LOG_ERROR("PyGPI library initialized again!");
         return;
         // LCOV_EXCL_STOP
     }
@@ -107,8 +109,8 @@ extern "C" COCOTB_EXPORT void initialize(void) {
         return;
         // LCOV_EXCL_STOP
     }
-    LOG_INFO("Using Python %s interpreter at %ls", PY_VERSION,
-             interpreter_path);
+    PYGPI_LOG_INFO("Using Python %s interpreter at %ls", PY_VERSION,
+                   interpreter_path);
 
     /* Use the new Python Initialization Configuration from Python 3.8. */
     PyConfig config;
@@ -122,12 +124,12 @@ extern "C" COCOTB_EXPORT void initialize(void) {
     status = PyConfig_SetArgv(&config, 1, argv);
     if (PyStatus_Exception(status)) {
         // LCOV_EXCL_START
-        LOG_ERROR("Failed to set ARGV during the Python initialization");
+        PYGPI_LOG_ERROR("Failed to set ARGV during the Python initialization");
         if (status.err_msg != NULL) {
-            LOG_ERROR("\terror: %s", status.err_msg);
+            PYGPI_LOG_ERROR("\terror: %s", status.err_msg);
         }
         if (status.func != NULL) {
-            LOG_ERROR("\tfunction: %s", status.func);
+            PYGPI_LOG_ERROR("\tfunction: %s", status.func);
         }
         return;
         // LCOV_EXCL_STOP
@@ -136,12 +138,12 @@ extern "C" COCOTB_EXPORT void initialize(void) {
     status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
         // LCOV_EXCL_START
-        LOG_ERROR("Failed to initialize Python");
+        PYGPI_LOG_ERROR("Failed to initialize Python");
         if (status.err_msg != NULL) {
-            LOG_ERROR("\terror: %s", status.err_msg);
+            PYGPI_LOG_ERROR("\terror: %s", status.err_msg);
         }
         if (status.func != NULL) {
-            LOG_ERROR("\tfunction: %s", status.func);
+            PYGPI_LOG_ERROR("\tfunction: %s", status.func);
         }
         return;
         // LCOV_EXCL_STOP
@@ -152,17 +154,18 @@ extern "C" COCOTB_EXPORT void initialize(void) {
     PyObject *sys_executable_obj = PySys_GetObject("executable");
     if (sys_executable_obj == NULL) {
         // LCOV_EXCL_START
-        LOG_ERROR("Failed to load sys.executable");
+        PYGPI_LOG_ERROR("Failed to load sys.executable");
         // LCOV_EXCL_STOP
     } else if (PyUnicode_AsWideChar(sys_executable_obj, sys_executable,
                                     sizeof(sys_executable)) == -1) {
         // LCOV_EXCL_START
-        LOG_ERROR("Failed to convert sys.executable to wide string");
+        PYGPI_LOG_ERROR("Failed to convert sys.executable to wide string");
         // LCOV_EXCL_STOP
     } else if (wcscmp(interpreter_path, sys_executable) != 0) {
         // LCOV_EXCL_START
-        LOG_ERROR("Unexpected sys.executable value (expected '%ls', got '%ls')",
-                  interpreter_path, sys_executable);
+        PYGPI_LOG_ERROR(
+            "Unexpected sys.executable value (expected '%ls', got '%ls')",
+            interpreter_path, sys_executable);
         // LCOV_EXCL_STOP
     }
 
@@ -180,19 +183,20 @@ extern "C" COCOTB_EXPORT void initialize(void) {
            narrowing cast */
         if (errno == ERANGE || sleep_time >= UINT_MAX) {
             // LCOV_EXCL_START
-            LOG_ERROR("COCOTB_ATTACH only needs to be set to ~30 seconds");
+            PYGPI_LOG_ERROR(
+                "COCOTB_ATTACH only needs to be set to ~30 seconds");
             return;
             // LCOV_EXCL_STOP
         }
         if ((errno != 0 && sleep_time == 0) || (sleep_time <= 0)) {
             // LCOV_EXCL_START
-            LOG_ERROR(
+            PYGPI_LOG_ERROR(
                 "COCOTB_ATTACH must be set to an integer base 10 or omitted");
             return;
             // LCOV_EXCL_STOP
         }
 
-        LOG_INFO(
+        PYGPI_LOG_INFO(
             "Waiting for %lu seconds - attach to PID %d with your debugger",
             sleep_time, getpid());
         sleep((unsigned int)sleep_time);
@@ -200,6 +204,8 @@ extern "C" COCOTB_EXPORT void initialize(void) {
 }
 
 static void finalize(void *) {
+    PYGPI_LOG_TRACE("GPI Finalize => [ PYGPI Finalize ]");
+    DEFER(PYGPI_LOG_TRACE("[ PYGPI Finalize ] => GPI Finalize"));
     // If initialization fails, this may be called twice:
     // Before the initial callback returns and in the final callback.
     // So we check if Python is still initialized before doing cleanup.
@@ -215,10 +221,13 @@ static void finalize(void *) {
 }
 
 static int start_of_sim_time(void *, int argc, char const *const *_argv) {
+    PYGPI_LOG_TRACE("GPI Start Sim => [ PYGPI Start ]");
+    DEFER(PYGPI_LOG_TRACE("[ PYGPI Start ] => GPI Start Sim"));
+
     // Check that we are not already initialized
     if (embed_init_called) {
         // LCOV_EXCL_START
-        LOG_ERROR("PyGPI library initialized again!");
+        PYGPI_LOG_ERROR("PyGPI library initialized again!");
         return -1;
         // LCOV_EXCL_STOP
     }
@@ -279,6 +288,9 @@ static int start_of_sim_time(void *, int argc, char const *const *_argv) {
 }
 
 static void end_of_sim_time(void *) {
+    PYGPI_LOG_TRACE("GPI End Sim => [ PYGPI End ]");
+    DEFER(PYGPI_LOG_TRACE("[ PYGPI End ] => GPI End Sim"));
+
     /* Indicate to the upper layer that a sim event occurred */
 
     if (pEventFn) {
@@ -294,7 +306,7 @@ static void end_of_sim_time(void *) {
             }
             // Clear error so re-entering Python doesn't fail.
             PyErr_Clear();
-            LOG_ERROR("Passing event to upper layer failed");
+            PYGPI_LOG_ERROR("Passing event to upper layer failed");
         }
         Py_XDECREF(pValue);
         PyGILState_Release(gstate);
