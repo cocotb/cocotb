@@ -1093,13 +1093,13 @@ Replace :func:`!cocotb.start` with :func:`cocotb.start_soon` and remove the :key
     .. code-block:: python
         :caption: Using :class:`!NullTrigger` to force a new Task to run
 
-            async def my_coro():
-                ...  # do stuff
+        async def my_coro():
+            ...  # do stuff
 
-            my_task = cocotb.start_soon(my_coro())
-            # my_task isn't running
-            await NullTrigger()
-            # my_task is now running
+        my_task = cocotb.start_soon(my_coro())
+        # my_task isn't running
+        await NullTrigger()
+        # my_task is now running
 
 Rationale
 =========

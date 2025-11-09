@@ -284,8 +284,8 @@ class VhpiImpl : public GpiImplInterface {
     GpiObjHdl *get_child_by_index(int32_t index, GpiObjHdl *parent) override;
     GpiObjHdl *get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) override;
 
-    const char *reason_to_string(int reason) override;
-    const char *format_to_string(int format);
+    static const char *reason_to_string(int reason);
+    static const char *format_to_string(int format);
 
     GpiObjHdl *create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                                           const std::string &name,

@@ -121,6 +121,7 @@ class Task(Generic[ResultType]):
         A modifiable namespace where any user-defined variables can be added.
         Use :func:`~cocotb.task.current_task` to access the current Task's locals.
 
+        .. autolink-skip::
         .. code-block:: python
 
             def get_rng() -> random.Random:

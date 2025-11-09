@@ -311,8 +311,7 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
     LOG_DEBUG(
         "VHPI: Found %s of format type %s (%d) format object with %d elems "
         "buffsize %d size %d",
-        name.c_str(),
-        ((VhpiImpl *)GpiObjHdl::m_impl)->format_to_string(m_value.format),
+        name.c_str(), VhpiImpl::format_to_string(m_value.format),
         m_value.format, m_value.numElems, m_value.bufSize,
         vhpi_get(vhpiSizeP, handle));
 
@@ -342,9 +341,7 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
         default: {
             LOG_ERROR(
                 "VHPI: Unable to determine property for %s (%d) format object",
-                ((VhpiImpl *)GpiObjHdl::m_impl)
-                    ->format_to_string(m_value.format),
-                m_value.format);
+                VhpiImpl::format_to_string(m_value.format), m_value.format);
             return -1;
         }
     }
@@ -458,7 +455,7 @@ int VhpiCbHdl::arm() {
         LOG_ERROR(
             "VHPI: Unable to register a callback handle for VHPI type "
             "%s(%d)",
-            m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+            VhpiImpl::reason_to_string(cb_data.reason), cb_data.reason);
         check_vhpi_error();
         return -1;
     }
@@ -660,8 +657,7 @@ int VhpiSignalObjHdl::set_signal_value(int32_t value, gpi_set_action action) {
 
         default: {
             LOG_ERROR("VHPI: Unable to handle this format type %s",
-                      ((VhpiImpl *)GpiObjHdl::m_impl)
-                          ->format_to_string(m_value.format));
+                      VhpiImpl::format_to_string(m_value.format));
             return -1;
         }
     }
@@ -684,8 +680,7 @@ int VhpiSignalObjHdl::set_signal_value(double value, gpi_set_action action) {
 
         default: {
             LOG_ERROR("VHPI: Unable to set a Real handle with format type %s",
-                      ((VhpiImpl *)GpiObjHdl::m_impl)
-                          ->format_to_string(m_value.format));
+                      VhpiImpl::format_to_string(m_value.format));
             return -1;
         }
     }
@@ -733,8 +728,7 @@ int VhpiSignalObjHdl::set_signal_value_binstr(std::string &value,
 
         default: {
             LOG_ERROR("VHPI: Unable to handle this format type: %s",
-                      ((VhpiImpl *)GpiObjHdl::m_impl)
-                          ->format_to_string(m_value.format));
+                      VhpiImpl::format_to_string(m_value.format));
             return -1;
         }
     }
@@ -762,8 +756,7 @@ int VhpiSignalObjHdl::set_signal_value_str(std::string &value,
 
         default: {
             LOG_ERROR("VHPI: Unable to handle this format type: %s",
-                      ((VhpiImpl *)GpiObjHdl::m_impl)
-                          ->format_to_string(m_value.format));
+                      VhpiImpl::format_to_string(m_value.format));
             return -1;
         }
     }
@@ -781,8 +774,7 @@ const char *VhpiSignalObjHdl::get_signal_value_binstr() {
     switch (m_value.format) {
         case vhpiRealVal:
             LOG_INFO("VHPI: get_signal_value_binstr not supported for %s",
-                     ((VhpiImpl *)GpiObjHdl::m_impl)
-                         ->format_to_string(m_value.format));
+                     VhpiImpl::format_to_string(m_value.format));
             return "";
         default: {
             /* Some simulators do not support BinaryValues so we fake up here
@@ -795,8 +787,7 @@ const char *VhpiSignalObjHdl::get_signal_value_binstr() {
                     "VHPI: Size of m_binvalue.value.str was not large enough: "
                     "req=%d have=%d for type %s",
                     ret, m_binvalue.bufSize,
-                    ((VhpiImpl *)GpiObjHdl::m_impl)
-                        ->format_to_string(m_value.format));
+                    VhpiImpl::format_to_string(m_value.format));
             }
 
             return m_binvalue.value.str;
@@ -815,8 +806,7 @@ const char *VhpiSignalObjHdl::get_signal_value_str() {
                     "VHPI: Size of m_value.value.str was not large enough: "
                     "req=%d have=%d for type %s",
                     ret, m_value.bufSize,
-                    ((VhpiImpl *)GpiObjHdl::m_impl)
-                        ->format_to_string(m_value.format));
+                    VhpiImpl::format_to_string(m_value.format));
             }
             break;
         }

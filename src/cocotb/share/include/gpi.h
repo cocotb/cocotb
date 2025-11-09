@@ -453,7 +453,7 @@ GPI_EXPORT int gpi_register_start_of_sim_time_callback(
  *
  * @param cb_data   Pointer to user data to be passed to callback function.
  */
-typedef void (*gpi_end_of_sim_time_callback)(void *cbd_data);
+typedef void (*gpi_end_of_sim_time_callback)(void *cb_data);
 
 /** Register a callback to run at the end of simulation time.
  *
@@ -468,7 +468,7 @@ GPI_EXPORT int gpi_register_end_of_sim_time_callback(
  *
  * @param cb_data   Pointer to user data to be passed to callback function.
  */
-typedef void (*gpi_finalize_callback)(void *cbd_data);
+typedef void (*gpi_finalize_callback)(void *cb_data);
 
 /** Register a callback to run just before the GPI terminates.
  *

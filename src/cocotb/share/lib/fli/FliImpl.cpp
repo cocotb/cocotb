@@ -435,10 +435,6 @@ GpiObjHdl *FliImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     }
 }
 
-const char *FliImpl::reason_to_string(int) {
-    return "Who can explain it, who can tell you why?";
-}
-
 /**
  * @name    Get current simulation time
  * @brief   Get current simulation time
