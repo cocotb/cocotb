@@ -318,10 +318,16 @@ Example set up and tear down fixture:
         """Test DUT feature 2. DUT will be always correctly reset and configured."""
 
 
-Integrating with Existing Build Flows
-=====================================
+.. _pytest-plugin-integration:
+
+Integration
+===========
 
 First, you should follow the chapter about :ref:`custom-flows` to learn how to integrate cocotb into your existing build flow.
+
+
+Direct Usage
+------------
 
 The most straightforward usage with the plugin is to directly invoke build system from a test function.
 Example with a custom ``Makefile`` that is defining the ``sample_module`` make recipe:
@@ -356,6 +362,9 @@ You may also consider to use command line arguments from pytest to configure bui
         subprocess.run(args, check=True)
 
 
+As Fixture
+----------
+
 And make it reusable for other projects/teams by packaging is as a new plugin for pytest:
 
 .. code:: python
@@ -388,6 +397,53 @@ So others can use it in their projects:
     @pytest.mark.cocotb
     def test_sample_module(my_build_system: MyBuildSystem) -> None:
         my_build_system.build_and_run()
+
+
+By Hooks
+--------
+
+The most recommended way to integrate custom build flow with :py:mod:`~cocotb_tools.pytest.plugin`
+is to implement cocotb pytest hooks defined in :py:mod:`cocotb_tools.pytest.hookspecs`.
+
+
+.. code:: python
+
+    from pathlib import Path
+    from cocotb_tools.pytest.hdl import HDL
+    from cocotb_tools.runner import Runner
+    from pytest import FixtureRequest, hookimpl
+
+
+    class MyHDL(HDL):
+        def __init__(self, request: FixtureRequest) -> None:
+            # Add new attributes, load HDL source files from build system, ...
+            ...
+
+
+    class MyRunner(Runner):
+        def build(self, *args, **kwargs) -> None:
+            # Build HDL design by invoking existing build system
+            ...
+
+        def test(self, *args, **kwargs) -> Path:
+            # Run HDL simulator by invoking existing build system
+            ...
+
+
+    @hookimpl(tryfirst=True)
+    def pytest_cocotb_make_hdl(request: FixtureRequest) -> HDL:
+        return MyHDL(request)
+
+
+    @hookimpl(tryfirst=True)
+    def pytest_cocotb_make_runner(simulator_name: str) -> Runner:
+        return MyRunner()
+
+
+Implemented hooks can be distributed as new Python package published to PyPI registry.
+
+Consider to name published Python package with the ``pytest-cocotb-`` prefix.
+This will allow to automatically list your integration in the list of available pytest `plugins`_.
 
 
 Configuration

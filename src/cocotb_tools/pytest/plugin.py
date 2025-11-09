@@ -37,6 +37,7 @@ from pytest import (
 import cocotb
 import cocotb.handle
 from cocotb.handle import SimHandleBase
+from cocotb_tools.pytest import hookspecs
 from cocotb_tools.pytest.compat import (
     cocotb_decorator_as_pytest_marks,
     is_cocotb_decorator,
@@ -50,6 +51,7 @@ from cocotb_tools.pytest.option import (
     add_options_to_parser,
     populate_ini_to_options,
 )
+from cocotb_tools.runner import Runner, get_runner
 
 ENTRY_POINT: str = "cocotb_tools.pytest._init:run_regression"
 
@@ -506,7 +508,7 @@ def hdl_session(request: FixtureRequest) -> HDL:
     Returns:
         Instance that allows to build and test HDL design.
     """
-    return HDL(request)
+    return request.config.hook.pytest_cocotb_make_hdl(request=request)
 
 
 @fixture
@@ -570,7 +572,7 @@ def hdl(request: FixtureRequest, hdl_session: HDL) -> HDL:
     Returns:
         Instance that allows to build and test HDL design.
     """
-    instance: HDL = HDL(request)
+    instance: HDL = request.config.hook.pytest_cocotb_make_hdl(request=request)
 
     # Runner in test() method is checking for hdl_toplevel_lang,
     # if missing then it will retrieve this information from list of HDL source files
@@ -585,6 +587,41 @@ def hdl(request: FixtureRequest, hdl_session: HDL) -> HDL:
 
 def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None:
     add_options_to_parser(parser, "cocotb", OPTIONS)
+
+
+def pytest_addhooks(pluginmanager: PytestPluginManager) -> None:
+    """Called at plugin registration time to add specification of cocotb hooks.
+
+    Args:
+        pluginmanager: The pytest plugin manager.
+    """
+    pluginmanager.add_hookspecs(hookspecs)
+
+
+@hookimpl(trylast=True)
+def pytest_cocotb_make_hdl(request: FixtureRequest) -> HDL:
+    """Create new instance of :py:class:`cocotb_tools.pytest.hdl.HDL`.
+
+    Args:
+        request: The pytest fixture request object.
+
+    Returns:
+        New instance of HDL.
+    """
+    return HDL(request)
+
+
+@hookimpl(trylast=True)
+def pytest_cocotb_make_runner(simulator_name: str) -> Runner:
+    """Create new instance of :py:class:`cocotb_tools.runner.Runner`.
+
+    Args:
+        simulator_name: Name of HDL simulator.
+
+    Returns:
+        New instance of runner.
+    """
+    return get_runner(simulator_name)
 
 
 @hookimpl(tryfirst=True)

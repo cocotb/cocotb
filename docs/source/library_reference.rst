@@ -58,6 +58,18 @@ HDL Fixture Request
     :members:
 
 
+.. _api-pytest-plugin-hook-specs:
+
+Hook Specifications
+-------------------
+
+.. module:: cocotb_tools.pytest.hookspecs
+
+.. autofunction:: pytest_cocotb_make_hdl
+
+.. autofunction:: pytest_cocotb_make_runner
+
+
 .. _api-runner:
 
 Python Test Runner

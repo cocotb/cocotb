@@ -23,7 +23,6 @@ from cocotb_tools.runner import (
     Runner,
     VerilatorControlFile,
     Verilog,
-    get_runner,
 )
 
 POSIX_PATH: re.Pattern = re.compile(r"[^A-Za-z0-9/._-]")
@@ -89,7 +88,9 @@ class HDL:
         Args:
             request: The pytest fixture request.
         """
-        option = request.config.option
+        config: Config = request.config
+        option = config.option
+        hook = config.hook
         nodeid: str = request.node.nodeid
 
         # We need information if .build()/.test() is running during session stage and by xdist worker
@@ -107,7 +108,9 @@ class HDL:
         self.test_dir: PathLike = Path(option.cocotb_build_dir).resolve() / nodeid
         """Directory to run the tests in."""
 
-        self.runner: Runner = get_runner(get_simulator(request.config))
+        self.runner: Runner = hook.pytest_cocotb_make_runner(
+            simulator_name=get_simulator(request.config)
+        )
         """Instance that allows to build HDL and run cocotb tests."""
 
         # Build options
