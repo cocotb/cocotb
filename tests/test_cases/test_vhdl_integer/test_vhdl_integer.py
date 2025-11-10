@@ -34,9 +34,9 @@ async def vhdl_integer_valuechange(dut) -> None:
     reason="GHDL is unable to access record signals (gh-2591)",
 )
 @cocotb.xfail(
-    SIM_NAME.startswith("nvc") and NvcVersion(cocotb.SIM_VERSION) < NvcVersion("1.5"),
+    SIM_NAME.startswith("nvc") and NvcVersion(cocotb.SIM_VERSION) < NvcVersion("1.15"),
     raises=RuntimeError,
-    reason="NVC versions prior to 1.5 have issues setting up value change triggers on fields of records (gh-5130)",
+    reason="NVC versions prior to 1.15 have issues setting up value change triggers on fields of records (gh-5130)",
 )
 @cocotb.test(timeout_time=15, timeout_unit="ns")
 async def vhdl_record_integer_valuechange(dut) -> None:
