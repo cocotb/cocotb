@@ -38,7 +38,6 @@ def cocotb_runner(
     defines: Mapping[str, object] = {},
     parameters: MutableMapping[str, object] = {},
     build_args: Sequence[str | VHDL | Verilog] = [],
-    toplevel: str | None = None,
     toplevel_lang: str | None = None,
     always: bool = False,
     clean: bool = False,
@@ -102,9 +101,6 @@ def cocotb_runner(*test_module: str, **option: object) -> MarkDecorator:
 
         build_args:
             Extra build arguments for the simulator.
-
-        toplevel:
-            Name of the HDL toplevel module.
 
         always:
             Always run the build step.

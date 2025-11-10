@@ -92,6 +92,18 @@ class HDL:
         option = config.option
         hook = config.hook
         nodeid: str = request.node.nodeid
+        kwargs: dict[str, Any] = {}
+
+        self.test_module: str | Sequence[str] = ""
+        """Name(s) of the Python module(s) containing the tests to run."""
+
+        # Collect all runner options, starting from the root (session) to the leaf (test function)
+        # The last option will win the prize to be used by runner
+        for marker in reversed(list(request.node.iter_markers("cocotb_runner"))):
+            if marker.args:
+                self.test_module = marker.args
+
+            kwargs.update(marker.kwargs)  # update named arguments from all nodes
 
         # We need information if .build()/.test() is running during session stage and by xdist worker
         # This is needed to protect build/test directory
@@ -114,40 +126,44 @@ class HDL:
         """Instance that allows to build HDL and run cocotb tests."""
 
         # Build options
-        self.library: str = option.cocotb_library
+        self.library: str = kwargs.pop("library", option.cocotb_library)
         """The library name to compile into."""
 
-        self.sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] = []
+        self.sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] = (
+            kwargs.pop("sources", [])
+        )
         """Language-agnostic list of source files to build."""
 
-        self.includes: Sequence[PathLike] = []
+        self.includes: Sequence[PathLike] = kwargs.pop("includes", [])
         """Verilog include directories."""
 
-        self.defines: Mapping[str, object] = {}
+        self.defines: Mapping[str, object] = kwargs.pop("defines", {})
         """Defines to set."""
 
-        self.parameters: MutableMapping[str, object] = {}
+        self.parameters: MutableMapping[str, object] = kwargs.pop("parameters", {})
         """Verilog parameters or VHDL generics."""
 
-        self.build_args: Sequence[str | VHDL | Verilog] = []
+        self.build_args: Sequence[str | VHDL | Verilog] = kwargs.pop("build_args", [])
         """Extra build arguments for the simulator."""
 
         self.toplevel: str | None = None
         """Name of the HDL toplevel module."""
 
-        self.always: bool = option.cocotb_always
+        self.always: bool = kwargs.pop("always", option.cocotb_always)
         """Always run the build step."""
 
-        self.clean: bool = option.cocotb_clean
+        self.clean: bool = kwargs.pop("clean", option.cocotb_clean)
         """Delete *build_dir* before building."""
 
-        self.verbose: bool = option.cocotb_verbose
+        self.verbose: bool = kwargs.pop("verbose", option.cocotb_verbose)
         """Enable verbose messages."""
 
-        self.timescale: tuple[str, str] | None = option.cocotb_timescale
+        self.timescale: tuple[str, str] | None = kwargs.pop(
+            "timescale", option.cocotb_timescale
+        )
         """Tuple containing time unit and time precision for simulation."""
 
-        self.waves: bool = option.cocotb_waves
+        self.waves: bool = kwargs.pop("waves", option.cocotb_waves)
         """Record signal traces."""
 
         self.build_dir: PathLike = self.test_dir
@@ -157,38 +173,49 @@ class HDL:
         """Directory to execute the build command(s) in."""
 
         # Test options
-        self.test_module: str | Sequence[str] = ""
-        """Name(s) of the Python module(s) containing the tests to run."""
-
-        self.toplevel_library: str = option.cocotb_toplevel_library
+        self.toplevel_library: str = kwargs.pop(
+            "toplevel_library", option.cocotb_toplevel_library
+        )
         """The library name for HDL toplevel module."""
 
-        self.toplevel_lang: str | None = option.cocotb_toplevel_lang
+        self.toplevel_lang: str | None = kwargs.pop(
+            "toplevel_lang", option.cocotb_toplevel_lang
+        )
         """Language of the HDL toplevel module."""
 
-        self.gpi_interfaces: list[str] | None = option.cocotb_gpi_interfaces
+        self.gpi_interfaces: list[str] | None = kwargs.pop(
+            "gpi_interfaces", option.cocotb_gpi_interfaces
+        )
         """List of GPI interfaces to use, with the first one being the entry point."""
 
-        self.seed: str | int | None = option.cocotb_seed
+        self.seed: str | int | None = kwargs.pop("seed", option.cocotb_seed)
         """A specific random seed to use."""
 
-        self.elab_args: Sequence[str] = []
+        self.elab_args: Sequence[str] = kwargs.pop("elab_args", [])
         """A list of elaboration arguments for the simulator."""
 
-        self.test_args: Sequence[str] = []
+        self.test_args: Sequence[str] = kwargs.pop("test_args", [])
         """A list of extra arguments for the simulator."""
 
-        self.plusargs: Sequence[str] = []
+        self.plusargs: Sequence[str] = kwargs.pop("plusargs", [])
         """'plusargs' to set for the simulator."""
 
-        self.env: Mapping[str, str] = {}
+        self.env: Mapping[str, str] = kwargs.pop("env", {})
         """Extra environment variables to set."""
 
-        self.gui: bool = option.cocotb_gui
+        self.gui: bool = kwargs.pop("gui", option.cocotb_gui)
         """Run with simulator GUI."""
 
-        self.pre_cmd: list[str] | None = []
+        self.pre_cmd: list[str] | None = kwargs.pop("pre_cmd", [])
         """Commands to run before simulation begins. Typically Tcl commands for simulators that support them."""
+
+        for name, value in kwargs.items():
+            request.node.warn(
+                UserWarning(
+                    f"Unsupported @pytest.mark.cocotb_runner({name}={value}) "
+                    f"option applied on {request.node.nodeid!r}"
+                )
+            )
 
         # Store reference to command line options
         self._option = option
@@ -199,21 +226,6 @@ class HDL:
             else:
                 # HDL simulator supports multiple languages
                 self.toplevel_lang = None
-
-        for marker in reversed(list(request.node.iter_markers("cocotb_runner"))):
-            if marker.args:
-                self.test_module = marker.args
-
-            for name, value in marker.kwargs.items():
-                if not name.startswith("_") and hasattr(self, name):
-                    setattr(self, name, value)
-                else:
-                    request.node.warn(
-                        UserWarning(
-                            f"Unsupported @pytest.mark.cocotb_runner({name}={value}) "
-                            f"option applied on {request.node.nodeid!r}"
-                        )
-                    )
 
         if not self.test_module and not self._is_session_scoped:
             self.test_module = request.path.name.partition(".")[0]

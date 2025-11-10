@@ -222,15 +222,12 @@ name of HDL top level design will be ``design``.
 
 .. code:: python
 
+    # test_design.py
+
     @pytest.mark.cocotb_runner
     def test_dut_using_default_toplevel(sample_module: HDL) -> None:
         """Test DUT with default top level associated with name of test file as this test function."""
-        sample_module.test()
-
-
-    @pytest.mark.cocotb_runner(toplevel="sample_submodule")
-    def test_dut_using_different_toplevel(sample_module: HDL) -> None:
-        """Test DUT with different top level that was set at fixture level."""
+        assert hdl.toplevel == "design"
         sample_module.test()
 
 
