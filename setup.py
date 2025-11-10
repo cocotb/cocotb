@@ -21,6 +21,15 @@ sys.path.append(path.dirname(__file__))
 
 from cocotb_build_libs import build_ext, get_ext
 
+__version__ = "2.1.0.dev0"
+
+max_python = (3, 14)
+max_python_str = ".".join(map(str, max_python))
+if sys.version_info > max_python:
+    raise RuntimeError(
+        f"cocotb {__version__} only supports a maximum Python version of {max_python_str}"
+    )
+
 
 def read_file(fname):
     with open(path.join(path.dirname(__file__), fname), encoding="utf8") as f:
@@ -36,7 +45,6 @@ def package_files(directory):
 
 
 version_file_path = path.join("src", "cocotb", "_version.py")
-__version__ = "2.1.0.dev0"
 if "dev" in __version__:
     try:
         rev = subprocess.check_output(
@@ -60,7 +68,7 @@ with open(version_file_path, "w") as f:
 # see https://github.com/pypa/pip/issues/6634
 log_stream = StringIO()
 handler = logging.StreamHandler(log_stream)
-log = logging.getLogger("cocotb._build_libs")
+log = logging.getLogger("cocotb_build_libs")
 log.setLevel(logging.INFO)
 log.addHandler(handler)
 
