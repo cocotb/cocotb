@@ -130,15 +130,15 @@ class _ValueAndOptionalTag(Generic[_T]):
 
 
 class VHDL(_Tag):
-    """Tags source files and build arguments to :meth:`.build() <cocotb_tools.runner.Runner.build>` as VHDL-specific."""
+    """Tags source files and build arguments to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` as VHDL-specific."""
 
 
 class Verilog(_Tag):
-    """Tags source files and build arguments to :meth:`.build() <cocotb_tools.runner.Runner.build>` as Verilog-specific."""
+    """Tags source files and build arguments to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` as Verilog-specific."""
 
 
 class VerilatorControlFile(_Tag):
-    """Tags source files to :meth:`.build() <cocotb_tools.runner.Runner.build>` as Verilator control files."""
+    """Tags source files to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>` as Verilator control files."""
 
 
 _verilog_extensions = (".v", ".sv", ".vh", ".svh")
@@ -1467,6 +1467,7 @@ class AldecBase(Runner):
 class Riviera(AldecBase):
     """Implementation of :class:`Runner` for Aldec Riviera-Pro.
     .. admonition:: Simulator-specific Usage
+
        * Does not support the ``pre_cmd`` argument to :meth:`.test`.
        * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
@@ -1476,6 +1477,7 @@ class Riviera(AldecBase):
 class ActiveHDL(AldecBase):
     """Implementation of :class:`Runner` for Aldec Active-HDL.
     .. admonition:: Simulator-specific Usage
+
        * Does not support the ``pre_cmd`` argument to :meth:`.test`.
        * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
