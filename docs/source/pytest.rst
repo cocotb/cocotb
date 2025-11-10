@@ -140,8 +140,6 @@ An example is provided below, located in a project ``conftest.py`` file:
 Markers
 -------
 
-.. currentmodule:: cocotb_tools
-
 :py:deco:`pytest.mark.cocotb_runner`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
