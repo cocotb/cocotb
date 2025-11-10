@@ -140,10 +140,10 @@ An example is provided below, located in a project ``conftest.py`` file:
 Markers
 -------
 
-:py:deco:`pytest.mark.cocotb_runner`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:py:deco:`!pytest.mark.cocotb_runner`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The plugin provides the marker :py:deco:`pytest.mark.cocotb_runner` which allows
+The plugin provides the marker :py:deco:`!pytest.mark.cocotb_runner` which allows
 to configure all aspects of cocotb runner.
 
 .. code:: python
@@ -175,8 +175,8 @@ to configure all aspects of cocotb runner.
         sample_module.test()
 
 
-If no positional arguments were provided to :py:deco:`pytest.mark.cocotb_runner`,
-plugin will load current Python module where :py:deco:`pytest.mark.cocotb_runner` was used as cocotb testbench
+If no positional arguments were provided to :py:deco:`!pytest.mark.cocotb_runner`,
+plugin will load current Python module where :py:deco:`!pytest.mark.cocotb_runner` was used as cocotb testbench
 (Python file with cocotb tests).
 
 .. code:: python
@@ -197,7 +197,7 @@ plugin will load current Python module where :py:deco:`pytest.mark.cocotb_runner
         ...
 
 
-Additionally, positional arguments of :py:deco:`pytest.mark.cocotb_runner` marker are equivalent to
+Additionally, positional arguments of :py:deco:`!pytest.mark.cocotb_runner` marker are equivalent to
 ``test_module`` argument from :py:meth:`.Runner.test`.
 
 .. code:: python
@@ -229,10 +229,10 @@ name of HDL top level design will be ``design``.
         sample_module.test()
 
 
-:py:deco:`pytest.mark.cocotb_test`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:py:deco:`!pytest.mark.cocotb_test`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The plugin provides the marker :py:deco:`pytest.mark.cocotb_test` which allows
+The plugin provides the marker :py:deco:`!pytest.mark.cocotb_test` which allows
 to mark any coroutine test function as cocotb test.
 
 .. code:: python
@@ -243,7 +243,7 @@ to mark any coroutine test function as cocotb test.
         ...
 
 
-Using the :py:deco:`pytest.mark.cocotb_test` marker is optional for test functions if they meet the following criteria:
+Using the :py:deco:`!pytest.mark.cocotb_test` marker is optional for test functions if they meet the following criteria:
 
 * start with ``test_``
 * is a coroutine function (``async def``)
@@ -256,7 +256,7 @@ Using the :py:deco:`pytest.mark.cocotb_test` marker is optional for test functio
         ...
 
 
-Non-``async`` functions marked with :py:deco:`pytest.mark.cocotb_test` are control functions run by pytest.
+Non-``async`` functions marked with :py:deco:`!pytest.mark.cocotb_test` are control functions run by pytest.
 They can run simulations by invoking :py:func:`cocotb_tools.pytest.hdl.HDL.test`
 or :py:func:`cocotb_tools.runner.Runner.test`.
 
@@ -293,10 +293,10 @@ or :py:func:`cocotb_tools.runner.Runner.test`.
         """Function that is not picked up by pytest discovery needs a decorator to count as a test."""
 
 
-:py:deco:`pytest.mark.cocotb_timeout`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:py:deco:`!pytest.mark.cocotb_timeout`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The plugin provides the marker :py:deco:`pytest.mark.cocotb_timeout` which allows to mark coroutine function
+The plugin provides the marker :py:deco:`!pytest.mark.cocotb_timeout` which allows to mark coroutine function
 with simulation time duration before the test is forced to fail.
 
 .. code:: python
@@ -313,7 +313,7 @@ Test Discovery
 ==============
 
 Markers can also help the plugin identify and bind cocotb tests to cocotb runners.
-This is done based on positional arguments supplied to the :py:deco:`pytest.mark.cocotb_runner` decorator.
+This is done based on positional arguments supplied to the :py:deco:`!pytest.mark.cocotb_runner` decorator.
 Users can filter tests when invoking `pytest`_  with ``-k '<expression>'`` or ``-m '<markers>'`` options.
 
 List tree hierarchy of cocotb tests related to cocotb runners and cocotb testbenches:
@@ -541,7 +541,7 @@ Thanks to :py:mod:`cocotb_tools.pytest.plugin`, cocotb can be configured in many
 Precedence order of configuring cocotb from the highest to the lowest priority:
 
 1. :py:func:`cocotb_tools.pytest.hdl.HDL` attributes set at fixture or test function level
-2. :py:deco:`pytest.mark.cocotb_runner` marker used with test functions.
+2. :py:deco:`!pytest.mark.cocotb_runner` marker used with test functions.
 3. ``--cocotb-*`` command line arguments when invoking them with `pytest`_ command line interface.
 4. ``COCOTB_*`` environment variables.
 5. ``cocotb_*`` entries defined in various configuration files like `pyproject.toml`_ file.
