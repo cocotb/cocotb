@@ -154,7 +154,7 @@ def cocotb_runner(*test_module: str, **option: object) -> MarkDecorator:
     return mark.cocotb_runner(*test_module, **option)
 
 
-def cocotb_test(*, timeout: tuple[float, TimeUnit] | None = None) -> MarkDecorator:
+def cocotb_test() -> MarkDecorator:
     """Mark coroutine function as cocotb test.
 
     Example usage:
@@ -171,20 +171,35 @@ def cocotb_test(*, timeout: tuple[float, TimeUnit] | None = None) -> MarkDecorat
             # Test DUT feature but from a test function that doesn't follow with the pytest naming convention
             ...
 
-        @pytest.mark.cocotb_test(timeout=(200, "ns"))
+    Returns:
+        Decorated coroutine function as cocotb test.
+    """
+    return mark.cocotb_test()
+
+
+def cocotb_timeout(duration: float, unit: TimeUnit) -> MarkDecorator:
+    """Mark coroutine function with simulation time duration before the test is forced to fail.
+
+    Example usage:
+
+    .. code:: python
+
+        @pytest.mark.cocotb_timeout(200, "ns")
         async def test_dut_feature_with_timeout(dut) -> None:
             # Test DUT feature with timeout configured from cocotb marker
             ...
 
     Args:
-        timeout:
-            Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
-            A tuple of the timeout value and unit. Accepts any unit that :class:`~cocotb.triggers.Timer` does.
+        duration: Simulation time duration before the test is forced to fail.
+        unit: Simulation time unit that accepts any unit that :class:`~cocotb.triggers.Timer` does.
+
+    Raises:
+        :exc:`~cocotb.triggers.SimTimeoutError`: Test function timeouted.
 
     Returns:
-        Decorated coroutine function as cocotb test.
+        Decorated coroutine function with simulation time duration before the test is forced to fail.
     """
-    return mark.cocotb_test(timeout=timeout)
+    return mark.cocotb_timeout(duration=duration, unit=unit)
 
 
 def marker_description(marker: Callable[..., MarkDecorator]) -> str:
@@ -231,3 +246,4 @@ def register_markers(config: Config) -> None:
     """
     config.addinivalue_line("markers", marker_description(cocotb_runner))
     config.addinivalue_line("markers", marker_description(cocotb_test))
+    config.addinivalue_line("markers", marker_description(cocotb_timeout))

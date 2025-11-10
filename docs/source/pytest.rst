@@ -238,13 +238,13 @@ name of HDL top level design will be ``design``.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The plugin provides the marker :py:deco:`pytest.mark.cocotb_test` which allows
-to configure all aspects of cocotb test.
+to mark any coroutine test function as cocotb test.
 
 .. code:: python
 
-    @pytest.mark.cocotb_test(timeout=(200, "ns"))
-    async def test_dut_feature_with_timeout(dut) -> None:
-        """Test DUT feature. It must finish within 200 nanoseconds."""
+    @pytest.mark.cocotb_test
+    async def my_test_function(dut) -> None:
+        """Function to test DUT feature."""
         ...
 
 
@@ -253,6 +253,13 @@ Using the :py:deco:`pytest.mark.cocotb_test` marker is optional for test functio
 * start with ``test_``
 * is a coroutine function (``async def``)
 * has a positional argument ``dut`` to use the :fixture:`~cocotb_tools.pytest.plugin.dut` fixture
+
+.. code:: python
+
+    async def test_dut_feature(dut) -> None:
+        """Function to test DUT feature."""
+        ...
+
 
 Non-``async`` functions marked with :py:deco:`pytest.mark.cocotb_test` are control functions run by pytest.
 They can run simulations by invoking :py:func:`cocotb_tools.pytest.hdl.HDL.test`
@@ -289,6 +296,20 @@ or :py:func:`cocotb_tools.runner.Runner.test`.
     @pytest.mark.cocotb_test
     async def name_without_test_prefix(dut) -> None:
         """Function that is not picked up by pytest discovery needs a decorator to count as a test."""
+
+
+:py:deco:`pytest.mark.cocotb_timeout`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The plugin provides the marker :py:deco:`pytest.mark.cocotb_timeout` which allows to mark coroutine function
+with simulation time duration before the test is forced to fail.
+
+.. code:: python
+
+    @pytest.mark.cocotb_timeout(200, "ns")
+    async def test_dut_feature(dut) -> None:
+        """Test DUT feature that must finish before 200 nanoseconds."""
+        ...
 
 
 .. _pytest-plugin-test-discovery:

@@ -33,6 +33,7 @@ from pytest import (
     FixtureDef,
     Function,
     Item,
+    Mark,
     Module,
     PytestPluginManager,
     Session,
@@ -488,27 +489,7 @@ class RegressionManager:
         if not inspect.iscoroutinefunction(testfunction):
             return None
 
-        timeout: tuple[float, TimeUnit] | None = None
-
-        for marker in reversed(list(pyfuncitem.iter_markers("cocotb_test"))):
-            if marker.args:
-                pyfuncitem.warn(
-                    UserWarning(
-                        f"Unsupported @pytest.mark.cocotb_test{(*marker.args,)} "
-                        f"positional argument(s) applied on {pyfuncitem.nodeid!r}"
-                    )
-                )
-
-            for name, value in marker.kwargs.items():
-                if name == "timeout":
-                    timeout = value
-                else:
-                    pyfuncitem.warn(
-                        UserWarning(
-                            f"Unsupported @pytest.mark.cocotb_test({name}={value}) "
-                            f"option applied on {pyfuncitem.nodeid!r}"
-                        )
-                    )
+        timeout: tuple[float, TimeUnit] | None = _get_timeout(pyfuncitem)
 
         if timeout:
             testfunction = _wrap_with_timeout(testfunction, timeout)
@@ -747,6 +728,18 @@ def _interactive_exception(item: Item, call: CallInfo, report: TestReport) -> No
         item.ihook.pytest_exception_interact(node=item, call=call, report=report)
     except Exit:
         pass
+
+
+def _to_timeout(duration: float, unit: TimeUnit) -> tuple[float, TimeUnit]:
+    """Helper function to extract ``*marker.args`` and ``**marker.kwargs`` to tuple."""
+    return duration, unit
+
+
+def _get_timeout(function: Function) -> tuple[float, TimeUnit] | None:
+    """Get timeout from test function."""
+    marker: Mark | None = function.get_closest_marker("cocotb_timeout")
+
+    return _to_timeout(*marker.args, **marker.kwargs) if marker else None
 
 
 def _wrap_with_timeout(

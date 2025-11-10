@@ -48,6 +48,8 @@ Markers
 
 .. autodecorator:: cocotb_test
 
+.. autodecorator:: cocotb_timeout
+
 .. _api-pytest-plugin-hdl:
 
 HDL Fixture Request

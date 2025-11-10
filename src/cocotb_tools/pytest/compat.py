@@ -105,12 +105,10 @@ def _as_pytest_marks(
             ).mark
         )
 
-    kwargs: dict[str, object] = {}
-
     if timeout:
-        kwargs["timeout"] = timeout
+        markers.append(mark.cocotb_timeout(duration=timeout[0], unit=timeout[1]).mark)
 
-    markers.append(mark.cocotb_test(**kwargs).mark)
+    markers.append(mark.cocotb_test().mark)
     markers.extend(getattr(obj, "pytestmark", ()))
 
     # Add pytest marks to object
