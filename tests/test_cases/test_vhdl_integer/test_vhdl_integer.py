@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import cocotb
 from cocotb.triggers import Combine
+from cocotb_tools.sim_versions import NvcVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
@@ -31,6 +32,11 @@ async def vhdl_integer_valuechange(dut) -> None:
     SIM_NAME.startswith("ghdl"),
     raises=AttributeError,
     reason="GHDL is unable to access record signals (gh-2591)",
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("nvc") and NvcVersion(cocotb.SIM_VERSION) < NvcVersion("1.5"),
+    raises=RuntimeError,
+    reason="NVC versions prior to 1.5 have issues setting up value change triggers on fields of records (gh-5130)",
 )
 @cocotb.test(timeout_time=15, timeout_unit="ns")
 async def vhdl_record_integer_valuechange(dut) -> None:
