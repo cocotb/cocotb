@@ -173,7 +173,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.040",  # Latest release version.
+        "sim-version": "v5.042",  # Latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci-free",
@@ -185,22 +185,6 @@ ENVS = [
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "experimental",
-    },
-    {
-        "lang": "verilog",
-        "sim": "verilator",
-        "sim-version": "v5.038",
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
-    },
-    {
-        "lang": "verilog",
-        "sim": "verilator",
-        "sim-version": "v5.036",  # Minimum supported version.
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
     },
     # Test other OSes
     # Icarus homebrew (ARM64)
@@ -234,7 +218,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.038",  # not latest, but v5.040 is broken on MacOS
+        "sim-version": "v5.042",
         "os": "macos-14",
         "python-version": "3.9",
         "group": "ci-free",
@@ -378,6 +362,19 @@ ENVS = [
         "group": "experimental",
     },
 ]
+
+verilator_versions = ("v5.036", "v5.038", "v5.040")
+for version in verilator_versions:
+    ENVS += [
+        {
+            "lang": "verilog",
+            "sim": "verilator",
+            "sim-version": version,
+            "os": "ubuntu-22.04",
+            "python-version": "3.9",
+            "group": "extended",
+        },
+    ]
 
 nvc_versions = (
     "r1.11.0",
