@@ -206,13 +206,13 @@ Additionally, positional arguments of :py:deco:`pytest.mark.cocotb_runner` marke
 
     @pytest.mark.cocotb_runner("test_dut_tb_1")
     def test_dut_using_different_testbench(sample_module: HDL) -> None:
-        """Use cocotb tests from ``test_dut_tb_1.py`` file to test DUT."""
+        """Load ``test_dut_tb_1`` Python module and run cocotb tests from there to test DUT."""
         sample_module.test()
 
 
     @pytest.mark.cocotb_runner("test_dut_tb_2", "test_dut_tb_3")
     def test_dut_using_different_testbenches(sample_module: HDL) -> None:
-        """Use cocotb tests from ``test_dut_tb_2.py`` and ``test_dut_tb_3.py`` files to test DUT."""
+        """Load ``test_dut_tb_2`` and ``test_dut_tb_3`` Python modules and run cocotb tests from there to test DUT."""
         sample_module.test()
 
 
