@@ -7,9 +7,33 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
-.. include:: master-notes.rst
 
-.. towncrier release notes start
+cocotb 2.0.1 (2025-11-10)
+=========================
+
+cocotb 2.0.1 is the first patch release of cocotb 2.0, which fixes small problems identified with the cocotb 2.0.0 release.
+
+Features
+--------
+
+- Added support for passing Verilator control files to the ``sources`` argument of the :class:`~cocotb_tools.runner.Verilator` runner. (:pr:`4989`)
+- Added support for NVC on Windows. (:pr:`4995`)
+- Support MacOS ARM64 builds and provide pre-built wheels. (:pr:`5056`)
+
+
+Bugfixes
+--------
+
+- Fix CI using the unintended version of Python to run regressions. (:pr:`4988`)
+- Fix support for Python 3.6. (:pr:`4988`)
+- Added filter to ``results.xml`` output to ensure only valid XML characters are emitted. (:pr:`5035`)
+
+
+Changes
+-------
+
+- The value of :data:`cocotb.RANDOM_SEED` is now modified for the duration of a test to be that tests's seed, rather than the regression-wide seed. (:pr:`5082`)
+
 
 cocotb 2.0.0 (2025-09-12)
 =========================

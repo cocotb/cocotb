@@ -1,1 +1,0 @@
-Added support for passing Verilator control files to the ``sources`` argument of the :class:`~cocotb_tools.runner.Verilator` runner.

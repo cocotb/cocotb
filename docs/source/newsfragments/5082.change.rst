@@ -1,1 +1,0 @@
-The value of :data:`cocotb.RANDOM_SEED` is now modified for the duration of a test to be that tests's seed, rather than the regression-wide seed.
