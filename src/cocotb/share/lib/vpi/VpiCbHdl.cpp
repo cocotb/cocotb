@@ -12,37 +12,40 @@
 #include <algorithm>
 #include <deque>
 
-static std::deque<GpiCbHdl *> cb_queue;
+static std::deque<VpiCbHdl *> cb_queue;
 #endif
 
-static int32_t handle_vpi_callback_(GpiCbHdl *cb_hdl) {
-    gpi_to_user();
-
+static int32_t handle_vpi_callback_(VpiCbHdl *cb_hdl) {
+    int error = (!cb_hdl);
     // LCOV_EXCL_START
-    if (!cb_hdl) {
+    if (error) {
         LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
-        gpi_end_of_sim_time();
-        return -1;
     }
     // LCOV_EXCL_STOP
 
-    if (cb_hdl->run()) {
-        // sim failed, so call shutdown
-        gpi_end_of_sim_time();
-        return 0;
+    if (!error) {
+        GPI_TO_USER_CB(VPI);
+        error = cb_hdl->run();
+        USER_CB_TO_GPI(VPI);
     }
 
-    gpi_to_simulator();
-    return 0;
+    if (error) {
+        gpi_end_of_sim_time();
+    }
+
+    return error ? -1 : 0;
 }
 
 // Main re-entry point for callbacks from simulator
 int32_t handle_vpi_callback(p_cb_data cb_data) {
+    SIM_TO_GPI(VPI, VpiImpl::reason_to_string(cb_data->reason));
+
+    int ret = 0;
 #ifdef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
     VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
-    return handle_vpi_callback_(cb_hdl);
+    ret = handle_vpi_callback_(cb_hdl);
 #else
-    // must push things into a queue because Icaurus (gh-4067), Xcelium
+    // must push things into a queue because Icarus (gh-4067), Xcelium
     // (gh-4013), and Questa (gh-4105) react to value changes on signals that
     // are set with vpiNoDelay immediately, and not after the current callback
     // has ended, causing re-entrancy.
@@ -50,17 +53,18 @@ int32_t handle_vpi_callback(p_cb_data cb_data) {
     VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
     if (reacting) {
         cb_queue.push_back(cb_hdl);
-        return 0;
+    } else {
+        reacting = true;
+        ret = handle_vpi_callback_(cb_hdl);
+        while (!cb_queue.empty()) {
+            handle_vpi_callback_(cb_queue.front());
+            cb_queue.pop_front();
+        }
+        reacting = false;
     }
-    reacting = true;
-    int32_t ret = handle_vpi_callback_(cb_hdl);
-    while (!cb_queue.empty()) {
-        handle_vpi_callback_(cb_queue.front());
-        cb_queue.pop_front();
-    }
-    reacting = false;
-    return ret;
 #endif
+    GPI_TO_SIM(VPI);
+    return ret;
 }
 
 VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {

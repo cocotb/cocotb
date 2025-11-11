@@ -16,9 +16,9 @@
 #include <cerrno>
 #include <cstdint>
 
-#include "cocotb_utils.h"  // to_python to_simulator
+#include "cocotb_utils.h"  // DEFER
 #include "gpi.h"
-#include "py_gpi_logging.h"  // py_gpi_logger_set_level
+#include "py_gpi_logging.h"  // py_gpi_logger_set_level, c_to_python, python_to_c
 
 // This file defines the routines available to Python
 
@@ -160,8 +160,10 @@ struct sim_time {
  *
  */
 int handle_gpi_callback(void *user_data) {
-    to_python();
-    DEFER(to_simulator());
+    PYGPI_LOG_TRACE("GPI => [ PYGPI (cocotb.simulator) ]");
+    DEFER(PYGPI_LOG_TRACE("[ PYGPI (cocotb.simulator) ] => GPI"));
+    c_to_python();
+    DEFER(python_to_c());
 
     PyGILState_STATE gstate = PyGILState_Ensure();
     DEFER(PyGILState_Release(gstate));
@@ -874,7 +876,8 @@ int GpiClock::toggle(bool initialSet) {
             // Failing when called from start() will be reported via
             // exception, but log in case of later failure that would
             // otherwise be silent.
-            LOG_ERROR("Clock will be stopped: failed to register toggle cb");
+            PYGPI_LOG_ERROR(
+                "Clock will be stopped: failed to register toggle cb");
         }
         return EAGAIN;
         // LCOV_EXCL_STOP
@@ -884,8 +887,11 @@ int GpiClock::toggle(bool initialSet) {
 }
 
 int GpiClock::toggle_cb(void *gpi_clk) {
+    PYGPI_LOG_TRACE("GPI => [ PYGPI (GpiClock) ]");
     GpiClock *clk_obj = (GpiClock *)gpi_clk;
-    return clk_obj->toggle(false);
+    int result = clk_obj->toggle(false);
+    PYGPI_LOG_TRACE("[ PYGPI (GpiClock) ] => GPI");
+    return result;
 }
 
 // Create a new clock object

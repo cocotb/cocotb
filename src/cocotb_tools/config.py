@@ -81,7 +81,9 @@ def _help_vars_text() -> str:
 
         GPI
         ---
-        GPI_EXTRA                       Extra libraries to load at runtime (comma-separated)
+        GPI_EXTRA                 Extra libraries to load at runtime (comma-separated)
+        GPI_LOG_LEVEL             Default logging level for "gpi" loggers (default INFO)
+        GPI_DEBUG                 Enable GPI debug features, including TRACE log output
 
         Scheduler
         ---------

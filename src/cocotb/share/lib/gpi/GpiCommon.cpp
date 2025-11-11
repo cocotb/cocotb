@@ -14,6 +14,8 @@
 #include <utility>
 #include <vector>
 
+#include "gpi.h"
+#include "gpi_logging.h"
 #include "gpi_priv.h"
 
 using namespace std;
@@ -72,7 +74,7 @@ static size_t gpi_print_registered_impl() {
     vector<GpiImplInterface *>::iterator iter;
     for (iter = registered_impls.begin(); iter != registered_impls.end();
          iter++) {
-        LOG_INFO("%s registered", (*iter)->get_name_c());
+        LOG_INFO("GPI: %s support registered", (*iter)->get_name_c());
     }
     return registered_impls.size();
 }
@@ -82,7 +84,7 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
     for (iter = registered_impls.begin(); iter != registered_impls.end();
          iter++) {
         if ((*iter)->get_name_s() == func_tbl->get_name_s()) {
-            LOG_WARN("%s already registered, check GPI_EXTRA",
+            LOG_WARN("GPI: %s support already registered, check GPI_EXTRA",
                      func_tbl->get_name_c());
             return -1;
         }
@@ -97,7 +99,10 @@ void gpi_start_of_sim_time(int argc, char const *const *argv) {
     for (auto &cb_info : start_of_sim_time_cbs) {
         // start_of_sime_time should never fail, this should be moved to
         // gpi_load_users, as should the (argc,argv)
-        if (cb_info.first(cb_info.second, argc, argv)) {
+        LOG_TRACE("[ GPI Start Sim ] => User Start callback");
+        int error = cb_info.first(cb_info.second, argc, argv);
+        LOG_TRACE("User Start callback => [ GPI Start Sim ]");
+        if (error) {
             gpi_end_of_sim_time();
         }
     }
@@ -105,7 +110,9 @@ void gpi_start_of_sim_time(int argc, char const *const *argv) {
 
 void gpi_end_of_sim_time() {
     for (auto &cb_info : end_of_sim_time_cbs) {
+        LOG_TRACE("[ GPI End Sim ] => User End callback");
         cb_info.first(cb_info.second);
+        LOG_TRACE("User End callback => [ GPI End Sim ]");
     }
     // always request simulation termination at end_of_sim_time
     gpi_finish();
@@ -121,7 +128,15 @@ void gpi_finish() {
 void gpi_finalize(void) {
     CLEAR_STORE();
     for (auto it = finalize_cbs.rbegin(); it != finalize_cbs.rend(); it++) {
+        LOG_TRACE("[ GPI Finalize ] => User Finalize callback");
         it->first(it->second);
+        LOG_TRACE("User Finalize callback => [ GPI Finalize ]");
+    }
+}
+
+void gpi_check_cleanup(void) {
+    if (gpi_finalizing) {
+        gpi_finalize();
     }
 }
 
@@ -162,7 +177,9 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
         }
 
         layer_entry_func new_lib_entry = (layer_entry_func)entry_point;
+        LOG_TRACE("[ GPI Init ] => Impl Init (%s)", arg.c_str());
         new_lib_entry();
+        LOG_TRACE("Impl Init => [ GPI Init ]");
     }
 }
 
@@ -217,7 +234,10 @@ static int gpi_load_users() {
                      func_name.c_str(), lib_name.c_str());
 
             auto entry_func = (void (*)(void))func_handle;
+            LOG_TRACE("[ GPI Init ] => User Init (%s:%s)", lib_name.c_str(),
+                      func_name.c_str());
             entry_func();
+            LOG_TRACE("User Init => [ GPI Init ]");
         }
     }
 
@@ -231,21 +251,7 @@ static int gpi_load_users() {
 #endif
 
 void gpi_entry_point() {
-    const char *log_level = getenv("GPI_LOG_LEVEL");
-    if (log_level) {
-        static const std::map<std::string, int> log_level_str_table = {
-            {"CRITICAL", GPI_CRITICAL}, {"ERROR", GPI_ERROR},
-            {"WARNING", GPI_WARNING},   {"INFO", GPI_INFO},
-            {"DEBUG", GPI_DEBUG},       {"TRACE", GPI_TRACE}};
-        auto it = log_level_str_table.find(log_level);
-        if (it != log_level_str_table.end()) {
-            gpi_native_logger_set_level(it->second);
-        } else {
-            // LCOV_EXCL_START
-            LOG_ERROR("Invalid log level: %s", log_level);
-            // LCOV_EXCL_STOP
-        }
-    }
+    LOG_TRACE("=> [ GPI Init ]");
 
     /* Lets look at what other libs we were asked to load too */
     char *lib_env = getenv("GPI_EXTRA");
@@ -287,7 +293,37 @@ void gpi_entry_point() {
     if (!gpi_load_users()) {
         return;
     }
+
     gpi_print_registered_impl();
+
+    LOG_TRACE("[ GPI Init ] =>");
+}
+
+GPI_EXPORT void gpi_init_logging_and_debug() {
+    char *debug_env = getenv("GPI_DEBUG");
+    if (debug_env) {
+        std::string gpi_debug = debug_env;
+        // If it's explicitly set to 0, don't enable
+        if (gpi_debug != "0") {
+            gpi_debug_enabled = 1;
+        }
+    }
+
+    const char *log_level = getenv("GPI_LOG_LEVEL");
+    if (log_level) {
+        static const std::map<std::string, int> log_level_str_table = {
+            {"CRITICAL", GPI_CRITICAL}, {"ERROR", GPI_ERROR},
+            {"WARNING", GPI_WARNING},   {"INFO", GPI_INFO},
+            {"DEBUG", GPI_DEBUG},       {"TRACE", GPI_TRACE}};
+        auto it = log_level_str_table.find(log_level);
+        if (it != log_level_str_table.end()) {
+            gpi_native_logger_set_level(it->second);
+        } else {
+            // LCOV_EXCL_START
+            LOG_ERROR("Invalid log level: %s", log_level);
+            // LCOV_EXCL_STOP
+        }
+    }
 }
 
 void gpi_get_sim_time(uint32_t *high, uint32_t *low) {
@@ -723,15 +759,6 @@ void gpi_get_cb_info(gpi_cb_hdl cb_hdl, int (**cb_func)(void *),
 const char *GpiImplInterface::get_name_c() { return m_name.c_str(); }
 
 const string &GpiImplInterface::get_name_s() { return m_name; }
-
-void gpi_to_user() { LOG_TRACE("Passing control to GPI user"); }
-
-void gpi_to_simulator() {
-    if (gpi_finalizing) {
-        gpi_finalize();
-    }
-    LOG_TRACE("Returning control to simulator");
-}
 
 GPI_EXPORT int gpi_register_start_of_sim_time_callback(
     int (*cb)(void *, int, char const *const *), void *cb_data) {

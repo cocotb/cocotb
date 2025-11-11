@@ -10,27 +10,31 @@
 
 // Main re-entry point for callbacks from simulator
 void handle_fli_callback(void *data) {
-    gpi_to_user();
+    SIM_TO_GPI(FLI, "callback");
 
     // TODO Add why?
     fflush(stderr);
 
     FliCbHdl *cb_hdl = (FliCbHdl *)data;
 
+    int error = (!cb_hdl);
     // LCOV_EXCL_START
-    if (!cb_hdl) {
+    if (error) {
         LOG_CRITICAL("FLI: Callback data corrupted: ABORTING");
-        gpi_end_of_sim_time();
-        return;
     }
     // LCOV_EXCL_STOP
 
-    if (cb_hdl->run()) {
-        // sim failed, so call shutdown
+    if (!error) {
+        GPI_TO_USER_CB(FLI);
+        error = cb_hdl->run();
+        USER_CB_TO_GPI(FLI);
+    }
+
+    if (error) {
         gpi_end_of_sim_time();
     }
 
-    gpi_to_simulator();
+    GPI_TO_SIM(FLI);
 }
 
 int FliTimedCbHdl::arm() {

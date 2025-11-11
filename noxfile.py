@@ -28,7 +28,7 @@ dev_deps = [
 ]
 
 # Version of the cibuildwheel package used to build wheels.
-cibuildwheel_version = "2.20.0"
+cibuildwheel_version = "3.2.1"
 
 #
 # Helpers for use within this file.
@@ -126,9 +126,9 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
     env["LDFLAGS"] = "--coverage"
 
     if editable:
-        session.run("pip", "install", "-v", "-e", ".", env=env)
+        session.install("-v", "-e", ".", env=env)  # type: ignore[arg-type]  # bug in nox
     else:
-        session.run("pip", "install", "-v", ".", env=env)
+        session.install("-v", ".", env=env)  # type: ignore[arg-type]  # bug in nox
 
 
 #
@@ -166,7 +166,7 @@ def dev_test_sim(
 
     configure_env_for_dev_test(session)
 
-    session.run("pip", "install", *test_deps, *coverage_deps)
+    session.install(*test_deps, *coverage_deps)
 
     # Editable installs break C/C++ coverage collection; don't use them.
     # C/C++ coverage collection requires that the object files produced by the
@@ -295,7 +295,7 @@ def dev_test_nosim(session: nox.Session) -> None:
 
     configure_env_for_dev_test(session)
 
-    session.run("pip", "install", *test_deps, *coverage_deps)
+    session.install(*test_deps, *coverage_deps)
     build_cocotb_for_dev_test(session, editable=False)
 
     # Remove a potentially existing coverage file from a previous run for the
@@ -330,7 +330,7 @@ def dev_test_nosim(session: nox.Session) -> None:
 @nox.session
 def dev_coverage_combine(session: nox.Session) -> None:
     """Combine coverage from previous dev_* runs into a .coverage file."""
-    session.run("pip", "install", *coverage_report_deps)
+    session.install(*coverage_report_deps)
 
     coverage_files = glob.glob("**/.cov.test.*", recursive=True)
     session.run("coverage", "combine", *coverage_files)
@@ -344,7 +344,7 @@ def dev_coverage_combine(session: nox.Session) -> None:
 @nox.session
 def dev_coverage_report(session: nox.Session) -> None:
     """Report coverage results."""
-    session.run("pip", "install", *coverage_report_deps)
+    session.install(*coverage_report_deps)
 
     # Produce Cobertura XML coverage reports.
     session.log("Producing Python and C/C++ coverage in Cobertura XML format")
@@ -421,7 +421,7 @@ def release_build_bdist(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
 
     # Pin a version to ensure reproducible builds.
-    session.run("pip", "install", f"cibuildwheel=={cibuildwheel_version}")
+    session.install(f"cibuildwheel=={cibuildwheel_version}")
 
     session.log("Building binary distribution (wheels)")
     session.run(
@@ -437,7 +437,7 @@ def release_build_bdist(session: nox.Session) -> None:
 def release_build_sdist(session: nox.Session) -> None:
     """Build the source distribution."""
 
-    session.run("pip", "install", "build")
+    session.install("build")
 
     session.log("Building source distribution (sdist)")
     session.run("python", "-m", "build", "--sdist", "--outdir", dist_dir, ".")
@@ -465,11 +465,7 @@ def release_test_sdist(session: nox.Session) -> None:
     assert sdist_path.is_file()
 
     session.log("Installing cocotb from sdist, which includes the build step")
-    session.run(
-        "pip",
-        "install",
-        str(sdist_path),
-    )
+    session.install(str(sdist_path))
 
     session.log("Running cocotb-config as basic installation smoke test")
     session.run("cocotb-config", "--version")
@@ -485,12 +481,10 @@ def release_install(session: nox.Session) -> None:
     # PyPi, and then installing cocotb itself from the local dist directory.
 
     session.log("Installing cocotb dependencies from PyPi")
-    session.run("pip", "install", "find_libpython")
+    session.install("find_libpython")
 
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")
-    session.run(
-        "pip",
-        "install",
+    session.install(
         "--force-reinstall",
         "--only-binary",
         "cocotb",
@@ -505,7 +499,7 @@ def release_install(session: nox.Session) -> None:
     session.run("cocotb-config", "--version")
 
     session.log("Installing test dependencies")
-    session.run("pip", "install", *test_deps)
+    session.install(*test_deps)
 
 
 @nox.session
@@ -554,14 +548,14 @@ def release_test_nosim(session: nox.Session) -> None:
 
 
 def create_env_for_docs_build(session: nox.Session) -> None:
-    session.run("pip", "install", "-r", "docs/requirements.txt")
+    session.install("-r", "docs/requirements.txt")
 
 
 @nox.session
 def docs(session: nox.Session) -> None:
     """invoke sphinx-build to build the HTML docs"""
     create_env_for_docs_build(session)
-    session.run("pip", "install", ".")
+    session.install(".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -581,8 +575,8 @@ def docs_preview(session: nox.Session) -> None:
     """Build a live preview of the documentation"""
     create_env_for_docs_build(session)
     # Editable install allows editing cocotb source and seeing it updated in the live preview
-    session.run("pip", "install", "-e", ".")
-    session.run("pip", "install", "sphinx-autobuild")
+    session.install("-e", ".")
+    session.install("sphinx-autobuild")
     outdir = session.cache_dir / "docs_out"
     # fmt: off
     session.run(
@@ -614,7 +608,7 @@ def docs_preview(session: nox.Session) -> None:
 def docs_linkcheck(session: nox.Session) -> None:
     """invoke sphinx-build to linkcheck the docs"""
     create_env_for_docs_build(session)
-    session.run("pip", "install", ".")
+    session.install(".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -631,7 +625,7 @@ def docs_linkcheck(session: nox.Session) -> None:
 def docs_spelling(session: nox.Session) -> None:
     """invoke sphinx-build to spellcheck the docs"""
     create_env_for_docs_build(session)
-    session.run("pip", "install", ".")
+    session.install(".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -651,9 +645,7 @@ def dev(session: nox.Session) -> None:
     configure_env_for_dev_test(session)
     create_env_for_docs_build(session)
 
-    session.run(
-        "pip", "install", *test_deps, *dev_deps, *coverage_deps, *coverage_report_deps
-    )
+    session.install(*test_deps, *dev_deps, *coverage_deps, *coverage_report_deps)
     build_cocotb_for_dev_test(session, editable=True)
     if session.posargs:
         session.run(*session.posargs, external=True)

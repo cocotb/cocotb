@@ -18,24 +18,28 @@ using bufSize_type = decltype(vhpiValueT::bufSize);
 
 // Main entry point for callbacks from simulator
 void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
-    gpi_to_user();
+    SIM_TO_GPI(VHPI, VhpiImpl::reason_to_string(cb_data->reason));
 
     VhpiCbHdl *cb_hdl = (VhpiCbHdl *)cb_data->user_data;
 
+    int error = (!cb_hdl);
     // LCOV_EXCL_START
-    if (!cb_hdl) {
+    if (error) {
         LOG_CRITICAL("VHPI: Callback data corrupted: ABORTING");
-        gpi_end_of_sim_time();
-        return;
     }
     // LCOV_EXCL_STOP
 
-    if (cb_hdl->run()) {
-        // sim failed, so call shutdown
+    if (!error) {
+        GPI_TO_USER_CB(VHPI);
+        error = cb_hdl->run();
+        USER_CB_TO_GPI(VHPI);
+    }
+
+    if (error) {
         gpi_end_of_sim_time();
     }
 
-    gpi_to_simulator();
+    GPI_TO_SIM(VHPI);
 }
 
 VhpiArrayObjHdl::~VhpiArrayObjHdl() {

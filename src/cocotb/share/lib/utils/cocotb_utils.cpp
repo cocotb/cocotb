@@ -14,9 +14,6 @@
 #include <dlfcn.h>
 #endif
 
-// Tracks if we are in the context of Python or Simulator
-int is_python_context = 0;
-
 extern "C" void *utils_dyn_open(const char *lib_name) {
     void *ret = NULL;
 #ifdef _WIN32
