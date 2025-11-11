@@ -10,10 +10,9 @@ import os
 import re
 from collections.abc import Mapping, MutableMapping, Sequence
 from copy import deepcopy
-from functools import wraps
 from pathlib import Path
 from shutil import which
-from typing import Any, Callable
+from typing import Any
 
 from pytest import Config, FixtureRequest
 
@@ -62,23 +61,6 @@ def get_simulator(config: Config) -> str:
     return simulator
 
 
-def lock_on_session(method: Callable[..., Any]) -> Callable[..., Any]:
-    """Wrap class method and protect it from running multiple times by the pytest-xdist plugin during the ``session`` stage."""
-
-    @wraps(method)
-    def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
-        if self._is_session_scoped and self._is_xdist_worker:
-            # https://pytest-xdist.readthedocs.io/en/stable/how-to.html#making-session-scoped-fixtures-execute-only-once
-            from filelock import FileLock  # noqa: PLC0415
-
-            with FileLock(Path(self.build_dir) / ".cocotb-pytest-session.lock"):
-                return method(self, *args, **kwargs)
-        else:
-            return method(self, *args, **kwargs)
-
-    return wrapper
-
-
 class HDL:
     """Build HDL design and run test against specific HDL top level."""
 
@@ -108,7 +90,9 @@ class HDL:
         # We need information if .build()/.test() is running during session stage and by xdist worker
         # This is needed to protect build/test directory
         self._is_session_scoped: bool = request.scope == "session"
-        self._is_xdist_worker: bool = hasattr(request.config, "workerinput")
+        self._is_xdist_worker: bool = (
+            getattr(request.config, "workerinput", None) is not None
+        )
 
         # Use only allowed characters by POSIX standard
         # Pytest is always using "/" as path separator regardless of current OS environment
@@ -255,7 +239,6 @@ class HDL:
         """Get HDL parameter/generic."""
         return self.parameters[key]
 
-    @lock_on_session
     def build(
         self,
         library: str | None = None,
@@ -319,6 +302,11 @@ class HDL:
             cwd:
                 Directory to execute the build command(s) in.
         """
+        # Run build only once when executing this method during session stage
+        # https://github.com/pytest-dev/pytest-xdist/issues/271#issuecomment-826396320
+        if self._is_session_scoped and self._is_xdist_worker:
+            return
+
         option = self._option
 
         build_dir = build_dir or self.build_dir
@@ -352,7 +340,6 @@ class HDL:
             waves=waves or self.waves,
         )
 
-    @lock_on_session
     def test(
         self,
         test_module: str | Sequence[str] | None = None,
