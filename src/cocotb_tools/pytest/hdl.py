@@ -434,7 +434,7 @@ class HDL:
         test_args = (test_args or self.test_args) + option.cocotb_test_args
         plusargs = (plusargs or self.plusargs) + option.cocotb_plusargs
         pre_cmd = (pre_cmd or self.pre_cmd) + option.cocotb_pre_cmd
-        timescale = timescale or option.cocotb_timescale
+        timescale = timescale or self.timescale
 
         # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
         parameters = dict(deepcopy(parameters or self.parameters))
