@@ -6,31 +6,21 @@
 #define PY_GPI_LOGGING_H
 
 #include <Python.h>
-
-#include "exports.h"
-
-#ifdef PYGPILOG_EXPORTS
-#define PYGPILOG_EXPORT COCOTB_EXPORT
-#else
-#define PYGPILOG_EXPORT COCOTB_IMPORT
-#endif
-
 #include <gpi_logging.h>
 
-#ifdef __cplusplus
-extern "C" {
+#ifdef PYGPI_EXPORTS
+#define PYGPI_EXPORT COCOTB_EXPORT
+#else
+#define PYGPI_EXPORT COCOTB_IMPORT
 #endif
 
-PYGPILOG_EXPORT void py_gpi_logger_initialize(PyObject *handler,
-                                              PyObject *get_logger);
+void py_gpi_logger_initialize(PyObject *handler, PyObject *get_logger);
+void py_gpi_logger_finalize();
 
-PYGPILOG_EXPORT void py_gpi_logger_finalize();
-
-extern PYGPILOG_EXPORT PyObject *pEventFn;  // This is gross but I don't care
-
-extern "C" PYGPILOG_EXPORT int pygpi_debug_enabled;
-extern "C" PYGPILOG_EXPORT int python_context_tracing_enabled;
-extern "C" PYGPILOG_EXPORT int is_python_context;
+extern PyObject *pEventFn;
+extern int pygpi_debug_enabled;
+extern int python_context_tracing_enabled;
+extern int is_python_context;
 
 #define PYGPI_LOG_(level, ...) \
     gpi_log_("pygpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__)
@@ -97,9 +87,5 @@ extern "C" PYGPILOG_EXPORT int is_python_context;
             PYGPI_LOG_TRACE("Python => C");                                \
         }                                                                  \
     } while (0)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

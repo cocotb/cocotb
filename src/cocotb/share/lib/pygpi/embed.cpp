@@ -7,15 +7,15 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
-#include <cocotb_utils.h>    // DEFER
-#include <exports.h>         // COCOTB_EXPORT
-#include <gpi.h>             // gpi_register_*
-#include <py_gpi_logging.h>  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize, LOG_* macros
+#include <gpi.h>  // gpi_register_*
 
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <string>
+
+#include "../utils.hpp"      // DEFER
+#include "./pygpi_priv.hpp"  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize, LOG_* macros, PYGPI_EXPORT
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -86,7 +86,7 @@ static int start_of_sim_time(void *, int, char const *const *);
 static void end_of_sim_time(void *);
 static void finalize(void *);
 
-extern "C" COCOTB_EXPORT void initialize(void) {
+extern "C" PYGPI_EXPORT void initialize(void) {
     pygpi_init_debug();
 
     PYGPI_LOG_TRACE("GPI Init => [ PYGPI Init ]");

@@ -6,13 +6,14 @@
 #ifndef COCOTB_FLI_IMPL_H_
 #define COCOTB_FLI_IMPL_H_
 
+#include <exports.h>
+#include <gpi.h>
+
 #include <map>
 #include <vector>
 
-#include "../gpi/gpi_priv.h"
+#include "../gpi_priv.hpp"
 #include "_vendor/fli/mti.h"
-#include "exports.h"
-#include "gpi.h"
 
 #ifdef COCOTBFLI_EXPORTS
 #define COCOTBFLI_EXPORT COCOTB_EXPORT

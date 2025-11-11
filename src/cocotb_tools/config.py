@@ -96,10 +96,9 @@ def _help_vars_text() -> str:
 
 
 def pygpi_entry_point() -> str:
-    for possible_name in ("libcocotb.so", "cocotb.dll", "libcocotb.dll"):
-        if (possible_lib_path := (libs_dir / possible_name)).exists():
-            return f"{possible_lib_path},initialize"
-    raise RuntimeError("No libcocotb found")
+    import cocotb.simulator  # noqa: PLC0415
+
+    return f"{Path(cocotb.simulator.__file__).resolve()},initialize"
 
 
 def lib_name(interface: str, simulator: str) -> str:
@@ -152,7 +151,7 @@ def lib_name(interface: str, simulator: str) -> str:
         lib_ext = ".so"
 
     # check if compiled with msvc
-    if (libs_dir / "cocotb.dll").is_file():
+    if (libs_dir / "gpi.dll").is_file():
         lib_prefix = ""
     else:
         lib_prefix = "lib"

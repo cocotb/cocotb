@@ -3,8 +3,9 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "VhpiImpl.h"
+#include "./VhpiImpl.hpp"
 
+#include <gpi_logging.h>
 #include <stdlib.h>
 
 #include <cassert>
@@ -12,7 +13,6 @@
 #include <cstring>
 
 #include "_vendor/vhpi/vhpi_user.h"
-#include "gpi_logging.h"
 #include "vhpi_user_ext.h"
 
 #ifdef NVC

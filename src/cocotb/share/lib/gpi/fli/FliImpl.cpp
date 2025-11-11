@@ -3,7 +3,7 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "FliImpl.h"
+#include "./FliImpl.hpp"
 
 #include <cstddef>
 #include <cstring>

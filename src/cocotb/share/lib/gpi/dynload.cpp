@@ -4,7 +4,6 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <cocotb_utils.h>
 #include <gpi_logging.h>
 #include <stdlib.h>
 
@@ -14,7 +13,7 @@
 #include <dlfcn.h>
 #endif
 
-extern "C" void *utils_dyn_open(const char *lib_name) {
+void *utils_dyn_open(const char *lib_name) {
     void *ret = NULL;
 #ifdef _WIN32
     SetErrorMode(0);
@@ -45,7 +44,7 @@ extern "C" void *utils_dyn_open(const char *lib_name) {
     return ret;
 }
 
-extern "C" void *utils_dyn_sym(void *handle, const char *sym_name) {
+void *utils_dyn_sym(void *handle, const char *sym_name) {
     void *entry_point;
 #ifdef _WIN32
     entry_point = reinterpret_cast<void *>(

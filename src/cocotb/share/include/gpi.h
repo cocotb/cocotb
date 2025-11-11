@@ -32,15 +32,15 @@ imitate a callback.
 */
 
 #include <exports.h>
+#include <gpi_logging.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #ifdef GPI_EXPORTS
 #define GPI_EXPORT COCOTB_EXPORT
 #else
 #define GPI_EXPORT COCOTB_IMPORT
 #endif
-
-#include <gpi_logging.h>
-#include <stdbool.h>
-#include <stdint.h>
 
 /*
  * Declare the handle types.
