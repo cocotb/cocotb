@@ -193,7 +193,7 @@ class HDL:
         self.gui: bool = kwargs.pop("gui", option.cocotb_gui)
         """Run with simulator GUI."""
 
-        self.pre_cmd: MutableSequence[str] | None = _pop_and_copy(kwargs, "pre_cmd", [])
+        self.pre_cmd: list[str] | None = _pop_and_copy(kwargs, "pre_cmd", [])
         """Commands to run before simulation begins. Typically Tcl commands for simulators that support them."""
 
         for name, value in kwargs.items():
