@@ -6,9 +6,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
 from inspect import Parameter, signature
-from typing import Callable, overload
+from typing import Callable
 
 from pytest import Config, MarkDecorator, mark
 
@@ -21,42 +20,7 @@ from cocotb_tools.runner import (
 )
 
 
-@overload
-def cocotb_runner() -> MarkDecorator: ...
-
-
-@overload
-def cocotb_runner(*test_module: str) -> MarkDecorator: ...
-
-
-@overload
-def cocotb_runner(
-    *test_module: str,
-    library: str | None = None,
-    sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] | None = None,
-    includes: Sequence[PathLike] | None = None,
-    defines: Mapping[str, object] | None = None,
-    parameters: Mapping[str, object] | None = None,
-    build_args: Sequence[str | VHDL | Verilog] | None = None,
-    toplevel_lang: str | None = None,
-    always: bool = False,
-    clean: bool = False,
-    verbose: bool = False,
-    timescale: tuple[str, str] | None = None,
-    waves: bool = False,
-    toplevel_library: str | None = None,
-    gpi_interfaces: Sequence[str] | None = None,
-    seed: str | int | None = None,
-    elab_args: Sequence[str] | None = None,
-    test_args: Sequence[str] | None = None,
-    plusargs: Sequence[str] | None = None,
-    env: Mapping[str, str] | None = None,
-    gui: bool = False,
-    pre_cmd: Sequence[str] | None = None,
-) -> MarkDecorator: ...
-
-
-def cocotb_runner(*test_module: str, **option: object) -> MarkDecorator:
+def cocotb_runner(test_module: str = "", *extra_test_module: str) -> MarkDecorator:
     """Mark test function as cocotb runner.
 
     Example usage:
@@ -84,70 +48,10 @@ def cocotb_runner(*test_module: str, **option: object) -> MarkDecorator:
         test_module:
             Name of Python module with cocotb tests to be loaded by cocotb :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner`.
 
-        library:
-            The library name to compile into.
-
-        sources:
-            Language-agnostic list of source files to build.
-
-        includes:
-            Verilog include directories.
-
-        defines:
-            Defines to set.
-
-        parameters:
-            Verilog parameters or VHDL generics.
-
-        build_args:
-            Extra build arguments for the simulator.
-
-        always:
-            Always run the build step.
-
-        clean:
-            Delete *build_dir* before building.
-
-        verbose:
-            Enable verbose messages.
-
-        timescale:
-            Tuple containing time unit and time precision for simulation.
-
-        waves:
-            Record signal traces.
-
-        toplevel_library:
-            The library name for HDL toplevel module.
-
-        gpi_interfaces:
-            List of GPI interfaces to use, with the first one being the entry point.
-
-        seed:
-            A specific random seed to use.
-
-        elab_args:
-            A list of elaboration arguments for the simulator.
-
-        test_args:
-            A list of extra arguments for the simulator.
-
-        plusargs:
-            'plusargs' to set for the simulator.
-
-        env:
-            Extra environment variables to set.
-
-        gui:
-            Run with simulator GUI.
-
-        pre_cmd:
-            Commands to run before simulation begins. Typically Tcl commands for simulators that support them.
-
     Returns:
         Decorated test function as cocotb runner.
     """
-    return mark.cocotb_runner(*test_module, **option)
+    return mark.cocotb_runner(test_module=test_module, *extra_test_module)
 
 
 def cocotb_test() -> MarkDecorator:
@@ -180,7 +84,7 @@ def cocotb_timeout(duration: float, unit: TimeUnit) -> MarkDecorator:
 
     .. code:: python
 
-        @pytest.mark.cocotb_timeout(200, "ns")
+        @pytest.mark.cocotb_timeout(duration=200, unit="ns")
         async def test_dut_feature_with_timeout(dut) -> None:
             # Test DUT feature with timeout configured from cocotb marker
             ...
@@ -196,6 +100,93 @@ def cocotb_timeout(duration: float, unit: TimeUnit) -> MarkDecorator:
         Decorated coroutine function with simulation time duration before the test is forced to fail.
     """
     return mark.cocotb_timeout(duration=duration, unit=unit)
+
+
+def cocotb_sources(
+    *source: PathLike | Verilog | VHDL | VerilatorControlFile,
+) -> MarkDecorator:
+    """Add language-agnostic list of source files to build."""
+    return mark.cocotb_sources(*source)
+
+
+def cocotb_defines(**define: object) -> MarkDecorator:
+    """Set defines."""
+    return mark.cocotb_defines(**define)
+
+
+def cocotb_parameters(**parameter: object) -> MarkDecorator:
+    """Set Verilog/SystemVerilog parameters and VHDL generics."""
+    return mark.cocotb_parameters(**parameter)
+
+
+def cocotb_env(**env: str) -> MarkDecorator:
+    """Set environment variables."""
+    return mark.cocotb_env(**env)
+
+
+def cocotb_includes(*include: PathLike) -> MarkDecorator:
+    """Add Verilog includes."""
+    return mark.cocotb_includes(*include)
+
+
+def cocotb_plusargs(*plusarg: str) -> MarkDecorator:
+    """Add plus arguments for the simulator."""
+    return mark.cocotb_plusargs(*plusarg)
+
+
+def cocotb_timescale(unit: str, precision: str | None = None) -> MarkDecorator:
+    """Set time unit and time precision for simulation."""
+    return mark.cocotb_timescale(unit=unit, precision=precision)
+
+
+def cocotb_seed(value: str | int) -> MarkDecorator:
+    """A specific random seed to use."""
+    return mark.cocotb_seed(value=value)
+
+
+def cocotb_build_args(*arg: str | VHDL | Verilog) -> MarkDecorator:
+    """Add extra build arguments for the simulator."""
+    return mark.cocotb_build_args(*arg)
+
+
+def cocotb_elab_args(*arg: str) -> MarkDecorator:
+    """Add extra elaboration arguments to the simulator."""
+    return mark.cocotb_elab_args(*arg)
+
+
+def cocotb_test_args(*arg: str) -> MarkDecorator:
+    """Add extra runtime arguments to the simulator."""
+    return mark.cocotb_test_args(*arg)
+
+
+def cocotb_pre_cmd(*arg: str) -> MarkDecorator:
+    """Add extra commands to run before simulation begins. Typically Tcl commands for simulators that support them.."""
+    return mark.cocotb_pre_cmd(*arg)
+
+
+def cocotb_library(name: str) -> MarkDecorator:
+    """Set the library name to compile into."""
+    return mark.cocotb_library(name=name)
+
+
+def cocotb_waves(condition: bool = True) -> MarkDecorator:
+    """Record signal traces."""
+    return mark.cocotb_waves(condition=condition)
+
+
+def cocotb_verbose(condition: bool = True) -> MarkDecorator:
+    """Enable verbose messages."""
+    return mark.cocotb_verbose(condition=condition)
+
+
+def cocotb_always(condition: bool = True) -> MarkDecorator:
+    """Always run the build step."""
+    return mark.cocotb_always(condition=condition)
+
+
+def cocotb_clean(condition: bool = True) -> MarkDecorator:
+    """Delete *build_dir* before building."""
+    return mark.cocotb_clean(condition=condition)
 
 
 def marker_description(marker: Callable[..., MarkDecorator]) -> str:
@@ -227,7 +218,7 @@ def marker_description(marker: Callable[..., MarkDecorator]) -> str:
         args.append(arg)
 
         if parameter.kind == Parameter.VAR_POSITIONAL:
-            args.extend(("...", "*"))
+            args.append("...")
 
     description: str = str(marker.__doc__).lstrip().splitlines()[0]
 
@@ -240,6 +231,25 @@ def register_markers(config: Config) -> None:
     Args:
         config: Pytest configuration object.
     """
-    config.addinivalue_line("markers", marker_description(cocotb_runner))
-    config.addinivalue_line("markers", marker_description(cocotb_test))
-    config.addinivalue_line("markers", marker_description(cocotb_timeout))
+    for marker in (
+        cocotb_runner,
+        cocotb_test,
+        cocotb_timeout,
+        cocotb_library,
+        cocotb_sources,
+        cocotb_defines,
+        cocotb_includes,
+        cocotb_parameters,
+        cocotb_plusargs,
+        cocotb_env,
+        cocotb_seed,
+        cocotb_timescale,
+        cocotb_always,
+        cocotb_clean,
+        cocotb_waves,
+        cocotb_build_args,
+        cocotb_elab_args,
+        cocotb_test_args,
+        cocotb_pre_cmd,
+    ):
+        config.addinivalue_line("markers", marker_description(marker))

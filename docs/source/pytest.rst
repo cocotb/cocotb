@@ -143,8 +143,7 @@ Markers
 :py:deco:`!pytest.mark.cocotb_runner`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The plugin provides the marker :py:deco:`!pytest.mark.cocotb_runner` which allows
-to configure all aspects of cocotb runner.
+The plugin provides the marker :py:deco:`!pytest.mark.cocotb_runner` that will mark test function as cocotb runner.
 
 .. code:: python
 
@@ -169,7 +168,8 @@ to configure all aspects of cocotb runner.
         sample_module.test()
 
 
-    @pytest.mark.cocotb_runner(timescale=("1ns", "1ps"))
+    @pytest.mark.cocotb_runner
+    @pytest.mark.cocotb_timescale(unit="1ns", precision="1ps")
     def test_dut_using_different_timescale(sample_module: HDL) -> None:
         """Test DUT using different timescale."""
         sample_module.test()
@@ -301,7 +301,7 @@ with simulation time duration before the test is forced to fail.
 
 .. code:: python
 
-    @pytest.mark.cocotb_timeout(200, "ns")
+    @pytest.mark.cocotb_timeout(duration=200, unit="ns")
     async def test_dut_feature(dut) -> None:
         """Test DUT feature that must finish before 200 nanoseconds."""
         ...

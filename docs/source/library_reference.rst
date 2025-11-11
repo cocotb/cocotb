@@ -50,7 +50,40 @@ Markers
 
 .. autodecorator:: cocotb_timeout
 
+.. autodecorator:: cocotb_library
+
+.. autodecorator:: cocotb_sources
+
+.. autodecorator:: cocotb_defines
+
+.. autodecorator:: cocotb_includes
+
+.. autodecorator:: cocotb_parameters
+
+.. autodecorator:: cocotb_plusargs
+
+.. autodecorator:: cocotb_env
+
+.. autodecorator:: cocotb_seed
+
+.. autodecorator:: cocotb_timescale
+
+.. autodecorator:: cocotb_always
+
+.. autodecorator:: cocotb_clean
+
+.. autodecorator:: cocotb_waves
+
+.. autodecorator:: cocotb_build_args
+
+.. autodecorator:: cocotb_elab_args
+
+.. autodecorator:: cocotb_test_args
+
+.. autodecorator:: cocotb_pre_cmd
+
 .. _api-pytest-plugin-hdl:
+
 
 HDL Fixture Request
 -------------------
