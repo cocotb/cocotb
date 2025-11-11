@@ -114,23 +114,23 @@ class HDL:
 
         self.sources: MutableSequence[
             PathLike | VHDL | Verilog | VerilatorControlFile
-        ] = kwargs.pop("sources", []).copy()
+        ] = _pop_and_copy(kwargs, "sources", [])
         """Language-agnostic list of source files to build."""
 
-        self.includes: MutableSequence[PathLike] = kwargs.pop("includes", []).copy()
+        self.includes: MutableSequence[PathLike] = _pop_and_copy(kwargs, "includes", [])
         """Verilog include directories."""
 
-        self.defines: MutableMapping[str, object] = kwargs.pop("defines", {}).copy()
+        self.defines: MutableMapping[str, object] = _pop_and_copy(kwargs, "defines", {})
         """Defines to set."""
 
-        self.parameters: MutableMapping[str, object] = kwargs.pop(
-            "parameters", {}
-        ).copy()
+        self.parameters: MutableMapping[str, object] = _pop_and_copy(
+            kwargs, "parameters", {}
+        )
         """Verilog parameters or VHDL generics."""
 
-        self.build_args: MutableSequence[str | VHDL | Verilog] = kwargs.pop(
-            "build_args", []
-        ).copy()
+        self.build_args: MutableSequence[str | VHDL | Verilog] = _pop_and_copy(
+            kwargs, "build_args", []
+        )
         """Extra build arguments for the simulator."""
 
         self.toplevel: str | None = None
@@ -178,22 +178,22 @@ class HDL:
         self.seed: str | int | None = kwargs.pop("seed", option.cocotb_seed)
         """A specific random seed to use."""
 
-        self.elab_args: MutableSequence[str] = kwargs.pop("elab_args", []).copy()
+        self.elab_args: MutableSequence[str] = _pop_and_copy(kwargs, "elab_args", [])
         """A list of elaboration arguments for the simulator."""
 
-        self.test_args: MutableSequence[str] = kwargs.pop("test_args", []).copy()
+        self.test_args: MutableSequence[str] = _pop_and_copy(kwargs, "test_args", [])
         """A list of extra arguments for the simulator."""
 
-        self.plusargs: MutableSequence[str] = kwargs.pop("plusargs", []).copy()
+        self.plusargs: MutableSequence[str] = _pop_and_copy(kwargs, "plusargs", [])
         """'plusargs' to set for the simulator."""
 
-        self.env: MutableMapping[str, str] = kwargs.pop("env", {}).copy()
+        self.env: MutableMapping[str, str] = _pop_and_copy(kwargs, "env", {})
         """Extra environment variables to set."""
 
         self.gui: bool = kwargs.pop("gui", option.cocotb_gui)
         """Run with simulator GUI."""
 
-        self.pre_cmd: MutableSequence[str] | None = kwargs.pop("pre_cmd", []).copy()
+        self.pre_cmd: MutableSequence[str] | None = _pop_and_copy(kwargs, "pre_cmd", [])
         """Commands to run before simulation begins. Typically Tcl commands for simulators that support them."""
 
         for name, value in kwargs.items():
@@ -461,3 +461,9 @@ class HDL:
             verbose=verbose or self.verbose,
             timescale=None if self.simulator in ("xcelium",) else timescale,
         )
+
+
+def _pop_and_copy(kwargs: MutableMapping, name: str, default: Any) -> Any:
+    value: Any = kwargs.pop(name, None)
+
+    return value.copy() if value else default
