@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Mapping, Sequence
 from inspect import Parameter, signature
 from typing import Callable, overload
 
@@ -36,7 +36,7 @@ def cocotb_runner(
     sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] = [],
     includes: Sequence[PathLike] = [],
     defines: Mapping[str, object] = {},
-    parameters: MutableMapping[str, object] = {},
+    parameters: Mapping[str, object] = {},
     build_args: Sequence[str | VHDL | Verilog] = [],
     toplevel_lang: str | None = None,
     always: bool = False,
