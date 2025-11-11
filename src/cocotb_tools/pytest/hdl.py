@@ -8,8 +8,7 @@ from __future__ import annotations
 
 import os
 import re
-from collections.abc import Mapping, MutableMapping, Sequence
-from copy import deepcopy
+from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
 from pathlib import Path
 from shutil import which
 from typing import Any
@@ -113,21 +112,25 @@ class HDL:
         self.library: str = kwargs.pop("library", option.cocotb_library)
         """The library name to compile into."""
 
-        self.sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile] = (
-            kwargs.pop("sources", [])
-        )
+        self.sources: MutableSequence[
+            PathLike | VHDL | Verilog | VerilatorControlFile
+        ] = kwargs.pop("sources", []).copy()
         """Language-agnostic list of source files to build."""
 
-        self.includes: Sequence[PathLike] = kwargs.pop("includes", [])
+        self.includes: MutableSequence[PathLike] = kwargs.pop("includes", []).copy()
         """Verilog include directories."""
 
-        self.defines: Mapping[str, object] = kwargs.pop("defines", {})
+        self.defines: MutableMapping[str, object] = kwargs.pop("defines", {}).copy()
         """Defines to set."""
 
-        self.parameters: MutableMapping[str, object] = kwargs.pop("parameters", {})
+        self.parameters: MutableMapping[str, object] = kwargs.pop(
+            "parameters", {}
+        ).copy()
         """Verilog parameters or VHDL generics."""
 
-        self.build_args: Sequence[str | VHDL | Verilog] = kwargs.pop("build_args", [])
+        self.build_args: MutableSequence[str | VHDL | Verilog] = kwargs.pop(
+            "build_args", []
+        ).copy()
         """Extra build arguments for the simulator."""
 
         self.toplevel: str | None = None
@@ -175,22 +178,22 @@ class HDL:
         self.seed: str | int | None = kwargs.pop("seed", option.cocotb_seed)
         """A specific random seed to use."""
 
-        self.elab_args: Sequence[str] = kwargs.pop("elab_args", [])
+        self.elab_args: MutableSequence[str] = kwargs.pop("elab_args", []).copy()
         """A list of elaboration arguments for the simulator."""
 
-        self.test_args: Sequence[str] = kwargs.pop("test_args", [])
+        self.test_args: MutableSequence[str] = kwargs.pop("test_args", []).copy()
         """A list of extra arguments for the simulator."""
 
-        self.plusargs: Sequence[str] = kwargs.pop("plusargs", [])
+        self.plusargs: MutableSequence[str] = kwargs.pop("plusargs", []).copy()
         """'plusargs' to set for the simulator."""
 
-        self.env: Mapping[str, str] = kwargs.pop("env", {})
+        self.env: MutableMapping[str, str] = kwargs.pop("env", {}).copy()
         """Extra environment variables to set."""
 
         self.gui: bool = kwargs.pop("gui", option.cocotb_gui)
         """Run with simulator GUI."""
 
-        self.pre_cmd: list[str] | None = kwargs.pop("pre_cmd", [])
+        self.pre_cmd: MutableSequence[str] | None = kwargs.pop("pre_cmd", []).copy()
         """Commands to run before simulation begins. Typically Tcl commands for simulators that support them."""
 
         for name, value in kwargs.items():
@@ -246,7 +249,7 @@ class HDL:
         | None = None,
         includes: Sequence[PathLike] | None = None,
         defines: Mapping[str, object] | None = None,
-        parameters: MutableMapping[str, object] | None = None,
+        parameters: Mapping[str, object] | None = None,
         build_args: Sequence[str | VHDL | Verilog] | None = None,
         toplevel: str | None = None,
         always: bool = False,
@@ -317,11 +320,8 @@ class HDL:
         includes = (includes or self.includes) + option.cocotb_includes
 
         # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
-        parameters = dict(deepcopy(parameters or self.parameters))
-        defines = dict(deepcopy(defines or self.defines))
-
-        parameters.update(option.cocotb_parameters)
-        defines.update(option.cocotb_defines)
+        parameters = (parameters or self.parameters) | option.cocotb_parameters
+        defines = (defines or self.defines) | option.cocotb_defines
 
         self.runner.build(
             hdl_library=library or self.library,
@@ -347,7 +347,7 @@ class HDL:
         toplevel_library: str | None = None,
         toplevel_lang: str | None = None,
         gpi_interfaces: list[str] | None = None,
-        parameters: MutableMapping[str, object] | None = None,
+        parameters: Mapping[str, object] | None = None,
         seed: str | int | None = None,
         elab_args: Sequence[str] | None = None,
         test_args: Sequence[str] | None = None,
@@ -437,11 +437,8 @@ class HDL:
         timescale = timescale or self.timescale
 
         # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
-        parameters = dict(deepcopy(parameters or self.parameters))
-        extra_env: dict[str, str] = dict(deepcopy(env or self.env))
-
-        parameters.update(option.cocotb_parameters)
-        extra_env.update(option.cocotb_env)
+        parameters = (parameters or self.parameters) | option.cocotb_parameters
+        env = (env or self.env) | option.cocotb_env
 
         return self.runner.test(
             test_module=test_module or self.test_module,
@@ -453,7 +450,7 @@ class HDL:
             elab_args=elab_args,
             test_args=test_args,
             plusargs=plusargs,
-            extra_env=extra_env,
+            extra_env=env,
             waves=waves or self.waves,
             gui=gui or self.gui,
             parameters=parameters or None,
