@@ -696,7 +696,7 @@ def is_cocotb_test(item: Item) -> bool:
     """
     return (
         isinstance(item, Function)
-        and "cocotb" in item.keywords
+        and "cocotb_test" in item.keywords
         and inspect.iscoroutinefunction(item.function)
     )
 

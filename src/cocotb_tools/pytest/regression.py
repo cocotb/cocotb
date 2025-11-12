@@ -272,7 +272,7 @@ class RegressionManager:
             if not isinstance(item, Function):
                 yield item
 
-            elif "cocotb" in item.keywords and inspect.iscoroutinefunction(
+            elif "cocotb_test" in item.keywords and inspect.iscoroutinefunction(
                 item.function
             ):
                 item.extra_keyword_matches.update(self._keywords)

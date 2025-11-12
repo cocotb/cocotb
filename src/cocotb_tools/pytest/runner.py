@@ -37,7 +37,6 @@ class Runner(Collector):
         super().__init__(*args, **kwargs)
 
         self.item: Item = item
-        item.extra_keyword_matches.add("runner")
 
     def collect(self) -> Iterable[Item | Collector]:
         """Collect cocotb tests from Python module(s) that will be run by cocotb runner.
