@@ -23,11 +23,10 @@ from cocotb_build_libs import build_ext, get_ext
 
 __version__ = "2.1.0.dev0"
 
-max_python = (3, 14)
-max_python_str = ".".join(map(str, max_python))
-if sys.version_info > max_python:
+max_python3_minor_version = 14
+if sys.version_info >= (3, max_python3_minor_version + 1):
     raise RuntimeError(
-        f"cocotb {__version__} only supports a maximum Python version of {max_python_str}"
+        f"cocotb {__version__} only supports a maximum Python version of 3.{max_python3_minor_version}"
     )
 
 
