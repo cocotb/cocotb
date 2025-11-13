@@ -385,6 +385,19 @@ def test(
 test.__test__ = False  # type: ignore[attr-defined]
 
 
+@overload
+def parametrize(
+    *options_by_tuple: tuple[str, Sequence[object]]
+    | tuple[Sequence[str], Sequence[Sequence[object]]],
+) -> Callable[[TestFuncType | TestGenerator], TestGenerator]: ...
+
+
+@overload
+def parametrize(
+    **options_by_name: Sequence[object],
+) -> Callable[[TestFuncType | TestGenerator], TestGenerator]: ...
+
+
 def parametrize(
     *options_by_tuple: tuple[str, Sequence[object]]
     | tuple[Sequence[str], Sequence[Sequence[object]]],
