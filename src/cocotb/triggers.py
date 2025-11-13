@@ -27,6 +27,7 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
+from cocotb._task_manager import TaskManager
 
 __all__ = (
     "ClockCycles",
@@ -43,6 +44,7 @@ __all__ = (
     "ReadWrite",
     "RisingEdge",
     "SimTimeoutError",
+    "TaskManager",
     "Timer",
     "Trigger",
     "ValueChange",
