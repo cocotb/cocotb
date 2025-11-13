@@ -4,11 +4,12 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <gpi.h>
+#include <vpi_user_ext.h>
+
 #include <cassert>
 
-#include "VpiImpl.h"
-#include "gpi.h"
-#include "vpi_user_ext.h"
+#include "./VpiImpl.hpp"
 
 int VpiSignalObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {

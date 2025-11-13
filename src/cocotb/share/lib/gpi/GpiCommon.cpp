@@ -4,8 +4,8 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <cocotb_utils.h>
 #include <gpi.h>
+#include <gpi_logging.h>
 #include <sys/types.h>
 
 #include <algorithm>
@@ -14,9 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "gpi.h"
-#include "gpi_logging.h"
-#include "gpi_priv.h"
+#include "./gpi_priv.hpp"
 
 using namespace std;
 
@@ -760,20 +758,19 @@ const char *GpiImplInterface::get_name_c() { return m_name.c_str(); }
 
 const string &GpiImplInterface::get_name_s() { return m_name; }
 
-GPI_EXPORT int gpi_register_start_of_sim_time_callback(
-    int (*cb)(void *, int, char const *const *), void *cb_data) {
+int gpi_register_start_of_sim_time_callback(int (*cb)(void *, int,
+                                                      char const *const *),
+                                            void *cb_data) {
     start_of_sim_time_cbs.push_back(std::make_pair(cb, cb_data));
     return 0;
 }
 
-GPI_EXPORT int gpi_register_end_of_sim_time_callback(void (*cb)(void *),
-                                                     void *cb_data) {
+int gpi_register_end_of_sim_time_callback(void (*cb)(void *), void *cb_data) {
     end_of_sim_time_cbs.push_back(std::make_pair(cb, cb_data));
     return 0;
 }
 
-GPI_EXPORT int gpi_register_finalize_callback(void (*cb)(void *),
-                                              void *cb_data) {
+int gpi_register_finalize_callback(void (*cb)(void *), void *cb_data) {
     finalize_cbs.push_back(std::make_pair(cb, cb_data));
     return 0;
 }

@@ -9,7 +9,7 @@
 #include <limits>  // numeric_limits
 #include <stdexcept>
 
-#include "VhpiImpl.h"
+#include "./VhpiImpl.hpp"
 #include "_vendor/vhpi/vhpi_user.h"
 
 namespace {

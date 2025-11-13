@@ -7,21 +7,8 @@
 #ifndef COCOTB_UTILS_H_
 #define COCOTB_UTILS_H_
 
-#include <exports.h>
-#ifdef COCOTBUTILS_EXPORTS
-#define COCOTBUTILS_EXPORT COCOTB_EXPORT
-#else
-#define COCOTBUTILS_EXPORT COCOTB_IMPORT
-#endif
-
-#include <gpi_logging.h>
-
 #define xstr(a) str(a)
 #define str(a) #a
-
-extern "C" COCOTBUTILS_EXPORT void *utils_dyn_open(const char *lib_name);
-extern "C" COCOTBUTILS_EXPORT void *utils_dyn_sym(void *handle,
-                                                  const char *sym_name);
 
 template <typename F>
 class Deferable {

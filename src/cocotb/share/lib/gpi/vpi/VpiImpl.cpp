@@ -3,12 +3,13 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "VpiImpl.h"
+#include "./VpiImpl.hpp"
+
+#include <gpi.h>
+#include <gpi_logging.h>
+#include <vpi_user_ext.h>
 
 #include "_vendor/vpi/vpi_user.h"
-#include "gpi.h"
-#include "gpi_logging.h"
-#include "vpi_user_ext.h"
 
 #define CASE_STR(_X) \
     case _X:         \

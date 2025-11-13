@@ -5,7 +5,7 @@
 
 #include <cstring>
 
-#include "FliImpl.h"
+#include "./FliImpl.hpp"
 #include "_vendor/fli/mti.h"
 
 // Main re-entry point for callbacks from simulator

@@ -4,10 +4,11 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <vpi_user_ext.h>
+
 #include <stdexcept>
 
-#include "VpiImpl.h"
-#include "vpi_user_ext.h"
+#include "./VpiImpl.hpp"
 
 decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
     /* for reused lists */

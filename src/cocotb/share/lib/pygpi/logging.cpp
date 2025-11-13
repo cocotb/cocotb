@@ -2,9 +2,8 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "py_gpi_logging.h"
-
-#include <Python.h>  // all things Python
+#include <Python.h>       // all things Python
+#include <gpi_logging.h>  // all things GPI logging
 
 #include <cstdarg>  // va_list, va_copy, va_end
 #include <cstdio>   // fprintf, vsnprintf
@@ -12,8 +11,8 @@
 #include <string>   // std::string
 #include <vector>   // std::vector
 
-#include "cocotb_utils.h"  // DEFER
-#include "gpi_logging.h"   // all things GPI logging
+#include "../utils.hpp"  // DEFER
+#include "./pygpi_priv.hpp"
 
 static int py_gpi_log_level = GPI_NOTSET;
 
@@ -176,8 +175,7 @@ static bool py_gpi_logger_set_level(void *, const char *, int level) {
     return old_level;
 }
 
-extern "C" void py_gpi_logger_initialize(PyObject *log_func,
-                                         PyObject *get_logger) {
+void py_gpi_logger_initialize(PyObject *log_func, PyObject *get_logger) {
     Py_INCREF(log_func);
     Py_INCREF(get_logger);
     m_log_func = log_func;
@@ -186,7 +184,7 @@ extern "C" void py_gpi_logger_initialize(PyObject *log_func,
                         py_gpi_logger_set_level, nullptr);
 }
 
-extern "C" void py_gpi_logger_finalize() {
+void py_gpi_logger_finalize() {
     gpi_clear_log_handler();
     Py_XDECREF(m_log_func);
     Py_XDECREF(m_get_logger);

@@ -3,14 +3,15 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <gpi.h>
+
 #include <bitset>
 #include <cmath>
 #include <cstring>
 #include <string>
 
-#include "FliImpl.h"
+#include "./FliImpl.hpp"
 #include "_vendor/fli/acc_vhdl.h"
-#include "gpi.h"
 
 using std::abs;
 using std::to_string;

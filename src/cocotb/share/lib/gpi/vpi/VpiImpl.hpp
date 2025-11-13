@@ -6,15 +6,16 @@
 #ifndef COCOTB_VPI_IMPL_H_
 #define COCOTB_VPI_IMPL_H_
 
+#include <exports.h>
+#include <gpi.h>
+#include <gpi_logging.h>
+
 #include <cstring>
 #include <map>
 #include <vector>
 
-#include "../gpi/gpi_priv.h"
+#include "../gpi_priv.hpp"
 #include "_vendor/vpi/sv_vpi_user.h"
-#include "exports.h"
-#include "gpi.h"
-#include "gpi_logging.h"
 
 #ifdef COCOTBVPI_EXPORTS
 #define COCOTBVPI_EXPORT COCOTB_EXPORT

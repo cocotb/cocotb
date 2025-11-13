@@ -7,17 +7,17 @@
 #define COCOTB_GPI_PRIV_H_
 
 #include <exports.h>
+#include <gpi.h>
+
+#include <string>
+
+#include "../utils.hpp"  // xstr
+
 #ifdef GPI_EXPORTS
 #define GPI_EXPORT COCOTB_EXPORT
 #else
 #define GPI_EXPORT COCOTB_IMPORT
 #endif
-
-#include <gpi.h>
-
-#include <string>
-
-#include "cocotb_utils.h"  // xstr
 
 class GpiCbHdl;
 class GpiImplInterface;
@@ -275,6 +275,9 @@ GPI_EXPORT void gpi_end_of_sim_time();
 GPI_EXPORT void gpi_entry_point();
 GPI_EXPORT void gpi_check_cleanup();
 GPI_EXPORT void gpi_init_logging_and_debug();
+
+void *utils_dyn_open(const char *lib_name);
+void *utils_dyn_sym(void *handle, const char *sym_name);
 
 #define GPI_TO_USER_CB(impl) LOG_TRACE("[ " xstr(impl) " ] => User Callback")
 
