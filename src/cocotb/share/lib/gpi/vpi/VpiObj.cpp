@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-#include "VpiImpl.h"
+#include "./VpiImpl.hpp"
 
 int VpiArrayObjHdl::initialise(const std::string &name,
                                const std::string &fq_name) {

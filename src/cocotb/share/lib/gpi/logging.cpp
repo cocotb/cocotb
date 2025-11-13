@@ -4,7 +4,7 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "gpi_logging.h"
+#include <gpi_logging.h>
 
 #include <cstdarg>
 #include <cstdio>
@@ -12,9 +12,8 @@
 #include <map>
 #include <vector>
 
-#include "cocotb_utils.h"  // DEFER
+#include "../utils.hpp"  // DEFER
 
-// Disabled by default
 int gpi_debug_enabled = 0;
 
 static gpi_log_handler_ftype current_handler = nullptr;

@@ -16,22 +16,22 @@ This header file defines how to produce logs for GPI implementations
 as well as users of the GPI.
 */
 
+#include <exports.h>
+
 #include <cstdarg>  // va_list
 #include <cstring>  // strlen
 
-#include "exports.h"
-
-#ifdef GPILOG_EXPORTS
-#define GPILOG_EXPORT COCOTB_EXPORT
+#ifdef GPI_EXPORTS
+#define GPI_EXPORT COCOTB_EXPORT
 #else
-#define GPILOG_EXPORT COCOTB_IMPORT
+#define GPI_EXPORT COCOTB_IMPORT
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern GPILOG_EXPORT int gpi_debug_enabled;
+extern GPI_EXPORT int gpi_debug_enabled;
 
 /** Named logging level
  *
@@ -168,9 +168,9 @@ typedef bool (*gpi_log_set_level_ftype)(void *userdata, const char *logger,
 
 // Don't call this function directly unless the name is "gpi" or starts with
 // "gpi."
-GPILOG_EXPORT void gpi_log_(const char *name, int level, const char *pathname,
-                            const char *funcname, long lineno, const char *msg,
-                            ...);
+GPI_EXPORT void gpi_log_(const char *name, int level, const char *pathname,
+                         const char *funcname, long lineno, const char *msg,
+                         ...);
 
 /** Log a message using the currently registered log handler.
  *
@@ -189,9 +189,9 @@ GPILOG_EXPORT void gpi_log_(const char *name, int level, const char *pathname,
 
 // Don't call this function directly unless the name is "gpi" or starts with
 // "gpi."
-GPILOG_EXPORT void gpi_vlog_(const char *name, int level, const char *pathname,
-                             const char *funcname, long lineno, const char *msg,
-                             va_list args);
+GPI_EXPORT void gpi_vlog_(const char *name, int level, const char *pathname,
+                          const char *funcname, long lineno, const char *msg,
+                          va_list args);
 
 /** Check if a log would be filtered.
  *
@@ -199,7 +199,7 @@ GPILOG_EXPORT void gpi_vlog_(const char *name, int level, const char *pathname,
  * @param level Level at which to test if the logger would emit a message.
  * @return `true` if the *logger* is enabled at *level*.
  */
-GPILOG_EXPORT bool gpi_log_filtered(const char *logger, int level);
+GPI_EXPORT bool gpi_log_filtered(const char *logger, int level);
 
 /** Set the log level of a logger.
  *
@@ -207,10 +207,10 @@ GPILOG_EXPORT bool gpi_log_filtered(const char *logger, int level);
  * @param level Level to set the logger to.
  * @return The old log level.
  */
-GPILOG_EXPORT int gpi_log_set_level(const char *logger, int level);
+GPI_EXPORT int gpi_log_set_level(const char *logger, int level);
 
 /** @return The string representation of the GPI log level. */
-GPILOG_EXPORT const char *gpi_log_level_to_str(int level);
+GPI_EXPORT const char *gpi_log_level_to_str(int level);
 
 /** Retrieve the current log handler.
  * @param handler   Location to return current log handler function. If no
@@ -222,10 +222,10 @@ GPILOG_EXPORT const char *gpi_log_level_to_str(int level);
  * @param userdata  Location to return log handler userdata. If no custom
  *                  logger is registered this will be `NULL`.
  */
-GPILOG_EXPORT void gpi_get_log_handler(gpi_log_handler_ftype *handler,
-                                       gpi_log_filter_ftype *filter,
-                                       gpi_log_set_level_ftype *set_level,
-                                       void **userdata);
+GPI_EXPORT void gpi_get_log_handler(gpi_log_handler_ftype *handler,
+                                    gpi_log_filter_ftype *filter,
+                                    gpi_log_set_level_ftype *set_level,
+                                    void **userdata);
 
 /** Set custom log handler
  * @param handler   Logger handler function.
@@ -233,13 +233,13 @@ GPILOG_EXPORT void gpi_get_log_handler(gpi_log_handler_ftype *handler,
  * @param set_level Logger set level function.
  * @param userdata  Data passed to the above functions.
  */
-GPILOG_EXPORT void gpi_set_log_handler(gpi_log_handler_ftype handler,
-                                       gpi_log_filter_ftype filter,
-                                       gpi_log_set_level_ftype set_level,
-                                       void *userdata);
+GPI_EXPORT void gpi_set_log_handler(gpi_log_handler_ftype handler,
+                                    gpi_log_filter_ftype filter,
+                                    gpi_log_set_level_ftype set_level,
+                                    void *userdata);
 
 /** Clear the current custom log handler and use native logger. */
-GPILOG_EXPORT void gpi_clear_log_handler(void);
+GPI_EXPORT void gpi_clear_log_handler(void);
 
 /*******************************************************************************
  * GPI Native Logger
@@ -263,10 +263,10 @@ GPILOG_EXPORT void gpi_clear_log_handler(void);
 
 // Don't call this function directly unless the name is "gpi" or starts with
 // "gpi."
-GPILOG_EXPORT void gpi_native_logger_log_(const char *name, int level,
-                                          const char *pathname,
-                                          const char *funcname, long lineno,
-                                          const char *msg, ...);
+GPI_EXPORT void gpi_native_logger_log_(const char *name, int level,
+                                       const char *pathname,
+                                       const char *funcname, long lineno,
+                                       const char *msg, ...);
 
 /** Log a message using the native log handler.
  * User is expected to populate all arguments to this function.
@@ -286,17 +286,17 @@ GPILOG_EXPORT void gpi_native_logger_log_(const char *name, int level,
 
 // Don't call this function directly unless the name is "gpi" or starts with
 // "gpi."
-GPILOG_EXPORT void gpi_native_logger_vlog_(const char *name, int level,
-                                           const char *pathname,
-                                           const char *funcname, long lineno,
-                                           const char *msg, va_list args);
+GPI_EXPORT void gpi_native_logger_vlog_(const char *name, int level,
+                                        const char *pathname,
+                                        const char *funcname, long lineno,
+                                        const char *msg, va_list args);
 
 /** Check if a message would be filtered by the native logger.
  *
  * @param level     Level at which to test if the logger would emit a message.
  * @return `true` if the *logger* is enabled at *level*.
  */
-GPILOG_EXPORT bool gpi_native_logger_filtered(int level);
+GPI_EXPORT bool gpi_native_logger_filtered(int level);
 
 /** Set minimum logging level of the native logger.
  *
@@ -305,7 +305,7 @@ GPILOG_EXPORT bool gpi_native_logger_filtered(int level);
  * @param level     Logging level
  * @return          Previous logging level
  */
-GPILOG_EXPORT int gpi_native_logger_set_level(int level);
+GPI_EXPORT int gpi_native_logger_set_level(int level);
 
 #ifdef __cplusplus
 }
