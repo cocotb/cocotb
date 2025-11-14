@@ -32,7 +32,7 @@ if "COCOTB_IGNORE_PYTHON_REQUIRES" not in os.environ and sys.version_info >= (
     raise RuntimeError(
         f"cocotb {__version__} only supports a maximum Python version of 3.{max_python3_minor_version}.\n"
         "You can suppress this error by defining the environment variable COCOTB_IGNORE_PYTHON_REQUIRES\n"
-        "There is no guarantee this will work and no support will be provided."
+        "There is no guarantee cocotb will work with untested versions of Python and no support will be provided."
     )
 
 
