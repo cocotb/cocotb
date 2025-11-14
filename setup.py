@@ -19,6 +19,7 @@ if sys.version_info[:3] < (3, 6, 2):  # noqa: UP036 | bug in ruff
     raise SystemExit("\n".join(msg))
 
 import logging
+import os
 import subprocess
 from io import StringIO
 from os import path, walk
@@ -34,9 +35,14 @@ from cocotb_build_libs import build_ext, get_ext
 __version__ = "2.0.1"
 
 max_python3_minor_version = 13
-if sys.version_info >= (3, max_python3_minor_version + 1):
+if "COCOTB_IGNORE_PYTHON_REQUIRES" not in os.environ and sys.version_info >= (
+    3,
+    max_python3_minor_version + 1,
+):
     raise RuntimeError(
-        f"cocotb {__version__} only supports a maximum Python version of 3.{max_python3_minor_version}"
+        f"cocotb {__version__} only supports a maximum Python version of 3.{max_python3_minor_version}.\n"
+        "You can suppress this error by defining the environment variable COCOTB_IGNORE_PYTHON_REQUIRES\n"
+        "There is no guarantee this will work and no support will be provided."
     )
 
 
