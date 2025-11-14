@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
 import sys
 from io import StringIO
@@ -24,9 +25,14 @@ from cocotb_build_libs import build_ext, get_ext
 __version__ = "2.1.0.dev0"
 
 max_python3_minor_version = 14
-if sys.version_info >= (3, max_python3_minor_version + 1):
+if "COCOTB_IGNORE_PYTHON_REQUIRES" not in os.environ and sys.version_info >= (
+    3,
+    max_python3_minor_version + 1,
+):
     raise RuntimeError(
-        f"cocotb {__version__} only supports a maximum Python version of 3.{max_python3_minor_version}"
+        f"cocotb {__version__} only supports a maximum Python version of 3.{max_python3_minor_version}.\n"
+        "You can suppress this error by defining the environment variable COCOTB_IGNORE_PYTHON_REQUIRES\n"
+        "There is no guarantee this will work and no support will be provided."
     )
 
 
