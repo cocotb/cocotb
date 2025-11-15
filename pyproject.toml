@@ -6,10 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "cocotb"
 description = "Python-based chip (RTL) verification"
 readme = "README.md"
-license = "BSD-3-Clause"
-license-files = [
-    "LICENSE"
-]
+license = { file = "LICENSE" }
 authors = [
     {name = "Chris Higgs"},
     {name = "Stuart Hodgson"},
