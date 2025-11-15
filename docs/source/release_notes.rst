@@ -8,7 +8,7 @@ Release Notes
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
 
-cocotb 2.0.1 (2025-11-10)
+cocotb 2.0.1 (2025-11-15)
 =========================
 
 cocotb 2.0.1 is the first patch release of cocotb 2.0, which fixes small problems identified with the cocotb 2.0.0 release.
