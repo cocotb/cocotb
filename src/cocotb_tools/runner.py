@@ -1675,15 +1675,9 @@ class Xcelium(Runner):
             verbosity_opts += ["-messages"]
             verbosity_opts += ["-status"]
             verbosity_opts += ["-gverbose"]  # print assigned generics/parameters
-            verbosity_opts += ["-pliverbose"]
-            verbosity_opts += ["-plidebug"]  # Enhance the profile output with PLI info
-            verbosity_opts += [
-                "-plierr_verbose"
-            ]  # Expand handle info in PLI/VPI/VHPI messages
 
         else:
             verbosity_opts += ["-quiet"]
-            verbosity_opts += ["-plinowarn"]
 
         sources = self._sources + self._vhdl_sources + self._verilog_sources
 
@@ -1707,14 +1701,7 @@ class Xcelium(Runner):
             + ["-licqueue"]
             + (["-clean"] if self.always else [])
             + verbosity_opts
-            # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
             + ["-access +rwc"]
-            + ["-loadvpi"]
-            # always start with VPI on Xcelium
-            + [
-                cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
-                + ":vlog_startup_routines_bootstrap"
-            ]
             + vhpi_opts
             + [f"-work {self.hdl_library}"]
             + (
@@ -1795,7 +1782,14 @@ class Xcelium(Runner):
                 tmpdir,
                 "-licqueue",
                 *vhpi_opts,
+                # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
                 *verbosity_opts,
+                "-loadvpi",
+                # always start with VPI on Xcelium
+                (
+                    cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
+                    + ":vlog_startup_routines_bootstrap"
+                ),
                 "-R",
                 *self.test_args,
                 *self.plusargs,
