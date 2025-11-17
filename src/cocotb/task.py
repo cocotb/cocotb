@@ -208,33 +208,39 @@ class Task(Generic[ResultType]):
         else:
             coro_name = type(self._coro).__name__
 
-        if self._state is _TaskState.RUNNING:
+        state = self._state
+        if state is _TaskState.RUNNING:
             return f"<{self._name} running coro={coro_name}()>"
-        elif self._state is _TaskState.FINISHED:
+        elif state is _TaskState.FINISHED:
             return (
                 f"<{self._name} finished coro={coro_name}() outcome={self._outcome!r}>"
             )
-        elif self._state is _TaskState.ERRORED:
+        elif state is _TaskState.ERRORED:
             return f"<{self._name} error coro={coro_name}() outcome={self._outcome!r}>"
-        elif self._state is _TaskState.PENDING:
+        elif state is _TaskState.PENDING:
             return (
                 f"<{self._name} pending coro={coro_name}() trigger={self._trigger!r}>"
             )
-        elif self._state is _TaskState.SCHEDULED:
+        elif state is _TaskState.SCHEDULED:
             return f"<{self._name} scheduled coro={coro_name}()>"
-        elif self._state is _TaskState.UNSTARTED:
+        elif state is _TaskState.UNSTARTED:
             return f"<{self._name} created coro={coro_name}()>"
-        elif self._state is _TaskState.CANCELLED:
+        elif state is _TaskState.CANCELLED:
             return f"<{self._name} cancelled coro={coro_name} with={self._outcome!r}"
         else:
             raise RuntimeError("Task in unknown state")
 
     def _ensure_started(self) -> None:
         # start if unstarted
-        if self._state is _TaskState.UNSTARTED:
+        state = self._state
+        if state is _TaskState.UNSTARTED:
             self._schedule_resume()
         # fail if it's already done
-        elif self.done():
+        elif state in (
+            _TaskState.FINISHED,
+            _TaskState.ERRORED,
+            _TaskState.CANCELLED,
+        ):
             raise RuntimeError("Cannot start a finished Task")
         # it's already running
 
@@ -351,15 +357,16 @@ class Task(Generic[ResultType]):
     def kill(self) -> None:
         """Kill a coroutine."""
 
-        if self._state is _TaskState.PENDING:
+        state = self._state
+        if state is _TaskState.PENDING:
             # Unprime triggers if pending.
             self._trigger_callback.cancel()
-        elif self._state is _TaskState.SCHEDULED:
+        elif state is _TaskState.SCHEDULED:
             # Unschedule if scheduled.
             self._schedule_callback.cancel()
-        elif self._state is _TaskState.UNSTARTED:
+        elif state is _TaskState.UNSTARTED:
             pass
-        elif self._state in (
+        elif state in (
             _TaskState.FINISHED,
             _TaskState.ERRORED,
             _TaskState.CANCELLED,
@@ -439,13 +446,14 @@ class Task(Generic[ResultType]):
         if debug.debug:
             self._log.debug("Cancelling")
 
-        if self._state is _TaskState.PENDING:
+        state = self._state
+        if state is _TaskState.PENDING:
             # Unprime triggers if pending.
             self._trigger_callback.cancel()
-        elif self._state is _TaskState.SCHEDULED:
+        elif state is _TaskState.SCHEDULED:
             # Unschedule if scheduled.
             self._schedule_callback.cancel()
-        elif self._state in (
+        elif state in (
             _TaskState.FINISHED,
             _TaskState.ERRORED,
             _TaskState.CANCELLED,
@@ -470,16 +478,17 @@ class Task(Generic[ResultType]):
         Not safe to be called from a running Task.
         Only from done callbacks or scheduler or Task internals.
         """
-        if self._state is _TaskState.PENDING:
+        state = self._state
+        if state is _TaskState.PENDING:
             # Unprime triggers if pending.
             self._trigger_callback.cancel()
-        elif self._state is _TaskState.SCHEDULED:
+        elif state is _TaskState.SCHEDULED:
             # Unschedule if scheduled.
             self._schedule_callback.cancel()
-        elif self._state is _TaskState.UNSTARTED:
+        elif state is _TaskState.UNSTARTED:
             # Must fail immediately as we can't start a coroutine with an exception.
             pass
-        elif self._state is _TaskState.RUNNING:
+        elif state is _TaskState.RUNNING:
             raise RuntimeError("Can't _cancel_now() currently running Task")
         else:
             # Already finished or cancelled
@@ -518,11 +527,12 @@ class Task(Generic[ResultType]):
         If the Task was cancelled, the :exc:`asyncio.CancelledError` is re-raised.
         If the coroutine is not yet complete, an :exc:`asyncio.InvalidStateError` is raised.
         """
-        if self._state is _TaskState.CANCELLED:
+        state = self._state
+        if state is _TaskState.CANCELLED:
             raise cast("CancelledError", self._outcome)
-        elif self._state is _TaskState.FINISHED:
+        elif state is _TaskState.FINISHED:
             return cast("ResultType", self._outcome)
-        elif self._state is _TaskState.ERRORED:
+        elif state is _TaskState.ERRORED:
             raise cast("BaseException", self._outcome)
         else:
             raise InvalidStateError("result is not yet available")
@@ -535,11 +545,12 @@ class Task(Generic[ResultType]):
         If the Task was cancelled, the :exc:`asyncio.CancelledError` is re-raised.
         If the coroutine is not yet complete, an :exc:`asyncio.InvalidStateError` is raised.
         """
-        if self._state is _TaskState.CANCELLED:
+        state = self._state
+        if state is _TaskState.CANCELLED:
             raise cast("CancelledError", self._outcome)
-        elif self._state is _TaskState.FINISHED:
+        elif state is _TaskState.FINISHED:
             return None
-        elif self._state is _TaskState.ERRORED:
+        elif state is _TaskState.ERRORED:
             return cast("BaseException", self._outcome)
         else:
             raise InvalidStateError("result is not yet available")
