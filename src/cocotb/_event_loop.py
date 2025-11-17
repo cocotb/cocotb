@@ -47,7 +47,7 @@ class EventLoop:
         while self._callbacks:
             while self._callbacks:
                 do_debug = debug.debug
-                cb = self._callbacks.pop()
+                cb = self._callbacks.popleft()
                 if not cb._cancelled:
                     if do_debug:
                         self.log.debug(
@@ -80,7 +80,7 @@ class EventLoop:
         if debug.debug:
             self.log.debug("Scheduling %s with args=%s, kwargs=%s)", func, args, kwargs)
         cb = ScheduledCallback(func, *args, **kwargs)
-        self._callbacks.appendleft(cb)
+        self._callbacks.append(cb)
         return cb
 
 
