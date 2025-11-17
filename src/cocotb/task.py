@@ -108,6 +108,7 @@ class Task(Generic[ResultType]):
         self._done_callbacks: list[Callable[[Task[ResultType]], None]] = []
         self._must_cancel: bool = False
         self._locals = SimpleNamespace()
+        self._exc: BaseException | None = None
 
         self._task_id = self._id_count
         type(self)._id_count += 1
@@ -261,9 +262,10 @@ class Task(Generic[ResultType]):
         if debug.debug:
             self._log.debug("Scheduling %s", self)
         self._state = _TaskState.SCHEDULED
-        self._schedule_callback = cocotb._event_loop._inst.schedule(self._resume, exc)
+        self._exc = exc
+        self._schedule_callback = cocotb._event_loop._inst.schedule(self._resume)
 
-    def _resume(self, exc: BaseException | None = None) -> None:
+    def _resume(self) -> None:
         """Resume execution of the Task.
 
         Runs until the coroutine ends, raises, or yields a Trigger.
@@ -285,10 +287,10 @@ class Task(Generic[ResultType]):
         _current_task = self
 
         try:
-            if exc is None:
+            if self._exc is None:
                 trigger = self._coro.send(None)
             else:
-                trigger = self._coro.throw(exc)
+                trigger = self._coro.throw(self._exc)
         except StopIteration as e:
             if self._must_cancel:
                 self._set_outcome(
@@ -491,7 +493,8 @@ class Task(Generic[ResultType]):
         self._must_cancel = True
 
         # Throw CancelledError now
-        self._resume(cancelled_error)
+        self._exc = cancelled_error
+        self._resume()
 
         return True
 

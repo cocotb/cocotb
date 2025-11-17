@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 from collections import deque
 from functools import cached_property
 from typing import Callable
@@ -12,25 +11,25 @@ from typing import Callable
 from cocotb import debug
 from cocotb._bridge import run_bridge_threads
 
-if sys.version_info >= (3, 10):
-    from typing import ParamSpec
-
-    P = ParamSpec("P")
-
 
 class ScheduledCallback:
-    __slots__ = ("_func", "_args", "_kwargs", "_cancelled")
+    __slots__ = ("_func", "_cancelled")
 
     def __init__(
-        self, func: Callable[P, object], *args: P.args, **kwargs: P.kwargs
+        self,
+        func: Callable[[], object],
     ) -> None:
         self._func = func
-        self._args = args
-        self._kwargs = kwargs
         self._cancelled: bool = False
+
+    def _run(self) -> None:
+        self._func()
 
     def cancel(self) -> None:
         self._cancelled = True
+
+    def __repr__(self) -> str:
+        return self._func.__name__
 
 
 class EventLoop:
@@ -50,20 +49,10 @@ class EventLoop:
                 cb = self._callbacks.popleft()
                 if not cb._cancelled:
                     if do_debug:
-                        self.log.debug(
-                            "Running callback %s with args=%s, kwargs=%s",
-                            cb._func,
-                            cb._args,
-                            cb._kwargs,
-                        )
-                    cb._func(*cb._args, **cb._kwargs)
+                        self.log.debug("Running callback %r", cb)
+                    cb._run()
                 elif do_debug:
-                    self.log.debug(
-                        "Ignoring cancelled callback %s with args=%s, kwargs=%s",
-                        cb._func,
-                        cb._args,
-                        cb._kwargs,
-                    )
+                    self.log.debug("Ignoring cancelled callback %r", cb)
                 if do_debug:
                     self._cycles += 1
                     if self._cycles == 100_000:
@@ -74,12 +63,10 @@ class EventLoop:
 
             run_bridge_threads()
 
-    def schedule(
-        self, func: Callable[P, object], *args: P.args, **kwargs: P.kwargs
-    ) -> ScheduledCallback:
+    def schedule(self, func: Callable[[], object]) -> ScheduledCallback:
+        cb = ScheduledCallback(func)
         if debug.debug:
-            self.log.debug("Scheduling %s with args=%s, kwargs=%s)", func, args, kwargs)
-        cb = ScheduledCallback(func, *args, **kwargs)
+            self.log.debug("Scheduling %r", cb)
         self._callbacks.append(cb)
         return cb
 
