@@ -106,7 +106,6 @@ class Task(Generic[ResultType]):
         self._schedule_callback: cocotb._event_loop.ScheduledCallback
         self._trigger_callback: TriggerCallback
         self._done_callbacks: list[Callable[[Task[ResultType]], None]] = []
-        self._cancelled_msg: str | None = None
         self._must_cancel: bool = False
         self._locals = SimpleNamespace()
 
@@ -160,13 +159,6 @@ class Task(Generic[ResultType]):
         if "_log" in vars(self):
             del self._log  # clear cached value
         self._name = str(value)
-
-    @cached_property
-    def _cancelled_error(self) -> CancelledError:
-        if self._cancelled_msg is None:
-            return CancelledError()
-        else:
-            return CancelledError(self._cancelled_msg)
 
     @cached_property
     def _log(self) -> logging.Logger:
@@ -287,10 +279,6 @@ class Task(Generic[ResultType]):
             self._log.debug("Resuming %s", self)
 
         self._state = _TaskState.RUNNING
-
-        # If we are cancelling, hijack the resume to throw CancelledError.
-        if self._must_cancel:
-            exc = self._cancelled_error
 
         # Set this Task and the current. Unset in finally block.
         global _current_task
@@ -463,11 +451,14 @@ class Task(Generic[ResultType]):
             return False
 
         # Set state to do cancel
-        self._cancelled_msg = msg
+        if msg is None:
+            cancelled_error = CancelledError()
+        else:
+            cancelled_error = CancelledError(msg)
         self._must_cancel = True
 
         # Schedule resume to throw CancelledError
-        self._schedule_resume()
+        self._schedule_resume(cancelled_error)
 
         return True
 
@@ -493,11 +484,14 @@ class Task(Generic[ResultType]):
             return False
 
         # Set state to do cancel
-        self._cancelled_msg = msg
+        if msg is None:
+            cancelled_error = CancelledError()
+        else:
+            cancelled_error = CancelledError(msg)
         self._must_cancel = True
 
         # Throw CancelledError now
-        self._resume()
+        self._resume(cancelled_error)
 
         return True
 
