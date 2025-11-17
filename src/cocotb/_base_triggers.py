@@ -21,11 +21,6 @@ from cocotb import debug
 from cocotb._deprecation import deprecated
 from cocotb._utils import pointer_str
 
-if sys.version_info >= (3, 10):
-    from typing import ParamSpec
-
-    P = ParamSpec("P")
-
 if sys.version_info >= (3, 11):
     from typing import Self
 
@@ -33,22 +28,24 @@ if sys.version_info >= (3, 11):
 class TriggerCallback:
     """A cancellable handle to a callback registered with a Trigger."""
 
-    __slots__ = ("_trigger", "_func", "_args", "_kwargs")
+    __slots__ = ("_trigger", "_func")
 
     def __init__(
         self,
         trigger: Trigger,
-        func: Callable[P, object],
-        *args: P.args,
-        **kwargs: P.kwargs,
+        func: Callable[..., object],
     ) -> None:
         self._trigger = trigger
         self._func = func
-        self._args = args
-        self._kwargs = kwargs
 
     def cancel(self) -> None:
         self._trigger._deregister(self)
+
+    def _run(self) -> None:
+        self._func()
+
+    def __repr__(self) -> str:
+        return self._func.__name__
 
 
 class Trigger:
@@ -61,19 +58,11 @@ class Trigger:
     def _log(self) -> logging.Logger:
         return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
-    def _register(
-        self, func: Callable[P, object], *args: P.args, **kwargs: P.kwargs
-    ) -> TriggerCallback:
+    def _register(self, func: Callable[[], object]) -> TriggerCallback:
         """Add a callback to be called when the Trigger fires."""
+        handle = TriggerCallback(self, func)
         if debug.debug:
-            self._log.debug(
-                "Registering on %s: %s, args=%s, kwargs=%s",
-                self,
-                func,
-                args,
-                kwargs,
-            )
-        handle = TriggerCallback(self, func, *args, **kwargs)
+            self._log.debug("Registering on %r: %r", self, handle)
         do_prime = not self._callbacks
         self._callbacks[handle] = None
         # *Must* call `_prime()` after adding callback in case `_prime()` immediately
@@ -86,13 +75,7 @@ class Trigger:
     def _deregister(self, callback: TriggerCallback) -> None:
         """Remove a callback from a Trigger before it fires."""
         if debug.debug:
-            self._log.debug(
-                "De-registering on %s: %s, args=%s, kwargs=%s",
-                self,
-                callback._func,
-                callback._args,
-                callback._kwargs,
-            )
+            self._log.debug("De-registering on %r: %r", self, callback)
         del self._callbacks[callback]
         if not self._callbacks:
             self._unprime()
@@ -101,14 +84,8 @@ class Trigger:
         callbacks, self._callbacks = self._callbacks, {}
         for cb in callbacks:
             if debug.debug:
-                self._log.debug(
-                    "Running after %s: %s, args=%s, kwargs=%s",
-                    self,
-                    cb._func,
-                    cb._args,
-                    cb._kwargs,
-                )
-            cb._func(*cb._args, **cb._kwargs)
+                self._log.debug("Running after %r: %r", self, cb)
+            cb._run()
 
     def _react(self) -> None:
         """Function called when a Trigger fires.
