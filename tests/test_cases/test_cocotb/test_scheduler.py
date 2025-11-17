@@ -403,7 +403,7 @@ async def test_task_repr(_) -> None:
 
     log.info(repr(coro_task))
     assert re.match(
-        r"<Task \d+ finished coro=coroutine_outer\(\) outcome=Value\('Combine done'\)",
+        r"<Task \d+ finished coro=coroutine_outer\(\) outcome='Combine done'",
         repr(coro_task),
     )
 
