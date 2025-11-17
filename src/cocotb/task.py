@@ -28,7 +28,6 @@ from cocotb import debug
 from cocotb._base_triggers import Trigger, TriggerCallback
 from cocotb._bridge import bridge, resume
 from cocotb._deprecation import deprecated
-from cocotb._outcomes import Error, Outcome, Value
 from cocotb._utils import DocEnum, extract_coro_stack, remove_traceback_frames
 
 if sys.version_info >= (3, 11):
@@ -58,7 +57,8 @@ class _TaskState(DocEnum):
     SCHEDULED = (auto(), "Task queued to run soon")
     PENDING = (auto(), "Task waiting for Trigger to fire")
     RUNNING = (auto(), "Task is currently running")
-    FINISHED = (auto(), "Task has finished with a value or Exception")
+    FINISHED = (auto(), "Task has finished with a value")
+    ERRORED = (auto(), "Task has finished with an Exception")
     CANCELLED = (auto(), "Task was cancelled before it finished")
 
 
@@ -101,7 +101,7 @@ class Task(Generic[ResultType]):
 
         self._coro = inst
         self._state: _TaskState = _TaskState.UNSTARTED
-        self._outcome: Outcome[ResultType] | None = None
+        self._outcome: ResultType | BaseException
         self._trigger: Trigger
         self._schedule_callback: cocotb._event_loop.ScheduledCallback
         self._trigger_callback: TriggerCallback
@@ -218,15 +218,21 @@ class Task(Generic[ResultType]):
         if self._state is _TaskState.RUNNING:
             return f"<{self._name} running coro={coro_name}()>"
         elif self._state is _TaskState.FINISHED:
-            return f"<{self._name} finished coro={coro_name}() outcome={self._outcome}>"
+            return (
+                f"<{self._name} finished coro={coro_name}() outcome={self._outcome!r}>"
+            )
+        elif self._state is _TaskState.ERRORED:
+            return f"<{self._name} error coro={coro_name}() outcome={self._outcome!r}>"
         elif self._state is _TaskState.PENDING:
-            return f"<{self._name} pending coro={coro_name}() trigger={self._trigger}>"
+            return (
+                f"<{self._name} pending coro={coro_name}() trigger={self._trigger!r}>"
+            )
         elif self._state is _TaskState.SCHEDULED:
             return f"<{self._name} scheduled coro={coro_name}()>"
         elif self._state is _TaskState.UNSTARTED:
             return f"<{self._name} created coro={coro_name}()>"
         elif self._state is _TaskState.CANCELLED:
-            return f"<{self._name} cancelled coro={coro_name} with={self._cancelled_error} outcome={self._outcome}"
+            return f"<{self._name} cancelled coro={coro_name} with={self._outcome!r}"
         else:
             raise RuntimeError("Task in unknown state")
 
@@ -240,10 +246,14 @@ class Task(Generic[ResultType]):
         # it's already running
 
     def _set_outcome(
-        self, result: Outcome[ResultType], state: _TaskState = _TaskState.FINISHED
+        self,
+        result: ResultType | BaseException,
+        state: _TaskState,
     ) -> None:
         if debug.debug:
-            self._log.debug("Finished %s with %s", self, state)
+            self._log.debug(
+                "Finished %s with state %r and result: %r", self, state, result
+            )
         self._outcome = result
         self._state = state
 
@@ -292,36 +302,37 @@ class Task(Generic[ResultType]):
             else:
                 trigger = self._coro.throw(exc)
         except StopIteration as e:
-            outcome = Value(e.value)
             if self._must_cancel:
                 self._set_outcome(
-                    Error(
-                        RuntimeError(
-                            "Task was cancelled, but exited normally. Did you forget to re-raise the CancelledError?"
-                        )
-                    )
+                    RuntimeError(
+                        "Task was cancelled, but exited normally. Did you forget to re-raise the CancelledError?"
+                    ),
+                    _TaskState.ERRORED,
                 )
             else:
-                self._set_outcome(outcome)
+                self._set_outcome(e.value, _TaskState.FINISHED)
         except (KeyboardInterrupt, SystemExit, BdbQuit) as e:
             # Allow these to bubble up to the execution root to fail the sim immediately.
             # This follows asyncio's behavior.
-            self._set_outcome(Error(remove_traceback_frames(e, ["_resume"])))
+            self._set_outcome(
+                remove_traceback_frames(e, ["_resume"]), _TaskState.ERRORED
+            )
             raise
         except CancelledError as e:
             self._set_outcome(
-                Error(remove_traceback_frames(e, ["_resume"])), _TaskState.CANCELLED
+                remove_traceback_frames(e, ["_resume"]), _TaskState.CANCELLED
             )
         except BaseException as e:
-            self._set_outcome(Error(remove_traceback_frames(e, ["_resume"])))
+            self._set_outcome(
+                remove_traceback_frames(e, ["_resume"]), _TaskState.ERRORED
+            )
         else:
             if self._must_cancel:
                 self._set_outcome(
-                    Error(
-                        RuntimeError(
-                            "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?"
-                        )
-                    )
+                    RuntimeError(
+                        "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?"
+                    ),
+                    _TaskState.ERRORED,
                 )
             elif not isinstance(trigger, Trigger):
                 self._schedule_resume(
@@ -358,7 +369,11 @@ class Task(Generic[ResultType]):
             self._schedule_callback.cancel()
         elif self._state is _TaskState.UNSTARTED:
             pass
-        elif self._state in (_TaskState.FINISHED, _TaskState.CANCELLED):
+        elif self._state in (
+            _TaskState.FINISHED,
+            _TaskState.ERRORED,
+            _TaskState.CANCELLED,
+        ):
             # Do nothing if already done.
             return
         else:
@@ -371,7 +386,7 @@ class Task(Generic[ResultType]):
         ):
             self._coro.close()
 
-        self._set_outcome(Value(None))  # type: ignore  # `kill()` sets the result to None regardless of the ResultType
+        self._set_outcome(None, _TaskState.FINISHED)  # type: ignore  # `kill()` sets the result to None regardless of the ResultType
 
     @cached_property
     def complete(self) -> TaskComplete[ResultType]:
@@ -440,7 +455,11 @@ class Task(Generic[ResultType]):
         elif self._state is _TaskState.SCHEDULED:
             # Unschedule if scheduled.
             self._schedule_callback.cancel()
-        elif self._state in (_TaskState.FINISHED, _TaskState.CANCELLED):
+        elif self._state in (
+            _TaskState.FINISHED,
+            _TaskState.ERRORED,
+            _TaskState.CANCELLED,
+        ):
             return False
 
         # Set state to do cancel
@@ -488,7 +507,11 @@ class Task(Generic[ResultType]):
 
     def done(self) -> bool:
         """Return ``True`` if the Task has finished executing."""
-        return self._state in (_TaskState.FINISHED, _TaskState.CANCELLED)
+        return self._state in (
+            _TaskState.FINISHED,
+            _TaskState.ERRORED,
+            _TaskState.CANCELLED,
+        )
 
     def result(self) -> ResultType:
         """Return the result of the Task.
@@ -499,9 +522,11 @@ class Task(Generic[ResultType]):
         If the coroutine is not yet complete, an :exc:`asyncio.InvalidStateError` is raised.
         """
         if self._state is _TaskState.CANCELLED:
-            raise self._cancelled_error
+            raise cast("CancelledError", self._outcome)
         elif self._state is _TaskState.FINISHED:
-            return cast("Outcome[ResultType]", self._outcome).get()
+            return cast("ResultType", self._outcome)
+        elif self._state is _TaskState.ERRORED:
+            raise cast("BaseException", self._outcome)
         else:
             raise InvalidStateError("result is not yet available")
 
@@ -514,12 +539,11 @@ class Task(Generic[ResultType]):
         If the coroutine is not yet complete, an :exc:`asyncio.InvalidStateError` is raised.
         """
         if self._state is _TaskState.CANCELLED:
-            raise self._cancelled_error
+            raise cast("CancelledError", self._outcome)
         elif self._state is _TaskState.FINISHED:
-            if isinstance(self._outcome, Error):
-                return self._outcome.error
-            else:
-                return None
+            return None
+        elif self._state is _TaskState.ERRORED:
+            return cast("BaseException", self._outcome)
         else:
             raise InvalidStateError("result is not yet available")
 
