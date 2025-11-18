@@ -1371,6 +1371,13 @@ class LogicArrayObject(
             "Alternatively, use `ValueChange` on the whole object and check the bit(s) you care about for changes afterwards."
         )
 
+    @cached_property
+    def is_signed(self) -> bool:
+        signed = self._handle.get_signed()
+        if signed == -1:
+            raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
+        return bool(signed)
+
 
 class RealObject(_NonIndexableValueObjectBase[float, float]):
     """A floating point simulation object.
@@ -1425,7 +1432,7 @@ class RealObject(_NonIndexableValueObjectBase[float, float]):
         return self.value
 
 
-class EnumObject(_NonIndexableValueObjectBase[int, int]):
+class EnumObject(_NonIndexableValueObjectBase[int, Union[LogicArray, int, str]]):
     """An enumeration simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
@@ -1445,21 +1452,30 @@ class EnumObject(_NonIndexableValueObjectBase[int, int]):
 
     def _set_value(
         self,
-        value: int,
+        value: LogicArray | int | str,
         action: _GPISetAction,
     ) -> None:
-        if not isinstance(value, int):
-            raise TypeError(
-                f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
-            )
-
-        min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
-        if min_val <= value <= max_val:
-            _schedule_write(self, self._handle.set_signal_val_int, action, value)
+        if isinstance(value, int):
+            min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
+            if value < min_val or max_val < value:
+                raise ValueError(
+                    f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
+                )
+            return _schedule_write(self, self._handle.set_signal_val_int, action, value)
+        if isinstance(value, LogicArray):
+            if len(value) != len(self):
+                raise ValueError(
+                    f"Cannot assign value of length {len(value)} to handle of length {len(self)}"
+                )
         else:
-            raise ValueError(
-                f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
-            )
+            # Try to convert to LogicArray first
+            try:
+                value = LogicArray(value, Range(len(self) - 1, "downto", 0))
+            except (ValueError, TypeError):
+                raise TypeError(
+                    f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
+                ) from None
+        _schedule_write(self, self._handle.set_signal_val_binstr, action, str(value))
 
     def get(self) -> int:
         """Return the current value of the simulation object as an :class:`int`.
@@ -1470,7 +1486,14 @@ class EnumObject(_NonIndexableValueObjectBase[int, int]):
 
     def set(
         self,
-        value: int | Deposit[int] | Force[int] | Freeze | Release | Immediate[int],
+        value: LogicArray
+        | int
+        | str
+        | Deposit[LogicArray | int | str]
+        | Force[LogicArray | int | str]
+        | Freeze
+        | Release
+        | Immediate[LogicArray | int | str],
     ) -> None:
         """Set the value of the simulation object using an :class:`int`.
 
@@ -1493,6 +1516,20 @@ class EnumObject(_NonIndexableValueObjectBase[int, int]):
     )
     def __int__(self) -> int:
         return int(self.value)
+
+    @cached_property
+    def _len(self) -> int:
+        return self._handle.get_num_elems()
+
+    def __len__(self) -> int:
+        return self._len
+
+    @cached_property
+    def is_signed(self) -> bool:
+        signed = self._handle.get_signed()
+        if signed == -1:
+            raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
+        return bool(signed)
 
 
 class IntegerObject(_NonIndexableValueObjectBase[int, int]):
@@ -1531,7 +1568,9 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int]):
                 f"Unsupported type for integer value assignment: {type(value)} ({value!r})"
             )
 
-        min_val, max_val = _value_limits(32, _Limits.SIGNED_NBIT)
+        min_val, max_val = _value_limits(
+            32, _Limits.SIGNED_NBIT if self.is_signed else _Limits.UNSIGNED_NBIT
+        )
         if min_val <= value <= max_val:
             _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
@@ -1566,6 +1605,20 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int]):
     )
     def __int__(self) -> int:
         return self.value
+
+    @cached_property
+    def _len(self) -> int:
+        return self._handle.get_num_elems()
+
+    def __len__(self) -> int:
+        return self._len
+
+    @cached_property
+    def is_signed(self) -> bool:
+        signed = self._handle.get_signed()
+        if signed == -1:
+            raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
+        return bool(signed)
 
 
 class StringObject(

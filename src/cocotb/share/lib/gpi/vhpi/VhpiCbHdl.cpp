@@ -8,6 +8,7 @@
 #include "../logging.hpp"
 #include "./VhpiImpl.hpp"
 #include "_vendor/vhpi/vhpi_user.h"
+#include "gpi.h"
 
 // Main entry point for callbacks from simulator
 void handle_vhpi_callback(const vhpiCbDataT *cb_data) {

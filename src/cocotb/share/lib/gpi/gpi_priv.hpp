@@ -75,6 +75,7 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     int get_range_right() { return m_range_right; }
     gpi_range_dir get_range_dir() { return m_range_dir; }
     int get_indexable() { return m_indexable; }
+    virtual int get_signed() { return -1; }
 
     const std::string &get_name();
     const std::string &get_fullname();
