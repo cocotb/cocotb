@@ -1573,6 +1573,13 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int]):
     def __int__(self) -> int:
         return self.value
 
+    @cached_property
+    def _len(self) -> int:
+        return self._handle.get_num_elems()
+
+    def __len__(self) -> int:
+        return self._len
+
 
 class StringObject(
     _NonIndexableValueObjectBase[bytes, bytes],
