@@ -656,6 +656,11 @@ static PyObject *get_type_string(gpi_hdl_Object<gpi_sim_hdl> *self,
     return PyUnicode_FromString(result);
 }
 
+static PyObject *get_signed(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
+    int result = gpi_is_signed(self->hdl);
+    return PyLong_FromLong(result);
+}
+
 static PyObject *is_running(PyObject *, PyObject *) {
     return PyBool_FromLong(gpi_has_registered_impl());
 }
@@ -1328,6 +1333,12 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
                "--\n\n"
                "get_const() -> bool\n"
                "Return ``True`` if the object is a constant.")},
+    {"get_signed", (PyCFunction)get_signed, METH_NOARGS,
+     PyDoc_STR("get_signed($self)\n"
+               "--\n\n"
+               "get_signed() -> bool\n"
+               "Return ``1`` if the object is a signed integer, ``0`` if "
+               "unsigned, and ``-1`` if unknown or not applicable.")},
     {"get_num_elems", (PyCFunction)get_num_elems, METH_NOARGS,
      PyDoc_STR("get_num_elems($self)\n"
                "--\n\n"

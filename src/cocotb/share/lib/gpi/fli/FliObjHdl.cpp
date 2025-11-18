@@ -542,9 +542,10 @@ int FliLogicObjHdl::set_signal_value_binstr(std::string &value,
 
 int FliIntObjHdl::initialise(const std::string &name,
                              const std::string &fq_name) {
-    m_num_elems = 1;
-
-    m_val_buff = new char[33];  // Integers are always 32-bits
+    // We are assuming integers are always 32-bits
+    // TODO handle VHDL-2019 64-bit integers at some point.
+    m_num_elems = 32;
+    m_val_buff = new char[33];
     m_val_buff[m_num_elems] = '\0';
 
     return FliValueObjHdl::initialise(name, fq_name);
