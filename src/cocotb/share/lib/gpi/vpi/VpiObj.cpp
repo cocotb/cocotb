@@ -113,3 +113,11 @@ const char *VpiObjHdl::get_definition_file() {
     }
     return m_definition_file.c_str();
 }
+
+int VpiObjHdl::get_signed() {
+    if (m_type == GPI_INTEGER) {
+        return vpi_get(vpiSigned, get_handle<vpiHandle>());
+    } else {
+        return -1;
+    }
+}
