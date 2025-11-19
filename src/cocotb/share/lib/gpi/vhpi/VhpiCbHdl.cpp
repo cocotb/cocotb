@@ -11,6 +11,7 @@
 
 #include "./VhpiImpl.hpp"
 #include "_vendor/vhpi/vhpi_user.h"
+#include "gpi.h"
 
 namespace {
 using bufSize_type = decltype(vhpiValueT::bufSize);
@@ -859,6 +860,14 @@ GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
     // LCOV_EXCL_STOP
     cb_hdl->set_cb_info(cb_func, cb_data);
     return cb_hdl;
+}
+
+int VhpiSignalObjHdl::get_signed() {
+    if (m_type == GPI_INTEGER) {
+        return 1;
+    } else {
+        return -1;
+    }
 }
 
 VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig,
