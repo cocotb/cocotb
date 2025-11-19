@@ -93,6 +93,12 @@ class Clock:
 
             .. versionadded:: 2.0
 
+        start_high:
+            Whether to start the clock with a ``1``.
+            Default is ``True``.
+
+            .. versionadded:: 2.0
+
     When *impl* is ``'auto'``, if :envvar:`COCOTB_TRUST_INERTIAL_WRITES` is defined,
     the :class:`~cocotb.simulator.GpiClock` implementation will be used.
     Otherwise, the Python coroutine implementation will be used.
@@ -168,6 +174,7 @@ class Clock:
         units: None = None,
         set_action: type[Immediate] | type[Deposit] | type[Force] | None = None,
         period_high: float | Fraction | Decimal | None = None,
+        start_high: bool = True,
     ) -> None:
         self._signal = signal
 
@@ -221,6 +228,8 @@ class Clock:
             self._period_high = period / 2
             self._period_high_steps = self._period_steps // 2
 
+        self._start_high = start_high
+
         self._task: Task[None] | None = None
 
     @property
@@ -273,7 +282,12 @@ class Clock:
         """
         return self._set_action
 
-    def start(self, start_high: bool = True) -> Task[None]:
+    @property
+    def start_high(self) -> bool:
+        """``True`` if the first partial-period of the clock drove a ``1``."""
+        return self._start_high
+
+    def start(self, start_high: bool | None = None) -> Task[None]:
         r"""Start driving the clock signal.
 
         You can later stop the clock by calling :meth:`stop`.
@@ -281,9 +295,13 @@ class Clock:
         Args:
             start_high: Whether to start the clock with a ``1``
                 for the first half of the period.
-                Default is ``True``.
+                Overrides the value of *start_high* passed to the constructor.
+                Defaults to the value of :attr:`start_high`.
 
                 .. versionadded:: 1.3
+
+                .. deprecated:: 2.0
+                    Pass ``start_high`` to the constructor instead.
 
         Raises:
             RuntimeError: If attempting to start a clock that has already been started.
@@ -302,6 +320,16 @@ class Clock:
         """
         if self._task is not None:
             raise RuntimeError("Starting clock that has already been started.")
+
+        if start_high is not None:
+            warnings.warn(
+                "Passing `start_high` to `Clock.start()` is deprecated. "
+                "Pass `start_high` to the Clock constructor instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            start_high = self._start_high
 
         if self._impl == "gpi":
             clkobj = clock_create(self._signal._handle)
