@@ -1765,7 +1765,7 @@ class Xcelium(Runner):
             # always start with VPI on Xcelium
             + [
                 cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
-                + ":vlog_startup_routines_bootstrap"
+                + ":.vlog_startup_routines_bootstrap"
             ]
             + vhpi_opts
             + [f"-work {self.hdl_library}"]

@@ -149,7 +149,7 @@ Cadence Incisive and Xcelium
    .. tab-item:: Design with a VHDL Toplevel
 
       For a design with a VHDL toplevel, call the ``xrun`` or ``xmelab`` executable with the options
-      ``-NEW_VHPI_PROPAGATE_DELAY -loadvpi $(cocotb-config --lib-name-path vpi xcelium):vlog_startup_routines_bootstrap``.
+      ``-NEW_VHPI_PROPAGATE_DELAY -loadvpi $(cocotb-config --lib-name-path vpi xcelium):.vlog_startup_routines_bootstrap``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
       ``$(cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point``.
@@ -159,7 +159,7 @@ Cadence Incisive and Xcelium
    .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call the ``xrun`` or ``xmelab`` executable with the option
-      ``-loadvpi $(cocotb-config --lib-name-path vpi xcelium):vlog_startup_routines_bootstrap``.
+      ``-loadvpi $(cocotb-config --lib-name-path vpi xcelium):.vlog_startup_routines_bootstrap``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
       ``$(cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point``
