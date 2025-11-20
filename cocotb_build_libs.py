@@ -762,3 +762,18 @@ def get_ext():
         ext.append(dsim_vpi_ext)
 
     return ext
+
+    #
+    # Galaxsim
+    #
+    if os.name == "posix":
+        logger.info("Compiling libraries for Galaxsim")
+        galaxsim_vpi_ext = _get_vpi_lib_ext(
+            include_dirs=include_dirs,
+            share_lib_dir=share_lib_dir,
+            sim_define="GALAXSIM"
+        )
+        ext.append(galaxsim_vpi_ext)
+
+    return ext
+
