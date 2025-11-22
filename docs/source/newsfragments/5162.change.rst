@@ -1,0 +1,1 @@
+Disallow calling :meth:`.Task.cancel` on the currently running task.

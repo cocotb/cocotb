@@ -231,28 +231,24 @@ class Task(Generic[ResultType]):
             raise RuntimeError("Task in unknown state")
 
     def _ensure_started(self) -> None:
-        # start if unstarted
         state = self._state
         if state is _TaskState.UNSTARTED:
+            if debug.debug:
+                self._log.debug("Starting %r", self)
             self._schedule_resume()
-        # fail if it's already done
         elif state in (
             _TaskState.FINISHED,
             _TaskState.ERRORED,
             _TaskState.CANCELLED,
         ):
             raise RuntimeError("Cannot start a finished Task")
-        # it's already running
+        # RUNNING, SCHEDULED, PENDING are already running
 
     def _set_outcome(
         self,
         result: ResultType | BaseException,
         state: _TaskState,
     ) -> None:
-        if debug.debug:
-            self._log.debug(
-                "Finished %s with state %r and result: %r", self, state, result
-            )
         self._outcome = result
         self._state = state
 
@@ -265,8 +261,6 @@ class Task(Generic[ResultType]):
         self._join._react()
 
     def _schedule_resume(self, exc: BaseException | None = None) -> None:
-        if debug.debug:
-            self._log.debug("Scheduling %s", self)
         self._state = _TaskState.SCHEDULED
         self._exc = exc
         self._schedule_callback = cocotb._event_loop._inst.schedule(self._resume)
@@ -284,7 +278,7 @@ class Task(Generic[ResultType]):
             The object yielded from the coroutine or ``None`` if coroutine finished.
         """
         if debug.debug:
-            self._log.debug("Resuming %s", self)
+            self._log.debug("Resuming %r", self)
 
         self._state = _TaskState.RUNNING
 
@@ -299,6 +293,8 @@ class Task(Generic[ResultType]):
                 trigger = self._coro.throw(self._exc)
         except StopIteration as e:
             if self._must_cancel:
+                if debug.debug:
+                    self._log.debug("Task %r was cancelled but exited normally", self)
                 self._set_outcome(
                     RuntimeError(
                         "Task was cancelled, but exited normally. Did you forget to re-raise the CancelledError?"
@@ -306,24 +302,45 @@ class Task(Generic[ResultType]):
                     _TaskState.ERRORED,
                 )
             else:
+                if debug.debug:
+                    self._log.debug(
+                        "Task %r finished with value of type %r", self, type(e.value)
+                    )
                 self._set_outcome(e.value, _TaskState.FINISHED)
         except (KeyboardInterrupt, SystemExit, BdbQuit) as e:
             # Allow these to bubble up to the execution root to fail the sim immediately.
             # This follows asyncio's behavior.
+            if debug.debug:
+                self._log.debug(
+                    "Task %r errored with exception of type %r", self, type(e)
+                )
             self._set_outcome(
                 remove_traceback_frames(e, ["_resume"]), _TaskState.ERRORED
             )
             raise
         except CancelledError as e:
+            if debug.debug:
+                # Print the message only if it exists
+                reason = str(e)
+                msg = "Task %r was cancelled"
+                if reason:
+                    msg += f": {reason}"
+                self._log.debug(msg, self)
             self._set_outcome(
                 remove_traceback_frames(e, ["_resume"]), _TaskState.CANCELLED
             )
         except BaseException as e:
+            if debug.debug:
+                self._log.debug(
+                    "Task %r errored with exception of type %r", self, type(e)
+                )
             self._set_outcome(
                 remove_traceback_frames(e, ["_resume"]), _TaskState.ERRORED
             )
         else:
             if self._must_cancel:
+                if debug.debug:
+                    self._log.debug("Task %r was cancelled but continued running", self)
                 self._set_outcome(
                     RuntimeError(
                         "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?"
@@ -331,9 +348,13 @@ class Task(Generic[ResultType]):
                     _TaskState.ERRORED,
                 )
             elif not isinstance(trigger, Trigger):
+                if debug.debug:
+                    self._log.debug(
+                        "Task %r yielded non-Trigger of type: %r", self, type(trigger)
+                    )
                 self._schedule_resume(
                     TypeError(
-                        f"Coroutine yielded {trigger!r}, which the scheduler can't handle."
+                        f"Coroutine yielded object of type {type(trigger)!r}, which the scheduler can't handle."
                     )
                 )
             else:
@@ -349,6 +370,9 @@ class Task(Generic[ResultType]):
                     self._trigger_callback = trigger._register(self._schedule_resume)
                 except Exception as e:
                     self._schedule_resume(remove_traceback_frames(e, ["_resume"]))
+                else:
+                    if debug.debug:
+                        self._log.debug("Pending %r on %r", self, trigger)
 
         finally:
             _current_task = None
@@ -366,24 +390,26 @@ class Task(Generic[ResultType]):
             self._schedule_callback.cancel()
         elif state is _TaskState.UNSTARTED:
             pass
-        elif state in (
-            _TaskState.FINISHED,
-            _TaskState.ERRORED,
-            _TaskState.CANCELLED,
-        ):
-            # Do nothing if already done.
-            return
-        else:
+        elif state is _TaskState.RUNNING:
             raise RuntimeError("Can't kill currently running Task")
+        else:
+            return
 
-        # Close native coroutines if they were never resumed to prevent ResourceWarnings.
+        # The coroutine may have never been started (happens in UNSTARTED or SCHEDULED state)
+        # and this will cause a ResourceWarning if the coroutine is not manually closed.
+        # This is only an issue because kill() does not run the coroutine after it's killed.
         if (
             inspect.iscoroutine(self._coro)
             and inspect.getcoroutinestate(self._coro) == "CORO_CREATED"
         ):
             self._coro.close()
 
-        self._set_outcome(None, _TaskState.FINISHED)  # type: ignore  # `kill()` sets the result to None regardless of the ResultType
+        if debug.debug:
+            self._log.debug("Killed %r", self)
+        self._set_outcome(
+            None,  # type: ignore  # `kill()` sets the result to None regardless of the ResultType
+            _TaskState.FINISHED,
+        )
 
     @cached_property
     def complete(self) -> TaskComplete[ResultType]:
@@ -443,32 +469,39 @@ class Task(Generic[ResultType]):
 
         Returns: ``True`` if the Task was cancelled; ``False`` otherwise.
         """
-        if debug.debug:
-            self._log.debug("Cancelling")
-
         state = self._state
-        if state is _TaskState.PENDING:
-            # Unprime triggers if pending.
-            self._trigger_callback.cancel()
-        elif state is _TaskState.SCHEDULED:
-            # Unschedule if scheduled.
-            self._schedule_callback.cancel()
-        elif state in (
+        if state in (
             _TaskState.FINISHED,
             _TaskState.ERRORED,
             _TaskState.CANCELLED,
         ):
             return False
+        elif state is _TaskState.RUNNING:
+            raise RuntimeError("Can't cancel() currently running Task")
 
         # Set state to do cancel
         if msg is None:
             cancelled_error = CancelledError()
         else:
             cancelled_error = CancelledError(msg)
-        self._must_cancel = True
 
-        # Schedule resume to throw CancelledError
-        self._schedule_resume(cancelled_error)
+        if debug.debug:
+            self._log.debug("Cancelling %r", self)
+
+        if state is _TaskState.PENDING:
+            # Unprime triggers if pending.
+            self._trigger_callback.cancel()
+            self._schedule_resume(cancelled_error)
+        elif state is _TaskState.SCHEDULED:
+            # hijack scheduled callback if scheduled.
+            self._exc = cancelled_error
+        else:  # UNSTARTED
+            # Schedule anyways, the error will come out when calling coro.throw() on an
+            # unstarted coroutine and this will prevent ResourceWarnings from un-awaited
+            # coroutines.
+            self._schedule_resume(cancelled_error)
+
+        self._must_cancel = True
 
         return True
 
@@ -486,12 +519,13 @@ class Task(Generic[ResultType]):
             # Unschedule if scheduled.
             self._schedule_callback.cancel()
         elif state is _TaskState.UNSTARTED:
-            # Must fail immediately as we can't start a coroutine with an exception.
+            # Resume anyways, the error will come out when calling coro.throw() on an
+            # unstarted coroutine and this will prevent ResourceWarnings from un-awaited
+            # coroutines.
             pass
         elif state is _TaskState.RUNNING:
             raise RuntimeError("Can't _cancel_now() currently running Task")
-        else:
-            # Already finished or cancelled
+        else:  # FINISHED, ERRORED, CANCELLED
             return False
 
         # Set state to do cancel
