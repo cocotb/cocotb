@@ -6,7 +6,7 @@ exclude: "^.*/_vendor/"
 repos:
 # ruff with --fix should run before other formatting tools
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.14.5"
+  rev: "v0.14.6"
   hooks:
     # Run the linter.
     - id: "ruff"
@@ -17,7 +17,7 @@ repos:
     - id: ruff-format
 
 - repo: "https://github.com/pre-commit/mirrors-clang-format"
-  rev: "v21.1.5"
+  rev: "v21.1.6"
   hooks:
   - id: "clang-format"
     exclude: "^src/cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
@@ -34,7 +34,7 @@ repos:
     exclude: "^docs/source/diagrams/(svg|xml)/"
 
 - repo: https://github.com/henryiii/validate-pyproject-schema-store
-  rev: "2025.11.14"
+  rev: "2025.11.21"
   hooks:
     - id: validate-pyproject
       files: pyproject.toml
