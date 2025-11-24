@@ -14,8 +14,8 @@ from cocotb.triggers import RisingEdge
 @cocotb.test()
 async def clk_in_coroutine(dut):
     dut.d.value = 0
-    clock = Clock(dut.clk, 10, unit="us")
-    cocotb.start_soon(clock.start(start_high=False))
+    clock = Clock(dut.clk, 10, unit="us", start_high=False)
+    clock.start()
     await RisingEdge(dut.clk)
     for _ in range(3):
         val = random.randint(0, 1)
