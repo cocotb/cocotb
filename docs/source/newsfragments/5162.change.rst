@@ -1,1 +1,1 @@
-Disallow calling :meth:`.Task.cancel` on the currently running task.
+Changed :meth:`.Task.cancel` to throw :exc:`RuntimeError` if attempting to cancel the currently running task.
