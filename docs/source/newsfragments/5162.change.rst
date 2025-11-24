@@ -1,0 +1,1 @@
+Changed :meth:`.Task.cancel` to throw :exc:`RuntimeError` if attempting to cancel the currently running task.

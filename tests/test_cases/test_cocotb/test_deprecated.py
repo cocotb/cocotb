@@ -15,7 +15,7 @@ import cocotb
 from cocotb._base_triggers import Lock
 from cocotb.clock import Clock
 from cocotb.regression import TestFactory
-from cocotb.task import Join
+from cocotb.task import Join, current_task
 from cocotb.triggers import Edge, Event, First, Timer
 from cocotb.utils import get_sim_steps, get_sim_time, get_time_from_sim_steps
 
@@ -308,3 +308,19 @@ async def test_Task_kill_done(_: object) -> None:
 
     assert task.done()
     assert task.result() == 1
+
+
+@cocotb.test
+async def test_Task_kill_running(_: object) -> None:
+    async def example() -> None:
+        task = current_task()
+        with pytest.warns(DeprecationWarning), pytest.raises(RuntimeError):
+            task.kill()
+        assert not task.done()
+        await Timer(1)
+        # things still work after the failed kill
+        assert not task.done()
+
+    task = cocotb.start_soon(example())
+    await task
+    assert task.done()

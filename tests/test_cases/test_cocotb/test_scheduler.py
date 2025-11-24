@@ -17,7 +17,7 @@ import os
 import random
 import re
 from asyncio import CancelledError, InvalidStateError
-from collections.abc import Awaitable, Coroutine
+from collections.abc import Awaitable, Coroutine, Generator
 from typing import Any
 
 import pytest
@@ -1085,3 +1085,32 @@ async def test_Task_ignored_CancelledError_await(_: object) -> None:
     task = cocotb.start_soon(bad())
     await Timer(1)
     task.cancel()
+
+
+@cocotb.test
+async def test_Task_cancel_running(_: object) -> None:
+    async def example() -> None:
+        task = current_task()
+        with pytest.raises(RuntimeError):
+            task.cancel()
+        assert not task.done()
+        await Timer(1)
+        # things still work after the failed kill
+        assert not task.done()
+
+    task = cocotb.start_soon(example())
+    await task
+    assert task.done()
+
+
+@cocotb.test
+async def test_Task_yield_bad_value(_: object) -> None:
+    class NotATrigger:
+        def __await__(self) -> Generator[int, None, None]:
+            yield 1
+
+    with pytest.raises(TypeError):
+        await NotATrigger()
+
+    await Timer(1)
+    # things still work after the bad yield
