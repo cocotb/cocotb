@@ -1518,6 +1518,10 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int]):
     Objects that use this type are assumed to be two's complement 32-bit integers with 2-state (``0`` and ``1``) bits.
     """
 
+    @property
+    def is_signed(self) -> int:
+        return self._handle.get_signed()
+
     def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
         super().__init__(handle, path)
 
@@ -1531,7 +1535,9 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int]):
                 f"Unsupported type for integer value assignment: {type(value)} ({value!r})"
             )
 
-        min_val, max_val = _value_limits(32, _Limits.SIGNED_NBIT)
+        min_val, max_val = _value_limits(
+            32, _Limits.SIGNED_NBIT if self.is_signed else _Limits.UNSIGNED_NBIT
+        )
         if min_val <= value <= max_val:
             _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
