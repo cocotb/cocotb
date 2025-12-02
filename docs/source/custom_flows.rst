@@ -164,7 +164,7 @@ Cadence Incisive and Xcelium
       The first list is invoked during elaboration and then simulation, while the second only applies to simulation
       and it is the one to use to register callbacks. Specifying the entry point in ``elab_functions`` works but has
       the downside of initializing cocotb during elaboration, not only simulation.
-      As of Xcelium 25.03, ``-loadvpi`` must be given at elaboration time, even if it applies only to simulation.
+      As of Xcelium 25.09, ``-loadvpi`` must be given at elaboration time, even if it applies only to simulation.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
       ``$(cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point``
