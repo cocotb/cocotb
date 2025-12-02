@@ -358,7 +358,7 @@ ENVS = [
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
-        "group": "experimental",  # TODO: Move back to ci-licensed once we got new licenses.
+        "group": "ci-licensed",
     },
     {
         "lang": "vhdl",
