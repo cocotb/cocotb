@@ -1,0 +1,1 @@
+Added :func:`cocotb.triggers.select` to wait for multiple awaitables concurrently and return the first completed.
