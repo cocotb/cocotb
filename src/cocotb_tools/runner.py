@@ -1317,7 +1317,6 @@ class AldecBase(Runner):
     .. admonition:: Simulator-specific Usage
 
        * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-       * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
@@ -1458,10 +1457,18 @@ class AldecBase(Runner):
 
         do_script += "run -all \nexit"
 
+        if isinstance(self, Riviera) and self.gui:
+            do_script += "echo execute run -all to run the whole simulation."
+        else:
+            do_script += "run -all \nexit"
+
         with tempfile.NamedTemporaryFile(delete=False) as do_file:
             do_file.write(do_script.encode())
 
-        return [["vsimsa", "-do", do_file.name]]
+        if isinstance(self, Riviera) and self.gui:
+            return [["riviera", "-do", do_file.name]]
+        else:
+            return [["vsimsa", "-do", do_file.name]]
 
 
 class Riviera(AldecBase):
@@ -1469,7 +1476,6 @@ class Riviera(AldecBase):
     .. admonition:: Simulator-specific Usage
 
        * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-       * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
