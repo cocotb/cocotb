@@ -1449,18 +1449,8 @@ class AldecBase(Runner):
                 + ":cocotbvhpi_entry_point"
             )
 
-        if self.pre_cmd is not None:
-            if isinstance(self, Riviera):
-                if not isinstance(self.pre_cmd, list):
-                    raise TypeError("pre_cmd must be a list of strings.")
-                if not all(isinstance(s, str) for s in self.pre_cmd):
-                    raise TypeError("pre_cmd must be a list of strings.")
-                for s in self.pre_cmd:
-                    do_script += f"{s}; "
-                do_script += "\n"
-            else:
-                raise RuntimeError("pre_cmd is not implemented for ActiveHDL.")
-        
+        do_script = self._append_pre_cmd(do_script)
+
         if self.waves:
             do_script += "log -recursive /*;"
 
@@ -1471,6 +1461,12 @@ class AldecBase(Runner):
 
         return [["vsimsa", "-do", do_file.name]]
 
+    def _append_pre_cmd(self, do_script: str) -> str:
+        """Hook for subclasses to extend do_script with simulator-specific pre_cmd."""
+        if self.pre_cmd is not None:
+            raise RuntimeError("pre_cmd is not implemented for this simulator.")
+        return do_script
+
 
 class Riviera(AldecBase):
     """Implementation of :class:`Runner` for Aldec Riviera-Pro.
@@ -1480,6 +1476,18 @@ class Riviera(AldecBase):
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
+    def _append_pre_cmd(self, do_script: str) -> str:
+        if self.pre_cmd is None:
+            return do_script
+
+        if not isinstance(self.pre_cmd, list):
+            raise TypeError("pre_cmd must be a list of strings.")
+        if not all(isinstance(s, str) for s in self.pre_cmd):
+            raise TypeError("pre_cmd must be a list of strings.")
+
+        for s in self.pre_cmd:
+            do_script += f"{s}; "
+        return do_script + "\n"
 
 class ActiveHDL(AldecBase):
     """Implementation of :class:`Runner` for Aldec Active-HDL.
@@ -1489,6 +1497,11 @@ class ActiveHDL(AldecBase):
        * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
+
+    def _append_pre_cmd(self, do_script: str) -> str:
+        if self.pre_cmd is not None:
+            raise RuntimeError("pre_cmd is not implemented for Aldec ActiveHDL.")
+        return do_script
 
 
 class Verilator(Runner):
