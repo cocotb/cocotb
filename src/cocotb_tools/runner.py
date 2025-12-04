@@ -1466,7 +1466,9 @@ class AldecBase(Runner):
         """Append simulator-specific run commands."""
         return do_script + "run -all \nexit"
 
-    def _simulator_command(self, do_file: tempfile.NamedTemporaryFile) -> list[_Command]:
+    def _simulator_command(
+        self, do_file: tempfile.NamedTemporaryFile
+    ) -> list[_Command]:
         """Return the simulator invocation command."""
         return [["vsimsa", "-do", do_file.name]]
 
