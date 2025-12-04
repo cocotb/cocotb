@@ -1489,6 +1489,7 @@ class Riviera(AldecBase):
             do_script += f"{s}; "
         return do_script + "\n"
 
+
 class ActiveHDL(AldecBase):
     """Implementation of :class:`Runner` for Aldec Active-HDL.
     .. admonition:: Simulator-specific Usage
