@@ -1455,20 +1455,20 @@ class AldecBase(Runner):
         if self.waves:
             do_script += "log -recursive /*;"
 
-        do_script += "run -all \nexit"
-
-        if isinstance(self, Riviera) and self.gui:
-            do_script += "echo execute run -all to run the whole simulation."
-        else:
-            do_script += "run -all \nexit"
+        do_script = self._append_run_commands(do_script)
 
         with tempfile.NamedTemporaryFile(delete=False) as do_file:
             do_file.write(do_script.encode())
 
-        if isinstance(self, Riviera) and self.gui:
-            return [["riviera", "-do", do_file.name]]
-        else:
-            return [["vsimsa", "-do", do_file.name]]
+        return self._simulator_command(do_file)
+
+    def _append_run_commands(self, do_script: str) -> str:
+        """Append simulator-specific run commands."""
+        return do_script + "run -all \nexit"
+
+    def _simulator_command(self, do_file: tempfile.NamedTemporaryFile) -> list[_Command]:
+        """Return the simulator invocation command."""
+        return [["vsimsa", "-do", do_file.name]]
 
 
 class Riviera(AldecBase):
@@ -1478,6 +1478,18 @@ class Riviera(AldecBase):
        * Does not support the ``pre_cmd`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
+
+    def _append_run_commands(self, do_script: str) -> str:
+        if getattr(self, "gui", False):
+            return do_script + "echo execute run -all to run the whole simulation."
+        else:
+            return do_script + "run -all \nexit"
+
+    def _simulator_command(self, do_file) -> list[_Command]:
+        if getattr(self, "gui", False):
+            return [["riviera", "-do", do_file.name]]
+        else:
+            return [["vsimsa", "-do", do_file.name]]
 
 
 class ActiveHDL(AldecBase):
