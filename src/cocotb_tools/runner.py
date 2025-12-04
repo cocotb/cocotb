@@ -1316,7 +1316,6 @@ class AldecBase(Runner):
 
     .. admonition:: Simulator-specific Usage
 
-       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
        * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
@@ -1404,9 +1403,6 @@ class AldecBase(Runner):
         return [["vsimsa", "-do", do_file.name]]
 
     def _test_command(self) -> list[_Command]:
-        if self.pre_cmd is not None:
-            raise RuntimeError("pre_cmd is not implemented for Riviera.")
-
         do_script: str = "\nonerror {\n quit -code 1 \n} \n"
 
         if self.hdl_toplevel_lang == "vhdl":
@@ -1453,6 +1449,18 @@ class AldecBase(Runner):
                 + ":cocotbvhpi_entry_point"
             )
 
+        if self.pre_cmd is not None:
+            if isinstance(self, Riviera):
+                if not isinstance(self.pre_cmd, list):
+                    raise TypeError("pre_cmd must be a list of strings.")
+                if not all(isinstance(s, str) for s in self.pre_cmd):
+                    raise TypeError("pre_cmd must be a list of strings.")
+                for s in self.pre_cmd:
+                    do_script += f"{s}; "
+                do_script += "\n"
+            else:
+                raise RuntimeError("pre_cmd is not implemented for ActiveHDL.")
+        
         if self.waves:
             do_script += "log -recursive /*;"
 
@@ -1468,7 +1476,6 @@ class Riviera(AldecBase):
     """Implementation of :class:`Runner` for Aldec Riviera-Pro.
     .. admonition:: Simulator-specific Usage
 
-       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
        * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
