@@ -1,1 +1,1 @@
-Implemented pre_cmd support for Aldec Riviera-Pro. 
+Add support for ``pre_cmd`` argument to :meth:`.Runner.test` for Aldec Riviera-Pro. 
