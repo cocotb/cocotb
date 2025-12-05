@@ -1,1 +1,1 @@
-Add support for `gui` argument to :meth:`.Runner.test` for Aldec Riviera-Pro. 
+Add support for ``gui`` argument to :meth:`.Runner.test` for Aldec Riviera-Pro. 
