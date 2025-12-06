@@ -1493,7 +1493,7 @@ class Riviera(AldecBase):
         if self.gui:
             return do_script
         else:
-            return super._append_onerror_command(do_script)
+            return super()._append_onerror_command(do_script)
 
     def _append_run_commands(self, do_script: str) -> str:
         if getattr(self, "gui", False):
