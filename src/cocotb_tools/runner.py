@@ -1316,7 +1316,6 @@ class AldecBase(Runner):
 
     .. admonition:: Simulator-specific Usage
 
-       * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
@@ -1403,7 +1402,9 @@ class AldecBase(Runner):
         return [["vsimsa", "-do", do_file.name]]
 
     def _test_command(self) -> list[_Command]:
-        do_script: str = "\nonerror {\n quit -code 1 \n} \n"
+        do_script: str = ""
+
+        do_script = self._append_onerror_command(do_script)
 
         if self.hdl_toplevel_lang == "vhdl":
             do_script += "asim +access +w_nets -interceptcoutput -loadvhpi {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUSARGS}\n".format(
@@ -1454,11 +1455,24 @@ class AldecBase(Runner):
         if self.waves:
             do_script += "log -recursive /*;"
 
-        do_script += "run -all \nexit"
+        do_script = self._append_run_commands(do_script)
 
         with tempfile.NamedTemporaryFile(delete=False) as do_file:
             do_file.write(do_script.encode())
 
+        return self._simulator_command(do_file)
+
+    def _append_onerror_command(self, do_script: str) -> str:
+        return do_script + "\nonerror {\n quit -code 1 \n} \n"
+
+    def _append_run_commands(self, do_script: str) -> str:
+        """Append simulator-specific run commands."""
+        return do_script + "run -all \nexit"
+
+    def _simulator_command(
+        self, do_file: tempfile.NamedTemporaryFile
+    ) -> list[_Command]:
+        """Return the simulator invocation command."""
         return [["vsimsa", "-do", do_file.name]]
 
     def _append_pre_cmd(self, do_script: str) -> str:
@@ -1472,9 +1486,26 @@ class Riviera(AldecBase):
     """Implementation of :class:`Runner` for Aldec Riviera-Pro.
     .. admonition:: Simulator-specific Usage
 
-       * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
+
+    def _append_onerror_command(self, do_script: str) -> str:
+        if self.gui:
+            return do_script
+        else:
+            return super()._append_onerror_command(do_script)
+
+    def _append_run_commands(self, do_script: str) -> str:
+        if getattr(self, "gui", False):
+            return do_script + "echo execute run -all to run the whole simulation."
+        else:
+            return do_script + "run -all \nexit"
+
+    def _simulator_command(self, do_file) -> list[_Command]:
+        if getattr(self, "gui", False):
+            return [["riviera", "-do", do_file.name]]
+        else:
+            return [["vsimsa", "-do", do_file.name]]
 
     def _append_pre_cmd(self, do_script: str) -> str:
         if self.pre_cmd is None:
