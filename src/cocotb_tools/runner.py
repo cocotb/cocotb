@@ -1402,7 +1402,9 @@ class AldecBase(Runner):
         return [["vsimsa", "-do", do_file.name]]
 
     def _test_command(self) -> list[_Command]:
-        do_script: str = "\nonerror {\n quit -code 1 \n} \n"
+        do_script: str = ""
+
+        do_script = self._append_onerror_command(do_script)
 
         if self.hdl_toplevel_lang == "vhdl":
             do_script += "asim +access +w_nets -interceptcoutput -loadvhpi {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUSARGS}\n".format(
@@ -1460,6 +1462,9 @@ class AldecBase(Runner):
 
         return self._simulator_command(do_file)
 
+    def _append_onerror_command(self, do_script: str) -> str:
+        return do_script + "\nonerror {\n quit -code 1 \n} \n"
+
     def _append_run_commands(self, do_script: str) -> str:
         """Append simulator-specific run commands."""
         return do_script + "run -all \nexit"
@@ -1483,6 +1488,12 @@ class Riviera(AldecBase):
 
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
+
+    def _append_onerror_command(self, do_script: str) -> str:
+        if self.gui:
+            return do_script
+        else:
+            return super._append_onerror_command(do_script)
 
     def _append_run_commands(self, do_script: str) -> str:
         if getattr(self, "gui", False):
