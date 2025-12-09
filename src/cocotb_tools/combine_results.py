@@ -29,7 +29,7 @@ def _find_all(name: Pattern, path: Path) -> Iterable[Path]:
 def _existing_path(path_str: str) -> Path:
     path = Path(path_str)
     if not path.exists():
-        raise argparse.ArgumentTypeError(f"Path '{path_string}' does not exist.")
+        raise argparse.ArgumentTypeError(f"Path '{path_str}' does not exist.")
     return path
 
 
