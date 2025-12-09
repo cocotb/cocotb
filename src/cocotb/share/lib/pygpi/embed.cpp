@@ -120,7 +120,7 @@ extern "C" PYGPI_EXPORT void initialize(void) {
     PyConfig_InitPythonConfig(&config);
     DEFER(PyConfig_Clear(&config));
 
-    PyConfig_SetString(&config, &config.program_name, interpreter_path);
+    PyConfig_SetString(&config, &config.executable, interpreter_path);
 
     status = PyConfig_SetArgv(&config, 1, argv);
     if (PyStatus_Exception(status)) {
