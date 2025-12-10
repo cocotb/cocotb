@@ -1,3 +1,7 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
 from __future__ import annotations
 
 import sys
@@ -82,9 +86,9 @@ async def wait(
     Once the return conditions are met,
     any :class:`!Task`\ s which are still running are :meth:`~cocotb.task.Task.cancel`\ ed.
 
-    The *return_when* conditions must be one of the following:
+    The *return_when* condition must be one of the following:
 
-    - ``"FIRST_COMPLETED"``: Returns after the first *awaitable* completes, regardless if that was due to an exception or not.
+    - ``"FIRST_COMPLETED"``: Returns after the first of the *awaitables* completes, regardless if that was due to an exception or not.
     - ``"FIRST_EXCEPTION"``: Returns after all *awaitables* complete or after the first *awaitable* that completes due to an exception.
     - ``"ALL_COMPLETED"``: Returns after all *awaitables* complete.
 
@@ -184,9 +188,9 @@ async def select(
 ) -> tuple[int, T | BaseException]:
     r"""Await on all given *awaitables* concurrently and return the index and result of the first to complete.
 
-    After the first *awaitable* completes, remaining waiter tasks are cancelled.
+    After the first *awaitable* completes, the remaining waiter tasks are cancelled.
     This does not cancel :class:`~cocotb.task.Task`\ s passed as arguments,
-    only the internal tasks awaiting upon their completion.
+    only the internal waiter Tasks.
 
     Args:
         awaitables: The :class:`~cocotb.abc.Awaitable`\ s to concurrently :keyword:`!await` upon.
@@ -198,7 +202,7 @@ async def select(
         ValueError: if missing at least one awaitable.
 
     Returns:
-        A tuple of the index into the argument list (0-based) of the first *awaitable* to complete and its result.
+        A tuple comprised of the index into the argument list (0-based) of the first *awaitable* to complete, and the *awaitable*'s result.
     """
     if len(awaitables) == 0:
         raise ValueError("At least one awaitable required")
@@ -280,9 +284,9 @@ async def gather(
 ) -> tuple[Any, ...]:
     r"""Await on all given *awaitables* concurrently and return their results once all have completed.
 
-    After the return condition, based on *return_exceptions* is met, remaining waiter tasks are cancelled.
+    After the return condition, based on *return_exceptions*, is met, remaining waiter tasks are cancelled.
     This does not cancel :class:`~cocotb.task.Task`\ s passed as arguments,
-    only the internal tasks awaiting upon their completion.
+    only the internal waiter Tasks.
 
     Args:
         awaitables: The :class:`~collection.abc.Awaitable`\ s to concurrently :keyword:`!await` upon.
