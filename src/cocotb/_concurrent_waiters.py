@@ -83,8 +83,8 @@ async def wait(
 
     Every :class:`~collections.abc.Awaitable` given to the function is :keyword:`await`\ ed concurrently in its own :class:`~cocotb.task.Task`.
     When the return conditions specified by *return_when* are met, this function returns those :class:`!Task`\ s.
-    Once the return conditions are met,
-    any :class:`!Task`\ s which are still running are :meth:`~cocotb.task.Task.cancel`\ ed.
+    Once the return conditions are met, any waiter tasks which are still running are cancelled.
+    This does not cancel :class:`~cocotb.task.Task`\ s passed as arguments, only the waiter tasks.
 
     The *return_when* condition must be one of the following:
 
@@ -134,8 +134,9 @@ async def wait(
             del remaining[task]
             if not remaining:
                 done.set()
-            # Cancel remaining before they have a chance to resume.
-            cancel()
+            else:
+                # Cancel remaining before they have a chance to resume.
+                cancel()
 
     elif return_when == "FIRST_EXCEPTION":
 
@@ -144,7 +145,6 @@ async def wait(
             if not remaining:
                 done.set()
             elif not task.cancelled() and task.exception() is not None:
-                done.set()
                 # Cancel remaining before they have a chance to resume.
                 cancel()
 
@@ -190,7 +190,7 @@ async def select(
 
     After the first *awaitable* completes, the remaining waiter tasks are cancelled.
     This does not cancel :class:`~cocotb.task.Task`\ s passed as arguments,
-    only the internal waiter Tasks.
+    only the internal waiter tasks.
 
     Args:
         awaitables: The :class:`~cocotb.abc.Awaitable`\ s to concurrently :keyword:`!await` upon.
@@ -198,11 +198,11 @@ async def select(
             If ``False`` (default), re-raises the exception when an *awaitable* results in an exception.
             If ``True``, returns the exception rather than re-raising when an *awaitable* results in an exception.
 
-    Raises:
-        ValueError: if missing at least one awaitable.
-
     Returns:
         A tuple comprised of the index into the argument list (0-based) of the first *awaitable* to complete, and the *awaitable*'s result.
+
+    Raises:
+        ValueError: If no *awaitables* are provided.
     """
     if len(awaitables) == 0:
         raise ValueError("At least one awaitable required")
@@ -284,9 +284,9 @@ async def gather(
 ) -> tuple[Any, ...]:
     r"""Await on all given *awaitables* concurrently and return their results once all have completed.
 
-    After the return condition, based on *return_exceptions*, is met, remaining waiter tasks are cancelled.
+    After the return condition, based on *return_exceptions*, is met, the remaining waiter tasks are cancelled.
     This does not cancel :class:`~cocotb.task.Task`\ s passed as arguments,
-    only the internal waiter Tasks.
+    only the internal waiter tasks.
 
     Args:
         awaitables: The :class:`~collection.abc.Awaitable`\ s to concurrently :keyword:`!await` upon.

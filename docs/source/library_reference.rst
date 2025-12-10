@@ -371,6 +371,11 @@ Triggers dealing with Tasks or running multiple Tasks concurrently.
 .. autoclass:: First
     :members:
 
+.. autofunction:: wait
+
+.. autofunction:: gather
+
+.. autofunction:: select
 
 Synchronization Triggers
 ------------------------
