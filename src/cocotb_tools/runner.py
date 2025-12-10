@@ -1761,12 +1761,6 @@ class Xcelium(Runner):
             + verbosity_opts
             # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
             + ["-access +rwc"]
-            + ["-loadvpi"]
-            # always start with VPI on Xcelium
-            + [
-                cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
-                + ":.vlog_startup_routines_bootstrap"
-            ]
             + vhpi_opts
             + [f"-work {self.hdl_library}"]
             + (
@@ -1843,6 +1837,9 @@ class Xcelium(Runner):
                 f"xrun_{self.current_test_name}.log",
                 "-xmlibdirname",
                 f"{self.build_dir}/xrun_snapshot",
+                "-loadvpisim",
+                cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
+                + ":vlog_startup_routines_bootstrap",
                 "-cds_implicit_tmpdir",
                 tmpdir,
                 "-licqueue",
