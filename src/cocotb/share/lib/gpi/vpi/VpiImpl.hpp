@@ -182,6 +182,7 @@ class VpiObjHdl : public GpiObjHdl {
 
     const char *get_definition_name() override;
     const char *get_definition_file() override;
+    int get_signed() override;
 };
 
 class VpiSignalObjHdl : public GpiSignalObjHdl {
