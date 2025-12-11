@@ -93,7 +93,7 @@ async def wait(
     - ``"ALL_COMPLETED"``: Returns after all *awaitables* complete.
 
     Args:
-        awaitables: The :class:`Awaitable`\ s to concurrently :keyword:`!await` upon.
+        awaitables: The :class:`~collections.abc.Awaitable`\ s to concurrently :keyword:`!await` upon.
         return_when:
             The condition that must be met before returning.
             One of ``"FIRST_COMPLETED"``, ``"FIRST_EXCEPTION"``, or ``"ALL_COMPLETED"``.
@@ -193,7 +193,7 @@ async def select(
     only the internal waiter tasks.
 
     Args:
-        awaitables: The :class:`~cocotb.abc.Awaitable`\ s to concurrently :keyword:`!await` upon.
+        awaitables: The :class:`~collections.abc.Awaitable`\ s to concurrently :keyword:`!await` upon.
         return_exception:
             If ``False`` (default), re-raises the exception when an *awaitable* results in an exception.
             If ``True``, returns the exception rather than re-raising when an *awaitable* results in an exception.
@@ -289,7 +289,7 @@ async def gather(
     only the internal waiter tasks.
 
     Args:
-        awaitables: The :class:`~collection.abc.Awaitable`\ s to concurrently :keyword:`!await` upon.
+        awaitables: The :class:`~collections.abc.Awaitable`\ s to concurrently :keyword:`!await` upon.
         return_exceptions:
             If ``False`` (default), after the first *awaitable* results in an exception, cancels the remaining *awaitables* and re-raises the exception.
             If ``True``, returns the exception rather than the result value when an *awaitable* results in an exception.
