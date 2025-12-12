@@ -36,177 +36,11 @@ async def _waiter(aw: Awaitable[T]) -> T:
 class TaskManager:
     r"""An :term:`asynchronous context manager` which enables the user to run :term:`coroutine function`\ s or :keyword:`await` :term:`awaitable`\ s concurrently and wait for them all to finish.
 
-    The :deco:`fork` decorator can be used to run :term:`coroutine function`\ s in parallel as children of the :class:`!TaskManager` object.
-    When control reaches the end of the context block
-    the :class:`!TaskManager` blocks the calling :class:`!Task` until all children :class:`!Task`\ s complete.
-
-    .. code-block:: python
-
-        async with TaskManager() as tm:
-
-            @tm.fork
-            async def drive_interface1(): ...
-
-            @tm.fork
-            async def drive_interface2(): ...
-
-        # Control returns here when all drive Tasks have completed
-
-    After exiting the context block,
-    if any child :class:`!Task` failed with an exception,
-    one of two behaviors will occur:
-    if the *continue_on_error* parameter is ``False`` (default), all other child :class:`!Task`\ s are cancelled;
-    if the *continue_on_error* parameter is ``True``, other child :class:`!Task`\ s are allowed to continue running.
-
-    After all child :class:`!Task`\ s have finished,
-    all exceptions, besides :exc:`CancelledError`, are gathered into an :exc:`ExceptionGroup`,
-    or a :exc:`BaseExceptionGroup`, if at least one of the exceptions is a :exc:`BaseException`,
-    and raised in the enclosing scope.
-
-    You can catch the :exc:`!ExceptionGroup` to handle errors from child :class:`!Task`\ s
-    by either catching the :exc:`!ExceptionGroup` as you would typically;
-    or, if you are running Python 3.11 or later,
-    using the new ``except*`` syntax to catch specific exception types from the group.
-    This new syntax will run the except clause for each matching exception in the group.
-
-    .. code-block:: python
-
-        try:
-            async with TaskManager() as tm:
-
-                @tm.fork
-                async def task1():
-                    ...
-                    raise ValueError("An error occurred in task1")
-
-                @tm.fork
-                async def task2():
-                    ...
-                    raise ValueError("An error occurred in task2")
-
-        except* ValueError as e:
-            # This will print both ValueErrors from task1 and task2
-            cocotb.log.info(f"Caught ValueError from TaskManager: {e}")
-
-    You are permitted to add any :keyword:`await` statement to the body of the context block.
-    This means that it is possible for child tasks to start running, and fail, before the context block is exited.
-    In this case, the context block will also exit with a :exc:`CancelledError` if the *continue_on_error* parameter is ``False`` (default),
-    or continue if *continue_on_error* is ``True``.
-
-    .. code-block:: python
-
-        e = Event()
-
-        async with TaskManager() as tm:
-
-            @tm.fork
-            async def task1():
-                raise ValueError("An error occurred in task1")
-
-            try:
-                await e.wait()  # During this await, task1 will fail
-            except CancelledError:
-                cocotb.log.info(
-                    "The rest of the context block will be skipped due to task1 failing"
-                )
-                raise  # DON'T FORGET THIS
-
-            ...  # This code will be skipped
-
-
-    In addition to the :deco:`!fork` method for starting :term:`coroutine function`\ s concurrently,
-    :meth:`start_soon` is also provided for :keyword:`await`\ ing arbitrary :term:`awaitable`\ s concurrently.
-
-    .. code-block:: python
-
-        async with TaskManager() as tm:
-            tm.start_soon(RisingEdge(cocotb.top.operation_complete))
-
-            @tm.fork
-            async def watchdog():
-                await Timer(1, "us")
-                raise TimeoutError("Operation did not complete in time")
-
-    You can inspect the result of child classes by storing the :class:`!Task` objects returned by :meth:`start_soon` method.
-    When decoratoring a :term:`coroutine function` with :deco:`!fork`,
-    the name of the function will become the returned :class:`!Task` object.
-
-    .. code-block:: python
-
-        async with TaskManager() as tm:
-            task1 = tm.start_soon(RisingEdge(cocotb.top.signal_a))
-
-            @tm.fork
-            async def task2():
-                return 42
-
-
-        assert task1.done()
-        assert task1.result() is RisingEdge(cocotb.top.signal_a)
-
-        assert task2.done()
-        assert task2.result() == 42
-
-    After exiting the context block and waiting for all child :class:`!Task`\ s to complete,
-    or :keyword:`await`\ ing the :class:`!TaskManager` instance the first time,
-    no further calls to :meth:`start_soon` or :deco:`!fork` are permitted;
-    attempting to do so will raise a :exc:`RuntimeError`.
-
-    Additionally, after a child :class:`!Task` fails and the :class:`!TaskManager` begins cancelling other child :class:`!Task`\ s,
-    no further calls to :meth:`start_soon` or :deco:`!fork` are permitted;
-    attempting to do so will raise a :exc:`RuntimeError`,
-    unless the *continue_on_error* parameter is ``True`` and the context block has not yet exited.
-
-    .. code-block:: python
-
-        try:
-            async with TaskManager(continue_on_error=True) as tm:
-
-                @tm.fork
-                async def task1():
-                    raise ValueError("An error occurred in task1")
-
-                await Timer(1)
-                # At this point task1 has already failed, but because continue_on_error=True,
-                # we can still add new tasks.
-
-                @tm.fork
-                async def task2(): ...
-
-        except* ValueError as e:
-            cocotb.log.info(f"Caught ValueError from task1: {e}")
-            pass
-
-        assert task2.done()  # task2 was able to run to completion
-
-    And of course, :class:`!TaskManager` can be arbitrarily nested.
-    When any child :class:`!Task` fails, the entire tree of child :class:`!Task`\ s will eventually be cancelled.
-
-    .. code-block:: python
-        async with TaskManager() as tm_outer:
-
-            @tm_outer.fork
-            async def outer_task():
-                async with TaskManager() as tm_inner:
-
-                    @tm_inner.fork
-                    async def inner_task(): ...
-
-            async with TaskManager() as tm_another:
-
-                @tm_another.fork
-                async def another_task(): ...
-
-    .. warning::
-        Just like with :class:`~cocotb.task.Task`, cancelling a :class:`!TaskManager` instance
-        (after a child fails, or if another Task cancels the Task using the :class:`!TaskManager`)
-        and squashing the resulting :exc:`CancelledError` will cause the test to fail immediately.
-        Always remember to re-raise the :exc:`!CancelledError` if you catch it.
+    See :ref:`task_manager_tutorial` for usage information.
 
     Args:
         continue_on_error: If ``False``, when a child Task fails, all other child Tasks are cancelled.
             If ``True``, other child Tasks are allowed to continue running.
-
     """
 
     def __init__(self, continue_on_error: bool = False) -> None:
@@ -225,7 +59,7 @@ class TaskManager:
         self._none_remaining.set()
 
     def start_soon(self, aw: Awaitable[T], *, name: str | None = None) -> Task[T]:
-        """Await the *aw* argument concurrently to other calls to this method.
+        """Await the *aw* argument concurrently.
 
         Args:
             aw: A :class:`~collections.abc.Awaitable` to :keyword:`await` concurrently.
