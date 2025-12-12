@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import sys
 from asyncio import CancelledError
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from common import assert_takes
 
 import cocotb
+from cocotb.task import Task
 from cocotb.triggers import Event, TaskManager, Timer, Trigger
 
 if TYPE_CHECKING:
@@ -46,18 +47,19 @@ async def raises_after(wait: int) -> None:
 
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_passes(_: object, continue_on_error: bool) -> None:
+async def test_passes(_: object, continue_on_error: bool) -> None:
     timer = Timer(2)
 
-    async with TaskManager(continue_on_error=continue_on_error) as tm:
-        task1 = tm.start_soon(timer)
-        task2 = tm.start_soon(AwaitableThing(3, ret=123))
-        task3 = tm.start_soon(coro(4, ret=456))
+    with assert_takes(5, "step"):
+        async with TaskManager(continue_on_error=continue_on_error) as tm:
+            task1 = tm.start_soon(timer)
+            task2 = tm.start_soon(AwaitableThing(3, ret=123))
+            task3 = tm.start_soon(coro(4, ret=456))
 
-        @tm.fork
-        async def task4() -> int:
-            await Timer(5)
-            return 789
+            @tm.fork
+            async def task4() -> int:
+                await Timer(5)
+                return 789
 
     assert task1.done()
     assert task1.result() == timer
@@ -71,21 +73,92 @@ async def test_TaskManager_passes(_: object, continue_on_error: bool) -> None:
 
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_no_tasks_passes(_: object, continue_on_error: bool) -> None:
+async def test_no_tasks_passes(_: object, continue_on_error: bool) -> None:
     async with TaskManager(continue_on_error=continue_on_error):
         pass
 
 
 @cocotb.test
+@cocotb.parametrize(inner_continue_on_error=[True, False])
+@cocotb.parametrize(outer_continue_on_error=[True, False])
+async def test_nested_passes(
+    _: object, inner_continue_on_error: bool, outer_continue_on_error: bool
+) -> None:
+    timer = Timer(2)
+
+    with assert_takes(8, "step"):
+        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+            task_outer = tm_outer.start_soon(coro(8, ret=808))
+
+            with assert_takes(5, "step"):
+                async with TaskManager(
+                    continue_on_error=inner_continue_on_error
+                ) as tm_inner:
+                    task1 = tm_inner.start_soon(timer)
+                    task2 = tm_inner.start_soon(AwaitableThing(3, ret=123))
+                    task3 = tm_inner.start_soon(coro(4, ret=456))
+
+                    @tm_inner.fork
+                    async def task4() -> int:
+                        await Timer(5)
+                        return 789
+
+    assert task_outer.result() == 808
+    assert task1.result() == timer
+    assert task2.result() == 123
+    assert task3.result() == 456
+    assert task4.result() == 789
+
+
+@cocotb.test
+@cocotb.parametrize(inner_continue_on_error=[True, False])
+@cocotb.parametrize(outer_continue_on_error=[True, False])
+async def test_nested_in_child_passes(
+    _: object, inner_continue_on_error: bool, outer_continue_on_error: bool
+) -> None:
+    timer = Timer(2)
+
+    task1: Task[Any] | None = None
+    task2: Task[Any] | None = None
+    task3: Task[Any] | None = None
+    task4: Task[Any] | None = None
+
+    async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        task_outer = tm_outer.start_soon(coro(5, ret=808))
+
+        @tm_outer.fork
+        async def outer_task() -> None:
+            async with TaskManager(
+                continue_on_error=inner_continue_on_error
+            ) as tm_inner:
+                nonlocal task1, task2, task3, task4
+
+                task1 = tm_inner.start_soon(timer)
+                task2 = tm_inner.start_soon(AwaitableThing(3, ret=123))
+                task3 = tm_inner.start_soon(coro(4, ret=456))
+
+                @tm_inner.fork
+                async def task4() -> int:
+                    await Timer(5)
+                    return 789
+
+    assert task_outer.result() == 808
+    assert task1 is not None
+    assert task2 is not None
+    assert task3 is not None
+    assert task4 is not None
+    assert task1.result() == timer
+    assert task2.result() == 123
+    assert task3.result() == 456
+    assert task4.result() == 789
+
+
+@cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_failure_in_block(_: object, continue_on_error: bool) -> None:
+async def test_failure_in_block(_: object, continue_on_error: bool) -> None:
     try:
         async with TaskManager(continue_on_error=continue_on_error) as tm:
-
-            @tm.fork
-            async def stuff() -> int:
-                await Timer(5)
-                return 789
+            stuff = tm.start_soon(coro(3, ret=789))
 
             raise MyException()
 
@@ -102,21 +175,49 @@ async def test_TaskManager_failure_in_block(_: object, continue_on_error: bool) 
 
 
 @cocotb.test
-@cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_child_failure_in_block(
-    _: object, continue_on_error: bool
+@cocotb.parametrize(outer_continue_on_error=[True, False])
+@cocotb.parametrize(inner_continue_on_error=[True, False])
+async def test_failure_in_nested_block(
+    _: object, outer_continue_on_error: bool, inner_continue_on_error: bool
 ) -> None:
+    try:
+        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+            task_inner = tm_outer.start_soon(coro(5, ret=9))
+
+            async with TaskManager(
+                continue_on_error=inner_continue_on_error
+            ) as tm_inner:
+                stuff = tm_inner.start_soon(coro(3, ret=789))
+
+                raise MyException()
+
+    except BaseExceptionGroup as e:
+        my_exc, rest = e.split(MyException)
+        assert rest is None
+        assert my_exc is not None
+        assert len(my_exc.exceptions) == 1
+
+    if outer_continue_on_error:
+        assert task_inner.result() == 9
+    else:
+        assert task_inner.cancelled()
+
+    if inner_continue_on_error:
+        assert stuff.result() == 789
+    else:
+        assert stuff.cancelled()
+
+
+@cocotb.test
+@cocotb.parametrize(continue_on_error=[True, False])
+async def test_child_failure_in_block(_: object, continue_on_error: bool) -> None:
     takes = 5 if continue_on_error else 1
 
     with assert_takes(takes, "step"):
         try:
             async with TaskManager(continue_on_error=continue_on_error) as tm:
                 tm.start_soon(raises_after(1))
-
-                @tm.fork
-                async def stuff() -> int:
-                    await Timer(5)
-                    return 789
+                stuff = tm.start_soon(coro(3, ret=789))
 
                 try:
                     await Timer(5)
@@ -139,21 +240,58 @@ async def test_TaskManager_child_failure_in_block(
 
 
 @cocotb.test
-@cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_child_failure_in_exit(
-    _: object, continue_on_error: bool
+@cocotb.parametrize(outer_continue_on_error=[True, False])
+@cocotb.parametrize(inner_continue_on_error=[True, False])
+async def test_child_failure_in_nested_block(
+    _: object, outer_continue_on_error: bool, inner_continue_on_error: bool
 ) -> None:
-    takes = 5 if continue_on_error else 2
+    try:
+        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+            task_inner = tm_outer.start_soon(coro(5, ret=9))
+
+            async with TaskManager(
+                continue_on_error=inner_continue_on_error
+            ) as tm_inner:
+                task_inner_failure = tm_inner.start_soon(raises_after(1))
+                stuff = tm_inner.start_soon(coro(3, ret=789))
+
+                try:
+                    await Timer(5)
+                except CancelledError:
+                    assert not inner_continue_on_error
+                    raise  # can't use pytest.raises as that causes CancelledError to be swallowed
+                else:
+                    assert inner_continue_on_error
+
+    except BaseExceptionGroup as e:
+        my_exc, rest = e.split(MyException)
+        assert rest is None
+        assert my_exc is not None
+        assert len(my_exc.exceptions) == 1
+
+    assert task_inner_failure.exception() is not None
+
+    if outer_continue_on_error:
+        assert task_inner.result() == 9
+    else:
+        assert task_inner.cancelled()
+
+    if inner_continue_on_error:
+        assert stuff.result() == 789
+    else:
+        assert stuff.cancelled()
+
+
+@cocotb.test
+@cocotb.parametrize(continue_on_error=[True, False])
+async def test_child_failure_in_exit(_: object, continue_on_error: bool) -> None:
+    takes = 3 if continue_on_error else 2
 
     with assert_takes(takes, "step"):
         try:
             async with TaskManager(continue_on_error=continue_on_error) as tm:
                 tm.start_soon(raises_after(2))
-
-                @tm.fork
-                async def stuff() -> int:
-                    await Timer(5)
-                    return 789
+                stuff = tm.start_soon(coro(3, ret=789))
 
         except BaseExceptionGroup as e:
             my_exc, rest = e.split(MyException)
@@ -168,10 +306,43 @@ async def test_TaskManager_child_failure_in_exit(
 
 
 @cocotb.test
-@cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_external_cancel_in_block(
-    _: object, continue_on_error: bool
+@cocotb.parametrize(outer_continue_on_error=[True, False])
+@cocotb.parametrize(inner_continue_on_error=[True, False])
+async def test_child_failure_in_nested_exit(
+    _: object, outer_continue_on_error: bool, inner_continue_on_error: bool
 ) -> None:
+    try:
+        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+            task_inner = tm_outer.start_soon(coro(5, ret=9))
+
+            async with TaskManager(
+                continue_on_error=inner_continue_on_error
+            ) as tm_inner:
+                task_inner_failure = tm_inner.start_soon(raises_after(2))
+                stuff = tm_inner.start_soon(coro(3, ret=789))
+
+    except BaseExceptionGroup as e:
+        my_exc, rest = e.split(MyException)
+        assert rest is None
+        assert my_exc is not None
+        assert len(my_exc.exceptions) == 1
+
+    assert task_inner_failure.exception() is not None
+
+    if outer_continue_on_error:
+        assert task_inner.result() == 9
+    else:
+        assert task_inner.cancelled()
+
+    if inner_continue_on_error:
+        assert stuff.result() == 789
+    else:
+        assert stuff.cancelled()
+
+
+@cocotb.test
+@cocotb.parametrize(continue_on_error=[True, False])
+async def test_external_cancel_in_block(_: object, continue_on_error: bool) -> None:
     cancelled = False
     e = Event()
 
@@ -197,17 +368,27 @@ async def test_TaskManager_external_cancel_in_block(
 
 
 @cocotb.test
-@cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_external_cancel_in_block_ignored_at_end_of_block(
-    _: object,
-    continue_on_error: bool,
+@cocotb.parametrize(outer_continue_on_error=[True, False])
+@cocotb.parametrize(inner_continue_on_error=[True, False])
+async def test_external_cancel_in_nested_block(
+    _: object, outer_continue_on_error: bool, inner_continue_on_error: bool
 ) -> None:
+    cancelled = False
+    e = Event()
+
+    outer_task: Task[Any] | None = None
+
     async def do_stuff() -> None:
-        async with TaskManager(continue_on_error=continue_on_error):
-            try:
-                await Timer(2)
-            except CancelledError:
-                pass
+        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+            nonlocal outer_task
+            outer_task = tm_outer.start_soon(coro(5, ret=9))
+
+            async with TaskManager(continue_on_error=inner_continue_on_error):
+                try:
+                    await e.wait()
+                finally:
+                    nonlocal cancelled
+                    cancelled = True
 
     task = cocotb.start_soon(do_stuff())
 
@@ -217,67 +398,16 @@ async def test_TaskManager_external_cancel_in_block_ignored_at_end_of_block(
     # cancel do_stuff externally
     task.cancel()
     await task.complete
-    assert not task.cancelled()
-    assert task.exception() is not None
+
+    # ensure do_stuff's children are also cancelled
+    assert outer_task is not None
+    assert outer_task.cancelled()
+    assert cancelled
 
 
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_external_cancel_in_block_ignored_new_raise(
-    _: object,
-    continue_on_error: bool,
-) -> None:
-    async def do_stuff() -> None:
-        async with TaskManager(continue_on_error=continue_on_error):
-            try:
-                await Timer(2)
-            except CancelledError:
-                raise MyException()
-
-    task = cocotb.start_soon(do_stuff())
-
-    # wait until do_stuff's TaskManager is blocking
-    await Timer(1)
-
-    # cancel do_stuff externally
-    task.cancel()
-    await task.complete
-    assert not task.cancelled()
-    assert task.exception() is not None
-
-
-@cocotb.test
-@cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_external_cancel_in_block_ignored_and_await(
-    _: object,
-    continue_on_error: bool,
-) -> None:
-    async def do_stuff() -> None:
-        async with TaskManager(continue_on_error=continue_on_error):
-            try:
-                await Timer(2)
-            except CancelledError:
-                pass
-
-            await Timer(1)
-
-    task = cocotb.start_soon(do_stuff())
-
-    # wait until do_stuff's TaskManager is blocking
-    await Timer(1)
-
-    # cancel do_stuff externally
-    task.cancel()
-    await task.complete
-    assert not task.cancelled()
-    assert task.exception() is not None
-
-
-@cocotb.test
-@cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_external_cancel_in_aexit(
-    _: object, continue_on_error: bool
-) -> None:
+async def test_external_cancel_in_aexit(_: object, continue_on_error: bool) -> None:
     cancelled = False
     e = Event()
 
@@ -307,8 +437,127 @@ async def test_TaskManager_external_cancel_in_aexit(
 
 
 @cocotb.test
+@cocotb.parametrize(outer_continue_on_error=[True, False])
+@cocotb.parametrize(inner_continue_on_error=[True, False])
+async def test_external_cancel_in_nested_aexit(
+    _: object, outer_continue_on_error: bool, inner_continue_on_error: bool
+) -> None:
+    cancelled = False
+    e = Event()
+
+    outer_task: Task[Any] | None = None
+
+    async def do_stuff() -> None:
+        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+            nonlocal outer_task
+            outer_task = tm_outer.start_soon(coro(5, ret=9))
+
+            async with TaskManager(continue_on_error=inner_continue_on_error) as tm:
+
+                @tm.fork
+                async def do_stuff() -> None:
+                    try:
+                        await e.wait()
+                    finally:
+                        nonlocal cancelled
+                        cancelled = True
+
+    task = cocotb.start_soon(do_stuff())
+
+    # wait until do_stuff's TaskManager is in __aexit__
+    await Timer(1)
+
+    # cancel do_stuff to see what happens when a TaskManager is cancelled when
+    # waiting for finish in __aexit__
+    task.cancel()
+    await task.complete
+
+    # ensure do_stuff's children are also cancelled
+    assert cancelled
+    assert outer_task is not None
+    assert outer_task.cancelled()
+
+
+@cocotb.test
+@cocotb.parametrize(continue_on_error=[True, False])
+async def test_external_cancel_in_block_ignored_at_end_of_block(
+    _: object,
+    continue_on_error: bool,
+) -> None:
+    async def do_stuff() -> None:
+        async with TaskManager(continue_on_error=continue_on_error):
+            try:
+                await Timer(2)
+            except CancelledError:
+                pass
+
+    task = cocotb.start_soon(do_stuff())
+
+    # wait until do_stuff's TaskManager is blocking
+    await Timer(1)
+
+    # cancel do_stuff externally
+    task.cancel()
+    await task.complete
+    assert not task.cancelled()
+    assert task.exception() is not None
+
+
+@cocotb.test
+@cocotb.parametrize(continue_on_error=[True, False])
+async def test_external_cancel_in_block_ignored_new_raise(
+    _: object,
+    continue_on_error: bool,
+) -> None:
+    async def do_stuff() -> None:
+        async with TaskManager(continue_on_error=continue_on_error):
+            try:
+                await Timer(2)
+            except CancelledError:
+                raise MyException()
+
+    task = cocotb.start_soon(do_stuff())
+
+    # wait until do_stuff's TaskManager is blocking
+    await Timer(1)
+
+    # cancel do_stuff externally
+    task.cancel()
+    await task.complete
+    assert not task.cancelled()
+    assert task.exception() is not None
+
+
+@cocotb.test
+@cocotb.parametrize(continue_on_error=[True, False])
+async def test_external_cancel_in_block_ignored_and_await(
+    _: object,
+    continue_on_error: bool,
+) -> None:
+    async def do_stuff() -> None:
+        async with TaskManager(continue_on_error=continue_on_error):
+            try:
+                await Timer(2)
+            except CancelledError:
+                pass
+
+            await Timer(1)
+
+    task = cocotb.start_soon(do_stuff())
+
+    # wait until do_stuff's TaskManager is blocking
+    await Timer(1)
+
+    # cancel do_stuff externally
+    task.cancel()
+    await task.complete
+    assert not task.cancelled()
+    assert task.exception() is not None
+
+
+@cocotb.test
 @cocotb.xfail(raises=RuntimeError, reason="Ignored CancelledError")
-async def test_TaskManager_child_fails_ignore_cancel_at_end_of_block(_: object) -> None:
+async def test_child_fails_ignore_cancel_at_end_of_block(_: object) -> None:
     async with TaskManager() as tm:
         tm.start_soon(raises_after(1))
 
@@ -322,7 +571,7 @@ async def test_TaskManager_child_fails_ignore_cancel_at_end_of_block(_: object) 
 
 @cocotb.test
 @cocotb.xfail(raises=RuntimeError, reason="Ignored CancelledError")
-async def test_TaskManager_child_fails_ignore_cancel_and_await(_: object) -> None:
+async def test_child_fails_ignore_cancel_and_await(_: object) -> None:
     async with TaskManager() as tm:
         tm.start_soon(raises_after(1))
 
@@ -336,7 +585,7 @@ async def test_TaskManager_child_fails_ignore_cancel_and_await(_: object) -> Non
 
 @cocotb.test
 @cocotb.xfail(raises=RuntimeError, reason="Ignored CancelledError")
-async def test_TaskManager_child_fails_ignore_cancel_new_raise(_: object) -> None:
+async def test_child_fails_ignore_cancel_new_raise(_: object) -> None:
     async with TaskManager() as tm:
         tm.start_soon(raises_after(1))
 
@@ -348,7 +597,7 @@ async def test_TaskManager_child_fails_ignore_cancel_new_raise(_: object) -> Non
 
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_reused_context(_: object, continue_on_error: bool) -> None:
+async def test_reused_context(_: object, continue_on_error: bool) -> None:
     tm = TaskManager(continue_on_error=continue_on_error)
 
     async with tm:
@@ -360,7 +609,7 @@ async def test_TaskManager_reused_context(_: object, continue_on_error: bool) ->
 
 
 @cocotb.test
-async def test_TaskManager_start_soon_after_cancel_no_continue(_: object) -> None:
+async def test_start_soon_after_cancel_no_continue(_: object) -> None:
     try:
         async with TaskManager(continue_on_error=False) as tm:
             tm.start_soon(raises_after(1))
@@ -381,7 +630,7 @@ async def test_TaskManager_start_soon_after_cancel_no_continue(_: object) -> Non
 
 
 @cocotb.test
-async def test_TaskManager_start_soon_after_cancel_continue(_: object) -> None:
+async def test_start_soon_after_cancel_continue(_: object) -> None:
     try:
         async with TaskManager(continue_on_error=True) as tm:
             tm.start_soon(raises_after(1))
@@ -396,7 +645,7 @@ async def test_TaskManager_start_soon_after_cancel_continue(_: object) -> None:
 
 
 @cocotb.test
-async def test_TaskManager_reraised_child_exception(_: object) -> None:
+async def test_reraised_child_exception(_: object) -> None:
     try:
         async with TaskManager(continue_on_error=True) as tm:
             task = tm.start_soon(raises_after(1))
@@ -413,9 +662,7 @@ async def test_TaskManager_reraised_child_exception(_: object) -> None:
 
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_start_soon_after_finished(
-    _: object, continue_on_error: bool
-) -> None:
+async def test_start_soon_after_finished(_: object, continue_on_error: bool) -> None:
     async with TaskManager(continue_on_error=continue_on_error) as tm:
         tm.start_soon(coro(1))
 
@@ -427,7 +674,7 @@ async def test_TaskManager_start_soon_after_finished(
 
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_cancel_child_task_in_block_and_exit(
+async def test_cancel_child_task_in_block_and_exit(
     _: object, continue_on_error: bool
 ) -> None:
     cancelled = False
@@ -450,7 +697,7 @@ async def test_TaskManager_cancel_child_task_in_block_and_exit(
 
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
-async def test_TaskManager_cancel_child_task_in_block_and_continue(
+async def test_cancel_child_task_in_block_and_continue(
     _: object, continue_on_error: bool
 ) -> None:
     cancelled = False
@@ -477,7 +724,7 @@ async def test_TaskManager_cancel_child_task_in_block_and_continue(
 
 
 @cocotb.test
-async def test_TaskManager_KeyboardInterrupt_in_block(_: object) -> None:
+async def test_KeyboardInterrupt_in_block(_: object) -> None:
     with pytest.raises(KeyboardInterrupt):
         async with TaskManager() as tm:
             tm.start_soon(coro(5))
@@ -486,127 +733,18 @@ async def test_TaskManager_KeyboardInterrupt_in_block(_: object) -> None:
             raise KeyboardInterrupt()
 
 
+@cocotb.test
+async def test_KeyboardInterrupt_in_nested_block(_: object) -> None:
+    with pytest.raises(KeyboardInterrupt):
+        async with TaskManager() as tm_outer:
+            tm_outer.start_soon(coro(5))
+
+            async with TaskManager() as tm_inner:
+                tm_inner.start_soon(coro(5))
+
+                await Timer(1)
+                raise KeyboardInterrupt()
+
+
 # Can't test KeyboardInterrupt in child Task since that will take a path to shut down
 # the simulation.
-
-
-# @cocotb.test
-# async def test_TaskManager_child_and_nested_fails_simultaneously(_: object, continue_on_error: bool) -> None:
-#     try:
-#         async with TaskManager(continue_on_error=continue_on_error) as tm:
-
-#             @tm.fork
-#             async def outer() -> None:
-#                 await Timer(1)
-#                 raise MyException()
-
-#             async with TaskManager():
-#                 await Timer(2)
-
-#     except BaseExceptionGroup as e:
-#         my_exc, rest = e.split(MyException)
-#         assert rest is None
-#         assert my_exc is not None
-#         assert len(my_exc.exceptions) == 1
-
-
-# @cocotb.test
-# async def test_TaskManager_nested_failures(_: object) -> None:
-#     try:
-#         async with TaskManager() as tm:
-
-#             @tm.fork
-#             async def outer() -> None:
-#                 await Timer(2)
-
-#             async with TaskManager():
-
-#                 @tm.fork
-#                 async def inner() -> None:
-#                     await Timer(1)
-#                     raise MyException("inner")
-
-#     except BaseExceptionGroup as e:
-#         my_exc, rest = e.split(MyException)
-#         assert rest is None
-#         assert my_exc is not None
-#         assert len(my_exc.exceptions) == 1
-
-
-# @cocotb.test
-# async def test_TaskManager_nested_cancel_in_block(_: object) -> None:
-#     cancelled_inner_tm = False
-#     cancelled_outer_task = False
-#     e = Event()
-
-#     async def do_stuff() -> None:
-#         async with TaskManager() as tm:
-
-#             @tm.fork
-#             async def outer() -> None:
-#                 try:
-#                     await e.wait()
-#                 finally:
-#                     nonlocal cancelled_outer_task
-#                     cancelled_outer_task = True
-
-#             async with TaskManager():
-#                 try:
-#                     await e.wait()
-#                 finally:
-#                     nonlocal cancelled_inner_tm
-#                     cancelled_inner_tm = True
-
-#     task = cocotb.start_soon(do_stuff())
-
-#     # wait until do_stuff's TaskManager is blocking
-#     await Timer(1)
-
-#     # cancel do_stuff to see what happens when a TaskManager is cancelled when
-#     # waiting for finish in __aexit__
-#     task.cancel()
-
-#     # ensure do_stuff's children are also cancelled
-#     assert cancelled_inner_tm
-#     assert cancelled_outer_task
-
-
-# @cocotb.test
-# async def test_TaskManager_nested_cancel_in_aexit(_: object) -> None:
-#     cancelled_inner_task = False
-#     cancelled_outer_task = False
-#     e = Event()
-
-#     async def do_stuff() -> None:
-#         async with TaskManager() as tm:
-
-#             @tm.fork
-#             async def outer() -> None:
-#                 try:
-#                     await e.wait()
-#                 finally:
-#                     nonlocal cancelled_outer_task
-#                     cancelled_outer_task = True
-
-#             async with TaskManager():
-
-#                 @tm.fork
-#                 async def inner() -> None:
-#                     try:
-#                         await e.wait()
-#                     finally:
-#                         nonlocal cancelled_inner_task
-#                         cancelled_inner_task = True
-
-#     task = cocotb.start_soon(do_stuff())
-
-#     # wait until do_stuff's TaskManager is in __aexit__
-#     await Timer(1)
-
-#     # cancel do_stuff to see what happens when a TaskManager is cancelled when
-#     # waiting for finish in __aexit__
-#     task.cancel()
-
-#     # ensure do_stuff's children are also cancelled
-#     assert cancelled_inner_task
-#     assert cancelled_outer_task
