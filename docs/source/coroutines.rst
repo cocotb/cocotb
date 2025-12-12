@@ -265,12 +265,12 @@ And of course, the sky is the limit when you compose the two.
 :class:`!TaskManager`: Structured Asymmetric Concurrency
 ========================================================
 
-The :class:`~cocotb.task.TaskManager` class is another way to run multiple async routines concurrently and wait for them all to complete,
+The :class:`~cocotb.triggers.TaskManager` class is another way to run multiple async routines concurrently and wait for them all to complete,
 but properly manages the lifetime of its "children" and handles exceptions and cancellations gracefully.
 This should be the preferred way to run multiple coroutines concurrently.
 
 The typical usage pattern is to create a :class:`!TaskManager` as an :term:`asynchronous context manager` using the :keyword:`async with` statement;
-then to use the :deco:`~cocotb.triggers.TaskManager.fork` decorator method to start :class:`!Task`\ s within the context block.
+then to use the :deco:`@fork <cocotb.triggers.TaskManager.fork>` decorator method to start :class:`!Task`\ s within the context block.
 When control reaches the end of the context block
 the :class:`!TaskManager` blocks the encompassing :class:`!Task` until all children :class:`!Task`\ s complete.
 
@@ -292,7 +292,7 @@ If the *continue_on_error* parameter is ``False`` (default), all other child :cl
 If the *continue_on_error* parameter is ``True``, the exception is captured and other child :class:`!Task`\ s are allowed to continue running.
 
 After all child :class:`!Task`\ s have finished,
-all exceptions, besides :exc:`CancelledError`, are gathered into an :exc:`ExceptionGroup`,
+all exceptions, besides :exc:`~asyncio.CancelledError`, are gathered into an :exc:`ExceptionGroup`,
 or a :exc:`BaseExceptionGroup`, if at least one of the exceptions is a :exc:`BaseException`,
 and raised in the enclosing scope.
 
@@ -324,7 +324,7 @@ This new syntax will run the except clause for each matching exception in the gr
 
 You are permitted to add any :keyword:`await` statement to the body of the context block.
 This means that it is possible for child tasks to start running, and end with an exception, before the context block has finished.
-In this case, a :exc:`CancelledError` will be raised from the current :keyword:`!await`
+In this case, a :exc:`~asyncio.CancelledError` will be raised from the current :keyword:`!await`
 if the *continue_on_error* parameter to the constructor is ``False`` (default),
 or continue if *continue_on_error* is ``True``.
 
@@ -353,7 +353,7 @@ or continue if *continue_on_error* is ``True``.
     Always remember to re-raise the :exc:`!CancelledError` if you catch it.
 
 In addition to the :deco:`!fork` method for starting :term:`coroutine function`\ s concurrently,
-:meth:`start_soon` is also provided for :keyword:`!await`\ ing arbitrary :term:`awaitable`\ s concurrently.
+:meth:`~cocotb.triggers.TaskManager.start_soon` is also provided for :keyword:`!await`\ ing arbitrary :term:`awaitable`\ s concurrently.
 
 .. code-block:: python
 
@@ -365,7 +365,7 @@ In addition to the :deco:`!fork` method for starting :term:`coroutine function`\
             await Timer(1, "us")
             raise TimeoutError("Operation did not complete in time")
 
-You can inspect the result of child classes by storing the :class:`!Task` objects returned by :meth:`start_soon` method.
+You can inspect the result of child classes by storing the :class:`!Task` objects returned by the :meth:`!start_soon` method.
 When decoratoring a :term:`coroutine function` with :deco:`!fork`,
 the name of the function will become the returned :class:`!Task` object.
 
@@ -391,7 +391,7 @@ Attempting to do so will raise a :exc:`RuntimeError`.
 
 Additionally, after a child :class:`!Task` fails and the :class:`!TaskManager` begins cancelling other child :class:`!Task`\ s,
 no further calls to :meth:`start_soon` or :deco:`!fork` are permitted.
-Attempting to do so will raise a :exc:`RuntimeError`,
+Attempting to do so will raise a :exc:`!RuntimeError`,
 unless the *continue_on_error* parameter is ``True``.
 
 .. code-block:: python
