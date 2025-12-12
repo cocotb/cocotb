@@ -296,7 +296,7 @@ async def test_child_failure_in_nested_block(
                 task_inner = tm_inner.start_soon(coro(3, ret=789))
 
                 try:
-                    await Timer(5)
+                    await Timer(4)
                 except CancelledError:
                     assert not inner_continue_on_error
                     raise  # can't use pytest.raises as that causes CancelledError to be swallowed
