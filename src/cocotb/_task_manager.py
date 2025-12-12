@@ -46,7 +46,7 @@ class TaskManager:
     def __init__(self, continue_on_error: bool = False) -> None:
         self._continue_on_error = continue_on_error
 
-        self._exceptions: list[BaseException] = []
+        self._exceptions: set[BaseException] = set()
         self._remaining_tasks: dict[Task[Any], None] = {}
         self._none_remaining = Event()
         self._cancelled: bool = False
@@ -126,7 +126,7 @@ class TaskManager:
 
         # If a child Task failed, cancel all other child Tasks.
         if not task.cancelled() and (exc := task.exception()) is not None:
-            self._exceptions.append(exc)
+            self._exceptions.add(exc)
             if not self._continue_on_error:
                 self._cancel()
 
@@ -207,11 +207,11 @@ class TaskManager:
 
         # Build BaseExceptionGroup if there were any errors. Ignore CancelledError.
         if exc is not None and not isinstance(exc, CancelledError):
-            self._exceptions.append(exc)
+            self._exceptions.add(exc)
         if self._exceptions:
             # BaseExceptionGroup constructor will automatically return an ExceptionGroup if all elements are Exceptions.
             raise BaseExceptionGroup(
-                "TaskManager finished with errors", self._exceptions
+                "TaskManager finished with errors", tuple(self._exceptions)
             )
 
         # Return True to handle suppressing CancelledError if there were no exceptions
