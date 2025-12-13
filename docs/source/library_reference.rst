@@ -377,6 +377,10 @@ Triggers dealing with Tasks or running multiple Tasks concurrently.
 
 .. autofunction:: select
 
+.. autoclass:: TaskManager
+    :members:
+
+
 Synchronization Triggers
 ------------------------
 

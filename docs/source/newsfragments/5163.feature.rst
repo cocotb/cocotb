@@ -1,0 +1,1 @@
+Added :class:`cocotb.triggers.TaskManager` for managing multiple concurrent tasks with automatic cleanup on completion or error.
