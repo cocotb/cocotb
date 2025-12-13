@@ -270,11 +270,13 @@ but properly manages the lifetime of its "children" and handles exceptions and c
 This should be the preferred way to run multiple coroutines concurrently.
 
 The typical usage pattern is to create a :class:`!TaskManager` as an :term:`asynchronous context manager` using the :keyword:`async with` statement;
-then to use the :deco:`@fork <cocotb.triggers.TaskManager.fork>` decorator method to start :class:`!Task`\ s within the context block.
+then to use the :deco:`fork <cocotb.triggers.TaskManager.fork>` decorator method to start :class:`!Task`\ s within the context block.
 When control reaches the end of the context block
 the :class:`!TaskManager` blocks the encompassing :class:`!Task` until all children :class:`!Task`\ s complete.
 
 .. code-block:: python
+
+    from cocotb.triggers import TaskManager
 
     async with TaskManager() as tm:
 
