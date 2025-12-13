@@ -381,6 +381,10 @@ def test(
     return wrapper
 
 
+# Prevent pytest from picking up the test decorator as a test
+test.__test__ = False  # type: ignore[attr-defined]
+
+
 def parametrize(
     *options_by_tuple: tuple[str, Sequence[object]]
     | tuple[Sequence[str], Sequence[Sequence[object]]],
