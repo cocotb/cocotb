@@ -304,6 +304,9 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
 Triggers
 ========
 
+..
+   Please keep this section aligned with the table in triggers.rst
+
 .. module:: cocotb.triggers
 
 .. autofunction:: current_gpi_trigger

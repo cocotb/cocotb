@@ -18,7 +18,7 @@ The coroutine uses the :keyword:`await` keyword to
 block on another coroutine's execution or pass control of execution back to the
 simulator, allowing simulation time to advance.
 
-Typically coroutines await a :class:`~cocotb.triggers.Trigger` object which
+Typically coroutines await a :doc:`Trigger <triggers>` object which
 pauses the task, and indicates to the simulator some event which will cause the task to resume execution.
 For example:
 
