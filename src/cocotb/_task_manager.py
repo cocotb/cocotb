@@ -22,7 +22,7 @@ else:
     from exceptiongroup import BaseExceptionGroup
 
 if sys.version_info >= (3, 10):
-    from typing import Concatenate, ParamSpec
+    from typing import ParamSpec
 
     P = ParamSpec("P")
 
@@ -32,6 +32,9 @@ T = TypeVar("T")
 
 async def _waiter(aw: Awaitable[T]) -> T:
     return await aw
+
+
+_MISSING = object()
 
 
 class TaskManager:
@@ -78,14 +81,13 @@ class TaskManager:
             A :class:`~cocotb.task.Task` which is awaiting *aw* concurrently.
         """
         return self._start_soon(
-            _waiter, (aw,), {}, name=name, continue_on_error=continue_on_error
+            _waiter, aw, name=name, continue_on_error=continue_on_error
         )
 
     def _start_soon(
         self,
         coro_func: Callable[..., Coroutine[Trigger, None, T]],
-        args: tuple[Any, ...],
-        kwargs: dict[str, Any],
+        arg: Any | None = _MISSING,
         *,
         name: str | None = None,
         continue_on_error: bool | None = None,
@@ -101,7 +103,10 @@ class TaskManager:
         if current_task() is not self._parent_task:
             raise RuntimeError("Cannot add new Tasks to TaskManager from another Task")
 
-        coro = coro_func(*args, **kwargs)
+        if arg is _MISSING:
+            coro = coro_func()
+        else:
+            coro = coro_func(arg)
         try:
             task = Task[Any](coro, name=name)
         except Exception:
@@ -124,27 +129,20 @@ class TaskManager:
     @overload
     def fork(
         self,
-        coro: Callable[P, Coroutine[Trigger, None, T]],
-        *args: P.args,
-        **kwargs: P.kwargs,
+        coro: Callable[[], Coroutine[Trigger, None, T]],
     ) -> Task[T]: ...
 
     @overload
     def fork(
         self, *, continue_on_error: bool
-    ) -> Callable[
-        Concatenate[Callable[P, Coroutine[Trigger, None, T]], P], Task[T]
-    ]: ...
+    ) -> Callable[[Callable[[], Coroutine[Trigger, None, T]]], Task[T]]: ...
 
     def fork(
         self,
         coro: Callable[..., Coroutine[Trigger, None, T]] | None = None,
-        *args: Any,
-        **kwargs: Any,
-    ) -> (
-        Task[T]
-        | Callable[Concatenate[Callable[P, Coroutine[Trigger, None, T]], P], Task[T]]
-    ):
+        *,
+        continue_on_error: bool | None = None,
+    ) -> Task[T] | Callable[[Callable[[], Coroutine[Trigger, None, T]]], Task[T]]:
         """Decorate a coroutine function to run it concurrently.
 
         Args:
@@ -168,33 +166,23 @@ class TaskManager:
                     ...
         """
         if coro is None:
-            if (continue_on_error := kwargs.pop("continue_on_error", None)) is None:
+            if continue_on_error is None:
                 raise TypeError(
                     "Missing required keyword-only argument: 'continue_on_error'"
                 )
-            if args:
-                raise TypeError("Unexpected positional arguments")
-            if kwargs:
-                raise TypeError(
-                    f"Unexpected keyword arguments: {', '.join(kwargs.keys())}"
-                )
 
             def deco(
-                coro: Callable[P, Coroutine[Trigger, None, T]],
-                *args: P.args,
-                **kwargs: P.kwargs,
+                coro: Callable[[], Coroutine[Trigger, None, T]],
             ) -> Task[T]:
                 return self._start_soon(
                     coro,
-                    args,
-                    kwargs,
                     name=coro.__name__,
                     continue_on_error=continue_on_error,
                 )
 
             return deco
         else:
-            return self._start_soon(coro, args, kwargs, name=coro.__name__)
+            return self._start_soon(coro, name=coro.__name__)
 
     def _done_callback(self, task: Task[Any]) -> None:
         """Callback run when a child Task finishes."""
