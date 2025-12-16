@@ -146,7 +146,11 @@ class TaskManager:
         """Decorate a coroutine function to run it concurrently.
 
         Args:
-            coro: A :term:`coroutine function` to run concurrently.
+            coro: A :term:`coroutine function` to run concurrently. Typically only passed as a decorator.
+            continue_on_error:
+                Override the TaskManager's ``continue_on_error`` argument for this Task only.
+
+                Passing this requires calling the :meth:`fork` method before decoratoring the coroutine function.
 
         Returns:
             A :class:`~cocotb.task.Task` which is running *coro* concurrently.
@@ -160,7 +164,7 @@ class TaskManager:
                     # Do stuff
                     ...
 
-                @tm.fork
+                @tm.fork(continue_on_error=True)
                 async def other_func():
                     # Do other stuff in parallel to my_func
                     ...

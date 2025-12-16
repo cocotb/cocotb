@@ -997,5 +997,79 @@ async def test_KeyboardInterrupt_in_nested_block(_: object) -> None:
                 raise KeyboardInterrupt()
 
 
+@cocotb.test
+async def test_override_continue_on_error_continue(_: object) -> None:
+    with assert_takes(2, "step"):
+        try:
+            async with TaskManager(continue_on_error=False) as tm:
+                task1 = tm.start_soon(coro(2, ret=123))
+                task2 = tm.start_soon(raises_after(1), continue_on_error=True)
+        except BaseExceptionGroup as e:
+            my_exc, rest = e.split(MyException)
+            assert rest is None
+            assert my_exc is not None
+            assert len(my_exc.exceptions) == 1
+
+    assert task1.result() == 123
+    assert task2.exception() is not None
+
+
+@cocotb.test
+async def test_override_continue_on_error_fail(_: object) -> None:
+    with assert_takes(1, "step"):
+        try:
+            async with TaskManager(continue_on_error=True) as tm:
+                task1 = tm.start_soon(coro(2, ret=123))
+                task2 = tm.start_soon(raises_after(1), continue_on_error=False)
+        except BaseExceptionGroup as e:
+            my_exc, rest = e.split(MyException)
+            assert rest is None
+            assert my_exc is not None
+            assert len(my_exc.exceptions) == 1
+
+    assert task1.cancelled()
+    assert task2.exception() is not None
+
+
+@cocotb.test
+async def test_override_continue_on_error_fork_continue(_: object) -> None:
+    with assert_takes(2, "step"):
+        try:
+            async with TaskManager(continue_on_error=False) as tm:
+                task1 = tm.start_soon(coro(2, ret=123))
+
+                @tm.fork(continue_on_error=True)
+                async def task2() -> None:
+                    await raises_after(1)
+        except BaseExceptionGroup as e:
+            my_exc, rest = e.split(MyException)
+            assert rest is None
+            assert my_exc is not None
+            assert len(my_exc.exceptions) == 1
+
+    assert task1.result() == 123
+    assert task2.exception() is not None
+
+
+@cocotb.test
+async def test_override_continue_on_error_fork_fail(_: object) -> None:
+    with assert_takes(1, "step"):
+        try:
+            async with TaskManager(continue_on_error=True) as tm:
+                task1 = tm.start_soon(coro(2, ret=123))
+
+                @tm.fork(continue_on_error=False)
+                async def task2() -> None:
+                    await raises_after(1)
+        except BaseExceptionGroup as e:
+            my_exc, rest = e.split(MyException)
+            assert rest is None
+            assert my_exc is not None
+            assert len(my_exc.exceptions) == 1
+
+    assert task1.cancelled()
+    assert task2.exception() is not None
+
+
 # Can't test KeyboardInterrupt in child Task since that will take a path to shut down
 # the simulation.
