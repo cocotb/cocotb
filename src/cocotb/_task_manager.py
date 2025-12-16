@@ -9,21 +9,22 @@ from __future__ import annotations
 import sys
 from asyncio import CancelledError
 from bdb import BdbQuit
-from types import CoroutineType
-from typing import TYPE_CHECKING, Any, TypeVar
+from collections.abc import Awaitable, Callable, Coroutine
+from typing import Any, TypeVar, overload
 
-import cocotb
 from cocotb._base_triggers import NullTrigger
 from cocotb.task import Task, current_task
 from cocotb.triggers import Event, Trigger
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Coroutine
 
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
     from exceptiongroup import BaseExceptionGroup
+
+if sys.version_info >= (3, 10):
+    from typing import Concatenate, ParamSpec
+
+    P = ParamSpec("P")
 
 
 T = TypeVar("T")
@@ -43,11 +44,12 @@ class TaskManager:
             If ``True``, other child Tasks are allowed to continue running.
     """
 
-    def __init__(self, continue_on_error: bool = False) -> None:
+    def __init__(self, *, continue_on_error: bool = False) -> None:
         self._continue_on_error = continue_on_error
 
         self._exceptions: set[BaseException] = set()
-        self._remaining_tasks: dict[Task[Any], None] = {}
+        # dict value is per-Task continue_on_error setting
+        self._remaining_tasks: dict[Task[Any], bool] = {}
         self._none_remaining = Event()
         self._cancelled: bool = False
         self._finishing: bool = False
@@ -58,21 +60,35 @@ class TaskManager:
         # Start with no remaining tasks
         self._none_remaining.set()
 
-    def start_soon(self, aw: Awaitable[T], *, name: str | None = None) -> Task[T]:
+    def start_soon(
+        self,
+        aw: Awaitable[T],
+        *,
+        name: str | None = None,
+        continue_on_error: bool | None = None,
+    ) -> Task[T]:
         """Await the *aw* argument concurrently.
 
         Args:
             aw: A :class:`~collections.abc.Awaitable` to :keyword:`await` concurrently.
             name: A name to associate with the :class:`!Task` awaiting *aw*.
+            continue_on_error: override the TaskManager's continue_on_error setting for this Task only.
 
         Returns:
             A :class:`~cocotb.task.Task` which is awaiting *aw* concurrently.
         """
-        coro = aw if isinstance(aw, CoroutineType) else _waiter(aw)
-        return self._start_soon(coro, name=name)
+        return self._start_soon(
+            _waiter, (aw,), {}, name=name, continue_on_error=continue_on_error
+        )
 
     def _start_soon(
-        self, coro: Coroutine[Trigger, None, T], *, name: str | None = None
+        self,
+        coro_func: Callable[..., Coroutine[Trigger, None, T]],
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        *,
+        name: str | None = None,
+        continue_on_error: bool | None = None,
     ) -> Task[T]:
         if self._cancelled:
             raise RuntimeError("Cannot add new Tasks to TaskManager after error")
@@ -85,17 +101,50 @@ class TaskManager:
         if current_task() is not self._parent_task:
             raise RuntimeError("Cannot add new Tasks to TaskManager from another Task")
 
-        task = Task[Any](coro, name=name)
+        coro = coro_func(*args, **kwargs)
+        try:
+            task = Task[Any](coro, name=name)
+        except Exception:
+            # If Task creation fails, close the coroutine to avoid ResourceWarning.
+            coro.close()
+            raise
+
+        # Track the Task and store per-Task continue_on_error setting
         task._add_done_callback(self._done_callback)
-        self._remaining_tasks[task] = None
+        if continue_on_error is None:
+            continue_on_error = self._continue_on_error
+        self._remaining_tasks[task] = continue_on_error
         self._none_remaining.clear()
-        cocotb.start_soon(task)
+
+        # Schedule the Task to run soon
+        task._ensure_started()
+
         return task
+
+    @overload
+    def fork(
+        self,
+        coro: Callable[P, Coroutine[Trigger, None, T]],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> Task[T]: ...
+
+    @overload
+    def fork(
+        self, *, continue_on_error: bool
+    ) -> Callable[
+        Concatenate[Callable[P, Coroutine[Trigger, None, T]], P], Task[T]
+    ]: ...
 
     def fork(
         self,
-        coro: Callable[[], Coroutine[Trigger, None, T]],
-    ) -> Task[T]:
+        coro: Callable[..., Coroutine[Trigger, None, T]] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> (
+        Task[T]
+        | Callable[Concatenate[Callable[P, Coroutine[Trigger, None, T]], P], Task[T]]
+    ):
         """Decorate a coroutine function to run it concurrently.
 
         Args:
@@ -118,18 +167,45 @@ class TaskManager:
                     # Do other stuff in parallel to my_func
                     ...
         """
-        return self._start_soon(coro(), name=coro.__name__)
+        if coro is None:
+            if (continue_on_error := kwargs.pop("continue_on_error", None)) is None:
+                raise TypeError(
+                    "Missing required keyword-only argument: 'continue_on_error'"
+                )
+            if args:
+                raise TypeError("Unexpected positional arguments")
+            if kwargs:
+                raise TypeError(
+                    f"Unexpected keyword arguments: {', '.join(kwargs.keys())}"
+                )
+
+            def deco(
+                coro: Callable[P, Coroutine[Trigger, None, T]],
+                *args: P.args,
+                **kwargs: P.kwargs,
+            ) -> Task[T]:
+                return self._start_soon(
+                    coro,
+                    args,
+                    kwargs,
+                    name=coro.__name__,
+                    continue_on_error=continue_on_error,
+                )
+
+            return deco
+        else:
+            return self._start_soon(coro, args, kwargs, name=coro.__name__)
 
     def _done_callback(self, task: Task[Any]) -> None:
         """Callback run when a child Task finishes."""
-        del self._remaining_tasks[task]
+        continue_on_error = self._remaining_tasks.pop(task)
         if not self._remaining_tasks:
             self._none_remaining.set()
 
         # If a child Task failed, cancel all other child Tasks.
         if not task.cancelled() and (exc := task.exception()) is not None:
             self._exceptions.add(exc)
-            if not self._continue_on_error:
+            if not continue_on_error:
                 self._cancel()
 
     def _cancel(self) -> None:
