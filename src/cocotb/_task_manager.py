@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import inspect
 import sys
 from asyncio import CancelledError
 from bdb import BdbQuit
@@ -80,6 +81,10 @@ class TaskManager:
         Returns:
             A :class:`~cocotb.task.Task` which is awaiting *aw* concurrently.
         """
+        if not isinstance(aw, Awaitable):
+            raise TypeError(
+                f"start_soon() expected an Awaitable, got {type(aw).__name__}"
+            )
         return self._start_soon(
             _waiter, aw, name=name, continue_on_error=continue_on_error
         )
@@ -129,7 +134,8 @@ class TaskManager:
     @overload
     def fork(
         self,
-        coro: Callable[[], Coroutine[Trigger, None, T]],
+        coro_func: Callable[[], Coroutine[Trigger, None, T]],
+        /,
     ) -> Task[T]: ...
 
     @overload
@@ -139,21 +145,21 @@ class TaskManager:
 
     def fork(
         self,
-        coro: Callable[..., Coroutine[Trigger, None, T]] | None = None,
+        coro_func: Callable[..., Coroutine[Trigger, None, T]] | None = None,
         *,
         continue_on_error: bool | None = None,
     ) -> Task[T] | Callable[[Callable[[], Coroutine[Trigger, None, T]]], Task[T]]:
         """Decorate a coroutine function to run it concurrently.
 
         Args:
-            coro: A :term:`coroutine function` to run concurrently. Typically only passed as a decorator.
+            coro_func: A :term:`coroutine function` to run concurrently. Typically only passed as a decorator.
             continue_on_error:
                 Override the TaskManager's ``continue_on_error`` argument for this Task only.
 
                 Passing this requires calling the :meth:`fork` method before decoratoring the coroutine function.
 
         Returns:
-            A :class:`~cocotb.task.Task` which is running *coro* concurrently.
+            A :class:`~cocotb.task.Task` which is running *coro_func* concurrently.
 
         .. code-block:: python
 
@@ -169,7 +175,7 @@ class TaskManager:
                     # Do other stuff in parallel to my_func
                     ...
         """
-        if coro is None:
+        if coro_func is None:
             if continue_on_error is None:
                 raise TypeError(
                     "Missing required keyword-only argument: 'continue_on_error'"
@@ -178,15 +184,20 @@ class TaskManager:
             def deco(
                 coro: Callable[[], Coroutine[Trigger, None, T]],
             ) -> Task[T]:
-                return self._start_soon(
+                return self.fork(  # type: ignore[call-overload]
                     coro,
-                    name=coro.__name__,
                     continue_on_error=continue_on_error,
                 )
 
             return deco
-        else:
-            return self._start_soon(coro, name=coro.__name__)
+
+        if not inspect.iscoroutinefunction(coro_func):
+            raise TypeError(
+                f"fork() expected a coroutine function, got {type(coro_func).__name__}"
+            )
+        return self._start_soon(
+            coro_func, name=coro_func.__name__, continue_on_error=continue_on_error
+        )
 
     def _done_callback(self, task: Task[Any]) -> None:
         """Callback run when a child Task finishes."""

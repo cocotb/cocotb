@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import sys
 from asyncio import CancelledError
+from collections.abc import AsyncGenerator
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -984,6 +985,10 @@ async def test_KeyboardInterrupt_in_block(_: object) -> None:
             raise KeyboardInterrupt()
 
 
+# Can't test KeyboardInterrupt in child Task since that will take a path to shut down
+# the simulation.
+
+
 @cocotb.test
 async def test_KeyboardInterrupt_in_nested_block(_: object) -> None:
     with pytest.raises(KeyboardInterrupt):
@@ -1071,5 +1076,26 @@ async def test_override_continue_on_error_fork_fail(_: object) -> None:
     assert task2.exception() is not None
 
 
-# Can't test KeyboardInterrupt in child Task since that will take a path to shut down
-# the simulation.
+@cocotb.test
+async def test_bad_args(_: object) -> None:
+    async with TaskManager() as tm:
+        with pytest.raises(TypeError):
+            tm.start_soon(123)  # type: ignore
+
+        with pytest.raises(TypeError):
+            tm.fork(123)  # type: ignore
+
+        async def oops_async_generator() -> AsyncGenerator[None, None, None]:
+            yield None
+
+        with pytest.raises(TypeError):
+            tm.start_soon(oops_async_generator())  # type: ignore
+
+        with pytest.raises(TypeError):
+            tm.fork(oops_async_generator)  # type: ignore
+
+        with pytest.raises(TypeError):
+            tm.start_soon()  # type: ignore
+
+        with pytest.raises(TypeError):
+            tm.fork()  # type: ignore
