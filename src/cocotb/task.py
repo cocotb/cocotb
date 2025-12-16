@@ -541,10 +541,6 @@ class Task(Generic[ResultType]):
 
         return True
 
-    def _cancelling(self) -> int:
-        """Return the number of cancellation requests if the Task is in the process of being cancelled."""
-        return self._must_cancel
-
     def _uncancel(self) -> None:
         """Prevents RuntimeError from occurring when cancelled Tasks suppress CancelledError.
 
