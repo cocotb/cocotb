@@ -9,8 +9,8 @@ from asyncio import CancelledError
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 import cocotb
+from cocotb._base_triggers import Event
 from cocotb.task import Task
-from cocotb.triggers import Event
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable
