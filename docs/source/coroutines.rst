@@ -262,21 +262,29 @@ And of course, the sky is the limit when you compose the two.
 
 .. _task_manager_tutorial:
 
-:class:`!TaskManager`: Structured Asymmetric Concurrency
-========================================================
+:class:`!TaskManager`
+=====================
 
-The :class:`~cocotb.triggers.TaskManager` class is another way to run multiple async routines concurrently and wait for them all to complete,
-but properly manages the lifetime of its "children" and handles exceptions and cancellations gracefully.
-This should be the preferred way to run multiple coroutines concurrently.
+The :class:`~cocotb.triggers.TaskManager` class is another way to run multiple async routines concurrently and wait for them all to complete.
+It properly manages the lifetime of its "children" and handles exceptions and cancellations gracefully.
+Unlike :func:`gather` which takes all :term:`awaitable`\ s and :term:`coroutine`\ s at once,
+:class:`!TaskManager` allows adding new :term:`!awaitable`\ s and :term:`!coroutine`\ s dynamically,
+and provides options to control exception handling behavior on a per-Task basis,
+making it much more flexible.
 
-The typical usage pattern is to create a :class:`!TaskManager` as an :term:`asynchronous context manager` using the :keyword:`async with` statement;
-then to use the :deco:`fork <cocotb.triggers.TaskManager.fork>` decorator method to start :class:`!Task`\ s within the context block.
+Basic Usage
+-----------
+
+To use :class:`!TaskManager`, first construct it and use it as an :term:`asynchronous context manager` with the :keyword:`async with` statement.
+Inside of the context block you can use the :deco:`fork <cocotb.triggers.TaskManager.fork>` decorator method to start :class:`!Task`\ s concurrently.
 When control reaches the end of the context block
-the :class:`!TaskManager` blocks the encompassing :class:`!Task` until all children :class:`!Task`\ s complete.
+the :class:`!TaskManager` blocks the encompassing :class:`!Task` until all child :class:`!Task`\ s complete.
 
 .. code-block:: python
 
     from cocotb.triggers import TaskManager
+
+    # Drive two interfaces concurrently until both complete.
 
     async with TaskManager() as tm:
 
@@ -288,9 +296,73 @@ the :class:`!TaskManager` blocks the encompassing :class:`!Task` until all child
 
     # Control returns here when all drive Tasks have completed
 
+In addition to the :deco:`!fork` method for starting :term:`coroutine function`\ s concurrently,
+:meth:`~cocotb.triggers.TaskManager.start_soon` can be used for :keyword:`!await`\ ing arbitrary :term:`awaitable`\ s concurrently.
+
+.. code-block:: python
+
+    # Wait for operation to complete or timeout after 1 us
+
+    async with TaskManager() as tm:
+        tm.start_soon(RisingEdge(cocotb.top.operation_complete))
+
+        @tm.fork
+        async def watchdog():
+            await Timer(1, "us")
+            raise TimeoutError("Operation did not complete in time")
+
+Inspecting Child Task Results
+-----------------------------
+
+You can inspect the result of child classes by storing the :class:`!Task` objects returned by the :meth:`!start_soon` method.
+When decoratoring a :term:`coroutine function` with :deco:`!fork`,
+the name of the function will become the returned :class:`!Task` object.
+
+.. code-block:: python
+
+    async with TaskManager() as tm:
+        task1 = tm.start_soon(RisingEdge(cocotb.top.signal_a))
+
+        # task2 will become the Task object after wrapping the coroutine function with @fork
+        @tm.fork
+        async def task2():
+            return 42
+
+
+    assert task1.done()
+    assert task1.result() is RisingEdge(cocotb.top.signal_a)
+
+    assert task2.done()
+    assert task2.result() == 42
+
+.. note::
+    After exiting the context block and the :class:`!TaskManager` has begun finishing,
+    no further calls to :meth:`start_soon` or :deco:`!fork` are permitted.
+    Attempting to do so will raise a :exc:`RuntimeError`.
+
+Handling Exceptions and *continue_on_error*
+-------------------------------------------
+
+:class:`!TaskManager` gracefully handles exceptions raised in child :class:`!Task`\ s or in the context block itself.
+It ensures that no child :class:`!Task` is left running unintentionally by the time the context block exits.
+
+The behavior of :class:`!TaskManager` when a child :class:`!Task` raises an exception is controlled by the *continue_on_error* parameter.
+The constructor for :class:`!TaskManager` accepts an optional parameter *continue_on_error* which is used as the default for all children Tasks;
+it defaults to ``False``.
+The :class:`!TaskManager`-wide default can be overridden on a per-Task basis using the *continue_on_error* parameter to the :deco:`!fork` or :meth:`!start_soon` methods.
+
+.. code-block:: python
+
+    async with TaskManager(continue_on_error=True) as tm:
+
+        @tm.fork(continue_on_error=False)
+        async def task1(): ...
+
+        tm.start_soon(some_coroutine(), continue_on_error=True)
+
 If a child :class:`!Task` raises an exception,
-one of two behaviors will occur depending on the value of the *continue_on_error* parameter passed to the :class:`!TaskManager` constructor.
-If the *continue_on_error* parameter is ``False`` (default), all other child :class:`!Task`\ s are cancelled and the :class:`!TaskManager` will begin shutting down.
+one of two behaviors will occur depending on the value of *continue_on_error* for that Task.
+If the *continue_on_error* parameter is ``False``, all other child :class:`!Task`\ s are cancelled and the :class:`!TaskManager` will begin shutting down.
 If the *continue_on_error* parameter is ``True``, the exception is captured and other child :class:`!Task`\ s are allowed to continue running.
 
 After all child :class:`!Task`\ s have finished,
@@ -324,11 +396,19 @@ This new syntax will run the except clause for each matching exception in the gr
         # This will print both ValueErrors from task1 and task2
         cocotb.log.info(f"Caught ValueError from TaskManager: {e}")
 
+.. note::
+    After a :class:`!Task` fails and the :class:`!TaskManager` begins cancelling,
+    no further calls to :meth:`start_soon` or :deco:`!fork` are permitted.
+
+Failures Within the Context Block
+---------------------------------
+
 You are permitted to add any :keyword:`await` statement to the body of the context block.
-This means that it is possible for child tasks to start running, and end with an exception, before the context block has finished.
-In this case, a :exc:`~asyncio.CancelledError` will be raised from the current :keyword:`!await` expression
-if the *continue_on_error* parameter to the constructor is ``False`` (default),
-or continue if *continue_on_error* is ``True``.
+This means that it is possible for child tasks to start running, and then end with an exception, before the context block has finished.
+In this case, a :exc:`~asyncio.CancelledError` will be raised from the current :keyword:`!await` expression in the context block,
+allowing the user to perform any necessary cleanup.
+This :exc:`!CancelledError` will be squashed when the context block exits,
+and :class:`!TaskManager` continues shutting down as it normally would.
 
 .. code-block:: python
 
@@ -349,93 +429,33 @@ or continue if *continue_on_error* is ``True``.
         ...  # This code will be skipped
 
 .. warning::
-    Just like with :class:`~cocotb.task.Task`, cancelling a :class:`!TaskManager` instance
-    (after a child fails, or if another Task cancels the Task using the :class:`!TaskManager`)
-    and squashing the resulting :exc:`CancelledError` will cause the test to fail immediately.
-    Always remember to re-raise the :exc:`!CancelledError` if you catch it.
+    Just like with :class:`~cocotb.task.Task`, if a :class:`!TaskManager` context block is cancelled
+    and squashes the resulting :exc:`asyncio.CancelledError`, the test will be forcibly failed immediately.
+    Always remember to re-raise the :exc:`!asyncio.CancelledError` if you catch it.
 
-In addition to the :deco:`!fork` method for starting :term:`coroutine function`\ s concurrently,
-:meth:`~cocotb.triggers.TaskManager.start_soon` is also provided for :keyword:`!await`\ ing arbitrary :term:`awaitable`\ s concurrently.
+Nesting :class:`!TaskManager`
+-----------------------------
 
-.. code-block:: python
-
-    async with TaskManager() as tm:
-        tm.start_soon(RisingEdge(cocotb.top.operation_complete))
-
-        @tm.fork
-        async def watchdog():
-            await Timer(1, "us")
-            raise TimeoutError("Operation did not complete in time")
-
-You can inspect the result of child classes by storing the :class:`!Task` objects returned by the :meth:`!start_soon` method.
-When decoratoring a :term:`coroutine function` with :deco:`!fork`,
-the name of the function will become the returned :class:`!Task` object.
-
-.. code-block:: python
-
-    async with TaskManager() as tm:
-        task1 = tm.start_soon(RisingEdge(cocotb.top.signal_a))
-
-        @tm.fork
-        async def task2():
-            return 42
-
-
-    assert task1.done()
-    assert task1.result() is RisingEdge(cocotb.top.signal_a)
-
-    assert task2.done()
-    assert task2.result() == 42
-
-After exiting the context block and waiting for all child :class:`!Task`\ s to complete,
-no further calls to :meth:`start_soon` or :deco:`!fork` are permitted.
-Attempting to do so will raise a :exc:`RuntimeError`.
-
-Additionally, after a child :class:`!Task` fails and the :class:`!TaskManager` begins cancelling other child :class:`!Task`\ s,
-no further calls to :meth:`start_soon` or :deco:`!fork` are permitted.
-Attempting to do so will raise a :exc:`!RuntimeError`,
-unless the *continue_on_error* parameter is ``True``.
-
-.. code-block:: python
-
-    try:
-        async with TaskManager(continue_on_error=True) as tm:
-
-            @tm.fork
-            async def task1():
-                raise ValueError("An error occurred in task1")
-
-            await Timer(1)
-            # At this point task1 has already failed, but because continue_on_error=True,
-            # we can still add new tasks.
-
-            @tm.fork
-            async def task2(): ...
-
-    except* ValueError as e:
-        cocotb.log.info(f"Caught ValueError from task1: {e}")
-        pass
-
-    assert task2.done()  # task2 was able to run to completion
-
-And of course, :class:`!TaskManager` can be arbitrarily nested.
+:class:`!TaskManager`\ s can be arbitrarily nested.
 When any child :class:`!Task` fails, the entire tree of child :class:`!Task`\ s will eventually be cancelled.
 
 .. code-block:: python
+
     async with TaskManager() as tm_outer:
 
         @tm_outer.fork
         async def outer_task():
-            async with TaskManager() as tm_inner:
+            ...
+            raise RuntimeError("An error occurred in outer_task")
 
-                @tm_inner.fork
-                async def inner_task(): ...
+        async with TaskManager() as tm_inner:
 
-        async with TaskManager() as tm_another:
-
-            @tm_another.fork
+            # This inner task will be cancelled when outer_task fails
+            @tm_inner.fork
             async def another_task(): ...
 
+    assert outer_task.exception() is RuntimeError
+    assert another_task.cancelled()
 
 Async generators
 ================

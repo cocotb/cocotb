@@ -71,12 +71,12 @@ class TaskManager:
         name: str | None = None,
         continue_on_error: bool | None = None,
     ) -> Task[T]:
-        """Await the *aw* argument concurrently.
+        r"""Await the *aw* argument concurrently.
 
         Args:
             aw: A :class:`~collections.abc.Awaitable` to :keyword:`await` concurrently.
             name: A name to associate with the :class:`!Task` awaiting *aw*.
-            continue_on_error: override the TaskManager's continue_on_error setting for this Task only.
+            continue_on_error: Override the :class:`!TaskManager`\ 's ``continue_on_error`` setting for this Task only.
 
         Returns:
             A :class:`~cocotb.task.Task` which is awaiting *aw* concurrently.
@@ -149,12 +149,12 @@ class TaskManager:
         *,
         continue_on_error: bool | None = None,
     ) -> Task[T] | Callable[[Callable[[], Coroutine[Trigger, None, T]]], Task[T]]:
-        """Decorate a coroutine function to run it concurrently.
+        r"""Decorate a coroutine function to run it concurrently.
 
         Args:
             coro_func: A :term:`coroutine function` to run concurrently. Typically only passed as a decorator.
             continue_on_error:
-                Override the TaskManager's ``continue_on_error`` argument for this Task only.
+                Override the :class:`!TaskManager`\ 's ``continue_on_error`` argument for this Task only.
 
                 Passing this requires calling the :meth:`fork` method before decoratoring the coroutine function.
 
