@@ -9,12 +9,13 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Awaitable, Coroutine, Generator
+from collections.abc import Awaitable, Generator
 from decimal import Decimal
 from typing import Any, TypeVar, cast, overload
 
 import cocotb.handle
 from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
+from cocotb._concurrent_waiters import select
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
 from cocotb.simtime import RoundMode, TimeUnit
 from cocotb.task import Task
@@ -297,52 +298,13 @@ class SimTimeoutError(TimeoutError):
     """Exception thrown when a timeout, in terms of simulation time, occurs."""
 
 
-TriggerT = TypeVar("TriggerT", bound=Trigger)
-
-
-@overload
 async def with_timeout(
-    trigger: TriggerT,
+    trigger: Awaitable[T],
     timeout_time: float | Decimal,
     timeout_unit: TimeUnit = "step",
     round_mode: RoundMode | None = None,
-) -> TriggerT: ...
-
-
-@overload
-async def with_timeout(
-    trigger: Waitable[T],
-    timeout_time: float | Decimal,
-    timeout_unit: TimeUnit = "step",
-    round_mode: RoundMode | None = None,
-) -> T: ...
-
-
-@overload
-async def with_timeout(
-    trigger: Task[T],
-    timeout_time: float | Decimal,
-    timeout_unit: TimeUnit = "step",
-    round_mode: RoundMode | None = None,
-) -> T: ...
-
-
-@overload
-async def with_timeout(
-    trigger: Coroutine[Trigger, None, T],
-    timeout_time: float | Decimal,
-    timeout_unit: TimeUnit = "step",
-    round_mode: RoundMode | None = None,
-) -> T: ...
-
-
-async def with_timeout(
-    trigger: TriggerT | Waitable[T] | Task[T] | Coroutine[Trigger, None, T],
-    timeout_time: float | Decimal,
-    timeout_unit: TimeUnit = "step",
-    round_mode: RoundMode | None = None,
-) -> T | TriggerT:
-    r"""Wait on triggers or coroutines, throw an exception if it waits longer than the given time.
+) -> T:
+    r"""Wait on any awaitable, throw an exception if it waits longer than the given time.
 
     When a :term:`python:coroutine` is passed,
     the callee coroutine is started,
@@ -396,18 +358,10 @@ async def with_timeout(
         Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
 
     """
-    if isinstance(trigger, Coroutine):
-        trigger = cocotb.start_soon(trigger)
-        shielded = False
-    else:
-        shielded = True
-    timeout_timer = Timer(timeout_time, timeout_unit, round_mode=round_mode)
-    res = await First(timeout_timer, trigger)
-    if res is timeout_timer:
-        if not shielded:
-            # shielded = False only when trigger is a Task created to wrap a Coroutine
-            task = cast("Task[object]", trigger)
-            task.cancel()
+    i, res = await select(
+        Timer(timeout_time, timeout_unit, round_mode=round_mode), trigger
+    )
+    if i == 0:
         raise SimTimeoutError
     else:
-        return cast("T | TriggerT", res)
+        return cast("T", res)
