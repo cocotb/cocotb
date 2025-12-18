@@ -5,12 +5,12 @@
    Async
 
 
-********************
-Coroutines and Tasks
-********************
+******************************
+Coroutines, Tasks and Triggers
+******************************
 
 Testbenches built using cocotb use Python coroutines.
-*Tasks* are cocotb objects that wrap coroutines
+:dfn:`Tasks` are cocotb objects that wrap coroutines
 and are used to schedule concurrent execution of the testbench coroutines.
 
 While active tasks are executing, the simulation is paused.
@@ -18,18 +18,18 @@ The coroutine uses the :keyword:`await` keyword to
 block on another coroutine's execution or pass control of execution back to the
 simulator, allowing simulation time to advance.
 
-Typically coroutines await a :class:`~cocotb.triggers.Trigger` object which
+Typically coroutines :keyword:`!await` a :class:`~cocotb.triggers.Trigger` object which
 pauses the task, and indicates to the simulator some event which will cause the task to resume execution.
-For example:
+In the following example, :class:`~cocotb.triggers.Timer` is such a trigger:
 
 .. code-block:: python
 
     async def wait_10ns():
         cocotb.log.info("About to wait for 10 ns")
-        await Timer(10, unit='ns')
+        await Timer(10, unit="ns")
         cocotb.log.info("Simulation time has advanced by 10 ns")
 
-Coroutines may also await on other coroutines:
+Coroutines may also :keyword:`!await` on other coroutines:
 
 .. code-block:: python
 
@@ -50,6 +50,52 @@ Coroutines can :keyword:`return` a value, so that they can be used by other coro
         second = await get_signal(dut.clk, dut.signal)
         assert first != second, "Signal did not change"
 
+
+Useful Objects for Testbenches
+==============================
+
+Below is a table of objects that are useful for writing testbenches and models.
+
+..
+   Please keep this table aligned with the content in library_reference.rst
+
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| **Signal Edges**                                                                                                                                 |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| | :class:`~cocotb.triggers.RisingEdge`               | | Resume after a *rising* edge on a single-bit signal                                     |
+| | :class:`~cocotb.triggers.FallingEdge`              | | Resume after a *falling* edge on a single-bit signal                                    |
+| | :class:`~cocotb.triggers.ValueChange`              | | Resume after *any* edge on a signal, but prefer using ``signal.value_change``           |
+| | :class:`~cocotb.triggers.ClockCycles`              | | Resume after the specified number of transitions of a signal                            |
+| | :class:`~cocotb.triggers.Edge`                     | | (deprecated, use ``signal.value_change`` instead)                                       |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| **Timing**                                                                                                                                       |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| | :class:`~cocotb.triggers.Timer`                    | | Resume after the specified time                                                         |
+| | :class:`~cocotb.triggers.ReadOnly`                 | | Resume when the simulation timestep moves to the *read-only* phase                      |
+| | :class:`~cocotb.triggers.ReadWrite`                | | Resume when the simulation timestep moves to the *read-write* phase                     |
+| | :class:`~cocotb.triggers.NextTimeStep`             | | Resume when the simulation timestep moves to the *next time step*                       |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| **Concurrency**                                                                                                                                  |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| | :func:`~cocotb.triggers.gather`                    | | Resume after *all* given Tasks or Triggers                                              |
+| | :func:`~cocotb.triggers.select`                    | | Resume after *any* given Tasks or Triggers                                              |
+| | :class:`~cocotb.triggers.Combine`                  | | Resume after *all* given Triggers                                                       |
+| | :class:`~cocotb.triggers.First`                    | | Resume after *any* given Triggers                                                       |
+| | :meth:`Task.complete <cocotb.task.Task.complete>`  | | Resume when a Task completes                                                            |
+| | :func:`~cocotb.triggers.wait` [#f1]_               | | Await on all given Tasks or Triggers concurrently and block until a condition is met    |
+| | :class:`~cocotb.triggers.NullTrigger` [#f1]_       | | Resume "soon"                                                                           |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| **Synchronization**                                                                                                                              |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| | :class:`~cocotb.triggers.Event`                    | | A way to signal an event across Tasks                                                   |
+| | :class:`~cocotb.triggers.Lock`                     | | A mutual exclusion lock                                                                 |
+| | :func:`~cocotb.triggers.with_timeout`              | | Resume latest at the specified timeout time                                             |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+
+.. rubric:: Footnotes
+
+.. [#f1] Something for uncommon cases.
+
 Concurrent Execution
 ====================
 
@@ -66,15 +112,15 @@ some time after the current Task yields control.
         """While reset is active, toggle signals"""
         tb = uart_tb(dut)
         # "Clock" is a built in class for toggling a clock signal
-        Clock(dut.clk, 1, unit='ns').start()
+        Clock(dut.clk, 1, unit="ns").start()
         # reset_dut is a function -
         # part of the user-generated "uart_tb" class
         # run reset_dut immediately before continuing
         await tb.reset_dut(dut.rstn, 20)
 
-        await Timer(10, unit='ns')
+        await Timer(10, unit="ns")
         print("Reset is still active: %d" % dut.rstn)
-        await Timer(15, unit='ns')
+        await Timer(15, unit="ns")
         print("Reset has gone inactive: %d" % dut.rstn)
 
 Other tasks can be used in an await statement to suspend the current task until the other task finishes.
@@ -83,10 +129,10 @@ Other tasks can be used in an await statement to suspend the current task until 
 
     @cocotb.test()
     async def test_count_edge_cycles(dut, period_ns=1, clocks=6):
-        Clock(dut.clk, period_ns, unit='ns').start()
+        Clock(dut.clk, period_ns, unit="ns").start()
         await RisingEdge(dut.clk)
 
-        timer = Timer(period_ns + 10, 'ns')
+        timer = Timer(period_ns + 10, "ns")
         task = cocotb.start_soon(count_edges_cycles(dut.clk, clocks))
         count = 0
         expect = clocks - 1
@@ -107,23 +153,23 @@ forcing their completion before they would naturally end.
 
     @cocotb.test()
     async def test_different_clocks(dut):
-        clk_1mhz   = Clock(dut.clk, 1.0, unit='us')
-        clk_250mhz = Clock(dut.clk, 4.0, unit='ns')
+        clk_1mhz   = Clock(dut.clk, 1.0, unit="us")
+        clk_250mhz = Clock(dut.clk, 4.0, unit="ns")
 
         clk_1mhz.start()
-        start_time_ns = get_sim_time(unit='ns')
-        await Timer(1, unit='ns')
+        start_time_ns = get_sim_time(unit="ns")
+        await Timer(1, unit="ns")
         await RisingEdge(dut.clk)
-        edge_time_ns = get_sim_time(unit='ns')
+        edge_time_ns = get_sim_time(unit="ns")
         assert isclose(edge_time_ns, start_time_ns + 1000.0), "Expected a period of 1 us"
 
         clk_1mhz.stop()  # stop 1MHz clock here
 
         clk_250mhz.start()
-        start_time_ns = get_sim_time(unit='ns')
-        await Timer(1, unit='ns')
+        start_time_ns = get_sim_time(unit="ns")
+        await Timer(1, unit="ns")
         await RisingEdge(dut.clk)
-        edge_time_ns = get_sim_time(unit='ns')
+        edge_time_ns = get_sim_time(unit="ns")
         assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
 
 
