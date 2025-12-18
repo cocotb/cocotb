@@ -39,17 +39,29 @@ _MISSING = object()
 
 
 class TaskManager:
-    r"""An :term:`asynchronous context manager` which enables the user to run :term:`coroutine function`\ s or :keyword:`await` :term:`awaitable`\ s concurrently and wait for them all to finish.
+    r"""An :term:`asynchronous context manager` which runs :term:`coroutine function`\ s or :term:`awaitable`\ s concurrently until all finish.
 
-    See :ref:`task_manager_tutorial` for usage information.
+    See :ref:`task_manager_tutorial` for detailed usage information.
 
     Args:
-        continue_on_error: If ``False``, when a child Task fails, all other child Tasks are cancelled.
-            If ``True``, other child Tasks are allowed to continue running.
+        default_continue_on_error: Default value for *continue_on_error* for child Tasks started by this TaskManager.
+        context_continue_on_error: Value for *continue_on_error* for the context block itself.
+
+            If not specified, defaults to the value of *default_continue_on_error*.
     """
 
-    def __init__(self, *, continue_on_error: bool = False) -> None:
-        self._continue_on_error = continue_on_error
+    def __init__(
+        self,
+        *,
+        default_continue_on_error: bool = False,
+        context_continue_on_error: bool | None = None,
+    ) -> None:
+        self._default_continue_on_error = default_continue_on_error
+        self._context_continue_on_error: bool = (
+            context_continue_on_error
+            if context_continue_on_error is not None
+            else default_continue_on_error
+        )
 
         self._exceptions: set[BaseException] = set()
         # dict value is per-Task continue_on_error setting
@@ -76,7 +88,9 @@ class TaskManager:
         Args:
             aw: A :class:`~collections.abc.Awaitable` to :keyword:`await` concurrently.
             name: A name to associate with the :class:`!Task` awaiting *aw*.
-            continue_on_error: Override the :class:`!TaskManager`\ 's ``continue_on_error`` setting for this Task only.
+            continue_on_error: Value of *continue_on_error* for this Task only.
+
+                If not specified, defaults to the value of the :class:`!TaskManager`'s *default_continue_on_error* argument.
 
         Returns:
             A :class:`~cocotb.task.Task` which is awaiting *aw* concurrently.
@@ -122,7 +136,7 @@ class TaskManager:
         # Track the Task and store per-Task continue_on_error setting
         task._add_done_callback(self._done_callback)
         if continue_on_error is None:
-            continue_on_error = self._continue_on_error
+            continue_on_error = self._default_continue_on_error
         self._remaining_tasks[task] = continue_on_error
         self._none_remaining.clear()
 
@@ -153,10 +167,10 @@ class TaskManager:
 
         Args:
             coro_func: A :term:`coroutine function` to run concurrently. Typically only passed as a decorator.
-            continue_on_error:
-                Override the :class:`!TaskManager`\ 's ``continue_on_error`` argument for this Task only.
+            continue_on_error: Value of *continue_on_error* for this Task only.
 
-                Passing this requires calling the :meth:`fork` method before decoratoring the coroutine function.
+                If not specified, defaults to the value of the :class:`!TaskManager`'s *default_continue_on_error* argument.
+                Passing this requires calling the :meth:`fork` method before decorating the coroutine function.
 
         Returns:
             A :class:`~cocotb.task.Task` which is running *coro_func* concurrently.
@@ -262,8 +276,8 @@ class TaskManager:
                 # Certain BaseExceptions should be immediately propagated like they are in Task.
                 self._cancel()
                 return None  # re-raise exception
-            else:
-                # Block finished with an exception.
+            elif not self._context_continue_on_error:
+                # Block finished with an exception and we are not continuing on error.
                 self._cancel()
 
         # Wait for all Tasks to finish / finish cancelling.
@@ -280,7 +294,7 @@ class TaskManager:
             # This is likely because we ignored a CancelledError since there is no other
             # way to fail this await AFAICT. Cancel children and let it pass up as there's
             # nothing we can do.
-            # TODO Make this force a test failure.
+            # TODO Make this force a test failure. Special case KeyboardInterrupt/SystemExit/BdbQuit
             self._cancel()
             raise
 

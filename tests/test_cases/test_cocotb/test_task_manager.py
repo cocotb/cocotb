@@ -52,7 +52,7 @@ async def test_passes(_: object, continue_on_error: bool) -> None:
     timer = Timer(2)
 
     with assert_takes(5, "step"):
-        async with TaskManager(continue_on_error=continue_on_error) as tm:
+        async with TaskManager(default_continue_on_error=continue_on_error) as tm:
             task1 = tm.start_soon(timer)
             task2 = tm.start_soon(AwaitableThing(3, ret=123))
             task3 = tm.start_soon(coro(4, ret=456))
@@ -75,7 +75,7 @@ async def test_passes(_: object, continue_on_error: bool) -> None:
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
 async def test_no_tasks_passes(_: object, continue_on_error: bool) -> None:
-    async with TaskManager(continue_on_error=continue_on_error):
+    async with TaskManager(default_continue_on_error=continue_on_error):
         pass
 
 
@@ -88,12 +88,14 @@ async def test_nested_passes(
     timer = Timer(2)
 
     with assert_takes(8, "step"):
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             task_outer = tm_outer.start_soon(coro(8, ret=808))
 
             with assert_takes(5, "step"):
                 async with TaskManager(
-                    continue_on_error=inner_continue_on_error
+                    default_continue_on_error=inner_continue_on_error
                 ) as tm_inner:
                     task1 = tm_inner.start_soon(timer)
                     task2 = tm_inner.start_soon(AwaitableThing(3, ret=123))
@@ -124,13 +126,15 @@ async def test_nested_in_child_passes(
     task3: Task[Any] | None = None
     task4: Task[Any] | None = None
 
-    async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+    async with TaskManager(
+        default_continue_on_error=outer_continue_on_error
+    ) as tm_outer:
         task_outer = tm_outer.start_soon(coro(5, ret=808))
 
         @tm_outer.fork
         async def outer_task() -> None:
             async with TaskManager(
-                continue_on_error=inner_continue_on_error
+                default_continue_on_error=inner_continue_on_error
             ) as tm_inner:
                 nonlocal task1, task2, task3, task4
 
@@ -158,7 +162,7 @@ async def test_nested_in_child_passes(
 @cocotb.parametrize(continue_on_error=[True, False])
 async def test_failure_in_block(_: object, continue_on_error: bool) -> None:
     try:
-        async with TaskManager(continue_on_error=continue_on_error) as tm:
+        async with TaskManager(default_continue_on_error=continue_on_error) as tm:
             task = tm.start_soon(coro(3, ret=789))
             raise MyException()
 
@@ -181,11 +185,13 @@ async def test_failure_in_nested_block(
     _: object, outer_continue_on_error: bool, inner_continue_on_error: bool
 ) -> None:
     try:
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             task_outer = tm_outer.start_soon(coro(5, ret=9))
 
             async with TaskManager(
-                continue_on_error=inner_continue_on_error
+                default_continue_on_error=inner_continue_on_error
             ) as tm_inner:
                 task_inner = tm_inner.start_soon(coro(3, ret=789))
                 raise MyException()
@@ -216,13 +222,15 @@ async def test_failure_in_nested_child_block(
     task_inner: Task[Any] | None = None
 
     try:
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             task_outer = tm_outer.start_soon(coro(5, ret=9))
 
             @tm_outer.fork
             async def inner_block() -> None:
                 async with TaskManager(
-                    continue_on_error=inner_continue_on_error
+                    default_continue_on_error=inner_continue_on_error
                 ) as tm_inner:
                     nonlocal task_inner
                     task_inner = tm_inner.start_soon(coro(3, ret=789))
@@ -254,7 +262,7 @@ async def test_child_failure_in_block(_: object, continue_on_error: bool) -> Non
 
     with assert_takes(takes, "step"):
         try:
-            async with TaskManager(continue_on_error=continue_on_error) as tm:
+            async with TaskManager(default_continue_on_error=continue_on_error) as tm:
                 task_failure = tm.start_soon(raises_after(1))
                 task = tm.start_soon(coro(3, ret=789))
 
@@ -287,11 +295,13 @@ async def test_child_failure_in_nested_block(
     _: object, outer_continue_on_error: bool, inner_continue_on_error: bool
 ) -> None:
     try:
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             task_outer = tm_outer.start_soon(coro(5, ret=9))
 
             async with TaskManager(
-                continue_on_error=inner_continue_on_error
+                default_continue_on_error=inner_continue_on_error
             ) as tm_inner:
                 task_inner_failure = tm_inner.start_soon(raises_after(1))
                 task_inner = tm_inner.start_soon(coro(3, ret=789))
@@ -333,13 +343,15 @@ async def test_child_failure_in_nested_child_block(
     task_inner: Task[Any] | None = None
 
     try:
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             task_outer = tm_outer.start_soon(coro(5, ret=9))
 
             @tm_outer.fork
             async def inner_block() -> None:
                 async with TaskManager(
-                    continue_on_error=inner_continue_on_error
+                    default_continue_on_error=inner_continue_on_error
                 ) as tm_inner:
                     nonlocal task_inner_failure, task_inner
                     task_inner_failure = tm_inner.start_soon(raises_after(1))
@@ -381,7 +393,7 @@ async def test_child_failure_in_exit(_: object, continue_on_error: bool) -> None
 
     with assert_takes(takes, "step"):
         try:
-            async with TaskManager(continue_on_error=continue_on_error) as tm:
+            async with TaskManager(default_continue_on_error=continue_on_error) as tm:
                 task_failure = tm.start_soon(raises_after(2))
                 task = tm.start_soon(coro(3, ret=789))
 
@@ -406,11 +418,13 @@ async def test_child_failure_in_nested_exit(
     _: object, outer_continue_on_error: bool, inner_continue_on_error: bool
 ) -> None:
     try:
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             task_outer = tm_outer.start_soon(coro(5, ret=9))
 
             async with TaskManager(
-                continue_on_error=inner_continue_on_error
+                default_continue_on_error=inner_continue_on_error
             ) as tm_inner:
                 task_inner_failure = tm_inner.start_soon(raises_after(2))
                 task_inner = tm_inner.start_soon(coro(3, ret=789))
@@ -443,14 +457,16 @@ async def test_child_failure_in_nested_child_exit(
     task_inner_failure: Task[Any] | None = None
     task_inner: Task[Any] | None = None
     try:
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             task_outer = tm_outer.start_soon(coro(5, ret=9))
 
             @tm_outer.fork
             async def inner_block() -> None:
                 nonlocal task_inner_failure, task_inner
                 async with TaskManager(
-                    continue_on_error=inner_continue_on_error
+                    default_continue_on_error=inner_continue_on_error
                 ) as tm_inner:
                     task_inner_failure = tm_inner.start_soon(raises_after(2))
                     task_inner = tm_inner.start_soon(coro(3, ret=789))
@@ -483,7 +499,7 @@ async def test_external_cancel_in_block(_: object, continue_on_error: bool) -> N
     e = Event()
 
     async def run_task_manager() -> None:
-        async with TaskManager(continue_on_error=continue_on_error):
+        async with TaskManager(default_continue_on_error=continue_on_error):
             try:
                 await e.wait()
             finally:
@@ -515,11 +531,13 @@ async def test_external_cancel_in_nested_block(
     outer_task: Task[Any] | None = None
 
     async def run_task_manager() -> None:
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             nonlocal outer_task
             outer_task = tm_outer.start_soon(coro(5, ret=9))
 
-            async with TaskManager(continue_on_error=inner_continue_on_error):
+            async with TaskManager(default_continue_on_error=inner_continue_on_error):
                 try:
                     await e.wait()
                 finally:
@@ -554,13 +572,17 @@ async def test_external_cancel_in_nested_child_block(
     inner_block: Task[Any] | None = None
 
     async def run_task_manager() -> None:
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             nonlocal outer_task, inner_block
             outer_task = tm_outer.start_soon(coro(5, ret=9))
 
             @tm_outer.fork
             async def inner_block() -> None:
-                async with TaskManager(continue_on_error=inner_continue_on_error):
+                async with TaskManager(
+                    default_continue_on_error=inner_continue_on_error
+                ):
                     try:
                         await e.wait()
                     finally:
@@ -590,7 +612,7 @@ async def test_external_cancel_in_aexit(_: object, continue_on_error: bool) -> N
     inner_task: Task[Any] | None = None
 
     async def run_task_manager() -> None:
-        async with TaskManager(continue_on_error=continue_on_error) as tm:
+        async with TaskManager(default_continue_on_error=continue_on_error) as tm:
             nonlocal inner_task
             inner_task = tm.start_soon(coro(5, ret=9))
 
@@ -619,12 +641,14 @@ async def test_external_cancel_in_nested_aexit(
     inner_task: Task[Any] | None = None
 
     async def run_task_manager() -> None:
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             nonlocal outer_task
             outer_task = tm_outer.start_soon(coro(5, ret=9))
 
             async with TaskManager(
-                continue_on_error=inner_continue_on_error
+                default_continue_on_error=inner_continue_on_error
             ) as tm_inner:
                 nonlocal inner_task
                 inner_task = tm_inner.start_soon(coro(5, ret=9))
@@ -656,14 +680,16 @@ async def test_external_cancel_in_nested_child_aexit(
     inner_task: Task[Any] | None = None
 
     async def run_task_manager() -> None:
-        async with TaskManager(continue_on_error=outer_continue_on_error) as tm_outer:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
             nonlocal outer_task
             outer_task = tm_outer.start_soon(coro(5, ret=9))
 
             @tm_outer.fork
             async def inner_block() -> None:
                 async with TaskManager(
-                    continue_on_error=inner_continue_on_error
+                    default_continue_on_error=inner_continue_on_error
                 ) as tm_inner:
                     nonlocal inner_task
                     inner_task = tm_inner.start_soon(coro(5, ret=9))
@@ -695,7 +721,7 @@ async def test_external_cancel_in_block_ignored_at_end_of_block(
     continue_on_error: bool,
 ) -> None:
     async def run_task_manager() -> None:
-        async with TaskManager(continue_on_error=continue_on_error):
+        async with TaskManager(default_continue_on_error=continue_on_error):
             try:
                 await Timer(2)
             except CancelledError:
@@ -720,7 +746,7 @@ async def test_external_cancel_in_block_ignored_new_raise(
     continue_on_error: bool,
 ) -> None:
     async def run_task_manager() -> None:
-        async with TaskManager(continue_on_error=continue_on_error):
+        async with TaskManager(default_continue_on_error=continue_on_error):
             try:
                 await Timer(2)
             except CancelledError:
@@ -745,7 +771,7 @@ async def test_external_cancel_in_block_ignored_and_await(
     continue_on_error: bool,
 ) -> None:
     async def run_task_manager() -> None:
-        async with TaskManager(continue_on_error=continue_on_error):
+        async with TaskManager(default_continue_on_error=continue_on_error):
             try:
                 await Timer(2)
             except CancelledError:
@@ -808,7 +834,7 @@ async def test_child_fails_ignore_cancel_new_raise(_: object) -> None:
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
 async def test_reused_context(_: object, continue_on_error: bool) -> None:
-    tm = TaskManager(continue_on_error=continue_on_error)
+    tm = TaskManager(default_continue_on_error=continue_on_error)
 
     async with tm:
         tm.start_soon(coro(1))
@@ -821,7 +847,7 @@ async def test_reused_context(_: object, continue_on_error: bool) -> None:
 @cocotb.test
 async def test_start_soon_after_cancel_no_continue(_: object) -> None:
     try:
-        async with TaskManager(continue_on_error=False) as tm:
+        async with TaskManager(default_continue_on_error=False) as tm:
             tm.start_soon(raises_after(1))
 
             try:
@@ -842,7 +868,7 @@ async def test_start_soon_after_cancel_no_continue(_: object) -> None:
 @cocotb.test
 async def test_start_soon_after_cancel_continue(_: object) -> None:
     try:
-        async with TaskManager(continue_on_error=True) as tm:
+        async with TaskManager(default_continue_on_error=True) as tm:
             tm.start_soon(raises_after(1))
             await Timer(2)
             tm.start_soon(coro(2))
@@ -857,7 +883,7 @@ async def test_start_soon_after_cancel_continue(_: object) -> None:
 @cocotb.test
 async def test_reraised_child_exception(_: object) -> None:
     try:
-        async with TaskManager(continue_on_error=True) as tm:
+        async with TaskManager(default_continue_on_error=True) as tm:
             task = tm.start_soon(raises_after(1))
             # task will raise, but since continue_on_error=True, we will continue,
             # which will cause this await to re-raise the exception.
@@ -873,7 +899,7 @@ async def test_reraised_child_exception(_: object) -> None:
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
 async def test_start_soon_outside_context(_: object, continue_on_error: bool) -> None:
-    tm = TaskManager(continue_on_error=continue_on_error)
+    tm = TaskManager(default_continue_on_error=continue_on_error)
     with pytest.raises(RuntimeError):
         tm.start_soon(coro(1))
 
@@ -884,7 +910,7 @@ async def test_fork_outside_context(_: object, continue_on_error: bool) -> None:
     async def coro_noargs() -> None:
         await Timer(1)
 
-    tm = TaskManager(continue_on_error=continue_on_error)
+    tm = TaskManager(default_continue_on_error=continue_on_error)
     with pytest.raises(RuntimeError):
         tm.fork(coro_noargs)
 
@@ -897,7 +923,7 @@ async def test_add_tasks_from_another_task(_: object, continue_on_error: bool) -
             await ev.wait()
         return 10
 
-    tm = TaskManager(continue_on_error=continue_on_error)
+    tm = TaskManager(default_continue_on_error=continue_on_error)
     ev = Event()
     tm_task = cocotb.start_soon(tm_coro(tm, ev))
 
@@ -915,7 +941,7 @@ async def test_add_tasks_from_another_task(_: object, continue_on_error: bool) -
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
 async def test_start_soon_after_finished(_: object, continue_on_error: bool) -> None:
-    async with TaskManager(continue_on_error=continue_on_error) as tm:
+    async with TaskManager(default_continue_on_error=continue_on_error) as tm:
         tm.start_soon(coro(1))
 
     c = coro(1)
@@ -931,7 +957,7 @@ async def test_cancel_child_task_in_block_and_exit(
 ) -> None:
     cancelled = False
 
-    async with TaskManager(continue_on_error=continue_on_error) as tm:
+    async with TaskManager(default_continue_on_error=continue_on_error) as tm:
 
         @tm.fork
         async def child() -> None:
@@ -954,7 +980,7 @@ async def test_cancel_child_task_in_block_and_continue(
 ) -> None:
     cancelled = False
 
-    async with TaskManager(continue_on_error=continue_on_error) as tm:
+    async with TaskManager(default_continue_on_error=continue_on_error) as tm:
 
         @tm.fork
         async def child() -> None:
@@ -1006,7 +1032,7 @@ async def test_KeyboardInterrupt_in_nested_block(_: object) -> None:
 async def test_override_continue_on_error_continue(_: object) -> None:
     with assert_takes(2, "step"):
         try:
-            async with TaskManager(continue_on_error=False) as tm:
+            async with TaskManager(default_continue_on_error=False) as tm:
                 task1 = tm.start_soon(coro(2, ret=123))
                 task2 = tm.start_soon(raises_after(1), continue_on_error=True)
         except BaseExceptionGroup as e:
@@ -1023,7 +1049,7 @@ async def test_override_continue_on_error_continue(_: object) -> None:
 async def test_override_continue_on_error_fail(_: object) -> None:
     with assert_takes(1, "step"):
         try:
-            async with TaskManager(continue_on_error=True) as tm:
+            async with TaskManager(default_continue_on_error=True) as tm:
                 task1 = tm.start_soon(coro(2, ret=123))
                 task2 = tm.start_soon(raises_after(1), continue_on_error=False)
         except BaseExceptionGroup as e:
@@ -1040,7 +1066,7 @@ async def test_override_continue_on_error_fail(_: object) -> None:
 async def test_override_continue_on_error_fork_continue(_: object) -> None:
     with assert_takes(2, "step"):
         try:
-            async with TaskManager(continue_on_error=False) as tm:
+            async with TaskManager(default_continue_on_error=False) as tm:
                 task1 = tm.start_soon(coro(2, ret=123))
 
                 @tm.fork(continue_on_error=True)
@@ -1060,7 +1086,7 @@ async def test_override_continue_on_error_fork_continue(_: object) -> None:
 async def test_override_continue_on_error_fork_fail(_: object) -> None:
     with assert_takes(1, "step"):
         try:
-            async with TaskManager(continue_on_error=True) as tm:
+            async with TaskManager(default_continue_on_error=True) as tm:
                 task1 = tm.start_soon(coro(2, ret=123))
 
                 @tm.fork(continue_on_error=False)
@@ -1099,3 +1125,33 @@ async def test_bad_args(_: object) -> None:
 
         with pytest.raises(TypeError):
             tm.fork()  # type: ignore
+
+
+@cocotb.test
+@cocotb.parametrize(continue_on_error=[True, False])
+async def test_context_block_continue_on_error(
+    _: object, continue_on_error: bool
+) -> None:
+    timer = Timer(2)
+
+    try:
+        async with TaskManager(context_continue_on_error=continue_on_error) as tm:
+            task1 = tm.start_soon(timer)
+            task2 = tm.start_soon(AwaitableThing(3, ret=123))
+            task3 = tm.start_soon(coro(4, ret=456))
+
+            raise MyException()
+    except BaseExceptionGroup as e:
+        my_exc, rest = e.split(MyException)
+        assert rest is None
+        assert my_exc is not None
+        assert len(my_exc.exceptions) == 1
+
+    if continue_on_error:
+        assert task1.result() == timer
+        assert task2.result() == 123
+        assert task3.result() == 456
+    else:
+        assert task1.cancelled()
+        assert task2.cancelled()
+        assert task3.cancelled()

@@ -353,7 +353,7 @@ The :class:`!TaskManager`-wide default can be overridden on a per-Task basis usi
 
 .. code-block:: python
 
-    async with TaskManager(continue_on_error=True) as tm:
+    async with TaskManager(default_continue_on_error=True) as tm:
 
         @tm.fork(continue_on_error=False)
         async def task1(): ...
@@ -380,7 +380,7 @@ This new syntax will run the except clause for each matching exception in the gr
 .. code-block:: python
 
     try:
-        async with TaskManager(continue_on_error=True) as tm:
+        async with TaskManager(default_continue_on_error=True) as tm:
 
             @tm.fork
             async def task1():
@@ -432,6 +432,32 @@ and :class:`!TaskManager` continues shutting down as it normally would.
     Just like with :class:`~cocotb.task.Task`, if a :class:`!TaskManager` context block is cancelled
     and squashes the resulting :exc:`asyncio.CancelledError`, the test will be forcibly failed immediately.
     Always remember to re-raise the :exc:`!asyncio.CancelledError` if you catch it.
+
+A context block can also fail with an exception like a child :class:`!Task` could.
+In this case, if the *context_continue_on_error* parameter to the constructor is ``False``, all child :class:`!Task`\ s are cancelled;
+if it is set to ``True``, other child :class:`!Task`\ s are allowed to continue running.
+In either case, after all child :class:`!Task`\ s have finished,
+all exceptions, besides :exc:`~asyncio.CancelledError`, are gathered into an :exc:`ExceptionGroup`,
+or a :exc:`BaseExceptionGroup`, if at least one of the exceptions is a :exc:`BaseException`,
+and raised in the enclosing scope.
+
+.. code-block:: python
+
+    try:
+        async with TaskManager(context_continue_on_error=True) as tm:
+
+            @tm.fork
+            async def task1():
+                ...
+                return 42
+
+            raise ValueError("An error occurred in the context block")
+
+    except* ValueError as e:
+        # This will print the ValueError from the context block
+        cocotb.log.info(f"Caught ValueError from TaskManager: {e}")
+
+    assert task1.result() == 42  # task1 was allowed to continue running until completion
 
 Nesting :class:`!TaskManager`
 -----------------------------
