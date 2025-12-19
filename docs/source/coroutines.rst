@@ -9,9 +9,9 @@
 Coroutines, Tasks and Triggers
 ******************************
 
-Testbenches built using cocotb use Python coroutines.
+cocotb testbenches use Python's coroutines.
 :dfn:`Tasks` are cocotb objects that wrap coroutines
-and are used to schedule concurrent execution of the testbench coroutines.
+and are used to schedule concurrent execution of the coroutines.
 
 While active tasks are executing, the simulation is paused.
 The coroutine uses the :keyword:`await` keyword to
@@ -51,10 +51,10 @@ Coroutines can :keyword:`return` a value, so that they can be used by other coro
         assert first != second, "Signal did not change"
 
 
-Useful Objects for Testbenches
-==============================
+Triggers and Concurrency Utilities
+==================================
 
-Below is a table of objects that are useful for writing testbenches and models.
+Below is a table of triggers and concurrency utilities that are useful for writing testbenches and models.
 
 ..
    Please keep this table aligned with the content in library_reference.rst
