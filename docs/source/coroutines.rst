@@ -347,7 +347,7 @@ Handling Exceptions and *continue_on_error*
 It ensures that no child :class:`!Task` is left running unintentionally by the time the context block exits.
 
 The behavior of :class:`!TaskManager` when a child :class:`!Task` raises an exception is controlled by the *continue_on_error* parameter.
-The constructor for :class:`!TaskManager` accepts an optional parameter *continue_on_error* which is used as the default for all children Tasks;
+The constructor for :class:`!TaskManager` accepts an optional parameter *default_continue_on_error* which is used as the default for all children Tasks;
 it defaults to ``False``.
 The :class:`!TaskManager`-wide default can be overridden on a per-Task basis using the *continue_on_error* parameter to the :deco:`!fork` or :meth:`!start_soon` methods.
 
