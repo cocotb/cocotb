@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import warnings
 from abc import abstractmethod
 from collections.abc import Awaitable, Generator
 from decimal import Decimal
@@ -16,6 +17,7 @@ from typing import Any, TypeVar, cast, overload
 import cocotb.handle
 from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
 from cocotb._concurrent_waiters import select
+from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
 from cocotb.simtime import RoundMode, TimeUnit
 from cocotb.task import Task
@@ -37,35 +39,11 @@ class Waitable(Awaitable[T]):
         return self._wait().__await__()
 
 
-class _AggregateWaitable(Waitable[T]):
-    """Base class for :class:`Combine` and :class:`First`."""
-
-    def __init__(self, *trigger: Trigger | Waitable[Any] | Task[Any]) -> None:
-        self._triggers = trigger
-
-        # Do some basic type-checking up front, rather than waiting until we
-        # await them.
-        allowed_types = (Trigger, Waitable, Task)
-        for t in self._triggers:
-            if not isinstance(t, allowed_types):
-                raise TypeError(
-                    f"All triggers must be instances of Trigger! Got: {type(t).__qualname__}"
-                )
-
-    def __repr__(self) -> str:
-        # no _pointer_str here, since this is not a trigger, so identity
-        # doesn't matter.
-        return "{}({})".format(
-            type(self).__qualname__,
-            ", ".join(repr(t) for t in self._triggers),
-        )
-
-
 async def _wait_callback(trigger: Awaitable[T]) -> T:
     return await trigger
 
 
-class Combine(_AggregateWaitable["Combine"]):
+class Combine(Waitable["Combine"]):
     r"""Trigger that fires when all *triggers* have fired.
 
     :keyword:`await`\ ing this returns the :class:`Combine` object.
@@ -73,11 +51,42 @@ class Combine(_AggregateWaitable["Combine"]):
     See :ref:`combine-tutorial` for an example.
 
     Args:
-        trigger: One or more :keyword:`await`\ able objects.
+        triggers: One or more :keyword:`await`\ able objects.
 
     Raises:
         TypeError: When an unsupported *trigger* object is passed.
+
+    .. deprecated:: 2.1
+        Passing :class:`~cocotb.task.Task` objects to :class:`!Combine` is deprecated.
+        Use :func:`~cocotb.triggers.gather` instead and pass coroutines directly instead of wrapping them in :func:`cocotb.start_soon`.
     """
+
+    _task_deprecation_str = (
+        "Passing Task objects to `Combine` is deprecated. "
+        "Use `gather` instead and pass coroutines directly instead of wrapping them in `cocotb.start_soon`."
+    )
+
+    @overload
+    def __init__(self, *triggers: Trigger | Waitable[Any]) -> None: ...
+
+    @overload
+    @deprecated(_task_deprecation_str)
+    def __init__(self, *triggers: Trigger | Waitable[Any] | Task[Any]) -> None: ...
+
+    def __init__(self, *triggers: Trigger | Waitable[Any] | Task[Any]) -> None:
+        # Do some basic type-checking up front, rather than waiting until we
+        # await them.
+        for t in triggers:
+            if isinstance(t, Task):
+                warnings.warn(
+                    self._task_deprecation_str, DeprecationWarning, stacklevel=2
+                )
+            elif not isinstance(t, (Trigger, Waitable)):
+                raise TypeError(
+                    f"All triggers must be instances of Trigger! Got: {type(t).__qualname__}"
+                )
+
+        self._triggers = triggers
 
     async def _wait(self) -> Combine:
         if len(self._triggers) == 0:
@@ -129,8 +138,16 @@ class Combine(_AggregateWaitable["Combine"]):
 
         return self
 
+    def __repr__(self) -> str:
+        # no _pointer_str here, since this is not a trigger, so identity
+        # doesn't matter.
+        return "{}({})".format(
+            type(self).__qualname__,
+            ", ".join(repr(t) for t in self._triggers),
+        )
 
-class First(_AggregateWaitable[object]):
+
+class First(Waitable[object]):
     r"""Fires when the first trigger in *triggers* fires.
 
     :keyword:`await`\ ing this object returns the result of the first trigger that fires.
@@ -138,7 +155,7 @@ class First(_AggregateWaitable[object]):
     See :ref:`first-tutorial` for an example.
 
     Args:
-        trigger: One or more :keyword:`await`\ able objects.
+        triggers: One or more :keyword:`await`\ able objects.
 
     Raises:
         TypeError: When an unsupported *trigger* object is passed.
@@ -158,12 +175,48 @@ class First(_AggregateWaitable[object]):
         In the old-style :ref:`generator-based coroutines <yield-syntax>`, ``t = yield [a, b]`` was another spelling of
         ``t = yield First(a, b)``. This spelling is no longer available when using :keyword:`await`-based
         coroutines.
+
+    .. deprecated:: 2.1
+        Passing :class:`~cocotb.task.Task` objects to :class:`!First` is deprecated.
+        Use :func:`~cocotb.triggers.select` instead and pass coroutines directly instead of wrapping them in :func:`cocotb.start_soon`.
     """
 
-    def __init__(self, *trigger: Trigger | Waitable[Any] | Task[Any]) -> None:
-        if not trigger:
+    _task_deprecation_str = (
+        "Passing Task objects to `First` is deprecated. "
+        "Use `select` instead and pass coroutines directly instead of wrapping them in `cocotb.start_soon`."
+    )
+
+    @overload
+    def __init__(
+        self, first: Trigger | Waitable[Any], /, *triggers: Trigger | Waitable[Any]
+    ) -> None: ...
+
+    @overload
+    @deprecated(_task_deprecation_str)
+    def __init__(
+        self,
+        first: Trigger | Waitable[Any] | Task[Any],
+        /,
+        *triggers: Trigger | Waitable[Any] | Task[Any],
+    ) -> None: ...
+
+    def __init__(self, *triggers: Trigger | Waitable[Any] | Task[Any]) -> None:
+        if not triggers:
             raise ValueError("First() requires at least one Trigger or Task argument")
-        super().__init__(*trigger)
+
+        # Do some basic type-checking up front, rather than waiting until we
+        # await them.
+        for t in triggers:
+            if isinstance(t, Task):
+                warnings.warn(
+                    self._task_deprecation_str, DeprecationWarning, stacklevel=2
+                )
+            elif not isinstance(t, (Trigger, Waitable)):
+                raise TypeError(
+                    f"All triggers must be instances of Trigger! Got: {type(t).__qualname__}"
+                )
+
+        self._triggers = triggers
 
     async def _wait(self) -> object:
         if len(self._triggers) == 1:
@@ -193,6 +246,14 @@ class First(_AggregateWaitable[object]):
                 w.cancel()
 
         return completed[0].result()
+
+    def __repr__(self) -> str:
+        # no _pointer_str here, since this is not a trigger, so identity
+        # doesn't matter.
+        return "{}({})".format(
+            type(self).__qualname__,
+            ", ".join(repr(t) for t in self._triggers),
+        )
 
 
 class ClockCycles(Waitable["ClockCycles"]):

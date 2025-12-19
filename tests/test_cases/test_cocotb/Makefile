@@ -10,7 +10,7 @@ include ../../designs/sample_module/Makefile
 COCOTB_TEST_MODULES := "\
 	test_deprecated,\
 	test_synchronization_primitives,\
-	test_concurrency_primitives,\
+	test_first_combine,\
 	test_tests,\
 	test_testfactory,\
 	test_timing_triggers,\

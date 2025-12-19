@@ -34,6 +34,7 @@ from cocotb.triggers import (
     RisingEdge,
     Timer,
     Trigger,
+    gather,
 )
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -209,9 +210,7 @@ async def test_stack_overflow_pending_coros(dut):
     async def simple_coroutine():
         await Timer(10, "step")
 
-    coros = [cocotb.start_soon(simple_coroutine()) for _ in range(1024)]
-
-    await Combine(*coros)
+    await gather(*(cocotb.start_soon(simple_coroutine()) for _ in range(1024)))
 
 
 @cocotb.test()
@@ -265,12 +264,12 @@ async def test_nulltrigger_reschedule(dut):
             await NullTrigger()
 
     # Test should start in event loop
-    await Combine(*(cocotb.start_soon(reschedule(i)) for i in range(4)))
+    await gather(*(cocotb.start_soon(reschedule(i)) for i in range(4)))
 
     await Timer(1, "ns")
 
     # Event loop when simulator returns
-    await Combine(*(cocotb.start_soon(reschedule(i)) for i in range(4)))
+    await gather(*(cocotb.start_soon(reschedule(i)) for i in range(4)))
 
 
 @cocotb.test()
@@ -357,7 +356,8 @@ async def test_task_repr(_) -> None:
         log.info(repr(coro_task))
         assert re.match(r"<Task \d+ running coro=coroutine_outer\(\)>", repr(coro_task))
 
-        await Combine(*(cocotb.start_soon(coroutine_wait()) for _ in range(2)))
+        with pytest.warns(DeprecationWarning):
+            await Combine(*(cocotb.start_soon(coroutine_wait()) for _ in range(2)))
 
         return "Combine done"
 
@@ -409,7 +409,8 @@ async def test_task_repr(_) -> None:
 
     async def coroutine_first():
         task = Task(coroutine_wait())
-        await First(task, Timer(2, unit="ns"))
+        with pytest.warns(DeprecationWarning):
+            await First(task, Timer(2, unit="ns"))
         task.cancel()
 
     coro_task = cocotb.start_soon(coroutine_first())
