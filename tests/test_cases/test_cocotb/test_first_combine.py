@@ -7,7 +7,6 @@ Tests for concurrency primitives like First and Combine
 
 from __future__ import annotations
 
-import contextlib
 import re
 from collections import deque
 from random import randint
@@ -58,7 +57,7 @@ async def test_First_unfired_triggers_killed_on_exception(_) -> None:
     async def fails() -> None:
         raise ValueError("I am a failure")
 
-    with contextlib.suppress(ValueError):
+    with pytest.raises(ValueError), pytest.warns(DeprecationWarning):
         await First(cocotb.start_soon(Task(fails())), *triggers)
 
     for t in triggers:
@@ -75,7 +74,7 @@ async def test_Combine_unfired_triggers_killed_on_exception(_) -> None:
     async def fails() -> None:
         raise ValueError("I am a failure")
 
-    with contextlib.suppress(ValueError):
+    with pytest.raises(ValueError), pytest.warns(DeprecationWarning):
         await Combine(cocotb.start_soon(Task(fails())), *triggers)
 
     for t in triggers:
@@ -120,7 +119,8 @@ async def test_first_does_not_kill(dut):
 
     # Coroutine runs for 2ns, so we expect the timer to fire first
     timer = Timer(1, unit="ns")
-    t = await First(timer, cocotb.start_soon(coro()))
+    with pytest.warns(DeprecationWarning):
+        t = await First(timer, cocotb.start_soon(coro()))
     assert t is timer
     assert not ran
 
@@ -140,7 +140,8 @@ async def test_exceptions_first(dut):
 
     async def raise_soon():
         await Timer(1, "ns")
-        await cocotb.triggers.First(cocotb.start_soon(raise_inner()))
+        with pytest.warns(DeprecationWarning):
+            await First(cocotb.start_soon(raise_inner()))
 
     await _check_traceback(
         raise_soon(), ValueError, r".*in raise_soon.*in raise_inner", re.DOTALL
@@ -157,7 +158,8 @@ async def test_combine(dut):
 
     tasks = [cocotb.start_soon(coro(dly)) for dly in [10, 30, 20]]
 
-    await Combine(*tasks)
+    with pytest.warns(DeprecationWarning):
+        await Combine(*tasks)
 
 
 @cocotb.test()
@@ -170,7 +172,8 @@ async def test_fork_combine(dut):
 
     tasks = [cocotb.start_soon(coro(dly)) for dly in [10, 30, 20]]
 
-    await Combine(*tasks)
+    with pytest.warns(DeprecationWarning):
+        await Combine(*tasks)
 
 
 @cocotb.test()
@@ -193,7 +196,7 @@ async def test_combine_start_soon(_):
 
     tasks = [cocotb.start_soon(coro(d)) for d in range(1, max_delay + 1)]
 
-    with assert_takes(max_delay, "ns"):
+    with assert_takes(max_delay, "ns"), pytest.warns(DeprecationWarning):
         await Combine(*tasks)
 
 
@@ -208,7 +211,8 @@ async def test_recursive_combine_and_start_soon(_):
         part2 = n[len(n) // 2 :]
         sort1 = cocotb.start_soon(mergesort(part1))
         sort2 = cocotb.start_soon(mergesort(part2))
-        await Combine(sort1, sort2)
+        with pytest.warns(DeprecationWarning):
+            await Combine(sort1, sort2)
         res1 = deque(sort1.result())
         res2 = deque(sort2.result())
         res = []
@@ -238,10 +242,11 @@ async def test_recursive_combine(_):
         done.add(N)
 
     with assert_takes(30, "ns"):
-        await Combine(
-            Combine(cocotb.start_soon(waiter(10)), cocotb.start_soon(waiter(20))),
-            cocotb.start_soon(waiter(30)),
-        )
+        with pytest.warns(DeprecationWarning):
+            await Combine(
+                Combine(cocotb.start_soon(waiter(10)), cocotb.start_soon(waiter(20))),
+                cocotb.start_soon(waiter(30)),
+            )
     assert done == {10, 20, 30}
 
 
@@ -299,7 +304,10 @@ async def test_Combine_exception(dut) -> None:
         await Timer(1, "ns")
         raise MyException
 
-    combine = Combine(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
+    with pytest.warns(DeprecationWarning):
+        combine = Combine(
+            cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait()
+        )
     with assert_takes(1, "ns"), pytest.raises(MyException):
         await combine
 
@@ -330,7 +338,8 @@ async def test_First_exception(_) -> None:
         await Timer(1, "ns")
         raise MyException
 
-    first = First(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
+    with pytest.warns(DeprecationWarning):
+        first = First(cocotb.start_soon(raises_after_1ns()), Timer(10, "ns"), e.wait())
     with assert_takes(1, "ns"), pytest.raises(MyException):
         await first
 
@@ -349,7 +358,8 @@ async def test_Combine_objects_shared_by_multiple(_: Any) -> None:
     waiters = [cocotb.start_soon(wait_for_all_events()) for _ in range(5)]
     for e in events:
         e.set()
-    await Combine(*waiters)
+    with pytest.warns(DeprecationWarning):
+        await Combine(*waiters)
     assert count == 5
 
 
@@ -410,7 +420,8 @@ async def test_Combine_task_being_waited_cancelled(_: Any) -> None:
     tasks = [cocotb.start_soon(wait_forever()) for _ in range(5)]
 
     async def wait_on_tasks() -> None:
-        await Combine(*tasks)
+        with pytest.warns(DeprecationWarning):
+            await Combine(*tasks)
 
     waiter_task = cocotb.start_soon(wait_on_tasks())
     await Timer(1, "ns")
@@ -444,7 +455,8 @@ async def test_First_task_being_waited_cancelled(_: Any) -> None:
     tasks = [cocotb.start_soon(wait_forever()) for _ in range(5)]
 
     async def wait_on_tasks() -> None:
-        await First(*tasks)
+        with pytest.warns(DeprecationWarning):
+            await First(*tasks)
 
     waiter_task = cocotb.start_soon(wait_on_tasks())
     await Timer(1, "ns")
