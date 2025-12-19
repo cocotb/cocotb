@@ -11,7 +11,7 @@ import pytest
 
 import cocotb
 from cocotb.queue import LifoQueue, PriorityQueue, Queue, QueueEmpty, QueueFull
-from cocotb.triggers import Combine, NullTrigger
+from cocotb.triggers import NullTrigger, gather
 
 
 @cocotb.test
@@ -103,7 +103,7 @@ async def test_queue_contention(dut):
 
     coro_list.append(cocotb.start_soon(getter(getter_list, 101)))
 
-    await Combine(*coro_list)
+    await gather(*coro_list)
 
     assert putter_list == [*range(NUM_PUTTERS), 101]
     assert getter_list == [*range(NUM_PUTTERS), 101]
@@ -128,7 +128,7 @@ async def test_queue_contention(dut):
 
     coro_list.append(cocotb.start_soon(putter(putter_list, 101)))
 
-    await Combine(*coro_list)
+    await gather(*coro_list)
 
     assert putter_list == [*range(NUM_PUTTERS), 101]
     assert getter_list == [*range(NUM_PUTTERS), 101]
@@ -203,7 +203,7 @@ async def run_queue_blocking_test(dut, queue_type):
         coro_list.append(cocotb.start_soon(getter(getter_list, k)))
     await NullTrigger()
 
-    await Combine(*coro_list)
+    await gather(*coro_list)
 
     assert putter_list == list(range(NUM_PUTTERS))
     assert getter_list == list(range(NUM_PUTTERS))
@@ -224,7 +224,7 @@ async def run_queue_blocking_test(dut, queue_type):
         coro_list.append(cocotb.start_soon(putter(putter_list, k)))
     await NullTrigger()
 
-    await Combine(*coro_list)
+    await gather(*coro_list)
 
     assert putter_list == list(range(NUM_PUTTERS))
     assert getter_list == list(range(NUM_PUTTERS))
