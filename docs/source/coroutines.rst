@@ -94,7 +94,7 @@ Below is a table of triggers and concurrency utilities that are useful for writi
 
 .. rubric:: Footnotes
 
-.. [#f1] Something for uncommon cases.
+.. [#f1] Uncommon.
 
 Concurrent Execution
 ====================
