@@ -6,6 +6,7 @@ from __future__ import annotations
 import glob
 import os
 import shutil
+import sys
 from contextlib import suppress
 from pathlib import Path
 from typing import cast
@@ -466,6 +467,8 @@ def release_install(session: nox.Session) -> None:
     # PyPi, and then installing cocotb itself from the local dist directory.
 
     session.log("Installing cocotb dependencies from PyPi")
+    if sys.version_info < (3, 11):
+        session.install("exceptiongroup")
     session.install("find_libpython")
 
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")
