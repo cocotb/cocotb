@@ -230,13 +230,19 @@ class Runner(ABC):
 
         self.env.update(os.environ)
 
-        if "LIBPYTHON_LOC" not in self.env:
-            libpython_path = find_libpython.find_libpython()
-            if not libpython_path:
-                raise ValueError(
-                    "Unable to find libpython, please make sure the appropriate libpython is installed"
-                )
-            self.env["LIBPYTHON_LOC"] = libpython_path
+        gpi_users: list[str] = []
+
+        # Ensure libpython is in GPI_USERS before pygpi_entry_point
+        if "GPI_USERS" not in self.env:
+            if (libpython_loc := self.env.get("LIBPYTHON_LOC")) is not None:
+                gpi_users.append(libpython_loc)
+            else:
+                libpython_path = find_libpython.find_libpython()
+                if libpython_path is None:
+                    raise ValueError(
+                        "Unable to find libpython, please make sure the appropriate libpython is installed"
+                    )
+                gpi_users.append(libpython_path)
 
         # TODO the following line reappends the path on every call to build() or test(). This needs to not be an attribute.
         # Most of the stuff on this class really shouldn't be an attribute, but that's a non-trivial and API-breaking refactor.
@@ -244,7 +250,8 @@ class Runner(ABC):
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
         self.env["PYGPI_PYTHON_BIN"] = sys.executable
         if "GPI_USERS" not in self.env:
-            self.env["GPI_USERS"] = cocotb_tools.config.pygpi_entry_point()
+            gpi_users.append(cocotb_tools.config.pygpi_entry_point())
+            self.env["GPI_USERS"] = ";".join(gpi_users)
 
     def _set_env_build(self) -> None:
         self._set_env_common()

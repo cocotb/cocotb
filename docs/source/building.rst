@@ -164,7 +164,7 @@ Make Variables
       Use to define a scratch directory for use by the simulator. The path is relative to the location where ``make`` was invoked.
       If not provided, the default scratch directory is :file:`sim_build`.
 
-.. envvar:: SCRIPT_FILE
+.. make:var:: SCRIPT_FILE
 
     The name of a simulator script that is run as part of the simulation, e.g. for setting up wave traces.
     You can usually write out such a file from the simulator's GUI.
@@ -180,5 +180,13 @@ Make Variables
     The path to the Python binary.
     Set to the result of ``cocotb-config --python-bin`` if ``cocotb-config`` is present on the ``PATH``.
     Otherwise defaults to ``python3``.
+
+.. make:var:: LIBPYTHON_LOC
+
+    The absolute path to the Python library associated with the current Python installation;
+    i.e. ``libpython.so`` or ``python.dll`` on Windows.
+    This is determined with ``cocotb-config --libpython`` during build.
+
+    This is only used if present and :envvar:`GPI_USERS` is not already set by the user.
 
 The :envvar:`COCOTB_TOPLEVEL` variable is also often used by the Makefile-based build and runner system.

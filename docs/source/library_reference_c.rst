@@ -38,12 +38,6 @@ Environment Variables
     You can get the default PyGPI entry point at other times by calling ``cocotb-config --pygpi-entry-point`` from the shell
     or :func:`cocotb_tools.config.pygpi_entry_point` from Python.
 
-.. envvar:: LIBPYTHON_LOC
-
-    The absolute path to the Python library associated with the current Python installation;
-    i.e. ``libpython.so`` or ``python.dll`` on Windows.
-    This is determined with ``cocotb-config --libpython`` during build.
-
 .. envvar:: GPI_EXTRA
 
     A comma-separated list of extra libraries that are dynamically loaded at runtime.

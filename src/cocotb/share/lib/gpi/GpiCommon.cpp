@@ -236,17 +236,13 @@ static int gpi_load_users() {
                       func_name.c_str());
             entry_func();
             LOG_TRACE("User Init => [ GPI Init ]");
+        } else {
+            LOG_INFO("Loaded entry library: '%s'", lib_name.c_str());
         }
     }
 
     return 0;
 }
-
-#ifndef PYTHON_LIB
-#error "Name of Python library required"
-#else
-#define PYTHON_LIB_STR xstr(PYTHON_LIB)
-#endif
 
 void gpi_entry_point() {
     LOG_TRACE("=> [ GPI Init ]");
@@ -273,21 +269,7 @@ void gpi_entry_point() {
         gpi_load_libs(to_load);
     }
 
-    // preload Python library
-    char const *libpython_path = getenv("LIBPYTHON_LOC");
-    if (!libpython_path) {
-        // default to libpythonX.X.so
-        libpython_path = PYTHON_LIB_STR;
-    }
-    auto loaded = utils_dyn_open(libpython_path);
-    // LCOV_EXCL_START
-    if (!loaded) {
-        LOG_ERROR("Failed to preload Python library: %s", libpython_path);
-        return;
-    }
-    // LCOV_EXCL_STOP
-
-    /* Finally embed Python */
+    // Load users
     if (!gpi_load_users()) {
         return;
     }
