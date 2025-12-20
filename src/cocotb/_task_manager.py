@@ -99,18 +99,16 @@ class TaskManager:
             raise TypeError(
                 f"start_soon() expected an Awaitable, got {type(aw).__name__}"
             )
-        return self._start_soon(
-            _waiter, aw, name=name, continue_on_error=continue_on_error
-        )
+        task = Task[T](_waiter(aw), name=name)
+        self._add_task(task, continue_on_error=continue_on_error)
+        return task
 
-    def _start_soon(
+    def _add_task(
         self,
-        coro_func: Callable[..., Coroutine[Trigger, None, T]],
-        arg: Any | None = _MISSING,
+        task: Task[Any],
         *,
-        name: str | None = None,
         continue_on_error: bool | None = None,
-    ) -> Task[T]:
+    ) -> None:
         if self._cancelled:
             raise RuntimeError("Cannot add new Tasks to TaskManager after error")
         elif self._finishing:
@@ -122,17 +120,6 @@ class TaskManager:
         if current_task() is not self._parent_task:
             raise RuntimeError("Cannot add new Tasks to TaskManager from another Task")
 
-        if arg is _MISSING:
-            coro = coro_func()
-        else:
-            coro = coro_func(arg)
-        try:
-            task = Task[Any](coro, name=name)
-        except Exception:
-            # If Task creation fails, close the coroutine to avoid ResourceWarning.
-            coro.close()
-            raise
-
         # Track the Task and store per-Task continue_on_error setting
         task._add_done_callback(self._done_callback)
         if continue_on_error is None:
@@ -142,8 +129,6 @@ class TaskManager:
 
         # Schedule the Task to run soon
         task._ensure_started()
-
-        return task
 
     @overload
     def fork(
@@ -209,9 +194,9 @@ class TaskManager:
             raise TypeError(
                 f"fork() expected a coroutine function, got {type(coro_func).__name__}"
             )
-        return self._start_soon(
-            coro_func, name=coro_func.__name__, continue_on_error=continue_on_error
-        )
+        task = Task[T](coro_func(), name=coro_func.__name__)
+        self._add_task(task, continue_on_error=continue_on_error)
+        return task
 
     def _done_callback(self, task: Task[Any]) -> None:
         """Callback run when a child Task finishes."""

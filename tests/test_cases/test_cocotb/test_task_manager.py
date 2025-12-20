@@ -900,8 +900,11 @@ async def test_reraised_child_exception(_: object) -> None:
 @cocotb.parametrize(continue_on_error=[True, False])
 async def test_start_soon_outside_context(_: object, continue_on_error: bool) -> None:
     tm = TaskManager(default_continue_on_error=continue_on_error)
+
+    c = coro(1)
     with pytest.raises(RuntimeError):
-        tm.start_soon(coro(1))
+        tm.start_soon(c)
+    c.close()  # avoid ResourceWarning since we didn't await it.
 
 
 @cocotb.test
@@ -929,8 +932,10 @@ async def test_add_tasks_from_another_task(_: object, continue_on_error: bool) -
 
     await NullTrigger()
 
+    c = coro(1)
     with pytest.raises(RuntimeError):
-        tm.start_soon(coro(1))
+        tm.start_soon(c)
+    c.close()  # avoid ResourceWarning since we didn't await it.
 
     ev.set()
 

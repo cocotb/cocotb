@@ -399,7 +399,7 @@ class Task(Generic[ResultType]):
         # and this will cause a ResourceWarning if the coroutine is not manually closed.
         # This is only an issue because kill() does not run the coroutine after it's killed.
         if (
-            inspect.iscoroutine(self._coro)
+            self._native_coroutine
             and inspect.getcoroutinestate(self._coro) == "CORO_CREATED"
         ):
             self._coro.close()

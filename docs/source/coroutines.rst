@@ -267,7 +267,7 @@ And of course, the sky is the limit when you compose the two.
 
 The :class:`~cocotb.triggers.TaskManager` class is another way to run multiple async routines concurrently and wait for them all to complete.
 It properly manages the lifetime of its "children" and handles exceptions and cancellations gracefully.
-Unlike :func:`gather` which takes all :term:`awaitable`\ s and :term:`coroutine`\ s at once,
+Unlike :func:`~cocotb.triggers.gather` which takes all :term:`awaitable`\ s and :term:`coroutine`\ s at once,
 :class:`!TaskManager` allows adding new :term:`!awaitable`\ s and :term:`!coroutine`\ s dynamically,
 and provides options to control exception handling behavior on a per-Task basis,
 making it much more flexible.
