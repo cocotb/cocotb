@@ -32,8 +32,6 @@ from typing import (
     Union,
 )
 
-import find_libpython
-
 import cocotb_tools.config
 from cocotb_tools.check_results import get_results
 from cocotb_tools.sim_versions import NvcVersion
@@ -229,14 +227,6 @@ class Runner(ABC):
         # TODO: Remove this. Why are Xcelium and VCS loading VPI during build?
 
         self.env.update(os.environ)
-
-        if "LIBPYTHON_LOC" not in self.env:
-            libpython_path = find_libpython.find_libpython()
-            if not libpython_path:
-                raise ValueError(
-                    "Unable to find libpython, please make sure the appropriate libpython is installed"
-                )
-            self.env["LIBPYTHON_LOC"] = libpython_path
 
         # TODO the following line reappends the path on every call to build() or test(). This needs to not be an attribute.
         # Most of the stuff on this class really shouldn't be an attribute, but that's a non-trivial and API-breaking refactor.

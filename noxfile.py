@@ -465,9 +465,6 @@ def release_install(session: nox.Session) -> None:
     # Work around that by explicitly installing the dependencies first from
     # PyPi, and then installing cocotb itself from the local dist directory.
 
-    session.log("Installing cocotb dependencies from PyPi")
-    session.install("find_libpython")
-
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")
     session.install(
         "--force-reinstall",

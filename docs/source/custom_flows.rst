@@ -15,7 +15,7 @@ this chapter shows the minimum settings to be done.
 
 For all simulators, the following environment variables need to be set:
 
-* Define :envvar:`LIBPYTHON_LOC` using ``$(cocotb-config --libpython)``.
+* Define :envvar:`GPI_USERS` using ``$(cocotb-config --pygpi-entry-point)``.
 * Define :envvar:`PYGPI_PYTHON_BIN` using ``$(cocotb-config --python-bin)``.
 * Define :envvar:`COCOTB_TEST_MODULES` with the name of the Python module(s) containing your testcases.
 

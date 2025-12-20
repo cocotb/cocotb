@@ -6,7 +6,6 @@ from __future__ import annotations
 import os
 import sys
 
-import find_libpython
 import pytest
 
 import cocotb
@@ -116,50 +115,3 @@ def test_runner(parameters, pre_cmd, clean_build):
         assert not os.path.isfile(build_dir + "/clean_test_file")
     else:
         assert os.path.isfile(build_dir + "/clean_test_file")
-
-
-def test_missing_libpython(monkeypatch):
-    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
-    if hdl_toplevel_lang == "verilog":
-        hdl_sources = [os.path.join(tests_dir, "designs", "runner", "runner.sv")]
-        gpi_interfaces = ["vpi"]
-    else:
-        hdl_sources = [os.path.join(tests_dir, "designs", "runner", "runner.vhdl")]
-        gpi_interfaces = [os.getenv("VHDL_GPI_INTERFACE", None)]
-
-    sim_tool = os.getenv(
-        "SIM",
-        "icarus" if os.getenv("HDL_TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
-    )
-    sim_runner = get_runner(sim_tool)
-    sim_params = {
-        "WIDTH_IN": "8",
-        "WIDTH_OUT": "8",
-    }
-    build_args = [VHDL("-v93")] if sim_tool == "xcelium" else []
-    build_dir = os.path.join(sim_build, "test_missing_libpython")
-
-    os.makedirs(build_dir, exist_ok=True)
-
-    sim_runner.build(
-        sources=hdl_sources,
-        hdl_toplevel="runner",
-        parameters=sim_params,
-        defines={"DEFINE": 4, "DEFINE_STR": string_define_value},
-        includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
-        build_args=build_args,
-        build_dir=build_dir,
-    )
-
-    def mock_find_libpython():
-        return None
-
-    monkeypatch.setattr(find_libpython, "find_libpython", mock_find_libpython)
-
-    with pytest.raises(ValueError):
-        sim_runner.test(
-            hdl_toplevel="runner",
-            test_module="test_runner",
-            gpi_interfaces=gpi_interfaces,
-            extra_env=sim_params,
-        )

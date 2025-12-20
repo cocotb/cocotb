@@ -25,8 +25,6 @@ import sys
 import textwrap
 from pathlib import Path
 
-import find_libpython
-
 import cocotb_tools
 
 base_tools_dir = Path(cocotb_tools.__file__).parent.resolve()
@@ -68,7 +66,6 @@ def _help_vars_text() -> str:
         COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
         COCOTB_LOG_LEVEL          Default logging level (default INFO)
         COCOTB_RESOLVE_X          How to resolve X, Z, U, W, - on integer conversion
-        LIBPYTHON_LOC             Absolute path to libpython
 
         Regression Manager
         ------------------
@@ -191,11 +188,6 @@ def _get_parser() -> argparse.ArgumentParser:
         help="Print help about supported Makefile variables",
     )
     group.add_argument(
-        "--libpython",
-        action="store_true",
-        help="Print the absolute path to the libpython associated with the current Python installation",
-    )
-    group.add_argument(
         "--lib-dir",
         action="store_true",
         help="Print the absolute path to the interface libraries location",
@@ -238,11 +230,6 @@ def main() -> None:
         print(Path(sys.executable).as_posix())
     elif args.help_vars:
         print(_help_vars_text())
-    elif args.libpython:
-        libpython_path = find_libpython.find_libpython()
-        if libpython_path is None:
-            sys.exit(1)
-        print(Path(libpython_path).as_posix())
     elif args.lib_dir:
         print(libs_dir.as_posix())
     elif args.lib_name:

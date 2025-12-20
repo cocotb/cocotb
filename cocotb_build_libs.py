@@ -435,42 +435,6 @@ class build_ext(_build_ext):
                 )
 
 
-def _get_python_lib_link():
-    """Get name of python library used for linking"""
-
-    if sys.platform == "darwin":
-        ld_library = sysconfig.get_config_var("LIBRARY")
-    else:
-        ld_library = sysconfig.get_config_var("LDLIBRARY")
-
-    if ld_library is not None:
-        python_lib_link = os.path.splitext(ld_library)[0][3:]
-    else:
-        python_version = sysconfig.get_python_version().replace(".", "")
-        python_lib_link = "python" + python_version
-
-    return python_lib_link
-
-
-def _get_python_lib():
-    """Get the library for embedded the python interpreter"""
-
-    if os.name == "nt":
-        python_lib = _get_python_lib_link() + "." + _get_lib_ext_name()
-    elif sys.platform == "darwin":
-        python_lib = os.path.join(
-            sysconfig.get_config_var("LIBDIR"), "lib" + _get_python_lib_link() + "."
-        )
-        if os.path.exists(python_lib + "dylib"):
-            python_lib += "dylib"
-        else:
-            python_lib += "so"
-    else:
-        python_lib = "lib" + _get_python_lib_link() + "." + _get_lib_ext_name()
-
-    return python_lib
-
-
 def _get_common_lib_ext(include_dirs, share_lib_dir):
     """
     Defines common libraries.
@@ -496,7 +460,6 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         os.path.join("cocotb", "libs", "libgpi"),
         define_macros=[
             ("GPI_EXPORTS", ""),
-            ("PYTHON_LIB", _get_python_lib()),
             *_extra_defines,
         ],
         include_dirs=include_dirs,
@@ -517,6 +480,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
     python_lib_dirs = []
     if sys.platform == "darwin":
         python_lib_dirs = [sysconfig.get_config_var("LIBDIR")]
+    libpython_link_name = f"python{sysconfig.get_python_version()}"
     libpygpi = Extension(
         os.path.join("cocotb", "simulator"),
         define_macros=[
@@ -524,7 +488,7 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
             *_extra_defines,
         ],
         include_dirs=include_dirs,
-        libraries=["gpi"],
+        libraries=["gpi", libpython_link_name],
         library_dirs=python_lib_dirs,
         sources=pygpi_sources,
     )

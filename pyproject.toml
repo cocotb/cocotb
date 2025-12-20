@@ -21,9 +21,7 @@ maintainers = [
     {name = "Colin Marquardt"},
     {name = "Philipp Wagner"},
 ]
-dependencies = [
-    "find_libpython",
-]
+dependencies = []
 requires-python = ">= 3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
