@@ -63,7 +63,7 @@ Python Test Runner
     i.e. ``libpython.so`` or ``python.dll`` on Windows.
     This is determined with ``cocotb-config --libpython`` during build.
 
-    This is only used if present and :envvar:`GPI_USERS` is not already set by the user.
+    This is only used if :envvar:`GPI_USERS` is not already defined by the user.
 
 
 .. _api-runner-sim:

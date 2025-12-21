@@ -34,7 +34,7 @@ Environment Variables
         Instead of using a full path, use the basename, and use environment variables like ``PATH`` or ``LD_LIBRARY_PATH``
         to modify your operating system's library search path.
 
-    When using the :ref:`building` or :ref:`api-runner` this defaults to load the PyGPI entry point.
+    When using the :ref:`building` or :ref:`api-runner` this defaults to load ``libpython`` and then the PyGPI entry point.
     You can get the default PyGPI entry point at other times by calling ``cocotb-config --pygpi-entry-point`` from the shell
     or :func:`cocotb_tools.config.pygpi_entry_point` from Python.
 
