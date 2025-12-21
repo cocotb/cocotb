@@ -1,6 +1,6 @@
-##################################
-Welcome to cocotb's Documentation!
-##################################
+#################
+Welcome to cocotb
+#################
 
 ..
    This documentation tries to follow https://www.divio.com/blog/documentation/ (Daniele Procida)
@@ -15,35 +15,17 @@ Welcome to cocotb's Documentation!
 What is cocotb?
 ***************
 
-**cocotb** is a *COroutine* based *COsimulation* *TestBench* environment for verifying VHDL and SystemVerilog :term:`RTL` using `Python <https://www.python.org>`_.
-
-cocotb is completely free, open source (under the `BSD License <https://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_(%22BSD_License_2.0%22,_%22Revised_BSD_License%22,_%22New_BSD_License%22,_or_%22Modified_BSD_License%22)>`_) and hosted on `GitHub <https://github.com/cocotb/cocotb>`_.
-
-cocotb requires a simulator to simulate the :term:`HDL` design
-and has been used with a variety of simulators on Linux, Windows and macOS.
-Please check the :ref:`simulator-support` page for specifics.
-
-A (possibly older) version of cocotb can be used live in a web browser on `EDA Playground <https://www.edaplayground.com>`_.
+cocotb enables users to write testbenches in `Python <https://www.python.org>`_ as opposed to VHDL, (System)Verilog, or other EDA-specific languages.
 
 
-************************
-How is cocotb different?
-************************
+***********
+Why cocotb?
+***********
 
-cocotb encourages the same philosophy of design reuse and randomized testing as
-`UVM <https://en.wikipedia.org/wiki/Universal_Verification_Methodology>`_,
-however is implemented in Python.
+cocotb was specifically designed to lower the overhead of creating a testbench.
+But it is still capable of -- and encourages -- design reuse and randomized testing for building larger, more complex testbenches.
 
-With cocotb, VHDL or SystemVerilog are normally only used for the design itself, not the testbench.
-
-cocotb has built-in support for integrating with continuous integration systems,
-such as Jenkins, GitLab, etc. through standardized, machine-readable test reporting formats.
-
-cocotb was specifically designed to lower the overhead of creating a test.
-
-cocotb automatically discovers tests so that no additional step is required to add a test to a regression.
-
-All verification is done using Python which has various advantages over using SystemVerilog or VHDL for verification:
+Python offers many advantages over languages traditionally used for testbenching, such as VHDL or (System)Verilog.
 
 * Writing Python is **fast** - it's a very productive language.
 * It's **easy** to interface to other languages from Python.
@@ -51,30 +33,46 @@ All verification is done using Python which has various advantages over using Sy
 * Python is **interpreted** - tests can be edited and re-run without having to recompile the design.
 * Python is **popular** - far more engineers know Python than SystemVerilog or VHDL.
 
+cocotb supports :ref:`most popular simulators <simulator-support>` on :ref:`most relevant platforms <platform-support>`.
+
+When writing cocotb testbenches, users will typically not have to write any :term:`HDL`.
+
+cocotb has built-in support for integrating with continuous integration systems,
+such as Jenkins, GitLab, etc. through standardized, machine-readable test reporting formats.
+
+cocotb is provided free of charge under the `BSD License <https://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_(%22BSD_License_2.0%22,_%22Revised_BSD_License%22,_%22New_BSD_License%22,_or_%22Modified_BSD_License%22)>`_
+and is hosted publicly on `GitHub <https://github.com/cocotb/cocotb>`_.
+
 
 *********************
 How does cocotb work?
 *********************
 
-A typical cocotb testbench requires no additional :term:`RTL` code.
-The Design Under Test (:term:`DUT`) is instantiated as the toplevel in the simulator without any wrapper code.
-cocotb drives stimulus onto the inputs to the :term:`DUT` (or further down the hierarchy) and monitors the outputs directly from Python.
-Note that cocotb can not instantiate :term:`HDL` blocks - your DUT must be complete.
+cocotb is a **co**\ routine-based **co**\ simulation **t**\ est\ **b**\ ench environment.
+
+This means that when the design is simulated, cocotb runs as a cosimulation using one of the procedural interfaces (:term:`VPI`, :term:`VHPI`, or :term:`FLI`).
+A Python interpreter is embedded into the running simulator process to provide a Python execution environment.
+And a :doc:`Python library <library_reference>`
+and `coroutine <https://en.wikipedia.org/wiki/Coroutine>`_\ -based concurrency system are built on top of the procedural interfaces to interact with the simulated design in a Pythonic way.
 
 .. image:: diagrams/svg/cocotb_overview.svg
 
-A test is simply a Python function.
-At any given time either the simulator is advancing time or the Python code is executing.
-The :keyword:`await` keyword is used to indicate when to pass control of execution back to the simulator.
-A test can spawn multiple coroutines, allowing for independent flows of execution.
+
+**************
+Who is cocotb?
+**************
+
+cocotb is a Free and Open Source project and is developed collaboratively by its `contributors <https://github.com/cocotb/cocotb/graphs/contributors>`_ and :ref:`maintainers`.
+cocotb has many serious commercial users and sponsors.
+See `cocotb.org <https://cocotb.org>`_ for more details.
 
 
 .. toctree::
    :maxdepth: 1
    :hidden:
 
-   quickstart
    install
+   quickstart
 
 ..
    Tutorials - lessons that take the reader by the hand through a series of steps to complete a project
