@@ -33,6 +33,9 @@
 #define GEN_IDX_SEP_RHS ")"
 #endif
 
+bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
+               gpi_range_dir *dir);
+
 // Should be run after every VHPI call to check error status
 static inline void __check_vhpi_error(const char *file, const char *func,
                                       long line) {
