@@ -100,33 +100,6 @@ class TaskManager:
         self._add_task(task, continue_on_error=continue_on_error)
         return task
 
-    def _add_task(
-        self,
-        task: Task[Any],
-        *,
-        continue_on_error: bool | None = None,
-    ) -> None:
-        if self._cancelled:
-            raise RuntimeError("Cannot add new Tasks to TaskManager after error")
-        elif self._finishing:
-            raise RuntimeError("Cannot add new Tasks to TaskManager after finishing")
-        elif not self._entered:
-            raise RuntimeError(
-                "Cannot add new Tasks to TaskManager before entering context"
-            )
-        if current_task() is not self._parent_task:
-            raise RuntimeError("Cannot add new Tasks to TaskManager from another Task")
-
-        # Track the Task and store per-Task continue_on_error setting
-        task._add_done_callback(self._done_callback)
-        if continue_on_error is None:
-            continue_on_error = self._default_continue_on_error
-        self._remaining_tasks[task] = continue_on_error
-        self._none_remaining.clear()
-
-        # Schedule the Task to run soon
-        task._ensure_started()
-
     @overload
     def fork(
         self,
@@ -194,6 +167,33 @@ class TaskManager:
         task = Task[T](coro_func(), name=coro_func.__name__)
         self._add_task(task, continue_on_error=continue_on_error)
         return task
+
+    def _add_task(
+        self,
+        task: Task[Any],
+        *,
+        continue_on_error: bool | None = None,
+    ) -> None:
+        if self._cancelled:
+            raise RuntimeError("Cannot add new Tasks to TaskManager after error")
+        elif self._finishing:
+            raise RuntimeError("Cannot add new Tasks to TaskManager after finishing")
+        elif not self._entered:
+            raise RuntimeError(
+                "Cannot add new Tasks to TaskManager before entering context"
+            )
+        if current_task() is not self._parent_task:
+            raise RuntimeError("Cannot add new Tasks to TaskManager from another Task")
+
+        # Track the Task and store per-Task continue_on_error setting
+        task._add_done_callback(self._done_callback)
+        if continue_on_error is None:
+            continue_on_error = self._default_continue_on_error
+        self._remaining_tasks[task] = continue_on_error
+        self._none_remaining.clear()
+
+        # Schedule the Task to run soon
+        task._ensure_started()
 
     def _done_callback(self, task: Task[Any]) -> None:
         """Callback run when a child Task finishes."""
