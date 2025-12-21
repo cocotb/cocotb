@@ -106,7 +106,7 @@ class Task(Generic[ResultType]):
         self._schedule_callback: cocotb._event_loop.ScheduledCallback
         self._trigger_callback: TriggerCallback
         self._done_callbacks: list[Callable[[Task[ResultType]], None]] = []
-        self._must_cancel: bool = False
+        self._must_cancel: int = 0
         self._locals = SimpleNamespace()
         self._exc: BaseException | None = None
 
@@ -399,7 +399,7 @@ class Task(Generic[ResultType]):
         # and this will cause a ResourceWarning if the coroutine is not manually closed.
         # This is only an issue because kill() does not run the coroutine after it's killed.
         if (
-            inspect.iscoroutine(self._coro)
+            self._native_coroutine
             and inspect.getcoroutinestate(self._coro) == "CORO_CREATED"
         ):
             self._coro.close()
@@ -501,7 +501,7 @@ class Task(Generic[ResultType]):
             # coroutines.
             self._schedule_resume(cancelled_error)
 
-        self._must_cancel = True
+        self._must_cancel += 1
 
         return True
 
@@ -533,13 +533,20 @@ class Task(Generic[ResultType]):
             cancelled_error = CancelledError()
         else:
             cancelled_error = CancelledError(msg)
-        self._must_cancel = True
+        self._must_cancel += 1
 
         # Throw CancelledError now
         self._exc = cancelled_error
         self._resume()
 
         return True
+
+    def _uncancel(self) -> None:
+        """Prevents :exc:`RuntimeError` from occurring when cancelled Tasks suppress :exc:`asyncio.CancelledError`.
+
+        Currently only useful for :class:`.TaskManager`.
+        """
+        self._must_cancel -= 1
 
     def cancelled(self) -> bool:
         """Return ``True`` if the Task was cancelled."""

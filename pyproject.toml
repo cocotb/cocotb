@@ -23,6 +23,7 @@ maintainers = [
 ]
 dependencies = [
     "find_libpython",
+    "exceptiongroup; python_version < '3.11'",
 ]
 requires-python = ">= 3.9"
 classifiers = [
