@@ -496,7 +496,6 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         os.path.join("cocotb", "libs", "libgpi"),
         define_macros=[
             ("GPI_EXPORTS", ""),
-            ("PYTHON_LIB", _get_python_lib()),
             *_extra_defines,
         ],
         include_dirs=include_dirs,
