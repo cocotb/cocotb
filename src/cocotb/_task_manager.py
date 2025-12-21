@@ -35,9 +35,6 @@ async def _waiter(aw: Awaitable[T]) -> T:
     return await aw
 
 
-_MISSING = object()
-
-
 class TaskManager:
     r"""An :term:`asynchronous context manager` which runs :term:`coroutine function`\ s or :term:`awaitable`\ s concurrently until all finish.
 
