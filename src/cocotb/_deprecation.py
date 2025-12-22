@@ -4,34 +4,41 @@
 from __future__ import annotations
 
 import functools
+import sys
 import warnings
 from typing import Callable, TypeVar
 
 AnyCallableT = TypeVar("AnyCallableT", bound=Callable[..., object])
 
 
-def deprecated(
-    msg: str, category: type[Warning] = DeprecationWarning
-) -> Callable[[AnyCallableT], AnyCallableT]:
-    """Emits a DeprecationWarning when the decorated function is called.
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
 
-    This decorator works on normal functions, methods, and properties.
-    Usage on properties requires the ``@property`` decorator to appear outside the
-    ``@deprecated`` decorator.
-    Concrete classes can be deprecated by decorating their ``__init__`` or ``__new__``
-    method.
+else:
 
-    Args:
-        msg: the deprecation message
-        category: the warning class to use
-    """
+    def deprecated(
+        msg: str, *, category: type[Warning] = DeprecationWarning, stacklevel: int = 1
+    ) -> Callable[[AnyCallableT], AnyCallableT]:
+        """Emits a DeprecationWarning when the decorated function is called.
 
-    def decorator(f: AnyCallableT) -> AnyCallableT:
-        @functools.wraps(f)
-        def wrapper(*args: object, **kwargs: object) -> object:
-            warnings.warn(msg, category=category, stacklevel=2)
-            return f(*args, **kwargs)
+        This decorator works on normal functions, methods, and properties.
+        Usage on properties requires the ``@property`` decorator to appear outside the
+        ``@deprecated`` decorator.
+        Concrete classes can be deprecated by decorating their ``__init__`` or ``__new__``
+        method.
 
-        return wrapper  # type: ignore[return-value]  # type checkers get confused about this
+        Args:
+            msg: the deprecation message
+            category: the warning class to use
+            stacklevel: the stack level for the warning
+        """
 
-    return decorator
+        def decorator(f: AnyCallableT) -> AnyCallableT:
+            @functools.wraps(f)
+            def wrapper(*args: object, **kwargs: object) -> object:
+                warnings.warn(msg, category=category, stacklevel=1 + stacklevel)
+                return f(*args, **kwargs)
+
+            return wrapper  # type: ignore[return-value]  # type checkers get confused about this
+
+        return decorator

@@ -9,7 +9,7 @@ import os
 
 import cocotb
 from cocotb.handle import ArrayObject, HierarchyArrayObject, HierarchyObject
-from cocotb.triggers import Combine, Timer
+from cocotb.triggers import Timer, gather
 
 
 def total_object_count():
@@ -94,4 +94,4 @@ async def dual_iteration(dut):
     loop_one = cocotb.start_soon(iteration_loop())
     loop_two = cocotb.start_soon(iteration_loop())
 
-    await Combine(loop_one, loop_two)
+    await gather(loop_one, loop_two)

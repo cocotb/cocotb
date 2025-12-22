@@ -8,7 +8,7 @@ import logging
 
 import cocotb
 from cocotb.handle import ArrayObject, HierarchyArrayObject, HierarchyObject
-from cocotb.triggers import First
+from cocotb.triggers import gather
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
@@ -63,4 +63,4 @@ async def dual_iteration(dut):
     loop_one = cocotb.start_soon(iteration_loop(dut))
     loop_two = cocotb.start_soon(iteration_loop(dut))
 
-    await First(loop_one, loop_two)
+    await gather(loop_one, loop_two)

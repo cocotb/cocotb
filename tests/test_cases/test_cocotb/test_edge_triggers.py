@@ -22,14 +22,14 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import (
     ClockCycles,
-    Combine,
     FallingEdge,
-    First,
     ReadOnly,
     RisingEdge,
     SimTimeoutError,
     Timer,
     ValueChange,
+    gather,
+    select,
     with_timeout,
 )
 from cocotb_tools.sim_versions import RivieraVersion
@@ -68,7 +68,7 @@ async def test_rising_edge(dut):
     await Timer(10, "ns")
     dut.clk.value = 1
     fail_timer = Timer(1000, "ns")
-    result = await First(fail_timer, test)
+    _, result = await select(fail_timer, test)
     assert result is not fail_timer, "Test timed out"
 
 
@@ -81,7 +81,7 @@ async def test_falling_edge(dut):
     await Timer(10, "ns")
     dut.clk.value = 0
     fail_timer = Timer(1000, "ns")
-    result = await First(fail_timer, test)
+    _, result = await select(fail_timer, test)
     assert result is not fail_timer, "Test timed out"
 
 
@@ -128,7 +128,7 @@ async def test_fork_and_monitor(dut, period=1000, clocks=6):
     expect = clocks - 1
 
     while True:
-        result = await First(timer, task)
+        _, result = await select(timer, task)
         assert count <= expect, "Task didn't complete in expected time"
         if result is timer:
             cocotb.log.info("Count %d: Task still running", count)
@@ -313,7 +313,7 @@ async def test_both_edge_triggers(dut):
     rising_coro = cocotb.start_soon(wait_rising_edge())
     falling_coro = cocotb.start_soon(wait_falling_edge())
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
-    await Combine(rising_coro, falling_coro)
+    await gather(rising_coro, falling_coro)
 
 
 @cocotb.test()
