@@ -45,6 +45,8 @@ class TaskManager:
         context_continue_on_error: Value for *continue_on_error* for the context block itself.
 
             If not specified, defaults to the value of *default_continue_on_error*.
+
+    .. versionadded:: 2.1
     """
 
     def __init__(

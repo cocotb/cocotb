@@ -101,6 +101,8 @@ async def wait(
     Returns:
         A tuple of waiter :class:`~cocotb.task.Task`\ s.
         The order of the return tuple corresponds to the order of the input.
+
+    .. versionadded:: 2.1
     """
 
     async def waiter(aw: Awaitable[T]) -> T:
@@ -203,6 +205,8 @@ async def select(
 
     Raises:
         ValueError: If no *awaitables* are provided.
+
+    .. versionadded:: 2.1
     """
     if len(awaitables) == 0:
         raise ValueError("At least one awaitable required")
@@ -297,6 +301,8 @@ async def gather(
     Returns:
         A tuple of the results of awaiting each *awaitable* in the same order they were given.
         The order of the return tuple corresponds to the order of the input.
+
+    .. versionadded:: 2.1
     """
     if len(awaitables) == 0:
         return ()
