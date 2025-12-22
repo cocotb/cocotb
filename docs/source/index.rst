@@ -15,7 +15,7 @@ Welcome to cocotb
 What is cocotb?
 ***************
 
-cocotb enables users to write testbenches in `Python <https://www.python.org>`_ as opposed to VHDL, (System)Verilog, or other EDA-specific languages.
+cocotb enables users to test and verify their designs in `Python <https://www.python.org>`_ as opposed to VHDL, (System)Verilog, or other EDA-specific languages.
 
 
 ***********
@@ -25,7 +25,7 @@ Why cocotb?
 cocotb was specifically designed to lower the overhead of creating a testbench.
 But it is still capable of -- and encourages -- design reuse and randomized testing for building larger, more complex testbenches.
 
-Python offers many advantages over languages traditionally used for testbenching, such as VHDL or (System)Verilog.
+Python offers many advantages over languages traditionally used for test and verification, such as VHDL or (System)Verilog.
 
 * Writing Python is **fast** - it's a very productive language.
 * It's **easy** to interface to other languages from Python.
