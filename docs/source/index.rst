@@ -3,7 +3,7 @@ Welcome to cocotb
 #################
 
 ..
-   This documentation tries to follow https://www.divio.com/blog/documentation/ (Daniele Procida)
+   This documentation tries to follow https://diataxis.fr/
    Other media about the same topic:
    - https://ep2018.europython.eu/media/conference/slides/get-your-documentation-right.pdf
    - https://www.youtube.com/watch?v=t4vKPhjcMZg
@@ -30,7 +30,7 @@ Python offers many advantages over languages traditionally used for testbenching
 * Writing Python is **fast** - it's a very productive language.
 * It's **easy** to interface to other languages from Python.
 * Python has a huge library of existing code to **reuse**.
-* Python is **interpreted** - tests can be edited and re-run without having to recompile the design.
+* Python is **interpreted** - tests can be edited and re-run without having to recompile the design or the testbench.
 * Python is **popular** - far more engineers know Python than SystemVerilog or VHDL.
 
 cocotb supports :ref:`most popular simulators <simulator-support>` on :ref:`most relevant platforms <platform-support>`.
@@ -52,7 +52,7 @@ cocotb is a **co**\ routine-based **co**\ simulation **t**\ est\ **b**\ ench env
 
 This means that when the design is simulated, cocotb runs as a cosimulation using one of the procedural interfaces (:term:`VPI`, :term:`VHPI`, or :term:`FLI`).
 A Python interpreter is embedded into the running simulator process to provide a Python execution environment.
-And a :doc:`Python library <library_reference>`
+A :doc:`Python library <library_reference>`
 and `coroutine <https://en.wikipedia.org/wiki/Coroutine>`_\ -based concurrency system are built on top of the procedural interfaces to interact with the simulated design in a Pythonic way.
 
 .. image:: diagrams/svg/cocotb_overview.svg
