@@ -185,6 +185,31 @@ class LogicArray(AbstractMutableArray[Logic]):
         >>> big_mux(a, b, sel)
         LogicArray('1110', Range(3, 'downto', 0))
 
+    :class:`!LogicArray`\ s support formatting in f-strings and the :func:`format` built-in.
+    All resulting strings are zero-padded to the length of the :class:`!LogicArray`.
+    For specifiers other than ``""``, if the value contains non-``0``/``1`` values, a :exc:`!ValueError` will be raised.
+    The supported format specifiers are:
+
+    * ``""``: Binary (same as :class:`str` cast).
+    * ``"b"``: 0-padded unsigned binary.
+    * ``"o"``: 0-padded unsigned octal.
+    * ``"d"``: 0-padded unsigned decimal integer.
+    * ``"x"``: 0-padded unsigned hexadecimal (lowercase).
+    * ``"X"``: 0-padded unsigned hexadecimal (uppercase).
+
+    The  ``"#"`` "alternate" format specifier and the ``"_"`` and ``","`` grouping modifiers are also supported.
+    These behave the same way as in standard Python formatting of integers.
+
+    .. code-block:: pycon3
+
+        >>> value = LogicArray("00101011")
+        >>> f"{value}"
+        '00101011'
+        >>> f"{value:#_b}"
+        '0b0010_1011'
+        >>> format(value, "x")
+        '2b'
+
     Args:
         value: Initial value for the :class:`!LogicArray`.
         range: The indexing scheme of the :class:`!LogicArray`.
@@ -884,3 +909,57 @@ class LogicArray(AbstractMutableArray[Logic]):
         res._range = copy.deepcopy(self._range, memo=memo)
         res._warn_indexing = self._warn_indexing
         return res
+
+    def __format__(self, spec: str, /) -> str:
+        if not spec:
+            return str(self)
+
+        base_len = 0
+        alternate = ""
+        if spec.startswith("#"):
+            alternate, spec = spec[0], spec[1:]
+            # length operator doesn't take alternate format's effect on overall length into account
+            base_len = 2
+
+        grouping = ""
+        if spec.startswith(("_", ",")):
+            grouping, spec = spec[0], spec[1:]
+
+        if spec == "b":
+            bin_len = len(self)
+            # length operator doesn't take grouping's effect on overall length into account
+            if grouping:
+                bin_len += (bin_len - 1) // 4
+            bin_len += base_len
+            # length operator doesn't take alternate format's and grouping's effect on overall length into account
+            return f"{int(self):{alternate}0{bin_len}{grouping}b}"
+        elif spec in {"x", "X"}:
+            # fast ceil(len(self) / 4)
+            hex_len = (len(self) + 3) // 4
+            # length operator doesn't take grouping's affect on overall length into account
+            if grouping:
+                hex_len += (hex_len - 1) // 4
+            hex_len += base_len
+            return f"{int(self):{alternate}0{hex_len}{grouping}{spec}}"
+        elif spec == "d":
+            # fast ceil(len(self) / 10)
+            dec_len = (len(self) + 9) // 10
+            # length operator doesn't take grouping's effect on overall length into account
+            if grouping:
+                dec_len += (dec_len - 1) // 3
+            dec_len += base_len
+            # integer alternate form for "d" doesn't add any prefix, but we need it to
+            # ensure people know it isn't hex or octal.
+            if alternate:
+                alternate = "0d"
+            return f"{alternate}{int(self):0{dec_len}{grouping}d}"
+        elif spec == "o":
+            # fast ceil(len(self) / 8)
+            oct_len = (len(self) + 2) // 3
+            oct_len += base_len
+            # length operator doesn't take grouping's effect on overall length into account
+            if grouping:
+                oct_len += (oct_len - 1) // 4
+            return f"{int(self):{alternate}0{oct_len}{grouping}o}"
+        else:
+            raise ValueError(f"Unsupported format specifier: {spec!r}")
