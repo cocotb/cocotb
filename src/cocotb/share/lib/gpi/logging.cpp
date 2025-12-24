@@ -17,7 +17,6 @@
 int gpi_debug_enabled = 0;
 
 static gpi_log_handler_ftype current_handler = nullptr;
-static gpi_log_filter_ftype current_filter = nullptr;
 static gpi_log_set_level_ftype current_set_level = nullptr;
 static void *current_userdata = nullptr;
 
@@ -43,28 +42,23 @@ extern "C" void gpi_vlog_(const char *name, int level, const char *pathname,
 }
 
 extern "C" void gpi_get_log_handler(gpi_log_handler_ftype *handler,
-                                    gpi_log_filter_ftype *filter,
                                     gpi_log_set_level_ftype *set_level,
                                     void **userdata) {
     *handler = current_handler;
-    *filter = current_filter;
     *set_level = current_set_level;
     *userdata = current_userdata;
 }
 
 extern "C" void gpi_set_log_handler(gpi_log_handler_ftype handler,
-                                    gpi_log_filter_ftype filter,
                                     gpi_log_set_level_ftype set_level,
                                     void *userdata) {
     current_handler = handler;
-    current_filter = filter;
     current_set_level = set_level;
     current_userdata = userdata;
 }
 
 extern "C" void gpi_clear_log_handler(void) {
     current_handler = nullptr;
-    current_filter = nullptr;
     current_set_level = nullptr;
     current_userdata = nullptr;
 }

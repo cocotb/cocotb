@@ -125,19 +125,6 @@ typedef void (*gpi_log_handler_ftype)(void *userdata, const char *name,
                                       const char *funcname, long lineno,
                                       const char *msg, va_list args);
 
-/** Type of a logger filter function.
- *
- * Log filter functions test to see if a message would be emitted if logged at
- * the given log level.
- *
- * @param userdata  Private implementation data registered with this function.
- * @param logger    Name of the logger.
- * @param level     Level at which to test if the logger would emit a message.
- * @return `true` if the *logger* is enabled at *level*.
- */
-typedef bool (*gpi_log_filter_ftype)(void *userdata, const char *logger,
-                                     int level);
-
 /** Type of a logger set level function.
  *
  * Log filter functions test to see if a message would be emitted if logged at
@@ -207,26 +194,21 @@ GPI_EXPORT const char *gpi_log_level_to_str(int level);
 /** Retrieve the current log handler.
  * @param handler   Location to return current log handler function. If no
  *                  custom logger is registered this will be `NULL`.
- * @param filter    Location to return current log filter function. If no
- *                  custom logger is registered this will be `NULL`.
  * @param set_level Location to return current log set level function. If no
  *                  custom logger is registered this will be `NULL`.
  * @param userdata  Location to return log handler userdata. If no custom
  *                  logger is registered this will be `NULL`.
  */
 GPI_EXPORT void gpi_get_log_handler(gpi_log_handler_ftype *handler,
-                                    gpi_log_filter_ftype *filter,
                                     gpi_log_set_level_ftype *set_level,
                                     void **userdata);
 
 /** Set custom log handler
  * @param handler   Logger handler function.
- * @param filter    Logger level filter function.
  * @param set_level Logger set level function.
  * @param userdata  Data passed to the above functions.
  */
 GPI_EXPORT void gpi_set_log_handler(gpi_log_handler_ftype handler,
-                                    gpi_log_filter_ftype filter,
                                     gpi_log_set_level_ftype set_level,
                                     void *userdata);
 
