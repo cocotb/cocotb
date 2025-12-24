@@ -193,14 +193,6 @@ GPI_EXPORT void gpi_vlog_(const char *name, int level, const char *pathname,
                           const char *funcname, long lineno, const char *msg,
                           va_list args);
 
-/** Check if a log would be filtered.
- *
- * @param logger Name of the logger.
- * @param level Level at which to test if the logger would emit a message.
- * @return `true` if the *logger* is enabled at *level*.
- */
-GPI_EXPORT bool gpi_log_filtered(const char *logger, int level);
-
 /** Set the log level of a logger.
  *
  * @param logger Name of the logger.
@@ -290,13 +282,6 @@ GPI_EXPORT void gpi_native_logger_vlog_(const char *name, int level,
                                         const char *pathname,
                                         const char *funcname, long lineno,
                                         const char *msg, va_list args);
-
-/** Check if a message would be filtered by the native logger.
- *
- * @param level     Level at which to test if the logger would emit a message.
- * @return `true` if the *logger* is enabled at *level*.
- */
-GPI_EXPORT bool gpi_native_logger_filtered(int level);
 
 /** Set minimum logging level of the native logger.
  *

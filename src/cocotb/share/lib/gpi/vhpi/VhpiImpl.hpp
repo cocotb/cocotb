@@ -39,7 +39,7 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
 // Should be run after every VHPI call to check error status
 static inline void __check_vhpi_error(const char *file, const char *func,
                                       long line) {
-    if (gpi_log_filtered("gpi", GPI_DEBUG)) {
+    if (!gpi_debug_enabled) {
         return;
     }
 

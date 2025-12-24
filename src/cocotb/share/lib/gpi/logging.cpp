@@ -69,14 +69,6 @@ extern "C" void gpi_clear_log_handler(void) {
     current_userdata = nullptr;
 }
 
-extern "C" bool gpi_log_filtered(const char *logger, int level) {
-    if (current_filter) {
-        return current_filter(current_userdata, logger, level);
-    } else {
-        return gpi_native_logger_filtered(level);
-    }
-}
-
 extern "C" int gpi_log_set_level(const char *logger, int level) {
     if (current_set_level) {
         return current_set_level(current_userdata, logger, level);
@@ -192,8 +184,4 @@ extern "C" int gpi_native_logger_set_level(int level) {
     int old_level = current_native_logger_level;
     current_native_logger_level = level;
     return old_level;
-}
-
-extern "C" bool gpi_native_logger_filtered(int level) {
-    return level >= current_native_logger_level;
 }

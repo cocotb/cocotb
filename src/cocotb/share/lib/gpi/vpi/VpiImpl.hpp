@@ -28,7 +28,7 @@
 // Should be run after every VPI call to check error status
 static inline void __check_vpi_error(const char *file, const char *func,
                                      long line) {
-    if (gpi_log_filtered("gpi", GPI_DEBUG)) {
+    if (!gpi_debug_enabled) {
         return;
     }
 
