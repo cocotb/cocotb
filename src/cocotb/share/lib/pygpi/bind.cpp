@@ -771,7 +771,7 @@ static PyObject *set_gpi_log_level(PyObject *, PyObject *args) {
         return NULL;
     }
 
-    gpi_log_set_level("gpi", l_level);
+    py_gpi_log_set_level(l_level);
 
     Py_RETURN_NONE;
 }

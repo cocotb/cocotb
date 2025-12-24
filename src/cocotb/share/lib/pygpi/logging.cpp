@@ -164,11 +164,9 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     Py_DECREF(handler_ret);
 }
 
-static bool py_gpi_logger_set_level(void *, const char *, int level) {
-    auto old_level = py_gpi_log_level;
+void py_gpi_log_set_level(int level) {
     py_gpi_log_level = level;
     gpi_native_logger_set_level(level);
-    return old_level;
 }
 
 void py_gpi_logger_initialize(PyObject *log_func, PyObject *get_logger) {
@@ -176,7 +174,7 @@ void py_gpi_logger_initialize(PyObject *log_func, PyObject *get_logger) {
     Py_INCREF(get_logger);
     m_log_func = log_func;
     m_get_logger = get_logger;
-    gpi_set_log_handler(py_gpi_log_handler, py_gpi_logger_set_level, nullptr);
+    gpi_set_log_handler(py_gpi_log_handler, nullptr);
 }
 
 void py_gpi_logger_finalize() {
