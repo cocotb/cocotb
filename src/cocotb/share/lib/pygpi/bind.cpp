@@ -771,7 +771,7 @@ static PyObject *set_gpi_log_level(PyObject *, PyObject *args) {
         return NULL;
     }
 
-    pygpi_logging_set_level(l_level);
+    pygpi_logging_set_level(static_cast<enum gpi_log_level>(l_level));
 
     Py_RETURN_NONE;
 }

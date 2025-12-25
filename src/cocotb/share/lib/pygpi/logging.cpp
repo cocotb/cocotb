@@ -23,9 +23,9 @@ static PyObject *m_get_logger = nullptr;
 static gpi_log_handler_ftype fallback_log_handler = nullptr;
 static void *fallback_log_userdata = nullptr;
 
-static void fallback_handler(const char *name, int level, const char *pathname,
-                             const char *funcname, long lineno, const char *msg,
-                             ...) {
+static void fallback_handler(const char *name, enum gpi_log_level level,
+                             const char *pathname, const char *funcname,
+                             long lineno, const char *msg, ...) {
     // The standard provides no way to create an empty va_list, so we have to
     // make these empty args list to make the compiler happy.
     va_list args1, args2;
@@ -43,9 +43,10 @@ static void fallback_handler(const char *name, int level, const char *pathname,
                          args2);
 }
 
-static void pygpi_log_handler(void *, const char *name, int level,
-                              const char *pathname, const char *funcname,
-                              long lineno, const char *msg, va_list argp) {
+static void pygpi_log_handler(void *, const char *name,
+                              enum gpi_log_level level, const char *pathname,
+                              const char *funcname, long lineno,
+                              const char *msg, va_list argp) {
     // Always pass through messages when NOTSET to let Python make the decision.
     // Otherwise, skip logs using the local log level for better performance.
     if (pygpi_log_level != GPI_NOTSET && level < pygpi_log_level) {
@@ -183,8 +184,8 @@ static void pygpi_log_handler(void *, const char *name, int level,
     Py_DECREF(handler_ret);
 }
 
-void pygpi_log(int level, const char *pathname, const char *funcname,
-               long lineno, const char *fmt, ...) {
+void pygpi_log(enum gpi_log_level level, const char *pathname,
+               const char *funcname, long lineno, const char *fmt, ...) {
     va_list argp;
     va_start(argp, fmt);
     DEFER(va_end(argp));
@@ -192,7 +193,7 @@ void pygpi_log(int level, const char *pathname, const char *funcname,
                       argp);
 }
 
-void pygpi_logging_set_level(int level) {
+void pygpi_logging_set_level(enum gpi_log_level level) {
     pygpi_log_level = level;
     gpi_native_logger_set_level(level);
 }

@@ -24,7 +24,8 @@ int gpi_debug_enabled = 0;
 
 static int current_native_logger_level = GPI_NOTSET;
 
-static void gpi_native_logger_vlog(void *, const char *name, int level,
+static void gpi_native_logger_vlog(void *, const char *name,
+                                   enum gpi_log_level level,
                                    const char *pathname, const char *funcname,
                                    long lineno, const char *msg, va_list argp) {
     int curr_level = current_native_logger_level;
@@ -97,7 +98,7 @@ static void gpi_native_logger_vlog(void *, const char *name, int level,
 static gpi_log_handler_ftype current_handler = gpi_native_logger_vlog;
 static void *current_userdata = nullptr;
 
-void gpi_log_(const char *name, int level, const char *pathname,
+void gpi_log_(const char *name, enum gpi_log_level level, const char *pathname,
               const char *funcname, long lineno, const char *msg, ...) {
     va_list argp;
     va_start(argp, msg);
@@ -105,7 +106,7 @@ void gpi_log_(const char *name, int level, const char *pathname,
     va_end(argp);
 }
 
-void gpi_vlog_(const char *name, int level, const char *pathname,
+void gpi_vlog_(const char *name, enum gpi_log_level level, const char *pathname,
                const char *funcname, long lineno, const char *msg,
                va_list argp) {
     (*current_handler)(current_userdata, name, level, pathname, funcname,
@@ -119,7 +120,7 @@ static const std::map<int, const char *> log_level_str_table = {
 
 static const char *unknown_level = "------";
 
-const char *gpi_log_level_to_str(int level) {
+const char *gpi_log_level_to_str(enum gpi_log_level level) {
     const char *log_level_str = unknown_level;
     auto idx = log_level_str_table.find(level);
     if (idx != log_level_str_table.end()) {
@@ -132,7 +133,7 @@ const char *gpi_log_level_to_str(int level) {
  * GPI Logger Public API
  *******************************************************************************/
 
-extern "C" int gpi_native_logger_set_level(int level) {
+extern "C" int gpi_native_logger_set_level(enum gpi_log_level level) {
     int old_level = current_native_logger_level;
     current_native_logger_level = level;
     return old_level;

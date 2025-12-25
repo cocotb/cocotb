@@ -545,7 +545,8 @@ enum gpi_log_level {
  *                  according to format specifier in msg argument
  */
 typedef void (*gpi_log_handler_ftype)(void *userdata, const char *name,
-                                      int level, const char *pathname,
+                                      enum gpi_log_level level,
+                                      const char *pathname,
                                       const char *funcname, long lineno,
                                       const char *msg, va_list args);
 
@@ -572,7 +573,7 @@ GPI_EXPORT void gpi_set_log_handler(gpi_log_handler_ftype handler,
  * @param level     Logging level
  * @return          Previous logging level
  */
-GPI_EXPORT int gpi_native_logger_set_level(int level);
+GPI_EXPORT int gpi_native_logger_set_level(enum gpi_log_level level);
 
 /** @} */  // End of group Logging
 

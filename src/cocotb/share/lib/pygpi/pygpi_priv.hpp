@@ -6,6 +6,7 @@
 #define PY_GPI_LOGGING_H
 
 #include <Python.h>
+#include <gpi.h>
 
 #ifdef PYGPI_EXPORTS
 #define PYGPI_EXPORT COCOTB_EXPORT
@@ -16,15 +17,15 @@
 void pygpi_logging_initialize();
 void pygpi_logging_configure(PyObject *handler, PyObject *get_logger);
 void pygpi_logging_finalize();
-void pygpi_logging_set_level(int level);
+void pygpi_logging_set_level(enum gpi_log_level level);
 
 extern PyObject *pEventFn;
 extern int pygpi_debug_enabled;
 extern int python_context_tracing_enabled;
 extern int is_python_context;
 
-void pygpi_log(int level, const char *pathname, const char *funcname,
-               long lineno, const char *fmt, ...);
+void pygpi_log(enum gpi_log_level level, const char *pathname,
+               const char *funcname, long lineno, const char *fmt, ...);
 
 #define PYGPI_LOG_(level, ...) \
     pygpi_log(level, __FILE__, __func__, __LINE__, __VA_ARGS__)

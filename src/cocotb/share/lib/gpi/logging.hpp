@@ -31,7 +31,7 @@ as well as users of the GPI.
 extern GPI_EXPORT int gpi_debug_enabled;
 
 /** @return The string representation of the GPI log level. */
-GPI_EXPORT const char *gpi_log_level_to_str(int level);
+GPI_EXPORT const char *gpi_log_level_to_str(enum gpi_log_level level);
 
 /** Logs a message at a given log level using the current log handler.
  * The caller provides explicit location information.
@@ -101,9 +101,9 @@ GPI_EXPORT const char *gpi_log_level_to_str(int level);
 
 // Don't call this function directly unless the name is "gpi" or starts with
 // "gpi."
-GPI_EXPORT void gpi_log_(const char *name, int level, const char *pathname,
-                         const char *funcname, long lineno, const char *msg,
-                         ...);
+GPI_EXPORT void gpi_log_(const char *name, enum gpi_log_level level,
+                         const char *pathname, const char *funcname,
+                         long lineno, const char *msg, ...);
 
 /** Log a message using the currently registered log handler.
  *
@@ -122,8 +122,8 @@ GPI_EXPORT void gpi_log_(const char *name, int level, const char *pathname,
 
 // Don't call this function directly unless the name is "gpi" or starts with
 // "gpi."
-GPI_EXPORT void gpi_vlog_(const char *name, int level, const char *pathname,
-                          const char *funcname, long lineno, const char *msg,
-                          va_list args);
+GPI_EXPORT void gpi_vlog_(const char *name, enum gpi_log_level level,
+                          const char *pathname, const char *funcname,
+                          long lineno, const char *msg, va_list args);
 
 #endif /* COCOTB_GPI_LOGGING_H_ */
