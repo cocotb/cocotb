@@ -2,8 +2,8 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <Python.h>       // all things Python
-#include <gpi_logging.h>  // all things GPI logging
+#include <Python.h>  // all things Python
+#include <gpi.h>     // all things GPI logging
 
 #include <cstdarg>  // va_list, va_copy, va_end
 #include <cstdio>   // fprintf, vsnprintf

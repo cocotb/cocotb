@@ -5,6 +5,8 @@
 
 #include "./FliImpl.hpp"
 
+#include <gpi_logging.h>
+
 #include <cstddef>
 #include <cstring>
 #include <stdexcept>

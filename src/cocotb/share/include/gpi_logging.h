@@ -17,6 +17,7 @@ as well as users of the GPI.
 */
 
 #include <exports.h>
+#include <gpi.h>
 
 #include <cstdarg>  // va_list
 #include <cstring>  // strlen
@@ -32,31 +33,6 @@ extern "C" {
 #endif
 
 extern GPI_EXPORT int gpi_debug_enabled;
-
-/** Named logging level
- *
- *  The native logger only logs level names at these log level values.
- *  They were specifically chosen to align with the default level values in the
- *  Python logging module. Implementers of custom loggers should emit human
- *  readable level names for these value, but may support other values.
- */
-enum gpi_log_level {
-    GPI_NOTSET = 0,  ///< Lets the parent logger in the hierarchy decide the
-                     ///< effective log level. By default this behaves like
-                     ///< `INFO`.
-    GPI_TRACE = 5,   ///< Prints `TRACE` by default. Information about execution
-                     ///< of simulator callbacks and Python/simulator contexts.
-    GPI_DEBUG = 10,  ///< Prints `DEBUG` by default. Verbose information, useful
-                     ///< for debugging.
-    GPI_INFO = 20,   ///< Prints `INFO` by default. Information about major
-                     ///< events in the current program.
-    GPI_WARNING = 30,  ///< Prints `WARN` by default. Encountered a recoverable
-                       ///< bug, or information about surprising behavior.
-    GPI_ERROR = 40,    ///< Prints `ERROR` by default. An unrecoverable error
-    GPI_CRITICAL = 50  ///< Prints `CRITICAL` by default. An unrecoverable
-                       ///< error, to be followed by immediate simulator
-                       ///< shutdown.
-};
 
 /** Logs a message at a given log level using the current log handler.
  * The caller provides explicit location information.
@@ -109,22 +85,6 @@ enum gpi_log_level {
 #define MAKE_LOG_NAME_(extra_name) \
     (extra_name[0] == '\0' ? "gpi" : "gpi." extra_name)
 
-/** Type of a logger handler function.
- * @param userdata  private implementation data registered with this function
- * @param name      Name of the logger
- * @param level     Level at which to log the message
- * @param pathname  Name of the file where the call site is located
- * @param funcname  Name of the function where the call site is located
- * @param lineno    Line number of the call site
- * @param msg       The message to log, uses C-sprintf-style format specifier
- * @param args      Additional arguments; formatted and inserted in message
- *                  according to format specifier in msg argument
- */
-typedef void (*gpi_log_handler_ftype)(void *userdata, const char *name,
-                                      int level, const char *pathname,
-                                      const char *funcname, long lineno,
-                                      const char *msg, va_list args);
-
 /** Log a message using the currently registered log handler.
  *
  * @param extra_name  Name of the "gpi" child logger, "" for the root logger
@@ -169,22 +129,6 @@ GPI_EXPORT void gpi_vlog_(const char *name, int level, const char *pathname,
 
 /** @return The string representation of the GPI log level. */
 GPI_EXPORT const char *gpi_log_level_to_str(int level);
-
-/** Retrieve the current log handler.
- * @param handler   Location to return current log handler function. If no
- *                  custom logger is registered this will be `NULL`.
- * @param userdata  Location to return log handler userdata. If no custom
- *                  logger is registered this will be `NULL`.
- */
-GPI_EXPORT void gpi_get_log_handler(gpi_log_handler_ftype *handler,
-                                    void **userdata);
-
-/** Set custom log handler
- * @param handler   Logger handler function.
- * @param userdata  Data passed to the above functions.
- */
-GPI_EXPORT void gpi_set_log_handler(gpi_log_handler_ftype handler,
-                                    void *userdata);
 
 /** Clear the current custom log handler and use native logger. */
 GPI_EXPORT void gpi_clear_log_handler(void);
@@ -238,15 +182,6 @@ GPI_EXPORT void gpi_native_logger_vlog_(const char *name, int level,
                                         const char *pathname,
                                         const char *funcname, long lineno,
                                         const char *msg, va_list args);
-
-/** Set minimum logging level of the native logger.
- *
- * If a logging request occurs where the logging level is lower than the level
- * set by this function, it is not logged. Only affects the native logger.
- * @param level     Logging level
- * @return          Previous logging level
- */
-GPI_EXPORT int gpi_native_logger_set_level(int level);
 
 #ifdef __cplusplus
 }

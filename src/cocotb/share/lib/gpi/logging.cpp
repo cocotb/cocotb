@@ -4,6 +4,7 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <gpi.h>
 #include <gpi_logging.h>
 
 #include <cstdarg>
