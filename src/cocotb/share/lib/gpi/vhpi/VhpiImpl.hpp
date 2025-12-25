@@ -8,12 +8,12 @@
 
 #include <exports.h>
 #include <gpi.h>
-#include <gpi_logging.h>
 
 #include <map>
 #include <vector>
 
 #include "../gpi_priv.hpp"
+#include "../logging.hpp"
 #include "_vendor/vhpi/vhpi_user.h"
 
 #ifdef COCOTBVHPI_EXPORTS

@@ -5,14 +5,13 @@
 
 #include "./FliImpl.hpp"
 
-#include <gpi_logging.h>
-
 #include <cstddef>
 #include <cstring>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "../logging.hpp"
 #include "_vendor/fli/acc_user.h"
 #include "_vendor/fli/acc_vhdl.h"
 #include "_vendor/fli/mti.h"

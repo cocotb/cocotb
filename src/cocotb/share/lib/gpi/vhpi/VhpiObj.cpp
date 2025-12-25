@@ -3,6 +3,7 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "../logging.hpp"
 #include "./VhpiImpl.hpp"
 #include "_vendor/vhpi/vhpi_user.h"
 

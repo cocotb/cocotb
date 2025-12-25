@@ -6,7 +6,6 @@
 #define PY_GPI_LOGGING_H
 
 #include <Python.h>
-#include <gpi_logging.h>
 
 #ifdef PYGPI_EXPORTS
 #define PYGPI_EXPORT COCOTB_EXPORT

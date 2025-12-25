@@ -8,7 +8,6 @@
 
 #include <exports.h>
 #include <gpi.h>
-#include <gpi_logging.h>
 
 #include <map>
 #include <vector>

@@ -4,13 +4,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <gpi.h>
-#include <gpi_logging.h>
 
 #include <bitset>
 #include <cmath>
 #include <cstring>
 #include <string>
 
+#include "../logging.hpp"
 #include "./FliImpl.hpp"
 #include "_vendor/fli/acc_vhdl.h"
 

@@ -5,7 +5,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <gpi.h>
-#include <gpi_logging.h>
 #include <sys/types.h>
 
 #include <algorithm>
@@ -15,6 +14,7 @@
 #include <vector>
 
 #include "./gpi_priv.hpp"
+#include "./logging.hpp"
 
 using namespace std;
 

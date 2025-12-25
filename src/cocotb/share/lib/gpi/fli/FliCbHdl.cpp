@@ -3,10 +3,9 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <gpi_logging.h>
-
 #include <cstring>
 
+#include "../logging.hpp"
 #include "./FliImpl.hpp"
 #include "_vendor/fli/mti.h"
 
