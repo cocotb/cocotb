@@ -23,8 +23,11 @@ extern int pygpi_debug_enabled;
 extern int python_context_tracing_enabled;
 extern int is_python_context;
 
+void py_gpi_log(int level, const char *pathname, const char *funcname,
+                long lineno, const char *fmt, ...);
+
 #define PYGPI_LOG_(level, ...) \
-    gpi_log_("pygpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__)
+    py_gpi_log(level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
 /** Logs a message at TRACE log level if PYGPI tracing is enabled */
 #define PYGPI_LOG_TRACE(...)                    \

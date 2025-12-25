@@ -20,14 +20,27 @@ static PyObject *m_log_func = nullptr;
 static std::map<std::string, PyObject *> m_logger_map;
 static PyObject *m_get_logger = nullptr;
 
+static gpi_log_handler_ftype fallback_log_handler = nullptr;
+static void *fallback_log_userdata = nullptr;
+
 static void fallback_handler(const char *name, int level, const char *pathname,
-                             const char *funcname, long lineno,
-                             const char *msg) {
+                             const char *funcname, long lineno, const char *msg,
+                             ...) {
+    // The standard provides no way to create an empty va_list, so we have to
+    // make these empty args list to make the compiler happy.
+    va_list args1, args2;
+    va_start(args1, msg);
+    va_copy(args2, args1);
+    DEFER(va_end(args2));
+    DEFER(va_end(args1));
     // Note: don't call the LOG_ERROR macro because that might recurse
-    gpi_native_logger_log_(name, level, pathname, funcname, lineno, msg);
-    gpi_native_logger_log_("gpi", GPI_ERROR, __FILE__, __func__, __LINE__,
-                           "Error calling Python logging function from C++ "
-                           "while logging the above");
+    fallback_log_handler(fallback_log_userdata, name, level, pathname, funcname,
+                         lineno, msg, args1);
+    fallback_log_handler(fallback_log_userdata, "gpi", GPI_ERROR, __FILE__,
+                         __func__, __LINE__,
+                         "Error calling Python logging function from C++ "
+                         "while logging the above",
+                         args2);
 }
 
 static void py_gpi_log_handler(void *, const char *name, int level,
@@ -164,6 +177,15 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     Py_DECREF(handler_ret);
 }
 
+void py_gpi_log(int level, const char *pathname, const char *funcname,
+                long lineno, const char *fmt, ...) {
+    va_list argp;
+    va_start(argp, fmt);
+    DEFER(va_end(argp));
+    py_gpi_log_handler(nullptr, "pygpi", level, pathname, funcname, lineno, fmt,
+                       argp);
+}
+
 void py_gpi_log_set_level(int level) {
     py_gpi_log_level = level;
     gpi_native_logger_set_level(level);
@@ -174,11 +196,12 @@ void py_gpi_logger_initialize(PyObject *log_func, PyObject *get_logger) {
     Py_INCREF(get_logger);
     m_log_func = log_func;
     m_get_logger = get_logger;
+    gpi_get_log_handler(&fallback_log_handler, &fallback_log_userdata);
     gpi_set_log_handler(py_gpi_log_handler, nullptr);
 }
 
 void py_gpi_logger_finalize() {
-    gpi_clear_log_handler();
+    gpi_set_log_handler(fallback_log_handler, fallback_log_userdata);
     Py_XDECREF(m_log_func);
     Py_XDECREF(m_get_logger);
     for (auto &elem : m_logger_map) {
