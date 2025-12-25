@@ -783,7 +783,7 @@ static PyObject *initialize_logger(PyObject *, PyObject *args) {
         PyErr_Print();
         return NULL;
     }
-    py_gpi_logger_initialize(log_func, get_logger);
+    pygpi_logging_configure(log_func, get_logger);
     Py_RETURN_NONE;
 }
 

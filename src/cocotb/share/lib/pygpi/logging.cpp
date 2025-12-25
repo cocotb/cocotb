@@ -52,6 +52,12 @@ static void py_gpi_log_handler(void *, const char *name, int level,
         return;
     }
 
+    // If we haven't configured yet, use the fallback log handler
+    if (!m_log_func) {
+        return fallback_log_handler(fallback_log_userdata, name, level,
+                                    pathname, funcname, lineno, msg, argp);
+    }
+
     va_list argp_copy;
     va_copy(argp_copy, argp);
     DEFER(va_end(argp_copy));
@@ -191,16 +197,20 @@ void py_gpi_log_set_level(int level) {
     gpi_native_logger_set_level(level);
 }
 
-void py_gpi_logger_initialize(PyObject *log_func, PyObject *get_logger) {
-    Py_INCREF(log_func);
-    Py_INCREF(get_logger);
-    m_log_func = log_func;
-    m_get_logger = get_logger;
+void pygpi_logging_initialize() {
+    // Default to using the fallback handler until configured
     gpi_get_log_handler(&fallback_log_handler, &fallback_log_userdata);
     gpi_set_log_handler(py_gpi_log_handler, nullptr);
 }
 
-void py_gpi_logger_finalize() {
+void pygpi_logging_configure(PyObject *log_func, PyObject *get_logger) {
+    Py_INCREF(log_func);
+    Py_INCREF(get_logger);
+    m_log_func = log_func;
+    m_get_logger = get_logger;
+}
+
+void pygpi_logging_finalize() {
     gpi_set_log_handler(fallback_log_handler, fallback_log_userdata);
     Py_XDECREF(m_log_func);
     Py_XDECREF(m_get_logger);

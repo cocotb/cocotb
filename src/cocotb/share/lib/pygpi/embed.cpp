@@ -88,6 +88,7 @@ static void finalize(void *);
 
 extern "C" PYGPI_EXPORT void initialize(void) {
     pygpi_init_debug();
+    pygpi_logging_initialize();
 
     PYGPI_LOG_TRACE("GPI Init => [ PYGPI Init ]");
     DEFER(PYGPI_LOG_TRACE("[ PYGPI Init ] => GPI Init"));
@@ -215,7 +216,7 @@ static void finalize(void *) {
         PyGILState_Ensure();  // Don't save state as we are calling Py_Finalize
         Py_XDECREF(pEventFn);
         pEventFn = NULL;
-        py_gpi_logger_finalize();
+        pygpi_logging_finalize();
         Py_Finalize();
         python_to_c();
     }

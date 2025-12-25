@@ -13,8 +13,9 @@
 #define PYGPI_EXPORT COCOTB_IMPORT
 #endif
 
-void py_gpi_logger_initialize(PyObject *handler, PyObject *get_logger);
-void py_gpi_logger_finalize();
+void pygpi_logging_initialize();
+void pygpi_logging_configure(PyObject *handler, PyObject *get_logger);
+void pygpi_logging_finalize();
 void py_gpi_log_set_level(int level);
 
 extern PyObject *pEventFn;
