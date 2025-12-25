@@ -28,11 +28,10 @@ as well as users of the GPI.
 #define GPI_EXPORT COCOTB_IMPORT
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern GPI_EXPORT int gpi_debug_enabled;
+
+/** @return The string representation of the GPI log level. */
+GPI_EXPORT const char *gpi_log_level_to_str(int level);
 
 /** Logs a message at a given log level using the current log handler.
  * The caller provides explicit location information.
@@ -126,65 +125,5 @@ GPI_EXPORT void gpi_log_(const char *name, int level, const char *pathname,
 GPI_EXPORT void gpi_vlog_(const char *name, int level, const char *pathname,
                           const char *funcname, long lineno, const char *msg,
                           va_list args);
-
-/** @return The string representation of the GPI log level. */
-GPI_EXPORT const char *gpi_log_level_to_str(int level);
-
-/** Clear the current custom log handler and use native logger. */
-GPI_EXPORT void gpi_clear_log_handler(void);
-
-/*******************************************************************************
- * GPI Native Logger
- *******************************************************************************/
-
-/** Log a message using the native log handler.
- * User is expected to populate all arguments to this function.
- * @param extra_name  Name of the "gpi" child logger, "" for the root logger
- * @param level       Level at which to log the message
- * @param pathname    Name of the file where the call site is located
- * @param funcname    Name of the function where the call site is located
- * @param lineno      Line number of the call site
- * @param msg         The message to log, uses C-sprintf-style format specifier
- * @param ...         Additional arguments; formatted and inserted in message
- *                    according to format specifier in msg argument
- */
-#define gpi_native_logger_log(extra_name, level, pathname, funcname, lineno, \
-                              ...)                                           \
-    gpi_native_logger_log_(MAKE_LOG_NAME_(extra_name), level, pathname,      \
-                           funcname, lineno, __VA_ARGS__)
-
-// Don't call this function directly unless the name is "gpi" or starts with
-// "gpi."
-GPI_EXPORT void gpi_native_logger_log_(const char *name, int level,
-                                       const char *pathname,
-                                       const char *funcname, long lineno,
-                                       const char *msg, ...);
-
-/** Log a message using the native log handler.
- * User is expected to populate all arguments to this function.
- * @param extra_name  Name of the "gpi" child logger, "" for the root logger
- * @param level       Level at which to log the message
- * @param pathname    Name of the file where the call site is located
- * @param funcname    Name of the function where the call site is located
- * @param lineno      Line number of the call site
- * @param msg         The message to log, uses C-sprintf-style format specifier
- * @param args        Additional arguments; formatted and inserted in message
- *                    according to format specifier in msg argument
- */
-#define gpi_native_logger_vlog(extra_name, level, pathname, funcname, lineno, \
-                               msg, args)                                     \
-    gpi_native_logger_vlog_(MAKE_LOG_NAME_(extra_name), level, pathname,      \
-                            funcname, lineno, msg, args)
-
-// Don't call this function directly unless the name is "gpi" or starts with
-// "gpi."
-GPI_EXPORT void gpi_native_logger_vlog_(const char *name, int level,
-                                        const char *pathname,
-                                        const char *funcname, long lineno,
-                                        const char *msg, va_list args);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* COCOTB_GPI_LOGGING_H_ */

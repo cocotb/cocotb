@@ -16,85 +16,17 @@
 
 #include "../utils.hpp"  // DEFER
 
-int gpi_debug_enabled = 0;
-
-static gpi_log_handler_ftype current_handler = nullptr;
-static void *current_userdata = nullptr;
-
-extern "C" void gpi_log_(const char *name, int level, const char *pathname,
-                         const char *funcname, long lineno, const char *msg,
-                         ...) {
-    va_list argp;
-    va_start(argp, msg);
-    gpi_vlog_(name, level, pathname, funcname, lineno, msg, argp);
-    va_end(argp);
-}
-
-extern "C" void gpi_vlog_(const char *name, int level, const char *pathname,
-                          const char *funcname, long lineno, const char *msg,
-                          va_list argp) {
-    if (current_handler) {
-        (*current_handler)(current_userdata, name, level, pathname, funcname,
-                           lineno, msg, argp);
-    } else {
-        gpi_native_logger_vlog_(name, level, pathname, funcname, lineno, msg,
-                                argp);
-    }
-}
-
-extern "C" void gpi_get_log_handler(gpi_log_handler_ftype *handler,
-                                    void **userdata) {
-    *handler = current_handler;
-    *userdata = current_userdata;
-}
-
-extern "C" void gpi_set_log_handler(gpi_log_handler_ftype handler,
-                                    void *userdata) {
-    current_handler = handler;
-    current_userdata = userdata;
-}
-
-extern "C" void gpi_clear_log_handler(void) {
-    current_handler = nullptr;
-    current_userdata = nullptr;
-}
-
-static const std::map<int, const char *> log_level_str_table = {
-    {GPI_TRACE, "TRACE"},     {GPI_DEBUG, "DEBUG"}, {GPI_INFO, "INFO"},
-    {GPI_WARNING, "WARNING"}, {GPI_ERROR, "ERROR"}, {GPI_CRITICAL, "CRITICAL"},
-};
-
-static const char *unknown_level = "------";
-
-extern "C" const char *gpi_log_level_to_str(int level) {
-    const char *log_level_str = unknown_level;
-    auto idx = log_level_str_table.find(level);
-    if (idx != log_level_str_table.end()) {
-        log_level_str = idx->second;
-    }
-    return log_level_str;
-}
-
 /*******************************************************************************
- * GPI Native Logger
+ * GPI Internal API
  *******************************************************************************/
+
+int gpi_debug_enabled = 0;
 
 static int current_native_logger_level = GPI_NOTSET;
 
-extern "C" void gpi_native_logger_log_(const char *name, int level,
-                                       const char *pathname,
-                                       const char *funcname, long lineno,
-                                       const char *msg, ...) {
-    va_list argp;
-    va_start(argp, msg);
-    gpi_native_logger_vlog_(name, level, pathname, funcname, lineno, msg, argp);
-    va_end(argp);
-}
-
-extern "C" void gpi_native_logger_vlog_(const char *name, int level,
-                                        const char *pathname,
-                                        const char *funcname, long lineno,
-                                        const char *msg, va_list argp) {
+static void gpi_native_logger_vlog(void *, const char *name, int level,
+                                   const char *pathname, const char *funcname,
+                                   long lineno, const char *msg, va_list argp) {
     int curr_level = current_native_logger_level;
     if (current_native_logger_level == GPI_NOTSET) {
         curr_level = GPI_INFO;
@@ -162,8 +94,58 @@ extern "C" void gpi_native_logger_vlog_(const char *name, int level,
     fflush(stdout);
 }
 
+static gpi_log_handler_ftype current_handler = gpi_native_logger_vlog;
+static void *current_userdata = nullptr;
+
+void gpi_log_(const char *name, int level, const char *pathname,
+              const char *funcname, long lineno, const char *msg, ...) {
+    va_list argp;
+    va_start(argp, msg);
+    gpi_vlog_(name, level, pathname, funcname, lineno, msg, argp);
+    va_end(argp);
+}
+
+void gpi_vlog_(const char *name, int level, const char *pathname,
+               const char *funcname, long lineno, const char *msg,
+               va_list argp) {
+    (*current_handler)(current_userdata, name, level, pathname, funcname,
+                       lineno, msg, argp);
+}
+
+static const std::map<int, const char *> log_level_str_table = {
+    {GPI_TRACE, "TRACE"},     {GPI_DEBUG, "DEBUG"}, {GPI_INFO, "INFO"},
+    {GPI_WARNING, "WARNING"}, {GPI_ERROR, "ERROR"}, {GPI_CRITICAL, "CRITICAL"},
+};
+
+static const char *unknown_level = "------";
+
+const char *gpi_log_level_to_str(int level) {
+    const char *log_level_str = unknown_level;
+    auto idx = log_level_str_table.find(level);
+    if (idx != log_level_str_table.end()) {
+        log_level_str = idx->second;
+    }
+    return log_level_str;
+}
+
+/*******************************************************************************
+ * GPI Logger Public API
+ *******************************************************************************/
+
 extern "C" int gpi_native_logger_set_level(int level) {
     int old_level = current_native_logger_level;
     current_native_logger_level = level;
     return old_level;
+}
+
+extern "C" void gpi_get_log_handler(gpi_log_handler_ftype *handler,
+                                    void **userdata) {
+    *handler = current_handler;
+    *userdata = current_userdata;
+}
+
+extern "C" void gpi_set_log_handler(gpi_log_handler_ftype handler,
+                                    void *userdata) {
+    current_handler = handler;
+    current_userdata = userdata;
 }
