@@ -15,7 +15,7 @@
 #include <string>
 
 #include "../utils.hpp"      // DEFER
-#include "./pygpi_priv.hpp"  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize, LOG_* macros, PYGPI_EXPORT
+#include "./pygpi_priv.hpp"  // pygpi_logger_set_level, pygpi_logger_initialize, pygpi_logger_finalize, LOG_* macros, PYGPI_EXPORT
 
 #if defined(_WIN32)
 #include <windows.h>

@@ -14,7 +14,7 @@
 #include "../utils.hpp"  // DEFER
 #include "./pygpi_priv.hpp"
 
-static int py_gpi_log_level = GPI_NOTSET;
+static int pygpi_log_level = GPI_NOTSET;
 
 static PyObject *m_log_func = nullptr;
 static std::map<std::string, PyObject *> m_logger_map;
@@ -43,12 +43,12 @@ static void fallback_handler(const char *name, int level, const char *pathname,
                          args2);
 }
 
-static void py_gpi_log_handler(void *, const char *name, int level,
-                               const char *pathname, const char *funcname,
-                               long lineno, const char *msg, va_list argp) {
+static void pygpi_log_handler(void *, const char *name, int level,
+                              const char *pathname, const char *funcname,
+                              long lineno, const char *msg, va_list argp) {
     // Always pass through messages when NOTSET to let Python make the decision.
     // Otherwise, skip logs using the local log level for better performance.
-    if (py_gpi_log_level != GPI_NOTSET && level < py_gpi_log_level) {
+    if (pygpi_log_level != GPI_NOTSET && level < pygpi_log_level) {
         return;
     }
 
@@ -183,24 +183,24 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     Py_DECREF(handler_ret);
 }
 
-void py_gpi_log(int level, const char *pathname, const char *funcname,
-                long lineno, const char *fmt, ...) {
+void pygpi_log(int level, const char *pathname, const char *funcname,
+               long lineno, const char *fmt, ...) {
     va_list argp;
     va_start(argp, fmt);
     DEFER(va_end(argp));
-    py_gpi_log_handler(nullptr, "pygpi", level, pathname, funcname, lineno, fmt,
-                       argp);
+    pygpi_log_handler(nullptr, "pygpi", level, pathname, funcname, lineno, fmt,
+                      argp);
 }
 
-void py_gpi_log_set_level(int level) {
-    py_gpi_log_level = level;
+void pygpi_logging_set_level(int level) {
+    pygpi_log_level = level;
     gpi_native_logger_set_level(level);
 }
 
 void pygpi_logging_initialize() {
     // Default to using the fallback handler until configured
     gpi_get_log_handler(&fallback_log_handler, &fallback_log_userdata);
-    gpi_set_log_handler(py_gpi_log_handler, nullptr);
+    gpi_set_log_handler(pygpi_log_handler, nullptr);
 }
 
 void pygpi_logging_configure(PyObject *log_func, PyObject *get_logger) {

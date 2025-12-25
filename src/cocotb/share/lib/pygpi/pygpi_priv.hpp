@@ -16,18 +16,18 @@
 void pygpi_logging_initialize();
 void pygpi_logging_configure(PyObject *handler, PyObject *get_logger);
 void pygpi_logging_finalize();
-void py_gpi_log_set_level(int level);
+void pygpi_logging_set_level(int level);
 
 extern PyObject *pEventFn;
 extern int pygpi_debug_enabled;
 extern int python_context_tracing_enabled;
 extern int is_python_context;
 
-void py_gpi_log(int level, const char *pathname, const char *funcname,
-                long lineno, const char *fmt, ...);
+void pygpi_log(int level, const char *pathname, const char *funcname,
+               long lineno, const char *fmt, ...);
 
 #define PYGPI_LOG_(level, ...) \
-    py_gpi_log(level, __FILE__, __func__, __LINE__, __VA_ARGS__)
+    pygpi_log(level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
 /** Logs a message at TRACE log level if PYGPI tracing is enabled */
 #define PYGPI_LOG_TRACE(...)                    \

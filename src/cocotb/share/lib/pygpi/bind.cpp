@@ -18,7 +18,7 @@
 #include <cstdint>
 
 #include "../utils.hpp"      // DEFER
-#include "./pygpi_priv.hpp"  // py_gpi_logger_set_level, c_to_python, python_to_c
+#include "./pygpi_priv.hpp"  // pygpi_logger_set_level, c_to_python, python_to_c
 
 // This file defines the routines available to Python
 
@@ -771,7 +771,7 @@ static PyObject *set_gpi_log_level(PyObject *, PyObject *args) {
         return NULL;
     }
 
-    py_gpi_log_set_level(l_level);
+    pygpi_logging_set_level(l_level);
 
     Py_RETURN_NONE;
 }
