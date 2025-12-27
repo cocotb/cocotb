@@ -112,7 +112,7 @@ def test_report(tmp_path: Path) -> None:
             line=18,
             time=4.0,
             error=e,
-            attachments=(tmp_path / "non-existing.log",),
+            attachments=(tmp_path / "sim.log",),
         )
 
     xunit.write(results)
@@ -247,11 +247,11 @@ def test_report(tmp_path: Path) -> None:
     # Testcase 4
     properties = testcases[4].findall("properties")[0].findall("property")
 
-    assert len(properties) == 2
+    assert len(properties) == 3
     assert len(testcases[4].findall("error")) == 1
     assert len(testcases[4].findall("failure")) == 0
     assert len(testcases[4].findall("skipped")) == 0
-    assert len(testcases[4].findall("system-out")) == 0
+    assert len(testcases[4].findall("system-out")) == 1
     assert len(testcases[4].findall("system-err")) == 0
 
 

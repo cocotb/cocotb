@@ -181,12 +181,9 @@ class XUnitReporter:
                     system_out += os.linesep
 
             for attachment in attachments or ():
-                path: Path = Path(attachment)
-
-                if path.exists():
-                    path = self._normalize_path(path)
-                    _add_property(properties, "attachment", path)
-                    system_out = f"{system_out}[[ATTACHMENT|{path}]]{os.linesep}"
+                path = self._normalize_path(attachment)
+                _add_property(properties, "attachment", path)
+                system_out = f"{system_out}[[ATTACHMENT|{path}]]{os.linesep}"
 
         if failure:
             self._add_simple(testcase, "failure", failure)

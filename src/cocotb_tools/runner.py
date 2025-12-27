@@ -531,7 +531,7 @@ class Runner(ABC):
             attachments: list[PathLike] = []
 
             if self.log_file:
-                attachments.append(self.test_dir / self.log_file)
+                attachments.append(self.log_file)
 
             if waves_file:
                 attachments.append(self.test_dir / waves_file)
