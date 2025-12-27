@@ -4,7 +4,13 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""xUnit XML reporter."""
+"""xUnit XML reporter.
+
+Supported xUnit families:
+
+- `xunit1 <https://github.com/jenkinsci/xunit-plugin/blob/xunit-1.104/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd>`_ legacy
+- `xunit2 <https://github.com/jenkinsci/xunit-plugin/blob/xunit-2.3.2/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd>`_ default
+"""
 
 from __future__ import annotations
 

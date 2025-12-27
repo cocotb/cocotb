@@ -195,10 +195,12 @@ Discovering Tests
 .. envvar:: COCOTB_RESULTS_FILE
 
     The file name where xUnit XML tests results are stored. If not provided, the default is :file:`results.xml`.
-    Generated XML file is fully compatible with xUnit version 1.x (``xunit1``) and 2.x (``xunit2``).
-    The default xUnit format is ``xunit2``. The ``xunit1`` format is used in GitLab CI environments.
 
     .. versionadded:: 1.3
+
+    .. versionchanged:: 2.1
+        Generated XML file is fully compatible with xUnit version 1.x (`xunit1`_) and 2.x (`xunit2`_).
+        The default xUnit format is `xunit2`_. The `xunit1`_ format is used in GitLab CI environments.
 
 .. envvar:: COCOTB_ATTACHMENTS
 
@@ -976,3 +978,7 @@ It should not be considered public API, but is documented here for developers of
     :undoc-members:
     :member-order: bysource
     :synopsis: Interface to simulator.
+
+
+.. _xunit1: https://github.com/jenkinsci/xunit-plugin/blob/xunit-1.104/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd
+.. _xunit2: https://github.com/jenkinsci/xunit-plugin/blob/xunit-2.3.2/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd
