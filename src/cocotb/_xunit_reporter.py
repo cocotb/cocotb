@@ -87,11 +87,11 @@ class XUnitReporter:
         """Create new instance of xUnit reporter.
 
         Args:
-            name:        Name of xUnit reporter.
+            name: Name of xUnit reporter.
             environment: Name of environment where tests are running. If not provided, it will be detected automatically.
-            family:      Name of xUnit family. If not provided, it will be detected based on environment.
-            workspace:   Path where tests are running. If not provided, it will be detected based on environment.
-            kwargs:      Default properties for all created test suites.
+            family: Name of xUnit family. If not provided, it will be detected based on environment.
+            workspace: Path where tests are running. If not provided, it will be detected based on environment.
+            kwargs: Default properties for all created test suites.
         """
         self._root: Element = Element("testsuites", name=name)
         self._testsuite: TestSuite | None = None
@@ -136,18 +136,18 @@ class XUnitReporter:
         """Create and add new test case to test suite.
 
         Args:
-            name:        Name of test.
-            classname:   Path to module (using the ``.`` dot as separator) where test is located.
-            file:        Path to file with test.
-            line:        Line number of test in file.
-            time:        Wall clock execution time of test in seconds.
-            system_out:  Captured standard output from test case. It will also include XML file attachments.
-            system_err:  Captured standard error from test case.
+            name: Name of test.
+            classname: Path to module (using the ``.`` dot as separator) where test is located.
+            file: Path to file with test.
+            line: Line number of test in file.
+            time: Wall clock execution time of test in seconds.
+            system_out: Captured standard output from test case. It will also include XML file attachments.
+            system_err: Captured standard error from test case.
             attachments: List of attachments to add.
-            failure:     Fail test case.
-            error:       Error test case.
-            skipped:     Skip test case.
-            kwargs:      Additional testcase properties.
+            failure: Fail test case.
+            error: Error test case.
+            skipped: Skip test case.
+            kwargs: Additional testcase properties.
         """
         testsuite: TestSuite = self._get_testsuite(classname or "cocotb")
 
@@ -288,9 +288,9 @@ class XUnitReporter:
         """Create and add a simple XML element to XML parent.
 
         Args:
-            parent:  XML parent element.
-            name:    Name of XML element.
-            arg:     Argument of XML element.
+            parent: XML parent element.
+            name: Name of XML element.
+            arg: Argument of XML element.
 
         Returns:
             Added XML element.
@@ -412,7 +412,7 @@ def _add_property(parent: Element, name: str, value: object) -> None:
 
     Args:
         parent: XML parent element.
-        name:   Name of property.
-        value:  Value of property.
+        name: Name of property.
+        value: Value of property.
     """
     SubElement(parent, "property", name=_escape(name), value=_escape(value))
