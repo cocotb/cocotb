@@ -140,7 +140,7 @@ class XUnitReporter:
             classname:   Path to module (using the ``.`` dot as separator) where test is located.
             file:        Path to file with test.
             line:        Line number of test in file.
-            time:        Real-time execution of test in seconds.
+            time:        Wall clock execution time of test in seconds.
             system_out:  Captured standard output from test case. It will also include XML file attachments.
             system_err:  Captured standard error from test case.
             attachments: List of attachments to add.
