@@ -1,0 +1,1 @@
+Detecting CI environments: GitHub Actions, GitLab CI and Jenkins CI for Junit XML tests results file.

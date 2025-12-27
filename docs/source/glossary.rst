@@ -4,6 +4,7 @@ Glossary
 ========
 
 .. glossary::
+   :sorted:
 
    BFM
       Bus Functional Model

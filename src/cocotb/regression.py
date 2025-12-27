@@ -39,7 +39,7 @@ from cocotb._utils import (
     remove_traceback_frames,
     safe_divide,
 )
-from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
+from cocotb._xunit_reporter import XUnitReporter
 from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
 from cocotb.task import Task
@@ -163,16 +163,11 @@ class RegressionManager:
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_state: Any
 
-        # Setup XUnit
+        # Setup xUnit
         ###################
-
-        results_filename = os.getenv("COCOTB_RESULTS_FILE", "results.xml")
-        suite_name = os.getenv("COCOTB_RESULT_TESTSUITE", "all")
-        package_name = os.getenv("COCOTB_RESULT_TESTPACKAGE", "all")
-
-        self.xunit = XUnitReporter(filename=results_filename)
-        self.xunit.add_testsuite(name=suite_name, package=package_name)
-        self.xunit.add_property(name="random_seed", value=str(cocotb.RANDOM_SEED))
+        self.xunit: XUnitReporter = XUnitReporter(
+            random_seed=cocotb.RANDOM_SEED,
+        )
 
     def discover_tests(self, *modules: str) -> None:
         """Discover tests in files automatically.
@@ -410,7 +405,7 @@ class RegressionManager:
         self._log_test_summary()
 
         # Generate output reports
-        self.xunit.write()
+        self.xunit.write(os.getenv("COCOTB_RESULTS_FILE", "results.xml"))
 
         # TODO refactor initialization and finalization into their own module
         # to prevent circular imports requiring local imports
@@ -556,17 +551,19 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test is excluded by filters."""
 
         # write out xunit results
-        lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
             file=inspect.getfile(self._test.func),
-            lineno=repr(lineno),
-            time=repr(0),
-            sim_time_ns=repr(0),
-            ratio_time=repr(0),
+            line=self._get_lineno(self._test),
+            time=0,
+            # Added as properties
+            sim_time_duration=0.0,
+            sim_time_unit="ns",
+            sim_time_ratio=0.0,
+            # Reason
+            skipped="Test was excluded",
         )
-        self.xunit.add_skipped()
 
         # do not log anything, nor save details for the summary
 
@@ -587,17 +584,19 @@ class RegressionManager:
         )
 
         # write out xunit results
-        lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
             file=inspect.getfile(self._test.func),
-            lineno=repr(lineno),
-            time=repr(0),
-            sim_time_ns=repr(0),
-            ratio_time=repr(0),
+            line=self._get_lineno(self._test),
+            time=0,
+            # Added as properties
+            sim_time_duration=0.0,
+            sim_time_unit="ns",
+            sim_time_ratio=0.0,
+            # Reason
+            skipped="Test was skipped",
         )
-        self.xunit.add_skipped()
 
         # save details for summary
         self._test_results.append(
@@ -630,17 +629,21 @@ class RegressionManager:
         )
 
         # write out xunit results
-        lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
             file=inspect.getfile(self._test.func),
-            lineno=repr(lineno),
-            time=repr(0),
-            sim_time_ns=repr(0),
-            ratio_time=repr(0),
+            line=self._get_lineno(self._test),
+            time=0,
+            # Added as properties
+            sim_time_duration=0.0,
+            sim_time_unit="ns",
+            sim_time_ratio=0.0,
+            # Reason
+            failure="Test initialization failed",
+            system_err=f"Test failed with COCOTB_RANDOM_SEED={cocotb.RANDOM_SEED}",
+            attachments=os.getenv("COCOTB_ATTACHMENTS", "").split(","),
         )
-        self.xunit.add_failure(msg="Test initialization failed")
 
         # save details for summary
         self._test_results.append(
@@ -683,16 +686,16 @@ class RegressionManager:
         )
 
         # write out xunit results
-        ratio_time = safe_divide(sim_time_ns, wall_time_s)
-        lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
             file=inspect.getfile(self._test.func),
-            lineno=repr(lineno),
-            time=repr(wall_time_s),
-            sim_time_ns=repr(sim_time_ns),
-            ratio_time=repr(ratio_time),
+            line=self._get_lineno(self._test),
+            time=wall_time_s,
+            # Added as properties
+            sim_time_duration=sim_time_ns,
+            sim_time_unit="ns",
+            sim_time_ratio=safe_divide(sim_time_ns, wall_time_s),
         )
 
         # update running passed/failed/skipped counts
@@ -732,19 +735,20 @@ class RegressionManager:
         )
 
         # write out xunit results
-        ratio_time = safe_divide(sim_time_ns, wall_time_s)
-        lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
             file=inspect.getfile(self._test.func),
-            lineno=repr(lineno),
-            time=repr(wall_time_s),
-            sim_time_ns=repr(sim_time_ns),
-            ratio_time=repr(ratio_time),
-        )
-        self.xunit.add_failure(
-            error_type=type(result).__name__, error_msg=bin_xml_escape(result)
+            line=self._get_lineno(self._test),
+            time=wall_time_s,
+            # Added as properties
+            sim_time_duration=sim_time_ns,
+            sim_time_unit="ns",
+            sim_time_ratio=safe_divide(sim_time_ns, wall_time_s),
+            # Reason
+            failure=result or msg,
+            system_err=f"Test failed with COCOTB_RANDOM_SEED={cocotb.RANDOM_SEED}",
+            attachments=os.getenv("COCOTB_ATTACHMENTS", "").split(","),
         )
 
         # update running passed/failed/skipped counts

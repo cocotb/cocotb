@@ -1,0 +1,1 @@
+Generated JUnit XML tests results file is now compatible with xUnit 1.x (``xunit1``) and 2.x (``xunit2``).

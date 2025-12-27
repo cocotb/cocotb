@@ -28,15 +28,13 @@ def get_results(results_xml_file: Path) -> tuple[int, int]:
             f"ERROR: Simulation terminated abnormally. Results file {results_xml_file} not found."
         )
 
-    num_tests = 0
-    num_failed = 0
+    num_tests: int = 0
+    num_failed: int = 0
 
-    tree = ElementTree.parse(results_xml_file)
-    for ts in tree.iter("testsuite"):
-        for tc in ts.iter("testcase"):
-            num_tests += 1
-            for _ in tc.iter("failure"):
-                num_failed += 1
+    for testsuite in ElementTree.parse(results_xml_file).getroot().findall("testsuite"):
+        num_tests += int(testsuite.get("tests", 0))
+        num_failed += int(testsuite.get("failures", 0))
+        num_failed += int(testsuite.get("errors", 0))
 
     return (num_tests, num_failed)
 
