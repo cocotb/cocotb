@@ -177,22 +177,22 @@ class XUnitReporter:
                     system_out = f"{system_out}[[ATTACHMENT|{path}]]{os.linesep}"
 
         if failure:
-            _add_simple(testcase, "failure", failure)
+            self._add_simple(testcase, "failure", failure)
             testsuite.failures += 1
 
         if error:
-            _add_simple(testcase, "error", error)
+            self._add_simple(testcase, "error", error)
             testsuite.errors += 1
 
         if skipped:
-            _add_simple(testcase, "skipped", skipped)
+            self._add_simple(testcase, "skipped", skipped)
             testsuite.skipped += 1
 
         if system_out:
-            SubElement(testcase, "system-out").text = _escape(system_out)
+            SubElement(testcase, "system-out").text = self._normalize_text(system_out)
 
         if system_err:
-            SubElement(testcase, "system-err").text = _escape(system_err)
+            SubElement(testcase, "system-err").text = self._normalize_text(system_err)
 
     def write(self, filename: Path | str) -> None:
         """Write xUnit report to file."""
@@ -259,6 +259,48 @@ class XUnitReporter:
             return path.resolve().relative_to(self._workspace)
         except ValueError:
             return path.resolve()
+
+    def _add_simple(
+        self,
+        parent: Element,
+        name: str,
+        arg: bool | str | BaseException | None = None,
+    ) -> Element:
+        """Create and add a simple XML element to XML parent.
+
+        Args:
+            parent:  XML parent element.
+            name:    Name of XML element.
+            arg:     Argument of XML element.
+
+        Returns:
+            Added XML element.
+        """
+        message: str = _escape(arg).strip()
+
+        if message:
+            message = message.splitlines()[0]
+
+        if isinstance(arg, BaseException):
+            kind: str = _escape(type(arg).__name__)
+            element: Element = SubElement(parent, name, message=message, type=kind)
+            text: str = self._normalize_text(
+                "".join(format_exception(type(arg), arg, arg.__traceback__))
+            )
+
+            if text:
+                element.text = text
+
+            return element
+
+        if isinstance(arg, str) and message:
+            return SubElement(parent, name, message=message)
+
+        return SubElement(parent, name)
+
+    def _normalize_text(self, text: str) -> str:
+        """Replace absolute paths with relative."""
+        return _escape(text.replace(f"{self._workspace}{os.path.sep}", ""))
 
 
 def _detect_environment() -> Environment | None:
@@ -354,41 +396,3 @@ def _add_property(parent: Element, name: str, value: object) -> None:
         value:  Value of property.
     """
     SubElement(parent, "property", name=_escape(name), value=_escape(value))
-
-
-def _add_simple(
-    parent: Element,
-    name: str,
-    arg: bool | str | BaseException | None = None,
-) -> Element:
-    """Create and add a simple XML element to XML parent.
-
-    Args:
-        parent:  XML parent element.
-        name:    Name of XML element.
-        arg:     Argument of XML element.
-
-    Returns:
-        Added XML element.
-    """
-    message: str = _escape(arg).strip()
-
-    if message:
-        message = message.splitlines()[0]
-
-    if isinstance(arg, BaseException):
-        kind: str = _escape(type(arg).__name__)
-        element: Element = SubElement(parent, name, message=message, type=kind)
-        text: str = _escape(
-            "".join(format_exception(type(arg), arg, arg.__traceback__))
-        )
-
-        if text:
-            element.text = text
-
-        return element
-
-    if isinstance(arg, str) and message:
-        return SubElement(parent, name, message=message)
-
-    return SubElement(parent, name)
