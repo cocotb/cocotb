@@ -43,7 +43,14 @@ _INVALID_CHARS: re.Pattern[str] = re.compile(
 
 
 class TestSuite:
+    """xUnit test suite."""
+
     def __init__(self, element: Element) -> None:
+        """Create new instance of test suite.
+
+        Args:
+            element: XML element of test suite.
+        """
         self.element: Element = element
         self.errors: int = 0
         self.failures: int = 0
@@ -52,6 +59,7 @@ class TestSuite:
         self.time: float = 0.0
 
     def update(self) -> None:
+        """Update all test suite statistic counters."""
         self.element.set("errors", str(self.errors))
         self.element.set("failures", str(self.failures))
         self.element.set("skipped", str(self.skipped))
@@ -60,6 +68,8 @@ class TestSuite:
 
 
 class XUnitReporter:
+    """xUnit reporter."""
+
     def __init__(
         self,
         name: str = "cocotb tests",
@@ -72,7 +82,7 @@ class XUnitReporter:
 
         Args:
             name:        Name of xUnit reporter.
-            environment: Name of environment where tests are running. If not provided, it will be detected it automatically.
+            environment: Name of environment where tests are running. If not provided, it will be detected automatically.
             family:      Name of xUnit family. If not provided, it will be detected based on environment.
             workspace:   Path where tests are running. If not provided, it will be detected based on environment.
             kwargs:      Default properties for all created test suites.
@@ -89,7 +99,7 @@ class XUnitReporter:
 
     @property
     def workspace(self) -> Path:
-        """Absolute path to the workspace where tests are run."""
+        """Absolute path to the workspace where tests are running."""
         return self._workspace
 
     @property
@@ -99,7 +109,7 @@ class XUnitReporter:
 
     @property
     def environment(self) -> Environment | None:
-        """Name of environment where tests are run."""
+        """Name of environment where tests are running."""
         return self._environment
 
     def add_testcase(
@@ -125,6 +135,8 @@ class XUnitReporter:
             file:        Path to file with test.
             line:        Line number of test in file.
             time:        Real-time execution of test in seconds.
+            system_out:  Captured standard output from test case. It will also include XML file attachments.
+            system_err:  Captured standard error from test case.
             attachments: List of attachments to add.
             failure:     Fail test case.
             error:       Error test case.
@@ -195,7 +207,11 @@ class XUnitReporter:
             SubElement(testcase, "system-err").text = self._normalize_text(system_err)
 
     def write(self, filename: Path | str) -> None:
-        """Write xUnit report to file."""
+        """Write xUnit report to file.
+
+        Args:
+            filename: Path to file where to write tests results.
+        """
         for testsuite in self._testsuites.values():
             testsuite.update()
 
@@ -299,7 +315,7 @@ class XUnitReporter:
         return SubElement(parent, name)
 
     def _normalize_text(self, text: str) -> str:
-        """Replace absolute paths with relative."""
+        """Replace all absolute paths with relative ones."""
         return _escape(text.replace(f"{self._workspace}{os.path.sep}", ""))
 
 
@@ -364,6 +380,7 @@ def _get_workspace(environment: Environment | None) -> Path:
 
 
 def _escape_code(matchobj: re.Match[str]) -> str:
+    """Visually escape invalid XML character."""
     value = ord(matchobj.group())
 
     if value <= 0xFF:
