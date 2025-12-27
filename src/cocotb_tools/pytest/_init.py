@@ -41,6 +41,10 @@ def run_regression() -> None:
         toplevel=_env.as_str("COCOTB_TOPLEVEL"),
         # Initialization value for the random generator
         seed=cocotb.RANDOM_SEED,
+        # If defined, convert all absolute paths to relative ones
+        relative_to=_env.as_str("COCOTB_RESULTS_RELATIVE_TO"),
+        # List of file attachments to be included in created test reports
+        attachments=_env.as_list("COCOTB_RESULTS_ATTACHMENTS"),
     )
 
     manager.start_regression()

@@ -36,7 +36,7 @@ from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
 from cocotb._test_manager import TestManager
 from cocotb._utils import DocEnum, safe_divide
-from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
+from cocotb._xunit_reporter import XUnitReporter
 from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
 from cocotb.task import Task
@@ -173,16 +173,22 @@ class RegressionManager:
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_state: Any
 
-        # Setup XUnit
+        # Setup xUnit
         ###################
-
-        results_filename = os.getenv("COCOTB_RESULTS_FILE", "results.xml")
-        suite_name = os.getenv("COCOTB_RESULT_TESTSUITE", "all")
-        package_name = os.getenv("COCOTB_RESULT_TESTPACKAGE", "all")
-
-        self.xunit = XUnitReporter(filename=results_filename)
-        self.xunit.add_testsuite(name=suite_name, package=package_name)
-        self.xunit.add_property(name="random_seed", value=str(cocotb.RANDOM_SEED))
+        self.xunit: XUnitReporter = XUnitReporter(
+            relative_to=os.getenv("COCOTB_RESULTS_RELATIVE_TO"),
+            # Common default properties that will be added to all created test cases
+            default_properties={
+                "cocotb": True,
+                "random_seed": self._regression_seed,
+                "sim_time_unit": "ns",
+                "sim_time_start": 0.0,
+                "sim_time_stop": 0.0,
+                "sim_time_duration": 0.0,
+                "sim_time_ratio": 0.0,
+                "attachment": os.getenv("COCOTB_RESULTS_ATTACHMENTS", "").split(","),
+            },
+        )
 
     def discover_tests(self, *modules: str) -> None:
         """Discover tests in files automatically.
@@ -355,6 +361,7 @@ class RegressionManager:
                     self._sim_failure,
                     0,
                     0,
+                    0,
                 )
                 continue
 
@@ -423,7 +430,7 @@ class RegressionManager:
         self._log_test_summary()
 
         # Generate output reports
-        self.xunit.write()
+        self.xunit.write(os.getenv("COCOTB_RESULTS_FILE", "results.xml"))
 
         # We shut down here since the shutdown callback isn't called if stop_simulator is called.
         shutdown._shutdown()
@@ -436,7 +443,8 @@ class RegressionManager:
 
         # compute wall time
         wall_time = time.time() - self._start_time
-        sim_time_ns = get_sim_time("ns") - self._start_sim_time
+        sim_time_start: float = self._start_sim_time
+        sim_time_stop: float = get_sim_time("ns")
 
         cocotb.RANDOM_SEED = self._regression_seed
         random.setstate(self._random_state)
@@ -445,7 +453,8 @@ class RegressionManager:
         self._score_test(
             self._running_test.exception(),
             wall_time,
-            sim_time_ns,
+            sim_time_start,
+            sim_time_stop,
         )
 
         # Run next test.
@@ -455,7 +464,8 @@ class RegressionManager:
         self,
         exc: BaseException | None,
         wall_time_s: float,
-        sim_time_ns: float,
+        sim_time_start: float,
+        sim_time_stop: float,
     ) -> None:
         test = self._test
 
@@ -471,7 +481,8 @@ class RegressionManager:
             if test.expect_error:
                 self._record_test_failed(
                     wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
+                    sim_time_start=sim_time_start,
+                    sim_time_stop=sim_time_stop,
                     result=exc,
                     msg="passed but we expected an error",
                 )
@@ -480,7 +491,8 @@ class RegressionManager:
             elif test.expect_fail:
                 self._record_test_failed(
                     wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
+                    sim_time_start=sim_time_start,
+                    sim_time_stop=sim_time_stop,
                     result=exc,
                     msg="passed but we expected a failure",
                 )
@@ -489,7 +501,8 @@ class RegressionManager:
             else:
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
+                    sim_time_start=sim_time_start,
+                    sim_time_stop=sim_time_stop,
                     result=exc,
                     msg=msg,
                 )
@@ -498,7 +511,8 @@ class RegressionManager:
             if isinstance(exc, (AssertionError, Failed)):
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
+                    sim_time_start=sim_time_start,
+                    sim_time_stop=sim_time_stop,
                     result=exc,
                     msg="failed as expected",
                 )
@@ -506,7 +520,8 @@ class RegressionManager:
             else:
                 self._record_test_failed(
                     wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
+                    sim_time_start=sim_time_start,
+                    sim_time_stop=sim_time_stop,
                     result=exc,
                     msg="expected failure, but errored with unexpected type",
                 )
@@ -516,7 +531,8 @@ class RegressionManager:
             if isinstance(exc, test.expect_error):
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
+                    sim_time_start=sim_time_start,
+                    sim_time_stop=sim_time_stop,
                     result=exc,
                     msg="errored as expected",
                 )
@@ -524,7 +540,8 @@ class RegressionManager:
             else:
                 self._record_test_failed(
                     wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
+                    sim_time_start=sim_time_start,
+                    sim_time_stop=sim_time_stop,
                     result=exc,
                     msg="errored with unexpected type",
                 )
@@ -533,7 +550,8 @@ class RegressionManager:
         else:
             self._record_test_failed(
                 wall_time_s=wall_time_s,
-                sim_time_ns=sim_time_ns,
+                sim_time_start=sim_time_start,
+                sim_time_stop=sim_time_stop,
                 result=exc,
                 msg=msg,
             )
@@ -562,17 +580,16 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test is excluded by filters."""
 
         # write out xunit results
-        lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
-            file=inspect.getfile(self._test.func),
-            lineno=repr(lineno),
-            time=repr(0),
-            sim_time_ns=repr(0),
-            ratio_time=repr(0),
+            status="skipped",
+            reason="Test was excluded",
+            extra_properties={
+                "file": inspect.getfile(self._test.func),
+                "line": self._get_lineno(self._test),
+            },
         )
-        self.xunit.add_skipped()
 
         # do not log anything, nor save details for the summary
 
@@ -593,17 +610,16 @@ class RegressionManager:
         )
 
         # write out xunit results
-        lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
-            file=inspect.getfile(self._test.func),
-            lineno=repr(lineno),
-            time=repr(0),
-            sim_time_ns=repr(0),
-            ratio_time=repr(0),
+            status="skipped",
+            reason="Test was skipped",
+            extra_properties={
+                "file": inspect.getfile(self._test.func),
+                "line": self._get_lineno(self._test),
+            },
         )
-        self.xunit.add_skipped()
 
         # save details for summary
         self._test_results.append(
@@ -636,17 +652,17 @@ class RegressionManager:
         )
 
         # write out xunit results
-        lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
-            file=inspect.getfile(self._test.func),
-            lineno=repr(lineno),
-            time=repr(0),
-            sim_time_ns=repr(0),
-            ratio_time=repr(0),
+            status="error",
+            reason="Test initialization failed",
+            system_err=f"Test failed with COCOTB_RANDOM_SEED={self._regression_seed}",
+            extra_properties={
+                "file": inspect.getfile(self._test.func),
+                "line": self._get_lineno(self._test),
+            },
         )
-        self.xunit.add_failure(msg="Test initialization failed")
 
         # save details for summary
         self._test_results.append(
@@ -665,7 +681,8 @@ class RegressionManager:
     def _record_test_passed(
         self,
         wall_time_s: float,
-        sim_time_ns: float,
+        sim_time_start: float,
+        sim_time_stop: float,
         result: BaseException | None,
         msg: str | None,
     ) -> None:
@@ -689,17 +706,22 @@ class RegressionManager:
             exc_info=result,
         )
 
+        sim_time_duration: float = sim_time_stop - sim_time_start
+
         # write out xunit results
-        ratio_time = safe_divide(sim_time_ns, wall_time_s)
-        lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
-            file=inspect.getfile(self._test.func),
-            lineno=repr(lineno),
-            time=repr(wall_time_s),
-            sim_time_ns=repr(sim_time_ns),
-            ratio_time=repr(ratio_time),
+            time=wall_time_s,
+            status="passed",
+            extra_properties={
+                "file": inspect.getfile(self._test.func),
+                "line": self._get_lineno(self._test),
+                "sim_time_start": sim_time_start,
+                "sim_time_stop": sim_time_stop,
+                "sim_time_duration": sim_time_duration,
+                "sim_time_ratio": safe_divide(sim_time_duration, wall_time_s),
+            },
         )
 
         # update running passed/failed/skipped counts
@@ -711,7 +733,7 @@ class RegressionManager:
             _TestResults(
                 test_fullname=self._test.fullname,
                 passed=True,
-                sim_time_ns=sim_time_ns,
+                sim_time_ns=sim_time_duration,
                 wall_time_s=wall_time_s,
             )
         )
@@ -719,7 +741,8 @@ class RegressionManager:
     def _record_test_failed(
         self,
         wall_time_s: float,
-        sim_time_ns: float,
+        sim_time_start: float,
+        sim_time_stop: float,
         result: BaseException | None,
         msg: str | None,
     ) -> None:
@@ -739,20 +762,24 @@ class RegressionManager:
             exc_info=result,
         )
 
+        sim_time_duration: float = sim_time_stop - sim_time_start
+
         # write out xunit results
-        ratio_time = safe_divide(sim_time_ns, wall_time_s)
-        lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
             classname=self._test.module,
-            file=inspect.getfile(self._test.func),
-            lineno=repr(lineno),
-            time=repr(wall_time_s),
-            sim_time_ns=repr(sim_time_ns),
-            ratio_time=repr(ratio_time),
-        )
-        self.xunit.add_failure(
-            error_type=type(result).__name__, error_msg=bin_xml_escape(result)
+            time=wall_time_s,
+            status="failed",
+            reason=result or msg,
+            system_err=f"Test failed with COCOTB_RANDOM_SEED={self._regression_seed}",
+            extra_properties={
+                "file": inspect.getfile(self._test.func),
+                "line": self._get_lineno(self._test),
+                "sim_time_start": sim_time_start,
+                "sim_time_stop": sim_time_stop,
+                "sim_time_duration": sim_time_duration,
+                "sim_time_ratio": safe_divide(sim_time_duration, wall_time_s),
+            },
         )
 
         # update running passed/failed/skipped counts
@@ -764,7 +791,7 @@ class RegressionManager:
             _TestResults(
                 test_fullname=self._test.fullname,
                 passed=False,
-                sim_time_ns=sim_time_ns,
+                sim_time_ns=sim_time_duration,
                 wall_time_s=wall_time_s,
             )
         )

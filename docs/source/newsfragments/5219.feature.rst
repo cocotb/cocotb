@@ -1,0 +1,1 @@
+Generated log and waveform files from simulators will be attached in created JUnit XML tests results file.
