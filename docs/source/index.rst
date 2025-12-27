@@ -116,6 +116,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    install_devel
    custom_flows
    extensions
+   junit
    upgrade-2.0
    update_indexing
    rotating_logger
@@ -171,6 +172,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
 
    building
    Python Code Library Reference <library_reference>
+   JUnit Tests Report Reference <junit_reference>
    GPI Library Reference <library_reference_c>
    simulator_support
    platform_support

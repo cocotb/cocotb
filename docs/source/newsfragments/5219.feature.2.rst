@@ -1,0 +1,1 @@
+Added the :envvar:`COCOTB_RESULTS_ATTACHMENTS` environment variable that allows to attach files as attachments in generated reports like :ref:`junit`.
