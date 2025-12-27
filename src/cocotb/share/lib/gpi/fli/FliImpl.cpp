@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "../logging.hpp"
 #include "_vendor/fli/acc_user.h"
 #include "_vendor/fli/acc_vhdl.h"
 #include "_vendor/fli/mti.h"

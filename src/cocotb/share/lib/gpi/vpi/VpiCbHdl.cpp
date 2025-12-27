@@ -4,9 +4,8 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <gpi_logging.h>
-
 #include "../gpi_priv.hpp"
+#include "../logging.hpp"
 #include "./VpiImpl.hpp"
 
 #ifndef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
