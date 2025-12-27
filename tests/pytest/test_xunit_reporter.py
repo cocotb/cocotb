@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Test JUnit XML reporter."""
+"""Test xUnit XML reporter."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from cocotb._xunit_reporter import XUnitReporter
 
 
 def test_empty_testsuite(tmp_path: Path) -> None:
-    """JUnit XML report with empty testsuite."""
+    """xUnit XML report with empty testsuite."""
     results: Path = tmp_path / "results.xml"
 
     xunit: XUnitReporter = XUnitReporter(family="xunit2", workspace=tmp_path)
@@ -37,7 +37,7 @@ def test_empty_testsuite(tmp_path: Path) -> None:
 
 
 def test_report(tmp_path: Path) -> None:
-    """JUnit XML report with mixed test results."""
+    """xUnit XML report with mixed test results."""
     results: Path = tmp_path / "subdir" / "results.xml"
 
     (tmp_path / "sim.log").touch(0o600, exist_ok=True)
@@ -256,7 +256,7 @@ def test_report(tmp_path: Path) -> None:
 
 
 def test_legacy(tmp_path: Path) -> None:
-    """JUnit XML report in legacy format (xunit1)."""
+    """xUnit XML report in legacy format (xunit1)."""
     results: Path = tmp_path / "results.xml"
 
     xunit: XUnitReporter = XUnitReporter(family="xunit1", workspace=tmp_path)
@@ -331,7 +331,7 @@ def test_legacy(tmp_path: Path) -> None:
 
 
 def test_file_outside_workspace(tmp_path: Path) -> None:
-    """JUnit XML report where file is outside of workspace."""
+    """xUnit XML report where file is outside of workspace."""
     results: Path = tmp_path / "subdirA" / "results.xml"
     file: Path = tmp_path / "subdirB" / "module.py"
 
@@ -358,7 +358,7 @@ def test_file_outside_workspace(tmp_path: Path) -> None:
 
 
 def test_invalid_characters(tmp_path: Path) -> None:
-    """JUnit XML report with invalid characters."""
+    """xUnit XML report with invalid characters."""
     results: Path = tmp_path / "results.xml"
 
     xunit: XUnitReporter = XUnitReporter(family="xunit2", workspace=tmp_path)
