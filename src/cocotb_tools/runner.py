@@ -526,15 +526,17 @@ class Runner(ABC):
         self.timescale = timescale
 
         waves_file: str | None = self._waves_file()
-        attachments: list[PathLike] = []
 
-        if self.log_file:
-            attachments.append(self.test_dir / self.log_file)
+        if "COCOTB_ATTACHMENTS" not in self.env:
+            attachments: list[PathLike] = []
 
-        if waves_file:
-            attachments.append(self.test_dir / waves_file)
+            if self.log_file:
+                attachments.append(self.test_dir / self.log_file)
 
-        self.env["COCOTB_ATTACHMENTS"] = ",".join(map(str, attachments))
+            if waves_file:
+                attachments.append(self.test_dir / waves_file)
+
+            self.env["COCOTB_ATTACHMENTS"] = ",".join(map(str, attachments))
 
         if verbose is not None:
             self.verbose = verbose
