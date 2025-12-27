@@ -1,1 +1,1 @@
-Tests reported in generated JUnit XML tests results file will be grouped into test suites per Python module.
+Detecting CI environments: GitHub Actions, GitLab CI and Jenkins CI for Junit XML tests results file.
