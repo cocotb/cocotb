@@ -1,0 +1,1 @@
+Generated xUnit XML tests results file is now compatible with xUnit 1.x (``xunit1``, legacy) and 2.x (``xunit2``, default).
