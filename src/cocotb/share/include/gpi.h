@@ -527,14 +527,14 @@ enum gpi_log_level {
                      ///< events in the current program.
     GPI_WARNING = 30,  ///< Prints `WARN` by default. Encountered a recoverable
                        ///< bug, or information about surprising behavior.
-    GPI_ERROR = 40,    ///< Prints `ERROR` by default. An unrecoverable error
+    GPI_ERROR = 40,    ///< Prints `ERROR` by default. An unrecoverable error.
     GPI_CRITICAL = 50  ///< Prints `CRITICAL` by default. An unrecoverable
                        ///< error, to be followed by immediate simulator
                        ///< shutdown.
 };
 
 /** Type of a logger handler function.
- * @param userdata  private implementation data registered with this function
+ * @param userdata  Private implementation data registered with this function
  * @param name      Name of the logger
  * @param level     Level at which to log the message
  * @param pathname  Name of the file where the call site is located

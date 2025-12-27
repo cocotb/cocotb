@@ -4,16 +4,15 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef COCOTB_GPI_LOGGING_H_
-#define COCOTB_GPI_LOGGING_H_
+#ifndef GPI_LOGGING_HPP_
+#define GPI_LOGGING_HPP_
 
-/** @file gpi_logging.h
+/** @file logging.hpp
 
 GPI Logging
 ===========
 
-This header file defines how to produce logs for GPI implementations
-as well as users of the GPI.
+Logging functionality for the GPI and its implementations.
 */
 
 #include <exports.h>
@@ -126,4 +125,4 @@ GPI_EXPORT void gpi_vlog_(const char *name, enum gpi_log_level level,
                           const char *pathname, const char *funcname,
                           long lineno, const char *msg, va_list args);
 
-#endif /* COCOTB_GPI_LOGGING_H_ */
+#endif /* GPI_LOGGING_HPP_ */
