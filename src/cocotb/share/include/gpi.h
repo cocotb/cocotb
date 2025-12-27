@@ -551,10 +551,8 @@ typedef void (*gpi_log_handler_ftype)(void *userdata, const char *name,
                                       const char *msg, va_list args);
 
 /** Retrieve the current log handler.
- * @param handler   Location to return current log handler function. If no
- *                  custom logger is registered this will be `NULL`.
- * @param userdata  Location to return log handler userdata. If no custom
- *                  logger is registered this will be `NULL`.
+ * @param handler   Location to return current log handler function.
+ * @param userdata  Location to return log handler userdata.
  */
 GPI_EXPORT void gpi_get_log_handler(gpi_log_handler_ftype *handler,
                                     void **userdata);
