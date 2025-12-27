@@ -218,7 +218,7 @@ class XUnitReporter:
         indent(self._root)
         ElementTree(self._root).write(
             str(filename),
-            encoding="UTF-8",
+            encoding="utf-8",
             xml_declaration=True,
         )
 
