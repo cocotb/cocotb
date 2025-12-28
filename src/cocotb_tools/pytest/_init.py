@@ -7,27 +7,18 @@
 from __future__ import annotations
 
 import sys
-from logging import getLogger
-from random import seed
-from time import time
-from typing import cast
 
 import cocotb
-from cocotb import simtime, simulator
-from cocotb._init import (
-    _process_packages,
-    _process_plusargs,
-    _setup_root_handle,
-    _sim_event,
-)
-from cocotb.logging import _setup_gpi_logger
 from cocotb_tools import _env
 from cocotb_tools.pytest.regression import RegressionManager
 
 
 def run_regression(argv: list[str]) -> None:
     """Run regression using pytest as regression manager for cocotb tests."""
-    _setup_simulation_environment(argv)
+
+    # sys.path normally includes "" (the current directory), but does not appear to when Python is embedded.
+    # Add it back because users expect to be able to import files in their test directory.
+    sys.path.insert(0, "")
 
     manager: RegressionManager = RegressionManager(
         # Use the same command line arguments as from the main pytest parent process
@@ -52,29 +43,4 @@ def run_regression(argv: list[str]) -> None:
         seed=cocotb.RANDOM_SEED,
     )
 
-    cocotb._regression_manager = cast("cocotb.regression.RegressionManager", manager)
-    cocotb._regression_manager.start_regression()
-
-
-def _setup_simulation_environment(argv: list[str] | None = None) -> None:
-    """Setup minimal required simulation environment for pytest and cocotb."""
-    cocotb.simulator.set_sim_event_callback(_sim_event)
-    _setup_gpi_logger()
-
-    # sys.path normally includes "" (the current directory), but does not appear to when python is embedded.
-    # Add it back because users expect to be able to import files in their test directory.
-    sys.path.insert(0, "")
-
-    cocotb.argv = argv or []
-    cocotb.is_simulation = True
-    cocotb.log = getLogger("test")
-    cocotb.RANDOM_SEED = _env.as_int("COCOTB_RANDOM_SEED", int(time()))
-    cocotb.SIM_NAME = simulator.get_simulator_product().strip()
-    cocotb.SIM_VERSION = simulator.get_simulator_version().strip()
-
-    _process_plusargs()
-    _process_packages()
-    _setup_root_handle()
-
-    simtime._init()
-    seed(cocotb.RANDOM_SEED)
+    manager.start_regression()

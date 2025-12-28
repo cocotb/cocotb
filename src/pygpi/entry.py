@@ -16,7 +16,7 @@ def load_entry(argv: list[str]) -> None:
             "cocotb_tools._coverage:start_cocotb_library_coverage",
             "cocotb.logging:_configure",
             "cocotb._init:init_package_from_simulation",
-            "cocotb._init:run_regression",
+            "cocotb.regression:_run_regression",
         ),
     )
 
