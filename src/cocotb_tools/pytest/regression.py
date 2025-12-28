@@ -91,6 +91,8 @@ class RegressionManager:
         keywords: Iterable[str] | None = None,
         test_modules: Iterable[str] | None = None,
         invocation_dir: Path | str | None = None,
+        relative_to: Path | str | None = None,
+        attachments: Iterable[Path | str] | None = None,
     ) -> None:
         """Create new instance of regression manager for cocotb tests.
 
@@ -103,6 +105,8 @@ class RegressionManager:
             test_modules: List of test modules (Python modules with cocotb tests) to be loaded.
             invocation_dir: Path to directory location from where pytest was invoked.
             reporter_address: IPC address (Unix socket, Windows pipe, TCP, ...) to tests reporter.
+            relative_to: If provided, all absolute paths will be converted to relative ones.
+            attachments: List of file attachments to be included in created test reports.
         """
         self._toplevel: str = toplevel
         self._task: Task
@@ -121,6 +125,10 @@ class RegressionManager:
         self._logging_root_level: int = getLogger().level
         self._logging_level: int = 0
         self._logging_restored: bool = False
+        self._relative_to: Path | None = (
+            Path(relative_to).resolve() if relative_to else None
+        )
+        self._attachments: list[Path] = self._normalize_paths(attachments)
 
         pluginmanager = PytestPluginManager()
 
@@ -545,16 +553,23 @@ class RegressionManager:
         report: TestReport = yield  # get generated test report from other plugins
 
         sim_time_stop: float = get_sim_time(self._sim_time_unit)
+        sim_time_duration: float = sim_time_stop - self._sim_time_start
+        sim_time_ratio: float = (
+            (report.duration / sim_time_duration) if sim_time_duration else 0.0
+        )
 
         # Additional properties that will be included with generated test report
         properties: dict[str, Any] = {
-            "cocotb": True,
+            "cocotb": "true",
             "sim_time_start": self._sim_time_start,
             "sim_time_stop": sim_time_stop,
-            "sim_time_duration": sim_time_stop - self._sim_time_start,
+            "sim_time_duration": sim_time_duration,
+            "sim_time_ratio": sim_time_ratio,
             "sim_time_unit": self._sim_time_unit,
             "runner_nodeid": self._nodeid,  # identify cocotb runner
             "random_seed": getattr(cocotb, "RANDOM_SEED", 0),
+            "file": self._normalize_path(report.location[0]),
+            "line": report.location[1],
         }
 
         # Make properties available for other plugins. The `extra` argument from pytest.TestReport
@@ -563,6 +578,15 @@ class RegressionManager:
 
         # Make properties available in generated test reports like JUnit XML report
         report.user_properties.extend(properties.items())
+
+        # Add file attachments to test report, this will be included in JUnit XML report
+        for attachment in self._attachments:
+            report.user_properties.append(("attachment", attachment))
+            # pytest --override-ini=junit_logging=system-out|all ...
+            report.sections.append(("Captured stdout", f"[[ATTACHMENT|{attachment}]]"))
+
+        # Add file attachments for other plugins
+        report.__dict__.update({"attachments": self._attachments})
 
         return report
 
@@ -708,6 +732,23 @@ class RegressionManager:
 
         # Setup simulator finalization
         simulator.stop_simulator()
+
+    def _normalize_path(self, path: Path | str) -> Path:
+        """Normalize provided path."""
+        if not isinstance(path, Path):
+            path = Path(path)
+
+        if self._relative_to and path.is_absolute():
+            try:
+                return path.resolve().relative_to(self._relative_to)
+            except ValueError:
+                return path.resolve()
+
+        return path
+
+    def _normalize_paths(self, paths: Iterable[Path | str] | None) -> list[Path]:
+        """Normalize provided list of paths."""
+        return [self._normalize_path(path) for path in paths or ()]
 
 
 def _check_interactive_exception(call: CallInfo, report: TestReport) -> bool:

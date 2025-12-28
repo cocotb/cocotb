@@ -322,9 +322,6 @@ class XUnitReporter:
         if isinstance(value, Path) or name in ("file", "attachment"):
             value = self._normalize_path(value)
 
-        elif isinstance(value, bool):
-            value = str(value).lower()
-
         SubElement(parent, "property", name=_escape(name), value=_escape(value))
 
 

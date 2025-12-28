@@ -17,9 +17,18 @@ This allow to support wide range of different CI environments like GitHub Action
 Attachments
 ===========
 
-Simulation log and waveform files will be attached to generated JUnix XML file by using :ref:`junit-property` and
-:ref:`junit-system-out`. List of files that should be attached can be defined by using the :envvar:`COCOTB_ATTACHMENTS`
-environment variable.
+Simulation log and waveform files will be attached to generated JUnix XML file by using :ref:`junit-attributes-property` and
+:ref:`junit-attributes-system-out` XML elements. List of files that should be attached can be defined by using
+the :envvar:`COCOTB_ATTACHMENTS` environment variable.
+
+.. note::
+
+    To include file attachments in :ref:`junit-attributes-system-out` XML element when generating JUnit XML file from pytest,
+    set the pytest ``junit_logging`` option to ``system-out`` or ``all``:
+
+    .. code:: shell
+
+        pytest --override-ini=junit_logging=system-out --junit-xml=junit.xml ...
 
 Example:
 
@@ -97,7 +106,16 @@ List of supported XML attributes:
 .. note::
 
     The `Jenkins xUnit schema version 2`_ doesn't allow to have ``file`` and ``line`` as XML attributes in ``testcase`` XML element.
-    They are part of :ref:`junit-property`.
+    They are part of :ref:`junit-attributes-property` XML element.
+
+.. note::
+
+    When generating JUnit XML file from pytest, it is possible to include ``file`` and ``line`` as XML attributes
+    in ``testcase`` XML element by setting the pytest ``junit_family`` to ``xunit1``:
+
+    .. code:: shell
+
+        pytest --override-ini=junit_family=xunit1 --junit-xml=junit.xml ...
 
 Example:
 
@@ -142,7 +160,7 @@ No XML attributes.
 .. code:: xml
 
     <properties>
-      <property name="cocotb" value="true" />
+      <property name="cocotb" value="True" />
     </properties>
 
 
@@ -160,7 +178,7 @@ List of supported XML attributes:
 
 List of supported properties:
 
-* ``cocotb`` - mark ``testcase`` as cocotb test. If defined, default value is ``true``.
+* ``cocotb`` - mark ``testcase`` as cocotb test. If defined, default value is ``True``.
 * ``file`` - path to source file where test was defined.
 * ``line`` - line number in file where test was defined.
 * ``sim_time_unit`` - simulation time unit like ``ns`` (nanoseconds).
@@ -176,7 +194,7 @@ Example:
 .. code:: xml
 
     <properties>
-      <property name="cocotb" value="true" />
+      <property name="cocotb" value="True" />
       <property name="random_seed" value="1766926362" />
       <property name="sim_time_unit" value="ns" />
       <property name="sim_time_duration" value="115000.0" />
@@ -295,7 +313,7 @@ An example of XML with 3 reported tests where 1 test was skipped and another tes
       <testsuite name="test_dff" errors="0" failures="1" skipped="1" tests="3" time="0.001" timestamp="2025-12-28T12:52:42.287738+00:00" hostname="d9019dc0cfcf">
         <testcase classname="test_dff" name="dff_simple_test" time="0.001">
           <properties>
-            <property name="cocotb" value="true" />
+            <property name="cocotb" value="True" />
             <property name="random_seed" value="1766926362" />
             <property name="sim_time_unit" value="ns" />
             <property name="sim_time_duration" value="115000.0" />
@@ -309,7 +327,7 @@ An example of XML with 3 reported tests where 1 test was skipped and another tes
         </testcase>
         <testcase classname="test_dff" name="dff_simple_test_failed" time="0.000">
           <properties>
-            <property name="cocotb" value="true" />
+            <property name="cocotb" value="True" />
             <property name="random_seed" value="1766926362" />
             <property name="sim_time_unit" value="ns" />
             <property name="sim_time_duration" value="0.0" />
@@ -331,7 +349,7 @@ An example of XML with 3 reported tests where 1 test was skipped and another tes
         </testcase>
         <testcase classname="test_dff" name="dff_simple_test_skipped" time="0.000">
           <properties>
-            <property name="cocotb" value="true" />
+            <property name="cocotb" value="True" />
             <property name="random_seed" value="1766926362" />
             <property name="sim_time_unit" value="ns" />
             <property name="sim_time_duration" value="0.0" />

@@ -170,7 +170,7 @@ def test_report(tmp_path: Path) -> None:
     assert len(properties) == 9
     assert len(properties[0].attrib) == 2
     assert properties[0].get("name") == "cocotb"
-    assert properties[0].get("value") == "true"
+    assert properties[0].get("value") == "True"
     assert properties[1].get("name") == "random_seed"
     assert properties[1].get("value") == "100"
     assert properties[2].get("name") == "sim_time_duration"
@@ -349,8 +349,8 @@ def test_properties(tmp_path: Path) -> None:
     }
 
     assert len(properties) == 10
-    assert properties["cocotb"] == "true"
-    assert properties["coverage"] == "false"
+    assert properties["cocotb"] == "True"
+    assert properties["coverage"] == "False"
     assert properties["line"] == "10"
     assert properties["file"] == str(results.relative_to(tmp_path))
     assert properties["attachment"] == str(results.relative_to(tmp_path))
