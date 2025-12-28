@@ -6,10 +6,16 @@
 
 """xUnit XML reporter.
 
-Supported xUnit families:
+Reporter generates XML file that is compatible with `Jenkins xUnit schema in version 2.4.0
+<https://github.com/jenkinsci/xunit-plugin/blob/xunit-2.4.0/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd>`_.
 
-- `xunit1 <https://github.com/jenkinsci/xunit-plugin/blob/xunit-1.104/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd>`_ legacy
-- `xunit2 <https://github.com/jenkinsci/xunit-plugin/blob/xunit-2.3.2/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd>`_ default
+Only few XML elements and attributes are used from above XML schema when generating XML tests report
+that are commonly supported in other available JUnit/xUnit XML schemas.
+
+Generated XML output is compatible with generated JUnit XML tests report file from the pytest
+with the enabled ``junit_family=xunit2`` pytest option.
+
+This allow to support wide range of different CI environments like GitHub Actions, GitLab CI, Jenkins CI and others.
 """
 
 from __future__ import annotations
@@ -21,24 +27,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from platform import node
 from traceback import format_exception
-from typing import Literal
+from typing import Any, Literal
 from xml.etree.ElementTree import Element, ElementTree, SubElement, indent
 
-Family = Literal["legacy", "xunit1", "xunit2"]
-"""Name of xUnit family.
+Status = Literal["passed", "failed", "skipped", "error"]
+"""Status of test case.
 
-- ``legacy`` - Alias to ``xunit1``.
-- ``xunit1`` - With ``file`` and ``line`` attributes in test case.
-- ``xunit2`` - Without ``file`` and ``line`` attributes in test case.
+- ``passed`` - Test passed. Default status.
+- ``failed`` - Test failed. Test case will include the ``failure`` XML element.
+- ``skipped`` - Test was skipped. Test case will include the ``skipped`` XML element.
+- ``error`` - An unexpected error when test was executed. Test case will include the ``error`` XML element.
 """
 
-Environment = Literal["github", "gitlab", "jenkins"]
-"""Name of environment, mostly CI.
-
-- ``github`` - GitHub Actions.
-- ``gitlab`` - GitLab CI.
-- ``jenkins`` - Jenkins CI.
-"""
 
 # The spec range of valid chars is:
 # Char ::= #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
@@ -79,129 +79,110 @@ class XUnitReporter:
     def __init__(
         self,
         name: str = "cocotb tests",
-        environment: Environment | None = None,
-        family: Family | None = None,
-        workspace: Path | str | None = None,
-        **kwargs: object,
+        relative_to: Path | str | None = None,
+        **kwargs: Any,
     ) -> None:
         """Create new instance of xUnit reporter.
 
         Args:
-            name: Name of xUnit reporter.
-            environment: Name of environment where tests are running. If not provided, it will be detected automatically.
-            family: Name of xUnit family. If not provided, it will be detected based on environment.
-            workspace: Path where tests are running. If not provided, it will be detected based on environment.
-            kwargs: Default properties for all created test suites.
+            name: Name of xUnit reporter. Used as name for the XML test suites root element.
+            relative_to: If provided, all reported absolute paths will be converted to relative paths.
+            kwargs: Additional common default properties that will be added to all created test cases.
         """
+        # The root of the XML document
         self._root: Element = Element("testsuites", name=name)
+
+        # Current tracked test suite element
         self._testsuite: TestSuite | None = None
+
+        # List of all created and cached test suite elements
         self._testsuites: dict[str, TestSuite] = {}
-        self._environment: Environment | None = environment or _detect_environment()
-        self._family: Family = family or _get_family(self._environment)
-        self._properties: dict[str, object] = dict(kwargs)
-        self._workspace: Path = Path(
-            workspace or _get_workspace(self._environment)
-        ).resolve()
 
-    @property
-    def workspace(self) -> Path:
-        """Absolute path to the workspace where tests are running."""
-        return self._workspace
+        # Common properties that will be added to all created test cases
+        self._properties: dict[str, Any] = dict(kwargs)
 
-    @property
-    def family(self) -> Family:
-        """Name of xUnit family."""
-        return self._family
-
-    @property
-    def environment(self) -> Environment | None:
-        """Name of environment where tests are running."""
-        return self._environment
+        # If present, all reported absolute paths will be converted to relative paths
+        self._relative_to: Path | None = (
+            Path(relative_to).resolve() if relative_to else None
+        )
 
     def add_testcase(
         self,
         name: str,
         classname: str = "",
-        file: Path | str = "",
-        line: int = 0,
         time: int | float = 0,
-        system_out: str | None = None,
-        system_err: str | None = None,
-        attachments: Sequence[Path | str] | None = None,
-        failure: bool | str | BaseException | None = None,
-        error: bool | str | BaseException | None = None,
-        skipped: bool | str | None = None,
-        **kwargs: object,
+        system_out: str = "",
+        system_err: str = "",
+        status: Status = "passed",
+        reason: str | BaseException | None = None,
+        **kwargs: Any,
     ) -> None:
         """Create and add new test case to test suite.
 
         Args:
             name: Name of test.
             classname: Path to module (using the ``.`` dot as separator) where test is located.
-            file: Path to file with test.
-            line: Line number of test in file.
             time: Wall clock execution time of test in seconds.
-            system_out: Captured standard output from test case. It will also include XML file attachments.
-            system_err: Captured standard error from test case.
-            attachments: List of attachments to add.
-            failure: Fail test case.
-            error: Error test case.
-            skipped: Skip test case.
-            kwargs: Additional testcase properties.
+            system_out: Text that will be included in the ``system-out`` element. It will also include XML file attachments.
+            system_err: Text that will be included in the ``system-err`` element.
+            status: Status of test case.
+            reason: Reason of failed or skipped test case.
+            kwargs: Additional test case properties.
         """
         testsuite: TestSuite = self._get_testsuite(classname or "cocotb")
 
+        # NOTE: file and line attributes are invalid in Jenkins XML schema version 2.*
         attributes: dict[str, str] = {
             "classname": _escape(classname),
             "name": _escape(name),
             "time": f"{time:.3f}",
         }
 
-        if self._family in ("legacy", "xunit1"):
-            attributes["file"] = _escape(self._normalize_path(file)) if file else ""
-            attributes["line"] = str(line)
-
         testsuite.time += time
         testsuite.tests += 1
 
         testcase: Element = SubElement(testsuite.element, "testcase", attrib=attributes)
 
-        if file or line or kwargs or attachments:
-            properties: Element = SubElement(testcase, "properties")
+        # Ensure a newline at the end. Required when adding file attachments
+        if system_out and not system_out.endswith(os.linesep):
+            system_out += os.linesep
 
-            if file:
-                _add_property(properties, "file", self._normalize_path(file))
+        if system_err and not system_err.endswith(os.linesep):
+            system_err += os.linesep
 
-            if line:
-                _add_property(properties, "line", line)
+        properties: dict[str, Any] = self._properties.copy()
+        properties.update(kwargs)
 
-            for key, value in kwargs.items():
-                _add_property(properties, key, value)
+        if properties:
+            property_root: Element = SubElement(testcase, "properties")
 
-            if attachments:
-                if system_out is None:
-                    system_out = ""
+            for key, value in properties.items():
+                if not value and not isinstance(value, (int, float, bool)):
+                    continue
 
-                # Ensure a newline when adding attachments
-                if system_out and not system_out.endswith(os.linesep):
-                    system_out += os.linesep
+                if not isinstance(value, str) and isinstance(value, Sequence):
+                    for item in value:
+                        self._add_property(property_root, key, item)
 
-            for attachment in attachments or ():
-                path = self._normalize_path(attachment)
-                _add_property(properties, "attachment", path)
-                system_out = f"{system_out}[[ATTACHMENT|{path}]]{os.linesep}"
+                        if key == "attachment":
+                            system_out += self._attachment_line(item)
+                else:
+                    self._add_property(property_root, key, value)
 
-        if failure:
-            self._add_simple(testcase, "failure", failure)
-            testsuite.failures += 1
+                    if key == "attachment":
+                        system_out += self._attachment_line(value)
 
-        if error:
-            self._add_simple(testcase, "error", error)
+        if status == "skipped":
+            self._add_simple(testcase, "skipped", reason)
+            testsuite.skipped += 1
+
+        elif status == "error":
+            self._add_simple(testcase, "error", reason)
             testsuite.errors += 1
 
-        if skipped:
-            self._add_simple(testcase, "skipped", skipped)
-            testsuite.skipped += 1
+        elif status == "failed":
+            self._add_simple(testcase, "failure", reason)
+            testsuite.failures += 1
 
         if system_out:
             SubElement(testcase, "system-out").text = self._normalize_text(system_out)
@@ -215,6 +196,7 @@ class XUnitReporter:
         Args:
             filename: Path to file where to write tests results.
         """
+        # Update all statistic counters in all test suites
         for testsuite in self._testsuites.values():
             testsuite.update()
 
@@ -223,9 +205,7 @@ class XUnitReporter:
 
         indent(self._root)
         ElementTree(self._root).write(
-            str(filename),
-            encoding="utf-8",
-            xml_declaration=True,
+            str(filename), encoding="utf-8", xml_declaration=True
         )
 
     def _get_testsuite(self, name: str) -> TestSuite:
@@ -258,12 +238,6 @@ class XUnitReporter:
         self._testsuite = TestSuite(testsuite)
         self._testsuites[name] = self._testsuite  # cache it
 
-        if self._properties:
-            properties: Element = SubElement(testsuite, "properties")
-
-            for key, value in self._properties.items():
-                _add_property(properties, key, value)
-
         return self._testsuite
 
     def _normalize_path(self, path: Path | str) -> Path:
@@ -271,40 +245,53 @@ class XUnitReporter:
         if not isinstance(path, Path):
             path = Path(path)
 
-        if not path.is_absolute():
-            return path
+        if self._relative_to and path.is_absolute():
+            try:
+                return path.resolve().relative_to(self._relative_to)
+            except ValueError:
+                return path.resolve()
 
-        try:
-            return path.resolve().relative_to(self._workspace)
-        except ValueError:
-            return path.resolve()
+        return path
+
+    def _attachment_line(self, path: Path | str) -> str:
+        """Get attachment as text line.
+
+        Args:
+            path: Path to file attachment.
+
+        Returns:
+            Text line with file attachment.
+        """
+        attachment: Path = self._normalize_path(path)
+
+        return f"[[ATTACHMENT|{attachment}]]{os.linesep}"
 
     def _add_simple(
         self,
         parent: Element,
         name: str,
-        arg: bool | str | BaseException | None = None,
+        reason: str | BaseException | None = None,
     ) -> Element:
         """Create and add a simple XML element to XML parent.
 
         Args:
             parent: XML parent element.
             name: Name of XML element.
-            arg: Argument of XML element.
+            reason: Reason to be included in created XML element.
 
         Returns:
             Added XML element.
         """
-        message: str = _escape(arg).strip()
+        message: str = _escape(reason).strip()
 
         if message:
             message = message.splitlines()[0]
 
-        if isinstance(arg, BaseException):
-            kind: str = _escape(type(arg).__name__)
+        if isinstance(reason, BaseException):
+            kind: str = _escape(type(reason).__name__)
             element: Element = SubElement(parent, name, message=message, type=kind)
             text: str = self._normalize_text(
-                "".join(format_exception(type(arg), arg, arg.__traceback__))
+                "".join(format_exception(type(reason), reason, reason.__traceback__))
             )
 
             if text:
@@ -312,74 +299,33 @@ class XUnitReporter:
 
             return element
 
-        if isinstance(arg, str) and message:
+        if isinstance(reason, str) and message:
             return SubElement(parent, name, message=message)
 
         return SubElement(parent, name)
 
     def _normalize_text(self, text: str) -> str:
         """Replace all absolute paths with relative ones."""
-        return _escape(text.replace(f"{self._workspace}{os.path.sep}", ""))
+        if self._relative_to:
+            text = text.replace(f"{self._relative_to}{os.path.sep}", "")
 
+        return _escape(text)
 
-def _detect_environment() -> Environment | None:
-    """Try to detect environment based on environment variables.
+    def _add_property(self, parent: Element, name: str, value: Any) -> None:
+        """Add property to XML element.
 
-    Args:
-        Detected environment or None if cannot determine it.
-    """
-    # https://docs.github.com/en/actions/reference/workflows-and-actions/variables#default-environment-variables
-    if os.environ.get("GITHUB_ACTIONS") == "true":
-        return "github"
+        Args:
+            parent: XML parent element.
+            name: Name of property.
+            value: Value of property.
+        """
+        if isinstance(value, Path) or name in ("file", "attachment"):
+            value = self._normalize_path(value)
 
-    # https://docs.gitlab.com/ci/variables/predefined_variables/#predefined-variables
-    if os.environ.get("GITLAB_CI") == "true":
-        return "gitlab"
+        elif isinstance(value, bool):
+            value = str(value).lower()
 
-    # https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-    if os.environ.get("BUILD_TAG", "").startswith("jenkins-"):
-        return "jenkins"
-
-    return None
-
-
-def _get_family(environment: Environment | None) -> Family:
-    """Get xUnit family.
-
-    Args:
-        environment: Name of environment where tests are running.
-
-    Returns:
-        xUnit family.
-    """
-    if environment in ("gitlab",):
-        return "xunit1"
-
-    return "xunit2"
-
-
-def _get_workspace(environment: Environment | None) -> Path:
-    """Get the absolute path to the workspace where tests are running.
-
-    Args:
-        environment: Name of environment where tests are running.
-
-    Returns:
-        Absolute path to the workspace where tests are running.
-    """
-    # https://docs.github.com/en/actions/reference/workflows-and-actions/variables#default-environment-variables
-    if environment == "github":
-        return Path(os.environ.get("GITHUB_WORKSPACE", "."))
-
-    # https://docs.gitlab.com/ci/variables/predefined_variables/#predefined-variables
-    if environment == "gitlab":
-        return Path(os.environ.get("CI_PROJECT_DIR", "."))
-
-    # https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-    if environment == "jenkins":
-        return Path(os.environ.get("WORKSPACE", "."))
-
-    return Path.cwd()
+        SubElement(parent, "property", name=_escape(name), value=_escape(value))
 
 
 def _escape_code(matchobj: re.Match[str]) -> str:
@@ -405,14 +351,3 @@ def _escape(arg: object) -> str:
     The idea is to escape visually for the user rather than for XML itself.
     """
     return _INVALID_CHARS.sub(_escape_code, str(arg))
-
-
-def _add_property(parent: Element, name: str, value: object) -> None:
-    """Add property to XML element.
-
-    Args:
-        parent: XML parent element.
-        name: Name of property.
-        value: Value of property.
-    """
-    SubElement(parent, "property", name=_escape(name), value=_escape(value))

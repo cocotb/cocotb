@@ -198,13 +198,18 @@ Discovering Tests
 
     .. versionadded:: 1.3
 
-    .. versionchanged:: 2.1
-        Generated XML file is fully compatible with xUnit version 1.x (`xunit1`_) and 2.x (`xunit2`_).
-        The default xUnit format is `xunit2`_. The `xunit1`_ format is used in GitLab CI environments.
+.. envvar:: COCOTB_RESULTS_RELATIVE_TO
+
+    If defined and set to absolute path, all absolute paths reported in generated xUnit XML tests results file,
+    if possible, will be converted to relative paths based on provided path set in this environment variable.
+    Otherwise, it will contain unmodified paths.
+
+   .. versionadded:: 2.1
 
 .. envvar:: COCOTB_ATTACHMENTS
 
-   List of file attachments, comma ``,`` separated, that will be included in generated xUnit XML tests results file.
+   List of absolute paths to files, comma ``,`` separated, that will be included as file attachments in generated
+   xUnit XML tests results file.
 
    .. versionadded:: 2.1
 
@@ -978,7 +983,3 @@ It should not be considered public API, but is documented here for developers of
     :undoc-members:
     :member-order: bysource
     :synopsis: Interface to simulator.
-
-
-.. _xunit1: https://github.com/jenkinsci/xunit-plugin/blob/xunit-1.104/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd
-.. _xunit2: https://github.com/jenkinsci/xunit-plugin/blob/xunit-2.3.2/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd

@@ -528,13 +528,13 @@ class Runner(ABC):
         waves_file: str | None = self._waves_file()
 
         if "COCOTB_ATTACHMENTS" not in self.env:
-            attachments: list[PathLike] = []
+            attachments: list[Path] = []
 
             if self.log_file:
-                attachments.append(self.log_file)
+                attachments.append(get_abs_path(self.log_file))
 
             if waves_file:
-                attachments.append(self.test_dir / waves_file)
+                attachments.append(get_abs_path(self.test_dir) / waves_file)
 
             self.env["COCOTB_ATTACHMENTS"] = ",".join(map(str, attachments))
 

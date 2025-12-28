@@ -72,6 +72,11 @@ def _get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Enables verbose output.",
     )
+    parser.add_argument(
+        "--repo-root",
+        type=Path,
+        help="Specify root of cocotb repo the regression is run from (CI only).",
+    )
     return parser
 
 
@@ -109,6 +114,8 @@ def main() -> int:
                         )
                     result.append(ts)
 
+    workspace: Path = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+
     testsuite_count: int = 0
     testcase_count: int = 0
 
@@ -122,14 +129,21 @@ def main() -> int:
                 continue
 
             properties: dict[str, str] = _get_properties(testcase)
+            file: Path | str | None = properties.get("file")
             rc = 1
+
+            if file and Path(file).is_absolute():
+                try:
+                    file = Path(file).resolve().relative_to(workspace)
+                except ValueError:
+                    pass
 
             print(
                 "Failure in testsuite: '{}' testcase: '{}.{}' file: '{}::{}'".format(
                     testsuite.get("name"),
                     testcase.get("classname"),
                     testcase.get("name"),
-                    properties.get("file"),
+                    file,
                     properties.get("line"),
                 )
             )
