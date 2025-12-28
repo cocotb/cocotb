@@ -149,20 +149,7 @@ def _init() -> None:
     if in_gui is not None:
         strip_ansi = bool(int(in_gui))
 
-    # Monkeypatch "gpi" logger with function that also sets a PyGPI-local logger level
-    # as an optimization.
-    gpi_logger = logging.getLogger("gpi")
-    old_setLevel = gpi_logger.setLevel
-
-    @wraps(old_setLevel)
-    def setLevel(level: int | str) -> None:
-        old_setLevel(level)
-        simulator.set_gpi_log_level(gpi_logger.getEffectiveLevel())
-
-    gpi_logger.setLevel = setLevel  # type: ignore[method-assign]
-
-    # Initialize PyGPI logging
-    simulator.initialize_logger(_log_from_c, logging.getLogger)
+    _setup_gpi_logger()
 
     # Set "cocotb" and "gpi" logger based on environment variables
     def set_level(logger_name: str, envvar: str) -> None:
@@ -188,6 +175,24 @@ def _init() -> None:
 
     set_level("gpi", "GPI_LOG_LEVEL")
     set_level("cocotb", "COCOTB_LOG_LEVEL")
+
+
+def _setup_gpi_logger() -> None:
+    """Setup logger for GPI."""
+    # Monkeypatch "gpi" logger with function that also sets a PyGPI-local logger level
+    # as an optimization.
+    gpi_logger = logging.getLogger("gpi")
+    old_setLevel = gpi_logger.setLevel
+
+    @wraps(old_setLevel)
+    def setLevel(level: int | str) -> None:
+        old_setLevel(level)
+        simulator.set_gpi_log_level(gpi_logger.getEffectiveLevel())
+
+    gpi_logger.setLevel = setLevel  # type: ignore[method-assign]
+
+    # Initialize PyGPI logging
+    simulator.initialize_logger(_log_from_c, logging.getLogger)
 
 
 def _configure(_: object) -> None:
