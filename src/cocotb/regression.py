@@ -15,6 +15,7 @@ import logging
 import os
 import random
 import re
+import sys
 import time
 import warnings
 from collections.abc import Coroutine
@@ -24,6 +25,7 @@ from typing import Any, Callable
 
 import cocotb
 import cocotb._event_loop
+import cocotb._shutdown as shutdown
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
 from cocotb._base_triggers import Trigger
@@ -289,6 +291,8 @@ class RegressionManager:
     def start_regression(self) -> None:
         """Start the regression."""
 
+        self.log.info("Running tests")
+
         # sort tests into stages
         self._test_queue.sort(key=lambda test: test.stage)
 
@@ -412,11 +416,8 @@ class RegressionManager:
         # Generate output reports
         self.xunit.write()
 
-        # TODO refactor initialization and finalization into their own module
-        # to prevent circular imports requiring local imports
-        from cocotb._init import _shutdown_testbench  # noqa: PLC0415
-
-        _shutdown_testbench()
+        # We shut down here since the shutdown callback isn't called if stop_simulator is called.
+        shutdown._shutdown()
 
         # Setup simulator finalization
         simulator.stop_simulator()
@@ -886,7 +887,13 @@ class RegressionManager:
         self.log.info(summary)
 
     def _on_sim_end(self) -> None:
-        # We assume if we get this, the simulation ended unexpectedly due to an assertion failure,
+        """Called when the simulator shuts down."""
+
+        # We are already shutting down, this is expected.
+        if self._tearing_down:
+            return
+
+        # We assume if we get here, the simulation ended unexpectedly due to an assertion failure,
         # or due to an end of events from the simulator.
         self._sim_failure = Error(
             SimFailure(
@@ -897,3 +904,56 @@ class RegressionManager:
         )
         self._running_test.abort(self._sim_failure)
         cocotb._event_loop._inst.run()
+
+
+_manager_inst: RegressionManager
+"""The global regression manager instance."""
+
+
+def _run_regression(_: object) -> None:
+    """Setup and run a regression."""
+
+    global _manager_inst
+    _manager_inst = RegressionManager()
+
+    # sys.path normally includes "" (the current directory), but does not appear to when Python is embedded.
+    # Add it back because users expect to be able to import files in their test directory.
+    sys.path.insert(0, "")
+
+    # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
+    # If the user doesn't want to see these, they can always change the global
+    # warning settings in their test module.
+    if not sys.warnoptions:
+        warnings.simplefilter("default")
+
+    # discover tests
+    module_str = os.getenv("COCOTB_TEST_MODULES", "")
+    if not module_str:
+        raise RuntimeError(
+            "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
+        )
+    modules = [s.strip() for s in module_str.split(",") if s.strip()]
+    _manager_inst.setup_pytest_assertion_rewriting()
+    _manager_inst.discover_tests(*modules)
+
+    # filter tests
+    testcase_str = os.getenv("COCOTB_TESTCASE", "").strip()
+    test_filter_str = os.getenv("COCOTB_TEST_FILTER", "").strip()
+    if testcase_str and test_filter_str:
+        raise RuntimeError("Specify only one of COCOTB_TESTCASE or COCOTB_TEST_FILTER")
+    elif testcase_str:
+        warnings.warn(
+            "COCOTB_TESTCASE is deprecated in favor of COCOTB_TEST_FILTER",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+        filters = [f"{s.strip()}$" for s in testcase_str.split(",") if s.strip()]
+        _manager_inst.add_filters(*filters)
+        _manager_inst.set_mode(RegressionMode.TESTCASE)
+    elif test_filter_str:
+        _manager_inst.add_filters(test_filter_str)
+        _manager_inst.set_mode(RegressionMode.TESTCASE)
+
+    # start Regression Manager
+    _manager_inst.start_regression()
+    shutdown.register(_manager_inst._on_sim_end)

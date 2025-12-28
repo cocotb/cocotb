@@ -53,7 +53,14 @@ from cocotb_tools.pytest.option import (
 )
 from cocotb_tools.runner import Runner, get_runner
 
-ENTRY_POINT: str = "cocotb_tools.pytest._init:run_regression"
+ENTRY_POINT: str = ",".join(
+    (
+        "cocotb_tools._coverage:start_cocotb_library_coverage",
+        "cocotb.logging:_configure",
+        "cocotb._init:init_package_from_simulation",
+        "cocotb_tools.pytest._init:run_regression",
+    )
+)
 
 
 def to_timescale(value: str) -> tuple[str, str]:
