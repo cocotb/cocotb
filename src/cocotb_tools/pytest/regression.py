@@ -560,7 +560,7 @@ class RegressionManager:
 
         # Additional properties that will be included with generated test report
         properties: dict[str, Any] = {
-            "cocotb": "true",
+            "cocotb": True,
             "sim_time_start": self._sim_time_start,
             "sim_time_stop": sim_time_stop,
             "sim_time_duration": sim_time_duration,
