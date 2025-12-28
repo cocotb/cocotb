@@ -293,14 +293,14 @@ Discovering Tests
     if possible, will be converted to relative paths based on provided path set in this environment variable.
     Otherwise, it will contain unmodified paths.
 
-   .. versionadded:: 2.1
+    .. versionadded:: 2.1
 
 .. envvar:: COCOTB_ATTACHMENTS
 
-   List of absolute paths to files, comma ``,`` separated, that will be included as file attachments in generated
-   xUnit XML tests results file.
+    List of absolute paths to files, comma ``,`` separated, that will be included as file attachments in generated
+    xUnit XML tests results file.
 
-   .. versionadded:: 2.1
+    .. versionadded:: 2.1
 
 .. envvar:: COCOTB_REWRITE_ASSERTION_FILES
 
