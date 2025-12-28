@@ -496,3 +496,23 @@ def test_format():
     assert f"{l:#_X}" == "0X069"
     assert f"{l:#_o}" == "0o0_0151"
     assert f"{l:#,d}" == "0d0,105"
+
+
+def test_from_signed_wrap():
+    assert LogicArray.from_signed(-1, 4, on_overflow="wrap") == LogicArray("1111")
+    assert LogicArray.from_signed(-8, 4, on_overflow="wrap") == LogicArray("1000")
+    assert LogicArray.from_signed(-9, 4, on_overflow="wrap") == LogicArray("0111")
+    assert LogicArray.from_signed(7, 4, on_overflow="wrap") == LogicArray("0111")
+    assert LogicArray.from_signed(8, 4, on_overflow="wrap") == LogicArray("1000")
+    assert LogicArray.from_signed(15, 4, on_overflow="wrap") == LogicArray("1111")
+    assert LogicArray.from_signed(16, 4, on_overflow="wrap") == LogicArray("0000")
+
+
+def test_from_unsigned_wrap():
+    with pytest.raises(ValueError):
+        LogicArray.from_unsigned(-1, 4)
+    with pytest.raises(ValueError):
+        LogicArray.from_unsigned(-9, 4)
+    assert LogicArray.from_unsigned(15, 4, on_overflow="wrap") == LogicArray("1111")
+    assert LogicArray.from_unsigned(16, 4, on_overflow="wrap") == LogicArray("0000")
+    assert LogicArray.from_unsigned(20, 4, on_overflow="wrap") == LogicArray("0100")
