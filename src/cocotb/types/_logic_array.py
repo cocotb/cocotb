@@ -342,15 +342,26 @@ class LogicArray(AbstractMutableArray[Logic]):
         cls,
         value: int,
         range: Range | int,
+        *,
+        on_overflow: Literal["error", "wrap"] = "error",
     ) -> LogicArray:
         """Construct a :class:`!LogicArray` from an :class:`int` with unsigned representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with unsigned representation where the left-most bit is the most significant bit.
         This bit vector is then constructed into a :class:`!LogicArray`.
 
+        The *on_overflow* parameter can be set to ``"wrap"`` to allow truncating excessive significant bits so the *value* fits into the *range*.
+
+        .. code-block:: python
+
+            >>> LogicArray.from_unsigned(0b10011101, 4, on_overflow="wrap")
+            LogicArray('1101', Range(3, 'downto', 0))
+
         Args:
             value: The integer to convert.
             range: Indexing scheme for the :class:`!LogicArray`.
+            on_overflow: If ``"wrap"``, the *value* will have excessive significant bits truncated so that it fits into the *range*.
+                If ``"error"`` (default), a :class:`ValueError` is raised when the *value* does not fit.
 
         Returns:
             A :class:`!LogicArray` equivalent to the *value*.
@@ -358,25 +369,80 @@ class LogicArray(AbstractMutableArray[Logic]):
         Raises:
             TypeError: When invalid argument types are used.
             ValueError: When a :class:`!LogicArray` of the given *range* can't hold the *value*, or *value* is negative.
+
+        .. versionadded:: 2.1
+            The *on_overflow* parameter.
         """
+        # input type checking and normalization
+        if isinstance(range, int):
+            range = Range(range - 1, "downto", 0)
+        elif not isinstance(range, Range):
+            raise TypeError(
+                f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
+            )
+        if not isinstance(value, int):
+            raise TypeError(
+                f"Expected int for parameter 'value', not {type(value).__qualname__}"
+            )
+
         if value < 0:
             raise ValueError("Expected unsigned integer, got negative value")
-        return LogicArray(value, range)
+
+        if len(range) == 0:
+            raise ValueError(
+                f"Unsigned integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
+            )
+
+        if on_overflow == "wrap":
+            value %= 1 << len(range)
+        elif on_overflow == "error":
+            if value >= (1 << len(range)):
+                raise ValueError(
+                    f"Unsigned integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
+                )
+        else:
+            raise ValueError(
+                f"Invalid value for on_overflow: {on_overflow!r}. "
+                f"Expected 'error' or 'wrap'."
+            )
+
+        # construct the LogicArray
+        self = cls.__new__(cls)
+        self._value_as_array = None
+        self._value_as_int = value
+        self._value_as_str = None
+        self._range = range
+        self._warn_indexing = False
+        return self
 
     @classmethod
     def from_signed(
         cls,
         value: int,
         range: Range | int,
+        *,
+        on_overflow: Literal["error", "wrap"] = "error",
     ) -> LogicArray:
         """Construct a :class:`!LogicArray` from an :class:`int` with two's complement representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with two's complement representation where the left-most bit is the most significant bit.
         This bit vector is then constructed into a :class:`!LogicArray`.
 
+        The *on_overflow* parameter can be set to ``"wrap"`` to allow truncating excessive significant bits so the *value* fits into the *range*.
+
+        .. code-block:: python
+
+            >>> LogicArray.from_signed(-12345, 16)
+            LogicArray('1100111111000111', Range(15, 'downto', 0))
+
+            >>> LogicArray.from_signed(-12345, 4, on_overflow="wrap")
+            LogicArray('0111', Range(3, 'downto', 0))
+
         Args:
             value: The integer to convert.
             range: Indexing scheme for the :class:`!LogicArray`.
+            on_overflow: If ``"wrap"``, the *value* will have excessive significant bits truncated so that it fits into the *range*.
+                If ``"error"`` (default), a :class:`ValueError` is raised when the *value* does not fit.
 
         Returns:
             A :class:`!LogicArray` equivalent to the *value*.
@@ -384,12 +450,20 @@ class LogicArray(AbstractMutableArray[Logic]):
         Raises:
             TypeError: When invalid argument types are used.
             ValueError: When a :class:`!LogicArray` of the given *range* can't hold the *value*.
+
+        .. versionadded:: 2.1
+            The *on_overflow* parameter.
         """
+        # input type checking and normalization
         if isinstance(range, int):
             range = Range(range - 1, "downto", 0)
         elif not isinstance(range, Range):
             raise TypeError(
                 f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
+            )
+        if not isinstance(value, int):
+            raise TypeError(
+                f"Expected int for parameter 'value', not {type(value).__qualname__}"
             )
 
         # Prevent null range from blowing up the below code.
@@ -398,14 +472,29 @@ class LogicArray(AbstractMutableArray[Logic]):
                 f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
             )
 
-        limit = 1 << (len(range) - 1)
-        if value < -limit or limit <= value:
+        if on_overflow == "wrap":
+            value %= 1 << len(range)
+        elif on_overflow == "error":
+            limit = 1 << (len(range) - 1)
+            if value < -limit or limit <= value:
+                raise ValueError(
+                    f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
+                )
+            value %= 2 * limit
+        else:
             raise ValueError(
-                f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
+                f"Invalid value for on_overflow: {on_overflow!r}. "
+                f"Expected 'error' or 'wrap'."
             )
-        value %= 2 * limit
 
-        return LogicArray(value, range)
+        # construct the LogicArray
+        self = cls.__new__(cls)
+        self._value_as_array = None
+        self._value_as_int = value
+        self._value_as_str = None
+        self._range = range
+        self._warn_indexing = False
+        return self
 
     @classmethod
     def from_bytes(
