@@ -1,1 +1,1 @@
-Tests reported in generated xUnit XML tests results file will be grouped into test suites per Python module.
+Tests reported in generated JUnit XML tests results file will be grouped into test suites per Python module.
