@@ -48,7 +48,7 @@ Example:
 Paths
 =====
 
-The :envvar:`COCOTB_RESULTS_RELATIVE_TO` environment variable can be used to covert all absolute paths reported in
+The :envvar:`COCOTB_RESULTS_RELATIVE_TO` environment variable can be used to convert all absolute paths reported in
 generated XML file to relative ones including XML attributes, properties and text.
 
 Example:
