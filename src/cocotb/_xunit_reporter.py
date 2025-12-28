@@ -284,9 +284,6 @@ class XUnitReporter:
         """
         message: str = _escape(reason).strip()
 
-        if message:
-            message = message.splitlines()[0]
-
         if isinstance(reason, BaseException):
             kind: str = _escape(type(reason).__name__)
             element: Element = SubElement(parent, name, message=message, type=kind)

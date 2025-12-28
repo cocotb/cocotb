@@ -238,7 +238,7 @@ def test_report(tmp_path: Path) -> None:
     failure: Element = testcases[3].findall("failure")[0]
 
     assert len(failure.attrib) == 2
-    assert failure.get("message") == "Invalid value"
+    assert failure.get("message", "").splitlines() == ["Invalid value", "assert False"]
     assert failure.get("type") == "AssertionError"
     assert str(failure.text).startswith("Traceback (most recent call last):")
 
