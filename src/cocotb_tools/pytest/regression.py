@@ -125,9 +125,7 @@ class RegressionManager:
         self._logging_root_level: int = getLogger().level
         self._logging_level: int = 0
         self._logging_restored: bool = False
-        self._relative_to: Path | None = (
-            Path(relative_to).resolve() if relative_to else None
-        )
+        self._relative_to: Path = _resolve_path(relative_to or invocation_dir)
         self._attachments: list[Path] = self._normalize_paths(attachments)
 
         pluginmanager = PytestPluginManager()
@@ -738,7 +736,7 @@ class RegressionManager:
         if not isinstance(path, Path):
             path = Path(path)
 
-        if self._relative_to and path.is_absolute():
+        if path.is_absolute():
             try:
                 return path.resolve().relative_to(self._relative_to)
             except ValueError:
@@ -769,6 +767,11 @@ def _interactive_exception(item: Item, call: CallInfo, report: TestReport) -> No
         item.ihook.pytest_exception_interact(node=item, call=call, report=report)
     except Exit:
         pass
+
+
+def _resolve_path(path: Path | str | None) -> Path:
+    """Resolve provided path."""
+    return Path(path).resolve() if path else Path.cwd()
 
 
 def _to_timeout(duration: float, unit: TimeUnit) -> tuple[float, TimeUnit]:
