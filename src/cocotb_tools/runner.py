@@ -530,11 +530,13 @@ class Runner(ABC):
         if "COCOTB_ATTACHMENTS" not in self.env:
             attachments: list[Path] = []
 
-            if self.log_file:
-                attachments.append(get_abs_path(self.log_file))
-
+            # Prioritize waveform as first over other files like logs
+            # GitLab is using Ruby regular expression that will retrieve attachment on first match
             if waves_file:
                 attachments.append(get_abs_path(self.test_dir) / waves_file)
+
+            if self.log_file:
+                attachments.append(get_abs_path(self.log_file))
 
             self.env["COCOTB_ATTACHMENTS"] = ",".join(map(str, attachments))
 
