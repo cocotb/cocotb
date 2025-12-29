@@ -166,7 +166,7 @@ class RegressionManager:
         # Setup xUnit
         ###################
         self.xunit: XUnitReporter = XUnitReporter(
-            relative_to=os.getenv("COCOTB_RESULTS_RELATIVE_TO"),
+            relative_to=os.getenv("COCOTB_PATHS_RELATIVE_TO"),
             # Common default properties that will be added to all created test cases
             cocotb=True,
             random_seed=cocotb.RANDOM_SEED,

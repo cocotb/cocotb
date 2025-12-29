@@ -48,15 +48,20 @@ Example:
 Paths
 =====
 
-The :envvar:`COCOTB_RESULTS_RELATIVE_TO` environment variable can be used to convert all absolute paths reported in
+The :envvar:`COCOTB_PATHS_RELATIVE_TO` environment variable can be used to convert all absolute paths reported in
 generated XML file to relative ones including XML attributes, properties and text.
 
 Example:
 
 .. code:: shell
 
-    COCOTB_RESULTS_RELATIVE_TO="${CI_PROJECT_DIR:-$(pwd)}" pytest|make ...
+    COCOTB_PATHS_RELATIVE_TO="${CI_PROJECT_DIR:-$(pwd)}" pytest|make ...
 
+.. note::
+
+    When using the :ref:`pytest-support`, the path hint used to convert absolute paths to relative ones is determined
+    from where the ``pytest`` command was invoked. Use the :envvar:`COCOTB_PATHS_RELATIVE_TO` environment variable to
+    override that.
 
 .. _junit-attributes:
 

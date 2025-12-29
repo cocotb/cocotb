@@ -287,18 +287,16 @@ Discovering Tests
 
     .. versionadded:: 1.3
 
-.. envvar:: COCOTB_RESULTS_RELATIVE_TO
+.. envvar:: COCOTB_PATHS_RELATIVE_TO
 
-    If defined and set to absolute path, all absolute paths reported in generated xUnit XML tests results file,
-    if possible, will be converted to relative paths based on provided path set in this environment variable.
-    Otherwise, it will contain unmodified paths.
+    A hint for cocotb how to convert absolute paths to relative ones. Used in report generators like :ref:`junit`.
 
     .. versionadded:: 2.1
 
 .. envvar:: COCOTB_ATTACHMENTS
 
-    List of absolute paths to files, comma ``,`` separated, that will be included as file attachments in generated
-    xUnit XML tests results file.
+    List of absolute paths to files (comma ``,`` separated) that will be included as file attachments in generated
+    reports like :ref:`junit`.
 
     .. versionadded:: 2.1
 
