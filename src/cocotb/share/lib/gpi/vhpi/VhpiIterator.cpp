@@ -6,6 +6,7 @@
 #include <cinttypes>  // fixed-size int types and format strings
 #include <stdexcept>
 
+#include "../logging.hpp"
 #include "./VhpiImpl.hpp"
 #include "_vendor/vhpi/vhpi_user.h"
 

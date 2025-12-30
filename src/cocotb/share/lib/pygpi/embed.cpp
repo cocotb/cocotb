@@ -15,7 +15,7 @@
 #include <string>
 
 #include "../utils.hpp"      // DEFER
-#include "./pygpi_priv.hpp"  // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize, LOG_* macros, PYGPI_EXPORT
+#include "./pygpi_priv.hpp"  // pygpi_logger_set_level, pygpi_logger_initialize, pygpi_logger_finalize, LOG_* macros, PYGPI_EXPORT
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -88,6 +88,7 @@ static void finalize(void *);
 
 extern "C" PYGPI_EXPORT void initialize(void) {
     pygpi_init_debug();
+    pygpi_logging_initialize();
 
     PYGPI_LOG_TRACE("GPI Init => [ PYGPI Init ]");
     DEFER(PYGPI_LOG_TRACE("[ PYGPI Init ] => GPI Init"));
@@ -215,7 +216,7 @@ static void finalize(void *) {
         PyGILState_Ensure();  // Don't save state as we are calling Py_Finalize
         Py_XDECREF(pEventFn);
         pEventFn = NULL;
-        py_gpi_logger_finalize();
+        pygpi_logging_finalize();
         Py_Finalize();
         python_to_c();
     }

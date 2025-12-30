@@ -8,6 +8,7 @@
 
 #include <stdexcept>
 
+#include "../logging.hpp"
 #include "./VpiImpl.hpp"
 
 decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {

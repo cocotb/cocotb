@@ -5,7 +5,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <gpi.h>
-#include <gpi_logging.h>
 #include <sys/types.h>
 
 #include <algorithm>
@@ -15,6 +14,7 @@
 #include <vector>
 
 #include "./gpi_priv.hpp"
+#include "./logging.hpp"
 
 using namespace std;
 
@@ -291,10 +291,11 @@ GPI_EXPORT void gpi_init_logging_and_debug() {
 
     const char *log_level = getenv("GPI_LOG_LEVEL");
     if (log_level) {
-        static const std::map<std::string, int> log_level_str_table = {
-            {"CRITICAL", GPI_CRITICAL}, {"ERROR", GPI_ERROR},
-            {"WARNING", GPI_WARNING},   {"INFO", GPI_INFO},
-            {"DEBUG", GPI_DEBUG},       {"TRACE", GPI_TRACE}};
+        static const std::map<std::string, enum gpi_log_level>
+            log_level_str_table = {
+                {"CRITICAL", GPI_CRITICAL}, {"ERROR", GPI_ERROR},
+                {"WARNING", GPI_WARNING},   {"INFO", GPI_INFO},
+                {"DEBUG", GPI_DEBUG},       {"TRACE", GPI_TRACE}};
         auto it = log_level_str_table.find(log_level);
         if (it != log_level_str_table.end()) {
             gpi_native_logger_set_level(it->second);
