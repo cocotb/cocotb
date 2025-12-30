@@ -287,7 +287,7 @@ Discovering Tests
 
     .. versionadded:: 1.3
 
-.. envvar:: COCOTB_PATHS_RELATIVE_TO
+.. envvar:: COCOTB_RESULTS_RELATIVE_TO
 
     A hint for cocotb how to convert absolute paths to relative ones. Used in report generators like :ref:`junit`.
 
