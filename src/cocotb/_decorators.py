@@ -9,7 +9,6 @@ import inspect
 import sys
 from collections.abc import Coroutine, Iterable, Mapping, Sequence
 from enum import Enum
-from functools import cached_property
 from itertools import product
 from typing import Any, Callable, cast, overload
 
@@ -93,7 +92,7 @@ class Test:
         self.skip = skip
         self.stage = stage
 
-    @cached_property
+    @property
     def fullname(self) -> str:
         return f"{self.module}.{self.name}"
 
