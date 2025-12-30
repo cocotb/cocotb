@@ -525,7 +525,7 @@ class Runner(ABC):
         self.gui = bool(int(os.getenv("GUI", gui)))
         self.timescale = timescale
 
-        waves_file: str | None = self._waves_file()
+        waves_file: str | None = self._waves_file() if waves else None
 
         if "COCOTB_ATTACHMENTS" not in self.env:
             attachments: list[Path] = []
