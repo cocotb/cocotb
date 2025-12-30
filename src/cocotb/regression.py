@@ -169,7 +169,7 @@ class RegressionManager:
             relative_to=os.getenv("COCOTB_PATHS_RELATIVE_TO"),
             # Common default properties that will be added to all created test cases
             cocotb=True,
-            random_seed=cocotb.RANDOM_SEED,
+            random_seed=self._regression_seed,
             sim_time_unit="ns",
             sim_time_start=0.0,
             sim_time_stop=0.0,
@@ -653,7 +653,7 @@ class RegressionManager:
             # Reason
             status="error",
             reason="Test initialization failed",
-            system_err=f"Test failed with COCOTB_RANDOM_SEED={cocotb.RANDOM_SEED}",
+            system_err=f"Test failed with COCOTB_RANDOM_SEED={self._regression_seed}",
         )
 
         # save details for summary
@@ -767,7 +767,7 @@ class RegressionManager:
             # Reason
             status="failed",
             reason=result or msg,
-            system_err=f"Test failed with COCOTB_RANDOM_SEED={cocotb.RANDOM_SEED}",
+            system_err=f"Test failed with COCOTB_RANDOM_SEED={self._regression_seed}",
         )
 
         # update running passed/failed/skipped counts
