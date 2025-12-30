@@ -583,6 +583,13 @@ class RegressionManager:
             # pytest --override-ini=junit_logging=system-out|all ...
             report.sections.append(("Captured stdout", f"[[ATTACHMENT|{attachment}]]"))
 
+        # FIXME: This is not working yet, it requires a fix in pytest internal plugin: junitxml
+        # Fix can be done by overriding the junitxml.pytest_runtest_logreport() hook or the pytest project upstream
+        if report.failed:
+            # pytest --override-ini=junit_logging=system-err|all ...
+            message: str = f"Test failed with COCOTB_RANDOM_SEED={cocotb.RANDOM_SEED}"
+            report.sections.append(("Captured stderr", message))
+
         # Add file attachments for other plugins
         report.__dict__.update({"attachments": self._attachments})
 
@@ -746,7 +753,7 @@ class RegressionManager:
 
     def _normalize_paths(self, paths: Iterable[Path | str] | None) -> list[Path]:
         """Normalize provided list of paths."""
-        return [self._normalize_path(path) for path in paths or ()]
+        return [self._normalize_path(path) for path in paths or () if path]
 
 
 def _check_interactive_exception(call: CallInfo, report: TestReport) -> bool:
