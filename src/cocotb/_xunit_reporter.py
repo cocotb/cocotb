@@ -157,20 +157,7 @@ class XUnitReporter:
             property_root: Element = SubElement(testcase, "properties")
 
             for key, value in properties.items():
-                if not value and not isinstance(value, (int, float, bool)):
-                    continue
-
-                if not isinstance(value, str) and isinstance(value, Sequence):
-                    for item in value:
-                        self._add_property(property_root, key, item)
-
-                        if key == "attachment":
-                            system_out += self._attachment_line(item)
-                else:
-                    self._add_property(property_root, key, value)
-
-                    if key == "attachment":
-                        system_out += self._attachment_line(value)
+                system_out += self._add_property(property_root, key, value)
 
         if status == "skipped":
             self._add_simple(testcase, "skipped", reason)
@@ -253,19 +240,6 @@ class XUnitReporter:
 
         return path
 
-    def _attachment_line(self, path: Path | str) -> str:
-        """Get attachment as text line.
-
-        Args:
-            path: Path to file attachment.
-
-        Returns:
-            Text line with file attachment.
-        """
-        attachment: Path = self._normalize_path(path)
-
-        return f"[[ATTACHMENT|{attachment}]]{os.linesep}"
-
     def _add_simple(
         self,
         parent: Element,
@@ -308,18 +282,38 @@ class XUnitReporter:
 
         return _escape(text)
 
-    def _add_property(self, parent: Element, name: str, value: Any) -> None:
+    def _add_property(self, parent: Element, name: str, value: Any) -> str:
         """Add property to XML element.
 
         Args:
             parent: XML parent element.
             name: Name of property.
             value: Value of property.
+
+        Returns:
+            Text content to be added to the ``system-out`` XML element.
         """
+        # Skip empty values
+        if not value and not isinstance(value, (int, float, bool)):
+            return ""
+
+        # Handling property as a list. Example: attachment: ["a", "b", "c"]
+        if not isinstance(value, str) and isinstance(value, Sequence):
+            system_out: str = ""
+
+            for item in value:
+                system_out += self._add_property(parent, name, item)
+
+            return system_out
+
+        # Handling paths like files and attachments
         if isinstance(value, Path) or name in ("file", "attachment"):
             value = self._normalize_path(value)
 
         SubElement(parent, "property", name=_escape(name), value=_escape(value))
+
+        # Add file attachment to the text part of the system-out XML element
+        return f"[[ATTACHMENT|{value}]]{os.linesep}" if name == "attachment" else ""
 
 
 def _escape_code(matchobj: re.Match[str]) -> str:
