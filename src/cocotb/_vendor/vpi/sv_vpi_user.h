@@ -25,7 +25,7 @@
 #ifndef SV_VPI_USER_H
 #define SV_VPI_USER_H
 
-#include "_vendor/vpi/vpi_user.h"
+#include "vpi_user.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -107,7 +107,6 @@ extern "C" {
 #define vpiAssume                             687
 #define vpiCover                              688
 #define vpiRestrict                           901
-
 #define vpiDisableCondition                   689
 #define vpiClockingEvent                      690
 
@@ -151,6 +150,14 @@ extern "C" {
 #define vpiIntegerNet                         681
 #define vpiLogicNet                           vpiNet
 #define vpiTimeNet                            682
+#define vpiUnionNet                           525
+#define vpiShortRealNet                       526
+#define vpiRealNet                            527
+#define vpiByteNet                            528
+#define vpiShortIntNet                        529
+#define vpiIntNet                             530
+#define vpiLongIntNet                         531
+#define vpiBitNet                             532
 #define vpiStructNet                          683
 #define vpiBreak                              684
 #define vpiContinue                           685
@@ -226,59 +233,59 @@ extern "C" {
 
 #define vpiUnit                               602
 #define vpiJoinType                           603
-#define vpiJoin                            0
-#define vpiJoinNone                        1
-#define vpiJoinAny                         2
+#define vpiJoin                                 0
+#define vpiJoinNone                             1
+#define vpiJoinAny                              2
 #define vpiAccessType                         604
-#define vpiForkJoinAcc                     1
-#define vpiExternAcc                       2
-#define vpiDPIExportAcc                    3
-#define vpiDPIImportAcc                    4
+#define vpiForkJoinAcc                          1
+#define vpiExternAcc                            2
+#define vpiDPIExportAcc                         3
+#define vpiDPIImportAcc                         4
 
 #define vpiArrayType                          606
-#define vpiStaticArray                     1
-#define vpiDynamicArray                    2
-#define vpiAssocArray                      3
-#define vpiQueueArray                      4
+#define vpiStaticArray                          1
+#define vpiDynamicArray                         2
+#define vpiAssocArray                           3
+#define vpiQueueArray                           4
 #define vpiArrayMember                        607
 
 #define vpiIsRandomized                       608
 #define vpiLocalVarDecls                      609
 #define vpiOpStrong                           656 /* strength of temporal operator */
 #define vpiRandType                           610
-#define vpiNotRand                         1
-#define vpiRand                            2
-#define vpiRandC                           3
+#define vpiNotRand                              1
+#define vpiRand                                 2
+#define vpiRandC                                3
 #define vpiPortType                           611
-#define vpiInterfacePort                   1
-#define vpiModportPort                     2
+#define vpiInterfacePort                        1
+#define vpiModportPort                          2
 /* vpiPort is also a port type. It is defined in vpi_user.h */
 
 #define vpiConstantVariable                   612
 #define vpiStructUnionMember                  615
 
 #define vpiVisibility                         620
-#define vpiPublicVis                       1
-#define vpiProtectedVis                    2
-#define vpiLocalVis                        3
-
+#define vpiPublicVis                            1
+#define vpiProtectedVis                         2
+#define vpiLocalVis                             3
 /* Return values for vpiConstType property */
-#define vpiOneStepConst                    9
-#define vpiUnboundedConst                 10
-#define vpiNullConst                      11
+
+#define vpiOneStepConst                         9
+#define vpiUnboundedConst                      10
+#define vpiNullConst                           11
 
 #define vpiAlwaysType                         624
-#define vpiAlwaysComb                      2
-#define vpiAlwaysFF                        3
-#define vpiAlwaysLatch                     4
+#define vpiAlwaysComb                           2
+#define vpiAlwaysFF                             3
+#define vpiAlwaysLatch                          4
 
 #define vpiDistType                           625
-#define vpiEqualDist                       1 /* constraint equal distribution */
-#define vpiDivDist                         2 /* constraint divided distribution */
+#define vpiEqualDist                            1 /* constraint equal distribution */
+#define vpiDivDist                              2 /* constraint divided distribution */
 
 #define vpiPacked                             630
 #define vpiTagged                             632
-#define vpiRef                             6 /* Return value for vpiDirection property */
+#define vpiRef                                  6 /* Return value for vpiDirection property */
 #define vpiVirtual                            635
 #define vpiHasActual                          636
 #define vpiIsConstraintEnabled                638
@@ -286,36 +293,35 @@ extern "C" {
 
 
 #define vpiClassType                          640
-#define vpiMailboxClass                    1
-#define vpiSemaphoreClass                  2
-#define vpiUserDefinedClass                3
-#define vpiProcessClass                    4
+#define vpiMailboxClass                         1
+#define vpiSemaphoreClass                       2
+#define vpiUserDefinedClass                     3
+#define vpiProcessClass                         4
+
 #define vpiMethod                             645
 #define vpiIsClockInferred                    649
 #define vpiIsDeferred                         657
 #define vpiIsFinal                            670
 #define vpiIsCoverSequence                    659
 #define vpiQualifier                          650
-#define vpiNoQualifier                     0
-#define vpiUniqueQualifier                 1
-#define vpiPriorityQualifier               2
-#define vpiTaggedQualifier                 4
-#define vpiRandQualifier                   8
-#define vpiInsideQualifier                16
+#define vpiNoQualifier                          0
+#define vpiUniqueQualifier                      1
+#define vpiPriorityQualifier                    2
+#define vpiTaggedQualifier                      4
+#define vpiRandQualifier                        8
+#define vpiInsideQualifier                     16
 
-#define vpiInputEdge                          651 /* returns vpiNoEdge, vpiPosedge,
-                                                     vpiNegedge */
-#define vpiOutputEdge                         652 /* returns vpiNoEdge, vpiPosedge,
-                                                     vpiNegedge */
+#define vpiInputEdge                          651 /* returns vpiNoEdge, vpiPosedge, vpiNegedge */
+#define vpiOutputEdge                         652 /* returns vpiNoEdge, vpiPosedge, vpiNegedge */
 #define vpiGeneric                            653
 
 /* Compatibility-mode property and values (object argument == NULL) */
 #define vpiCompatibilityMode                  654
-#define vpiMode1364v1995                   1
-#define vpiMode1364v2001                   2
-#define vpiMode1364v2005                   3
-#define vpiMode1800v2005                   4
-#define vpiMode1800v2009                   5
+#define vpiMode1364v1995                        1
+#define vpiMode1364v2001                        2
+#define vpiMode1364v2005                        3
+#define vpiMode1800v2005                        4
+#define vpiMode1800v2009                        5
 
 #define vpiPackedArrayMember                  655
 #define vpiStartLine                          661
@@ -325,81 +331,82 @@ extern "C" {
 
 /* memory allocation scheme for transient objects */
 #define vpiAllocScheme                        658
-#define vpiAutomaticScheme                 1
-#define vpiDynamicScheme                   2
-#define vpiOtherScheme                     3
+#define vpiAutomaticScheme                      1
+#define vpiDynamicScheme                        2
+#define vpiOtherScheme                          3
 
 #define vpiObjId                              660
 
 #define vpiDPIPure                            665
 #define vpiDPIContext                         666
 #define vpiDPICStr                            667
-#define vpiDPI                             1
-#define vpiDPIC                            2
+#define vpiDPI                                  1
+#define vpiDPIC                                 2
 #define vpiDPICIdentifier                     668
 #define vpiIsModPort                          669
 
 /******************************** Operators *******************************/
-#define vpiImplyOp                        50 /* -> implication operator */
-#define vpiNonOverlapImplyOp              51 /* |=> nonoverlapped implication */
-#define vpiOverlapImplyOp                 52 /* |-> overlapped implication operator */
-#define vpiAcceptOnOp                     83 /* accept_on operator */
-#define vpiRejectOnOp                     84 /* reject_on operator */
-#define vpiSyncAcceptOnOp                 85 /* sync_accept_on operator */
-#define vpiSyncRejectOnOp                 86 /* sync_reject_on operator */
-#define vpiOverlapFollowedByOp            87 /* overlapped followed_by operator */
-#define vpiNonOverlapFollowedByOp         88 /* nonoverlapped followed_by operator */
-#define vpiNexttimeOp                     89 /* nexttime operator */
-#define vpiAlwaysOp                       90 /* always operator */
-#define vpiEventuallyOp                   91 /* eventually operator */
-#define vpiUntilOp                        92 /* until operator */
-#define vpiUntilWithOp                    93 /* until_with operator */
+#define vpiImplyOp                             50 /* -> implication operator */
+#define vpiNonOverlapImplyOp                   51 /* |=> nonoverlapped implication */
+#define vpiOverlapImplyOp                      52 /* |-> overlapped implication operator */
+#define vpiAcceptOnOp                          83 /* accept_on operator */
+#define vpiRejectOnOp                          84 /* reject_on operator */
+#define vpiSyncAcceptOnOp                      85 /* sync_accept_on operator */
+#define vpiSyncRejectOnOp                      86 /* sync_reject_on operator */
+#define vpiOverlapFollowedByOp                 87 /* overlapped followed_by operator */
+#define vpiNonOverlapFollowedByOp              88 /* nonoverlapped followed_by operator */
+#define vpiNexttimeOp                          89 /* nexttime operator */
+#define vpiAlwaysOp                            90 /* always operator */
+#define vpiEventuallyOp                        91 /* eventually operator */
+#define vpiUntilOp                             92 /* until operator */
+#define vpiUntilWithOp                         93 /* until_with operator */
 
-#define vpiUnaryCycleDelayOp              53 /* binary cycle delay (##) operator */
-#define vpiCycleDelayOp                   54 /* binary cycle delay (##) operator */
-#define vpiIntersectOp                    55 /* intersection operator */
-#define vpiFirstMatchOp                   56 /* first_match operator */
-#define vpiThroughoutOp                   57 /* throughout operator */
-#define vpiWithinOp                       58 /* within operator */
-#define vpiRepeatOp                       59 /* [=] nonconsecutive repetition */
-#define vpiConsecutiveRepeatOp            60 /* [*] consecutive repetition */
-#define vpiGotoRepeatOp                   61 /* [->] goto repetition */
+#define vpiUnaryCycleDelayOp                   53 /* binary cycle delay (##) operator */
+#define vpiCycleDelayOp                        54 /* binary cycle delay (##) operator */
+#define vpiIntersectOp                         55 /* intersection operator */
+#define vpiFirstMatchOp                        56 /* first_match operator */
+#define vpiThroughoutOp                        57 /* throughout operator */
+#define vpiWithinOp                            58 /* within operator */
+#define vpiRepeatOp                            59 /* [=] nonconsecutive repetition */
+#define vpiConsecutiveRepeatOp                 60 /* [*] consecutive repetition */
+#define vpiGotoRepeatOp                        61 /* [->] goto repetition */
 
-#define vpiPostIncOp                      62 /* ++ post-increment */
-#define vpiPreIncOp                       63 /* ++ pre-increment */
-#define vpiPostDecOp                      64 /* -- post-decrement */
-#define vpiPreDecOp                       65 /* -- pre-decrement */
+#define vpiPostIncOp                           62 /* ++ post-increment */
+#define vpiPreIncOp                            63 /* ++ pre-increment */
+#define vpiPostDecOp                           64 /* -- post-decrement */
+#define vpiPreDecOp                            65 /* -- pre-decrement */
 
-#define vpiMatchOp                        66 /* match() operator */
-#define vpiCastOp                         67 /* type'() operator */
-#define vpiIffOp                          68 /* iff operator */
-#define vpiWildEqOp                       69 /* ==? operator */
-#define vpiWildNeqOp                      70 /* !=? operator */
+#define vpiMatchOp                             66 /* match() operator */
+#define vpiCastOp                              67 /* type'() operator */
+#define vpiIffOp                               68 /* iff operator */
+#define vpiWildEqOp                            69 /* ==? operator */
+#define vpiWildNeqOp                           70 /* !=? operator */
 
-#define vpiStreamLROp                     71 /* left-to-right streaming {>>} operator */
-#define vpiStreamRLOp                     72 /* right-to-left streaming {<<} operator */
+#define vpiStreamLROp                          71 /* left-to-right streaming {>>} operator */
+#define vpiStreamRLOp                          72 /* right-to-left streaming {<<} operator */
 
-#define vpiMatchedOp                      73 /* the .matched sequence operation */
-#define vpiTriggeredOp                    74 /* the .triggered sequence operation */
-#define vpiAssignmentPatternOp            75 /* '{} assignment pattern */
-#define vpiMultiAssignmentPatternOp       76 /* '{n{}} multi assignment pattern */
-#define vpiIfOp                           77 /* if operator */
-#define vpiIfElseOp                       78 /* if/else operator */
-#define vpiCompAndOp                      79 /* Composite and operator */
-#define vpiCompOrOp                       80 /* Composite or operator */
-#define vpiImpliesOp                      94 /* implies operator */
-#define vpiInsideOp                       95 /* inside operator */
-#define vpiTypeOp                         81 /* type operator */
-#define vpiAssignmentOp                   82 /* Normal assignment */
+#define vpiMatchedOp                           73 /* the .matched sequence operation */
+#define vpiTriggeredOp                         74 /* the .triggered sequence operation */
+#define vpiAssignmentPatternOp                 75 /* '{} assignment pattern */
+#define vpiMultiAssignmentPatternOp            76 /* '{n{}} multi assignment pattern */
+#define vpiIfOp                                77 /* if operator */
+#define vpiIfElseOp                            78 /* if-else operator */
+#define vpiCompAndOp                           79 /* Composite and operator */
+#define vpiCompOrOp                            80 /* Composite or operator */
+#define vpiImpliesOp                           94 /* implies operator */
+#define vpiInsideOp                            95 /* inside operator */
+#define vpiTypeOp                              81 /* type operator */
+#define vpiAssignmentOp                        82 /* Normal assignment */
 
 /*********************** task/function properties ***********************/
-#define vpiOtherFunc                       6 /* returns other types; for property vpiFuncType */
-/* vpiValid,vpiValidTrue,vpiValidFalse are deprecated in 1800-2009 */
+#define vpiOtherFunc                            6 /* returns other types; for property vpiFuncType */
 
+/* vpiValid,vpiValidTrue,vpiValidFalse are deprecated in 1800-2009 */
 /*********************** value for vpiValid *****************************/
-#define vpiValidUnknown                    2 /* Validity of variable is unknown */
+#define vpiValidUnknown                         2 /* Validity of variable is unknown */
 
 /************************** STRUCTURE DEFINITIONS *************************/
+
 
 /***************************** structure *****************************/
 
@@ -438,7 +445,8 @@ extern "C" {
 
 /* coverage status properties */
 #define vpiCovered                            765
-#define vpiCoverMax                           766
+#define vpiCoverMax                           766  /* preserved for backward compatibility */
+#define vpiCoveredMax                         766
 #define vpiCoveredCount                       767
 
 /* assertion-specific coverage status properties */
@@ -461,7 +469,6 @@ extern "C" {
 /***************************************************************************/
 /***************************** Assertion VPI *******************************/
 /***************************************************************************/
-
 /* assertion callback types */
 #define cbAssertionStart                      606
 #define cbAssertionSuccess                    607
