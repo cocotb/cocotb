@@ -34,7 +34,7 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
-from cocotb._utils import DocIntEnum
+from cocotb._utils import DocIntEnum, cached_no_args_method
 from cocotb.types import Array, Logic, LogicArray, Range
 from cocotb.types._indexing import do_indexing_changed_warning, indexing_changed
 from cocotb_tools import _env
@@ -1354,13 +1354,10 @@ class LogicArrayObject(
     def __str__(self) -> str:
         return str(self.value)
 
+    @cached_no_args_method
     def __len__(self) -> int:
         # can't use `range` to get length because `range` is for outer-most dimension only
         # and this object needs to support multi-dimensional packed arrays.
-        return self._len
-
-    @cached_property
-    def _len(self) -> int:
         return self._handle.get_num_elems()
 
     def __getitem__(self, _: object) -> NoReturn:
@@ -1517,12 +1514,9 @@ class EnumObject(_NonIndexableValueObjectBase[int, Union[LogicArray, int, str]])
     def __int__(self) -> int:
         return int(self.value)
 
-    @cached_property
-    def _len(self) -> int:
-        return self._handle.get_num_elems()
-
+    @cached_no_args_method
     def __len__(self) -> int:
-        return self._len
+        return self._handle.get_num_elems()
 
     @cached_property
     def is_signed(self) -> bool:
@@ -1606,12 +1600,9 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int]):
     def __int__(self) -> int:
         return self.value
 
-    @cached_property
-    def _len(self) -> int:
-        return self._handle.get_num_elems()
-
+    @cached_no_args_method
     def __len__(self) -> int:
-        return self._len
+        return self._handle.get_num_elems()
 
     @cached_property
     def is_signed(self) -> bool:
