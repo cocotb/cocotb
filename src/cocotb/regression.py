@@ -175,7 +175,7 @@ class RegressionManager:
             sim_time_stop=0.0,
             sim_time_duration=0.0,
             sim_time_ratio=0.0,
-            attachment=os.getenv("COCOTB_ATTACHMENTS", "").split(","),
+            attachment=os.getenv("COCOTB_RESULTS_ATTACHMENTS", "").split(","),
         )
 
     def discover_tests(self, *modules: str) -> None:

@@ -19,7 +19,7 @@ Attachments
 
 Simulation log and waveform files will be attached to generated JUnit XML file by using :ref:`junit-attributes-property` and
 :ref:`junit-attributes-system-out` XML elements. List of files that should be attached can be defined by using
-the :envvar:`COCOTB_ATTACHMENTS` environment variable.
+the :envvar:`COCOTB_RESULTS_ATTACHMENTS` environment variable.
 
 .. note::
 

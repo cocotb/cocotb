@@ -42,6 +42,12 @@ async def dff_simple_test(dut):
     assert dut.q.value == expected_val, "output q was incorrect on the last cycle"
 
 
+@cocotb.test
+async def xxx_failed(dut) -> None:
+    """x"""
+    assert 3 == 4, "Dupa"
+
+
 def test_simple_dff_runner():
     sim = os.getenv("SIM", "icarus")
 

@@ -293,7 +293,7 @@ Discovering Tests
 
     .. versionadded:: 2.1
 
-.. envvar:: COCOTB_ATTACHMENTS
+.. envvar:: COCOTB_RESULTS_ATTACHMENTS
 
     List of absolute paths to files (comma ``,`` separated) that will be included as file attachments in generated
     reports like :ref:`junit`.

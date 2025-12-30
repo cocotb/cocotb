@@ -527,18 +527,18 @@ class Runner(ABC):
 
         waves_file: str | None = self._waves_file() if self.waves else None
 
-        if "COCOTB_ATTACHMENTS" not in self.env:
+        if "COCOTB_RESULTS_ATTACHMENTS" not in self.env:
             attachments: list[Path] = []
 
             # Prioritize waveform as first over other files like logs
-            # GitLab is using Ruby regular expression that will retrieve attachment on first match
+            # So CI environments like GitLab CI use regular expression that will retrieve attachment only on first match
             if waves_file:
                 attachments.append(get_abs_path(self.test_dir) / waves_file)
 
             if self.log_file:
                 attachments.append(get_abs_path(self.log_file))
 
-            self.env["COCOTB_ATTACHMENTS"] = ",".join(map(str, attachments))
+            self.env["COCOTB_RESULTS_ATTACHMENTS"] = ",".join(map(str, attachments))
 
         if verbose is not None:
             self.verbose = verbose

@@ -51,7 +51,7 @@ def run_regression(argv: list[str]) -> None:
         # If defined, convert all absolute paths to relative ones
         relative_to=env.as_str("COCOTB_PATHS_RELATIVE_TO"),
         # List of file attachments to be included in created test reports
-        attachments=env.as_list("COCOTB_ATTACHMENTS"),
+        attachments=env.as_list("COCOTB_RESULTS_ATTACHMENTS"),
     )
 
     cocotb._regression_manager = cast("cocotb.regression.RegressionManager", manager)
