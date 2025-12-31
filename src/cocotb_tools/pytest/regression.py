@@ -17,7 +17,7 @@ from importlib import import_module
 from logging import Logger, getLogger
 from multiprocessing.connection import Client
 from pathlib import Path
-from time import sleep
+from time import sleep, time
 from typing import Any, Callable, Literal, cast
 
 from _pytest.config import default_plugins
@@ -45,8 +45,7 @@ import cocotb
 from cocotb import simulator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
-from cocotb._test_functions import TestSuccess
-from cocotb.regression import SimFailure
+from cocotb._test import RunningTest
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb.task import Task
 from cocotb_tools.pytest.fixture import (
@@ -54,11 +53,18 @@ from cocotb_tools.pytest.fixture import (
     AsyncFixtureCachedResult,
     resolve_fixture_arg,
 )
+from cocotb_tools.pytest.test import RunningTestSetup
 
 RETRIES: int = 10
 INTERVAL: float = 0.1  # seconds
 
 AsyncFunction = Callable[..., Awaitable]
+When = Literal["setup", "call", "teardown"]
+"""Test phase."""
+
+
+class SimFailure(BaseException):
+    """A Test failure due to simulator failure. Used internally."""
 
 
 def finish_on_exception(method: Callable[..., Any]) -> Callable[..., Any]:
@@ -91,6 +97,7 @@ class RegressionManager:
         keywords: Iterable[str] | None = None,
         test_modules: Iterable[str] | None = None,
         invocation_dir: Path | str | None = None,
+        seed: int | None = None,
     ) -> None:
         """Create new instance of regression manager for cocotb tests.
 
@@ -103,11 +110,25 @@ class RegressionManager:
             test_modules: List of test modules (Python modules with cocotb tests) to be loaded.
             invocation_dir: Path to directory location from where pytest was invoked.
             reporter_address: IPC address (Unix socket, Windows pipe, TCP, ...) to tests reporter.
+            seed: Initialization value for the random number generator. If not provided, use current timestamp.
         """
         self._toplevel: str = toplevel
-        self._task: Task
-        self._tasks: deque[Task] = deque[Task]()
-        self._subtasks: list[Task] = []
+        """Name of top level."""
+
+        self._running_test: RunningTest
+        """Current running test: "setup", "call" or "teardown"."""
+
+        self._setups: deque[RunningTest] = deque[RunningTest]()
+        """List of test setups that were populated from the :py:func:`pytest.hookspec.pytest_fixture_setup` hook."""
+
+        self._call: RunningTest | None = None
+        """Test call that was populated from the :py:func:`pytest.hookspec.pytest_runtest_call` hook."""
+
+        self._teardowns: deque[RunningTest] = deque[RunningTest]()
+        """List of test teardowns that were populated from registered setup finalizers via
+        :py:meth:`pytest.FixtureRequest.addfinalizer`` method.
+        """
+
         self._scheduled: bool = False
         self._index: int = 0
         self._finished: bool = False
@@ -121,6 +142,8 @@ class RegressionManager:
         self._logging_root_level: int = getLogger().level
         self._logging_level: int = 0
         self._logging_restored: bool = False
+        self._seed: int = int(time()) if seed is None else seed
+        self._random_state: Any = random.getstate()
 
         pluginmanager = PytestPluginManager()
 
@@ -205,7 +228,7 @@ class RegressionManager:
         return [
             f"Running on {cocotb.SIM_NAME} version {cocotb.SIM_VERSION}",
             f"Initialized cocotb v{cocotb.__version__} from {Path(__file__).parent.resolve()}",
-            f"Seeding Python random module with {cocotb.RANDOM_SEED}",
+            f"Seeding Python random module with {self._seed}",
             f"Top level set to {self._toplevel!r}",
         ]
 
@@ -248,8 +271,14 @@ class RegressionManager:
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_protocol(self, item: Item, nextitem: Item | None) -> bool:
+        """Perform the runtest protocol for a single test item.
+
+        Args:
+            item: Test item for which the runtest protocol is performed.
+            nextitem: The scheduled-to-be-next test item (or ``None`` if this is the end my friend).
+        """
         item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
-        self._setup()
+        self._setup(item=item, nextitem=nextitem)
 
         return True
 
@@ -282,10 +311,21 @@ class RegressionManager:
     def _call_and_report(
         self,
         item: Item,
-        when: Literal["setup", "call", "teardown"],
+        when: When,
         func: Callable[..., None] | None = None,
         **kwargs: object,
-    ) -> bool:
+    ) -> TestReport:
+        """Invoke test setup, call, teardown and generate test report from it.
+
+        Args:
+            item: The pytest item.
+            when: Test setup, call or teardown.
+            func: Test function that will be called.
+            kwargs: Additional named arguments that will be passed to the test function.
+
+        Returns:
+            Test report.
+        """
         if not func:
             self._logging_root_level = getLogger().level
             func = getattr(item.ihook, f"pytest_runtest_{when}")
@@ -311,65 +351,112 @@ class RegressionManager:
             call.start = self._call_start
             call.duration = call.stop - call.start
 
-        if call.excinfo or not self._tasks:
-            self._update_report_section(item, when)
+        report: TestReport = item.ihook.pytest_runtest_makereport(item=item, call=call)
 
-            report: TestReport = item.ihook.pytest_runtest_makereport(
-                item=item, call=call
-            )
+        if _check_interactive_exception(call, report):
+            _interactive_exception(item, call, report)
 
-            item.ihook.pytest_runtest_logreport(report=report)
+        return report
 
-            if _check_interactive_exception(call, report):
-                _interactive_exception(item, call, report)
+    def _completed(self, item: Item, when: When) -> TestReport:
+        """Part of test setup, call or teardown completed callback.
 
-            # Cancel remaining tasks when exception was raised (excinfo)
-            for task in self._tasks:
-                task.cancel()
+        Args:
+            item: The pytest item.
+            when: Test "setup", "call" or "teardown".
 
-            self._tasks.clear()
+        Returns:
+            Test report.
+        """
+        self._update_report_section(item=item, when=when)
 
-            return report.passed
-
-        return False
-
-    @finish_on_exception
-    def _setup(self, task: Task | None = None) -> None:
-        item: Item = self._item
-        func = task.result if task else None
-        passed: bool = self._call_and_report(item, "setup", func=func)
-
-        if self._tasks:
-            self._execute(self._setup, self._tasks.popleft())
-        elif passed:
-            self._call()
-        else:
-            self._teardown()
+        return self._call_and_report(
+            item=item, when=when, func=self._running_test.result().get
+        )
 
     @finish_on_exception
-    def _call(self, task: Task | None = None) -> None:
-        item: Item = self._item
-        func = task.result if task else None
-        self._call_and_report(item, "call", func=func)
-
-        if self._tasks:
-            self._execute(self._call, self._tasks.popleft())
-        else:
-            self._teardown()
-
-    @finish_on_exception
-    def _teardown(self, task: Task | None = None) -> None:
+    def _setup_completed(self) -> None:
+        """Test setup completed callback."""
         item: Item = self._item
         nextitem: Item | None = self._nextitem
 
-        if task:
-            self._call_and_report(item, "teardown", func=task.result)
+        report: TestReport = self._completed(item=item, when="setup")
+        self._setup(item=item, nextitem=nextitem, report=report)
+
+    def _setup(
+        self, item: Item, nextitem: Item | None = None, report: TestReport | None = None
+    ) -> None:
+        """Test setup.
+
+        Args:
+            item: The pytest item.
+            nextitem: The next pytest item. ``None`` if there are no more pytest items.
+            report: Test report.
+        """
+        if not report:
+            self._setups.clear()
+            report = self._call_and_report(item=item, when="setup")
+
+        if not report.passed:
+            item.ihook.pytest_runtest_logreport(report=report)
+            self._teardown(item=item, nextitem=nextitem)
+            return
+
+        if self._setups:
+            self._start(self._setups.popleft())
+            return
+
+        item.ihook.pytest_runtest_logreport(report=report)
+
+        self._call = None
+        report = self._call_and_report(item=item, when="call")
+
+        if self._call:
+            self._start(self._call)
         else:
-            self._call_and_report(item, "teardown", nextitem=nextitem)
+            item.ihook.pytest_runtest_logreport(report=report)
+            self._teardown(item=item, nextitem=nextitem)
 
-        if self._tasks:
-            return self._execute(self._teardown, self._tasks.popleft())
+    @finish_on_exception
+    def _call_completed(self) -> None:
+        """Test call completed callback."""
+        item: Item = self._item
+        nextitem: Item | None = self._nextitem
 
+        report: TestReport = self._completed(item=item, when="call")
+        item.ihook.pytest_runtest_logreport(report=report)
+        self._teardown(item=item, nextitem=nextitem)
+
+    @finish_on_exception
+    def _teardown_completed(self) -> None:
+        """Test teardown completed callback."""
+        item: Item = self._item
+        nextitem: Item | None = self._nextitem
+
+        report: TestReport = self._completed(item=item, when="teardown")
+        self._teardown(item=item, nextitem=nextitem, report=report)
+
+    def _teardown(
+        self, item: Item, nextitem: Item | None = None, report: TestReport | None = None
+    ) -> None:
+        """Test teardown.
+
+        Args:
+            item: The pytest item.
+            nextitem: The next pytest item. ``None`` if there are no more pytest items.
+            report: Test report.
+        """
+        if not report:
+            self._teardowns.clear()
+            report = self._call_and_report(
+                item=item, when="teardown", nextitem=nextitem
+            )
+
+        if self._teardowns:
+            self._start(self._teardowns.popleft())
+            return
+
+        item.ihook.pytest_runtest_logreport(report=report)
         item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
 
         if nextitem:
@@ -416,7 +503,9 @@ class RegressionManager:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
         hasher = hashlib.sha1()
         hasher.update(item.nodeid.encode())
-        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
+        seed: int = self._seed + int(hasher.hexdigest(), 16)
+        cocotb.RANDOM_SEED = seed
+        self._random_state = random.getstate()
         random.seed(seed)
 
     @hookimpl(tryfirst=True)
@@ -438,6 +527,10 @@ class RegressionManager:
         """
         self._save_logging_state()
 
+        # Restore random seed to original value
+        cocotb.RANDOM_SEED = self._seed
+        random.setstate(self._random_state)
+
     @hookimpl(tryfirst=True)
     def pytest_fixture_setup(
         self,
@@ -452,6 +545,38 @@ class RegressionManager:
         if not is_coroutine and not is_async_generator:
             return None
 
+        func: Callable[[], Any]
+        setup: RunningTest
+
+        if is_async_generator:
+            # Test setup with teardown, re-assign added sub-tasks during setup to teardown
+            func = self._setup_async_generator(fixturedef, request)
+        else:
+            # Test setup-only without teardown
+            func = self._setup_async_function(fixturedef, request)
+
+        task: Task = AsyncFixture(func(), name=f"Setup {request.fixturename}")
+        cache_key = fixturedef.cache_key(request)
+        fixturedef.cached_result = AsyncFixtureCachedResult((task, cache_key, None))
+
+        if is_async_generator:
+            # Test setup with teardown, added sub-tasks during setup will be cancelled by test teardown
+            setup = RunningTestSetup(self._setup_completed, task)
+        else:
+            # Test setup-only without teardown, run all tasks only during test setup
+            setup = RunningTest(self._setup_completed, task)
+
+        self._setups.append(setup)
+
+        return True
+
+    def _setup_async_generator(
+        self,
+        fixturedef: FixtureDef[Any],
+        request: Any,
+    ) -> Callable[[], Any]:
+        """Test setup with teardown."""
+
         async def func() -> Any:
             self._restore_logging_state()
 
@@ -460,27 +585,33 @@ class RegressionManager:
                 for argname in fixturedef.argnames
             }
 
-            try:
-                if is_async_generator:
-                    iterator: AsyncGenerator[Any, None] = cast(
-                        "AsyncGenerator", fixturefunc(**kwargs)
-                    )
+            iterator: AsyncGenerator[Any, None] = cast(
+                "AsyncGenerator", fixturedef.func(**kwargs)
+            )
 
-                    result = await iterator.__anext__()
-                    fixturedef.addfinalizer(self._create_async_finalizer(iterator))
-                else:
-                    result = await cast("AsyncFunction", fixturefunc)(**kwargs)
+            result = await iterator.__anext__()
+            self._add_teardown(fixturedef, request, iterator)
 
-                return result
-            finally:
-                fixturedef.addfinalizer(self._create_tasks_finalizer())
+            return result
 
-        task: Task = AsyncFixture(func())
-        cache_key = fixturedef.cache_key(request)
-        fixturedef.cached_result = AsyncFixtureCachedResult((task, cache_key, None))
-        self._tasks.append(task)
+        return func
 
-        return True
+    def _setup_async_function(
+        self, fixturedef: FixtureDef[Any], request: Any
+    ) -> Callable[[], Any]:
+        """Test setup-only without teardown."""
+
+        async def func() -> Any:
+            self._restore_logging_state()
+
+            kwargs: dict[str, Any] = {
+                argname: resolve_fixture_arg(request.getfixturevalue(argname))
+                for argname in fixturedef.argnames
+            }
+
+            return await cast("AsyncFunction", fixturedef.func)(**kwargs)
+
+        return func
 
     @hookimpl(tryfirst=True)
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
@@ -503,14 +634,10 @@ class RegressionManager:
                 for argname in pyfuncitem._fixtureinfo.argnames
             }
 
-            try:
-                await testfunction(**kwargs)
-            except TestSuccess:
-                pass
-            finally:
-                pyfuncitem.addfinalizer(self._create_tasks_finalizer())
+            await testfunction(**kwargs)
 
-        self._tasks.append(Task(func()))
+        task: Task = Task(func(), name=f"Test {pyfuncitem.name}")
+        self._call = RunningTest(self._call_completed, task)
 
         return True
 
@@ -554,7 +681,7 @@ class RegressionManager:
             "sim_time_duration": sim_time_stop - self._sim_time_start,
             "sim_time_unit": self._sim_time_unit,
             "runner_nodeid": self._nodeid,  # identify cocotb runner
-            "random_seed": getattr(cocotb, "RANDOM_SEED", 0),
+            "random_seed": self._seed,
         }
 
         # Make properties available for other plugins. The `extra` argument from pytest.TestReport
@@ -586,40 +713,42 @@ class RegressionManager:
                     else:
                         self._notify_exception(ExceptionInfo.from_current())
 
-    def _create_async_finalizer(
-        self, iterator: AsyncGenerator[Any, None]
-    ) -> Callable[[], object]:
-        tasks: list[Task] = self._subtasks
-        self._subtasks = []
+    def _add_teardown(
+        self,
+        fixturedef: FixtureDef[Any],
+        request: Any,
+        iterator: AsyncGenerator[Any, None],
+    ) -> None:
+        """Add asynchronous test teardown.
+
+        Args:
+            fixturedef: Definition of fixture.
+            request: Fixture request.
+            iterator: Asynchronous generator from invoked yield statement.
+        """
+
+        async def func() -> None:
+            self._restore_logging_state()
+
+            try:
+                await iterator.__anext__()
+            except StopAsyncIteration:
+                pass
+
+        task: Task = Task(func(), name=f"Teardown {request.fixturename}")
+        setup: RunningTest = self._running_test
+        teardown: RunningTest = RunningTest(self._teardown_completed, task)
 
         def finalizer() -> None:
-            async def func() -> None:
-                self._restore_logging_state()
+            # Assign setup tasks (without the main task) to test teardown
+            if isinstance(setup, RunningTestSetup):
+                for task in setup.subtasks:
+                    if not task.cancelled():
+                        teardown.add_task(task)
 
-                try:
-                    await iterator.__anext__()
-                except StopAsyncIteration:
-                    pass
-                finally:
-                    for task in reversed(tasks):
-                        task._cancel_now()
+            self._teardowns.append(teardown)
 
-            self._tasks.append(Task(func()))
-
-        return finalizer
-
-    def _create_tasks_finalizer(self) -> Callable[[], object]:
-        tasks: list[Task] = self._subtasks
-        self._subtasks = []
-
-        def finalizer() -> None:
-            async def func() -> None:
-                for task in reversed(tasks):
-                    task._cancel_now()
-
-            self._tasks.append(Task(func()))
-
-        return finalizer if tasks else lambda: None
+        fixturedef.addfinalizer(finalizer)
 
     def _save_logging_state(self) -> None:
         """Save state of logging including log handlers and current log level."""
@@ -666,13 +795,6 @@ class RegressionManager:
             root_logger.removeHandler(self._logging_plugin.caplog_handler)
             root_logger.removeHandler(self._logging_plugin.report_handler)
 
-    @property
-    def _running_test(self) -> RegressionManager:
-        return self
-
-    def add_task(self, task: Task) -> None:
-        self._subtasks.append(task)
-
     def _on_sim_end(self) -> None:
         try:
             raise SimFailure(
@@ -685,19 +807,19 @@ class RegressionManager:
         finally:
             self._finish()
 
-    def _execute(self, done_callback: Callable[..., None], task: Task) -> None:
-        task._add_done_callback(done_callback)
-        self._task = task
+    def _start(self, running_test: RunningTest) -> None:
+        """Start test setup, call or teardown.
+
+        Args:
+            running_test: Test to run.
+        """
+        self._running_test = running_test
 
         if self._scheduled:
-            self._timer1._register(self._schedule_next_task)
+            self._timer1._register(self._running_test.start)
         else:
             self._scheduled = True
-            self._schedule_next_task()
-
-    def _schedule_next_task(self) -> None:
-        self._task._ensure_started()
-        cocotb._event_loop._inst.run()
+            self._running_test.start()
 
     def _shutdown(self) -> None:
         # TODO refactor initialization and finalization into their own module
