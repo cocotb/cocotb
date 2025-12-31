@@ -234,6 +234,7 @@ class GPI_EXPORT GpiImplInterface {
     virtual void get_sim_precision(int32_t *precision) = 0;
     virtual const char *get_simulator_product() = 0;
     virtual const char *get_simulator_version() = 0;
+    virtual int get_simulator_args(int *argc, char const *const **argv) = 0;
 
     /* Hierarchy related */
     virtual GpiObjHdl *get_child_by_name(const std::string &name,
@@ -258,10 +259,6 @@ class GPI_EXPORT GpiImplInterface {
 
   private:
     std::string m_name;
-
-  protected:
-    std::string m_product;
-    std::string m_version;
 };
 
 /* Called from implementation layers back up the stack */
@@ -270,7 +267,7 @@ GPI_EXPORT int gpi_register_impl(GpiImplInterface *func_tbl);
 // GpiImpls are currently expected to register single callbacks with the
 // interface for the start and end of simulation time. These functions are
 // called by the GpiImpls. The GPI layer will do the callback muxing.
-GPI_EXPORT void gpi_start_of_sim_time(int argc, char const *const *argv);
+GPI_EXPORT void gpi_start_of_sim_time();
 GPI_EXPORT void gpi_end_of_sim_time();
 
 GPI_EXPORT void gpi_entry_point();

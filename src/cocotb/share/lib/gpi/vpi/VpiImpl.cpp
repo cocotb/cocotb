@@ -48,15 +48,19 @@ void VpiImpl::get_sim_precision(int32_t *precision) {
 }
 
 const char *VpiImpl::get_simulator_product() {
-    if (m_product.empty() && m_version.empty()) {
+    if (m_product.empty()) {
         s_vpi_vlog_info info;
         if (!vpi_get_vlog_info(&info)) {
             LOG_WARN("Could not obtain info about the simulator");
             m_product = "UNKNOWN";
             m_version = "UNKNOWN";
+            m_argc = 0;
+            m_argv = nullptr;
         } else {
             m_product = info.product;
             m_version = info.version;
+            m_argc = info.argc;
+            m_argv = info.argv;
         }
     }
     return m_product.c_str();
@@ -65,6 +69,13 @@ const char *VpiImpl::get_simulator_product() {
 const char *VpiImpl::get_simulator_version() {
     get_simulator_product();
     return m_version.c_str();
+}
+
+int VpiImpl::get_simulator_args(int *argc, char const *const **argv) {
+    get_simulator_product();
+    *argc = m_argc;
+    *argv = m_argv;
+    return 0;
 }
 
 static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
@@ -759,28 +770,16 @@ const char *VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
 }
 
 static int startup_callback(void *) {
-    s_vpi_vlog_info info;
-
     LOG_TRACE("GPI => [ GPI (VPI startup) ]");
-    auto pass = vpi_get_vlog_info(&info);
-    // LCOV_EXCL_START
-    if (!pass) {
-        LOG_ERROR("Unable to get argv and argc from simulator");
-        info.argc = 0;
-        info.argv = nullptr;
-    }
-    // LCOV_EXCL_STOP
-
-    gpi_start_of_sim_time(info.argc, info.argv);
-
+    gpi_start_of_sim_time();
     LOG_TRACE("[ GPI (VPI startup) ] => GPI");
     return 0;
 }
 
 static int shutdown_callback(void *) {
-    LOG_TRACE("GPI => [ GPI (VPI shutdown) ]");
+    LOG_TRACE("GPI => [ GPI (VPI end of sim time) ]");
     gpi_end_of_sim_time();
-    LOG_TRACE("[ GPI (VPI shutdown) ] => GPI");
+    LOG_TRACE("[ GPI (VPI end of sim time) ] => GPI");
     return 0;
 }
 

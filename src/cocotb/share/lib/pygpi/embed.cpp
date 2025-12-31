@@ -82,7 +82,7 @@ static void pygpi_init_debug() {
     }
 }
 
-static int start_of_sim_time(void *, int, char const *const *);
+static int start_of_sim_time(void *);
 static void end_of_sim_time(void *);
 static void finalize(void *);
 
@@ -222,7 +222,7 @@ static void finalize(void *) {
     }
 }
 
-static int start_of_sim_time(void *, int argc, char const *const *_argv) {
+static int start_of_sim_time(void *) {
     PYGPI_LOG_TRACE("GPI Start Sim => [ PYGPI Start ]");
     DEFER(PYGPI_LOG_TRACE("[ PYGPI Start ] => GPI Start Sim"));
 
@@ -250,6 +250,10 @@ static int start_of_sim_time(void *, int argc, char const *const *_argv) {
         // LCOV_EXCL_STOP
     }
     DEFER(Py_DECREF(entry_utility_module));
+
+    int argc;
+    char const *const *_argv;
+    gpi_get_simulator_args(&argc, &_argv);
 
     // Build argv for cocotb module
     auto argv_list = PyList_New(argc);
