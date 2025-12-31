@@ -9,9 +9,9 @@ TESTCASE := y_test
 
 # TESTCASE filtering out all tests results in a warning
 
-include ../../designs/sample_module/Makefile
-
-# override PYTHONWARNINGS to prevent DeprecationWarning causing an error with use of TESTCASE
+# override PYTHONWARNINGS to prevent DeprecationWarning causing an error with use of COCOTB_TESTCASE
 ifdef PYTHONWARNINGS
-override PYTHONWARNINGS += ignore::DeprecationWarning:cocotb._init,
+override PYTHONWARNINGS := $(PYTHONWARNINGS),ignore::DeprecationWarning:cocotb.regression
 endif
+
+include ../../designs/sample_module/Makefile

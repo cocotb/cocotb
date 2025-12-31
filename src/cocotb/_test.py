@@ -230,7 +230,11 @@ def create_task(
         return coro
     elif isinstance(coro, Coroutine):
         task = Task[ResultType](coro, name=name)
-        cocotb._regression_manager._running_test.add_task(task)
+        # TODO Break this dependency cycle as soon as pytest plugin RegressionManager
+        # uses this class rather than trying to mimic it.
+        import cocotb.regression  # noqa: PLC0415
+
+        cocotb.regression._manager_inst._running_test.add_task(task)
         return task
     elif inspect.iscoroutinefunction(coro):
         raise TypeError(
