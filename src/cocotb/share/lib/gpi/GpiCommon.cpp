@@ -19,8 +19,7 @@
 using namespace std;
 
 static vector<GpiImplInterface *> registered_impls;
-static vector<std::pair<int (*)(void *, int, char const *const *), void *>>
-    start_of_sim_time_cbs;
+static vector<std::pair<int (*)(void *), void *>> start_of_sim_time_cbs;
 static vector<std::pair<void (*)(void *), void *>> end_of_sim_time_cbs;
 static vector<std::pair<void (*)(void *), void *>> finalize_cbs;
 
@@ -93,12 +92,12 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
 
 bool gpi_has_registered_impl() { return registered_impls.size() > 0; }
 
-void gpi_start_of_sim_time(int argc, char const *const *argv) {
+void gpi_start_of_sim_time() {
     for (auto &cb_info : start_of_sim_time_cbs) {
         // start_of_sime_time should never fail, this should be moved to
         // gpi_load_users, as should the (argc,argv)
         LOG_TRACE("[ GPI Start Sim ] => User Start callback");
-        int error = cb_info.first(cb_info.second, argc, argv);
+        int error = cb_info.first(cb_info.second);
         LOG_TRACE("User Start callback => [ GPI Start Sim ]");
         if (error) {
             gpi_end_of_sim_time();
@@ -744,9 +743,7 @@ const char *GpiImplInterface::get_name_c() { return m_name.c_str(); }
 
 const string &GpiImplInterface::get_name_s() { return m_name; }
 
-int gpi_register_start_of_sim_time_callback(int (*cb)(void *, int,
-                                                      char const *const *),
-                                            void *cb_data) {
+int gpi_register_start_of_sim_time_callback(int (*cb)(void *), void *cb_data) {
     start_of_sim_time_cbs.push_back(std::make_pair(cb, cb_data));
     return 0;
 }
@@ -758,5 +755,10 @@ int gpi_register_end_of_sim_time_callback(void (*cb)(void *), void *cb_data) {
 
 int gpi_register_finalize_callback(void (*cb)(void *), void *cb_data) {
     finalize_cbs.push_back(std::make_pair(cb, cb_data));
+    return 0;
+}
+
+int gpi_get_simulator_args(int *argc, char const *const **argv) {
+    registered_impls[0]->get_simulator_args(argc, argv);
     return 0;
 }

@@ -182,6 +182,14 @@ GPI_EXPORT const char *gpi_get_simulator_product(void);
  */
 GPI_EXPORT const char *gpi_get_simulator_version(void);
 
+/** Return the arguments to the simulator executable call.
+ *
+ * @param argc  Pointer to store argument count.
+ * @param argv  Pointer to store argument values.
+ * @return      Zero on success, non-zero on failure.
+ */
+GPI_EXPORT int gpi_get_simulator_args(int *argc, char const *const **argv);
+
 /** @} */  // End of group SimIntf
 
 /** @defgroup ObjQuery Simulation Object Query
@@ -436,40 +444,23 @@ gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 GPI_EXPORT gpi_cb_hdl
 gpi_register_readwrite_callback(int (*gpi_function)(void *), void *gpi_cb_data);
 
-/** Type of a start of simulation time callback.
- *
- * @param cb_data   Pointer to user data to be passed to callback function.
- * @param argc      Number of command line arguments.
- * @param argv      Command line arguments.
- * @return          `0` on success, non-zero on error which will abort
- * simulation.
- */
-typedef int (*gpi_start_of_sim_time_callback)(void *cb_data, int argc,
-                                              char const *const *argv);
-
 /** Register a callback to run at the start of simulation time.
  *
  * @param cb        Callback function pointer.
  * @param cb_data   Pointer to user data to be passed to callback function.
- * @return          Handle to callback object.
+ * @return          Zero on success, non-zero on failure.
  */
-GPI_EXPORT int gpi_register_start_of_sim_time_callback(
-    gpi_start_of_sim_time_callback cb, void *cb_data);
-
-/** Type of an end of simulation time callback.
- *
- * @param cb_data   Pointer to user data to be passed to callback function.
- */
-typedef void (*gpi_end_of_sim_time_callback)(void *cb_data);
+GPI_EXPORT int gpi_register_start_of_sim_time_callback(int (*cb)(void *),
+                                                       void *cb_data);
 
 /** Register a callback to run at the end of simulation time.
  *
  * @param cb        Callback function pointer.
  * @param cb_data   Pointer to user data to be passed to callback function.
- * @return          Handle to callback object.
+ * @return          Zero on success, non-zero on failure.
  */
-GPI_EXPORT int gpi_register_end_of_sim_time_callback(
-    gpi_end_of_sim_time_callback cb, void *cb_data);
+GPI_EXPORT int gpi_register_end_of_sim_time_callback(void (*cb)(void *),
+                                                     void *cb_data);
 
 /** Type of a GPI finalization callback.
  *
