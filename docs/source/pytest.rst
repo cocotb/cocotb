@@ -351,16 +351,23 @@ Example clock generation for all tests using the ``conftest.py`` file:
 
 .. code:: python
 
+    from collections.abc import AsyncGenerator
+
     import pytest
     from cocotb.clock import Clock
 
 
     @pytest.fixture(scope="session", autouse=True)
-    async def clock_generation(dut) -> None:
+    async def clock_generation(dut) -> AsyncGenerator[None, None]:
         """Generate clock for all tests using session scope."""
+        # Test setup (executed before test), create and start clock generation
         dut.clk.value = 0
 
         Clock(dut.clk, 10, unit="ns").start(start_high=False)
+
+        yield  # Calling test, yield is needed to keep clock generation alive
+
+        # Test teardown (executed after test), clock generation will be finished here
 
 
 Example set up and tear down fixture:
