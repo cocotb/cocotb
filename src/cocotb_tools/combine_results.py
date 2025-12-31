@@ -9,7 +9,6 @@ Simple script to combine JUnit test results into a single XML file.
 from __future__ import annotations
 
 import argparse
-import os
 import re
 import sys
 from collections.abc import Iterable
@@ -31,6 +30,12 @@ def _existing_path(path_str: str) -> Path:
     if not path.exists():
         raise argparse.ArgumentTypeError(f"Path '{path_str}' does not exist.")
     return path
+
+
+def _get_properties(element: ET.Element) -> dict[str, str]:
+    return {
+        item.get("name", ""): item.get("value", "") for item in element.iter("property")
+    }
 
 
 def _get_parser() -> argparse.ArgumentParser:
@@ -93,15 +98,9 @@ def main() -> int:
             tree = ET.parse(fname)
             for ts in tree.iter("testsuite"):
                 if args.verbose:
-                    print(
-                        "Testsuite name: {!r}, package: {!r}".format(
-                            ts.get("name"), ts.get("package")
-                        )
-                    )
+                    print("Testsuite name: {!r}".format(ts.get("name")))
                 for existing in result:
-                    if (existing.get("name") == ts.get("name")) and (
-                        existing.get("package") == ts.get("package")
-                    ):
+                    if existing.get("name") == ts.get("name"):
                         if args.verbose:
                             print(
                                 "Testsuite already exists in combined results. Extending it."
@@ -115,39 +114,39 @@ def main() -> int:
                         )
                     result.append(ts)
 
-    testsuite_count = 0
-    testcase_count = 0
-    for testsuite in result.iter("testsuite"):
+    workspace: Path = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+
+    testsuite_count: int = 0
+    testcase_count: int = 0
+
+    for testsuite in result.findall("testsuite"):
         testsuite_count += 1
+
         for testcase in testsuite.iter("testcase"):
             testcase_count += 1
-            for _ in testcase.iter("failure"):
-                rc = 1
-                print(
-                    "Failure in testsuite: '{}' classname: '{}' testcase: '{}' with parameters '{}'".format(
-                        testsuite.get("name"),
-                        testcase.get("classname"),
-                        testcase.get("name"),
-                        testsuite.get("package"),
-                    )
+
+            if testcase.find("failure") is None and testcase.find("error") is None:
+                continue
+
+            properties: dict[str, str] = _get_properties(testcase)
+            file: Path | str | None = properties.get("file")
+            rc = 1
+
+            if file and Path(file).is_absolute():
+                try:
+                    file = Path(file).resolve().relative_to(workspace)
+                except ValueError:
+                    pass
+
+            print(
+                "Failure in testsuite: '{}' testcase: '{}.{}' file: '{}::{}'".format(
+                    testsuite.get("name"),
+                    testcase.get("classname"),
+                    testcase.get("name"),
+                    file,
+                    properties.get("line"),
                 )
-                if (
-                    os.getenv("GITHUB_ACTIONS") is not None
-                    and args.repo_root is not None
-                ):
-                    # Get test file relative to root of repo
-                    file = testcase.get("file")
-                    # if this file was output by cocotb, it has this attribute
-                    assert file is not None
-                    relative_file = Path(file).relative_to(args.repo_root)
-                    print(
-                        "::error file={},line={}::Test {}:{} failed".format(
-                            relative_file,
-                            testcase.get("lineno"),
-                            testcase.get("classname"),
-                            testcase.get("name"),
-                        )
-                    )
+            )
 
     print(f"Ran a total of {testsuite_count} TestSuites and {testcase_count} TestCases")
 

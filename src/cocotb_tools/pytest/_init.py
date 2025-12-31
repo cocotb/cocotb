@@ -48,6 +48,10 @@ def run_regression(argv: list[str]) -> None:
         reporter_address=env.as_str("COCOTB_PYTEST_REPORTER_ADDRESS"),
         # Name of HDL top level design
         toplevel=env.as_str("COCOTB_TOPLEVEL"),
+        # If defined, convert all absolute paths to relative ones
+        relative_to=env.as_str("COCOTB_RESULTS_RELATIVE_TO"),
+        # List of file attachments to be included in created test reports
+        attachments=env.as_list("COCOTB_RESULTS_ATTACHMENTS"),
     )
 
     cocotb._regression_manager = cast("cocotb.regression.RegressionManager", manager)
