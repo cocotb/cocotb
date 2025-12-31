@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import Any
 
 from pytest import FixtureRequest, Parser, PytestPluginManager, fixture, hookimpl
 
@@ -88,8 +90,13 @@ def sample_module_fixture(hdl: HDL, request: FixtureRequest) -> HDL:
 
 
 @fixture(name="clock_generation", scope="session", autouse=True)
-async def clock_generation_fixture(dut) -> None:
+async def clock_generation_fixture(dut: Any) -> AsyncGenerator[None, None]:
     """Generate clock for all tests using session scope."""
+    # Test setup (executed before test), create and start clock generation
     dut.clk.value = 0
 
     Clock(dut.clk, 10, unit="ns").start(start_high=False)
+
+    yield  # Calling test, yield is needed to keep clock generation alive
+
+    # Test teardown (executed after test), clock generation will be finished here
