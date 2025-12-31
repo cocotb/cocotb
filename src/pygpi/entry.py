@@ -7,7 +7,7 @@ from typing import Callable
 from cocotb_tools import _env
 
 
-def load_entry(argv: list[str]) -> None:
+def load_entry() -> None:
     """Gather entry point information by parsing :envvar:`PYGPI_USERS`."""
 
     entry_points_str: list[str] = _env.as_list(
@@ -36,7 +36,7 @@ def load_entry(argv: list[str]) -> None:
     # Expect failure to stop the loading of any additional entry points.
     for entry_module_str, entry_func_str in entry_points:
         entry_module = importlib.import_module(entry_module_str)
-        entry_func: Callable[[list[str]], object] = operator.attrgetter(entry_func_str)(
+        entry_func: Callable[[], object] = operator.attrgetter(entry_func_str)(
             entry_module
         )
-        entry_func(argv)
+        entry_func()

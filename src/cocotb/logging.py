@@ -193,7 +193,7 @@ def _setup_gpi_logger() -> None:
     simulator.initialize_logger(_log_from_c, logging.getLogger)
 
 
-def _configure(_: object) -> None:
+def _configure() -> None:
     """Configure basic logging."""
     reduced_log_fmt: bool = _env.as_bool("COCOTB_REDUCED_LOG_FMT", True)
     prefix_format: str = os.getenv("COCOTB_LOG_PREFIX", "")
