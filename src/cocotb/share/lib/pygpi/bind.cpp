@@ -727,6 +727,39 @@ static PyObject *get_simulator_version(PyObject *, PyObject *) {
     return PyUnicode_FromString(gpi_get_simulator_version());
 }
 
+static PyObject *get_argv(PyObject *, PyObject *) {
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
+
+    int argc;
+    char const *const *_argv;
+    gpi_get_simulator_args(&argc, &_argv);
+
+    // Build argv for cocotb module
+    auto argv_list = PyList_New(argc);
+    // LCOV_EXCL_START
+    if (argv_list == NULL) {
+        PyErr_Print();
+        return NULL;
+    }
+    // LCOV_EXCL_STOP
+    for (int i = 0; i < argc; i++) {
+        // Decode, embedding non-decodable bytes using PEP-383. This can only
+        // fail with MemoryError or similar.
+        auto argv_item = PyUnicode_DecodeLocale(_argv[i], "surrogateescape");
+        // LCOV_EXCL_START
+        if (!argv_item) {
+            PyErr_Print();
+            return NULL;
+        }
+        // LCOV_EXCL_STOP
+        PyList_SetItem(argv_list, i, argv_item);
+    }
+    return argv_list;
+}
+
 static PyObject *get_num_elems(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
     int elems = gpi_get_num_elems(self->hdl);
     return PyLong_FromLong(elems);
@@ -1158,6 +1191,11 @@ static PyMethodDef SimulatorMethods[] = {
                "--\n\n"
                "get_simulator_version() -> str\n"
                "Get the simulator's product version string.")},
+    {"get_simulator_args", get_argv, METH_NOARGS,
+     PyDoc_STR("get_simulator_args()\n"
+               "--\n\n"
+               "get_simulator_args() -> list[str]\n"
+               "Get the simulator's command line arguments.")},
     {"clock_create", clock_create, METH_VARARGS,
      PyDoc_STR("clock_create(signal, /)\n"
                "--\n\n"

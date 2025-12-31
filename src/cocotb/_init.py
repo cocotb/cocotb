@@ -26,7 +26,7 @@ from cocotb_tools import _env
 log: logging.Logger
 
 
-def init_package_from_simulation(argv: list[str]) -> None:
+def init_package_from_simulation() -> None:
     """Initialize the cocotb package from a simulation context."""
 
     # Initialize subsystems
@@ -41,7 +41,7 @@ def init_package_from_simulation(argv: list[str]) -> None:
 
     # setup cocotb global variables
     cocotb.is_simulation = True
-    cocotb.argv = argv
+    cocotb.argv = cocotb.simulator.get_simulator_args()
     cocotb.log = logging.getLogger("test")
     cocotb.log.setLevel(logging.INFO)
     cocotb.SIM_NAME = cocotb.simulator.get_simulator_product().strip()

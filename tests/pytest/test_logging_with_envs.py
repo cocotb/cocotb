@@ -54,7 +54,7 @@ def _set_env(monkeypatch: MonkeyPatch, name: str, value: str | None) -> None:
     )
 
     cocotb.logging._init()
-    cocotb.logging._configure(())
+    cocotb.logging._configure()
 
 
 @pytest.mark.parametrize("value", (None, "0", "1"))

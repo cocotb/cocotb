@@ -1095,7 +1095,7 @@ The PyGPI is a Python wrapper around the :term:`GPI` (Generic Procedural Interfa
 
     The entry function must be a callable matching this form:
 
-    * ``entry_function(argv: List[str]) -> None``
+    * ``entry_function() -> None``
 
     .. versionchanged:: 1.8
         ``level`` argument to ``_sim_event`` is no longer passed, it is assumed to be ``SIM_FAIL`` (2).
@@ -1108,6 +1108,11 @@ The PyGPI is a Python wrapper around the :term:`GPI` (Generic Procedural Interfa
 
     .. versionchanged:: 2.0
         Renamed from ``PYGPI_ENTRY_POINT``.
+
+    .. versionchanged:: 2.1
+
+        The entry function is no longer passed the ``argv`` object.
+        If you need access to command-line arguments, use :func:`cocotb.simulator.get_simulator_args`.
 
 .. envvar:: PYGPI_DEBUG
 
