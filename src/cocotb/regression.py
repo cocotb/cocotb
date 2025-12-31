@@ -946,7 +946,7 @@ def _setup_regression_manager() -> None:
         _manager_inst.set_mode(RegressionMode.TESTCASE)
 
 
-def _run_regression(_: object) -> None:
+def _run_regression() -> None:
     """Setup and run a regression."""
 
     # sys.path normally includes "" (the current directory), but does not appear to when Python is embedded.
