@@ -5,13 +5,13 @@
 
 #include "./VhpiImpl.hpp"
 
-#include <gpi_logging.h>
 #include <stdlib.h>
 
 #include <cassert>
 #include <cmath>
 #include <cstring>
 
+#include "../logging.hpp"
 #include "_vendor/vhpi/vhpi_user.h"
 #include "vhpi_user_ext.h"
 

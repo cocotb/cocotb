@@ -5,6 +5,7 @@
 
 #include <cstring>
 
+#include "../logging.hpp"
 #include "./FliImpl.hpp"
 #include "_vendor/fli/mti.h"
 

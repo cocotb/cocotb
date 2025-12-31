@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "../logging.hpp"
 #include "./VpiImpl.hpp"
 
 int VpiArrayObjHdl::initialise(const std::string &name,

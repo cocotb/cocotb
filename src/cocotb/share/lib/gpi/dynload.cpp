@@ -4,8 +4,9 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <gpi_logging.h>
 #include <stdlib.h>
+
+#include "./logging.hpp"
 
 #ifdef _WIN32
 #include <windows.h>

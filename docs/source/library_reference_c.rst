@@ -73,3 +73,4 @@ C API
 .. doxygengroup:: SigProps
 .. doxygengroup:: HandleIteration
 .. doxygengroup:: SimCallbacks
+.. doxygengroup:: Logging
