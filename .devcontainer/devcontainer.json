@@ -1,0 +1,40 @@
+// VS Code Dev Container configuration file for a cocotb development environment.
+{
+	"name": "cocotb development",
+	"build": {
+		"context": "..",
+		"dockerfile": "Dockerfile"
+	},
+	"postCreateCommand": ".devcontainer/post-create.sh",
+	"postAttachCommand": "less .devcontainer/README.md",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"llvm-vs-code-extensions.vscode-clangd",
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"lramseyer.vaporview"
+			],
+			"settings": {
+				"tasks": {
+					// See https://go.microsoft.com/fwlink/?LinkId=733558
+					// for the documentation about the tasks.json format
+					"version": "2.0.0",
+					"tasks": [
+						{
+							"label": "Preview documentation",
+							"type": "shell",
+							// Run the docs_preview nox session with the virtual environment's Python
+							// (if it exists).
+							"command": "PATH=.venv/bin:$PATH nox -s docs_preview",
+							"isBackground": true
+						}
+					]
+				},
+				"files.exclude": {
+					"**/.venv": true
+				}
+			}
+		}
+	}
+}

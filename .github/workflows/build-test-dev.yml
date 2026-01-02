@@ -23,13 +23,11 @@ on:
       # Documentation
       - 'docs/**'
       # Dot-files not related to running tests
-      - '.theia/**'
+      - '.devcontainer/**'
       - '.backportrc.json'
       - '.clang-format'
       - '.git-blame-ignore-revs'
       - '.gitignore'
-      - '.gitpod.Dockerfile'
-      - '.gitpod.yml'
       - '.pre-commit-config.yaml'
       - '.readthedocs.yml'
       # Information files
