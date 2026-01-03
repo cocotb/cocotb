@@ -1,0 +1,1 @@
+Added the *on_overflow* parameter to :meth:`.LogicArray.from_unsigned` and :meth:`.LogicArray.from_signed` to allow the user to decide how to handle values which are too large to fit in *range*.
