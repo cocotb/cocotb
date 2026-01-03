@@ -1,0 +1,1 @@
+Added environment variable :ref:`env-types` in documentation.

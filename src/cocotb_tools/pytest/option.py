@@ -13,7 +13,7 @@ from typing import Any, Literal
 
 from pytest import Config, OptionGroup, Parser
 
-from cocotb_tools.pytest import env
+from cocotb_tools import env
 
 PREFIXES: tuple[str, ...] = ("cocotb_", "gpi_", "pygpi_")
 

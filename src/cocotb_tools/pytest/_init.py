@@ -21,7 +21,7 @@ from cocotb._init import (
     _sim_event,
 )
 from cocotb.logging import _setup_gpi_logger
-from cocotb_tools.pytest import env
+from cocotb_tools import env
 from cocotb_tools.pytest.regression import RegressionManager
 
 

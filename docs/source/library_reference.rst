@@ -132,21 +132,32 @@ Python Test Runner
 
 .. envvar:: GUI
 
-    Set this to 1 to enable the GUI mode in the simulator (if supported).
+    Type: :ref:`env-boolean`
+
+    Default: :py:data:`False`
+
+    Enable the GUI mode in the simulator (if supported).
 
 .. envvar:: WAVES
 
-    Set this to 1 to enable wave traces dump for the
-    Aldec Riviera-PRO, Mentor Graphics Questa, and Icarus Verilog simulators.
+    Type: :ref:`env-boolean`
+
+    Default: :py:data:`False`
+
+    Enable wave traces dump for the Aldec Riviera-PRO, Mentor Graphics Questa, and Icarus Verilog simulators.
     To get wave traces in Verilator see :ref:`sim-verilator-waveforms`.
 
 .. envvar:: COCOTB_WAVEFORM_VIEWER
+
+    Type: :ref:`env-string`
 
     The name of the waveform viewer executable to use (like ``surfer``) when GUI mode is enabled
     for simulators that do not have a built-in waveform viewer (like Verilator).
     The executable name will be called with the name of the waveform file as the argument.
 
 .. envvar:: LIBPYTHON_LOC
+
+    Type: :ref:`env-path`
 
     The absolute path to the Python library associated with the current Python installation;
     i.e. ``libpython.so`` or ``python.dll`` on Windows.
@@ -218,6 +229,8 @@ Discovering Tests
 
 .. envvar:: COCOTB_TEST_MODULES
 
+    Type: :ref:`env-list`
+
     The name of the Python module(s) to search for test functions -
     if your tests are in a file called ``test_mydesign.py``, ``COCOTB_TEST_MODULES`` would be set to ``test_mydesign``.
     Multiple modules can be specified using a comma-separated string.
@@ -237,6 +250,8 @@ Discovering Tests
 .. _testcase:
 
 .. envvar:: COCOTB_TESTCASE
+
+    Type: :ref:`env-list`
 
     A comma-separated list of tests to run.
     Does an exact match on the test name.
@@ -272,6 +287,8 @@ Discovering Tests
 
 .. envvar:: COCOTB_TEST_FILTER
 
+    Type: :ref:`env-string`
+
     A regular expression matching names of test function(s) to run.
     If this variable is not defined cocotb discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied :envvar:`COCOTB_TEST_MODULES` list.
 
@@ -283,11 +300,19 @@ Discovering Tests
 
 .. envvar:: COCOTB_RESULTS_FILE
 
-    The file name where xUnit XML tests results are stored. If not provided, the default is :file:`results.xml`.
+    Type: :ref:`env-string`
+
+    Default: :file:`results.xml`
+
+    The file name where xUnit XML tests results are stored.
 
     .. versionadded:: 1.3
 
 .. envvar:: COCOTB_REWRITE_ASSERTION_FILES
+
+    Type: :ref:`env-string`
+
+    Default: ``*.py``
 
     Select the Python files to apply ``pytest``'s assertion rewriting to.
     This is useful to get more informative assertion error messages in cocotb tests.
@@ -371,6 +396,8 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
     :inherited-members:
 
 .. envvar:: COCOTB_RESOLVE_X
+
+    Type: :env:`env-string`
 
     Defines how to resolve bits with a value of ``X``, ``Z``, ``U``, ``W``, or ``-`` when being converted to integer.
     Valid settings are:
@@ -567,6 +594,8 @@ Logging
 
 .. envvar:: COCOTB_LOG_LEVEL
 
+    Type: :env:`env-string`
+
     The default log level of all ``"cocotb"`` Python loggers.
     Valid values are ``TRACE``, ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
     The default is unset, which means that the log level is inherited from the root logger.
@@ -577,6 +606,8 @@ Logging
         Use :envvar:`GPI_LOG_LEVEL` instead.
 
 .. envvar:: GPI_LOG_LEVEL
+
+    Type: :env:`env-string`
 
     The default log level of all ``"gpi"`` (the low-level simulator interface) loggers,
     including both Python and the native GPI logger.
@@ -627,11 +658,17 @@ Log Formatting
 
 .. envvar:: COCOTB_REDUCED_LOG_FMT
 
-    Defaults to ``1``.
+    Type: :env:`env-boolean`
+
+    Default: :py:data:`True`
+
     Logs will include simulation time, message type (``INFO``, ``WARNING``, ``ERROR``, ...), logger name, and the log message itself.
-    If the value is set to ``0``, the filename and line number where a log function was called will be added between the logger name and the log message.
+    If disabled, the filename and line number where a log function was called will be added between the logger name and the log message.
+    By default, option is enabled.
 
 .. envvar:: COCOTB_LOG_PREFIX
+
+    Type: :env:`env-string`
 
     Customize the log message prefix.
     The value of this variable should be in Python f-string syntax.
@@ -665,6 +702,8 @@ Log Coloring
 
 .. envvar:: COCOTB_ANSI_OUTPUT
 
+    Type: :env:`env-boolean`
+
     Use this to override the default behavior of annotating cocotb output with
     ANSI color codes if the output is a terminal (``isatty()``).
 
@@ -677,8 +716,8 @@ Log Coloring
 
     From http://no-color.org,
 
-        All command-line software which outputs text with ANSI color added should check for the presence
-        of a ``NO_COLOR`` environment variable that, when present (regardless of its value), prevents the addition of ANSI color.
+        Command-line software which adds ANSI color to its output by default should check for a ``NO_COLOR`` environment variable that,
+        when present and not an empty string (regardless of its value), prevents the addition of ANSI color.
 
 
 Simulator Objects
@@ -754,6 +793,8 @@ Simulator Objects
 
 .. envvar:: COCOTB_TRUST_INERTIAL_WRITES
 
+    Type: :ref:`env-boolean`
+
     Defining this variable enables a mode which allows cocotb to trust that VPI/VHPI/FLI inertial writes are applied properly according to the respective standards.
     This mode can lead to noticeable performance improvements,
     and also includes some behavioral difference that are considered by the cocotb maintainers to be "better".
@@ -809,6 +850,8 @@ Other Runtime Information
 
 .. envvar:: COCOTB_PLUSARGS
 
+    Type: :ref:`env-string`
+
       "Plusargs" are options that are starting with a plus (``+``) sign.
       They are passed to the simulator and are also available within cocotb as :data:`cocotb.plusargs`.
       In the simulator, they can be read by the Verilog/SystemVerilog system functions
@@ -825,6 +868,8 @@ Other Runtime Information
 .. autodata:: cocotb.top
 
 .. envvar:: COCOTB_TOPLEVEL
+
+    Type: :ref:`env-string`
 
     Use this to indicate the instance in the hierarchy to use as the :term:`DUT`.
     If this isn't defined then the first root instance is used.
@@ -852,6 +897,8 @@ Other Runtime Information
 .. autodata:: cocotb.RANDOM_SEED
 
 .. envvar:: COCOTB_RANDOM_SEED
+
+    Type: :ref:`env-integer`
 
     Seed the Python random module to recreate a previous test stimulus.
     At the beginning of every test a message is displayed with the seed used for that execution:
@@ -896,6 +943,10 @@ Debugging
 
 .. envvar:: COCOTB_SCHEDULER_DEBUG
 
+    Type: :ref:`env-boolean`
+
+    Default: :py:data:`False`
+
     Enable additional log output of the coroutine scheduler.
 
     This will default the value of :data:`~cocotb.debug.debug`,
@@ -903,10 +954,16 @@ Debugging
 
 .. envvar:: COCOTB_PDB_ON_EXCEPTION
 
-   If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
-   See also the :ref:`troubleshooting-attaching-debugger-python` subsection of :ref:`troubleshooting-attaching-debugger`.
+    Type: :ref:`env-boolean`
+
+    Default: :py:data:`False`
+
+    If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
+    See also the :ref:`troubleshooting-attaching-debugger-python` subsection of :ref:`troubleshooting-attaching-debugger`.
 
 .. envvar:: COCOTB_ATTACH
+
+    Type: :ref:`env-integer`
 
     In order to give yourself time to attach a debugger to the simulator process before it starts to run,
     you can set the environment variable :envvar:`COCOTB_ATTACH` to a pause time value in seconds.
@@ -915,12 +972,20 @@ Debugging
 
 .. envvar:: COCOTB_ENABLE_PROFILING
 
+    Type: :ref:`env-boolean`
+
+    Default: :py:data:`False`
+
     Enable performance analysis of the Python portion of cocotb. When set, a file :file:`test_profile.pstat`
     will be written which contains statistics about the cumulative time spent in the functions.
 
     From this, a callgraph diagram can be generated with `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ and ``graphviz``.
 
 .. envvar:: COCOTB_USER_COVERAGE
+
+    Type: :ref:`env-boolean`
+
+    Default: :py:data:`False`
 
     Enable to collect Python coverage data for user code.
     For some simulators, this will also report :term:`HDL` coverage.
@@ -938,6 +1003,8 @@ Debugging
         :envvar:`COVERAGE` is a deprecated alias and will be removed.
 
 .. envvar:: COVERAGE_RCFILE
+
+    Type: :ref:`env-string`
 
     Location of a configuration file for coverage collection of Python user code
     using the the :mod:`coverage` module.
@@ -1008,6 +1075,8 @@ The PyGPI is a Python wrapper around the :term:`GPI` (Generic Procedural Interfa
 
 .. envvar:: PYGPI_PYTHON_BIN
 
+    Type: :ref:`env-path`
+
     The Python binary in the Python environment to use with cocotb.
     This is set to the result of ``cocotb-config --python-bin`` in the Makefiles and :ref:`Python Runner <howto-python-runner>`.
     You will likely only need to set this variable manually if
@@ -1015,6 +1084,8 @@ The PyGPI is a Python wrapper around the :term:`GPI` (Generic Procedural Interfa
     or if you are using a :ref:`custom flow <custom-flows>`.
 
 .. envvar:: PYGPI_USERS
+
+    Type: :ref:`env-list`
 
     The Python module and callable that starts up the Python cosimulation environment.
     User overloads can be used to enter alternative Python frameworks or to hook existing cocotb functionality.
@@ -1041,6 +1112,10 @@ The PyGPI is a Python wrapper around the :term:`GPI` (Generic Procedural Interfa
 
 .. envvar:: PYGPI_DEBUG
 
+    Type: :ref:`env-boolean`
+
+    Default: :py:data:`False`
+
     Enable additional debug functionality in the PyGPI.
     Includes verbose log messages tracing the code execution path through the PyGPI.
     The messages are logged at GPI log level ``TRACE``,
@@ -1057,3 +1132,76 @@ It should not be considered public API, but is documented here for developers of
     :undoc-members:
     :member-order: bysource
     :synopsis: Interface to simulator.
+
+
+.. _env:
+
+Environment Variables
+=====================
+
+.. _env-types:
+
+Types
+-----
+
+.. _env-boolean:
+
+Boolean
+^^^^^^^
+
+Enable or disable option by setting environment variable to one of supported values:
+
+* ``1``, ``yes``, ``y``, ``on``, ``true`` or ``enable`` to enable it.
+* ``0``, ``no``, ``n``, ``off``, ``false`` or ``disable`` to disable it.
+* If environment variable is unset or empty, it will use default value. If not specified, it will be :py:data:`False` (disabled).
+
+Passed value will be converted to :py:class:`bool` type.
+
+.. note::
+
+    Environment variables of boolean type are case-insensitive. For example: ``YES``, ``Yes`` or ``yes`` are equal.
+
+.. _env-list:
+
+List
+^^^^
+
+List of values (comma ``,`` separated) that will be passed by environment variable as :py:class:`list`.
+All values will be strip from leading and trailing whitespace characters. Empty values will be discarded.
+
+.. _env-string:
+
+String
+^^^^^^
+
+Value that will be passed by environment variable as :py:class:`str` type.
+Passed value will be strip from leading and trailing whitespace characters.
+If environment variable is unset or empty, it will use default value. If not specified, it will be an empty string.
+
+.. _env-integer:
+
+Integer
+^^^^^^^
+
+Value that will be passed by environment variable as :py:class:`int` type.
+If environment variable is unset or empty, it will use default value. If not specified, it will be zero (``0``).
+
+.. _env-path:
+
+Path
+^^^^
+
+Value that will be passed by environment variable as :py:class:`pathlib.Path` type.
+If environment variable is unset or empty, it will use default value. If not specified, it will be current working directory.
+
+----
+
+.. _env-api:
+
+cocotb_tools.env
+----------------
+
+.. automodule:: cocotb_tools.env
+    :members:
+    :member-order: bysource
+    :synopsis: Handling environment variables in consistent and unified way.
