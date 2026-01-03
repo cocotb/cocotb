@@ -114,3 +114,8 @@ const char *VpiObjHdl::get_definition_file() {
     }
     return m_definition_file.c_str();
 }
+
+int VpiSignalObjHdl::get_signed() {
+    LOG_INFO("Getting signed property for signal %s", get_fullname().c_str());
+    return vpi_get(vpiSigned, get_handle<vpiHandle>());
+}
