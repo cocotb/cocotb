@@ -17,7 +17,7 @@ from importlib import import_module
 from logging import Logger, getLogger
 from multiprocessing.connection import Client
 from pathlib import Path
-from time import sleep
+from time import sleep, time
 from typing import Any, Callable, Literal, cast
 
 from _pytest.config import default_plugins
@@ -91,6 +91,7 @@ class RegressionManager:
         keywords: Iterable[str] | None = None,
         test_modules: Iterable[str] | None = None,
         invocation_dir: Path | str | None = None,
+        seed: int | None = None,
     ) -> None:
         """Create new instance of regression manager for cocotb tests.
 
@@ -103,6 +104,7 @@ class RegressionManager:
             test_modules: List of test modules (Python modules with cocotb tests) to be loaded.
             invocation_dir: Path to directory location from where pytest was invoked.
             reporter_address: IPC address (Unix socket, Windows pipe, TCP, ...) to tests reporter.
+            seed: Initialization value for the random number generator. If not provided, use current timestamp.
         """
         self._toplevel: str = toplevel
         self._task: Task
@@ -121,6 +123,8 @@ class RegressionManager:
         self._logging_root_level: int = getLogger().level
         self._logging_level: int = 0
         self._logging_restored: bool = False
+        self._seed: int = int(time()) if seed is None else seed
+        self._random_state: Any = random.getstate()
 
         pluginmanager = PytestPluginManager()
 
@@ -205,7 +209,7 @@ class RegressionManager:
         return [
             f"Running on {cocotb.SIM_NAME} version {cocotb.SIM_VERSION}",
             f"Initialized cocotb v{cocotb.__version__} from {Path(__file__).parent.resolve()}",
-            f"Seeding Python random module with {cocotb.RANDOM_SEED}",
+            f"Seeding Python random module with {self._seed}",
             f"Top level set to {self._toplevel!r}",
         ]
 
@@ -416,7 +420,9 @@ class RegressionManager:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
         hasher = hashlib.sha1()
         hasher.update(item.nodeid.encode())
-        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
+        seed: int = self._seed + int(hasher.hexdigest(), 16)
+        cocotb.RANDOM_SEED = seed
+        self._random_state = random.getstate()
         random.seed(seed)
 
     @hookimpl(tryfirst=True)
@@ -437,6 +443,10 @@ class RegressionManager:
             nextitem: The scheduled-to-be-next pytest item (next test function).
         """
         self._save_logging_state()
+
+        # Restore random seed to original value
+        cocotb.RANDOM_SEED = self._seed
+        random.setstate(self._random_state)
 
     @hookimpl(tryfirst=True)
     def pytest_fixture_setup(
@@ -554,7 +564,7 @@ class RegressionManager:
             "sim_time_duration": sim_time_stop - self._sim_time_start,
             "sim_time_unit": self._sim_time_unit,
             "runner_nodeid": self._nodeid,  # identify cocotb runner
-            "random_seed": getattr(cocotb, "RANDOM_SEED", 0),
+            "random_seed": self._seed,
         }
 
         # Make properties available for other plugins. The `extra` argument from pytest.TestReport

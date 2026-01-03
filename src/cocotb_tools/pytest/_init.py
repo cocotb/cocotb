@@ -48,6 +48,8 @@ def run_regression(argv: list[str]) -> None:
         reporter_address=env.as_str("COCOTB_PYTEST_REPORTER_ADDRESS"),
         # Name of HDL top level design
         toplevel=env.as_str("COCOTB_TOPLEVEL"),
+        # Initialization value for the random generator
+        seed=cocotb.RANDOM_SEED,
     )
 
     cocotb._regression_manager = cast("cocotb.regression.RegressionManager", manager)
