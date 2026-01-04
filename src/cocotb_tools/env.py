@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Handling environment variables in friendly way."""
+"""Handling environment variables in consistent and unified way."""
 
 from __future__ import annotations
 
@@ -30,17 +30,23 @@ def exists(name: str) -> bool:
     return name in os.environ
 
 
-def as_str(name: str, default: str | None = None) -> str:
+def as_str(name: str, default: str | None = None, strip: bool = True) -> str:
     """Convert value of environment variable to Python string type.
 
     Args:
         name: Name of environment variable.
         default: Default value of environment variable.
+        strip: Strip value from leading and trailing whitespace characters.
 
     Returns:
-        Striped string of environment variable.
+        Stripped string of environment variable.
     """
-    return os.environ.get(name, "").strip() or default or ""
+    value: str = os.environ.get(name, "")
+
+    if strip:
+        value = value.strip()
+
+    return value or default or ""
 
 
 def as_bool(name: str, default: bool | None = None) -> bool:
@@ -73,7 +79,7 @@ def as_bool(name: str, default: bool | None = None) -> bool:
         return False
 
     raise ValueError(
-        f"Unexpected value '{envvar}' for environment variable: {name}. "
+        f"Unexpected value {envvar!r} for environment variable: {name!r}. "
         f"Expecting one of {(*TRUE,)} or {(*FALSE,)}"
     )
 
@@ -106,11 +112,9 @@ def as_int(name: str, default: int | None = None) -> int:
         default: Default value of environment variable.
 
     Returns:
-        Integer.
+        Integer. If value was not set, it will return zero (0).
     """
-    value: str = as_str(name)
-
-    return int(value or default or 0)
+    return int(as_str(name) or default or 0)
 
 
 def as_path(name: str, default: Path | str | None = None) -> Path:
@@ -121,11 +125,27 @@ def as_path(name: str, default: Path | str | None = None) -> Path:
         default: Default value of environment variable.
 
     Returns:
-        Path type.
+        Resolved path. If path was not set, it will return current working directory.
     """
-    value: str = as_str(name)
+    return Path(as_str(name) or default or "").resolve()
 
-    return Path(value or default or "")
+
+def as_paths(
+    name: str, default: Iterable[Path | str] | Path | str | None = None
+) -> list[Path]:
+    """Convert value of environment variable to list of Python path types.
+
+    Args:
+        name: Name of environment variable.
+        default: Default value of environment variable.
+
+    Returns:
+        List of resolved paths.
+    """
+    if isinstance(default, (Path, str)):
+        default = (default,)
+
+    return [Path(path).resolve() for path in as_list(name) or default or ()]
 
 
 def as_args(name: str, default: str | None = None) -> list[str]:
@@ -138,6 +158,4 @@ def as_args(name: str, default: str | None = None) -> list[str]:
     Returns:
         List of arguments split based on shell syntax.
     """
-    value: str = as_str(name)
-
-    return shlex.split(value or default or "")
+    return shlex.split(as_str(name) or default or "")

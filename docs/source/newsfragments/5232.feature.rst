@@ -1,0 +1,1 @@
+Added documentation about :ref:`env` and supported types :ref:`env-boolean`, :ref:`env-list`, :ref:`env-integer`, :ref:`env-string` and :ref:`env-path`.
