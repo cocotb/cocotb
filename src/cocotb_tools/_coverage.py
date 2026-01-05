@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 
 def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
@@ -16,8 +17,9 @@ def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
             "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`."
         ) from None
     else:
+        tmp_data_file = f".coverage{os.getenv('COCOTB_REDUCED_LOG_FMT')}.tmp"
         library_coverage = coverage.coverage(
-            data_file=".coverage.cocotb",
+            data_file=tmp_data_file,
             config_file=False,
             branch=True,
             source=["cocotb"],
@@ -27,6 +29,26 @@ def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
         def stop_library_coverage() -> None:
             library_coverage.stop()
             library_coverage.save()  # pragma: no cover
+
+            data_file = (
+                getattr(library_coverage.config, "data_file", None)
+                or ".coverage.cocotb"
+            )
+            data_dir = Path(data_file).resolve().parent
+            pattern = data_dir / ".coverage*"
+            files = [
+                str(p.resolve()) for p in Path(pattern).parent.glob(Path(pattern).name)
+            ]
+
+            if files:
+                final_data_file = ".coverage.cocotb"
+                combiner = coverage.coverage(
+                    data_file=final_data_file,
+                    config_file=False,
+                    branch=True,
+                    source=["cocotb"],
+                )
+                combiner.combine(data_paths=files, strict=True, keep=True)
 
         # This must come after `library_coverage.start()` to ensure coverage is being
         # collected on the cocotb library before importing from it.

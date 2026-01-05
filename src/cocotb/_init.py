@@ -174,6 +174,8 @@ def _start_user_coverage() -> None:
             ) from None
         else:
             config_filepath = os.getenv("COVERAGE_RCFILE")
+
+            tmp_data_file = f".coverage{os.getenv('COCOTB_REDUCED_LOG_FMT')}.tmp"
             if config_filepath is None:
                 # Exclude cocotb itself from coverage collection.
                 log.info(
@@ -181,20 +183,49 @@ def _start_user_coverage() -> None:
                 )
                 cocotb_package_dir = Path(__file__).parent.absolute()
                 user_coverage = coverage.coverage(
-                    branch=True, omit=[f"{cocotb_package_dir}/*"]
+                    data_file=tmp_data_file,
+                    branch=True,
+                    omit=[f"{cocotb_package_dir}/*"],
                 )
             else:
                 log.info(
                     "Collecting coverage of user code. Coverage config file supplied."
                 )
                 # Allow the config file to handle all configuration
-                user_coverage = coverage.coverage(config_file=config_filepath)
+                user_coverage = coverage.coverage(
+                    data_file=tmp_data_file, config_file=config_filepath
+                )
             user_coverage.start()
 
             def stop_user_coverage() -> None:
                 user_coverage.stop()
                 log.debug("Writing user coverage data")
                 user_coverage.save()
+
+                data_file = (
+                    getattr(user_coverage.config, "data_file", None) or ".coverage"
+                )
+                data_dir = Path(data_file).resolve().parent
+                pattern = str(data_dir / ".coverage*")
+                files = [
+                    str(p.resolve())
+                    for p in Path(pattern).parent.glob(Path(pattern).name)
+                ]
+
+                if files:
+                    final_data_file = ".coverage"
+                    if config_filepath is None:
+                        cocotb_package_dir = Path(__file__).parent.absolute()
+                        combiner = coverage.coverage(
+                            data_file=final_data_file,
+                            branch=True,
+                            omit=[f"{cocotb_package_dir}/*"],
+                        )
+                    else:
+                        combiner = coverage.coverage(
+                            data_file=final_data_file, config_file=config_filepath
+                        )
+                    combiner.combine(data_paths=files, strict=True, keep=True)
 
             _register_shutdown_callback(stop_user_coverage)
 
