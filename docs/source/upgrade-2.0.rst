@@ -255,7 +255,7 @@ Replace construction from :class:`bytes` with :meth:`.LogicArray.from_bytes` and
     LogicArray.from_unsigned(10, 10)
     LogicArray("1010")
     LogicArray.from_signed(-10, 8)
-    BinaryValue.from_bytes(b"1234", byteorder="big")
+    LogicArray.from_bytes(b"1234", byteorder="big")
 
 ----
 
