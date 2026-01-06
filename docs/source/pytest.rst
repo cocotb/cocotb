@@ -110,6 +110,8 @@ An example is provided below, located in a project ``conftest.py`` file:
 
 .. code:: python
 
+    # conftest.py
+
     import pytest
     from cocotb_tools.pytest.hdl import HDL
 
@@ -124,15 +126,47 @@ An example is provided below, located in a project ``conftest.py`` file:
         Returns:
             Representation of HDL design with added HDL source files.
         """
-        hdl.sources = (
+        hdl.toplevel = "sample_module"
+        hdl.sources = [
             # List HDL source files,
             "sample_module.sv",
-        )
-
-        # Build HDL design
-        hdl.build()
+        ]
 
         return hdl
+
+
+Then it can be used in ``test_*.py`` files like this:
+
+.. code:: python
+
+    # test_*.py
+
+    from cocotb_tools.pytest.hdl import HDL
+    import pytest
+
+
+    @pytest.mark.cocotb_runner
+    def test_sample_module(sample_module: HDL) -> None:
+        """Build and run HDL design "sample_module" with cocotb tests.
+
+        Args:
+            sample_module: Definition of HDL design that will be build and run with cocotb tests.
+        """
+        sample_module.test()
+
+
+    async def test_dut_feature_1(dut) -> None:
+        """Test DUT feature 1."""
+
+
+    async def test_dut_feature_2(dut) -> None:
+        """Test DUT feature 2."""
+
+
+.. note::
+
+    If the :meth:`~cocotb_tools.pytest.hdl.HDL.build` method was not called explicitly,
+    then it will be invoked implicitly by the :meth:`~cocotb_tools.pytest.hdl.HDL.test` method.
 
 
 .. _pytest-plugin-markers:
@@ -155,8 +189,7 @@ The plugin provides the marker :py:deco:`!pytest.mark.cocotb_runner` that will m
     def sample_module_fixture(hdl: HDL) -> HDL:
         """Define new HDL design by adding HDL source files to it."""
         hdl.toplevel = "sample_module"
-        hdl.sources = (DESIGNS / "sample_module.sv",)
-        hdl.build()
+        hdl.sources = [DESIGNS / "sample_module.sv"]
 
         return hdl
 
@@ -214,7 +247,8 @@ Additionally, positional arguments of :py:deco:`!pytest.mark.cocotb_runner` mark
         sample_module.test()
 
 
-If ``toplevel`` argument is empty/non-set, plugin will use name of first test module but without
+If ``toplevel`` argument is empty/non-set, plugin will use the base name of the last provided source file
+used during compilation. If list of source files was not specified, it will use name of first test module but without
 ``test_*`` prefix or ``*_test`` suffix. For example, if test module was ``test_design`` then
 name of HDL top level design will be ``design``.
 
@@ -223,9 +257,18 @@ name of HDL top level design will be ``design``.
     # test_design.py
 
     @pytest.mark.cocotb_runner
-    def test_dut_using_default_toplevel(sample_module: HDL) -> None:
+    def test_dut_using_default_toplevel_1(sample_module: HDL) -> None:
         """Test DUT with default top level associated with name of test file as this test function."""
         assert hdl.toplevel == "design"
+        sample_module.test()
+
+
+    @pytest.mark.cocotb_runner
+    def test_dut_using_default_toplevel_2(sample_module: HDL) -> None:
+        """Test DUT with default top level associated with the base name of the last source file."""
+        sample_module.sources = ["other_design_pkg.v", "other_design.v"]
+
+        assert hdl.toplevel == "other_design"
         sample_module.test()
 
 
@@ -271,8 +314,7 @@ or :py:func:`cocotb_tools.runner.Runner.test`.
     def sample_module_fixture(hdl: HDL) -> HDL:
         """Define new HDL design by adding HDL source files to it."""
         hdl.toplevel = "sample_module"
-        hdl.sources = (DESIGNS / "sample_module.sv",)
-        hdl.build()
+        hdl.sources = [DESIGNS / "sample_module.sv"]
 
         return hdl
 
@@ -428,6 +470,8 @@ Example with a custom ``Makefile`` that is defining the ``sample_module`` make r
 
 .. code:: python
 
+    # conftest.py or test_*.py
+
     import pytest
     import subprocess
 
@@ -440,6 +484,8 @@ Example with a custom ``Makefile`` that is defining the ``sample_module`` make r
 You may also consider to use command line arguments from pytest to configure build system:
 
 .. code:: python
+
+    # conftest.py or test_*.py
 
     import pytest
     import subprocess
@@ -463,6 +509,8 @@ And make it reusable for other projects/teams by packaging is as a new plugin fo
 
 .. code:: python
 
+    # plugin.py or conftest.py or test_*.py
+
     import pytest
     import subprocess
 
@@ -485,6 +533,8 @@ So others can use it in their projects:
 
 .. code:: python
 
+    # test_*.py
+
     import pytest
     from pytest_cocotb_my_build_system import MyBuildSystem
 
@@ -499,39 +549,33 @@ By Hooks
 The most recommended way to integrate custom build flow with :py:mod:`~cocotb_tools.pytest.plugin`
 is to implement cocotb pytest hooks defined in :py:mod:`cocotb_tools.pytest.hookspecs`.
 
-
 .. code:: python
 
-    from pathlib import Path
+    # plugin.py or conftest.py or test_*.py
+
+    import subprocess
     from cocotb_tools.pytest.hdl import HDL
-    from cocotb_tools.runner import Runner
-    from pytest import FixtureRequest, hookimpl
+    from pytest import hookimpl
 
 
-    class MyHDL(HDL):
-        def __init__(self, request: FixtureRequest) -> None:
-            # Add new attributes, load HDL source files from build system, ...
-            ...
+    # Several plugins can implement this hook as well
+    # The "tryfirst=True" tells pytest to try this hook as first before others
+    @hookimpl(tryfirst=True)
+    def pytest_cocotb_hdl_build(hdl: HDL) -> object | None:
+        """Build a HDL design using external build system."""
+        subprocess.run(["make", "build", f"TOPLEVEL={hdl.toplevel}"], check=True)
 
-
-    class MyRunner(Runner):
-        def build(self, *args, **kwargs) -> None:
-            # Build HDL design by invoking existing build system
-            ...
-
-        def test(self, *args, **kwargs) -> Path:
-            # Run HDL simulator by invoking existing build system
-            ...
+        # Required by the pytest plugin system
+        # If None, next plugin will be invoked as well. Otherwise, this hook will be executed as the last
+        return True
 
 
     @hookimpl(tryfirst=True)
-    def pytest_cocotb_make_hdl(request: FixtureRequest) -> HDL:
-        return MyHDL(request)
+    def pytest_cocotb_hdl_test(hdl: HDL) -> object | None:
+        """Test a HDL design using external build system."""
+        subprocess.run(["make", "test", f"TOPLEVEL={hdl.toplevel}"], check=True)
 
-
-    @hookimpl(tryfirst=True)
-    def pytest_cocotb_make_runner(simulator_name: str) -> Runner:
-        return MyRunner()
+        return True
 
 
 Implemented hooks can be distributed as new Python package published to PyPI registry.

@@ -32,8 +32,6 @@ Fixtures
 
 .. autofixture:: dut
 
-.. autofixture:: hdl_session
-
 .. autofixture:: hdl
 
 
@@ -103,8 +101,9 @@ Hook Specifications
 
 .. autofunction:: pytest_cocotb_make_hdl
 
-.. autofunction:: pytest_cocotb_make_runner
+.. autofunction:: pytest_cocotb_hdl_build
 
+.. autofunction:: pytest_cocotb_hdl_test
 
 .. _api-runner:
 
