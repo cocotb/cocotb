@@ -21,7 +21,6 @@ def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
         tmp_data_file_controller = tempfile.NamedTemporaryFile(
             prefix=".coverage.cocotb.",
             suffix=".tmp",
-            delete=False,
         )
         tmp_data_file = tmp_data_file_controller.name
         library_coverage = coverage.coverage(
