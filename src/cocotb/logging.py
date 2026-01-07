@@ -110,19 +110,22 @@ def default_config(
         Now captures warnings and outputs them through the logging system using
         :func:`logging.captureWarnings`.
     """
-    logging.basicConfig()
+    # Using the stream=sys.stdout argument will ensure that the root logger without any handlers
+    # will be always configured to have the stdout stream handler
+    logging.basicConfig(stream=sys.stdout)
 
-    hdlr = logging.StreamHandler(sys.stdout)
-    hdlr.addFilter(SimTimeContextFilter())
-    hdlr.setFormatter(
-        SimLogFormatter(
-            reduced_log_fmt=reduced_log_fmt,
-            strip_ansi=strip_ansi,
-            prefix_format=prefix_format,
-            multiline_indent=multiline_indent,
+    # Pytest or other frameworks can add custom log handlers, we need to ensure that log output will be consistent
+    for handler in logging.getLogger().handlers:
+        handler.addFilter(SimTimeContextFilter())
+
+        handler.setFormatter(
+            SimLogFormatter(
+                reduced_log_fmt=reduced_log_fmt,
+                strip_ansi=strip_ansi,
+                prefix_format=prefix_format,
+                multiline_indent=multiline_indent,
+            )
         )
-    )
-    logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
     logging.getLogger("cocotb").setLevel(logging.INFO)
     logging.getLogger("gpi").setLevel(logging.INFO)
