@@ -203,6 +203,8 @@ class VhpiSignalObjHdl : public GpiSignalObjHdl {
         : GpiSignalObjHdl(impl, hdl, objtype, is_const) {}
     ~VhpiSignalObjHdl() override;
 
+    int get_signed() override;
+
     const char *get_signal_value_binstr() override;
     const char *get_signal_value_str() override;
     double get_signal_value_real() override;

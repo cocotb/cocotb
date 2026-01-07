@@ -208,6 +208,7 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
     GpiCbHdl *register_value_change_callback(gpi_edge edge,
                                              int (*function)(void *),
                                              void *cb_data) override;
+    int get_signed() override;
 
   private:
     int set_signal_value(s_vpi_value value, gpi_set_action action);
