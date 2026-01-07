@@ -513,7 +513,7 @@ class Runner(ABC):
                 names = [s.strip() for s in testcase.split(",") if s.strip()]
             else:
                 names = list(testcase)
-            regex = "^(" + "|".join(rf".*{re.escape(name)}" for name in names) + ")$"
+            regex = "\.(" + "|".join(rf".*{re.escape(name)}" for name in names) + ")$"
             self.env["COCOTB_TEST_FILTER"] = regex
 
         if test_filter is not None:
