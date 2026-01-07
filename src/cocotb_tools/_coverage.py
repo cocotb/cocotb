@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import os
+from cocotb_tools import _env
 
 
 def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
-    if "COCOTB_LIBRARY_COVERAGE" not in os.environ:
+    if not _env.as_bool("COCOTB_LIBRARY_COVERAGE"):
         return
     try:
         import coverage  # noqa: PLC0415

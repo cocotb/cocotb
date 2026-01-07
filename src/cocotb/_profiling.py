@@ -7,14 +7,15 @@
 from __future__ import annotations
 
 import cProfile
-import os
 import pstats
 from contextlib import AbstractContextManager, nullcontext
+
+from cocotb_tools import _env
 
 profiling_context: AbstractContextManager[None, None]
 
 
-if "COCOTB_ENABLE_PROFILING" in os.environ:
+if _env.as_bool("COCOTB_ENABLE_PROFILING"):
     _profile: cProfile.Profile
 
     def initialize() -> None:

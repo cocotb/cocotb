@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Handling environment variables in friendly way."""
+"""Handling environment variables in a consistent and unified way."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def as_str(name: str, default: str | None = None) -> str:
         default: Default value of environment variable.
 
     Returns:
-        Striped string of environment variable.
+        Stripped string of environment variable.
     """
     return os.environ.get(name, "").strip() or default or ""
 
@@ -53,12 +53,12 @@ def as_bool(name: str, default: bool | None = None) -> bool:
         default: Default value of environment variable.
 
     Returns:
-        True if environment variable is ``1``, ``yes``, ``y``, ``on``, ``true`` or ``enable``.
-        False if environment variable is ``0``, ``no``, ``n``, ``off``, ``false`` or ``disable``.
-        Default value if environment variable was not set or it is empty.
+        :data:`True` if the environment variable is ``1``, ``yes``, ``y``, ``on``, ``true`` or ``enable``.
+        :data:`False` if the environment variable is ``0``, ``no``, ``n``, ``off``, ``false`` or ``disable``.
+        Default value if environment variable was not set or is empty.
 
     Raises:
-        :py:exc:`ValueError` for unexpected value from environment variable.
+        :exc:`ValueError` in case of an unexpected value.
     """
     envvar: str = as_str(name)  # Keep original case for ValueError
     value: str = envvar.lower()
@@ -73,8 +73,8 @@ def as_bool(name: str, default: bool | None = None) -> bool:
         return False
 
     raise ValueError(
-        f"Unexpected value '{envvar}' for environment variable: {name}. "
-        f"Expecting one of {(*TRUE,)} or {(*FALSE,)}"
+        f"Unexpected value {envvar!r} for environment variable: {name!r}. "
+        f"Expecting one of {(*TRUE,)} or {(*FALSE,)} (case-insensitive)"
     )
 
 
@@ -83,7 +83,7 @@ def as_list(
 ) -> list[str]:
     """Convert value of environment variable to Python list of strings type.
 
-    Values by default are comma ``,`` separated.
+    Values by default are comma (``,``) separated.
 
     Args:
         name: Name of environment variable.
@@ -91,7 +91,7 @@ def as_list(
         separator: Used separator between values.
 
     Returns:
-        List of striped and non-empty strings.
+        List of stripped and non-empty strings.
     """
     items: list[str] = list(filter(None, map(str.strip, as_str(name).split(separator))))
 
@@ -106,11 +106,9 @@ def as_int(name: str, default: int | None = None) -> int:
         default: Default value of environment variable.
 
     Returns:
-        Integer.
+        Integer. If value was not set, it will return zero (0).
     """
-    value: str = as_str(name)
-
-    return int(value or default or 0)
+    return int(as_str(name) or default or 0)
 
 
 def as_path(name: str, default: Path | str | None = None) -> Path:
@@ -121,11 +119,9 @@ def as_path(name: str, default: Path | str | None = None) -> Path:
         default: Default value of environment variable.
 
     Returns:
-        Path type.
+        The resolved path. If not set, the current working directory will be returned.
     """
-    value: str = as_str(name)
-
-    return Path(value or default or "")
+    return Path(as_str(name) or default or "").resolve()
 
 
 def as_args(name: str, default: str | None = None) -> list[str]:
@@ -138,6 +134,4 @@ def as_args(name: str, default: str | None = None) -> list[str]:
     Returns:
         List of arguments split based on shell syntax.
     """
-    value: str = as_str(name)
-
-    return shlex.split(value or default or "")
+    return shlex.split(as_str(name) or default or "")

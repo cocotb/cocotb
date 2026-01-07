@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import enum
 import logging
-import os
 import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
@@ -38,6 +37,7 @@ from cocotb._gpi_triggers import (
 from cocotb._utils import DocIntEnum
 from cocotb.types import Array, Logic, LogicArray, Range
 from cocotb.types._indexing import do_indexing_changed_warning, indexing_changed
+from cocotb_tools import _env
 
 __all__ = (
     "ArrayObject",
@@ -754,7 +754,7 @@ class _OldImmediate(Generic[_ValueT]):
         self.value = value
 
 
-_trust_inertial = bool(int(os.environ.get("COCOTB_TRUST_INERTIAL_WRITES", "0")))
+_trust_inertial: bool = _env.as_bool("COCOTB_TRUST_INERTIAL_WRITES")
 if _trust_inertial:
 
     def _apply_scheduled_writes() -> None:

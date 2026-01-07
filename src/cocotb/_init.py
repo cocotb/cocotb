@@ -5,14 +5,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import ast
 import logging
-import os
 import random
 import sys
-import time
 import warnings
 from pathlib import Path
+from time import time
 from types import SimpleNamespace
 from typing import Callable, cast
 
@@ -23,6 +21,7 @@ import cocotb.logging
 import cocotb.simtime
 import cocotb.simulator
 from cocotb.regression import RegressionManager, RegressionMode
+from cocotb_tools import _env
 
 log: logging.Logger
 
@@ -156,16 +155,20 @@ def _process_packages() -> None:
 
 
 def _start_user_coverage() -> None:
-    coverage_envvar = os.getenv("COCOTB_USER_COVERAGE")
-    if coverage_envvar is None:
-        coverage_envvar = os.getenv("COVERAGE")
-        if coverage_envvar is not None:
-            warnings.warn(
-                "COVERAGE is deprecated in favor of COCOTB_USER_COVERAGE",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-    if coverage_envvar:
+    enable_coverage: bool = False
+
+    if _env.exists("COCOTB_USER_COVERAGE"):
+        enable_coverage = _env.as_bool("COCOTB_USER_COVERAGE")
+
+    elif _env.exists("COVERAGE"):
+        warnings.warn(
+            "COVERAGE is deprecated in favor of COCOTB_USER_COVERAGE",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        enable_coverage = _env.as_bool("COVERAGE")
+
+    if enable_coverage:
         try:
             import coverage  # noqa: PLC0415
         except ImportError:
@@ -173,8 +176,8 @@ def _start_user_coverage() -> None:
                 "Coverage collection requested but coverage module not available. Install it using `pip install coverage`."
             ) from None
         else:
-            config_filepath = os.getenv("COVERAGE_RCFILE")
-            if config_filepath is None:
+            config_filepath: str = _env.as_str("COVERAGE_RCFILE")
+            if not config_filepath:
                 # Exclude cocotb itself from coverage collection.
                 log.info(
                     "Collecting coverage of user code. No coverage config file supplied via COVERAGE_RCFILE."
@@ -200,62 +203,45 @@ def _start_user_coverage() -> None:
 
 
 def _setup_random_seed() -> None:
-    seed_envvar = os.getenv("COCOTB_RANDOM_SEED")
-    if seed_envvar is None:
-        seed_envvar = os.getenv("RANDOM_SEED")
-        if seed_envvar is not None:
-            warnings.warn(
-                "RANDOM_SEED is deprecated in favor of COCOTB_RANDOM_SEED",
-                DeprecationWarning,
-            )
-    if seed_envvar is None:
-        if "ntb_random_seed" in cocotb.plusargs:
-            warnings.warn(
-                "Passing +ntb_random_seed will not be used to seed Python's random number generator in the future. "
-                "Ensure you also set `COCOTB_RANDOM_SEED`.",
-                FutureWarning,
-            )
-            plusarg_seed = cocotb.plusargs["ntb_random_seed"]
-            if not isinstance(plusarg_seed, str):
-                raise TypeError("ntb_random_seed plusarg is not a valid seed value.")
-            seed = ast.literal_eval(plusarg_seed)
-            if not isinstance(seed, int):
-                raise TypeError("ntb_random_seed plusargs is not a valid seed value.")
-            cocotb.RANDOM_SEED = seed
-        elif "seed" in cocotb.plusargs:
-            warnings.warn(
-                "Passing +seed will not be used to seed Python's random number generator in the future. "
-                "Ensure you also set `COCOTB_RANDOM_SEED`.",
-                FutureWarning,
-            )
-            plusarg_seed = cocotb.plusargs["seed"]
-            if not isinstance(plusarg_seed, str):
-                raise TypeError("seed plusarg is not a valid seed value.")
-            seed = ast.literal_eval(plusarg_seed)
-            if not isinstance(seed, int):
-                raise TypeError("seed plusargs is not a valid seed value.")
-            cocotb.RANDOM_SEED = seed
-        else:
-            cocotb.RANDOM_SEED = int(time.time())
-        log.info("Seeding Python random module with %d", cocotb.RANDOM_SEED)
-    else:
-        cocotb.RANDOM_SEED = ast.literal_eval(seed_envvar)
-        log.info(
-            "Seeding Python random module with supplied seed %d", cocotb.RANDOM_SEED
-        )
+    seed: int = int(time())
 
-    random.seed(cocotb.RANDOM_SEED)
+    if _env.exists("COCOTB_RANDOM_SEED"):
+        seed = _env.as_int("COCOTB_RANDOM_SEED", seed)
+
+    elif _env.exists("RANDOM_SEED"):
+        warnings.warn(
+            "RANDOM_SEED is deprecated in favor of COCOTB_RANDOM_SEED",
+            DeprecationWarning,
+        )
+        seed = _env.as_int("RANDOM_SEED", seed)
+
+    elif "ntb_random_seed" in cocotb.plusargs:
+        warnings.warn(
+            "Passing +ntb_random_seed will not be used to seed Python's random number generator in the future. "
+            "Ensure you also set `COCOTB_RANDOM_SEED`.",
+            FutureWarning,
+        )
+        seed = int(str(cocotb.plusargs["ntb_random_seed"]))
+
+    elif "seed" in cocotb.plusargs:
+        warnings.warn(
+            "Passing +seed will not be used to seed Python's random number generator in the future. "
+            "Ensure you also set `COCOTB_RANDOM_SEED`.",
+            FutureWarning,
+        )
+        seed = int(str(cocotb.plusargs["seed"]))
+
+    cocotb.RANDOM_SEED = seed
+    random.seed(seed)
+    log.info("Seeding Python random module with %d", seed)
 
 
 def _setup_root_handle() -> None:
-    root_name = os.getenv("COCOTB_TOPLEVEL")
-    if root_name is not None:
-        root_name = root_name.strip()
-        if root_name == "":
-            root_name = None
-        elif "." in root_name:
-            # Skip any library component of the toplevel
-            root_name = root_name.split(".", 1)[1]
+    root_name: str = _env.as_str("COCOTB_TOPLEVEL")
+
+    if "." in root_name:
+        # Skip any library component of the toplevel
+        root_name = root_name.split(".", 1)[1]
 
     from cocotb import simulator  # noqa: PLC0415
 
@@ -270,29 +256,29 @@ def _setup_regression_manager() -> None:
     cocotb._regression_manager = RegressionManager()
 
     # discover tests
-    module_str = os.getenv("COCOTB_TEST_MODULES", "")
-    if not module_str:
+    modules: list[str] = _env.as_list("COCOTB_TEST_MODULES")
+    if not modules:
         raise RuntimeError(
             "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
         )
-    modules = [s.strip() for s in module_str.split(",") if s.strip()]
     cocotb._regression_manager.setup_pytest_assertion_rewriting()
     cocotb._regression_manager.discover_tests(*modules)
 
     # filter tests
-    testcase_str = os.getenv("COCOTB_TESTCASE", "").strip()
-    test_filter_str = os.getenv("COCOTB_TEST_FILTER", "").strip()
-    if testcase_str and test_filter_str:
+    testcases: list[str] = _env.as_list("COCOTB_TESTCASE")
+    test_filter: str = _env.as_str("COCOTB_TEST_FILTER")
+
+    if testcases and test_filter:
         raise RuntimeError("Specify only one of COCOTB_TESTCASE or COCOTB_TEST_FILTER")
-    elif testcase_str:
+    elif testcases:
         warnings.warn(
             "COCOTB_TESTCASE is deprecated in favor of COCOTB_TEST_FILTER",
             DeprecationWarning,
             stacklevel=2,
         )
-        filters = [f"{s.strip()}$" for s in testcase_str.split(",") if s.strip()]
+        filters: list[str] = [f"{testcase}$" for testcase in testcases]
         cocotb._regression_manager.add_filters(*filters)
         cocotb._regression_manager.set_mode(RegressionMode.TESTCASE)
-    elif test_filter_str:
-        cocotb._regression_manager.add_filters(test_filter_str)
+    elif test_filter:
+        cocotb._regression_manager.add_filters(test_filter)
         cocotb._regression_manager.set_mode(RegressionMode.TESTCASE)

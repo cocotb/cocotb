@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import os
-
 from cocotb.types._range import Range
+from cocotb_tools import _env
 
-do_indexing_changed_warning = os.environ.get("COCOTB_INDEXING_CHANGED_WARNING")
+do_indexing_changed_warning: bool = _env.as_bool("COCOTB_INDEXING_CHANGED_WARNING")
 
 
 def indexing_changed(range: Range) -> bool:

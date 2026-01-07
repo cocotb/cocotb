@@ -21,7 +21,7 @@ from cocotb._init import (
     _sim_event,
 )
 from cocotb.logging import _setup_gpi_logger
-from cocotb_tools.pytest import env
+from cocotb_tools import _env
 from cocotb_tools.pytest.regression import RegressionManager
 
 
@@ -31,23 +31,23 @@ def run_regression(argv: list[str]) -> None:
 
     manager: RegressionManager = RegressionManager(
         # Use the same command line arguments as from the main pytest parent process
-        *env.as_args("COCOTB_PYTEST_ARGS"),
+        *_env.as_args("COCOTB_PYTEST_ARGS"),
         # Node identifier of cocotb runner
-        nodeid=env.as_str("COCOTB_PYTEST_NODEID"),
+        nodeid=_env.as_str("COCOTB_PYTEST_NODEID"),
         # List of cocotb runner keywords
-        keywords=env.as_list("COCOTB_PYTEST_KEYWORDS"),
+        keywords=_env.as_list("COCOTB_PYTEST_KEYWORDS"),
         # Provide list of test modules (Python modules with cocotb tests) to be loaded
-        test_modules=env.as_list("COCOTB_TEST_MODULES"),
+        test_modules=_env.as_list("COCOTB_TEST_MODULES"),
         # Cocotb runner is using generated JUnit XML results file to determine
         # if executed cocotb tests passed or failed. Test function (cocotb runner)
         # from the main pytest parent process will also fail if any of cocotb test failed.
-        xmlpath=env.as_str("COCOTB_RESULTS_FILE"),
+        xmlpath=_env.as_str("COCOTB_RESULTS_FILE"),
         # Path to directory location from where pytest was invoked
-        invocation_dir=env.as_path("COCOTB_PYTEST_DIR"),
+        invocation_dir=_env.as_path("COCOTB_PYTEST_DIR"),
         # IPC address (Unix socket, Windows pipe, TCP, ...) to tests reporter
-        reporter_address=env.as_str("COCOTB_PYTEST_REPORTER_ADDRESS"),
+        reporter_address=_env.as_str("COCOTB_PYTEST_REPORTER_ADDRESS"),
         # Name of HDL top level design
-        toplevel=env.as_str("COCOTB_TOPLEVEL"),
+        toplevel=_env.as_str("COCOTB_TOPLEVEL"),
         # Initialization value for the random generator
         seed=cocotb.RANDOM_SEED,
     )
@@ -68,7 +68,7 @@ def _setup_simulation_environment(argv: list[str] | None = None) -> None:
     cocotb.argv = argv or []
     cocotb.is_simulation = True
     cocotb.log = getLogger("test")
-    cocotb.RANDOM_SEED = env.as_int("COCOTB_RANDOM_SEED", int(time()))
+    cocotb.RANDOM_SEED = _env.as_int("COCOTB_RANDOM_SEED", int(time()))
     cocotb.SIM_NAME = simulator.get_simulator_product().strip()
     cocotb.SIM_VERSION = simulator.get_simulator_version().strip()
 
