@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import tempfile
 from pathlib import Path
 
 
@@ -17,7 +18,11 @@ def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
             "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`."
         ) from None
     else:
-        tmp_data_file = f".coverage{os.getenv('COCOTB_REDUCED_LOG_FMT')}.tmp"
+        tmp_data_file = tempfile.NamedTemporaryFile(
+            prefix=".coverage.cocotb.",
+            suffix=".tmp",
+            delete=True,
+        ).name
         library_coverage = coverage.coverage(
             data_file=tmp_data_file,
             config_file=False,

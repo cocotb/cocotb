@@ -10,6 +10,7 @@ import logging
 import os
 import random
 import sys
+import tempfile
 import time
 import warnings
 from pathlib import Path
@@ -175,7 +176,11 @@ def _start_user_coverage() -> None:
         else:
             config_filepath = os.getenv("COVERAGE_RCFILE")
 
-            tmp_data_file = f".coverage{os.getenv('COCOTB_REDUCED_LOG_FMT')}.tmp"
+            tmp_data_file = tempfile.NamedTemporaryFile(
+                prefix=".coverage.cocotb.",
+                suffix=".tmp",
+                delete=True,
+            ).name
             if config_filepath is None:
                 # Exclude cocotb itself from coverage collection.
                 log.info(

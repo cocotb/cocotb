@@ -68,7 +68,6 @@ sys.path.insert(0, os.path.join(tests_dir, "test_cases", "test_cocotb"))
 timescale = ("1ps", "1ps")
 
 
-# def test_cocotb():
 @pytest.mark.parametrize("reduced_log_fmt", ["1", "0"])
 def test_cocotb(reduced_log_fmt):
     runner = get_runner(sim)
