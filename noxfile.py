@@ -6,6 +6,7 @@ from __future__ import annotations
 import glob
 import os
 import shutil
+import sys
 from contextlib import suppress
 from pathlib import Path
 from typing import cast
@@ -258,6 +259,21 @@ def dev_test_sim(
         env=env,
     )
 
+    # We need to run it separately to avoid loading pytest cocotb plugin for other tests
+    session.log(f"Running tests for pytest plugin against a simulator {config_str}")
+    session.run(
+        "pytest",
+        "-v",
+        "tests/pytest_plugin",
+        "--cocotb-simulator",
+        sim,
+        "--cocotb-gpi-interfaces",
+        gpi_interface,
+        "--cocotb-toplevel-lang",
+        toplevel_lang,
+        env=env,
+    )
+
     session.log(f"All tests and examples passed with configuration {config_str}!")
 
     # Combine coverage produced during the test runs, and place it in a file
@@ -466,6 +482,8 @@ def release_install(session: nox.Session) -> None:
     # PyPi, and then installing cocotb itself from the local dist directory.
 
     session.log("Installing cocotb dependencies from PyPi")
+    if sys.version_info < (3, 11):
+        session.install("exceptiongroup")
     session.install("find_libpython")
 
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")

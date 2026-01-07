@@ -19,7 +19,7 @@ module_name = [
     "test_async_coroutines",
     "test_async_generators",
     "test_clock",
-    "test_concurrency_primitives",
+    "test_first_combine",
     "test_deprecated",
     "test_edge_triggers",
     "test_handle",

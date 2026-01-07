@@ -8,13 +8,13 @@
 
 #include <exports.h>
 #include <gpi.h>
-#include <gpi_logging.h>
 
 #include <cstring>
 #include <map>
 #include <vector>
 
 #include "../gpi_priv.hpp"
+#include "../logging.hpp"
 #include "_vendor/vpi/sv_vpi_user.h"
 
 #ifdef COCOTBVPI_EXPORTS
@@ -28,7 +28,7 @@
 // Should be run after every VPI call to check error status
 static inline void __check_vpi_error(const char *file, const char *func,
                                      long line) {
-    if (gpi_log_filtered("gpi", GPI_DEBUG)) {
+    if (!gpi_debug_enabled) {
         return;
     }
 

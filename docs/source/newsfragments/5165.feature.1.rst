@@ -1,0 +1,1 @@
+Added :func:`cocotb.triggers.gather` to wait for multiple awaitables concurrently and collect all results.

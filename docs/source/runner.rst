@@ -64,6 +64,60 @@ add the ``-s`` option to the ``pytest`` call:
     :ref:`list of command line flags <pytest:command-line-flags>`
     in pytest's official documentation.
 
+
+Usage with plugin
+-----------------
+
+:py:mod:`cocotb_tools.pytest.plugin` is a plugin for pytest that will allow to use pytest as regression manager for
+cocotb tests and extend cocotb testing capabilities with pytest features like `fixtures`_.
+
+Please see the chapter about :ref:`pytest-support` to learn how to enable plugin in your project.
+
+Above example will just run fine with enabled plugin. But we could also slightly refactor it to gain all benefits from
+using pytest like showing all available cocotb tests in our project with ``pytest --collect-only`` or adding support for
+command line arguments.
+
+.. code:: python
+
+    import pytest
+    from cocotb_tools.pytest.hdl import HDL
+
+
+    @pytest.fixture(name="dff")
+    def dff_fixture(hdl: HDL) -> HDL:
+        """Define new HDL design by using pytest fixture."""
+        hdl.toplevel = "dff"
+
+        proj_path = Path(__file__).resolve().parent
+
+        if hdl.toplevel_lang == "verilog":
+            hdl.sources = (proj_path / "dff.sv",)
+        else:
+            hdl.sources = (proj_path / "dff.vhdl",)
+
+        hdl.build(always=True)
+
+        return hdl
+
+
+    @pytest.mark.cocotb_runner  # NOTE: mark this test function as cocotb runner
+    def test_simple_dff_runner(dff: HDL) -> None:
+        """Run HDL simulator with cocotb tests to test DFF."""
+        dff.test()
+
+
+    # NOTE: When using plugin, there is no need for using @pytest.mark.cocotb_test or @cocotb.test decorators
+    async def test_simple_dff_feature_1(dut) -> None:
+        """Test DFF feature 1."""
+
+
+To run it:
+
+.. code:: shell
+
+    pytest examples/simple_dff/test_dff.py -s --cocotb-toplevel-lang=vhdl --cocotb-simulator=questa
+
+
 Direct usage
 ============
 
@@ -118,3 +172,6 @@ API
 ===
 
 The API of the Python runner is documented in section :ref:`api-runner`.
+
+
+.. _fixtures: https://docs.pytest.org/en/stable/explanation/fixtures.html#about-fixtures

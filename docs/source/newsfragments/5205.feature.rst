@@ -1,0 +1,1 @@
+:func:`.with_timeout` now supports being passed any :term:`awaitable`.

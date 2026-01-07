@@ -2,8 +2,8 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <Python.h>       // all things Python
-#include <gpi_logging.h>  // all things GPI logging
+#include <Python.h>  // all things Python
+#include <gpi.h>     // all things GPI logging
 
 #include <cstdarg>  // va_list, va_copy, va_end
 #include <cstdio>   // fprintf, vsnprintf
@@ -14,29 +14,49 @@
 #include "../utils.hpp"  // DEFER
 #include "./pygpi_priv.hpp"
 
-static int py_gpi_log_level = GPI_NOTSET;
+static int pygpi_log_level = GPI_NOTSET;
 
 static PyObject *m_log_func = nullptr;
 static std::map<std::string, PyObject *> m_logger_map;
 static PyObject *m_get_logger = nullptr;
 
-static void fallback_handler(const char *name, int level, const char *pathname,
-                             const char *funcname, long lineno,
-                             const char *msg) {
+static gpi_log_handler_ftype fallback_log_handler = nullptr;
+static void *fallback_log_userdata = nullptr;
+
+static void fallback_handler(const char *name, enum gpi_log_level level,
+                             const char *pathname, const char *funcname,
+                             long lineno, const char *msg, ...) {
+    // The standard provides no way to create an empty va_list, so we have to
+    // make these empty args list to make the compiler happy.
+    va_list args1, args2;
+    va_start(args1, msg);
+    va_copy(args2, args1);
+    DEFER(va_end(args2));
+    DEFER(va_end(args1));
     // Note: don't call the LOG_ERROR macro because that might recurse
-    gpi_native_logger_log_(name, level, pathname, funcname, lineno, msg);
-    gpi_native_logger_log_("gpi", GPI_ERROR, __FILE__, __func__, __LINE__,
-                           "Error calling Python logging function from C++ "
-                           "while logging the above");
+    fallback_log_handler(fallback_log_userdata, name, level, pathname, funcname,
+                         lineno, msg, args1);
+    fallback_log_handler(fallback_log_userdata, "gpi", GPI_ERROR, __FILE__,
+                         __func__, __LINE__,
+                         "Error calling Python logging function from C++ "
+                         "while logging the above",
+                         args2);
 }
 
-static void py_gpi_log_handler(void *, const char *name, int level,
-                               const char *pathname, const char *funcname,
-                               long lineno, const char *msg, va_list argp) {
+static void pygpi_log_handler(void *, const char *name,
+                              enum gpi_log_level level, const char *pathname,
+                              const char *funcname, long lineno,
+                              const char *msg, va_list argp) {
     // Always pass through messages when NOTSET to let Python make the decision.
     // Otherwise, skip logs using the local log level for better performance.
-    if (py_gpi_log_level != GPI_NOTSET && level < py_gpi_log_level) {
+    if (pygpi_log_level != GPI_NOTSET && level < pygpi_log_level) {
         return;
+    }
+
+    // If we haven't configured yet, use the fallback log handler
+    if (!m_log_func) {
+        return fallback_log_handler(fallback_log_userdata, name, level,
+                                    pathname, funcname, lineno, msg, argp);
     }
 
     va_list argp_copy;
@@ -164,28 +184,35 @@ static void py_gpi_log_handler(void *, const char *name, int level,
     Py_DECREF(handler_ret);
 }
 
-static bool py_gpi_log_filter(void *, const char *, int level) {
-    return level >= py_gpi_log_level;
+void pygpi_log(enum gpi_log_level level, const char *pathname,
+               const char *funcname, long lineno, const char *fmt, ...) {
+    va_list argp;
+    va_start(argp, fmt);
+    DEFER(va_end(argp));
+    pygpi_log_handler(nullptr, "pygpi", level, pathname, funcname, lineno, fmt,
+                      argp);
 }
 
-static bool py_gpi_logger_set_level(void *, const char *, int level) {
-    auto old_level = py_gpi_log_level;
-    py_gpi_log_level = level;
+void pygpi_logging_set_level(enum gpi_log_level level) {
+    pygpi_log_level = level;
     gpi_native_logger_set_level(level);
-    return old_level;
 }
 
-void py_gpi_logger_initialize(PyObject *log_func, PyObject *get_logger) {
+void pygpi_logging_initialize() {
+    // Default to using the fallback handler until configured
+    gpi_get_log_handler(&fallback_log_handler, &fallback_log_userdata);
+    gpi_set_log_handler(pygpi_log_handler, nullptr);
+}
+
+void pygpi_logging_configure(PyObject *log_func, PyObject *get_logger) {
     Py_INCREF(log_func);
     Py_INCREF(get_logger);
     m_log_func = log_func;
     m_get_logger = get_logger;
-    gpi_set_log_handler(py_gpi_log_handler, py_gpi_log_filter,
-                        py_gpi_logger_set_level, nullptr);
 }
 
-void py_gpi_logger_finalize() {
-    gpi_clear_log_handler();
+void pygpi_logging_finalize() {
+    gpi_set_log_handler(fallback_log_handler, fallback_log_userdata);
     Py_XDECREF(m_log_func);
     Py_XDECREF(m_get_logger);
     for (auto &elem : m_logger_map) {

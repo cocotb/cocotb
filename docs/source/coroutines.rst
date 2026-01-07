@@ -5,31 +5,31 @@
    Async
 
 
-********************
-Coroutines and Tasks
-********************
+******************************
+Coroutines, Tasks and Triggers
+******************************
 
-Testbenches built using cocotb use Python coroutines.
-*Tasks* are cocotb objects that wrap coroutines
-and are used to schedule concurrent execution of the testbench coroutines.
+cocotb testbenches use Python's coroutines.
+:dfn:`Tasks` are cocotb objects that wrap coroutines
+and are used to schedule concurrent execution of the coroutines.
 
 While active tasks are executing, the simulation is paused.
 The coroutine uses the :keyword:`await` keyword to
 block on another coroutine's execution or pass control of execution back to the
 simulator, allowing simulation time to advance.
 
-Typically coroutines await a :class:`~cocotb.triggers.Trigger` object which
+Typically coroutines :keyword:`!await` a :class:`~cocotb.triggers.Trigger` object which
 pauses the task, and indicates to the simulator some event which will cause the task to resume execution.
-For example:
+In the following example, :class:`~cocotb.triggers.Timer` is such a trigger:
 
 .. code-block:: python
 
     async def wait_10ns():
         cocotb.log.info("About to wait for 10 ns")
-        await Timer(10, unit='ns')
+        await Timer(10, unit="ns")
         cocotb.log.info("Simulation time has advanced by 10 ns")
 
-Coroutines may also await on other coroutines:
+Coroutines may also :keyword:`!await` on other coroutines:
 
 .. code-block:: python
 
@@ -50,6 +50,52 @@ Coroutines can :keyword:`return` a value, so that they can be used by other coro
         second = await get_signal(dut.clk, dut.signal)
         assert first != second, "Signal did not change"
 
+
+Triggers and Concurrency Utilities
+==================================
+
+Below is a table of triggers and concurrency utilities that are useful for writing testbenches and models.
+
+..
+   Please keep this table aligned with the content in library_reference.rst
+
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| **Signal Edges**                                                                                                                                 |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| | :class:`~cocotb.triggers.RisingEdge`               | | Resume after a *rising* edge on a single-bit signal                                     |
+| | :class:`~cocotb.triggers.FallingEdge`              | | Resume after a *falling* edge on a single-bit signal                                    |
+| | :class:`~cocotb.triggers.ValueChange`              | | Resume after *any* edge on a signal, but prefer using ``signal.value_change``           |
+| | :class:`~cocotb.triggers.ClockCycles`              | | Resume after the specified number of transitions of a signal                            |
+| | :class:`~cocotb.triggers.Edge`                     | | (deprecated, use ``signal.value_change`` instead)                                       |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| **Timing**                                                                                                                                       |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| | :class:`~cocotb.triggers.Timer`                    | | Resume after the specified time                                                         |
+| | :class:`~cocotb.triggers.ReadOnly`                 | | Resume when the simulation timestep moves to the *read-only* phase                      |
+| | :class:`~cocotb.triggers.ReadWrite`                | | Resume when the simulation timestep moves to the *read-write* phase                     |
+| | :class:`~cocotb.triggers.NextTimeStep`             | | Resume when the simulation timestep moves to the *next time step*                       |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| **Concurrency**                                                                                                                                  |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| | :func:`~cocotb.triggers.gather`                    | | Resume after *all* given Tasks or Triggers                                              |
+| | :func:`~cocotb.triggers.select`                    | | Resume after *any* given Tasks or Triggers                                              |
+| | :class:`~cocotb.triggers.Combine`                  | | Resume after *all* given Triggers                                                       |
+| | :class:`~cocotb.triggers.First`                    | | Resume after *any* given Triggers                                                       |
+| | :meth:`Task.complete <cocotb.task.Task.complete>`  | | Resume when a Task completes                                                            |
+| | :func:`~cocotb.triggers.wait` [#f1]_               | | Await on all given Tasks or Triggers concurrently and block until a condition is met    |
+| | :class:`~cocotb.triggers.NullTrigger` [#f1]_       | | Resume "soon"                                                                           |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| **Synchronization**                                                                                                                              |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| | :class:`~cocotb.triggers.Event`                    | | A way to signal an event across Tasks                                                   |
+| | :class:`~cocotb.triggers.Lock`                     | | A mutual exclusion lock                                                                 |
+| | :func:`~cocotb.triggers.with_timeout`              | | Resume latest at the specified timeout time                                             |
++------------------------------------------------------+-------------------------------------------------------------------------------------------+
+
+.. rubric:: Footnotes
+
+.. [#f1] Uncommon.
+
 Concurrent Execution
 ====================
 
@@ -66,15 +112,15 @@ some time after the current Task yields control.
         """While reset is active, toggle signals"""
         tb = uart_tb(dut)
         # "Clock" is a built in class for toggling a clock signal
-        Clock(dut.clk, 1, unit='ns').start()
+        Clock(dut.clk, 1, unit="ns").start()
         # reset_dut is a function -
         # part of the user-generated "uart_tb" class
         # run reset_dut immediately before continuing
         await tb.reset_dut(dut.rstn, 20)
 
-        await Timer(10, unit='ns')
+        await Timer(10, unit="ns")
         print("Reset is still active: %d" % dut.rstn)
-        await Timer(15, unit='ns')
+        await Timer(15, unit="ns")
         print("Reset has gone inactive: %d" % dut.rstn)
 
 Other tasks can be used in an await statement to suspend the current task until the other task finishes.
@@ -83,10 +129,10 @@ Other tasks can be used in an await statement to suspend the current task until 
 
     @cocotb.test()
     async def test_count_edge_cycles(dut, period_ns=1, clocks=6):
-        Clock(dut.clk, period_ns, unit='ns').start()
+        Clock(dut.clk, period_ns, unit="ns").start()
         await RisingEdge(dut.clk)
 
-        timer = Timer(period_ns + 10, 'ns')
+        timer = Timer(period_ns + 10, "ns")
         task = cocotb.start_soon(count_edges_cycles(dut.clk, clocks))
         count = 0
         expect = clocks - 1
@@ -107,23 +153,23 @@ forcing their completion before they would naturally end.
 
     @cocotb.test()
     async def test_different_clocks(dut):
-        clk_1mhz   = Clock(dut.clk, 1.0, unit='us')
-        clk_250mhz = Clock(dut.clk, 4.0, unit='ns')
+        clk_1mhz   = Clock(dut.clk, 1.0, unit="us")
+        clk_250mhz = Clock(dut.clk, 4.0, unit="ns")
 
         clk_1mhz.start()
-        start_time_ns = get_sim_time(unit='ns')
-        await Timer(1, unit='ns')
+        start_time_ns = get_sim_time(unit="ns")
+        await Timer(1, unit="ns")
         await RisingEdge(dut.clk)
-        edge_time_ns = get_sim_time(unit='ns')
+        edge_time_ns = get_sim_time(unit="ns")
         assert isclose(edge_time_ns, start_time_ns + 1000.0), "Expected a period of 1 us"
 
         clk_1mhz.stop()  # stop 1MHz clock here
 
         clk_250mhz.start()
-        start_time_ns = get_sim_time(unit='ns')
-        await Timer(1, unit='ns')
+        start_time_ns = get_sim_time(unit="ns")
+        await Timer(1, unit="ns")
         await RisingEdge(dut.clk)
-        edge_time_ns = get_sim_time(unit='ns')
+        edge_time_ns = get_sim_time(unit="ns")
         assert isclose(edge_time_ns, start_time_ns + 4.0), "Expected a period of 4 ns"
 
 
@@ -260,6 +306,228 @@ And of course, the sky is the limit when you compose the two.
     This means that Tasks passed to it are *still running*.
     You may need to cancel those Tasks with :meth:`.Task.cancel`.
 
+.. _task_manager_tutorial:
+
+:class:`!TaskManager`
+=====================
+
+The :class:`~cocotb.triggers.TaskManager` class is another way to run multiple async routines concurrently and wait for them all to complete.
+It properly manages the lifetime of its "children" and handles exceptions and cancellations gracefully.
+Unlike :func:`~cocotb.triggers.gather` which takes all :term:`awaitable`\ s and :term:`coroutine`\ s at once,
+:class:`!TaskManager` allows adding new :term:`!awaitable`\ s and :term:`!coroutine`\ s dynamically,
+and provides options to control exception handling behavior on a per-Task basis,
+making it much more flexible.
+
+Basic Usage
+-----------
+
+To use :class:`!TaskManager`, first construct it and use it as an :term:`asynchronous context manager` with the :keyword:`async with` statement.
+Inside of the context block you can use the :deco:`fork <cocotb.triggers.TaskManager.fork>` decorator method to start :class:`!Task`\ s concurrently.
+When control reaches the end of the context block
+the :class:`!TaskManager` blocks the encompassing :class:`!Task` until all child :class:`!Task`\ s complete.
+
+.. code-block:: python
+
+    from cocotb.triggers import TaskManager
+
+    # Drive two interfaces concurrently until both complete.
+
+    async with TaskManager() as tm:
+
+        @tm.fork
+        async def drive_interface1(): ...
+
+        @tm.fork
+        async def drive_interface2(): ...
+
+    # Control returns here when all drive Tasks have completed
+
+In addition to the :deco:`!fork` method for starting :term:`coroutine function`\ s concurrently,
+:meth:`~cocotb.triggers.TaskManager.start_soon` can be used for :keyword:`!await`\ ing arbitrary :term:`awaitable`\ s concurrently.
+
+.. code-block:: python
+
+    # Wait for operation to complete or timeout after 1 us
+
+    async with TaskManager() as tm:
+        tm.start_soon(RisingEdge(cocotb.top.operation_complete))
+
+        @tm.fork
+        async def watchdog():
+            await Timer(1, "us")
+            raise TimeoutError("Operation did not complete in time")
+
+Inspecting Child Task Results
+-----------------------------
+
+You can inspect the result of child classes by storing the :class:`!Task` objects returned by the :meth:`!start_soon` method.
+When decoratoring a :term:`coroutine function` with :deco:`!fork`,
+the name of the function will become the returned :class:`!Task` object.
+
+.. code-block:: python
+
+    async with TaskManager() as tm:
+        task1 = tm.start_soon(RisingEdge(cocotb.top.signal_a))
+
+        # task2 will become the Task object after wrapping the coroutine function with @fork
+        @tm.fork
+        async def task2():
+            return 42
+
+
+    assert task1.done()
+    assert task1.result() is RisingEdge(cocotb.top.signal_a)
+
+    assert task2.done()
+    assert task2.result() == 42
+
+.. note::
+    After exiting the context block and the :class:`!TaskManager` has begun finishing,
+    no further calls to :meth:`start_soon` or :deco:`!fork` are permitted.
+    Attempting to do so will raise a :exc:`RuntimeError`.
+
+Handling Exceptions and *continue_on_error*
+-------------------------------------------
+
+:class:`!TaskManager` gracefully handles exceptions raised in child :class:`!Task`\ s or in the context block itself.
+It ensures that no child :class:`!Task` is left running unintentionally by the time the context block exits.
+
+The behavior of :class:`!TaskManager` when a child :class:`!Task` raises an exception is controlled by the *continue_on_error* parameter.
+The constructor for :class:`!TaskManager` accepts an optional parameter *default_continue_on_error* which is used as the default for all children Tasks;
+it defaults to ``False``.
+The :class:`!TaskManager`-wide default can be overridden on a per-Task basis using the *continue_on_error* parameter to the :deco:`!fork` or :meth:`!start_soon` methods.
+
+.. code-block:: python
+
+    async with TaskManager(default_continue_on_error=True) as tm:
+
+        @tm.fork(continue_on_error=False)
+        async def task1(): ...
+
+        tm.start_soon(some_coroutine(), continue_on_error=True)
+
+If a child :class:`!Task` raises an exception,
+one of two behaviors will occur depending on the value of *continue_on_error* for that Task.
+If the *continue_on_error* parameter is ``False``, all other child :class:`!Task`\ s are cancelled and the :class:`!TaskManager` will begin shutting down.
+If the *continue_on_error* parameter is ``True``, the exception is captured and other child :class:`!Task`\ s are allowed to continue running.
+
+After all child :class:`!Task`\ s have finished,
+all exceptions, besides :exc:`~asyncio.CancelledError`, are gathered into an :exc:`ExceptionGroup`,
+or a :exc:`BaseExceptionGroup`, if at least one of the exceptions is a :exc:`BaseException`,
+and raised in the enclosing scope.
+
+You can catch the :exc:`!ExceptionGroup` to handle errors from child :class:`!Task`\ s
+by either catching the :exc:`!ExceptionGroup` as you would typically;
+or, if you are running Python 3.11 or later,
+using the new `except* <https://docs.python.org/3/reference/compound_stmts.html#except-star>`_ syntax
+to catch specific exception types from the group.
+This new syntax will run the except clause for each matching exception in the group.
+
+.. code-block:: python
+
+    try:
+        async with TaskManager(default_continue_on_error=True) as tm:
+
+            @tm.fork
+            async def task1():
+                ...
+                raise ValueError("An error occurred in task1")
+
+            @tm.fork
+            async def task2():
+                ...
+                raise ValueError("An error occurred in task2")
+
+    except* ValueError as e:
+        # This will print both ValueErrors from task1 and task2
+        cocotb.log.info(f"Caught ValueError from TaskManager: {e}")
+
+.. note::
+    After a :class:`!Task` fails and the :class:`!TaskManager` begins cancelling,
+    no further calls to :meth:`start_soon` or :deco:`!fork` are permitted.
+
+Failures Within the Context Block
+---------------------------------
+
+You are permitted to add any :keyword:`await` statement to the body of the context block.
+This means that it is possible for child tasks to start running, and then end with an exception, before the context block has finished.
+In this case, a :exc:`~asyncio.CancelledError` will be raised from the current :keyword:`!await` expression in the context block,
+allowing the user to perform any necessary cleanup.
+This :exc:`!CancelledError` will be squashed when the context block exits,
+and :class:`!TaskManager` continues shutting down as it normally would.
+
+.. code-block:: python
+
+    async with TaskManager() as tm:
+
+        @tm.fork
+        async def task1():
+            raise ValueError("An error occurred in task1")
+
+        try:
+            await Timer(10)  # During this await, task1 will fail
+        except CancelledError:
+            cocotb.log.info(
+                "The rest of the context block will be skipped due to task1 failing"
+            )
+            raise  # DON'T FORGET THIS
+
+        ...  # This code will be skipped
+
+.. warning::
+    Just like with :class:`~cocotb.task.Task`, if a :class:`!TaskManager` context block is cancelled
+    and squashes the resulting :exc:`asyncio.CancelledError`, the test will be forcibly failed immediately.
+    Always remember to re-raise the :exc:`!asyncio.CancelledError` if you catch it.
+
+A context block can also fail with an exception like a child :class:`!Task` could.
+In this case, if the *context_continue_on_error* parameter to the constructor is ``False``, all child :class:`!Task`\ s are cancelled;
+if it is set to ``True``, other child :class:`!Task`\ s are allowed to continue running.
+In either case, after all child :class:`!Task`\ s have finished,
+all exceptions, besides :exc:`~asyncio.CancelledError`, are gathered into an :exc:`ExceptionGroup`,
+or a :exc:`BaseExceptionGroup`, if at least one of the exceptions is a :exc:`BaseException`,
+and raised in the enclosing scope.
+
+.. code-block:: python
+
+    try:
+        async with TaskManager(context_continue_on_error=True) as tm:
+
+            @tm.fork
+            async def task1():
+                ...
+                return 42
+
+            raise ValueError("An error occurred in the context block")
+
+    except* ValueError as e:
+        # This will print the ValueError from the context block
+        cocotb.log.info(f"Caught ValueError from TaskManager: {e}")
+
+    assert task1.result() == 42  # task1 was allowed to continue running until completion
+
+Nesting :class:`!TaskManager`
+-----------------------------
+
+:class:`!TaskManager`\ s can be arbitrarily nested.
+When any child :class:`!Task` fails, the entire tree of child :class:`!Task`\ s will eventually be cancelled.
+
+.. code-block:: python
+
+    async with TaskManager() as tm_outer:
+
+        @tm_outer.fork
+        async def outer_task():
+            ...
+            raise RuntimeError("An error occurred in outer_task")
+
+        async with TaskManager() as tm_inner:
+
+            # This inner task will be cancelled when outer_task fails
+            @tm_inner.fork
+            async def another_task(): ...
+
+    assert outer_task.exception() is RuntimeError
+    assert another_task.cancelled()
 
 Async generators
 ================

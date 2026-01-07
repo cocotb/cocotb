@@ -10,6 +10,7 @@
 #include <cstring>
 #include <string>
 
+#include "../logging.hpp"
 #include "./FliImpl.hpp"
 #include "_vendor/fli/acc_vhdl.h"
 

@@ -23,6 +23,7 @@ maintainers = [
 ]
 dependencies = [
     "find_libpython",
+    "exceptiongroup; python_version < '3.11'",
 ]
 requires-python = ">= 3.9"
 classifiers = [
@@ -232,7 +233,7 @@ ignore-words-list = [
 ]
 
 [tool.mypy]
-packages = ["cocotb", "pygpi"]
+packages = ["cocotb", "pygpi", "cocotb_tools.pytest"]
 modules = ["noxfile"]
 disallow_untyped_defs = true
 disallow_any_unimported = true

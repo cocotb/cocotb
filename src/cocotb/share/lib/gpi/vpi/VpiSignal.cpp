@@ -9,6 +9,7 @@
 
 #include <cassert>
 
+#include "../logging.hpp"
 #include "./VpiImpl.hpp"
 
 int VpiSignalObjHdl::initialise(const std::string &name,

@@ -230,13 +230,19 @@ class Runner(ABC):
 
         self.env.update(os.environ)
 
-        if "LIBPYTHON_LOC" not in self.env:
-            libpython_path = find_libpython.find_libpython()
-            if not libpython_path:
-                raise ValueError(
-                    "Unable to find libpython, please make sure the appropriate libpython is installed"
-                )
-            self.env["LIBPYTHON_LOC"] = libpython_path
+        gpi_users: list[str] = []
+
+        # Ensure libpython is in GPI_USERS before pygpi_entry_point
+        if "GPI_USERS" not in self.env:
+            if (libpython_loc := self.env.get("LIBPYTHON_LOC")) is not None:
+                gpi_users.append(libpython_loc)
+            else:
+                libpython_path = find_libpython.find_libpython()
+                if libpython_path is None:
+                    raise ValueError(
+                        "Unable to find libpython, please make sure the appropriate libpython is installed"
+                    )
+                gpi_users.append(libpython_path)
 
         # TODO the following line reappends the path on every call to build() or test(). This needs to not be an attribute.
         # Most of the stuff on this class really shouldn't be an attribute, but that's a non-trivial and API-breaking refactor.
@@ -244,7 +250,8 @@ class Runner(ABC):
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
         self.env["PYGPI_PYTHON_BIN"] = sys.executable
         if "GPI_USERS" not in self.env:
-            self.env["GPI_USERS"] = cocotb_tools.config.pygpi_entry_point()
+            gpi_users.append(cocotb_tools.config.pygpi_entry_point())
+            self.env["GPI_USERS"] = ";".join(gpi_users)
 
     def _set_env_build(self) -> None:
         self._set_env_common()
@@ -1316,8 +1323,6 @@ class AldecBase(Runner):
 
     .. admonition:: Simulator-specific Usage
 
-       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-       * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
 
@@ -1404,10 +1409,9 @@ class AldecBase(Runner):
         return [["vsimsa", "-do", do_file.name]]
 
     def _test_command(self) -> list[_Command]:
-        if self.pre_cmd is not None:
-            raise RuntimeError("pre_cmd is not implemented for Riviera.")
+        do_script: str = ""
 
-        do_script: str = "\nonerror {\n quit -code 1 \n} \n"
+        do_script = self._append_onerror_command(do_script)
 
         if self.hdl_toplevel_lang == "vhdl":
             do_script += "asim +access +w_nets -interceptcoutput -loadvhpi {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUSARGS}\n".format(
@@ -1453,25 +1457,75 @@ class AldecBase(Runner):
                 + ":cocotbvhpi_entry_point"
             )
 
+        do_script = self._append_pre_cmd(do_script)
+
         if self.waves:
             do_script += "log -recursive /*;"
 
-        do_script += "run -all \nexit"
+        do_script = self._append_run_commands(do_script)
 
         with tempfile.NamedTemporaryFile(delete=False) as do_file:
             do_file.write(do_script.encode())
 
+        return self._simulator_command(do_file)
+
+    def _append_onerror_command(self, do_script: str) -> str:
+        return do_script + "\nonerror {\n quit -code 1 \n} \n"
+
+    def _append_run_commands(self, do_script: str) -> str:
+        """Append simulator-specific run commands."""
+        return do_script + "run -all \nexit"
+
+    def _simulator_command(
+        self, do_file: tempfile.NamedTemporaryFile
+    ) -> list[_Command]:
+        """Return the simulator invocation command."""
         return [["vsimsa", "-do", do_file.name]]
+
+    def _append_pre_cmd(self, do_script: str) -> str:
+        """Hook for subclasses to extend do_script with simulator-specific pre_cmd."""
+        if self.pre_cmd is not None:
+            raise RuntimeError("pre_cmd is not implemented for this simulator.")
+        return do_script
 
 
 class Riviera(AldecBase):
     """Implementation of :class:`Runner` for Aldec Riviera-Pro.
     .. admonition:: Simulator-specific Usage
 
-       * Does not support the ``pre_cmd`` argument to :meth:`.test`.
-       * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
+
+    def _append_onerror_command(self, do_script: str) -> str:
+        if self.gui:
+            return do_script
+        else:
+            return super()._append_onerror_command(do_script)
+
+    def _append_run_commands(self, do_script: str) -> str:
+        if getattr(self, "gui", False):
+            return do_script + "echo execute run -all to run the whole simulation."
+        else:
+            return do_script + "run -all \nexit"
+
+    def _simulator_command(self, do_file) -> list[_Command]:
+        if getattr(self, "gui", False):
+            return [["riviera", "-do", do_file.name]]
+        else:
+            return [["vsimsa", "-do", do_file.name]]
+
+    def _append_pre_cmd(self, do_script: str) -> str:
+        if self.pre_cmd is None:
+            return do_script
+
+        if not isinstance(self.pre_cmd, list):
+            raise TypeError("pre_cmd must be a list of strings.")
+        if not all(isinstance(s, str) for s in self.pre_cmd):
+            raise TypeError("pre_cmd must be a list of strings.")
+
+        for s in self.pre_cmd:
+            do_script += f"{s}; "
+        return do_script + "\n"
 
 
 class ActiveHDL(AldecBase):
@@ -1482,6 +1536,11 @@ class ActiveHDL(AldecBase):
        * Does not support the ``gui`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
+
+    def _append_pre_cmd(self, do_script: str) -> str:
+        if self.pre_cmd is not None:
+            raise RuntimeError("pre_cmd is not implemented for Aldec ActiveHDL.")
+        return do_script
 
 
 class Verilator(Runner):
@@ -1675,15 +1734,9 @@ class Xcelium(Runner):
             verbosity_opts += ["-messages"]
             verbosity_opts += ["-status"]
             verbosity_opts += ["-gverbose"]  # print assigned generics/parameters
-            verbosity_opts += ["-pliverbose"]
-            verbosity_opts += ["-plidebug"]  # Enhance the profile output with PLI info
-            verbosity_opts += [
-                "-plierr_verbose"
-            ]  # Expand handle info in PLI/VPI/VHPI messages
 
         else:
             verbosity_opts += ["-quiet"]
-            verbosity_opts += ["-plinowarn"]
 
         sources = self._sources + self._vhdl_sources + self._verilog_sources
 
@@ -1707,14 +1760,7 @@ class Xcelium(Runner):
             + ["-licqueue"]
             + (["-clean"] if self.always else [])
             + verbosity_opts
-            # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
             + ["-access +rwc"]
-            + ["-loadvpi"]
-            # always start with VPI on Xcelium
-            + [
-                cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
-                + ":vlog_startup_routines_bootstrap"
-            ]
             + vhpi_opts
             + [f"-work {self.hdl_library}"]
             + (
@@ -1791,6 +1837,10 @@ class Xcelium(Runner):
                 f"xrun_{self.current_test_name}.log",
                 "-xmlibdirname",
                 f"{self.build_dir}/xrun_snapshot",
+                # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
+                "-loadvpisim",
+                cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
+                + ":vlog_startup_routines_bootstrap",
                 "-cds_implicit_tmpdir",
                 tmpdir,
                 "-licqueue",

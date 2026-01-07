@@ -17,6 +17,95 @@ Library Reference
 
 .. module:: cocotb
 
+.. _api-pytest-plugin:
+
+Pytest Plugin
+=============
+
+
+.. _api-pytest-plugin-fixtures:
+
+Fixtures
+--------
+
+.. module:: cocotb_tools.pytest.plugin
+
+.. autofixture:: dut
+
+.. autofixture:: hdl_session
+
+.. autofixture:: hdl
+
+
+.. _api-pytest-plugin-markers:
+
+Markers
+-------
+
+.. module:: cocotb_tools.pytest.mark
+
+.. autodecorator:: cocotb_runner
+
+.. autodecorator:: cocotb_test
+
+.. autodecorator:: cocotb_timeout
+
+.. autodecorator:: cocotb_library
+
+.. autodecorator:: cocotb_sources
+
+.. autodecorator:: cocotb_defines
+
+.. autodecorator:: cocotb_includes
+
+.. autodecorator:: cocotb_parameters
+
+.. autodecorator:: cocotb_plusargs
+
+.. autodecorator:: cocotb_env
+
+.. autodecorator:: cocotb_seed
+
+.. autodecorator:: cocotb_timescale
+
+.. autodecorator:: cocotb_always
+
+.. autodecorator:: cocotb_clean
+
+.. autodecorator:: cocotb_waves
+
+.. autodecorator:: cocotb_build_args
+
+.. autodecorator:: cocotb_elab_args
+
+.. autodecorator:: cocotb_test_args
+
+.. autodecorator:: cocotb_pre_cmd
+
+.. _api-pytest-plugin-hdl:
+
+
+HDL Fixture Request
+-------------------
+
+.. module:: cocotb_tools.pytest.hdl
+
+.. autoclass:: HDL
+    :members:
+
+
+.. _api-pytest-plugin-hook-specs:
+
+Hook Specifications
+-------------------
+
+.. module:: cocotb_tools.pytest.hookspecs
+
+.. autofunction:: pytest_cocotb_make_hdl
+
+.. autofunction:: pytest_cocotb_make_runner
+
+
 .. _api-runner:
 
 Python Test Runner
@@ -56,6 +145,14 @@ Python Test Runner
     The name of the waveform viewer executable to use (like ``surfer``) when GUI mode is enabled
     for simulators that do not have a built-in waveform viewer (like Verilator).
     The executable name will be called with the name of the waveform file as the argument.
+
+.. envvar:: LIBPYTHON_LOC
+
+    The absolute path to the Python library associated with the current Python installation;
+    i.e. ``libpython.so`` or ``python.dll`` on Windows.
+    This is determined with ``cocotb-config --libpython`` during build.
+
+    This is only used if :envvar:`GPI_USERS` is not already defined by the user.
 
 
 .. _api-runner-sim:
@@ -369,6 +466,15 @@ Triggers dealing with Tasks or running multiple Tasks concurrently.
     :members:
 
 .. autoclass:: First
+    :members:
+
+.. autofunction:: wait
+
+.. autofunction:: gather
+
+.. autofunction:: select
+
+.. autoclass:: TaskManager
     :members:
 
 

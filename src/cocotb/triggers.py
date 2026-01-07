@@ -6,6 +6,7 @@ from __future__ import annotations
 import warnings
 
 from cocotb._base_triggers import Event, Lock, NullTrigger, Trigger
+from cocotb._concurrent_waiters import gather, select, wait
 from cocotb._extended_awaitables import (
     ClockCycles,
     Combine,
@@ -26,6 +27,7 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
+from cocotb._task_manager import TaskManager
 
 __all__ = (
     "ClockCycles",
@@ -42,11 +44,15 @@ __all__ = (
     "ReadWrite",
     "RisingEdge",
     "SimTimeoutError",
+    "TaskManager",
     "Timer",
     "Trigger",
     "ValueChange",
     "Waitable",
     "current_gpi_trigger",
+    "gather",
+    "select",
+    "wait",
     "with_timeout",
 )
 

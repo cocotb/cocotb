@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Generator
 from decimal import Decimal
 from fractions import Fraction
 
@@ -22,6 +23,7 @@ import pytest
 from common import assert_takes
 
 import cocotb
+from cocotb._base_triggers import Trigger
 from cocotb.clock import Clock
 from cocotb.simulator import get_precision
 from cocotb.triggers import (
@@ -146,37 +148,55 @@ async def test_writes_have_taken_effect_after_readwrite(dut):
     assert dut.stream_in_data.value == 2
 
 
-async def example():
+async def example() -> int:
     await Timer(10, "ns")
     return 1
 
 
-@cocotb.test()
-async def test_timeout_func_coro_fail(dut):
+@cocotb.test
+async def test_timeout_func_coro_fail(dut: object) -> None:
     with pytest.raises(SimTimeoutError):
         await with_timeout(
             cocotb.start_soon(example()), timeout_time=1, timeout_unit="ns"
         )
 
 
-@cocotb.test()
-async def test_timeout_func_coro_pass(dut):
+@cocotb.test
+async def test_timeout_func_coro_pass(dut: object) -> None:
     res = await with_timeout(
         cocotb.start_soon(example()), timeout_time=100, timeout_unit="ns"
     )
     assert res == 1
 
 
-@cocotb.test()
-async def test_timeout_func_fail(dut):
+@cocotb.test
+async def test_timeout_func_fail(dut: object) -> None:
     with pytest.raises(SimTimeoutError):
         await with_timeout(example(), timeout_time=1, timeout_unit="ns")
 
 
-@cocotb.test()
-async def test_timeout_func_pass(dut):
+@cocotb.test
+async def test_timeout_func_pass(dut: object) -> None:
     res = await with_timeout(example(), timeout_time=100, timeout_unit="ns")
     assert res == 1
+
+
+class MyAwaitable:
+    def __await__(self) -> Generator[Trigger, None, int]:
+        yield from Timer(10, "ns").__await__()
+        return 42
+
+
+@cocotb.test
+async def test_timeout_awaitable_fail(dut: object) -> None:
+    with pytest.raises(SimTimeoutError):
+        await with_timeout(MyAwaitable(), timeout_time=1, timeout_unit="ns")
+
+
+@cocotb.test
+async def test_timeout_awaitable_pass(dut: object) -> None:
+    res = await with_timeout(MyAwaitable(), timeout_time=100, timeout_unit="ns")
+    assert res == 42
 
 
 @cocotb.test()

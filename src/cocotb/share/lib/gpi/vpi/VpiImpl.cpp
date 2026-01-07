@@ -6,9 +6,9 @@
 #include "./VpiImpl.hpp"
 
 #include <gpi.h>
-#include <gpi_logging.h>
 #include <vpi_user_ext.h>
 
+#include "../logging.hpp"
 #include "_vendor/vpi/vpi_user.h"
 
 #define CASE_STR(_X) \

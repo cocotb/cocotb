@@ -4,8 +4,9 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <gpi_logging.h>
 #include <stdlib.h>
+
+#include "./logging.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -19,7 +20,7 @@ void *utils_dyn_open(const char *lib_name) {
     SetErrorMode(0);
     ret = static_cast<void *>(LoadLibrary(lib_name));
     if (!ret) {
-        const char *log_fmt = "Unable to open lib %s%s%s";
+        const char *log_fmt = "Unable to open lib '%s'%s%s";
         LPSTR msg_ptr;
         if (FormatMessageA(
                 FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
@@ -38,7 +39,7 @@ void *utils_dyn_open(const char *lib_name) {
 
     ret = dlopen(lib_name, RTLD_LAZY | RTLD_GLOBAL);
     if (!ret) {
-        LOG_ERROR("Unable to open lib %s: %s", lib_name, dlerror());
+        LOG_ERROR("Unable to open lib '%s': %s", lib_name, dlerror());
     }
 #endif
     return ret;
@@ -50,7 +51,7 @@ void *utils_dyn_sym(void *handle, const char *sym_name) {
     entry_point = reinterpret_cast<void *>(
         GetProcAddress(static_cast<HMODULE>(handle), sym_name));
     if (!entry_point) {
-        const char *log_fmt = "Unable to find symbol %s%s%s";
+        const char *log_fmt = "Unable to find symbol '%s'%s%s";
         LPSTR msg_ptr;
         if (FormatMessageA(
                 FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
@@ -66,7 +67,7 @@ void *utils_dyn_sym(void *handle, const char *sym_name) {
 #else
     entry_point = dlsym(handle, sym_name);
     if (!entry_point) {
-        LOG_ERROR("Unable to find symbol %s: %s", sym_name, dlerror());
+        LOG_ERROR("Unable to find symbol '%s': %s", sym_name, dlerror());
     }
 #endif
     return entry_point;

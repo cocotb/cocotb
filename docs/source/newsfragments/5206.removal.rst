@@ -1,0 +1,1 @@
+Deprecated passing :class:`~cocotb.task.Task`\ s to :class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combine` in favor of passing coroutines directly to :func:`~cocotb.triggers.select` and :func:`~cocotb.triggers.gather`, respectively.

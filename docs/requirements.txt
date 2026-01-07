@@ -15,3 +15,6 @@ towncrier
 IPython
 enum-tools[sphinx]
 sphinx-codeautolink
+sphinx-argparse
+sphinx-autofixture
+pytest

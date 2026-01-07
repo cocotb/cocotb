@@ -27,7 +27,7 @@ jobs:
           - python-version: 3.9
 
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
     - name: Set up Python ${{matrix.python-version}}
       uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
       with:
@@ -62,7 +62,7 @@ jobs:
     - name: Generate a token to access cocotb/cocotb-benchmark-results
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       id: generate_token
-      uses: actions/create-github-app-token@7e473efe3cb98aa54f8d4bac15400b15fad77d94  # v2.2.0
+      uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf  # v2.2.1
       with:
         app-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
         private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}

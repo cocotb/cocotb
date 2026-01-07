@@ -6,7 +6,7 @@
 #define PY_GPI_LOGGING_H
 
 #include <Python.h>
-#include <gpi_logging.h>
+#include <gpi.h>
 
 #ifdef PYGPI_EXPORTS
 #define PYGPI_EXPORT COCOTB_EXPORT
@@ -14,16 +14,21 @@
 #define PYGPI_EXPORT COCOTB_IMPORT
 #endif
 
-void py_gpi_logger_initialize(PyObject *handler, PyObject *get_logger);
-void py_gpi_logger_finalize();
+void pygpi_logging_initialize();
+void pygpi_logging_configure(PyObject *handler, PyObject *get_logger);
+void pygpi_logging_finalize();
+void pygpi_logging_set_level(enum gpi_log_level level);
 
 extern PyObject *pEventFn;
 extern int pygpi_debug_enabled;
 extern int python_context_tracing_enabled;
 extern int is_python_context;
 
+void pygpi_log(enum gpi_log_level level, const char *pathname,
+               const char *funcname, long lineno, const char *fmt, ...);
+
 #define PYGPI_LOG_(level, ...) \
-    gpi_log_("pygpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__)
+    pygpi_log(level, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
 /** Logs a message at TRACE log level if PYGPI tracing is enabled */
 #define PYGPI_LOG_TRACE(...)                    \

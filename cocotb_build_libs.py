@@ -496,7 +496,6 @@ def _get_common_lib_ext(include_dirs, share_lib_dir):
         os.path.join("cocotb", "libs", "libgpi"),
         define_macros=[
             ("GPI_EXPORTS", ""),
-            ("PYTHON_LIB", _get_python_lib()),
             *_extra_defines,
         ],
         include_dirs=include_dirs,
@@ -567,6 +566,9 @@ def _get_vhpi_lib_ext(
     libcocotbvhpi_sources = [
         os.path.join(share_lib_dir, "gpi", "vhpi", "VhpiImpl.cpp"),
         os.path.join(share_lib_dir, "gpi", "vhpi", "VhpiCbHdl.cpp"),
+        os.path.join(share_lib_dir, "gpi", "vhpi", "VhpiObj.cpp"),
+        os.path.join(share_lib_dir, "gpi", "vhpi", "VhpiIterator.cpp"),
+        os.path.join(share_lib_dir, "gpi", "vhpi", "VhpiSignal.cpp"),
     ]
     if os.name == "nt":
         libcocotbvhpi_sources += [lib_name + ".rc"]
