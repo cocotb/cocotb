@@ -179,7 +179,6 @@ def _start_user_coverage() -> None:
             tmp_data_file_controller = tempfile.NamedTemporaryFile(
                 prefix=".coverage.cocotb.",
                 suffix=".tmp",
-                delete=False,
             )
             tmp_data_file = tmp_data_file_controller.name
             if config_filepath is None:
