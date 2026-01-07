@@ -511,9 +511,11 @@ class Runner(ABC):
 
         if testcase is not None:
             if isinstance(testcase, str):
-                self.env["COCOTB_TESTCASE"] = testcase
+                names = [s.strip() for s in testcase.split(",") if s.strip()]
             else:
-                self.env["COCOTB_TESTCASE"] = ",".join(testcase)
+                names = list(testcase)
+            regex = r"\.(" + "|".join(rf".*{re.escape(name)}" for name in names) + ")$"
+            self.env["COCOTB_TEST_FILTER"] = regex
 
         if test_filter is not None:
             self.env["COCOTB_TEST_FILTER"] = test_filter
