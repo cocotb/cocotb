@@ -18,11 +18,12 @@ def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
             "cocotb library coverage collection requested but coverage package not available. Install it using `pip install coverage`."
         ) from None
     else:
-        tmp_data_file = tempfile.NamedTemporaryFile(
+        tmp_data_file_controller = tempfile.NamedTemporaryFile(
             prefix=".coverage.cocotb.",
             suffix=".tmp",
-            delete=True,
-        ).name
+            delete=False,
+        )
+        tmp_data_file = tmp_data_file_controller.name
         library_coverage = coverage.coverage(
             data_file=tmp_data_file,
             config_file=False,
@@ -54,6 +55,8 @@ def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
                     source=["cocotb"],
                 )
                 combiner.combine(data_paths=files, strict=True, keep=True)
+            tmp_data_file_controller.close()
+            Path(tmp_data_file).unlink()
 
         # This must come after `library_coverage.start()` to ensure coverage is being
         # collected on the cocotb library before importing from it.

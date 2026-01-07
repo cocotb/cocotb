@@ -176,11 +176,12 @@ def _start_user_coverage() -> None:
         else:
             config_filepath = os.getenv("COVERAGE_RCFILE")
 
-            tmp_data_file = tempfile.NamedTemporaryFile(
+            tmp_data_file_controller = tempfile.NamedTemporaryFile(
                 prefix=".coverage.cocotb.",
                 suffix=".tmp",
-                delete=True,
-            ).name
+                delete=False,
+            )
+            tmp_data_file = tmp_data_file_controller.name
             if config_filepath is None:
                 # Exclude cocotb itself from coverage collection.
                 log.info(
@@ -231,6 +232,8 @@ def _start_user_coverage() -> None:
                             data_file=final_data_file, config_file=config_filepath
                         )
                     combiner.combine(data_paths=files, strict=True, keep=True)
+                tmp_data_file_controller.close()
+                Path(tmp_data_file).unlink()
 
             _register_shutdown_callback(stop_user_coverage)
 
