@@ -204,36 +204,38 @@ def _start_user_coverage() -> None:
             user_coverage.start()
 
             def stop_user_coverage() -> None:
-                user_coverage.stop()
-                log.debug("Writing user coverage data")
-                user_coverage.save()
+                try:
+                    user_coverage.stop()
+                    log.debug("Writing user coverage data")
+                    user_coverage.save()
 
-                data_file = (
-                    getattr(user_coverage.config, "data_file", None) or ".coverage"
-                )
-                data_dir = Path(data_file).resolve().parent
-                pattern = str(data_dir / ".coverage*")
-                files = [
-                    str(p.resolve())
-                    for p in Path(pattern).parent.glob(Path(pattern).name)
-                ]
+                    data_file = (
+                        getattr(user_coverage.config, "data_file", None) or ".coverage"
+                    )
+                    data_dir = Path(data_file).resolve().parent
+                    pattern = str(data_dir / ".coverage*")
+                    files = [
+                        str(p.resolve())
+                        for p in Path(pattern).parent.glob(Path(pattern).name)
+                    ]
 
-                if files:
-                    final_data_file = ".coverage"
-                    if config_filepath is None:
-                        cocotb_package_dir = Path(__file__).parent.absolute()
-                        combiner = coverage.coverage(
-                            data_file=final_data_file,
-                            branch=True,
-                            omit=[f"{cocotb_package_dir}/*"],
-                        )
-                    else:
-                        combiner = coverage.coverage(
-                            data_file=final_data_file, config_file=config_filepath
-                        )
-                    combiner.combine(data_paths=files, strict=True, keep=True)
-                tmp_data_file_controller.close()
-                Path(tmp_data_file).unlink()
+                    if files:
+                        final_data_file = ".coverage"
+                        if config_filepath is None:
+                            cocotb_package_dir = Path(__file__).parent.absolute()
+                            combiner = coverage.coverage(
+                                data_file=final_data_file,
+                                branch=True,
+                                omit=[f"{cocotb_package_dir}/*"],
+                            )
+                        else:
+                            combiner = coverage.coverage(
+                                data_file=final_data_file, config_file=config_filepath
+                            )
+                        combiner.combine(data_paths=files, strict=True, keep=True)
+                finally:
+                    tmp_data_file_controller.close()
+                    Path(tmp_data_file).unlink()
 
             _register_shutdown_callback(stop_user_coverage)
 

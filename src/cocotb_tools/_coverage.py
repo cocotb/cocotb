@@ -33,30 +33,33 @@ def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
         library_coverage.start()
 
         def stop_library_coverage() -> None:
-            library_coverage.stop()
-            library_coverage.save()  # pragma: no cover
+            try:
+                library_coverage.stop()
+                library_coverage.save()  # pragma: no cover
 
-            data_file = (
-                getattr(library_coverage.config, "data_file", None)
-                or ".coverage.cocotb"
-            )
-            data_dir = Path(data_file).resolve().parent
-            pattern = data_dir / ".coverage*"
-            files = [
-                str(p.resolve()) for p in Path(pattern).parent.glob(Path(pattern).name)
-            ]
-
-            if files:
-                final_data_file = ".coverage.cocotb"
-                combiner = coverage.coverage(
-                    data_file=final_data_file,
-                    config_file=False,
-                    branch=True,
-                    source=["cocotb"],
+                data_file = (
+                    getattr(library_coverage.config, "data_file", None)
+                    or ".coverage.cocotb"
                 )
-                combiner.combine(data_paths=files, strict=True, keep=True)
-            tmp_data_file_controller.close()
-            Path(tmp_data_file).unlink()
+                data_dir = Path(data_file).resolve().parent
+                pattern = data_dir / ".coverage*"
+                files = [
+                    str(p.resolve())
+                    for p in Path(pattern).parent.glob(Path(pattern).name)
+                ]
+
+                if files:
+                    final_data_file = ".coverage.cocotb"
+                    combiner = coverage.coverage(
+                        data_file=final_data_file,
+                        config_file=False,
+                        branch=True,
+                        source=["cocotb"],
+                    )
+                    combiner.combine(data_paths=files, strict=True, keep=True)
+            finally:
+                tmp_data_file_controller.close()
+                Path(tmp_data_file).unlink()
 
         # This must come after `library_coverage.start()` to ensure coverage is being
         # collected on the cocotb library before importing from it.
