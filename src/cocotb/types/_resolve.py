@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import os
 import sys
 from functools import cache
 from random import getrandbits
 from typing import Callable, Final, Literal
+
+from cocotb_tools import _env
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
@@ -57,14 +58,13 @@ def get_str_resolver(resolver: ResolverLiteral) -> Callable[[str], str]:
 
 
 def _init() -> Callable[[str], str] | None:
-    _envvar = os.getenv("COCOTB_RESOLVE_X", None)
+    resolver = _env.as_str("COCOTB_RESOLVE_X").lower()
 
     # no resolver
-    if _envvar is None:
+    if not resolver:
         return None
 
     # backwards compatibility
-    resolver = _envvar.strip().lower()
     if resolver == "value_error":
         resolver = "error"
 
@@ -73,7 +73,7 @@ def _init() -> Callable[[str], str] | None:
         return get_str_resolver(resolver)
     except ValueError:
         raise ValueError(
-            f"Invalid COCOTB_RESOLVE_X value: {_envvar!r}. {_VALID_RESOLVERS_ERR_MSG}"
+            f"Invalid COCOTB_RESOLVE_X value: {resolver!r}. {_VALID_RESOLVERS_ERR_MSG}"
         ) from None
 
 

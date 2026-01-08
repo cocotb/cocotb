@@ -1,0 +1,1 @@
+:func:`cocotb.logging.default_config` no longer overwrites root handlers, but configures formatting on whatever handlers are already registered.

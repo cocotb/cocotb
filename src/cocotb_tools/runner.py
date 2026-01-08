@@ -35,6 +35,7 @@ from typing import (
 import find_libpython
 
 import cocotb_tools.config
+from cocotb_tools import _env
 from cocotb_tools.check_results import get_results
 from cocotb_tools.sim_versions import NvcVersion
 
@@ -397,7 +398,7 @@ class Runner(ABC):
         self.log_file: PathLike | None = log_file
         self.cwd = self.build_dir if cwd is None else cwd
 
-        self.waves = bool(os.getenv("WAVES", waves))
+        self.waves = _env.as_bool("WAVES", waves)
 
         self._set_env_build()
 
@@ -510,9 +511,11 @@ class Runner(ABC):
 
         if testcase is not None:
             if isinstance(testcase, str):
-                self.env["COCOTB_TESTCASE"] = testcase
+                names = [s.strip() for s in testcase.split(",") if s.strip()]
             else:
-                self.env["COCOTB_TESTCASE"] = ",".join(testcase)
+                names = list(testcase)
+            regex = r"\.(" + "|".join(rf".*{re.escape(name)}" for name in names) + ")$"
+            self.env["COCOTB_TEST_FILTER"] = regex
 
         if test_filter is not None:
             self.env["COCOTB_TEST_FILTER"] = test_filter
@@ -521,17 +524,17 @@ class Runner(ABC):
             self.env["COCOTB_RANDOM_SEED"] = str(seed)
 
         self.log_file = log_file
-        self.waves = bool(int(os.getenv("WAVES", waves)))
-        self.gui = bool(int(os.getenv("GUI", gui)))
+        self.waves = _env.as_bool("WAVES", waves)
+        self.gui = _env.as_bool("GUI", gui)
         self.timescale = timescale
 
         if verbose is not None:
             self.verbose = verbose
 
         # Pytest test name is used by the next couple sections.
-        pytest_current_test = os.getenv("PYTEST_CURRENT_TEST", None)
+        pytest_current_test: str = _env.as_str("PYTEST_CURRENT_TEST")
 
-        if pytest_current_test is not None:
+        if pytest_current_test:
             self.current_test_name = pytest_current_test.split(":")[-1].split(" ")[0]
         else:
             self.current_test_name = "test"
@@ -547,7 +550,7 @@ class Runner(ABC):
         # 4. default name
         if results_xml_path is not None and results_xml_path.is_absolute():
             results_xml_file = results_xml_path
-        elif pytest_current_test is not None:
+        elif pytest_current_test:
             if results_xml_path is not None:
                 raise NotImplementedError(
                     "Relative result_xml paths aren't supported when using pytest"
@@ -594,8 +597,8 @@ class Runner(ABC):
             sys.exit(simulator_exit_code)
 
         if pytest_current_test and self._use_external_viewer() and self.gui:
-            viewer = os.getenv("COCOTB_WAVEFORM_VIEWER")
-            if viewer is not None:
+            viewer: str = _env.as_str("COCOTB_WAVEFORM_VIEWER")
+            if viewer:
                 viewer_path = shutil.which(viewer)
                 if viewer_path is None:
                     raise ValueError(f"Cannot find {viewer} in the system path")

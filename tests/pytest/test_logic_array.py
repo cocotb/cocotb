@@ -462,3 +462,57 @@ def test_copy() -> None:
     d = copy.deepcopy(l)
     assert l == d
     assert l.range == d.range
+
+
+def test_format():
+    l = LogicArray("01XZ")
+    assert f"{l}" == "01XZ"
+    assert f"{l!s}" == "01XZ"
+    assert f"{l!r}" == "LogicArray('01XZ', Range(3, 'downto', 0))"
+    with pytest.raises(ValueError):
+        f"{l:d}"
+    with pytest.raises(ValueError):
+        f"{l:b}"
+    with pytest.raises(ValueError):
+        f"{l:x}"
+    with pytest.raises(ValueError):
+        f"{l:X}"
+    with pytest.raises(ValueError):
+        f"{l:o}"
+
+    l = LogicArray("1010")
+    assert f"{l:d}" == "10"
+    assert f"{l:b}" == "1010"
+    assert f"{l:x}" == "a"
+    assert f"{l:X}" == "A"
+    assert f"{l:o}" == "12"
+
+    with pytest.raises(ValueError):
+        f"{l:Q}"
+
+    l = LogicArray("00001101001")
+    assert f"{l:#_b}" == "0b000_0110_1001"
+    assert f"{l:#x}" == "0x069"
+    assert f"{l:#_X}" == "0X069"
+    assert f"{l:#_o}" == "0o0_0151"
+    assert f"{l:#,d}" == "0d0,105"
+
+
+def test_from_signed_wrap():
+    assert LogicArray.from_signed(-1, 4, on_overflow="wrap") == LogicArray("1111")
+    assert LogicArray.from_signed(-8, 4, on_overflow="wrap") == LogicArray("1000")
+    assert LogicArray.from_signed(-9, 4, on_overflow="wrap") == LogicArray("0111")
+    assert LogicArray.from_signed(7, 4, on_overflow="wrap") == LogicArray("0111")
+    assert LogicArray.from_signed(8, 4, on_overflow="wrap") == LogicArray("1000")
+    assert LogicArray.from_signed(15, 4, on_overflow="wrap") == LogicArray("1111")
+    assert LogicArray.from_signed(16, 4, on_overflow="wrap") == LogicArray("0000")
+
+
+def test_from_unsigned_wrap():
+    with pytest.raises(ValueError):
+        LogicArray.from_unsigned(-1, 4)
+    with pytest.raises(ValueError):
+        LogicArray.from_unsigned(-9, 4)
+    assert LogicArray.from_unsigned(15, 4, on_overflow="wrap") == LogicArray("1111")
+    assert LogicArray.from_unsigned(16, 4, on_overflow="wrap") == LogicArray("0000")
+    assert LogicArray.from_unsigned(20, 4, on_overflow="wrap") == LogicArray("0100")

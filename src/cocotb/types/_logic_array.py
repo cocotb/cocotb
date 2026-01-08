@@ -185,6 +185,31 @@ class LogicArray(AbstractMutableArray[Logic]):
         >>> big_mux(a, b, sel)
         LogicArray('1110', Range(3, 'downto', 0))
 
+    :class:`!LogicArray`\ s support formatting in f-strings and the :func:`format` built-in.
+    All resulting strings are zero-padded to the length of the :class:`!LogicArray`.
+    For specifiers other than ``""``, if the value contains non-``0``/``1`` values, a :exc:`!ValueError` will be raised.
+    The supported format specifiers are:
+
+    * ``""``: Binary (same as :class:`str` cast).
+    * ``"b"``: 0-padded unsigned binary.
+    * ``"o"``: 0-padded unsigned octal.
+    * ``"d"``: 0-padded unsigned decimal integer.
+    * ``"x"``: 0-padded unsigned hexadecimal (lowercase).
+    * ``"X"``: 0-padded unsigned hexadecimal (uppercase).
+
+    The  ``"#"`` "alternate" format specifier and the ``"_"`` and ``","`` grouping modifiers are also supported.
+    These behave the same way as in standard Python formatting of integers.
+
+    .. code-block:: pycon3
+
+        >>> value = LogicArray("00101011")
+        >>> f"{value}"
+        '00101011'
+        >>> f"{value:#_b}"
+        '0b0010_1011'
+        >>> format(value, "x")
+        '2b'
+
     Args:
         value: Initial value for the :class:`!LogicArray`.
         range: The indexing scheme of the :class:`!LogicArray`.
@@ -317,15 +342,26 @@ class LogicArray(AbstractMutableArray[Logic]):
         cls,
         value: int,
         range: Range | int,
+        *,
+        on_overflow: Literal["error", "wrap"] = "error",
     ) -> LogicArray:
         """Construct a :class:`!LogicArray` from an :class:`int` with unsigned representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with unsigned representation where the left-most bit is the most significant bit.
         This bit vector is then constructed into a :class:`!LogicArray`.
 
+        The *on_overflow* parameter can be set to ``"wrap"`` to allow truncating excessive significant bits so the *value* fits into the *range*.
+
+        .. code-block:: python
+
+            >>> LogicArray.from_unsigned(0b10011101, 4, on_overflow="wrap")
+            LogicArray('1101', Range(3, 'downto', 0))
+
         Args:
             value: The integer to convert.
             range: Indexing scheme for the :class:`!LogicArray`.
+            on_overflow: If ``"wrap"``, the *value* will have excessive significant bits truncated so that it fits into the *range*.
+                If ``"error"`` (default), a :class:`ValueError` is raised when the *value* does not fit.
 
         Returns:
             A :class:`!LogicArray` equivalent to the *value*.
@@ -333,25 +369,80 @@ class LogicArray(AbstractMutableArray[Logic]):
         Raises:
             TypeError: When invalid argument types are used.
             ValueError: When a :class:`!LogicArray` of the given *range* can't hold the *value*, or *value* is negative.
+
+        .. versionadded:: 2.1
+            The *on_overflow* parameter.
         """
+        # input type checking and normalization
+        if isinstance(range, int):
+            range = Range(range - 1, "downto", 0)
+        elif not isinstance(range, Range):
+            raise TypeError(
+                f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
+            )
+        if not isinstance(value, int):
+            raise TypeError(
+                f"Expected int for parameter 'value', not {type(value).__qualname__}"
+            )
+
         if value < 0:
             raise ValueError("Expected unsigned integer, got negative value")
-        return LogicArray(value, range)
+
+        if len(range) == 0:
+            raise ValueError(
+                f"Unsigned integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
+            )
+
+        if on_overflow == "wrap":
+            value %= 1 << len(range)
+        elif on_overflow == "error":
+            if value >= (1 << len(range)):
+                raise ValueError(
+                    f"Unsigned integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
+                )
+        else:
+            raise ValueError(
+                f"Invalid value for on_overflow: {on_overflow!r}. "
+                f"Expected 'error' or 'wrap'."
+            )
+
+        # construct the LogicArray
+        self = cls.__new__(cls)
+        self._value_as_array = None
+        self._value_as_int = value
+        self._value_as_str = None
+        self._range = range
+        self._warn_indexing = False
+        return self
 
     @classmethod
     def from_signed(
         cls,
         value: int,
         range: Range | int,
+        *,
+        on_overflow: Literal["error", "wrap"] = "error",
     ) -> LogicArray:
         """Construct a :class:`!LogicArray` from an :class:`int` with two's complement representation.
 
         The :class:`int` is treated as an arbitrary-length bit vector with two's complement representation where the left-most bit is the most significant bit.
         This bit vector is then constructed into a :class:`!LogicArray`.
 
+        The *on_overflow* parameter can be set to ``"wrap"`` to allow truncating excessive significant bits so the *value* fits into the *range*.
+
+        .. code-block:: python
+
+            >>> LogicArray.from_signed(-12345, 16)
+            LogicArray('1100111111000111', Range(15, 'downto', 0))
+
+            >>> LogicArray.from_signed(-12345, 4, on_overflow="wrap")
+            LogicArray('0111', Range(3, 'downto', 0))
+
         Args:
             value: The integer to convert.
             range: Indexing scheme for the :class:`!LogicArray`.
+            on_overflow: If ``"wrap"``, the *value* will have excessive significant bits truncated so that it fits into the *range*.
+                If ``"error"`` (default), a :class:`ValueError` is raised when the *value* does not fit.
 
         Returns:
             A :class:`!LogicArray` equivalent to the *value*.
@@ -359,12 +450,20 @@ class LogicArray(AbstractMutableArray[Logic]):
         Raises:
             TypeError: When invalid argument types are used.
             ValueError: When a :class:`!LogicArray` of the given *range* can't hold the *value*.
+
+        .. versionadded:: 2.1
+            The *on_overflow* parameter.
         """
+        # input type checking and normalization
         if isinstance(range, int):
             range = Range(range - 1, "downto", 0)
         elif not isinstance(range, Range):
             raise TypeError(
                 f"Expected Range or int for parameter 'range', not {type(range).__qualname__}"
+            )
+        if not isinstance(value, int):
+            raise TypeError(
+                f"Expected int for parameter 'value', not {type(value).__qualname__}"
             )
 
         # Prevent null range from blowing up the below code.
@@ -373,14 +472,29 @@ class LogicArray(AbstractMutableArray[Logic]):
                 f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
             )
 
-        limit = 1 << (len(range) - 1)
-        if value < -limit or limit <= value:
+        if on_overflow == "wrap":
+            value %= 1 << len(range)
+        elif on_overflow == "error":
+            limit = 1 << (len(range) - 1)
+            if value < -limit or limit <= value:
+                raise ValueError(
+                    f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
+                )
+            value %= 2 * limit
+        else:
             raise ValueError(
-                f"Signed integer {value!r} will not fit in a LogicArray with bounds: {range!r}"
+                f"Invalid value for on_overflow: {on_overflow!r}. "
+                f"Expected 'error' or 'wrap'."
             )
-        value %= 2 * limit
 
-        return LogicArray(value, range)
+        # construct the LogicArray
+        self = cls.__new__(cls)
+        self._value_as_array = None
+        self._value_as_int = value
+        self._value_as_str = None
+        self._range = range
+        self._warn_indexing = False
+        return self
 
     @classmethod
     def from_bytes(
@@ -884,3 +998,57 @@ class LogicArray(AbstractMutableArray[Logic]):
         res._range = copy.deepcopy(self._range, memo=memo)
         res._warn_indexing = self._warn_indexing
         return res
+
+    def __format__(self, spec: str, /) -> str:
+        if not spec:
+            return str(self)
+
+        base_len = 0
+        alternate = ""
+        if spec.startswith("#"):
+            alternate, spec = spec[0], spec[1:]
+            # length operator doesn't take alternate format's effect on overall length into account
+            base_len = 2
+
+        grouping = ""
+        if spec.startswith(("_", ",")):
+            grouping, spec = spec[0], spec[1:]
+
+        if spec == "b":
+            bin_len = len(self)
+            # length operator doesn't take grouping's effect on overall length into account
+            if grouping:
+                bin_len += (bin_len - 1) // 4
+            bin_len += base_len
+            # length operator doesn't take alternate format's and grouping's effect on overall length into account
+            return f"{int(self):{alternate}0{bin_len}{grouping}b}"
+        elif spec in {"x", "X"}:
+            # fast ceil(len(self) / 4)
+            hex_len = (len(self) + 3) // 4
+            # length operator doesn't take grouping's affect on overall length into account
+            if grouping:
+                hex_len += (hex_len - 1) // 4
+            hex_len += base_len
+            return f"{int(self):{alternate}0{hex_len}{grouping}{spec}}"
+        elif spec == "d":
+            # fast ceil(len(self) / 10)
+            dec_len = (len(self) + 9) // 10
+            # length operator doesn't take grouping's effect on overall length into account
+            if grouping:
+                dec_len += (dec_len - 1) // 3
+            dec_len += base_len
+            # integer alternate form for "d" doesn't add any prefix, but we need it to
+            # ensure people know it isn't hex or octal.
+            if alternate:
+                alternate = "0d"
+            return f"{alternate}{int(self):0{dec_len}{grouping}d}"
+        elif spec == "o":
+            # fast ceil(len(self) / 8)
+            oct_len = (len(self) + 2) // 3
+            oct_len += base_len
+            # length operator doesn't take grouping's effect on overall length into account
+            if grouping:
+                oct_len += (oct_len - 1) // 4
+            return f"{int(self):{alternate}0{oct_len}{grouping}o}"
+        else:
+            raise ValueError(f"Unsupported format specifier: {spec!r}")

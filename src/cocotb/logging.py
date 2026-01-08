@@ -25,6 +25,7 @@ from cocotb._ANSI import ANSI
 from cocotb._deprecation import deprecated
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb.utils import get_time_from_sim_steps
+from cocotb_tools import _env
 
 __all__ = (
     "ANSI",
@@ -109,19 +110,22 @@ def default_config(
         Now captures warnings and outputs them through the logging system using
         :func:`logging.captureWarnings`.
     """
-    logging.basicConfig()
+    # Using the stream=sys.stdout argument will ensure that the root logger without any handlers
+    # will be always configured to have the stdout stream handler
+    logging.basicConfig(stream=sys.stdout)
 
-    hdlr = logging.StreamHandler(sys.stdout)
-    hdlr.addFilter(SimTimeContextFilter())
-    hdlr.setFormatter(
-        SimLogFormatter(
-            reduced_log_fmt=reduced_log_fmt,
-            strip_ansi=strip_ansi,
-            prefix_format=prefix_format,
-            multiline_indent=multiline_indent,
+    # Pytest or other frameworks can add custom log handlers, we need to ensure that log output will be consistent
+    for handler in logging.getLogger().handlers:
+        handler.addFilter(SimTimeContextFilter())
+
+        handler.setFormatter(
+            SimLogFormatter(
+                reduced_log_fmt=reduced_log_fmt,
+                strip_ansi=strip_ansi,
+                prefix_format=prefix_format,
+                multiline_indent=multiline_indent,
+            )
         )
-    )
-    logging.getLogger().handlers = [hdlr]  # overwrite default handlers
 
     logging.getLogger("cocotb").setLevel(logging.INFO)
     logging.getLogger("gpi").setLevel(logging.INFO)
@@ -139,25 +143,19 @@ def _init() -> None:
       :envvar:`COCOTB_LOG_LEVEL` and :envvar:`GPI_LOG_LEVEL`, respectively.
     """
     global strip_ansi
-    strip_ansi = not sys.stdout.isatty()  # default to color for TTYs
-    if os.getenv("NO_COLOR", ""):
-        strip_ansi = True
-    ansi_output = os.getenv("COCOTB_ANSI_OUTPUT")
-    if ansi_output is not None:
-        strip_ansi = not int(ansi_output)
-    in_gui = os.getenv("GUI")
-    if in_gui is not None:
-        strip_ansi = bool(int(in_gui))
+
+    strip_ansi = not _env.as_bool(
+        "COCOTB_ANSI_OUTPUT",
+        sys.stdout.isatty() and not _env.as_str("NO_COLOR") and not _env.as_bool("GUI"),
+    )
 
     _setup_gpi_logger()
 
     # Set "cocotb" and "gpi" logger based on environment variables
     def set_level(logger_name: str, envvar: str) -> None:
-        log_level = os.environ.get(envvar)
-        if log_level is None:
+        log_level: str = _env.as_str(envvar).upper()
+        if not log_level:
             return
-
-        log_level = log_level.upper()
 
         logger = logging.getLogger(logger_name)
 
@@ -197,12 +195,8 @@ def _setup_gpi_logger() -> None:
 
 def _configure(_: object) -> None:
     """Configure basic logging."""
-    reduced_log_fmt = True
-    try:
-        reduced_log_fmt = bool(int(os.environ.get("COCOTB_REDUCED_LOG_FMT", "1")))
-    except ValueError:
-        pass
-    prefix_format = os.environ.get("COCOTB_LOG_PREFIX", None)
+    reduced_log_fmt: bool = _env.as_bool("COCOTB_REDUCED_LOG_FMT", True)
+    prefix_format: str = os.getenv("COCOTB_LOG_PREFIX", "")
     default_config(reduced_log_fmt=reduced_log_fmt, prefix_format=prefix_format)
 
 
@@ -321,7 +315,7 @@ class SimLogFormatter(logging.Formatter):
             re.VERBOSE,
         )
 
-        if prefix_format is None:
+        if not prefix_format:
             prefix_format = "{simtime_fmt(record,'ns'):>11} {level_color_start}{record.levelname:<8}{level_color_end} {ljust(record.name, 34)} "
             if not self._reduced_log_fmt:
                 prefix_format = (

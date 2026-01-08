@@ -319,6 +319,12 @@ class FliIntObjHdl : public FliValueObjHdl {
 
     const char *get_signal_value_binstr() override;
     long get_signal_value_long() override;
+    int get_signed() override {
+        // We don't know if the object is a Verilog object or VHDL object, but
+        // we assume that FLI is for VHDL accesses primarily and VHDL ints are
+        // always signed.
+        return 1;
+    }
 
     using FliValueObjHdl::set_signal_value;
     int set_signal_value(int32_t value, gpi_set_action action) override;

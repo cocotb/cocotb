@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import inspect
-import os
 import pdb
 from collections.abc import Coroutine
 from typing import (
@@ -19,8 +18,9 @@ from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
 from cocotb._test_functions import TestSuccess
 from cocotb.task import ResultType, Task
+from cocotb_tools import _env
 
-_pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
+_pdb_on_exception = _env.as_bool("COCOTB_PDB_ON_EXCEPTION")
 
 
 class RunningTest:

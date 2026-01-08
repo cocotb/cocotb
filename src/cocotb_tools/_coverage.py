@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import os
 import tempfile
 from pathlib import Path
 
+from cocotb_tools import _env
+
 
 def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
-    if "COCOTB_LIBRARY_COVERAGE" not in os.environ:
+    if not _env.as_bool("COCOTB_LIBRARY_COVERAGE"):
         return
     try:
         import coverage  # noqa: PLC0415
@@ -19,8 +20,7 @@ def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
         ) from None
     else:
         tmp_data_file_controller = tempfile.NamedTemporaryFile(
-            prefix=".coverage.cocotb.",
-            suffix=".tmp"
+            prefix=".coverage.cocotb.", suffix=".tmp"
         )
         tmp_data_file = tmp_data_file_controller.name
         library_coverage = coverage.coverage(

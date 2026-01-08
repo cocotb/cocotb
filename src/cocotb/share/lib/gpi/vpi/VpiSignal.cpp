@@ -16,7 +16,9 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
     if ((vpiIntVar == type) || (vpiIntegerVar == type) ||
-        (vpiIntegerNet == type) || (vpiRealNet == type)) {
+        (vpiIntegerNet == type)) {
+        m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
+    } else if (vpiRealNet == type) {
         m_num_elems = 1;
     } else {
         m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());

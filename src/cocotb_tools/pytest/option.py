@@ -13,7 +13,7 @@ from typing import Any, Literal
 
 from pytest import Config, OptionGroup, Parser
 
-from cocotb_tools.pytest import env
+from cocotb_tools import _env
 
 PREFIXES: tuple[str, ...] = ("cocotb_", "gpi_", "pygpi_")
 
@@ -77,30 +77,30 @@ class Option:
         # Map command line argument to option in configuration file
         # Environment variable set by user can override default value for option
         if action == "store_true":
-            default = env.as_bool(self.environment, default)
+            default = _env.as_bool(self.environment, default)
             ini_type = "bool"
         elif nargs:
-            default = env.as_list(self.environment, default)
+            default = _env.as_list(self.environment, default)
             ini_type = "paths" if argtype == Path else "args"
         elif argtype is int:
-            default = env.as_int(self.environment, default)
+            default = _env.as_int(self.environment, default)
             ini_type = "int"
         elif argtype is Path:
-            default = env.as_path(self.environment, default)
+            default = _env.as_path(self.environment, default)
             ini_type = "string"
         elif argtype is shlex.split:
-            default = env.as_args(self.environment, default)
+            default = _env.as_args(self.environment, default)
             ini_type = "args"
         elif choices:
-            default = env.as_str(self.environment, default).lower()
+            default = _env.as_str(self.environment, default).lower()
             ini_type = "string"
 
             # Resolve values passed from environment variables
             if not default or default in choices:
                 pass
-            elif "yes" in choices and default in env.TRUE:
+            elif "yes" in choices and default in _env.TRUE:
                 default = "yes"
-            elif "no" in choices and default in env.FALSE:
+            elif "no" in choices and default in _env.FALSE:
                 default = "no"
             else:
                 raise ValueError(
@@ -108,7 +108,7 @@ class Option:
                     f"Expecting one of {(*choices,)}"
                 )
         else:
-            default = env.as_str(self.environment, default)
+            default = _env.as_str(self.environment, default)
             ini_type = "string"
 
         # Add option entry to configuration files (pyproject.toml, pytest.ini, ...)

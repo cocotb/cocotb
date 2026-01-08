@@ -9,6 +9,7 @@
 #include <vpi_user_ext.h>
 
 #include "../logging.hpp"
+#include "_vendor/vpi/sv_vpi_user.h"
 #include "_vendor/vpi/vpi_user.h"
 
 #define CASE_STR(_X) \
@@ -100,8 +101,15 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
             return GPI_ENUM;
 
         case vpiIntVar:
+        case vpiIntNet:
         case vpiIntegerVar:
         case vpiIntegerNet:
+        case vpiByteVar:
+        case vpiByteNet:
+        case vpiShortIntVar:
+        case vpiShortIntNet:
+        case vpiLongIntVar:
+        case vpiLongIntNet:
             return GPI_INTEGER;
 
         case vpiStructVar:
@@ -181,8 +189,15 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiEnumNet:
         case vpiEnumVar:
         case vpiIntVar:
+        case vpiIntNet:
         case vpiIntegerVar:
         case vpiIntegerNet:
+        case vpiByteVar:
+        case vpiByteNet:
+        case vpiShortIntVar:
+        case vpiShortIntNet:
+        case vpiLongIntVar:
+        case vpiLongIntNet:
         case vpiPackedArrayVar:
         case vpiPackedArrayNet:
         case vpiRealVar:
@@ -191,7 +206,39 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiMemoryWord:
         case vpiInterconnectNet: {
             const auto is_vector = vpi_get(vpiVector, new_hdl);
-            const auto num_elements = vpi_get(vpiSize, new_hdl);
+            PLI_INT32 num_elements;
+#ifdef MODELSIM
+            // Questa defines the vpiSize of all of scalar types as 1.
+            switch (type) {
+                case vpiByteNet:
+                case vpiByteVar:
+                    num_elements = 8;
+                    break;
+                case vpiShortIntNet:
+                case vpiShortIntVar:
+                    num_elements = 16;
+                    break;
+                case vpiEnumNet:
+                case vpiEnumVar:
+                case vpiIntNet:
+                case vpiIntVar:
+                case vpiIntegerNet:
+                case vpiIntegerVar:
+                    num_elements = 32;
+                    break;
+                case vpiLongIntNet:
+                case vpiLongIntVar:
+                case vpiRealNet:
+                case vpiRealVar:
+                    num_elements = 64;
+                    break;
+                default:
+                    num_elements = vpi_get(vpiSize, new_hdl);
+                    break;
+            }
+#else
+            num_elements = vpi_get(vpiSize, new_hdl);
+#endif
             new_obj = new VpiSignalObjHdl(
                 this, new_hdl, to_gpi_objtype(type, num_elements, is_vector),
                 false);

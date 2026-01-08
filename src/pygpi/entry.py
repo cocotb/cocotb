@@ -2,22 +2,21 @@ from __future__ import annotations
 
 import importlib
 import operator
-import os
 from typing import Callable
+
+from cocotb_tools import _env
 
 
 def load_entry(argv: list[str]) -> None:
     """Gather entry point information by parsing :envvar:`PYGPI_USERS`."""
 
-    entry_point_str = os.environ.get(
+    entry_points_str: list[str] = _env.as_list(
         "PYGPI_USERS",
-        ",".join(
-            (
-                "cocotb_tools._coverage:start_cocotb_library_coverage",
-                "cocotb.logging:_configure",
-                "cocotb._init:init_package_from_simulation",
-                "cocotb._init:run_regression",
-            )
+        (
+            "cocotb_tools._coverage:start_cocotb_library_coverage",
+            "cocotb.logging:_configure",
+            "cocotb._init:init_package_from_simulation",
+            "cocotb._init:run_regression",
         ),
     )
 
@@ -25,14 +24,13 @@ def load_entry(argv: list[str]) -> None:
     # Any failure prevents any entry points from being loaded.
     entry_points: list[tuple[str, str]] = []
     try:
-        entry_points_str = entry_point_str.split(",")
         for entry_point_str in entry_points_str:
             entry_module_str, entry_func_str = entry_point_str.split(":")
             # TODO maybe some basic validation of the module and function names.
             # WITHOUT IMPORTING THEM.
             entry_points.append((entry_module_str, entry_func_str))
     except Exception as e:
-        raise RuntimeError(f"Failure to parse PYGPI_USERS ('{entry_point_str}')") from e
+        raise RuntimeError(f"Failure to parse PYGPI_USERS {entry_point_str!r}") from e
 
     # Run all entry points.
     # Expect failure to stop the loading of any additional entry points.

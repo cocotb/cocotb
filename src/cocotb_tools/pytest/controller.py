@@ -43,6 +43,7 @@ from pytest import (
 )
 
 import cocotb
+from cocotb_tools import _env
 from cocotb_tools.pytest.handle import MockSimHandle
 from cocotb_tools.pytest.hdl import get_simulator
 from cocotb_tools.pytest.junitxml import JUnitXML
@@ -82,7 +83,7 @@ class Controller:
         # Create only a single reporter service in the main parent process
         # In case when plugin is used with xdist, it must be created within xdist dsession to
         # receive test results from xdist workers
-        if "COCOTB_PYTEST_REPORTER_ADDRESS" not in os.environ:
+        if not _env.exists("COCOTB_PYTEST_REPORTER_ADDRESS"):
             self._listener = Listener()
             self._thread = Thread(target=self._handle_test_reports)
             os.environ["COCOTB_PYTEST_REPORTER_ADDRESS"] = str(self._listener.address)

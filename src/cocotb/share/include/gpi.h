@@ -261,6 +261,13 @@ GPI_EXPORT int gpi_is_constant(gpi_sim_hdl gpi_hdl);
  */
 GPI_EXPORT int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
 
+/** Determine whether integer object is signed.
+ *
+ * @return `1` if the integer object is signed, `0` if unsigned, `-1` if unknown
+ * or not applicable.
+ */
+GPI_EXPORT int gpi_is_signed(gpi_sim_hdl gpi_hdl);
+
 /** @} */  // End of group ObjProps
 
 /** @defgroup SigProps Signal Object Properties
