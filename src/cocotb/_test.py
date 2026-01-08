@@ -230,7 +230,7 @@ def create_task(
         return coro
     elif isinstance(coro, Coroutine):
         task = Task[ResultType](coro, name=name)
-        cocotb._regression_manager._running_test.add_task(task)
+        _current_test.add_task(task)
         return task
     elif inspect.iscoroutinefunction(coro):
         raise TypeError(
@@ -246,3 +246,17 @@ def create_task(
             f"Attempt to add an object of type {type(coro)} to the scheduler, "
             f"which isn't a coroutine: {coro!r}\n"
         )
+
+
+_current_test: RunningTest
+"""The currently executing test's state."""
+
+
+def set_current_test(running_test: RunningTest) -> None:
+    """Set the currently executing test's state.
+
+    Args:
+        running_test: The :class:`~cocotb._test.RunningTest` instance to set as current.
+    """
+    global _current_test
+    _current_test = running_test

@@ -20,6 +20,7 @@ from pytest import MonkeyPatch, raises
 import cocotb
 import cocotb._init
 import cocotb._profiling
+import cocotb.regression
 import cocotb.types._resolve
 from cocotb.handle import SimHandleBase
 from cocotb_tools import _env
@@ -223,7 +224,7 @@ def test_env_cocotb_testcase_deprecated(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("COCOTB_TESTCASE", "dummy")
 
     with pytest.deprecated_call():
-        cocotb._init._setup_regression_manager()
+        cocotb.regression._setup_regression_manager()
 
 
 def test_env_cocotb_test_modules_empty(monkeypatch: MonkeyPatch) -> None:
@@ -237,7 +238,7 @@ def test_env_cocotb_test_modules_empty(monkeypatch: MonkeyPatch) -> None:
             "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
         ),
     ):
-        cocotb._init._setup_regression_manager()
+        cocotb.regression._setup_regression_manager()
 
 
 def test_env_cocotb_test_modules_undefined(monkeypatch: MonkeyPatch) -> None:
@@ -251,7 +252,7 @@ def test_env_cocotb_test_modules_undefined(monkeypatch: MonkeyPatch) -> None:
             "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
         ),
     ):
-        cocotb._init._setup_regression_manager()
+        cocotb.regression._setup_regression_manager()
 
 
 def test_env_cocotb_testcase_with_cocotb_test_filter(monkeypatch: MonkeyPatch) -> None:
@@ -265,7 +266,7 @@ def test_env_cocotb_testcase_with_cocotb_test_filter(monkeypatch: MonkeyPatch) -
         RuntimeError,
         match="Specify only one of COCOTB_TESTCASE or COCOTB_TEST_FILTER",
     ):
-        cocotb._init._setup_regression_manager()
+        cocotb.regression._setup_regression_manager()
 
 
 def test_env_cocotb_random_seed(monkeypatch: MonkeyPatch) -> None:
@@ -323,12 +324,10 @@ def test_env_cocotb_enable_profiling(monkeypatch: MonkeyPatch) -> None:
         monkeypatch.setenv("COCOTB_ENABLE_PROFILING", value)
         reload(cocotb._profiling)
 
-        cocotb._profiling.initialize()
+        cocotb._profiling._init()
 
         with cocotb._profiling.profiling_context:
             pass
-
-        cocotb._profiling.finalize()
 
 
 def test_env_cocotb_resolve_x_weak(monkeypatch: MonkeyPatch) -> None:

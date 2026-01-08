@@ -12,7 +12,6 @@ from cocotb._decorators import parametrize, skipif, test, xfail
 from cocotb._test import create_task, start, start_soon
 from cocotb._test_functions import pass_test
 from cocotb.handle import SimHandleBase
-from cocotb.regression import RegressionManager
 
 from ._version import __version__ as _version
 
@@ -63,9 +62,6 @@ This logger defaults to the :data:`logging.INFO` log level.
     This was previously the ``"cocotb"`` Logger.
     It is now a Logger under the ``"test"`` namespace.
 """
-
-_regression_manager: RegressionManager
-"""The global regression manager instance."""
 
 argv: list[str]
 """The argument list as seen by the simulator."""

@@ -42,6 +42,8 @@ from pytest import (
 )
 
 import cocotb
+import cocotb._shutdown
+import cocotb._test
 from cocotb import simulator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
@@ -814,6 +816,7 @@ class RegressionManager:
             running_test: Test to run.
         """
         self._running_test = running_test
+        cocotb._test.set_current_test(running_test)
 
         if self._scheduled:
             self._timer1._register(self._running_test.start)
@@ -822,11 +825,7 @@ class RegressionManager:
             self._running_test.start()
 
     def _shutdown(self) -> None:
-        # TODO refactor initialization and finalization into their own module
-        # to prevent circular imports requiring local imports
-        from cocotb._init import _shutdown_testbench  # noqa: PLC0415
-
-        _shutdown_testbench()
+        cocotb._shutdown._shutdown()
 
         # Setup simulator finalization
         simulator.stop_simulator()

@@ -62,6 +62,6 @@ def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
 
         # This must come after `library_coverage.start()` to ensure coverage is being
         # collected on the cocotb library before importing from it.
-        from cocotb._init import _register_shutdown_callback  # noqa: PLC0415
+        import cocotb._shutdown  # noqa: PLC0415
 
-        _register_shutdown_callback(stop_library_coverage)
+        cocotb._shutdown.register(stop_library_coverage)
