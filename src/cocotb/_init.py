@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import logging
 import random
-import sys
 import tempfile
 import time
 import warnings
