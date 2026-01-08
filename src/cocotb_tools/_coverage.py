@@ -58,7 +58,6 @@ def start_cocotb_library_coverage(_: object) -> None:  # pragma: no cover
                     combiner.combine(data_paths=files, strict=True, keep=True)
             finally:
                 tmp_data_file_controller.close()
-                Path(tmp_data_file).unlink()
 
         # This must come after `library_coverage.start()` to ensure coverage is being
         # collected on the cocotb library before importing from it.
