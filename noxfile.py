@@ -153,10 +153,10 @@ def dev_test(session: nox.Session) -> None:
     configure_env_for_dev_test(session)
     session.install(*test_deps, *coverage_deps)
 
-    # Build cocotb ONCE for all dev tests
+    # Build cocotb ONCE for both dev tests
     build_cocotb_for_dev_test(session, editable=False)
 
-    # Mark that build already happened
+    # Mark that build is done already
     session.env["COCOTB_DEV_ALREADY_BUILT"] = "1"
 
     dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
