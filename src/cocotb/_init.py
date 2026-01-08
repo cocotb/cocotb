@@ -181,7 +181,6 @@ def _start_user_coverage() -> None:
                         combiner.combine(data_paths=files, strict=True, keep=True)
                 finally:
                     tmp_data_file_controller.close()
-                    Path(tmp_data_file).unlink()
 
             cocotb._shutdown.register(stop_user_coverage)
 
