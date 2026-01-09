@@ -44,10 +44,10 @@ from pytest import (
 
 import cocotb
 from cocotb_tools import _env
-from cocotb_tools.pytest.handle import MockSimHandle
-from cocotb_tools.pytest.hdl import get_simulator
-from cocotb_tools.pytest.junitxml import JUnitXML
-from cocotb_tools.pytest.runner import Runner
+from cocotb_tools.pytest._handle import MockSimHandle
+from cocotb_tools.pytest._junitxml import JUnitXML
+from cocotb_tools.pytest._runner import Runner
+from cocotb_tools.pytest.hdl import _get_simulator
 
 
 class Controller:
@@ -136,7 +136,7 @@ class Controller:
         # There is no need for the main pytest process to collect tests from HDL simulators.
         # Cocotb tests will be properly collected and executed with valid cocotb.top simulation handle by
         # pytest instance that is running from HDL simulator and report back to the main pytest process.
-        setattr(cocotb, "SIM_NAME", get_simulator(config))
+        setattr(cocotb, "SIM_NAME", _get_simulator(config))
         setattr(cocotb, "SIM_VERSION", "")
         setattr(cocotb, "top", MockSimHandle())
 
