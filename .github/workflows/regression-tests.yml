@@ -10,10 +10,10 @@ on:
         required: true
         type: string
         default: dev_test_sim
-      nox_session_test_nosim:
+      with_nosim:
         required: true
-        type: string
-        default: dev_test_nosim
+        type: boolean
+        default: true
       collect_coverage:
         required: false
         type: boolean
