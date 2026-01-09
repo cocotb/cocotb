@@ -18,7 +18,7 @@ nox.options.sessions = ["dev_test"]
 
 test_deps = ["pytest>=6"]
 coverage_deps = ["coverage[toml]>=7.2", "pytest-cov"]
-coverage_report_deps = ["coverage[toml]>=7.2", "gcovr"]
+coverage_report_deps = ["coverage[toml]>=7.2", "gcovr==8.4"]
 
 dev_deps = [
     "mypy",
