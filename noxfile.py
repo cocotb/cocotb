@@ -150,15 +150,6 @@ def dev_build(session: nox.Session) -> None:
 def dev_test(session: nox.Session) -> None:
     """Run all development tests as configured through environment variables."""
 
-    configure_env_for_dev_test(session)
-    session.install(*test_deps, *coverage_deps)
-
-    # Build cocotb ONCE for both dev tests
-    build_cocotb_for_dev_test(session, editable=False)
-
-    # Mark that build is done already
-    session.env["COCOTB_DEV_ALREADY_BUILT"] = "1"
-
     dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
     dev_test_nosim(session)
     dev_coverage_combine(session)
@@ -186,8 +177,7 @@ def dev_test_sim(
     # editable builds are done in a directory in /tmp, which is removed after
     # the build completes, taking all gcno files with them, as well as the path
     # to place the gcda files.
-    if "COCOTB_DEV_ALREADY_BUILT" not in session.env:
-        build_cocotb_for_dev_test(session, editable=False)
+    build_cocotb_for_dev_test(session, editable=False)
 
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
@@ -307,8 +297,7 @@ def dev_test_nosim(session: nox.Session) -> None:
     configure_env_for_dev_test(session)
 
     session.install(*test_deps, *coverage_deps)
-    if "COCOTB_DEV_ALREADY_BUILT" not in session.env:
-        build_cocotb_for_dev_test(session, editable=False)
+    build_cocotb_for_dev_test(session, editable=False)
 
     # Remove a potentially existing coverage file from a previous run for the
     # same test configuration. Use a filename *not* starting with `.coverage.`,
