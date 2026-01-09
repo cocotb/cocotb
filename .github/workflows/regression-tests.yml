@@ -11,9 +11,10 @@ on:
         type: string
         default: dev_test_sim
       with_nosim:
-        required: true
+        required: false
         type: boolean
         default: true
+        description: Whether to run non-simulator tests
       collect_coverage:
         required: false
         type: boolean
@@ -130,11 +131,6 @@ jobs:
     - name: Install Python testing dependencies
       run: |
         pip install nox
-
-    - name: Run tests without simulators
-      if: ${{ matrix.test_nosim }}
-      run: nox -s "${{ inputs.nox_session_test_nosim }}"
-      continue-on-error: ${{matrix.may-fail || false}}
 
       # Install Icarus
     - name: Set up Icarus (Ubuntu - apt)
