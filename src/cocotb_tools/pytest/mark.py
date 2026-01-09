@@ -189,7 +189,7 @@ def cocotb_clean(condition: bool = True) -> MarkDecorator:
     return mark.cocotb_clean(condition=condition)
 
 
-def marker_description(marker: Callable[..., MarkDecorator]) -> str:
+def _marker_description(marker: Callable[..., MarkDecorator]) -> str:
     """Get pretty formatted description of marker.
 
     Args:
@@ -225,7 +225,7 @@ def marker_description(marker: Callable[..., MarkDecorator]) -> str:
     return f"{marker.__name__}({', '.join(args)}): {description}".rstrip()
 
 
-def register_markers(config: Config) -> None:
+def _register_markers(config: Config) -> None:
     """Register plugin markers.
 
     Args:
@@ -252,4 +252,4 @@ def register_markers(config: Config) -> None:
         cocotb_test_args,
         cocotb_pre_cmd,
     ):
-        config.addinivalue_line("markers", marker_description(marker))
+        config.addinivalue_line("markers", _marker_description(marker))
