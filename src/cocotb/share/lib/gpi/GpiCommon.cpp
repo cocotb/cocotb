@@ -185,6 +185,7 @@ static int gpi_load_users() {
     auto users = getenv("GPI_USERS");
     if (!users) {
         LOG_ERROR("No GPI_USERS specified, exiting...");
+        return -1;
     }
     // I would have loved to use istringstream and getline, but it causes a
     // compilation issue when compiling with newer GCCs against C++11.
@@ -270,7 +271,7 @@ void gpi_entry_point() {
     }
 
     // Load users
-    if (!gpi_load_users()) {
+    if (gpi_load_users()) {
         return;
     }
 
