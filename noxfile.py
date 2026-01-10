@@ -110,6 +110,8 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
 
     - Build with more aggressive error checking.
     """
+    if "DEV_TEST_COCOTB_BUILT" in session.env:
+        return
 
     env = session.env.copy()
     flags = " ".join(
@@ -130,6 +132,8 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
         session.install("-v", "-e", ".", env=env)
     else:
         session.install("-v", ".", env=env)
+
+    session.env["DEV_TEST_COCOTB_BUILT"] = "1"
 
 
 #
