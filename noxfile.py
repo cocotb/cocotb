@@ -110,10 +110,6 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
 
     - Build with more aggressive error checking.
     """
-    if os.environ.get("COCOTB_ALREADY_BUILT") == "1":
-        session.log("Skipping cocotb build: already built by previous session.")
-        return
-
     env = session.env.copy()
     flags = " ".join(
         [
@@ -134,8 +130,6 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
     else:
         session.install("-v", ".", env=env)
 
-    os.environ["COCOTB_ALREADY_BUILT"] = "1"
-
 
 #
 # Development pipeline
@@ -155,8 +149,7 @@ def dev_build(session: nox.Session) -> None:
 def dev_test(session: nox.Session) -> None:
     """Run all development tests as configured through environment variables."""
 
-    if "RUN_TEST_WITHOUT_SIM" in session.env:
-        dev_test_nosim(session)
+    dev_test_nosim(session)
     dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
     dev_coverage_combine(session)
 
