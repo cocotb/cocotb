@@ -52,7 +52,7 @@ jobs:
     name: Regression Tests
     uses: ./.github/workflows/regression-tests.yml
     with:
-      nox_session_test: dev_test
+      nox_session_test: dev_test_ci
       collect_coverage: true
       group: ci-free
 
@@ -61,6 +61,6 @@ jobs:
     name: Regression Tests
     uses: ./.github/workflows/regression-tests.yml
     with:
-      nox_session_test: dev_test
+      nox_session_test: dev_test_ci
       collect_coverage: true
       group: ci-licensed

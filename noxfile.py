@@ -155,6 +155,35 @@ def dev_test(session: nox.Session) -> None:
 
 
 @nox.session
+def dev_test_ci(session: nox.Session) -> None:
+    """
+    CI entrypoint:
+    - Run nosim tests
+    - Run simulator tests for the simulator defined by env vars
+    - Combine coverage
+    """
+
+    dev_test_nosim(session)
+
+    sim = os.environ["SIM"]
+    toplevel_lang = os.environ["TOPLEVEL_LANG"]
+
+    if toplevel_lang == "verilog":
+        gpi_interface = "vpi"
+    elif sim in ("questa",):
+        gpi_interface = "fli"
+    elif sim in ("ghdl",):
+        gpi_interface = "vpi"
+    elif sim in ("nvc",):
+        gpi_interface = "vhpi"
+    else:
+        gpi_interface = "vhpi"
+
+    dev_test_sim(session, sim, toplevel_lang, gpi_interface)
+    dev_coverage_combine(session)
+
+
+@nox.session
 @nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 def dev_test_sim(
     session: nox.Session,
