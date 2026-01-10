@@ -110,7 +110,8 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
 
     - Build with more aggressive error checking.
     """
-    if "DEV_TEST_COCOTB_BUILT" in session.env:
+    if os.environ.get("COCOTB_ALREADY_BUILT") == "1":
+        session.log("Skipping cocotb build: already built by previous session.")
         return
 
     env = session.env.copy()
@@ -133,7 +134,7 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
     else:
         session.install("-v", ".", env=env)
 
-    session.env["DEV_TEST_COCOTB_BUILT"] = "1"
+    os.environ["COCOTB_ALREADY_BUILT"] = "1"
 
 
 #
@@ -154,7 +155,8 @@ def dev_build(session: nox.Session) -> None:
 def dev_test(session: nox.Session) -> None:
     """Run all development tests as configured through environment variables."""
 
-    dev_test_nosim(session)
+    if "RUN_TEST_WITHOUT_SIM" in session.env:
+        dev_test_nosim(session)
     dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
     dev_coverage_combine(session)
 
@@ -507,16 +509,6 @@ def release_install(session: nox.Session) -> None:
 
     session.log("Installing test dependencies")
     session.install(*test_deps)
-
-
-@nox.session
-def release_test(session: nox.Session) -> None:
-    """Run all release tests as configured through environment variables."""
-
-    # TODO
-    # Currently CI for release
-    # cannot execute based on changed inputs to
-    # Regression Tests
 
 
 @nox.session

@@ -6,14 +6,14 @@ name: Regression Tests
 on:
   workflow_call:
     inputs:
-      nox_session_test:
+      nox_session_test_sim:
         required: true
         type: string
-        default: dev_test
-      with_nosim:
-        required: false
-        type: boolean
-        default: true
+        default: dev_test_sim
+      nox_session_test_nosim:
+        required: true
+        type: string
+        default: dev_test_nosim
         description: Whether to run non-simulator tests
       collect_coverage:
         required: false
@@ -256,7 +256,11 @@ jobs:
       id: windowstesting
       continue-on-error: ${{matrix.may-fail || false}}
       run: |
-        nox -k "${{ inputs.nox_session_test }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+        if ("${{ matrix.test_nosim }}" -eq "true")
+        {
+          nox -s ${{ inputs.nox_session_test_nosim }}
+        }
+        nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
         COCOTB_ANSI_OUTPUT: 1
         COCOTB_CI_SKIP_MAKE: 1
@@ -283,7 +287,10 @@ jobs:
         if [ "${{matrix.self-hosted}}" == "true" ]; then
           module load "${{ matrix.sim-version }}"
         fi
-        nox -k "${{ inputs.nox_session_test }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+        if [ "${{ matrix.test_nosim }}" = "true" ]; then
+          nox -s dev_test_nosim
+        fi
+        nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
         COCOTB_ANSI_OUTPUT: 1
 
