@@ -9,7 +9,7 @@ on:
       nox_session_test:
         required: true
         type: string
-        default: dev_test_ci
+        default: dev_test
       collect_coverage:
         required: false
         type: boolean
