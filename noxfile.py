@@ -154,8 +154,8 @@ def dev_build(session: nox.Session) -> None:
 def dev_test(session: nox.Session) -> None:
     """Run all development tests as configured through environment variables."""
 
-    dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
     dev_test_nosim(session)
+    dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
     dev_coverage_combine(session)
 
 
