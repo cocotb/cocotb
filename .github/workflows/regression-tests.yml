@@ -259,7 +259,7 @@ jobs:
         if ("${{ matrix.test_nosim }}" -eq "true") {
           nox -s dev_test_nosim
         }
-        nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+        nox -k "${{ inputs.nox_session_test }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
         COCOTB_ANSI_OUTPUT: 1
         COCOTB_CI_SKIP_MAKE: 1
@@ -289,7 +289,7 @@ jobs:
         if [ "${{ matrix.test_nosim }}" = "true" ]; then
           nox -s dev_test_nosim
         fi
-        nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+        nox -k "${{ inputs.nox_session_test }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
         COCOTB_ANSI_OUTPUT: 1
 
