@@ -14,7 +14,7 @@ from typing import Any
 
 from pytest import Collector, Item
 
-from cocotb_tools.pytest.testbench import Testbench
+from cocotb_tools.pytest._testbench import Testbench
 
 
 class Runner(Collector):

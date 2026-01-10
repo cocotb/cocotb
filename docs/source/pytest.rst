@@ -569,7 +569,7 @@ Options
 
 .. argparse::
    :module: cocotb_tools.pytest.plugin
-   :func: options_for_documentation
+   :func: _options_for_documentation
    :prog: pytest
 
 .. _pytest: https://docs.pytest.org/en/stable/contents.html
