@@ -53,7 +53,7 @@ jobs:
     uses: ./.github/workflows/regression-tests.yml
     with:
       nox_session_test_sim: dev_test_sim
-      with_nosim: true
+      nox_session_test_nosim: dev_test_nosim
       collect_coverage: true
       group: ci-free
 
@@ -63,6 +63,6 @@ jobs:
     uses: ./.github/workflows/regression-tests.yml
     with:
       nox_session_test_sim: dev_test_sim
-      with_nosim: true
+      nox_session_test_nosim: dev_test_nosim
       collect_coverage: true
       group: ci-licensed
