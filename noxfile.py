@@ -180,7 +180,6 @@ def dev_test(session: nox.Session) -> None:
         gpi_interface = "vhpi"
 
     dev_test_sim(session, sim, toplevel_lang, gpi_interface)
-    dev_coverage_combine(session)
 
 
 @nox.session
