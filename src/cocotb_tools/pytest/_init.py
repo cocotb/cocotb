@@ -10,7 +10,7 @@ import sys
 
 import cocotb
 from cocotb_tools import _env
-from cocotb_tools.pytest.regression import RegressionManager
+from cocotb_tools.pytest._regression import RegressionManager
 
 
 def run_regression(argv: list[str]) -> None:

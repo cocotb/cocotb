@@ -23,11 +23,11 @@ from cocotb_tools.runner import (
     Verilog,
 )
 
-POSIX_PATH: re.Pattern = re.compile(r"[^A-Za-z0-9/._-]")
+_POSIX_PATH: re.Pattern = re.compile(r"[^A-Za-z0-9/._-]")
 
 # Name of HDL simulator per executable
 # TODO: Move to cocotb_tools.runner?
-SIMULATORS: dict[str, str] = {
+_SIMULATORS: dict[str, str] = {
     # open-source simulators first
     "verilator": "verilator",
     "nvc": "nvc",
@@ -41,7 +41,7 @@ SIMULATORS: dict[str, str] = {
 }
 
 
-def get_simulator(config: Config) -> str:
+def _get_simulator(config: Config) -> str:
     """Get name of HDL simulator.
 
     Args:
@@ -53,7 +53,7 @@ def get_simulator(config: Config) -> str:
     simulator: str = config.option.cocotb_simulator
 
     if not simulator or simulator == "auto":
-        for command, name in SIMULATORS.items():
+        for command, name in _SIMULATORS.items():
             if which(command):
                 return name
 
@@ -83,7 +83,7 @@ class HDL:
 
         # Use only allowed characters by POSIX standard
         # Pytest is always using "/" as path separator regardless of current OS environment
-        nodeid = POSIX_PATH.sub("_", nodeid.replace(".py::", "/").replace("::", "/"))
+        nodeid = _POSIX_PATH.sub("_", nodeid.replace(".py::", "/").replace("::", "/"))
 
         if os.path.sep != "/":
             nodeid = nodeid.replace("/", os.path.sep)
@@ -92,7 +92,7 @@ class HDL:
         """Directory to run the tests in."""
 
         self.runner: Runner = hook.pytest_cocotb_make_runner(
-            simulator_name=get_simulator(request.config)
+            simulator_name=_get_simulator(request.config)
         )
         """Instance that allows to build HDL and run cocotb tests."""
 

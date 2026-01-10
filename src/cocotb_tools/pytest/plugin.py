@@ -21,7 +21,6 @@ from pytest import (
     Config,
     ExitCode,
     FixtureRequest,
-    Function,
     Item,
     Mark,
     Module,
@@ -38,22 +37,22 @@ import cocotb
 import cocotb.handle
 from cocotb.handle import SimHandleBase
 from cocotb_tools.pytest import hookspecs
-from cocotb_tools.pytest.compat import (
+from cocotb_tools.pytest._compat import (
     cocotb_decorator_as_pytest_marks,
     is_cocotb_decorator,
 )
-from cocotb_tools.pytest.controller import Controller
-from cocotb_tools.pytest.hdl import HDL, SIMULATORS
-from cocotb_tools.pytest.logging import Logging
-from cocotb_tools.pytest.mark import register_markers
-from cocotb_tools.pytest.option import (
+from cocotb_tools.pytest._controller import Controller
+from cocotb_tools.pytest._logging import Logging
+from cocotb_tools.pytest._option import (
     Option,
     add_options_to_parser,
     populate_ini_to_options,
 )
+from cocotb_tools.pytest.hdl import _SIMULATORS, HDL
+from cocotb_tools.pytest.mark import _register_markers
 from cocotb_tools.runner import Runner, get_runner
 
-ENTRY_POINT: str = ",".join(
+_ENTRY_POINT: str = ",".join(
     (
         "cocotb_tools._coverage:start_cocotb_library_coverage",
         "cocotb.logging:_configure",
@@ -63,7 +62,7 @@ ENTRY_POINT: str = ",".join(
 )
 
 
-def to_timescale(value: str) -> tuple[str, str]:
+def _to_timescale(value: str) -> tuple[str, str]:
     """Split string containing timescale to time unit and time precision.
 
     Args:
@@ -80,7 +79,7 @@ def to_timescale(value: str) -> tuple[str, str]:
     return time_unit, time_precision or time_unit
 
 
-def to_dict(items: Iterable[str]) -> dict[str, object]:
+def _to_dict(items: Iterable[str]) -> dict[str, object]:
     """Convert list of items into dictionary.
 
     Args:
@@ -98,7 +97,7 @@ def to_dict(items: Iterable[str]) -> dict[str, object]:
     return result
 
 
-OPTIONS: tuple[Option, ...] = (
+_OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_summary",
         action="store_true",
@@ -189,7 +188,7 @@ OPTIONS: tuple[Option, ...] = (
     ),
     Option(
         "cocotb_simulator",
-        choices=("auto", *tuple(SIMULATORS.values())),
+        choices=("auto", *tuple(_SIMULATORS.values())),
         default="auto",
         metavar="NAME",
         description="""
@@ -370,7 +369,7 @@ OPTIONS: tuple[Option, ...] = (
         "pygpi_users",
         nargs="*",
         metavar="MODULE:FUNCTION",
-        default=(ENTRY_POINT,),
+        default=(_ENTRY_POINT,),
         description="""
             The Python module and callable that starts up the Python cosimulation environment. User overloads can be
             used to enter alternative Python frameworks or to hook existing cocotb functionality. It is formatted as
@@ -382,14 +381,14 @@ OPTIONS: tuple[Option, ...] = (
 )
 
 
-def options_for_documentation() -> ArgumentParser:
+def _options_for_documentation() -> ArgumentParser:
     """It helps to attach plugin options into Sphinx documentation using the sphinx-argparse extension."""
     parser: ArgumentParser = ArgumentParser(
         prog="pytest",
         description="Plugin options",
     )
 
-    for option in OPTIONS:
+    for option in _OPTIONS:
         default: Any
 
         if option.extra.get("action") == "store_true":
@@ -593,7 +592,7 @@ def hdl(request: FixtureRequest, hdl_session: HDL) -> HDL:
 
 
 def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None:
-    add_options_to_parser(parser, "cocotb", OPTIONS)
+    add_options_to_parser(parser, "cocotb", _OPTIONS)
 
 
 def pytest_addhooks(pluginmanager: PytestPluginManager) -> None:
@@ -635,23 +634,23 @@ def pytest_cocotb_make_runner(simulator_name: str) -> Runner:
 def pytest_configure(config: Config) -> None:
     option = config.option
 
-    register_markers(config)
-    populate_ini_to_options(config, OPTIONS)
+    _register_markers(config)
+    populate_ini_to_options(config, _OPTIONS)
 
     if not option.cocotb_timescale:
         option.cocotb_timescale = None
 
     elif isinstance(option.cocotb_timescale, str):
-        option.cocotb_timescale = to_timescale(option.cocotb_timescale)
+        option.cocotb_timescale = _to_timescale(option.cocotb_timescale)
 
     if isinstance(option.cocotb_env, list):
-        option.cocotb_env = to_dict(option.cocotb_env)
+        option.cocotb_env = _to_dict(option.cocotb_env)
 
     if isinstance(option.cocotb_defines, list):
-        option.cocotb_defines = to_dict(option.cocotb_defines)
+        option.cocotb_defines = _to_dict(option.cocotb_defines)
 
     if isinstance(option.cocotb_parameters, list):
-        option.cocotb_parameters = to_dict(option.cocotb_parameters)
+        option.cocotb_parameters = _to_dict(option.cocotb_parameters)
 
     config.pluginmanager.register(Logging(config), "cocotb_logging")
 
@@ -692,23 +691,7 @@ def pytest_pycollect_makeitem(
     return None
 
 
-def is_cocotb_test(item: Item) -> bool:
-    """Check if provided pytest item is cocotb test.
-
-    Args:
-        item: Pytest item (test).
-
-    Returns:
-        True if provided pytest item is cocotb test. Otherwise False.
-    """
-    return (
-        isinstance(item, Function)
-        and "cocotb_test" in item.keywords
-        and inspect.iscoroutinefunction(item.function)
-    )
-
-
-def is_cocotb_test_report(item: Any) -> bool:
+def _is_cocotb_test_report(item: Any) -> bool:
     """Check if provided pytest item is cocotb test report.
 
     Args:
@@ -771,7 +754,7 @@ def pytest_terminal_summary(
             test_status = map_status[status]
 
             for item in items:
-                if is_cocotb_test_report(item):
+                if _is_cocotb_test_report(item):
                     count[test_status] += 1
                     tests += 1
 
