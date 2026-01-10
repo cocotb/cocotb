@@ -132,6 +132,15 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
         session.install("-v", ".", env=env)
 
 
+def split_lang_and_interface(s: str) -> tuple[str, str] | tuple[str]:
+    s = s.strip()
+    if " and " not in s:
+        return (s,)
+
+    left, right = s.split(" and ", 1)
+    return left.strip(), right.strip()
+
+
 #
 # Development pipeline
 #
@@ -168,16 +177,23 @@ def dev_test(session: nox.Session) -> None:
     sim = os.environ["SIM"]
     toplevel_lang = os.environ["TOPLEVEL_LANG"]
 
-    if toplevel_lang == "verilog":
-        gpi_interface = "vpi"
-    elif sim in ("questa",):
-        gpi_interface = "fli"
-    elif sim in ("ghdl",):
-        gpi_interface = "vpi"
-    elif sim in ("nvc",):
-        gpi_interface = "vhpi"
+    parts = split_lang_and_interface(toplevel_lang)
+
+    if len(parts) == 2:
+        toplevel_lang, gpi_interface = parts
     else:
-        gpi_interface = "vhpi"
+        toplevel_lang = parts[0]
+
+        if toplevel_lang == "verilog":
+            gpi_interface = "vpi"
+        elif sim == "questa":
+            gpi_interface = "fli"
+        elif sim == "ghdl":
+            gpi_interface = "vpi"
+        elif sim == "nvc":
+            gpi_interface = "vhpi"
+        else:
+            gpi_interface = "vhpi"
 
     dev_test_sim(session, sim, toplevel_lang, gpi_interface)
 
@@ -511,6 +527,12 @@ def release_install(session: nox.Session) -> None:
 
     session.log("Installing test dependencies")
     session.install(*test_deps)
+
+
+@nox.session
+def release_test(session: nox.Session) -> None:
+    # TODO
+    pass
 
 
 @nox.session
