@@ -256,9 +256,6 @@ jobs:
       id: windowstesting
       continue-on-error: ${{matrix.may-fail || false}}
       run: |
-        if ("${{ matrix.test_nosim }}" -eq "true") {
-          nox -s dev_test_nosim
-        }
         nox -k "${{ inputs.nox_session_test }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
         COCOTB_ANSI_OUTPUT: 1
@@ -285,9 +282,6 @@ jobs:
       run: |
         if [ "${{matrix.self-hosted}}" == "true" ]; then
           module load "${{ matrix.sim-version }}"
-        fi
-        if [ "${{ matrix.test_nosim }}" = "true" ]; then
-          nox -s dev_test_nosim
         fi
         nox -k "${{ inputs.nox_session_test }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
