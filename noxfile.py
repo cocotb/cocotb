@@ -150,23 +150,7 @@ def dev_build(session: nox.Session) -> None:
 def dev_test(session: nox.Session) -> None:
     """Run all development tests as configured through environment variables."""
 
-    dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
-    dev_test_nosim(session)
-    dev_coverage_combine(session)
-
-
-@nox.session
-@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
-def dev_test_sim(
-    session: nox.Session,
-    sim: str,
-    toplevel_lang: str,
-    gpi_interface: str,
-) -> None:
-    """Test a development version of cocotb against a simulator."""
-
     configure_env_for_dev_test(session)
-
     session.install(*test_deps, *coverage_deps)
 
     # Editable installs break C/C++ coverage collection; don't use them.
@@ -178,6 +162,35 @@ def dev_test_sim(
     # the build completes, taking all gcno files with them, as well as the path
     # to place the gcda files.
     build_cocotb_for_dev_test(session, editable=False)
+
+    dev_test_nosim(session)
+
+    sim = os.environ["SIM"]
+    toplevel_lang = os.environ["TOPLEVEL_LANG"]
+
+    if toplevel_lang == "verilog":
+        gpi_interface = "vpi"
+    elif sim in ("questa",):
+        gpi_interface = "fli"
+    elif sim in ("ghdl",):
+        gpi_interface = "vpi"
+    elif sim in ("nvc",):
+        gpi_interface = "vhpi"
+    else:
+        gpi_interface = "vhpi"
+
+    dev_test_sim(session, sim, toplevel_lang, gpi_interface)
+
+
+@nox.session
+@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
+def dev_test_sim(
+    session: nox.Session,
+    sim: str,
+    toplevel_lang: str,
+    gpi_interface: str,
+) -> None:
+    """Test a development version of cocotb against a simulator."""
 
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
@@ -293,11 +306,6 @@ def dev_test_sim(
 @nox.session
 def dev_test_nosim(session: nox.Session) -> None:
     """Run the simulator-agnostic tests against a cocotb development version."""
-
-    configure_env_for_dev_test(session)
-
-    session.install(*test_deps, *coverage_deps)
-    build_cocotb_for_dev_test(session, editable=False)
 
     # Remove a potentially existing coverage file from a previous run for the
     # same test configuration. Use a filename *not* starting with `.coverage.`,

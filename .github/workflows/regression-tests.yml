@@ -6,19 +6,10 @@ name: Regression Tests
 on:
   workflow_call:
     inputs:
-      nox_session_test_sim:
+      nox_session_test:
         required: true
         type: string
-        default: dev_test_sim
-      # nox_session_test_nosim:
-      #   required: true
-      #   type: string
-      #   default: dev_test_nosim
-      with_nosim:
-        required: false
-        type: boolean
-        default: true
-        description: Whether to run non-simulator tests
+        default: dev_test
       collect_coverage:
         required: false
         type: boolean
@@ -135,11 +126,6 @@ jobs:
     - name: Install Python testing dependencies
       run: |
         pip install nox
-
-    - name: Run tests without simulators
-      if: ${{ matrix.test_nosim }}
-      run: nox -s "${{ inputs.nox_session_test_nosim }}"
-      continue-on-error: ${{matrix.may-fail || false}}
 
       # Install Icarus
     - name: Set up Icarus (Ubuntu - apt)
@@ -265,7 +251,7 @@ jobs:
       id: windowstesting
       continue-on-error: ${{matrix.may-fail || false}}
       run: |
-        nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+        nox -s ${{ inputs.nox_session_test }}
       env:
         COCOTB_ANSI_OUTPUT: 1
         COCOTB_CI_SKIP_MAKE: 1
@@ -292,7 +278,7 @@ jobs:
         if [ "${{matrix.self-hosted}}" == "true" ]; then
           module load "${{ matrix.sim-version }}"
         fi
-        nox -k "${{ inputs.nox_session_test_sim }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
+        nox -s ${{ inputs.nox_session_test }}
       env:
         COCOTB_ANSI_OUTPUT: 1
 

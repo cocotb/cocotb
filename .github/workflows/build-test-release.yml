@@ -82,7 +82,7 @@ jobs:
     uses: ./.github/workflows/regression-tests.yml
     with:
       nox_session_test_sim: release_test_sim
-      with_nosim: true
+      nox_session_test_nosim: release_test_sim
       download_artifacts: true
       group: ci-free
 
@@ -92,7 +92,7 @@ jobs:
     uses: ./.github/workflows/regression-tests.yml
     with:
       nox_session_test_sim: release_test_sim
-      with_nosim: true
+      nox_session_test_nosim: release_test_sim
       download_artifacts: true
       group: ci-licensed
 
