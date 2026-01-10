@@ -21,6 +21,6 @@ jobs:
     name: Regression Tests
     uses: ./.github/workflows/regression-tests.yml
     with:
-      nox_session_test_sim: dev_test_sim
+      nox_session_test: dev_test
       with_nosim: true
       group: experimental

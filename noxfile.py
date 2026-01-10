@@ -506,6 +506,16 @@ def release_install(session: nox.Session) -> None:
 
 
 @nox.session
+def release_test(session: nox.Session) -> None:
+    """Run all release tests as configured through environment variables."""
+
+    # TODO
+    # Currently CI for release
+    # cannot execute based on changed inputs to
+    # Regression Tests
+
+
+@nox.session
 @nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 def release_test_sim(
     session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str

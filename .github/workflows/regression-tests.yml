@@ -6,10 +6,10 @@ name: Regression Tests
 on:
   workflow_call:
     inputs:
-      nox_session_test_sim:
+      nox_session_test:
         required: true
         type: string
-        default: dev_test_sim
+        default: dev_test
       with_nosim:
         required: false
         type: boolean
