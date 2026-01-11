@@ -1,0 +1,1 @@
+Entry points listed in :envvar:`PYGPI_USERS` are no longer passed the ``argv`` object. If you need access to command-line arguments, use :func:`cocotb.simulator.get_simulator_args` instead.

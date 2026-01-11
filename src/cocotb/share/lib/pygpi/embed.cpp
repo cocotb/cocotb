@@ -82,7 +82,7 @@ static void pygpi_init_debug() {
     }
 }
 
-static int start_of_sim_time(void *, int, char const *const *);
+static int start_of_sim_time(void *);
 static void end_of_sim_time(void *);
 static void finalize(void *);
 
@@ -222,7 +222,7 @@ static void finalize(void *) {
     }
 }
 
-static int start_of_sim_time(void *, int argc, char const *const *_argv) {
+static int start_of_sim_time(void *) {
     PYGPI_LOG_TRACE("GPI Start Sim => [ PYGPI Start ]");
     DEFER(PYGPI_LOG_TRACE("[ PYGPI Start ] => GPI Start Sim"));
 
@@ -251,30 +251,8 @@ static int start_of_sim_time(void *, int argc, char const *const *_argv) {
     }
     DEFER(Py_DECREF(entry_utility_module));
 
-    // Build argv for cocotb module
-    auto argv_list = PyList_New(argc);
-    if (argv_list == NULL) {
-        // LCOV_EXCL_START
-        PyErr_Print();
-        return -1;
-        // LCOV_EXCL_STOP
-    }
-    for (int i = 0; i < argc; i++) {
-        // Decode, embedding non-decodable bytes using PEP-383. This can only
-        // fail with MemoryError or similar.
-        auto argv_item = PyUnicode_DecodeLocale(_argv[i], "surrogateescape");
-        if (!argv_item) {
-            // LCOV_EXCL_START
-            PyErr_Print();
-            return -1;
-            // LCOV_EXCL_STOP
-        }
-        PyList_SetItem(argv_list, i, argv_item);
-    }
-    DEFER(Py_DECREF(argv_list))
-
     auto cocotb_retval =
-        PyObject_CallMethod(entry_utility_module, "load_entry", "O", argv_list);
+        PyObject_CallMethod(entry_utility_module, "load_entry", nullptr);
     if (!cocotb_retval) {
         // Printing a SystemExit calls exit(1), which we don't want.
         if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {

@@ -118,6 +118,30 @@ const char *VhpiImpl::get_simulator_version() {
     return m_version.c_str();
 }
 
+int VhpiImpl::get_simulator_args(int *argc, char const *const **argv) {
+    if (m_argv == nullptr) {
+        auto tool = vhpi_handle(vhpiTool, NULL);
+        if (tool) {
+            m_argc = static_cast<int>(vhpi_get(vhpiArgcP, tool));
+            m_argv = new char const *[m_argc];
+
+            auto argv_iter = vhpi_iterator(vhpiArgvs, tool);
+            if (argv_iter) {
+                vhpiHandleT argv_hdl;
+                for (size_t i = 0; (argv_hdl = vhpi_scan(argv_iter)); i++) {
+                    m_argv[i] = const_cast<char *>(static_cast<const char *>(
+                        vhpi_get_str(vhpiStrValP, argv_hdl)));
+                }
+            }
+
+            vhpi_release_handle(tool);
+        }
+    }
+    *argc = m_argc;
+    *argv = m_argv;
+    return 0;
+}
+
 // Determine whether a VHPI object type is a constant or not
 bool is_const(vhpiHandleT hdl) {
     vhpiHandleT tmp = hdl;
@@ -1059,33 +1083,8 @@ bool VhpiImpl::compare_generate_labels(const std::string &a,
 }
 
 static int startup_callback(void *) {
-    vhpiHandleT tool, argv_iter, argv_hdl;
-    char **tool_argv = NULL;
-    int tool_argc = 0;
-    int i = 0;
-
     LOG_TRACE("GPI => [ GPI (VHPI startup) ]");
-    tool = vhpi_handle(vhpiTool, NULL);
-    if (tool) {
-        tool_argc = static_cast<int>(vhpi_get(vhpiArgcP, tool));
-        tool_argv = new char *[tool_argc];
-        assert(tool_argv);
-
-        argv_iter = vhpi_iterator(vhpiArgvs, tool);
-        if (argv_iter) {
-            while ((argv_hdl = vhpi_scan(argv_iter))) {
-                tool_argv[i] = const_cast<char *>(static_cast<const char *>(
-                    vhpi_get_str(vhpiStrValP, argv_hdl)));
-                i++;
-            }
-        }
-
-        vhpi_release_handle(tool);
-    }
-
-    gpi_start_of_sim_time(tool_argc, tool_argv);
-    delete[] tool_argv;
-
+    gpi_start_of_sim_time();
     LOG_TRACE("[ GPI (VHPI startup) ] => GPI");
     return 0;
 }

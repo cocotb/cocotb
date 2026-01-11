@@ -274,6 +274,7 @@ class VhpiImpl : public GpiImplInterface {
     void get_sim_precision(int32_t *precision) override;
     const char *get_simulator_product() override;
     const char *get_simulator_version() override;
+    int get_simulator_args(int *argc, char const *const **argv) override;
 
     /* Hierarchy related */
     GpiObjHdl *get_root_handle(const char *name) override;
@@ -316,6 +317,10 @@ class VhpiImpl : public GpiImplInterface {
     // We store the shutdown callback handle here so sim_end() can remove() it
     // if it's called.
     VhpiShutdownCbHdl *m_sim_finish_cb;
+    std::string m_product;
+    std::string m_version;
+    int m_argc = 0;
+    char const **m_argv = nullptr;
 };
 
 #endif /*COCOTB_VHPI_IMPL_H_  */
