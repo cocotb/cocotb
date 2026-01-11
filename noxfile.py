@@ -531,6 +531,8 @@ def release_install(session: nox.Session) -> None:
 
 @nox.session
 def release_test(session: nox.Session) -> None:
+    """Test a release version of cocotb with and without a simulator"""
+    # At release build tests cocotb shouldn't built twice
     # TODO
     pass
 

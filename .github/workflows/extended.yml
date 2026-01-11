@@ -19,7 +19,6 @@ jobs:
     name: Regression Tests
     uses: ./.github/workflows/regression-tests.yml
     with:
-      nox_session_test_sim: dev_test_sim
-      with_nosim: true
+      nox_session_test: dev_test
       group: extended
       max_parallel: 5
