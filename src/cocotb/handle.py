@@ -10,7 +10,7 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
-from functools import cache, cached_property
+from functools import cached_property
 from logging import Logger
 from typing import (
     Any,
@@ -58,28 +58,6 @@ __all__ = (
     "StringObject",
     "ValueObjectBase",
 )
-
-
-class _Limits(enum.IntEnum):
-    SIGNED_NBIT = 1
-    UNSIGNED_NBIT = 2
-    VECTOR_NBIT = 3
-
-
-@cache
-def _value_limits(n_bits: int, limits: _Limits) -> tuple[int, int]:
-    """Calculate min/max for given number of bits and limits class"""
-    if limits == _Limits.SIGNED_NBIT:
-        min_val = -(2 ** (n_bits - 1))
-        max_val = 2 ** (n_bits - 1) - 1
-    elif limits == _Limits.UNSIGNED_NBIT:
-        min_val = 0
-        max_val = 2**n_bits - 1
-    else:
-        min_val = -(2 ** (n_bits - 1))
-        max_val = 2**n_bits - 1
-
-    return min_val, max_val
 
 
 class SimHandleBase(ABC):
@@ -1231,12 +1209,41 @@ class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
         return str(self.value)
 
 
+class _SignednessObjectMixin(SimHandleBase):
+    @abstractmethod
+    def __len__(self) -> int: ...
+
+    @cached_property
+    def is_signed(self) -> bool:
+        signed = self._handle.get_signed()
+        if signed == -1:
+            raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
+        return bool(signed)
+
+    @cached_property
+    def _min_val(self) -> int:
+        signed = self._handle.get_signed()
+        if signed == 0:
+            return 0
+        else:
+            return -(2 ** (len(self) - 1))
+
+    @cached_property
+    def _max_val(self) -> int:
+        signed = self._handle.get_signed()
+        if signed == 1:
+            return (2 ** (len(self) - 1)) - 1
+        else:
+            return (2 ** len(self)) - 1
+
+
 _str_literals = set("ux01zlhw-")
 
 
 class LogicArrayObject(
     _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
     _RangeableObjectMixin,
+    _SignednessObjectMixin,
 ):
     """A logic array simulation object.
 
@@ -1267,8 +1274,7 @@ class LogicArrayObject(
     ) -> None:
         value_: str
         if isinstance(value, int):
-            min_val, max_val = _value_limits(len(self), _Limits.VECTOR_NBIT)
-            if min_val <= value <= max_val:
+            if self._min_val <= value <= self._max_val:
                 if len(self) <= 32:
                     return _schedule_write(
                         self, self._handle.set_signal_val_int, action, value
@@ -1385,11 +1391,14 @@ class LogicArrayObject(
         )
 
     @cached_property
-    def is_signed(self) -> bool:
-        signed = self._handle.get_signed()
-        if signed == -1:
-            raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
-        return bool(signed)
+    def _min_val(self) -> int:
+        # Backwards compatibility. Always wrap negative values.
+        return -(2 ** (len(self) - 1))
+
+    @cached_property
+    def _max_val(self) -> int:
+        # Backwards compatibility. Always wrap negative values.
+        return (2 ** len(self)) - 1
 
 
 class RealObject(_NonIndexableValueObjectBase[float, float]):
@@ -1445,7 +1454,10 @@ class RealObject(_NonIndexableValueObjectBase[float, float]):
         return self.value
 
 
-class EnumObject(_NonIndexableValueObjectBase[int, int]):
+class EnumObject(
+    _NonIndexableValueObjectBase[int, int],
+    _SignednessObjectMixin,
+):
     """An enumeration simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
@@ -1473,8 +1485,7 @@ class EnumObject(_NonIndexableValueObjectBase[int, int]):
                 f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
             )
 
-        min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
-        if value < min_val or max_val < value:
+        if value < self._min_val or self._max_val < value:
             raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
             )
@@ -1527,15 +1538,8 @@ class EnumObject(_NonIndexableValueObjectBase[int, int]):
     def __len__(self) -> int:
         return self._handle.get_num_elems()
 
-    @cached_property
-    def is_signed(self) -> bool:
-        signed = self._handle.get_signed()
-        if signed == -1:
-            raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
-        return bool(signed)
 
-
-class IntegerObject(_NonIndexableValueObjectBase[int, int]):
+class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMixin):
     """An integer simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
@@ -1571,11 +1575,23 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int]):
                 f"Unsupported type for integer value assignment: {type(value)} ({value!r})"
             )
 
-        min_val, max_val = _value_limits(
-            32, _Limits.SIGNED_NBIT if self.is_signed else _Limits.UNSIGNED_NBIT
-        )
-        if min_val <= value <= max_val:
-            _schedule_write(self, self._handle.set_signal_val_int, action, value)
+        if self._min_val <= value <= self._max_val:
+            if len(self) <= 32:
+                # set_signal_val_int is limited to 32 bits.
+                return _schedule_write(
+                    self, self._handle.set_signal_val_int, action, value
+                )
+            else:
+                if value < 0:
+                    value += 1 << len(self)
+                value_ = format(value, f"0{len(self)}b")
+
+                return _schedule_write(
+                    self,
+                    self._handle.set_signal_val_binstr,
+                    action,
+                    value_,
+                )
         else:
             raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
@@ -1612,13 +1628,6 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int]):
     @cached_no_args_method
     def __len__(self) -> int:
         return self._handle.get_num_elems()
-
-    @cached_property
-    def is_signed(self) -> bool:
-        signed = self._handle.get_signed()
-        if signed == -1:
-            raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
-        return bool(signed)
 
 
 class StringObject(
