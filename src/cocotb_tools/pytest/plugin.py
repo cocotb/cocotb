@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import inspect
 import shlex
 import textwrap
 from argparse import ArgumentParser
@@ -16,31 +15,21 @@ from time import time
 from typing import Any
 
 from pytest import (
-    Class,
-    Collector,
     Config,
     ExitCode,
     FixtureRequest,
-    Item,
-    Mark,
-    Module,
     Parser,
     PytestPluginManager,
     TerminalReporter,
     TestReport,
     fixture,
     hookimpl,
-    mark,
 )
 
 import cocotb
 import cocotb.handle
 from cocotb.handle import SimHandleBase
 from cocotb_tools.pytest import hookspecs
-from cocotb_tools.pytest._compat import (
-    cocotb_decorator_as_pytest_marks,
-    is_cocotb_decorator,
-)
 from cocotb_tools.pytest._controller import Controller
 from cocotb_tools.pytest._logging import Logging
 from cocotb_tools.pytest._option import (
@@ -656,39 +645,6 @@ def pytest_configure(config: Config) -> None:
 
     if not getattr(cocotb, "is_simulation", False):
         config.pluginmanager.register(Controller(config), "cocotb_controller")
-
-
-@hookimpl(tryfirst=True)
-def pytest_pycollect_makeitem(
-    collector: Module | Class, name: str, obj: object
-) -> Item | Collector | list[Item | Collector] | None:
-    if is_cocotb_decorator(obj):
-        obj = cocotb_decorator_as_pytest_marks(collector, name, obj)
-
-        return collector.config.hook.pytest_pycollect_makeitem(
-            collector=collector, name=name, obj=obj
-        )
-
-    if inspect.isfunction(obj):
-        markers: list[Mark] | None = getattr(obj, "pytestmark", None)
-
-        if any(
-            marker.name in ("cocotb_runner", "cocotb_test") for marker in markers or ()
-        ):
-            setattr(obj, "__test__", True)
-
-        elif (
-            inspect.iscoroutinefunction(obj)
-            and "dut" in inspect.signature(obj).parameters
-        ):
-            marker: Mark = mark.cocotb_test().mark
-
-            if markers is None:
-                setattr(obj, "pytestmark", [marker])
-            else:
-                markers.append(marker)
-
-    return None
 
 
 def _is_cocotb_test_report(item: Any) -> bool:

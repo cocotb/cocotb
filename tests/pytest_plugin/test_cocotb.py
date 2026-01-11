@@ -155,11 +155,11 @@ async def test_parametrize_series_2(dut, x: int, y: int, z: int) -> None:
 
 class TestClass:
     @cocotb.test
-    async def test_simple(dut) -> None:
+    async def test_simple(self, dut) -> None:
         """Test @cocotb.test under class."""
 
     @cocotb.parametrize(x=(1, 2), y=(3, 4))
-    async def test_parametrize_matrix(dut, x: int, y: int) -> None:
+    async def test_parametrize_matrix(self, dut, x: int, y: int) -> None:
         """Test @cocotb.parametrize under class."""
         assert x in (1, 2)
         assert y in (3, 4)

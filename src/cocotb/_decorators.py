@@ -122,6 +122,9 @@ class TestGenerator:
             | tuple[Sequence[str], Sequence[Sequence[object]]]
         ] = []
 
+        # Expected by pytest. Used to extract wrapped test function from object (decorator)
+        self.__func__ = func
+
     def generate_tests(self) -> Iterable[Test]:
         option_reprs: dict[str, list[str]] = {}
 
@@ -179,6 +182,10 @@ class TestGenerator:
                 skip=self.skip,
                 stage=self.stage,
             )
+
+    async def __call__(self, *args: object, **kwargs: object) -> None:
+        # Needed by pytest. It calls callable(obj) before extracting a test function from the self.__func__ attribute
+        await self.func(*args, **kwargs)
 
 
 def _reprs(values: Sequence[object]) -> list[str]:
