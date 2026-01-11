@@ -625,6 +625,7 @@ class HierarchyArrayObject(
 
 
 class _GPISetAction(enum.Enum):
+    # TODO make this a PyGPI exposed Enum
     DEPOSIT = 0
     FORCE = 1
     RELEASE = 2
@@ -635,7 +636,12 @@ class _GPISetAction(enum.Enum):
 _ValueT = TypeVar("_ValueT")
 
 
-class Deposit(Generic[_ValueT]):
+class _Action(Generic[_ValueT]):
+    @abstractmethod
+    def _dispatch(self, obj: ValueObjectBase[Any, _ValueT]) -> None: ...
+
+
+class Deposit(_Action[_ValueT]):
     r""":term:`Inertially deposit <inertial deposit>` the given value on a simulator object.
 
     If another :term:`deposit` comes after this deposit, the newer deposit overwrites the old value.
@@ -652,8 +658,11 @@ class Deposit(Generic[_ValueT]):
     def __init__(self, value: _ValueT) -> None:
         self.value = value
 
+    def _dispatch(self, obj: ValueObjectBase[Any, _ValueT]) -> None:
+        return obj._set_value(self.value, _GPISetAction.DEPOSIT)
 
-class Force(Generic[_ValueT]):
+
+class Force(_Action[_ValueT]):
     r""":term:`Force <force>` the given value on a simulator object immediately.
 
     Further :term:`deposits <deposit>` from cocotb or :term:`drives <driving>` from HDL processes
@@ -677,8 +686,11 @@ class Force(Generic[_ValueT]):
     def __init__(self, value: _ValueT) -> None:
         self.value = value
 
+    def _dispatch(self, obj: ValueObjectBase[Any, _ValueT]) -> None:
+        return obj._set_value(self.value, _GPISetAction.FORCE)
 
-class Freeze:
+
+class Freeze(_Action[_ValueT]):
     r""":term:`Force <force>` the simulator object with its current value.
 
     Useful if you have done a :term:`deposit` and later decide to lock the value from changing.
@@ -699,8 +711,11 @@ class Freeze:
         Issuing a :class:`!Force` and :class:`Release` in the same evaluation cycle in VHDL will result in the :class:`!Force` "winning".
     """
 
+    def _dispatch(self, obj: ValueObjectBase[Any, _ValueT]) -> None:
+        return obj._set_value(obj.get(), _GPISetAction.FORCE)
 
-class Release:
+
+class Release(_Action[_ValueT]):
     r""":term:`Release <release>` a :term:`forced <force>` simulation object.
 
     Does not change the current value of the simulation object.
@@ -726,8 +741,11 @@ class Release:
         Unconnected ``in`` ports and unconnected internal signals have no drivers and their value after :class:`!Release` will be ``U`` in VHDL and ``X`` in Verilog.
     """
 
+    def _dispatch(self, obj: ValueObjectBase[Any, _ValueT]) -> None:
+        return obj._set_value(obj.get(), _GPISetAction.RELEASE)
 
-class Immediate(Generic[_ValueT]):
+
+class Immediate(_Action[_ValueT]):
     """:term:`Deposit <no-delay deposit>` a value on a simulator object without delay.
 
     The value of the signal will be changed immediately
@@ -748,10 +766,16 @@ class Immediate(Generic[_ValueT]):
     def __init__(self, value: _ValueT) -> None:
         self.value = value
 
+    def _dispatch(self, obj: ValueObjectBase[Any, _ValueT]) -> None:
+        return obj._set_value(self.value, _GPISetAction.NO_DELAY)
 
-class _OldImmediate(Generic[_ValueT]):
+
+class _OldImmediate(_Action[_ValueT]):
     def __init__(self, value: _ValueT) -> None:
         self.value = value
+
+    def _dispatch(self, obj: ValueObjectBase[Any, _ValueT]) -> None:
+        return obj._set_value(self.value, _GPISetAction.OLD_IMMEDIATE)
 
 
 _trust_inertial: bool = _env.as_bool("COCOTB_TRUST_INERTIAL_WRITES")
@@ -856,13 +880,30 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         return self.get()
 
     @value.setter
-    def value(self, value: ValueSetT) -> None:
-        self.set(value)
+    def value(
+        self,
+        value: ValueSetT
+        | Deposit[ValueSetT]
+        | Force[ValueSetT]
+        | Freeze
+        | Release
+        | Immediate[ValueSetT],
+    ) -> None:
+        if isinstance(current_gpi_trigger(), ReadOnly):
+            raise RuntimeError("Attempting settings a value during the ReadOnly phase.")
+        if self.is_const:
+            raise TypeError("Attempted setting an immutable object")
+        if isinstance(value, _Action):
+            return value._dispatch(self)
+        else:
+            # default to deposit without creating a new object
+            return self._set_value(value, _GPISetAction.DEPOSIT)
 
     @abstractmethod
     def get(self) -> ValueGetT:
         """Return the current value of the simulation object."""
 
+    @abstractmethod
     def set(
         self,
         value: ValueSetT
@@ -885,26 +926,6 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
                 or if the simulation object is immutable.
             ValueError: If the *value* is of the correct type, but the value fails to convert.
         """
-        if isinstance(current_gpi_trigger(), ReadOnly):
-            raise RuntimeError("Attempting settings a value during the ReadOnly phase.")
-        if self.is_const:
-            raise TypeError("Attempted setting an immutable object")
-        if isinstance(value, Deposit):
-            self._set_value(value.value, _GPISetAction.DEPOSIT)
-        elif isinstance(value, Force):
-            self._set_value(value.value, _GPISetAction.FORCE)
-        elif isinstance(value, Freeze):
-            # We assume that ValueSetT >= ValueGetT
-            self._set_value(cast("ValueSetT", self.get()), _GPISetAction.FORCE)
-        elif isinstance(value, Release):
-            # We assume that ValueSetT >= ValueGetT
-            self._set_value(cast("ValueSetT", self.get()), _GPISetAction.RELEASE)
-        elif isinstance(value, Immediate):
-            self._set_value(value.value, _GPISetAction.NO_DELAY)
-        elif isinstance(value, _OldImmediate):
-            self._set_value(value.value, _GPISetAction.OLD_IMMEDIATE)
-        else:
-            self._set_value(value, _GPISetAction.DEPOSIT)
 
     @deprecated(
         "Use `handle.set(Immediate(...))` or `handle.value = Immediate(...)` instead."
@@ -933,7 +954,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             value = _OldImmediate(value.value)  # type: ignore
         elif not isinstance(value, (Force, Freeze, Release, Immediate)):
             value = _OldImmediate(value)  # type: ignore
-        self.set(value)
+        self.value = value
 
     @cached_property
     def is_const(self) -> bool:
@@ -1054,7 +1075,7 @@ class ArrayObject(
             Exceptions from array element :meth:`.ValueObjectBase.set` calls will be propagated up,
             so the actual set of exceptions possible is greater than this list.
         """
-        super().set(value)
+        self.value = value
 
     def _set_value(
         self,
@@ -1178,7 +1199,7 @@ class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
             TypeError: If *value* is of a type that can't be assigned to the simulation object, or readily converted into a type that can.
             ValueError: If *value* would not fit in the bounds of the simulation object.
         """
-        super().set(value)
+        self.value = value
 
     @cached_property
     def rising_edge(self) -> RisingEdge:
@@ -1340,7 +1361,7 @@ class LogicArrayObject(
         .. versionchanged:: 2.0
             Supplying too large of an :class:`int` value results in raising a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
-        super().set(value)
+        self.value = value
 
     @deprecated(
         "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
@@ -1420,7 +1441,7 @@ class RealObject(_NonIndexableValueObjectBase[float, float]):
         Raises:
             TypeError: If *value* is any type other than :class:`float`.
         """
-        super().set(value)
+        self.value = value
 
     @deprecated(
         "`float(handle)` casts have been deprecated. Use `float(handle.value)` instead."
@@ -1506,7 +1527,7 @@ class EnumObject(_NonIndexableValueObjectBase[int, Union[LogicArray, int, str]])
         .. versionchanged:: 2.0
             Supplying too large of a value results in raising a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
-        super().set(value)
+        self.value = value
 
     @deprecated(
         "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
@@ -1592,7 +1613,7 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int]):
         .. versionchanged:: 2.0
             Supplying too large of a value results in raising a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
-        super().set(value)
+        self.value = value
 
     @deprecated(
         "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
@@ -1682,7 +1703,7 @@ class StringObject(
             Takes :class:`bytes` instead of :class:`str`.
             Users are now expected to choose an encoding when using these objects.
         """
-        super().set(value)
+        self.value = value
 
     @deprecated(
         '`str(handle)` casts have been deprecated. Use `handle.value.decode("ascii")` instead.'
