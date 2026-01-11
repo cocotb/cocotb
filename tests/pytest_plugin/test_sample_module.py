@@ -83,6 +83,11 @@ def test_sample_module_parametrize(sample_module: HDL, int_param: int) -> None:
     sample_module.test()
 
 
+def test_sample_module_without_marker(sample_module: HDL) -> None:
+    """Test runner without using the :deco:`!pytest.mark.cocotb_runner` marker."""
+    sample_module.test()
+
+
 async def test_pass(dut) -> None:
     pass
 
