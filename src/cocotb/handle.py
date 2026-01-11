@@ -1231,6 +1231,9 @@ class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
         return str(self.value)
 
 
+_str_literals = set("ux01zlhw-")
+
+
 class LogicArrayObject(
     _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
     _RangeableObjectMixin,
@@ -1267,34 +1270,26 @@ class LogicArrayObject(
             min_val, max_val = _value_limits(len(self), _Limits.VECTOR_NBIT)
             if min_val <= value <= max_val:
                 if len(self) <= 32:
-                    _schedule_write(
+                    return _schedule_write(
                         self, self._handle.set_signal_val_int, action, value
                     )
-                    return
-
-                # LogicArray used for checking
-                if value < 0:
-                    value_ = str(
-                        LogicArray.from_signed(
-                            value,
-                            Range(len(self) - 1, "downto", 0),
-                        )
-                    )
                 else:
-                    value_ = str(
-                        LogicArray.from_unsigned(
-                            value,
-                            Range(len(self) - 1, "downto", 0),
-                        )
-                    )
+                    if value < 0:
+                        value += 1 << len(self)
+                    value_ = format(value, f"0{len(self)}b")
             else:
                 raise ValueError(
                     f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
                 )
 
         elif isinstance(value, str):
-            # LogicArray used for checking
-            value_ = str(LogicArray(value, self.range))
+            value_ = value.lower()
+            if not (set(value_) <= _str_literals):
+                raise ValueError("invalid str literal")
+            if len(value_) != len(self):
+                raise ValueError(
+                    f"cannot assign value of length {len(value)} to handle of length {len(self)}"
+                )
 
         elif isinstance(value, LogicArray):
             if len(self) != len(value):
