@@ -1445,7 +1445,7 @@ class RealObject(_NonIndexableValueObjectBase[float, float]):
         return self.value
 
 
-class EnumObject(_NonIndexableValueObjectBase[int, Union[LogicArray, int, str]]):
+class EnumObject(_NonIndexableValueObjectBase[int, int]):
     """An enumeration simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
@@ -1465,30 +1465,30 @@ class EnumObject(_NonIndexableValueObjectBase[int, Union[LogicArray, int, str]])
 
     def _set_value(
         self,
-        value: LogicArray | int | str,
+        value: int,
         action: _GPISetAction,
     ) -> None:
-        if isinstance(value, int):
-            min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
-            if value < min_val or max_val < value:
-                raise ValueError(
-                    f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
-                )
+        if not isinstance(value, int):
+            raise TypeError(
+                f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
+            )
+
+        min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
+        if value < min_val or max_val < value:
+            raise ValueError(
+                f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
+            )
+
+        if len(self) <= 32:
+            # set_signal_val_int is limited to 32 bits.
             return _schedule_write(self, self._handle.set_signal_val_int, action, value)
-        if isinstance(value, LogicArray):
-            if len(value) != len(self):
-                raise ValueError(
-                    f"Cannot assign value of length {len(value)} to handle of length {len(self)}"
-                )
         else:
-            # Try to convert to LogicArray first
-            try:
-                value = LogicArray(value, Range(len(self) - 1, "downto", 0))
-            except (ValueError, TypeError):
-                raise TypeError(
-                    f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
-                ) from None
-        _schedule_write(self, self._handle.set_signal_val_binstr, action, str(value))
+            return _schedule_write(
+                self,
+                self._handle.set_signal_val_binstr,
+                action,
+                format(value, f"0{len(self)}b"),
+            )
 
     def get(self) -> int:
         """Return the current value of the simulation object as an :class:`int`.
@@ -1499,14 +1499,7 @@ class EnumObject(_NonIndexableValueObjectBase[int, Union[LogicArray, int, str]])
 
     def set(
         self,
-        value: LogicArray
-        | int
-        | str
-        | Deposit[LogicArray | int | str]
-        | Force[LogicArray | int | str]
-        | Freeze
-        | Release
-        | Immediate[LogicArray | int | str],
+        value: int | Deposit[int] | Force[int] | Freeze | Release | Immediate[int],
     ) -> None:
         """Set the value of the simulation object using an :class:`int`.
 
