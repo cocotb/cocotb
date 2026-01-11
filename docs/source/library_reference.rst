@@ -308,6 +308,19 @@ Discovering Tests
 
     .. versionadded:: 1.3
 
+.. envvar:: COCOTB_RESULTS_RELATIVE_TO
+
+    A hint for cocotb how to convert absolute paths to relative ones. Used in report generators like :ref:`junit`.
+
+    .. versionadded:: 2.1
+
+.. envvar:: COCOTB_RESULTS_ATTACHMENTS
+
+    List of absolute paths to files (comma ``,`` separated) that will be included as file attachments in generated
+    reports like :ref:`junit`.
+
+    .. versionadded:: 2.1
+
 .. envvar:: COCOTB_REWRITE_ASSERTION_FILES
 
     Type: :ref:`env-string`
