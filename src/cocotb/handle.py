@@ -1128,7 +1128,7 @@ class _NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
         return Edge._make(self)
 
 
-class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
+class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str, LogicArray]]):
     """A scalar logic simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
@@ -1150,7 +1150,7 @@ class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
 
     def _set_value(
         self,
-        value: Logic | int | str,
+        value: Logic | int | str | LogicArray,
         action: _GPISetAction,
     ) -> None:
         value_: str
@@ -1184,11 +1184,12 @@ class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str]]):
         value: Logic
         | int
         | str
-        | Deposit[Logic | int | str]
-        | Force[Logic | int | str]
+        | LogicArray
+        | Deposit[Logic | int | str | LogicArray]
+        | Force[Logic | int | str | LogicArray]
         | Freeze
         | Release
-        | Immediate[Logic | int | str],
+        | Immediate[Logic | int | str | LogicArray],
     ) -> None:
         """Set the value of the simulation object using a :class:`.Logic`-like value.
 
