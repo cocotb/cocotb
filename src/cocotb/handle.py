@@ -1128,7 +1128,9 @@ class _NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
         return Edge._make(self)
 
 
-class LogicObject(_NonIndexableValueObjectBase[Logic, Union[Logic, int, str, LogicArray]]):
+class LogicObject(
+    _NonIndexableValueObjectBase[Logic, Union[Logic, int, str, LogicArray]]
+):
     """A scalar logic simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
