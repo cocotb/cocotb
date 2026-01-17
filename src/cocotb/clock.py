@@ -18,7 +18,6 @@ from logging import Logger
 from typing import ClassVar, Literal
 
 import cocotb
-from cocotb._utils import cached_no_args_method
 from cocotb.handle import (
     Deposit,
     Force,
@@ -405,7 +404,6 @@ class Clock:
         for _ in range(num_cycles):
             await edge_type(self._signal)
 
-    @cached_no_args_method
     def __repr__(self) -> str:
         freq_mhz = 1 / get_time_from_sim_steps(
             get_sim_steps(self._period, self._unit), "us"
