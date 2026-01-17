@@ -34,7 +34,7 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
-from cocotb._utils import DocIntEnum, cached_no_args_method
+from cocotb._utils import DocIntEnum
 from cocotb.types import Array, Logic, LogicArray, Range
 from cocotb.types._indexing import do_indexing_changed_warning, indexing_changed
 from cocotb_tools import _env
@@ -1379,7 +1379,6 @@ class LogicArrayObject(
     def __str__(self) -> str:
         return str(self.value)
 
-    @cached_no_args_method
     def __len__(self) -> int:
         # can't use `range` to get length because `range` is for outer-most dimension only
         # and this object needs to support multi-dimensional packed arrays.
@@ -1537,7 +1536,6 @@ class EnumObject(
     def __int__(self) -> int:
         return int(self.value)
 
-    @cached_no_args_method
     def __len__(self) -> int:
         return self._handle.get_num_elems()
 
@@ -1628,7 +1626,6 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
     def __int__(self) -> int:
         return self.value
 
-    @cached_no_args_method
     def __len__(self) -> int:
         return self._handle.get_num_elems()
 

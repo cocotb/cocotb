@@ -242,41 +242,6 @@ class cached_method(Generic[InstanceT, Params, ResultT]):
         return func(*args, **kwargs)
 
 
-class cached_no_args_method(Generic[InstanceT, ResultT]):
-    def __init__(self, method: Callable[[InstanceT], ResultT]) -> None:
-        self._method = method
-        update_wrapper(self, method)
-
-    @overload
-    def __get__(
-        self, instance: None, objtype: object = None
-    ) -> Callable[[InstanceT], ResultT]: ...
-
-    @overload
-    def __get__(
-        self, instance: InstanceT, objtype: object = None
-    ) -> Callable[[], ResultT]: ...
-
-    def __get__(
-        self, instance: None | InstanceT, objtype: object = None
-    ) -> Callable[[InstanceT], ResultT] | Callable[[], ResultT]:
-        if instance is None:
-            return self
-
-        res = self._method(instance)
-
-        @wraps(self._method)
-        def lookup() -> ResultT:
-            return res
-
-        setattr(instance, self._method.__name__, lookup)
-        return lookup
-
-    def __call__(self, instance: InstanceT) -> ResultT:
-        func = getattr(instance, self._method.__name__)
-        return func()
-
-
 T = TypeVar("T")
 
 
