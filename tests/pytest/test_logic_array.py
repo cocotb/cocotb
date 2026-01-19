@@ -22,6 +22,11 @@ def test_logic_array_str_construction():
     with pytest.raises(ValueError):
         LogicArray("5h7_@")
 
+    assert LogicArray("1010_1101") == LogicArray("10101101")
+    assert LogicArray("10_____10") == LogicArray("1010")
+    assert LogicArray("_0_") == LogicArray("0")
+    assert LogicArray("___") == LogicArray("")
+
 
 def test_logic_array_iterable_construction():
     assert LogicArray([False, 1, "X", Logic("Z")]) == LogicArray("01XZ")
