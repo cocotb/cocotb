@@ -26,7 +26,7 @@ if sys.version_info >= (3, 10):
     from typing import TypeAlias
 
 _resolve_lh_table = str.maketrans({"L": "0", "H": "1"})
-_str_literals = frozenset("uUxX01zZwWlLhH-")
+_str_literals = frozenset("UX01ZWLH-")
 
 
 ByteOrder: TypeAlias = Literal["big", "little"]
@@ -256,19 +256,29 @@ class LogicArray(AbstractMutableArray[Logic]):
             )
 
         if isinstance(value, str):
-            if not (set(value) <= _str_literals):
-                raise ValueError("Invalid str literal")
-            self._value_as_str = value.upper()
+            value = value.replace("_", "")  # remove visual separators
+            value = value.upper()  # normalize to uppercase
+            nonliterals = set(value) - _str_literals
+            if nonliterals:
+                nonliteral_str = ", ".join(repr(c) for c in sorted(nonliterals))
+                raise ValueError(
+                    f"String literal contains invalid logic values: {nonliteral_str}"
+                )
+            self._value_as_str = value
             if range is not None:
                 if len(value) != len(range):
-                    raise ValueError(f"Length of {value!r} does not match {range!r}")
+                    raise ValueError(
+                        f"String literal of length {len(value)} does not match length of {range!r}"
+                    )
                 self._range = range
             else:
                 self._range = Range(len(self._value_as_str) - 1, "downto", 0)
         elif isinstance(value, int):
             value = int(value)  # force bool to int
             if value < 0:
-                raise ValueError("Invalid int literal")
+                raise ValueError(
+                    "Integer literals cannot be negative. Use `from_signed()` instead."
+                )
             if range is None:
                 raise TypeError("Missing required arguments: 'range'")
             bitlen = max(1, int.bit_length(value))

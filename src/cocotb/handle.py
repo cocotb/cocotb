@@ -37,6 +37,7 @@ from cocotb._gpi_triggers import (
 from cocotb._utils import DocIntEnum
 from cocotb.types import Array, Logic, LogicArray, Range
 from cocotb.types._indexing import do_indexing_changed_warning, indexing_changed
+from cocotb.types._logic_array import _str_literals
 from cocotb_tools import _env
 
 __all__ = (
@@ -1240,9 +1241,6 @@ class _SignednessObjectMixin(SimHandleBase):
             return (2 ** len(self)) - 1
 
 
-_str_literals = set("ux01zlhw-")
-
-
 class LogicArrayObject(
     _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
     _RangeableObjectMixin,
@@ -1292,9 +1290,14 @@ class LogicArrayObject(
                 )
 
         elif isinstance(value, str):
-            value_ = value.lower()
-            if not (set(value_) <= _str_literals):
-                raise ValueError("invalid str literal")
+            value_ = value.replace("_", "")  # remove visual separators
+            value_ = value_.upper()  # normalize to uppercase
+            nonliterals = set(value_) - _str_literals
+            if nonliterals:
+                nonliteral_str = ", ".join(repr(c) for c in sorted(nonliterals))
+                raise ValueError(
+                    f"String literal contains invalid logic values: {nonliteral_str}"
+                )
             if len(value_) != len(self):
                 raise ValueError(
                     f"cannot assign value of length {len(value)} to handle of length {len(self)}"

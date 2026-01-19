@@ -1,0 +1,1 @@
+Added visual separator support to :class:`.LogicArray` string construction. This allows underscores (``_``) to be used to improve readability of long bitstrings, e.g. ``"1010_1101"``.

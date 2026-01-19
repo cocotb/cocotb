@@ -447,3 +447,19 @@ async def test_setattr_error_msg(dut: Any) -> None:
 async def test_pickling_prohibited(dut: object) -> None:
     with pytest.raises(NotImplementedError):
         pickle.dumps(dut)
+
+
+@cocotb.test
+async def test_handle_str_with_separators(dut: Any) -> None:
+    """Test that LogicArray handles string inputs with visual separators correctly."""
+    dut.stream_in_data.value = "1010_1101"
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == LogicArray("10101101")
+
+    dut.stream_in_data.value = "11__00__11__00"
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == LogicArray("11001100")
+
+    dut.stream_in_data.value = "__01010011__"
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == LogicArray("01010011")
