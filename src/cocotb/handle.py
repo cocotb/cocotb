@@ -1275,19 +1275,19 @@ class LogicArrayObject(
     ) -> None:
         value_: str
         if isinstance(value, int):
-            if self._min_val <= value <= self._max_val:
-                if len(self) <= 32:
-                    return _schedule_write(
-                        self, self._handle.set_signal_val_int, action, value
-                    )
-                else:
-                    if value < 0:
-                        value += 1 << len(self)
-                    value_ = format(value, f"0{len(self)}b")
-            else:
+            if not self._min_val <= value <= self._max_val:
                 raise ValueError(
                     f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
                 )
+
+            if len(self) <= 32:
+                return _schedule_write(
+                    self, self._handle.set_signal_val_int, action, value
+                )
+            else:
+                if value < 0:
+                    value += 1 << len(self)
+                value_ = f"{value:0{len(self)}b}"
 
         elif isinstance(value, str):
             value_ = value.replace("_", "")  # remove visual separators
@@ -1298,23 +1298,8 @@ class LogicArrayObject(
                 raise ValueError(
                     f"String literal contains invalid logic values: {nonliteral_str}"
                 )
-            if len(value_) != len(self):
-                raise ValueError(
-                    f"cannot assign value of length {len(value)} to handle of length {len(self)}"
-                )
 
-        elif isinstance(value, LogicArray):
-            if len(self) != len(value):
-                raise ValueError(
-                    f"cannot assign value of length {len(value)} to handle of length {len(self)}"
-                )
-            value_ = str(value)
-
-        elif isinstance(value, Logic):
-            if len(self) != 1:
-                raise ValueError(
-                    f"cannot assign value of length 1 to handle of length {len(self)}"
-                )
+        elif isinstance(value, (LogicArray, Logic)):
             value_ = str(value)
 
         else:
@@ -1322,6 +1307,10 @@ class LogicArrayObject(
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
+        if len(value_) != len(self):
+            raise ValueError(
+                f"Cannot assign value of length {len(value_)} to handle of length {len(self)}"
+            )
         _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
     def get(self) -> LogicArray:
@@ -1490,7 +1479,7 @@ class EnumObject(
                 f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
             )
 
-        if value < self._min_val or self._max_val < value:
+        if not self._min_val <= value <= self._max_val:
             raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
             )
@@ -1587,26 +1576,24 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
                 f"Unsupported type for integer value assignment: {type(value)} ({value!r})"
             )
 
-        if self._min_val <= value <= self._max_val:
-            if len(self) <= 32:
-                # set_signal_val_int is limited to 32 bits.
-                return _schedule_write(
-                    self, self._handle.set_signal_val_int, action, value
-                )
-            else:
-                if value < 0:
-                    value += 1 << len(self)
-                value_ = format(value, f"0{len(self)}b")
-
-                return _schedule_write(
-                    self,
-                    self._handle.set_signal_val_binstr,
-                    action,
-                    value_,
-                )
-        else:
+        if not self._min_val <= value <= self._max_val:
             raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
+            )
+
+        if len(self) <= 32:
+            # set_signal_val_int is limited to 32 bits.
+            return _schedule_write(self, self._handle.set_signal_val_int, action, value)
+        else:
+            if value < 0:
+                value += 1 << len(self)
+            value_ = format(value, f"0{len(self)}b")
+
+            return _schedule_write(
+                self,
+                self._handle.set_signal_val_binstr,
+                action,
+                value_,
             )
 
     def get(self) -> int:
