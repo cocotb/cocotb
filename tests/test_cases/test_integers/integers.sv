@@ -24,10 +24,19 @@ module top (
     longint longint_signal;
     integer integer_signal;
 
+/* Icarus optimizes out the undriven signals.
+ * Verilator updates the signals every evaluation cycle.
+ * This should work considering most event-base simulators will only run the constant
+ * assignment, overwriting the signal values, if the driver values are updated, which
+ * isn't a problem for our test.
+ */
+`ifndef VERILATOR
     assign enum_signal = enum_input;
     assign byte_signal = byte_input;
     assign shortint_signal = shortint_input;
     assign int_signal = int_input;
     assign longint_signal = longint_input;
     assign integer_signal = integer_input;
+`endif  /* VERILATOR */
+
 endmodule
