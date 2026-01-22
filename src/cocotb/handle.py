@@ -1511,7 +1511,15 @@ class EnumObject(
 
         See :class:`EnumObject` for details on what :class:`int` values correspond to which enumeration values.
         """
-        return self._handle.get_signal_val_long()
+        if len(self) <= 32:
+            res = self._handle.get_signal_val_long()
+        else:
+            res = int(self._handle.get_signal_val_binstr(), 2)
+        if res > self._max_val:
+            res -= 1 << len(self)
+        elif self._handle.get_signed() == 0 and res < 0:
+            res += 1 << len(self)
+        return res
 
     def set(
         self,
@@ -1603,7 +1611,15 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
 
     def get(self) -> int:
         """Return the current value of the simulation object as an :class:`int`."""
-        return self._handle.get_signal_val_long()
+        if len(self) <= 32:
+            res = self._handle.get_signal_val_long()
+        else:
+            res = int(self._handle.get_signal_val_binstr(), 2)
+        if res > self._max_val:
+            res -= 1 << len(self)
+        elif self._handle.get_signed() == 0 and res < 0:
+            res += 1 << len(self)
+        return res
 
     def set(
         self,

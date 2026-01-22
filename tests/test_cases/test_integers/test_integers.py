@@ -12,6 +12,7 @@ import pytest
 import cocotb
 from cocotb.handle import LogicArrayObject
 from cocotb.triggers import Timer
+from cocotb.types import LogicArray
 from cocotb_tools.sim_versions import GhdlVersion, VerilatorVersion
 
 LANGUAGE = os.getenv("TOPLEVEL_LANG").lower()
@@ -58,39 +59,47 @@ async def test_int_verilog(
     if isinstance(handle, LogicArrayObject):
         min_value = -(2 ** (width - 1))
         max_value = (2**width) - 1
+
+        def check(actual: LogicArray, expected: int) -> bool:
+            if expected >= 0:
+                return actual.to_unsigned() == expected
+            else:
+                return actual.to_signed() == expected
+
     else:
         min_value = -(2 ** (width - 1)) if is_signed else 0
         max_value = (2 ** (width - 1)) - 1 if is_signed else (2**width) - 1
 
+        def check(actual: int, expected: int) -> bool:
+            return actual == expected
+
     for _ in range(100):
-        handle.value = random.randint(min_value, max_value)
+        exp_value = random.randint(min_value, max_value)
+        handle.value = exp_value
         await Timer(1)
+        assert check(handle.value, exp_value)
 
-    last_value = handle.value
+    handle.value = 67
+    await Timer(1)
 
-    for max_value_test, min_value_test in zip(
-        (
-            max_value + 1,
-            random.randint(max_value, 2 * max_value),
-            2 * max_value,
-            random.randint(2 * max_value, 10 * max_value),
-        ),
-        (
-            min_value - 1,
-            random.randint(2 * min_value, min_value),
-            2 * min_value,
-            random.randint(10 * min_value, 2 * min_value),
-        ),
+    for value in (
+        max_value + 1,
+        random.randint(max_value, 2 * max_value),
+        2 * max_value,
+        random.randint(2 * max_value, 10 * max_value),
+        min_value - 1,
+        random.randint(2 * min_value, min_value),
+        2 * min_value,
+        random.randint(10 * min_value, 2 * min_value),
     ):
-        with pytest.raises(ValueError):
-            handle.value = max_value_test
-        await Timer(1)
-        assert handle.value == last_value
+        cocotb.log.info(f"Testing value={value}")
 
         with pytest.raises(ValueError):
-            handle.value = min_value_test
+            handle.value = value
+
+        # ensure it wasn't applied
         await Timer(1)
-        assert handle.value == last_value
+        assert handle.value == 67
 
 
 @cocotb.test
@@ -126,13 +135,28 @@ async def test_integer_access_vhdl(
     assert handle.is_signed is is_signed
     assert len(handle) == width
 
+    # For backwards compatibility, LogicArrayObjects always use (INT_MIN, UINT_MAX) for bounds.
+    # Some simulators (GHDL) discover integer handles as LogicArrayObjects.
+    if isinstance(handle, LogicArrayObject):
+
+        def check(actual: LogicArray, expected: int) -> bool:
+            if expected >= 0:
+                return actual.to_unsigned() == expected
+            else:
+                return actual.to_signed() == expected
+
+    else:
+
+        def check(actual: int, expected: int) -> bool:
+            return actual == expected
+
     # Use bounds of the specific subtype for random testing.
     # Otherwise we get fun range constraint violations which cause errors.
     for _ in range(100):
-        handle.value = random.randint(min_value, max_value)
+        exp_value = random.randint(min_value, max_value)
+        handle.value = exp_value
         await Timer(1)
-
-    last_value = handle.value
+        assert check(handle.value, exp_value)
 
     # For backwards compatibility, LogicArrayObjects always use (INT_MIN, UINT_MAX) for bounds.
     # Some simulators (GHDL) discover integer handles as LogicArrayObjects.
@@ -143,26 +167,24 @@ async def test_integer_access_vhdl(
         min_value = -(2 ** (width - 1)) if is_signed else 0
         max_value = (2 ** (width - 1)) - 1 if is_signed else (2**width) - 1
 
-    for max_value_test, min_value_test in zip(
-        (
-            max_value + 1,
-            random.randint(max_value, 2 * max_value),
-            2 * max_value,
-            random.randint(2 * max_value, 10 * max_value),
-        ),
-        (
-            min_value - 1,
-            random.randint(2 * min_value, min_value),
-            2 * min_value,
-            random.randint(10 * min_value, 2 * min_value),
-        ),
+    handle.value = 67
+    await Timer(1)
+
+    for value in (
+        max_value + 1,
+        random.randint(max_value, 2 * max_value),
+        2 * max_value,
+        random.randint(2 * max_value, 10 * max_value),
+        min_value - 1,
+        random.randint(2 * min_value, min_value),
+        2 * min_value,
+        random.randint(10 * min_value, 2 * min_value),
     ):
-        with pytest.raises(ValueError):
-            handle.value = max_value_test
-        await Timer(1)
-        assert handle.value == last_value
+        cocotb.log.info(f"Testing value={value}")
 
         with pytest.raises(ValueError):
-            handle.value = min_value_test
+            handle.value = value
+
+        # ensure it wasn't applied
         await Timer(1)
-        assert handle.value == last_value
+        assert handle.value == 67
