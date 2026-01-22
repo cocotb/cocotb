@@ -200,12 +200,12 @@ markers = [
 [tool.coverage.paths]
 source = [
     "src/cocotb/",
+    "src/cocotb_tools/runner.py",
     ".nox/**/cocotb/",
 ]
 
 [tool.coverage.report]
 omit = [
-    "*/cocotb_tools/*",
     "*/_vendor/*",
 ]
 exclude_lines = [
