@@ -13,25 +13,17 @@ import traceback
 import types
 from collections.abc import Iterable
 from enum import Enum, IntEnum
-from functools import update_wrapper, wraps
+from functools import wraps
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
-    Generic,
     TypeVar,
     cast,
     overload,
 )
 
 if sys.version_info >= (3, 10):
-    from typing import Concatenate, ParamSpec, TypeAlias
-
-    Params = ParamSpec("Params")
-
-else:
-    # hack to make 3.9 happy
-    Params = TypeVar("Params")
+    from typing import TypeAlias
 
 ExceptionTuple: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 
@@ -187,59 +179,6 @@ class DocIntEnum(IntEnum):
         if doc is not None:
             self.__doc__ = doc
         return self
-
-
-ResultT = TypeVar("ResultT")
-InstanceT = TypeVar("InstanceT")
-
-
-class cached_method(Generic[InstanceT, Params, ResultT]):
-    def __init__(
-        self, method: Callable[Concatenate[InstanceT, Params], ResultT]
-    ) -> None:
-        self._method = method
-        update_wrapper(self, method)
-
-    @overload
-    def __get__(
-        self, instance: None, objtype: object = None
-    ) -> Callable[Concatenate[InstanceT, Params], ResultT]: ...
-
-    @overload
-    def __get__(
-        self, instance: InstanceT, objtype: object = None
-    ) -> Callable[Params, ResultT]: ...
-
-    def __get__(
-        self, instance: None | InstanceT, objtype: object = None
-    ) -> Callable[Concatenate[InstanceT, Params], ResultT] | Callable[Params, ResultT]:
-        if instance is None:
-            return self
-
-        cache: dict[
-            tuple[tuple[object, ...], tuple[tuple[str, object], ...]], ResultT
-        ] = {}
-
-        @wraps(self._method)
-        def lookup(*args: Params.args, **kwargs: Params.kwargs) -> ResultT:
-            key = (args, tuple(kwargs.items()))
-            try:
-                return cache[key]
-            except KeyError:
-                res = self._method(instance, *args, **kwargs)
-                cache[key] = res
-                return res
-
-        lookup.cache = cache  # type: ignore[attr-defined]
-
-        setattr(instance, self._method.__name__, lookup)
-        return lookup
-
-    def __call__(
-        self, instance: InstanceT, *args: Params.args, **kwargs: Params.kwargs
-    ) -> ResultT:
-        func = getattr(instance, self._method.__name__)
-        return func(*args, **kwargs)
 
 
 T = TypeVar("T")

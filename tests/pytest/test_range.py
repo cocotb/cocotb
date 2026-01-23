@@ -148,3 +148,35 @@ def test_copy() -> None:
     l = Range(-2, "to", 1)
     assert l == copy.copy(l)
     assert l == copy.deepcopy(l)
+
+
+def test_index() -> None:
+    r = Range(1, "to", 5)
+    # value no longer in range
+    with pytest.raises(ValueError):
+        r.index(1, 2, 5)
+    with pytest.raises(ValueError):
+        r.index(1, 2)
+    with pytest.raises(ValueError):
+        r.index(5, 0, 4)
+    # value not in range at all
+    with pytest.raises(ValueError):
+        r.index(10, 1, 5)
+    with pytest.raises(ValueError):
+        r.index(10, 1)
+    with pytest.raises(ValueError):
+        r.index(0, 1, 5)
+    with pytest.raises(ValueError):
+        r.index(0, 1)
+    # start is past stop, will never find
+    with pytest.raises(ValueError):
+        r.index(3, 10, 5)
+    with pytest.raises(ValueError):
+        r.index(3, 10)
+    # start is before start of range, will always find
+    assert r.index(3, 0, 10) == 2
+    # stop is past end of range, will always find
+    assert r.index(3, 0, 10) == 2
+    # stop is before start of range, will never find
+    with pytest.raises(ValueError):
+        r.index(3, 0, -10)
