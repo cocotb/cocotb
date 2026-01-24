@@ -185,7 +185,7 @@ def dev_test(session: nox.Session) -> None:
         else:
             gpi_interface = "vhpi"
 
-    dev_test_sim(session, sim, toplevel_lang, gpi_interface)
+    dev_test_sim_runner(session, sim, toplevel_lang, gpi_interface)
 
 
 @nox.session
@@ -211,7 +211,16 @@ def dev_test_sim(
     # the build completes, taking all gcno files with them, as well as the path
     # to place the gcda files.
     build_cocotb_for_dev_test(session, editable=False)
+    dev_test_sim_runner(session, sim, toplevel_lang, gpi_interface)
 
+
+@nox.session
+def dev_test_sim_runner(
+    session: nox.Session,
+    sim: str,
+    toplevel_lang: str,
+    gpi_interface: str,
+) -> None:
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
 
