@@ -9,7 +9,6 @@ from __future__ import annotations
 from pytest import FixtureRequest, hookspec
 
 from cocotb_tools.pytest.hdl import HDL
-from cocotb_tools.runner import Runner
 
 
 @hookspec(firstresult=True)
@@ -29,16 +28,26 @@ def pytest_cocotb_make_hdl(request: FixtureRequest) -> HDL | None:
 
 
 @hookspec(firstresult=True)
-def pytest_cocotb_make_runner(simulator_name: str) -> Runner | None:
-    """Create new instance of :py:class:`cocotb_tools.runner.Runner`.
+def pytest_cocotb_hdl_build(hdl: HDL) -> object | None:
+    """Build a HDL design.
 
     .. note::
 
         Any conftest file can implement this hook. Stops at first non-None result.
 
     Args:
-        simulator_name: Name of HDL simulator.
+        hdl: Instance of HDL design to build.
+    """
 
-    Returns:
-        New instance of runner.
+
+@hookspec(firstresult=True)
+def pytest_cocotb_hdl_test(hdl: HDL) -> object | None:
+    """Test a HDL design.
+
+    .. note::
+
+        Any conftest file can implement this hook. Stops at first non-None result.
+
+    Args:
+        hdl: Instance of HDL design to test.
     """

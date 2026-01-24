@@ -67,13 +67,13 @@ def sample_module_fixture(hdl: HDL, request: FixtureRequest) -> HDL:
     # Selected based on command line argument --cocotb-toplevel-lang=<verilog|vhdl>
     # or enforced by HDL simulator choice --cocotb-simulator=<name>
     if hdl.toplevel_lang == "vhdl":
-        hdl.sources = (
+        hdl.sources = [
             DESIGNS / "sample_module" / "sample_module_package.vhdl",
             DESIGNS / "sample_module" / "sample_module_1.vhdl",
             DESIGNS / "sample_module" / "sample_module.vhdl",
-        )
+        ]
     else:
-        hdl.sources = (DESIGNS / "sample_module" / "sample_module.sv",)
+        hdl.sources = [DESIGNS / "sample_module" / "sample_module.sv"]
 
     if hdl.simulator == "questa":
         hdl.build_args = ["+acc"]
@@ -83,8 +83,6 @@ def sample_module_fixture(hdl: HDL, request: FixtureRequest) -> HDL:
 
     elif hdl.simulator == "nvc":
         hdl.build_args = ["--std=08"]
-
-    hdl.build()
 
     return hdl
 

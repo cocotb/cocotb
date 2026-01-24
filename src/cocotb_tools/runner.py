@@ -2064,6 +2064,56 @@ class Dsim(Runner):
         return cmds
 
 
+# List of supported simulators
+_supported_sims: dict[str, type[Runner]] = {
+    "icarus": Icarus,
+    "questa": Questa,
+    "ghdl": Ghdl,
+    "riviera": Riviera,
+    "activehdl": ActiveHDL,
+    "verilator": Verilator,
+    "xcelium": Xcelium,
+    "nvc": Nvc,
+    "vcs": Vcs,
+    "dsim": Dsim,
+}
+
+
+# Name of simulator command that can be used to detect if simulator is available in current environment
+# If not listed, then simulator name is equal command name
+_sim_command: dict[str, str] = {
+    "questa": "vsim",
+    "riviera": "vsimsa",
+    "activehdl": "vsima",
+    "xcelium": "xrun",
+}
+
+
+def _find_available_simulator() -> str | None:
+    """Find available simulator in current environment.
+
+    Returns:
+        Name of found simulator in current environment. :data:`None` if any of supported simulators cannot be found.
+    """
+    for name in _supported_sims:
+        if shutil.which(_sim_command.get(name, name)):
+            return name
+
+    return None
+
+
+def _get_supported_simulators() -> list[str]:
+    """Get list of supported simulators."""
+    return list(_supported_sims)
+
+
+def _get_supported_languages(simulator_name: str) -> list[str]:
+    """Get list of supported languages for *simulator_name*."""
+    runner: type[Runner] | None = _supported_sims.get(simulator_name)
+
+    return list(runner.supported_gpi_interfaces) if runner else []
+
+
 def get_runner(simulator_name: str) -> Runner:
     """Return an instance of a runner for *simulator_name*.
 
@@ -2074,22 +2124,9 @@ def get_runner(simulator_name: str) -> Runner:
         ValueError: If *simulator_name* is not one of the supported simulators or an alias of one.
     """
 
-    supported_sims: dict[str, type[Runner]] = {
-        "icarus": Icarus,
-        "questa": Questa,
-        "ghdl": Ghdl,
-        "riviera": Riviera,
-        "activehdl": ActiveHDL,
-        "verilator": Verilator,
-        "xcelium": Xcelium,
-        "nvc": Nvc,
-        "vcs": Vcs,
-        "dsim": Dsim,
-        # TODO: "activehdl": ActiveHdl,
-    }
     try:
-        return supported_sims[simulator_name]()
+        return _supported_sims[simulator_name]()
     except KeyError:
         raise ValueError(
-            f"Simulator {simulator_name!r} is not in supported list: {', '.join(supported_sims)}"
+            f"Simulator {simulator_name!r} is not in supported list: {', '.join(_supported_sims)}"
         ) from None

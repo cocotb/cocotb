@@ -8,56 +8,20 @@ from __future__ import annotations
 
 import os
 import re
-from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
+from collections.abc import MutableMapping, MutableSequence
 from pathlib import Path
-from shutil import which
 from typing import Any, Callable
 
-from pytest import Config, FixtureRequest
+from pytest import FixtureRequest
 
 from cocotb_tools.runner import (
     VHDL,
     PathLike,
-    Runner,
     VerilatorControlFile,
     Verilog,
 )
 
 _POSIX_PATH: re.Pattern = re.compile(r"[^A-Za-z0-9/._-]")
-
-# Name of HDL simulator per executable
-# TODO: Move to cocotb_tools.runner?
-_SIMULATORS: dict[str, str] = {
-    # open-source simulators first
-    "verilator": "verilator",
-    "nvc": "nvc",
-    "ghdl": "ghdl",
-    "iverilog": "icarus",
-    # proprietary simulators
-    "xrun": "xcelium",
-    "vcs": "vcs",
-    "vsim": "questa",
-    "vsimsa": "riviera",
-}
-
-
-def _get_simulator(config: Config) -> str:
-    """Get name of HDL simulator.
-
-    Args:
-        config: Pytest configuration object.
-
-    Returns:
-        Name of HDL simulator.
-    """
-    simulator: str = config.option.cocotb_simulator
-
-    if not simulator or simulator == "auto":
-        for command, name in _SIMULATORS.items():
-            if which(command):
-                return name
-
-    return simulator
 
 
 class HDL:
@@ -69,17 +33,8 @@ class HDL:
         Args:
             request: The pytest fixture request.
         """
-        config: Config = request.config
-        option = config.option
-        hook = config.hook
+        option = request.config.option
         nodeid: str = request.node.nodeid
-
-        # We need information if .build()/.test() is running during session stage and by xdist worker
-        # This is needed to protect build/test directory
-        self._is_session_scoped: bool = request.scope == "session"
-        self._is_xdist_worker: bool = (
-            getattr(request.config, "workerinput", None) is not None
-        )
 
         # Use only allowed characters by POSIX standard
         # Pytest is always using "/" as path separator regardless of current OS environment
@@ -88,13 +43,14 @@ class HDL:
         if os.path.sep != "/":
             nodeid = nodeid.replace("/", os.path.sep)
 
+        self.request: FixtureRequest = request
+        """The pytest fixture request."""
+
         self.test_dir: PathLike = Path(option.cocotb_build_dir).resolve() / nodeid
         """Directory to run the tests in."""
 
-        self.runner: Runner = hook.pytest_cocotb_make_runner(
-            simulator_name=_get_simulator(request.config)
-        )
-        """Instance that allows to build HDL and run cocotb tests."""
+        self.simulator: str = option.cocotb_simulator
+        """Name of HDL simulator."""
 
         # Build options
         self.library: str = option.cocotb_library
@@ -105,19 +61,21 @@ class HDL:
         ] = []
         """Language-agnostic list of source files to build."""
 
-        self.includes: MutableSequence[PathLike] = []
+        self.includes: MutableSequence[PathLike] = option.cocotb_includes.copy()
         """Verilog include directories."""
 
-        self.defines: MutableMapping[str, object] = {}
+        self.defines: MutableMapping[str, object] = option.cocotb_defines.copy()
         """Defines to set."""
 
-        self.parameters: MutableMapping[str, object] = {}
+        self.parameters: MutableMapping[str, object] = option.cocotb_parameters.copy()
         """Verilog parameters or VHDL generics."""
 
-        self.build_args: MutableSequence[str | VHDL | Verilog] = []
+        self.build_args: MutableSequence[str | VHDL | Verilog] = (
+            option.cocotb_build_args.copy()
+        )
         """Extra build arguments for the simulator."""
 
-        self.toplevel: str | None = None
+        self._toplevel: str | None = None
         """Name of the HDL toplevel module."""
 
         self.always: bool = option.cocotb_always
@@ -142,70 +100,46 @@ class HDL:
         """Directory to execute the build command(s) in."""
 
         # Test options
-        self.test_module: str | Sequence[str] = ""
+        self.test_modules: MutableSequence[str] = []
         """Name(s) of the Python module(s) containing the tests to run."""
 
         self.toplevel_library: str = option.cocotb_toplevel_library
         """The library name for HDL toplevel module."""
 
-        self.toplevel_lang: str | None = option.cocotb_toplevel_lang
+        self.toplevel_lang: str = option.cocotb_toplevel_lang
         """Language of the HDL toplevel module."""
 
-        self.gpi_interfaces: list[str] = option.cocotb_gpi_interfaces
+        self.gpi_interfaces: MutableSequence[str] = option.cocotb_gpi_interfaces.copy()
         """List of GPI interfaces to use, with the first one being the entry point."""
 
-        self.seed: str | int | None = option.cocotb_seed
+        self.seed: int | None = option.cocotb_seed
         """A specific random seed to use."""
 
-        self.elab_args: MutableSequence[str] = []
+        self.elab_args: MutableSequence[str] = option.cocotb_elab_args.copy()
         """A list of elaboration arguments for the simulator."""
 
-        self.test_args: MutableSequence[str] = []
+        self.test_args: MutableSequence[str] = option.cocotb_test_args.copy()
         """A list of extra arguments for the simulator."""
 
-        self.plusargs: MutableSequence[str] = []
+        self.plusargs: MutableSequence[str] = option.cocotb_plusargs.copy()
         """'plusargs' to set for the simulator."""
 
-        self.env: MutableMapping[str, str] = {}
+        self.env: MutableMapping[str, str] = option.cocotb_env.copy()
         """Extra environment variables to set."""
 
         self.gui: bool = option.cocotb_gui
         """Run with simulator GUI."""
 
-        self.pre_cmd: list[str] = []
+        self.pre_cmd: MutableSequence[str] = option.cocotb_pre_cmd.copy()
         """Commands to run before simulation begins. Typically Tcl commands for simulators that support them."""
+
+        self._build_done: bool = False
+        """Mark that the :meth:`cocotb_tools.pytest.hdl.HDL.build` method was called at least once."""
 
         self._apply_markers(request.node)
 
-        # Store reference to command line options
-        self._option = option
-
-        if not self.toplevel_lang or self.toplevel_lang == "auto":
-            if len(self.runner.supported_gpi_interfaces) == 1:
-                self.toplevel_lang = list(self.runner.supported_gpi_interfaces)[0]
-            else:
-                # HDL simulator supports multiple languages
-                self.toplevel_lang = None
-
-        if not self.test_module and not self._is_session_scoped:
-            self.test_module = request.path.name.partition(".")[0]
-
-        if not self.toplevel and self.test_module:
-            if isinstance(self.test_module, str):
-                self.toplevel = self.test_module
-            elif isinstance(self.test_module, Sequence):
-                self.toplevel = self.test_module[0]
-
-            if self.toplevel.startswith("test_"):
-                self.toplevel = self.toplevel.removeprefix("test_")
-
-            elif self.toplevel.endswith("_test"):
-                self.toplevel = self.toplevel.removesuffix("_test")
-
-    @property
-    def simulator(self) -> str:
-        """Name of HDL simulator."""
-        return str(self.runner.__class__.__name__).lower()
+        if not self.test_modules and self.request.scope != "session":
+            self.test_modules = [request.path.name.partition(".")[0]]
 
     def __setitem__(self, key: str, value: object) -> None:
         """Set HDL parameter/generic in HDL design."""
@@ -215,225 +149,65 @@ class HDL:
         """Get HDL parameter/generic."""
         return self.parameters[key]
 
-    def build(
-        self,
-        library: str | None = None,
-        sources: Sequence[PathLike | VHDL | Verilog | VerilatorControlFile]
-        | None = None,
-        includes: Sequence[PathLike] | None = None,
-        defines: Mapping[str, object] | None = None,
-        parameters: Mapping[str, object] | None = None,
-        build_args: Sequence[str | VHDL | Verilog] | None = None,
-        toplevel: str | None = None,
-        always: bool = False,
-        clean: bool = False,
-        verbose: bool = False,
-        timescale: tuple[str, str] | None = None,
-        waves: bool = False,
-        build_dir: PathLike | None = None,
-        cwd: PathLike | None = None,
-    ) -> None:
-        """Build HDL design.
+    @property
+    def toplevel(self) -> str:
+        """Name of the HDL toplevel module."""
+        if self._toplevel:
+            return self._toplevel
 
-        Args:
-            library:
-                The library name to compile into.
+        if self.sources:
+            # Path.stem can still return dots in case of <name>.<ext1>.<ext2>
+            return Path(str(self.sources[-1])).name.partition(".")[0]
 
-            sources:
-                Language-agnostic list of source files to build.
+        if not self.test_modules:
+            return ""
 
-            includes:
-                Verilog include directories.
+        # Test modules may contain dots: "a.b.test_module" -> "test_module"
+        test_module: str = self.test_modules[0].rpartition(".")[2]
 
-            defines:
-                Defines to set.
+        if test_module.startswith("test_"):
+            return test_module.removeprefix("test_")
 
-            parameters:
-                Verilog parameters or VHDL generics.
+        if test_module.endswith("_test"):
+            return test_module.removesuffix("_test")
 
-            build_args:
-                Extra build arguments for the simulator.
+        return test_module
 
-            toplevel:
-                Name of the HDL toplevel module.
+    @toplevel.setter
+    def toplevel(self, toplevel: str) -> None:
+        self._toplevel = toplevel
 
-            always:
-                Always run the build step.
+    def build(self) -> None:
+        """Build a HDL design.
 
-            clean:
-                Delete *build_dir* before building.
+        It will delegate building HDL design to :func:`~cocotb_tools.pytest.hookspecs.pytest_cocotb_hdl_build` hook.
 
-            verbose:
-                Enable verbose messages.
-
-            timescale:
-                Tuple containing time unit and time precision for simulation.
-
-            waves:
-                Record signal traces.
-
-            build_dir:
-                Directory to run the build step in.
-
-            cwd:
-                Directory to execute the build command(s) in.
+        The default implementation of hook is invoking the :meth:`cocotb_tools.runner.Runner.build` method.
         """
-        # Run build only once when executing this method during session stage
-        # https://github.com/pytest-dev/pytest-xdist/issues/271#issuecomment-826396320
-        if self._is_session_scoped and self._is_xdist_worker:
-            return
+        # Delegate building HDL design to external hooks
+        self.request.node.ihook.pytest_cocotb_hdl_build(hdl=self)
 
-        option = self._option
+        # Used to invoke the build method implicitly
+        self._build_done = True
 
-        build_dir = build_dir or self.build_dir
-        Path(build_dir).mkdir(0o755, parents=True, exist_ok=True)
+    def test(self) -> None:
+        """Test a HDL design.
 
-        # Allow to extend build, elab, test and + arguments from cli and configs
-        build_args = (build_args or self.build_args) + option.cocotb_build_args
-        includes = (includes or self.includes) + option.cocotb_includes
+        It will delegate testing HDL design to :func:`~cocotb_tools.pytest.hookspecs.pytest_cocotb_hdl_test` hook.
 
-        # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
-        parameters = (parameters or self.parameters) | option.cocotb_parameters
-        defines = (defines or self.defines) | option.cocotb_defines
+        The default implementation of hook is invoking the :meth:`cocotb_tools.runner.Runner.test` method.
 
-        self.runner.build(
-            hdl_library=library or self.library,
-            sources=sources or self.sources,
-            includes=includes,
-            defines=defines,
-            parameters=parameters,
-            build_args=build_args,
-            hdl_toplevel=toplevel or self.toplevel or None,
-            always=always or self.always,
-            build_dir=build_dir,
-            cwd=cwd or build_dir,
-            clean=clean or self.clean,
-            verbose=verbose or self.verbose,
-            timescale=timescale or self.timescale,
-            waves=waves or self.waves,
-        )
+        .. note::
 
-    def test(
-        self,
-        test_module: str | Sequence[str] | None = None,
-        toplevel: str | None = None,
-        toplevel_library: str | None = None,
-        toplevel_lang: str | None = None,
-        gpi_interfaces: list[str] | None = None,
-        parameters: Mapping[str, object] | None = None,
-        seed: str | int | None = None,
-        elab_args: Sequence[str] | None = None,
-        test_args: Sequence[str] | None = None,
-        plusargs: Sequence[str] | None = None,
-        env: Mapping[str, str] | None = None,
-        gui: bool = False,
-        waves: bool = False,
-        verbose: bool = False,
-        pre_cmd: list[str] | None = None,
-        timescale: tuple[str, str] | None = None,
-        build_dir: PathLike | None = None,
-        test_dir: PathLike | None = None,
-    ) -> Path:
-        """Test HDL design.
-
-        Args:
-            test_module:
-                Name(s) of the Python module(s) containing the tests to run.
-
-            toplevel:
-                Name of the HDL toplevel module.
-
-            toplevel_library:
-                The library name for HDL toplevel module.
-
-            toplevel_lang:
-                Language of the HDL toplevel module.
-
-            gpi_interfaces:
-                List of GPI interfaces to use, with the first one being the entry point.
-
-            parameters:
-                Verilog parameters or VHDL generics.
-
-            seed:
-                A specific random seed to use.
-
-            elab_args:
-                A list of elaboration arguments for the simulator.
-
-            test_args:
-                A list of extra arguments for the simulator.
-
-            plusargs:
-                'plusargs' to set for the simulator.
-
-            env:
-                Extra environment variables to set.
-
-            gui:
-                Run with simulator GUI.
-
-            waves:
-                Record signal traces.
-
-            verbose:
-                Enable verbose messages.
-
-            pre_cmd:
-                Commands to run before simulation begins. Typically Tcl commands for simulators that support them.
-
-            timescale:
-                Tuple containing time unit and time precision for simulation.
-
-            build_dir:
-                Directory to run the build step in.
-
-            test_dir:
-                Directory to run the tests in.
-
-        Returns:
-            Path to created results file with cocotb tests in JUnit XML format.
+            If the :meth:`~cocotb_tools.pytest.hdl.HDL.build` method was not called explicitly, then it will be
+            invoked implicitly by this method.
         """
-        option = self._option
+        # Invoke the build method implicitly
+        if not self._build_done:
+            self.build()
 
-        build_dir = build_dir or self.build_dir
-        Path(build_dir).mkdir(0o755, parents=True, exist_ok=True)
-
-        test_dir = test_dir or self.test_dir
-        Path(test_dir).mkdir(0o755, parents=True, exist_ok=True)
-
-        # Allow to extend build, elab, test and + arguments from cli and configs
-        elab_args = (elab_args or self.elab_args) + option.cocotb_elab_args
-        test_args = (test_args or self.test_args) + option.cocotb_test_args
-        plusargs = (plusargs or self.plusargs) + option.cocotb_plusargs
-        pre_cmd = (pre_cmd or self.pre_cmd) + option.cocotb_pre_cmd
-        timescale = timescale or self.timescale
-
-        # Allow to override HDL parameters/generics, environment variables and defines from cli and configs
-        parameters = (parameters or self.parameters) | option.cocotb_parameters
-        env = (env or self.env) | option.cocotb_env
-
-        return self.runner.test(
-            test_module=test_module or self.test_module,
-            hdl_toplevel=toplevel or self.toplevel or "",
-            hdl_toplevel_lang=toplevel_lang or self.toplevel_lang,
-            hdl_toplevel_library=toplevel_library or self.toplevel_library,
-            gpi_interfaces=gpi_interfaces or self.gpi_interfaces or None,
-            seed=seed or self.seed,
-            elab_args=elab_args,
-            test_args=test_args,
-            plusargs=plusargs,
-            extra_env=env,
-            waves=waves or self.waves,
-            gui=gui or self.gui,
-            parameters=parameters or None,
-            build_dir=build_dir,
-            test_dir=test_dir,
-            results_xml=str(Path(test_dir) / "results.xml"),
-            pre_cmd=pre_cmd or None,
-            verbose=verbose or self.verbose,
-            timescale=None if self.simulator in ("xcelium",) else timescale,
-        )
+        # Delegate testing HDL design to external hooks
+        self.request.node.ihook.pytest_cocotb_hdl_test(hdl=self)
 
     def _apply_markers(self, node: Any) -> None:
         """Apply all cocotb markers starting from the root (session) to the leaf (test function).
@@ -457,7 +231,7 @@ class HDL:
                         apply(*marker.args, **marker.kwargs)
 
     def _mark_cocotb_runner(self, test_module: str = "", *args: str) -> None:
-        self.test_module = [test_module, *args] if test_module else list(args)
+        self.test_modules = [test_module, *args] if test_module else list(args)
 
     def _mark_cocotb_sources(
         self, *args: PathLike | Verilog | VHDL | VerilatorControlFile
@@ -482,7 +256,7 @@ class HDL:
     def _mark_cocotb_timescale(self, unit: str, precision: str | None = None) -> None:
         self.timescale = (unit, precision if precision else unit)
 
-    def _mark_cocotb_seed(self, value: str | int) -> None:
+    def _mark_cocotb_seed(self, value: int) -> None:
         self.seed = value
 
     def _mark_cocotb_build_args(self, *args: str | VHDL | Verilog) -> None:
