@@ -147,13 +147,13 @@ def dev_build(session: nox.Session) -> None:
 
 
 @nox.session
-@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 def dev_test(session: nox.Session) -> None:
-    """Run all development tests as configured through environment variables."""
-
-    dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
-    dev_test_nosim_runner(session)
-    dev_coverage_combine(session)
+    for sim, toplevel_lang, gpi_interface in simulator_support_matrix():
+        session.notify(
+            f"dev_test_sim(sim={sim},toplevel_lang={toplevel_lang},gpi_interface={gpi_interface})"
+        )
+    session.notify("dev_test_nosim_runner")
+    session.notify("dev_coverage_combine")
 
 
 @nox.session
