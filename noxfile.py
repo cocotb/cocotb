@@ -153,7 +153,7 @@ def dev_test(session: nox.Session) -> None:
         session.notify(
             f"dev_test_sim(sim={sim},toplevel_lang={toplevel_lang},gpi_interface={gpi_interface})"
         )
-    session.notify("dev_coverage_combine")
+    session.notify("dev_coverage_combine_runner")
 
 
 @nox.session
@@ -302,6 +302,7 @@ def dev_test_nosim(session: nox.Session) -> None:
     dev_test_nosim_runner(session)
 
 
+@nox.session
 def dev_test_nosim_runner(session: nox.Session) -> None:
     # Remove a potentially existing coverage file from a previous run for the
     # same test configuration. Use a filename *not* starting with `.coverage.`,
@@ -339,6 +340,7 @@ def dev_coverage_combine(session: nox.Session) -> None:
     dev_coverage_combine_runner(session)
 
 
+@nox.session
 def dev_coverage_combine_runner(session: nox.Session) -> None:
     coverage_files = glob.glob("**/.cov.test.*", recursive=True)
     session.run("coverage", "combine", *coverage_files)
