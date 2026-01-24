@@ -14,30 +14,54 @@ Installing the Development Version
    you should keep reading the
    `matching documentation <https://docs.cocotb.org/en/development/>`_.
 
-The development version of cocotb has different prerequisites
-than the stable version (see below).
-Namely, it requires the Python development headers and a C/C++ compiler.
+:command:`pip` is the officially supported and recommended package manager for installing the development version of cocotb.
+Currently there are no alternative package managers that provide the development version of cocotb.
+Below are the instructions for installing the development version of cocotb using :command:`pip`.
+
+
+Install with ``pip``
+====================
+
+
+Install Prerequisites
+---------------------
+
+The development version of cocotb requires building C++ extensions.
+This requires Python development headers, a C++ compiler, and C++ development libraries.
 
 * Python 3.9+
+* libpython 3.9+ to match the executable Python version
 * Python development packages
 * GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
 * On Linux: A static build of the C++ standard library ``libstdc++``.
   Some distributions include the static library in their default packages (e.g. Debian/Ubuntu),
   others (e.g. Red Hat) require the installation of a package typically named ``libstdc++-static``.
-* GNU Make
-* A Verilog or VHDL simulator, depending on your :term:`RTL` source code
-
-.. note:: Type checking cocotb code requires Python 3.11+.
 
 The installation instructions vary depending on your operating system:
 
 .. tab-set::
 
-   .. tab-item:: Windows + Conda
+   .. tab-item:: Windows - Conda
 
-      .. code-block::
+      We recommend users who are more comfortable with native Windows development to use `Conda <https://conda.io/>`_.
+      Conda is an open-source package and environment management system available on Windows.
 
-         conda install -c msys2 m2-base m2-make
+      Download and install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ from https://conda.io/.
+      From an Anaconda Prompt, use the following line to install a compiler (GCC or Clang) and GNU Make:
+
+      .. code-block:: bash
+
+          conda install -c msys2 m2-base m2-make
+
+   .. tab-item:: Windows - WSL
+
+      We recommend users who are running Windows and who are more comfortable with a Unix shell,
+      or who have legacy Makefile-based projects,
+      to use Windows Subsystem for Linux (WSL).
+
+      Follow the `Microsoft WSL installation guide <https://docs.microsoft.com/en-us/windows/wsl/install>`_ to install WSL
+      with a :ref:`supported Linux distribution <supported-linux-distributions>`.
+      Then follow the appropriate Linux installation instructions for cocotb.
 
    .. tab-item:: Linux - Debian/Ubuntu
 
@@ -70,11 +94,27 @@ The installation instructions vary depending on your operating system:
            brew install python
 
 
-The development version of cocotb can be installed by running
+Install cocotb
+--------------
+
+The development version of cocotb can be installed by running the following command:
 
 .. code-block:: bash
 
     pip install git+https://github.com/cocotb/cocotb@master
+
+Alternatively, if you have cloned the cocotb repository locally, you can install it by running:
+
+.. code-block:: bash
+
+    pip install ./path/to/cocotb
+
+For testing Python changes without reinstalling, you can use the editable install option.
+This requires that you have cloned the cocotb repository locally.
+
+.. code-block:: bash
+
+    pip install -e ./path/to/cocotb
 
 .. note::
 
@@ -88,12 +128,9 @@ The development version of cocotb can be installed by running
     Use ``pip -V`` to check.
     If this prints "(python 2.7)", use ``pip3`` or ``python3 -m pip`` in place of ``pip`` in the command shown.
 
-After installation, you should be able to execute ``cocotb-config``.
-If it is not found, you need to append its location to the ``PATH`` environment variable.
 
-
-Passing Flags to cocotb Library Build
-=====================================
+Passing Flags to C++ Library Builds
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You may want to pass additional flags when building cocotb's C++ libraries.
 These libraries are built during the ``pip install`` call when installing from a source distribution,
@@ -111,3 +148,17 @@ and `CL <https://learn.microsoft.com/en-us/cpp/build/reference/cl-environment-va
 .. note::
 
     ``CXXFLAGS``, ``LDLIBS`` are not supported by the distutils/pip build system.
+
+
+Verify Installation
+-------------------
+
+After installation, you should be able to execute the following command:
+
+.. code-block:: bash
+
+    cocotb-config --version
+
+If the command is not found, you need to append its location to the ``PATH`` environment variable.
+
+Verify the version printed matches the version you intended to install.
