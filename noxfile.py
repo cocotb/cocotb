@@ -163,7 +163,9 @@ def dev_test(session: nox.Session) -> None:
     session.install(*test_deps, *coverage_deps)
     build_cocotb_for_dev_test(session, editable=False)
 
-    dev_test_nosim_runner(session)
+    if os.environ["WITH_NOSIM"] == "true":
+        dev_test_nosim_runner(session)
+
     sim = os.environ["SIM"]
     toplevel_lang = os.environ["TOPLEVEL_LANG"]
 
