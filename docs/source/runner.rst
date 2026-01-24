@@ -1,8 +1,8 @@
 .. _howto-python-runner:
 
-******************************
-Building HDL and Running Tests
-******************************
+******************************************
+Building HDL and Running Tests with Python
+******************************************
 
 .. versionadded:: 1.8
 

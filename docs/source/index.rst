@@ -66,6 +66,14 @@ cocotb is a Free and Open Source project and is developed collaboratively by its
 cocotb has many serious commercial users and sponsors.
 See `cocotb.org <https://cocotb.org>`_ for more details.
 
+
+*********************
+How do I get started?
+*********************
+
+Read the :doc:`install` instructions to get cocotb installed and set up.
+Then follow the :doc:`first_steps` tutorial to get a simple test running.
+
 ..
    Tutorials - lessons that take the reader by the hand through a series of steps to complete a project
    (Example: kid cooking; learning-oriented)
@@ -86,7 +94,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    :hidden:
 
    install
-   quickstart
+   first_steps
    writing_testbenches
    runner
    coroutines
