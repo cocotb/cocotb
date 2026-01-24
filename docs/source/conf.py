@@ -200,7 +200,9 @@ pygments_style = "sphinx"
 
 # We are using https://github.com/executablebooks/sphinx-book-theme
 # Install with ``pip install sphinx-book-theme``
-html_theme = "sphinx_book_theme"
+# html_theme = "sphinx_book_theme"
+# html_theme = "pydata_sphinx_theme"
+html_theme = "sphinx_nefertiti"
 
 # A dictionary of values to pass into the template engine’s context for all pages.
 # https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/light-dark.html#configure-default-theme-mode
@@ -211,29 +213,30 @@ html_context = {
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {
-    "logo": {
-        "image_light": "_static/cocotb-logo.svg",
-        "image_dark": "_static/cocotb-logo-dark.svg",
-        "link": "https://cocotb.org",
-    },
-    # https://pydata-sphinx-theme.readthedocs.io/en/latest/user_guide/version-dropdown.html
-    # https://pydata-sphinx-theme.readthedocs.io/en/latest/user_guide/readthedocs.html#version-switcher
-    # "switcher": {
-    #     "json_url": f"<...>/switcher.json",
-    #     "version_match": ...,
-    #     "check_switcher": False,
-    #     "show_version_warning_banner": True,
-    # },
-    "repository_provider": "github",  # "gitlab", "github", "bitbucket"
-    "repository_url": "https://github.com/cocotb/cocotb",
-    "use_repository_button": True,
-    # "use_edit_page_button": True,
-    "use_issues_button": True,
-    # "use_fullscreen_button": False,
-    "home_page_in_toc": True,
-    # "primary_sidebar_end": ["indices.html"],
-}
+if html_theme == "sphinx_book_theme":
+    html_theme_options = {
+        "logo": {
+            "image_light": "_static/cocotb-logo.svg",
+            "image_dark": "_static/cocotb-logo-dark.svg",
+            "link": "https://cocotb.org",
+        },
+        # https://pydata-sphinx-theme.readthedocs.io/en/latest/user_guide/version-dropdown.html
+        # https://pydata-sphinx-theme.readthedocs.io/en/latest/user_guide/readthedocs.html#version-switcher
+        # "switcher": {
+        #     "json_url": f"<...>/switcher.json",
+        #     "version_match": ...,
+        #     "check_switcher": False,
+        #     "show_version_warning_banner": True,
+        # },
+        "repository_provider": "github",  # "gitlab", "github", "bitbucket"
+        "repository_url": "https://github.com/cocotb/cocotb",
+        "use_repository_button": True,
+        # "use_edit_page_button": True,
+        "use_issues_button": True,
+        # "use_fullscreen_button": False,
+        "home_page_in_toc": True,
+        # "primary_sidebar_end": ["indices.html"],
+    }
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
@@ -255,8 +258,14 @@ html_favicon = "_static/cocotb-favicon.svg"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-html_css_files = ["cocotb.css"]
-html_js_files = ["cocotb.js"]
+
+if html_theme == "sphinx_book_theme":
+    html_css_files = ["cocotb.css"]
+
+html_js_files = [
+    "cocotb.js",
+    # "patch_pydata_scroll_behaviour.js",
+]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
