@@ -621,3 +621,35 @@ h5 code,
 h6 code {
     font-size: inherit;
 }
+
+/* Hide PST's default TOC active state - they use box-shadow not border */
+.toc-entry a.nav-link.active,
+.bd-toc .active > a,
+nav.bd-links .active > a,
+#pst-page-navigation-contents .active > a {
+    font-weight: inherit !important;
+    color: inherit !important;
+    box-shadow: none !important;
+}
+
+.bd-toc .active,
+nav.bd-links .active,
+#pst-page-navigation-contents .active {
+    background-color: transparent !important;
+}
+
+/* Custom TOC active state styling - matching PST's box-shadow */
+.toc-entry a.nav-link.cocotb-active,
+.bd-toc .cocotb-active > a,
+nav.bd-links .cocotb-active > a,
+#pst-page-navigation-contents .cocotb-active > a {
+    font-weight: 600 !important;
+    color: var(--pst-color-link) !important;
+    box-shadow: inset max(3px, .1875rem, .12em) 0 0 var(--pst-color-primary) !important;
+}
+
+.bd-toc .cocotb-active,
+nav.bd-links .cocotb-active,
+#pst-page-navigation-contents .cocotb-active {
+    background-color: transparent;
+}
