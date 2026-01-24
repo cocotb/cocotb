@@ -54,6 +54,7 @@ jobs:
     timeout-minutes: 60
 
     env:
+      WITH_NOSIM: ${{ matrix.test_nosim }}
       SIM: ${{matrix.sim}}
       TOPLEVEL_LANG: ${{matrix.lang}}
       CXX: ${{matrix.cxx || 'g++'}}

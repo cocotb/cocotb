@@ -132,6 +132,15 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
         session.install("-v", ".", env=env)
 
 
+def split_lang_and_interface(s: str) -> tuple[str, str] | tuple[str]:
+    s = s.strip()
+    if " and " not in s:
+        return (s,)
+
+    left, right = s.split(" and ", 1)
+    return left.strip(), right.strip()
+
+
 #
 # Development pipeline
 #
@@ -148,12 +157,35 @@ def dev_build(session: nox.Session) -> None:
 
 @nox.session
 def dev_test(session: nox.Session) -> None:
-    session.notify("dev_test_nosim_runner")
-    for sim, toplevel_lang, gpi_interface in simulator_support_matrix():
-        session.notify(
-            f"dev_test_sim(sim={sim},toplevel_lang={toplevel_lang},gpi_interface={gpi_interface})"
-        )
-    session.notify("dev_coverage_combine_runner")
+    """Run all development tests as configured through environment variables."""
+
+    configure_env_for_dev_test(session)
+    session.install(*test_deps, *coverage_deps)
+    build_cocotb_for_dev_test(session, editable=False)
+
+    dev_test_nosim_runner(session)
+    sim = os.environ["SIM"]
+    toplevel_lang = os.environ["TOPLEVEL_LANG"]
+
+    parts = split_lang_and_interface(toplevel_lang)
+
+    if len(parts) == 2:
+        toplevel_lang, gpi_interface = parts
+    else:
+        toplevel_lang = parts[0]
+
+        if toplevel_lang == "verilog":
+            gpi_interface = "vpi"
+        elif sim == "questa":
+            gpi_interface = "fli"
+        elif sim == "ghdl":
+            gpi_interface = "vpi"
+        elif sim == "nvc":
+            gpi_interface = "vhpi"
+        else:
+            gpi_interface = "vhpi"
+
+    dev_test_sim(session, sim, toplevel_lang, gpi_interface)
 
 
 @nox.session
@@ -512,6 +544,14 @@ def release_install(session: nox.Session) -> None:
 
     session.log("Installing test dependencies")
     session.install(*test_deps)
+
+
+@nox.session
+def release_test(session: nox.Session) -> None:
+    """Test a release version of cocotb with and without a simulator"""
+    # At release build tests cocotb shouldn't built twice
+    # TODO
+    pass
 
 
 @nox.session
