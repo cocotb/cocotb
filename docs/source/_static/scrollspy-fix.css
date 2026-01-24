@@ -1,0 +1,23 @@
+/* Fix for third navigation level - pydata-sphinx-theme#1889 */
+/* Hide third navigation level by default */
+.bd-toc nav ul li > ul {
+    display: none;
+    padding-left: 1.25rem;
+    font-size: 0.85rem;
+}
+
+/* Only show third level when parent link is active */
+.bd-toc nav ul li > a.nav-link.active + ul {
+    display: block !important;
+}
+
+/* Also show third level when a child is active */
+.bd-toc nav ul li > ul:has(a.nav-link.active) {
+    display: block !important;
+}
+
+/* Highlight active third level */
+.bd-toc nav ul li > ul > li > a.nav-link.active {
+    font-weight: var(--medium);
+    color: var(--pst-color-accent);
+}
