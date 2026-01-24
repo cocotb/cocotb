@@ -30,6 +30,8 @@ alternative Python implementations like PyPy or Jython are not supported.
 * CPython 3.13
 * CPython 3.14
 
+.. _supported-linux-distributions:
+
 Supported Linux Distributions and Versions
 ==========================================
 
