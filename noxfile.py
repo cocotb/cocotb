@@ -132,15 +132,6 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
         session.install("-v", ".", env=env)
 
 
-def split_lang_and_interface(s: str) -> tuple[str, str] | tuple[str]:
-    s = s.strip()
-    if " and " not in s:
-        return (s,)
-
-    left, right = s.split(" and ", 1)
-    return left.strip(), right.strip()
-
-
 #
 # Development pipeline
 #
@@ -159,43 +150,9 @@ def dev_build(session: nox.Session) -> None:
 def dev_test(session: nox.Session) -> None:
     """Run all development tests as configured through environment variables."""
 
-    configure_env_for_dev_test(session)
-    session.install(*test_deps, *coverage_deps)
-
-    # Editable installs break C/C++ coverage collection; don't use them.
-    # C/C++ coverage collection requires that the object files produced by the
-    # compiler are not moved around, otherwise the gcno and gcda files produced
-    # at compile and runtime, respectively, are located in the wrong
-    # directories. Depending on the version of the Python install machinery
-    # editable builds are done in a directory in /tmp, which is removed after
-    # the build completes, taking all gcno files with them, as well as the path
-    # to place the gcda files.
-    build_cocotb_for_dev_test(session, editable=False)
-
+    dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
     dev_test_nosim(session)
-
-    sim = os.environ["SIM"]
-    toplevel_lang = os.environ["TOPLEVEL_LANG"]
-
-    parts = split_lang_and_interface(toplevel_lang)
-
-    if len(parts) == 2:
-        toplevel_lang, gpi_interface = parts
-    else:
-        toplevel_lang = parts[0]
-
-        if toplevel_lang == "verilog":
-            gpi_interface = "vpi"
-        elif sim == "questa":
-            gpi_interface = "fli"
-        elif sim == "ghdl":
-            gpi_interface = "vpi"
-        elif sim == "nvc":
-            gpi_interface = "vhpi"
-        else:
-            gpi_interface = "vhpi"
-
-    dev_test_sim(session, sim, toplevel_lang, gpi_interface)
+    dev_coverage_combine(session)
 
 
 @nox.session
@@ -207,6 +164,20 @@ def dev_test_sim(
     gpi_interface: str,
 ) -> None:
     """Test a development version of cocotb against a simulator."""
+
+    configure_env_for_dev_test(session)
+
+    session.install(*test_deps, *coverage_deps)
+
+    # Editable installs break C/C++ coverage collection; don't use them.
+    # C/C++ coverage collection requires that the object files produced by the
+    # compiler are not moved around, otherwise the gcno and gcda files produced
+    # at compile and runtime, respectively, are located in the wrong
+    # directories. Depending on the version of the Python install machinery
+    # editable builds are done in a directory in /tmp, which is removed after
+    # the build completes, taking all gcno files with them, as well as the path
+    # to place the gcda files.
+    build_cocotb_for_dev_test(session, editable=False)
 
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
@@ -322,6 +293,11 @@ def dev_test_sim(
 @nox.session
 def dev_test_nosim(session: nox.Session) -> None:
     """Run the simulator-agnostic tests against a cocotb development version."""
+
+    configure_env_for_dev_test(session)
+
+    session.install(*test_deps, *coverage_deps)
+    build_cocotb_for_dev_test(session, editable=False)
 
     # Remove a potentially existing coverage file from a previous run for the
     # same test configuration. Use a filename *not* starting with `.coverage.`,
@@ -527,14 +503,6 @@ def release_install(session: nox.Session) -> None:
 
     session.log("Installing test dependencies")
     session.install(*test_deps)
-
-
-@nox.session
-def release_test(session: nox.Session) -> None:
-    """Test a release version of cocotb with and without a simulator"""
-    # At release build tests cocotb shouldn't built twice
-    # TODO
-    pass
 
 
 @nox.session
