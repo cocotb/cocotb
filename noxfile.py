@@ -153,7 +153,7 @@ def dev_test(session: nox.Session) -> None:
 
     dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
     dev_test_nosim_runner(session)
-    # dev_coverage_combine_runner(session)
+    dev_coverage_combine(session)
 
 
 @nox.session
