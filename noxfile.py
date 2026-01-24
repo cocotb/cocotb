@@ -148,11 +148,11 @@ def dev_build(session: nox.Session) -> None:
 
 @nox.session
 def dev_test(session: nox.Session) -> None:
+    session.notify("dev_test_nosim_runner")
     for sim, toplevel_lang, gpi_interface in simulator_support_matrix():
         session.notify(
             f"dev_test_sim(sim={sim},toplevel_lang={toplevel_lang},gpi_interface={gpi_interface})"
         )
-    session.notify("dev_test_nosim_runner")
     session.notify("dev_coverage_combine")
 
 
