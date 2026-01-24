@@ -147,12 +147,13 @@ def dev_build(session: nox.Session) -> None:
 
 
 @nox.session
+@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 def dev_test(session: nox.Session) -> None:
     """Run all development tests as configured through environment variables."""
 
     dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
-    dev_test_nosim(session)
-    dev_coverage_combine(session)
+    dev_test_nosim_runner(session)
+    dev_coverage_combine_runner(session)
 
 
 @nox.session
@@ -298,7 +299,10 @@ def dev_test_nosim(session: nox.Session) -> None:
 
     session.install(*test_deps, *coverage_deps)
     build_cocotb_for_dev_test(session, editable=False)
+    dev_test_nosim_runner(session)
 
+
+def dev_test_nosim_runner(session: nox.Session) -> None:
     # Remove a potentially existing coverage file from a previous run for the
     # same test configuration. Use a filename *not* starting with `.coverage.`,
     # as coverage.py assumes ownership over these files and deleted them at
@@ -332,7 +336,10 @@ def dev_test_nosim(session: nox.Session) -> None:
 def dev_coverage_combine(session: nox.Session) -> None:
     """Combine coverage from previous dev_* runs into a .coverage file."""
     session.install(*coverage_report_deps)
+    dev_coverage_combine_runner(session)
 
+
+def dev_coverage_combine_runner(session: nox.Session) -> None:
     coverage_files = glob.glob("**/.cov.test.*", recursive=True)
     session.run("coverage", "combine", *coverage_files)
     assert Path(".coverage").is_file()
