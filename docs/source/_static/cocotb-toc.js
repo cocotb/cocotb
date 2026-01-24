@@ -15,6 +15,7 @@
       this.toc = null;
       this.observer = null;
       this.disableObserver = false;
+      this.scrollDebounceTimer = null;
     }
 
     /**
@@ -38,9 +39,58 @@
         if (item.isIntersecting === true) {
           target?.classList.add("cocotb-active");
           parent?.classList.add("cocotb-active");
+          // Scroll the TOC to keep active items visible
+          this._scrollIntoView(target);
         } else {
           target?.classList.remove("cocotb-active");
           parent?.classList.remove("cocotb-active");
+        }
+      });
+    }
+
+    /**
+     * Scroll TOC to keep the active link visible
+     * Only scrolls if the element is not already in view
+     * Debounced to avoid excessive calls during rapid intersection changes
+     */
+    _scrollIntoView(target) {
+      if (!target) return;
+
+      // Store the most recent target
+      this.lastScrollTarget = target;
+
+      // Clear any pending scroll
+      if (this.scrollDebounceTimer) {
+        cancelAnimationFrame(this.scrollDebounceTimer);
+      }
+
+      // Debounce the scroll operation using requestAnimationFrame
+      this.scrollDebounceTimer = requestAnimationFrame(() => {
+        const actualTarget = this.lastScrollTarget;
+        if (!actualTarget) return;
+
+        // Find the scrollable TOC container
+        const scrollContainer = actualTarget.closest('.bd-toc, nav.bd-links, #pst-page-navigation-contents');
+        if (!scrollContainer) return;
+
+        // Check if element is already visible in the container with some margin
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const targetRect = actualTarget.getBoundingClientRect();
+
+        // Add a margin to ensure items near edges are fully visible
+        const margin = 20;
+        const isVisible = (
+          targetRect.top >= (containerRect.top + margin) &&
+          targetRect.bottom <= (containerRect.bottom - margin)
+        );
+
+        // Only scroll if element is not visible - use 'auto' for instant, non-blocking scroll
+        if (!isVisible) {
+          actualTarget.scrollIntoView({
+            behavior: 'auto',
+            block: 'nearest',
+            inline: 'nearest'
+          });
         }
       });
     }
