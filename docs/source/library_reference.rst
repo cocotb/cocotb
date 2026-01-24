@@ -932,7 +932,7 @@ Other Runtime Information
     Leading and trailing whitespace are automatically discarded.
 
     The DUT is available in cocotb tests as a Python object at :data:`cocotb.top`;
-    and is also passed to all cocotb tests as the :ref:`first and only parameter <quickstart_creating_a_test>`.
+    and is also passed to all cocotb tests as the first and only parameter (often called ``dut``).
 
     .. versionchanged:: 1.6 Strip leading and trailing whitespace
 
