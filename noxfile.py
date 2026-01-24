@@ -164,28 +164,28 @@ def dev_test(session: nox.Session) -> None:
     build_cocotb_for_dev_test(session, editable=False)
 
     dev_test_nosim_runner(session)
-    # sim = os.environ["SIM"]
-    # toplevel_lang = os.environ["TOPLEVEL_LANG"]
+    sim = os.environ["SIM"]
+    toplevel_lang = os.environ["TOPLEVEL_LANG"]
 
-    # parts = split_lang_and_interface(toplevel_lang)
+    parts = split_lang_and_interface(toplevel_lang)
 
-    # if len(parts) == 2:
-    #     toplevel_lang, gpi_interface = parts
-    # else:
-    #     toplevel_lang = parts[0]
+    if len(parts) == 2:
+        toplevel_lang, gpi_interface = parts
+    else:
+        toplevel_lang = parts[0]
 
-    #     if toplevel_lang == "verilog":
-    #         gpi_interface = "vpi"
-    #     elif sim == "questa":
-    #         gpi_interface = "fli"
-    #     elif sim == "ghdl":
-    #         gpi_interface = "vpi"
-    #     elif sim == "nvc":
-    #         gpi_interface = "vhpi"
-    #     else:
-    #         gpi_interface = "vhpi"
+        if toplevel_lang == "verilog":
+            gpi_interface = "vpi"
+        elif sim == "questa":
+            gpi_interface = "fli"
+        elif sim == "ghdl":
+            gpi_interface = "vpi"
+        elif sim == "nvc":
+            gpi_interface = "vhpi"
+        else:
+            gpi_interface = "vhpi"
 
-    # dev_test_sim(session, sim, toplevel_lang, gpi_interface)
+    dev_test_sim(session, sim, toplevel_lang, gpi_interface)
 
 
 @nox.session
