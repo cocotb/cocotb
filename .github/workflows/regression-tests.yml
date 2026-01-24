@@ -251,7 +251,7 @@ jobs:
       id: windowstesting
       continue-on-error: ${{matrix.may-fail || false}}
       run: |
-        nox -s ${{ inputs.nox_session_test }}
+        nox -k "${{ inputs.nox_session_test }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
         COCOTB_ANSI_OUTPUT: 1
         COCOTB_CI_SKIP_MAKE: 1
@@ -278,7 +278,7 @@ jobs:
         if [ "${{matrix.self-hosted}}" == "true" ]; then
           module load "${{ matrix.sim-version }}"
         fi
-        nox -s ${{ inputs.nox_session_test }}
+        nox -k "${{ inputs.nox_session_test }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
         COCOTB_ANSI_OUTPUT: 1
 
