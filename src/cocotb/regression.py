@@ -26,7 +26,7 @@ from typing import Any, Callable
 import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
-import cocotb._test
+import cocotb._test_manager
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
 from cocotb._base_triggers import Trigger
@@ -34,9 +34,9 @@ from cocotb._decorators import Test, TestGenerator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._outcomes import Error, Outcome
-from cocotb._test import RunningTest
 from cocotb._test_factory import TestFactory
 from cocotb._test_functions import Failed
+from cocotb._test_manager import TestManager
 from cocotb._utils import (
     DocEnum,
     remove_traceback_frames,
@@ -144,7 +144,7 @@ class RegressionManager:
 
     def __init__(self) -> None:
         self._test: Test
-        self._running_test: RunningTest
+        self._running_test: TestManager
         self.log = _logger
         self._regression_start_time: float
         self._test_results: list[_TestResults] = []
@@ -358,7 +358,7 @@ class RegressionManager:
             except Exception:
                 self._record_test_init_failed()
                 continue
-            cocotb._test.set_current_test(self._running_test)
+            cocotb._test_manager.set_current_test(self._running_test)
 
             self._log_test_start()
 
@@ -371,7 +371,7 @@ class RegressionManager:
 
         return self._tear_down()
 
-    def _init_test(self) -> RunningTest:
+    def _init_test(self) -> TestManager:
         # wrap test function in timeout
         func: Callable[..., Coroutine[Trigger, None, None]]
         timeout = self._test.timeout
@@ -386,7 +386,7 @@ class RegressionManager:
 
         coro = func(cocotb.top, *self._test.args, **self._test.kwargs)
         main_task = Task(coro, name=f"Test {self._test.name}")
-        return RunningTest(self._test_complete, main_task)
+        return TestManager(self._test_complete, main_task)
 
     def _schedule_next_test(self) -> None:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
