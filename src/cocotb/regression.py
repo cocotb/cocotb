@@ -33,14 +33,9 @@ from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test, TestGenerator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
-from cocotb._outcomes import Error, Outcome
 from cocotb._test_factory import TestFactory
 from cocotb._test_manager import TestManager
-from cocotb._utils import (
-    DocEnum,
-    remove_traceback_frames,
-    safe_divide,
-)
+from cocotb._utils import DocEnum, safe_divide
 from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
 from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
@@ -111,8 +106,6 @@ class RegressionMode(DocEnum):
 
 
 class _TestResults:
-    # TODO merge into Test object
-
     def __init__(
         self,
         test_fullname: str,
@@ -176,7 +169,7 @@ class RegressionManager:
         self._filters: list[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
         self._included: list[bool]
-        self._sim_failure: Error[None] | None = None
+        self._sim_failure: SimFailure | None = None
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_state: Any
 
@@ -450,7 +443,7 @@ class RegressionManager:
 
         # Judge and record pass/fail.
         self._score_test(
-            self._running_test.result(),
+            self._running_test.exception(),
             wall_time,
             sim_time_ns,
         )
@@ -460,7 +453,7 @@ class RegressionManager:
 
     def _score_test(
         self,
-        outcome: Outcome[None],
+        exc: BaseException | None,
         wall_time_s: float,
         sim_time_ns: float,
     ) -> None:
@@ -469,12 +462,8 @@ class RegressionManager:
         # score test
         passed: bool
         msg: str | None
-        exc: BaseException | None
-        try:
-            outcome.get()
-        except BaseException as e:
+        if exc is not None:
             passed, msg = False, None
-            exc = remove_traceback_frames(e, ["_score_test", "get"])
         else:
             passed, msg, exc = True, None, None
 
@@ -501,7 +490,7 @@ class RegressionManager:
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
-                    result=None,
+                    result=exc,
                     msg=msg,
                 )
 
@@ -510,7 +499,7 @@ class RegressionManager:
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
-                    result=None,
+                    result=exc,
                     msg="failed as expected",
                 )
 
@@ -528,7 +517,7 @@ class RegressionManager:
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
-                    result=None,
+                    result=exc,
                     msg="errored as expected",
                 )
 
@@ -677,7 +666,7 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Exception | None,
+        result: BaseException | None,
         msg: str | None,
     ) -> None:
         start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_PASSED
@@ -697,6 +686,7 @@ class RegressionManager:
             stop_hilight,
             rest,
             result_was,
+            exc_info=result,
         )
 
         # write out xunit results
@@ -746,6 +736,7 @@ class RegressionManager:
             start_hilight,
             stop_hilight,
             rest,
+            exc_info=result,
         )
 
         # write out xunit results
@@ -911,12 +902,10 @@ class RegressionManager:
 
         # We assume if we get here, the simulation ended unexpectedly due to an assertion failure,
         # or due to an end of events from the simulator.
-        self._sim_failure = Error(
-            SimFailure(
-                "cocotb expected it would shut down the simulation, but the simulation ended prematurely. "
-                "This could be due to an assertion failure or a call to an exit routine in the HDL, "
-                "or due to the simulator running out of events to process (is your clock running?)."
-            )
+        self._sim_failure = SimFailure(
+            "cocotb expected it would shut down the simulation, but the simulation ended prematurely. "
+            "This could be due to an assertion failure or a call to an exit routine in the HDL, "
+            "or due to the simulator running out of events to process (is your clock running?)."
         )
         self._running_test.abort(self._sim_failure)
         cocotb._event_loop._inst.run()
