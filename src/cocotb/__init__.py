@@ -9,8 +9,7 @@ from logging import Logger
 from types import SimpleNamespace
 
 from cocotb._decorators import parametrize, skipif, test, xfail
-from cocotb._test_functions import pass_test
-from cocotb._test_manager import create_task, start, start_soon
+from cocotb._test_manager import create_task, pass_test, start, start_soon
 from cocotb.handle import SimHandleBase
 
 from ._version import __version__ as _version
