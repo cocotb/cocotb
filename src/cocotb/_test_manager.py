@@ -23,7 +23,7 @@ from cocotb_tools import _env
 _pdb_on_exception = _env.as_bool("COCOTB_PDB_ON_EXCEPTION")
 
 
-class RunningTest:
+class TestManager:
     """State of the currently executing Test."""
 
     # TODO
@@ -248,11 +248,11 @@ def create_task(
         )
 
 
-_current_test: RunningTest
+_current_test: TestManager
 """The currently executing test's state."""
 
 
-def set_current_test(running_test: RunningTest) -> None:
+def set_current_test(running_test: TestManager) -> None:
     """Set the currently executing test's state.
 
     Args:
