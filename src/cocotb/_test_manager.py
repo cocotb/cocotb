@@ -9,6 +9,7 @@ from collections.abc import Coroutine
 from typing import (
     Any,
     Callable,
+    NoReturn,
 )
 
 import cocotb
@@ -16,7 +17,6 @@ import cocotb._event_loop
 from cocotb._base_triggers import NullTrigger, Trigger
 from cocotb._deprecation import deprecated
 from cocotb._outcomes import Error, Outcome, Value
-from cocotb._test_functions import TestSuccess
 from cocotb.task import ResultType, Task
 from cocotb_tools import _env
 
@@ -246,6 +246,28 @@ def create_task(
             f"Attempt to add an object of type {type(coro)} to the scheduler, "
             f"which isn't a coroutine: {coro!r}\n"
         )
+
+
+class TestSuccess(BaseException):
+    """Implementation of :func:`pass_test`.
+
+    Users are *not* intended to catch this exception type.
+    """
+
+    def __init__(self, msg: str | None) -> None:
+        super().__init__(msg)
+        self.msg = msg
+
+
+def pass_test(msg: str | None = None) -> NoReturn:
+    """Force a test to pass.
+
+    The test will end and enter termination phase when this is called.
+
+    Args:
+        msg: The message to display when the test passes.
+    """
+    raise TestSuccess(msg)
 
 
 _current_test: TestManager

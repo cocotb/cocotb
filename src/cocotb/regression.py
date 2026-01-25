@@ -35,7 +35,6 @@ from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._outcomes import Error, Outcome
 from cocotb._test_factory import TestFactory
-from cocotb._test_functions import Failed
 from cocotb._test_manager import TestManager
 from cocotb._utils import (
     DocEnum,
@@ -61,6 +60,20 @@ __all__ = (
 TestGenerator.__module__ = __name__
 Test.__module__ = __name__
 TestFactory.__module__ = __name__
+
+Failed: type[BaseException]
+try:
+    import pytest
+except ModuleNotFoundError:
+    Failed = AssertionError
+else:
+    try:
+        with pytest.raises(Exception):
+            pass
+    except BaseException as _raises_e:
+        Failed = type(_raises_e)
+    else:
+        assert False, "pytest.raises doesn't raise an exception when it fails"
 
 
 class SimFailure(BaseException):
