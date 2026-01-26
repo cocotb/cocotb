@@ -312,14 +312,12 @@ class Controller:
             elif item.get_closest_marker("cocotb_runner"):
                 # Avoid recursion of cocotb runners
                 if not runner:
-                    if not collectonly:
-                        # Don't show collected cocotb runner as <Function> because it will be duplicated with <Runner>
-                        # <Module file>
-                        #   <Function name>       <--- cocotb runner as test function (it will be not showed)
-                        #   <Runner name>         <--- cocotb runner as collector of cocotb tests
-                        #     <Testbench name>    <--- test module aka testbench (Python module with cocotb tests)
-                        #       <Function name>   <--- cocotb test
-                        yield item
+                    # <Module file>
+                    #   <Function name>       <--- cocotb runner as test function
+                    #   <Runner name>         <--- cocotb runner as collector of cocotb tests
+                    #     <Testbench name>    <--- test module aka testbench (Python module with cocotb tests)
+                    #       <Function name>   <--- cocotb test
+                    yield item
 
                     if item.parent:
                         yield Runner.from_parent(

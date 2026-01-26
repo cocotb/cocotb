@@ -326,10 +326,18 @@ Example output::
 
     <Dir tests>
       <Module test_sample_module.py>
+        <Function test_sample_module>
         <Runner test_sample_module>
           <Testbench test_sample_module>
             <Function test_dut_feature_1>
             <Function test_dut_feature_2>
+
+.. note::
+
+   Functions which build HDL designs and run tests using the cocotb Runner are treated by the plugin as test functions.
+   Unfortunately, pytest ``<Function>`` items cannot have other sub-items like cocotb test functions or cocotb test modules.
+   So the plugin uses the ``<Runner>`` node to visualize relationship between the cocotb Runner (``<Function>``),
+   cocotb test modules (``<Testbench>``) and cocotb tests (``<Function>``).
 
 Run specific test(s) based on output from ``pytest --collect-only``:
 
@@ -560,6 +568,40 @@ used to configure cocotb testing environment, can be listed by invoking `pytest`
 .. code:: shell
 
     pytest --help
+
+
+.. _pytest-plugin-under-the-hood:
+
+Under the Hood
+==============
+
+.. image:: diagrams/svg/pytest_plugin_overview.svg
+
+
+The :py:mod:`cocotb_tools.pytest.plugin` is split into two independent parts that complement each other.
+
+The first part is performed when invoking the ``pytest`` from command line.
+This is the main process that is running in non-simulation environment. It will:
+
+* Identify and mark test function as cocotb runner or cocotb test.
+* Collect all tests, including cocotb runners and cocotb tests, when invoking ``pytest`` **with** the ``--collect-only`` option.
+  This will allow to properly visualize relationship between cocotb runner, test module (testbench) and cocotb test in
+  the ``pytest`` summary report about collected tests (items).
+* Collect all non-cocotb tests, including cocotb runners, when invoking ``pytest`` **without** the ``--collect-only`` option.
+  This will allow to execute cocotb runners as test functions that will build HDL design and run simulation with cocotb tests.
+* Collect serialized test reports sent by cocotb tests via IPC (Inter-Process Communication) from running simulation process.
+
+.. note::
+
+   Cocotb runners are treated by the plugin as test functions and they will be reported in pytest collect and test summary info.
+   This will allow to report compilation/elaboration of HDL design and simulation runtimes.
+
+The second part of the :py:mod:`cocotb_tools.pytest.plugin` is performed within the simulator process. It will:
+
+* Identify and mark test function as cocotb test.
+* Collect **only** cocotb tests.
+* Handle coroutines (asynchronous functions) for requested fixtures, test setup, test call and test teardown.
+* Serialize test reports and send them via IPC to the main process (non-simulation environment).
 
 
 .. _pytest-plugin-options:
