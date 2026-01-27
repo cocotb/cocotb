@@ -68,6 +68,8 @@ class TestManager:
             self.abort(e)
 
     def start(self) -> None:
+        global _current_test
+        _current_test = self
         self._main_task._ensure_started()
         cocotb._event_loop._inst.run()
 
@@ -104,6 +106,9 @@ class TestManager:
         # Cancel Tasks.
         for task in self.tasks[:]:
             task._cancel_now()
+
+        global _current_test
+        _current_test = None
 
         # TODO: Wait for Tasks to end
         self._test_complete_cb()
@@ -237,6 +242,10 @@ def create_task(
         return coro
     elif isinstance(coro, Coroutine):
         task = Task[ResultType](coro, name=name)
+        if _current_test is None:
+            raise RuntimeError(
+                "No test is currently running; cannot schedule new Task."
+            )
         _current_test.add_task(task)
         return task
     elif inspect.iscoroutinefunction(coro):
@@ -277,15 +286,5 @@ def pass_test(msg: str | None = None) -> NoReturn:
     raise TestSuccess(msg)
 
 
-_current_test: TestManager
+_current_test: TestManager | None = None
 """The currently executing test's state."""
-
-
-def set_current_test(running_test: TestManager) -> None:
-    """Set the currently executing test's state.
-
-    Args:
-        running_test: The :class:`~cocotb._test.RunningTest` instance to set as current.
-    """
-    global _current_test
-    _current_test = running_test
