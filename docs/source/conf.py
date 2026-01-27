@@ -202,7 +202,7 @@ pygments_style = "sphinx"
 # Install with ``pip install sphinx-book-theme``
 html_theme = "sphinx_book_theme"
 
-# A dictionary of values to pass into the template engine’s context for all pages.
+# A dictionary of values to pass into the template engine's context for all pages.
 # https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/light-dark.html#configure-default-theme-mode
 html_context = {
     "default_mode": "light",
@@ -256,7 +256,7 @@ html_favicon = "_static/cocotb-favicon.svg"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_css_files = ["cocotb.css"]
-html_js_files = ["cocotb.js"]
+html_js_files = ["cocotb.js", "cocotb-toc.js"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
