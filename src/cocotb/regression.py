@@ -364,7 +364,6 @@ class RegressionManager:
             except Exception:
                 self._record_test_init_failed()
                 continue
-            cocotb._test_manager.set_current_test(self._running_test)
 
             self._log_test_start()
 

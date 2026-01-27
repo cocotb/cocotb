@@ -816,7 +816,6 @@ class RegressionManager:
             running_test: Test to run.
         """
         self._running_test = running_test
-        cocotb._test_manager.set_current_test(running_test)
 
         if self._scheduled:
             self._timer1._register(self._running_test.start)
