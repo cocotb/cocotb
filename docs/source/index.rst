@@ -123,6 +123,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    rotating_logger
    extensions
    pytest
+   junit
    upgrade-2.0
    update_indexing
 
