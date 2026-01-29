@@ -440,9 +440,16 @@ class RegressionManager:
         cocotb.RANDOM_SEED = self._regression_seed
         random.setstate(self._random_state)
 
+        exc: BaseException | None
+        if self._sim_failure is not None:
+            # When the simulation is failing, we override the typical test results.
+            exc = self._sim_failure
+        else:
+            exc = self._running_test.exception()
+
         # Judge and record pass/fail.
         self._score_test(
-            self._running_test.exception(),
+            exc,
             wall_time,
             sim_time_ns,
         )
@@ -906,7 +913,7 @@ class RegressionManager:
             "This could be due to an assertion failure or a call to an exit routine in the HDL, "
             "or due to the simulator running out of events to process (is your clock running?)."
         )
-        self._running_test.abort(self._sim_failure)
+        self._running_test.abort()
         cocotb._event_loop._inst.run()
 
 
