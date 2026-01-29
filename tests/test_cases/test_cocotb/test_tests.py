@@ -213,3 +213,17 @@ async def test_pass_test_in_task(_) -> None:
 @cocotb.test
 async def test_pass_test_in_test(_) -> None:
     cocotb.pass_test("Finished test early")
+
+
+@cocotb.test
+async def test_decorator_call(_) -> None:
+    """Test if decorator is callable. Needed by the pytest unit testing framework."""
+    called: bool = False
+
+    @cocotb.test
+    async def mock() -> None:
+        nonlocal called
+        called = True
+
+    await mock()
+    assert called

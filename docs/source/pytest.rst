@@ -229,6 +229,29 @@ name of HDL top level design will be ``design``.
         sample_module.test()
 
 
+Using the :deco:`!pytest.mark.cocotb_runner` marker is optional for test functions if they meet the following criteria:
+
+* start with ``test_``
+* is a normal function (``def`` without the ``async`` keyword)
+* has a positional argument annotated with the :class:`~cocotb_tools.pytest.hdl.HDL` class type
+
+.. code:: python
+
+    # test_*.py
+
+    from cocotb_tools.pytest.hdl import HDL
+
+
+    def test_sample_module(sample_module: HDL) -> None:
+        """Test DUT without explicitly marking this test function with the :deco:`!pytest.mark.cocotb_runner`."""
+        sample_module.test()
+
+
+    async def test_dut_feature_1(dut) -> None:
+        """Test DUT feature 1."""
+        ...
+
+
 :py:deco:`!pytest.mark.cocotb_test`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

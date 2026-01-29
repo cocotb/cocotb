@@ -44,6 +44,11 @@ from pytest import (
 
 import cocotb
 from cocotb_tools import _env
+from cocotb_tools.pytest._compat import (
+    is_cocotb_runner,
+    is_cocotb_test,
+    pre_process_collected_item,
+)
 from cocotb_tools.pytest._handle import MockSimHandle
 from cocotb_tools.pytest._junitxml import JUnitXML
 from cocotb_tools.pytest._runner import Runner
@@ -158,6 +163,9 @@ class Controller:
         Yields:
             Collected test function, cocotb runner or cocotb test.
         """
+        # Convert @cocotb.* decorators to @pytest.mark.* markers
+        pre_process_collected_item(obj)
+
         result: Item | Collector | list[Item | Collector] | None = yield
 
         if result is None:
@@ -279,7 +287,7 @@ class Controller:
             if not isinstance(item, Function):
                 yield item
 
-            elif inspect.iscoroutinefunction(item.function):
+            elif is_cocotb_test(item):
                 if item.get_closest_marker("cocotb_runner"):
                     item.warn(
                         UserWarning(
@@ -287,29 +295,28 @@ class Controller:
                             f"This is an usage mistake. Please remove it from {item.nodeid!r}"
                         )
                     )
-                elif item.get_closest_marker("cocotb_test"):
-                    if runner:
-                        # Collected cocotb test must be always under cocotb runner
-                        if collectonly:
-                            # Show collected cocotb test under cocotb runner when invoking pytest --collect-only
-                            # It will help user to visualize hierarchy tree of cocotb tests and cocotb runners
-                            yield item
-                        else:
-                            # Add cocotb test keywords to cocotb runner
-                            # This will allow to run cocotb runner by using keywords associated with cocotb test
-                            runner.item.extra_keyword_matches.update(item.keywords)
-                            # Skip cocotb test here, it will be collected by pytest that is running from HDL simulator
-                else:
-                    yield item  # some coroutine test function that is not part of cocotb
 
-            elif item.get_closest_marker("cocotb_test"):
-                item.warn(
-                    UserWarning(
-                        "You have applied @pytest.mark.cocotb_test marker on non-async test function. "
-                        f"This is an usage mistake. Please remove it from {item.nodeid!r}"
+                if runner:
+                    # Collected cocotb test must be always under cocotb runner
+                    if collectonly:
+                        # Show collected cocotb test under cocotb runner when invoking pytest --collect-only
+                        # It will help user to visualize hierarchy tree of cocotb tests and cocotb runners
+                        yield item
+                    else:
+                        # Add cocotb test keywords to cocotb runner
+                        # This will allow to run cocotb runner by using keywords associated with cocotb test
+                        runner.item.extra_keyword_matches.update(item.keywords)
+                        # Skip cocotb test here, it will be collected by pytest that is running from HDL simulator
+
+            elif is_cocotb_runner(item):
+                if item.get_closest_marker("cocotb_test"):
+                    item.warn(
+                        UserWarning(
+                            "You have applied @pytest.mark.cocotb_test marker on non-async test function. "
+                            f"This is an usage mistake. Please remove it from {item.nodeid!r}"
+                        )
                     )
-                )
-            elif item.get_closest_marker("cocotb_runner"):
+
                 # Avoid recursion of cocotb runners
                 if not runner:
                     # <Module file>

@@ -45,11 +45,16 @@ import cocotb
 import cocotb._shutdown
 import cocotb._test_manager
 from cocotb import simulator
+from cocotb._decorators import TestGenerator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_manager import TestManager
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb.task import Task
+from cocotb_tools.pytest._compat import (
+    is_cocotb_test,
+    pre_process_collected_item,
+)
 from cocotb_tools.pytest._fixture import (
     AsyncFixture,
     AsyncFixtureCachedResult,
@@ -242,6 +247,9 @@ class RegressionManager:
         Item | Collector | list[Item | Collector] | None,
         list[Item | Collector] | None,
     ]:
+        # Convert @cocotb.* decorators to @pytest.mark.* markers
+        pre_process_collected_item(obj)
+
         result: Item | Collector | list[Item | Collector] | None = yield
 
         if result is None:
@@ -303,11 +311,8 @@ class RegressionManager:
             if not isinstance(item, Function):
                 yield item
 
-            elif "cocotb_test" in item.keywords and inspect.iscoroutinefunction(
-                item.function
-            ):
+            elif is_cocotb_test(item):
                 item.extra_keyword_matches.update(self._keywords)
-
                 yield item
 
     def _call_and_report(
@@ -618,6 +623,17 @@ class RegressionManager:
     @hookimpl(tryfirst=True)
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
         testfunction = pyfuncitem.obj
+        args: Iterable[object] = ()
+
+        if isinstance(testfunction, TestGenerator):
+            # Get test function from cocotb decorator object
+            testfunction = testfunction.func
+
+            if pyfuncitem.getparent(Class):
+                # Pytest will create an instance for class but instance method is not correctly retrieved
+                # by the pytest with getattr(instance, method_name) because it will get cocotb decorator object.
+                # We must inject created instance (self) to method manually
+                args = (pyfuncitem.instance,)  # self
 
         if not inspect.iscoroutinefunction(testfunction):
             return None
@@ -636,7 +652,7 @@ class RegressionManager:
                 for argname in pyfuncitem._fixtureinfo.argnames
             }
 
-            await testfunction(**kwargs)
+            await testfunction(*args, **kwargs)
 
         task: Task = Task(func(), name=f"Test {pyfuncitem.name}")
         self._call = TestManager(self._call_completed, task)

@@ -28,20 +28,20 @@ async def test_series(dut, x: int, y: int, z: int) -> None:
 
 @pytest.mark.parametrize("z", (1, 2))
 class TestParametrize:
-    async def test_from_class(dut, z: int) -> None:
+    async def test_from_class(self, dut, z: int) -> None:
         """Test @pytest.mark.parametrize."""
         assert z in (1, 2)
 
     @pytest.mark.parametrize("x", [4, 5])
     @pytest.mark.parametrize("y", [6, 7, 8])
-    async def test_matrix(dut, x: int, y: int, z: int) -> None:
+    async def test_matrix(self, dut, x: int, y: int, z: int) -> None:
         """Test @pytest.mark.parametrize."""
         assert x in (4, 5)
         assert y in (6, 7, 8)
         assert z in (1, 2)
 
     @pytest.mark.parametrize("x,y", ((7, 8), (9, 4)))
-    async def test_series(dut, x: int, y: int, z: int) -> None:
+    async def test_series(self, dut, x: int, y: int, z: int) -> None:
         """Test @pytest.mark.parametrize."""
         assert x in (7, 9)
         assert y in (8, 4)
