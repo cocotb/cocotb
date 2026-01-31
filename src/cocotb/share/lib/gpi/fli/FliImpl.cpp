@@ -5,8 +5,6 @@
 
 #include "./FliImpl.hpp"
 
-#include <strings.h>
-
 #include <cstddef>
 #include <cstring>
 #include <stdexcept>
@@ -174,7 +172,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl,
                             auto objGpiType = GPI_LOGIC_ARRAY;
                             const char *lang = getenv("TOPLEVEL_LANG");
                             bool isVerilog = (lang != nullptr) &&
-                                             (strcasecmp(lang, "verilog") == 0);
+                                             (strcmp(lang, "verilog") == 0);
                             if (isVerilog) {
                                 objGpiType = GPI_PACKED_OBJECT;
                             } else {

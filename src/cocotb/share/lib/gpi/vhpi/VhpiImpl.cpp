@@ -6,7 +6,6 @@
 #include "./VhpiImpl.hpp"
 
 #include <stdlib.h>
-#include <strings.h>
 
 #include <cassert>
 #include <cmath>
@@ -350,7 +349,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                                       fq_name.c_str());
                             const char *lang = getenv("TOPLEVEL_LANG");
                             bool isVerilog = (lang != nullptr) &&
-                                             (strcasecmp(lang, "verilog") == 0);
+                                             (strcmp(lang, "verilog") == 0);
                             if (isVerilog) {
                                 gpi_type = GPI_PACKED_OBJECT;
                             } else {

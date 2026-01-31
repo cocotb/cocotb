@@ -6,8 +6,9 @@
 #include "./VpiImpl.hpp"
 
 #include <gpi.h>
-#include <strings.h>
 #include <vpi_user_ext.h>
+
+#include <cstring>
 
 #include "../logging.hpp"
 #include "_vendor/vpi/sv_vpi_user.h"
@@ -93,7 +94,7 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
             if (is_vector || num_elements > 1) {
                 const char *lang = getenv("TOPLEVEL_LANG");
                 bool isVerilog =
-                    (lang != nullptr) && (strcasecmp(lang, "verilog") == 0);
+                    (lang != nullptr) && (strcmp(lang, "verilog") == 0);
                 if (isVerilog) {
                     return GPI_PACKED_OBJECT;
                 } else {
@@ -160,7 +161,7 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
 
 static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
     const char *lang = getenv("TOPLEVEL_LANG");
-    bool isVerilog = (lang != nullptr) && (strcasecmp(lang, "verilog") == 0);
+    bool isVerilog = (lang != nullptr) && (strcmp(lang, "verilog") == 0);
     // Most simulators only return vpiDecConst or vpiBinaryConst
     switch (const_type) {
 #ifdef IUS
