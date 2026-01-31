@@ -79,8 +79,7 @@ int VpiImpl::get_simulator_args(int *argc, char const *const **argv) {
 }
 
 static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
-                                  bool is_vector = false,
-                                  bool isVerilog = false) {
+                                  bool is_vector = false) {
     switch (vpitype) {
         case vpiNet:
         case vpiNetBit:
@@ -91,7 +90,7 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
         case vpiPackedArrayVar:
         case vpiPackedArrayNet:
             if (is_vector || num_elements > 1) {
-                if (isVerilog) {
+                if (bool isVerilog = true) {
                     return GPI_PACKED_OBJECT;
                 } else {
                     return GPI_LOGIC_ARRAY;
