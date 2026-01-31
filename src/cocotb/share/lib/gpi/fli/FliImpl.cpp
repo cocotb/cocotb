@@ -169,8 +169,18 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl,
                 switch (elemTypeKind) {
                     case MTI_TYPE_ENUM:
                         if (isValueLogic(elemType)) {
+                            auto objGpiType = GPI_LOGIC_ARRAY;
+                            const char *lang = getenv("TOPLEVEL_LANG");
+                            bool isVerilog = (lang != nullptr) &&
+                                             (strcasecmp(lang, "verilog") == 0);
+                            if (isVerilog) {
+                                objGpiType = GPI_PACKED_OBJECT;
+                            } else {
+                                objGpiType = GPI_LOGIC_ARRAY;
+                            }
+
                             new_obj = new FliLogicObjHdl(
-                                this, hdl, GPI_LOGIC_ARRAY, is_const, accType,
+                                this, hdl, objGpiType, is_const, accType,
                                 accFullType, is_var, valType,
                                 typeKind);  // std_logic_vector
                         } else if (isValueChar(elemType)) {
@@ -395,7 +405,8 @@ GpiObjHdl *FliImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         return create_gpi_obj_from_handle(hdl, name, fq_name, accType,
                                           accFullType);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
-               obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
+               obj_type == GPI_PACKED_OBJECT || obj_type == GPI_ARRAY ||
+               obj_type == GPI_STRING) {
         FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent);
 
         LOG_DEBUG("Looking for index %u from %s", index,

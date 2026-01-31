@@ -80,8 +80,6 @@ int VpiImpl::get_simulator_args(int *argc, char const *const **argv) {
 
 static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
                                   bool is_vector = false) {
-    const char *lang = getenv("TOPLEVEL_LANG");
-    bool isVerilog = (lang != nullptr) && (strcasecmp(lang, "verilog") == 0);
     switch (vpitype) {
         case vpiNet:
         case vpiNetBit:
@@ -92,6 +90,9 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
         case vpiPackedArrayVar:
         case vpiPackedArrayNet:
             if (is_vector || num_elements > 1) {
+                const char *lang = getenv("TOPLEVEL_LANG");
+                bool isVerilog =
+                    (lang != nullptr) && (strcasecmp(lang, "verilog") == 0);
                 if (isVerilog) {
                     return GPI_PACKED_OBJECT;
                 } else {
@@ -171,7 +172,14 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
         case vpiOctConst:
         case vpiHexConst:
         case vpiIntConst:
-            return GPI_LOGIC_ARRAY;
+            const char *lang = getenv("TOPLEVEL_LANG");
+            bool isVerilog =
+                (lang != nullptr) && (strcasecmp(lang, "verilog") == 0);
+            if (isVerilog) {
+                return GPI_PACKED_OBJECT;
+            } else {
+                return GPI_LOGIC_ARRAY;
+            }
         case vpiRealConst:
             return GPI_REAL;
         case vpiStringConst:
@@ -182,7 +190,14 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
                 "Unable to map vpiConst type %d onto GPI type, "
                 "guessing this is a logic vector",
                 const_type);
-            return GPI_LOGIC_ARRAY;
+            const char *lang = getenv("TOPLEVEL_LANG");
+            bool isVerilog =
+                (lang != nullptr) && (strcasecmp(lang, "verilog") == 0);
+            if (isVerilog) {
+                return GPI_PACKED_OBJECT;
+            } else {
+                return GPI_LOGIC_ARRAY;
+            }
     }
 }
 
@@ -497,7 +512,8 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 
         new_hdl = vpi_handle_by_name(&writable[0], NULL);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
-               obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
+               obj_type == GPI_PACKED_OBJECT || obj_type == GPI_ARRAY ||
+               obj_type == GPI_STRING) {
         new_hdl = vpi_handle_by_index(vpi_hdl, index);
 
         /* vpi_handle_by_index() doesn't work for all simulators when dealing

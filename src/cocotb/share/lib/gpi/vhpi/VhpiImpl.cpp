@@ -347,7 +347,14 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                         if (is_enum_logic(elem_base_type_hdl)) {
                             LOG_DEBUG("VHPI: Detected a LOGIC VECTOR type %s",
                                       fq_name.c_str());
-                            gpi_type = GPI_LOGIC_ARRAY;
+                            const char *lang = getenv("TOPLEVEL_LANG");
+                            bool isVerilog = (lang != nullptr) &&
+                                             (strcasecmp(lang, "verilog") == 0);
+                            if (isVerilog) {
+                                gpi_type = GPI_PACKED_OBJECT;
+                            } else {
+                                gpi_type = GPI_LOGIC_ARRAY;
+                            }
                         } else if (is_enum_char(elem_base_type_hdl)) {
                             LOG_DEBUG("VHPI: Detected a STRING type %s",
                                       fq_name.c_str());
@@ -482,6 +489,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
             break;
         }
         case GPI_LOGIC:
+        case GPI_PACKED_OBJECT:
         case GPI_LOGIC_ARRAY: {
             new_obj = new VhpiLogicSignalObjHdl(this, new_hdl, gpi_type,
                                                 is_const(new_hdl));
