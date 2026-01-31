@@ -14,7 +14,7 @@ from typing import (
 
 import cocotb
 import cocotb._event_loop
-from cocotb._base_triggers import NullTrigger, Trigger
+from cocotb._base_triggers import Event, NullTrigger, Trigger
 from cocotb._deprecation import deprecated
 from cocotb.task import ResultType, Task
 from cocotb_tools import _env
@@ -48,13 +48,14 @@ class TestManager:
 
         # We create the main task here so that the init checks can be done immediately.
         self._main_task = Task[None](test_coro, name=f"Test {name}")
-        self.tasks: list[Task[Any]] = []
+        self._tasks: list[Task[Any]] = []
         self._excs: list[BaseException] = []
         self._finishing: bool = False
         self._complete: bool = False
+        self._done = Event()
 
     def _test_done_callback(self, task: Task[None]) -> None:
-        self.tasks.remove(task)
+        self.remove_task(task)
         # If cancelled, end the Test without additional error. This case would only
         # occur if a child threw a CancelledError or if the Test was forced to shutdown.
         if task.cancelled():
@@ -78,7 +79,7 @@ class TestManager:
         # start main task
         self._main_task._add_done_callback(self._test_done_callback)
         self._main_task._ensure_started()
-        self.tasks.append(self._main_task)
+        self._tasks.append(self._main_task)
 
         cocotb._event_loop._inst.run()
 
@@ -117,23 +118,37 @@ class TestManager:
                 pdb.set_trace()
 
         # Cancel Tasks.
-        for task in self.tasks[:]:
+        for task in self._tasks[:]:
             task._cancel_now()
 
+        # Register function to clean up global state once all Tasks have ended.
+        if self._done.is_set():
+            self._on_complete()
+        else:
+            self._done.wait()._register(self._on_complete)
+
+    def _on_complete(self) -> None:
+        # Clear the current global current test manager
         global _current_test
         _current_test = None
 
         self._complete = True
 
-        # TODO: Wait for Tasks to end
+        # Tell RegressionManager the test is complete
         self._test_complete_cb()
 
     def add_task(self, task: Task[Any]) -> None:
-        self.tasks.append(task)
         task._add_done_callback(self._task_done_callback)
+        self._tasks.append(task)
+        self._done.clear()
+
+    def remove_task(self, task: Task[Any]) -> None:
+        self._tasks.remove(task)
+        if not self._tasks:
+            self._done.set()
 
     def _task_done_callback(self, task: Task[Any]) -> None:
-        self.tasks.remove(task)
+        self.remove_task(task)
         # if cancelled, do nothing
         if task.cancelled():
             return
