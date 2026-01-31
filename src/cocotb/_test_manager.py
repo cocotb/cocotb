@@ -38,16 +38,20 @@ class TestManager:
     #  done callback with.
 
     def __init__(
-        self, test_complete_cb: Callable[[], None], main_task: Task[None]
+        self,
+        test_coro: Coroutine[Trigger, None, Any],
+        *,
+        name: str,
+        test_complete_cb: Callable[[], None],
     ) -> None:
         self._test_complete_cb: Callable[[], None] = test_complete_cb
-        self._main_task: Task[None] = main_task
-        self._main_task._add_done_callback(self._test_done_callback)
 
-        self.tasks: list[Task[Any]] = [main_task]
-
+        # We create the main task here so that the init checks can be done immediately.
+        self._main_task = Task[None](test_coro, name=f"Test {name}")
+        self.tasks: list[Task[Any]] = []
         self._excs: list[BaseException] = []
         self._finishing: bool = False
+        self._complete: bool = False
 
     def _test_done_callback(self, task: Task[None]) -> None:
         self.tasks.remove(task)
@@ -67,9 +71,15 @@ class TestManager:
             self.abort(e)
 
     def start(self) -> None:
+        # set global current test manager
         global _current_test
         _current_test = self
+
+        # start main task
+        self._main_task._add_done_callback(self._test_done_callback)
         self._main_task._ensure_started()
+        self.tasks.append(self._main_task)
+
         cocotb._event_loop._inst.run()
 
     def exception(self) -> BaseException | None:
@@ -84,6 +94,10 @@ class TestManager:
         exc = self.exception()
         if exc:
             raise exc
+
+    def done(self) -> bool:
+        """Return whether the test has completed."""
+        return self._complete
 
     def abort(self, exc: BaseException | None = None) -> None:
         """Force this test to end early."""
@@ -108,6 +122,8 @@ class TestManager:
 
         global _current_test
         _current_test = None
+
+        self._complete = True
 
         # TODO: Wait for Tasks to end
         self._test_complete_cb()
