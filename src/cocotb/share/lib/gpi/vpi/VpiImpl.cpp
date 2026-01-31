@@ -6,6 +6,7 @@
 #include "./VpiImpl.hpp"
 
 #include <gpi.h>
+#include <strings.h>
 #include <vpi_user_ext.h>
 
 #include "../logging.hpp"

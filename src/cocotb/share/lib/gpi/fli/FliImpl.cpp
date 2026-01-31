@@ -5,6 +5,8 @@
 
 #include "./FliImpl.hpp"
 
+#include <strings.h>
+
 #include <cstddef>
 #include <cstring>
 #include <stdexcept>

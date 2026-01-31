@@ -6,6 +6,7 @@
 #include "./VhpiImpl.hpp"
 
 #include <stdlib.h>
+#include <strings.h>
 
 #include <cassert>
 #include <cmath>
