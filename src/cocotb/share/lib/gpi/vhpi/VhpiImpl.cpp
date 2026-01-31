@@ -650,7 +650,8 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 
         new_hdl = vhpi_handle_by_name(&writable[0], NULL);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
-               obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
+               obj_type == GPI_PACKED_OBJECT || obj_type == GPI_ARRAY ||
+               obj_type == GPI_STRING) {
         LOG_DEBUG("VHPI: Get child at index %d of parent %s (%s)", index,
                   parent->get_fullname_str(),
                   vhpi_get_str(vhpiKindStrP, vhpi_hdl));

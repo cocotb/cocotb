@@ -79,8 +79,9 @@ int VpiImpl::get_simulator_args(int *argc, char const *const **argv) {
 }
 
 static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
-                                  bool is_vector = false,
-                                  bool isVerilog = true) {
+                                  bool is_vector = false) {
+    const char *lang = getenv("TOPLEVEL_LANG");
+    bool isVerilog = (lang != nullptr) && (strcasecmp(lang, "verilog") == 0);
     switch (vpitype) {
         case vpiNet:
         case vpiNetBit:
