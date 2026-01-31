@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 
-import functools
 import hashlib
 import inspect
 import logging
@@ -18,19 +17,16 @@ import re
 import sys
 import time
 import warnings
-from collections.abc import Coroutine
 from enum import auto
 from importlib import import_module
-from typing import Any, Callable
+from typing import Any
 
 import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
-from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test, TestGenerator
-from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
 from cocotb._test_manager import TestManager
@@ -375,23 +371,12 @@ class RegressionManager:
         return self._tear_down()
 
     def _init_test(self) -> TestManager:
-        # wrap test function in timeout
-        func: Callable[..., Coroutine[Trigger, None, None]]
-        timeout = self._test.timeout
-        if timeout is not None:
-            f = self._test.func
-
-            @functools.wraps(f)
-            async def func(*args: object, **kwargs: object) -> None:
-                await with_timeout(f(*args, **kwargs), *timeout)
-        else:
-            func = self._test.func
-
-        coro = func(cocotb.top, *self._test.args, **self._test.kwargs)
+        coro = self._test.func(cocotb.top, *self._test.args, **self._test.kwargs)
         return TestManager(
             coro,
             test_complete_cb=self._test_complete,
             name=self._test.name,
+            timeout=self._test.timeout,
         )
 
     def _schedule_next_test(self) -> None:

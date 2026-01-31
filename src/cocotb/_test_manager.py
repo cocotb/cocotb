@@ -14,8 +14,11 @@ from typing import (
 
 import cocotb
 import cocotb._event_loop
-from cocotb._base_triggers import Event, NullTrigger, Trigger
+from cocotb._base_triggers import Event, NullTrigger, Trigger, TriggerCallback
 from cocotb._deprecation import deprecated
+from cocotb._extended_awaitables import SimTimeoutError
+from cocotb._gpi_triggers import Timer
+from cocotb.simtime import TimeUnit
 from cocotb.task import ResultType, Task
 from cocotb_tools import _env
 
@@ -42,8 +45,11 @@ class TestManager:
         test_coro: Coroutine[Trigger, None, Any],
         *,
         name: str,
+        timeout: tuple[float, TimeUnit] | None = None,
         test_complete_cb: Callable[[], None],
     ) -> None:
+        self._timeout = timeout
+        self._timeout_cb: TriggerCallback | None = None
         self._test_complete_cb: Callable[[], None] = test_complete_cb
 
         # We create the main task here so that the init checks can be done immediately.
@@ -81,7 +87,15 @@ class TestManager:
         self._main_task._ensure_started()
         self._tasks.append(self._main_task)
 
+        # start timeout if specified
+        if self._timeout is not None:
+            self._timeout_cb = Timer(*self._timeout)._register(self._on_timeout)
+
         cocotb._event_loop._inst.run()
+
+    def _on_timeout(self) -> None:
+        self._timeout_cb = None
+        self.abort(SimTimeoutError())
 
     def exception(self) -> BaseException | None:
         if self._excs:
@@ -116,6 +130,10 @@ class TestManager:
                 pdb.post_mortem(exc.__traceback__)
             except BaseException:
                 pdb.set_trace()
+
+        # Cancel the timeout if it is running.
+        if self._timeout_cb is not None:
+            self._timeout_cb.cancel()
 
         # Cancel Tasks.
         for task in self._tasks[:]:
