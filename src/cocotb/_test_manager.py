@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import inspect
 import pdb
 import sys
 from collections.abc import Coroutine
@@ -160,10 +159,9 @@ def start_soon(
 
     .. versionadded:: 1.6
     """
-    if not isinstance(coro, Task):
-        coro = create_task(coro, name=name)
-    coro._ensure_started()
-    return coro
+    task = create_task(coro, name=name)
+    task._ensure_started()
+    return task
 
 
 @deprecated("Use ``cocotb.start_soon`` instead.")
@@ -236,32 +234,20 @@ def create_task(
 
     .. versionadded:: 1.6
     """
+    if _current_test is None:
+        raise RuntimeError("No test is currently running; cannot schedule new Task.")
+
     if isinstance(coro, Task):
+        # We do not add the done callback here, so that custom Tasks are not considered
+        # "toplevel" tasks and end the test when they fail.
         if name is not None:
             coro.set_name(name)
         return coro
-    elif isinstance(coro, Coroutine):
-        task = Task[ResultType](coro, name=name)
-        if _current_test is None:
-            raise RuntimeError(
-                "No test is currently running; cannot schedule new Task."
-            )
-        _current_test.add_task(task)
-        return task
-    elif inspect.iscoroutinefunction(coro):
-        raise TypeError(
-            f"Coroutine function {coro} should be called prior to being scheduled."
-        )
-    elif inspect.isasyncgen(coro):
-        raise TypeError(
-            f"{coro.__qualname__} is an async generator, not a coroutine. "
-            "You likely used the yield keyword instead of await."
-        )
-    else:
-        raise TypeError(
-            f"Attempt to add an object of type {type(coro)} to the scheduler, "
-            f"which isn't a coroutine: {coro!r}\n"
-        )
+
+    task = Task[ResultType](coro, name=name)
+    _current_test.add_task(task)
+
+    return task
 
 
 class TestSuccess(BaseException):
