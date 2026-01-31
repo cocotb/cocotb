@@ -90,11 +90,12 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
         case vpiPackedArrayVar:
         case vpiPackedArrayNet:
             if (is_vector || num_elements > 1) {
-                if (bool isVerilog = true) {
-                    return GPI_PACKED_OBJECT;
-                } else {
-                    return GPI_LOGIC_ARRAY;
-                }
+                // if (isVerilog) {
+                //     return GPI_PACKED_OBJECT;
+                // } else {
+                //     return GPI_LOGIC_ARRAY;
+                // }
+                return GPI_LOGIC_ARRAY;
             } else {
                 return GPI_LOGIC;
             }
