@@ -26,7 +26,6 @@ from typing import Any, Callable
 import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
-import cocotb._test_manager
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
 from cocotb._base_triggers import Trigger
@@ -39,7 +38,6 @@ from cocotb._utils import DocEnum, safe_divide
 from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
 from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
-from cocotb.task import Task
 from cocotb_tools import _env
 
 __all__ = (
@@ -390,8 +388,11 @@ class RegressionManager:
             func = self._test.func
 
         coro = func(cocotb.top, *self._test.args, **self._test.kwargs)
-        main_task = Task(coro, name=f"Test {self._test.name}")
-        return TestManager(self._test_complete, main_task)
+        return TestManager(
+            coro,
+            test_complete_cb=self._test_complete,
+            name=self._test.name,
+        )
 
     def _schedule_next_test(self) -> None:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED

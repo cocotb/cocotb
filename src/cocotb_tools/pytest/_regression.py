@@ -43,15 +43,12 @@ from pytest import (
 
 import cocotb
 import cocotb._shutdown
-import cocotb._test_manager
 from cocotb import simulator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_manager import TestManager
 from cocotb.simtime import TimeUnit, get_sim_time
-from cocotb.task import Task
 from cocotb_tools.pytest._fixture import (
-    AsyncFixture,
     AsyncFixtureCachedResult,
     resolve_fixture_arg,
 )
@@ -557,16 +554,23 @@ class RegressionManager:
             # Test setup-only without teardown
             func = self._setup_async_function(fixturedef, request)
 
-        task: Task = AsyncFixture(func(), name=f"Setup {request.fixturename}")
-        cache_key = fixturedef.cache_key(request)
-        fixturedef.cached_result = AsyncFixtureCachedResult((task, cache_key, None))
-
         if is_async_generator:
             # Test setup with teardown, added sub-tasks during setup will be cancelled by test teardown
-            setup = RunningTestSetup(self._setup_completed, task)
+            setup = RunningTestSetup(
+                func(),
+                name=f"Setup {request.fixturename}",
+                test_complete_cb=self._setup_completed,
+            )
         else:
             # Test setup-only without teardown, run all tasks only during test setup
-            setup = TestManager(self._setup_completed, task)
+            setup = TestManager(
+                func(),
+                name=f"Setup {request.fixturename}",
+                test_complete_cb=self._setup_completed,
+            )
+
+        cache_key = fixturedef.cache_key(request)
+        fixturedef.cached_result = AsyncFixtureCachedResult((setup, cache_key, None))
 
         self._setups.append(setup)
 
@@ -638,8 +642,11 @@ class RegressionManager:
 
             await testfunction(**kwargs)
 
-        task: Task = Task(func(), name=f"Test {pyfuncitem.name}")
-        self._call = TestManager(self._call_completed, task)
+        self._call = TestManager(
+            func(),
+            name=f"Test {pyfuncitem.name}",
+            test_complete_cb=self._call_completed,
+        )
 
         return True
 
@@ -737,9 +744,12 @@ class RegressionManager:
             except StopAsyncIteration:
                 pass
 
-        task: Task = Task(func(), name=f"Teardown {request.fixturename}")
         setup: TestManager = self._running_test
-        teardown: TestManager = TestManager(self._teardown_completed, task)
+        teardown: TestManager = TestManager(
+            func(),
+            name=f"Teardown {request.fixturename}",
+            test_complete_cb=self._teardown_completed,
+        )
 
         def finalizer() -> None:
             # Assign setup tasks (without the main task) to test teardown
