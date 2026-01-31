@@ -158,6 +158,8 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
 }
 
 static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
+    const char *lang = getenv("TOPLEVEL_LANG");
+    bool isVerilog = (lang != nullptr) && (strcasecmp(lang, "verilog") == 0);
     // Most simulators only return vpiDecConst or vpiBinaryConst
     switch (const_type) {
 #ifdef IUS
@@ -172,9 +174,6 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
         case vpiOctConst:
         case vpiHexConst:
         case vpiIntConst:
-            const char *lang = getenv("TOPLEVEL_LANG");
-            bool isVerilog =
-                (lang != nullptr) && (strcasecmp(lang, "verilog") == 0);
             if (isVerilog) {
                 return GPI_PACKED_OBJECT;
             } else {
@@ -190,9 +189,6 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
                 "Unable to map vpiConst type %d onto GPI type, "
                 "guessing this is a logic vector",
                 const_type);
-            const char *lang = getenv("TOPLEVEL_LANG");
-            bool isVerilog =
-                (lang != nullptr) && (strcasecmp(lang, "verilog") == 0);
             if (isVerilog) {
                 return GPI_PACKED_OBJECT;
             } else {
