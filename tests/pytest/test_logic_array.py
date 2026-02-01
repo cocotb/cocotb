@@ -53,14 +53,19 @@ def test_logic_array_iterable_construction():
 def test_logic_array_int_construction():
     with pytest.raises(TypeError):
         LogicArray(10)  # refuse temptation to guess
+
     assert LogicArray(10, Range(5, "downto", 0)) == LogicArray("001010")
     assert LogicArray(10, 6) == LogicArray("001010")
     assert LogicArray(10, range=Range(5, "downto", 0)) == LogicArray("001010")
 
+    assert LogicArray(-2, Range(5, "downto", 0)) == LogicArray("111110")
+    assert LogicArray(-2, 6) == LogicArray("111110")
+    assert LogicArray(-2, range=Range(5, "downto", 0)) == LogicArray("111110")
+
     with pytest.raises(ValueError):
         LogicArray(10, Range(1, "to", 3))
     with pytest.raises(ValueError):
-        LogicArray(-10, Range(7, "downto", 0))
+        LogicArray(-10, Range(3, "downto", 0))
 
 
 def test_logic_array_bad_construction():
@@ -284,6 +289,9 @@ def test_equality():
     assert LogicArray("0101") != "lol"
     assert LogicArray("0101") != 123
     assert LogicArray("0101") != [7, "f", dict]
+    assert LogicArray("1111") == -1
+    assert LogicArray("1111") == 15
+    assert LogicArray("0111") != -6
 
 
 def test_repr_eval():
