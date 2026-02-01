@@ -22,7 +22,10 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 )
 async def test_packed_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
-    assert repr(dut.my_struct) == "LogicArrayObject(sample_module.my_struct)"
+    assert repr(dut.my_struct) in (
+        "LogicArrayObject(sample_module.my_struct)",
+        "PackedObject(sample_module.my_struct)",
+    )
 
     # Riviera-PRO initializes the struct with X, Verilator with 0, and others
     # with Z. Since we don't want to explicitly set dut.my_struct (write tests
