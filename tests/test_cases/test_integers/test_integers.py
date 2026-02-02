@@ -83,14 +83,18 @@ async def test_int_verilog(
     await Timer(1)
 
     for value in (
+        # Above maximum value
         max_value + 1,
-        random.randint(max_value, 2 * max_value),
+        random.randint(max_value + 1, 2 * max_value),
         2 * max_value,
         random.randint(2 * max_value, 10 * max_value),
+        10 * max_value,
+        # Below minimum value
         min_value - 1,
-        random.randint(2 * min_value, min_value),
+        random.randint(2 * min_value, min_value - 1),
         2 * min_value,
         random.randint(10 * min_value, 2 * min_value),
+        10 * min_value,
     ):
         cocotb.log.info(f"Testing value={value}")
 
@@ -171,14 +175,18 @@ async def test_integer_access_vhdl(
     await Timer(1)
 
     for value in (
+        # Above maximum value
         max_value + 1,
-        random.randint(max_value, 2 * max_value),
+        random.randint(max_value + 1, 2 * max_value),
         2 * max_value,
         random.randint(2 * max_value, 10 * max_value),
+        10 * max_value,
+        # Below minimum value
         min_value - 1,
-        random.randint(2 * min_value, min_value),
+        random.randint(2 * min_value, min_value - 1),
         2 * min_value,
         random.randint(10 * min_value, 2 * min_value),
+        10 * min_value,
     ):
         cocotb.log.info(f"Testing value={value}")
 
