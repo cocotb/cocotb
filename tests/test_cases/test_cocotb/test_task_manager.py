@@ -1119,8 +1119,10 @@ async def test_bad_args(_: object) -> None:
         async def oops_async_generator() -> AsyncGenerator[None, None, None]:
             yield None
 
+        c = oops_async_generator()
         with pytest.raises(TypeError):
-            tm.start_soon(oops_async_generator())  # type: ignore
+            tm.start_soon(c)  # type: ignore
+        await c.aclose()  # avoid ResourceWarning since we didn't await it.
 
         with pytest.raises(TypeError):
             tm.fork(oops_async_generator)  # type: ignore
