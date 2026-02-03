@@ -10,14 +10,16 @@ import inspect
 import shlex
 import textwrap
 from argparse import ArgumentParser
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Mapping
 from pathlib import Path
 from time import time
 from typing import Any
 
+from pluggy import Result
 from pytest import (
     Class,
     Collector,
+    CollectReport,
     Config,
     ExitCode,
     FixtureRequest,
@@ -61,16 +63,7 @@ _ENTRY_POINT: str = ",".join(
         "cocotb_tools.pytest._init:run_regression",
     )
 )
-FAILED_COCOTB_RUNNER = TestShortLogReport(
-    category="failed cocotb runner",
-    letter="CF",
-    word=("FAILED COCOTB RUNNER", {"red": True}),
-)
-PASSED_COCOTB_RUNNER = TestShortLogReport(
-    category="passed cocotb runner",
-    letter=".",
-    word=("PASSED COCOTB RUNNER", {"green": True}),
-)
+_TestStatus = TestShortLogReport | tuple[str, str, str | tuple[str, Mapping[str, bool]]]
 
 
 def _to_timescale(value: str) -> tuple[str, str]:
@@ -714,12 +707,27 @@ def _is_cocotb_test_report(item: Any) -> bool:
     return isinstance(item, TestReport) and getattr(item, "cocotb", False)
 
 
-def pytest_report_teststatus(report, config):
-    if ("cocotb_runner" in report.keywords) and (report.when == "call"):
-        if report.failed:
-            return FAILED_COCOTB_RUNNER
+@hookimpl(hookwrapper=True, trylast=True)
+def pytest_report_teststatus(
+    report: CollectReport | TestReport, config: Config
+) -> Generator[None, Result[_TestStatus], None]:
+    result: Result[_TestStatus] = yield
+    status: _TestStatus = result.get_result()
+
+    if (
+        isinstance(report, TestReport)
+        and ("cocotb_runner" in report.keywords)
+        and (report.when == "call")
+    ):
+        category, letter, word = status
+        category = f"{category} cocotb runner"
+        if isinstance(word, str):
+            word = f"{word} COCOTB RUNNER"
         else:
-            return PASSED_COCOTB_RUNNER
+            word = (f"{word[0]} COCOTB RUNNER", word[1])
+        result.force_result(
+            TestShortLogReport(category=category, letter=letter, word=word)
+        )
 
 
 @hookimpl(hookwrapper=True, tryfirst=True)
@@ -730,8 +738,8 @@ def pytest_terminal_summary(
 ) -> Generator[None]:
     # Print cocotb runner failures before test failures
     terminalreporter.summary_failures_combined(
-        which_reports=FAILED_COCOTB_RUNNER.category,
-        sep_title=FAILED_COCOTB_RUNNER.word[0] + "S",
+        which_reports="failed cocotb runner",
+        sep_title="COCOTB RUNNER FAILURES",
         style=config.option.tbstyle,
     )
     # Continue with the rest of pytest terminal summary
