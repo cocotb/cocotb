@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 from collections.abc import Generator, Iterable, Mapping
 from pathlib import Path
 from time import time
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from pluggy import Result
 from pytest import (
@@ -63,7 +63,10 @@ _ENTRY_POINT: str = ",".join(
         "cocotb_tools.pytest._init:run_regression",
     )
 )
-_TestStatus = TestShortLogReport | tuple[str, str, str | tuple[str, Mapping[str, bool]]]
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+    TestStatus: TypeAlias = TestShortLogReport | tuple[str, str, str | tuple[str, Mapping[str, bool]]]
 
 
 def _to_timescale(value: str) -> tuple[str, str]:
@@ -710,9 +713,9 @@ def _is_cocotb_test_report(item: Any) -> bool:
 @hookimpl(hookwrapper=True, trylast=True)
 def pytest_report_teststatus(
     report: CollectReport | TestReport, config: Config
-) -> Generator[None, Result[_TestStatus], None]:
-    result: Result[_TestStatus] = yield
-    status: _TestStatus = result.get_result()
+) -> Generator[None, Result[TestStatus], None]:
+    result: Result[TestStatus] = yield
+    status: TestStatus = result.get_result()
 
     if (
         isinstance(report, TestReport)
