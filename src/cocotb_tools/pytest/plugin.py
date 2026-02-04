@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 from collections.abc import Generator, Iterable, Mapping
 from pathlib import Path
 from time import time
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pluggy import Result
 from pytest import (
@@ -66,7 +66,9 @@ _ENTRY_POINT: str = ",".join(
 if TYPE_CHECKING:
     from typing import TypeAlias
 
-    TestStatus: TypeAlias = TestShortLogReport | tuple[str, str, str | tuple[str, Mapping[str, bool]]]
+    TestStatus: TypeAlias = (
+        TestShortLogReport | tuple[str, str, str | tuple[str, Mapping[str, bool]]]
+    )
 
 
 def _to_timescale(value: str) -> tuple[str, str]:
