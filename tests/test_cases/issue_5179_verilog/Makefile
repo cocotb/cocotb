@@ -18,7 +18,7 @@ clean::
 
 else
 
-SIM ?= verilator
+SIM ?= icarus
 
 VERILOG_SOURCES = $(PWD)/debug_array.v
 
