@@ -43,11 +43,11 @@ from pytest import (
 
 import cocotb
 import cocotb._shutdown
-import cocotb._test
+import cocotb._test_manager
 from cocotb import simulator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
-from cocotb._test import RunningTest
+from cocotb._test_manager import TestManager
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb.task import Task
 from cocotb_tools.pytest._fixture import (
@@ -117,16 +117,16 @@ class RegressionManager:
         self._toplevel: str = toplevel
         """Name of top level."""
 
-        self._running_test: RunningTest
+        self._running_test: TestManager
         """Current running test: "setup", "call" or "teardown"."""
 
-        self._setups: deque[RunningTest] = deque[RunningTest]()
+        self._setups: deque[TestManager] = deque[TestManager]()
         """List of test setups that were populated from the :py:func:`pytest.hookspec.pytest_fixture_setup` hook."""
 
-        self._call: RunningTest | None = None
+        self._call: TestManager | None = None
         """Test call that was populated from the :py:func:`pytest.hookspec.pytest_runtest_call` hook."""
 
-        self._teardowns: deque[RunningTest] = deque[RunningTest]()
+        self._teardowns: deque[TestManager] = deque[TestManager]()
         """List of test teardowns that were populated from registered setup finalizers via
         :py:meth:`pytest.FixtureRequest.addfinalizer`` method.
         """
@@ -373,7 +373,7 @@ class RegressionManager:
         self._update_report_section(item=item, when=when)
 
         return self._call_and_report(
-            item=item, when=when, func=self._running_test.result().get
+            item=item, when=when, func=lambda: self._running_test.result()
         )
 
     @finish_on_exception
@@ -548,7 +548,7 @@ class RegressionManager:
             return None
 
         func: Callable[[], Any]
-        setup: RunningTest
+        setup: TestManager
 
         if is_async_generator:
             # Test setup with teardown, re-assign added sub-tasks during setup to teardown
@@ -566,7 +566,7 @@ class RegressionManager:
             setup = RunningTestSetup(self._setup_completed, task)
         else:
             # Test setup-only without teardown, run all tasks only during test setup
-            setup = RunningTest(self._setup_completed, task)
+            setup = TestManager(self._setup_completed, task)
 
         self._setups.append(setup)
 
@@ -639,7 +639,7 @@ class RegressionManager:
             await testfunction(**kwargs)
 
         task: Task = Task(func(), name=f"Test {pyfuncitem.name}")
-        self._call = RunningTest(self._call_completed, task)
+        self._call = TestManager(self._call_completed, task)
 
         return True
 
@@ -738,8 +738,8 @@ class RegressionManager:
                 pass
 
         task: Task = Task(func(), name=f"Teardown {request.fixturename}")
-        setup: RunningTest = self._running_test
-        teardown: RunningTest = RunningTest(self._teardown_completed, task)
+        setup: TestManager = self._running_test
+        teardown: TestManager = TestManager(self._teardown_completed, task)
 
         def finalizer() -> None:
             # Assign setup tasks (without the main task) to test teardown
@@ -809,14 +809,14 @@ class RegressionManager:
         finally:
             self._finish()
 
-    def _start(self, running_test: RunningTest) -> None:
+    def _start(self, running_test: TestManager) -> None:
         """Start test setup, call or teardown.
 
         Args:
             running_test: Test to run.
         """
         self._running_test = running_test
-        cocotb._test.set_current_test(running_test)
+        cocotb._test_manager.set_current_test(running_test)
 
         if self._scheduled:
             self._timer1._register(self._running_test.start)

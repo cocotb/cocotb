@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from cocotb._test import RunningTest
+from cocotb._test_manager import TestManager
 from cocotb.task import Task
 
 
-class RunningTestSetup(RunningTest):
+class RunningTestSetup(TestManager):
     """Running test setup without cancelling added sub-tasks."""
 
     def __init__(

@@ -8,8 +8,6 @@ from collections.abc import Iterator, Sequence
 from functools import cache
 from typing import Any, overload
 
-from cocotb._utils import cached_method
-
 
 class Range(Sequence[int]):
     r"""
@@ -167,7 +165,16 @@ class Range(Sequence[int]):
     def __repr__(self) -> str:
         return f"{type(self).__qualname__}({self.left!r}, {self.direction!r}, {self.right!r})"
 
-    index = cached_method(Sequence[int].index)
+    def index(
+        self, value: Any, start: int | None = None, stop: int | None = None, /
+    ) -> int:
+        if start is not None or stop is not None:
+            if start is None:
+                start = self._range.start
+            if stop is None:
+                stop = self._range.stop
+            return super().index(value, start, stop)
+        return self._range.index(value)
 
     def __copy__(self) -> Range:
         return Range.from_range(self._range)

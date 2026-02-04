@@ -13,7 +13,7 @@ def __getattr__(name: str) -> object:
             DeprecationWarning,
             stacklevel=2,
         )
-        from cocotb._test_functions import TestSuccess  # noqa: PLC0415
+        from cocotb._test_manager import TestSuccess  # noqa: PLC0415
 
         return TestSuccess
 

@@ -5,25 +5,28 @@ from __future__ import annotations
 
 import inspect
 import pdb
+import sys
 from collections.abc import Coroutine
 from typing import (
     Any,
     Callable,
+    NoReturn,
 )
 
 import cocotb
 import cocotb._event_loop
 from cocotb._base_triggers import NullTrigger, Trigger
 from cocotb._deprecation import deprecated
-from cocotb._outcomes import Error, Outcome, Value
-from cocotb._test_functions import TestSuccess
 from cocotb.task import ResultType, Task
 from cocotb_tools import _env
+
+if sys.version_info < (3, 11):
+    from exceptiongroup import BaseExceptionGroup
 
 _pdb_on_exception = _env.as_bool("COCOTB_PDB_ON_EXCEPTION")
 
 
-class RunningTest:
+class TestManager:
     """State of the currently executing Test."""
 
     # TODO
@@ -44,60 +47,65 @@ class RunningTest:
 
         self.tasks: list[Task[Any]] = [main_task]
 
-        self._outcome: None | Outcome[None] = None
-        self._shutdown_errors: list[Outcome[None]] = []
+        self._excs: list[BaseException] = []
+        self._finishing: bool = False
 
     def _test_done_callback(self, task: Task[None]) -> None:
         self.tasks.remove(task)
         # If cancelled, end the Test without additional error. This case would only
         # occur if a child threw a CancelledError or if the Test was forced to shutdown.
         if task.cancelled():
-            self.abort(Value(None))
+            self.abort()
             return
         # Handle outcome appropriately and shut down the Test.
         e = task.exception()
         if e is None:
-            self.abort(Value(task.result()))
+            self.abort()
         elif isinstance(e, TestSuccess):
             task._log.info("Test stopped early by this task")
-            self.abort(Value(None))
+            self.abort()
         else:
-            task._log.warning(e, exc_info=e)
-            self.abort(Error(e))
+            self.abort(e)
 
     def start(self) -> None:
         self._main_task._ensure_started()
         cocotb._event_loop._inst.run()
 
-    def result(self) -> Outcome[None]:
-        if self._outcome is None:  # pragma: no cover
-            raise RuntimeError("Getting result before test is completed")
+    def exception(self) -> BaseException | None:
+        if self._excs:
+            if len(self._excs) == 1:
+                return self._excs[0]
+            else:
+                return BaseExceptionGroup("Multiple exceptions in test", self._excs)
+        return None
 
-        if not isinstance(self._outcome, Error) and self._shutdown_errors:
-            return self._shutdown_errors[0]
-        return self._outcome
+    def result(self) -> None:
+        exc = self.exception()
+        if exc:
+            raise exc
 
-    def abort(self, outcome: Outcome[None]) -> None:
+    def abort(self, exc: BaseException | None = None) -> None:
         """Force this test to end early."""
 
-        # If we are shutting down, save any errors
-        if self._outcome is not None:
-            if isinstance(outcome, Error):
-                self._shutdown_errors.append(outcome)
+        if exc is not None:
+            self._excs.append(exc)
+
+        if self._finishing:
             return
+        self._finishing = True
 
         # Break into pdb on test end before all Tasks are killed.
-        if _pdb_on_exception and isinstance(outcome, Error):
+        if _pdb_on_exception and exc is not None:
             try:
-                pdb.post_mortem(outcome.error.__traceback__)
+                pdb.post_mortem(exc.__traceback__)
             except BaseException:
                 pdb.set_trace()
 
-        # Set outcome and cancel Tasks.
-        self._outcome = outcome
+        # Cancel Tasks.
         for task in self.tasks[:]:
             task._cancel_now()
 
+        # TODO: Wait for Tasks to end
         self._test_complete_cb()
 
     def add_task(self, task: Task[Any]) -> None:
@@ -119,10 +127,9 @@ class RunningTest:
         # there was a failure and no one is watching, fail test
         elif isinstance(e, TestSuccess):
             task._log.info("Test stopped early by this task")
-            self.abort(Value(None))
+            self.abort()
         else:
-            task._log.warning(e, exc_info=e)
-            self.abort(Error(e))
+            self.abort(e)
 
 
 def start_soon(
@@ -248,11 +255,33 @@ def create_task(
         )
 
 
-_current_test: RunningTest
+class TestSuccess(BaseException):
+    """Implementation of :func:`pass_test`.
+
+    Users are *not* intended to catch this exception type.
+    """
+
+    def __init__(self, msg: str | None) -> None:
+        super().__init__(msg)
+        self.msg = msg
+
+
+def pass_test(msg: str | None = None) -> NoReturn:
+    """Force a test to pass.
+
+    The test will end and enter termination phase when this is called.
+
+    Args:
+        msg: The message to display when the test passes.
+    """
+    raise TestSuccess(msg)
+
+
+_current_test: TestManager
 """The currently executing test's state."""
 
 
-def set_current_test(running_test: RunningTest) -> None:
+def set_current_test(running_test: TestManager) -> None:
     """Set the currently executing test's state.
 
     Args:

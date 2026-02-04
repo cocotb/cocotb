@@ -37,6 +37,7 @@ from cocotb._gpi_triggers import (
 from cocotb._utils import DocIntEnum
 from cocotb.types import Array, Logic, LogicArray, Range
 from cocotb.types._indexing import do_indexing_changed_warning, indexing_changed
+from cocotb.types._logic_array import _str_literals
 from cocotb_tools import _env
 
 __all__ = (
@@ -1240,9 +1241,6 @@ class _SignednessObjectMixin(SimHandleBase):
             return (2 ** len(self)) - 1
 
 
-_str_literals = set("ux01zlhw-")
-
-
 class LogicArrayObject(
     _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
     _RangeableObjectMixin,
@@ -1277,41 +1275,31 @@ class LogicArrayObject(
     ) -> None:
         value_: str
         if isinstance(value, int):
-            if self._min_val <= value <= self._max_val:
-                if len(self) <= 32:
-                    return _schedule_write(
-                        self, self._handle.set_signal_val_int, action, value
-                    )
-                else:
-                    if value < 0:
-                        value += 1 << len(self)
-                    value_ = format(value, f"0{len(self)}b")
-            else:
+            if not self._min_val <= value <= self._max_val:
                 raise ValueError(
                     f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
                 )
 
+            if len(self) <= 32:
+                return _schedule_write(
+                    self, self._handle.set_signal_val_int, action, value
+                )
+            else:
+                if value < 0:
+                    value += 1 << len(self)
+                value_ = f"{value:0{len(self)}b}"
+
         elif isinstance(value, str):
-            value_ = value.lower()
-            if not (set(value_) <= _str_literals):
-                raise ValueError("invalid str literal")
-            if len(value_) != len(self):
+            value_ = value.replace("_", "")  # remove visual separators
+            value_ = value_.upper()  # normalize to uppercase
+            nonliterals = set(value_) - _str_literals
+            if nonliterals:
+                nonliteral_str = ", ".join(repr(c) for c in sorted(nonliterals))
                 raise ValueError(
-                    f"cannot assign value of length {len(value)} to handle of length {len(self)}"
+                    f"String literal contains invalid logic values: {nonliteral_str}"
                 )
 
-        elif isinstance(value, LogicArray):
-            if len(self) != len(value):
-                raise ValueError(
-                    f"cannot assign value of length {len(value)} to handle of length {len(self)}"
-                )
-            value_ = str(value)
-
-        elif isinstance(value, Logic):
-            if len(self) != 1:
-                raise ValueError(
-                    f"cannot assign value of length 1 to handle of length {len(self)}"
-                )
+        elif isinstance(value, (LogicArray, Logic)):
             value_ = str(value)
 
         else:
@@ -1319,6 +1307,10 @@ class LogicArrayObject(
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
+        if len(value_) != len(self):
+            raise ValueError(
+                f"Cannot assign value of length {len(value_)} to handle of length {len(self)}"
+            )
         _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
     def get(self) -> LogicArray:
@@ -1487,7 +1479,7 @@ class EnumObject(
                 f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
             )
 
-        if value < self._min_val or self._max_val < value:
+        if not self._min_val <= value <= self._max_val:
             raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
             )
@@ -1508,7 +1500,15 @@ class EnumObject(
 
         See :class:`EnumObject` for details on what :class:`int` values correspond to which enumeration values.
         """
-        return self._handle.get_signal_val_long()
+        if len(self) <= 32:
+            res = self._handle.get_signal_val_long()
+        else:
+            res = int(self._handle.get_signal_val_binstr(), 2)
+        if res > self._max_val:
+            res -= 1 << len(self)
+        elif self._handle.get_signed() == 0 and res < 0:
+            res += 1 << len(self)
+        return res
 
     def set(
         self,
@@ -1576,31 +1576,37 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
                 f"Unsupported type for integer value assignment: {type(value)} ({value!r})"
             )
 
-        if self._min_val <= value <= self._max_val:
-            if len(self) <= 32:
-                # set_signal_val_int is limited to 32 bits.
-                return _schedule_write(
-                    self, self._handle.set_signal_val_int, action, value
-                )
-            else:
-                if value < 0:
-                    value += 1 << len(self)
-                value_ = format(value, f"0{len(self)}b")
-
-                return _schedule_write(
-                    self,
-                    self._handle.set_signal_val_binstr,
-                    action,
-                    value_,
-                )
-        else:
+        if not self._min_val <= value <= self._max_val:
             raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
             )
 
+        if len(self) <= 32:
+            # set_signal_val_int is limited to 32 bits.
+            return _schedule_write(self, self._handle.set_signal_val_int, action, value)
+        else:
+            if value < 0:
+                value += 1 << len(self)
+            value_ = format(value, f"0{len(self)}b")
+
+            return _schedule_write(
+                self,
+                self._handle.set_signal_val_binstr,
+                action,
+                value_,
+            )
+
     def get(self) -> int:
         """Return the current value of the simulation object as an :class:`int`."""
-        return self._handle.get_signal_val_long()
+        if len(self) <= 32:
+            res = self._handle.get_signal_val_long()
+        else:
+            res = int(self._handle.get_signal_val_binstr(), 2)
+        if res > self._max_val:
+            res -= 1 << len(self)
+        elif self._handle.get_signed() == 0 and res < 0:
+            res += 1 << len(self)
+        return res
 
     def set(
         self,

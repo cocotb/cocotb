@@ -114,6 +114,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    :name: howto_guides
    :hidden:
 
+   install_devel
    writing_testbenches
    runner
    coroutines
@@ -147,7 +148,6 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    :name: key_topics
    :hidden:
 
-   install_devel
    troubleshooting
    timing_model
 

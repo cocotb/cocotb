@@ -232,6 +232,8 @@ ignore-words-list = [
     "synopsys",
 ]
 
+skip = ["*.svg"]
+
 [tool.mypy]
 packages = ["cocotb", "pygpi", "cocotb_tools.pytest"]
 modules = ["noxfile"]

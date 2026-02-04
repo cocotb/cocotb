@@ -1,0 +1,1 @@
+Added support for using underscores (``_``) as visual separators in :class:`str` values used to set the value of :class:`~cocotb.handle.LogicArrayObject` to enhance readability of long bitstrings, e.g. ``dut.signal.value = "1010_1101"``.

@@ -20,8 +20,4 @@ architecture rtl of top is
     signal positive_signal: positive;
     signal my_integer_signal: my_integer;
 begin
-    integer_signal <= integer_input;
-    natural_signal <= natural_input;
-    positive_signal <= positive_input;
-    my_integer_signal <= my_integer_input;
 end architecture rtl;

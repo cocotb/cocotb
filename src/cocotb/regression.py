@@ -26,22 +26,16 @@ from typing import Any, Callable
 import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
-import cocotb._test
+import cocotb._test_manager
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
 from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test, TestGenerator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
-from cocotb._outcomes import Error, Outcome
-from cocotb._test import RunningTest
 from cocotb._test_factory import TestFactory
-from cocotb._test_functions import Failed
-from cocotb._utils import (
-    DocEnum,
-    remove_traceback_frames,
-    safe_divide,
-)
+from cocotb._test_manager import TestManager
+from cocotb._utils import DocEnum, safe_divide
 from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
 from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
@@ -61,6 +55,20 @@ __all__ = (
 TestGenerator.__module__ = __name__
 Test.__module__ = __name__
 TestFactory.__module__ = __name__
+
+Failed: type[BaseException]
+try:
+    import pytest
+except ModuleNotFoundError:
+    Failed = AssertionError
+else:
+    try:
+        with pytest.raises(Exception):
+            pass
+    except BaseException as _raises_e:
+        Failed = type(_raises_e)
+    else:
+        assert False, "pytest.raises doesn't raise an exception when it fails"
 
 
 class SimFailure(BaseException):
@@ -102,8 +110,6 @@ class RegressionMode(DocEnum):
 
 
 class _TestResults:
-    # TODO merge into Test object
-
     def __init__(
         self,
         test_fullname: str,
@@ -148,7 +154,7 @@ class RegressionManager:
 
     def __init__(self) -> None:
         self._test: Test
-        self._running_test: RunningTest
+        self._running_test: TestManager
         self.log = _logger
         self._regression_start_time: float
         self._test_results: list[_TestResults] = []
@@ -167,7 +173,7 @@ class RegressionManager:
         self._filters: list[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
         self._included: list[bool]
-        self._sim_failure: Error[None] | None = None
+        self._sim_failure: SimFailure | None = None
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_state: Any
         self._stop_on_failure = _env.as_bool("COCOTB_STOP_ON_FAILURE", default=False)
@@ -334,57 +340,50 @@ class RegressionManager:
         Used by :meth:`start_regression` and :meth:`_test_complete` to continue to the main test running loop,
         and by :meth:`_fail_regression` to shutdown the regression when a simulation failure occurs.
         """
-        try:
-            while self._test_queue:
-                self._test = self._test_queue.pop(0)
-                included = self._included.pop(0)
 
-                # if the test is not included, record and continue
-                if not included:
-                    self._record_test_excluded()
-                    continue
+        while self._test_queue:
+            self._test = self._test_queue.pop(0)
+            included = self._included.pop(0)
 
-                # if the test is skipped, record and continue
-                if self._test.skip and self._mode != RegressionMode.TESTCASE:
-                    self._record_test_skipped()
-                    continue
+            # if the test is not included, record and continue
+            if not included:
+                self._record_test_excluded()
+                continue
 
-                # if the test should be run, but the simulator has failed, record and continue
-                if self._sim_failure is not None:
-                    self._score_test(
-                        self._sim_failure,
-                        0,
-                        0,
-                    )
-                    continue
+            # if the test is skipped, record and continue
+            if self._test.skip and self._mode != RegressionMode.TESTCASE:
+                self._record_test_skipped()
+                continue
 
-                # initialize the test, if it fails, record and continue
-                try:
-                    self._running_test = self._init_test()
-                except Exception:
-                    self._record_test_init_failed()
-                    continue
-                cocotb._test.set_current_test(self._running_test)
+            # if the test should be run, but the simulator has failed, record and continue
+            if self._sim_failure is not None:
+                self._score_test(
+                    self._sim_failure,
+                    0,
+                    0,
+                )
+                continue
 
-                self._log_test_start()
+            # initialize the test, if it fails, record and continue
+            try:
+                self._running_test = self._init_test()
+            except Exception:
+                self._record_test_init_failed()
+                continue
+            cocotb._test_manager.set_current_test(self._running_test)
 
-                if self._first_test:
-                    self._first_test = False
-                    return self._schedule_next_test()
-                else:
-                    self._timer1._register(self._schedule_next_test)
-                    return
+            self._log_test_start()
 
-            return self._tear_down()
-        except RegressionTerminated:
-            self.log.info(
-                "Stopping regression early after first failure (%d/%d tests run)",
-                self.count - 1,
-                self.total_tests,
-            )
-            return self._tear_down()
+            if self._first_test:
+                self._first_test = False
+                return self._schedule_next_test()
+            else:
+                self._timer1._register(self._schedule_next_test)
+                return
 
-    def _init_test(self) -> RunningTest:
+        return self._tear_down()
+
+    def _init_test(self) -> TestManager:
         # wrap test function in timeout
         func: Callable[..., Coroutine[Trigger, None, None]]
         timeout = self._test.timeout
@@ -399,7 +398,7 @@ class RegressionManager:
 
         coro = func(cocotb.top, *self._test.args, **self._test.kwargs)
         main_task = Task(coro, name=f"Test {self._test.name}")
-        return RunningTest(self._test_complete, main_task)
+        return TestManager(self._test_complete, main_task)
 
     def _schedule_next_test(self) -> None:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
@@ -451,7 +450,7 @@ class RegressionManager:
 
         # Judge and record pass/fail.
         self._score_test(
-            self._running_test.result(),
+            self._running_test.exception(),
             wall_time,
             sim_time_ns,
         )
@@ -461,7 +460,7 @@ class RegressionManager:
 
     def _score_test(
         self,
-        outcome: Outcome[None],
+        exc: BaseException | None,
         wall_time_s: float,
         sim_time_ns: float,
     ) -> None:
@@ -470,12 +469,8 @@ class RegressionManager:
         # score test
         passed: bool
         msg: str | None
-        exc: BaseException | None
-        try:
-            outcome.get()
-        except BaseException as e:
+        if exc is not None:
             passed, msg = False, None
-            exc = remove_traceback_frames(e, ["_score_test", "get"])
         else:
             passed, msg, exc = True, None, None
 
@@ -502,7 +497,7 @@ class RegressionManager:
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
-                    result=None,
+                    result=exc,
                     msg=msg,
                 )
 
@@ -511,7 +506,7 @@ class RegressionManager:
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
-                    result=None,
+                    result=exc,
                     msg="failed as expected",
                 )
 
@@ -529,7 +524,7 @@ class RegressionManager:
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
-                    result=None,
+                    result=exc,
                     msg="errored as expected",
                 )
 
@@ -678,7 +673,7 @@ class RegressionManager:
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Exception | None,
+        result: BaseException | None,
         msg: str | None,
     ) -> None:
         start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_PASSED
@@ -698,6 +693,7 @@ class RegressionManager:
             stop_hilight,
             rest,
             result_was,
+            exc_info=result,
         )
 
         # write out xunit results
@@ -747,6 +743,7 @@ class RegressionManager:
             start_hilight,
             stop_hilight,
             rest,
+            exc_info=result,
         )
 
         # write out xunit results
@@ -915,12 +912,10 @@ class RegressionManager:
 
         # We assume if we get here, the simulation ended unexpectedly due to an assertion failure,
         # or due to an end of events from the simulator.
-        self._sim_failure = Error(
-            SimFailure(
-                "cocotb expected it would shut down the simulation, but the simulation ended prematurely. "
-                "This could be due to an assertion failure or a call to an exit routine in the HDL, "
-                "or due to the simulator running out of events to process (is your clock running?)."
-            )
+        self._sim_failure = SimFailure(
+            "cocotb expected it would shut down the simulation, but the simulation ended prematurely. "
+            "This could be due to an assertion failure or a call to an exit routine in the HDL, "
+            "or due to the simulator running out of events to process (is your clock running?)."
         )
         self._running_test.abort(self._sim_failure)
         cocotb._event_loop._inst.run()
