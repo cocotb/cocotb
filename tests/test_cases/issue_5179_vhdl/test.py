@@ -7,7 +7,8 @@ from __future__ import annotations
 import logging
 
 import cocotb
-from cocotb.handle import LogicArrayObject
+from cocotb.handle import LogicArrayObject, LogicObject
+from cocotb.triggers import RisingEdge
 
 
 @cocotb.test()
@@ -21,8 +22,7 @@ async def test_debug_array_vhdl(dut):
     assert type(dut.test_a) is LogicArrayObject
     inspect_signal(dut.test_b)
     assert type(dut.test_a) is LogicArrayObject
-    # TODO
-    # un-comment after PR #5272 is merged
-    # inspect_signal(dut.test_a[0], "test_a[0]")
-    # assert type(dut.test_a[0]) is LogicObject
-    # await RisingEdge(dut.test_a[0])
+
+    inspect_signal(dut.test_a[0], "test_a[0]")
+    assert type(dut.test_a[0]) is LogicObject
+    await RisingEdge(dut.test_a[0])
