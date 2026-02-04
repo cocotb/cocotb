@@ -18,4 +18,4 @@ architecture rtl of debug_array is
     signal test_b : std_logic_array(3 downto 0);
 
 begin
-end architecture;
+end architecture rtl;
