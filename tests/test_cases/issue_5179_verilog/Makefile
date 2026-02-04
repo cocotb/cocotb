@@ -10,9 +10,15 @@ all:
 	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
 clean::
 
+else ifeq ($(SIM),verilator)
+
+all:
+	@echo "verilator use LogicArrayObjects for verilog"
+clean::
+
 else
 
-SIM ?= icarus
+SIM ?= verilator
 
 VERILOG_SOURCES = $(PWD)/debug_array.v
 

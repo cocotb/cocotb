@@ -1391,7 +1391,7 @@ class LogicArrayObject(
                 f"Index {index} out of range for vector of length {length}"
             )
 
-        sub_handle = self._handle.get_handle_by_index(index)
+        sub_handle = self._handle  # .get_handle_by_index(index)
         if sub_handle is None:
             raise IndexError(f"Unable to index {self._name}[{index}]")
 
