@@ -8,7 +8,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity debug_array is
-end entity;
+end entity debug_array;
 
 architecture rtl of debug_array is
 
