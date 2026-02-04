@@ -3,29 +3,43 @@ from __future__ import annotations
 import logging
 
 import cocotb
-from cocotb.handle import (
-    LogicArrayObject,
-    LogicObject,
-)
+from cocotb.handle import LogicArrayObject, LogicObject
+from cocotb_tools import _env
 
 
-@cocotb.test()
-async def test_debug_array(dut):
-    tlog = logging.getLogger("cocotb.test")
+@cocotb.test(skip=_env.get("TOPLEVEL_LANG") != "vhdl")
+async def test_debug_array_vhdl(dut):
+    log = logging.getLogger("cocotb.test")
 
-    # Suggested Work around for VHDL vectors indexing
-    # but this no longer works
-    # def get_elem(logic_array: LogicArrayObject, idx: int) -> LogicObject:
-    #     return cocotb.handle._make_sim_object(logic_array._handle.get_handle_by_index(idx))
+    log.info("Inspecting VHDL signals")
 
-    def inspect_signal(signal, signal_name="name"):
-        tlog.critical(f"Signal name: {signal_name} {type(signal)}")
+    # test_a: std_logic_vector
+    assert isinstance(dut.test_a, LogicArrayObject)
+    bit_a0 = dut.test_a[0]
+    log.info("test_a[0] -> %s", type(bit_a0))
+    assert isinstance(bit_a0, LogicObject)
 
-    inspect_signal(dut.test_a)
-    assert type(dut.test_a) is LogicArrayObject
-    inspect_signal(dut.test_b)
-    assert type(dut.test_a) is LogicArrayObject
-    inspect_signal(dut.test_a[0], "test_a[0]")
-    assert type(dut.test_a) is LogicObject
+    # test_b: array of std_logic
+    assert isinstance(dut.test_b, LogicArrayObject)
+    bit_b0 = dut.test_b[0]
+    log.info("test_b[0] -> %s", type(bit_b0))
+    assert isinstance(bit_b0, LogicObject)
 
-    return True
+
+@cocotb.test(skip=_env.get("TOPLEVEL_LANG") != "verilog")
+async def test_debug_array_verilog(dut):
+    log = logging.getLogger("cocotb.test")
+
+    log.info("Inspecting Verilog signals")
+
+    # Packed vectors
+    assert isinstance(dut.test_a, LogicArrayObject)
+    assert isinstance(dut.test_b, LogicArrayObject)
+
+    # Verilog packed vectors MUST NOT be indexable
+    try:
+        _ = dut.test_a[0]
+    except TypeError:
+        log.info("Correct: Verilog packed vector is not indexable")
+    else:
+        raise AssertionError("Verilog packed vector should not be indexable")
