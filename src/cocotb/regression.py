@@ -170,6 +170,7 @@ class RegressionManager:
         self._sim_failure: Error[None] | None = None
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_state: Any
+        self._stop_on_failure: bool = bool(os.getenv("COCOTB_STOP_ON_FAILURE"))
 
         # Setup XUnit
         ###################
@@ -332,48 +333,50 @@ class RegressionManager:
         Used by :meth:`start_regression` and :meth:`_test_complete` to continue to the main test running loop,
         and by :meth:`_fail_regression` to shutdown the regression when a simulation failure occurs.
         """
+        try:
+            while self._test_queue:
+                self._test = self._test_queue.pop(0)
+                included = self._included.pop(0)
 
-        while self._test_queue:
-            self._test = self._test_queue.pop(0)
-            included = self._included.pop(0)
+                # if the test is not included, record and continue
+                if not included:
+                    self._record_test_excluded()
+                    continue
 
-            # if the test is not included, record and continue
-            if not included:
-                self._record_test_excluded()
-                continue
+                # if the test is skipped, record and continue
+                if self._test.skip and self._mode != RegressionMode.TESTCASE:
+                    self._record_test_skipped()
+                    continue
 
-            # if the test is skipped, record and continue
-            if self._test.skip and self._mode != RegressionMode.TESTCASE:
-                self._record_test_skipped()
-                continue
+                # if the test should be run, but the simulator has failed, record and continue
+                if self._sim_failure is not None:
+                    self._score_test(
+                        self._sim_failure,
+                        0,
+                        0,
+                    )
+                    continue
 
-            # if the test should be run, but the simulator has failed, record and continue
-            if self._sim_failure is not None:
-                self._score_test(
-                    self._sim_failure,
-                    0,
-                    0,
-                )
-                continue
+                # initialize the test, if it fails, record and continue
+                try:
+                    self._running_test = self._init_test()
+                except Exception:
+                    self._record_test_init_failed()
+                    continue
+                cocotb._test.set_current_test(self._running_test)
 
-            # initialize the test, if it fails, record and continue
-            try:
-                self._running_test = self._init_test()
-            except Exception:
-                self._record_test_init_failed()
-                continue
-            cocotb._test.set_current_test(self._running_test)
+                self._log_test_start()
 
-            self._log_test_start()
+                if self._first_test:
+                    self._first_test = False
+                    return self._schedule_next_test()
+                else:
+                    self._timer1._register(self._schedule_next_test)
+                    return
 
-            if self._first_test:
-                self._first_test = False
-                return self._schedule_next_test()
-            else:
-                self._timer1._register(self._schedule_next_test)
-                return
-
-        return self._tear_down()
+            return self._tear_down()
+        except RegressionTerminated:
+            return self._tear_down()
 
     def _init_test(self) -> RunningTest:
         # wrap test function in timeout
@@ -768,6 +771,8 @@ class RegressionManager:
                 wall_time_s=wall_time_s,
             )
         )
+        if self._stop_on_failure:
+            raise RegressionTerminated()
 
     def _log_test_summary(self) -> None:
         """Called by :meth:`_tear_down` to log the test summary."""
