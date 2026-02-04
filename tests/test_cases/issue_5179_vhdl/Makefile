@@ -10,7 +10,7 @@ SIM ?= GHDL
 #TOPLEVEL_LANG ?= verilog
 TOPLEVEL_LANG ?= vhdl
 
-#VERILOG_SOURCES += debug_array_verilog.v
+# VERILOG_SOURCES += debug_array_verilog.v
 VHDL_SOURCES += debug_array.vhdl
 
 # COCOTB_TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file
