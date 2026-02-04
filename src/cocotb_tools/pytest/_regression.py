@@ -43,6 +43,8 @@ from pytest import (
 
 import cocotb
 import cocotb._shutdown
+import cocotb._test_manager
+import cocotb.types._resolve
 from cocotb import simulator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
@@ -143,6 +145,9 @@ class RegressionManager:
         self._logging_restored: bool = False
         self._seed: int = int(time()) if seed is None else seed
         self._random_state: Any = random.getstate()
+        self._random_x_resolver_state: Any = (
+            cocotb.types._resolve._randomResolveRng.getstate()
+        )
 
         pluginmanager = PytestPluginManager()
 
@@ -503,9 +508,15 @@ class RegressionManager:
         hasher = hashlib.sha1()
         hasher.update(item.nodeid.encode())
         seed: int = self._seed + int(hasher.hexdigest(), 16)
-        cocotb.RANDOM_SEED = seed
+
+        # seed random number generators with test seed
         self._random_state = random.getstate()
         random.seed(seed)
+        self._random_x_resolver_state = (
+            cocotb.types._resolve._randomResolveRng.getstate()
+        )
+        cocotb.types._resolve._randomResolveRng.seed(seed)
+        cocotb.RANDOM_SEED = seed
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_call(self, item: Item) -> None:
@@ -529,6 +540,7 @@ class RegressionManager:
         # Restore random seed to original value
         cocotb.RANDOM_SEED = self._seed
         random.setstate(self._random_state)
+        cocotb.types._resolve._randomResolveRng.setstate(self._random_x_resolver_state)
 
     @hookimpl(tryfirst=True)
     def pytest_fixture_setup(

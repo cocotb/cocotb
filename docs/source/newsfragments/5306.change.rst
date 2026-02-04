@@ -1,0 +1,1 @@
+Split the random number generator (RNG) for the :envvar:`COCOTB_RESOLVE_X` ``"random"`` mode from the global Python RNG, so that switching from one :envvar:`!COCOTB_RESOLVE_X` mode to another would not affect the random number sequence of the rest of the testbench.

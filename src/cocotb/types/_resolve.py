@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import sys
 from functools import cache
-from random import getrandbits
+from random import Random
 from typing import Callable, Final, Literal, cast
 
 from cocotb_tools import _env
@@ -15,6 +15,8 @@ if sys.version_info >= (3, 10):
 
 ResolverLiteral: TypeAlias = Literal["weak", "zeros", "ones", "random"]
 
+
+_randomResolveRng = Random()
 
 _01lookup = ("0", "1")
 
@@ -27,7 +29,7 @@ class _random_resolve_table(dict[str, str]):
         self["H"] = "1"
 
     def __missing__(self, _: str) -> str:
-        return _01lookup[getrandbits(1)]
+        return _01lookup[_randomResolveRng.getrandbits(1)]
 
 
 _rnd_table = _random_resolve_table()
