@@ -72,6 +72,10 @@ class SimFailure(BaseException):
     """
 
 
+class RegressionTerminated(BaseException):
+    """Raised to stop the regression after the first test failure."""
+
+
 _logger = logging.getLogger(__name__)
 
 
