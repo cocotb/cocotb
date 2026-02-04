@@ -1395,6 +1395,20 @@ class LogicArrayObject(
         return (2 ** len(self)) - 1
 
 
+class PackedObject(LogicArrayObject):
+    """
+    Verilog packed vectors
+    """
+
+    def __getitem__(self, _: object) -> NoReturn:
+        raise TypeError(
+            "Packed objects, either arrays or structs, cannot be indexed.\n"
+            "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"
+            "If you need to use an element in an Edge Trigger, consider making the array or struct unpacked.\n"
+            "Alternatively, use `ValueChange` on the whole object and check the bit(s) you care about for changes afterwards."
+        )
+
+
 class RealObject(_NonIndexableValueObjectBase[float, float]):
     """A floating point simulation object.
 
