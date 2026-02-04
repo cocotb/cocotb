@@ -24,6 +24,8 @@ from typing import Any
 import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
+import cocotb._test_manager
+import cocotb.types._resolve
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
 from cocotb._decorators import Test, TestGenerator
@@ -166,6 +168,7 @@ class RegressionManager:
         self._sim_failure: SimFailure | None = None
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_state: Any
+        self._random_x_resolver_state: Any
 
         # Setup XUnit
         ###################
@@ -385,9 +388,14 @@ class RegressionManager:
         hasher.update(self._test.fullname.encode())
         test_seed = self._regression_seed + int(hasher.hexdigest(), 16)
 
-        cocotb.RANDOM_SEED = test_seed
+        # seed random number generators with test seed
         self._random_state = random.getstate()
         random.seed(test_seed)
+        self._random_x_resolver_state = (
+            cocotb.types._resolve._randomResolveRng.getstate()
+        )
+        cocotb.types._resolve._randomResolveRng.seed(test_seed)
+        cocotb.RANDOM_SEED = test_seed
 
         self._start_sim_time = get_sim_time("ns")
         self._start_time = time.time()
@@ -423,8 +431,10 @@ class RegressionManager:
         wall_time = time.time() - self._start_time
         sim_time_ns = get_sim_time("ns") - self._start_sim_time
 
+        # restore random number generators state
         cocotb.RANDOM_SEED = self._regression_seed
         random.setstate(self._random_state)
+        cocotb.types._resolve._randomResolveRng.setstate(self._random_x_resolver_state)
 
         exc: BaseException | None
         if self._sim_failure is not None:
