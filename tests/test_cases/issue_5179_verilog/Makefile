@@ -1,17 +1,15 @@
 # Makefile
 
 # simulator
-#SIM ?= verilator
-SIM ?= GHDL
+SIM ?= verilator
 
 # hdl
-TOPLEVEL_LANG ?= vhdl
+TOPLEVEL_LANG ?= verilog
 
-# VHDL Source
-VHDL_SOURCES += debug_array_vhdl.vhdl
+VERILOG_SOURCES += debug_array.v
 
 # COCOTB_TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file
-COCOTB_TOPLEVEL = debug_array_vhdl
+COCOTB_TOPLEVEL = debug_array
 
 # COCOTB_TEST_MODULES is the basename of the Python test file(s)
 COCOTB_TEST_MODULES = test
