@@ -170,7 +170,8 @@ class RegressionManager:
         self._sim_failure: Error[None] | None = None
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_state: Any
-        self._stop_on_failure: bool = bool(os.getenv("COCOTB_STOP_ON_FAILURE"))
+        self._stop_on_failure = _env.as_bool("COCOTB_STOP_ON_FAILURE", default=False)
+        self._terminated_early = False
 
         # Setup XUnit
         ###################
@@ -376,6 +377,11 @@ class RegressionManager:
 
             return self._tear_down()
         except RegressionTerminated:
+            self.log.info(
+                "Stopping regression early after first failure (%d/%d tests run)",
+                self.count - 1,
+                self.total_tests,
+            )
             return self._tear_down()
 
     def _init_test(self) -> RunningTest:
@@ -418,7 +424,8 @@ class RegressionManager:
         else:
             return
 
-        assert not self._test_queue
+        if not self._terminated_early:
+            assert not self._test_queue
 
         # Write out final log messages
         self._log_test_summary()
@@ -772,6 +779,7 @@ class RegressionManager:
             )
         )
         if self._stop_on_failure:
+            self._terminated_early = True
             raise RegressionTerminated()
 
     def _log_test_summary(self) -> None:
