@@ -25,5 +25,6 @@ async def test_debug_array_verilog(dut):
         tlog.info("Packed Object indexing failed as expected")
     except AttributeError:
         tlog.info("Packed Object indexing failed as expected")
+        pass
     else:
         raise AssertionError("Verilog packed vector should not be indexable")
