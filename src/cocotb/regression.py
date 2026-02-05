@@ -81,7 +81,14 @@ class SimFailure(BaseException):
 
 
 class RegressionTerminated(BaseException):
-    """Raised to stop the regression after the first test failure."""
+    """Indicates the regression was terminated early.
+    The regression can be terminated early by setting ``COCOTB_MAX_FAILURES``.
+
+
+    .. caution::
+        Not intended to be raised or caught by user code.
+        Used internally by the RegressionManager.
+    """
 
 
 _logger = logging.getLogger(__name__)
@@ -173,10 +180,10 @@ class RegressionManager:
         self._filters: list[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
         self._included: list[bool]
-        self._sim_failure: SimFailure | None = None
+        self._sim_failure: BaseException | None = None
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_state: Any
-        self._stop_on_failure = _env.as_bool("COCOTB_STOP_ON_FAILURE", default=False)
+        self._max_failures = _env.as_int("COCOTB_MAX_FAILURES", default=0)
         self._terminated_early = False
 
         # Setup XUnit
@@ -340,56 +347,50 @@ class RegressionManager:
         Used by :meth:`start_regression` and :meth:`_test_complete` to continue to the main test running loop,
         and by :meth:`_fail_regression` to shutdown the regression when a simulation failure occurs.
         """
-        try:
-            while self._test_queue:
-                self._test = self._test_queue.pop(0)
-                included = self._included.pop(0)
+        while self._test_queue:
+            if isinstance(self._sim_failure, RegressionTerminated):
+                return self._tear_down()
 
-                # if the test is not included, record and continue
-                if not included:
-                    self._record_test_excluded()
-                    continue
+            self._test = self._test_queue.pop(0)
+            included = self._included.pop(0)
 
-                # if the test is skipped, record and continue
-                if self._test.skip and self._mode != RegressionMode.TESTCASE:
-                    self._record_test_skipped()
-                    continue
+            # if the test is not included, record and continue
+            if not included:
+                self._record_test_excluded()
+                continue
 
-                # if the test should be run, but the simulator has failed, record and continue
-                if self._sim_failure is not None:
-                    self._score_test(
-                        self._sim_failure,
-                        0,
-                        0,
-                    )
-                    continue
+            # if the test is skipped, record and continue
+            if self._test.skip and self._mode != RegressionMode.TESTCASE:
+                self._record_test_skipped()
+                continue
 
-                # initialize the test, if it fails, record and continue
-                try:
-                    self._running_test = self._init_test()
-                except Exception:
-                    self._record_test_init_failed()
-                    continue
-                cocotb._test_manager.set_current_test(self._running_test)
+            # if the test should be run, but the simulator has failed, record and continue
+            if isinstance(self._sim_failure, SimFailure):
+                self._score_test(
+                    self._sim_failure,
+                    0,
+                    0,
+                )
+                continue
 
-                self._log_test_start()
+            # initialize the test, if it fails, record and continue
+            try:
+                self._running_test = self._init_test()
+            except Exception:
+                self._record_test_init_failed()
+                continue
+            cocotb._test_manager.set_current_test(self._running_test)
 
-                if self._first_test:
-                    self._first_test = False
-                    return self._schedule_next_test()
-                else:
-                    self._timer1._register(self._schedule_next_test)
-                    return
+            self._log_test_start()
 
-            return self._tear_down()
-        except RegressionTerminated:
-            self.log.info(
-                "Stopping regression early after first failure (%d/%d tests run)",
-                self.count - 1,
-                self.total_tests,
-            )
+            if self._first_test:
+                self._first_test = False
+                return self._schedule_next_test()
+            else:
+                self._timer1._register(self._schedule_next_test)
+                return
 
-            return self._tear_down()
+        return self._tear_down()
 
     def _init_test(self) -> TestManager:
         # wrap test function in timeout
@@ -783,9 +784,13 @@ class RegressionManager:
                 wall_time_s=wall_time_s,
             )
         )
-        if self._stop_on_failure:
+        if self._max_failures > 0 and self.failures >= self._max_failures:
             self._terminated_early = True
-            raise RegressionTerminated()
+            self._sim_failure = RegressionTerminated(
+                f"Regression stopped after {self.failures} failures "
+                f"(limit={self._max_failures})"
+            )
+            self.log.error(self._sim_failure)
 
     def _log_test_summary(self) -> None:
         """Called by :meth:`_tear_down` to log the test summary."""
