@@ -528,6 +528,21 @@ class Runner(ABC):
         self.gui = _env.as_bool("GUI", gui)
         self.timescale = timescale
 
+        waves_file: str | None = self._waves_file() if self.waves else None
+
+        if "COCOTB_RESULTS_ATTACHMENTS" not in self.env:
+            attachments: list[Path] = []
+
+            # Prioritize waveform as first over other files like logs
+            # So CI environments like GitLab CI use regular expression that will retrieve attachment only on first match
+            if waves_file:
+                attachments.append(get_abs_path(self.test_dir) / waves_file)
+
+            if self.log_file:
+                attachments.append(get_abs_path(self.log_file))
+
+            self.env["COCOTB_RESULTS_ATTACHMENTS"] = ",".join(map(str, attachments))
+
         if verbose is not None:
             self.verbose = verbose
 
@@ -822,7 +837,7 @@ class Icarus(Runner):
         return True
 
     def _waves_file(self) -> str | None:
-        return f"{self.hdl_toplevel}.fst"
+        return f"{self.sim_hdl_toplevel}.fst"
 
     def _create_cmd_file(self) -> None:
         assert self.timescale is not None
@@ -1125,7 +1140,7 @@ class Ghdl(Runner):
         return True
 
     def _waves_file(self) -> str | None:
-        return f"{self.hdl_toplevel}.ghw"
+        return f"{self.sim_hdl_toplevel}.ghw"
 
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         raise RuntimeError
@@ -1266,7 +1281,7 @@ class Nvc(Runner):
         return True
 
     def _waves_file(self) -> str | None:
-        return f"{self.hdl_toplevel}.fst"
+        return f"{self.sim_hdl_toplevel}.fst"
 
     def _build_command(self) -> list[_Command]:
         sources = self._sources + self._vhdl_sources
