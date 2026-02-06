@@ -10,14 +10,16 @@ import inspect
 import shlex
 import textwrap
 from argparse import ArgumentParser
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable, Mapping
 from pathlib import Path
 from time import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from pluggy import Result
 from pytest import (
     Class,
     Collector,
+    CollectReport,
     Config,
     ExitCode,
     FixtureRequest,
@@ -28,6 +30,7 @@ from pytest import (
     PytestPluginManager,
     TerminalReporter,
     TestReport,
+    TestShortLogReport,
     fixture,
     hookimpl,
     mark,
@@ -60,6 +63,12 @@ _ENTRY_POINT: str = ",".join(
         "cocotb_tools.pytest._init:run_regression",
     )
 )
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+    TestStatus: TypeAlias = (
+        TestShortLogReport | tuple[str, str, str | tuple[str, Mapping[str, bool]]]
+    )
 
 
 def _to_timescale(value: str) -> tuple[str, str]:
@@ -703,12 +712,44 @@ def _is_cocotb_test_report(item: Any) -> bool:
     return isinstance(item, TestReport) and getattr(item, "cocotb", False)
 
 
-@hookimpl(tryfirst=True)
+@hookimpl(hookwrapper=True, trylast=True)
+def pytest_report_teststatus(
+    report: CollectReport | TestReport, config: Config
+) -> Generator[None, Result[TestStatus], None]:
+    result: Result[TestStatus] = yield
+    status: TestStatus = result.get_result()
+
+    if (
+        isinstance(report, TestReport)
+        and ("cocotb_runner" in report.keywords)
+        and (report.when == "call")
+    ):
+        category, letter, word = status
+        category = f"{category} cocotb runner"
+        if isinstance(word, str):
+            word = f"{word} COCOTB RUNNER"
+        else:
+            word = (f"{word[0]} COCOTB RUNNER", word[1])
+        result.force_result(
+            TestShortLogReport(category=category, letter=letter, word=word)
+        )
+
+
+@hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_terminal_summary(
     terminalreporter: TerminalReporter,
     exitstatus: ExitCode,
     config: Config,
-) -> None:
+) -> Generator[None]:
+    # Print cocotb runner failures before test failures
+    terminalreporter.summary_failures_combined(
+        which_reports="failed cocotb runner",
+        sep_title="COCOTB RUNNER FAILURES",
+        style=config.option.tbstyle,
+    )
+    # Continue with the rest of pytest terminal summary
+    yield
+
     if not config.option.cocotb_summary:
         return
 
