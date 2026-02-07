@@ -247,3 +247,18 @@ warn_unused_ignores = true
 implicit_reexport = false
 show_error_codes = true
 pretty = true
+
+# TODO add lower bounds and justifications
+[dependency-groups]
+dev = [
+    "pip>=25.1",  # 25.1 needed for '--groups'
+    "clang-format",
+    "nox",
+    "mypy>=1.18",  # 1.18 needed for descriptor typing
+    "pre-commit",
+    "ruff",
+    "pytest>=6",
+    "coverage[toml]>=7.2",
+    "pytest-cov",
+    "gcovr==8.4",
+]
