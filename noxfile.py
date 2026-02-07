@@ -20,14 +20,6 @@ test_deps = ["pytest>=6"]
 coverage_deps = ["coverage[toml]>=7.2", "pytest-cov"]
 coverage_report_deps = ["coverage[toml]>=7.2", "gcovr==8.4"]
 
-dev_deps = [
-    "mypy",
-    "pre-commit",
-    "nox",
-    "ruff",
-    "clang-format",
-]
-
 # Version of the cibuildwheel package used to build wheels.
 cibuildwheel_version = "3.2.1"
 
@@ -639,16 +631,3 @@ def docs_spelling(session: nox.Session) -> None:
         "spelling",
         *session.posargs,
     )
-
-
-@nox.session(reuse_venv=True)
-def dev(session: nox.Session) -> None:
-    """Build a development environment and optionally run a command given as extra args"""
-
-    configure_env_for_dev_test(session)
-    create_env_for_docs_build(session)
-
-    session.install(*test_deps, *dev_deps, *coverage_deps, *coverage_report_deps)
-    build_cocotb_for_dev_test(session, editable=True)
-    if session.posargs:
-        session.run(*session.posargs, external=True)

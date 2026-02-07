@@ -38,7 +38,7 @@ Then execute the following commands to download a development version of cocotb 
   $ git clone https://github.com/cocotb/cocotb.git
   $ # Build cocotb in debug mode, and enter a bash shell
   $ cd cocotb
-  $ nox -s dev -- /bin/bash
+  $ uv sync --dev
 
 
 .. _troubleshooting-attaching-debugger:
