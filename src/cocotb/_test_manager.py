@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pdb
 import sys
+from asyncio import CancelledError
 from collections.abc import Coroutine
 from typing import (
     Any,
@@ -65,17 +66,17 @@ class TestManager:
         # If cancelled, end the Test without additional error. This case would only
         # occur if a child threw a CancelledError or if the Test was forced to shutdown.
         if task.cancelled():
-            self.abort()
+            self._abort()
             return
         # Handle outcome appropriately and shut down the Test.
         e = task.exception()
         if e is None:
-            self.abort()
+            self._abort()
         elif isinstance(e, TestSuccess):
             task._log.info("Test stopped early by this task")
-            self.abort()
+            self._abort()
         else:
-            self.abort(e)
+            self._abort(e)
 
     def start(self) -> None:
         # set global current test manager
@@ -95,7 +96,7 @@ class TestManager:
 
     def _on_timeout(self) -> None:
         self._timeout_cb = None
-        self.abort(SimTimeoutError())
+        self._abort(SimTimeoutError())
 
     def exception(self) -> BaseException | None:
         if self._excs:
@@ -114,8 +115,16 @@ class TestManager:
         """Return whether the test has completed."""
         return self._complete
 
-    def abort(self, exc: BaseException | None = None) -> None:
-        """Force this test to end early."""
+    def cancel(self, msg: str | None = None) -> None:
+        """End the test prematurely."""
+        if msg is not None:
+            exc = CancelledError(msg)
+        else:
+            exc = CancelledError()
+        self._abort(exc)
+
+    def _abort(self, exc: BaseException | None = None) -> None:
+        """Shutdown the test"""
 
         if exc is not None:
             self._excs.append(exc)
@@ -180,9 +189,9 @@ class TestManager:
         # there was a failure and no one is watching, fail test
         elif isinstance(e, TestSuccess):
             task._log.info("Test stopped early by this task")
-            self.abort()
+            self._abort()
         else:
-            self.abort(e)
+            self._abort(e)
 
 
 def start_soon(

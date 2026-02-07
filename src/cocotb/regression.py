@@ -892,14 +892,16 @@ class RegressionManager:
         if self._tearing_down:
             return
 
-        # We assume if we get here, the simulation ended unexpectedly due to an assertion failure,
-        # or due to an end of events from the simulator.
-        self._sim_failure = SimFailure(
+        msg = (
             "cocotb expected it would shut down the simulation, but the simulation ended prematurely. "
             "This could be due to an assertion failure or a call to an exit routine in the HDL, "
             "or due to the simulator running out of events to process (is your clock running?)."
         )
-        self._running_test.abort()
+
+        # We assume if we get here, the simulation ended unexpectedly due to an assertion failure,
+        # or due to an end of events from the simulator.
+        self._sim_failure = SimFailure(msg)
+        self._running_test.cancel(msg)
         cocotb._event_loop._inst.run()
 
 
