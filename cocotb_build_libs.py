@@ -399,9 +399,7 @@ class build_ext(_build_ext):
 
             os.makedirs(os.path.dirname(dest_filename), exist_ok=True)
 
-            copy_file(
-                src_filename, dest_filename, verbose=self.verbose, dry_run=self.dry_run
-            )
+            copy_file(src_filename, dest_filename, verbose=self.verbose)
             if ext._needs_stub:
                 self.write_stub(package_dir or os.curdir, ext, True)
 
