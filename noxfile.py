@@ -543,7 +543,7 @@ def release_test_nosim(session: nox.Session) -> None:
 
 
 def create_env_for_docs_build(session: nox.Session) -> None:
-    session.install("-r", "docs/requirements.txt")
+    session.install("--group", "docs")
 
 
 @nox.session

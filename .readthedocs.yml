@@ -10,14 +10,14 @@ build:
     python: "3.12"
   apt_packages:
     - graphviz
-
-python:
-  install:
-    - requirements: docs/requirements.txt
-    - method: pip
-      path: .
-      extra_requirements:
-        - bus
+  jobs:
+    create_environment:
+      - asdf plugin add uv
+      - asdf install uv latest
+      - asdf global uv latest
+      - UV_PROJECT_ENVIRONMENT=$READTHEDOCS_VIRTUALENV_PATH uv sync --all-extras --group docs
+    install:
+      - "true"
 
 sphinx:
   configuration: docs/source/conf.py
