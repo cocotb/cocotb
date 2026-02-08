@@ -41,14 +41,14 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.12"
-      - name: Install nox
-        run: python3 -m pip install nox
+      - name: Install invoke
+        run: python3 -m pip install invoke
 
-      # Use the cibuildwheel configuration inside nox, instead of the
+      # Use the cibuildwheel configuration inside invoke, instead of the
       # cibuildwheel GitHub Action, to make the process easy to reproduce
       # locally.
       - name: Build cocotb release
-        run: nox -s release_build
+        run: invoke release.build
 
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
         with:
@@ -71,18 +71,18 @@ jobs:
         path: dist
         pattern: cocotb-dist-*
         merge-multiple: true
-    - name: Install nox
-      run: python3 -m pip install nox
+    - name: Install invoke
+      run: python3 -m pip install invoke
     - name: Smoke-test the sdist
-      run: nox -s release_test_sdist
+      run: invoke release.test-sdist
 
   test_release:
     name: Regression Tests
     needs: build_release
     uses: ./.github/workflows/regression-tests.yml
     with:
-      nox_session_test_sim: release_test_sim
-      nox_session_test_nosim: release_test_nosim
+      task_test_sim: release.test-sim
+      task_test_nosim: release.test-nosim
       download_artifacts: true
       group: ci-free
 
@@ -91,8 +91,8 @@ jobs:
     needs: build_release
     uses: ./.github/workflows/regression-tests.yml
     with:
-      nox_session_test_sim: release_test_sim
-      nox_session_test_nosim: release_test_nosim
+      task_test_sim: release.test-sim
+      task_test_nosim: release.test-nosim
       download_artifacts: true
       group: ci-licensed
 

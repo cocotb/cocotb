@@ -295,7 +295,8 @@ ENVS = [
         "group": "ci-licensed",
     },
     {
-        "lang": "vhdl and fli",
+        "lang": "vhdl",
+        "gpi_interface": "fli",
         "sim": "questa",
         "sim-version": "siemens/questa/2025.2",
         "os": "ubuntu-22.04",
@@ -304,7 +305,8 @@ ENVS = [
         "group": "ci-licensed",
     },
     {
-        "lang": "vhdl and vhpi",
+        "lang": "vhdl",
+        "gpi_interface": "vhpi",
         "sim": "questa",
         "sim-version": "siemens/questa/2025.2",
         "os": "ubuntu-22.04",
@@ -571,6 +573,7 @@ def main() -> int:
         else:
             name_parts.append(env["sim-version"])
         append_str_val(name_parts, env, "lang")
+        append_str_val(name_parts, env, "gpi_interface")
         append_str_val(name_parts, env, "os")
         append_str_val(name_parts, env, "python-version")
         if env.get("may-fail") is not None:
