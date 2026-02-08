@@ -215,6 +215,8 @@ void pygpi_logging_finalize() {
     gpi_set_log_handler(fallback_log_handler, fallback_log_userdata);
     Py_XDECREF(m_log_func);
     Py_XDECREF(m_get_logger);
+    m_log_func = nullptr;
+    m_get_logger = nullptr;
     for (auto &elem : m_logger_map) {
         Py_DECREF(elem.second);
     }
