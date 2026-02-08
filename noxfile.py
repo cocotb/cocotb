@@ -6,7 +6,6 @@ from __future__ import annotations
 import glob
 import os
 import shutil
-import sys
 from contextlib import suppress
 from pathlib import Path
 from typing import cast
@@ -15,13 +14,6 @@ import nox
 
 # Sessions run by default if nox is called without further arguments.
 nox.options.sessions = ["dev_test"]
-
-test_deps = ["pytest>=6"]
-coverage_deps = ["coverage[toml]>=7.2", "pytest-cov"]
-coverage_report_deps = ["coverage[toml]>=7.2", "gcovr==8.4"]
-
-# Version of the cibuildwheel package used to build wheels.
-cibuildwheel_version = "3.2.1"
 
 #
 # Helpers for use within this file.
@@ -159,7 +151,7 @@ def dev_test_sim(
 
     configure_env_for_dev_test(session)
 
-    session.install(*test_deps, *coverage_deps)
+    session.install("--group", "test", "--group", "test_coverage")
 
     # Editable installs break C/C++ coverage collection; don't use them.
     # C/C++ coverage collection requires that the object files produced by the
@@ -288,7 +280,7 @@ def dev_test_nosim(session: nox.Session) -> None:
 
     configure_env_for_dev_test(session)
 
-    session.install(*test_deps, *coverage_deps)
+    session.install("--group", "test", "--group", "test_coverage")
     build_cocotb_for_dev_test(session, editable=False)
 
     # Remove a potentially existing coverage file from a previous run for the
@@ -323,7 +315,7 @@ def dev_test_nosim(session: nox.Session) -> None:
 @nox.session
 def dev_coverage_combine(session: nox.Session) -> None:
     """Combine coverage from previous dev_* runs into a .coverage file."""
-    session.install(*coverage_report_deps)
+    session.install("--group", "coverage_report")
 
     coverage_files = glob.glob("**/.cov.test.*", recursive=True)
     session.run("coverage", "combine", *coverage_files)
@@ -337,7 +329,7 @@ def dev_coverage_combine(session: nox.Session) -> None:
 @nox.session
 def dev_coverage_report(session: nox.Session) -> None:
     """Report coverage results."""
-    session.install(*coverage_report_deps)
+    session.install("--group", "coverage_report")
 
     # Produce Cobertura XML coverage reports.
     session.log("Producing Python and C/C++ coverage in Cobertura XML format")
@@ -414,7 +406,7 @@ def release_build_bdist(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
 
     # Pin a version to ensure reproducible builds.
-    session.install(f"cibuildwheel=={cibuildwheel_version}")
+    session.install("--group", "release_build_bdist")
 
     session.log("Building binary distribution (wheels)")
     session.run(
@@ -430,7 +422,7 @@ def release_build_bdist(session: nox.Session) -> None:
 def release_build_sdist(session: nox.Session) -> None:
     """Build the source distribution."""
 
-    session.install("build")
+    session.install("--group", "release_build_sdist")
 
     session.log("Building source distribution (sdist)")
     session.run("python", "-m", "build", "--sdist", "--outdir", dist_dir, ".")
@@ -474,9 +466,7 @@ def release_install(session: nox.Session) -> None:
     # PyPi, and then installing cocotb itself from the local dist directory.
 
     session.log("Installing cocotb dependencies from PyPi")
-    if sys.version_info < (3, 11):
-        session.install("exceptiongroup")
-    session.install("find_libpython")
+    session.install("--group", "package_deps")
 
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")
     session.install(
@@ -494,7 +484,7 @@ def release_install(session: nox.Session) -> None:
     session.run("cocotb-config", "--version")
 
     session.log("Installing test dependencies")
-    session.install(*test_deps)
+    session.install("--group", "test")
 
 
 @nox.session
