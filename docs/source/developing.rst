@@ -56,48 +56,36 @@ Running Tests Locally
 
 First, `set up your development environment <#setting-up-a-development-environment>`__.
 
-Our tests are managed by ``nox``, which runs both ``pytest`` tests and our system of makefiles.
+Our tests are managed by ``invoke``, which runs both ``pytest`` tests and our system of makefiles.
 The regression does not end on the first failure, but continues until all tests in the ``/tests`` and ``/examples`` directories have been run.
 
-To run the tests locally with ``nox``, issue the following command.
+To run the tests locally with ``invoke``, issue the following command.
 
 .. code:: bash
 
-   nox -s dev_test
+   invoke dev_test --sim=icarus --toplevel-lang=verilog --gpi-interface=vpi
 
 At the end of the regression, if there were any test failures, the tests that failed will be printed.
 If the tests succeed you will see the message ``Session tests was successful`` printed in green.
 
-By default the ``dev_test`` nox session runs all simulator-agnostic tests, as well as all tests which require a simulator and can be run against Icarus Verilog.
-Icarus Verilog must be installed.
-
-The simulator and the toplevel language can be changed by setting the environment variables :make:var:`SIM` and :make:var:`TOPLEVEL_LANG`.
-Alternatively, the simulator-specific nox sessions can be used, as described below.
-
-Selecting a Language and Simulator for Regression
-=================================================
-
 cocotb can be used with multiple simulators, and can run tests against all of them.
-Nox provides a session for each valid simulator/language/GPI interface combination, from which one or multiple sessions can be selected.
+Invoke takes the simulator, language, and GPI interface as optional arguments.
+Each of these arguments can be a comma-delimited list.
+These options act as filters on the entire simulator support matrix;
+not specifying any of them will run tests for all supported simulators, languages, and GPI interfaces.
 
-The following examples are good starting points;
-refer to the `nox command-line usage documentation <https://nox.thea.codes/en/stable/usage.html>`__ for more information.
+For example, to run tests for all supported languages and GPI interfaces on Riviera, issue the following command:
 
 .. code:: bash
 
-   # List all available sessions.
-   nox -l
+   invoke dev_test --sim=riviera
 
-   # Run all simulator-agnostic tests.
-   nox -s dev_test_nosim
+To run all tests against all FOSS simulators, issue the following command:
 
-   # Run the simulator-specific tests against Xcelium, using a VHDL toplevel and
-   # the VHPI interface.
-   nox -s "dev_test_sim(sim='xcelium', toplevel_lang='vhdl', gpi_interface='vhpi')"
+.. code:: bash
 
-   # Run all simulator-specific tests against Icarus Verilog and GHDL.
-   # Both simulators must be installed locally.
-   nox -k "dev_test_sim and (icarus or ghdl)"
+   invoke dev_test --sim=icarus,verilator,ghdl,nvc
+
 
 Running Individual Tests Locally
 ================================
