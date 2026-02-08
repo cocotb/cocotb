@@ -251,16 +251,18 @@ pretty = true
 # TODO add lower bounds and justifications
 [dependency-groups]
 dev = [
+    # required for development
     "pip>=25.1",  # 25.1 needed for '--groups'
-    "clang-format",
     "nox",
-    "mypy>=1.18",  # 1.18 needed for descriptor typing
     "pre-commit",
+    # allows linting the project manually
+    "clang-format",
+    "mypy>=1.18",  # 1.18 needed for descriptor typing
     "ruff",
-    "pytest>=6",
-    "coverage[toml]>=7.2",
-    "pytest-cov",
-    "gcovr==8.4",
+    # allows running tests manually if desired
+    {include-group = "test"},
+    {include-group = "test_coverage"},
+    {include-group = "coverage_report"},
 ]
 docs = [
     "Sphinx ~= 8.2.0",
@@ -282,7 +284,29 @@ docs = [
     "sphinx-autofixture",
     "pytest",
 ]
+release_build_sdist = [
+    "build",
+]
+release_build_bdist = [
+    "cibuildwheel==3.2.1",
+]
+package_deps = [
+    "exceptiongroup; python_version<'3.11'",
+    "find_libpython",
+]
+test = [
+    "pytest>=6"
+]
+test_coverage = [
+    "coverage[toml]>=7.2",
+    "pytest-cov",
+]
+coverage_report = [
+    "coverage[toml]>=7.2",
+    "gcovr==8.4",
+]
 
 [tool.uv.dependency-groups]
 # We need Python 3.11 to run Sphinx 8.2 and cibuildwheel 3.2
 docs = {requires-python = ">=3.11"}
+release_build_bdist = {requires-python = ">=3.11"}
