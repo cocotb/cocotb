@@ -236,8 +236,7 @@ Discovering Tests
     If set then if the number of failed tests reaches this value, the regression
     is terminated early and no further tests are executed.
 
-    If not set this disables early termination and causes
-    all tests to be executed regardless of failures.
+    If not set, all tests are executed regardless of failures.
 
 .. envvar:: COCOTB_TEST_MODULES
 
