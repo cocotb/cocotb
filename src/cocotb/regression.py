@@ -78,7 +78,7 @@ class SimFailure(BaseException):
 
 class RegressionTerminated(BaseException):
     """Indicates the regression was terminated early.
-    
+
     The regression can be terminated early by setting :envvar:`COCOTB_MAX_FAILURES`.
 
 
