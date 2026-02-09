@@ -88,7 +88,7 @@ class RegressionTerminated(BaseException):
 
     .. caution::
         Not intended to be raised or caught by user code.
-        Used internally by the RegressionManager.
+        Used internally by the :class:`RegressionManager`.
     """
 
 
