@@ -6,16 +6,17 @@
 
 from __future__ import annotations
 
-from typing import Any
+from types import TracebackType
+from typing import Any, Union
 
-from cocotb.task import Task
-
-
-class AsyncFixture(Task):
-    """Asynchronous fixture."""
+from cocotb._test_manager import TestManager
 
 
-class AsyncFixtureCachedResult(tuple):
+class AsyncFixtureCachedResult(
+    tuple[
+        TestManager, Any, Union[tuple[BaseException, Union[TracebackType, None]], None]
+    ]
+):
     """Cached result from asynchronous fixture.
 
     Class compatible with pytest fixture cached result.
@@ -35,7 +36,7 @@ class AsyncFixtureCachedResult(tuple):
 
     def __getitem__(self, index: Any) -> Any:
         """Dynamically get result from asynchronous task."""
-        task: Task = super().__getitem__(0)
+        task = super().__getitem__(0)._main_task
 
         if not task.done() or index == 1:
             return super().__getitem__(index)
@@ -53,4 +54,4 @@ class AsyncFixtureCachedResult(tuple):
 
 def resolve_fixture_arg(arg: Any) -> Any:
     """Resolve fixture argument."""
-    return arg.result() if isinstance(arg, AsyncFixture) else arg
+    return arg._main_task.result() if isinstance(arg, TestManager) else arg

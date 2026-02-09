@@ -7,26 +7,36 @@ Setting Up a Development Environment
 
 :ref:`Install prerequisites to build the development version of cocotb <install-devel>` and standard development tools (editor, shell, git, etc.).
 
-.. note:: Type checking and documentation generation require Python 3.11+.
+.. note:: Documentation generation requires Python 3.11+.
 
 First, you should `fork and clone <https://guides.github.com/activities/forking/>`__ the cocotb repo to your machine.
 This will allow you to make changes to the cocotb source code, create pull requests, and run regressions and build documentation locally.
 
-Additionally, you will need `doxygen <https://www.doxygen.nl/index.html>`__, for building documentation;
-`nox <https://pypi.org/project/nox/>`__, for building documentation and running regression tests;
-and `pre-commit <https://pre-commit.com/>`__, to check your changes before committing them.
-
+You will need `doxygen <https://www.doxygen.nl/index.html>`__, for building documentation.
 We recommend if you are using a Linux distribution to use your system package manager to install doxygen.
 Likewise, doxygen can be installed using the homebrew package manager on Mac OS.
 Windows contributors should download a binary distribution installer from the main website.
 
-``nox`` and ``pre-commit`` are Python projects and can be installed with ``pip``:
+Next install `uv <https://docs.astral.sh/uv/getting-started/installation/>`__,
+which is a tool for managing Python virtual environments and dependencies.
+
+After ``uv`` is installed, run the following command in the project root to build a virtual environment for development.
 
 .. code:: bash
 
-   pip install nox pre-commit
+   uv venv
 
-To enable pre-commit run the following command at the root of the cloned project to install the git hooks.
+This will create a virtual environment and print instructions on how to activate it.
+After you activate the virtual environment, you can install the development dependencies with the following command:
+
+.. code:: bash
+
+   uv sync --dev
+
+.. note::
+   We recommend using `direnv <https://direnv.net/>`__ to automatically activate the virtual environment when you navigate into the project directory.
+
+To enable pre-commit, run the following command at the root of the cloned project to install the git hooks.
 The first run of pre-commit will build an environment for you, so it may take a while.
 Following runs should be much quicker.
 

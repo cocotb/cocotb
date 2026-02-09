@@ -83,7 +83,11 @@ class Task(Generic[ResultType]):
         self, inst: Coroutine[Trigger, None, ResultType], *, name: str | None = None
     ) -> None:
         self._native_coroutine: bool
-        if inspect.iscoroutinefunction(inst):
+        if inspect.iscoroutine(inst):
+            self._native_coroutine = True
+        elif isinstance(inst, collections.abc.Coroutine):
+            self._native_coroutine = False
+        elif inspect.iscoroutinefunction(inst):
             raise TypeError(
                 f"Coroutine function {inst} should be called prior to being scheduled."
             )
@@ -92,10 +96,6 @@ class Task(Generic[ResultType]):
                 f"{inst.__qualname__} is an async generator, not a coroutine. "
                 "You likely used the yield keyword instead of await."
             )
-        elif inspect.iscoroutine(inst):
-            self._native_coroutine = True
-        elif isinstance(inst, collections.abc.Coroutine):
-            self._native_coroutine = False
         else:
             raise TypeError(f"{inst} isn't a valid coroutine!")
 
@@ -546,7 +546,8 @@ class Task(Generic[ResultType]):
 
         Currently only useful for :class:`.TaskManager`.
         """
-        self._must_cancel -= 1
+        if self._must_cancel > 0:
+            self._must_cancel -= 1
 
     def cancelled(self) -> bool:
         """Return ``True`` if the Task was cancelled."""

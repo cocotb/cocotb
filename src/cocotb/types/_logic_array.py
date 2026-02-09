@@ -275,18 +275,24 @@ class LogicArray(AbstractMutableArray[Logic]):
                 self._range = Range(len(self._value_as_str) - 1, "downto", 0)
         elif isinstance(value, int):
             value = int(value)  # force bool to int
-            if value < 0:
-                raise ValueError(
-                    "Integer literals cannot be negative. Use `from_signed()` instead."
-                )
             if range is None:
                 raise TypeError("Missing required arguments: 'range'")
-            bitlen = max(1, int.bit_length(value))
-            if bitlen > len(range):
+            if len(range) == 0:
                 raise ValueError(
                     f"{value!r} is too large to fit in LogicArray with {range!r}"
                 )
-            self._value_as_int = value
+            value_ = value
+            if value_ < 0:
+                if value_ < -(1 << (len(range) - 1)):
+                    raise ValueError(
+                        f"{value!r} is too small to fit in LogicArray with {range!r}"
+                    )
+                value_ += 1 << len(range)
+            elif value_ >= 1 << len(range):
+                raise ValueError(
+                    f"{value!r} is too large to fit in LogicArray with {range!r}"
+                )
+            self._value_as_int = value_
             self._range = range
         elif isinstance(value, LogicArray):
             array = value._value_as_array
@@ -589,7 +595,10 @@ class LogicArray(AbstractMutableArray[Logic]):
                 # Null arrays don't have a value and thus always compare False.
                 return False
             try:
-                return self.to_unsigned() == other
+                if other < 0:
+                    return self.to_signed() == other
+                else:
+                    return self.to_unsigned() == other
             except ValueError:
                 return False
         elif isinstance(other, str):
@@ -697,7 +706,7 @@ class LogicArray(AbstractMutableArray[Logic]):
         "`logic_array.integer = value` setter is deprecated. Use `logic_array[:] = value` instead."
     )
     def integer(self, value: int) -> None:
-        self[:] = value
+        self[:] = LogicArray.from_unsigned(value, len(self))
 
     @property
     @deprecated(

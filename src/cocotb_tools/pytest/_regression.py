@@ -44,14 +44,13 @@ from pytest import (
 import cocotb
 import cocotb._shutdown
 import cocotb._test_manager
+import cocotb.types._resolve
 from cocotb import simulator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_manager import TestManager
 from cocotb.simtime import TimeUnit, get_sim_time
-from cocotb.task import Task
 from cocotb_tools.pytest._fixture import (
-    AsyncFixture,
     AsyncFixtureCachedResult,
     resolve_fixture_arg,
 )
@@ -146,6 +145,9 @@ class RegressionManager:
         self._logging_restored: bool = False
         self._seed: int = int(time()) if seed is None else seed
         self._random_state: Any = random.getstate()
+        self._random_x_resolver_state: Any = (
+            cocotb.types._resolve._randomResolveRng.getstate()
+        )
 
         pluginmanager = PytestPluginManager()
 
@@ -506,9 +508,15 @@ class RegressionManager:
         hasher = hashlib.sha1()
         hasher.update(item.nodeid.encode())
         seed: int = self._seed + int(hasher.hexdigest(), 16)
-        cocotb.RANDOM_SEED = seed
+
+        # seed random number generators with test seed
         self._random_state = random.getstate()
         random.seed(seed)
+        self._random_x_resolver_state = (
+            cocotb.types._resolve._randomResolveRng.getstate()
+        )
+        cocotb.types._resolve._randomResolveRng.seed(seed)
+        cocotb.RANDOM_SEED = seed
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_call(self, item: Item) -> None:
@@ -532,6 +540,7 @@ class RegressionManager:
         # Restore random seed to original value
         cocotb.RANDOM_SEED = self._seed
         random.setstate(self._random_state)
+        cocotb.types._resolve._randomResolveRng.setstate(self._random_x_resolver_state)
 
     @hookimpl(tryfirst=True)
     def pytest_fixture_setup(
@@ -557,16 +566,23 @@ class RegressionManager:
             # Test setup-only without teardown
             func = self._setup_async_function(fixturedef, request)
 
-        task: Task = AsyncFixture(func(), name=f"Setup {request.fixturename}")
-        cache_key = fixturedef.cache_key(request)
-        fixturedef.cached_result = AsyncFixtureCachedResult((task, cache_key, None))
-
         if is_async_generator:
             # Test setup with teardown, added sub-tasks during setup will be cancelled by test teardown
-            setup = RunningTestSetup(self._setup_completed, task)
+            setup = RunningTestSetup(
+                func(),
+                name=f"Setup {request.fixturename}",
+                test_complete_cb=self._setup_completed,
+            )
         else:
             # Test setup-only without teardown, run all tasks only during test setup
-            setup = TestManager(self._setup_completed, task)
+            setup = TestManager(
+                func(),
+                name=f"Setup {request.fixturename}",
+                test_complete_cb=self._setup_completed,
+            )
+
+        cache_key = fixturedef.cache_key(request)
+        fixturedef.cached_result = AsyncFixtureCachedResult((setup, cache_key, None))
 
         self._setups.append(setup)
 
@@ -638,8 +654,11 @@ class RegressionManager:
 
             await testfunction(**kwargs)
 
-        task: Task = Task(func(), name=f"Test {pyfuncitem.name}")
-        self._call = TestManager(self._call_completed, task)
+        self._call = TestManager(
+            func(),
+            name=f"Test {pyfuncitem.name}",
+            test_complete_cb=self._call_completed,
+        )
 
         return True
 
@@ -737,9 +756,12 @@ class RegressionManager:
             except StopAsyncIteration:
                 pass
 
-        task: Task = Task(func(), name=f"Teardown {request.fixturename}")
         setup: TestManager = self._running_test
-        teardown: TestManager = TestManager(self._teardown_completed, task)
+        teardown: TestManager = TestManager(
+            func(),
+            name=f"Teardown {request.fixturename}",
+            test_complete_cb=self._teardown_completed,
+        )
 
         def finalizer() -> None:
             # Assign setup tasks (without the main task) to test teardown
@@ -816,7 +838,6 @@ class RegressionManager:
             running_test: Test to run.
         """
         self._running_test = running_test
-        cocotb._test_manager.set_current_test(running_test)
 
         if self._scheduled:
             self._timer1._register(self._running_test.start)
