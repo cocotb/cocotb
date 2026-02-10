@@ -35,7 +35,7 @@ class GPITrigger(Trigger):
 
     def __init__(self) -> None:
         super().__init__()
-        self._cbhdl: simulator.gpi_cb_hdl | None = None
+        self._cbhdl: simulator.sim_callback | None = None
 
     def _react(self) -> None:
         if debug.debug:
