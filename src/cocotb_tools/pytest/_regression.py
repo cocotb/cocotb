@@ -375,7 +375,7 @@ class RegressionManager:
         self._update_report_section(item=item, when=when)
 
         return self._call_and_report(
-            item=item, when=when, func=lambda: self._running_test.result()
+            item=item, when=when, func=self._running_test.result
         )
 
     @finish_on_exception
