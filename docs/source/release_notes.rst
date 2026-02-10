@@ -93,7 +93,7 @@ Features
 - Added :meth:`.LogicArray.from_unsigned` and :meth:`.LogicArray.from_signed` to construct :class:`~cocotb.types.LogicArray` from :class:`int`. (:pr:`3792`)
 - Added :envvar:`COCOTB_TEST_FILTER` which filters tests like :envvar:`COCOTB_TESTCASE`, but is a regular expression to allow for more expressive test filtering. (:pr:`3841`)
 - Introduced :envvar:`COCOTB_TRUST_INERTIAL_WRITES` to enable a mode where VPI/VHPI/FLI inertial writes are trusted to behave properly. Enabling this feature can lead to behavioral changes and noticeable performance improvements. Some simulators do not handle writes properly, so use this option with caution. (:pr:`3873`)
-- Added :class:`cocotb.simulator.GpiClock`, a C++ clock generator implementation with higher performance due to less handshaking between Python and the GPI. :class:`~cocotb.clock.Clock` uses it automatically when it would behave identically to the Python implementation. (:pr:`3983`)
+- Added :class:`cocotb.simulator.cpp_clock`, a C++ clock generator implementation with higher performance due to less handshaking between Python and the GPI. :class:`~cocotb.clock.Clock` uses it automatically when it would behave identically to the Python implementation. (:pr:`3983`)
 - The :ref:`Siemens DSim <sim-dsim>` simulator is now supported by cocotb. (:pr:`3990`)
 - Added :meth:`.LogicArray.to_bytes` and :meth:`.LogicArray.from_bytes` for converting :class:`~cocotb.types.LogicArray` to and from :class:`bytes`. (:pr:`4098`)
 - :class:`~cocotb.types.LogicArray` can take :class:`int` as the second positional argument as shorthand for passing ``Range(width-1, "downto", 0)`` as ``range``. (:pr:`4142`)
