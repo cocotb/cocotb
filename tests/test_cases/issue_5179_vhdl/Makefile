@@ -4,6 +4,12 @@
 
 TOPLEVEL_LANG ?= vhdl
 
+SIM ?= ghdl
+
+VHDL_SOURCES = $(PWD)/debug_array.vhdl
+
+COCOTB_TOPLEVEL = debug_array
+COCOTB_TEST_MODULES = test
 ifneq ($(TOPLEVEL_LANG),vhdl)
 
 all:
@@ -11,13 +17,6 @@ all:
 clean::
 
 else
-
-SIM ?= ghdl
-
-VHDL_SOURCES = $(PWD)/debug_array.vhdl
-
-COCOTB_TOPLEVEL = debug_array
-COCOTB_TEST_MODULES = test
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 

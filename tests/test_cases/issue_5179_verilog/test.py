@@ -14,10 +14,10 @@ from cocotb.handle import PackedObject
 async def test_debug_array_verilog(dut):
     tlog = logging.getLogger("cocotb.test_debug_array_verilog")
 
-    def inspect_signal(signal, signal_name="name"):
+    def inspect_signal(signal, signal_name):
         tlog.info(f"Signal name: {signal_name} {type(signal)}")
 
-    inspect_signal(dut.test_a)
+    inspect_signal(dut.test_a, "dut.test_a")
     assert type(dut.test_a) is PackedObject
 
     try:

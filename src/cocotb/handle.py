@@ -1381,18 +1381,11 @@ class LogicArrayObject(
         VHDL indexable vectors
         """
 
-        length = len(self)
-        if index < 0 or index >= length:
-            raise IndexError(
-                f"Index {index} out of range for vector of length {length}"
-            )
+        handle = self._handle.get_handle_by_index(index)
+        if handle is None:
+            raise IndexError
 
-        sub_handle = self._handle  # .get_handle_by_index(index)
-        if sub_handle is None:
-            raise IndexError(f"Unable to index {self._name}[{index}]")
-
-        path = f"{self._path}[{index}]"
-        return LogicObject(sub_handle, path)
+        return LogicObject(handle, self._path)
 
     @cached_property
     def _min_val(self) -> int:
