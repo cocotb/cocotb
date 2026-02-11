@@ -12,7 +12,7 @@ from cocotb.handle import PackedObject
 
 @cocotb.test()
 async def test_debug_array_verilog(dut):
-    tlog = logging.getLogger("cocotb.test")
+    tlog = logging.getLogger("cocotb.test_debug_array_verilog")
 
     def inspect_signal(signal, signal_name="name"):
         tlog.info(f"Signal name: {signal_name} {type(signal)}")
