@@ -452,7 +452,7 @@ async def type_check_verilog(dut):
     # Verilator returns vpiReg rather than vpiNet
     # Verilator (correctly) treats parameters with implicit type, that are assigned a string literal value, as an unsigned integer. See IEEE 1800-2017 Section 5.9 and Section 6.20.2
     if SIM_NAME.startswith("verilator"):
-        test_handles.append((dut.STRING_PARAM, "GPI_LOGIC_ARRAY"))
+        test_handles.append((dut.STRING_PARAM, "GPI_PACKED_OBJECT"))
     else:
         test_handles.append((dut.STRING_PARAM, "GPI_STRING"))
 
