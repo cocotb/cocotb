@@ -75,6 +75,18 @@ class TaskManager:
         # Start with no remaining tasks
         self._none_remaining.set()
 
+    def _ensure_can_add(self) -> None:
+        if self._cancelled:
+            raise RuntimeError("Cannot add new Tasks to TaskManager after error")
+        elif self._finishing:
+            raise RuntimeError("Cannot add new Tasks to TaskManager after finishing")
+        elif not self._entered:
+            raise RuntimeError(
+                "Cannot add new Tasks to TaskManager before entering context"
+            )
+        if current_task() is not self._parent_task:
+            raise RuntimeError("Cannot add new Tasks to TaskManager from another Task")
+
     def start_soon(
         self,
         aw: Awaitable[T],
@@ -94,11 +106,18 @@ class TaskManager:
         Returns:
             A :class:`~cocotb.task.Task` which is awaiting *aw* concurrently.
         """
-        if not isinstance(aw, Awaitable):
+        self._ensure_can_add()
+
+        if isinstance(aw, Coroutine):
+            # This must come before Awaitable since Coroutine is a subclass of Awaitable
+            pass
+        elif isinstance(aw, Awaitable):
+            aw = _waiter(aw)
+        else:
             raise TypeError(
                 f"start_soon() expected an Awaitable, got {type(aw).__name__}"
             )
-        task = Task[T](_waiter(aw), name=name)
+        task = Task[T](aw, name=name)
         self._add_task(task, continue_on_error=continue_on_error)
         return task
 
@@ -146,6 +165,8 @@ class TaskManager:
                     # Do other stuff in parallel to my_func
                     ...
         """
+        self._ensure_can_add()
+
         if coro_func is None:
             if continue_on_error is None:
                 raise TypeError(
@@ -176,17 +197,6 @@ class TaskManager:
         *,
         continue_on_error: bool | None = None,
     ) -> None:
-        if self._cancelled:
-            raise RuntimeError("Cannot add new Tasks to TaskManager after error")
-        elif self._finishing:
-            raise RuntimeError("Cannot add new Tasks to TaskManager after finishing")
-        elif not self._entered:
-            raise RuntimeError(
-                "Cannot add new Tasks to TaskManager before entering context"
-            )
-        if current_task() is not self._parent_task:
-            raise RuntimeError("Cannot add new Tasks to TaskManager from another Task")
-
         # Track the Task and store per-Task continue_on_error setting
         task._add_done_callback(self._done_callback)
         if continue_on_error is None:

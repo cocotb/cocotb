@@ -53,14 +53,35 @@ def test_logic_array_iterable_construction():
 def test_logic_array_int_construction():
     with pytest.raises(TypeError):
         LogicArray(10)  # refuse temptation to guess
+
     assert LogicArray(10, Range(5, "downto", 0)) == LogicArray("001010")
     assert LogicArray(10, 6) == LogicArray("001010")
     assert LogicArray(10, range=Range(5, "downto", 0)) == LogicArray("001010")
 
+    assert LogicArray(-2, Range(5, "downto", 0)) == LogicArray("111110")
+    assert LogicArray(-2, 6) == LogicArray("111110")
+    assert LogicArray(-2, range=Range(5, "downto", 0)) == LogicArray("111110")
+
     with pytest.raises(ValueError):
         LogicArray(10, Range(1, "to", 3))
     with pytest.raises(ValueError):
-        LogicArray(-10, Range(7, "downto", 0))
+        LogicArray(-10, Range(3, "downto", 0))
+
+
+def test_logic_array_copy_construction():
+    l = LogicArray("01XZ", Range(3, "downto", 0))
+    l2 = LogicArray(l)
+    assert l2 == l
+    assert l2.range == l.range
+    l3 = LogicArray(l, Range(7, "downto", 4))
+    assert l3 == l
+    assert l3.range == Range(7, "downto", 4)
+    l4 = LogicArray(l, 4)
+    assert l4 == l
+    assert l4.range == Range(3, "downto", 0)
+
+    with pytest.raises(ValueError):
+        LogicArray(l, Range(1, "to", 0))
 
 
 def test_logic_array_bad_construction():
@@ -284,6 +305,9 @@ def test_equality():
     assert LogicArray("0101") != "lol"
     assert LogicArray("0101") != 123
     assert LogicArray("0101") != [7, "f", dict]
+    assert LogicArray("1111") == -1
+    assert LogicArray("1111") == 15
+    assert LogicArray("0111") != -6
 
 
 def test_repr_eval():
@@ -511,6 +535,8 @@ def test_from_signed_wrap():
     assert LogicArray.from_signed(8, 4, on_overflow="wrap") == LogicArray("1000")
     assert LogicArray.from_signed(15, 4, on_overflow="wrap") == LogicArray("1111")
     assert LogicArray.from_signed(16, 4, on_overflow="wrap") == LogicArray("0000")
+    with pytest.raises(ValueError):
+        LogicArray.from_signed(-45, 4, on_overflow="6789")
 
 
 def test_from_unsigned_wrap():
@@ -521,3 +547,5 @@ def test_from_unsigned_wrap():
     assert LogicArray.from_unsigned(15, 4, on_overflow="wrap") == LogicArray("1111")
     assert LogicArray.from_unsigned(16, 4, on_overflow="wrap") == LogicArray("0000")
     assert LogicArray.from_unsigned(20, 4, on_overflow="wrap") == LogicArray("0100")
+    with pytest.raises(ValueError):
+        LogicArray.from_unsigned(10, 4, on_overflow="6789")

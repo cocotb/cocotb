@@ -1,0 +1,1 @@
+Fixed bug where :envvar:`COCOTB_RESOLVE_X` when set ``"random"`` would resolve all non-``0``/``1`` values in a vector to the same value.

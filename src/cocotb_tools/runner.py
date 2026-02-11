@@ -535,7 +535,9 @@ class Runner(ABC):
         pytest_current_test: str = _env.as_str("PYTEST_CURRENT_TEST")
 
         if pytest_current_test:
-            self.current_test_name = pytest_current_test.split(":")[-1].split(" ")[0]
+            self.current_test_name = pytest_current_test.rsplit(":", maxsplit=1)[
+                -1
+            ].split(" ")[0]
         else:
             self.current_test_name = "test"
 

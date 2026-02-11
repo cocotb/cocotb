@@ -404,8 +404,7 @@ static PyObject *register_value_change_callback(
 
     PyObject *pSigHdl = PyTuple_GetItem(args, 0);
     if (Py_TYPE(pSigHdl) != &gpi_hdl_Object<gpi_sim_hdl>::py_type) {
-        PyErr_SetString(PyExc_TypeError,
-                        "First argument must be a gpi_sim_hdl");
+        PyErr_SetString(PyExc_TypeError, "First argument must be a sim_obj");
         return NULL;
     }
     gpi_sim_hdl sig_hdl = ((gpi_hdl_Object<gpi_sim_hdl> *)pSigHdl)->hdl;
@@ -458,7 +457,7 @@ static PyObject *package_iterate(PyObject *, PyObject *) {
     return gpi_hdl_New(result);
 }
 
-static PyObject *next(gpi_hdl_Object<gpi_iterator_hdl> *self) {
+static PyObject *iterator_next(gpi_hdl_Object<gpi_iterator_hdl> *self) {
     gpi_sim_hdl result = gpi_next(self->hdl);
 
     // Raise StopIteration when we're done
@@ -983,7 +982,8 @@ static void clock_dealloc(PyObject *self) {
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-static PyObject *clk_start(gpi_hdl_Object<gpi_clk_hdl> *self, PyObject *args) {
+static PyObject *clock_start(gpi_hdl_Object<gpi_clk_hdl> *self,
+                             PyObject *args) {
     unsigned long long period, t_high;
     int start_high;
     int set_action;
@@ -1064,28 +1064,28 @@ static int add_module_types(PyObject *simulator) {
 
     typ = (PyObject *)&gpi_hdl_Object<gpi_sim_hdl>::py_type;
     Py_INCREF(typ);
-    if (PyModule_AddObject(simulator, "gpi_sim_hdl", typ) < 0) {
+    if (PyModule_AddObject(simulator, "sim_obj", typ) < 0) {
         Py_DECREF(typ);
         return -1;
     }
 
     typ = (PyObject *)&gpi_hdl_Object<gpi_cb_hdl>::py_type;
     Py_INCREF(typ);
-    if (PyModule_AddObject(simulator, "gpi_cb_hdl", typ) < 0) {
+    if (PyModule_AddObject(simulator, "sim_callback", typ) < 0) {
         Py_DECREF(typ);
         return -1;
     }
 
     typ = (PyObject *)&gpi_hdl_Object<gpi_iterator_hdl>::py_type;
     Py_INCREF(typ);
-    if (PyModule_AddObject(simulator, "gpi_iterator_hdl", typ) < 0) {
+    if (PyModule_AddObject(simulator, "sim_obj_iterator", typ) < 0) {
         Py_DECREF(typ);
         return -1;
     }
 
     typ = (PyObject *)&gpi_hdl_Object<gpi_clk_hdl>::py_type;
     Py_INCREF(typ);
-    if (PyModule_AddObject(simulator, "GpiClock", typ) < 0) {
+    if (PyModule_AddObject(simulator, "cpp_clock", typ) < 0) {
         // LCOV_EXCL_START
         Py_DECREF(typ);
         return -1;
@@ -1108,12 +1108,12 @@ static PyMethodDef SimulatorMethods[] = {
     {"get_root_handle", get_root_handle, METH_VARARGS,
      PyDoc_STR("get_root_handle(name, /)\n"
                "--\n\n"
-               "get_root_handle(name: str) -> cocotb.simulator.gpi_sim_hdl\n"
+               "get_root_handle(name: str) -> cocotb.simulator.sim_obj\n"
                "Get the root handle.")},
     {"package_iterate", package_iterate, METH_NOARGS,
      PyDoc_STR("package_iterate(/)\n"
                "--\n\n"
-               "package_iterate() -> cocotb.simulator.gpi_iterator_hdl\n"
+               "package_iterate() -> cocotb.simulator.sim_obj_iterator\n"
                "Get an iterator handle to loop over all HDL packages.\n"
                "\n"
                ".. versionadded:: 2.0")},
@@ -1121,33 +1121,33 @@ static PyMethodDef SimulatorMethods[] = {
      PyDoc_STR("register_timed_callback(time, func, /, *args)\n"
                "--\n\n"
                "register_timed_callback(time: int, func: Callable[..., Any], "
-               "*args: Any) -> cocotb.simulator.gpi_cb_hdl\n"
+               "*args: Any) -> cocotb.simulator.sim_callback\n"
                "Register a timed callback.")},
     {"register_value_change_callback", register_value_change_callback,
      METH_VARARGS,
      PyDoc_STR("register_value_change_callback(signal, func, edge, /, *args)\n"
                "--\n\n"
                "register_value_change_callback(signal: "
-               "cocotb.simulator.gpi_sim_hdl, func: Callable[..., Any], edge: "
-               "int, *args: Any) -> cocotb.simulator.gpi_cb_hdl\n"
+               "cocotb.simulator.sim_obj, func: Callable[..., Any], edge: "
+               "int, *args: Any) -> cocotb.simulator.sim_callback\n"
                "Register a signal change callback.")},
     {"register_readonly_callback", register_readonly_callback, METH_VARARGS,
      PyDoc_STR("register_readonly_callback(func, /, *args)\n"
                "--\n\n"
                "register_readonly_callback(func: Callable[..., Any], *args: "
-               "Any) -> cocotb.simulator.gpi_cb_hdl\n"
+               "Any) -> cocotb.simulator.sim_callback\n"
                "Register a callback for the read-only phase.")},
     {"register_nextstep_callback", register_nextstep_callback, METH_VARARGS,
      PyDoc_STR("register_nextstep_callback(func, /, *args)\n"
                "--\n\n"
                "register_nextstep_callback(func: Callable[..., Any], *args: "
-               "Any) -> cocotb.simulator.gpi_cb_hdl\n"
+               "Any) -> cocotb.simulator.sim_callback\n"
                "Register a callback for the cbNextSimTime callback.")},
     {"register_rwsynch_callback", register_rwsynch_callback, METH_VARARGS,
      PyDoc_STR("register_rwsynch_callback(func, /, *args)\n"
                "--\n\n"
                "register_rwsynch_callback(func: Callable[..., Any], *args: "
-               "Any) -> cocotb.simulator.gpi_cb_hdl\n"
+               "Any) -> cocotb.simulator.sim_callback\n"
                "Register a callback for the read-write phase.")},
     {"stop_simulator", stop_simulator, METH_VARARGS,
      PyDoc_STR("stop_simulator()\n"
@@ -1201,8 +1201,8 @@ static PyMethodDef SimulatorMethods[] = {
     {"clock_create", clock_create, METH_VARARGS,
      PyDoc_STR("clock_create(signal, /)\n"
                "--\n\n"
-               "clock_create(signal: cocotb.simulator.gpi_sim_hdl"
-               ") -> cocotb.simulator.GpiClock\n"
+               "clock_create(signal: cocotb.simulator.sim_obj"
+               ") -> cocotb.simulator.cpp_clock\n"
                "Create a clock driver on a signal.\n"
                "\n"
                ".. versionadded:: 2.0")},
@@ -1284,7 +1284,7 @@ PyMODINIT_FUNC PyInit_simulator(void) {
  * __text_signature__.
  */
 
-static PyMethodDef gpi_sim_hdl_methods[] = {
+static PyMethodDef sim_obj_methods[] = {
     {"get_signal_val_long", (PyCFunction)get_signal_val_long, METH_NOARGS,
      PyDoc_STR("get_signal_val_long($self)\n"
                "--\n\n"
@@ -1343,16 +1343,15 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
          "--\n\n"
          "get_handle_by_name(name: str, discovery_method: "
          "cocotb.handle._GPIDiscovery) -> "
-         "cocotb.simulator.gpi_sim_hdl\n"
+         "cocotb.simulator.sim_obj\n"
          "Get a handle to a child object by name.\n"
          "Specify *discovery_method* to determine the signal discovery "
          "strategy. :data:`~cocotb.handle.GPIDiscovery.AUTO` by default.")},
     {"get_handle_by_index", (PyCFunction)get_handle_by_index, METH_VARARGS,
-     PyDoc_STR(
-         "get_handle_by_index($self, index, /)\n"
-         "--\n\n"
-         "get_handle_by_index(index: int) -> cocotb.simulator.gpi_sim_hdl\n"
-         "Get a handle to a child object by index.")},
+     PyDoc_STR("get_handle_by_index($self, index, /)\n"
+               "--\n\n"
+               "get_handle_by_index(index: int) -> cocotb.simulator.sim_obj\n"
+               "Get a handle to a child object by index.")},
     {"get_name_string", (PyCFunction)get_name_string, METH_NOARGS,
      PyDoc_STR("get_name_string($self)\n"
                "--\n\n"
@@ -1401,7 +1400,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
      PyDoc_STR(
          "iterate($self, mode, /)\n"
          "--\n\n"
-         "iterate(mode: int) -> cocotb.simulator.gpi_iterator_hdl\n"
+         "iterate(mode: int) -> cocotb.simulator.sim_obj_iterator\n"
          "Get an iterator handle to loop over all members in an object.")},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
@@ -1410,27 +1409,29 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
 template <>
 PyTypeObject gpi_hdl_Object<gpi_sim_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_sim_hdl>();
-    type.tp_name = "cocotb.simulator.gpi_sim_hdl";
+    type.tp_name = "cocotb.simulator.sim_obj";
     type.tp_doc =
-        "GPI object handle.\n"
+        "A simulation object that represents a GPI object handle.\n"
         "\n"
         "Contains methods for getting and setting the value of a GPI object, "
-        "and introspection.";
-    type.tp_methods = gpi_sim_hdl_methods;
+        "and introspection of the object and design hierarchy.";
+    type.tp_methods = sim_obj_methods;
     return type;
 }();
 
 template <>
 PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_iterator_hdl>();
-    type.tp_name = "cocotb.simulator.gpi_iterator_hdl";
-    type.tp_doc = "GPI iterator handle.";
+    type.tp_name = "cocotb.simulator.sim_obj_iterator";
+    type.tp_doc =
+        "A :term:`Python iterator <python:iterator>` that wraps a GPI iterator "
+        "handle.";
     type.tp_iter = PyObject_SelfIter;
-    type.tp_iternext = (iternextfunc)next;
+    type.tp_iternext = (iternextfunc)iterator_next;
     return type;
 }();
 
-static PyMethodDef gpi_cb_hdl_methods[] = {
+static PyMethodDef sim_callback_methods[] = {
     {"deregister", (PyCFunction)deregister, METH_NOARGS,
      PyDoc_STR("deregister($self)\n"
                "--\n\n"
@@ -1442,14 +1443,15 @@ static PyMethodDef gpi_cb_hdl_methods[] = {
 template <>
 PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_cb_hdl>();
-    type.tp_name = "cocotb.simulator.gpi_cb_hdl";
-    type.tp_doc = "GPI callback handle.";
-    type.tp_methods = gpi_cb_hdl_methods;
+    type.tp_name = "cocotb.simulator.sim_callback";
+    type.tp_doc =
+        "A simulation callback object that manages a GPI callback handle.";
+    type.tp_methods = sim_callback_methods;
     return type;
 }();
 
-static PyMethodDef gpi_clk_methods[] = {
-    {"start", (PyCFunction)clk_start, METH_VARARGS,
+static PyMethodDef cpp_clock_methods[] = {
+    {"start", (PyCFunction)clock_start, METH_VARARGS,
      PyDoc_STR(
          "start($self, period_steps, high_steps, start_high)\n"
          "--\n\n"
@@ -1482,9 +1484,13 @@ static PyMethodDef gpi_clk_methods[] = {
 template <>
 PyTypeObject gpi_hdl_Object<gpi_clk_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_clk_hdl>();
-    type.tp_name = "cocotb.simulator.GpiClock";
-    type.tp_doc = "C++ clock using the GPI.";
-    type.tp_methods = gpi_clk_methods;
+    type.tp_name = "cocotb.simulator.cpp_clock";
+    type.tp_doc =
+        "A clock implemented in C++ that uses the GPI directly.\n"
+        "\n"
+        "The clock signal is driven without interacting with Python to "
+        "increase performance.";
+    type.tp_methods = cpp_clock_methods;
     type.tp_dealloc = clock_dealloc;
     return type;
 }();

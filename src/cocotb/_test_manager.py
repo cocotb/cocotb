@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import inspect
 import pdb
 import sys
+from asyncio import CancelledError
 from collections.abc import Coroutine
 from typing import (
     Any,
@@ -15,8 +15,11 @@ from typing import (
 
 import cocotb
 import cocotb._event_loop
-from cocotb._base_triggers import NullTrigger, Trigger
+from cocotb._base_triggers import Event, NullTrigger, Trigger, TriggerCallback
 from cocotb._deprecation import deprecated
+from cocotb._extended_awaitables import SimTimeoutError
+from cocotb._gpi_triggers import Timer
+from cocotb.simtime import TimeUnit
 from cocotb.task import ResultType, Task
 from cocotb_tools import _env
 
@@ -39,37 +42,61 @@ class TestManager:
     #  done callback with.
 
     def __init__(
-        self, test_complete_cb: Callable[[], None], main_task: Task[None]
+        self,
+        test_coro: Coroutine[Trigger, None, Any],
+        *,
+        name: str,
+        timeout: tuple[float, TimeUnit] | None = None,
+        test_complete_cb: Callable[[], None],
     ) -> None:
+        self._timeout = timeout
+        self._timeout_cb: TriggerCallback | None = None
         self._test_complete_cb: Callable[[], None] = test_complete_cb
-        self._main_task: Task[None] = main_task
-        self._main_task._add_done_callback(self._test_done_callback)
 
-        self.tasks: list[Task[Any]] = [main_task]
-
+        # We create the main task here so that the init checks can be done immediately.
+        self._main_task = Task[None](test_coro, name=f"Test {name}")
+        self._tasks: list[Task[Any]] = []
         self._excs: list[BaseException] = []
         self._finishing: bool = False
+        self._complete: bool = False
+        self._done = Event()
 
     def _test_done_callback(self, task: Task[None]) -> None:
-        self.tasks.remove(task)
+        self.remove_task(task)
         # If cancelled, end the Test without additional error. This case would only
         # occur if a child threw a CancelledError or if the Test was forced to shutdown.
         if task.cancelled():
-            self.abort()
+            self._abort()
             return
         # Handle outcome appropriately and shut down the Test.
         e = task.exception()
         if e is None:
-            self.abort()
+            self._abort()
         elif isinstance(e, TestSuccess):
             task._log.info("Test stopped early by this task")
-            self.abort()
+            self._abort()
         else:
-            self.abort(e)
+            self._abort(e)
 
     def start(self) -> None:
+        # set global current test manager
+        global _current_test
+        _current_test = self
+
+        # start main task
+        self._main_task._add_done_callback(self._test_done_callback)
         self._main_task._ensure_started()
+        self._tasks.append(self._main_task)
+
+        # start timeout if specified
+        if self._timeout is not None:
+            self._timeout_cb = Timer(*self._timeout)._register(self._on_timeout)
+
         cocotb._event_loop._inst.run()
+
+    def _on_timeout(self) -> None:
+        self._timeout_cb = None
+        self._abort(SimTimeoutError())
 
     def exception(self) -> BaseException | None:
         if self._excs:
@@ -84,8 +111,20 @@ class TestManager:
         if exc:
             raise exc
 
-    def abort(self, exc: BaseException | None = None) -> None:
-        """Force this test to end early."""
+    def done(self) -> bool:
+        """Return whether the test has completed."""
+        return self._complete
+
+    def cancel(self, msg: str | None = None) -> None:
+        """End the test prematurely."""
+        if msg is not None:
+            exc = CancelledError(msg)
+        else:
+            exc = CancelledError()
+        self._abort(exc)
+
+    def _abort(self, exc: BaseException | None = None) -> None:
+        """Shutdown the test"""
 
         if exc is not None:
             self._excs.append(exc)
@@ -101,19 +140,42 @@ class TestManager:
             except BaseException:
                 pdb.set_trace()
 
+        # Cancel the timeout if it is running.
+        if self._timeout_cb is not None:
+            self._timeout_cb.cancel()
+
         # Cancel Tasks.
-        for task in self.tasks[:]:
+        for task in self._tasks[:]:
             task._cancel_now()
 
-        # TODO: Wait for Tasks to end
+        # Register function to clean up global state once all Tasks have ended.
+        if self._done.is_set():
+            self._on_complete()
+        else:
+            self._done.wait()._register(self._on_complete)
+
+    def _on_complete(self) -> None:
+        # Clear the current global current test manager
+        global _current_test
+        _current_test = None
+
+        self._complete = True
+
+        # Tell RegressionManager the test is complete
         self._test_complete_cb()
 
     def add_task(self, task: Task[Any]) -> None:
-        self.tasks.append(task)
         task._add_done_callback(self._task_done_callback)
+        self._tasks.append(task)
+        self._done.clear()
+
+    def remove_task(self, task: Task[Any]) -> None:
+        self._tasks.remove(task)
+        if not self._tasks:
+            self._done.set()
 
     def _task_done_callback(self, task: Task[Any]) -> None:
-        self.tasks.remove(task)
+        self.remove_task(task)
         # if cancelled, do nothing
         if task.cancelled():
             return
@@ -127,9 +189,9 @@ class TestManager:
         # there was a failure and no one is watching, fail test
         elif isinstance(e, TestSuccess):
             task._log.info("Test stopped early by this task")
-            self.abort()
+            self._abort()
         else:
-            self.abort(e)
+            self._abort(e)
 
 
 def start_soon(
@@ -155,10 +217,9 @@ def start_soon(
 
     .. versionadded:: 1.6
     """
-    if not isinstance(coro, Task):
-        coro = create_task(coro, name=name)
-    coro._ensure_started()
-    return coro
+    task = create_task(coro, name=name)
+    task._ensure_started()
+    return task
 
 
 @deprecated("Use ``cocotb.start_soon`` instead.")
@@ -231,28 +292,20 @@ def create_task(
 
     .. versionadded:: 1.6
     """
+    if _current_test is None:
+        raise RuntimeError("No test is currently running; cannot schedule new Task.")
+
     if isinstance(coro, Task):
+        # We do not add the done callback here, so that custom Tasks are not considered
+        # "toplevel" tasks and end the test when they fail.
         if name is not None:
             coro.set_name(name)
         return coro
-    elif isinstance(coro, Coroutine):
-        task = Task[ResultType](coro, name=name)
-        _current_test.add_task(task)
-        return task
-    elif inspect.iscoroutinefunction(coro):
-        raise TypeError(
-            f"Coroutine function {coro} should be called prior to being scheduled."
-        )
-    elif inspect.isasyncgen(coro):
-        raise TypeError(
-            f"{coro.__qualname__} is an async generator, not a coroutine. "
-            "You likely used the yield keyword instead of await."
-        )
-    else:
-        raise TypeError(
-            f"Attempt to add an object of type {type(coro)} to the scheduler, "
-            f"which isn't a coroutine: {coro!r}\n"
-        )
+
+    task = Task[ResultType](coro, name=name)
+    _current_test.add_task(task)
+
+    return task
 
 
 class TestSuccess(BaseException):
@@ -277,15 +330,5 @@ def pass_test(msg: str | None = None) -> NoReturn:
     raise TestSuccess(msg)
 
 
-_current_test: TestManager
+_current_test: TestManager | None = None
 """The currently executing test's state."""
-
-
-def set_current_test(running_test: TestManager) -> None:
-    """Set the currently executing test's state.
-
-    Args:
-        running_test: The :class:`~cocotb._test.RunningTest` instance to set as current.
-    """
-    global _current_test
-    _current_test = running_test

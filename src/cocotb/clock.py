@@ -74,7 +74,7 @@ class Clock:
 
         impl:
             One of ``'auto'``, ``'gpi'``, ``'py'``.
-            Specify whether the clock is implemented with a :class:`~cocotb.simulator.GpiClock` (faster), or with a Python coroutine.
+            Specify whether the clock is implemented with a :class:`~cocotb.simulator.cpp_clock` (faster), or with a Python coroutine.
             When ``'auto'`` is used (default), the fastest implementation that supports your environment and use case is picked.
 
             .. versionadded:: 2.0
@@ -94,7 +94,7 @@ class Clock:
             .. versionadded:: 2.0
 
     When *impl* is ``'auto'``, if :envvar:`COCOTB_TRUST_INERTIAL_WRITES` is defined,
-    the :class:`~cocotb.simulator.GpiClock` implementation will be used.
+    the :class:`~cocotb.simulator.cpp_clock` implementation will be used.
     Otherwise, the Python coroutine implementation will be used.
     See the environment variable's documentation for more information on the consequences
     of using the simulator's inertial write mechanism.

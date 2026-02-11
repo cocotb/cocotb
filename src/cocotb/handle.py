@@ -77,7 +77,7 @@ class SimHandleBase(ABC):
     """
 
     @abstractmethod
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         self._handle = handle
         self._path: str = self._name if path is None else path
         """The path to this handle, or its name if this is the root handle.
@@ -218,7 +218,7 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     """
 
     @abstractmethod
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
         self._sub_handles: dict[KeyType, SimHandleBase] = {}
         self._discovered = False
@@ -326,7 +326,7 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     @abstractmethod
     def _get_handle_by_key(
         self, key: KeyType, discovery_method: GPIDiscovery
-    ) -> simulator.gpi_sim_hdl | None:
+    ) -> simulator.sim_obj | None:
         """Get child object by key from the simulator.
 
         Args:
@@ -430,7 +430,7 @@ class HierarchyObject(_HierarchyObjectBase[str]):
         assert len(dut.some_module) == total
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
     def __setattr__(self, name: str, value: object) -> None:
@@ -507,7 +507,7 @@ class HierarchyObject(_HierarchyObjectBase[str]):
 
     def _get_handle_by_key(
         self, key: str, discovery_method: GPIDiscovery
-    ) -> simulator.gpi_sim_hdl | None:
+    ) -> simulator.sim_obj | None:
         return self._handle.get_handle_by_name(key, discovery_method)
 
 
@@ -551,7 +551,7 @@ class HierarchyArrayObject(
         assert len(dut.gen_pipe_stage) == len(dut.gen_pipe_stages.range)
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _sub_handle_key(self, name: str) -> int:
@@ -579,7 +579,7 @@ class HierarchyArrayObject(
 
     def _get_handle_by_key(
         self, key: int, discovery_method: GPIDiscovery
-    ) -> simulator.gpi_sim_hdl | None:
+    ) -> simulator.sim_obj | None:
         if discovery_method is not GPIDiscovery.AUTO:
             raise NotImplementedError(
                 f"Only GPIDiscovery.AUTO is supported for {type(self).__qualname__} right now"
@@ -999,7 +999,7 @@ class ArrayObject(
             dut.array_object[child_idx]
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
         self._sub_handles: dict[int, ChildObjectT] = {}
 
@@ -1126,7 +1126,7 @@ class LogicObject(
         * ``bit``
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
@@ -1265,7 +1265,7 @@ class LogicArrayObject(
         * ``float``
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
@@ -1437,7 +1437,7 @@ class RealObject(_NonIndexableValueObjectBase[float, float]):
     This type is used when a ``real`` object in VHDL or ``float`` object in Verilog is seen.
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
@@ -1500,7 +1500,7 @@ class EnumObject(
     There may be many enumeration values that a given :class:`int` value represents.
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
@@ -1597,7 +1597,7 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
     Objects that use this type are assumed to be two's complement 32-bit integers with 2-state (``0`` and ``1``) bits.
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
@@ -1681,7 +1681,7 @@ class StringObject(
     This type is used when a ``string`` (VHDL or Verilog) simulation object is seen.
     """
 
-    def __init__(self, handle: simulator.gpi_sim_hdl, path: str | None) -> None:
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _set_value(
@@ -1764,7 +1764,7 @@ _ConcreteHandleTypes = Union[
 
 
 _handle2obj: dict[
-    simulator.gpi_sim_hdl,
+    simulator.sim_obj,
     _ConcreteHandleTypes,
 ] = {}
 
@@ -1786,7 +1786,7 @@ _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
 
 
 def _make_sim_object(
-    handle: simulator.gpi_sim_hdl, path: str | None = None
+    handle: simulator.sim_obj, path: str | None = None
 ) -> SimHandleBase:
     """Factory function to create the correct type of `SimHandle` object.
 

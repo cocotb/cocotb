@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 
-import functools
 import hashlib
 import inspect
 import logging
@@ -18,20 +17,18 @@ import re
 import sys
 import time
 import warnings
-from collections.abc import Coroutine
 from enum import auto
 from importlib import import_module
-from typing import Any, Callable
+from typing import Any
 
 import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
 import cocotb._test_manager
+import cocotb.types._resolve
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
-from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test, TestGenerator
-from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
 from cocotb._test_manager import TestManager
@@ -39,7 +36,6 @@ from cocotb._utils import DocEnum, safe_divide
 from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
 from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
-from cocotb.task import Task
 from cocotb_tools import _env
 
 __all__ = (
@@ -172,6 +168,7 @@ class RegressionManager:
         self._sim_failure: SimFailure | None = None
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_state: Any
+        self._random_x_resolver_state: Any
 
         # Setup XUnit
         ###################
@@ -364,7 +361,6 @@ class RegressionManager:
             except Exception:
                 self._record_test_init_failed()
                 continue
-            cocotb._test_manager.set_current_test(self._running_test)
 
             self._log_test_start()
 
@@ -378,21 +374,13 @@ class RegressionManager:
         return self._tear_down()
 
     def _init_test(self) -> TestManager:
-        # wrap test function in timeout
-        func: Callable[..., Coroutine[Trigger, None, None]]
-        timeout = self._test.timeout
-        if timeout is not None:
-            f = self._test.func
-
-            @functools.wraps(f)
-            async def func(*args: object, **kwargs: object) -> None:
-                await with_timeout(f(*args, **kwargs), *timeout)
-        else:
-            func = self._test.func
-
-        coro = func(cocotb.top, *self._test.args, **self._test.kwargs)
-        main_task = Task(coro, name=f"Test {self._test.name}")
-        return TestManager(self._test_complete, main_task)
+        coro = self._test.func(cocotb.top, *self._test.args, **self._test.kwargs)
+        return TestManager(
+            coro,
+            test_complete_cb=self._test_complete,
+            name=self._test.name,
+            timeout=self._test.timeout,
+        )
 
     def _schedule_next_test(self) -> None:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
@@ -400,9 +388,14 @@ class RegressionManager:
         hasher.update(self._test.fullname.encode())
         test_seed = self._regression_seed + int(hasher.hexdigest(), 16)
 
-        cocotb.RANDOM_SEED = test_seed
+        # seed random number generators with test seed
         self._random_state = random.getstate()
         random.seed(test_seed)
+        self._random_x_resolver_state = (
+            cocotb.types._resolve._randomResolveRng.getstate()
+        )
+        cocotb.types._resolve._randomResolveRng.seed(test_seed)
+        cocotb.RANDOM_SEED = test_seed
 
         self._start_sim_time = get_sim_time("ns")
         self._start_time = time.time()
@@ -438,12 +431,21 @@ class RegressionManager:
         wall_time = time.time() - self._start_time
         sim_time_ns = get_sim_time("ns") - self._start_sim_time
 
+        # restore random number generators state
         cocotb.RANDOM_SEED = self._regression_seed
         random.setstate(self._random_state)
+        cocotb.types._resolve._randomResolveRng.setstate(self._random_x_resolver_state)
+
+        exc: BaseException | None
+        if self._sim_failure is not None:
+            # When the simulation is failing, we override the typical test results.
+            exc = self._sim_failure
+        else:
+            exc = self._running_test.exception()
 
         # Judge and record pass/fail.
         self._score_test(
-            self._running_test.exception(),
+            exc,
             wall_time,
             sim_time_ns,
         )
@@ -900,14 +902,16 @@ class RegressionManager:
         if self._tearing_down:
             return
 
-        # We assume if we get here, the simulation ended unexpectedly due to an assertion failure,
-        # or due to an end of events from the simulator.
-        self._sim_failure = SimFailure(
+        msg = (
             "cocotb expected it would shut down the simulation, but the simulation ended prematurely. "
             "This could be due to an assertion failure or a call to an exit routine in the HDL, "
             "or due to the simulator running out of events to process (is your clock running?)."
         )
-        self._running_test.abort(self._sim_failure)
+
+        # We assume if we get here, the simulation ended unexpectedly due to an assertion failure,
+        # or due to an end of events from the simulator.
+        self._sim_failure = SimFailure(msg)
+        self._running_test.cancel(msg)
         cocotb._event_loop._inst.run()
 
 
