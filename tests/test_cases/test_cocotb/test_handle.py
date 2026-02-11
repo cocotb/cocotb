@@ -424,12 +424,6 @@ async def test_set_at_end_of_test_check(dut) -> None:
 
 @cocotb.test
 async def test_invalid_indexing(dut) -> None:
-    # Indexing into packed arrays is not supported.
-    # with pytest.raises(TypeError):
-    #     dut.stream_in_data[0]
-    # with pytest.raises(TypeError):
-    #     dut.stream_in_data[0:1]
-
     # Slicing not supported by ArrayObject.
     with pytest.raises(TypeError):
         dut.array_7_downto_4[6:5]
