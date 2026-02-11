@@ -100,7 +100,7 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
 #endif
                 bool isVerilog =
                     (lang != nullptr) && (strcmp(lang, "verilog") == 0);
-                if (isVerilog && !onVerilator) {
+                if (isVerilog) {
                     return GPI_PACKED_OBJECT;
                 } else {
                     return GPI_LOGIC_ARRAY;
@@ -186,7 +186,7 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
         case vpiOctConst:
         case vpiHexConst:
         case vpiIntConst:
-            if (isVerilog && !onVerilator) {
+            if (isVerilog) {
                 return GPI_PACKED_OBJECT;
             } else {
                 return GPI_LOGIC_ARRAY;
@@ -201,7 +201,7 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
                 "Unable to map vpiConst type %d onto GPI type, "
                 "guessing this is a logic vector",
                 const_type);
-            if (isVerilog && !onVerilator) {
+            if (isVerilog) {
                 return GPI_PACKED_OBJECT;
             } else {
                 return GPI_LOGIC_ARRAY;
