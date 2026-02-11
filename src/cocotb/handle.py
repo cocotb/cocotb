@@ -1380,29 +1380,19 @@ class LogicArrayObject(
         """
         VHDL indexable vectors
         """
-        # According to work around provided in issue #5179
-        # this should work but it doesn't
-        # if not isinstance(index, int):
-        #     raise TypeError("only integer indexing is supported")
 
-        # length = len(self)
-        # if index < 0 or index >= length:
-        #     raise IndexError(
-        #         f"Index {index} out of range for vector of length {length}"
-        #     )
+        length = len(self)
+        if index < 0 or index >= length:
+            raise IndexError(
+                f"Index {index} out of range for vector of length {length}"
+            )
 
-        # sub_handle = self._handle  # .get_handle_by_index(index)
-        # if sub_handle is None:
-        #     raise IndexError(f"Unable to index {self._name}[{index}]")
+        sub_handle = self._handle  # .get_handle_by_index(index)
+        if sub_handle is None:
+            raise IndexError(f"Unable to index {self._name}[{index}]")
 
-        # path = f"{self._path}[{index}]"
-        # return LogicObject(sub_handle, path)
-        raise TypeError(
-            "Packed objects, either arrays or structs, cannot be indexed.\n"
-            "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"
-            "If you need to use an element in an Edge Trigger, consider making the array or struct unpacked.\n"
-            "Alternatively, use `ValueChange` on the whole object and check the bit(s) you care about for changes afterwards."
-        )
+        path = f"{self._path}[{index}]"
+        return LogicObject(sub_handle, path)
 
     @cached_property
     def _min_val(self) -> int:
