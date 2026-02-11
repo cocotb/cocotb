@@ -93,11 +93,11 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
         case vpiPackedArrayNet:
             if (is_vector || num_elements > 1) {
                 const char *lang = getenv("TOPLEVEL_LANG");
-#if defined(VERILATOR)
-                static constexpr bool onVerilator = true;
-#else
-                static constexpr bool onVerilator = false;
-#endif
+                // #if defined(VERILATOR)
+                //                 static constexpr bool onVerilator = true;
+                // #else
+                //                 static constexpr bool onVerilator = false;
+                // #endif
                 bool isVerilog =
                     (lang != nullptr) && (strcmp(lang, "verilog") == 0);
                 if (isVerilog) {
@@ -167,11 +167,11 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
 static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
     const char *lang = getenv("TOPLEVEL_LANG");
     bool isVerilog = (lang != nullptr) && (strcmp(lang, "verilog") == 0);
-#if defined(VERILATOR)
-    static constexpr bool onVerilator = true;
-#else
-    static constexpr bool onVerilator = false;
-#endif
+    // #if defined(VERILATOR)
+    //     static constexpr bool onVerilator = true;
+    // #else
+    //     static constexpr bool onVerilator = false;
+    // #endif
     // Most simulators only return vpiDecConst or vpiBinaryConst
     switch (const_type) {
 #ifdef IUS
