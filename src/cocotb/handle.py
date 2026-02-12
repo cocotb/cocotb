@@ -1379,7 +1379,12 @@ class LogicArrayObject(
     def __getitem__(self, index: int) -> LogicObject:
         """
         VHDL indexable vectors
+
+        GHDL doesn't return VHDL sub handles
         """
+
+        if _env.as_str("SIM") == "GHDL":
+            raise Exception("GHDL does not support indexing")
 
         handle = self._handle.get_handle_by_index(index)
         if handle is None:
