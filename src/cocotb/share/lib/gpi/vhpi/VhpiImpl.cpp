@@ -482,7 +482,6 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
             break;
         }
         case GPI_LOGIC:
-        case GPI_PACKED_OBJECT:
         case GPI_LOGIC_ARRAY: {
             new_obj = new VhpiLogicSignalObjHdl(this, new_hdl, gpi_type,
                                                 is_const(new_hdl));
