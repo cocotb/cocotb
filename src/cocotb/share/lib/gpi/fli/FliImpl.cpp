@@ -395,8 +395,7 @@ GpiObjHdl *FliImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         return create_gpi_obj_from_handle(hdl, name, fq_name, accType,
                                           accFullType);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
-               obj_type == GPI_PACKED_OBJECT || obj_type == GPI_ARRAY ||
-               obj_type == GPI_STRING) {
+               obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
         FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent);
 
         LOG_DEBUG("Looking for index %u from %s", index,
