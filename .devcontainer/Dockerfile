@@ -1,6 +1,9 @@
-# Verilator image, only used to copy some binaries out of it (see below).
 ARG VERILATOR_VERSION=5.044
+ARG UV_VERSION=0.10.2
+
+# Container images used only to copy binaries out of it (see below).
 FROM verilator/verilator:v${VERILATOR_VERSION} AS verilator
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
 
 # See https://github.com/devcontainers/images/tree/main/src/base-ubuntu/history
 # for a description of what's in this base image.
@@ -34,6 +37,9 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         python3-venv \
         valgrind \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install UV from the official uv container image.
+COPY --from=uv /uv /uvx /usr/local/bin/
 
 # Install Verilator from official Verilator container image.
 COPY --from=verilator /usr/local/share/verilator /usr/local/share/verilator
