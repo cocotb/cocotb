@@ -160,9 +160,6 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
 }
 
 static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
-    const char *lang = getenv("TOPLEVEL_LANG");
-    bool isVerilog = (lang != nullptr) && (strcmp(lang, "verilog") == 0);
-
     // Most simulators only return vpiDecConst or vpiBinaryConst
     switch (const_type) {
 #ifdef IUS
@@ -177,11 +174,7 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
         case vpiOctConst:
         case vpiHexConst:
         case vpiIntConst:
-            if (isVerilog) {
-                return GPI_PACKED_OBJECT;
-            } else {
-                return GPI_LOGIC_ARRAY;
-            }
+            return GPI_PACKED_OBJECT;
         case vpiRealConst:
             return GPI_REAL;
         case vpiStringConst:
@@ -192,11 +185,7 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
                 "Unable to map vpiConst type %d onto GPI type, "
                 "guessing this is a logic vector",
                 const_type);
-            if (isVerilog) {
-                return GPI_PACKED_OBJECT;
-            } else {
-                return GPI_LOGIC_ARRAY;
-            }
+            return GPI_PACKED_OBJECT;
     }
 }
 
@@ -511,8 +500,7 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 
         new_hdl = vpi_handle_by_name(&writable[0], NULL);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
-               obj_type == GPI_PACKED_OBJECT || obj_type == GPI_ARRAY ||
-               obj_type == GPI_STRING) {
+               obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
         new_hdl = vpi_handle_by_index(vpi_hdl, index);
 
         /* vpi_handle_by_index() doesn't work for all simulators when dealing
