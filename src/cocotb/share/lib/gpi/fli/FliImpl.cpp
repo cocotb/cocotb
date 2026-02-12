@@ -169,18 +169,8 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl,
                 switch (elemTypeKind) {
                     case MTI_TYPE_ENUM:
                         if (isValueLogic(elemType)) {
-                            auto objGpiType = GPI_LOGIC_ARRAY;
-                            const char *lang = getenv("TOPLEVEL_LANG");
-                            bool isVerilog = (lang != nullptr) &&
-                                             (strcmp(lang, "verilog") == 0);
-                            if (isVerilog) {
-                                objGpiType = GPI_PACKED_OBJECT;
-                            } else {
-                                objGpiType = GPI_LOGIC_ARRAY;
-                            }
-
                             new_obj = new FliLogicObjHdl(
-                                this, hdl, objGpiType, is_const, accType,
+                                this, hdl, GPI_LOGIC_ARRAY, is_const, accType,
                                 accFullType, is_var, valType,
                                 typeKind);  // std_logic_vector
                         } else if (isValueChar(elemType)) {
