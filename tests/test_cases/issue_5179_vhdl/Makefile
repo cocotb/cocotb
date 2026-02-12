@@ -16,6 +16,12 @@ all:
 	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being vhdl"
 clean::
 
+else ifeq ($(SIM),ghdl)
+
+all:
+	@echo "Not supported on GHDL"
+clean::
+
 else
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

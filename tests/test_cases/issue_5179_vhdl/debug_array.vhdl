@@ -15,6 +15,17 @@ end debug_array;
 
 architecture rtl of debug_array is
 begin
-    test_a <= (others => '0');
-    test_b <= (others => '0');
+
+    process
+    begin
+        test_a <= (others => '0');
+        test_b <= (others => '0');
+
+        wait for 10 ns;
+
+        test_a(0) <= '1';
+
+        wait;
+    end process;
+
 end rtl;

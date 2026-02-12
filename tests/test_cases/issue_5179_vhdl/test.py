@@ -28,6 +28,6 @@ async def test_debug_array_vhdl(dut):
     inspect_signal(dut.test_a[0], "test_a[0]")
     assert type(dut.test_a[0]) is LogicObject
 
-    val = dut.test_a[0].value
-    tlog.info(f"dut.test_a[0] Value = {val}")
-    await RisingEdge(val)
+    handle = dut.test_a[0]
+    tlog.info(f"dut.test_a[0] Value = {handle.value}")
+    await RisingEdge(handle)
