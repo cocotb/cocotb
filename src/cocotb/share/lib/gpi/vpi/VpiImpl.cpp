@@ -8,8 +8,6 @@
 #include <gpi.h>
 #include <vpi_user_ext.h>
 
-#include <cstring>
-
 #include "../logging.hpp"
 #include "_vendor/vpi/sv_vpi_user.h"
 #include "_vendor/vpi/vpi_user.h"
