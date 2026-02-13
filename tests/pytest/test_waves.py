@@ -37,15 +37,18 @@ async def clock_design(dut):
     await ClockCycles(dut.clk, 10)
 
 
-def run_simulation(sim, test_args=None):
+def run_simulation(sim, extra_build_args=None, test_args=None):
     runner = get_runner(sim)
+    build_args = compile_args
+    if extra_build_args:
+        build_args = build_args + extra_build_args
     runner.build(
         always=True,
         clean=True,
         sources=sources,
         hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
-        build_args=compile_args,
+        build_args=build_args,
         waves=False if sim in ("xcelium",) else True,
     )
 
@@ -81,6 +84,20 @@ def test_wave_dump():
         dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.fst")
     elif sim == "ghdl":
         dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.ghw")
+    else:
+        raise RuntimeError("Not a supported simulator")
+    assert os.path.exists(dumpfile_path)
+
+
+@pytest.mark.simulator_required
+@pytest.mark.skipif(
+    sim not in ["verilator"],
+    reason="Skipping test because it is only for the Verilator simulator",
+)
+def test_saif_dump():
+    run_simulation(sim=sim, extra_build_args=["--trace-saif"])
+    if sim == "verilator":
+        dumpfile_path = os.path.join(sim_build, "dump.saif")
     else:
         raise RuntimeError("Not a supported simulator")
     assert os.path.exists(dumpfile_path)
