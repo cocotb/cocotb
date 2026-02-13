@@ -1383,9 +1383,6 @@ class LogicArrayObject(
         GHDL doesn't return VHDL sub handles
         """
 
-        if _env.as_str("SIM") == "GHDL":
-            raise Exception("GHDL does not support indexing")
-
         handle = self._handle.get_handle_by_index(index)
         if handle is None:
             raise IndexError
