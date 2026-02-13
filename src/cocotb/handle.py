@@ -1378,14 +1378,8 @@ class LogicArrayObject(
 
     def __getitem__(self, index: int) -> LogicObject:
         """
-        VHDL indexable vectors
-
-        GHDL doesn't return VHDL sub handles
+        Vhpi VHDL indexable vectors
         """
-
-        if _env.as_str("SIM") == "GHDL":
-            raise Exception("GHDL does not support indexing")
-
         handle = self._handle.get_handle_by_index(index)
         if handle is None:
             raise IndexError
@@ -1404,11 +1398,10 @@ class LogicArrayObject(
 
 
 class PackedObject(LogicArrayObject):
-    """
-    Verilog packed vectors
-    """
-
     def __getitem__(self, _: object) -> NoReturn:
+        """
+        Vpi Verilog packed vectors
+        """
         raise TypeError(
             "Packed objects, either arrays or structs, cannot be indexed.\n"
             "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"

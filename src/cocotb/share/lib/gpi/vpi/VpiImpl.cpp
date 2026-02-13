@@ -8,8 +8,6 @@
 #include <gpi.h>
 #include <vpi_user_ext.h>
 
-#include <cstring>
-
 #include "../logging.hpp"
 #include "_vendor/vpi/sv_vpi_user.h"
 #include "_vendor/vpi/vpi_user.h"
@@ -92,14 +90,7 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
         case vpiPackedArrayVar:
         case vpiPackedArrayNet:
             if (is_vector || num_elements > 1) {
-                const char *lang = getenv("TOPLEVEL_LANG");
-                bool isVerilog =
-                    (lang != nullptr) && (strcmp(lang, "verilog") == 0);
-                if (isVerilog) {
-                    return GPI_PACKED_OBJECT;
-                } else {
-                    return GPI_LOGIC_ARRAY;
-                }
+                return GPI_PACKED_OBJECT;
             } else {
                 return GPI_LOGIC;
             }
