@@ -48,24 +48,24 @@ using gpi_clk_hdl = GpiClock *;
 
 /* define the extension types as templates */
 namespace {
-template <typename gpi_hdl>
+template <typename gpi_hdl_type>
 struct gpi_hdl_Object {
-    PyObject_HEAD gpi_hdl hdl;
+    PyObject_HEAD gpi_hdl_type hdl;
 
     // The python type object, in a place that is easy to retrieve in templates
     static PyTypeObject py_type;
 };
 
 /** __repr__ shows the memory address of the internal handle */
-template <typename gpi_hdl>
-static PyObject *gpi_hdl_repr(gpi_hdl_Object<gpi_hdl> *self) {
+template <typename gpi_hdl_type>
+static PyObject *gpi_hdl_repr(gpi_hdl_Object<gpi_hdl_type> *self) {
     auto *type = Py_TYPE(self);
     return PyUnicode_FromFormat("<%s at %p>", type->tp_name, self->hdl);
 }
 
 /** __hash__ returns the pointer itself */
-template <typename gpi_hdl>
-static Py_hash_t gpi_hdl_hash(gpi_hdl_Object<gpi_hdl> *self) {
+template <typename gpi_hdl_type>
+static Py_hash_t gpi_hdl_hash(gpi_hdl_Object<gpi_hdl_type> *self) {
     auto ret = reinterpret_cast<Py_hash_t>(self->hdl);
     // hash must never return -1
     if (ret == (Py_hash_t)-1) {
@@ -78,13 +78,13 @@ static Py_hash_t gpi_hdl_hash(gpi_hdl_Object<gpi_hdl> *self) {
  * Create a new python handle object from a pointer, returning None if the
  * pointer is NULL.
  */
-template <typename gpi_hdl>
-static PyObject *gpi_hdl_New(gpi_hdl hdl) {
+template <typename gpi_hdl_type>
+static PyObject *gpi_hdl_New(gpi_hdl_type hdl) {
     if (hdl == NULL) {
         Py_RETURN_NONE;
     }
-    auto *obj = PyObject_New(gpi_hdl_Object<gpi_hdl>,
-                             &gpi_hdl_Object<gpi_hdl>::py_type);
+    auto *obj = PyObject_New(gpi_hdl_Object<gpi_hdl_type>,
+                             &gpi_hdl_Object<gpi_hdl_type>::py_type);
     if (obj == NULL) {
         return NULL;
     }
@@ -93,15 +93,16 @@ static PyObject *gpi_hdl_New(gpi_hdl hdl) {
 }
 
 /** Comparison checks if the types match, and then compares pointers */
-template <typename gpi_hdl>
+template <typename gpi_hdl_type>
 static PyObject *gpi_hdl_richcompare(PyObject *self, PyObject *other, int op) {
-    if (Py_TYPE(self) != &gpi_hdl_Object<gpi_hdl>::py_type ||
-        Py_TYPE(other) != &gpi_hdl_Object<gpi_hdl>::py_type) {
+    if (Py_TYPE(self) != &gpi_hdl_Object<gpi_hdl_type>::py_type ||
+        Py_TYPE(other) != &gpi_hdl_Object<gpi_hdl_type>::py_type) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    auto self_hdl_obj = reinterpret_cast<gpi_hdl_Object<gpi_hdl> *>(self);
-    auto other_hdl_obj = reinterpret_cast<gpi_hdl_Object<gpi_hdl> *>(other);
+    auto self_hdl_obj = reinterpret_cast<gpi_hdl_Object<gpi_hdl_type> *>(self);
+    auto other_hdl_obj =
+        reinterpret_cast<gpi_hdl_Object<gpi_hdl_type> *>(other);
 
     switch (op) {
         case Py_EQ:
@@ -114,15 +115,15 @@ static PyObject *gpi_hdl_richcompare(PyObject *self, PyObject *other, int op) {
 }
 
 // Initialize the Python type slots
-template <typename gpi_hdl>
+template <typename gpi_hdl_type>
 PyTypeObject fill_common_slots() {
     PyTypeObject type = {};
     type.ob_base = {PyObject_HEAD_INIT(NULL) 0};
-    type.tp_basicsize = sizeof(gpi_hdl_Object<gpi_hdl>);
-    type.tp_repr = (reprfunc)gpi_hdl_repr<gpi_hdl>;
-    type.tp_hash = (hashfunc)gpi_hdl_hash<gpi_hdl>;
+    type.tp_basicsize = sizeof(gpi_hdl_Object<gpi_hdl_type>);
+    type.tp_repr = (reprfunc)gpi_hdl_repr<gpi_hdl_type>;
+    type.tp_hash = (hashfunc)gpi_hdl_hash<gpi_hdl_type>;
     type.tp_flags = Py_TPFLAGS_DEFAULT;
-    type.tp_richcompare = gpi_hdl_richcompare<gpi_hdl>;
+    type.tp_richcompare = gpi_hdl_richcompare<gpi_hdl_type>;
     return type;
 }
 
