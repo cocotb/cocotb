@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -21,6 +22,7 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 from cocotb_tools.runner import get_runner
+from cocotb_tools.sim_versions import VerilatorVersion
 
 sys.path.insert(0, os.path.join(tests_dir, "pytest"))
 test_module = os.path.basename(os.path.splitext(__file__)[0])
@@ -89,10 +91,23 @@ def test_wave_dump():
     assert os.path.exists(dumpfile_path)
 
 
+skip_saif_dump_test = True
+if sim == "verilator":
+    sim_version_str = subprocess.run(
+        ["verilator", "--version"],
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+    ).stdout
+    sim_version = VerilatorVersion.from_commandline(sim_version_str)
+    if sim_version >= VerilatorVersion("5.042"):
+        skip_saif_dump_test = False
+
+
 @pytest.mark.simulator_required
 @pytest.mark.skipif(
-    sim not in ["verilator"],
-    reason="Skipping test because it is only for the Verilator simulator",
+    skip_saif_dump_test,
+    reason="Skipping test because it is only for the Verilator simulator, v5.402 or higher",
 )
 def test_saif_dump():
     run_simulation(sim=sim, extra_build_args=["--trace-saif"])

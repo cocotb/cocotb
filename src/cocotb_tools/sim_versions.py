@@ -110,6 +110,13 @@ class VerilatorVersion(LooseVersion):
         True
     """
 
+    @classmethod
+    def from_commandline(cls, cmdline):
+        firstline = cmdline.split("\n")[0]
+        sim, version, *version_extra = firstline.strip().split(" ")
+        assert sim == "Verilator"
+        return cls(version)
+
 
 class XceliumVersion(LooseVersion):
     """Version numbering class for Cadence Xcelium.
