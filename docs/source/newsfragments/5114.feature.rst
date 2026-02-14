@@ -1,0 +1,1 @@
+Added support for SAIF tracing when using Verilator>=5.042 as the simulator.  This is enabled by adding ``--trace-saif`` to :make:var:`EXTRA_ARGS` (when using Makefiles) or to ``build_args`` (when using the runner)
