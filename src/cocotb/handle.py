@@ -1262,7 +1262,7 @@ class LogicArrayObject(
         * ``sfixed``
         * ``float``
 
-    .. versionchanged:: 2.0
+    .. versionchanged:: 2.1
         Verilog packed objects no longer map to this type, but :class:`PackedObject`.
     """
 
@@ -1403,7 +1403,7 @@ class PackedObject(LogicArrayObject):
         * packed any-dimensional vectors of ``logic`` or ``bit``.
         * packed any-dimensional vectors of packed structures or unions.
 
-    .. versionadded:: 2.0
+    .. versionadded:: 2.1
     """
 
     def __getitem__(self, _: object) -> NoReturn:
