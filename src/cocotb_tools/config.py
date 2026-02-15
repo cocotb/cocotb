@@ -78,6 +78,7 @@ def _help_vars_text() -> str:
         COCOTB_RESULTS_FILE       File name for xUnit XML tests results
         COCOTB_USER_COVERAGE      Collect Python user coverage (HDL for some simulators)
         COVERAGE_RCFILE           Configuration for user code coverage
+        COCOTB_MAX_FAILURES       Maximum number of test failures before aborting the regression
 
         GPI
         ---

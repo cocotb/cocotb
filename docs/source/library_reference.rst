@@ -238,6 +238,8 @@ Discovering Tests
 
     If not set, all tests are executed regardless of failures.
 
+    .. versionadded:: 2.1
+
 .. envvar:: COCOTB_TEST_MODULES
 
     Type: :ref:`env-list`
