@@ -6,14 +6,14 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity debug_array is
+entity test_logic_array_indexing is
     port (
         test_a : out std_logic_vector(3 downto 0);
         test_b : out std_logic_vector(3 downto 0)
     );
-end debug_array;
+end test_logic_array_indexing;
 
-architecture rtl of debug_array is
+architecture rtl of test_logic_array_indexing is
 begin
 
     process
