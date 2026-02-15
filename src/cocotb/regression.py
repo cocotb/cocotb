@@ -177,11 +177,10 @@ class RegressionManager:
         self._filters: list[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
         self._included: list[bool]
-        self._sim_failure: BaseException | None = None
+        self._regression_terminated: BaseException | None = None
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_state: Any
         self._max_failures = _env.as_int("COCOTB_MAX_FAILURES", default=0)
-        self._terminated_early = False
         self._random_x_resolver_state: Any
 
         # Setup XUnit
@@ -346,9 +345,6 @@ class RegressionManager:
         and by :meth:`_fail_regression` to shutdown the regression when a simulation failure occurs.
         """
         while self._test_queue:
-            if isinstance(self._sim_failure, RegressionTerminated):
-                return self._tear_down()
-
             self._test = self._test_queue.pop(0)
             included = self._included.pop(0)
 
@@ -363,9 +359,9 @@ class RegressionManager:
                 continue
 
             # if the test should be run, but the simulator has failed, record and continue
-            if isinstance(self._sim_failure, SimFailure):
+            if self._regression_terminated is not None:
                 self._score_test(
-                    self._sim_failure,
+                    self._regression_terminated,
                     0,
                     0,
                 )
@@ -426,9 +422,6 @@ class RegressionManager:
         else:
             return
 
-        if not self._terminated_early:
-            assert not self._test_queue
-
         # Write out final log messages
         self._log_test_summary()
 
@@ -454,9 +447,9 @@ class RegressionManager:
         cocotb.types._resolve._randomResolveRng.setstate(self._random_x_resolver_state)
 
         exc: BaseException | None
-        if self._sim_failure is not None:
+        if self._regression_terminated is not None:
             # When the simulation is failing, we override the typical test results.
-            exc = self._sim_failure
+            exc = self._regression_terminated
         else:
             exc = self._running_test.exception()
 
@@ -787,13 +780,16 @@ class RegressionManager:
                 wall_time_s=wall_time_s,
             )
         )
-        if self._max_failures > 0 and self.failures >= self._max_failures:
-            self._terminated_early = True
-            self._sim_failure = RegressionTerminated(
+        if (
+            self._regression_terminated is None
+            and self._max_failures > 0
+            and self.failures >= self._max_failures
+        ):
+            self._regression_terminated = RegressionTerminated(
                 f"Regression stopped after {self.failures} failures "
                 f"(limit={self._max_failures})"
             )
-            self.log.error(self._sim_failure)
+            self.log.warning(self._regression_terminated)
 
     def _log_test_summary(self) -> None:
         """Called by :meth:`_tear_down` to log the test summary."""
@@ -934,7 +930,7 @@ class RegressionManager:
 
         # We assume if we get here, the simulation ended unexpectedly due to an assertion failure,
         # or due to an end of events from the simulator.
-        self._sim_failure = SimFailure(msg)
+        self._regression_terminated = SimFailure(msg)
         self._running_test.cancel(msg)
         cocotb._event_loop._inst.run()
 
