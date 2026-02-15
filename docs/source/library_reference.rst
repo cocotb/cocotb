@@ -705,6 +705,8 @@ Log Formatting
     .. note::
         If this variable is set, :envvar:`COCOTB_REDUCED_LOG_FMT` has no effect.
 
+    .. versionadded:: 2.0
+
 Log Coloring
 ------------
 
