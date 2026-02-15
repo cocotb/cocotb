@@ -235,13 +235,13 @@ GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent,
  */
 
 /** @return The @ref gpi_objtype "type" of the simulation object. */
-GPI_EXPORT gpi_objtype gpi_get_object_type(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT gpi_objtype gpi_get_object_type(gpi_sim_hdl obj_hdl);
 
 /** @return Definition name of the simulation object. */
-GPI_EXPORT const char *gpi_get_definition_name(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char *gpi_get_definition_name(gpi_sim_hdl obj_hdl);
 
 /** @return Definition file of the simulation object. */
-GPI_EXPORT const char *gpi_get_definition_file(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char *gpi_get_definition_file(gpi_sim_hdl obj_hdl);
 
 /** @return The number of objects in the collection of the handle. */
 GPI_EXPORT int gpi_get_num_elems(gpi_sim_hdl gpi_sim_hdl);
@@ -261,20 +261,20 @@ GPI_EXPORT gpi_range_dir gpi_get_range_dir(gpi_sim_hdl gpi_sim_hdl);
  *
  * @return `1` if the object value is constant, `0` otherwise.
  */
-GPI_EXPORT int gpi_is_constant(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT int gpi_is_constant(gpi_sim_hdl obj_hdl);
 
 /** Determine whether an object is indexable.
  *
  * @return `1` if the object value is indexable, `0` otherwise.
  */
-GPI_EXPORT int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT int gpi_is_indexable(gpi_sim_hdl obj_hdl);
 
 /** Determine whether integer object is signed.
  *
  * @return `1` if the integer object is signed, `0` if unsigned, `-1` if unknown
  * or not applicable.
  */
-GPI_EXPORT int gpi_is_signed(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT int gpi_is_signed(gpi_sim_hdl obj_hdl);
 
 /** @} */  // End of group ObjProps
 
@@ -286,75 +286,75 @@ GPI_EXPORT int gpi_is_signed(gpi_sim_hdl gpi_hdl);
 // Getting properties
 
 /** Get signal object value as a binary string.
- * @param gpi_hdl   Signal object handle.
+ * @param sig_hdl   Signal object handle.
  * @return          Object value.
  */
-GPI_EXPORT const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl);
 
 /** Get signal object value as a byte array.
- * @param gpi_hdl   Signal object handle.
+ * @param sig_hdl   Signal object handle.
  * @return          Object value. Null-terminated byte array.
  */
-GPI_EXPORT const char *gpi_get_signal_value_str(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char *gpi_get_signal_value_str(gpi_sim_hdl sig_hdl);
 
 /** Get signal object value as a real.
- * @param gpi_hdl   Signal object handle.
+ * @param sig_hdl   Signal object handle.
  * @return          Object value.
  */
-GPI_EXPORT double gpi_get_signal_value_real(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT double gpi_get_signal_value_real(gpi_sim_hdl sig_hdl);
 
 /** Get signal object value as a long.
- * @param gpi_hdl   Signal object handle.
+ * @param sig_hdl   Signal object handle.
  * @return          Object value.
  */
-GPI_EXPORT long gpi_get_signal_value_long(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT long gpi_get_signal_value_long(gpi_sim_hdl sig_hdl);
 
 /** Get signal object name.
- * @param gpi_hdl   Signal object handle.
+ * @param sig_hdl   Signal object handle.
  * @return          Object name.
  */
-GPI_EXPORT const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char *gpi_get_signal_name_str(gpi_sim_hdl sig_hdl);
 
 /** Get signal object type as a string.
- * @param gpi_hdl   Signal object handle.
+ * @param sig_hdl   Signal object handle.
  * @return          Object type as a string.
  */
-GPI_EXPORT const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char *gpi_get_signal_type_str(gpi_sim_hdl sig_hdl);
 
 // Setting properties
 
 /** Set signal object value with a real.
- * @param gpi_hdl   Signal object handle.
+ * @param sig_hdl   Signal object handle.
  * @param value     Object value.
  * @param action    Action to use.
  */
-GPI_EXPORT void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value,
+GPI_EXPORT void gpi_set_signal_value_real(gpi_sim_hdl sig_hdl, double value,
                                           gpi_set_action action);
 
 /** Set signal object value with an int.
- * @param gpi_hdl   Signal object handle.
+ * @param sig_hdl   Signal object handle.
  * @param value     Object value.
  * @param action    Action to use.
  */
-GPI_EXPORT void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int32_t value,
+GPI_EXPORT void gpi_set_signal_value_int(gpi_sim_hdl sig_hdl, int32_t value,
                                          gpi_set_action action);
 
 /** Set signal object value with a binary string.
- * @param gpi_hdl   Signal object handle.
+ * @param sig_hdl   Signal object handle.
  * @param str       Object value. Null-terminated string of binary characters
  *                  in [`1`, `0`, `x`, `z`].
  * @param action    Action to use.
  */
-GPI_EXPORT void gpi_set_signal_value_binstr(gpi_sim_hdl gpi_hdl,
+GPI_EXPORT void gpi_set_signal_value_binstr(gpi_sim_hdl sig_hdl,
                                             const char *str,
                                             gpi_set_action action);
 
 /** Set signal object value with a byte array.
- * @param gpi_hdl   Signal object handle.
+ * @param sig_hdl   Signal object handle.
  * @param str       Object value. Null-terminated byte array.
  * @param action    Action to use.
  */
-GPI_EXPORT void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str,
+GPI_EXPORT void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str,
                                          gpi_set_action action);
 
 /** @} */  // End of group SigProps
@@ -406,12 +406,12 @@ GPI_EXPORT gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
  *
  * @param gpi_function  Callback function pointer.
  * @param gpi_cb_data   Pointer to user data to be passed to callback function.
- * @param gpi_hdl       Simulation object to monitor for value change.
+ * @param sig_hdl       Simulation object to monitor for value change.
  * @param edge          Type of value change to monitor for.
  * @return              Handle to callback object.
  */
 GPI_EXPORT gpi_cb_hdl gpi_register_value_change_callback(
-    int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl,
+    int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl sig_hdl,
     gpi_edge edge);
 
 /** Register a readonly simulation phase callback.
