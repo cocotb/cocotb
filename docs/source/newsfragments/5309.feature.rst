@@ -1,0 +1,1 @@
+Added support for terminating a regression early when the number of test failures reaches :envvar:`COCOTB_MAX_FAILURES`.

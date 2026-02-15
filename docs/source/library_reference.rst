@@ -227,6 +227,19 @@ Marking and Generating Tests
 Discovering Tests
 =================
 
+.. envvar:: COCOTB_MAX_FAILURES
+
+    Type: :ref:`_env-int`
+
+    Limits the number of test failures allowed during a regression run.
+
+    If set then if the number of failed tests reaches this value, the regression
+    is terminated early and no further tests are executed.
+
+    If not set, all tests are executed regardless of failures.
+
+    .. versionadded:: 2.1
+
 .. envvar:: COCOTB_TEST_MODULES
 
     Type: :ref:`env-list`
