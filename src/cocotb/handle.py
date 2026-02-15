@@ -1250,10 +1250,8 @@ class LogicArrayObject(
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
 
-    Verilog types that map to this object:
-
-        * packed any-dimensional vectors of ``logic`` or ``bit``
-        * packed any-dimensional vectors of packed structures
+    Verilog packed vectors, structs, and unions do not map to this type, but :class:`PackedObject`.
+    Unpacked vectors of type ``logic`` and ``bit`` map to :class:`ArrayObject`.
 
     VHDL types that map to this object:
 
@@ -1263,6 +1261,9 @@ class LogicArrayObject(
         * ``ufixed``
         * ``sfixed``
         * ``float``
+
+    .. versionchanged:: 2.0
+        Verilog packed objects no longer map to this type, but :class:`PackedObject`.
     """
 
     def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
@@ -1376,13 +1377,12 @@ class LogicArrayObject(
         # and this object needs to support multi-dimensional packed arrays.
         return self._handle.get_num_elems()
 
-    def __getitem__(self, _: object) -> NoReturn:
-        raise TypeError(
-            "Packed objects, either arrays or structs, cannot be indexed.\n"
-            "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"
-            "If you need to use an element in an Edge Trigger, consider making the array or struct unpacked.\n"
-            "Alternatively, use `ValueChange` on the whole object and check the bit(s) you care about for changes afterwards."
-        )
+    def __getitem__(self, index: int) -> LogicObject:
+        handle = self._handle.get_handle_by_index(index)
+        if handle is None:
+            raise IndexError
+
+        return LogicObject(handle, self._path)
 
     @cached_property
     def _min_val(self) -> int:
@@ -1393,6 +1393,26 @@ class LogicArrayObject(
     def _max_val(self) -> int:
         # Backwards compatibility. Always wrap negative values.
         return (2 ** len(self)) - 1
+
+
+class PackedObject(LogicArrayObject):
+    """A packed Verilog struct, union, or vector simulation object.
+
+    Verilog types that map to this object:
+
+        * packed any-dimensional vectors of ``logic`` or ``bit``.
+        * packed any-dimensional vectors of packed structures or unions.
+
+    .. versionadded:: 2.0
+    """
+
+    def __getitem__(self, _: object) -> NoReturn:
+        raise TypeError(
+            "Packed objects, either arrays or structs, cannot be indexed.\n"
+            "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"
+            "If you need to use an element in an Edge Trigger, consider making the array or struct unpacked.\n"
+            "Alternatively, use `ValueChange` on the whole object and check the bit(s) you care about for changes afterwards."
+        )
 
 
 class RealObject(_NonIndexableValueObjectBase[float, float]):
@@ -1720,6 +1740,7 @@ _ConcreteHandleTypes = Union[
     HierarchyArrayObject[SimHandleBase],
     LogicObject,
     LogicArrayObject,
+    PackedObject,
     ArrayObject[Any, ValueObjectBase[Any, Any]],
     RealObject,
     IntegerObject,
@@ -1739,6 +1760,7 @@ _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     simulator.PACKED_STRUCTURE: LogicArrayObject,
     simulator.LOGIC: LogicObject,
     simulator.LOGIC_ARRAY: LogicArrayObject,
+    simulator.PACKED_OBJECT: PackedObject,
     simulator.NETARRAY: ArrayObject[Any, ValueObjectBase[Any, Any]],
     simulator.REAL: RealObject,
     simulator.INTEGER: IntegerObject,

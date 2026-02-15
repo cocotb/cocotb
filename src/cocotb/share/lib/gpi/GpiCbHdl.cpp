@@ -35,6 +35,7 @@ const char *GpiObjHdl::get_type_str() {
         CASE_OPTION(GPI_PACKAGE);
         CASE_OPTION(GPI_LOGIC);
         CASE_OPTION(GPI_LOGIC_ARRAY);
+        CASE_OPTION(GPI_PACKED_OBJECT);
         default:
             ret = "unknown";
     }

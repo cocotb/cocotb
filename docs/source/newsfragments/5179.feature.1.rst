@@ -1,0 +1,1 @@
+Added the :class:`.PackedObject` type for Verilog packed vectors, structs, and unions.

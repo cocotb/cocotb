@@ -1049,6 +1049,8 @@ static int add_module_constants(PyObject *simulator) {
         PyModule_AddIntConstant(simulator, "LOGIC", GPI_LOGIC) < 0 ||
         PyModule_AddIntConstant(simulator, "LOGIC_ARRAY", GPI_LOGIC_ARRAY) <
             0 ||
+        PyModule_AddIntConstant(simulator, "PACKED_OBJECT", GPI_PACKED_OBJECT) <
+            0 ||
         false) {
         return -1;
     }

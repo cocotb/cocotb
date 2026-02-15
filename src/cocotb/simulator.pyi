@@ -16,6 +16,7 @@ INTEGER: int
 LOADS: int
 LOGIC: int
 LOGIC_ARRAY: int
+PACKED_OBJECT: int
 MEMORY: int
 MODULE: int
 NETARRAY: int

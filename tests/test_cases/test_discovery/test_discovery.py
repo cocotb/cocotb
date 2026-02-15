@@ -439,12 +439,12 @@ async def type_check_verilog(dut):
     test_handles = [
         (dut.stream_in_ready, "GPI_LOGIC"),
         (dut.register_array, "GPI_ARRAY"),
-        (dut.temp, "GPI_LOGIC_ARRAY"),
+        (dut.temp, "GPI_PACKED_OBJECT"),
         (dut.logic_b, "GPI_LOGIC"),
         (dut.logic_c, "GPI_LOGIC"),
-        (dut.INT_PARAM, "GPI_LOGIC_ARRAY"),
+        (dut.INT_PARAM, "GPI_PACKED_OBJECT"),
         (dut.REAL_PARAM, "GPI_REAL"),
-        (dut.stream_in_data, "GPI_LOGIC_ARRAY"),
+        (dut.stream_in_data, "GPI_PACKED_OBJECT"),
         (dut.and_output, "GPI_LOGIC"),
         (dut.logic_a, "GPI_LOGIC"),
     ]
@@ -452,12 +452,15 @@ async def type_check_verilog(dut):
     # Verilator returns vpiReg rather than vpiNet
     # Verilator (correctly) treats parameters with implicit type, that are assigned a string literal value, as an unsigned integer. See IEEE 1800-2017 Section 5.9 and Section 6.20.2
     if SIM_NAME.startswith("verilator"):
-        test_handles.append((dut.STRING_PARAM, "GPI_LOGIC_ARRAY"))
+        test_handles.append((dut.STRING_PARAM, "GPI_PACKED_OBJECT"))
     else:
         test_handles.append((dut.STRING_PARAM, "GPI_STRING"))
 
-    for handle in test_handles:
-        assert handle[0]._type == handle[1]
+    for handle, expected in test_handles:
+        if isinstance(expected, tuple):
+            assert handle._type in expected
+        else:
+            assert handle._type == expected
 
 
 # GHDL cannot find signal in "block" statement, may be related to (gh-2594)

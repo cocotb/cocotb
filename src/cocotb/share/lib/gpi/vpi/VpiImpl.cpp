@@ -90,7 +90,7 @@ static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
         case vpiPackedArrayVar:
         case vpiPackedArrayNet:
             if (is_vector || num_elements > 1) {
-                return GPI_LOGIC_ARRAY;
+                return GPI_PACKED_OBJECT;
             } else {
                 return GPI_LOGIC;
             }
@@ -165,7 +165,7 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
         case vpiOctConst:
         case vpiHexConst:
         case vpiIntConst:
-            return GPI_LOGIC_ARRAY;
+            return GPI_PACKED_OBJECT;
         case vpiRealConst:
             return GPI_REAL;
         case vpiStringConst:
@@ -176,7 +176,7 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
                 "Unable to map vpiConst type %d onto GPI type, "
                 "guessing this is a logic vector",
                 const_type);
-            return GPI_LOGIC_ARRAY;
+            return GPI_PACKED_OBJECT;
     }
 }
 

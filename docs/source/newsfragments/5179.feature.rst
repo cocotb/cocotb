@@ -1,0 +1,1 @@
+:class:`.LogicArrayObject` (VHDL arrays of ``logic`` and ``bit``) now support indexing single elements.
