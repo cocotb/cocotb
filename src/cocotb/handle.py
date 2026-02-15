@@ -1250,10 +1250,8 @@ class LogicArrayObject(
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
 
-    Verilog types that map to this object:
-
-        * packed any-dimensional vectors of ``logic`` or ``bit``
-        * packed any-dimensional vectors of packed structures
+    Verilog packed vectors, structs, and unions do not map to this type, but :class:`PackedObject`.
+    Unpacked vectors of type ``logic`` and ``bit`` map to :class:`ArrayObject`.
 
     VHDL types that map to this object:
 
@@ -1263,6 +1261,9 @@ class LogicArrayObject(
         * ``ufixed``
         * ``sfixed``
         * ``float``
+
+    .. versionchanged:: 2.0
+        Verilog packed objects no longer map to this type, but :class:`PackedObject`.
     """
 
     def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
@@ -1377,9 +1378,6 @@ class LogicArrayObject(
         return self._handle.get_num_elems()
 
     def __getitem__(self, index: int) -> LogicObject:
-        """
-        Vhpi VHDL indexable vectors
-        """
         handle = self._handle.get_handle_by_index(index)
         if handle is None:
             raise IndexError
@@ -1398,10 +1396,17 @@ class LogicArrayObject(
 
 
 class PackedObject(LogicArrayObject):
+    """A packed Verilog struct, union, or vector simulation object.
+
+    Verilog types that map to this object:
+
+        * packed any-dimensional vectors of ``logic`` or ``bit``.
+        * packed any-dimensional vectors of packed structures or unions.
+
+    .. versionadded:: 2.0
+    """
+
     def __getitem__(self, _: object) -> NoReturn:
-        """
-        Vpi Verilog packed vectors
-        """
         raise TypeError(
             "Packed objects, either arrays or structs, cannot be indexed.\n"
             "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"
