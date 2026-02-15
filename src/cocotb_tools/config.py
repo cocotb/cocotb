@@ -60,36 +60,47 @@ def _help_vars_text() -> str:
 
         cocotb
         ------
-        COCOTB_TOPLEVEL           Instance in the hierarchy to use as the DUT
-        COCOTB_RANDOM_SEED        Random seed, to recreate a previous test stimulus
-        COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
-        COCOTB_REDUCED_LOG_FMT    Display log lines shorter
-        COCOTB_ATTACH             Pause time value in seconds before the simulator start
-        COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
-        COCOTB_LOG_LEVEL          Default logging level (default INFO)
-        COCOTB_RESOLVE_X          How to resolve X, Z, U, W, - on integer conversion
-        LIBPYTHON_LOC             Absolute path to libpython
+        COCOTB_TOPLEVEL          Instance in the hierarchy to use as the DUT
+        COCOTB_RANDOM_SEED       Random seed, to recreate a previous test stimulus
+        COCOTB_ANSI_OUTPUT       Force cocotb to print or not print in color
+        COCOTB_REDUCED_LOG_FMT   Display log lines shorter
+        COCOTB_LOG_PREFIX        Set custom log prefix (f-string format)
+        COCOTB_ATTACH            Pause time value in seconds before the simulator start
+        COCOTB_ENABLE_PROFILING  Performance analysis of the Python portion of cocotb
+        COCOTB_LOG_LEVEL         Default logging level (default INFO)
+        COCOTB_RESOLVE_X         How to resolve X, Z, U, W, - on integer conversion
 
         Regression Manager
         ------------------
-        COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
-        COCOTB_TEST_MODULES       Module(s) to search for test functions (comma-separated)
-        COCOTB_TESTCASE           Test function(s) to run (comma-separated list)
-        COCOTB_RESULTS_FILE       File name for xUnit XML tests results
-        COCOTB_USER_COVERAGE      Collect Python user coverage (HDL for some simulators)
-        COVERAGE_RCFILE           Configuration for user code coverage
-        COCOTB_MAX_FAILURES       Maximum number of test failures before aborting the regression
-
-        GPI
-        ---
-        GPI_EXTRA                 Extra libraries to load at runtime (comma-separated)
-        GPI_LOG_LEVEL             Default logging level for "gpi" loggers (default INFO)
-        GPI_DEBUG                 Enable GPI debug features, including TRACE log output
+        COCOTB_PDB_ON_EXCEPTION  Drop into the Python debugger (pdb) on exception
+        COCOTB_TEST_MODULES      Module(s) to search for test functions (comma-separated)
+        COCOTB_TESTCASE          Test function(s) to run (Deprecated: Use COCOTB_TEST_FILTER)
+        COCOTB_TEST_FILTER       Regex used to match test function names
+        COCOTB_RESULTS_FILE      File name for xUnit XML tests results (default results.xml)
+        COCOTB_USER_COVERAGE     Collect Python user coverage (HDL for some simulators)
+        COVERAGE_RCFILE          Configuration for user code coverage
+        COCOTB_REWRITE_ASSERTION_FILES
+                                 Files to apply pytest assertion rewrites to (default *.py)
+        COCOTB_MAX_FAILURES      Maximum number of test failures before aborting the regression
 
         Scheduler
         ---------
-        COCOTB_SCHEDULER_DEBUG         Enable additional output of coroutine scheduler
-        COCOTB_TRUST_INERTIAL_WRITES   Trust inertial writes rather than mock them using scheduler
+        COCOTB_SCHEDULER_DEBUG   Enable additional output of coroutine scheduler
+        COCOTB_TRUST_INERTIAL_WRITES
+                                 Trust inertial writes rather than mock them using scheduler
+
+        GPI
+        ---
+        GPI_USERS         List of user libraries to load after GPI is initialized
+        GPI_EXTRA         Extra libraries to load as part of GPI initialization
+        GPI_LOG_LEVEL     Default logging level for "gpi" loggers (default INFO)
+        GPI_DEBUG         Enable GPI debug features, including TRACE log output
+
+        PYGPI
+        -----
+        PYGPI_USERS       List of Python callables to start test environemtn
+        PYGPI_PYTHON_BIN  Python binary. Usually set automatically by test runner
+        PYGPI_DEBUG       Enable PyGPI debug features, including TRACE log output
 
         For details, see {}"""
     ).format(doclink)
@@ -189,7 +200,7 @@ def _get_parser() -> argparse.ArgumentParser:
     group.add_argument(
         "--help-vars",
         action="store_true",
-        help="Print help about supported Makefile variables",
+        help="Print help about supported environment variables",
     )
     group.add_argument(
         "--libpython",
