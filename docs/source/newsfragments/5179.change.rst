@@ -1,0 +1,1 @@
+Verilog packed vectors, structs, and unions no longer map to :class:`.ArrayObject`, but :class:`.PackedObject`.
