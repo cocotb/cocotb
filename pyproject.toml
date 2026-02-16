@@ -282,6 +282,10 @@ docs = [
     "sphinx-autofixture",
     "pytest",
 ]
+docs_preview = [
+    {include-group = "docs"},
+    "sphinx-autobuild",
+]
 
 [tool.uv.dependency-groups]
 # We need Python 3.11 to run Sphinx 8.2 and cibuildwheel 3.2
