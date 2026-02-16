@@ -259,9 +259,8 @@ dev = [
     "clang-format",
     "mypy>=1.18",  # 1.18 needed for descriptor typing
     "ruff",
-    # allows running tests manually if desired
-    {include-group = "test"},
-    {include-group = "test_coverage"},
+    # allows running tests and doing coverage reporting manually if desired
+    {include-group = "dev_test"},
     {include-group = "coverage_report"},
 ]
 docs = [
@@ -288,20 +287,17 @@ docs_preview = [
     {include-group = "docs"},
     "sphinx-autobuild",
 ]
+release_build_wheel = [
+    "cibuildwheel==3.2.1",
+]
 release_build_sdist = [
     "build",
 ]
-release_build_bdist = [
-    "cibuildwheel==3.2.1",
-]
-package_deps = [
-    "exceptiongroup; python_version<'3.11'",
-    "find_libpython",
-]
-test = [
+test_common = [
     "pytest>=6"
 ]
-test_coverage = [
+dev_test = [
+    {include-group = "test_common"},
     "coverage[toml]>=7.2",
     "pytest-cov",
 ]
@@ -309,8 +305,19 @@ coverage_report = [
     "coverage[toml]>=7.2",
     "gcovr==8.4",
 ]
+release_test = [
+    {include-group = "test_common"},
+
+    # We have to disable the use of the PyPi index when installing cocotb to
+    # guarantee that the wheels in dist are being used. But without an index
+    # pip cannot find the dependencies, which need to be installed from PyPi.
+    # Work around that by explicitly installing the dependencies first from
+    # PyPi, and then installing cocotb itself from the local dist directory.
+    "exceptiongroup; python_version<'3.11'",
+    "find_libpython",
+]
 
 [tool.uv.dependency-groups]
 # We need Python 3.11 to run Sphinx 8.2 and cibuildwheel 3.2
 docs = {requires-python = ">=3.11"}
-release_build_bdist = {requires-python = ">=3.11"}
+release_build_wheel = {requires-python = ">=3.11"}

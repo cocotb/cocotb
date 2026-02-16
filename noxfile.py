@@ -80,6 +80,19 @@ def stringify_dict(d: dict[str, str]) -> str:
     return ", ".join(f"{k}={v}" for k, v in d.items())
 
 
+#
+# Development pipeline
+#
+# - Build cocotb with aggressive error checking and coverage flags.
+# - Run doctests in the source tree with pytest.
+# - Run simulator-agnostic tests with pytest.
+# - Run simulator-specific tests and examples with pytest.
+# - Run 'make test' to test Makefile-based tests.
+# - Combine coverage from all test runs into a .coverage file.
+# - Produce coverage reports from the combined .coverage file.
+#
+
+
 def configure_env_for_dev_test(session: nox.Session) -> None:
     """Set environment variables for a development test.
 
@@ -89,7 +102,7 @@ def configure_env_for_dev_test(session: nox.Session) -> None:
     session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
 
 
-def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
+def build_cocotb_for_dev_test(session: nox.Session) -> None:
     """Build local cocotb for a development test.
 
     - Build with more aggressive error checking.
@@ -110,49 +123,6 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
     env["CXXFLAGS"] = flags
     env["LDFLAGS"] = "--coverage"
 
-    if editable:
-        session.install("-v", "-e", ".", env=env)
-    else:
-        session.install("-v", ".", env=env)
-
-
-#
-# Development pipeline
-#
-# - Use nox to build an sdist; no separate build step is required.
-# - Run tests against the installed sdist.
-# - Collect coverage.
-#
-
-
-@nox.session
-def dev_build(session: nox.Session) -> None:
-    session.warn("No building is necessary for development sessions.")
-
-
-@nox.session
-def dev_test(session: nox.Session) -> None:
-    """Run all development tests as configured through environment variables."""
-
-    dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
-    dev_test_nosim(session)
-    dev_coverage_combine(session)
-
-
-@nox.session
-@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
-def dev_test_sim(
-    session: nox.Session,
-    sim: str,
-    toplevel_lang: str,
-    gpi_interface: str,
-) -> None:
-    """Test a development version of cocotb against a simulator."""
-
-    configure_env_for_dev_test(session)
-
-    session.install("--group", "test", "--group", "test_coverage")
-
     # Editable installs break C/C++ coverage collection; don't use them.
     # C/C++ coverage collection requires that the object files produced by the
     # compiler are not moved around, otherwise the gcno and gcda files produced
@@ -161,7 +131,33 @@ def dev_test_sim(
     # editable builds are done in a directory in /tmp, which is removed after
     # the build completes, taking all gcno files with them, as well as the path
     # to place the gcda files.
-    build_cocotb_for_dev_test(session, editable=False)
+    session.install("-v", ".", env=env)
+
+
+@nox.session
+@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
+def dev_test(
+    session: nox.Session,
+    sim: str,
+    toplevel_lang: str,
+    gpi_interface: str,
+) -> None:
+    """Run all development tests and merge coverage."""
+    session.install("--group", "dev_test")
+    build_cocotb_for_dev_test(session)
+    configure_env_for_dev_test(session)
+    dev_test_nosim(session)
+    dev_test_sim(session, sim, toplevel_lang, gpi_interface)
+    dev_coverage_combine(session)
+
+
+def dev_test_sim(
+    session: nox.Session,
+    sim: str,
+    toplevel_lang: str,
+    gpi_interface: str,
+) -> None:
+    """Test a development version of cocotb against a simulator."""
 
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
@@ -181,8 +177,6 @@ def dev_test_sim(
     # Run pytest for files which can only be tested in the source tree, not in
     # the installed binary (otherwise we get an "import file mismatch" error
     # from pytest).
-    # TODO move this to dev_test_nosim once we can import cocotb files without
-    # building the simulator module.
     session.log("Running simulator-agnostic tests in the source tree with pytest")
 
     cocotb_pkg_dir = Path(
@@ -274,14 +268,8 @@ def dev_test_sim(
     session.log(f"Stored Python coverage for this test run in {coverage_file}.")
 
 
-@nox.session
 def dev_test_nosim(session: nox.Session) -> None:
     """Run the simulator-agnostic tests against a cocotb development version."""
-
-    configure_env_for_dev_test(session)
-
-    session.install("--group", "test", "--group", "test_coverage")
-    build_cocotb_for_dev_test(session, editable=False)
 
     # Remove a potentially existing coverage file from a previous run for the
     # same test configuration. Use a filename *not* starting with `.coverage.`,
@@ -312,10 +300,8 @@ def dev_test_nosim(session: nox.Session) -> None:
     session.log(f"Stored Python coverage for this test run in {coverage_file}.")
 
 
-@nox.session
 def dev_coverage_combine(session: nox.Session) -> None:
     """Combine coverage from previous dev_* runs into a .coverage file."""
-    session.install("--group", "coverage_report")
 
     coverage_files = glob.glob("**/.cov.test.*", recursive=True)
     session.run("coverage", "combine", *coverage_files)
@@ -323,13 +309,15 @@ def dev_coverage_combine(session: nox.Session) -> None:
 
     session.log("Wrote combined coverage database for all tests to '.coverage'.")
 
-    session.notify("dev_coverage_report", session.posargs)
-
 
 @nox.session
 def dev_coverage_report(session: nox.Session) -> None:
     """Report coverage results."""
     session.install("--group", "coverage_report")
+
+    # combine coverage files from previous dev_test runs, if not already done
+    if not Path(".coverage").is_file():
+        dev_coverage_combine(session)
 
     # Produce Cobertura XML coverage reports.
     session.log("Producing Python and C/C++ coverage in Cobertura XML format")
@@ -395,20 +383,12 @@ def release_clean(session: nox.Session) -> None:
 
 
 @nox.session
-def release_build(session: nox.Session) -> None:
-    """Build a release (sdist and bdist)."""
-    session.notify("release_build_bdist")
-    session.notify("release_build_sdist")
-
-
-@nox.session
-def release_build_bdist(session: nox.Session) -> None:
+def release_build_wheel(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
 
-    # Pin a version to ensure reproducible builds.
-    session.install("--group", "release_build_bdist")
+    session.install("--group", "release_build_wheel")
 
-    session.log("Building binary distribution (wheels)")
+    session.log("Building binary distributions (wheels)")
     session.run(
         "cibuildwheel",
         "--output-dir",
@@ -436,11 +416,9 @@ def release_test_sdist(session: nox.Session) -> None:
 
     # Find the sdist to install.
     sdists = list(Path(dist_dir).glob("cocotb-*.tar.gz"))
-    if len(sdists) == 0:
-        session.error(
-            f"No *.tar.gz sdist file found in {dist_dir!r} "
-            f"Run the 'release_build' session first."
-        )
+    if not sdists:
+        session.notify("release_build_sdist")
+        sdists = list(Path(dist_dir).glob("cocotb-*.tar.gz"))
     if len(sdists) > 1:
         session.error(
             f"More than one potential sdist found in the {dist_dir!r} "
@@ -456,17 +434,25 @@ def release_test_sdist(session: nox.Session) -> None:
     session.run("cocotb-config", "--version")
 
 
-def release_install(session: nox.Session) -> None:
+@nox.session
+@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
+def release_test(
+    session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str
+) -> None:
+    """Run all tests against a cocotb release installed from wheels."""
+    session.install("--group", "release_test")
+    release_install_wheel(session)
+    release_test_nosim(session)
+    release_test_sim(session, sim, toplevel_lang, gpi_interface)
+
+
+def release_install_wheel(session: nox.Session) -> None:
     """Helper: Install cocotb from wheels and also install test dependencies."""
 
-    # We have to disable the use of the PyPi index when installing cocotb to
-    # guarantee that the wheels in dist are being used. But without an index
-    # pip cannot find the dependencies, which need to be installed from PyPi.
-    # Work around that by explicitly installing the dependencies first from
-    # PyPi, and then installing cocotb itself from the local dist directory.
-
-    session.log("Installing cocotb dependencies from PyPi")
-    session.install("--group", "package_deps")
+    wheels = list(Path(dist_dir).glob("cocotb-*.whl"))
+    if not wheels:
+        session.notify("release_build_wheel")
+        wheels = list(Path(dist_dir).glob("cocotb-*.whl"))
 
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")
     session.install(
@@ -483,18 +469,11 @@ def release_install(session: nox.Session) -> None:
     session.log("Running cocotb-config as basic installation smoke test")
     session.run("cocotb-config", "--version")
 
-    session.log("Installing test dependencies")
-    session.install("--group", "test")
 
-
-@nox.session
-@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 def release_test_sim(
     session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str
 ) -> None:
     """Test a release version of cocotb against a simulator."""
-
-    release_install(session)
 
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
@@ -515,11 +494,8 @@ def release_test_sim(
     session.log(f"All tests passed with configuration {config_str}!")
 
 
-@nox.session
 def release_test_nosim(session: nox.Session) -> None:
     """Run the simulator-agnostic tests against a cocotb release."""
-
-    release_install(session)
 
     session.log("Running simulator-agnostic tests")
     session.run(
@@ -532,14 +508,15 @@ def release_test_nosim(session: nox.Session) -> None:
     session.log("All tests passed!")
 
 
-def create_env_for_docs_build(session: nox.Session) -> None:
-    session.install("--group", "docs")
+#
+# Documentation sessions.
+#
 
 
 @nox.session
 def docs(session: nox.Session) -> None:
     """invoke sphinx-build to build the HTML docs"""
-    create_env_for_docs_build(session)
+    session.install("--group", "docs")
     session.install(".")
     outdir = session.cache_dir / "docs_out"
     session.run(
@@ -591,7 +568,7 @@ def docs_preview(session: nox.Session) -> None:
 @nox.session
 def docs_linkcheck(session: nox.Session) -> None:
     """invoke sphinx-build to linkcheck the docs"""
-    create_env_for_docs_build(session)
+    session.install("--group", "docs")
     session.install(".")
     outdir = session.cache_dir / "docs_out"
     session.run(
@@ -608,7 +585,7 @@ def docs_linkcheck(session: nox.Session) -> None:
 @nox.session
 def docs_spelling(session: nox.Session) -> None:
     """invoke sphinx-build to spellcheck the docs"""
-    create_env_for_docs_build(session)
+    session.install("--group", "docs")
     session.install(".")
     outdir = session.cache_dir / "docs_out"
     session.run(
