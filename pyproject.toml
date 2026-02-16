@@ -252,8 +252,8 @@ pretty = true
 [dependency-groups]
 dev = [
     # required for development
-    "pip>=25.1",  # 25.1 needed for '--groups'
     "nox",
+    "nox-uv",
     "pre-commit",
     # allows linting the project manually
     "clang-format",
