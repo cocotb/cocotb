@@ -84,7 +84,6 @@ extend-exclude = [
     "makefiles",
     "venv",
     "_vendor",
-    ".nox/",
 ]
 target-version = "py39"
 
@@ -181,8 +180,8 @@ environment = {CL = "/O2 /Z7 /Zo /LTCG"}
 repair-wheel-command = "delocate-wheel --no-sanitize-rpaths --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
 
 [tool.pytest.ini_options]
-# Note: Do *not* add files within the cocotb/ tree here. Add them to the
-# noxfile instead.
+# Note: Do *not* add files within the cocotb/ tree here. Add them to
+# tasks.py instead.
 testpaths = [
     "tests/pytest",
 ]
@@ -200,7 +199,6 @@ markers = [
 [tool.coverage.paths]
 source = [
     "src/cocotb/",
-    ".nox/**/cocotb/",
 ]
 
 [tool.coverage.report]
@@ -236,7 +234,6 @@ skip = ["*.svg"]
 
 [tool.mypy]
 packages = ["cocotb", "pygpi", "cocotb_tools.pytest"]
-modules = ["noxfile"]
 disallow_untyped_defs = true
 disallow_any_unimported = true
 disallow_untyped_calls = true
@@ -251,16 +248,18 @@ pretty = true
 # TODO add lower bounds and justifications
 [dependency-groups]
 dev = [
+    # required for development
     "pip>=25.1",  # 25.1 needed for '--groups'
-    "clang-format",
-    "nox",
-    "mypy>=1.18",  # 1.18 needed for descriptor typing
+    "invoke",
     "pre-commit",
+    # allows linting the project manually
+    "clang-format",
+    "mypy>=1.18",  # 1.18 needed for descriptor typing
     "ruff",
-    "pytest>=6",
-    "coverage[toml]>=7.2",
-    "pytest-cov",
-    "gcovr==8.4",
+    # allows running tests manually if desired
+    {include-group = "test"},
+    {include-group = "test_coverage"},
+    {include-group = "coverage_report"},
 ]
 docs = [
     "Sphinx ~= 8.2.0",
@@ -282,7 +281,33 @@ docs = [
     "sphinx-autofixture",
     "pytest",
 ]
+release_build_sdist = [
+    "build",
+]
+release_build_bdist = [
+    "cibuildwheel==3.2.1",
+]
+package_deps = [
+    "exceptiongroup; python_version<'3.11'",
+    "find_libpython",
+]
+test = [
+    "pytest>=6"
+]
+test_coverage = [
+    "coverage[toml]>=7.2",
+    "pytest-cov",
+]
+coverage_report = [
+    "coverage[toml]>=7.2",
+    "gcovr==8.4",
+]
 
 [tool.uv.dependency-groups]
 # We need Python 3.11 to run Sphinx 8.2 and cibuildwheel 3.2
 docs = {requires-python = ">=3.11"}
+release_build_bdist = {requires-python = ">=3.11"}
+
+# Prevent uv from syncing `dev` group by default to reduce burden on nox / CI.
+[tool.uv]
+default-groups = []
