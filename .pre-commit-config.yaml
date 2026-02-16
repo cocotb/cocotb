@@ -63,6 +63,7 @@ repos:
     - pytest
     - coverage
     - nox
+    - nox-uv
     files: ^(src/cocotb/|src/pygpi/|noxfile.py)
 
 ci:

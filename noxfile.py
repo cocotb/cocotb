@@ -11,6 +11,9 @@ from pathlib import Path
 from typing import cast
 
 import nox
+import nox_uv
+
+nox.options.default_venv_backend = "uv"
 
 # Sessions run by default if nox is called without further arguments.
 nox.options.sessions = ["dev_test"]
@@ -134,7 +137,10 @@ def build_cocotb_for_dev_test(session: nox.Session) -> None:
     session.install("-v", ".", env=env)
 
 
-@nox.session
+@nox_uv.session(
+    uv_groups=["dev_test"],
+    uv_no_install_project=True,
+)
 @nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 def dev_test(
     session: nox.Session,
@@ -143,7 +149,6 @@ def dev_test(
     gpi_interface: str,
 ) -> None:
     """Run all development tests and merge coverage."""
-    session.install("--group", "dev_test")
     build_cocotb_for_dev_test(session)
     configure_env_for_dev_test(session)
     dev_test_nosim(session)
@@ -310,10 +315,12 @@ def dev_coverage_combine(session: nox.Session) -> None:
     session.log("Wrote combined coverage database for all tests to '.coverage'.")
 
 
-@nox.session
+@nox_uv.session(
+    uv_groups=["coverage_report"],
+    uv_no_install_project=True,
+)
 def dev_coverage_report(session: nox.Session) -> None:
     """Report coverage results."""
-    session.install("--group", "coverage_report")
 
     # combine coverage files from previous dev_test runs, if not already done
     if not Path(".coverage").is_file():
@@ -376,17 +383,21 @@ def dev_coverage_report(session: nox.Session) -> None:
 dist_dir = "dist"
 
 
-@nox.session
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=[],
+)
 def release_clean(session: nox.Session) -> None:
     """Remove all build artifacts from the dist directory."""
     shutil.rmtree(dist_dir, ignore_errors=True)
 
 
-@nox.session
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=["release_build_wheel"],
+)
 def release_build_wheel(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
-
-    session.install("--group", "release_build_wheel")
 
     session.log("Building binary distributions (wheels)")
     session.run(
@@ -398,11 +409,12 @@ def release_build_wheel(session: nox.Session) -> None:
     session.log(f"Binary distribution in release mode built into {dist_dir!r}")
 
 
-@nox.session
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=["release_build_sdist"],
+)
 def release_build_sdist(session: nox.Session) -> None:
     """Build the source distribution."""
-
-    session.install("--group", "release_build_sdist")
 
     session.log("Building source distribution (sdist)")
     session.run("python", "-m", "build", "--sdist", "--outdir", dist_dir, ".")
@@ -410,7 +422,10 @@ def release_build_sdist(session: nox.Session) -> None:
     session.log(f"Source distribution in release mode built into {dist_dir!r}")
 
 
-@nox.session
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=[],
+)
 def release_test_sdist(session: nox.Session) -> None:
     """Build and install the sdist."""
 
@@ -434,13 +449,15 @@ def release_test_sdist(session: nox.Session) -> None:
     session.run("cocotb-config", "--version")
 
 
-@nox.session
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=["release_test"],
+)
 @nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 def release_test(
     session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str
 ) -> None:
     """Run all tests against a cocotb release installed from wheels."""
-    session.install("--group", "release_test")
     release_install_wheel(session)
     release_test_nosim(session)
     release_test_sim(session, sim, toplevel_lang, gpi_interface)
@@ -513,11 +530,11 @@ def release_test_nosim(session: nox.Session) -> None:
 #
 
 
-@nox.session
+@nox_uv.session(
+    uv_groups=["docs"],
+)
 def docs(session: nox.Session) -> None:
     """invoke sphinx-build to build the HTML docs"""
-    session.install("--group", "docs")
-    session.install(".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -532,12 +549,11 @@ def docs(session: nox.Session) -> None:
     session.log(f"Documentation is available at {index}")
 
 
-@nox.session
+@nox_uv.session(
+    uv_groups=["docs_preview"],
+)
 def docs_preview(session: nox.Session) -> None:
     """Build a live preview of the documentation"""
-    session.install("--group", "docs-preview")
-    # Editable install allows editing cocotb source and seeing it updated in the live preview
-    session.install("-e", ".")
     outdir = session.cache_dir / "docs_out"
     # fmt: off
     session.run(
@@ -565,11 +581,11 @@ def docs_preview(session: nox.Session) -> None:
     # fmt: on
 
 
-@nox.session
+@nox_uv.session(
+    uv_groups=["docs"],
+)
 def docs_linkcheck(session: nox.Session) -> None:
     """invoke sphinx-build to linkcheck the docs"""
-    session.install("--group", "docs")
-    session.install(".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -582,11 +598,11 @@ def docs_linkcheck(session: nox.Session) -> None:
     )
 
 
-@nox.session
+@nox_uv.session(
+    uv_groups=["docs"],
+)
 def docs_spelling(session: nox.Session) -> None:
     """invoke sphinx-build to spellcheck the docs"""
-    session.install("--group", "docs")
-    session.install(".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",

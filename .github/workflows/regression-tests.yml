@@ -123,9 +123,11 @@ jobs:
       if: startsWith(matrix.python-version, '3.14') && startsWith(matrix.os, 'ubuntu')
       run: sudo apt-get install -y --no-install-recommends libxml2-dev libxslt-dev
       # Run tests that don't need a simulator.
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
     - name: Install Python testing dependencies
       run: |
-        pip install nox
+        pip install nox nox-uv
 
       # Install Icarus
     - name: Set up Icarus (Ubuntu - apt)
