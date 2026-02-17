@@ -154,6 +154,12 @@ To enable SAIF tracing, add ``--trace-saif`` to :make:var:`EXTRA_ARGS` as shown 
 
 The resulting file will be :file:`dump.saif` which can be processed by most synthesis tools.
 
+.. note::
+
+    Please note that (as of Verilator v5.044) for any given build, verilator can only output traces in one format, be it VCD, FST, or SAIF.
+    For instance if both the ``--trace-saif`` and ``--trace-fst`` flags are applied, only the latter format will be generated.
+    Thus waveform tracing and activity tracing should be done with different builds.
+
 .. _sim-verilator-issues:
 
 Reported Issues for this Simulator
