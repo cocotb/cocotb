@@ -513,8 +513,9 @@ hr.docutils {
     opacity: 1.0;
 }
 
-/* Add badges for links that point to docs of specific cocotb versions */
-a[href*="docs.cocotb.org"]::after {
+/* Add version badges for links that point to docs of specific cocotb versions */
+/* Do not show badges on certain pages (class set in cocotb.js) */
+body:not(.no-version-badges) a[href*="docs.cocotb.org"]::after {
     background-color: white;
     color: var(--color-cocotb-blue);
     border: 1px solid;
@@ -528,31 +529,31 @@ a[href*="docs.cocotb.org"]::after {
     text-decoration: none;
 }
 
-a[href*="docs.cocotb.org"][href*="v1.9"]::after {
+body:not(.no-version-badges) a[href*="docs.cocotb.org"][href*="v1.9"]::after {
     content: "v1.9";
 }
-a[href*="docs.cocotb.org"][href*="v1.8"]::after {
+body:not(.no-version-badges) a[href*="docs.cocotb.org"][href*="v1.8"]::after {
     content: "v1.8";
 }
-a[href*="docs.cocotb.org"][href*="v1.7"]::after {
+body:not(.no-version-badges) a[href*="docs.cocotb.org"][href*="v1.7"]::after {
     content: "v1.7";
 }
-a[href*="docs.cocotb.org"][href*="v1.6"]::after {
+body:not(.no-version-badges) a[href*="docs.cocotb.org"][href*="v1.6"]::after {
     content: "v1.6";
 }
-a[href*="docs.cocotb.org"][href*="v1.5"]::after {
+body:not(.no-version-badges) a[href*="docs.cocotb.org"][href*="v1.5"]::after {
     content: "v1.5";
 }
-a[href*="docs.cocotb.org"][href*="v1.4"]::after {
+body:not(.no-version-badges) a[href*="docs.cocotb.org"][href*="v1.4"]::after {
     content: "v1.4";
 }
-a[href*="docs.cocotb.org"][href*="v1.3"]::after {
+body:not(.no-version-badges) a[href*="docs.cocotb.org"][href*="v1.3"]::after {
     content: "v1.3";
 }
-a[href*="docs.cocotb.org"][href*="v1.2"]::after {
+body:not(.no-version-badges) a[href*="docs.cocotb.org"][href*="v1.2"]::after {
     content: "v1.2";
 }
-a[href*="docs.cocotb.org"][href*="v1.1"]::after {
+body:not(.no-version-badges) a[href*="docs.cocotb.org"][href*="v1.1"]::after {
     content: "v1.1";
 }
 
