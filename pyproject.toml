@@ -284,6 +284,10 @@ docs = [
     "sphinx-autofixture",
     "pytest",
 ]
+docs_preview = [
+    {include-group = "docs"},
+    "sphinx-autobuild",
+]
 release_build_sdist = [
     "build",
 ]
