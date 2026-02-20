@@ -20,6 +20,13 @@ from cocotb.handle import SimHandleBase
 # DEPOSIT action value from _GPISetAction enum (handle.py)
 _DEPOSIT: int = 0
 
+# Phase tracking for the fast scheduler.
+# Set by _FastScheduler._on_gpi_callback to indicate which simulation phase
+# the fast loop is currently executing in.  SignalProxy checks this to prevent
+# writes during the ReadOnly phase.
+_fast_phase: str = ""
+"""Current fast-scheduler phase: ``"readonly"``, ``"readwrite"``, or ``""``."""
+
 
 class SignalProxy:
     """Lightweight signal accessor that bypasses Logic/LogicArray creation.
@@ -61,7 +68,12 @@ class SignalProxy:
             write-scheduling machinery. For correct behavior on simulators
             that don't support inertial writes natively, set the environment
             variable ``COCOTB_TRUST_INERTIAL_WRITES=1``.
+
+        Raises:
+            RuntimeError: If called during the ReadOnly simulation phase.
         """
+        if _fast_phase == "readonly":
+            raise RuntimeError("Attempting to set a value during the ReadOnly phase.")
         self._handle.set_signal_val_int(_DEPOSIT, value)
 
     def set_binstr(self, value: str) -> None:
@@ -69,7 +81,12 @@ class SignalProxy:
 
         .. note::
             Same caveats as :meth:`set_int` regarding inertial writes.
+
+        Raises:
+            RuntimeError: If called during the ReadOnly simulation phase.
         """
+        if _fast_phase == "readonly":
+            raise RuntimeError("Attempting to set a value during the ReadOnly phase.")
         self._handle.set_signal_val_binstr(_DEPOSIT, value)
 
 
@@ -149,6 +166,8 @@ async def run_cycles(
     exception: list[BaseException | None] = [None]
 
     def _on_edge() -> None:
+        global _fast_phase
+        _fast_phase = ""  # Value-change edges are not phase-specific.
         try:
             if step_fn(cycle_count[0]):
                 cycle_count[0] += 1
@@ -157,9 +176,11 @@ async def run_cycles(
             else:
                 # step_fn signalled stop — resume the cocotb Task.
                 cycle_count[0] += 1  # count the final call
+                _fast_phase = ""
                 done_trigger._finish()
         except BaseException as exc:
             exception[0] = exc
+            _fast_phase = ""
             done_trigger._finish()
 
     # Kick off the first callback.
