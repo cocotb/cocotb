@@ -1116,3 +1116,20 @@ async def test_Task_yield_bad_value(_: object) -> None:
 
     await Timer(1)
     # things still work after the bad yield
+
+
+@cocotb.test
+async def test_write_in_Task_occurs_on_same_cycle(dut) -> None:
+    """Test that writing to a signal in a Task writes on the same cycle."""
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+
+    async def writer():
+        dut.stream_in_valid.value = 1
+        await Timer(1, "step")
+
+    dut.stream_in_valid.value = 0
+    await RisingEdge(dut.clk)
+    cocotb.start_soon(writer())
+    assert dut.stream_in_valid.value == 0
+    await RisingEdge(dut.clk)
+    assert dut.stream_in_valid.value == 1
