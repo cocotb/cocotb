@@ -68,72 +68,23 @@ typedef GpiIterator *gpi_iterator_hdl;
 struct GpiObjHdl;
 struct GpiCbHdl;
 struct GpiIterator;
+
+/** Handle to simulation object, such as a signal. */
 typedef struct GpiObjHdl *gpi_sim_hdl;
+
+/** Handle to callback object. */
 typedef struct GpiCbHdl *gpi_cb_hdl;
+
+/** Handle to iterator object.
+ *
+ * Used to iterate over child handles of a smulation object.
+ */
 typedef struct GpiIterator *gpi_iterator_hdl;
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/** Object discovery method when searching by name. */
-typedef enum gpi_discovery_e {
-    GPI_AUTO = 0,
-    GPI_NATIVE = 1,
-} gpi_discovery;
-
-/** GPI simulation object types. */
-// Note these are strikingly similar to the VPI types...
-typedef enum gpi_objtype_e {
-    GPI_UNKNOWN = 0,
-    GPI_MEMORY = 1,
-    GPI_MODULE = 2,
-    // GPI_NET = 3,  // Deprecated
-    // GPI_PARAMETER = 4,  // Deprecated
-    // GPI_REGISTER = 5,  // Deprecated
-    GPI_ARRAY = 6,
-    GPI_ENUM = 7,
-    GPI_STRUCTURE = 8,
-    GPI_REAL = 9,
-    GPI_INTEGER = 10,
-    GPI_STRING = 11,
-    GPI_GENARRAY = 12,
-    GPI_PACKAGE = 13,
-    GPI_PACKED_STRUCTURE = 14,
-    GPI_LOGIC = 15,
-    GPI_LOGIC_ARRAY = 16,
-} gpi_objtype;
-
-/** Types of child objects to search for when iterating. */
-typedef enum gpi_iterator_sel_e {
-    GPI_OBJECTS = 1,
-    GPI_DRIVERS = 2,
-    GPI_LOADS = 3,
-    GPI_PACKAGE_SCOPES = 4,
-} gpi_iterator_sel;
-
-/** Action to use when setting object value. */
-typedef enum gpi_set_action_e {
-    GPI_DEPOSIT = 0,
-    GPI_FORCE = 1,
-    GPI_RELEASE = 2,
-    GPI_NO_DELAY = 3,
-} gpi_set_action;
-
-/** Direction of range constraint of an object. */
-typedef enum gpi_range_dir_e {
-    GPI_RANGE_DOWN = -1,
-    GPI_RANGE_NO_DIR = 0,
-    GPI_RANGE_UP = 1,
-} gpi_range_dir;
-
-/** Type of value change to match when registering for callback. */
-typedef enum gpi_edge_e {
-    GPI_RISING,
-    GPI_FALLING,
-    GPI_VALUE_CHANGE,
-} gpi_edge;
 
 /** @defgroup SimIntf Simulator Control and Interrogation
  * These functions are for controlling and querying
@@ -197,6 +148,12 @@ GPI_EXPORT int gpi_get_simulator_args(int *argc, char const *const **argv);
  * @{
  */
 
+/** Object discovery method when searching by name. */
+typedef enum gpi_discovery_e {
+    GPI_AUTO = 0,
+    GPI_NATIVE = 1,
+} gpi_discovery;
+
 /** Get a handle to the root simulation object.
  *
  * @param name  Name of the root object, or `NULL`.
@@ -233,6 +190,35 @@ GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent,
  * object.
  * @{
  */
+
+/** GPI simulation object types. */
+// Note these are strikingly similar to the VPI types...
+typedef enum gpi_objtype_e {
+    GPI_UNKNOWN = 0,
+    GPI_MEMORY = 1,
+    GPI_MODULE = 2,
+    // GPI_NET = 3,  // Deprecated
+    // GPI_PARAMETER = 4,  // Deprecated
+    // GPI_REGISTER = 5,  // Deprecated
+    GPI_ARRAY = 6,
+    GPI_ENUM = 7,
+    GPI_STRUCTURE = 8,
+    GPI_REAL = 9,
+    GPI_INTEGER = 10,
+    GPI_STRING = 11,
+    GPI_GENARRAY = 12,
+    GPI_PACKAGE = 13,
+    GPI_PACKED_STRUCTURE = 14,
+    GPI_LOGIC = 15,
+    GPI_LOGIC_ARRAY = 16,
+} gpi_objtype;
+
+/** Direction of range constraint of an object. */
+typedef enum gpi_range_dir_e {
+    GPI_RANGE_DOWN = -1,
+    GPI_RANGE_NO_DIR = 0,
+    GPI_RANGE_UP = 1,
+} gpi_range_dir;
 
 /** @return The @ref gpi_objtype "type" of the simulation object. */
 GPI_EXPORT gpi_objtype gpi_get_object_type(gpi_sim_hdl obj_hdl);
@@ -282,6 +268,14 @@ GPI_EXPORT int gpi_is_signed(gpi_sim_hdl obj_hdl);
  * These functions are for getting and setting properties of a signal object.
  * @{
  */
+
+/** Action to use when setting object value. */
+typedef enum gpi_set_action_e {
+    GPI_DEPOSIT = 0,
+    GPI_FORCE = 1,
+    GPI_RELEASE = 2,
+    GPI_NO_DELAY = 3,
+} gpi_set_action;
 
 // Getting properties
 
@@ -365,6 +359,14 @@ GPI_EXPORT void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str,
  * @{
  */
 
+/** Types of child objects to search for when iterating. */
+typedef enum gpi_iterator_sel_e {
+    GPI_OBJECTS = 1,
+    GPI_DRIVERS = 2,
+    GPI_LOADS = 3,
+    GPI_PACKAGE_SCOPES = 4,
+} gpi_iterator_sel;
+
 /** Start iteration on a simulation object.
  *
  * Unlike `vpi_iterate()` the iterator handle may only be `NULL` if the `type`
@@ -390,6 +392,13 @@ GPI_EXPORT gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
  * These functions are for registering and controlling callbacks.
  * @{
  */
+
+/** Type of value change to match when registering for callback. */
+typedef enum gpi_edge_e {
+    GPI_VALUE_CHANGE,
+    GPI_RISING,
+    GPI_FALLING,
+} gpi_edge;
 
 /** Register a timed callback.
  *
@@ -480,10 +489,10 @@ GPI_EXPORT int gpi_register_finalize_callback(gpi_finalize_callback cb,
 /** Remove callback.
  *
  * The callback will not fire after this function is called.
- * The argument is no longer valid if this function succeeds.
+ * The handle is no longer valid if this function succeeds.
  *
- * @param cb_hdl The handle to the callback to remove.
- * @returns `0` on successful removal, `1` otherwise.
+ * @param cb_hdl    The handle to the callback to remove.
+ * @return          `0` on successful removal, `1` otherwise.
  */
 GPI_EXPORT int gpi_remove_cb(gpi_cb_hdl cb_hdl);
 
@@ -491,9 +500,9 @@ GPI_EXPORT int gpi_remove_cb(gpi_cb_hdl cb_hdl);
  *
  * This function cannot fail.
  *
- * @param cb_hdl The handle to the callback.
- * @param cb_func Where the user callback function should be placed.
- * @param cb_data Where the user callback function data should be placed.
+ * @param cb_hdl    The handle to the callback.
+ * @param cb_func   Where the user callback function should be placed.
+ * @param cb_data   Where the user callback function data should be placed.
  */
 GPI_EXPORT void gpi_get_cb_info(gpi_cb_hdl cb_hdl, int (**cb_func)(void *),
                                 void **cb_data);
