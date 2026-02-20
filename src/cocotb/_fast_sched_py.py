@@ -15,6 +15,7 @@ from __future__ import annotations
 from collections.abc import Coroutine
 from typing import Any
 
+import cocotb._fast_loop as _fast_loop_module
 from cocotb import simulator
 from cocotb._fast_loop import _FastLoopDone
 
@@ -109,7 +110,14 @@ class _FastScheduler:
     Pure-Python fallback for :class:`cocotb._fast_sched._FastScheduler`.
     """
 
-    __slots__ = ("_coro", "_done_trigger", "_callback", "exception", "result")
+    __slots__ = (
+        "_coro",
+        "_done_trigger",
+        "_callback",
+        "_pending_phase",
+        "exception",
+        "result",
+    )
 
     def __init__(
         self, coro: Coroutine[Any, None, Any], done_trigger: _FastLoopDone
@@ -117,6 +125,7 @@ class _FastScheduler:
         self._coro = coro
         self._done_trigger = done_trigger
         self._callback = self._on_gpi_callback
+        self._pending_phase: str = ""
         self.exception: BaseException | None = None
         self.result: object = None
 
@@ -125,16 +134,21 @@ class _FastScheduler:
         cb = self._callback
 
         if isinstance(trigger, RisingEdge):
+            self._pending_phase = ""
             simulator.register_value_change_callback(trigger._sim_hdl, cb, _RISING)
         elif isinstance(trigger, FallingEdge):
+            self._pending_phase = ""
             simulator.register_value_change_callback(trigger._sim_hdl, cb, _FALLING)
         elif isinstance(trigger, ValueChange):
+            self._pending_phase = ""
             simulator.register_value_change_callback(
                 trigger._sim_hdl, cb, _VALUE_CHANGE
             )
         elif isinstance(trigger, ReadOnly):
+            self._pending_phase = "readonly"
             simulator.register_readonly_callback(cb)
         elif isinstance(trigger, ReadWrite):
+            self._pending_phase = "readwrite"
             simulator.register_rwsynch_callback(cb)
         else:
             self.exception = TypeError(
@@ -158,12 +172,17 @@ class _FastScheduler:
 
     def _on_gpi_callback(self) -> None:
         """Called from GPI — advance coroutine to next yield point."""
+        # Update phase tracking so SignalProxy can guard against
+        # writes in the ReadOnly phase.
+        _fast_loop_module._fast_phase = self._pending_phase
         try:
             trigger = self._coro.send(None)
             self._dispatch(trigger)
         except StopIteration as e:
             self.result = e.value
+            _fast_loop_module._fast_phase = ""
             self._done_trigger._finish()
         except BaseException as e:
             self.exception = e
+            _fast_loop_module._fast_phase = ""
             self._done_trigger._finish()

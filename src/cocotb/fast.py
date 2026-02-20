@@ -36,6 +36,77 @@ Usage (async/await style)::
 
 
     await fast.run(inner())
+
+.. _fast-behavioral-differences:
+
+Behavioral Differences from Standard cocotb
+============================================
+
+The fast scheduler is a lightweight replacement for cocotb's full
+Task / EventLoop / Trigger machinery.  It achieves its speedup by
+skipping several layers of the standard scheduler.  This introduces
+the following behavioral differences that users should be aware of:
+
+**Immediate signal writes (no write batching)**
+    :meth:`SignalProxy.set_int` and :meth:`SignalProxy.set_binstr`
+    call the GPI ``set_signal_val_*`` functions immediately via a
+    ``DEPOSIT`` action.  Standard cocotb defers inertial (deposit)
+    writes to the ReadWrite phase and batches multiple writes to the
+    same signal into a single GPI call.  In the fast API, every
+    ``set_int`` call hits the simulator immediately.  This requires
+    ``COCOTB_TRUST_INERTIAL_WRITES=1`` for simulators that do not
+    handle inertial writes correctly.
+
+    Writes during the ReadOnly phase **are** detected and raise
+    :class:`RuntimeError`, matching standard cocotb behavior.
+
+**No interaction with cocotb's event loop**
+    While a fast loop is running, cocotb's :class:`~cocotb.EventLoop`
+    is **not** pumped.  Other cocotb tasks (started via
+    :func:`~cocotb.start_soon`) will not make progress until the fast
+    loop completes and control returns to the standard scheduler.  Do
+    not mix concurrent cocotb tasks with fast loops that expect those
+    tasks to advance in lock-step.
+
+**``current_gpi_trigger()`` is not updated**
+    The fast scheduler does **not** set
+    :func:`cocotb._gpi_triggers.current_gpi_trigger`.  Code outside
+    the fast loop that relies on this function to determine the
+    current simulation phase will see stale values while a fast loop
+    is active.  Within the fast loop, :class:`SignalProxy` uses its
+    own phase tracking for the ReadOnly write guard.
+
+**No ``_apply_scheduled_writes()`` on ReadWrite**
+    Standard cocotb's ``ReadWrite._do_callbacks()`` flushes any
+    deferred writes queued by ``dut.signal.value = X`` before resuming
+    tasks.  The fast scheduler's ``ReadWrite`` trigger does **not**
+    call ``_apply_scheduled_writes()``.  If you mix standard
+    ``dut.signal.value`` assignments with fast ``await ReadWrite()``,
+    the deferred writes may not be applied at the expected time.
+    Use :meth:`SignalProxy.set_int` exclusively inside fast loops.
+
+**No phase-transition guards on triggers**
+    Standard cocotb raises :class:`RuntimeError` for illegal
+    transitions such as ``await ReadOnly()`` while already in the
+    ReadOnly phase, or ``await ReadWrite()`` from ReadOnly.  The fast
+    scheduler does not enforce these guards.  Awaiting an illegal
+    transition will register the GPI callback, and the resulting
+    behavior is simulator-dependent.
+
+**Single-coroutine execution only**
+    The fast scheduler drives exactly one coroutine.  There is no
+    support for ``start_soon``, ``Combine``, ``First``, or any form
+    of concurrent task execution within a fast loop.  If you need
+    concurrency, structure the code so that the concurrent portion
+    runs under the standard cocotb scheduler and only the tight inner
+    loop uses the fast API.
+
+**Supported triggers are limited**
+    Only :class:`RisingEdge`, :class:`FallingEdge`, :class:`ReadOnly`,
+    :class:`ReadWrite`, and :class:`ValueChange` are supported.
+    :class:`~cocotb.triggers.Timer`, :class:`~cocotb.triggers.First`,
+    :class:`~cocotb.triggers.Combine`, and other standard triggers
+    will raise :class:`TypeError` at runtime.
 """
 
 from __future__ import annotations

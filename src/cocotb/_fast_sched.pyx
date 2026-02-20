@@ -20,6 +20,7 @@ Compared to standard cocotb:
 from __future__ import annotations
 
 from cocotb import simulator
+import cocotb._fast_loop as _fast_loop_module
 
 
 # ---------------------------------------------------------------------------
@@ -124,6 +125,7 @@ cdef class _FastScheduler:
     cdef object _coro
     cdef object _done_trigger
     cdef object _callback       # cached bound method (avoids allocation per cycle)
+    cdef str _pending_phase     # phase the next callback will fire in
     cdef public object exception
     cdef public object result
 
@@ -131,6 +133,7 @@ cdef class _FastScheduler:
         self._coro = coro
         self._done_trigger = done_trigger
         self._callback = self._on_gpi_callback
+        self._pending_phase = ""
         self.exception = None
         self.result = None
 
@@ -139,21 +142,26 @@ cdef class _FastScheduler:
         cdef object cb = self._callback
 
         if isinstance(trigger, RisingEdge):
+            self._pending_phase = ""
             simulator.register_value_change_callback(
                 (<RisingEdge>trigger)._sim_hdl, cb, _RISING)
 
         elif isinstance(trigger, FallingEdge):
+            self._pending_phase = ""
             simulator.register_value_change_callback(
                 (<FallingEdge>trigger)._sim_hdl, cb, _FALLING)
 
         elif isinstance(trigger, ValueChange):
+            self._pending_phase = ""
             simulator.register_value_change_callback(
                 (<ValueChange>trigger)._sim_hdl, cb, _VALUE_CHANGE)
 
         elif isinstance(trigger, ReadOnly):
+            self._pending_phase = "readonly"
             simulator.register_readonly_callback(cb)
 
         elif isinstance(trigger, ReadWrite):
+            self._pending_phase = "readwrite"
             simulator.register_rwsynch_callback(cb)
 
         else:
@@ -178,12 +186,17 @@ cdef class _FastScheduler:
 
     def _on_gpi_callback(self):
         """Called from GPI — advance coroutine to next yield point."""
+        # Update phase tracking so SignalProxy can guard against
+        # writes in the ReadOnly phase.
+        _fast_loop_module._fast_phase = self._pending_phase
         try:
             trigger = self._coro.send(None)
             self._dispatch(trigger)
         except StopIteration as e:
             self.result = e.value
+            _fast_loop_module._fast_phase = ""
             self._done_trigger._finish()
         except BaseException as e:
             self.exception = e
+            _fast_loop_module._fast_phase = ""
             self._done_trigger._finish()
