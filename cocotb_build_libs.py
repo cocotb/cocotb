@@ -224,6 +224,24 @@ class build_ext(_build_ext):
 
         super().run()
 
+        # Fix --inplace placement for Cython extensions.
+        # With package_dir={"": "src"}, --inplace creates an extra nesting level
+        # (e.g. src/cocotb/cocotb/_fast.so instead of src/cocotb/_fast.so).
+        if self.inplace:
+            src_dir = os.path.join(
+                os.path.dirname(__file__), "src", "cocotb"
+            )
+            misplaced_dir = os.path.join(src_dir, "cocotb")
+            if os.path.isdir(misplaced_dir):
+                for fname in os.listdir(misplaced_dir):
+                    if fname.startswith("_fast") and fname.endswith(
+                        (".so", ".pyd", ".dylib")
+                    ):
+                        src_path = os.path.join(misplaced_dir, fname)
+                        dst_path = os.path.join(src_dir, fname)
+                        copy_file(src_path, dst_path, verbose=1)
+                        os.remove(src_path)
+
     def build_extensions(self):
         if os.name == "nt":
             if self._uses_msvc():
@@ -284,12 +302,20 @@ class build_ext(_build_ext):
         """
         lib_name = os.path.split(ext.name)[-1]
 
+        # Only add C++ flags to extensions that have C++ sources.
+        # Cython extensions generate pure C and must not get -std=c++11.
+        _has_cxx = any(s.endswith((".cpp", ".cxx", ".cc")) for s in ext.sources)
         if self._uses_msvc():
-            ext.extra_compile_args += _extra_cxx_compile_args_msvc
+            if _has_cxx:
+                ext.extra_compile_args += _extra_cxx_compile_args_msvc
         else:
-            ext.extra_compile_args += _extra_cxx_compile_args
+            if _has_cxx:
+                ext.extra_compile_args += _extra_cxx_compile_args
 
-            if os.name == "nt":
+            # Skip linker customizations for pure-C Python extensions (e.g. Cython)
+            if not _has_cxx:
+                pass
+            elif os.name == "nt":
                 # Align behavior of gcc with msvc and export only symbols marked with __declspec(dllexport)
                 ext.extra_link_args += ["-Wl,--exclude-all-symbols"]
             else:

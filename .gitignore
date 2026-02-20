@@ -122,6 +122,7 @@ metrics.db
 # Build artifacts
 /dist/
 src/cocotb/_version.py
+src/cocotb/_fast.c
 
 # clangd
 compile_commands.json
