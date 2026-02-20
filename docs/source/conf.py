@@ -436,3 +436,19 @@ extlinks = {
         None,
     ),
 }
+
+# -- intersphinx missing-reference interception --------------------------------
+from sphinx.errors import NoUri
+from sphinx.util.logging import getLogger
+
+def block_gpi_links(app, env, node, contnode):
+    target = node.get('reftarget', '')
+
+    # Stop intersphinx from linking to old GPI docs
+    if target in ('GpiObjHdl', 'GpiIterator', 'GpiCbHdl'):
+        getLogger("cocotb.conf").info(f"Stopping intersphinx link for {target}")
+        raise NoUri
+
+# -- Custom setup function -----------------------------------------------------
+def setup(app):
+    app.connect('missing-reference', block_gpi_links)
