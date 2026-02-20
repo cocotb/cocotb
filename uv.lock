@@ -660,12 +660,12 @@ requires-dist = [
 [package.metadata.requires-dev]
 coverage-report = [
     { name = "coverage", extras = ["toml"], specifier = ">=7.2" },
-    { name = "gcovr", specifier = "==8.4" },
+    { name = "gcovr", specifier = "==8.5" },
 ]
 dev = [
     { name = "clang-format" },
     { name = "coverage", extras = ["toml"], specifier = ">=7.2" },
-    { name = "gcovr", specifier = "==8.4" },
+    { name = "gcovr", specifier = "==8.5" },
     { name = "mypy", specifier = ">=1.18" },
     { name = "nox" },
     { name = "pip", specifier = ">=25.1" },
@@ -1153,7 +1153,7 @@ wheels = [
 
 [[package]]
 name = "gcovr"
-version = "8.4"
+version = "8.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorlog" },
@@ -1162,9 +1162,9 @@ dependencies = [
     { name = "pygments" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e4/ce/b7516854699f807f58c3c9801ad44de7f51a952be16b62a5948b358f1aa4/gcovr-8.4.tar.gz", hash = "sha256:8ea0cf23176b1029f28db679d712ca6477b3807097c3755c135bdc53b51cfa72", size = 188132, upload-time = "2025-09-27T22:13:28.882Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/12/460c5d026ea8877cade21473e090a125288442ff930cd08bdf5e3f9eb194/gcovr-8.5.tar.gz", hash = "sha256:9f0e21aab72b70fc26a4a0b6e35f25b97eefb5ce6e9c57388bf4a065726f7965", size = 200115, upload-time = "2026-01-08T22:13:41.054Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ae/50/b049fc9af7d3b0e4bd3af90ebba0e2f4ec42857674c8ba5ed15b5d719170/gcovr-8.4-py3-none-any.whl", hash = "sha256:1016d013d6c55225b1f716a4325e16ad5d626ff05b20b8a12d542e2d9a82ac21", size = 240591, upload-time = "2025-09-27T22:13:26.936Z" },
+    { url = "https://files.pythonhosted.org/packages/21/9b/e286046ffdb3f7fbde2be16b8f1a5dfdb7e5c2f62fe079da454a562464d7/gcovr-8.5-py3-none-any.whl", hash = "sha256:2a47b9af75d0658c6a72c2848ea3ca1da8e4f16f6f38d8d459c1c1b244b4a98e", size = 254970, upload-time = "2026-01-08T22:13:38.887Z" },
 ]
 
 [[package]]

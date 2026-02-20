@@ -303,7 +303,7 @@ dev_test = [
 ]
 coverage_report = [
     "coverage[toml]>=7.2",
-    "gcovr==8.4",
+    "gcovr==8.5",
 ]
 release_test = [
     {include-group = "test_common"},
