@@ -22,6 +22,19 @@ sys.path.append(path.dirname(__file__))
 
 from cocotb_build_libs import build_ext, get_ext
 
+try:
+    from Cython.Build import cythonize
+    from setuptools import Extension as _Extension
+
+    _cython_extensions = cythonize(
+        [
+            _Extension("cocotb._fast", ["src/cocotb/_fast.pyx"]),
+        ],
+        compiler_directives={"language_level": "3"},
+    )
+except Exception:
+    _cython_extensions = []
+
 __version__ = "2.1.0.dev0"
 
 max_python3_minor_version = 14
@@ -90,7 +103,7 @@ setup(
         ),
         "cocotb_tools": (package_files("src/cocotb_tools/makefiles")),
     },
-    ext_modules=get_ext(),
+    ext_modules=get_ext() + _cython_extensions,
 )
 
 print(log_stream.getvalue())
