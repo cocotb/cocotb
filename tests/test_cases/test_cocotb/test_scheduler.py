@@ -1133,3 +1133,22 @@ async def test_write_in_Task_occurs_on_same_cycle(dut) -> None:
     assert dut.stream_in_valid.value == 0
     await RisingEdge(dut.clk)
     assert dut.stream_in_valid.value == 1
+
+
+async def wait_edge(dut: Any) -> None:
+    # this trigger never fires
+    await First(RisingEdge(dut.stream_out_ready))
+
+
+@cocotb.test
+async def test_957_1(dut: Any) -> None:
+    cocotb.start_soon(wait_edge(dut))
+    await Timer(10, "ns")
+
+
+@cocotb.test
+async def test_957_2(dut: Any) -> None:
+    # This test *MUST* be after test_957_1 to test that the previous test's
+    # pending coroutine doesn't interfere with this test.
+    cocotb.start_soon(wait_edge(dut))
+    await Timer(10, "ns")
