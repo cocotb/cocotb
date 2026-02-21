@@ -55,7 +55,12 @@ jobs:
       group: ci-free
 
   test_dev_licensed:
-    if: github.repository == 'cocotb/cocotb'
+    # Only run licensed simulator tests for pushes to master/stable or PRs
+    # originating from the same repo (not forks, which lack simulator secrets).
+    if: >-
+      github.repository == 'cocotb/cocotb'
+      && (github.event_name == 'push'
+          || github.event.pull_request.head.repo.full_name == 'cocotb/cocotb')
     name: Regression Tests
     uses: ./.github/workflows/regression-tests.yml
     with:
