@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=77", "wheel", "Cython>=3.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -138,6 +138,10 @@ ignore = [
 "examples/doc_examples/quickstart/test_my_design.py" = [
     "E402",
     "F811",
+]
+# Lazy imports inside monkey-patch functions to avoid circular dependencies
+"src/cocotb/_fast_install.py" = [
+    "PLC0415",
 ]
 
 [tool.ruff.lint.isort]
