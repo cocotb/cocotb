@@ -194,6 +194,14 @@ clean::
 	@$(RM) -rf metrics.db
 	@$(RM) -rf file.vcd
 
+
+# Galaxsim
+clean::
+	@$(RM) -rf $(SIM_BUILD)
+	@$(RM) -rf xsim.src
+	@$(RM) -rf xsim.data
+	@$(RM) -rf xsim
+
 else
     $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)
 endif # COCOTB_MAKEFILE_INC_INCLUDED
