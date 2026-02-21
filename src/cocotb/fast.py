@@ -65,26 +65,6 @@ the following behavioral differences that users should be aware of:
     ``COCOTB_TRUST_INERTIAL_WRITES=1`` is set, standard cocotb also
     writes immediately, so behavior is identical on trusted simulators.
 
-**``current_gpi_trigger()`` is updated** *(resolved)*
-    The fast scheduler sets
-    :func:`cocotb._gpi_triggers.current_gpi_trigger` to the standard
-    singleton ``ReadOnly()`` / ``ReadWrite()`` instances when entering
-    those phases.  Concurrent standard cocotb tasks see correct phase
-    awareness for write guards.
-
-**``_apply_scheduled_writes()`` called on ReadWrite** *(resolved)*
-    The fast scheduler calls ``cocotb.handle._apply_scheduled_writes()``
-    when entering the ReadWrite phase, matching standard
-    ``ReadWrite._do_callbacks()`` behavior.  Deferred writes queued by
-    ``dut.signal.value = X`` from concurrent tasks are flushed before
-    the fast coroutine resumes.
-
-**Phase-transition guards enforced** *(resolved)*
-    The fast scheduler raises :class:`RuntimeError` for illegal
-    transitions such as ``await ReadOnly()`` while already in the
-    ReadOnly phase, or ``await ReadWrite()`` from ReadOnly, matching
-    standard cocotb behavior.
-
 **Single-coroutine execution only** *(by design)*
     The fast scheduler drives exactly one coroutine.  There is no
     support for ``start_soon``, ``Combine``, ``First``, or any form

@@ -1,4 +1,5 @@
 """Runner script for the profiling benchmark."""
+
 from __future__ import annotations
 
 import os
@@ -7,6 +8,7 @@ from pathlib import Path
 from cocotb_tools.runner import get_runner
 
 proj_path = Path(__file__).resolve().parent
+
 
 def run():
     sim = os.getenv("SIM", "verilator")
@@ -22,6 +24,7 @@ def run():
         test_module="bench_signals",
         test_dir=str(proj_path),
     )
+
 
 if __name__ == "__main__":
     run()
