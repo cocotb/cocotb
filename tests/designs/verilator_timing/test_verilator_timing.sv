@@ -2,7 +2,7 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-module test_3316 (
+module test_verilator_timing (
 `ifdef TEST_CLK_EXTERNAL
     input  logic clk,
 `endif  // `ifdef TEST_CLK_EXTERNAL
@@ -21,4 +21,4 @@ module test_3316 (
     q <= d;
   end
 
-endmodule : test_3316
+endmodule : test_verilator_timing
