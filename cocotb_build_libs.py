@@ -228,9 +228,7 @@ class build_ext(_build_ext):
         # With package_dir={"": "src"}, --inplace creates an extra nesting level
         # (e.g. src/cocotb/cocotb/_fast.so instead of src/cocotb/_fast.so).
         if self.inplace:
-            src_dir = os.path.join(
-                os.path.dirname(__file__), "src", "cocotb"
-            )
+            src_dir = os.path.join(os.path.dirname(__file__), "src", "cocotb")
             misplaced_dir = os.path.join(src_dir, "cocotb")
             if os.path.isdir(misplaced_dir):
                 for fname in os.listdir(misplaced_dir):

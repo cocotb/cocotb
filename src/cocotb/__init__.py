@@ -16,7 +16,7 @@ from ._version import __version__ as _version
 
 # Install Cython hot-path accelerators if available.
 # Disabled via COCOTB_DISABLE_FAST=1 environment variable.
-from cocotb._fast_install import install as _install_fast_paths
+from cocotb._fast_install import install as _install_fast_paths  # isort: skip
 
 _install_fast_paths()
 del _install_fast_paths

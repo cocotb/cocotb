@@ -139,6 +139,10 @@ ignore = [
     "E402",
     "F811",
 ]
+# Lazy imports inside monkey-patch functions to avoid circular dependencies
+"src/cocotb/_fast_install.py" = [
+    "PLC0415",
+]
 
 [tool.ruff.lint.isort]
 known-first-party = [

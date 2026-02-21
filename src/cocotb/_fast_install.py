@@ -10,10 +10,12 @@ variable ``COCOTB_DISABLE_FAST=1``.
 This module is safe to import even if the Cython extension was not
 compiled — it simply logs a message and returns.
 """
+
 from __future__ import annotations
 
 import logging
 import os
+from typing import Any
 
 _log = logging.getLogger(__name__)
 
@@ -36,11 +38,10 @@ def install() -> None:
         return
 
     try:
-        from cocotb import _fast
+        from cocotb import _fast  # type: ignore[attr-defined]
     except ImportError:
         _log.debug(
-            "cocotb._fast Cython extension not available; "
-            "using pure-Python hot paths"
+            "cocotb._fast Cython extension not available; using pure-Python hot paths"
         )
         _installed = True
         return
@@ -63,10 +64,12 @@ def _patch_logic_array_from_handle(fast_mod: object) -> None:
     from cocotb.types._logic_array import LogicArray
 
     @classmethod  # type: ignore[misc]
-    def _from_handle(cls, value: str, warn_indexing: bool) -> LogicArray:  # type: ignore[type-arg]
+    def _from_handle(
+        cls: type[LogicArray], value: str, warn_indexing: bool
+    ) -> LogicArray:
         return fast_mod.fast_logic_array_from_handle(cls, value, warn_indexing)  # type: ignore[attr-defined]
 
-    LogicArray._from_handle = _from_handle  # type: ignore[assignment]
+    LogicArray._from_handle = _from_handle  # type: ignore[method-assign,assignment]
     _log.debug("Patched LogicArray._from_handle")
 
 
@@ -74,7 +77,7 @@ def _patch_hierarchy_getattr(fast_mod: object) -> None:
     """Replace HierarchyObject.__getattr__ with the fast C-level version."""
     from cocotb.handle import HierarchyObject
 
-    HierarchyObject.__getattr__ = fast_mod.fast_getattr  # type: ignore[attr-defined,assignment]
+    HierarchyObject.__getattr__ = fast_mod.fast_getattr  # type: ignore[attr-defined,method-assign]
     _log.debug("Patched HierarchyObject.__getattr__")
 
 
@@ -89,7 +92,7 @@ def _patch_cached_len() -> None:
 
     original_len = LogicArrayObject.__len__
 
-    def _cached_len(self) -> int:  # type: ignore[override]
+    def _cached_len(self: Any) -> int:
         try:
             return self.__dict__["_cached_num_elems"]
         except KeyError:
@@ -97,7 +100,7 @@ def _patch_cached_len() -> None:
             self.__dict__["_cached_num_elems"] = result
             return result
 
-    LogicArrayObject.__len__ = _cached_len  # type: ignore[assignment]
+    LogicArrayObject.__len__ = _cached_len  # type: ignore[method-assign]
     _log.debug("Patched LogicArrayObject.__len__ with caching")
 
 
@@ -105,11 +108,11 @@ def _patch_logic_object_get(fast_mod: object) -> None:
     """Replace LogicObject.get() with a version using the fast char lookup."""
     from cocotb.handle import LogicObject
 
-    def _fast_get(self):  # type: ignore[override]
+    def _fast_get(self: Any) -> Any:
         binstr = self._handle.get_signal_val_binstr()
         return fast_mod.fast_logic_from_char(binstr)  # type: ignore[attr-defined]
 
-    LogicObject.get = _fast_get  # type: ignore[assignment]
+    LogicObject.get = _fast_get  # type: ignore[method-assign]
     _log.debug("Patched LogicObject.get()")
 
 
@@ -142,13 +145,11 @@ def _patch_value_setter() -> None:
     _action_types = frozenset({_Action} | set(_Action.__subclasses__()))
 
     def _fast_value_setter(
-        self,  # type: ignore[override]
-        value,  # noqa: ANN001
+        self: Any,
+        value: Any,
     ) -> None:
         if current_gpi_trigger().__class__ is ReadOnly:
-            raise RuntimeError(
-                "Attempting settings a value during the ReadOnly phase."
-            )
+            raise RuntimeError("Attempting settings a value during the ReadOnly phase.")
         if self.is_const:
             raise TypeError("Attempted setting an immutable object")
         if type(value) in _action_types:
@@ -157,7 +158,7 @@ def _patch_value_setter() -> None:
 
     original_prop = ValueObjectBase.__dict__["value"]
     new_prop = original_prop.setter(_fast_value_setter)
-    ValueObjectBase.value = new_prop  # type: ignore[assignment]
+    ValueObjectBase.value = new_prop  # type: ignore[method-assign]
     _log.debug("Patched ValueObjectBase.value setter")
 
 
@@ -170,21 +171,28 @@ def _patch_schedule_write() -> None:
     from cocotb._gpi_triggers import ReadWrite, current_gpi_trigger
     from cocotb.handle import _GPISetAction
 
-    _trust_inertial = _handle_mod._trust_inertial  # type: ignore[attr-defined]
+    _trust_inertial = _handle_mod._trust_inertial
 
     if _trust_inertial:
         _deposit_int = _GPISetAction.DEPOSIT.value
 
-        def _fast_schedule_write(handle, write_func, action, value):  # type: ignore[override]
-            write_func(action.value if action is not _GPISetAction.DEPOSIT else _deposit_int, value)
+        def _fast_schedule_write(
+            handle: Any, write_func: Any, action: Any, value: Any
+        ) -> None:
+            write_func(
+                action.value if action is not _GPISetAction.DEPOSIT else _deposit_int,
+                value,
+            )
 
-        _handle_mod._schedule_write = _fast_schedule_write  # type: ignore[attr-defined]
+        _handle_mod._schedule_write = _fast_schedule_write
         _log.debug("Patched _schedule_write (trust_inertial mode)")
     else:
         _deposit_int = _GPISetAction.DEPOSIT.value
         _deposit_action = _GPISetAction.DEPOSIT
 
-        def _fast_schedule_write_queued(handle, write_func, action, value):  # type: ignore[override]
+        def _fast_schedule_write_queued(
+            handle: Any, write_func: Any, action: Any, value: Any
+        ) -> None:
             if current_gpi_trigger().__class__ is ReadWrite:
                 write_func(
                     _deposit_int if action is _deposit_action else action.value,
@@ -197,13 +205,11 @@ def _patch_schedule_write() -> None:
                 write_calls[handle] = (write_func, action, value)
 
                 if _handle_mod._apply_writes_cb is None:
-                    _handle_mod._apply_writes_cb = ReadWrite()._register(
-                        lambda: None
-                    )
+                    _handle_mod._apply_writes_cb = ReadWrite()._register(lambda: None)
             else:
                 write_func(action.value, value)
 
-        _handle_mod._schedule_write = _fast_schedule_write_queued  # type: ignore[attr-defined]
+        _handle_mod._schedule_write = _fast_schedule_write_queued
         _log.debug("Patched _schedule_write (queued mode)")
 
 
@@ -218,7 +224,7 @@ def _patch_event_loop() -> None:
     from cocotb._bridge import run_bridge_threads
     from cocotb._event_loop import EventLoop
 
-    def _fast_run(self) -> None:  # type: ignore[override]
+    def _fast_run(self: Any) -> None:
         callbacks = self._callbacks
         self._cycles = 0
         while callbacks:
@@ -228,7 +234,7 @@ def _patch_event_loop() -> None:
                     cb._func()
             run_bridge_threads()
 
-    def _fast_run_debug(self) -> None:  # type: ignore[override]
+    def _fast_run_debug(self: Any) -> None:
         # Fallback with debug support — identical to original
         callbacks = self._callbacks
         self._cycles = 0
@@ -250,8 +256,8 @@ def _patch_event_loop() -> None:
             run_bridge_threads()
 
     if debug.debug:
-        EventLoop.run = _fast_run_debug  # type: ignore[assignment]
+        EventLoop.run = _fast_run_debug  # type: ignore[method-assign]
     else:
-        EventLoop.run = _fast_run  # type: ignore[assignment]
+        EventLoop.run = _fast_run  # type: ignore[method-assign]
 
     _log.debug("Patched EventLoop.run()")
