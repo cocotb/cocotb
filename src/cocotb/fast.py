@@ -60,13 +60,17 @@ the following behavioral differences that users should be aware of:
     Writes during the ReadOnly phase **are** detected and raise
     :class:`RuntimeError`, matching standard cocotb behavior.
 
-**No interaction with cocotb's event loop**
-    While a fast loop is running, cocotb's :class:`~cocotb.EventLoop`
-    is **not** pumped.  Other cocotb tasks (started via
-    :func:`~cocotb.start_soon`) will not make progress until the fast
-    loop completes and control returns to the standard scheduler.  Do
-    not mix concurrent cocotb tasks with fast loops that expect those
-    tasks to advance in lock-step.
+**Cocotb event loop is pumped, but with caveats**
+    After each fast-scheduler step, ``cocotb._event_loop.run()`` is
+    called so that other cocotb tasks (started via
+    :func:`~cocotb.start_soon`) can make progress.  However, those
+    tasks will see a stale ``current_gpi_trigger()`` (see below) and
+    will not benefit from the fast scheduler's trigger dispatch.
+    Concurrent tasks that only await their own standard cocotb
+    triggers (e.g. a Clock driver, a bus monitor) should work
+    correctly.  Tasks that rely on tight lock-step coordination with
+    the fast loop may still see ordering differences compared to
+    running everything under the standard scheduler.
 
 **``current_gpi_trigger()`` is not updated**
     The fast scheduler does **not** set
