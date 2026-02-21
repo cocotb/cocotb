@@ -20,6 +20,7 @@ Compared to standard cocotb:
 from __future__ import annotations
 
 from cocotb import simulator
+import cocotb._event_loop
 import cocotb._fast_loop as _fast_loop_module
 
 
@@ -200,3 +201,8 @@ cdef class _FastScheduler:
             self.exception = e
             _fast_loop_module._fast_phase = ""
             self._done_trigger._finish()
+        # Pump the cocotb event loop so other tasks can make progress.
+        # This matches GPITrigger._react() which calls run() after
+        # _do_callbacks().  When no other tasks are queued, this is
+        # essentially a no-op (empty deque check).
+        cocotb._event_loop._inst.run()

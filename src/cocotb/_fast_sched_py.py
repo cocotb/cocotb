@@ -15,6 +15,7 @@ from __future__ import annotations
 from collections.abc import Coroutine
 from typing import Any
 
+import cocotb._event_loop
 import cocotb._fast_loop as _fast_loop_module
 from cocotb import simulator
 from cocotb._fast_loop import _FastLoopDone
@@ -186,3 +187,8 @@ class _FastScheduler:
             self.exception = e
             _fast_loop_module._fast_phase = ""
             self._done_trigger._finish()
+        # Pump the cocotb event loop so other tasks can make progress.
+        # This matches GPITrigger._react() which calls run() after
+        # _do_callbacks().  When no other tasks are queued, this is
+        # essentially a no-op (empty deque check).
+        cocotb._event_loop._inst.run()

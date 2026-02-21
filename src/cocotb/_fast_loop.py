@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+import cocotb._event_loop
 from cocotb import simulator
 from cocotb._gpi_triggers import GPITrigger
 from cocotb.handle import SimHandleBase
@@ -182,6 +183,11 @@ async def run_cycles(
             exception[0] = exc
             _fast_phase = ""
             done_trigger._finish()
+        # Pump the cocotb event loop so other tasks can make progress.
+        # This matches GPITrigger._react() which calls run() after
+        # _do_callbacks().  When no other tasks are queued, this is
+        # essentially a no-op (empty deque check).
+        cocotb._event_loop._inst.run()
 
     # Kick off the first callback.
     simulator.register_value_change_callback(sim_hdl, _on_edge, edge)
