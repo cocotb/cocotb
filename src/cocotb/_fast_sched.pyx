@@ -22,6 +22,8 @@ from __future__ import annotations
 from cocotb import simulator
 import cocotb._event_loop
 import cocotb._fast_loop as _fast_loop_module
+import cocotb._gpi_triggers as _gpi_triggers_module
+import cocotb.handle
 
 
 # ---------------------------------------------------------------------------
@@ -126,6 +128,7 @@ cdef class _FastScheduler:
     cdef object _coro
     cdef object _done_trigger
     cdef object _callback       # cached bound method (avoids allocation per cycle)
+    cdef str _current_phase     # phase we are currently in
     cdef str _pending_phase     # phase the next callback will fire in
     cdef public object exception
     cdef public object result
@@ -134,6 +137,7 @@ cdef class _FastScheduler:
         self._coro = coro
         self._done_trigger = done_trigger
         self._callback = self._on_gpi_callback
+        self._current_phase = ""
         self._pending_phase = ""
         self.exception = None
         self.result = None
@@ -158,10 +162,22 @@ cdef class _FastScheduler:
                 (<ValueChange>trigger)._sim_hdl, cb, _VALUE_CHANGE)
 
         elif isinstance(trigger, ReadOnly):
+            if self._current_phase == "readonly":
+                self.exception = RuntimeError(
+                    "Attempted illegal transition: awaiting ReadOnly in ReadOnly phase"
+                )
+                self._done_trigger._finish()
+                return
             self._pending_phase = "readonly"
             simulator.register_readonly_callback(cb)
 
         elif isinstance(trigger, ReadWrite):
+            if self._current_phase == "readonly":
+                self.exception = RuntimeError(
+                    "Attempted illegal transition: awaiting ReadWrite in ReadOnly phase"
+                )
+                self._done_trigger._finish()
+                return
             self._pending_phase = "readwrite"
             simulator.register_rwsynch_callback(cb)
 
@@ -189,16 +205,34 @@ cdef class _FastScheduler:
         """Called from GPI — advance coroutine to next yield point."""
         # Update phase tracking so SignalProxy can guard against
         # writes in the ReadOnly phase.
+        self._current_phase = self._pending_phase
         _fast_loop_module._fast_phase = self._pending_phase
+
+        # Update the global GPI trigger so concurrent standard cocotb tasks
+        # see the correct phase (e.g. for ReadOnly write guards in handle.py).
+        if self._current_phase == "readonly":
+            _gpi_triggers_module._current_gpi_trigger = (
+                _gpi_triggers_module.ReadOnly()
+            )
+        elif self._current_phase == "readwrite":
+            _gpi_triggers_module._current_gpi_trigger = (
+                _gpi_triggers_module.ReadWrite()
+            )
+            # Flush deferred writes queued by dut.signal.value = X,
+            # matching standard ReadWrite._do_callbacks() behavior.
+            cocotb.handle._apply_scheduled_writes()
+
         try:
             trigger = self._coro.send(None)
             self._dispatch(trigger)
         except StopIteration as e:
             self.result = e.value
+            self._current_phase = ""
             _fast_loop_module._fast_phase = ""
             self._done_trigger._finish()
         except BaseException as e:
             self.exception = e
+            self._current_phase = ""
             _fast_loop_module._fast_phase = ""
             self._done_trigger._finish()
         # Pump the cocotb event loop so other tasks can make progress.
