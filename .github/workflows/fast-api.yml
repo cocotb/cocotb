@@ -1,0 +1,220 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: Fast API Tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/cocotb/_fast*'
+      - 'src/cocotb/fast.py'
+      - 'tools/convert_to_fast.py'
+      - 'profile_bench/**'
+      - 'tests/pytest/test_fast*'
+      - '.github/workflows/fast-api.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'src/cocotb/_fast*'
+      - 'src/cocotb/fast.py'
+      - 'tools/convert_to_fast.py'
+      - 'profile_bench/**'
+      - 'tests/pytest/test_fast*'
+      - '.github/workflows/fast-api.yml'
+
+jobs:
+
+  # -----------------------------------------------------------------------
+  # Unit tests — no simulator required
+  # -----------------------------------------------------------------------
+  unit-tests:
+    name: "Unit tests (Python ${{ matrix.python-version }})"
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.12"]
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install cocotb (with Cython)
+        run: |
+          pip install pytest
+          pip install .
+
+      - name: Run fast API unit tests
+        run: |
+          pytest tests/pytest/test_fast.py -v
+
+      - name: Verify Cython extension was compiled
+        run: |
+          python -c "
+          from cocotb._fast_sched import RisingEdge, _FastScheduler
+          print('Cython _fast_sched OK:', RisingEdge, _FastScheduler)
+          "
+
+  # -----------------------------------------------------------------------
+  # Unit tests without Cython — verify pure Python fallback works
+  # -----------------------------------------------------------------------
+  fallback-tests:
+    name: "Fallback tests (no Cython)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install cocotb WITHOUT Cython
+        run: |
+          pip install pytest
+          # Install without Cython to test the pure Python fallback
+          pip install --no-build-isolation --config-settings="--build-option=--no-cython" . || pip install .
+        env:
+          # Force Cython extensions to not build by hiding cython
+          COCOTB_DISABLE_CYTHON: "1"
+
+      - name: Run fast API unit tests (fallback path)
+        run: |
+          pytest tests/pytest/test_fast.py -v -k "not cython"
+
+  # -----------------------------------------------------------------------
+  # Converter tool tests
+  # -----------------------------------------------------------------------
+  converter-tests:
+    name: "Converter tool tests"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install cocotb
+        run: pip install .
+
+      - name: Run converter tests
+        run: |
+          pytest tests/pytest/test_fast.py -v -k "TestConverter"
+
+      - name: Run converter on benchmark file (smoke test)
+        run: |
+          python tools/convert_to_fast.py profile_bench/bench_signals.py --diff
+
+  # -----------------------------------------------------------------------
+  # Simulator benchmark — fast vs standard comparison
+  # -----------------------------------------------------------------------
+  benchmark:
+    name: "Benchmark (Icarus Verilog)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install Icarus Verilog
+        run: sudo apt-get install -y --no-install-recommends iverilog
+
+      - name: Install cocotb
+        run: |
+          pip install pytest
+          pip install .
+
+      - name: Verify Cython extensions built
+        run: |
+          python -c "
+          from cocotb._fast_sched import _FastScheduler
+          from cocotb._fast_loop import SignalProxy
+          print('All Cython extensions OK')
+          "
+
+      - name: Run benchmark comparison (fast vs standard)
+        run: |
+          pytest tests/pytest/test_fast_benchmark.py -v -s
+        env:
+          SIM: icarus
+          COCOTB_TRUST_INERTIAL_WRITES: "1"
+
+      - name: Run direct benchmark (all tests)
+        run: |
+          cd profile_bench
+          python run_profile.py
+        env:
+          SIM: icarus
+          COCOTB_TRUST_INERTIAL_WRITES: "1"
+
+  # -----------------------------------------------------------------------
+  # Lint check for fast API files
+  # -----------------------------------------------------------------------
+  lint:
+    name: "Lint"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: pip install ruff mypy
+
+      - name: Install cocotb (for type stubs)
+        run: pip install .
+
+      - name: Ruff check
+        run: |
+          ruff check \
+            src/cocotb/_fast_loop.py \
+            src/cocotb/_fast_sched_py.py \
+            src/cocotb/fast.py \
+            tools/convert_to_fast.py \
+            tests/pytest/test_fast.py \
+            tests/pytest/test_fast_benchmark.py \
+            profile_bench/bench_signals.py
+
+      - name: Ruff format check
+        run: |
+          ruff format --check \
+            src/cocotb/_fast_loop.py \
+            src/cocotb/_fast_sched_py.py \
+            src/cocotb/_fast_sched.pyi \
+            src/cocotb/fast.py \
+            tools/convert_to_fast.py \
+            tests/pytest/test_fast.py \
+            tests/pytest/test_fast_benchmark.py \
+            profile_bench/bench_signals.py
+
+      - name: Mypy (Python modules)
+        run: |
+          mypy \
+            src/cocotb/_fast_loop.py \
+            src/cocotb/_fast_sched_py.py \
+            src/cocotb/_fast_sched.pyi
