@@ -140,6 +140,26 @@ To enable FST tracing, add ``--trace-fst`` to :make:var:`EXTRA_ARGS` as shown be
 
 The resulting file will be :file:`dump.fst` and can be opened by ``gtkwave dump.fst``.
 
+Power Estimation
+----------------
+
+Verilator (versions 5.042 and higher) can generate SAIF activity files for use in power estimation.
+These compact files do not record the state of signals over time, rather they record general switching statistics to calculate the amount of power dissipated by each signal.
+
+To enable SAIF tracing, add ``--trace-saif`` to :make:var:`EXTRA_ARGS` as shown below.
+
+  .. code-block:: make
+
+    EXTRA_ARGS += --trace --trace-saif --trace-structs
+
+The resulting file will be :file:`dump.saif` which can be processed by most synthesis tools.
+
+.. note::
+
+    Please note that (as of Verilator v5.044) for any given build, verilator can only output traces in one format, be it VCD, FST, or SAIF.
+    For instance if both the ``--trace-saif`` and ``--trace-fst`` flags are applied, only the latter format will be generated.
+    Thus waveform tracing and activity tracing should be done with different builds.
+
 .. _sim-verilator-issues:
 
 Reported Issues for this Simulator
