@@ -422,12 +422,8 @@ def release_build_sdist(session: nox.Session) -> None:
     session.log(f"Source distribution in release mode built into {dist_dir!r}")
 
 
-@nox_uv.session(
-    uv_no_install_project=True,
-    uv_groups=[],
-)
-def release_test_sdist(session: nox.Session) -> None:
-    """Build and install the sdist."""
+def release_install_from_sdist(session: nox.Session) -> None:
+    """Install cocotb from sdist."""
 
     # Find the sdist to install.
     sdists = list(Path(dist_dir).glob("cocotb-*.tar.gz"))
@@ -445,26 +441,31 @@ def release_test_sdist(session: nox.Session) -> None:
     session.log("Installing cocotb from sdist, which includes the build step")
     session.install(str(sdist_path))
 
-    session.log("Running cocotb-config as basic installation smoke test")
-    session.run("cocotb-config", "--version")
-
 
 @nox_uv.session(
     uv_no_install_project=True,
     uv_groups=["release_test"],
 )
 @nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
+@nox.parametrize("source", ["wheel", "sdist"])
 def release_test(
-    session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str
+    session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str, source: str
 ) -> None:
-    """Run all tests against a cocotb release installed from wheels."""
-    release_install_wheel(session)
+    """Run all tests against a cocotb release build."""
+    if source == "sdist":
+        release_install_from_sdist(session)
+    else:
+        release_install_from_wheel(session)
+
+    session.log("Running cocotb-config as basic installation smoke test")
+    session.run("cocotb-config", "--version")
+
     release_test_nosim(session)
     release_test_sim(session, sim, toplevel_lang, gpi_interface)
 
 
-def release_install_wheel(session: nox.Session) -> None:
-    """Helper: Install cocotb from wheels and also install test dependencies."""
+def release_install_from_wheel(session: nox.Session) -> None:
+    """Install cocotb from wheels."""
 
     wheels = list(Path(dist_dir).glob("cocotb-*.whl"))
     if not wheels:
@@ -494,10 +495,6 @@ def release_test_sim(
 
     env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
-
-    if "COCOTB_CI_SKIP_MAKE" not in os.environ:
-        session.log(f"Running tests against a simulator: {config_str}")
-        session.run("make", "-k", "test", external=True, env=env)
 
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
