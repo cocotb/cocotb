@@ -32,6 +32,8 @@ class ReadWrite(_FastTrigger): ...
 class _FastScheduler:
     exception: BaseException | None
     result: object
+    _current_phase: str
+    _pending_phase: str
     def __init__(
         self,
         coro: Coroutine[Any, None, Any],

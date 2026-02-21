@@ -47,7 +47,7 @@ Task / EventLoop / Trigger machinery.  It achieves its speedup by
 skipping several layers of the standard scheduler.  This introduces
 the following behavioral differences that users should be aware of:
 
-**Immediate signal writes (no write batching)**
+**Immediate signal writes (no write batching)** *(by design)*
     :meth:`SignalProxy.set_int` and :meth:`SignalProxy.set_binstr`
     call the GPI ``set_signal_val_*`` functions immediately via a
     ``DEPOSIT`` action.  Standard cocotb defers inertial (deposit)
@@ -60,57 +60,51 @@ the following behavioral differences that users should be aware of:
     Writes during the ReadOnly phase **are** detected and raise
     :class:`RuntimeError`, matching standard cocotb behavior.
 
-**Cocotb event loop is pumped, but with caveats**
-    After each fast-scheduler step, ``cocotb._event_loop.run()`` is
-    called so that other cocotb tasks (started via
-    :func:`~cocotb.start_soon`) can make progress.  However, those
-    tasks will see a stale ``current_gpi_trigger()`` (see below) and
-    will not benefit from the fast scheduler's trigger dispatch.
-    Concurrent tasks that only await their own standard cocotb
-    triggers (e.g. a Clock driver, a bus monitor) should work
-    correctly.  Tasks that rely on tight lock-step coordination with
-    the fast loop may still see ordering differences compared to
-    running everything under the standard scheduler.
+    This is inherent to the design — adding deferred write batching
+    would reintroduce the overhead being eliminated.  When
+    ``COCOTB_TRUST_INERTIAL_WRITES=1`` is set, standard cocotb also
+    writes immediately, so behavior is identical on trusted simulators.
 
-**``current_gpi_trigger()`` is not updated**
-    The fast scheduler does **not** set
-    :func:`cocotb._gpi_triggers.current_gpi_trigger`.  Code outside
-    the fast loop that relies on this function to determine the
-    current simulation phase will see stale values while a fast loop
-    is active.  Within the fast loop, :class:`SignalProxy` uses its
-    own phase tracking for the ReadOnly write guard.
+**``current_gpi_trigger()`` is updated** *(resolved)*
+    The fast scheduler sets
+    :func:`cocotb._gpi_triggers.current_gpi_trigger` to the standard
+    singleton ``ReadOnly()`` / ``ReadWrite()`` instances when entering
+    those phases.  Concurrent standard cocotb tasks see correct phase
+    awareness for write guards.
 
-**No ``_apply_scheduled_writes()`` on ReadWrite**
-    Standard cocotb's ``ReadWrite._do_callbacks()`` flushes any
-    deferred writes queued by ``dut.signal.value = X`` before resuming
-    tasks.  The fast scheduler's ``ReadWrite`` trigger does **not**
-    call ``_apply_scheduled_writes()``.  If you mix standard
-    ``dut.signal.value`` assignments with fast ``await ReadWrite()``,
-    the deferred writes may not be applied at the expected time.
-    Use :meth:`SignalProxy.set_int` exclusively inside fast loops.
+**``_apply_scheduled_writes()`` called on ReadWrite** *(resolved)*
+    The fast scheduler calls ``cocotb.handle._apply_scheduled_writes()``
+    when entering the ReadWrite phase, matching standard
+    ``ReadWrite._do_callbacks()`` behavior.  Deferred writes queued by
+    ``dut.signal.value = X`` from concurrent tasks are flushed before
+    the fast coroutine resumes.
 
-**No phase-transition guards on triggers**
-    Standard cocotb raises :class:`RuntimeError` for illegal
+**Phase-transition guards enforced** *(resolved)*
+    The fast scheduler raises :class:`RuntimeError` for illegal
     transitions such as ``await ReadOnly()`` while already in the
-    ReadOnly phase, or ``await ReadWrite()`` from ReadOnly.  The fast
-    scheduler does not enforce these guards.  Awaiting an illegal
-    transition will register the GPI callback, and the resulting
-    behavior is simulator-dependent.
+    ReadOnly phase, or ``await ReadWrite()`` from ReadOnly, matching
+    standard cocotb behavior.
 
-**Single-coroutine execution only**
+**Single-coroutine execution only** *(by design)*
     The fast scheduler drives exactly one coroutine.  There is no
     support for ``start_soon``, ``Combine``, ``First``, or any form
     of concurrent task execution within a fast loop.  If you need
     concurrency, structure the code so that the concurrent portion
     runs under the standard cocotb scheduler and only the tight inner
-    loop uses the fast API.
+    loop uses the fast API.  Concurrent tasks started *outside* the
+    fast loop (e.g. Clock drivers) work normally since the cocotb
+    event loop is pumped after each step.
 
-**Supported triggers are limited**
+**Supported triggers are limited** *(partially addressable)*
     Only :class:`RisingEdge`, :class:`FallingEdge`, :class:`ReadOnly`,
     :class:`ReadWrite`, and :class:`ValueChange` are supported.
     :class:`~cocotb.triggers.Timer`, :class:`~cocotb.triggers.First`,
     :class:`~cocotb.triggers.Combine`, and other standard triggers
     will raise :class:`TypeError` at runtime.
+
+    ``Timer`` could be added via ``register_timed_callback``.
+    ``First`` / ``Combine`` require multi-trigger coordination that
+    conflicts with the single-dispatch design.
 """
 
 from __future__ import annotations
@@ -132,7 +126,7 @@ try:
         _FastScheduler,
     )
 except ImportError:
-    from cocotb._fast_sched_py import (  # type: ignore[no-redef]
+    from cocotb._fast_sched_py import (  # type: ignore[assignment]
         FallingEdge,
         ReadOnly,
         ReadWrite,

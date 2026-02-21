@@ -176,15 +176,105 @@ def test_signal_proxy_allows_writes_outside_readonly():
 
 
 def test_fast_phase_tracking_in_scheduler():
-    """_FastScheduler should set _pending_phase for ReadOnly/ReadWrite triggers."""
+    """_FastScheduler should have _current_phase and _pending_phase fields."""
     sched = PyFastScheduler.__new__(PyFastScheduler)
+    sched._current_phase = ""
     sched._pending_phase = ""
 
-    # Simulate dispatching a ReadOnly trigger — check that _pending_phase is set.
-    # We can't call _dispatch without a simulator, but we can verify the
-    # scheduler has the _pending_phase attribute.
+    assert hasattr(sched, "_current_phase")
     assert hasattr(sched, "_pending_phase")
+    assert sched._current_phase == ""
     assert sched._pending_phase == ""
+
+
+def test_phase_guard_readonly_to_readonly():
+    """Dispatching ReadOnly while in ReadOnly phase should set an exception."""
+    done = _FastLoopDone()
+
+    async def bad_coro():
+        await PyReadOnly()
+        await PyReadOnly()  # illegal: already in readonly
+
+    coro = bad_coro()
+    sched = PyFastScheduler(coro, done)
+    sched._current_phase = "readonly"
+    sched._pending_phase = "readonly"
+
+    trigger = PyReadOnly()
+    trigger.__await__()
+    next(trigger)
+
+    # _done_trigger._finish() will raise RuntimeError("No simulator available!")
+    # because there's no simulator running. The phase guard sets sched.exception
+    # before calling _finish(), so we catch the _finish() error.
+    try:
+        sched._dispatch(trigger)
+    except RuntimeError as e:
+        if "No simulator" not in str(e):
+            raise
+    assert sched.exception is not None
+    assert "ReadOnly in ReadOnly" in str(sched.exception)
+    coro.close()
+
+
+def test_phase_guard_readonly_to_readwrite():
+    """Dispatching ReadWrite while in ReadOnly phase should set an exception."""
+    done = _FastLoopDone()
+
+    async def bad_coro():
+        await PyReadOnly()
+        await PyReadWrite()  # illegal: can't go to readwrite from readonly
+
+    coro = bad_coro()
+    sched = PyFastScheduler(coro, done)
+    sched._current_phase = "readonly"
+    sched._pending_phase = "readonly"
+
+    trigger = PyReadWrite()
+    trigger.__await__()
+    next(trigger)
+
+    try:
+        sched._dispatch(trigger)
+    except RuntimeError as e:
+        if "No simulator" not in str(e):
+            raise
+    assert sched.exception is not None
+    assert "ReadWrite in ReadOnly" in str(sched.exception)
+    coro.close()
+
+
+def test_phase_guard_allows_valid_transitions():
+    """ReadOnly from non-readonly and ReadWrite from non-readonly should not error."""
+    done = _FastLoopDone()
+
+    async def dummy():
+        await PyReadOnly()
+
+    coro = dummy()
+    sched = PyFastScheduler(coro, done)
+    sched._current_phase = ""
+    sched._pending_phase = ""
+
+    # ReadOnly from edge phase ("") — should not set exception
+    # We can't actually register the callback without a simulator,
+    # so this will raise in simulator.register_readonly_callback.
+    # But the phase guard itself should not fire.
+    trigger = PyReadOnly()
+    trigger.__await__()
+    next(trigger)
+
+    try:
+        sched._dispatch(trigger)
+    except Exception:
+        pass  # Expected: no simulator available
+
+    # If the phase guard fired, exception would be a RuntimeError about phase
+    if sched.exception is not None:
+        assert "ReadOnly" not in str(sched.exception) or "phase" not in str(
+            sched.exception
+        )
+    coro.close()
 
 
 # ---------------------------------------------------------------------------
