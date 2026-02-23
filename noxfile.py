@@ -140,6 +140,7 @@ def build_cocotb_for_dev_test(session: nox.Session) -> None:
 @nox_uv.session(
     uv_groups=["dev_test"],
     uv_no_install_project=True,
+    uv_sync_locked=False,
 )
 @nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 def dev_test(
@@ -318,6 +319,7 @@ def dev_coverage_combine(session: nox.Session) -> None:
 @nox_uv.session(
     uv_groups=["coverage_report"],
     uv_no_install_project=True,
+    uv_sync_locked=False,
 )
 def dev_coverage_report(session: nox.Session) -> None:
     """Report coverage results."""
@@ -386,6 +388,7 @@ dist_dir = "dist"
 @nox_uv.session(
     uv_no_install_project=True,
     uv_groups=[],
+    uv_sync_locked=False,
 )
 def release_clean(session: nox.Session) -> None:
     """Remove all build artifacts from the dist directory."""
@@ -395,6 +398,7 @@ def release_clean(session: nox.Session) -> None:
 @nox_uv.session(
     uv_no_install_project=True,
     uv_groups=["release_build_wheel"],
+    uv_sync_locked=False,
 )
 def release_build_wheel(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
@@ -412,6 +416,7 @@ def release_build_wheel(session: nox.Session) -> None:
 @nox_uv.session(
     uv_no_install_project=True,
     uv_groups=["release_build_sdist"],
+    uv_sync_locked=False,
 )
 def release_build_sdist(session: nox.Session) -> None:
     """Build the source distribution."""
@@ -445,6 +450,7 @@ def release_install_from_sdist(session: nox.Session) -> None:
 @nox_uv.session(
     uv_no_install_project=True,
     uv_groups=["release_test"],
+    uv_sync_locked=False,
 )
 @nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 @nox.parametrize("source", ["wheel", "sdist"])
@@ -529,6 +535,7 @@ def release_test_nosim(session: nox.Session) -> None:
 
 @nox_uv.session(
     uv_groups=["docs"],
+    uv_sync_locked=False,
 )
 def docs(session: nox.Session) -> None:
     """invoke sphinx-build to build the HTML docs"""
@@ -548,6 +555,7 @@ def docs(session: nox.Session) -> None:
 
 @nox_uv.session(
     uv_groups=["docs_preview"],
+    uv_sync_locked=False,
 )
 def docs_preview(session: nox.Session) -> None:
     """Build a live preview of the documentation"""
@@ -580,6 +588,7 @@ def docs_preview(session: nox.Session) -> None:
 
 @nox_uv.session(
     uv_groups=["docs"],
+    uv_sync_locked=False,
 )
 def docs_linkcheck(session: nox.Session) -> None:
     """invoke sphinx-build to linkcheck the docs"""
@@ -597,6 +606,7 @@ def docs_linkcheck(session: nox.Session) -> None:
 
 @nox_uv.session(
     uv_groups=["docs"],
+    uv_sync_locked=False,
 )
 def docs_spelling(session: nox.Session) -> None:
     """invoke sphinx-build to spellcheck the docs"""
