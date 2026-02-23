@@ -50,7 +50,9 @@ jobs:
       # cibuildwheel GitHub Action, to make the process easy to reproduce
       # locally.
       - name: Build cocotb release
-        run: nox -s release_build
+        run: |
+          nox -s release_build_wheel
+          nox -s release_build_sdist
 
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
         with:
