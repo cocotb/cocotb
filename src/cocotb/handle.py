@@ -1408,7 +1408,7 @@ class PackedObject(LogicArrayObject):
 
     def __getitem__(self, _: object) -> NoReturn:
         raise TypeError(
-            "Packed objects, either arrays or structs, cannot be indexed.\n"
+            "Indexing into Verilog packed objects (arrays, structs, or unions) is not currently supported.\n"
             "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"
             "If you need to use an element in an Edge Trigger, consider making the array or struct unpacked.\n"
             "Alternatively, use `ValueChange` on the whole object and check the bit(s) you care about for changes afterwards."
