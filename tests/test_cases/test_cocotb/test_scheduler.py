@@ -1116,3 +1116,39 @@ async def test_Task_yield_bad_value(_: object) -> None:
 
     await Timer(1)
     # things still work after the bad yield
+
+
+@cocotb.test
+async def test_write_in_Task_occurs_on_same_cycle(dut) -> None:
+    """Test that writing to a signal in a Task writes on the same cycle."""
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+
+    async def writer():
+        dut.stream_in_valid.value = 1
+        await Timer(1, "step")
+
+    dut.stream_in_valid.value = 0
+    await RisingEdge(dut.clk)
+    cocotb.start_soon(writer())
+    assert dut.stream_in_valid.value == 0
+    await RisingEdge(dut.clk)
+    assert dut.stream_in_valid.value == 1
+
+
+async def wait_edge(dut: Any) -> None:
+    # this trigger never fires
+    await First(RisingEdge(dut.stream_out_ready))
+
+
+@cocotb.test
+async def test_957_1(dut: Any) -> None:
+    cocotb.start_soon(wait_edge(dut))
+    await Timer(10, "ns")
+
+
+@cocotb.test
+async def test_957_2(dut: Any) -> None:
+    # This test *MUST* be after test_957_1 to test that the previous test's
+    # pending coroutine doesn't interfere with this test.
+    cocotb.start_soon(wait_edge(dut))
+    await Timer(10, "ns")

@@ -27,6 +27,7 @@ __all__ = (
     "parametrize",
     "pass_test",
     "plusargs",
+    "skipif",
     "start",
     "start_soon",
     "test",

@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+"""Test for issue #2255: a scope whose name starts another scope is returned instead."""
+
 from __future__ import annotations
 
 import cocotb

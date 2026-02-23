@@ -65,12 +65,44 @@ C API
 =====
 
 .. doxygenfile:: gpi.h
-   :sections: brief detaileddescription define typedef enum
+   :sections: brief detaileddescription
 
+User Handles
+------------
+These types and functions are about handles the GPI provides to users
+for interacting with GPI-managed objects.
+
+.. doxygentypedef:: gpi_sim_hdl
+.. doxygentypedef:: gpi_iterator_hdl
+.. doxygentypedef:: gpi_cb_hdl
+
+GPI Functionality
+-----------------
+
+Simulator Control and Interrogation
++++++++++++++++++++++++++++++++++++
 .. doxygengroup:: SimIntf
+
+Simulation Object Query
++++++++++++++++++++++++
 .. doxygengroup:: ObjQuery
+
+General Object Properties
++++++++++++++++++++++++++
 .. doxygengroup:: ObjProps
+
+Signal Object Properties
+++++++++++++++++++++++++
 .. doxygengroup:: SigProps
+
+Simulation Object Iteration
++++++++++++++++++++++++++++
 .. doxygengroup:: HandleIteration
+
+Simulation Callbacks
+++++++++++++++++++++
 .. doxygengroup:: SimCallbacks
+
+Logging Dependency Injection
+++++++++++++++++++++++++++++
 .. doxygengroup:: Logging
