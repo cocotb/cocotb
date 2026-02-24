@@ -254,7 +254,7 @@ dev = [
     # required for development
     "nox",
     "nox-uv",
-    "pre-commit",
+    "prek",
     # allows linting the project manually
     "clang-format",
     "mypy>=1.18",  # 1.18 needed for descriptor typing

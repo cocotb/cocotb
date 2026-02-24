@@ -36,15 +36,13 @@ After you activate the virtual environment, you can install the development depe
 .. note::
    We recommend using `direnv <https://direnv.net/>`__ to automatically activate the virtual environment when you navigate into the project directory.
 
-To enable pre-commit, run the following command at the root of the cloned project to install the git hooks.
-The first run of pre-commit will build an environment for you, so it may take a while.
-Following runs should be much quicker.
+To enable pre-commit checks, run the following command at the root of the cloned project to install the git hooks.
 
 .. code:: bash
 
-   pre-commit install
+   prek install
 
-When committing, pre-commit's hook will run, checking your changes for formatting, code smells, etc.
+When committing, prek's git commit hooks will run, checking your changes for formatting, code smells, etc.
 You will see the lists of checks printed and whether they passed, were skipped, or failed.
 If any of the checks fail, it is recommended to fix them before opening a pull request,
 otherwise the pull request checks will fail as well.
