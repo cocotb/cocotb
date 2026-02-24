@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import distutils
 import logging
 import os
 import subprocess
@@ -583,7 +582,7 @@ def _get_vhpi_lib_ext(
 
 
 def get_ext():
-    cfg_vars = distutils.sysconfig.get_config_vars()
+    cfg_vars = sysconfig.get_config_vars()
 
     if sys.platform == "darwin":
         cfg_vars["LDSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
