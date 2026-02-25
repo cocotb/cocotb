@@ -32,17 +32,16 @@ static inline void __check_vpi_error(const char *file, const char *func,
         return;
     }
 
-    int level = 0;
     s_vpi_error_info info;
     enum gpi_log_level loglevel;
 
     memset(&info, 0, sizeof(info));
-    level = vpi_chk_error(&info);
-    if (info.code == 0 && level == 0) {
+    auto error_occured = vpi_chk_error(&info);
+    if (!error_occured) {
         return;
     }
 
-    switch (level) {
+    switch (info.level) {
         case vpiNotice:
             loglevel = GPI_INFO;
             break;
