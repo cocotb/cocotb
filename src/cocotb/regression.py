@@ -976,6 +976,15 @@ class RegressionManager:
         self._running_test.cancel(msg)
         cocotb._event_loop._inst.run()
 
+    def list_tests(self) -> None:
+        """List the tests that would be run, without running them."""
+        self.log.info(
+            "Listing tests that were discovered, in the order they would be run."
+        )
+        for test in self._test_queue:
+            print(test.fullname)
+        self.log.info("All tests listed. Exiting.")
+
 
 _manager_inst: RegressionManager
 """The global regression manager instance."""
@@ -1029,5 +1038,8 @@ def _run_regression() -> None:
 
     _setup_regression_manager()
 
-    _manager_inst.start_regression()
-    shutdown.register(_manager_inst._on_sim_end)
+    if _env.as_bool("COCOTB_LIST_TESTS", False):
+        _manager_inst.list_tests()
+    else:
+        _manager_inst.start_regression()
+        shutdown.register(_manager_inst._on_sim_end)
