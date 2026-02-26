@@ -56,7 +56,6 @@ def env_vars_for_sim_test(
     env = {
         "SIM": sim,
         "TOPLEVEL_LANG": toplevel_lang,
-        "HDL_TOPLEVEL_LANG": toplevel_lang,
     }
 
     assert not (toplevel_lang == "verilog" and gpi_interface != "vpi")

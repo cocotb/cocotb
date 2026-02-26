@@ -39,9 +39,9 @@ You run this file with pytest like
 
 .. code-block:: bash
 
-    SIM=questa HDL_TOPLEVEL_LANG=vhdl pytest examples/simple_dff/test_dff.py
+    SIM=questa TOPLEVEL_LANG=vhdl pytest examples/simple_dff/test_dff.py
 
-Note that the environment variables ``SIM`` and ``HDL_TOPLEVEL_LANG``
+Note that the environment variables ``SIM`` and ``TOPLEVEL_LANG``
 are defined in this test file to set arguments to the runner's
 :meth:`Runner.build <cocotb_tools.runner.Runner.build>` and :meth:`Runner.test <cocotb_tools.runner.Runner.test>` functions;
 they are not directly handled by the runner itself.
@@ -57,7 +57,7 @@ add the ``-s`` option to the ``pytest`` call:
 
 .. code-block:: bash
 
-    SIM=questa HDL_TOPLEVEL_LANG=vhdl pytest examples/simple_dff/test_dff.py -s
+    SIM=questa TOPLEVEL_LANG=vhdl pytest examples/simple_dff/test_dff.py -s
 
 .. note::
     Take a look at the
