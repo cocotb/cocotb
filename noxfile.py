@@ -49,7 +49,7 @@ def simulator_support_matrix() -> list[tuple[str, str, str]]:
     return standard + special
 
 
-def env_vars_for_test(
+def env_vars_for_sim_test(
     sim: str, toplevel_lang: str, gpi_interface: str
 ) -> dict[str, str]:
     """Prepare the environment variables controlling the test run."""
@@ -63,14 +63,19 @@ def env_vars_for_test(
     if toplevel_lang == "vhdl":
         env["VHDL_GPI_INTERFACE"] = gpi_interface
 
+    return env
+
+
+def configure_test_env(session: nox.Session) -> None:
+    """Set environment variables for any kind of test run."""
+
     # Do not fail on DeprecationWarning caused by virtualenv, which might come from
     # the site module.
-    env["PYTHONWARNINGS"] = "error,ignore::DeprecationWarning:site"
+    session.env["PYTHONWARNINGS"] = "error,ignore::DeprecationWarning:site"
+
     # Test with debug enabled, but log level still set low. That way we can test the code
     # without slowing everything down by emitting roughly 1 million logs.
-    env["COCOTB_SCHEDULER_DEBUG"] = "1"
-
-    return env
+    session.env["COCOTB_SCHEDULER_DEBUG"] = "1"
 
 
 def stringify_dict(d: dict[str, str]) -> str:
@@ -88,15 +93,6 @@ def stringify_dict(d: dict[str, str]) -> str:
 # - Combine coverage from all test runs into a .coverage file.
 # - Produce coverage reports from the combined .coverage file.
 #
-
-
-def configure_env_for_dev_test(session: nox.Session) -> None:
-    """Set environment variables for a development test.
-
-    - Enable coverage collection.
-    """
-    # Collect coverage of cocotb
-    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
 
 
 def build_cocotb_for_dev_test(session: nox.Session) -> None:
@@ -145,7 +141,9 @@ def dev_test(
 ) -> None:
     """Run all development tests and merge coverage."""
     build_cocotb_for_dev_test(session)
-    configure_env_for_dev_test(session)
+    configure_test_env(session)
+    # Collect coverage of cocotb
+    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
     dev_test_nosim(session)
     dev_test_sim(session, sim, toplevel_lang, gpi_interface)
     dev_coverage_combine(session)
@@ -159,7 +157,7 @@ def dev_test_sim(
 ) -> None:
     """Test a development version of cocotb against a simulator."""
 
-    env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
+    env = env_vars_for_sim_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
 
     # Remove a potentially existing coverage file from a previous run for the
@@ -459,7 +457,7 @@ def release_test(
 
     session.log("Running cocotb-config as basic installation smoke test")
     session.run("cocotb-config", "--version")
-
+    configure_test_env(session)
     release_test_nosim(session)
     release_test_sim(session, sim, toplevel_lang, gpi_interface)
 
@@ -493,7 +491,7 @@ def release_test_sim(
 ) -> None:
     """Test a release version of cocotb against a simulator."""
 
-    env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
+    env = env_vars_for_sim_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
 
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
