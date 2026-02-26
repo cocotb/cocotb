@@ -65,13 +65,7 @@ def env_vars_for_test(
 
     # Do not fail on DeprecationWarning caused by virtualenv, which might come from
     # the site module.
-    # Do not fail on DeprecationWarning caused by attrs dropping < 3.8 support
-    # Do not fail on FutureWarning on Python < 3.9
-    env["PYTHONWARNINGS"] = (
-        "error,ignore::DeprecationWarning:site,"
-        "ignore::DeprecationWarning:attr,"
-        "ignore:Support for Python versions:FutureWarning:cocotb,"
-    )
+    env["PYTHONWARNINGS"] = "error,ignore::DeprecationWarning:site"
     # Test with debug enabled, but log level still set low. That way we can test the code
     # without slowing everything down by emitting roughly 1 million logs.
     env["COCOTB_SCHEDULER_DEBUG"] = "1"
