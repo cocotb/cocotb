@@ -33,6 +33,7 @@ VALUE_CHANGE: int
 RANGE_UP: int
 RANGE_DOWN: int
 RANGE_NO_DIR: int
+tops: dict
 
 class sim_callback:
     def deregister(self) -> None: ...
