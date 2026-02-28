@@ -50,6 +50,8 @@ ifeq ($(shell $(CMD) --version | grep -q mcode; echo $$?),0)
             GHDL_TIME_RESOLUTION=fs
         else ifeq ($(COCOTB_HDL_TIMEPRECISION),1ps)
             GHDL_TIME_RESOLUTION=ps
+        else ifeq ($(COCOTB_HDL_TIMEPRECISION),1ns)
+            GHDL_TIME_RESOLUTION=ns
         else ifeq ($(COCOTB_HDL_TIMEPRECISION),1us)
             GHDL_TIME_RESOLUTION=us
         else ifeq ($(COCOTB_HDL_TIMEPRECISION),1ms)
@@ -57,7 +59,7 @@ ifeq ($(shell $(CMD) --version | grep -q mcode; echo $$?),0)
         else ifeq ($(COCOTB_HDL_TIMEPRECISION),1s)
             GHDL_TIME_RESOLUTION=sec
         else
-            $(error GHDL only supports the following values for COCOTB_HDL_TIMEPRECISION: 1fs, 1ps, 1us, 1ms, 1s)
+            $(error GHDL only supports the following values for COCOTB_HDL_TIMEPRECISION: 1fs, 1ps, 1ns, 1us, 1ms, 1s)
         endif
 
         GHDL_RUN_ARGS += --time-resolution=$(GHDL_TIME_RESOLUTION)
