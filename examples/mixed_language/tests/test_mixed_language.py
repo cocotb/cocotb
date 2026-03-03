@@ -133,7 +133,7 @@ def test_mixed_language_runner():
 
     This file can be run directly or via pytest discovery.
     """
-    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+    hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
 
     proj_path = Path(__file__).resolve().parent.parent
 

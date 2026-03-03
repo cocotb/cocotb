@@ -535,6 +535,8 @@ source = { editable = "." }
 dependencies = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "find-libpython" },
+    { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "pytest", version = "9.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
 
 [package.dev-dependencies]
@@ -627,6 +629,7 @@ test-common = [
 requires-dist = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "find-libpython" },
+    { name = "pytest", specifier = ">=6" },
 ]
 
 [package.metadata.requires-dev]

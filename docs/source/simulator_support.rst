@@ -140,6 +140,33 @@ To enable FST tracing, add ``--trace-fst`` to :make:var:`EXTRA_ARGS` as shown be
 
 The resulting file will be :file:`dump.fst` and can be opened by ``gtkwave dump.fst``.
 
+Power Estimation
+----------------
+
+Verilator (versions 5.042 and higher) can generate SAIF activity files for use in power estimation.
+These compact files do not record the state of signals over time, rather they record general switching statistics to calculate the amount of power dissipated by each signal.
+
+To enable SAIF tracing, if using the Makefiles, add ``--trace-saif`` to :make:var:`EXTRA_ARGS` as shown below.
+
+.. code-block:: make
+
+    EXTRA_ARGS += --trace --trace-saif --trace-structs
+
+If you are using the runner add ``--trace-saif`` to the ``build_args`` argument to :func:`.Runner.build`.
+
+.. code-block:: python
+
+    runner.build(
+        build_args=["--trace", "--trace-saif", "--trace-structs"],
+    )
+
+The resulting file will be :file:`dump.saif` which can be processed by most synthesis tools.
+
+.. note::
+
+    For any given build, only one output format (VCD, FST, or SAIF) can be used.
+    If both waveform tracing and activity tracing are needed, they should be done with different builds.
+
 .. _sim-verilator-issues:
 
 Reported Issues for this Simulator

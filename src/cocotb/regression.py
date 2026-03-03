@@ -21,10 +21,11 @@ from enum import auto
 from importlib import import_module
 from typing import Any
 
+import pytest
+
 import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
-import cocotb._test_manager
 import cocotb.types._resolve
 from cocotb import logging as cocotb_logging
 from cocotb import simulator
@@ -52,19 +53,11 @@ TestGenerator.__module__ = __name__
 Test.__module__ = __name__
 TestFactory.__module__ = __name__
 
-Failed: type[BaseException]
-try:
-    import pytest
-except ModuleNotFoundError:
-    Failed = AssertionError
-else:
-    try:
-        with pytest.raises(Exception):
-            pass
-    except BaseException as _raises_e:
-        Failed = type(_raises_e)
-    else:
-        assert False, "pytest.raises doesn't raise an exception when it fails"
+
+_TestFailures: tuple[type[BaseException], ...] = (
+    AssertionError,
+    pytest.raises.Exception,  # type: ignore[attr-defined]
+)
 
 
 class SimFailure(BaseException):
@@ -276,35 +269,21 @@ class RegressionManager:
 
         Must be called before all modules containing tests are imported.
         """
-        try:
-            import pytest  # noqa: PLC0415
-        except ImportError:
-            _logger.info(
-                "pytest not found, install it to enable better AssertionError messages"
-            )
+        # Install the assertion rewriting hook, which must be done before we
+        # import the test modules.
+        from _pytest.assertion import install_importhook  # noqa: PLC0415
+        from _pytest.config import Config  # noqa: PLC0415
+
+        python_files = os.getenv("COCOTB_REWRITE_ASSERTION_FILES", "*.py").strip()
+        if not python_files:
+            # Even running the hook causes exceptions in some cases, so if the user
+            # selects nothing, don't install the hook at all.
             return
-        try:
-            # Install the assertion rewriting hook, which must be done before we
-            # import the test modules.
-            from _pytest.assertion import install_importhook  # noqa: PLC0415
-            from _pytest.config import Config  # noqa: PLC0415
 
-            python_files = os.getenv("COCOTB_REWRITE_ASSERTION_FILES", "*.py").strip()
-            if not python_files:
-                # Even running the hook causes exceptions in some cases, so if the user
-                # selects nothing, don't install the hook at all.
-                return
-
-            pytest_conf = Config.fromdictargs(
-                {}, ["--capture=no", "-o", f"python_files={python_files}"]
-            )
-            install_importhook(pytest_conf)
-        except Exception:
-            _logger.exception(
-                "Configuring the assertion rewrite hook using pytest %s failed. "
-                "Please file a bug report!",
-                pytest.__version__,
-            )
+        pytest_conf = Config.fromdictargs(
+            {}, ["--capture=no", "-o", f"python_files={python_files}"]
+        )
+        install_importhook(pytest_conf)
 
     def start_regression(self) -> None:
         """Start the regression."""
@@ -507,7 +486,7 @@ class RegressionManager:
                 )
 
         elif test.expect_fail:
-            if isinstance(exc, (AssertionError, Failed)):
+            if isinstance(exc, _TestFailures):
                 self._record_test_passed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
