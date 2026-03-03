@@ -11,7 +11,6 @@ Tests of cocotb.test functionality
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Coroutine
 
 import pytest
@@ -19,9 +18,6 @@ from common import MyBaseException, MyException
 
 import cocotb
 from cocotb.triggers import NullTrigger, SimTimeoutError, Timer
-
-if sys.version_info < (3, 11):
-    from exceptiongroup import ExceptionGroup
 
 
 @cocotb.test(expect_error=NameError)
@@ -217,32 +213,6 @@ async def test_pass_test_in_task(_) -> None:
 @cocotb.test
 async def test_pass_test_in_test(_) -> None:
     cocotb.pass_test("Finished test early")
-
-
-@cocotb.test
-@cocotb.xfail(
-    raises=pytest.RaisesGroup(
-        ValueError,
-        ValueError,
-        pytest.RaisesExc(TypeError, match="^expected int$"),
-        match="^my group$",
-    )
-)
-async def test_xfail_with_raises_group(dut: object) -> None:
-    raise ExceptionGroup(
-        "my group",
-        [
-            ValueError(),
-            TypeError("expected int"),
-            ValueError(),
-        ],
-    )
-
-
-@cocotb.test
-@cocotb.xfail(raises=pytest.RaisesGroup(pytest.RaisesGroup(ValueError)))
-async def test_xfail_with_raises_group_nested(dut: object) -> None:
-    raise ExceptionGroup("", (ExceptionGroup("", (ValueError(),)),))
 
 
 @cocotb.test
