@@ -11,10 +11,10 @@ COCOTB_MAKEFILE_INC_INCLUDED = 1
 
 # Default sim rule will force a re-run of the simulation (though the cocotb library
 # and RTL compilation phases are still evaluated by makefile dependencies)
-.PHONY: sim
-sim:
+.PHONY: sim, _rm_regresion
+_rm_results:
 	$(RM) $(COCOTB_RESULTS_FILE)
-	"$(MAKE)" -f $(firstword $(MAKEFILE_LIST)) $(COCOTB_RESULTS_FILE)
+sim: _rm_results regression
 
 # Make sure to use bash for the pipefail option used in many simulator Makefiles
 SHELL := bash
