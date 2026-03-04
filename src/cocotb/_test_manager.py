@@ -72,9 +72,6 @@ class TestManager:
         e = task.exception()
         if e is None:
             self._abort()
-        elif isinstance(e, TestSuccess):
-            task._log.info("Test stopped early by this task")
-            self._abort()
         else:
             self._abort(e)
 
@@ -186,12 +183,7 @@ class TestManager:
         e = task.exception()
         if e is None:
             return
-        # there was a failure and no one is watching, fail test
-        elif isinstance(e, TestSuccess):
-            task._log.info("Test stopped early by this task")
-            self._abort()
-        else:
-            self._abort(e)
+        self._abort(e)
 
 
 def start_soon(
