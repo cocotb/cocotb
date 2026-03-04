@@ -252,3 +252,20 @@ async def test_pass_test_in_xfail_exception(dut: object) -> None:
 @cocotb.xfail()
 async def test_pass_test_in_xfail_assert(dut: object) -> None:
     cocotb.pass_test("Finished test early")
+
+
+@cocotb.test
+async def test_end_in_main_coro(dut: object) -> None:
+    cocotb.end_test("Finished test early")
+    assert False, "Test should have ended before this assertion"
+
+
+@cocotb.test
+async def test_end_in_task(dut: object) -> None:
+    async def end_test() -> None:
+        await Timer(1, unit="ns")
+        cocotb.end_test("Finished test early")
+
+    cocotb.start_soon(end_test())
+    await Timer(10, unit="ns")
+    assert False, "Test should have ended before this assertion"
