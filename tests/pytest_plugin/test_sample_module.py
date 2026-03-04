@@ -55,7 +55,6 @@ def test_sample_module(sample_module: HDL) -> None:
     "test_parametrize",
     "test_xfail",
     "test_caplog",
-    "test_pass",
     "test_timeout",
     "test_fixture",
 )

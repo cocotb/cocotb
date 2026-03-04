@@ -32,7 +32,7 @@ from cocotb import simulator
 from cocotb._decorators import Test, TestGenerator
 from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
-from cocotb._test_manager import TestManager
+from cocotb._test_manager import TestManager, TestSuccess
 from cocotb._utils import DocEnum, safe_divide
 from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
 from cocotb.logging import ANSI
@@ -519,6 +519,11 @@ class RegressionManager:
                     sim_time_ns=sim_time_ns,
                     result=None,
                     msg=exc.msg,
+                )
+            elif isinstance(exc, TestSuccess):
+                return self._record_test_passed(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
                 )
             if test.expect_error:
                 expected_error_set = set(test.expect_error)

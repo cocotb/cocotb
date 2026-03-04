@@ -240,3 +240,15 @@ async def test_bad_xfail(dut: object) -> None:
         )
         async def dummy(_: object) -> None:
             pass
+
+
+@cocotb.test
+@cocotb.xfail(raises=TypeError)
+async def test_pass_test_in_xfail_exception(dut: object) -> None:
+    cocotb.pass_test("Finished test early")
+
+
+@cocotb.test
+@cocotb.xfail()
+async def test_pass_test_in_xfail_assert(dut: object) -> None:
+    cocotb.pass_test("Finished test early")
