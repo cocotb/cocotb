@@ -67,6 +67,16 @@ if hasattr(pytest, "RaisesGroup") and hasattr(pytest, "RaisesExc"):
             type[BaseException] | pytest.RaisesExc | pytest.RaisesGroup
         ],
     ) -> tuple[set[pytest.RaisesExc | pytest.RaisesGroup], bool]:
+    """Filters out RaisesExc and RaisesGroup exceptions and does checking on them.
+
+    Args:
+        exc: The exception result of the test.
+        expected_error_set: The set of expected exceptions and :class:`pytest.RaisesExc` and :class:`pytest.RaisesGroup` objects.
+
+    Returns:
+        A tuple of the filtered out :class:`pytest.RaisesExc` and :class:`pytest.RaisesGroup` objects
+        (so that the caller may remove them from the exception set)
+        and a boolean whether there was a match.
         exception_matcher_excs = cast(
             "set[pytest.RaisesExc | pytest.RaisesGroup]",
             {
@@ -488,7 +498,7 @@ class RegressionManager:
             if test.expect_error:
                 expected_error_set = set(test.expect_error)
 
-                # Filter out RaisesExc or RaisesGroup , which need to be handled differently.
+                # Filter out RaisesExc or RaisesGroup, which need to be handled differently.
                 exception_matcher_excs, matched = handle_pytest_exception_matchers(
                     exc, expected_error_set
                 )
@@ -533,7 +543,7 @@ class RegressionManager:
                     )
             elif test.expect_fail:
                 if isinstance(exc, _TestFailures):
-                    # We expect a failure and got one.
+                    # We expected a failure and got one.
                     return self._record_test_passed(
                         wall_time_s=wall_time_s,
                         sim_time_ns=sim_time_ns,
@@ -546,7 +556,7 @@ class RegressionManager:
                         wall_time_s=wall_time_s,
                         sim_time_ns=sim_time_ns,
                         result=exc,
-                        msg="errored but expected a failure",
+                        msg="errored but we expected a failure",
                     )
             else:
                 # We are not expecting an error or failure, but got an exception instead.
