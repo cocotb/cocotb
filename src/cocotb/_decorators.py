@@ -345,11 +345,6 @@ def test(
 
             @cocotb.test
             async def test_thing(dut): ...
-
-
-    .. versionchanged:: 2.0
-        Decorated tests now return the decorated object.
-
     """
     if isinstance(obj, TestGenerator):
         return obj
@@ -529,6 +524,8 @@ def skipif(
 
     Returns:
         A decorator function to mark the test.
+
+    .. versionadded:: 2.1
     """
 
     def decorator(obj: TestFuncType | TestGenerator) -> TestGenerator:
@@ -574,6 +571,8 @@ def xfail(
             This argument is purely for documentation purposes.
 
         raises: An exception, or iterable of exceptions to expect the test to fail with.
+
+    .. versionadded:: 2.1
     """
 
     def decorator(obj: TestFuncType | TestGenerator) -> TestGenerator:
