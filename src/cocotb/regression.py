@@ -67,16 +67,17 @@ if hasattr(pytest, "RaisesGroup") and hasattr(pytest, "RaisesExc"):
             type[BaseException] | pytest.RaisesExc | pytest.RaisesGroup
         ],
     ) -> tuple[set[pytest.RaisesExc | pytest.RaisesGroup], bool]:
-    """Filters out RaisesExc and RaisesGroup exceptions and does checking on them.
+    """Filter out :class:`pytest.RaisesExc` and :class:`pytest.RaisesGroup` exceptions and do checking on them.
 
     Args:
         exc: The exception result of the test.
-        expected_error_set: The set of expected exceptions and :class:`pytest.RaisesExc` and :class:`pytest.RaisesGroup` objects.
+        expected_error_set: The set of expected exceptions and :class:`!pytest.RaisesExc` and :class:`!pytest.RaisesGroup` objects.
 
     Returns:
-        A tuple of the filtered out :class:`pytest.RaisesExc` and :class:`pytest.RaisesGroup` objects
+        A tuple of the filtered out :class:`!pytest.RaisesExc` and :class:`!pytest.RaisesGroup` objects
         (so that the caller may remove them from the exception set)
         and a boolean whether there was a match.
+        """
         exception_matcher_excs = cast(
             "set[pytest.RaisesExc | pytest.RaisesGroup]",
             {
