@@ -326,6 +326,8 @@ def pass_test(msg: str | None = None) -> NoReturn:
 
     Args:
         msg: The message to display when the test passes.
+
+    .. versionadded:: 2.0
     """
     raise TestSuccess(msg)
 
