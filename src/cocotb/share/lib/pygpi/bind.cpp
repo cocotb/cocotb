@@ -16,6 +16,7 @@
 
 #include <cerrno>
 #include <cstdint>
+#include <vector>
 
 #include "../utils.hpp"      // DEFER
 #include "./pygpi_priv.hpp"  // pygpi_logger_set_level, c_to_python, python_to_c
@@ -614,7 +615,7 @@ static PyObject *get_handle_by_index(gpi_hdl_Object<gpi_sim_hdl> *self,
     return gpi_hdl_New(result);
 }
 
-static PyObject *get_root_handle(PyObject *, PyObject *args) {
+static PyObject *get_all_root_handles(PyObject *, PyObject *args) {
     const char *name;
 
     if (!gpi_has_registered_impl()) {
@@ -622,16 +623,30 @@ static PyObject *get_root_handle(PyObject *, PyObject *args) {
         return NULL;
     }
 
-    if (!PyArg_ParseTuple(args, "z:get_root_handle", &name)) {
+    if (!PyArg_ParseTuple(args, "z:get_all_root_handles", &name)) {
         return NULL;
     }
 
-    gpi_sim_hdl result = gpi_get_root_handle(name);
-    if (NULL == result) {
+    std::vector<gpi_sim_hdl> result = gpi_get_root_handle(name);
+    if (result.empty()) {
         Py_RETURN_NONE;
     }
 
-    return gpi_hdl_New(result);
+    PyObject *py_list = PyList_New(result.size());
+    if (!py_list) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)result.size(); ++i) {
+        PyObject *hdl_obj = gpi_hdl_New(result[i]);
+        if (!hdl_obj) {
+            Py_DECREF(py_list);
+            return NULL;
+        }
+        PyList_SET_ITEM(py_list, i, hdl_obj);
+    }
+
+    return py_list;
 }
 
 static PyObject *get_name_string(gpi_hdl_Object<gpi_sim_hdl> *self,
@@ -1106,11 +1121,11 @@ static int add_module_types(PyObject *simulator) {
  */
 
 static PyMethodDef SimulatorMethods[] = {
-    {"get_root_handle", get_root_handle, METH_VARARGS,
-     PyDoc_STR("get_root_handle(name, /)\n"
+    {"get_all_root_handles", get_all_root_handles, METH_VARARGS,
+     PyDoc_STR("get_all_root_handles(name, /)\n"
                "--\n\n"
-               "get_root_handle(name: str) -> cocotb.simulator.sim_obj\n"
-               "Get the root handle.")},
+               "get_all_root_handles(name: str) -> cocotb.simulator.sim_obj\n"
+               "Get the all root handles.")},
     {"package_iterate", package_iterate, METH_NOARGS,
      PyDoc_STR("package_iterate(/)\n"
                "--\n\n"

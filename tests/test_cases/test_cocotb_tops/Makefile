@@ -8,7 +8,7 @@ SIM ?= icarus
 ifeq ($(TOPLEVEL_LANG),verilog)
 
 VERILOG_SOURCES = tops.v
-TOPLEVEL = verilog_top_a
+export DUT=verilog_top_a
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
 

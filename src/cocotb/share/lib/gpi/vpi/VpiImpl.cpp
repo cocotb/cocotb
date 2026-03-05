@@ -600,18 +600,18 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     return new_obj;
 }
 
-GpiObjHdl *VpiImpl::get_root_handle(const char *name) {
+std::vector<GpiObjHdl *> VpiImpl::get_all_root_handles(const char *name) {
+    std::vector<GpiObjHdl *> roots;
+
     vpiHandle root;
     vpiHandle iterator;
-    GpiObjHdl *rv;
-    std::string root_name;
 
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
     check_vpi_error();
     if (!iterator) {
         LOG_INFO("Nothing visible via VPI");
-        return NULL;
+        return roots;
     }
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
@@ -620,42 +620,27 @@ GpiObjHdl *VpiImpl::get_root_handle(const char *name) {
         // prevents finding virtual classes (which Xcelium puts at the top-level
         // scope) when looking for objects with get_root_handle.
         const char *obj_name = vpi_get_str(vpiFullName, root);
-        if ((!name && obj_name[0] != '\\') || (name && !strcmp(name, obj_name)))
-            break;
-    }
+        if ((obj_name[0] != '\\')) {
+            GpiObjHdl *rv;
+            std::string root_name;
 
-    if (!root) {
-        check_vpi_error();
-        goto error;
+            root_name = vpi_get_str(vpiFullName, root);
+            rv = new GpiObjHdl(this, root,
+                               to_gpi_objtype(vpi_get(vpiType, root)));
+            rv->initialise(root_name, root_name);
+
+            roots.push_back(rv);
+        }
     }
 
     // Need to free the iterator if it didn't return NULL
-    if (iterator && !vpi_free_object(iterator)) {
-        LOG_WARN("VPI: Attempting to free root iterator failed!");
-        check_vpi_error();
+    if (iterator && root != NULL) {
+        if (iterator && !vpi_free_object(iterator)) {
+            LOG_WARN("VPI: Attempting to free root iterator failed!");
+            check_vpi_error();
+        }
     }
-
-    root_name = vpi_get_str(vpiFullName, root);
-    rv = new GpiObjHdl(this, root, to_gpi_objtype(vpi_get(vpiType, root)));
-    rv->initialise(root_name, root_name);
-
-    return rv;
-
-error:
-
-    LOG_ERROR("VPI: Couldn't find root handle %s", name);
-
-    iterator = vpi_iterate(vpiModule, NULL);
-
-    for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
-        LOG_ERROR("VPI: Toplevel instances: %s != %s...", name,
-                  vpi_get_str(vpiFullName, root));
-
-        if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
-            break;
-    }
-
-    return NULL;
+    return roots;
 }
 
 GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl,

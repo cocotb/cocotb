@@ -10,6 +10,7 @@
 #include <gpi.h>
 
 #include <string>
+#include <vector>
 
 #include "../utils.hpp"  // xstr
 
@@ -242,7 +243,7 @@ class GPI_EXPORT GpiImplInterface {
     virtual GpiObjHdl *get_child_by_index(int32_t index, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_child_from_handle(void *raw_hdl,
                                              GpiObjHdl *parent) = 0;
-    virtual GpiObjHdl *get_root_handle(const char *name) = 0;
+    virtual std::vector<GpiObjHdl *> get_all_root_handles(const char *name) = 0;
     virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl,
                                         gpi_iterator_sel type) = 0;
 

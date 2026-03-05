@@ -11,7 +11,6 @@
 #include <map>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "./gpi_priv.hpp"
 #include "./logging.hpp"
@@ -330,31 +329,34 @@ const char *gpi_get_simulator_version() {
     return registered_impls[0]->get_simulator_version();
 }
 
-gpi_sim_hdl gpi_get_root_handle(const char *name) {
+vector<gpi_sim_hdl> gpi_get_root_handle(const char *name) {
     /* May need to look over all the implementations that are registered
        to find this handle */
     vector<GpiImplInterface *>::iterator iter;
 
-    GpiObjHdl *hdl = NULL;
+    vector<gpi_sim_hdl> result;
 
-    LOG_DEBUG("Looking for root handle '%s' over %d implementations", name,
+    LOG_DEBUG("Looking for all root handles over %d implementations",
               registered_impls.size());
 
     for (iter = registered_impls.begin(); iter != registered_impls.end();
          iter++) {
-        if ((hdl = (*iter)->get_root_handle(name))) {
-            LOG_DEBUG("Got a Root handle (%s) back from %s",
-                      hdl->get_name_str(), (*iter)->get_name_c());
-            break;
+        vector<GpiObjHdl *> all_hdls = (*iter)->get_all_root_handles(name);
+        if (!all_hdls.empty()) {
+            for (GpiObjHdl *hdl : all_hdls) {
+                LOG_DEBUG("Got a Root handle (%s) back from %s",
+                          hdl->get_name_str(), (*iter)->get_name_c());
+
+                result.push_back(CHECK_AND_STORE(hdl));
+            }
         }
     }
 
-    if (hdl)
-        return CHECK_AND_STORE(hdl);
-    else {
-        LOG_ERROR("No root handle found");
-        return hdl;
-    }
+    if (!result.empty()) return result;
+
+    LOG_ERROR("No root handle found");
+
+    return result;
 }
 
 static GpiObjHdl *gpi_get_child_by_name(GpiObjHdl *parent,

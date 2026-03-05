@@ -277,7 +277,7 @@ class VhpiImpl : public GpiImplInterface {
     int get_simulator_args(int *argc, char const *const **argv) override;
 
     /* Hierarchy related */
-    GpiObjHdl *get_root_handle(const char *name) override;
+    std::vector<GpiObjHdl *> get_all_root_handles(const char *name) override;
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl,
                                 gpi_iterator_sel type) override;
 

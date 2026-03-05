@@ -436,7 +436,7 @@ class FliImpl : public GpiImplInterface {
                                  GpiObjHdl *parent) override;
     GpiObjHdl *get_child_by_index(int32_t index, GpiObjHdl *parent) override;
     GpiObjHdl *get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) override;
-    GpiObjHdl *get_root_handle(const char *name) override;
+    std::vector<GpiObjHdl *> get_all_root_handles(const char *name) override;
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl,
                                 gpi_iterator_sel type) override;
 
