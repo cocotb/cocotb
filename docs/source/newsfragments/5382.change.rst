@@ -1,0 +1,1 @@
+The :ref:`Makefile <building>` target ``sim`` no longer recursively calls ``make``. This makes it possible to use ``+=`` with Make variables without the right hand side being added twice.
