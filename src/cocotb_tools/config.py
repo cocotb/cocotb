@@ -82,6 +82,7 @@ def _help_vars_text() -> str:
         COCOTB_REWRITE_ASSERTION_FILES
                                  Files to apply pytest assertion rewrites to (default *.py)
         COCOTB_MAX_FAILURES      Maximum number of test failures before aborting the regression
+        COCOTB_LIST_TESTS        Prints all tests in the order they would be executed and exits
 
         Scheduler
         ---------
@@ -98,7 +99,7 @@ def _help_vars_text() -> str:
 
         PYGPI
         -----
-        PYGPI_USERS       List of Python callables to start test environemtn
+        PYGPI_USERS       List of Python callables to start test environment
         PYGPI_PYTHON_BIN  Python binary. Usually set automatically by test runner
         PYGPI_DEBUG       Enable PyGPI debug features, including TRACE log output
 
