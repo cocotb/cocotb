@@ -17,7 +17,7 @@ import re
 import sys
 import time
 import warnings
-from enum import auto
+from enum import Enum, auto
 from importlib import import_module
 from typing import Any, cast
 
@@ -151,16 +151,23 @@ class RegressionMode(DocEnum):
     )
 
 
+class _TestOutcome(Enum):
+    PASS = auto()
+    FAIL = auto()
+    SKIP = auto()
+    XFAIL = auto()
+
+
 class _TestResults:
     def __init__(
         self,
         test_fullname: str,
-        passed: None | bool,
+        outcome: _TestOutcome,
         wall_time_s: float,
         sim_time_ns: float,
     ) -> None:
         self.test_fullname = test_fullname
-        self.passed = passed
+        self.outcome = outcome
         self.wall_time_s = wall_time_s
         self.sim_time_ns = sim_time_ns
 
@@ -191,6 +198,7 @@ class RegressionManager:
     COLOR_PASSED = ANSI.GREEN_FG
     COLOR_SKIPPED = ANSI.YELLOW_FG
     COLOR_FAILED = ANSI.RED_FG
+    COLOR_XFAILED = ANSI.YELLOW_FG
 
     _timer1 = Timer(1)
 
@@ -379,7 +387,7 @@ class RegressionManager:
 
             # if the test is skipped, record and continue
             if self._test.skip and self._mode != RegressionMode.TESTCASE:
-                self._record_test_skipped()
+                self._record_test_skipped(wall_time_s=0, sim_time_ns=0, msg=None)
                 continue
 
             # if the test should be run, but the simulator has failed, record and continue
@@ -496,6 +504,22 @@ class RegressionManager:
         test = self._test
 
         if exc is not None:
+            # These special exceptions take precedence over expect_error and expect_fail.
+            if isinstance(exc, pytest.skip.Exception):
+                # We got a skip exception, so we consider the test skipped.
+                return self._record_test_skipped(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
+                    msg=exc.msg,
+                )
+            elif isinstance(exc, pytest.xfail.Exception):
+                # We got an xfail exception, so we consider the test xfailed.
+                return self._record_test_xfail(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
+                    result=None,
+                    msg=exc.msg,
+                )
             if test.expect_error:
                 expected_error_set = set(test.expect_error)
 
@@ -505,7 +529,7 @@ class RegressionManager:
                 )
                 if matched:
                     # We got an RaisesExc or RaisesGroup that matches the expected exception.
-                    return self._record_test_passed(
+                    return self._record_test_xfail(
                         wall_time_s=wall_time_s,
                         sim_time_ns=sim_time_ns,
                         result=exc,
@@ -520,7 +544,7 @@ class RegressionManager:
 
                 if isinstance(exc, tuple(expected_excs_set)):
                     # Non-exception group error with expected type.
-                    return self._record_test_passed(
+                    return self._record_test_xfail(
                         wall_time_s=wall_time_s,
                         sim_time_ns=sim_time_ns,
                         result=exc,
@@ -545,7 +569,7 @@ class RegressionManager:
             elif test.expect_fail:
                 if isinstance(exc, _TestFailures):
                     # We expected a failure and got one.
-                    return self._record_test_passed(
+                    return self._record_test_xfail(
                         wall_time_s=wall_time_s,
                         sim_time_ns=sim_time_ns,
                         result=exc,
@@ -586,10 +610,7 @@ class RegressionManager:
         else:
             # We expected a pass and got one.
             return self._record_test_passed(
-                wall_time_s=wall_time_s,
-                sim_time_ns=sim_time_ns,
-                result=None,
-                msg=None,
+                wall_time_s=wall_time_s, sim_time_ns=sim_time_ns
             )
 
     def _get_lineno(self, test: Test) -> int:
@@ -630,20 +651,27 @@ class RegressionManager:
 
         # do not log anything, nor save details for the summary
 
-    def _record_test_skipped(self) -> None:
+    def _record_test_skipped(
+        self,
+        wall_time_s: float,
+        sim_time_ns: float,
+        msg: str | None,
+    ) -> None:
         """Called by :meth:`_execute` when a test is skipped."""
 
         # log test results
         hilight_start = "" if cocotb_logging.strip_ansi else self.COLOR_SKIPPED
         hilight_end = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
+        if msg is not None:
+            msg = f": {msg}"
+        else:
+            msg = f" ({self.count}/{self.total_tests}){_format_doc(self._test.doc)}"
         self.log.info(
-            "%sskipping%s %s (%d/%d)%s",
+            "%sskipping%s %s%s",
             hilight_start,
             hilight_end,
             self._test.fullname,
-            self.count,
-            self.total_tests,
-            _format_doc(self._test.doc),
+            msg,
         )
 
         # write out xunit results
@@ -663,9 +691,9 @@ class RegressionManager:
         self._test_results.append(
             _TestResults(
                 test_fullname=self._test.fullname,
-                passed=None,
-                sim_time_ns=0,
-                wall_time_s=0,
+                outcome=_TestOutcome.SKIP,
+                sim_time_ns=sim_time_ns,
+                wall_time_s=wall_time_s,
             )
         )
 
@@ -706,7 +734,7 @@ class RegressionManager:
         self._test_results.append(
             _TestResults(
                 test_fullname=self._test.fullname,
-                passed=False,
+                outcome=_TestOutcome.FAIL,
                 sim_time_ns=0,
                 wall_time_s=0,
             )
@@ -716,7 +744,7 @@ class RegressionManager:
         self.failures += 1
         self.count += 1
 
-    def _record_test_passed(
+    def _record_test_xfail(
         self,
         wall_time_s: float,
         sim_time_ns: float,
@@ -764,7 +792,48 @@ class RegressionManager:
         self._test_results.append(
             _TestResults(
                 test_fullname=self._test.fullname,
-                passed=True,
+                outcome=_TestOutcome.PASS,
+                sim_time_ns=sim_time_ns,
+                wall_time_s=wall_time_s,
+            )
+        )
+
+    def _record_test_passed(
+        self,
+        wall_time_s: float,
+        sim_time_ns: float,
+    ) -> None:
+        start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_PASSED
+        stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
+        self.log.info(
+            "%s %spassed%s",
+            self._test.fullname,
+            start_hilight,
+            stop_hilight,
+        )
+
+        # write out xunit results
+        ratio_time = safe_divide(sim_time_ns, wall_time_s)
+        lineno = self._get_lineno(self._test)
+        self.xunit.add_testcase(
+            name=self._test.name,
+            classname=self._test.module,
+            file=inspect.getfile(self._test.func),
+            lineno=repr(lineno),
+            time=repr(wall_time_s),
+            sim_time_ns=repr(sim_time_ns),
+            ratio_time=repr(ratio_time),
+        )
+
+        # update running passed/failed/skipped counts
+        self.passed += 1
+        self.count += 1
+
+        # save details for summary
+        self._test_results.append(
+            _TestResults(
+                test_fullname=self._test.fullname,
+                outcome=_TestOutcome.PASS,
                 sim_time_ns=sim_time_ns,
                 wall_time_s=wall_time_s,
             )
@@ -817,7 +886,7 @@ class RegressionManager:
         self._test_results.append(
             _TestResults(
                 test_fullname=self._test.fullname,
-                passed=False,
+                outcome=_TestOutcome.FAIL,
                 sim_time_ns=sim_time_ns,
                 wall_time_s=wall_time_s,
             )
@@ -899,20 +968,25 @@ class RegressionManager:
         hilite: str
         lolite: str
         for result in self._test_results:
-            if result.passed is None:
+            if result.outcome == _TestOutcome.SKIP:
                 ratio = "-.--"
                 pass_fail_str = "SKIP"
                 hilite = self.COLOR_SKIPPED
                 lolite = ANSI.DEFAULT
-            elif result.passed:
+            elif result.outcome == _TestOutcome.PASS:
                 ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "PASS"
                 hilite = self.COLOR_PASSED
                 lolite = ANSI.DEFAULT
-            else:
+            elif result.outcome == _TestOutcome.FAIL:
                 ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "FAIL"
                 hilite = self.COLOR_FAILED
+                lolite = ANSI.DEFAULT
+            elif result.outcome == _TestOutcome.XFAIL:
+                ratio = format(result.ratio, "0.2f")
+                pass_fail_str = "XFAIL"
+                hilite = self.COLOR_XFAILED
                 lolite = ANSI.DEFAULT
 
             if cocotb_logging.strip_ansi:

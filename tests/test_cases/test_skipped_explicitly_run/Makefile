@@ -14,9 +14,9 @@ clean::
 .DEFAULT_GOAL := override
 .PHONY: override
 override: clean all
-	 @test -f $(SKIPPED_TEST_FILE) || (echo "ERROR: skip=True test was not ran!" >&2 && exit 1)
+	@test -f $(SKIPPED_TEST_FILE) || (echo "ERROR: skip=True test was not ran!" >&2 && exit 1)
 
 # Set COCOTB_TEST_FILTER; run test_skipped even though skip=True is set.
 COCOTB_TEST_FILTER = test_skipped
 
-COCOTB_TEST_MODULES = test_skipped
+COCOTB_TEST_MODULES = test_skipped_explicitly_run
