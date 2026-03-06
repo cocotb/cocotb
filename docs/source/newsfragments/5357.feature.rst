@@ -1,0 +1,1 @@
+Added support for :class:`pytest.RaisesExc` and :class:`pytest.RaisesGroup` as ``raises`` argument to :func:`cocotb.xfail`.

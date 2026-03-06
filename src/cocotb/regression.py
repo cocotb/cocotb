@@ -19,7 +19,7 @@ import time
 import warnings
 from enum import auto
 from importlib import import_module
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -58,6 +58,51 @@ _TestFailures: tuple[type[BaseException], ...] = (
     AssertionError,
     pytest.raises.Exception,  # type: ignore[attr-defined]
 )
+
+if hasattr(pytest, "RaisesGroup") and hasattr(pytest, "RaisesExc"):
+
+    def handle_pytest_exception_matchers(
+        exc: BaseException,
+        expected_error_set: set[
+            type[BaseException] | pytest.RaisesExc | pytest.RaisesGroup
+        ],
+    ) -> tuple[set[pytest.RaisesExc | pytest.RaisesGroup], bool]:
+        """Filter out :class:`pytest.RaisesExc` and :class:`pytest.RaisesGroup` exceptions and do checking on them.
+
+        Args:
+            exc: The exception result of the test.
+            expected_error_set: The set of expected exceptions and :class:`!pytest.RaisesExc` and :class:`!pytest.RaisesGroup` objects.
+
+        Returns:
+            A tuple of the filtered out :class:`!pytest.RaisesExc` and :class:`!pytest.RaisesGroup` objects
+            (so that the caller may remove them from the exception set)
+            and a boolean whether there was a match.
+        """
+        exception_matcher_excs = cast(
+            "set[pytest.RaisesExc | pytest.RaisesGroup]",
+            {
+                exc
+                for exc in expected_error_set
+                if isinstance(exc, (pytest.RaisesExc, pytest.RaisesGroup))
+            },
+        )
+
+        for exception_matcher_exc in exception_matcher_excs:
+            if exception_matcher_exc.matches(exc):
+                # We got an exception that matches an exception matcher, so we consider the test passed.
+                return exception_matcher_excs, True
+
+        return exception_matcher_excs, False
+
+else:
+
+    def handle_pytest_exception_matchers(
+        exc: BaseException,
+        expected_error_set: set[
+            type[BaseException] | pytest.RaisesExc | pytest.RaisesGroup
+        ],
+    ) -> tuple[set[pytest.RaisesExc | pytest.RaisesGroup], bool]:
+        return set(), False
 
 
 class SimFailure(BaseException):
@@ -450,83 +495,101 @@ class RegressionManager:
     ) -> None:
         test = self._test
 
-        # score test
-        passed: bool
-        msg: str | None
         if exc is not None:
-            passed, msg = False, None
-        else:
-            passed, msg, exc = True, None, None
-
-        if passed:
             if test.expect_error:
-                self._record_test_failed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=exc,
-                    msg="passed but we expected an error",
-                )
-                passed = False
+                expected_error_set = set(test.expect_error)
 
+                # Filter out RaisesExc or RaisesGroup, which need to be handled differently.
+                exception_matcher_excs, matched = handle_pytest_exception_matchers(
+                    exc, expected_error_set
+                )
+                if matched:
+                    # We got an RaisesExc or RaisesGroup that matches the expected exception.
+                    return self._record_test_passed(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="errored as expected",
+                    )
+
+                # Use isinstance with the remaining expected exceptions, which should all be exception types.
+                expected_excs_set = cast(
+                    "set[type[BaseException]]",
+                    expected_error_set - exception_matcher_excs,
+                )
+
+                if isinstance(exc, tuple(expected_excs_set)):
+                    # Non-exception group error with expected type.
+                    return self._record_test_passed(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="errored as expected",
+                    )
+                elif isinstance(exc, _TestFailures):
+                    # We got a failure exception but expected an error.
+                    return self._record_test_failed(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="failed but we expected an error",
+                    )
+                else:
+                    # Non-exception group error with unexpected type.
+                    return self._record_test_failed(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="errored with unexpected type",
+                    )
             elif test.expect_fail:
-                self._record_test_failed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=exc,
-                    msg="passed but we expected a failure",
-                )
-                passed = False
-
+                if isinstance(exc, _TestFailures):
+                    # We expected a failure and got one.
+                    return self._record_test_passed(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="failed as expected",
+                    )
+                else:
+                    # We expected a failure but got an unexpected exception type.
+                    return self._record_test_failed(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="errored but we expected a failure",
+                    )
             else:
-                self._record_test_passed(
+                # We are not expecting an error or failure, but got an exception instead.
+                return self._record_test_failed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
                     result=exc,
-                    msg=msg,
+                    msg=None,
                 )
-
-        elif test.expect_fail:
-            if isinstance(exc, _TestFailures):
-                self._record_test_passed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=exc,
-                    msg="failed as expected",
-                )
-
-            else:
-                self._record_test_failed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=exc,
-                    msg="expected failure, but errored with unexpected type",
-                )
-                passed = False
-
         elif test.expect_error:
-            if isinstance(exc, test.expect_error):
-                self._record_test_passed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=exc,
-                    msg="errored as expected",
-                )
-
-            else:
-                self._record_test_failed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=exc,
-                    msg="errored with unexpected type",
-                )
-                passed = False
-
-        else:
-            self._record_test_failed(
+            # We expected an error but the test passed.
+            return self._record_test_failed(
                 wall_time_s=wall_time_s,
                 sim_time_ns=sim_time_ns,
-                result=exc,
-                msg=msg,
+                result=None,
+                msg="passed but we expected an error",
+            )
+        elif test.expect_fail:
+            # We expected a failure but the test passed.
+            return self._record_test_failed(
+                wall_time_s=wall_time_s,
+                sim_time_ns=sim_time_ns,
+                result=None,
+                msg="passed but we expected a failure",
+            )
+        else:
+            # We expected a pass and got one.
+            return self._record_test_passed(
+                wall_time_s=wall_time_s,
+                sim_time_ns=sim_time_ns,
+                result=None,
+                msg=None,
             )
 
     def _get_lineno(self, test: Test) -> int:

@@ -303,7 +303,7 @@ release_build_sdist = [
     "build",
 ]
 test_common = [
-    "pytest>=6"
+    "pytest>=8.4"  # need RaisesExc and RaisesGroup
 ]
 dev_test = [
     {include-group = "test_common"},

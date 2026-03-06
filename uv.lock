@@ -645,13 +645,13 @@ dev = [
     { name = "nox" },
     { name = "nox-uv" },
     { name = "prek" },
-    { name = "pytest", specifier = ">=6" },
+    { name = "pytest", specifier = ">=8.4" },
     { name = "pytest-cov" },
     { name = "ruff" },
 ]
 dev-test = [
     { name = "coverage", extras = ["toml"], specifier = ">=7.2" },
-    { name = "pytest", specifier = ">=6" },
+    { name = "pytest", specifier = ">=8.4" },
     { name = "pytest-cov" },
 ]
 docs = [
@@ -700,9 +700,9 @@ release-build-wheel = [{ name = "cibuildwheel", marker = "python_full_version >=
 release-test = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "find-libpython" },
-    { name = "pytest", specifier = ">=6" },
+    { name = "pytest", specifier = ">=8.4" },
 ]
-test-common = [{ name = "pytest", specifier = ">=6" }]
+test-common = [{ name = "pytest", specifier = ">=8.4" }]
 
 [[package]]
 name = "colorama"
