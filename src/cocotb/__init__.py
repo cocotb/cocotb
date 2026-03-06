@@ -106,5 +106,12 @@ It is particularly useful for extracting information about the :term:`DUT` in mo
 and in parameters to :class:`.TestFactory`\ s.
 """
 
+tops: dict = {}
+"""This contains all the top level modules including top i.e :envvar:`COCOTB_TOPLEVEL`
+
+If there are multiple hdl top level modules added to VERILOG_SOURCES
+or VHDL_SOURCES. This gets populated with all of them
+"""
+
 is_simulation: bool = False
 """``True`` if cocotb was loaded in a simulation."""

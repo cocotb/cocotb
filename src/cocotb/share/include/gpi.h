@@ -36,6 +36,8 @@ imitate a callback.
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <vector>
+
 #ifdef GPI_EXPORTS
 #define GPI_EXPORT COCOTB_EXPORT
 #else
@@ -159,7 +161,7 @@ typedef enum gpi_discovery_e {
  * @param name  Name of the root object, or `NULL`.
  * @return      Handle to simulation object or `NULL` if not found.
  */
-GPI_EXPORT gpi_sim_hdl gpi_get_root_handle(const char *name);
+GPI_EXPORT std::vector<gpi_sim_hdl> gpi_get_root_handle(const char *name);
 
 /** Get a handle to a child simulation object by its name.
  *
