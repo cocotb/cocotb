@@ -1,0 +1,1 @@
+Deprecated :func:`cocotb.pass_test`. Instead, use :func:`cocotb.skip` to skip a test or use :func:`cocotb.end_test` to end a test while respecting expected failures.

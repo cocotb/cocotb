@@ -9,7 +9,7 @@ import warnings
 def __getattr__(name: str) -> object:
     if name == "TestSuccess":
         warnings.warn(
-            "`raise TestSuccess` is deprecated. Use `cocotb.pass_test()` instead.",
+            "`raise TestSuccess` is deprecated. Use `cocotb.end_test` or `pytest.skip` instead.",
             DeprecationWarning,
             stacklevel=2,
         )

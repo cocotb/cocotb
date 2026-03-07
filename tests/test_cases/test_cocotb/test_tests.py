@@ -201,21 +201,6 @@ async def test_test_without_parenthesis_ran(dut):
 
 
 @cocotb.test
-async def test_pass_test_in_task(_) -> None:
-    async def raise_test_success():
-        await Timer(1, unit="ns")
-        cocotb.pass_test("Finished test early")
-
-    cocotb.start_soon(raise_test_success())
-    await Timer(10, unit="ns")
-
-
-@cocotb.test
-async def test_pass_test_in_test(_) -> None:
-    cocotb.pass_test("Finished test early")
-
-
-@cocotb.test
 async def test_bad_xfail(dut: object) -> None:
     with pytest.raises(TypeError):
 
@@ -240,18 +225,6 @@ async def test_bad_xfail(dut: object) -> None:
         )
         async def dummy(_: object) -> None:
             pass
-
-
-@cocotb.test
-@cocotb.xfail(raises=TypeError)
-async def test_pass_test_in_xfail_exception(dut: object) -> None:
-    cocotb.pass_test("Finished test early")
-
-
-@cocotb.test
-@cocotb.xfail()
-async def test_pass_test_in_xfail_assert(dut: object) -> None:
-    cocotb.pass_test("Finished test early")
 
 
 @cocotb.test
