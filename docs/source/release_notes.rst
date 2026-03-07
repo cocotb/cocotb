@@ -18,51 +18,6 @@ cocotb 2.0 is a major release of cocotb and includes a lot of changes.
 As indicated by the version number, this new version contains API-breaking changes that may require updates to existing testbenches.
 Refer to :doc:`upgrade-2.0` for a more high-level summary of the changes in cocotb 2.0 and to guide you through the upgrade process.
 
-Features
---------
-
-- Added :external+cocotb20:attr:`.Task.locals` namespace for Task-local user variables. (:pr:`4863`)
-- Added :external+cocotb20:data:`~cocotb.debug.debug` to allow users to programmatically control the collection of additional debugging information. (:pr:`4867`)
-- Added ``strip_ansi`` and ``reduced_log_fmt`` parameters to :external+cocotb20:func:`.default_config` to control log formatting. (:pr:`4871`)
-- Added ``period_high`` argument to :external+cocotb20:class:`.Clock` to allow the user to control the duty cycle of the generated clock. (:pr:`4872`)
-- Added :external+cocotb20:attr:`.Logic.is_resolvable` to mirror the method available on :external+cocotb20:class:`.LogicArray`. (:pr:`4881`)
-- Added support for :func:`copy.deepcopy` on :external+cocotb20:class:`.LogicArray`. :func:`copy.copy` is not supported. (:pr:`4884`)
-- Add support for :func:`copy.copy` and :func:`copy.deepcopy` on :external+cocotb20:class:`.Range`, :external+cocotb20:class:`.Array`, :external+cocotb20:class:`.Logic`. (:pr:`4884`)
-- Added :external+cocotb20:envvar:`COCOTB_LOG_PREFIX` environment variable to allow users to customize the log message prefix. (:pr:`4900`)
-- Added :external+cocotb20:func:`cocotb.simtime.convert` to replace :external+cocotb20:func:`~cocotb.utils.get_time_from_sim_steps` and :external+cocotb20:func:`~cocotb.utils.get_sim_steps` with a single intuitive interface. (:pr:`4901`)
-- Added :external+cocotb20:data:`cocotb.simtime.time_precision` to allow users to set simulated time precision when not operating with a simulator. (:pr:`4901`)
-- :external+cocotb20:data:`cocotb.logging.strip_ansi` was added to allow the user to programmatically control ANSI escape code stripping in :external+cocotb20:class:`~cocotb.logging.SimLogFormatter`. (:pr:`4909`)
-- Added :external+cocotb20:class:`cocotb.logging.ANSI` enum class for ANSI escape codes. (:pr:`4926`)
-
-
-Bugfixes
---------
-
-- :external+cocotb20:data:`ANSI escape code stripping <cocotb.logging.strip_ansi>` is now correctly disabled when :external+cocotb20:envvar:`COCOTB_ANSI_OUTPUT` is set to ``0``. (:pr:`4909`)
-
-
-Deprecations and Removals
--------------------------
-
-- Deprecated :external+cocotb20:class:`.SimColourLogFormatter`. Use :external+cocotb20:class:`.SimLogFormatter` with ``strip_ansi=False`` instead. (:pr:`4871`)
-- Removed :mod:`!cocotb.ANSI` module. (:pr:`4926`)
-- Removed the deprecated :external+cocotb19:class:`cocotb.result.TestComplete`, :external+cocotb19:class:`cocotb.result.TestError`, and :external+cocotb19:class:`cocotb.result.TestFailure`. (:pr:`4960`)
-
-
-Changes
--------
-
-- :external+cocotb19:func:`~cocotb.utils.get_sim_time` was moved from :external+cocotb19:mod:`cocotb.utils` to :external+cocotb20:mod:`cocotb.simtime`. (:pr:`4901`)
-- Logging colorization is now :external+cocotb20:data:`ANSI escape code stripping <cocotb.logging.strip_ansi>`. This will strip any ANSI escape codes, including colorization, from both the logging prefix and messages. (:pr:`4909`)
-- Warnings emitted by the :mod:`warnings` module are now captured and redirected to the logging system using :func:`logging.captureWarnings`. (:pr:`4914`)
-
-
-cocotb 2.0.0b1 (2025-07-12)
-===========================
-
-This is the first beta release of the upcoming cocotb 2.0.
-As indicated by the version number, this new version contains API-breaking changes that may require updates to existing testbenches.
-Refer to :doc:`upgrade-2.0` to guide you through the upgrade process.
 
 Features
 --------
@@ -127,6 +82,18 @@ Features
 - Added :external+cocotb20:func:`cocotb.task.current_task` to get the current task object. (:pr:`4730`)
 - Added the ``name`` keyword argument to :external+cocotb20:func:`cocotb.start_soon`, :external+cocotb20:func:`cocotb.start`, and :external+cocotb20:func:`cocotb.create_task` to set a :external+cocotb20:class:`.Task`\ s name during creation. (:pr:`4777`)
 - Added :external+cocotb20:meth:`.Task.get_name` and :external+cocotb20:meth:`.Task.set_name` to get and set a :external+cocotb20:class:`.Task`\ s name. (:pr:`4777`)
+- Added :external+cocotb20:attr:`.Task.locals` namespace for Task-local user variables. (:pr:`4863`)
+- Added :external+cocotb20:data:`~cocotb.debug.debug` to allow users to programmatically control the collection of additional debugging information. (:pr:`4867`)
+- Added ``strip_ansi`` and ``reduced_log_fmt`` parameters to :external+cocotb20:func:`.default_config` to control log formatting. (:pr:`4871`)
+- Added ``period_high`` argument to :external+cocotb20:class:`.Clock` to allow the user to control the duty cycle of the generated clock. (:pr:`4872`)
+- Added :external+cocotb20:attr:`.Logic.is_resolvable` to mirror the method available on :external+cocotb20:class:`.LogicArray`. (:pr:`4881`)
+- Added support for :func:`copy.deepcopy` on :external+cocotb20:class:`.LogicArray`. :func:`copy.copy` is not supported. (:pr:`4884`)
+- Add support for :func:`copy.copy` and :func:`copy.deepcopy` on :external+cocotb20:class:`.Range`, :external+cocotb20:class:`.Array`, :external+cocotb20:class:`.Logic`. (:pr:`4884`)
+- Added :external+cocotb20:envvar:`COCOTB_LOG_PREFIX` environment variable to allow users to customize the log message prefix. (:pr:`4900`)
+- Added :external+cocotb20:func:`cocotb.simtime.convert` to replace :external+cocotb20:func:`~cocotb.utils.get_time_from_sim_steps` and :external+cocotb20:func:`~cocotb.utils.get_sim_steps` with a single intuitive interface. (:pr:`4901`)
+- Added :external+cocotb20:data:`cocotb.simtime.time_precision` to allow users to set simulated time precision when not operating with a simulator. (:pr:`4901`)
+- :external+cocotb20:data:`cocotb.logging.strip_ansi` was added to allow the user to programmatically control ANSI escape code stripping in :external+cocotb20:class:`~cocotb.logging.SimLogFormatter`. (:pr:`4909`)
+- Added :external+cocotb20:class:`cocotb.logging.ANSI` enum class for ANSI escape codes. (:pr:`4926`)
 
 
 Bugfixes
@@ -147,6 +114,7 @@ Bugfixes
 - Support ``timescale`` argument to :external+cocotb20:meth:`.Runner.build` and :external+cocotb20:meth:`.Runner.test` for DSim. (:pr:`4645`)
 - Fix segfault when using VCS Slave Mode. (:pr:`4670`)
 - Fixed bug where calling :external+cocotb20:meth:`.Event.wait` but not ``await``\ ing the returned Trigger, then calling :external+cocotb20:meth:`.Event.set`, then ``await``\ ing the Trigger would hang. (:pr:`4675`)
+- :external+cocotb20:data:`ANSI escape code stripping <cocotb.logging.strip_ansi>` is now correctly disabled when :external+cocotb20:envvar:`COCOTB_ANSI_OUTPUT` is set to ``0``. (:pr:`4909`)
 
 
 Deprecations and Removals
@@ -215,6 +183,9 @@ Deprecations and Removals
 - ``cocotb.regression_manager``, the global :external+cocotb20:class:`.RegressionManager` singleton, is now private. (:pr:`4623`)
 - Deprecated :external+cocotb20:attr:`.Lock.name` and passing a ``name`` argument to :external+cocotb20:class:`.Lock` constructors. (:pr:`4723`)
 - Removed ``cocotb.logging.SimBaseLog`` as the class no longer did anything. (:pr:`4775`)
+- Deprecated :external+cocotb20:class:`.SimColourLogFormatter`. Use :external+cocotb20:class:`.SimLogFormatter` with ``strip_ansi=False`` instead. (:pr:`4871`)
+- Removed :mod:`!cocotb.ANSI` module. (:pr:`4926`)
+- Removed the deprecated :external+cocotb19:class:`cocotb.result.TestComplete`, :external+cocotb19:class:`cocotb.result.TestError`, and :external+cocotb19:class:`cocotb.result.TestFailure`. (:pr:`4960`)
 
 
 Changes
@@ -266,6 +237,9 @@ Changes
 - The minimum supported version of Verilator has been increased to v5.036. (:pr:`4644`)
 - If the user requests coverage collection via ``COCOTB_LIBRARY_COVERAGE`` or :external+cocotb20:envvar:`COCOTB_USER_COVERAGE` and the :mod:`coverage` module is not available, the regression will fail. (:pr:`4656`)
 - Moved :external+cocotb20:class:`~cocotb.regression.SimFailure` from :external+cocotb20:mod:`cocotb.result` to :external+cocotb20:mod:`cocotb.regression`. (:pr:`4685`)
+- :external+cocotb19:func:`~cocotb.utils.get_sim_time` was moved from :external+cocotb19:mod:`cocotb.utils` to :external+cocotb20:mod:`cocotb.simtime`. (:pr:`4901`)
+- Logging colorization is now :external+cocotb20:data:`ANSI escape code stripping <cocotb.logging.strip_ansi>`. This will strip any ANSI escape codes, including colorization, from both the logging prefix and messages. (:pr:`4909`)
+- Warnings emitted by the :mod:`warnings` module are now captured and redirected to the logging system using :func:`logging.captureWarnings`. (:pr:`4914`)
 
 
 cocotb 1.9.2 (2024-10-26)
