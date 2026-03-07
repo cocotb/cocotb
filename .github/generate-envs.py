@@ -114,7 +114,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v12_0",  # The latest release version.
+        "sim-version": "v13_0",  # The latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci-free",
@@ -244,7 +244,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v12_0",
+        "sim-version": "v13_0",
         "os": "windows-latest",
         "python-version": "3.11",
         "toolchain": "mingw",
@@ -255,7 +255,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v12_0",
+        "sim-version": "v13_0",
         "os": "windows-latest",
         "python-version": "3.11",
         "toolchain": "msvc",
@@ -370,6 +370,19 @@ ENVS = [
         "group": "experimental",
     },
 ]
+
+icarus_versions = ("v12_0",)
+for version in icarus_versions:
+    ENVS += [
+        {
+            "lang": "verilog",
+            "sim": "icarus",
+            "sim-version": version,
+            "os": "ubuntu-22.04",
+            "python-version": "3.9",
+            "group": "extended",
+        },
+    ]
 
 verilator_versions = ("v5.036", "v5.038", "v5.040")
 for version in verilator_versions:
