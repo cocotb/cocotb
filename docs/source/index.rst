@@ -66,14 +66,6 @@ cocotb is a Free and Open Source project and is developed collaboratively by its
 cocotb has many serious commercial users and sponsors.
 See `cocotb.org <https://cocotb.org>`_ for more details.
 
-
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-
-   install
-   quickstart
-
 ..
    Tutorials - lessons that take the reader by the hand through a series of steps to complete a project
    (Example: kid cooking; learning-oriented)
@@ -93,6 +85,13 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    :name: tutorials
    :hidden:
 
+   install
+   quickstart
+   writing_testbenches
+   runner
+   coroutines
+   triggers
+   pytest
    examples
 
 
@@ -115,16 +114,12 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    :hidden:
 
    install_devel
-   writing_testbenches
-   runner
-   coroutines
-   triggers
    custom_flows
-   rotating_logger
    extensions
-   pytest
    upgrade-2.0
    update_indexing
+   rotating_logger
+
 
 .. todo::
    - Add IPython section
