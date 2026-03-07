@@ -46,3 +46,13 @@ async def test_exception_with_nonprintable_characters(_: object) -> None:
 @cocotb.test(expect_error=TypeError)
 async def test_expect_error_get_failure(dut: object) -> None:
     assert False
+
+
+@cocotb.test(expect_error=Exception)
+async def test_end_test_with_expect_error(_: object) -> None:
+    cocotb.end_test()
+
+
+@cocotb.test(expect_fail=True)
+async def test_end_test_with_expect_fail(_: object) -> None:
+    cocotb.end_test()

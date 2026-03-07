@@ -348,6 +348,8 @@ Test Management
 
 .. currentmodule:: None
 
+.. autofunction:: cocotb.end_test
+
 .. autofunction:: cocotb.pass_test
 
 .. _task-management:
