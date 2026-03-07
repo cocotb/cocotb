@@ -59,6 +59,7 @@ intersphinx_mapping = {
     "pytest": ("https://docs.pytest.org/en/latest/", None),
     "coverage": ("https://coverage.readthedocs.io/en/latest/", None),
     "remote_pdb": ("https://python-remote-pdb.readthedocs.io/en/latest/", None),
+    "cocotb20": ("https://docs.cocotb.org/en/v2.0.1/", None),
     "cocotb19": ("https://docs.cocotb.org/en/v1.9.2/", None),
     "cocotb18": ("https://docs.cocotb.org/en/v1.8.1/", None),
     "cocotb17": ("https://docs.cocotb.org/en/v1.7.2/", None),
