@@ -42,7 +42,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.18.1",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci-free",
@@ -51,7 +51,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.18.1",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci-free",
@@ -60,7 +60,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.18.1",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.11",
         "group": "ci-free",
@@ -69,7 +69,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.18.1",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.12",
         "group": "ci-free",
@@ -78,7 +78,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.18.1",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.13",
         "group": "ci-free",
@@ -87,7 +87,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.18.1",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.14",
         "group": "ci-free",
@@ -266,7 +266,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.18.1",
+        "sim-version": "r1.19.2",
         "os": "windows-latest",
         "python-version": "3.11",
         "group": "ci-free",
@@ -276,7 +276,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.18.1",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "cxx": "clang++",
@@ -392,6 +392,7 @@ nvc_versions = (
     "r1.15.2",
     "r1.16.0",  # First version with --preserve-case
     "r1.17.1",
+    "r1.18.2",
 )
 for version in nvc_versions:
     ENVS += [
