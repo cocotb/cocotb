@@ -320,6 +320,9 @@ class TestSuccess(BaseException):
         self.msg = msg
 
 
+@deprecated(
+    "Use `cocotb.skip` to skip a test, or use `cocotb.end_test` to end a test while respecting expected failures."
+)
 def pass_test(msg: str | None = None) -> NoReturn:
     """Force a test to pass.
 
@@ -332,6 +335,11 @@ def pass_test(msg: str | None = None) -> NoReturn:
         msg: The message to display when the test passes.
 
     .. versionadded:: 2.0
+
+    .. deprecated:: 2.1
+        Forcing a test to pass is considered bad practice.
+        Use :func:`cocotb.skip` if you want to end the test immediately and force the outcome to skipped.
+        Or use :func:`cocotb.end_test` if you want to end the test immediately while respecting expected failures.
     """
     raise TestSuccess(msg)
 

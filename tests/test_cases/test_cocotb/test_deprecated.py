@@ -324,3 +324,46 @@ async def test_Task_kill_running(_: object) -> None:
     task = cocotb.start_soon(example())
     await task
     assert task.done()
+
+
+@cocotb.test
+async def test_pass_test_in_task(_) -> None:
+    async def raise_test_success():
+        await Timer(1, unit="ns")
+        with pytest.warns(DeprecationWarning):
+            cocotb.pass_test("Finished test early")
+
+    cocotb.start_soon(raise_test_success())
+    await Timer(10, unit="ns")
+
+
+@cocotb.test
+async def test_pass_test_in_test(_) -> None:
+    with pytest.warns(DeprecationWarning):
+        cocotb.pass_test("Finished test early")
+
+
+@cocotb.test
+@cocotb.xfail(raises=TypeError)
+async def test_pass_test_in_xfail_exception(dut: object) -> None:
+    with pytest.warns(DeprecationWarning):
+        cocotb.pass_test("Finished test early")
+
+
+@cocotb.test
+@cocotb.xfail()
+async def test_pass_test_in_xfail_assert(dut: object) -> None:
+    with pytest.warns(DeprecationWarning):
+        cocotb.pass_test("Finished test early")
+
+
+@cocotb.test(expect_error=TypeError)
+async def test_pass_test_in_expect_error(dut: object) -> None:
+    with pytest.warns(DeprecationWarning):
+        cocotb.pass_test("Finished test early")
+
+
+@cocotb.test(expect_fail=True)
+async def test_pass_test_in_expect_fail(dut: object) -> None:
+    with pytest.warns(DeprecationWarning):
+        cocotb.pass_test("Finished test early")
