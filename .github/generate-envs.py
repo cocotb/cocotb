@@ -139,22 +139,6 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "ghdl",
-        "sim-version": "v3.0.0",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "ghdl",
-        "sim-version": "v4.1.0",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "ghdl",
         "sim-version": "v5.1.1",  # The latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.9",
@@ -370,6 +354,19 @@ ENVS = [
         "group": "experimental",
     },
 ]
+
+ghdl_versions = ("v3.0.0", "v4.1.0")
+for version in ghdl_versions:
+    ENVS += [
+        {
+            "lang": "vhdl",
+            "sim": "ghdl",
+            "sim-version": version,
+            "os": "ubuntu-22.04",
+            "python-version": "3.9",
+            "group": "extended",
+        },
+    ]
 
 icarus_versions = ("v12_0",)
 for version in icarus_versions:
