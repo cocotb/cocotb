@@ -528,6 +528,9 @@ a[href*="docs.cocotb.org"]::after {
     text-decoration: none;
 }
 
+a[href*="docs.cocotb.org"][href*="v2.0"]::after {
+    content: "v2.0";
+}
 a[href*="docs.cocotb.org"][href*="v1.9"]::after {
     content: "v1.9";
 }
