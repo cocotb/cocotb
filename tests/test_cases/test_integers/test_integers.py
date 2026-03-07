@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 
 import cocotb
-from cocotb.handle import LogicArrayObject
+from cocotb.handle import LogicArrayObject, PackedObject
 from cocotb.triggers import Timer
 from cocotb.types import LogicArray
 from cocotb_tools.sim_versions import GhdlVersion, VerilatorVersion
@@ -56,7 +56,7 @@ async def test_int_verilog(
 
     # For backwards compatibility, LogicArrayObjects always use (INT_MIN, UINT_MAX) for bounds.
     # Some simulators discover integer handles as LogicArrayObjects.
-    if isinstance(handle, LogicArrayObject):
+    if isinstance(handle, PackedObject):
         min_value = -(2 ** (width - 1))
         max_value = (2**width) - 1
 

@@ -12,7 +12,7 @@ from cocotb.handle import (
     GPIDiscovery,
     HierarchyArrayObject,
     HierarchyObject,
-    LogicArrayObject,
+    PackedObject,
 )
 
 ########################################################################################
@@ -69,7 +69,7 @@ async def recursive_discovery(dut):
     assert expected == actual
     tlog.info("Found a total of %d things", actual)
 
-    assert isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, LogicArrayObject)
+    assert isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, PackedObject)
 
 
 @cocotb.test

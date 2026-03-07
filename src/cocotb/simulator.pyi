@@ -25,7 +25,6 @@ PACKAGE: int
 REAL: int
 STRING: int
 STRUCTURE: int
-PACKED_STRUCTURE: int
 UNKNOWN: int
 RISING: int
 FALLING: int

@@ -1241,31 +1241,11 @@ class _SignednessObjectMixin(SimHandleBase):
             return (2 ** len(self)) - 1
 
 
-class LogicArrayObject(
+class _LogicArrayObjectBase(
     _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
     _RangeableObjectMixin,
     _SignednessObjectMixin,
 ):
-    """A logic array simulation object.
-
-    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
-
-    Verilog packed vectors, structs, and unions do not map to this type, but :class:`PackedObject`.
-    Unpacked vectors of type ``logic`` and ``bit`` map to :class:`ArrayObject`.
-
-    VHDL types that map to this object:
-
-        * ``std_logic_vector`` and ``std_ulogic_vector``
-        * ``unsigned``
-        * ``signed``
-        * ``ufixed``
-        * ``sfixed``
-        * ``float``
-
-    .. versionchanged:: 2.1
-        Verilog packed objects no longer map to this type, but :class:`PackedObject`.
-    """
-
     def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
@@ -1377,13 +1357,6 @@ class LogicArrayObject(
         # and this object needs to support multi-dimensional packed arrays.
         return self._handle.get_num_elems()
 
-    def __getitem__(self, index: int) -> LogicObject:
-        handle = self._handle.get_handle_by_index(index)
-        if handle is None:
-            raise IndexError
-
-        return LogicObject(handle, self._path)
-
     @cached_property
     def _min_val(self) -> int:
         # Backwards compatibility. Always wrap negative values.
@@ -1395,7 +1368,40 @@ class LogicArrayObject(
         return (2 ** len(self)) - 1
 
 
-class PackedObject(LogicArrayObject):
+class LogicArrayObject(_LogicArrayObjectBase):
+    """A logic array simulation object.
+
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
+
+    Verilog packed vectors, structs, and unions do not map to this type, but :class:`PackedObject`.
+    Unpacked vectors of type ``logic`` and ``bit`` map to :class:`ArrayObject`.
+
+    VHDL types that map to this object:
+
+        * ``std_logic_vector`` and ``std_ulogic_vector``
+        * ``unsigned``
+        * ``signed``
+        * ``ufixed``
+        * ``sfixed``
+        * ``float``
+
+    .. versionchanged:: 2.1
+        Verilog packed objects no longer map to this type, but :class:`PackedObject`.
+    """
+
+    def __getitem__(self, index: int) -> LogicObject:
+        handle = self._handle.get_handle_by_index(index)
+        if handle is None:
+            raise IndexError
+
+        return LogicObject(handle, self._path)
+
+    def __iter__(self) -> Iterable[LogicObject]:
+        for i in self.range:
+            yield self[i]
+
+
+class PackedObject(_LogicArrayObjectBase):
     """A packed Verilog struct, union, or vector simulation object.
 
     Verilog types that map to this object:
@@ -1406,13 +1412,19 @@ class PackedObject(LogicArrayObject):
     .. versionadded:: 2.1
     """
 
-    def __getitem__(self, _: object) -> NoReturn:
+    def _indexing_error(self) -> NoReturn:
         raise TypeError(
             "Indexing into Verilog packed objects (arrays, structs, or unions) is not currently supported.\n"
             "Try instead reading the whole value and slicing: `t = handle.value; t[0:3]`.\n"
             "If you need to use an element in an Edge Trigger, consider making the array or struct unpacked.\n"
             "Alternatively, use `ValueChange` on the whole object and check the bit(s) you care about for changes afterwards."
         )
+
+    def __getitem__(self, _: object) -> NoReturn:
+        self._indexing_error()
+
+    def __iter__(self) -> NoReturn:
+        self._indexing_error()
 
 
 class RealObject(_NonIndexableValueObjectBase[float, float]):
@@ -1757,7 +1769,6 @@ _handle2obj: dict[
 _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     simulator.MODULE: HierarchyObject,
     simulator.STRUCTURE: HierarchyObject,
-    simulator.PACKED_STRUCTURE: LogicArrayObject,
     simulator.LOGIC: LogicObject,
     simulator.LOGIC_ARRAY: LogicArrayObject,
     simulator.PACKED_OBJECT: PackedObject,

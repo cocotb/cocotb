@@ -158,7 +158,7 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
             LOG_WARN(
                 "VPI: Xcelium reports undefined parameters as vpiUndefined, "
                 "guessing this is a logic vector");
-            return GPI_LOGIC_ARRAY;
+            return GPI_PACKED_OBJECT;
 #endif
         case vpiDecConst:
         case vpiBinaryConst:
@@ -280,8 +280,8 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             auto is_vector = false;
             if (vpi_get(vpiPacked, new_hdl)) {
                 LOG_DEBUG("VPI: Found packed struct/union data type");
-                new_obj = new VpiSignalObjHdl(this, new_hdl,
-                                              GPI_PACKED_STRUCTURE, false);
+                new_obj = new VpiSignalObjHdl(this, new_hdl, GPI_PACKED_OBJECT,
+                                              false);
                 break;
             } else if (vpi_get(vpiVector, new_hdl)) {
                 is_vector = true;

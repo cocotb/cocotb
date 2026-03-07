@@ -7,14 +7,18 @@ from __future__ import annotations
 import logging
 import os
 
+import pytest
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import (
+    Any,
     ArrayObject,
     HierarchyArrayObject,
     HierarchyObject,
     LogicArrayObject,
     LogicObject,
+    PackedObject,
     _HierarchyObjectBase,
 )
 from cocotb.triggers import Timer
@@ -364,36 +368,38 @@ async def test_direct_constant_indexing(dut):
 async def test_direct_signal_indexing(dut):
     """Test directly accessing signal/net data in arrays, i.e. not iterating"""
 
-    assert isinstance(dut.sig_t1, LogicArrayObject)
+    packed_array_type = PackedObject if LANGUAGE == "verilog" else LogicArrayObject
+
+    assert isinstance(dut.sig_t1, packed_array_type)
     assert isinstance(dut.sig_t2, ArrayObject)
-    assert isinstance(dut.sig_t2[5], LogicArrayObject)
-    assert isinstance(dut.sig_t3b[3], LogicArrayObject)
+    assert isinstance(dut.sig_t2[5], packed_array_type)
+    assert isinstance(dut.sig_t3b[3], packed_array_type)
     assert isinstance(dut.sig_t3a, ArrayObject)
     assert isinstance(dut.sig_t4, ArrayObject)
     assert isinstance(dut.sig_t4[3], ArrayObject)
-    assert isinstance(dut.sig_t4[3][4], LogicArrayObject)
+    assert isinstance(dut.sig_t4[3][4], packed_array_type)
     assert isinstance(dut.sig_t5, ArrayObject)
     assert isinstance(dut.sig_t5[1], ArrayObject)
-    assert isinstance(dut.sig_t5[1][0], LogicArrayObject)
+    assert isinstance(dut.sig_t5[1][0], packed_array_type)
     assert isinstance(dut.sig_t6, ArrayObject)
     assert isinstance(dut.sig_t6[1], ArrayObject)
-    assert isinstance(dut.sig_t6[0][3], LogicArrayObject)
+    assert isinstance(dut.sig_t6[0][3], packed_array_type)
 
     if LANGUAGE in ["verilog"]:
         assert isinstance(dut.sig_t7[1], ArrayObject)
-        assert isinstance(dut.sig_t7[0][3], LogicArrayObject)
-        assert isinstance(dut.sig_t8, LogicArrayObject)
+        assert isinstance(dut.sig_t7[0][3], PackedObject)
+        assert isinstance(dut.sig_t8, PackedObject)
 
     assert isinstance(dut.sig_cmplx, ArrayObject)
     assert isinstance(dut.sig_cmplx[1], HierarchyObject)
     assert isinstance(dut.sig_cmplx[1].a, LogicObject)
     assert isinstance(dut.sig_cmplx[1].b, ArrayObject)
-    assert isinstance(dut.sig_cmplx[1].b[1], LogicArrayObject)
+    assert isinstance(dut.sig_cmplx[1].b[1], packed_array_type)
 
     assert isinstance(dut.sig_rec, HierarchyObject)
     assert isinstance(dut.sig_rec.a, LogicObject)
     assert isinstance(dut.sig_rec.b, ArrayObject)
-    assert isinstance(dut.sig_rec.b[1], LogicArrayObject)
+    assert isinstance(dut.sig_rec.b[1], packed_array_type)
 
 
 @cocotb.test(skip=(LANGUAGE in ["verilog"]))
@@ -402,3 +408,62 @@ async def test_extended_identifiers(dut):
 
     assert isinstance(dut["\\ext_id\\"], LogicObject)
     assert isinstance(dut["\\!\\"], LogicObject)
+
+
+@cocotb.test
+@cocotb.skipif(
+    LANGUAGE != "vhdl",
+    reason="Verilog doesn't support iterating over arrays of structures",
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL uses VPI which doesn't support iterating/indexing of std_logic_vector",
+    raises=TypeError,
+)
+@cocotb.parametrize(array_name=["port_desc_in", "port_asc_in", "sig_desc", "sig_asc"])
+async def test_iterate_over_logic_arrays(dut: Any, array_name: str) -> None:
+    array = getattr(dut, array_name)
+    assert len(array) == 8
+
+    array.value = 0xFF
+    await Timer(1)
+
+    for bit in array:
+        assert isinstance(bit, LogicObject)
+        bit.value = 0
+    await Timer(1)
+
+    assert array.value == 0
+
+    for i in array.range:
+        bit = array[i]
+        assert isinstance(bit, LogicObject)
+        bit.value = 1
+    await Timer(1)
+
+    assert array.value == 0xFF
+
+
+@cocotb.test
+@cocotb.skipif(
+    LANGUAGE != "verilog",
+    reason="Verilog iteration and indexing of packed arrays is not allowed",
+)
+@cocotb.parametrize(array_name=["port_desc_in", "port_asc_in", "sig_desc", "sig_asc"])
+async def test_packed_indexing_fails(dut: Any, array_name: str) -> None:
+    array = getattr(dut, array_name)
+    with pytest.raises(TypeError):
+        array[0]
+
+
+@cocotb.test
+@cocotb.skipif(
+    LANGUAGE != "verilog",
+    reason="Verilog iteration and indexing of packed arrays is not allowed",
+)
+@cocotb.parametrize(array_name=["port_desc_in", "port_asc_in", "sig_desc", "sig_asc"])
+async def test_packed_iteration_fails(dut: Any, array_name: str) -> None:
+    array = getattr(dut, array_name)
+    with pytest.raises(TypeError):
+        for _ in array:
+            pass
