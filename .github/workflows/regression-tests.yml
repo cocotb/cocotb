@@ -93,11 +93,11 @@ jobs:
 
      # Download distribution artifacts (if any).
     - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
+      if: ${{ inputs.download_artifacts }}
       with:
         path: dist
         pattern: cocotb-dist-*
         merge-multiple: true
-      if: ${{ inputs.download_artifacts }}
 
       # Install Python
     - name: Set up Python ${{matrix.python-version}} (setup-python)
