@@ -14,10 +14,10 @@ else
 CMD_BIN := vcs
 
 ifdef VCS_BIN_DIR
-    CMD := $(shell :; command -v $(VCS_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    CMD := $(call find_command,$(VCS_BIN_DIR)/$(CMD_BIN))
 else
     # auto-detect bin dir from system path
-    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+    CMD := $(call find_command,$(CMD_BIN))
     VCS_BIN_DIR := $(shell dirname $(CMD))
 endif
 
