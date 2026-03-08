@@ -9,19 +9,12 @@ QRUN_BIN := qrun
 VIS_BIN := vis
 
 ifdef MODELSIM_BIN_DIR
-    QRUN_CMD := $(shell :; command -v $(MODELSIM_BIN_DIR)/$(QRUN_BIN) 2>/dev/null)
-    VIS_CMD := $(shell :; command -v $(MODELSIM_BIN_DIR)/$(VIS_BIN) 2>/dev/null)
+    QRUN_CMD := $(call find_command,$(MODELSIM_BIN_DIR)/$(QRUN_BIN))
+    VIS_CMD := $(call find_command,$(MODELSIM_BIN_DIR)/$(VIS_BIN))
 else
     # auto-detect bin dir from system path
-    QRUN_CMD := $(shell :; command -v $(QRUN_BIN) 2>/dev/null)
-    VIS_CMD := $(shell :; command -v $(VIS_BIN) 2>/dev/null)
-endif
-
-ifeq (,$(QRUN_CMD))
-    $(error Unable to locate command >$(QRUN_BIN)<)
-endif
-ifeq (,$(VIS_CMD))
-    $(error Unable to locate command >$(VIS_BIN)<)
+    QRUN_CMD := $(call find_command,$(QRUN_BIN))
+    VIS_CMD := $(call find_command,$(VIS_BIN))
 endif
 
 DESIGNFILE ?= design.bin

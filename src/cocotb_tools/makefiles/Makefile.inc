@@ -55,6 +55,11 @@ define check_results
     @$(PYTHON_BIN) -m cocotb_tools.check_results $(COCOTB_RESULTS_FILE)
 endef
 
+# Find an executable or fail if it can't be found.
+define find_command
+    $(or $(shell :; command -v $(1) 2>/dev/null),$(error Unable to locate command '$(1)'))
+endef
+
 SIM_BUILD ?= sim_build
 export SIM_BUILD
 
