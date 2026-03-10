@@ -714,7 +714,7 @@ Use :deco:`!cocotb.parametrize` instead of :class:`!TestFactory`
 Change
 ======
 
-:class:`cocotb.parametrize` was added to replace :class:`.TestFactory`, which was deprecated.
+:deco:`cocotb.parametrize` was added to replace :class:`.TestFactory`, which was deprecated.
 
 How to Upgrade
 ==============
