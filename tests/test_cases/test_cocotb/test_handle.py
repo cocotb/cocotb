@@ -103,6 +103,7 @@ async def test_string_ansi_color(dut):
         assert dut.stream_in_string_asciival_sum.value == asciival_sum
 
 
+@cocotb.test
 async def test_delayed_assignment_still_errors(dut):
     """Writing a bad value should fail even if the write is scheduled to happen later"""
 
