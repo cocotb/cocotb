@@ -110,12 +110,12 @@ async def test_delayed_assignment_still_errors(dut):
     with pytest.raises(ValueError):
         dut.stream_in_data.value = Immediate("1010 not a real binary string")
     with pytest.raises(TypeError):
-        dut.stream_in_int.value = Immediate([])
+        dut.stream_in_data.value = Immediate([])
 
     with pytest.raises(ValueError):
         dut.stream_in_data.value = "1010 not a real binary string"
     with pytest.raises(TypeError):
-        dut.stream_in_int.value = []
+        dut.stream_in_data.value = []
 
 
 @cocotb.xfail(
