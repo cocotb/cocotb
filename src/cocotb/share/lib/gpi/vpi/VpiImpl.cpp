@@ -491,7 +491,8 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 
         new_hdl = vpi_handle_by_name(&writable[0], NULL);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
-               obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
+               obj_type == GPI_ARRAY || obj_type == GPI_STRING ||
+               obj_type == GPI_PACKED_OBJECT) {
         new_hdl = vpi_handle_by_index(vpi_hdl, index);
 
         /* vpi_handle_by_index() doesn't work for all simulators when dealing
@@ -574,7 +575,8 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     } else {
         LOG_ERROR(
             "VPI: Parent of type %s must be of type GPI_GENARRAY, "
-            "GPI_LOGIC, GPI_LOGIC, GPI_ARRAY, or GPI_STRING to have an index.",
+            "GPI_LOGIC, GPI_LOGIC_ARRAY, GPI_ARRAY, GPI_STRING, or "
+            "GPI_PACKED_OBJECT to have an index.",
             parent->get_type_str());
         return NULL;
     }
