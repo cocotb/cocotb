@@ -789,6 +789,12 @@ Simulator Objects
 .. autoclass:: LogicArrayObject
     :members:
     :member-order: bysource
+    :special-members: __len__, __getitem__, __iter__
+    :inherited-members: SimHandleBase, ValueObjectBase
+
+.. autoclass:: PackedObject
+    :members:
+    :member-order: bysource
     :special-members: __len__
     :inherited-members: SimHandleBase, ValueObjectBase
 

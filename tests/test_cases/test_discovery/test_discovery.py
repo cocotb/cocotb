@@ -17,7 +17,7 @@ from cocotb.handle import (
     HierarchyObject,
     Immediate,
     IntegerObject,
-    LogicArrayObject,
+    PackedObject,
     StringObject,
 )
 from cocotb.triggers import Timer
@@ -390,7 +390,7 @@ async def access_boolean(dut):
 @cocotb.test(skip=LANGUAGE in ["vhdl"])
 async def access_internal_register_array(dut):
     """Test access to an internal register array"""
-    assert isinstance(dut.register_array[1], LogicArrayObject)
+    assert isinstance(dut.register_array[1], PackedObject)
     dut.register_array[1].value = 4
     await Timer(1, "ns")
     assert dut.register_array[1].value == 4
