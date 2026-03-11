@@ -227,7 +227,7 @@ def _setup_root_handle() -> None:
 
     from cocotb import simulator  # noqa: PLC0415
 
-    handle = simulator.get_root_handle(root_name)
+    handle = simulator.get_root_handle(root_name or None)
     if not handle:
         raise RuntimeError(f"Can not find root handle {root_name!r}")
 
