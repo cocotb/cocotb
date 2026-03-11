@@ -107,13 +107,13 @@ async def test_string_ansi_color(dut):
 async def test_delayed_assignment_still_errors(dut):
     """Writing a bad value should fail even if the write is scheduled to happen later"""
 
-    with pytest.raises(TypeError):
-        dut.stream_in_int.value = Immediate("1010 not a real binary string")
+    with pytest.raises(ValueError):
+dut.stream_in_data.value = Immediate("1010 not a real binary string")
     with pytest.raises(TypeError):
         dut.stream_in_int.value = Immediate([])
 
     with pytest.raises(ValueError):
-        dut.stream_in_int.value = "1010 not a real binary string"
+        dut.stream_in_data.value = "1010 not a real binary string"
     with pytest.raises(TypeError):
         dut.stream_in_int.value = []
 
