@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import random
 import tempfile
 import time
@@ -219,15 +220,18 @@ def _setup_random_seed() -> None:
 
 
 def _setup_root_handle() -> None:
-    root_name: str = _env.as_str("COCOTB_TOPLEVEL")
-
-    if "." in root_name:
-        # Skip any library component of the toplevel
-        root_name = root_name.split(".", 1)[1]
+    root_name = os.getenv("COCOTB_TOPLEVEL")
+    if root_name is not None:
+        root_name = root_name.strip()
+        if root_name == "":
+            root_name = None
+        elif "." in root_name:
+            # Skip any library component of the toplevel
+            root_name = root_name.split(".", 1)[1]
 
     from cocotb import simulator  # noqa: PLC0415
 
-    handle = simulator.get_root_handle(root_name or None)
+    handle = simulator.get_root_handle(root_name)
     if not handle:
         raise RuntimeError(f"Can not find root handle {root_name!r}")
 
