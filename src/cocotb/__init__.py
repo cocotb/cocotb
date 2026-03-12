@@ -9,6 +9,7 @@ from logging import Logger
 from types import SimpleNamespace
 
 from cocotb._decorators import parametrize, skipif, test, xfail
+from cocotb._run import run
 from cocotb._test_manager import create_task, pass_test, start, start_soon
 from cocotb.handle import SimHandleBase
 
@@ -27,6 +28,7 @@ __all__ = (
     "parametrize",
     "pass_test",
     "plusargs",
+    "run",
     "skipif",
     "start",
     "start_soon",
@@ -45,6 +47,7 @@ for thing in [
     start,
     create_task,
     pass_test,
+    run,
 ]:
     thing.__module__ = __name__
 
