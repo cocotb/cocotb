@@ -2066,6 +2066,27 @@ class Dsim(Runner):
         return cmds
 
 
+SUPPORTED_RUNNERS: dict[str, type[Runner]] = {
+    "icarus": Icarus,
+    "questa": Questa,
+    "ghdl": Ghdl,
+    "riviera": Riviera,
+    "activehdl": ActiveHDL,
+    "verilator": Verilator,
+    "xcelium": Xcelium,
+    "nvc": Nvc,
+    "vcs": Vcs,
+    "dsim": Dsim,
+}
+"""
+Dictionary mapping of simulator names to corresponding python runners; the keys
+of this dictionary make up valid `simulator_name` strings to pass to :meth:`get_runner()`.
+
+External libraries may register additional implementations of python runners
+by adding keys to this dictionary.
+"""
+
+    
 def get_runner(simulator_name: str) -> Runner:
     """Return an instance of a runner for *simulator_name*.
 
@@ -2076,21 +2097,8 @@ def get_runner(simulator_name: str) -> Runner:
         ValueError: If *simulator_name* is not one of the supported simulators or an alias of one.
     """
 
-    supported_sims: dict[str, type[Runner]] = {
-        "icarus": Icarus,
-        "questa": Questa,
-        "ghdl": Ghdl,
-        "riviera": Riviera,
-        "activehdl": ActiveHDL,
-        "verilator": Verilator,
-        "xcelium": Xcelium,
-        "nvc": Nvc,
-        "vcs": Vcs,
-        "dsim": Dsim,
-        # TODO: "activehdl": ActiveHdl,
-    }
     try:
-        return supported_sims[simulator_name]()
+        return SUPPORTED_RUNNERS[simulator_name]()
     except KeyError:
         raise ValueError(
             f"Simulator {simulator_name!r} is not in supported list: {', '.join(supported_sims)}"
