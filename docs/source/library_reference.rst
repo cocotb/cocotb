@@ -119,6 +119,9 @@ Python Test Runner
 
 .. autofunction:: get_runner
 
+.. autodata:: SUPPORTED_RUNNERS
+   :no-value:
+                  
 .. autoclass:: Runner
     :members:
 
