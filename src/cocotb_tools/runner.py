@@ -2101,5 +2101,5 @@ def get_runner(simulator_name: str) -> Runner:
         return SUPPORTED_RUNNERS[simulator_name]()
     except KeyError:
         raise ValueError(
-            f"Simulator {simulator_name!r} is not in supported list: {', '.join(supported_sims)}"
+            f"Simulator {simulator_name!r} is not in supported list: {', '.join(SUPPORTED_RUNNERS)}"
         ) from None
