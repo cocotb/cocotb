@@ -112,7 +112,7 @@ class AbstractArray(Generic[T_co]):
         for i in Range(start, self.direction, stop):
             if self[i] == value:
                 return i
-        raise IndexError(f"{value!r} not in array")
+        raise ValueError(f"{value!r} not in array")
 
     def count(self, value: object) -> int:
         """Return number of occurrences of value.
