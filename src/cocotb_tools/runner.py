@@ -2086,7 +2086,7 @@ External libraries may register additional implementations of python runners
 by adding keys to this dictionary.
 """
 
-    
+
 def get_runner(simulator_name: str) -> Runner:
     """Return an instance of a runner for *simulator_name*.
 
