@@ -121,7 +121,7 @@ Python Test Runner
 
 .. autodata:: SUPPORTED_RUNNERS
    :no-value:
-                  
+
 .. autoclass:: Runner
     :members:
 
