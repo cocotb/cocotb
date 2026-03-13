@@ -72,6 +72,10 @@ class TestManager:
         e = task.exception()
         if e is None:
             self._abort()
+        elif isinstance(e, EndTest):
+            msg_str = f": {e.msg}" if e.msg else ""
+            task._log.info("Test stopped early by this task%s", msg_str)
+            self._abort()
         else:
             self._abort(e)
 
@@ -183,7 +187,12 @@ class TestManager:
         e = task.exception()
         if e is None:
             return
-        self._abort(e)
+        elif isinstance(e, EndTest):
+            msg_str = f": {e.msg}" if e.msg else ""
+            task._log.info("Test stopped early by this task%s", msg_str)
+            self._abort()
+        else:
+            self._abort(e)
 
 
 def start_soon(
@@ -303,7 +312,7 @@ def create_task(
 class TestSuccess(BaseException):
     """Implementation of :func:`pass_test`.
 
-    Users are *not* intended to catch this exception type.
+    Users are *not* intended to catch or raise this exception type.
     """
 
     def __init__(self, msg: str | None) -> None:
@@ -314,7 +323,10 @@ class TestSuccess(BaseException):
 def pass_test(msg: str | None = None) -> NoReturn:
     """Force a test to pass.
 
-    The test will end and enter termination phase when this is called.
+    The test will end after this function is called.
+    The outcome of the test will be forced to pass,
+    even if a :deco:`cocotb.xfail` decorator is used,
+    or ``expect_error`` and ``expect_fail`` arguments to :deco:`cocotb.test` are passed.
 
     Args:
         msg: The message to display when the test passes.
@@ -322,6 +334,31 @@ def pass_test(msg: str | None = None) -> NoReturn:
     .. versionadded:: 2.0
     """
     raise TestSuccess(msg)
+
+
+class EndTest(BaseException):
+    """Implementation of :func:`cocotb.end_test`.
+
+    Users are *not* intended to catch or raise this exception type.
+    """
+
+    def __init__(self, msg: str | None) -> None:
+        super().__init__(msg)
+        self.msg = msg
+
+
+def end_test(msg: str | None = None) -> NoReturn:
+    """End a test.
+
+    The test will end after this function is called as if it passed.
+    However, any :deco:`cocotb.xfail` decorators
+    or ``expect_error`` and ``expect_fail`` arguments to :func:`cocotb.test` will be respected.
+    Meaning, if they are used, the test will fail, as a failure was expected.
+
+    Args:
+        msg: The message to display when the test ends.
+    """
+    raise EndTest(msg)
 
 
 _current_test: TestManager | None = None
