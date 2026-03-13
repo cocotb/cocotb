@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Test :py:func:`cocotb.end_test`."""
+"""Test :func:`cocotb.end_test`."""
 
 from __future__ import annotations
 

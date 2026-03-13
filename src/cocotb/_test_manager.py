@@ -326,7 +326,7 @@ def pass_test(msg: str | None = None) -> NoReturn:
     The test will end after this function is called.
     The outcome of the test will be forced to pass,
     even if a :deco:`cocotb.xfail` decorator is used,
-    or ``expect_error`` and ``expect_fail`` arguments to :deco:`cocotb.test` are set.
+    or ``expect_error`` and ``expect_fail`` arguments to :deco:`cocotb.test` are passed.
 
     Args:
         msg: The message to display when the test passes.
