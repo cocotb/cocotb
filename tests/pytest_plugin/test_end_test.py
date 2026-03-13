@@ -10,6 +10,6 @@ import cocotb
 
 
 async def test_end_test(dut) -> None:
-    """Test :py:func:`cocotb.end_test`."""
+    """Test :func:`cocotb.end_test`."""
     cocotb.end_test()
     assert False, "this should never be reached"
