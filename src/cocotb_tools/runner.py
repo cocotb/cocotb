@@ -2079,10 +2079,10 @@ SUPPORTED_RUNNERS: dict[str, type[Runner]] = {
     "dsim": Dsim,
 }
 """
-Dictionary mapping of simulator names to corresponding python runners.
-The keys of this dictionary make up valid `simulator_name` strings to pass to :func:`get_runner()`.
+Dictionary mapping of simulator names to corresponding Python runners.
+The keys of this dictionary make up valid ``simulator_name`` strings to pass to :func:`get_runner()`.
 
-External libraries may register additional implementations of python runners
+External libraries may register additional implementations of Python runners
 by adding keys to this dictionary.
 """
 
