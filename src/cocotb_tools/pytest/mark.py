@@ -34,8 +34,7 @@ def cocotb_runner(test_module: str = "", *extra_test_module: str) -> MarkDecorat
         def sample_module_fixture(hdl: HDL) -> HDL:
             # Define HDL design and build it
             hdl.toplevel = "sample_module"
-            hdl.sources = (DESIGNS / "sample_module.sv",)
-            hdl.build()
+            hdl.sources = [DESIGNS / "sample_module.sv"]
 
             return hdl
 
@@ -139,7 +138,7 @@ def cocotb_timescale(unit: str, precision: str | None = None) -> MarkDecorator:
     return mark.cocotb_timescale(unit=unit, precision=precision)
 
 
-def cocotb_seed(value: str | int) -> MarkDecorator:
+def cocotb_seed(value: int) -> MarkDecorator:
     """A specific random seed to use."""
     return mark.cocotb_seed(value=value)
 
