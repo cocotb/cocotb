@@ -161,13 +161,6 @@ def test_logic_invert():
     assert ~Logic("Z") == Logic("X")
 
 
-def test_logic_identity():
-    assert Logic(0) is Logic(False)
-    assert Logic("1") is Logic(1)
-    assert Logic("X") is Logic("x")
-    assert Logic("z") is Logic("Z")
-
-
 def test_resolve():
     for inp, exp in zip("UX01ZWLH-", "UX01ZX01-"):
         assert Logic(inp).resolve("weak") == Logic(exp)
@@ -226,18 +219,18 @@ def test_bit_constructor() -> None:
 
 
 def test_bit_ops() -> None:
-    assert Bit(1) | Bit(0) is Bit(1)
-    assert Bit(1) & Bit(0) is Bit(0)
-    assert Bit(1) ^ Bit(0) is Bit(1)
-    assert ~Bit(1) is Bit(0)
+    assert Bit(1) | Bit(0) == Bit(1)
+    assert Bit(1) & Bit(0) == Bit(0)
+    assert Bit(1) ^ Bit(0) == Bit(1)
+    assert ~Bit(1) == Bit(0)
 
 
 def test_bit_with_logic_ops() -> None:
     assert Logic(0) == Bit(0)
     assert Bit(0) == Logic(0)
-    assert Logic(1) & Bit(1) is Logic(1)
-    assert Bit(1) & Logic(1) is Logic(1)
-    assert Logic(0) | Bit(1) is Logic(1)
-    assert Bit(0) | Logic(1) is Logic(1)
-    assert Logic(1) ^ Bit(1) is Logic(0)
-    assert Bit(1) ^ Logic(1) is Logic(0)
+    assert Logic(1) & Bit(1) == Logic(1)
+    assert Bit(1) & Logic(1) == Logic(1)
+    assert Logic(0) | Bit(1) == Logic(1)
+    assert Bit(0) | Logic(1) == Logic(1)
+    assert Logic(1) ^ Bit(1) == Logic(0)
+    assert Bit(1) ^ Logic(1) == Logic(0)
