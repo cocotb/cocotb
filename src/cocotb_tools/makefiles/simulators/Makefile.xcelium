@@ -9,10 +9,10 @@
 CMD_BIN := xrun
 
 ifdef XCELIUM_BIN_DIR
-    CMD := $(shell :; command -v $(XCELIUM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    CMD := $(call find_command,$(XCELIUM_BIN_DIR)/$(CMD_BIN))
 else
     # auto-detect bin dir from system path
-    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+    CMD := $(call find_command,$(CMD_BIN))
     XCELIUM_BIN_DIR := $(shell dirname $(CMD))
 endif
 

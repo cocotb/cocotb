@@ -13,6 +13,10 @@ architecture rtl of vhdl_top_a is
 begin
 end rtl;
 
+
+library ieee;
+use ieee.std_logic_1164.all;
+
 entity vhdl_top_b is
 end vhdl_top_b;
 

@@ -1,0 +1,1 @@
+Added public variable :data:`cocotb_tools.runner.SUPPORTED_RUNNERS`, allowing external libraries to register additional simulators for the ``get_runner()`` function.

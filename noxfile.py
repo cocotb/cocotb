@@ -420,15 +420,27 @@ def release_build_sdist(session: nox.Session) -> None:
     session.log(f"Source distribution in release mode built into {dist_dir!r}")
 
 
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=[],
+    uv_sync_locked=False,
+)
+def release_build(session: nox.Session) -> None:
+    """Build all distributions for release."""
+    session.notify("release_build_wheel")
+    session.notify("release_build_sdist")
+
+
 def release_install_from_sdist(session: nox.Session) -> None:
     """Install cocotb from sdist."""
 
     # Find the sdist to install.
     sdists = list(Path(dist_dir).glob("cocotb-*.tar.gz"))
     if not sdists:
-        session.notify("release_build_sdist")
-        sdists = list(Path(dist_dir).glob("cocotb-*.tar.gz"))
-    if len(sdists) > 1:
+        session.error(
+            f"No potential sdist found in the {dist_dir!r} directory. Run the 'release_build_sdist' session first!"
+        )
+    elif len(sdists) > 1:
         session.error(
             f"More than one potential sdist found in the {dist_dir!r} "
             f"directory. Run the 'release_clean' session first!"
@@ -468,16 +480,16 @@ def release_install_from_wheel(session: nox.Session) -> None:
 
     wheels = list(Path(dist_dir).glob("cocotb-*.whl"))
     if not wheels:
-        session.notify("release_build_wheel")
-        wheels = list(Path(dist_dir).glob("cocotb-*.whl"))
-
+        session.error(
+            f"No potential wheel found in the {dist_dir!r} directory. Run the 'release_build_wheel' session first!"
+        )
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")
     session.install(
         "--force-reinstall",
         "--only-binary",
         "cocotb",
         "--no-index",
-        "--no-dependencies",
+        "--no-deps",
         "--find-links",
         dist_dir,
         "cocotb",

@@ -324,6 +324,33 @@ It may appear as one or more attributes here depending on the number of compilat
     cocotb.log.info(cocotb.packages.my_package.foo.value)
 
 
+Forcing a test to end with a given result
+=========================================
+
+In addition to the normal ways a test can pass or fail (see :ref:`passing_and_failing_tests`),
+a test can be forced to end with a given result using the following functions:
+
+* :func:`pytest.xfail` to end the test with an expected fail (considered a pass)
+* :func:`pytest.skip` to end the test with a skip
+
+These functions can be called from any Task and will end the test immediately with the given result.
+They are typically used when you cannot use the :deco:`cocotb.skipif` or :deco:`cocotb.xfail` decorators
+to describe the exact conditions under which a test should be skipped or have reached an expected fail state.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def test(dut):
+        if load_stimulus_from_a_file(dut.paramA, dut.paramB) is None:
+            pytest.skip("The test stimulus is not available, assuming this combination of parameters is not supported")
+
+    @cocotb.test()
+    async def test(dut):
+        ...
+        if dut.read_empty.value == 0:
+            pytest.xfail("The read interface is not empty, but this test is expected to fail in this case")
+
+
 .. _passing_and_failing_tests:
 
 Passing and failing tests
@@ -331,10 +358,10 @@ Passing and failing tests
 
 When cocotb tests complete execution, they have either `passed` or `failed`.
 
-In general, if a test coroutine completes without raising an :exc:`!Exception`,
+In general, if the main test coroutine completes without raising an :exc:`!Exception`,
 or if the test coroutine or any running :class:`~cocotb.task.Task` calls :func:`cocotb.pass_test`,
 the test is considered to have `passed`.
-Also, if a test raises a :exc:`~asyncio.CancelledError`,
+Also, if the main test coroutine raises a :exc:`~asyncio.CancelledError`,
 or is :keyword:`await`\ ing a :class:`!Task` that is cancelled and does not handle it (or re-raises it),
 the test will end immediately but it will have `passed`.
 

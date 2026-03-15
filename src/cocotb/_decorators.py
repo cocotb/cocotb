@@ -18,6 +18,8 @@ from cocotb.simtime import TimeUnit
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
 
+import pytest
+
 
 class Test:
     """A cocotb test in a regression.
@@ -76,7 +78,10 @@ class Test:
         doc: str | None,
         timeout: tuple[float, TimeUnit] | None,
         expect_fail: bool,
-        expect_error: tuple[type[BaseException], ...],
+        expect_error: tuple[
+            type[BaseException] | pytest.RaisesExc | pytest.RaisesGroup,
+            ...,
+        ],
         skip: bool,
         stage: int,
     ) -> None:
@@ -108,7 +113,9 @@ class TestGenerator:
         self.func: TestFuncType = func
         self.timeout: tuple[float, TimeUnit] | None = None
         self.expect_fail: bool = False
-        self.expect_error: set[type[BaseException]] = set()
+        self.expect_error: set[
+            type[BaseException] | pytest.RaisesExc | pytest.RaisesGroup
+        ] = set()
         self.skip = False
         self.stage = 0
         self.name = self.func.__qualname__
@@ -345,11 +352,6 @@ def test(
 
             @cocotb.test
             async def test_thing(dut): ...
-
-
-    .. versionchanged:: 2.0
-        Decorated tests now return the decorated object.
-
     """
     if isinstance(obj, TestGenerator):
         return obj
@@ -529,6 +531,8 @@ def skipif(
 
     Returns:
         A decorator function to mark the test.
+
+    .. versionadded:: 2.1
     """
 
     def decorator(obj: TestFuncType | TestGenerator) -> TestGenerator:
@@ -540,11 +544,25 @@ def skipif(
     return decorator
 
 
+_single_exception_types = (
+    type,
+    *(
+        (pytest.RaisesExc, pytest.RaisesGroup)
+        if hasattr(pytest, "RaisesExc") and hasattr(pytest, "RaisesGroup")
+        else ()
+    ),
+)
+
+
 def xfail(
     condition: bool = True,
     *,
     reason: str | None = None,
-    raises: type[BaseException] | Iterable[type[BaseException]] | None = None,
+    raises: type[BaseException]
+    | pytest.RaisesExc
+    | pytest.RaisesGroup
+    | Iterable[type[BaseException]]
+    | None = None,
 ) -> Callable[[TestFuncType | TestGenerator], TestGenerator]:
     """Marks a test as expected to fail if the condition is ``True``.
 
@@ -574,6 +592,8 @@ def xfail(
             This argument is purely for documentation purposes.
 
         raises: An exception, or iterable of exceptions to expect the test to fail with.
+
+    .. versionadded:: 2.1
     """
 
     def decorator(obj: TestFuncType | TestGenerator) -> TestGenerator:
@@ -581,11 +601,22 @@ def xfail(
             obj = TestGenerator(obj)
         if condition:
             if raises is not None:
-                if isinstance(raises, type):
+                if isinstance(raises, _single_exception_types):
                     obj.expect_error.add(raises)
                 else:
-                    for exc in raises:
-                        obj.expect_error.add(exc)
+                    try:
+                        it = iter(raises)  # type: ignore[arg-type]
+                    except TypeError:
+                        raise TypeError(
+                            "Expected error types must be an exception type or iterable of exception types"
+                        ) from None
+                    else:
+                        for exc in it:
+                            if not isinstance(exc, _single_exception_types):
+                                raise TypeError(
+                                    "Expected error types must be exception types"
+                                )
+                            obj.expect_error.add(exc)
             else:
                 obj.expect_fail = True
         return obj

@@ -12,10 +12,10 @@ else
 CMD_BIN := nvc
 
 ifdef NVC_BIN_DIR
-    CMD := $(shell :; command -v $(NVC_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    CMD := $(call find_command,$(NVC_BIN_DIR)/$(CMD_BIN))
 else
     # auto-detect bin dir from system path
-    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+    CMD := $(call find_command,$(CMD_BIN))
 	NVC_BIN_DIR := $(shell dirname $(CMD))
 endif
 
