@@ -49,15 +49,19 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
+<<<<<<< HEAD
         "sim-version": "r1.20.0",
+=======
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "ci-free",
-    },
     {
         "lang": "vhdl",
         "sim": "nvc",
+<<<<<<< HEAD
         "sim-version": "r1.20.0",
+=======
+        "sim-version": "r1.19.2",
+>>>>>>> 431aa16c (Make VPI support multiple tops via envar DUT)
         "os": "ubuntu-22.04",
         "python-version": "3.11",
         "group": "ci-free",
@@ -65,7 +69,11 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
+<<<<<<< HEAD
         "sim-version": "r1.20.0",
+=======
+        "sim-version": "r1.19.2",
+>>>>>>> 431aa16c (Make VPI support multiple tops via envar DUT)
         "os": "ubuntu-22.04",
         "python-version": "3.12",
         "group": "ci-free",
@@ -73,7 +81,11 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
+<<<<<<< HEAD
         "sim-version": "r1.20.0",
+=======
+        "sim-version": "r1.19.2",
+>>>>>>> 431aa16c (Make VPI support multiple tops via envar DUT)
         "os": "ubuntu-22.04",
         "python-version": "3.13",
         "group": "ci-free",
@@ -81,7 +93,11 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
+<<<<<<< HEAD
         "sim-version": "r1.20.0",
+=======
+        "sim-version": "r1.19.2",
+>>>>>>> 431aa16c (Make VPI support multiple tops via envar DUT)
         "os": "ubuntu-22.04",
         "python-version": "3.14",
         "group": "ci-free",
@@ -251,7 +267,11 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
+<<<<<<< HEAD
         "sim-version": "r1.20.0",
+=======
+        "sim-version": "r1.19.2",
+>>>>>>> 431aa16c (Make VPI support multiple tops via envar DUT)
         "os": "windows-latest",
         "python-version": "3.11",
         "group": "ci-free",
@@ -261,7 +281,11 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
+<<<<<<< HEAD
         "sim-version": "r1.20.0",
+=======
+        "sim-version": "r1.19.2",
+>>>>>>> 431aa16c (Make VPI support multiple tops via envar DUT)
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "cxx": "clang++",
@@ -395,7 +419,20 @@ for version in verilator_versions:
         },
     ]
 
+<<<<<<< HEAD
 nvc_versions = ()
+=======
+nvc_versions = (
+    "r1.11.0",
+    "r1.12.2",
+    "r1.13.3",
+    "r1.14.2",
+    "r1.15.2",
+    "r1.16.0",  # First version with --preserve-case
+    "r1.17.1",
+    "r1.18.2",
+)
+>>>>>>> 431aa16c (Make VPI support multiple tops via envar DUT)
 for version in nvc_versions:
     ENVS += [
         {

@@ -634,6 +634,12 @@ static PyObject *get_root_handle(PyObject *, PyObject *args) {
     return gpi_hdl_New(result);
 }
 
+static PyObject *root_iterate(PyObject *, PyObject *) {
+    gpi_iterator_hdl result = gpi_iterate(NULL, GPI_ROOTS);
+
+    return gpi_hdl_New(result);
+}
+
 static PyObject *get_name_string(gpi_hdl_Object<gpi_sim_hdl> *self,
                                  PyObject *) {
     const char *result = gpi_get_signal_name_str(self->hdl);
@@ -1118,6 +1124,14 @@ static PyMethodDef SimulatorMethods[] = {
                "Get an iterator handle to loop over all HDL packages.\n"
                "\n"
                ".. versionadded:: 2.0")},
+    {"root_iterate", root_iterate, METH_NOARGS,
+     PyDoc_STR("root_iterate(/)\n"
+               "--\n\n"
+               "root_iterate() -> cocotb.simulator.sim_obj_iterator\n"
+               "Get an iterator handle to loop over all root handles for VPI "
+               "Implication.\n"
+               "\n"
+               ".. versionadded:: 2.1")},
     {"register_timed_callback", register_timed_callback, METH_VARARGS,
      PyDoc_STR("register_timed_callback(time, func, /, *args)\n"
                "--\n\n"
