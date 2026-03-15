@@ -10,6 +10,13 @@ SIM ?= icarus
 VERILOG_SOURCES = tops.v
 COCOTB_TEST_MODULES = test_cocotb_tops
 
-ifneq ($(TOPLEVEL_LANG), vhdl)
+ifeq ($(TOPLEVEL_LANG), vhdl)
+
+all:
+	@echo "Skipping test: only applicable to Verilog"
+
+else
+
 include $(shell cocotb-config --makefiles)/Makefile.sim
+
 endif
