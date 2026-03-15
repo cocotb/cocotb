@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import random
 import tempfile
 import time
@@ -220,7 +219,18 @@ def _setup_random_seed() -> None:
 
 
 def _setup_root_handle() -> None:
-    root_name = os.getenv("COCOTB_TOPLEVEL")
+    COCOTB_TOPLEVEL: str = _env.as_str("COCOTB_TOPLEVEL")
+    DUT: str = _env.as_str("DUT")
+
+    if COCOTB_TOPLEVEL and DUT:
+        raise Exception(
+            """
+            DUT and COCOTB_TOPLEVEL both cannot be used at same time.
+            DUT exposed in Makefile means multiple tops are expected(Only supported by VPI).If that's
+            not the case just use COCOTB_TOPLEVEL in your Makefile.
+            """
+        )
+    root_name: str | None = COCOTB_TOPLEVEL or DUT
     if root_name is not None:
         root_name = root_name.strip()
         if root_name == "":
@@ -243,5 +253,4 @@ def _setup_root_handle() -> None:
             cocotb.tops[handle.get_name_string()] = cocotb.handle._make_sim_object(
                 handle
             )
-
         cocotb.top = cocotb.tops[root_name]

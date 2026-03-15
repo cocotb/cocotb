@@ -204,7 +204,7 @@ GpiIterator::Status VpiRootIterator::next_handle(std::string &, GpiObjHdl **hdl,
 
     VpiImpl *vpi_impl = reinterpret_cast<VpiImpl *>(m_impl);
 
-    LOG_CRITICAL("vpi_root_iterator: root found '%s'", root_name.c_str());
+    LOG_DEBUG("vpi_root_iterator: root found '%s'", root_name.c_str());
 
     GpiObjHdl *new_obj = new VpiObjHdl(vpi_impl, root, gpi_module);
 
