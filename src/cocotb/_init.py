@@ -231,8 +231,17 @@ def _setup_root_handle() -> None:
 
     from cocotb import simulator  # noqa: PLC0415
 
-    handle = simulator.get_root_handle(root_name)
-    if not handle:
-        raise RuntimeError(f"Can not find root handle {root_name!r}")
+    handles = simulator.root_iterate()
+    if not handles:
+        root_handle = simulator.get_root_handle(root_name)
+        if not root_handle:
+            raise RuntimeError(f"Can not find root handle {root_name!r}")
+        cocotb.top = cocotb.handle._make_sim_object(root_handle)
 
-    cocotb.top = cocotb.handle._make_sim_object(handle)
+    else:
+        for handle in handles:
+            cocotb.tops[handle.get_name_string()] = cocotb.handle._make_sim_object(
+                handle
+            )
+
+        cocotb.top = cocotb.tops[root_name]

@@ -366,6 +366,7 @@ typedef enum gpi_iterator_sel_e {
     GPI_DRIVERS = 2,
     GPI_LOADS = 3,
     GPI_PACKAGE_SCOPES = 4,
+    GPI_ROOTS = 5,
 } gpi_iterator_sel;
 
 /** Start iteration on a simulation object.
