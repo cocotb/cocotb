@@ -11,10 +11,10 @@ COCOTB_MAKEFILE_INC_INCLUDED = 1
 
 # Default sim rule will force a re-run of the simulation (though the cocotb library
 # and RTL compilation phases are still evaluated by makefile dependencies)
-.PHONY: sim
-sim:
+.PHONY: sim, _rm_results
+_rm_results:
 	$(RM) $(COCOTB_RESULTS_FILE)
-	"$(MAKE)" -f $(firstword $(MAKEFILE_LIST)) $(COCOTB_RESULTS_FILE)
+sim: _rm_results regression
 
 # Make sure to use bash for the pipefail option used in many simulator Makefiles
 SHELL := bash
@@ -53,6 +53,11 @@ endef
 # Check that the COCOTB_RESULTS_FILE was created and has no failures
 define check_results
     @$(PYTHON_BIN) -m cocotb_tools.check_results $(COCOTB_RESULTS_FILE)
+endef
+
+# Find an executable or fail if it can't be found.
+define find_command
+    $(or $(shell :; command -v $(1) 2>/dev/null),$(error Unable to locate command '$(1)'))
 endef
 
 SIM_BUILD ?= sim_build

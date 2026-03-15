@@ -119,6 +119,9 @@ Python Test Runner
 
 .. autofunction:: get_runner
 
+.. autodata:: SUPPORTED_RUNNERS
+   :no-value:
+
 .. autoclass:: Runner
     :members:
 
@@ -311,6 +314,14 @@ Discovering Tests
 
         Only one of :envvar:`COCOTB_TESTCASE` or :envvar:`COCOTB_TEST_FILTER` should be used.
 
+.. envvar:: COCOTB_LIST_TESTS
+
+    Type: :ref:`env-boolean`
+
+    If defined, list the tests that would be run, in the order they would be run, without running them.
+
+    .. versionadded:: 2.1
+
 .. envvar:: COCOTB_RESULTS_FILE
 
     Type: :ref:`env-string`
@@ -339,6 +350,8 @@ Test Management
 ===============
 
 .. currentmodule:: None
+
+.. autofunction:: cocotb.end_test
 
 .. autofunction:: cocotb.pass_test
 

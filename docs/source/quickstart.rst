@@ -34,7 +34,7 @@ A typical cocotb testbench requires no additional :term:`HDL` code.
 The :term:`DUT` is instantiated as the toplevel in the simulator without any HDL wrapper code.
 The input stimulus and output checking is done with Python.
 
-Create a cocotb testcase by decorating an :keyword:`async` Python function with :deco:`cocotb.test()`.
+Create a cocotb testcase by decorating an :keyword:`async` Python function with :deco:`cocotb.test`.
 The function must accept at least the ``dut`` argument,
 which gives access to the HDL toplevel.
 

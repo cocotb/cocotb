@@ -1,0 +1,1 @@
+Added support for :func:`pytest.skip` and :func:`pytest.xfail` for ending the test early.

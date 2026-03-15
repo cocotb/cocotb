@@ -714,7 +714,7 @@ Use :deco:`!cocotb.parametrize` instead of :class:`!TestFactory`
 Change
 ======
 
-:class:`cocotb.parametrize` was added to replace :class:`.TestFactory`, which was deprecated.
+:deco:`cocotb.parametrize` was added to replace :class:`.TestFactory`, which was deprecated.
 
 How to Upgrade
 ==============
@@ -1276,19 +1276,20 @@ This is unexpected and generally not useful.
     assert cocotb.top.data.value == 0
 
 
-********************************************************************
-Use :func:`!cocotb.pass_test` instead of raising :exc:`!TestSuccess`
-********************************************************************
+*******************************************************************************************
+Use :func:`!cocotb.end_test` or :func:`!pytest.skip` instead of raising :exc:`!TestSuccess`
+*******************************************************************************************
 
 Change
 ======
 
-:external+cocotb19:py:exc:`~cocotb.result.TestSuccess` was deprecated and replaced with :func:`cocotb.pass_test`.
+:external+cocotb19:py:exc:`~cocotb.result.TestSuccess` was deprecated and replaced with :func:`cocotb.end_test` and :func:`pytest.skip`.
 
 How To Upgrade
 ==============
 
-Replace ``raise TestSuccess(msg)`` with a call to :func:`!cocotb.pass_test`.
+Replace ``raise TestSuccess(msg)`` with a call to :func:`!cocotb.end_test` when you need to end the test immediately.
+Replace ``raise TestSuccess(msg)`` with a call to :func:`!pytest.skip` when you need to end the test immediately and force the outcome to 'skipped'.
 
 .. code-block:: python
     :caption: Old way with :exc:`!TestSuccess`
@@ -1298,16 +1299,23 @@ Replace ``raise TestSuccess(msg)`` with a call to :func:`!cocotb.pass_test`.
         raise TestSuccess("Test finished without DUT erroring")
 
 .. code-block:: python
-    :caption: New way with :func:`!cocotb.pass_test`
+    :caption: New way with :func:`!cocotb.end_test`
     :class: new
 
     if cocotb.top.error.value == 0:
-        cocotb.pass_test("Test finished without DUT erroring")
+        cocotb.end_test("Test finished without DUT erroring")
+
+.. code-block:: python
+    :caption: New way with :func:`!pytest.skip`
+    :class: new
+
+    if cocotb.top.param.value == 0:
+        pytest.skip("Test skipped because param is 0")
 
 Rationale
 =========
 
-cocotb needs a way to end a test with a pass from any Task, not just the main test Task.
+cocotb needs a way to end a test from any Task, not just the main test Task.
 :exc:`!TestSuccess` was created for that purpose.
 But being an exception, it has an additional implied interface:
 
@@ -1316,8 +1324,8 @@ But being an exception, it has an additional implied interface:
 
 However, neither of these implied behaviors is actually supported.
 
-:func:`!cocotb.pass_test` being a function call avoids these implicit interfaces.
-It also parallels the design of :func:`sys.exit`.
+:func:`!cocotb.end_test` and :func:`!pytest.skip` being function calls avoids these implicit interfaces.
+They also parallel the design of :func:`sys.exit`.
 
 
 *******************************************************************
