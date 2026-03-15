@@ -488,7 +488,7 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl base, int32_t index) {
 }
 
 gpi_iterator_hdl gpi_iterate(gpi_sim_hdl obj_hdl, gpi_iterator_sel type) {
-    if (type == GPI_PACKAGE_SCOPES) {
+    if (type == GPI_PACKAGE_SCOPES || type == GPI_ROOTS) {
         if (obj_hdl != NULL) {
             LOG_ERROR("Cannot iterate over package from non-NULL handles");
             return NULL;
@@ -501,8 +501,12 @@ gpi_iterator_hdl gpi_iterate(gpi_sim_hdl obj_hdl, gpi_iterator_sel type) {
 
         for (implIter = registered_impls.begin();
              implIter != registered_impls.end(); implIter++) {
-            GpiIterator *iter =
-                (*implIter)->iterate_handle(NULL, GPI_PACKAGE_SCOPES);
+            GpiIterator *iter = NULL;
+            if (type == GPI_ROOTS && (*implIter)->get_name_s() == "VPI") {
+                iter = (*implIter)->iterate_handle(NULL, type);
+            } else if (type == GPI_PACKAGE_SCOPES) {
+                iter = (*implIter)->iterate_handle(NULL, type);
+            }
             if (iter != NULL) return iter;
         }
         return NULL;
