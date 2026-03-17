@@ -219,18 +219,7 @@ def _setup_random_seed() -> None:
 
 
 def _setup_root_handle() -> None:
-    COCOTB_TOPLEVEL: str = _env.as_str("COCOTB_TOPLEVEL")
-    DUT: str = _env.as_str("DUT")
-
-    if COCOTB_TOPLEVEL and DUT:
-        raise Exception(
-            """
-            DUT and COCOTB_TOPLEVEL both cannot be used at same time.
-            DUT exposed in Makefile means multiple tops are expected(Only supported by VPI).If that's
-            not the case just use COCOTB_TOPLEVEL in your Makefile.
-            """
-        )
-    root_name: str | None = COCOTB_TOPLEVEL or DUT
+    root_name: str | None = _env.as_str("COCOTB_TOPLEVEL")
     if root_name is not None:
         root_name = root_name.strip()
         if root_name == "":

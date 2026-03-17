@@ -2,13 +2,13 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-export DUT=verilog_top_a
-
 TOPLEVEL_LANG ?= verilog
-SIM ?= icarus
+SIM ?= verilator
 
 VERILOG_SOURCES = tops.v
 COCOTB_TEST_MODULES = test_cocotb_tops
+COCOTB_TOPLEVEL = verilog_top_b
+COCOTB_TOPLEVEL += verilog_top_a
 
 ifeq ($(TOPLEVEL_LANG), vhdl)
 
