@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import random
 import tempfile
 import time
@@ -219,7 +220,7 @@ def _setup_random_seed() -> None:
 
 
 def _setup_root_handle() -> None:
-    root_name: str | None = _env.as_str("COCOTB_TOPLEVEL")
+    root_name: str | None = os.getenv("COCOTB_TOPLEVEL")
     if root_name is not None:
         root_name = root_name.strip()
         if root_name == "":
@@ -242,4 +243,11 @@ def _setup_root_handle() -> None:
             cocotb.tops[handle.get_name_string()] = cocotb.handle._make_sim_object(
                 handle
             )
-        cocotb.top = cocotb.tops[root_name]
+
+        if root_name is not None:
+            for name, handle in cocotb.tops.items():
+                if name.casefold() == root_name.casefold():
+                    cocotb.top = handle
+                    break
+            else:
+                raise KeyError(f"Top-level {root_name} not found in cocotb.tops")
