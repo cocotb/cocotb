@@ -3,20 +3,20 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 TOPLEVEL_LANG ?= verilog
-SIM ?= verilator
-
-VERILOG_SOURCES = tops.v
+SIM ?= icarus
 COCOTB_TEST_MODULES = test_cocotb_tops
-COCOTB_TOPLEVEL = verilog_top_b
-COCOTB_TOPLEVEL += verilog_top_a
+VERILOG_SOURCES = tops.v
+COCOTB_TOPLEVEL = verilog_top_a
+COCOTB_TOPLEVEL += verilog_top_b
 
-ifeq ($(TOPLEVEL_LANG), vhdl)
 
-all:
-	@echo "Skipping test: only applicable to Verilog"
+ifneq (,$(filter icarus,$(SIM)))
+
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 else
 
-include $(shell cocotb-config --makefiles)/Makefile.sim
+skip_unsupported_simulators:
+	@echo "Current supported simulators for feature multiple tops = Icarus"
 
 endif
