@@ -11,6 +11,9 @@ from typing import Callable, TypeVar
 AnyCallableT = TypeVar("AnyCallableT", bound=Callable[..., object])
 
 
+__all__ = ["deprecated"]
+
+
 if sys.version_info >= (3, 13):
     from warnings import deprecated
 
