@@ -24,6 +24,13 @@
 
 #define MODULE_NAME "simulator"
 
+#define FORWARD_EXCEPTION       \
+    do {                        \
+        if (PyErr_Occurred()) { \
+            return NULL;        \
+        }                       \
+    } while (0)
+
 // callback user data
 struct PythonCallback {
     PythonCallback(PyObject *func, PyObject *_args, PyObject *_kwargs)
@@ -521,6 +528,8 @@ static PyObject *set_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self,
     }
 
     gpi_set_signal_value_binstr(self->hdl, binstr, action);
+
+    FORWARD_EXCEPTION;
     Py_RETURN_NONE;
 }
 
