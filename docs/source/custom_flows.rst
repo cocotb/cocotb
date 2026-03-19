@@ -160,7 +160,7 @@ Cadence Incisive and Xcelium
 
 .. note::
   For a design with a VHDL toplevel, call the ``xrun`` or ``xmelab`` executable with the option
-  ``-NEW_VHPI_PROPAGATE_DELAY ``.
+  ``-NEW_VHPI_PROPAGATE_DELAY``.
 
 .. _custom-flows-ghdl:
 
