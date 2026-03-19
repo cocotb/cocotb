@@ -166,18 +166,14 @@ def _start_user_coverage() -> None:
                     ]
 
                     if files:
-                        final_data_file = ".coverage"
                         if config_filepath is None:
                             cocotb_package_dir = Path(__file__).parent.absolute()
                             combiner = coverage.coverage(
-                                data_file=final_data_file,
                                 branch=True,
                                 omit=[f"{cocotb_package_dir}/*"],
                             )
                         else:
-                            combiner = coverage.coverage(
-                                data_file=final_data_file, config_file=config_filepath
-                            )
+                            combiner = coverage.coverage(config_file=config_filepath)
                         combiner.combine(data_paths=files, strict=True, keep=True)
                 finally:
                     tmp_data_file_controller.close()
