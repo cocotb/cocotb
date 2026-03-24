@@ -7,13 +7,10 @@ from __future__ import annotations
 import sys
 from asyncio import CancelledError
 from collections.abc import Awaitable, Iterable
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, overload
+from typing import Any, Callable, Literal, TypeVar, overload
 
 from cocotb._base_triggers import NullTrigger, _InternalEvent
 from cocotb.task import Task, current_task
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
