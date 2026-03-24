@@ -8,7 +8,6 @@ from __future__ import annotations
 import logging
 import os
 import random
-import tempfile
 import time
 import warnings
 from pathlib import Path
@@ -123,11 +122,6 @@ def _start_user_coverage() -> None:
             ) from None
         else:
             config_filepath: str = _env.as_str("COVERAGE_RCFILE")
-
-            tmp_data_file_controller = tempfile.NamedTemporaryFile(
-                prefix=".coverage.cocotb.", suffix=".tmp"
-            )
-            tmp_data_file = tmp_data_file_controller.name
             if not config_filepath:
                 # Exclude cocotb itself from coverage collection.
                 log.info(
@@ -135,7 +129,6 @@ def _start_user_coverage() -> None:
                 )
                 cocotb_package_dir = Path(__file__).parent.absolute()
                 user_coverage = coverage.coverage(
-                    data_file=tmp_data_file,
                     branch=True,
                     omit=[f"{cocotb_package_dir}/*"],
                 )
@@ -144,39 +137,14 @@ def _start_user_coverage() -> None:
                     "Collecting coverage of user code. Coverage config file supplied."
                 )
                 # Allow the config file to handle all configuration
-                user_coverage = coverage.coverage(
-                    data_file=tmp_data_file, config_file=config_filepath
-                )
+                user_coverage = coverage.coverage(config_file=config_filepath)
+            user_coverage.load()
             user_coverage.start()
 
             def stop_user_coverage() -> None:
-                try:
-                    user_coverage.stop()
-                    log.debug("Writing user coverage data")
-                    user_coverage.save()
-
-                    data_file = (
-                        getattr(user_coverage.config, "data_file", None) or ".coverage"
-                    )
-                    data_dir = Path(data_file).resolve().parent
-                    pattern = str(data_dir / ".coverage*")
-                    files = [
-                        str(p.resolve())
-                        for p in Path(pattern).parent.glob(Path(pattern).name)
-                    ]
-
-                    if files:
-                        if config_filepath is None:
-                            cocotb_package_dir = Path(__file__).parent.absolute()
-                            combiner = coverage.coverage(
-                                branch=True,
-                                omit=[f"{cocotb_package_dir}/*"],
-                            )
-                        else:
-                            combiner = coverage.coverage(config_file=config_filepath)
-                        combiner.combine(data_paths=files, strict=True, keep=True)
-                finally:
-                    tmp_data_file_controller.close()
+                user_coverage.stop()
+                log.debug("Writing user coverage data")
+                user_coverage.save()
 
             cocotb._shutdown.register(stop_user_coverage)
 
