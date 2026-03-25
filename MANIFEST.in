@@ -3,3 +3,4 @@ recursive-include src/cocotb/_vendor *
 include README.md
 include LICENSE
 include cocotb_build_libs.py
+include VERSION

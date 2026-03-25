@@ -8,6 +8,7 @@
 *.o
 
 # Python and C++ code coverage
+.cov.*
 .coverage
 .coverage.cocotb
 *.gcno
@@ -126,3 +127,6 @@ metrics.db
 compile_commands.json
 compile_commands.*.json
 .cache/
+
+# CI artifacts
+.ccache/
