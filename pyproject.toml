@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=77", "wheel", "setuptools-git-versioning>=3.0,<4"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -51,6 +51,12 @@ Documentation = "https://docs.cocotb.org"
 Repository = "https://github.com/cocotb/cocotb"
 Issues = "https://github.com/cocotb/cocotb/issues"
 
+[tool.setuptools-git-versioning]
+enabled = true
+version_file = "VERSION"
+count_commits_from_version_file = true
+dev_template = "{tag}.dev{ccount}+r{sha}"
+dirty_template = "{tag}.dev{ccount}+r{sha}.dirty"
 
 [tool.towncrier]
     package = "cocotb"
