@@ -1,0 +1,1 @@
+Fixed use-after-free in ``VpiSignalObjHdl::register_value_change_callback`` where the signal object was incorrectly deleted instead of the callback handle when callback registration failed.
