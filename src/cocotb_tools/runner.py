@@ -261,7 +261,10 @@ class Runner(ABC):
         """Set environment variables for sub-processes."""
         self._set_env_common()
 
-        self.env["COCOTB_TOPLEVEL"] = self.sim_hdl_toplevel
+        # The NVC simulator allows specifying the top unit as {entity}-{arch}.
+        # The architecture is needed during elaboration, but when finding the root handle
+        # we only need the entity name, so strip off the architecture if present.
+        self.env["COCOTB_TOPLEVEL"] = self.sim_hdl_toplevel.split("-")[0]
         self.env["COCOTB_TEST_MODULES"] = self.test_module
         self.env["TOPLEVEL_LANG"] = self.hdl_toplevel_lang
 
@@ -1225,6 +1228,7 @@ class Nvc(Runner):
 
     .. admonition:: Simulator-specific Usage
 
+       * Supports specifying a particular entity architecture by setting hdl_toplevel to {entity}-{arch}.
        * Does not support the ``pre_cmd`` argument to :meth:`.test`.
        * Does not support the ``timescale`` argument to :meth:`.build` or :meth:`.test`.
     """
