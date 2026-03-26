@@ -14,11 +14,13 @@ from __future__ import annotations
 
 import os
 import re
+import unittest.mock
 
 import pytest
 from common import assert_takes
 
 import cocotb
+from cocotb import simulator
 from cocotb.clock import Clock
 from cocotb.triggers import (
     ClockCycles,
@@ -472,3 +474,18 @@ async def issue_376_different_edges(dut):
     Clock(dut.clk, 2500).start()
     cocotb.start_soon(wait_for_rising_edge(dut.clk))
     await cocotb.start_soon(wait_for_falling_edge(dut.clk))
+
+
+@cocotb.test()
+async def test_callback_registration_failure_raises_runtime_error(dut):
+    """Regression test for gh-5439: callback registration failure
+    should raise RuntimeError, not crash."""
+    trigger = dut.clk.rising_edge
+
+    with unittest.mock.patch.object(
+        simulator,
+        "register_value_change_callback",
+        return_value=None,
+    ):
+        with pytest.raises(RuntimeError, match="Unable set up .* Trigger"):
+            trigger._prime()
