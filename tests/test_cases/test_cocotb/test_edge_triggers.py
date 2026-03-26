@@ -488,4 +488,4 @@ async def test_callback_registration_failure_raises_runtime_error(dut):
         return_value=None,
     ):
         with pytest.raises(RuntimeError, match="Unable set up .* Trigger"):
-            trigger._prime()
+            await trigger
