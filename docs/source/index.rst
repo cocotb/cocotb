@@ -92,7 +92,27 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    coroutines
    triggers
    pytest
-   examples
+
+..
+   Examples - completed and working projects that demonstrate how cocotb can be used to solve a particular problem
+   (Example: testing a mixed language design; study-oriented)
+
+   - explain the solution, don't just present it
+   - not a step-by-step guide
+   - not interactive with the user
+   - mention design considerations, alternatives, and trade-offs
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+   :name: examples
+   :hidden:
+
+   matrix_multiplier
+   mixed_language
+   mixed_signal
+   analog_model
+   more_examples
 
 
 ..
