@@ -22,11 +22,11 @@ async def adder_basic_test(dut):
 
     A = 5
     B = 10
-
+    #test values
     dut.A.value = A
     dut.B.value = B
 
-    await Timer(2, unit="ns")
+    yield Timer(2, unit="ns")
 
     assert dut.X.value == adder_model(A, B), (
         f"Adder result is incorrect: {dut.X.value} != 15"
