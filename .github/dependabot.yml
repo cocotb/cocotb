@@ -17,3 +17,9 @@ updates:
     cooldown:
       default-days: 7
     versioning-strategy: lockfile-only
+    groups:
+      updates:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
