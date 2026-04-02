@@ -11,6 +11,7 @@ from IPython.terminal.prompts import Prompts
 from pygments.token import Token
 
 import cocotb
+import cocotb._bridge
 from cocotb.task import bridge
 from cocotb.utils import get_sim_time
 
@@ -62,7 +63,7 @@ async def embed(user_ns: dict[str, Any] = {}) -> None:
     def _runner(x):
         """Handler for async functions"""
         nonlocal shell
-        ret = cocotb._scheduler_inst._queue_function(x)
+        ret = cocotb._bridge.queue_function(x)
         shell.prompts._show_time = shell.execution_count
         return ret
 
