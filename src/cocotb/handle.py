@@ -1241,38 +1241,11 @@ class _SignednessObjectMixin(SimHandleBase):
             return (2 ** len(self)) - 1
 
 
-class LogicArrayObject(
+class _LogicArrayObjectBase(
     _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
     _RangeableObjectMixin,
     _SignednessObjectMixin,
 ):
-    """A logic array simulation object.
-
-    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
-
-    VHDL types that map to this object:
-
-        * ``std_logic_vector`` and ``std_ulogic_vector``
-        * ``unsigned``
-        * ``signed``
-        * ``ufixed``
-        * ``sfixed``
-        * ``float``
-
-    Verilog types that map to this object:
-
-        * packed any-dimensional vectors of ``logic`` or ``bit``
-        * packed any-dimensional vectors of packed structs or unions
-
-    .. warning::
-        For Verilog packed arrays,
-        accessing individual elements of a packed array may not be supported  by your simulator.
-        Even if you can successfully get the element,
-        the resulting handle may not support getting/setting the value of the individual element
-        and registering a value change trigger may fail or misbehave.
-
-    """
-
     def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
@@ -1321,6 +1294,84 @@ class LogicArrayObject(
             )
         _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
+    @deprecated(
+        "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
+    )
+    def __int__(self) -> int:
+        return int(self.value)
+
+    @deprecated(
+        "`str(handle)` casts have been deprecated. Use `str(handle.value)` instead."
+    )
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __len__(self) -> int:
+        # can't use `range` to get length because `range` is for outer-most dimension only
+        # and this object needs to support multi-dimensional packed arrays.
+        return self._handle.get_num_elems()
+
+    @cached_property
+    def _min_val(self) -> int:
+        # Backwards compatibility. Always wrap negative values.
+        return -(2 ** (len(self) - 1))
+
+    @cached_property
+    def _max_val(self) -> int:
+        # Backwards compatibility. Always wrap negative values.
+        return (2 ** len(self)) - 1
+
+
+class LogicArrayObject(_LogicArrayObjectBase):
+    """A logic array simulation object.
+
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
+
+    VHDL types that map to this object:
+
+        * ``std_logic_vector`` and ``std_ulogic_vector``
+        * ``unsigned``
+        * ``signed``
+        * ``ufixed``
+        * ``sfixed``
+        * ``float``
+
+    Verilog types that map to this object:
+
+        * packed any-dimensional vectors of ``logic`` or ``bit``
+        * packed any-dimensional vectors of packed structs or unions
+
+    .. warning::
+        For Verilog packed arrays,
+        accessing individual elements of a packed array may not be supported  by your simulator.
+        Even if you can successfully get the element,
+        the resulting handle may not support getting/setting the value of the individual element
+        and registering a value change trigger may fail or misbehave.
+
+    """
+
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
+        super().__init__(handle, path)
+        self._children: dict[int, ValueObjectBase[Any, Any]] = {}
+
+    def __getitem__(self, index: int) -> ValueObjectBase[Any, Any]:
+        if isinstance(index, slice):
+            raise TypeError("Slicing is not supported")
+        try:
+            return self._children[index]
+        except KeyError:
+            handle = self._handle.get_handle_by_index(index)
+            if handle is None:
+                raise IndexError(
+                    f"{self._path} contains no child object at index {index}"
+                )
+            sim_obj = cast(
+                "ValueObjectBase[Any, Any]",
+                _make_sim_object(handle, f"{self._path}[{index}]"),
+            )
+            self._children[index] = sim_obj
+            return sim_obj
+
     def get(self) -> LogicArray:
         """Return the current value of the simulation object as a :class:`.LogicArray`."""
         binstr = self._handle.get_signal_val_binstr()
@@ -1367,39 +1418,85 @@ class LogicArrayObject(
         """
         self.value = value
 
-    @deprecated(
-        "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
-    )
-    def __int__(self) -> int:
-        return int(self.value)
 
-    @deprecated(
-        "`str(handle)` casts have been deprecated. Use `str(handle.value)` instead."
-    )
-    def __str__(self) -> str:
-        return str(self.value)
+class PackedStructObject(_LogicArrayObjectBase):
+    """A packed struct simulation object.
 
-    def __len__(self) -> int:
-        # can't use `range` to get length because `range` is for outer-most dimension only
-        # and this object needs to support multi-dimensional packed arrays.
-        return self._handle.get_num_elems()
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
 
-    def __getitem__(self, index: int) -> LogicObject:
-        handle = self._handle.get_handle_by_index(index)
-        if handle is None:
-            raise IndexError
+    This type is used to represent (System)Verilog packed structs and unions.
+    It supports both getting/setting the value of the whole packed struct/union as a single
+    :class:`.LogicArray` as well as accessing individual fields by name to get/set the
+    value of the individual members.
 
-        return LogicObject(handle, self._path)
+    .. warning::
+        Accessing fields of a packed struct/union may not be supported  by your simulator.
+        Even if you can successfully get the field,
+        the resulting handle may not support getting/setting the value of the individual field
+        and registering a value change trigger may fail or misbehave.
 
-    @cached_property
-    def _min_val(self) -> int:
-        # Backwards compatibility. Always wrap negative values.
-        return -(2 ** (len(self) - 1))
+    """
 
-    @cached_property
-    def _max_val(self) -> int:
-        # Backwards compatibility. Always wrap negative values.
-        return (2 ** len(self)) - 1
+    def __init__(self, handle: simulator.sim_obj, path: str | None) -> None:
+        super().__init__(handle, path)
+        self._children: dict[str, ValueObjectBase[Any, Any]] = {}
+
+    def _get(self, name: str) -> ValueObjectBase[Any, Any]:
+        try:
+            return self._children[name]
+        except KeyError:
+            handle = self._handle.get_handle_by_name(name)
+            if handle is None:
+                raise KeyError(f"{self._path} contains no child object named {name}")
+            sim_obj = cast(
+                "ValueObjectBase[Any, Any]",
+                _make_sim_object(handle, f"{self._path}.{name}"),
+            )
+            self._children[name] = sim_obj
+            return sim_obj
+
+    def __getitem__(self, name: str) -> ValueObjectBase[Any, Any]:
+        return self._get(name)
+
+    def __getattr__(self, name: str) -> ValueObjectBase[Any, Any]:
+        if name.startswith("_"):
+            return object.__getattribute__(self, name)
+
+        return self._get(name)
+
+    def get(self) -> LogicArray:
+        """Return the current value of the simulation object as a :class:`.LogicArray`."""
+        binstr = self._handle.get_signal_val_binstr()
+        return LogicArray._from_handle(
+            value=binstr,
+            warn_indexing=indexing_changed(self.range)
+            if do_indexing_changed_warning
+            else False,
+        )
+
+    def set(
+        self,
+        value: LogicArray
+        | Logic
+        | int
+        | str
+        | Deposit[LogicArray | Logic | int | str]
+        | Force[LogicArray | Logic | int | str]
+        | Freeze
+        | Release
+        | Immediate[LogicArray | Logic | int | str],
+    ) -> None:
+        """Set the value of the simulation object using a :class:`.LogicArray`-like value.
+
+        Args:
+            value: The value to set the simulation object to.
+
+        Raises:
+            TypeError: If *value* is of a type that can't be assigned to the simulation object, or readily converted into a type that can.
+            ValueError: If *value* would not fit in the bounds of the simulation object.
+
+        """
+        self.value = value
 
 
 class RealObject(_NonIndexableValueObjectBase[float, float]):
@@ -1732,6 +1829,7 @@ _ConcreteHandleTypes = Union[
     IntegerObject,
     EnumObject,
     StringObject,
+    PackedStructObject,
 ]
 
 
@@ -1743,7 +1841,7 @@ _handle2obj: dict[
 _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     simulator.MODULE: HierarchyObject,
     simulator.STRUCTURE: HierarchyObject,
-    simulator.PACKED_STRUCTURE: LogicArrayObject,
+    simulator.PACKED_STRUCTURE: PackedStructObject,
     simulator.LOGIC: LogicObject,
     simulator.LOGIC_ARRAY: LogicArrayObject,
     simulator.NETARRAY: ArrayObject[Any, ValueObjectBase[Any, Any]],
