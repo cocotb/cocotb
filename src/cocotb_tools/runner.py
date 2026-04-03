@@ -1625,7 +1625,6 @@ class Verilator(Runner):
         cmds = []
         cmds.append(
             [
-                "perl",
                 self.executable,
                 "-cc",
                 "--exe",
