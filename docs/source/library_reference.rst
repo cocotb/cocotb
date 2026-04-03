@@ -1077,14 +1077,33 @@ To set it up:
       branch = True
       source = my_package
 
-3. Run ``coverage run`` with the ``--parallel-mode`` flag and the
-   ``COVERAGE_PROCESS_START`` environment variable pointing to the
-   configuration file:
+3. Set the ``COVERAGE_PROCESS_START`` environment variable and run your
+   tests. The exact command depends on how you run cocotb:
+
+   **With Makefiles:**
+
+   .. code-block:: bash
+
+      export COVERAGE_PROCESS_START=.coveragerc
+      make SIM=<simulator>
+
+   **With the Python Runner directly:**
+
+   .. code-block:: bash
+
+      export COVERAGE_PROCESS_START=.coveragerc
+      python my_test_script.py
+
+   **With pytest:**
 
    .. code-block:: bash
 
       export COVERAGE_PROCESS_START=.coveragerc
       coverage run --parallel-mode -m pytest
+
+   In all cases, the ``COVERAGE_PROCESS_START`` variable causes
+   :mod:`coverage` to start measurement in simulator-spawned Python
+   subprocesses automatically via its :mod:`sitecustomize` hook.
 
 4. Combine and view the results:
 
