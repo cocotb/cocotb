@@ -439,12 +439,12 @@ async def type_check_verilog(dut):
     test_handles = [
         (dut.stream_in_ready, "GPI_LOGIC"),
         (dut.register_array, "GPI_ARRAY"),
-        (dut.temp, "GPI_PACKED_OBJECT"),
+        (dut.temp, "GPI_LOGIC_ARRAY"),
         (dut.logic_b, "GPI_LOGIC"),
         (dut.logic_c, "GPI_LOGIC"),
-        (dut.INT_PARAM, "GPI_PACKED_OBJECT"),
+        (dut.INT_PARAM, "GPI_LOGIC_ARRAY"),
         (dut.REAL_PARAM, "GPI_REAL"),
-        (dut.stream_in_data, "GPI_PACKED_OBJECT"),
+        (dut.stream_in_data, "GPI_LOGIC_ARRAY"),
         (dut.and_output, "GPI_LOGIC"),
         (dut.logic_a, "GPI_LOGIC"),
     ]
@@ -452,7 +452,7 @@ async def type_check_verilog(dut):
     # Verilator returns vpiReg rather than vpiNet
     # Verilator (correctly) treats parameters with implicit type, that are assigned a string literal value, as an unsigned integer. See IEEE 1800-2017 Section 5.9 and Section 6.20.2
     if SIM_NAME.startswith("verilator"):
-        test_handles.append((dut.STRING_PARAM, "GPI_PACKED_OBJECT"))
+        test_handles.append((dut.STRING_PARAM, "GPI_LOGIC_ARRAY"))
     else:
         test_handles.append((dut.STRING_PARAM, "GPI_STRING"))
 
