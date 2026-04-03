@@ -1052,6 +1052,51 @@ Debugging
 
     .. versionadded:: 1.7
 
+.. _coverage-subprocess:
+
+Alternative: using ``coverage`` subprocess support
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As an alternative to :envvar:`COCOTB_USER_COVERAGE`,
+the :mod:`coverage` module's
+`subprocess measurement <https://coverage.readthedocs.io/en/latest/subprocess.html>`_
+feature can be used.
+This installs a :mod:`sitecustomize` hook that
+automatically starts coverage measurement in any Python subprocess,
+including those started by the simulator.
+
+To set it up:
+
+1. Install the :mod:`coverage` module if not already present.
+
+2. Create a ``.coveragerc`` configuration file specifying what to measure:
+
+   .. code-block:: ini
+
+      [run]
+      branch = True
+      source = my_package
+
+3. Run ``coverage run`` with the ``--parallel-mode`` flag and the
+   ``COVERAGE_PROCESS_START`` environment variable pointing to the
+   configuration file:
+
+   .. code-block:: bash
+
+      export COVERAGE_PROCESS_START=.coveragerc
+      coverage run --parallel-mode -m pytest
+
+4. Combine and view the results:
+
+   .. code-block:: bash
+
+      coverage combine
+      coverage report
+
+This approach works well for users who regularly collect coverage across
+subprocesses in their environment and want a single configuration that
+applies everywhere.
+
 .. _combine-results:
 
 The ``combine_results`` script
