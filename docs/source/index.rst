@@ -120,6 +120,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    update_indexing
    rotating_logger
    profiling
+   coverage
 
 
 .. todo::
