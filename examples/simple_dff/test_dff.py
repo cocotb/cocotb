@@ -59,7 +59,7 @@ def test_simple_dff_runner():
         always=True,
     )
 
-    runner.test(hdl_toplevel="dff", test_module="test_dff,")
+    runner.test(hdl_toplevel="dff", test_module="test_dff")
 
 
 if __name__ == "__main__":
