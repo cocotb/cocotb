@@ -960,6 +960,19 @@ Other Runtime Information
 
 .. autodata:: cocotb.is_simulation
 
+.. envvar:: COCOTB_RANDOM_TEST_ORDER
+
+    Type :ref:`env-boolean`
+
+    Default: :data:`False`
+
+    Enable randomizing the order of tests within each stage. To recreate the
+    same test order, the random seed must be set.
+
+    If not set, all tests are ran in the order in which they were discovered.
+
+    .. versionadded:: 2.1
+
 Debugging
 ---------
 

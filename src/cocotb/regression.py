@@ -225,6 +225,9 @@ class RegressionManager:
         self._included: list[bool]
         self._regression_terminated: BaseException | None = None
         self._regression_seed = cocotb.RANDOM_SEED
+        self._random_test_order = _env.as_bool(
+            "COCOTB_RANDOM_TEST_ORDER", default=False
+        )
         self._random_state: Any
         self._max_failures = _env.as_int("COCOTB_MAX_FAILURES", default=0)
         self._random_x_resolver_state: Any
@@ -342,6 +345,10 @@ class RegressionManager:
         """Start the regression."""
 
         self.log.info("Running tests")
+
+        # if needed, randomize tests before sorting into stages
+        if self._random_test_order:
+            random.shuffle(self._test_queue)
 
         # sort tests into stages
         self._test_queue.sort(key=lambda test: test.stage)
