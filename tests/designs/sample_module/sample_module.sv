@@ -196,6 +196,7 @@ reg _underscore_name;
 bit mybit;
 bit [1:0] mybits;
 bit [1:0] mybits_uninitialized;
+logic [0:0] one_bit_vector;
 initial begin
     mybit = 1;
     mybits = '1;
