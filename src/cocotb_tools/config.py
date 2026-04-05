@@ -83,6 +83,7 @@ def _help_vars_text() -> str:
                                  Files to apply pytest assertion rewrites to (default *.py)
         COCOTB_MAX_FAILURES      Maximum number of test failures before aborting the regression
         COCOTB_LIST_TESTS        Prints all tests in the order they would be executed and exits
+        COCOTB_RANDOM_TEST_ORDER Enables randomizing the order of tests within each stage
 
         Scheduler
         ---------
