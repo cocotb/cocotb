@@ -6,7 +6,7 @@ exclude: "^.*/_vendor/"
 repos:
 # ruff with --fix should run before other formatting tools
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.15.8"
+  rev: "v0.15.9"
   hooks:
     # Run the linter.
     - id: "ruff"
@@ -34,7 +34,7 @@ repos:
     exclude: "^docs/source/diagrams/(svg|xml)/"
 
 - repo: https://github.com/henryiii/validate-pyproject-schema-store
-  rev: "2026.03.29"
+  rev: "2026.04.03"
   hooks:
     - id: validate-pyproject
       files: pyproject.toml
@@ -67,7 +67,7 @@ repos:
     files: ^(src/cocotb/|src/pygpi/|noxfile.py)
 
 - repo: https://github.com/astral-sh/uv-pre-commit
-  rev: 0.11.2
+  rev: 0.11.3
   hooks:
     - id: uv-lock
 
