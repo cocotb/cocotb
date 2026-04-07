@@ -76,9 +76,9 @@ def _process_plusargs() -> None:
 def _process_packages() -> None:
     pkg_dict = {}
 
-    from cocotb import simulator  # noqa: PLC0415
+    import cocotb.simulator  # noqa: PLC0415
 
-    pkgs = simulator.package_iterate()
+    pkgs = cocotb.simulator.package_iterate()
     if pkgs is None:
         cocotb.packages = SimpleNamespace()
         return
@@ -193,9 +193,9 @@ def _setup_root_handle() -> None:
             # Skip any library component of the toplevel
             root_name = root_name.split(".", 1)[1]
 
-    from cocotb import simulator  # noqa: PLC0415
+    import cocotb.simulator  # noqa: PLC0415
 
-    handle = simulator.get_root_handle(root_name)
+    handle = cocotb.simulator.get_root_handle(root_name)
     if not handle:
         raise RuntimeError(f"Can not find root handle {root_name!r}")
 

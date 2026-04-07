@@ -26,9 +26,9 @@ import pytest
 import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
+import cocotb.simulator
 import cocotb.types._resolve
 from cocotb import logging as cocotb_logging
-from cocotb import simulator
 from cocotb._decorators import Test, TestGenerator
 from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
@@ -471,7 +471,7 @@ class RegressionManager:
         shutdown._shutdown()
 
         # Setup simulator finalization
-        simulator.stop_simulator()
+        cocotb.simulator.stop_simulator()
 
     def _test_complete(self) -> None:
         """Callback given to the test to be called when the test finished."""
