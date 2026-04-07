@@ -6,6 +6,8 @@
 
 # All configuration is now in pyproject.toml
 # This file exists only for backwards compatibility
+from __future__ import annotations
+
 from setuptools import setup
 
 setup()

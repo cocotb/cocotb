@@ -7,7 +7,6 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "cocotb"
-version = "2.1.0.dev0"
 description = "Python-based chip (RTL) verification"
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -26,8 +25,16 @@ maintainers = [
     {name = "Philipp Wagner"},
 ]
 dependencies = [
+    # For finding the libpython on the system so the GPI can preload it before
+    # embedding the Python interpreter.
     "find_libpython",
+    # Backport of Python 3.11's ExceptionGroups that are thrown by TaskManager.
     "exceptiongroup; python_version < '3.11'",
+    # For assertion rewriting, `raises` and `warns` context managers,
+    # `RaisesExc` and `RaisesGroup` test expected errors,
+    # `skip` and `xfail` functions for ending tests early,
+    # and for pytest plugin and test running functionality.
+    # Assertion rewriting interface changed in version 6.
     "pytest >= 6",
 ]
 requires-python = ">= 3.9"
@@ -36,6 +43,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
     "Framework :: cocotb",
 ]
+dynamic = ["version"]
 
 [project.scripts]
 cocotb-config = "cocotb_tools.config:main"
