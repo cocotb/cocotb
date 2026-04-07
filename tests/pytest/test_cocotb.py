@@ -1,6 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import os
 import sys
@@ -18,7 +19,7 @@ module_name = [
     "test_async_coroutines",
     "test_async_generators",
     "test_clock",
-    "test_concurrency_primitives",
+    "test_first_combine",
     "test_deprecated",
     "test_edge_triggers",
     "test_handle",
@@ -33,7 +34,7 @@ module_name = [
     "test_sim_time_utils",
 ]
 
-hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
 vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
 if hdl_toplevel_lang == "verilog":
@@ -67,7 +68,8 @@ sys.path.insert(0, os.path.join(tests_dir, "test_cases", "test_cocotb"))
 timescale = ("1ps", "1ps")
 
 
-def test_cocotb():
+@pytest.mark.parametrize("reduced_log_fmt", ["1", "0"])
+def test_cocotb(reduced_log_fmt):
     runner = get_runner(sim)
 
     runner.build(
@@ -84,7 +86,8 @@ def test_cocotb():
         test_module=module_name,
         gpi_interfaces=gpi_interfaces,
         test_args=sim_args,
-        timescale=timescale,
+        timescale=None if sim in ("xcelium",) else timescale,
+        extra_env={"COCOTB_REDUCED_LOG_FMT": reduced_log_fmt},
     )
 
 

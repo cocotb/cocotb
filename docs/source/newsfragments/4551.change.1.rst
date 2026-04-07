@@ -1,1 +1,0 @@
-:class:`bool(Logic) <cocotb.types.Logic>` casts now treat ``H`` as ``True`` and ``L`` as ``False`` instead of raising :exc:`ValueError`.

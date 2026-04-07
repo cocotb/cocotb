@@ -1,1 +1,0 @@
-Fixed several memory and callback leaks in the GPI. Simulations may use less memory and run slightly faster.

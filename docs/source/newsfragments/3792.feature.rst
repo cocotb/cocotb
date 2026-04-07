@@ -1,1 +1,0 @@
-Added :meth:`LogicArray.from_unsigned() <cocotb.types.LogicArray.from_unsigned>` and :meth:`LogicArray.from_signed() <cocotb.types.LogicArray.from_signed>` to construct :class:`~cocotb.types.LogicArray` from :class:`int`.

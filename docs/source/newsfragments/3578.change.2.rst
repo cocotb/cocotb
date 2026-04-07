@@ -1,1 +1,0 @@
-Use of the :envvar:`COCOTB_TESTCASE` variable has been changed so that each element of :envvar:`COCOTB_TESTCASE` will now select all tests with a matching name across all :envvar:`COCOTB_TEST_MODULES`\ s instead of just the first one found.

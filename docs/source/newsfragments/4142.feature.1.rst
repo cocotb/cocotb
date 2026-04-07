@@ -1,1 +1,0 @@
-:class:`~cocotb.types.Array` can take :class:`int` as the second positional argument or ``width`` keyword argument as shorthand for passing ``Range(0, "to", width-1)`` as ``range``.

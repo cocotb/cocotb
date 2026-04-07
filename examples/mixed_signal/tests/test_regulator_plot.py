@@ -1,5 +1,6 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
+from __future__ import annotations
 
 import math
 
@@ -23,7 +24,7 @@ async def test_trim_vals(tb_hdl):
         await Timer(1, unit="ns")
         trimmed_volt = await get_voltage(tb_hdl, probed_node)
         actual_trim_val = tb_hdl.trim_val.value.to_signed()
-        tb_hdl._log.info(
+        cocotb.log.info(
             f"trim_val={actual_trim_val} results in {probed_node}={trimmed_volt:.4} V"
         )
         # sanity check: output voltage can not exceed supply
@@ -41,7 +42,7 @@ async def get_voltage(tb_hdl, node):
         tb_hdl.i_analog_probe.probe_voltage_toggle
     )
     await Timer(1, unit="ps")  # waiting time needed for the analog values to be updated
-    tb_hdl._log.debug(
+    cocotb.log.debug(
         f"Voltage on node {node} is {tb_hdl.i_analog_probe.voltage.value:.4} V"
     )
     return tb_hdl.i_analog_probe.voltage.value
@@ -79,5 +80,5 @@ def plot_data(tb_hdl, datasets, graphfile="cocotb_plot.png"):
     fig.tight_layout()
     fig.set_size_inches(11, 6)
 
-    tb_hdl._log.info(f"Writing file {graphfile}")
+    cocotb.log.info(f"Writing file {graphfile}")
     fig.savefig(graphfile)

@@ -48,6 +48,8 @@ extensions = [
     "sphinx_design",
     "enum_tools.autoenum",
     "sphinx_codeautolink",
+    "sphinxarg.ext",
+    "sphinx_autofixture",
 ]
 
 intersphinx_mapping = {
@@ -57,7 +59,16 @@ intersphinx_mapping = {
     "pytest": ("https://docs.pytest.org/en/latest/", None),
     "coverage": ("https://coverage.readthedocs.io/en/latest/", None),
     "remote_pdb": ("https://python-remote-pdb.readthedocs.io/en/latest/", None),
+    "cocotb20": ("https://docs.cocotb.org/en/v2.0.1/", None),
     "cocotb19": ("https://docs.cocotb.org/en/v1.9.2/", None),
+    "cocotb18": ("https://docs.cocotb.org/en/v1.8.1/", None),
+    "cocotb17": ("https://docs.cocotb.org/en/v1.7.2/", None),
+    "cocotb16": ("https://docs.cocotb.org/en/v1.6.2/", None),
+    "cocotb15": ("https://docs.cocotb.org/en/v1.5.2/", None),
+    "cocotb14": ("https://docs.cocotb.org/en/v1.4.0/", None),
+    "cocotb13": ("https://docs.cocotb.org/en/v1.3.1/", None),
+    "cocotb12": ("https://docs.cocotb.org/en/v1.2.0/", None),
+    "cocotb11": ("https://docs.cocotb.org/en/v1.1/", None),
 }
 
 # Github repo
@@ -89,7 +100,7 @@ release = cocotb.__version__
 # The short X.Y version.
 v_major, v_minor = LooseVersion(release).version[:2]
 version = "{}.{}".format(v_major, v_minor)
-# Cocotb commit ID
+# cocotb commit ID
 try:
     commit_id = (
         subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("ascii")
@@ -106,10 +117,11 @@ is_rtd_tag = 'READTHEDOCS' in os.environ and os.environ.get('READTHEDOCS_VERSION
 if is_rtd_tag:
     tags.add('is_release_build')
 
-autoclass_content = "both"
+autoclass_content = "class"
 
-autodoc_typehints = "description"  # show type hints in the list of parameters
+autodoc_typehints = "signature"  # show type hints in the list of parameters
 autodoc_typehints_description_target = "documented"
+maximum_signature_line_length = 78
 
 # use short "a | b" syntax for Literal types
 python_display_short_literal_types = True
@@ -121,6 +133,7 @@ codeautolink_warn_on_failed_resolve = True
 codeautolink_autodoc_inject = True  # Inject an autolink-examples table to the end of all autodoc definitions
 # import statements that are often used in code examples
 codeautolink_global_preface = textwrap.dedent("""\
+    import random
     import cocotb
     from cocotb.clock import *
     from cocotb.handle import *
@@ -244,6 +257,7 @@ html_favicon = "_static/cocotb-favicon.svg"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_css_files = ["cocotb.css"]
+html_js_files = ["cocotb.js"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -423,3 +437,19 @@ extlinks = {
         None,
     ),
 }
+
+# -- intersphinx missing-reference interception --------------------------------
+from sphinx.errors import NoUri
+from sphinx.util.logging import getLogger
+
+def block_gpi_links(app, env, node, contnode):
+    target = node.get('reftarget', '')
+
+    # Stop intersphinx from linking to old GPI docs
+    if target in ('GpiObjHdl', 'GpiIterator', 'GpiCbHdl'):
+        getLogger("cocotb.conf").info(f"Stopping intersphinx link for {target}")
+        raise NoUri
+
+# -- Custom setup function -----------------------------------------------------
+def setup(app):
+    app.connect('missing-reference', block_gpi_links)

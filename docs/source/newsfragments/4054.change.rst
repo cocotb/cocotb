@@ -1,1 +1,0 @@
-``cocotb.external`` and ``cocotb.function`` have been renamed to :func:`cocotb.task.bridge` and :func:`cocotb.task.resume` to better reflect their intended use case.

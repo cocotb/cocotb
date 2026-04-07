@@ -1,1 +1,0 @@
-The :make:var:`GUI` and :make:var:`WAVES` environment variables can be used to override the corresponding ``gui`` and ``waves`` arguments to pytest test benches. This means that they can be provided at run-time without modifying the test bench.

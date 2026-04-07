@@ -1,1 +1,0 @@
-Testing equality of :class:`simulator value objects <cocotb.handle.ValueObjectBase>` now does identity equality instead of a value equality. Use ``handle.value == other_handle.value`` for the old behavior.

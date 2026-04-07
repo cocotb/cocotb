@@ -1,1 +1,0 @@
-:class:`.TestSuccess` was deprecated. Use :func:`cocotb.pass_test` instead.

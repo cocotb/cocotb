@@ -5,14 +5,10 @@
 CMD_BIN := dsim
 
 ifdef DSIM_BIN_DIR
-    CMD := $(shell :; command -v $(DSIM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    CMD := $(call find_command,$(DSIM_BIN_DIR)/$(CMD_BIN))
 else
     # auto-detect bin dir from system path
-    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
-endif
-
-ifeq (, $(CMD))
-    $(error Unable to locate command >$(CMD_BIN)<)
+    CMD := $(call find_command,$(CMD_BIN))
 endif
 
 ifeq ($(WAVES), 1)

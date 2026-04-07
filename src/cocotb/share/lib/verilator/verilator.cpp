@@ -20,9 +20,16 @@
 #if VM_TRACE
 #if VM_TRACE_FST
 #include <verilated_fst_c.h>
+using verilated_trace_t = VerilatedFstC;
+#elif VM_TRACE_SAIF
+#include <verilated_saif_c.h>
+using verilated_trace_t = VerilatedSaifC;
 #else
+// VM_TRACE_VCD
 #include <verilated_vcd_c.h>
+using verilated_trace_t = VerilatedVcdC;
 #endif
+static verilated_trace_t *tfp;
 #endif
 
 static vluint64_t main_time = 0;  // Current simulation time
@@ -50,26 +57,48 @@ static inline bool settle_value_callbacks() {
     return cbs_called;
 }
 
-static void clean_exit_cb(void*) { VerilatedVpi::callCbs(cbEndOfSimulation); }
+void wrap_up() {
+    VerilatedVpi::callCbs(cbEndOfSimulation);
 
-int main(int argc, char** argv) {
-    bool traceOn = false;
-#if VM_TRACE_FST
-    const char* traceFile = "dump.fst";
-#else
-    const char* traceFile = "dump.vcd";
+#if VM_TRACE
+    if (tfp) {
+        delete tfp;
+        tfp = nullptr;
+    }
 #endif
+
+    // VM_COVERAGE is a define which is set if Verilator is
+    // instructed to collect coverage (when compiling the simulation)
+#if VM_COVERAGE
+    VerilatedCov::write();  // Uses +verilator+coverage+file+<filename>,
+                            // defaults to coverage.dat
+#endif
+}
+
+int main(int argc, char **argv) {
+#if VM_TRACE_FST
+    const char *traceFile = "dump.fst";
+#elif VM_TRACE_SAIF
+    const char *traceFile = "dump.saif";
+#else
+    const char *traceFile = "dump.vcd";
+#endif
+    bool traceOn = false;
+    bool traceFlush = false;
 
     for (int i = 1; i < argc; i++) {
         std::string arg = std::string(argv[i]);
         if (arg == "--trace") {
+#if VM_TRACE
             traceOn = true;
-#ifndef VM_TRACE
+#else
             fprintf(stderr,
                     "Error: --trace requires the design to be built with trace "
                     "support\n");
             return -1;
 #endif
+        } else if (arg == "--trace-flush") {
+            traceFlush = true;
         } else if (arg == "--trace-file") {
             if (++i < argc) {
                 traceFile = argv[i];
@@ -78,16 +107,18 @@ int main(int argc, char** argv) {
                 return -1;
             }
         } else if (arg == "--help") {
-            fprintf(stderr,
-                    "usage: %s [--trace] [--trace-file TRACEFILE]\n"
-                    "\n"
-                    "Cocotb + Verilator sim\n"
-                    "\n"
-                    "options:\n"
-                    "  --trace      Enables tracing (VCD or FST)\n"
-                    "  --trace-file Specifies the trace file name (%s by "
-                    "default)\n",
-                    basename(argv[0]), traceFile);
+            fprintf(
+                stderr,
+                "usage: %s [--trace] [--trace-flush] [--trace-file TRACEFILE]\n"
+                "\n"
+                "cocotb + Verilator sim\n"
+                "\n"
+                "options:\n"
+                "  --trace       Enable tracing (VCD, SAIF or FST)\n"
+                "  --trace-flush Flush trace at each time step (slow)\n"
+                "  --trace-file  Specify the trace file name (%s by "
+                "default)\n",
+                basename(argv[0]), traceFile);
             return 0;
         }
     }
@@ -103,24 +134,19 @@ int main(int argc, char** argv) {
     Verilated::internalsDump();
 #endif
 
-    vlog_startup_routines_bootstrap();
-    Verilated::addExitCb(clean_exit_cb, NULL);
-    VerilatedVpi::callCbs(cbStartOfSimulation);
-    settle_value_callbacks();
-
 #if VM_TRACE
-#if VM_TRACE_FST
-    std::unique_ptr<VerilatedFstC> tfp(new VerilatedFstC);
-#else
-    std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
-#endif
-
     Verilated::traceEverOn(true);
     if (traceOn) {
-        top->trace(tfp.get(), 99);
+        tfp = new verilated_trace_t;
+        top->trace(tfp, 99);
         tfp->open(traceFile);
     }
 #endif
+
+    vlog_startup_routines_bootstrap();
+    Verilated::addExitCb([](void *) { wrap_up(); }, nullptr);
+    VerilatedVpi::callCbs(cbStartOfSimulation);
+    settle_value_callbacks();
 
     while (!Verilated::gotFinish()) {
         do {
@@ -145,8 +171,11 @@ int main(int argc, char** argv) {
         VerilatedVpi::callCbs(cbReadOnlySynch);
 
 #if VM_TRACE
-        if (traceOn) {
+        if (tfp) {
             tfp->dump(main_time);
+            if (traceFlush) {
+                tfp->flush();
+            }
         }
 #endif
         // cocotb controls the clock inputs using cbAfterDelay so
@@ -178,22 +207,9 @@ int main(int argc, char** argv) {
         settle_value_callbacks();
     }
 
-    VerilatedVpi::callCbs(cbEndOfSimulation);
-
     top->final();
 
-#if VM_TRACE
-    if (traceOn) {
-        tfp->close();
-    }
-#endif
-
-// VM_COVERAGE is a define which is set if Verilator is
-// instructed to collect coverage (when compiling the simulation)
-#if VM_COVERAGE
-    VerilatedCov::write();  // Uses +verilator+coverage+file+<filename>,
-                            // defaults to coverage.dat
-#endif
+    wrap_up();
 
     return 0;
 }

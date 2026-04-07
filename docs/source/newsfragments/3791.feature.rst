@@ -1,1 +1,0 @@
-The :ref:`combine_results.py <combine-results>` script now ships with the cocotb installation.

@@ -1,1 +1,0 @@
-Added :meth:`.LogicArray.to_bytes` and :meth:`.LogicArray.from_bytes` for converting :class:`~cocotb.types.LogicArray` to and from :class:`bytes`.

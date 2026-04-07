@@ -1,1 +1,0 @@
-Removed unmaintained WaveDrom support. Users (if any) are encouraged to include the code in their own codebase, or create a cocotb extension for it.

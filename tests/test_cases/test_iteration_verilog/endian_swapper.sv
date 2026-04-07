@@ -153,12 +153,4 @@ always @(posedge clk or negedge reset_n) begin
     end
 end
 
-`ifndef VERILATOR // traced differently
-initial begin
-  $dumpfile ("waveform.vcd");
-  $dumpvars (0,endian_swapper_sv);
-  #1;
-end
-`endif
-
 endmodule

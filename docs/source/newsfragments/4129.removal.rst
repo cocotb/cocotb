@@ -1,1 +1,0 @@
-The module ``cocotb.decorators`` was removed. All functionality is now available directly in the ``cocotb`` namespace (e.g. ``cocotb.decorators.test`` is now :func:`cocotb.test`).

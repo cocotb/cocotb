@@ -17,6 +17,95 @@ Library Reference
 
 .. module:: cocotb
 
+.. _api-pytest-plugin:
+
+Pytest Plugin
+=============
+
+
+.. _api-pytest-plugin-fixtures:
+
+Fixtures
+--------
+
+.. module:: cocotb_tools.pytest.plugin
+
+.. autofixture:: dut
+
+.. autofixture:: hdl_session
+
+.. autofixture:: hdl
+
+
+.. _api-pytest-plugin-markers:
+
+Markers
+-------
+
+.. module:: cocotb_tools.pytest.mark
+
+.. autodecorator:: cocotb_runner
+
+.. autodecorator:: cocotb_test
+
+.. autodecorator:: cocotb_timeout
+
+.. autodecorator:: cocotb_library
+
+.. autodecorator:: cocotb_sources
+
+.. autodecorator:: cocotb_defines
+
+.. autodecorator:: cocotb_includes
+
+.. autodecorator:: cocotb_parameters
+
+.. autodecorator:: cocotb_plusargs
+
+.. autodecorator:: cocotb_env
+
+.. autodecorator:: cocotb_seed
+
+.. autodecorator:: cocotb_timescale
+
+.. autodecorator:: cocotb_always
+
+.. autodecorator:: cocotb_clean
+
+.. autodecorator:: cocotb_waves
+
+.. autodecorator:: cocotb_build_args
+
+.. autodecorator:: cocotb_elab_args
+
+.. autodecorator:: cocotb_test_args
+
+.. autodecorator:: cocotb_pre_cmd
+
+.. _api-pytest-plugin-hdl:
+
+
+HDL Fixture Request
+-------------------
+
+.. module:: cocotb_tools.pytest.hdl
+
+.. autoclass:: HDL
+    :members:
+
+
+.. _api-pytest-plugin-hook-specs:
+
+Hook Specifications
+-------------------
+
+.. module:: cocotb_tools.pytest.hookspecs
+
+.. autofunction:: pytest_cocotb_make_hdl
+
+.. autofunction:: pytest_cocotb_make_runner
+
+
 .. _api-runner:
 
 Python Test Runner
@@ -25,12 +114,13 @@ Python Test Runner
 .. warning::
     Python runners and associated APIs are an experimental feature and subject to change.
 
-.. currentmodule:: cocotb_tools.runner
-
 .. module:: cocotb_tools.runner
     :synopsis: Build HDL and run cocotb tests.
 
 .. autofunction:: get_runner
+
+.. autodata:: SUPPORTED_RUNNERS
+   :no-value:
 
 .. autoclass:: Runner
     :members:
@@ -39,7 +129,47 @@ Python Test Runner
 
 .. autoclass:: Verilog
 
+.. autoclass:: VerilatorControlFile
+
 .. autodata:: MAX_PARALLEL_BUILD_JOBS
+
+.. envvar:: GUI
+
+    Type: :ref:`env-boolean`
+
+    Default: :data:`False`
+
+    Enable the GUI mode in the simulator (if supported).
+
+.. envvar:: WAVES
+
+    Type: :ref:`env-boolean`
+
+    Default: :data:`False`
+
+    Enable wave traces dump for the Aldec Riviera-PRO, Mentor Graphics Questa, and Icarus Verilog simulators.
+    To get wave traces in Verilator see :ref:`sim-verilator-waveforms`.
+
+.. envvar:: COCOTB_WAVEFORM_VIEWER
+
+    Type: :ref:`env-string`
+
+    The name of the waveform viewer executable to use (like ``surfer``) when GUI mode is enabled
+    for simulators that do not have a built-in waveform viewer (like Verilator).
+    The executable name will be called with the name of the waveform file as the argument.
+
+.. envvar:: LIBPYTHON_LOC
+
+    Type: :ref:`env-string`
+
+    The absolute path to the Python library associated with the current Python installation;
+    i.e. ``libpython.so`` or ``python.dll`` on Windows.
+    This is determined with ``cocotb-config --libpython`` during build.
+
+    This is only used if :envvar:`GPI_USERS` is not already defined by the user.
+
+
+.. _api-runner-sim:
 
 Simulator Runners
 -----------------
@@ -72,35 +202,165 @@ File Utilities
 
 .. autofunction:: get_abs_path
 
-.. autofunction:: get_abs_paths
-
 .. autofunction:: outdated
-
-.. autoclass:: UnknownFileExtension
 
 
 .. _writing-tests:
 
-Writing and Generating Tests
+Marking and Generating Tests
 ============================
+
+.. currentmodule:: None
 
 .. autofunction:: cocotb.test
 
 .. autofunction:: cocotb.parametrize
 
+.. autofunction:: cocotb.skipif
+
+.. autofunction:: cocotb.xfail
+
 .. autoclass:: cocotb.regression.TestFactory
     :members:
     :member-order: bysource
 
-.. autofunction:: cocotb.regression.SimFailure
+.. autoclass:: cocotb.regression.SimFailure
 
-Interacting with the Simulator
-==============================
+
+Discovering Tests
+=================
+
+.. envvar:: COCOTB_MAX_FAILURES
+
+    Type: :ref:`_env-int`
+
+    Limits the number of test failures allowed during a regression run.
+
+    If set then if the number of failed tests reaches this value, the regression
+    is terminated early and no further tests are executed.
+
+    If not set, all tests are executed regardless of failures.
+
+    .. versionadded:: 2.1
+
+.. envvar:: COCOTB_TEST_MODULES
+
+    Type: :ref:`env-list`
+
+    The name of the Python module(s) to search for test functions -
+    if your tests are in a file called ``test_mydesign.py``, ``COCOTB_TEST_MODULES`` would be set to ``test_mydesign``.
+    Multiple modules can be specified using a comma-separated string.
+    For example: ``COCOTB_TEST_MODULES="directed_tests,random_tests,error_injection_tests"``.
+    All tests will be run from each specified module in order of the module's appearance in this list.
+
+    This is the only environment variable that is **required** for cocotb, all others are optional.
+
+    .. versionchanged:: 2.0
+
+        :envvar:`MODULE` is renamed to :envvar:`COCOTB_TEST_MODULES`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`MODULE` is a deprecated alias and will be removed.
+
+.. _testcase:
+
+.. envvar:: COCOTB_TESTCASE
+
+    Type: :ref:`env-list`
+
+    A comma-separated list of tests to run.
+    Does an exact match on the test name.
+
+    .. versionchanged:: 2.0
+
+        :envvar:`TESTCASE` is renamed to :envvar:`COCOTB_TESTCASE`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`TESTCASE` is a deprecated alias and will be removed.
+
+    .. deprecated:: 2.0
+
+        Use :envvar:`COCOTB_TEST_FILTER` instead.
+
+        If matching only the exact test name is desired, use the regular expression anchor character ``$``.
+        For example, ``my_test$`` will match ``my_test``, but not ``my_test_2``.
+
+        To run multiple tests, use regular expression alternations.
+        For example, ``my_test|my_other_test``.
+
+    .. versionchanged:: 2.0
+
+        Previously, if more than one test matched a test name in the :envvar:`TESTCASE` list,
+        only the first test that matched that test name in the :envvar:`COCOTB_TEST_MODULES` list was run.
+        Now, all tests that match the test name across all :envvar:`COCOTB_TEST_MODULES`\ s are run.
+
+    .. warning::
+
+        Only one of :envvar:`COCOTB_TESTCASE` or :envvar:`COCOTB_TEST_FILTER` should be used.
+
+
+.. envvar:: COCOTB_TEST_FILTER
+
+    Type: :ref:`env-string`
+
+    A regular expression matching names of test function(s) to run.
+    If this variable is not defined cocotb discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied :envvar:`COCOTB_TEST_MODULES` list.
+
+    .. versionadded:: 2.0
+
+    .. warning::
+
+        Only one of :envvar:`COCOTB_TESTCASE` or :envvar:`COCOTB_TEST_FILTER` should be used.
+
+.. envvar:: COCOTB_LIST_TESTS
+
+    Type: :ref:`env-boolean`
+
+    If defined, list the tests that would be run, in the order they would be run, without running them.
+
+    .. versionadded:: 2.1
+
+.. envvar:: COCOTB_RESULTS_FILE
+
+    Type: :ref:`env-string`
+
+    Default: :file:`results.xml`
+
+    Name of the file in which xUnit XML test results are to be stored.
+
+    .. versionadded:: 1.3
+
+.. envvar:: COCOTB_REWRITE_ASSERTION_FILES
+
+    Type: :ref:`env-string`
+
+    Default: ``*.py``
+
+    Select the Python files to apply ``pytest``'s assertion rewriting to.
+    This is useful to get more informative assertion error messages in cocotb tests.
+    Specify using a space-separated list of file globs, e.g. ``test_*.py testbench_common/**/*.py``.
+    Set to the empty string to disable assertion rewriting.
+    Defaults to ``*.py`` (all Python files, even third-party modules like ``scipy``).
+
+    .. versionadded:: 2.0
+
+Test Management
+===============
+
+.. currentmodule:: None
+
+.. autofunction:: cocotb.end_test
+
+.. autofunction:: cocotb.pass_test
 
 .. _task-management:
 
 Task Management
----------------
+===============
+
+.. currentmodule:: None
 
 .. autofunction:: cocotb.start_soon
 
@@ -108,40 +368,86 @@ Task Management
 
 .. autofunction:: cocotb.create_task
 
-.. autoclass:: cocotb.task.ResultType
+.. module:: cocotb.task
+    :synopsis: Tools for concurrency.
 
-.. autoclass:: cocotb.task.Task
+.. autoclass:: ResultType
+
+.. autoclass:: Task
     :members:
 
-.. autofunction:: cocotb.task.current_task
+.. autofunction:: current_task
 
-Dealing with non-``async`` code
--------------------------------
+Bridging through non-`async` code
+---------------------------------
 
-.. autofunction:: cocotb.task.bridge
+.. autofunction:: bridge
 
-.. autofunction:: cocotb.task.resume
+.. autofunction:: resume
+
 
 HDL Datatypes
--------------
+=============
 
 These are a set of datatypes that model the behavior of common HDL datatypes.
 
 .. versionadded:: 1.6
 
-.. autoclass:: cocotb.types.Logic
+.. module:: cocotb.types
+    :synopsis: Types for dealing with digital signal values.
 
-.. autoclass:: cocotb.types.Range
+.. autoclass:: Logic
+    :members:
+
+.. autoclass:: Bit
+    :members:
+
+.. autoclass:: Range
     :members:
     :exclude-members: count, index
 
-.. autoclass:: cocotb.types.Array
+.. autoclass:: AbstractArray
+    :members:
+
+.. autoclass:: AbstractMutableArray
+    :members:
+    :show-inheritance:
+
+.. autoclass:: Array
     :members:
     :inherited-members:
 
-.. autoclass:: cocotb.types.LogicArray
+.. autoclass:: LogicArray
     :members:
     :inherited-members:
+
+.. envvar:: COCOTB_RESOLVE_X
+
+    Type: :ref:`env-string`
+
+    Defines how to resolve bits with a value of ``X``, ``Z``, ``U``, ``W``, or ``-`` when being converted to integer.
+    Valid settings are:
+
+    ``error``
+        Resolves nothing.
+    ``weak``
+        Resolves ``L`` to ``0`` and ``H`` to ``1``.
+    ``zeros``
+        Like ``weak``, but resolves all other non-\ ``0``\ /\ ``1`` values to ``0``.
+    ``ones``
+        Like ``weak``, but resolves all other non-\ ``0``\ /\ ``1`` values to ``1``.
+    ``random``
+        Like ``weak``, but resolves all other non-\ ``0``\ /\ ``1`` values randomly to either ``0`` or ``1``.
+
+    There is also a slight difference in behavior of ``bool(logic)`` when this environment variable is set.
+    When this variable is set, ``bool(logic)`` treats all non-\ ``0``\ /\ ``1`` values as equivalent to ``0``.
+    When this variable is *not* set, ``bool(logic)`` will fail on non-\ ``0``\ /\ ``1`` values.
+
+    .. warning::
+        Using this feature is *not* recommended.
+
+    .. deprecated:: 2.0
+        The previously accepted values ``VALUE_ERROR``, ``ZEROS``, ``ONES``, and ``RANDOM`` are deprecated.
 
 .. _triggers:
 
@@ -150,42 +456,44 @@ Triggers
 
 .. module:: cocotb.triggers
 
-.. autofunction:: cocotb.triggers.current_gpi_trigger
+.. autofunction:: current_gpi_trigger
 
 .. _edge-triggers:
 
 Edge Triggers
 -------------
 
-.. autoclass:: cocotb.triggers.RisingEdge
+.. autoclass:: RisingEdge
     :members:
 
-.. autoclass:: cocotb.triggers.FallingEdge
+.. autoclass:: FallingEdge
     :members:
 
-.. autoclass:: cocotb.triggers.ClockCycles
+.. autoclass:: ClockCycles
     :members:
 
-.. autoclass:: cocotb.triggers.ValueChange
+.. autoclass:: ValueChange
     :members:
 
-.. autoclass:: cocotb.triggers.Edge
+.. autoclass:: Edge
     :members:
 
 
 Timing Triggers
 ---------------
 
-.. autoclass:: cocotb.triggers.Timer
+.. autoclass:: Timer
     :members:
 
-.. autoclass:: cocotb.triggers.ReadOnly
+    .. autoattribute:: round_mode
+
+.. autoclass:: ReadOnly
     :members:
 
-.. autoclass:: cocotb.triggers.ReadWrite
+.. autoclass:: ReadWrite
     :members:
 
-.. autoclass:: cocotb.triggers.NextTimeStep
+.. autoclass:: NextTimeStep
     :members:
 
 
@@ -194,19 +502,32 @@ Concurrency Triggers
 
 Triggers dealing with Tasks or running multiple Tasks concurrently.
 
+.. currentmodule:: None
+
 .. autoclass:: cocotb.task.Join
     :members:
 
 .. autoclass:: cocotb.task.TaskComplete
     :members:
 
-.. autoclass:: cocotb.triggers.NullTrigger
+.. currentmodule:: cocotb.triggers
+
+.. autoclass:: NullTrigger
     :members:
 
-.. autoclass:: cocotb.triggers.Combine
+.. autoclass:: Combine
     :members:
 
-.. autoclass:: cocotb.triggers.First
+.. autoclass:: First
+    :members:
+
+.. autofunction:: wait
+
+.. autofunction:: gather
+
+.. autofunction:: select
+
+.. autoclass:: TaskManager
     :members:
 
 
@@ -216,17 +537,17 @@ Synchronization Triggers
 The following objects are not :class:`Trigger`\ s themselves, but contain methods that can be used as triggers.
 They are used to synchronize coroutines with each other.
 
-.. autoclass:: cocotb.triggers.Event
+.. autoclass:: Event
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.Lock
+.. autoclass:: Lock
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.SimTimeoutError
+.. autoclass:: SimTimeoutError
 
-.. autofunction:: cocotb.triggers.with_timeout
+.. autofunction:: with_timeout
 
 
 Abstract Triggers
@@ -234,15 +555,15 @@ Abstract Triggers
 
 The following are internal classes used within ``cocotb``.
 
-.. autoclass:: cocotb.triggers.Trigger
+.. autoclass:: Trigger
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.GPITrigger
+.. autoclass:: GPITrigger
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.Waitable
+.. autoclass:: Waitable
     :members:
     :member-order: bysource
     :private-members:
@@ -254,51 +575,86 @@ Test Utilities
 Clock Driver
 ------------
 
-.. module:: cocotb.clock
-
-.. autoclass:: cocotb.clock.Clock
+.. automodule:: cocotb.clock
     :members:
     :member-order: bysource
+    :synopsis: A single-ended clock driver.
 
 Asynchronous Queues
 -------------------
 
 .. automodule:: cocotb.queue
     :members:
+    :inherited-members:
     :member-order: bysource
-    :synopsis: Asynchronous queues.
+    :synopsis: Collection of asynchronous queues.
 
 
 Simulation Time Utilities
 =========================
 
+.. automodule:: cocotb.simtime
+    :members:
+    :member-order: bysource
+    :synopsis: Tools for dealing with simulated time.
+
 .. automodule:: cocotb.utils
     :members:
     :member-order: bysource
-    :synopsis: Various utilities for dealing with simulation time.
-
+    :synopsis: Tools for dealing with simulated time.
+    :ignore-module-all:
 
 .. _logging-reference-section:
 
 Logging
 =======
 
+.. autodata:: cocotb.log
+
 .. module:: cocotb.logging
     :synopsis: Classes for logging messages from cocotb during simulation.
 
-.. autodata:: cocotb.log
+.. autofunction:: SimLog
 
 .. autofunction:: default_config
 
-.. autofunction:: SimLog
+.. envvar:: COCOTB_LOG_LEVEL
 
-.. autoclass:: SimLogFormatter
-    :show-inheritance:
-    :no-members:
+    Type: :ref:`env-string`
 
-.. autoclass:: SimColourLogFormatter
-    :show-inheritance:
-    :no-members:
+    The default log level of all ``"cocotb"`` Python loggers.
+    Valid values are ``TRACE``, ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
+    The default is unset, which means that the log level is inherited from the root logger.
+    This behaves similarly to ``INFO``.
+
+    .. versionchanged:: 2.0
+        The root ``"gpi"`` logger level is no longer set when this environment variable is used.
+        Use :envvar:`GPI_LOG_LEVEL` instead.
+
+.. envvar:: GPI_LOG_LEVEL
+
+    Type: :ref:`env-string`
+
+    The default log level of all ``"gpi"`` (the low-level simulator interface) loggers,
+    including both Python and the native GPI logger.
+    Valid values are ``TRACE``, ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
+    The default is unset, which means that the log level is inherited from the root logger.
+    This behaves similarly to ``INFO``.
+
+    .. versionadded:: 2.0
+
+.. envvar:: GPI_DEBUG
+
+    Enable additional debug functionality in the GPI.
+    Includes verbose log messages tracing the code execution path through the GPI.
+    The messages are logged at GPI log level ``TRACE``,
+    so :envvar:`GPI_LOG_LEVEL` must be set to ``TRACE`` in order to see
+    tracing messages during early GPI startup.
+
+    .. versionadded:: 2.1
+
+Adding Simulation Time to Logs
+------------------------------
 
 .. autoclass:: SimTimeContextFilter
     :show-inheritance:
@@ -308,10 +664,87 @@ Logging
 
 .. attribute:: logging.LogRecord.created_sim_time
 
-    The result of :func:`~cocotb.utils.get_sim_time` at the point the log was created (in simulation time).
-    The formatter is responsible for converting this to something like nanoseconds via :func:`~cocotb.utils.get_time_from_sim_steps`.
+    The result of :func:`~cocotb.simtime.get_sim_time` at the point the log was created (in simulation time).
+    The formatter is responsible for converting this to something like nanoseconds via :func:`~cocotb.simtime.convert`.
 
-    This is added by :class:`cocotb.log.SimTimeContextFilter`.
+    This is added by :class:`~cocotb.logging.SimTimeContextFilter`.
+
+.. currentmodule:: cocotb.logging
+
+Log Formatting
+--------------
+
+.. autoclass:: SimLogFormatter
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: SimColourLogFormatter
+    :show-inheritance:
+    :no-members:
+
+.. envvar:: COCOTB_REDUCED_LOG_FMT
+
+    Type: :ref:`env-boolean`
+
+    Default: :data:`True`
+
+    Logs will include simulation time, message type (``INFO``, ``WARNING``, ``ERROR``, ...), logger name, and the log message itself.
+    If disabled, the filename and line number where a log function was called will be added between the logger name and the log message.
+
+.. envvar:: COCOTB_LOG_PREFIX
+
+    Type: :ref:`env-string`
+
+    Customize the log message prefix.
+    The value of this variable should be in Python f-string syntax.
+    It has access to the following variables:
+
+    - ``record``: The :class:`~logging.LogRecord` being formatted. This includes the attribute ``created_sim_time``, which is the simulation time in steps.
+    - ``time``: The Python :mod:`time` module.
+    - ``simtime``: The cocotb :mod:`cocotb.simtime` module.
+    - ``simtime_fmt``: Function which, given a ``LogRecord`` and ``TimeUnit``, returns the simulation time in the requested units as a string with the default formatting.
+    - ``ANSI``: The cocotb :class:`cocotb.logging.ANSI` enum, which contains ANSI escape codes for coloring the output.
+    - ``level_color_start``: The ANSI escape code to start highlighting according to the log level.
+    - ``level_color_end``: The ANSI escape code to end highlighting according to the log level.
+    - ``ljust``: A helper function ``ljust(s,c)``, equivalent to ``s.ljust(c)`` after shortening ``s`` from the left to a length at most ``c`` and prepending ``..`` if anything was cut.
+    - ``rjust``: A helper function ``rjust(s,c)``, equivalent to ``s.rjust(c)`` after shortening in the same way as ``ljust``.
+
+    The following example is a color-less version of the default log prefix.
+
+    .. code-block:: shell
+
+        COCOTB_LOG_PREFIX="{simtime.convert(record.created_sim_time, 'step', to='ns'):>9}ns {record.levelname:<8} {ljust(record.name, 34)} "
+
+    .. note::
+        If this variable is set, :envvar:`COCOTB_REDUCED_LOG_FMT` has no effect.
+
+    .. versionadded:: 2.0
+
+Log Coloring
+------------
+
+.. autodata:: strip_ansi
+
+.. autodata:: ANSI
+
+.. envvar:: COCOTB_ANSI_OUTPUT
+
+    Type: :ref:`env-boolean`
+
+    Use this to override the default behavior of annotating cocotb output with
+    ANSI color codes if the output is a terminal (``isatty()``).
+
+    ``COCOTB_ANSI_OUTPUT=1``
+       Forces output to be ANSI-colored regardless of the type of ``stdout`` or the presence of :envvar:`NO_COLOR`.
+    ``COCOTB_ANSI_OUTPUT=0``
+       Suppresses the ANSI color output in the log messages.
+
+.. envvar:: NO_COLOR
+
+    From http://no-color.org,
+
+        Command-line software which adds ANSI color to its output by default should check for a ``NO_COLOR`` environment variable that,
+        when present and not an empty string (regardless of its value), prevents the addition of ANSI color.
 
 
 Simulator Objects
@@ -322,6 +755,7 @@ Simulator Objects
     A better term is :term:`simulator object`.
 
 .. module:: cocotb.handle
+    :synopsis: Tools for discovering and manipulating :term:`simulator objects <simulator object>`.
 
 .. autoclass:: SimHandleBase
     :members:
@@ -384,6 +818,34 @@ Simulator Objects
     :member-order: bysource
     :inherited-members: SimHandleBase, ValueObjectBase
 
+.. envvar:: COCOTB_TRUST_INERTIAL_WRITES
+
+    Type: :ref:`env-boolean`
+
+    Defining this variable enables a mode which allows cocotb to trust that VPI/VHPI/FLI inertial writes are applied properly according to the respective standards.
+    This mode can lead to noticeable performance improvements,
+    and also includes some behavioral difference that are considered by the cocotb maintainers to be "better".
+    Not all simulators handle inertial writes properly, so use with caution.
+
+    This is achieved by *not* scheduling writes to occur at the beginning of the ``ReadWrite`` mode,
+    but instead trusting that the simulator's inertial write mechanism is correct.
+    This allows cocotb to avoid a VPI callback into Python to apply writes.
+
+    .. note::
+        This flag is enabled by default for the GHDL, NVC and Verilator simulators.
+        More simulators may enable this flag by default in the future as they are gradually updated to properly apply inertial writes according to the respective standard.
+
+    .. note::
+        To test if your simulator behaves correctly with your simulator and version,
+        first clone the cocotb github repo and run:
+
+        .. code-block::
+
+            cd tests/test_cases/test_inertial_writes
+            make simulator_test SIM=<your simulator here> TOPLEVEL_LANG=<vhdl or verilog>
+
+        If the tests pass, your simulator and version apply inertial writes as expected and you can turn on :envvar:`COCOTB_TRUST_INERTIAL_WRITES`.
+
 .. _assignment-methods:
 
 Assignment Methods
@@ -399,24 +861,59 @@ Assignment Methods
 
 .. autoclass:: Release
 
-.. module:: None
-
 Miscellaneous
 =============
 
-Test Control
-------------
-
-.. autofunction:: cocotb.pass_test
-
 Other Runtime Information
 -------------------------
+
+.. currentmodule:: None
+
+.. autodata:: cocotb.__version__
 
 .. autodata:: cocotb.argv
 
 .. autodata:: cocotb.plusargs
 
+.. envvar:: COCOTB_PLUSARGS
+
+    Type: :ref:`env-string`
+
+      "Plusargs" are options that are starting with a plus (``+``) sign.
+      They are passed to the simulator and are also available within cocotb as :data:`cocotb.plusargs`.
+      In the simulator, they can be read by the Verilog/SystemVerilog system functions
+      ``$test$plusargs`` and ``$value$plusargs``.
+
+    .. versionchanged:: 2.0
+
+        :envvar:`PLUSARGS` is renamed to :envvar:`COCOTB_PLUSARGS`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`PLUSARGS` is a deprecated alias and will be removed.
+
 .. autodata:: cocotb.top
+
+.. envvar:: COCOTB_TOPLEVEL
+
+    Type: :ref:`env-string`
+
+    Use this to indicate the instance in the hierarchy to use as the :term:`DUT`.
+    If this isn't defined then the first root instance is used.
+    Leading and trailing whitespace are automatically discarded.
+
+    The DUT is available in cocotb tests as a Python object at :data:`cocotb.top`;
+    and is also passed to all cocotb tests as the :ref:`first and only parameter <quickstart_creating_a_test>`.
+
+    .. versionchanged:: 1.6 Strip leading and trailing whitespace
+
+    .. versionchanged:: 2.0
+
+        :envvar:`TOPLEVEL` is renamed to :envvar:`COCOTB_TOPLEVEL`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`TOPLEVEL` is a deprecated alias and will be removed.
 
 .. autodata:: cocotb.packages
 
@@ -426,7 +923,147 @@ Other Runtime Information
 
 .. autodata:: cocotb.RANDOM_SEED
 
+.. envvar:: COCOTB_RANDOM_SEED
+
+    Type: :ref:`env-integer`
+
+    Seed the Python random module to recreate a previous test stimulus.
+    At the beginning of every test a message is displayed with the seed used for that execution:
+
+    .. code-block:: bash
+
+             0.00ns INFO     cocotb                             Seeding Python random module with 1756566114
+
+
+    To recreate the same stimuli use the following:
+
+    .. code-block:: bash
+
+       make COCOTB_RANDOM_SEED=1377424946
+
+    The special :data:`cocotb.plusargs` ``+ntb_random_seed`` and ``+seed``, if present,
+    are evaluated to set the random seed value if :envvar:`!COCOTB_RANDOM_SEED` is not set.
+    ``+ntb_random_seed`` takes precedence over ``+seed``.
+
+    .. versionchanged:: 2.0
+
+        :envvar:`RANDOM_SEED` is renamed to :envvar:`COCOTB_RANDOM_SEED`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`RANDOM_SEED` is a deprecated alias and will be removed.
+
+    .. deprecated:: 2.0
+
+        The setting of :envvar:`!COCOTB_RANDOM_SEED` using ``+ntb_random_seed`` and ``+seed`` :data:`!cocotb.plusargs`.
+
+
 .. autodata:: cocotb.is_simulation
+
+.. envvar:: COCOTB_RANDOM_TEST_ORDER
+
+    Type :ref:`env-boolean`
+
+    Default: :data:`False`
+
+    Enable randomizing the order of tests within each stage. To recreate the
+    same test order, the random seed must be set.
+
+    If not set, all tests are ran in the order in which they were discovered.
+
+    .. versionadded:: 2.1
+
+Debugging
+---------
+
+.. automodule:: cocotb.debug
+    :members:
+    :member-order: bysource
+    :synopsis: Features for debugging cocotb's concurrency system.
+
+.. envvar:: COCOTB_SCHEDULER_DEBUG
+
+    Type: :ref:`env-boolean`
+
+    Default: :data:`False`
+
+    Enable additional log output of the coroutine scheduler.
+
+    This will default the value of :data:`~cocotb.debug.debug`,
+    which can later be modified.
+
+.. envvar:: COCOTB_PDB_ON_EXCEPTION
+
+    Type: :ref:`env-boolean`
+
+    Default: :data:`False`
+
+    If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
+    See also the :ref:`troubleshooting-attaching-debugger-python` subsection of :ref:`troubleshooting-attaching-debugger`.
+
+    .. note::
+        Prior to Python 3.14 running the ``(q)uit`` command in the debugger would not exit the simulator process,
+        but continue running the rest of the test suite. From Python 3.14 onwards, ``(q)uit`` will exit the simulator process immediately.
+        To mimic this behavior call :func:`os._exit` from the pdb command line.
+
+        .. code-block::
+
+            (Pdb) import os; os._exit(0)
+
+.. envvar:: COCOTB_ATTACH
+
+    Type: :ref:`env-integer`
+
+    In order to give yourself time to attach a debugger to the simulator process before it starts to run,
+    you can set the environment variable :envvar:`COCOTB_ATTACH` to a pause time value in seconds.
+    If set, cocotb will print the process ID (PID) to attach to and wait the specified time before
+    actually letting the simulator run.
+
+.. envvar:: COCOTB_ENABLE_PROFILING
+
+    Type: :ref:`env-boolean`
+
+    Default: :data:`False`
+
+    Enable performance analysis of the Python portion of cocotb. When set, a file :file:`test_profile.pstat`
+    will be written which contains statistics about the cumulative time spent in the functions.
+
+    From this, a callgraph diagram can be generated with `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ and ``graphviz``.
+
+.. envvar:: COCOTB_USER_COVERAGE
+
+    Type: :ref:`env-boolean`
+
+    Default: :data:`False`
+
+    Enable to collect Python coverage data for user code.
+    For some simulators, this will also report :term:`HDL` coverage.
+    If :envvar:`COVERAGE_RCFILE` is not set, branch coverage is collected
+    and files in the cocotb package directory are excluded.
+
+    This needs the :mod:`coverage` Python module to be installed.
+
+    .. versionchanged:: 2.0
+
+        :envvar:`COVERAGE` is renamed to :envvar:`COCOTB_USER_COVERAGE`.
+
+    .. deprecated:: 2.0
+
+        :envvar:`COVERAGE` is a deprecated alias and will be removed.
+
+.. envvar:: COVERAGE_RCFILE
+
+    Type: :ref:`env-string`
+
+    Location of a configuration file for coverage collection of Python user code
+    using the the :mod:`coverage` module.
+    See https://coverage.readthedocs.io/en/latest/config.html for documentation of this file.
+
+    If this environment variable is set,
+    cocotb will *not* apply its own default coverage collection settings,
+    like enabling branch coverage and excluding files in the cocotb package directory.
+
+    .. versionadded:: 1.7
 
 .. _combine-results:
 
@@ -467,7 +1104,7 @@ The Regression Manager
 .. module:: cocotb.regression
     :synopsis: Regression test suite manager.
 
-.. autodata:: cocotb._regression_manager
+.. autodata:: _manager_inst
 
 .. autoclass:: Test
 
@@ -477,15 +1114,130 @@ The Regression Manager
     :members:
     :member-order: bysource
 
-The ``cocotb.simulator`` module (Internals)
--------------------------------------------
 
-This module is a Python wrapper to libgpi.
-It should not be considered public API, but is documented here for developers
-of cocotb.
+.. _pygpi:
+
+PyGPI and the ``cocotb.simulator`` module
+-----------------------------------------
+
+The PyGPI is a Python wrapper around the :term:`GPI` (Generic Procedural Interface).
+
+.. envvar:: PYGPI_PYTHON_BIN
+
+    Type: :ref:`env-string`
+
+    The Python binary in the Python environment to use with cocotb.
+    This is set to the result of ``cocotb-config --python-bin`` in the Makefiles and :ref:`Python Runner <howto-python-runner>`.
+    You will likely only need to set this variable manually if
+    you are using a Python environment other than the currently activated environment,
+    or if you are using a :ref:`custom flow <custom-flows>`.
+
+.. envvar:: PYGPI_USERS
+
+    Type: :ref:`env-list`
+
+    The Python module and callable that starts up the Python cosimulation environment.
+    User overloads can be used to enter alternative Python frameworks or to hook existing cocotb functionality.
+    The variable is formatted as ``path.to.entry.module:entry_point.function,other_module:other_func``.
+    The string before the colon is the Python module to import
+    and the string following the colon is the object to call as the entry function.
+    Multiple entry points can be specified by separating them with a comma.
+
+    The entry function must be a callable matching this form:
+
+    * ``entry_function() -> None``
+
+    .. versionchanged:: 1.8
+        ``level`` argument to ``_sim_event`` is no longer passed, it is assumed to be ``SIM_FAIL`` (2).
+
+    .. versionchanged:: 2.0
+        The entry-module-level functions ``_sim_event``, ``_log_from_c``, and ``_filter_from_c`` are no longer required.
+
+    .. versionchanged:: 2.0
+        Multiple entry points can be specified by separating them with a comma.
+
+    .. versionchanged:: 2.0
+        Renamed from ``PYGPI_ENTRY_POINT``.
+
+    .. versionchanged:: 2.1
+
+        The entry function is no longer passed the ``argv`` object.
+        If you need access to command-line arguments, use :func:`cocotb.simulator.get_simulator_args`.
+
+.. envvar:: PYGPI_DEBUG
+
+    Type: :ref:`env-boolean`
+
+    Default: :data:`False`
+
+    Enable additional debug functionality in the PyGPI.
+    Includes verbose log messages tracing the code execution path through the PyGPI.
+    The messages are logged at GPI log level ``TRACE``,
+    so :envvar:`GPI_LOG_LEVEL` must be set to ``TRACE`` in order to see
+    tracing messages during early PyGPI startup.
+
+    .. versionadded:: 2.1
+
+The ``cocotb.simulator`` module is the Python :keyword:`import`-able interface to the PyGPI.
+It should not be considered public API, but is documented here for developers of cocotb.
 
 .. automodule:: cocotb.simulator
     :members:
     :undoc-members:
     :member-order: bysource
     :synopsis: Interface to simulator.
+
+
+.. _env:
+
+Environment Variables
+=====================
+
+.. _env-types:
+
+Types
+-----
+
+.. _env-boolean:
+
+Boolean
+^^^^^^^
+
+Enable or disable an option by setting the corresponding environment variable to one of the supported values (case-insensitive):
+
+* ``1``, ``yes``, ``y``, ``on``, ``true`` or ``enable`` to enable it.
+* ``0``, ``no``, ``n``, ``off``, ``false`` or ``disable`` to disable it.
+* If the environment variable is unset or empty, it will use the listed default value, or be disabled if no default is specified.
+
+.. note::
+
+    Environment variables of boolean type are case-insensitive. For example: ``YES``, ``Yes`` or ``yes`` are equal.
+
+.. _env-list:
+
+List
+^^^^
+
+Comma (``,``) separated list of values. Each element will have leading and trailing whitespace characters stripped.
+Empty elements will be discarded.
+
+.. _env-string:
+
+String
+^^^^^^
+
+Passed value will have leading and trailing whitespace characters stripped.
+If environment variable is unset or empty, it will use default value.
+If no default is specified by the documentation, the feature will be disabled.
+
+.. _env-integer:
+
+Integer
+^^^^^^^
+
+An integer environment variable is formatted similarly to a Python integer literal.
+Only decimal literal syntax is supported (i.e. ``0x1234`` is *not* supported) unless specified.
+There is no limit on the size of the integer.
+Values cannot be prefixed with ``-``; negative values are not currently supported.
+Values cannot contain a decimal point, fractional value (even if ``0``) or exponent.
+Any leading or trailing whitespace is stripped.

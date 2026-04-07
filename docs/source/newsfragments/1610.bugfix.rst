@@ -1,1 +1,0 @@
-Fixes handling of escaped identifiers containing characters that are special in regular expressions (e.g. dots).

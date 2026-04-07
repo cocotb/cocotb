@@ -1,1 +1,0 @@
-Made ``cocotb.triggers.Trigger.primed``, ``cocotb.triggers.GPITrigger.cbhdl``, and ``cocotb.triggers.Timer.sim_steps`` private.

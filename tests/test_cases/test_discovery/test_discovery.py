@@ -3,6 +3,7 @@
 # Copyright (c) 2013 SolarFlare Communications Inc
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import os
 
@@ -21,10 +22,15 @@ from cocotb.handle import (
 )
 from cocotb.triggers import Timer
 from cocotb.types import LogicArray
-from cocotb_tools.sim_versions import VerilatorVersion
+from cocotb_tools.sim_versions import NvcVersion, RivieraVersion, VerilatorVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+SIM_VERSION = cocotb.SIM_VERSION
+
+riviera_before_2025_04 = SIM_NAME.startswith("riviera") and RivieraVersion(
+    SIM_VERSION
+) < RivieraVersion("2025.04")
 
 
 # GHDL is unable to access signals in generate loops (gh-2594)
@@ -141,7 +147,7 @@ async def recursive_discover(dut):
         if not isinstance(obj, (HierarchyObject, HierarchyArrayObject, ArrayObject)):
             return
         for thing in obj:
-            dut._log.debug("Found %s (%s)", thing._name, type(thing))
+            cocotb.log.debug("Found %s (%s)", thing._name, type(thing))
             _discover(thing)
 
     _discover(dut)
@@ -249,12 +255,12 @@ async def access_type_bit_verilog_metavalues(dut):
         assert dut.mybits.value == "00"
 
 
-# Riviera discovers integers as nets (gh-2597)
+# Riviera < 2025.04 discovers integers as nets (gh-2597)
 # GHDL discovers integers as nets (gh-2596)
 # Icarus does not support integer signals (gh-2598)
 @cocotb.test(
     expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
-    expect_fail=(SIM_NAME.startswith("riviera") and LANGUAGE in ["verilog"])
+    expect_fail=(riviera_before_2025_04 and LANGUAGE in ["verilog"])
     or SIM_NAME.startswith(("ghdl", "verilator")),
 )
 async def access_integer(dut):
@@ -271,7 +277,7 @@ async def access_ulogic(dut):
 # GHDL discovers generics as vpiParameter (gh-2722)
 @cocotb.test(
     skip=LANGUAGE in ["verilog"],
-    expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def access_constant_integer(dut):
     """
@@ -284,7 +290,7 @@ async def access_constant_integer(dut):
 # GHDL discovers generics as vpiParameter (gh-2722)
 @cocotb.test(
     skip=LANGUAGE in ["verilog"],
-    expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def access_constant_string_vhdl(dut):
     """Access to a string, both constant and signal."""
@@ -358,7 +364,7 @@ async def access_var_string_verilog(dut):
 # GHDL discovers generics as vpiParameter (gh-2722)
 @cocotb.test(
     skip=LANGUAGE in ["verilog"],
-    expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else (),
+    expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def access_constant_boolean(dut):
     """Test access to a constant boolean"""
@@ -433,12 +439,12 @@ async def type_check_verilog(dut):
     test_handles = [
         (dut.stream_in_ready, "GPI_LOGIC"),
         (dut.register_array, "GPI_ARRAY"),
-        (dut.temp, "GPI_LOGIC_ARRAY"),
+        (dut.temp, "GPI_PACKED_OBJECT"),
         (dut.logic_b, "GPI_LOGIC"),
         (dut.logic_c, "GPI_LOGIC"),
-        (dut.INT_PARAM, "GPI_LOGIC_ARRAY"),
+        (dut.INT_PARAM, "GPI_PACKED_OBJECT"),
         (dut.REAL_PARAM, "GPI_REAL"),
-        (dut.stream_in_data, "GPI_LOGIC_ARRAY"),
+        (dut.stream_in_data, "GPI_PACKED_OBJECT"),
         (dut.and_output, "GPI_LOGIC"),
         (dut.logic_a, "GPI_LOGIC"),
     ]
@@ -446,12 +452,15 @@ async def type_check_verilog(dut):
     # Verilator returns vpiReg rather than vpiNet
     # Verilator (correctly) treats parameters with implicit type, that are assigned a string literal value, as an unsigned integer. See IEEE 1800-2017 Section 5.9 and Section 6.20.2
     if SIM_NAME.startswith("verilator"):
-        test_handles.append((dut.STRING_PARAM, "GPI_LOGIC_ARRAY"))
+        test_handles.append((dut.STRING_PARAM, "GPI_PACKED_OBJECT"))
     else:
         test_handles.append((dut.STRING_PARAM, "GPI_STRING"))
 
-    for handle in test_handles:
-        assert handle[0]._type == handle[1]
+    for handle, expected in test_handles:
+        if isinstance(expected, tuple):
+            assert handle._type in expected
+        else:
+            assert handle._type == expected
 
 
 # GHDL cannot find signal in "block" statement, may be related to (gh-2594)
@@ -484,7 +493,7 @@ async def discover_all_in_component_vhdl(dut):
         count = 0
         for thing in obj:
             count += 1
-            dut._log.info("Found %s (%s)", thing._path, type(thing))
+            cocotb.log.info("Found %s (%s)", thing._path, type(thing))
             count += _discover(thing)
         return count
 
@@ -504,8 +513,12 @@ async def discover_all_in_component_vhdl(dut):
     #   1   SAMPLE_BLOCK.clk_inv
     if sim.startswith("ghdl"):
         # finds SAMPLE_BLOCK twice
-        # doesn't find EXAMPLE_STRING, EXAMPLE_BOOL, or EXAMPLE_WIDTH
-        assert total_count == 7
+        assert total_count == 10
+    elif sim.startswith("nvc") and NvcVersion(cocotb.SIM_VERSION) < NvcVersion(
+        "1.16.0"
+    ):
+        # old versions of NVC find clk_inv twice
+        assert total_count == 10
     else:
         assert total_count == 9
 

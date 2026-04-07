@@ -1,12 +1,13 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-import os
-from typing import Any
+from __future__ import annotations
+
+from cocotb_tools import _env
 
 
-def start_cocotb_library_coverage(_: Any) -> None:  # pragma: no cover
-    if "COCOTB_LIBRARY_COVERAGE" not in os.environ:
+def start_cocotb_library_coverage() -> None:  # pragma: no cover
+    if not _env.as_bool("COCOTB_LIBRARY_COVERAGE"):
         return
     try:
         import coverage  # noqa: PLC0415
@@ -21,6 +22,7 @@ def start_cocotb_library_coverage(_: Any) -> None:  # pragma: no cover
             branch=True,
             source=["cocotb"],
         )
+        library_coverage.load()
         library_coverage.start()
 
         def stop_library_coverage() -> None:
@@ -29,6 +31,6 @@ def start_cocotb_library_coverage(_: Any) -> None:  # pragma: no cover
 
         # This must come after `library_coverage.start()` to ensure coverage is being
         # collected on the cocotb library before importing from it.
-        from cocotb._init import _register_shutdown_callback  # noqa: PLC0415
+        import cocotb._shutdown  # noqa: PLC0415
 
-        _register_shutdown_callback(stop_library_coverage)
+        cocotb._shutdown.register(stop_library_coverage)

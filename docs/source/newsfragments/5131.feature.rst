@@ -1,0 +1,1 @@
+Added :envvar:`GPI_DEBUG` and :envvar:`PYGPI_DEBUG` environment variables to enable additional debug features, including TRACE log messages.

@@ -1,6 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import os
 import sys
@@ -59,5 +60,5 @@ def test_cocotb_parallel(seed):
         test_module=module_name,
         test_args=sim_args,
         build_dir=sim_build,
-        timescale=timescale,
+        timescale=None if sim in ("xcelium",) else timescale,
     )

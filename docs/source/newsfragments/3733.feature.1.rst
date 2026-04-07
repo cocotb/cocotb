@@ -1,1 +1,0 @@
-Added :attr:`~cocotb.handle.ArrayObject.range`, :attr:`~cocotb.handle.ArrayObject.left`, :attr:`~cocotb.handle.ArrayObject.direction`, and :attr:`~cocotb.handle.ArrayObject.right` properties to :class:`~cocotb.handle.ArrayObject`, :class:`~cocotb.handle.LogicArrayObject`, and :class:`~cocotb.handle.StringObject`.

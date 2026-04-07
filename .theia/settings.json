@@ -1,4 +1,0 @@
-{
-    // show leading and trailing whitespace
-    "editor.renderWhitespace": "boundary"
-}

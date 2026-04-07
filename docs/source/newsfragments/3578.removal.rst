@@ -1,1 +1,0 @@
-The ``prefix`` and ``postfix`` arguments to :meth:`TestFactory.generate_tests() <cocotb.regression.TestFactory.generate_tests>` are deprecated in favor of the more flexible ``name`` argument.

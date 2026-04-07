@@ -1,0 +1,1 @@
+Added :deco:`cocotb.xfail` to mark a test as expected to fail with an optional reason and expected exception type.

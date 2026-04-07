@@ -1,4 +1,4 @@
-Cocotb documentation
+cocotb documentation
 ====================
 
 This directory contains the documentation of cocotb, which is built with Doxygen and Sphinx.

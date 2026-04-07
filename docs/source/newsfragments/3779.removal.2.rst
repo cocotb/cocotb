@@ -1,1 +1,0 @@
-Removed :attr:`cocotb.argc`. Use ``len(cocotb.argv)`` instead.

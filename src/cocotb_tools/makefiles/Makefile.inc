@@ -11,10 +11,10 @@ COCOTB_MAKEFILE_INC_INCLUDED = 1
 
 # Default sim rule will force a re-run of the simulation (though the cocotb library
 # and RTL compilation phases are still evaluated by makefile dependencies)
-.PHONY: sim
-sim:
+.PHONY: sim, _rm_results
+_rm_results:
 	$(RM) $(COCOTB_RESULTS_FILE)
-	"$(MAKE)" -f $(firstword $(MAKEFILE_LIST)) $(COCOTB_RESULTS_FILE)
+sim: _rm_results regression
 
 # Make sure to use bash for the pipefail option used in many simulator Makefiles
 SHELL := bash
@@ -26,15 +26,6 @@ else ifneq (, $(findstring MSYS, $(OS)))
     OS := Msys
 endif
 export OS
-
-# this ensures we use the same python as the one cocotb was installed into
-# attempts to use cocotb_config entry script to get that info, falls back to "python"
-PYTHON_BIN_RES := $(shell cocotb-config --python-bin 2>>/dev/null; echo $$?)
-PYTHON_BIN_RC := $(lastword $(PYTHON_BIN_RES))
-PYTHON_BIN := $(strip $(subst $(PYTHON_BIN_RC)QQQQ,,$(PYTHON_BIN_RES)QQQQ))
-ifneq ($(PYTHON_BIN_RC),0)
-    PYTHON_BIN := python3
-endif
 
 export PYGPI_PYTHON_BIN := $(shell $(PYTHON_BIN) -m cocotb_tools.config --python-bin)
 
@@ -62,6 +53,11 @@ endef
 # Check that the COCOTB_RESULTS_FILE was created and has no failures
 define check_results
     @$(PYTHON_BIN) -m cocotb_tools.check_results $(COCOTB_RESULTS_FILE)
+endef
+
+# Find an executable or fail if it can't be found.
+define find_command
+    $(or $(shell :; command -v $(1) 2>/dev/null),$(error Unable to locate command '$(1)'))
 endef
 
 SIM_BUILD ?= sim_build
@@ -107,6 +103,7 @@ manually override the LIBPYTHON_LOC make variable with the absolute path to libp
 
 endef
 
+ifndef GPI_USERS
 ifndef LIBPYTHON_LOC
 
 # get the path to libpython and the return code from the script
@@ -115,14 +112,14 @@ FIND_LIBPYTHON_RES := $(shell $(PYTHON_BIN) -m cocotb_tools.config --libpython; 
 FIND_LIBPYTHON_RC := $(lastword $(FIND_LIBPYTHON_RES))
 LIBPYTHON_LOC := $(strip $(subst $(FIND_LIBPYTHON_RC)QQQQ,,$(FIND_LIBPYTHON_RES)QQQQ))
 
-# complain if libpython isn't found, and export otherwise
+# complain if libpython isn't found
 ifneq ($(FIND_LIBPYTHON_RC),0)
     $(error $(find_libpython_errmsg))
 endif
-
 endif
-
-export LIBPYTHON_LOC
+GPI_USERS := $(LIBPYTHON_LOC);$(shell $(PYTHON_BIN) -m cocotb_tools.config --pygpi-entry-point)
+endif
+export GPI_USERS
 
 define check_vhdl_sources
 if [ "$(VHDL_SOURCES_$(LIB))" == "" ]; then \
@@ -138,6 +135,9 @@ define check_lib_order
   fi;
 endef
 
+# NOTE: if the following simulator list is modified, update the sentence
+# "This flag is enabled by default for the GHDL, NVC and Verilator simulators."
+# in docs/source/building.rst accordingly.
 ifneq ($(filter $(SIM),nvc ghdl verilator),)
   COCOTB_TRUST_INERTIAL_WRITES ?= 1
 else
@@ -186,6 +186,12 @@ clean::
 	@$(RM) -rf xrun.*
 	@$(RM) -rf xmsim.*
 	@$(RM) -rf gdb_cmd_xmsim
+	@$(RM) -f qrun*
+	@$(RM) -f visualizer.log
+	@$(RM) -f design.bin
+	@$(RM) -f qwave.db
+	@$(RM) -f transcript
+
 
 # DSim
 clean::

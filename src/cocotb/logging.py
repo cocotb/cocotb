@@ -8,81 +8,154 @@
 Everything related to logging
 """
 
+from __future__ import annotations
+
 import logging
 import os
+import re
 import sys
-from pathlib import Path
-from typing import TYPE_CHECKING, Union
+import time
+import warnings
+from functools import wraps
+from typing import Callable
 
-from cocotb import _ANSI, simulator
+import cocotb.simtime
+from cocotb import simulator
+from cocotb._ANSI import ANSI
 from cocotb._deprecation import deprecated
-from cocotb._utils import want_color_output
-from cocotb.utils import get_sim_time, get_time_from_sim_steps
+from cocotb.simtime import TimeUnit, get_sim_time
+from cocotb.utils import get_time_from_sim_steps
+from cocotb_tools import _env
 
-try:
-    _suppress = int(os.environ.get("COCOTB_REDUCED_LOG_FMT", "1"))
-except ValueError:
-    _suppress = 1
+__all__ = (
+    "ANSI",
+    "SimLog",
+    "SimLogFormatter",
+    "SimTimeContextFilter",
+    "default_config",
+    "strip_ansi",
+)
 
-# Column alignment
-_LEVEL_CHARS = len("CRITICAL")
-_RECORD_CHARS = 34
-_FILENAME_CHARS = 20
-_LINENO_CHARS = 4
-_FUNCNAME_CHARS = 31
+ANSI.__module__ = __name__
 
 # Custom log level
 logging.TRACE = 5  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
 logging.addLevelName(5, "TRACE")
 
 
-__all__ = (
-    "SimBaseLog",
-    "SimColourLogFormatter",
-    "SimLog",
-    "SimLogFormatter",
-    "SimTimeContextFilter",
-    "default_config",
-)
+strip_ansi: bool = False
+"""Whether the default formatter should strip ANSI (color) escape codes from log messages.
+
+Defaults to ``True`` if ``stdout`` is not a TTY and ``False`` otherwise;
+but can be overridden with the :envvar:`NO_COLOR` or :envvar:`COCOTB_ANSI_OUTPUT` environment variable.
+"""
 
 
-def default_config() -> None:
+def default_config(
+    reduced_log_fmt: bool = True,
+    strip_ansi: bool | None = None,
+    prefix_format: str | None = None,
+    multiline_indent: int | Callable[[str], int] | None = None,
+) -> None:
     """Apply the default cocotb log formatting to the root logger.
 
-    This hooks up the logger to write to stdout, using either
-    :class:`SimColourLogFormatter` or :class:`SimLogFormatter` depending
-    on whether colored output is requested. It also adds a
-    :class:`SimTimeContextFilter` filter so that
-    :attr:`~logging.LogRecord.created_sim_time` is available to the formatter.
-
-    The logging level for cocotb logs is set based on the
-    :envvar:`COCOTB_LOG_LEVEL` environment variable, which defaults to ``INFO``.
-
-    The logging level for GPI logs is set based on the
-    :envvar:`GPI_LOG_LEVEL` environment variable, which defaults to ``INFO``.
+    This hooks up the logger to write to stdout, using :class:`SimLogFormatter` for formatting.
+    It also adds a :class:`SimTimeContextFilter` filter so that the
+    :attr:`~logging.LogRecord.created_sim_time` attribute on :class:`~logging.LogRecord`
+    is available to the formatter.
 
     If desired, this logging configuration can be overwritten by calling
-    ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards), or by
-    manually resetting the root logger instance.
+    ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards),
+    or by manually resetting the root logger instance.
     An example of this can be found in the section on :ref:`rotating-logger`.
 
+    Args:
+        reduced_log_fmt:
+            If ``True``, use a reduced log format that does not include the
+            filename, line number, and function name in the log prefix.
+
+            .. versionadded:: 2.0
+
+        strip_ansi:
+            If ``True``, strip ANSI (color) escape codes in log messages.
+            If ``False``, do not strip ANSI escape codes in log messages.
+            If ``None``, use the value of :data:`strip_ansi`.
+
+            .. versionadded:: 2.0
+
+        prefix_format:
+            An f-string to build a prefix for each log message.
+
+            .. versionadded:: 2.0
+
+        multiline_indent:
+            Controls the indentation of subsequent log lines in a multiline
+            log message.
+            If the argument is a callable, it will be called every time with
+            the stripped formatted prefix string and should return the number
+            of spaces to indent.
+            If a non-negative integer, it will be used directly as the number
+            of spaces to indent.
+            If a negative integer, the indentation will be the length of the
+            stripped prefix, when formatted with an empty LogRecord. This is
+            calculated only on initialization, so it's fast but assumes that
+            the prefix length does not change.
+            If ``None``, the length of the stripped prefix will be used.
+
+            .. versionadded:: 2.1
+
     .. versionadded:: 1.4
+
+    .. versionchanged:: 2.0
+        Now captures warnings and outputs them through the logging system using
+        :func:`logging.captureWarnings`.
     """
-    # construct an appropriate handler
-    hdlr = logging.StreamHandler(sys.stdout)
-    hdlr.addFilter(SimTimeContextFilter())
-    if want_color_output():
-        hdlr.setFormatter(SimColourLogFormatter())
-    else:
-        hdlr.setFormatter(SimLogFormatter())
+    # Using the stream=sys.stdout argument will ensure that the root logger without any handlers
+    # will be always configured to have the stdout stream handler
+    logging.basicConfig(stream=sys.stdout)
 
-    logging.setLoggerClass(SimBaseLog)
-    logging.basicConfig()
-    logging.getLogger().handlers = [hdlr]  # overwrite default handlers
+    # Pytest or other frameworks can add custom log handlers, we need to ensure that log output will be consistent
+    for handler in logging.getLogger().handlers:
+        handler.addFilter(SimTimeContextFilter())
 
-    def set_level(logger_name: str, envvar: str, default_level: str) -> None:
-        log_level = os.environ.get(envvar, default_level)
-        log_level = log_level.upper()
+        handler.setFormatter(
+            SimLogFormatter(
+                reduced_log_fmt=reduced_log_fmt,
+                strip_ansi=strip_ansi,
+                prefix_format=prefix_format,
+                multiline_indent=multiline_indent,
+            )
+        )
+
+    logging.getLogger("cocotb").setLevel(logging.INFO)
+    logging.getLogger("gpi").setLevel(logging.INFO)
+
+    logging.captureWarnings(True)
+
+
+def _init() -> None:
+    """cocotb-specific logging setup.
+
+    - Decides whether ANSI escape code stripping is desired by checking
+      :envvar:`NO_COLOR` and :envvar:`COCOTB_ANSI_OUTPUT`.
+    - Initializes the GPI logger and sets up the GPI logging optimization.
+    - Sets the log level of the ``"cocotb"`` and ``"gpi"`` loggers based on
+      :envvar:`COCOTB_LOG_LEVEL` and :envvar:`GPI_LOG_LEVEL`, respectively.
+    """
+    global strip_ansi
+
+    strip_ansi = not _env.as_bool(
+        "COCOTB_ANSI_OUTPUT",
+        sys.stdout.isatty() and not _env.as_str("NO_COLOR") and not _env.as_bool("GUI"),
+    )
+
+    _setup_gpi_logger()
+
+    # Set "cocotb" and "gpi" logger based on environment variables
+    def set_level(logger_name: str, envvar: str) -> None:
+        log_level: str = _env.as_str(envvar).upper()
+        if not log_level:
+            return
 
         logger = logging.getLogger(logger_name)
 
@@ -98,28 +171,38 @@ def default_config() -> None:
                 f"levels: {valid_levels}"
             ) from None
 
-    set_level("gpi", "GPI_LOG_LEVEL", "INFO")
-    set_level("cocotb", "COCOTB_LOG_LEVEL", "INFO")
+    set_level("gpi", "GPI_LOG_LEVEL")
+    set_level("cocotb", "COCOTB_LOG_LEVEL")
 
 
-if TYPE_CHECKING:
-    LoggerClass = logging.Logger
-else:
-    LoggerClass = logging.getLoggerClass()
+def _setup_gpi_logger() -> None:
+    """Setup logger for GPI."""
+    # Monkeypatch "gpi" logger with function that also sets a PyGPI-local logger level
+    # as an optimization.
+    gpi_logger = logging.getLogger("gpi")
+    old_setLevel = gpi_logger.setLevel
+
+    @wraps(old_setLevel)
+    def setLevel(level: int | str) -> None:
+        old_setLevel(level)
+        simulator.set_gpi_log_level(gpi_logger.getEffectiveLevel())
+
+    gpi_logger.setLevel = setLevel  # type: ignore[method-assign]
+
+    # Initialize PyGPI logging
+    simulator.initialize_logger(_log_from_c, logging.getLogger)
 
 
-class SimBaseLog(LoggerClass):
-    # For hooking setLevel to inform the GPI's local log level
-
-    def setLevel(self, level: Union[int, str]) -> None:
-        super().setLevel(level)
-        if self.name == "gpi":
-            simulator.set_gpi_log_level(self.getEffectiveLevel())
+def _configure() -> None:
+    """Configure basic logging."""
+    reduced_log_fmt: bool = _env.as_bool("COCOTB_REDUCED_LOG_FMT", True)
+    prefix_format: str = os.getenv("COCOTB_LOG_PREFIX", "")
+    default_config(reduced_log_fmt=reduced_log_fmt, prefix_format=prefix_format)
 
 
 @deprecated('Use `logging.getLogger(f"{name}.0x{ident:x}")` instead')
-def SimLog(name: str, ident: Union[int, None] = None) -> logging.Logger:
-    """Like logging.getLogger, but append a numeric identifier to the name.
+def SimLog(name: str, ident: int | None = None) -> logging.Logger:
+    """Like :func:`logging.getLogger`, but append a numeric identifier to the name.
 
     Args:
         name: Logger name.
@@ -141,17 +224,11 @@ class SimTimeContextFilter(logging.Filter):
     """
     A filter to inject simulator times into the log records.
 
-    This uses the approach described in the :ref:`Python logging cookbook <python:filters-contextual>`.
-
-    This adds the :attr:`~logging.LogRecord.created_sim_time` attribute.
+    This uses the approach described in the :ref:`Python logging cookbook <python:filters-contextual>`
+    which adds the :attr:`~logging.LogRecord.created_sim_time` attribute.
 
     .. versionadded:: 1.4
     """
-
-    # needed to make our docs render well
-    def __init__(self) -> None:
-        """"""
-        super().__init__()
 
     def filter(self, record: logging.LogRecord) -> bool:
         try:
@@ -163,115 +240,215 @@ class SimTimeContextFilter(logging.Filter):
         return True
 
 
+# Justify and truncate
+def _ljust(string: str, chars: int) -> str:
+    if len(string) > chars:
+        return ".." + string[(chars - 2) * -1 :]
+    return string.ljust(chars)
+
+
+def _rjust(string: str, chars: int) -> str:
+    if len(string) > chars:
+        return ".." + string[(chars - 2) * -1 :]
+    return string.rjust(chars)
+
+
+# Default simtime formatter
+def _simtime_fmt(record: logging.LogRecord, unit: TimeUnit) -> str:
+    sim_time = getattr(record, "created_sim_time", None)
+    if sim_time is None:
+        return f"-.--{unit}"
+    time_ns = get_time_from_sim_steps(sim_time, unit)
+    return f"{time_ns:.2f}{unit}"
+
+
 class SimLogFormatter(logging.Formatter):
     """Log formatter to provide consistent log message handling.
 
     This will only add simulator timestamps if the handler object this
     formatter is attached to has a :class:`SimTimeContextFilter` filter
     attached, which cocotb ensures by default.
+
+    See :func:`.default_config` for a description of the arguments.
     """
 
-    # Removes the arguments from the base class. Docstring needed to make
-    # sphinx happy.
-    def __init__(self) -> None:
-        """Takes no arguments."""
-        super().__init__()
+    loglevel2colour = {
+        logging.TRACE: "",  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
+        logging.DEBUG: "",
+        logging.INFO: "",
+        logging.WARNING: ANSI.YELLOW_FG,
+        logging.ERROR: ANSI.RED_FG,
+        logging.CRITICAL: ANSI.RED_BG + ANSI.BLACK_FG,
+    }
+
+    prefix_func_globals = {
+        "time": time,
+        "simtime": cocotb.simtime,
+        "ANSI": ANSI,
+        "ljust": _ljust,
+        "rjust": _rjust,
+        "simtime_fmt": _simtime_fmt,
+    }
+
+    def __init__(
+        self,
+        *,
+        reduced_log_fmt: bool = True,
+        strip_ansi: bool | None = None,
+        prefix_format: str | None = None,
+        multiline_indent: int | Callable[[str], int] | None = None,
+    ) -> None:
+        self._reduced_log_fmt = reduced_log_fmt
+        self._strip_ansi = strip_ansi
+        self._ansi_escape_pattern = re.compile(
+            r"""
+                \x1B
+                (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
+                    [@-Z\\-_]
+                | # or 7-bit CSI (ESC [) + control codes
+                    \[
+                    [0-?]*  # Parameter bytes
+                    [ -/]*  # Intermediate bytes
+                    [@-~]   # Final byte
+                )
+            """,
+            re.VERBOSE,
+        )
+
+        if not prefix_format:
+            prefix_format = "{simtime_fmt(record,'ns'):>11} {level_color_start}{record.levelname:<8}{level_color_end} {ljust(record.name, 34)} "
+            if not self._reduced_log_fmt:
+                prefix_format = (
+                    prefix_format
+                    + "{rjust(record.filename, 20)}:{record.lineno:<4} in {ljust(str(record.funcName), 31)} "
+                )
+            if multiline_indent is None:
+                # The default prefix_formats length is fixed, so unless explicitly
+                # overridden, precompute indentation on initialization.
+                multiline_indent = -1
+
+        self._prefix_func = eval(
+            f"lambda record, level_color_start, level_color_end: f'''{prefix_format}'''",
+            type(self).prefix_func_globals,
+        )
+
+        if isinstance(multiline_indent, int) and multiline_indent < 0:
+            # Compute the indentation based on the length of the prefix
+            # when formatted with an empty LogRecord.
+            record = logging.getLogger().makeRecord(
+                "", logging.INFO, "", 0, "", (), None, func=""
+            )
+            multiline_indent = len(
+                self._ansi_escape_pattern.sub("", self._prefix_func(record, "", ""))
+            )
+
+        if multiline_indent is None:
+            self._multiline_indent: int | Callable[[str], int] = len
+        else:
+            self._multiline_indent = multiline_indent
+
+    def strip_ansi(self) -> bool:
+        return strip_ansi if self._strip_ansi is None else self._strip_ansi
 
     # Justify and truncate
     @staticmethod
     def ljust(string: str, chars: int) -> str:
-        if len(string) > chars:
-            return ".." + string[(chars - 2) * -1 :]
-        return string.ljust(chars)
+        return _ljust(string, chars)
 
     @staticmethod
     def rjust(string: str, chars: int) -> str:
-        if len(string) > chars:
-            return ".." + string[(chars - 2) * -1 :]
-        return string.rjust(chars)
+        return _rjust(string, chars)
 
-    def _format(
-        self, level: str, record: logging.LogRecord, msg: str, coloured: bool = False
-    ) -> str:
-        sim_time = getattr(record, "created_sim_time", None)
-        if sim_time is None:
-            sim_time_str = "  -.--ns"
-        else:
-            time_ns = get_time_from_sim_steps(sim_time, "ns")
-            sim_time_str = f"{time_ns:6.2f}ns"
-        prefix = (
-            sim_time_str.rjust(11)
-            + " "
-            + level
-            + " "
-            + self.ljust(record.name, _RECORD_CHARS)
-            + " "
-        )
-        if not _suppress:
-            prefix += (
-                self.rjust(Path(record.filename).name, _FILENAME_CHARS)
-                + ":"
-                + self.ljust(str(record.lineno), _LINENO_CHARS)
-                + " in "
-                + self.ljust(str(record.funcName), _FUNCNAME_CHARS)
-                + " "
-            )
+    def formatExcInfo(self, record: logging.LogRecord) -> str:
+        msg = ""
 
-        # these lines are copied from the built-in logger
+        # these lines are copied and updated from the built-in logger
         if record.exc_info:
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
             if not record.exc_text:
                 record.exc_text = self.formatException(record.exc_info)
         if record.exc_text:
-            if msg[-1:] != "\n":
-                msg = msg + "\n"
-            msg = msg + record.exc_text
+            msg += record.exc_text
+        if record.stack_info:
+            if not msg.endswith("\n"):
+                msg += "\n"
+            msg += self.formatStack(record.stack_info)
 
-        prefix_len = len(prefix)
-        if coloured:
-            prefix_len -= len(level) - _LEVEL_CHARS
-        pad = "\n" + " " * (prefix_len)
-        return prefix + pad.join(msg.split("\n"))
+        return msg
 
     def format(self, record: logging.LogRecord) -> str:
-        """Prettify the log output by annotating with simulation time."""
-
         msg = record.getMessage()
-        level = record.levelname.ljust(_LEVEL_CHARS)
 
-        return self._format(level, record, msg)
+        if self.strip_ansi():
+            level_color_start = ""
+            level_color_end = ""
+        else:
+            level_color_start = self.loglevel2colour.get(record.levelno, "")
+            level_color_end = ANSI.DEFAULT if level_color_start else ""
+
+        prefix = self._prefix_func(record, level_color_start, level_color_end)
+
+        if self.strip_ansi():
+            output = self._ansi_escape_pattern.sub("", f"{prefix}{msg}")
+        elif level_color_start:
+            # NOTE: this handles the case where the string to log applies some
+            # custom coloring, but then reverts to default. The default should
+            # be this log level's default and not the terminal's. This assumes
+            # that ANSI.DEFAULT is used to revert.
+            output = f"{prefix}{level_color_start}{msg.replace(ANSI.DEFAULT, level_color_start)}{ANSI.DEFAULT}"
+        else:
+            # Just in case the log message itself contains ANSI codes,
+            # always revert to default at the end.
+            output = f"{prefix}{msg}{ANSI.DEFAULT}"
+
+        exc_info = self.formatExcInfo(record)
+        if exc_info:
+            multiline = True
+            output = f"{output}\n{exc_info}"
+        else:
+            multiline = "\n" in msg
+
+        if (not multiline) or (self._multiline_indent == 0):
+            return output
+
+        lines = output.splitlines()
+
+        # add padding to each line of message
+        if isinstance(self._multiline_indent, int):
+            indent = self._multiline_indent
+        else:
+            indent = self._multiline_indent(self._ansi_escape_pattern.sub("", prefix))
+        pad = "\n" + " " * indent
+
+        return pad.join(lines)
 
 
 class SimColourLogFormatter(SimLogFormatter):
-    """Log formatter to provide consistent log message handling."""
+    """Log formatter similar to :class:`SimLogFormatter`, but with colored output by default.
 
-    loglevel2colour = {
-        logging.TRACE: "%s",  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
-        logging.DEBUG: "%s",
-        logging.INFO: "%s",
-        logging.WARNING: _ANSI.COLOR_WARNING + "%s" + _ANSI.COLOR_DEFAULT,
-        logging.ERROR: _ANSI.COLOR_ERROR + "%s" + _ANSI.COLOR_DEFAULT,
-        logging.CRITICAL: _ANSI.COLOR_CRITICAL + "%s" + _ANSI.COLOR_DEFAULT,
-    }
+    .. deprecated:: 2.0
+        Use :class:`!SimLogFormatter` with ``strip_ansi=False`` instead.
+    """
 
-    def format(self, record: logging.LogRecord) -> str:
-        """Prettify the log output by annotating with simulation time."""
-
-        msg = record.getMessage()
-
-        # Need to colour each line in case coloring is applied in the message
-        msg = "\n".join(
-            [
-                SimColourLogFormatter.loglevel2colour.get(record.levelno, "%s") % line
-                for line in msg.split("\n")
-            ]
+    def __init__(
+        self,
+        *,
+        reduced_log_fmt: bool = True,
+        strip_ansi: bool | None = False,
+        prefix_format: str | None = None,
+    ) -> None:
+        warnings.warn(
+            "SimColourLogFormatter is deprecated and will be removed in a future release. "
+            "Use SimLogFormatter with `strip_ansi=False` instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
-        level = SimColourLogFormatter.loglevel2colour.get(
-            record.levelno, "%s"
-        ) % record.levelname.ljust(_LEVEL_CHARS)
-
-        return self._format(level, record, msg, coloured=True)
+        super().__init__(
+            reduced_log_fmt=reduced_log_fmt,
+            strip_ansi=strip_ansi,
+            prefix_format=prefix_format,
+        )
 
 
 def _log_from_c(

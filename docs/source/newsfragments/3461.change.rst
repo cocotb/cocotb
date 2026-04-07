@@ -1,1 +1,0 @@
-:func:`.resume` and :func:`.bridge` are now implemented as decorator functions and not types. All attributes, e.g. ``log``, are no longer available.

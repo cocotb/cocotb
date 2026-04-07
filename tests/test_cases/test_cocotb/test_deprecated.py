@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import os
 import sys
 import warnings
@@ -13,7 +15,7 @@ import cocotb
 from cocotb._base_triggers import Lock
 from cocotb.clock import Clock
 from cocotb.regression import TestFactory
-from cocotb.task import Join
+from cocotb.task import Join, current_task
 from cocotb.triggers import Edge, Event, First, Timer
 from cocotb.utils import get_sim_steps, get_sim_time, get_time_from_sim_steps
 
@@ -229,7 +231,7 @@ async def test_results_deprecated(_: Any) -> None:
         from cocotb.result import SimTimeoutError  # noqa: F401, PLC0415
 
 
-@cocotb.test
+@cocotb.test(skip=sys.version_info < (3, 7))
 async def test_triggers_Join_import_deprecated(_: Any) -> None:
     with pytest.warns(DeprecationWarning):
         from cocotb.triggers import Join  # noqa: F401, PLC0415
@@ -245,3 +247,123 @@ async def test_Lock_name_deprecated(_: object) -> None:
         l.name = "foobar"
     with pytest.warns(DeprecationWarning):
         assert l.name == "foobar"
+
+
+@cocotb.test
+async def test_Task_kill_unstarted(_: object) -> None:
+    async def example() -> None:
+        await Timer(10, "ns")
+
+    task = cocotb.create_task(example())
+
+    with pytest.warns(DeprecationWarning):
+        task.kill()
+
+    assert task.done()
+    assert task.result() is None
+
+
+@cocotb.test
+async def test_Task_kill_scheduled(_: object) -> None:
+    async def example() -> None:
+        await Timer(10, "ns")
+
+    task = cocotb.start_soon(example())
+
+    with pytest.warns(DeprecationWarning):
+        task.kill()
+
+    assert task.done()
+    assert task.result() is None
+
+
+@cocotb.test
+async def test_Task_kill_pending(_: object) -> None:
+    async def example() -> None:
+        await Timer(10, "ns")
+
+    task = cocotb.start_soon(example())
+    await Timer(1)
+
+    with pytest.warns(DeprecationWarning):
+        task.kill()
+
+    assert task.done()
+    assert task.result() is None
+
+
+@cocotb.test
+async def test_Task_kill_done(_: object) -> None:
+    async def example() -> int:
+        return 1
+
+    task = cocotb.start_soon(example())
+    await Timer(1)
+
+    assert task.done()
+    assert task.result() == 1
+
+    with pytest.warns(DeprecationWarning):
+        task.kill()
+
+    assert task.done()
+    assert task.result() == 1
+
+
+@cocotb.test
+async def test_Task_kill_running(_: object) -> None:
+    async def example() -> None:
+        task = current_task()
+        with pytest.warns(DeprecationWarning), pytest.raises(RuntimeError):
+            task.kill()
+        assert not task.done()
+        await Timer(1)
+        # things still work after the failed kill
+        assert not task.done()
+
+    task = cocotb.start_soon(example())
+    await task
+    assert task.done()
+
+
+@cocotb.test
+async def test_pass_test_in_task(_) -> None:
+    async def raise_test_success():
+        await Timer(1, unit="ns")
+        with pytest.warns(DeprecationWarning):
+            cocotb.pass_test("Finished test early")
+
+    cocotb.start_soon(raise_test_success())
+    await Timer(10, unit="ns")
+
+
+@cocotb.test
+async def test_pass_test_in_test(_) -> None:
+    with pytest.warns(DeprecationWarning):
+        cocotb.pass_test("Finished test early")
+
+
+@cocotb.test
+@cocotb.xfail(raises=TypeError)
+async def test_pass_test_in_xfail_exception(dut: object) -> None:
+    with pytest.warns(DeprecationWarning):
+        cocotb.pass_test("Finished test early")
+
+
+@cocotb.test
+@cocotb.xfail()
+async def test_pass_test_in_xfail_assert(dut: object) -> None:
+    with pytest.warns(DeprecationWarning):
+        cocotb.pass_test("Finished test early")
+
+
+@cocotb.test(expect_error=TypeError)
+async def test_pass_test_in_expect_error(dut: object) -> None:
+    with pytest.warns(DeprecationWarning):
+        cocotb.pass_test("Finished test early")
+
+
+@cocotb.test(expect_fail=True)
+async def test_pass_test_in_expect_fail(dut: object) -> None:
+    with pytest.warns(DeprecationWarning):
+        cocotb.pass_test("Finished test early")

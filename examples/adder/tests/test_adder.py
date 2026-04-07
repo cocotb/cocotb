@@ -1,6 +1,8 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
 # Simple tests for an adder module
+from __future__ import annotations
+
 import os
 import random
 import sys
@@ -54,7 +56,7 @@ def test_adder_runner():
 
     This file can be run directly or via pytest discovery.
     """
-    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+    hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent

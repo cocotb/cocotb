@@ -1,1 +1,0 @@
-The ``gui`` argument to :meth:`Runner.test` is now supported for NVC, GHDL, Icarus, Verilator, and Dsim using an external waveform viewer, displaying the results after the simulation has ended. cocotb will start Surfer or GTKWave, in that order, if they are in the system path. Use ``COCOTB_WAVEFORM_VIEWER`` to specify viewer.

@@ -1,1 +1,0 @@
-Deprecated :class:`int`, :class:`str`, and :class:`float` casts on :class:`simulator value objects <cocotb.handle.ValueObjectBase>`. Instead use the :attr:`.ValueObjectBase.value` getter, then cast the value.

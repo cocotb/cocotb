@@ -1,1 +1,0 @@
-Passing no triggers to :class:`~cocotb.triggers.First` previously hung the simulation indefinitely. Now, doing so raises a :exc:`ValueError` exception.

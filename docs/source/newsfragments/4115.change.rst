@@ -1,1 +1,0 @@
-Writes performed following an :keyword:`await` on :class:`~cocotb.triggers.ReadWrite` will be applied immediately (but inertially) and not scheduled for the next ``ReadWrite``.

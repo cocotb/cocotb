@@ -5,9 +5,12 @@
 Tests of cocotb.regression.TestFactory functionality
 """
 
+from __future__ import annotations
+
 from collections.abc import Coroutine
 
 import cocotb
+import cocotb.regression
 
 testfactory_test_names = set()
 testfactory_test_args = set()
@@ -18,7 +21,7 @@ testfactory_test_args = set()
     ("arg1", ["a1v1", "a1v2"]), (("arg2", "arg3"), [("a2v1", "a3v1"), ("a2v2", "a3v2")])
 )
 async def run_testfactory_test(dut, arg1, arg2, arg3):
-    testfactory_test_names.add(cocotb._regression_manager._test.name)
+    testfactory_test_names.add(cocotb.regression._manager_inst._test.name)
     testfactory_test_args.add((arg1, arg2, arg3))
 
 
@@ -65,13 +68,10 @@ p_testfactory_test_names = set()
 p_testfactory_test_args = set()
 
 
-@cocotb.test()
-@cocotb.parametrize(
-    arg1=["a1v1", "a1v2"],
-    arg2=["a2v1", "a2v2"],
-)
+@cocotb.parametrize(arg1=["a1v1", "a1v2"])
+@cocotb.parametrize(arg2=["a2v1", "a2v2"])
 async def p_run_testfactory_test(dut, arg1, arg2):
-    p_testfactory_test_names.add(cocotb._regression_manager._test.name)
+    p_testfactory_test_names.add(cocotb.regression._manager_inst._test.name)
     p_testfactory_test_args.add((arg1, arg2))
 
 

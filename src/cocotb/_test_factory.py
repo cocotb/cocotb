@@ -1,30 +1,19 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
-import functools
 import inspect
 import logging
 import warnings
+from collections.abc import Coroutine, Sequence
 from itertools import product
 from types import FrameType, FunctionType
-from typing import (
-    Any,
-    Callable,
-    Coroutine,
-    Dict,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-    overload,
-)
+from typing import Callable, cast, overload
 
 from cocotb._base_triggers import Trigger
 from cocotb._decorators import Test
-from cocotb._typing import TimeUnit
+from cocotb.simtime import TimeUnit
 
 
 class TestFactory:
@@ -94,8 +83,8 @@ class TestFactory:
     def __init__(
         self,
         test_function: Callable[..., Coroutine[Trigger, None, None]],
-        *args: Any,
-        **kwargs: Any,
+        *args: object,
+        **kwargs: object,
     ) -> None:
         warnings.warn(
             "TestFactory is deprecated, use `@cocotb.parametrize` instead",
@@ -105,23 +94,24 @@ class TestFactory:
         self.test_function = test_function
         self.args = args
         self.kwargs_constant = kwargs
-        self.kwargs: Dict[
-            Union[str, Sequence[str]], Union[Sequence[Any], Sequence[Sequence[Any]]]
+        self.kwargs: dict[
+            str | Sequence[str],
+            Sequence[object] | Sequence[Sequence[object]],
         ] = {}
         self._log = logging.getLogger(f"TestFactory({self.test_function.__name__})")
 
     @overload
-    def add_option(self, name: str, optionlist: Sequence[Any]) -> None: ...
+    def add_option(self, name: str, optionlist: Sequence[object]) -> None: ...
 
     @overload
     def add_option(
-        self, name: Sequence[str], optionlist: Sequence[Sequence[Any]]
+        self, name: Sequence[str], optionlist: Sequence[Sequence[object]]
     ) -> None: ...
 
     def add_option(
         self,
-        name: Union[str, Sequence[str]],
-        optionlist: Union[Sequence[str], Sequence[Sequence[str]]],
+        name: str | Sequence[str],
+        optionlist: Sequence[object] | Sequence[Sequence[object]],
     ) -> None:
         """Add a named option to the test.
 
@@ -139,6 +129,7 @@ class TestFactory:
             Groups of options are now supported
         """
         if not isinstance(name, str):
+            optionlist = cast("Sequence[Sequence[object]]", optionlist)
             for opt in optionlist:
                 if len(name) != len(opt):
                     raise ValueError(
@@ -149,14 +140,14 @@ class TestFactory:
     def generate_tests(
         self,
         *,
-        prefix: Optional[str] = None,
-        postfix: Optional[str] = None,
+        prefix: str | None = None,
+        postfix: str | None = None,
         stacklevel: int = 0,
-        name: Optional[str] = None,
-        timeout_time: Optional[float] = None,
+        name: str | None = None,
+        timeout_time: float | None = None,
         timeout_unit: TimeUnit = "step",
         expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
+        expect_error: type[BaseException] | tuple[type[BaseException], ...] = (),
         skip: bool = False,
         stage: int = 0,
     ) -> None:
@@ -239,7 +230,7 @@ class TestFactory:
             postfix = ""
 
         # trust the user puts a reasonable stacklevel in
-        glbs = cast(FrameType, inspect.stack()[stacklevel][0].f_back).f_globals
+        glbs = cast("FrameType", inspect.stack()[stacklevel][0].f_back).f_globals
 
         test_func_name = self.test_function.__qualname__ if name is None else name
 
@@ -250,21 +241,21 @@ class TestFactory:
             doc: str = "Automatically generated test\n\n"
 
             # preprocess testoptions to split tuples
-            testoptions_split: Dict[str, Sequence[Any]] = {}
+            testoptions_split: dict[str, Sequence[object]] = {}
             for optname, optvalue in testoptions.items():
                 if isinstance(optname, str):
-                    optvalue = cast(Sequence[Any], optvalue)
+                    optvalue = cast("Sequence[object]", optvalue)
                     testoptions_split[optname] = optvalue
                 else:
                     # previously checked in add_option; ensure nothing has changed
-                    optvalue = cast(Sequence[Sequence[Any]], optvalue)
+                    optvalue = cast("Sequence[Sequence[object]]", optvalue)
                     assert len(optname) == len(optvalue)
                     for n, v in zip(optname, optvalue):
                         testoptions_split[n] = v
 
             for optname, optvalue in testoptions_split.items():
                 if callable(optvalue):
-                    optvalue = cast(FunctionType, optvalue)
+                    optvalue = cast("FunctionType", optvalue)
                     if optvalue.__doc__ is None:
                         desc = "No docstring supplied"
                     else:
@@ -273,17 +264,8 @@ class TestFactory:
                 else:
                     doc += f"\t{optname}: {optvalue!r}\n"
 
-            kwargs: Dict[str, Any] = {}
-            kwargs.update(self.kwargs_constant)
+            kwargs = self.kwargs_constant.copy()
             kwargs.update(testoptions_split)
-
-            @functools.wraps(self.test_function)
-            async def _my_test(dut: object, kwargs: Dict[str, Any] = kwargs) -> None:
-                await self.test_function(dut, *self.args, **kwargs)
-
-            _my_test.__doc__ = doc
-            _my_test.__name__ = name
-            _my_test.__qualname__ = name
 
             if name in glbs:
                 self._log.error(
@@ -294,12 +276,19 @@ class TestFactory:
                     glbs["__name__"],
                 )
 
+            timeout = (timeout_time, timeout_unit) if timeout_time is not None else None
+
+            if isinstance(expect_error, type):
+                expect_error = (expect_error,)
+
             test = Test(
-                func=_my_test,
+                func=self.test_function,
+                args=self.args,
+                kwargs=kwargs,
                 name=name,
                 module=glbs["__name__"],
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
+                doc=doc,
+                timeout=timeout,
                 expect_fail=expect_fail,
                 expect_error=expect_error,
                 skip=skip,

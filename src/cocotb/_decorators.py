@@ -3,30 +3,22 @@
 # Copyright (c) 2013 SolarFlare Communications Inc
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
-import functools
 import inspect
+import sys
+from collections.abc import Coroutine, Iterable, Mapping, Sequence
 from enum import Enum
 from itertools import product
-from typing import (
-    Any,
-    Callable,
-    Coroutine,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Callable, cast, overload
 
 from cocotb._base_triggers import Trigger
-from cocotb._py_compat import TypeAlias
-from cocotb._typing import TimeUnit
+from cocotb.simtime import TimeUnit
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
+
+import pytest
 
 
 class Test:
@@ -36,23 +28,25 @@ class Test:
         func:
             The test function object.
 
+        args:
+            Positional arguments to pass to the test function.
+
+        kwargs:
+            Keyword arguments to pass to the test function.
+
         name:
             The name of the test function.
-            Defaults to ``func.__qualname__`` (the dotted path to the test function in the module).
 
         module:
             The name of the module containing the test function.
-            Defaults to ``func.__module__`` (the name of the module containing the test function).
 
         doc:
             The docstring for the test.
-            Defaults to ``func.__doc__`` (the docstring of the test function).
 
-        timeout_time:
+        timeout:
             Simulation time duration before the test is forced to fail with a :exc:`~cocotb.triggers.SimTimeoutError`.
-
-        timeout_unit:
-            Unit of ``timeout_time``, accepts any unit that :class:`~cocotb.triggers.Timer` does.
+            A tuple of the timeout value and unit.
+            Accepts any unit that :class:`~cocotb.triggers.Timer` does.
 
         expect_fail:
             If ``True`` and the test fails a functional check via an :keyword:`assert` statement, :func:`pytest.raises`,
@@ -71,125 +65,131 @@ class Test:
             Tests from earlier stages are run before tests from later stages.
     """
 
+    # TODO Replace with dataclass in Python 3.7+
+
     def __init__(
         self,
         *,
         func: Callable[..., Coroutine[Trigger, None, None]],
-        name: Optional[str] = None,
-        module: Optional[str] = None,
-        doc: Optional[str] = None,
-        timeout_time: Optional[float] = None,
-        timeout_unit: TimeUnit = "step",
-        expect_fail: bool = False,
-        expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
-        skip: bool = False,
-        stage: int = 0,
+        args: Sequence[Any],
+        kwargs: Mapping[str, Any],
+        name: str,
+        module: str,
+        doc: str | None,
+        timeout: tuple[float, TimeUnit] | None,
+        expect_fail: bool,
+        expect_error: tuple[
+            type[BaseException] | pytest.RaisesExc | pytest.RaisesGroup,
+            ...,
+        ],
+        skip: bool,
+        stage: int,
     ) -> None:
-        self.func: Callable[..., Coroutine[Trigger, None, None]] = func
-        self.timeout_time = timeout_time
-        self.timeout_unit = timeout_unit
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        self.name = name
+        self.module = module
+        self.doc = doc
+        self.timeout = timeout
         self.expect_fail = expect_fail
-        if isinstance(expect_error, type):
-            expect_error = (expect_error,)
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage
-        self.name = self.func.__qualname__ if name is None else name
-        self.module = self.func.__module__ if module is None else module
-        self.doc = self.func.__doc__ if doc is None else doc
-        if self.doc is not None:
-            # cleanup docstring using `trim` function from PEP257
-            self.doc = inspect.cleandoc(self.doc)
-        self.fullname = f"{self.module}.{self.name}"
+
+    @property
+    def fullname(self) -> str:
+        return f"{self.module}.{self.name}"
 
 
 TestFuncType: TypeAlias = Callable[..., Coroutine[Trigger, None, None]]
 
 
-class Parameterized:
+class TestGenerator:
     def __init__(
         self,
-        test_function: TestFuncType,
-        options: List[
-            Union[
-                Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
-            ]
-        ],
+        func: TestFuncType,
     ) -> None:
-        self.test_template = Test(func=test_function)
-        self.options = options
-        # we are assuming the input checking is done in parametrize()
+        self.func: TestFuncType = func
+        self.timeout: tuple[float, TimeUnit] | None = None
+        self.expect_fail: bool = False
+        self.expect_error: set[
+            type[BaseException] | pytest.RaisesExc | pytest.RaisesGroup
+        ] = set()
+        self.skip = False
+        self.stage = 0
+        self.name = self.func.__qualname__
+        self.module = self.func.__module__
+        self.doc = self.func.__doc__
+        if self.doc is not None:
+            # cleanup docstring using `trim` function from PEP257
+            self.doc = inspect.cleandoc(self.doc)
+        self.options: list[
+            tuple[str, Sequence[object]]
+            | tuple[Sequence[str], Sequence[Sequence[object]]]
+        ] = []
 
-        self._option_reprs: Dict[str, List[str]] = {}
+    def generate_tests(self) -> Iterable[Test]:
+        option_reprs: dict[str, list[str]] = {}
 
-        for name, values in options:
+        for name, values in self.options:
             if isinstance(name, str):
-                self._option_reprs[name] = _reprs(values)
+                option_reprs[name] = _reprs(values)
             else:
                 # transform to Dict[name, values]
-                transformed: Dict[str, List[Optional[str]]] = {}
+                transformed: dict[str, list[object]] = {}
                 for nam_idx, nam in enumerate(name):
                     transformed[nam] = []
-                    for value_array in cast(Sequence[Sequence[Any]], values):
+                    for value_array in cast("Sequence[Sequence[object]]", values):
                         value = value_array[nam_idx]
                         transformed[nam].append(value)
                 for n, vs in transformed.items():
-                    self._option_reprs[n] = _reprs(vs)
-
-    def generate_tests(self) -> Iterable[Test]:
-        test_func = self.test_template.func
-        test_func_name = self.test_template.name
+                    option_reprs[n] = _reprs(vs)
 
         # this value is a list of ranges of the same length as each set of values in self.options for passing to itertools.product
         option_indexes = [range(len(option[1])) for option in self.options]
 
         # go through the cartesian product of all values of all options
         for selected_options in product(*option_indexes):
-            test_kwargs: Dict[str, Sequence[Any]] = {}
-            test_name_pieces: List[str] = [test_func_name]
+            test_kwargs: dict[str, object] = {}
+            test_name_pieces: list[str] = [self.name]
             for option_idx, select_idx in enumerate(selected_options):
                 option_name, option_values = self.options[option_idx]
                 selected_value = option_values[select_idx]
 
                 if isinstance(option_name, str):
                     # single params per option
-                    selected_value = cast(Sequence[Any], selected_value)
+                    selected_value = cast("Sequence[object]", selected_value)
                     test_kwargs[option_name] = selected_value
                     test_name_pieces.append(
-                        f"/{option_name}={self._option_reprs[option_name][select_idx]}"
+                        f"/{option_name}={option_reprs[option_name][select_idx]}"
                     )
                 else:
                     # multiple params per option
-                    selected_value = cast(Sequence[Any], selected_value)
+                    selected_value = cast("Sequence[object]", selected_value)
                     for n, v in zip(option_name, selected_value):
                         test_kwargs[n] = v
-                        test_name_pieces.append(
-                            f"/{n}={self._option_reprs[n][select_idx]}"
-                        )
+                        test_name_pieces.append(f"/{n}={option_reprs[n][select_idx]}")
 
             parametrized_test_name = "".join(test_name_pieces)
 
-            # create wrapper function to bind kwargs
-            @functools.wraps(test_func)
-            async def _my_test(
-                dut: object, kwargs: Dict[str, Any] = test_kwargs
-            ) -> None:
-                await test_func(dut, **kwargs)
-
             yield Test(
-                func=_my_test,
+                func=self.func,
+                args=(),
+                kwargs=test_kwargs,
                 name=parametrized_test_name,
-                timeout_time=self.test_template.timeout_time,
-                timeout_unit=self.test_template.timeout_unit,
-                expect_fail=self.test_template.expect_fail,
-                expect_error=self.test_template.expect_error,
-                skip=self.test_template.skip,
-                stage=self.test_template.stage,
+                module=self.module,
+                doc=self.doc,
+                timeout=self.timeout,
+                expect_fail=self.expect_fail,
+                expect_error=tuple(self.expect_error),
+                skip=self.skip,
+                stage=self.stage,
             )
 
 
-def _reprs(values: Sequence[Any]) -> List[str]:
-    result: List[str] = []
+def _reprs(values: Sequence[object]) -> list[str]:
+    result: list[str] = []
     for value in values:
         value_repr = _repr(value)
         if value_repr is None:
@@ -200,7 +200,7 @@ def _reprs(values: Sequence[Any]) -> List[str]:
     return result
 
 
-def _repr(v: Any) -> Optional[str]:
+def _repr(v: object) -> str | None:
     if isinstance(v, Enum):
         return v.name
     elif isinstance(v, str):
@@ -218,47 +218,34 @@ def _repr(v: Any) -> Optional[str]:
         return None
 
 
-TestDecoratorType: TypeAlias = Union[
-    Callable[[TestFuncType], Test], Callable[[Parameterized], Parameterized]
-]
-
-
 @overload
-def test(_func: TestFuncType) -> Test: ...
-
-
-@overload
-def test(_func: Parameterized) -> Parameterized: ...
+def test(obj: TestFuncType | TestGenerator) -> TestGenerator: ...
 
 
 @overload
 def test(
     *,
-    timeout_time: Optional[float] = None,
+    timeout_time: float | None = None,
     timeout_unit: TimeUnit = "step",
     expect_fail: bool = False,
-    expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
+    expect_error: type[BaseException] | tuple[type[BaseException], ...] = (),
     skip: bool = False,
     stage: int = 0,
-    name: Optional[str] = None,
-) -> TestDecoratorType: ...
+    name: str | None = None,
+) -> Callable[[TestFuncType | TestGenerator], TestGenerator]: ...
 
 
 def test(
-    _func: Optional[Union[TestFuncType, Parameterized]] = None,
+    obj: TestFuncType | TestGenerator | None = None,
     *,
-    timeout_time: Optional[float] = None,
+    timeout_time: float | None = None,
     timeout_unit: TimeUnit = "step",
-    expect_fail: bool = False,
-    expect_error: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = (),
-    skip: bool = False,
-    stage: int = 0,
-    name: Optional[str] = None,
-) -> Union[
-    Test,
-    Parameterized,
-    TestDecoratorType,
-]:
+    expect_fail: bool | None = None,
+    expect_error: type[BaseException] | tuple[type[BaseException], ...] | None = None,
+    skip: bool | None = None,
+    stage: int | None = None,
+    name: str | None = None,
+) -> TestGenerator | Callable[[TestFuncType | TestGenerator], TestGenerator]:
     r"""
     Decorator to register a Callable which returns a Coroutine as a test.
 
@@ -365,64 +352,65 @@ def test(
 
             @cocotb.test
             async def test_thing(dut): ...
-
-
-    .. versionchanged:: 2.0
-        Decorated tests now return the decorated object.
-
     """
-    if _func is not None:
-        if isinstance(_func, Parameterized):
-            return _func
-        else:
-            return Test(func=_func)
+    if isinstance(obj, TestGenerator):
+        return obj
+    elif obj is not None:
+        return TestGenerator(obj)
 
-    @overload
-    def wrapper(obj: TestFuncType) -> Test: ...
-
-    @overload
-    def wrapper(obj: Parameterized) -> Parameterized: ...
-
-    def wrapper(obj: Union[TestFuncType, Parameterized]) -> Union[Test, Parameterized]:
-        if isinstance(obj, Parameterized):
-            obj.test_template = Test(
-                func=obj.test_template.func,
-                name=name,
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
-                expect_fail=expect_fail,
-                expect_error=expect_error,
-                skip=skip,
-                stage=stage,
-            )
-            return obj
-        else:
-            return Test(
-                func=obj,
-                name=name,
-                timeout_time=timeout_time,
-                timeout_unit=timeout_unit,
-                expect_fail=expect_fail,
-                expect_error=expect_error,
-                skip=skip,
-                stage=stage,
-            )
+    def wrapper(obj: TestFuncType | TestGenerator) -> TestGenerator:
+        if not isinstance(obj, TestGenerator):
+            obj = TestGenerator(obj)
+        if timeout_time is not None:
+            obj.timeout = (timeout_time, timeout_unit)
+        if expect_fail is not None:
+            obj.expect_fail |= expect_fail
+        if expect_error is not None:
+            if isinstance(expect_error, type):
+                obj.expect_error.add(expect_error)
+            else:
+                for exc in expect_error:
+                    obj.expect_error.add(exc)
+        if skip is not None:
+            obj.skip |= skip
+        if stage is not None:
+            obj.stage = stage
+        if name is not None:
+            obj.name = name
+        return obj
 
     return wrapper
 
 
+# Prevent pytest from picking up the test decorator as a test
+test.__test__ = False  # type: ignore[attr-defined]
+
+
+@overload
 def parametrize(
-    *options_by_tuple: Union[
-        Tuple[str, Sequence[Any]], Tuple[Sequence[str], Sequence[Sequence[Any]]]
-    ],
-    **options_by_name: Sequence[Any],
-) -> Callable[[TestFuncType], Parameterized]:
+    *options_by_tuple: tuple[str, Sequence[object]]
+    | tuple[Sequence[str], Sequence[Sequence[object]]],
+) -> Callable[[TestFuncType | TestGenerator], TestGenerator]: ...
+
+
+@overload
+def parametrize(
+    **options_by_name: Sequence[object],
+) -> Callable[[TestFuncType | TestGenerator], TestGenerator]: ...
+
+
+def parametrize(
+    *options_by_tuple: tuple[str, Sequence[object]]
+    | tuple[Sequence[str], Sequence[Sequence[object]]],
+    **options_by_name: Sequence[object],
+) -> Callable[[TestFuncType | TestGenerator], TestGenerator]:
     """Decorator to generate parametrized tests from a single test function.
 
     Decorates a test function with named test parameters.
     The call to ``parametrize`` should include the name of each test parameter and the possible values each parameter can hold.
     This will generate a test for each of the Cartesian products of the parameters and their values.
 
+    .. autolink-skip::
     .. code-block:: python
 
         @cocotb.test(
@@ -436,6 +424,7 @@ def parametrize(
 
     The above is equivalent to the following.
 
+    .. autolink-skip::
     .. code-block:: python
 
         @cocotb.test(skip=False)
@@ -465,6 +454,7 @@ def parametrize(
     either by supplying tuples of the parameter name to values,
     or a sequence of variable names and a sequence of values.
 
+    .. autolink-skip::
     .. code-block:: python
 
         @cocotb.parametrize(
@@ -495,7 +485,7 @@ def parametrize(
             for n in name:
                 if not n.isidentifier():
                     raise ValueError("Option names must be valid Python identifiers")
-            values = cast(Sequence[Sequence[Any]], values)
+            values = cast("Sequence[Sequence[object]]", values)
             for value in values:
                 if len(name) != len(value):
                     raise ValueError(
@@ -504,9 +494,131 @@ def parametrize(
         elif not name.isidentifier():
             raise ValueError("Option names must be valid Python identifiers")
 
-    options = [*options_by_tuple, *options_by_name.items()]
-
-    def wrapper(f: TestFuncType) -> Parameterized:
-        return Parameterized(f, options)
+    def wrapper(f: TestFuncType | TestGenerator) -> TestGenerator:
+        if not isinstance(f, TestGenerator):
+            f = TestGenerator(f)
+        # Ensure we prepend so that arguments lexically farther down in the "stack"
+        # appear in the test name lexically after (more right).
+        # Decorators are evaluated in reverse-lexical order.
+        f.options = [*options_by_tuple, *options_by_name.items(), *f.options]
+        return f
 
     return wrapper
+
+
+def skipif(
+    condition: bool, *, reason: str | None = None
+) -> Callable[[TestFuncType | TestGenerator], TestGenerator]:
+    """Marks a test as skipped if the condition is ``True``.
+
+    This acts as an alternative to the ``skip`` option to :deco:`cocotb.test`.
+
+    .. autolink-skip::
+    .. code-block:: python
+
+        @cocotb.skipif(
+            cocotb.top.USE_MY_FEATURE.value != 1,
+            reason="The design doesn't support my feature.",
+        )
+        @cocotb.test
+        async def test_my_feature(dut) -> None: ...
+
+    Args:
+        condition: The condition as to whether the test should be skipped. Defaults to ``True``.
+        reason: A string giving the reason as to why this test was skipped.
+
+            This argument is purely for documentation purposes.
+
+    Returns:
+        A decorator function to mark the test.
+
+    .. versionadded:: 2.1
+    """
+
+    def decorator(obj: TestFuncType | TestGenerator) -> TestGenerator:
+        if not isinstance(obj, TestGenerator):
+            obj = TestGenerator(obj)
+        obj.skip |= condition
+        return obj
+
+    return decorator
+
+
+_single_exception_types = (
+    type,
+    *(
+        (pytest.RaisesExc, pytest.RaisesGroup)
+        if hasattr(pytest, "RaisesExc") and hasattr(pytest, "RaisesGroup")
+        else ()
+    ),
+)
+
+
+def xfail(
+    condition: bool = True,
+    *,
+    reason: str | None = None,
+    raises: type[BaseException]
+    | pytest.RaisesExc
+    | pytest.RaisesGroup
+    | Iterable[type[BaseException]]
+    | None = None,
+) -> Callable[[TestFuncType | TestGenerator], TestGenerator]:
+    """Marks a test as expected to fail if the condition is ``True``.
+
+    This acts as an alternative to the ``expect_fail`` option to :deco:`cocotb.test` if *raises* is not given.
+    Or as an alternative to ``expect_error`` if *raises* is given.
+
+    .. autolink-skip::
+    .. code-block:: python
+
+        @cocotb.xfail(reason="The HDL does not behave as expected.")
+        @cocotb.test
+        async def test_design(dut): ...
+
+
+        @cocotb.xfail(
+            cocotb.top.USE_MY_FEATURE.value != 0,
+            raises=IndexError,
+            reason="My design is not configured to use the new feature, so the model will eventually fail",
+        )
+        @cocotb.test
+        async def test_design_feature(dut): ...
+
+    Args:
+        condition: The condition as to whether the test is expected to fail. Defaults to ``True``.
+        reason: A string giving the reason as to why this test is expected to fail.
+
+            This argument is purely for documentation purposes.
+
+        raises: An exception, or iterable of exceptions to expect the test to fail with.
+
+    .. versionadded:: 2.1
+    """
+
+    def decorator(obj: TestFuncType | TestGenerator) -> TestGenerator:
+        if not isinstance(obj, TestGenerator):
+            obj = TestGenerator(obj)
+        if condition:
+            if raises is not None:
+                if isinstance(raises, _single_exception_types):
+                    obj.expect_error.add(raises)
+                else:
+                    try:
+                        it = iter(raises)  # type: ignore[arg-type]
+                    except TypeError:
+                        raise TypeError(
+                            "Expected error types must be an exception type or iterable of exception types"
+                        ) from None
+                    else:
+                        for exc in it:
+                            if not isinstance(exc, _single_exception_types):
+                                raise TypeError(
+                                    "Expected error types must be exception types"
+                                )
+                            obj.expect_error.add(exc)
+            else:
+                obj.expect_fail = True
+        return obj
+
+    return decorator

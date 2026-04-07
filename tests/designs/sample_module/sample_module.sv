@@ -6,17 +6,15 @@
 
 `ifndef NOTIMESCALE
 `timescale 1 ps / 1 ps
-`endif
+`endif  // `ifndef NOTIMESCALE
 
 `ifndef __ICARUS__
 
-`ifndef VERILATOR
 typedef struct
 {
     logic a_in;
     logic b_out;
 } test_struct_unpacked;
-`endif // `ifndef VERILATOR
 
 typedef struct packed
 {
@@ -25,8 +23,7 @@ typedef struct packed
     logic value;
 } test_struct_packed;
 
-
-`endif
+`endif  // `ifndef __ICARUS__
 
 interface TestInterface ();
 
@@ -56,12 +53,10 @@ module sample_module #(
     input  integer                              stream_in_int,
     output real                                 stream_out_real,
     output integer                              stream_out_int,
-    `ifndef VERILATOR
     input  test_struct_unpacked                 inout_if,
-    `endif
     input  test_struct_packed                   my_struct,
     input  string                               stream_in_string,
-`endif
+`endif  // `ifndef __ICARUS__
     input  [7:0]                                stream_in_data,
     input  [31:0]                               stream_in_data_dword,
     input  [38:0]                               stream_in_data_39bit,
@@ -81,7 +76,7 @@ localparam string STRING_LOCALPARAM = "TESTING_LOCALPARAM";
 
 var   string STRING_VAR   = "TESTING_VAR";
 const string STRING_CONST = "TESTING_CONST";
-`endif
+`endif  // `ifndef __ICARUS__
 
 always @(posedge clk)
     stream_out_data_registered <= stream_in_data;
@@ -118,19 +113,10 @@ always @(stream_in_string) begin
 end
 `endif //  `ifndef _VCP
 
-`ifndef VERILATOR
 test_struct_unpacked struct_var;
-`endif
 `endif //  `ifndef __ICARUS__
 
 and test_and_gate(and_output, stream_in_ready, stream_in_valid);
-
-`ifndef NODUMPFILE
-initial begin
-    $dumpfile("waveform.vcd");
-    $dumpvars(0,sample_module);
-end
-`endif
 
 parameter NUM_OF_MODULES /*verilator public_flat_rd*/ = 4;
 reg[NUM_OF_MODULES-1:0] temp;
@@ -205,7 +191,7 @@ reg _underscore_name;
     // to be visible to VPI in Icarus Verilog.
     // See https://github.com/steveicarus/iverilog/issues/322
     assign _underscore_name = 0;
-`endif
+`endif  // `ifdef __ICARUS__
 
 bit mybit;
 bit [1:0] mybits;

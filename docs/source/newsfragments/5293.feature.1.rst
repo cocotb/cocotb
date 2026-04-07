@@ -1,0 +1,1 @@
+Added support for comparing :class:`.LogicArray` with negative integers. This assumes two's complement representation.

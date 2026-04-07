@@ -1,1 +1,0 @@
-:class:`~cocotb.clock.Clock` now owns the driver task, so the user does not need to pass the result of :meth:`.Clock.start` to :func:`cocotb.start_soon`. Additionally, :meth:`.Clock.stop` was introduced to stop the clock driver.

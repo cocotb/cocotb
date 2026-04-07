@@ -1,1 +1,0 @@
-PyGPI user modules specified by :envvar:`PYGPI_USERS` no longer require the module-level definition of functions ``_log_from_c`` and ``_filter_from_c``. Instead call ``cocotb.simulator.initialize_logger`` if you need this functionality.

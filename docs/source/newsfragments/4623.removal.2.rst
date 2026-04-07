@@ -1,1 +1,0 @@
-``cocotb.handle.SimHandle`` was made private. Generally, :class:`dut.hierarchy["path/to/thing"] <cocotb.handle.HierarchyObject>` or :meth:`.HierarchyObject._get` can be used get objects by a full path, which was the typical public use for this function originally.

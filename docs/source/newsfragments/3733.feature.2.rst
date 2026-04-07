@@ -1,1 +1,0 @@
-Added support for using :class:`str` in assignment to :class:`~cocotb.handle.LogicObject`\ s.

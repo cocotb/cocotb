@@ -1,1 +1,0 @@
-:attr:`LogicArray.signed_integer <cocotb.types.LogicArray.signed_integer>` has been deprecated. Use :meth:`LogicArray.to_signed() <cocotb.types.LogicArray.to_signed>` instead.

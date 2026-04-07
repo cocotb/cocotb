@@ -15,7 +15,7 @@ this chapter shows the minimum settings to be done.
 
 For all simulators, the following environment variables need to be set:
 
-* Define :envvar:`LIBPYTHON_LOC` using ``$(cocotb-config --libpython)``.
+* Define :envvar:`GPI_USERS` using ``$(cocotb-config --libpython);$(cocotb-config --pygpi-entry-point)``.
 * Define :envvar:`PYGPI_PYTHON_BIN` using ``$(cocotb-config --python-bin)``.
 * Define :envvar:`COCOTB_TEST_MODULES` with the name of the Python module(s) containing your testcases.
 
@@ -114,11 +114,13 @@ Aldec Active-HDL
 Mentor/Siemens EDA Questa and Modelsim
 ======================================
 
+Questa supports two different flows: the traditional flow using ``vsim``, which is also used by ModelSim, and a modern alternative using ``qrun``.
+
 .. tab-set::
 
    .. tab-item:: Design with a VHDL Toplevel
 
-      For a design with a VHDL toplevel, call the ``vsim`` executable with the option
+      For a design with a VHDL toplevel, call the ``vsim`` or ``qrun`` executable with the option
       ``-foreign "cocotb_init $(cocotb-config --lib-name-path fli questa)"``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
@@ -127,7 +129,7 @@ Mentor/Siemens EDA Questa and Modelsim
 
    .. tab-item:: Design with a (System)Verilog Toplevel
 
-      For a design with a (System)Verilog toplevel, call the ``vsim`` executable with the option
+      For a design with a (System)Verilog toplevel, call the ``vsim`` or ``qrun`` executable with the option
       ``-pli $(cocotb-config --lib-name-path vpi questa)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
@@ -142,26 +144,23 @@ Cadence Incisive and Xcelium
 * The ``xrun`` call (or ``xmelab`` in multi-step mode) needs the ``-access +rwc``
   (or equivalent, e.g. :samp:`-afile {afile}`) option set to allow cocotb to access values in the design.
 
-.. tab-set::
+* The ``xrun`` call (or ``xmsim`` in multi-step mode) needs the VPI library and entry point via the option
+  ``-loadvpisim $(cocotb-config --lib-name-path vpi xcelium):vlog_startup_routines_bootstrap``.
+  Alternatively, it is possible to specify the same during elaboration in multi-step mode with
+  ``-loadvpi $(cocotb-config --lib-name-path vpi xcelium):.vlog_startup_routines_bootstrap``.
+  The syntax is ``-loadvpi library:elab_functions[.sim_functions]``, taking two comma separated lists of
+  methods. The first list is invoked during elaboration and then simulation, while the second only applies
+  to simulation and it is the one to use to register callbacks. Specifying the entry point in ``elab_functions``
+  works but has the downside of initializing cocotb during elaboration, not only simulation.
 
-   .. tab-item:: Design with a VHDL Toplevel
+* If the design contains any VHDL modules, set the :envvar:`GPI_EXTRA` environment variable to
+  ``$(cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point``.
+  This is because directly loading the VHPI library causes an error in Xcelium,
+  so always load the VPI library and supply VHPI via ``GPI_EXTRA``.
 
-      For a design with a VHDL toplevel, call the ``xrun`` or ``xmelab`` executable with the options
-      ``-NEW_VHPI_PROPAGATE_DELAY -loadvpi $(cocotb-config --lib-name-path vpi xcelium):vlog_startup_routines_bootstrap``.
-
-      Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point``.
-      This is because directly loading the VHPI library causes an error in Xcelium,
-      so always load the VPI library and supply VHPI via ``GPI_EXTRA``.
-
-   .. tab-item:: Design with a (System)Verilog Toplevel
-
-      For a design with a (System)Verilog toplevel, call the ``xrun`` or ``xmelab`` executable with the option
-      ``-loadvpi $(cocotb-config --lib-name-path vpi xcelium):vlog_startup_routines_bootstrap``.
-
-      Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point``
-      if there are also VHDL modules in the design.
+.. note::
+  For a design with a VHDL toplevel, call the ``xrun`` or ``xmelab`` executable with the option
+  ``-NEW_VHPI_PROPAGATE_DELAY``.
 
 .. _custom-flows-ghdl:
 

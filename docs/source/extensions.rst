@@ -4,7 +4,7 @@ Writing cocotb Extensions
 
 This guide explains how to write cocotb extensions, with a focus on the conventions that should be followed.
 
-Cocotb gives its users a framework to build Python testbenches for hardware designs.
+cocotb gives its users a framework to build Python testbenches for hardware designs.
 But sometimes the functionality provided by cocotb is too low-level.
 One common example are bus drivers and monitors:
 instead of creating a bus adapter from scratch for each new project, wouldn't it be nice to share this component, and build on top it?
@@ -19,37 +19,15 @@ Additionally, the cocotb community has agreed on a set of conventions to make ex
 Naming conventions
 ==================
 
-Cocotb extensions are normal Python modules which follow these naming conventions.
+cocotb extensions are normal Python modules which follow these naming conventions.
 
 Assuming an extension named ``EXTNAME`` (all lower-case),
 
 - the package is in the ``cocotbext.EXTNAME`` namespace, and
 - the distribution (package) name is prefixed with ``cocotbext-EXTNAME``.
 
-Example:
-An SPI bus extension might be packaged as ``cocotbext-spi``, and its functionality would live in the ``cocotbext.spi`` namespace.
+For example, a SPI bus extension might be packaged as ``cocotbext-spi``, and its functionality would live in the ``cocotbext.spi`` namespace.
 The module can then be installed with ``pip3 install cocotbext-spi``, and used with ``import cocotbext.spi``.
-
-Types of cocotb extensions
-==========================
-
-For some types of cocotb extensions we have developed conventions which go beyond naming.
-These conventions help to achieve a consistent behavior across extensions of the same type.
-
-Bus extensions
---------------
-
-A cocotb extension which interacts with a bus or an interface (such as SPI or AXI) should build on top of a common set of classes to provide a uniform interface for its users.
-Typically, a bus extension provides three pieces of functionality:
-an abstraction of the bus itself, a bus driver, and a bus monitor.
-
-A bus driver is the "active" part, it drives the signals that make up the bus to request reads or writes from the bus.
-A bus monitor is the "passive" part, it observes signal changes on the bus and assigns meaning to them.
-Monitors can also check the bus behavior against a standard to ensure no invalid states are being observed.
-
-The signals which make up the bus should be grouped in a class inheriting from :class:`cocotb_bus.bus.Bus`.
-Bus drivers should inherit from the :class:`cocotb_bus.drivers.BusDriver` class.
-Bus monitors should inherit from the :class:`cocotb_bus.monitors.BusMonitor` class.
 
 Packaging extensions
 ====================
@@ -80,7 +58,7 @@ All packaging metadata goes into :file:`setup.py`.
         version = '0.1',
         packages = find_namespace_packages(include=['cocotbext.*']),
         install_requires = ['cocotb'],
-        python_requires = '>=3.6.2',
+        python_requires = '>=3.9',
         classifiers = [
           "Programming Language :: Python :: 3",
           "Operating System :: OS Independent",

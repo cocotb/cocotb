@@ -1,1 +1,0 @@
-Added :class:`cocotb.simulator.GpiClock`, a C++ clock generator implementation with higher performance due to less handshaking between Python and the GPI. :class:`~cocotb.clock.Clock` uses it automatically when it would behave identically to the Python implementation.

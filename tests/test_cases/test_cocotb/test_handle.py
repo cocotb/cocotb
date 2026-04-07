@@ -5,20 +5,30 @@
 Tests for handles
 """
 
+from __future__ import annotations
+
 import logging
 import os
+import pickle
 import random
+from typing import Any
 
 import pytest
 
 import cocotb
 import cocotb.triggers
-from cocotb.handle import Immediate, LogicArrayObject, StringObject, _Limits
+from cocotb.handle import Immediate, StringObject
 from cocotb.triggers import FallingEdge, Timer, ValueChange
 from cocotb.types import Logic, LogicArray
+from cocotb_tools.sim_versions import RivieraVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+SIM_VERSION = cocotb.SIM_VERSION
+
+riviera_before_2025_04 = SIM_NAME.startswith("riviera") and RivieraVersion(
+    SIM_VERSION
+) < RivieraVersion("2025.04")
 
 
 @cocotb.test()
@@ -34,12 +44,16 @@ async def test_bad_attr(dut):
         assert False, "Expected AttributeError"
 
 
-# iverilog fails to discover string inputs (gh-2585)
-# GHDL fails to discover string input properly (gh-2584)
-@cocotb.test(
-    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
-    expect_fail=SIM_NAME.startswith("ghdl"),
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="iverilog fails to discover string inputs (gh-2585)",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL fails to discover string input properly (gh-2584)",
+)
+@cocotb.test
 async def test_string_handle_takes_bytes(dut):
     assert isinstance(dut.stream_in_string, StringObject)
     dut.stream_in_string.value = b"bytes"
@@ -49,12 +63,18 @@ async def test_string_handle_takes_bytes(dut):
     assert val == b"bytes"
 
 
-# iverilog fails to discover string inputs (gh-2585)
-# GHDL fails to discover string input properly (gh-2584)
-@cocotb.test(
-    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
-    expect_fail=SIM_NAME.startswith("ghdl"),
-    skip=LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
+@cocotb.skipif(
+    LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera"),
+    reason="Riviera is unhappy for an unknown reason",
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="iverilog fails to discover string inputs (gh-2585)",
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL fails to discover string input properly (gh-2584)",
 )
 async def test_string_ansi_color(dut):
     """Check how different simulators treat ANSI-colored strings, see gh-2328"""
@@ -83,210 +103,32 @@ async def test_string_ansi_color(dut):
         assert dut.stream_in_string_asciival_sum.value == asciival_sum
 
 
+@cocotb.test
 async def test_delayed_assignment_still_errors(dut):
     """Writing a bad value should fail even if the write is scheduled to happen later"""
 
     with pytest.raises(ValueError):
-        dut.stream_in_int.value = Immediate("1010 not a real binary string")
+        dut.stream_in_data.value = Immediate("1010 not a real binary string")
     with pytest.raises(TypeError):
-        dut.stream_in_int.value = Immediate([])
+        dut.stream_in_data.value = Immediate([])
 
     with pytest.raises(ValueError):
-        dut.stream_in_int.value = "1010 not a real binary string"
+        dut.stream_in_data.value = "1010 not a real binary string"
     with pytest.raises(TypeError):
-        dut.stream_in_int.value = []
+        dut.stream_in_data.value = []
 
 
-signal_widths = {
-    len(sig): sig
-    for sig in (
-        cocotb.top.stream_in_data,
-        cocotb.top.stream_in_data_dword,
-        cocotb.top.stream_in_data_39bit,
-        cocotb.top.stream_in_data_wide,
-        cocotb.top.stream_in_data_dqword,
-    )
-}
-
-
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="iverilog unable to find real signals (gh-2590)",
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    raises=AttributeError,
+    reason="GHDL unable to find real signals (gh-2589)",
+)
 @cocotb.test
-@cocotb.parametrize(
-    ("width", tuple(signal_widths.keys())),
-    ("setimmediate", [True, False]),
-)
-async def test_int_values(
-    _, width: int, setimmediate: bool, limits=_Limits.VECTOR_NBIT
-) -> None:
-    """Test integer access to a signal."""
-    if LANGUAGE == "vhdl" and setimmediate:
-        return
-    signal = signal_widths[width]
-    await int_values_test(signal, width, setimmediate, limits)
-
-
-async def int_values_test(
-    signal: LogicArrayObject,
-    n_bits: int,
-    setimmediate: bool,
-    limits: _Limits = _Limits.VECTOR_NBIT,
-) -> None:
-    """Test integer access to a signal."""
-    values = gen_int_test_values(n_bits, limits)
-    for val in values:
-        if setimmediate:
-            signal.value = Immediate(val)
-        else:
-            signal.value = val
-        await Timer(1, "ns")
-
-        if limits == _Limits.VECTOR_NBIT:
-            if val < 0:
-                got = signal.value.to_signed()
-            else:
-                got = signal.value.to_unsigned()
-        else:
-            got = signal.value
-
-        assert got == val
-
-
-def gen_int_test_values(n_bits, limits=_Limits.VECTOR_NBIT):
-    """Generates a list of int test values for a given number of bits."""
-    unsigned_min = 0
-    unsigned_max = 2**n_bits - 1
-    signed_min = -(2 ** (n_bits - 1))
-    signed_max = 2 ** (n_bits - 1) - 1
-
-    if limits == _Limits.VECTOR_NBIT:
-        return [1, -1, 4, -4, unsigned_min, unsigned_max, signed_min, signed_max]
-    elif limits == _Limits.SIGNED_NBIT:
-        return [1, -1, 4, -4, signed_min, signed_max]
-    else:
-        return [1, -1, 4, -4, unsigned_min, unsigned_max]
-
-
-@cocotb.test
-@cocotb.parametrize(
-    ("width", tuple(signal_widths.keys())),
-    ("test_mode", ["ovfl", "unfl"]),
-    ("setimmediate", [True, False]),
-)
-async def test_vector_overflow(
-    _,
-    width: int,
-    test_mode: str,
-    setimmediate: bool,
-    limits=_Limits.VECTOR_NBIT,
-) -> None:
-    if LANGUAGE == "vhdl" and setimmediate:
-        return
-    signal = signal_widths[width]
-    await int_overflow_test(signal, width, test_mode, setimmediate, limits)
-
-
-async def int_overflow_test(
-    signal: LogicArrayObject,
-    n_bits: int,
-    test_mode: str,
-    setimmediate: bool,
-    limits: _Limits = _Limits.VECTOR_NBIT,
-) -> None:
-    """Test integer overflow."""
-    if test_mode == "ovfl":
-        value = gen_int_ovfl_value(n_bits, limits)
-    elif test_mode == "unfl":
-        value = gen_int_unfl_value(n_bits, limits)
-    else:
-        assert False, f"bad test_mode {test_mode}"
-
-    with pytest.raises(ValueError):
-        if setimmediate:
-            signal.value = Immediate(value)
-        else:
-            signal.value = value
-
-
-def gen_int_ovfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
-    unsigned_max = 2**n_bits - 1
-    signed_max = 2 ** (n_bits - 1) - 1
-
-    if limits == _Limits.SIGNED_NBIT:
-        return signed_max + 1
-    elif limits == _Limits.UNSIGNED_NBIT:
-        return unsigned_max + 1
-    else:
-        return unsigned_max + 1
-
-
-def gen_int_unfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
-    unsigned_min = 0
-    signed_min = -(2 ** (n_bits - 1))
-
-    if limits == _Limits.SIGNED_NBIT:
-        return signed_min - 1
-    elif limits == _Limits.UNSIGNED_NBIT:
-        return unsigned_min - 1
-    else:
-        return signed_min - 1
-
-
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
-@cocotb.parametrize(("setimmediate", [True, False]))
-async def test_integer(dut, setimmediate: bool) -> None:
-    """Test access to integers."""
-    if (
-        LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
-    ) or SIM_NAME.startswith(("ghdl", "verilator")):
-        limits = (
-            _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
-    else:
-        limits = _Limits.SIGNED_NBIT
-
-    await int_values_test(dut.stream_in_int, 32, setimmediate, limits)
-
-
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
-@cocotb.parametrize(("setimmediate", [True, False]))
-async def test_integer_overflow(dut, setimmediate: bool) -> None:
-    """Test integer overflow."""
-    if (
-        LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
-    ) or SIM_NAME.startswith(("ghdl", "verilator")):
-        limits = (
-            _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
-    else:
-        limits = _Limits.SIGNED_NBIT
-
-    await int_overflow_test(dut.stream_in_int, 32, "ovfl", setimmediate, limits)
-
-
-@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
-@cocotb.parametrize(("setimmediate", [True, False]))
-async def test_integer_underflow(dut, setimmediate: bool) -> None:
-    """Test integer underflow."""
-    if (
-        LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
-    ) or SIM_NAME.startswith("ghdl"):
-        limits = (
-            _Limits.VECTOR_NBIT
-        )  # stream_in_int is LogicArrayObject in Riviera and GHDL, not IntegerObject
-    else:
-        limits = _Limits.SIGNED_NBIT
-
-    await int_overflow_test(dut.stream_in_int, 32, "unfl", setimmediate, limits)
-
-
-# GHDL unable to find real signals (gh-2589)
-# iverilog unable to find real signals (gh-2590)
-@cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith("icarus")
-    else AttributeError
-    if SIM_NAME.startswith("ghdl")
-    else ()
-)
 async def test_real_assign_double(dut):
     """
     Assign a random floating point value, read it back from the DUT and check
@@ -305,15 +147,17 @@ async def test_real_assign_double(dut):
     assert got == val, "Values didn't match!"
 
 
-# GHDL unable to find real signals (gh-2589)
-# iverilog unable to find real signals (gh-2590)
-@cocotb.test(
-    expect_error=AttributeError
-    if SIM_NAME.startswith("icarus")
-    else AttributeError
-    if SIM_NAME.startswith("ghdl")
-    else ()
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="iverilog unable to find real signals (gh-2590)",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    raises=AttributeError,
+    reason="GHDL unable to find real signals (gh-2589)",
+)
+@cocotb.test
 async def test_real_assign_int(dut):
     """Assign a random integer value to ensure we can write types convertible to
     int, read it back from the DUT and check it matches what we assigned.
@@ -331,8 +175,10 @@ async def test_real_assign_int(dut):
     assert got == val, "Values didn't match!"
 
 
-# identifiers starting with `_` are illegal in VHDL
-@cocotb.test(skip=LANGUAGE in ("vhdl"))
+@cocotb.skipif(
+    LANGUAGE == "vhdl", reason="identifiers starting with `_` are illegal in VHDL"
+)
+@cocotb.test
 async def test_access_underscore_name(dut):
     """Test accessing HDL name starting with an underscore"""
     # direct access does not work because we consider such names cocotb-internal
@@ -360,9 +206,11 @@ async def test_assign_LogicArray(dut):
         dut.stream_in_data.value = LogicArray("010")  # not the correct size
 
 
-# verilator does not support 4-state signals
-# see https://veripool.org/guide/latest/languages.html#unknown-states
-@cocotb.test(expect_error=AssertionError if SIM_NAME.startswith("verilator") else ())
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="verilator does not support 4-state signals",
+)
+@cocotb.test
 async def test_assign_Logic(dut):
     dut.stream_in_ready.value = Logic("X")
     await Timer(1, "ns")
@@ -371,14 +219,14 @@ async def test_assign_Logic(dut):
         dut.stream_in_data.value = Logic("U")  # not the correct size
 
 
-# Run the test on GHDL, which uses VPI.
-# Skip the test on Verilator, which can only deal with 2-state values.
-@cocotb.test(
-    skip=(
-        (LANGUAGE != "verilog" and not SIM_NAME.startswith("ghdl"))
-        or SIM_NAME.startswith("verilator")
-    )
+@cocotb.skipif(
+    LANGUAGE != "verilog" and not SIM_NAME.startswith("ghdl"),
+    reason="For testing Verilog simulators, or GHDL which uses VPI",
 )
+@cocotb.skipif(
+    SIM_NAME.startswith("verilator"), reason="Verilator only supports 2-state values."
+)
+@cocotb.test
 async def test_assign_Logic_4value(dut):
     for value in ["X", "0", "1", "Z"]:
         dut.stream_in_ready.value = Logic(value)
@@ -386,8 +234,9 @@ async def test_assign_Logic_4value(dut):
         assert dut.stream_in_ready.value == value
 
 
-# GHDL uses VPI and hence can only deal with 4-state values.
-@cocotb.test(skip=LANGUAGE != "vhdl" or SIM_NAME.startswith("ghdl"))
+@cocotb.skipif(LANGUAGE != "vhdl", reason="For testing VHDL simulators.")
+@cocotb.skipif(SIM_NAME.startswith("ghdl"), reason="GHDL only supports 4-state values.")
+@cocotb.test
 async def test_assign_Logic_9value(dut):
     for value in ["U", "X", "0", "1", "Z", "W", "L", "H", "-"]:
         dut.stream_in_ready.value = Logic(value)
@@ -395,8 +244,9 @@ async def test_assign_Logic_9value(dut):
         assert dut.stream_in_ready.value == value
 
 
-# GHDL uses VPI and hence can only deal with 4-state values.
-@cocotb.test(skip=LANGUAGE != "vhdl" or SIM_NAME.startswith("ghdl"))
+@cocotb.skipif(LANGUAGE != "vhdl", reason="For testing VHDL simulators.")
+@cocotb.skipif(SIM_NAME.startswith("ghdl"), reason="GHDL only supports 4-state values.")
+@cocotb.test
 async def test_assign_LogicArray_9value(dut):
     # Reset to zero.
     dut.stream_in_data.value = LogicArray(0, 8)
@@ -424,9 +274,8 @@ async def test_assign_string(dut):
     assert dut.stream_in_data.value == "10101010"
 
 
-@cocotb.test(
-    skip=LANGUAGE in ["vhdl"],
-)
+@cocotb.skipif(LANGUAGE == "vhdl", reason="VHDL does not support immediate assignment.")
+@cocotb.test
 async def test_assign_immediate(dut):
     dut.mybits_uninitialized.value = Immediate(2)
     assert dut.mybits_uninitialized.value == 2
@@ -438,9 +287,8 @@ async def test_assign_immediate(dut):
     assert dut.mybits_uninitialized.value == LogicArray("11")
 
 
-@cocotb.test(
-    skip=LANGUAGE in ["vhdl"],
-)
+@cocotb.skipif(LANGUAGE == "vhdl", reason="VHDL does not support immediate assignment.")
+@cocotb.test
 async def test_immediate_reentrace(dut):
     dut.mybits_uninitialized.value = 0
     await Timer(1, "ns")
@@ -467,15 +315,16 @@ async def test_immediate_reentrace(dut):
     assert seen == 1
 
 
-@cocotb.test(
-    # GHDL uses the VPI, which does not have a way to infer null ranges
-    # Questa's implementation of the VHPI sets vhpiIsUpP incorrectly
-    skip=SIM_NAME.startswith("ghdl")
-    or (
-        SIM_NAME.startswith("modelsim")
-        and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi"
-    ),
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL uses the VPI, which does not have a way to infer null ranges.",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("modelsim")
+    and os.getenv("VHDL_GPI_INTERFACE", "fli") == "vhpi",
+    reason="Questa's implementation of the VHPI sets vhpiIsUpP incorrectly",
+)
+@cocotb.test
 async def test_null_range_width(dut):
     # Normal arrays should have the same length regardless of language
     assert len(dut.array_7_downto_4) == 4
@@ -526,8 +375,7 @@ async def test_assign_str_logic_scalar(dut) -> None:
         assert dut.stream_in_valid.value == "H"
 
 
-# verilator extended identifier names are not regular (gh-3754)
-@cocotb.test(expect_fail=cocotb.SIM_NAME.startswith("verilator"))
+@cocotb.test
 async def test_extended_identifiers(dut):
     if LANGUAGE == "vhdl":
         names = [
@@ -577,12 +425,36 @@ async def test_set_at_end_of_test_check(dut) -> None:
 
 @cocotb.test
 async def test_invalid_indexing(dut) -> None:
-    # Indexing into packed arrays is not supported.
-    with pytest.raises(TypeError):
-        dut.stream_in_data[0]
-    with pytest.raises(TypeError):
-        dut.stream_in_data[0:1]
-
     # Slicing not supported by ArrayObject.
     with pytest.raises(TypeError):
         dut.array_7_downto_4[6:5]
+
+
+@cocotb.test
+async def test_setattr_error_msg(dut: Any) -> None:
+    with pytest.raises(AttributeError, match=r"'example'.*[Nn]o.*exist"):
+        dut.example = 1
+    with pytest.raises(AttributeError, match=r"'stream_in_data'.*\.value"):
+        dut.stream_in_data = 1
+
+
+@cocotb.test
+async def test_pickling_prohibited(dut: object) -> None:
+    with pytest.raises(NotImplementedError):
+        pickle.dumps(dut)
+
+
+@cocotb.test
+async def test_handle_str_with_separators(dut: Any) -> None:
+    """Test that LogicArray handles string inputs with visual separators correctly."""
+    dut.stream_in_data.value = "1010_1101"
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == LogicArray("10101101")
+
+    dut.stream_in_data.value = "11__00__11__00"
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == LogicArray("11001100")
+
+    dut.stream_in_data.value = "__01010011__"
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == LogicArray("01010011")

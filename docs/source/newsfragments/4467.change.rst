@@ -1,1 +1,0 @@
-:envvar:`COCOTB_LOG_LEVEL` no longer sets the GPI loggers log level if supplied; use :envvar:`GPI_LOG_LEVEL` to do that.

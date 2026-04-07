@@ -51,12 +51,11 @@ Reference Card
 +------------------------+-----------------------------------------------------------------+
 | Wait for signal edge   | | ``await cocotb.triggers.RisingEdge(dut.mysignal)``            |
 |                        | | ``await cocotb.triggers.FallingEdge(dut.mysignal)``           |
-|                        | | ``await cocotb.triggers.Edge(dut.mysignal)``                  |
+|                        | | ``await cocotb.triggers.ValueChange(dut.mysignal)``           |
 +------------------------+-----------------------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+
-| Run coros concurrently | | ``task_0 = await cocotb.start(coro_0())``  (start coro now)   |
-|                        | | ``task_1 = cocotb.start_soon(coro)``                          |
+| Run coros concurrently | | ``task_0 = cocotb.start_soon(coro)``                          |
 |                        | | ``result = await task_0``                                     |
 +------------------------+-----------------------------------------------------------------+
 | Cancel task            | ``task_0.cancel()``                                             |
@@ -64,11 +63,11 @@ Reference Card
 | Wait for task to finish | ``await task_0.complete``                                      |
 +------------------------++----------------------------------------------------------------+
 |                                                                                          |
-+-------------------------------+----------------------------------------------------------+
-| Resume on any Task or Trigger | ``await cocotb.triggers.First(task_0, trigger_1)``       |
-+-------------------------------+----------------------------------------------------------+
-| Resume on all Task or Trigger | ``await cocotb.triggers.Combine(task_0, trigger_1)``     |
-+-------------------------------+----------------------------------------------------------+
++----------------------------------+-------------------------------------------------------+
+| Resume after any Task or Trigger | ``await cocotb.triggers.select(task_0, trigger_1)``   |
++----------------------------------+-------------------------------------------------------+
+| Resume after all Task or Trigger | ``await cocotb.triggers.gather(task_0, trigger_1)``   |
++----------------------------------+-------------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+
 | Generate clock         | ``clk = Clock(dut.clk, 12, "ns").start()``                      |

@@ -1,9 +1,13 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
+import copy
+
 import pytest
 
-from cocotb.types import Logic
+from cocotb.types import Bit, Logic
 
 
 def test_logic_conversions():
@@ -183,3 +187,57 @@ def test_resolve():
     assert Logic("L").resolve("random") == Logic("0")
     assert Logic("H").resolve("random") == Logic("1")
     assert Logic("-").resolve("random") in (Logic("0"), Logic("1"))
+
+
+def test_logic_is_resolvable() -> None:
+    assert Logic(False).is_resolvable
+    assert Logic(1).is_resolvable
+    assert Logic("L").is_resolvable
+    assert Logic("H").is_resolvable
+    assert not Logic("U").is_resolvable
+    assert not Logic("X").is_resolvable
+    assert not Logic("Z").is_resolvable
+    assert not Logic("W").is_resolvable
+    assert not Logic("-").is_resolvable
+
+
+def test_copy() -> None:
+    l = Logic("X")
+    assert l == copy.copy(l)
+    assert l == copy.deepcopy(l)
+
+
+def test_bit_constructor() -> None:
+    Bit(0)
+    Bit(False)
+    Bit("0")
+    Bit(Logic(0))
+    Bit(1)
+    Bit(True)
+    Bit("1")
+    Bit(Logic(1))
+    with pytest.raises(ValueError):
+        Bit("X")
+    with pytest.raises(ValueError):
+        Bit("L")
+    a = Logic("X")
+    with pytest.raises(ValueError):
+        Bit(a)
+
+
+def test_bit_ops() -> None:
+    assert Bit(1) | Bit(0) is Bit(1)
+    assert Bit(1) & Bit(0) is Bit(0)
+    assert Bit(1) ^ Bit(0) is Bit(1)
+    assert ~Bit(1) is Bit(0)
+
+
+def test_bit_with_logic_ops() -> None:
+    assert Logic(0) == Bit(0)
+    assert Bit(0) == Logic(0)
+    assert Logic(1) & Bit(1) is Logic(1)
+    assert Bit(1) & Logic(1) is Logic(1)
+    assert Logic(0) | Bit(1) is Logic(1)
+    assert Bit(0) | Logic(1) is Logic(1)
+    assert Logic(1) ^ Bit(1) is Logic(0)
+    assert Bit(1) ^ Logic(1) is Logic(0)

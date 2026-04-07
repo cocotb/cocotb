@@ -1,1 +1,0 @@
-The current Git revision will now be added to :data:`cocotb.__version__` for all ``dev`` versions.

@@ -6,26 +6,20 @@
 
 """A collection of triggers which a testbench can :keyword:`await`."""
 
+from __future__ import annotations
+
+import warnings
 from abc import abstractmethod
+from collections.abc import Awaitable, Generator
 from decimal import Decimal
-from typing import (
-    Any,
-    Awaitable,
-    Coroutine,
-    Generator,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, TypeVar, cast, overload
 
 import cocotb.handle
 from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
+from cocotb._concurrent_waiters import select
+from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
-from cocotb._typing import TimeUnit
+from cocotb.simtime import RoundMode, TimeUnit
 from cocotb.task import Task
 
 T = TypeVar("T")
@@ -41,41 +35,15 @@ class Waitable(Awaitable[T]):
     async def _wait(self) -> T:
         """The coroutine function which implements the functionality of the Waitable."""
 
-    def __await__(self) -> Generator[Any, Any, T]:
+    def __await__(self) -> Generator[Trigger, None, T]:
         return self._wait().__await__()
 
 
-class _AggregateWaitable(Waitable[T]):
-    """Base class for :class:`Combine` and :class:`First`."""
-
-    def __init__(self, *trigger: Union[Trigger, Waitable[Any], Task[Any]]) -> None:
-        self._triggers = trigger
-
-        # Do some basic type-checking up front, rather than waiting until we
-        # await them.
-        allowed_types = (Trigger, Waitable, Task)
-        for t in self._triggers:
-            if not isinstance(t, allowed_types):
-                raise TypeError(
-                    f"All triggers must be instances of Trigger! Got: {type(t).__qualname__}"
-                )
-
-    def __repr__(self) -> str:
-        # no _pointer_str here, since this is not a trigger, so identity
-        # doesn't matter.
-        return "{}({})".format(
-            type(self).__qualname__,
-            ", ".join(repr(t) for t in self._triggers),
-        )
-
-
-async def _wait_callback(
-    trigger: Union[Trigger, Waitable[object], Task[object]],
-) -> object:
+async def _wait_callback(trigger: Awaitable[T]) -> T:
     return await trigger
 
 
-class Combine(_AggregateWaitable["Combine"]):
+class Combine(Waitable["Combine"]):
     r"""Trigger that fires when all *triggers* have fired.
 
     :keyword:`await`\ ing this returns the :class:`Combine` object.
@@ -83,22 +51,53 @@ class Combine(_AggregateWaitable["Combine"]):
     See :ref:`combine-tutorial` for an example.
 
     Args:
-        trigger: One or more :keyword:`await`\ able objects.
+        triggers: One or more :keyword:`await`\ able objects.
 
     Raises:
         TypeError: When an unsupported *trigger* object is passed.
+
+    .. deprecated:: 2.1
+        Passing :class:`~cocotb.task.Task` objects to :class:`!Combine` is deprecated.
+        Use :func:`~cocotb.triggers.gather` instead and pass coroutines directly instead of wrapping them in :func:`cocotb.start_soon`.
     """
 
-    async def _wait(self) -> "Combine":
+    _task_deprecation_str = (
+        "Passing Task objects to `Combine` is deprecated. "
+        "Use `gather` instead and pass coroutines directly instead of wrapping them in `cocotb.start_soon`."
+    )
+
+    @overload
+    def __init__(self, *triggers: Trigger | Waitable[Any]) -> None: ...
+
+    @overload
+    @deprecated(_task_deprecation_str)
+    def __init__(self, *triggers: Trigger | Waitable[Any] | Task[Any]) -> None: ...
+
+    def __init__(self, *triggers: Trigger | Waitable[Any] | Task[Any]) -> None:
+        # Do some basic type-checking up front, rather than waiting until we
+        # await them.
+        for t in triggers:
+            if isinstance(t, Task):
+                warnings.warn(
+                    self._task_deprecation_str, DeprecationWarning, stacklevel=2
+                )
+            elif not isinstance(t, (Trigger, Waitable)):
+                raise TypeError(
+                    f"All triggers must be instances of Trigger! Got: {type(t).__qualname__}"
+                )
+
+        self._triggers = triggers
+
+    async def _wait(self) -> Combine:
         if len(self._triggers) == 0:
             await NullTrigger()
         elif len(self._triggers) == 1:
             await self._triggers[0]
         else:
-            waiters: List[Task[object]] = []
-            completed: List[Task[Any]] = []
+            waiters: list[Task[object]] = []
+            completed: list[Task[object]] = []
             done = _InternalEvent(self)
-            exception: Union[BaseException, None] = None
+            exception: BaseException | None = None
 
             def on_done(
                 task: Task[object],
@@ -139,8 +138,16 @@ class Combine(_AggregateWaitable["Combine"]):
 
         return self
 
+    def __repr__(self) -> str:
+        # no _pointer_str here, since this is not a trigger, so identity
+        # doesn't matter.
+        return "{}({})".format(
+            type(self).__qualname__,
+            ", ".join(repr(t) for t in self._triggers),
+        )
 
-class First(_AggregateWaitable[Any]):
+
+class First(Waitable[object]):
     r"""Fires when the first trigger in *triggers* fires.
 
     :keyword:`await`\ ing this object returns the result of the first trigger that fires.
@@ -148,7 +155,7 @@ class First(_AggregateWaitable[Any]):
     See :ref:`first-tutorial` for an example.
 
     Args:
-        trigger: One or more :keyword:`await`\ able objects.
+        triggers: One or more :keyword:`await`\ able objects.
 
     Raises:
         TypeError: When an unsupported *trigger* object is passed.
@@ -168,28 +175,64 @@ class First(_AggregateWaitable[Any]):
         In the old-style :ref:`generator-based coroutines <yield-syntax>`, ``t = yield [a, b]`` was another spelling of
         ``t = yield First(a, b)``. This spelling is no longer available when using :keyword:`await`-based
         coroutines.
+
+    .. deprecated:: 2.1
+        Passing :class:`~cocotb.task.Task` objects to :class:`!First` is deprecated.
+        Use :func:`~cocotb.triggers.select` instead and pass coroutines directly instead of wrapping them in :func:`cocotb.start_soon`.
     """
 
-    def __init__(self, *trigger: Union[Trigger, Waitable[Any], Task[Any]]) -> None:
-        if not trigger:
-            raise ValueError("First() requires at least one Trigger or Task argument")
-        super().__init__(*trigger)
+    _task_deprecation_str = (
+        "Passing Task objects to `First` is deprecated. "
+        "Use `select` instead and pass coroutines directly instead of wrapping them in `cocotb.start_soon`."
+    )
 
-    async def _wait(self) -> Any:
+    @overload
+    def __init__(
+        self, first: Trigger | Waitable[Any], /, *triggers: Trigger | Waitable[Any]
+    ) -> None: ...
+
+    @overload
+    @deprecated(_task_deprecation_str)
+    def __init__(
+        self,
+        first: Trigger | Waitable[Any] | Task[Any],
+        /,
+        *triggers: Trigger | Waitable[Any] | Task[Any],
+    ) -> None: ...
+
+    def __init__(self, *triggers: Trigger | Waitable[Any] | Task[Any]) -> None:
+        if not triggers:
+            raise ValueError("First() requires at least one Trigger or Task argument")
+
+        # Do some basic type-checking up front, rather than waiting until we
+        # await them.
+        for t in triggers:
+            if isinstance(t, Task):
+                warnings.warn(
+                    self._task_deprecation_str, DeprecationWarning, stacklevel=2
+                )
+            elif not isinstance(t, (Trigger, Waitable)):
+                raise TypeError(
+                    f"All triggers must be instances of Trigger! Got: {type(t).__qualname__}"
+                )
+
+        self._triggers = triggers
+
+    async def _wait(self) -> object:
         if len(self._triggers) == 1:
             return await self._triggers[0]
 
-        waiters: List[Task[Any]] = []
+        waiters: list[Task[object]] = []
         done = _InternalEvent(self)
-        completed: List[Task[Any]] = []
+        completed: list[Task[object]] = []
 
-        def on_done(task: Task[Any]) -> None:
+        def on_done(task: Task[object]) -> None:
             completed.append(task)
             done.set()
 
         # start a parallel task for each trigger
         for t in self._triggers:
-            task = Task[Any](_wait_callback(t))
+            task = Task[object](_wait_callback(t))
             task._add_done_callback(on_done)
             cocotb.start_soon(task)
             waiters.append(task)
@@ -204,11 +247,19 @@ class First(_AggregateWaitable[Any]):
 
         return completed[0].result()
 
+    def __repr__(self) -> str:
+        # no _pointer_str here, since this is not a trigger, so identity
+        # doesn't matter.
+        return "{}({})".format(
+            type(self).__qualname__,
+            ", ".join(repr(t) for t in self._triggers),
+        )
+
 
 class ClockCycles(Waitable["ClockCycles"]):
     r"""Finishes after *num_cycles* transitions of *signal*.
 
-    :keyword:`await`\ ing this Trigger returns the ClockCycle object.
+    :keyword:`await`\ ing this Trigger returns the :class:`!ClockCycles` object.
 
     Args:
         signal: The signal to monitor.
@@ -228,38 +279,41 @@ class ClockCycles(Waitable["ClockCycles"]):
     @overload
     def __init__(
         self,
-        signal: "cocotb.handle.LogicObject",
+        signal: cocotb.handle.LogicObject,
         num_cycles: int,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        signal: "cocotb.handle.LogicObject",
+        signal: cocotb.handle.LogicObject,
         num_cycles: int,
-        edge_type: Union[
-            Type[RisingEdge], Type[FallingEdge], Type[ValueChange], None
-        ] = None,
+        edge_type: type[RisingEdge]
+        | type[FallingEdge]
+        | type[ValueChange]
+        | None = None,
     ) -> None: ...
 
     @overload
     def __init__(
-        self, signal: "cocotb.handle.LogicObject", num_cycles: int, *, rising: bool
+        self, signal: cocotb.handle.LogicObject, num_cycles: int, *, rising: bool
     ) -> None: ...
 
     def __init__(
         self,
-        signal: "cocotb.handle.LogicObject",
+        signal: cocotb.handle.LogicObject,
         num_cycles: int,
-        edge_type: Union[
-            bool, Type[RisingEdge], Type[FallingEdge], Type[ValueChange], None
-        ] = None,
+        edge_type: bool
+        | type[RisingEdge]
+        | type[FallingEdge]
+        | type[ValueChange]
+        | None = None,
         *,
-        rising: Union[bool, None] = None,
+        rising: bool | None = None,
     ) -> None:
         self._signal = signal
         self._num_cycles = num_cycles
-        self._edge_type: Union[Type[RisingEdge], Type[FallingEdge], Type[ValueChange]]
+        self._edge_type: type[RisingEdge] | type[FallingEdge] | type[ValueChange]
         if edge_type is not None and rising is not None:
             raise TypeError("Passed more than one edge selection argument.")
         elif edge_type is True:
@@ -275,7 +329,7 @@ class ClockCycles(Waitable["ClockCycles"]):
             self._edge_type = RisingEdge
 
     @property
-    def signal(self) -> "cocotb.handle.LogicObject":
+    def signal(self) -> cocotb.handle.LogicObject:
         """The signal being monitored."""
         return self._signal
 
@@ -287,11 +341,11 @@ class ClockCycles(Waitable["ClockCycles"]):
     @property
     def edge_type(
         self,
-    ) -> Union[Type[RisingEdge], Type[FallingEdge], Type[ValueChange]]:
+    ) -> type[RisingEdge] | type[FallingEdge] | type[ValueChange]:
         """The type of edge trigger used."""
         return self._edge_type
 
-    async def _wait(self) -> "ClockCycles":
+    async def _wait(self) -> ClockCycles:
         trigger = self._edge_type(self._signal)
         for _ in range(self._num_cycles):
             await trigger
@@ -305,49 +359,13 @@ class SimTimeoutError(TimeoutError):
     """Exception thrown when a timeout, in terms of simulation time, occurs."""
 
 
-@overload
 async def with_timeout(
-    trigger: Trigger,
-    timeout_time: Union[float, Decimal],
+    trigger: Awaitable[T],
+    timeout_time: float | Decimal,
     timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
-) -> None: ...
-
-
-@overload
-async def with_timeout(
-    trigger: Waitable[T],
-    timeout_time: Union[float, Decimal],
-    timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
-) -> T: ...
-
-
-@overload
-async def with_timeout(
-    trigger: Task[T],
-    timeout_time: Union[float, Decimal],
-    timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
-) -> T: ...
-
-
-@overload
-async def with_timeout(
-    trigger: Coroutine[Any, Any, T],
-    timeout_time: Union[float, Decimal],
-    timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
-) -> T: ...
-
-
-async def with_timeout(
-    trigger: Union[Trigger, Waitable[Any], Task[Any], Coroutine[Any, Any, Any]],
-    timeout_time: Union[float, Decimal],
-    timeout_unit: TimeUnit = "step",
-    round_mode: Optional[str] = None,
-) -> Any:
-    r"""Wait on triggers or coroutines, throw an exception if it waits longer than the given time.
+    round_mode: RoundMode | None = None,
+) -> T:
+    r"""Wait on any awaitable, throw an exception if it waits longer than the given time.
 
     When a :term:`python:coroutine` is passed,
     the callee coroutine is started,
@@ -383,7 +401,8 @@ async def with_timeout(
             Unit of timeout_time, accepts any unit that :class:`~cocotb.triggers.Timer` does.
         round_mode:
             String specifying how to handle time values that sit between time steps
-            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
+            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``, ``None``).
+            A ``None`` argument is converted to the current value of :attr:`.Timer.round_mode`.
 
     Returns:
         First trigger that completed if timeout did not occur.
@@ -400,18 +419,10 @@ async def with_timeout(
         Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
 
     """
-    if isinstance(trigger, Coroutine):
-        trigger = cocotb.start_soon(trigger)
-        shielded = False
-    else:
-        shielded = True
-    timeout_timer = Timer(timeout_time, timeout_unit, round_mode=round_mode)
-    res = await First(timeout_timer, trigger)
-    if res is timeout_timer:
-        if not shielded:
-            # shielded = False only when trigger is a Task created to wrap a Coroutine
-            trigger = cast(Task[Any], trigger)
-            trigger.cancel()
+    i, res = await select(
+        Timer(timeout_time, timeout_unit, round_mode=round_mode), trigger
+    )
+    if i == 0:
         raise SimTimeoutError
     else:
-        return res
+        return cast("T", res)

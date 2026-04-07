@@ -1,1 +1,0 @@
-Getting a value with :attr:`.ArrayObject.value` now returns an :class:`~cocotb.types.Array` with the appropriate :class:`~cocotb.types.Range` set instead of a :class:`list`. This will change how the object is indexed to match the range of the simulation object, instead of ``0`` to ``len(handle)-1`` like before.

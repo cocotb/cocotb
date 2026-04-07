@@ -1,1 +1,0 @@
-:meth:`handle.setimmediatevalue() <cocotb.handle.ValueObjectBase.setimmediatevalue>` is deprecated. Use :meth:`handle.set(value, Action.NO_DELAY) <cocotb.handle.ValueObjectBase.set>` instead.

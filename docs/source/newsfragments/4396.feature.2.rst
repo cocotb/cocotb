@@ -1,1 +1,0 @@
-:class:`~cocotb.triggers.ClockCycles` can be constructed by passing one of the :ref:`edge-triggers` as the ``edge_type`` argument.

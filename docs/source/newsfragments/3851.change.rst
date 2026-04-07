@@ -1,1 +1,0 @@
-:meth:`.Lock.locked` is now a method instead of an attribute.

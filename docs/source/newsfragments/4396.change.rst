@@ -1,1 +1,0 @@
-:attr:`.Clock.period` was changed to be in terms of the passed-in unit rather than simulation steps.

@@ -6,69 +6,109 @@
 
 """A collection of triggers which a testbench can :keyword:`await`."""
 
-import logging
-import warnings
-from typing import (
-    Any,
-    AsyncContextManager,
-    Callable,
-    Generator,
-    List,
-    Optional,
-    Union,
-)
+from __future__ import annotations
 
+import logging
+import sys
+import warnings
+from abc import abstractmethod
+from collections.abc import Generator
+from contextlib import AbstractAsyncContextManager
+from functools import cached_property
+from typing import Callable
+
+from cocotb import debug
 from cocotb._deprecation import deprecated
-from cocotb._py_compat import Self, cached_property
 from cocotb._utils import pointer_str
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+
+
+class TriggerCallback:
+    """A cancellable handle to a callback registered with a Trigger."""
+
+    __slots__ = ("_trigger", "_func")
+
+    def __init__(
+        self,
+        trigger: Trigger,
+        func: Callable[..., object],
+    ) -> None:
+        self._trigger = trigger
+        self._func = func
+
+    def cancel(self) -> None:
+        self._trigger._deregister(self)
+
+    def _run(self) -> None:
+        self._func()
+
+    def __repr__(self) -> str:
+        return self._func.__name__
 
 
 class Trigger:
     """A future event that a Task can wait upon."""
 
     def __init__(self) -> None:
-        self._primed = False
+        self._callbacks: dict[TriggerCallback, None] = {}
 
     @cached_property
     def _log(self) -> logging.Logger:
         return logging.getLogger(f"cocotb.{type(self).__qualname__}.0x{id(self):x}")
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
-        """Set a callback to be invoked when the trigger fires.
+    def _register(self, func: Callable[[], object]) -> TriggerCallback:
+        """Add a callback to be called when the Trigger fires."""
+        handle = TriggerCallback(self, func)
+        if debug.debug:
+            self._log.debug("Registering on %r: %r", self, handle)
+        do_prime = not self._callbacks
+        self._callbacks[handle] = None
+        # *Must* call `_prime()` after adding callback in case `_prime()` immediately
+        # calls `_react()`
+        # TODO Don't allow `_prime()` to call `_react()`?
+        if do_prime:
+            self._prime()
+        return handle
 
-        The callback will be invoked with a single argument, `self`.
+    def _deregister(self, callback: TriggerCallback) -> None:
+        """Remove a callback from a Trigger before it fires."""
+        if debug.debug:
+            self._log.debug("De-registering on %r: %r", self, callback)
+        del self._callbacks[callback]
+        if not self._callbacks:
+            self._unprime()
 
-        Sub-classes must override this, but should end by calling the base class
-        method.
+    def _do_callbacks(self) -> None:
+        callbacks, self._callbacks = self._callbacks, {}
+        for cb in callbacks:
+            if debug.debug:
+                self._log.debug("Running after %r: %r", self, cb)
+            cb._run()
 
-        .. warning::
-            Do not call this directly within a :term:`task`. It is intended to be used
-            only by the scheduler.
+    def _react(self) -> None:
+        """Function called when a Trigger fires.
+
+        Expected to call ``_do_callbacks()`` and any cleanup of the underlying mechanism
+        required after it fires.
         """
-        # Set _primed so the trigger can test if it's already been primed and behave appropriately.
-        self._primed = True
+        if debug.debug:
+            self._log.debug("Fired %s", self)
+        self._do_callbacks()
 
+    @abstractmethod
+    def _prime(self) -> None:
+        """Enable the underlying mechanism for the Trigger to fire.
+
+        The underlying mechanism should call this Trigger's ``_react()`` when it fires.
+        """
+
+    @abstractmethod
     def _unprime(self) -> None:
-        """Remove the callback, and perform cleanup if necessary.
+        """Disable the underlying mechanism for the Trigger to fire."""
 
-        After being un-primed, a Trigger may be re-primed again in the future.
-        Calling `_unprime` multiple times is allowed, subsequent calls should be
-        a no-op.
-
-        Sub-classes may override this, but should end by calling the base class
-        method.
-
-        .. warning::
-            Do not call this directly within a :term:`task`. It is intended to be used
-            only by the scheduler.
-        """
-        self._cleanup()
-
-    def _cleanup(self) -> None:
-        # Clear _primed so this Trigger can be re-primed.
-        self._primed = False
-
-    def __await__(self) -> Generator["Self", None, "Self"]:
+    def __await__(self) -> Generator[Self, None, Self]:
         yield self
         return self
 
@@ -80,31 +120,20 @@ class _Event(Trigger):
     can maintain a unique mapping of triggers to tasks.
     """
 
-    _callback: Callable[["_Event"], None]
+    _callback: Callable[[_Event], None]
 
-    def __init__(self, parent: "Event") -> None:
+    def __init__(self, parent: Event) -> None:
         super().__init__()
         self._parent = parent
 
-    def _prime(self, callback: Callable[["_Event"], None]) -> None:
-        if self._primed:
-            return
+    def _prime(self) -> None:
         if self._parent.is_set():
             # If the event is already set, we need to call the callback
             # immediately, so we don't need to wait for the scheduler.
-            callback(self)
-            return
-        self._callback = callback
-        return super()._prime(callback)
+            return self._react()
 
     def _unprime(self) -> None:
-        if not self._primed:
-            return
-        return super()._unprime()
-
-    def _set(self) -> None:
-        if self._primed:
-            self._callback(self)
+        pass
 
     def __repr__(self) -> str:
         return f"<{self._parent!r}.wait() at {pointer_str(self)}>"
@@ -142,9 +171,9 @@ class Event:
         and the *name* attribute and argument to the constructor.
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
+    def __init__(self, name: str | None = None) -> None:
         self._event: _Event = _Event(self)
-        self._name: Union[str, None] = None
+        self._name: str | None = None
         if name is not None:
             warnings.warn(
                 "The 'name' argument will be removed in a future release.",
@@ -153,11 +182,11 @@ class Event:
             )
             self.name = name
         self._fired: bool = False
-        self._data: Any = None
+        self._data: object = None
 
     @property
     @deprecated("The 'name' field will be removed in a future release.")
-    def name(self) -> Union[str, None]:
+    def name(self) -> str | None:
         """Name of the Event.
 
         .. deprecated:: 2.0
@@ -167,12 +196,12 @@ class Event:
 
     @name.setter
     @deprecated("The 'name' field will be removed in a future release.")
-    def name(self, new_name: Union[str, None]) -> None:
+    def name(self, new_name: str | None) -> None:
         self._name = new_name
 
     @property
     @deprecated("The data field will be removed in a future release.")
-    def data(self) -> Any:
+    def data(self) -> object:
         """The data associated with the Event.
 
         .. deprecated:: 2.0
@@ -183,10 +212,10 @@ class Event:
 
     @data.setter
     @deprecated("The data field will be removed in a future release.")
-    def data(self, new_data: Any) -> None:
+    def data(self, new_data: object) -> None:
         self._data = new_data
 
-    def set(self, data: Optional[Any] = None) -> None:
+    def set(self, data: object | None = None) -> None:
         """Set the Event and unblock all Tasks blocked on this Event."""
         self._fired = True
         if data is not None:
@@ -196,7 +225,7 @@ class Event:
                 stacklevel=2,
             )
         self._data = data
-        self._event._set()
+        self._event._react()
 
     def wait(self) -> Trigger:
         """Block the current Task until the Event is set.
@@ -241,39 +270,34 @@ class _InternalEvent(Trigger):
     def __init__(self, parent: object) -> None:
         super().__init__()
         self._parent = parent
-        self._callback: Optional[Callable[[_InternalEvent], None]] = None
-        self.fired: bool = False
+        self._fired: bool = False
+        self._awaited: bool = False
 
-    def _prime(self, callback: Callable[["_InternalEvent"], None]) -> None:
-        if self._primed:
-            raise RuntimeError("This Trigger may only be awaited once")
-        self._callback = callback
-        super()._prime(callback)
-        if self.fired:
-            self._callback(self)
+    def _prime(self) -> None:
+        if self.is_set():
+            # If the event is already set, we need to call the callback
+            # immediately, so we don't need to wait for the scheduler.
+            return self._react()
 
-    def _cleanup(self) -> None:
-        # Don't clear _primed so a second call to _prime() fails.
+    def _unprime(self) -> None:
         pass
 
     def set(self) -> None:
         """Wake up coroutine blocked on this event."""
-        self.fired = True
-
-        if self._callback is not None:
-            self._callback(self)
+        self._fired = True
+        self._react()
 
     def is_set(self) -> bool:
         """Return true if event has been set."""
-        return self.fired
+        return self._fired
 
     def __await__(
         self,
-    ) -> Generator["Self", None, "Self"]:
-        if self._primed:
+    ) -> Generator[Self, None, Self]:
+        if self._awaited:
             raise RuntimeError("Only one Task may await this Trigger")
-        yield self
-        return self
+        self._awaited = True
+        return (yield from super().__await__())
 
     def __repr__(self) -> str:
         return repr(self._parent)
@@ -286,30 +310,28 @@ class _Lock(Trigger):
     can maintain a unique mapping of triggers to tasks.
     """
 
-    def __init__(self, parent: "Lock") -> None:
+    def __init__(self, parent: Lock) -> None:
         super().__init__()
         self._parent = parent
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
-        if self._primed:
+    def _prime(self) -> None:
+        self._parent._prime_lock(self)
+
+    def _unprime(self) -> None:
+        self._parent._unprime_lock(self)
+
+    def __await__(self) -> Generator[Self, None, Self]:
+        if self._parent._is_used(self):
             raise RuntimeError(
                 "Lock.acquire() result can only be used by one task at a time"
             )
-        self._callback = callback
-        self._parent._prime_lock(self)
-        return super()._prime(callback)
-
-    def _unprime(self) -> None:
-        if not self._primed:
-            return
-        self._parent._unprime_lock(self)
-        return super()._unprime()
+        return (yield from super().__await__())
 
     def __repr__(self) -> str:
         return f"<{self._parent!r}.acquire() at {pointer_str(self)}>"
 
 
-class Lock(AsyncContextManager[None]):
+class Lock(AbstractAsyncContextManager[None]):
     """A mutual exclusion lock.
 
     Guarantees fair scheduling.
@@ -343,9 +365,9 @@ class Lock(AsyncContextManager[None]):
         :keyword:`async with` statement
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
-        self._pending_primed: List[_Lock] = []
-        self._name: Union[str, None] = None
+    def __init__(self, name: str | None = None) -> None:
+        self._pending_primed: list[_Lock] = []
+        self._name: str | None = None
         if name is not None:
             warnings.warn(
                 "The 'name' argument will be removed in a future release.",
@@ -353,11 +375,11 @@ class Lock(AsyncContextManager[None]):
                 stacklevel=2,
             )
             self._name = name
-        self._locked: bool = False
+        self._current_acquired: _Lock | None = None
 
     @property
     @deprecated("The 'name' field will be removed in a future release.")
-    def name(self) -> Union[str, None]:
+    def name(self) -> str | None:
         """Name of the Lock.
 
         .. deprecated:: 2.0
@@ -367,7 +389,7 @@ class Lock(AsyncContextManager[None]):
 
     @name.setter
     @deprecated("The 'name' field will be removed in a future release.")
-    def name(self, new_name: Union[str, None]) -> None:
+    def name(self, new_name: str | None) -> None:
         self._name = new_name
 
     def locked(self) -> bool:
@@ -376,14 +398,14 @@ class Lock(AsyncContextManager[None]):
         .. versionchanged:: 2.0
             This is now a method to match :meth:`asyncio.Lock.locked`, rather than an attribute.
         """
-        return self._locked
+        return self._current_acquired is not None
 
     def _acquire_and_fire(self, lock: _Lock) -> None:
-        self._locked = True
-        lock._callback(lock)
+        self._current_acquired = lock
+        lock._react()
 
     def _prime_lock(self, lock: _Lock) -> None:
-        if not self._locked:
+        if self._current_acquired is None:
             self._acquire_and_fire(lock)
         else:
             self._pending_primed.append(lock)
@@ -392,17 +414,19 @@ class Lock(AsyncContextManager[None]):
         if lock in self._pending_primed:
             self._pending_primed.remove(lock)
 
+    def _is_used(self, lock: _Lock) -> bool:
+        return lock is self._current_acquired or lock in self._pending_primed
+
     def acquire(self) -> Trigger:
         """Produce a trigger which fires when the lock is acquired."""
-        trig = _Lock(self)
-        return trig
+        return _Lock(self)
 
     def release(self) -> None:
         """Release the lock."""
-        if not self._locked:
+        if self._current_acquired is None:
             raise RuntimeError(f"Attempt to release an unacquired Lock {self!s}")
 
-        self._locked = False
+        self._current_acquired = None
 
         # nobody waiting for this lock
         if not self._pending_primed:
@@ -426,7 +450,7 @@ class Lock(AsyncContextManager[None]):
     async def __aenter__(self) -> None:
         await self.acquire()
 
-    async def __aexit__(self, *args: Any) -> None:
+    async def __aexit__(self, *args: object) -> None:
         self.release()
 
 
@@ -443,17 +467,18 @@ class NullTrigger(Trigger):
     **Do not** do this:
 
     .. code-block:: python
+        :class: removed
 
         transaction_data = None
 
 
-        def monitor():
+        def monitor(dut):
             while dut.valid.value != 1 and dut.ready.value != 1:
                 await RisingEdge(dut.clk)
             transaction_data = dut.data.value
 
 
-        def use_transaction():
+        def use_transaction(dut):
             while True:
                 await RisingEdge(dut.clk)
                 # We need the NullTrigger here because both Tasks react to RisingEdge,
@@ -464,47 +489,48 @@ class NullTrigger(Trigger):
                     process(transaction_data)
 
 
-        use_task = cocotb.start_soon(use_transaction())
-        monitor_task = cocotb.start_soon(monitor())
+        use_task = cocotb.start_soon(use_transaction(cocotb.top))
+        monitor_task = cocotb.start_soon(monitor(cocotb.top))
 
-    Instead use an :class:`!.Event` to explicitly synchronize the two Tasks, like so:
+    Instead use an :class:`!Event` to explicitly synchronize the two Tasks, like so:
 
     .. code-block:: python
+        :class: new
 
         transaction_data = None
         transaction_event = Event()
 
 
-        def monitor():
+        def monitor(dut):
             while dut.valid.value != 1 and dut.ready.value != 1:
                 await RisingEdge(dut.clk)
             transaction_data = dut.data.value
             transaction_event.set()
 
 
-        def use_transaction():
+        def use_transaction(dut):
             # Now we don't need the NullTrigger.
             # This Task will wake up *strictly* after `monitor_task` sets the transaction.
             await transaction_event.wait()
             process(transaction_data)
 
 
-        use_task = cocotb.start_soon(use_transaction())
-        monitor_task = cocotb.start_soon(monitor())
+        use_task = cocotb.start_soon(use_transaction(cocotb.top))
+        monitor_task = cocotb.start_soon(monitor(cocotb.top))
 
     .. versionremoved:: 2.0
         The *outcome* parameter was removed. There is no alternative.
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
+    def __init__(self, name: str | None = None) -> None:
         super().__init__()
         self.name = name
 
-    def _prime(self, callback: Callable[["Self"], None]) -> None:
-        if self._primed:
-            return
-        callback(self)
-        return super()._prime(callback)
+    def _prime(self) -> None:
+        self._react()
+
+    def _unprime(self) -> None:
+        pass
 
     def __repr__(self) -> str:
         if self.name is None:

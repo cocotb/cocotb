@@ -5,21 +5,27 @@
 Tests relating to cocotb.clock.Clock
 """
 
+from __future__ import annotations
+
 import decimal
 import fractions
 import os
+from typing import Any
 
 import pytest
 from common import assert_takes
 
 import cocotb
+from cocotb._base_triggers import NullTrigger
 from cocotb.clock import Clock
+from cocotb.handle import Immediate
 from cocotb.simulator import clock_create, get_precision
 from cocotb.triggers import (
     FallingEdge,
     RisingEdge,
     SimTimeoutError,
     Timer,
+    ValueChange,
     with_timeout,
 )
 
@@ -86,22 +92,23 @@ async def test_gpi_clock_error_params(dut):
 async def test_gpi_clock_error_timing(dut):
     clk = clock_create(dut.clk._handle)
     with pytest.raises(ValueError):
-        clk.start(2, 3, True)
+        clk.start(2, 3, True, 0)
 
 
 @cocotb.test
-async def test_gpi_clock_error_start(dut):
-    clk = Clock(dut.clk, 1.0, unit="step", impl="gpi")
-    with pytest.raises(ValueError):
-        clk.start()
+async def test_bad_period(dut):
+    with pytest.raises(ValueError, match="Bad `period`"):
+        Clock(dut.clk, 1, unit="step", impl="gpi")
+    with pytest.raises(ValueError, match="Bad `period`"):
+        Clock(dut.clk, 1, unit="step", impl="py")
 
 
 @cocotb.test
 async def test_gpi_clock_error_already_started(dut):
     clk = clock_create(dut.clk._handle)
-    clk.start(2, 1, True)
+    clk.start(2, 1, True, 0)
     with pytest.raises(RuntimeError):
-        clk.start(2, 1, True)
+        clk.start(2, 1, True, 0)
     clk.stop()
 
 
@@ -138,20 +145,29 @@ async def test_clock_stop_and_restart(dut) -> None:
 
 
 @cocotb.test
-async def test_clock_cycles(dut) -> None:
+async def test_clock_cycles(dut: Any) -> None:
     period_ns = 10
     cycles = 10
     c = Clock(dut.clk, 10, "ns")
     c.start()
 
+    with pytest.raises(ValueError):
+        await c.cycles(-5)
+
     # so we start at a consistent state for math below
     await RisingEdge(dut.clk)
+
+    with assert_takes(0, "ns"):
+        await c.cycles(0)
 
     with assert_takes(cycles * period_ns, "ns"):
         await c.cycles(cycles)
 
     with assert_takes((cycles * period_ns) - (period_ns // 2), "ns"):
         await c.cycles(cycles, FallingEdge)
+
+    with assert_takes((cycles * period_ns // 2), "ns"):
+        await c.cycles(cycles, ValueChange)
 
 
 @cocotb.test
@@ -165,3 +181,49 @@ async def test_clock_task_cancel(dut) -> None:
     # Ensure clock is dead.
     with pytest.raises(SimTimeoutError):
         await with_timeout(RisingEdge(dut.clk), 20, "ns")
+
+
+@cocotb.test
+async def test_bad_set_action(dut: Any) -> None:
+    with pytest.raises(TypeError):
+        Clock(dut.clk, 10, "ns", set_action=1)
+
+
+# Immediate isn't truly immediate on every simulator,
+# and checking just one is sufficient to know it works.
+@cocotb.test(skip=not cocotb.SIM_NAME.lower().startswith("verilator"))
+async def test_set_action(dut: Any) -> None:
+    c = Clock(dut.clk, 10, "ns", set_action=Immediate)
+
+    c.start(start_high=True)
+    await NullTrigger()
+    assert dut.clk.value == 1
+
+    await Timer(5, "ns")
+    await NullTrigger()
+    assert dut.clk.value == 0
+
+    assert c.set_action is Immediate
+
+
+@cocotb.test
+async def test_period_high(dut: Any) -> None:
+    # Check bad constructions
+    with pytest.raises(ValueError, match="Bad `period_high`"):
+        Clock(dut.clk, 2, unit="step", period_high=0.5, impl="gpi")
+    with pytest.raises(ValueError, match="Bad `period_high`"):
+        Clock(dut.clk, 2, unit="step", period_high=0.5, impl="py")
+    with pytest.raises(
+        ValueError, match="`period_high` must be strictly less than `period`"
+    ):
+        Clock(dut.clk, 2, unit="step", period_high=10)
+
+    # Check functionality
+    c = Clock(dut.clk, 9, "ns", period_high=7)
+    c.start()
+    await RisingEdge(dut.clk)
+    for _ in range(10):
+        with assert_takes(7, "ns"):
+            await FallingEdge(dut.clk)
+        with assert_takes(2, "ns"):
+            await RisingEdge(dut.clk)

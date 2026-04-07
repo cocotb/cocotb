@@ -1,0 +1,1 @@
+Added :func:`cocotb.end_test` to end the test immediately from any :class:`!Task` without forcing a pass.

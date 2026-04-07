@@ -10,6 +10,8 @@ Tests for edge triggers
 * ClockCycles
 """
 
+from __future__ import annotations
+
 import os
 import re
 
@@ -20,14 +22,14 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import (
     ClockCycles,
-    Combine,
     FallingEdge,
-    First,
     ReadOnly,
     RisingEdge,
     SimTimeoutError,
     Timer,
     ValueChange,
+    gather,
+    select,
     with_timeout,
 )
 from cocotb_tools.sim_versions import RivieraVersion
@@ -40,15 +42,15 @@ async def count_edges_cycles(signal, edges):
     edge = RisingEdge(signal)
     for i in range(edges):
         await edge
-        signal._log.info("Rising edge %d detected", i)
-    signal._log.info("Finished, returning %d", edges)
+        cocotb.log.info("Rising edge %d detected", i)
+    cocotb.log.info("Finished, returning %d", edges)
     return edges
 
 
 async def do_single_edge_check(dut, level):
     """Do test for rising edge"""
     old_value = dut.clk.value
-    dut._log.info("Value of %s is %d", dut.clk._path, old_value)
+    cocotb.log.info("Value of %s is %d", dut.clk._path, old_value)
     assert old_value != level
     if level == 1:
         await RisingEdge(dut.clk)
@@ -66,7 +68,7 @@ async def test_rising_edge(dut):
     await Timer(10, "ns")
     dut.clk.value = 1
     fail_timer = Timer(1000, "ns")
-    result = await First(fail_timer, test)
+    _, result = await select(fail_timer, test)
     assert result is not fail_timer, "Test timed out"
 
 
@@ -79,7 +81,7 @@ async def test_falling_edge(dut):
     await Timer(10, "ns")
     dut.clk.value = 0
     fail_timer = Timer(1000, "ns")
-    result = await First(fail_timer, test)
+    _, result = await select(fail_timer, test)
     assert result is not fail_timer, "Test timed out"
 
 
@@ -126,10 +128,10 @@ async def test_fork_and_monitor(dut, period=1000, clocks=6):
     expect = clocks - 1
 
     while True:
-        result = await First(timer, task)
+        _, result = await select(timer, task)
         assert count <= expect, "Task didn't complete in expected time"
         if result is timer:
-            dut._log.info("Count %d: Task still running", count)
+            cocotb.log.info("Count %d: Task still running", count)
             count += 1
         else:
             break
@@ -311,7 +313,7 @@ async def test_both_edge_triggers(dut):
     rising_coro = cocotb.start_soon(wait_rising_edge())
     falling_coro = cocotb.start_soon(wait_falling_edge())
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
-    await Combine(rising_coro, falling_coro)
+    await gather(rising_coro, falling_coro)
 
 
 @cocotb.test()
@@ -423,7 +425,6 @@ async def test_edge_trigger_repr(dut) -> None:
     )
 
 
-@cocotb.test(expect_error=NotImplementedError if SIM_NAME.startswith("ghdl") else ())
 async def test_edge_trigger_on_const(dut) -> None:
     """Test failure if getting Edge trigger on const signal."""
     with pytest.raises(TypeError):

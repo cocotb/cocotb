@@ -1,1 +1,0 @@
-Introduced :envvar:`COCOTB_TRUST_INERTIAL_WRITES` to enable a mode where VPI/VHPI/FLI inertial writes are trusted to behave properly. Enabling this feature can lead to behavioral changes and noticeable performance improvements. Some simulators do not handle writes properly, so use this option with caution.

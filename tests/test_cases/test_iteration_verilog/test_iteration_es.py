@@ -2,12 +2,13 @@
 # Copyright (c) 2015, 2018 Potential Ventures Ltd
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import logging
 
 import cocotb
 from cocotb.handle import ArrayObject, HierarchyArrayObject, HierarchyObject
-from cocotb.triggers import First
+from cocotb.triggers import gather
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
@@ -54,7 +55,7 @@ async def recursive_discovery(dut):
 
 async def iteration_loop(dut):
     for thing in dut:
-        thing._log.info("Found something: %s", thing._path)
+        cocotb.log.info("Found something: %s", thing._path)
 
 
 @cocotb.test()
@@ -62,4 +63,4 @@ async def dual_iteration(dut):
     loop_one = cocotb.start_soon(iteration_loop(dut))
     loop_two = cocotb.start_soon(iteration_loop(dut))
 
-    await First(loop_one, loop_two)
+    await gather(loop_one, loop_two)

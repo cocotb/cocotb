@@ -6,7 +6,7 @@ exclude: "^.*/_vendor/"
 repos:
 # ruff with --fix should run before other formatting tools
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.12.1"
+  rev: "v0.15.9"
   hooks:
     # Run the linter.
     - id: "ruff"
@@ -17,14 +17,14 @@ repos:
     - id: ruff-format
 
 - repo: "https://github.com/pre-commit/mirrors-clang-format"
-  rev: "v20.1.7"
+  rev: "v22.1.2"
   hooks:
   - id: "clang-format"
     exclude: "^src/cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
     types_or: [c, c++]
 
 - repo: "https://github.com/pre-commit/pre-commit-hooks"
-  rev: "v5.0.0"
+  rev: "v6.0.0"
   hooks:
   - id: "trailing-whitespace"
   - id: "mixed-line-ending"
@@ -34,7 +34,7 @@ repos:
     exclude: "^docs/source/diagrams/(svg|xml)/"
 
 - repo: https://github.com/henryiii/validate-pyproject-schema-store
-  rev: "2025.06.23"
+  rev: "2026.04.03"
   hooks:
     - id: validate-pyproject
       files: pyproject.toml
@@ -49,21 +49,27 @@ repos:
     always_run: true
 
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.4.1
+  rev: v2.4.2
   hooks:
   - id: codespell
     additional_dependencies:
       - tomli
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.16.1
+  rev: v1.19.1
   hooks:
   - id: mypy
     additional_dependencies:
     - pytest
     - coverage
     - nox
+    - nox-uv
     files: ^(src/cocotb/|src/pygpi/|noxfile.py)
+
+- repo: https://github.com/astral-sh/uv-pre-commit
+  rev: 0.11.3
+  hooks:
+    - id: uv-lock
 
 ci:
   autofix_prs: false

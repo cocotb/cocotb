@@ -1,1 +1,0 @@
-``cocotb.utils.want_color_output()``, ``cocotb.utils.remove_traceback_frames``, ``cocotb.utils.walk_coro_stack``, and ``cocotb.utils.extract_coro_stack`` were made private.

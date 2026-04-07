@@ -7,62 +7,52 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "cocotb"
-version = "2.0.0.dev0"
-description = "cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python."
+version = "2.1.0.dev0"
+description = "Python-based chip (RTL) verification"
 readme = "README.md"
-license = {text = "BSD-3-Clause"}
+license = "BSD-3-Clause"
+license-files = [
+    "LICENSE"
+]
 authors = [
     {name = "Chris Higgs"},
     {name = "Stuart Hodgson"},
 ]
 maintainers = [
-    {name = "cocotb contributors", email = "cocotb@lists.librecores.org"},
+    {name = "Kaleb Barrett"},
+    {name = "Tomasz Hemperek"},
+    {name = "Marlon James"},
+    {name = "Colin Marquardt"},
+    {name = "Philipp Wagner"},
 ]
-requires-python = ">=3.6.2"
 dependencies = [
     "find_libpython",
+    "exceptiongroup; python_version < '3.11'",
+    "pytest >= 6",
 ]
+requires-python = ">= 3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
     "Framework :: cocotb",
 ]
 
-[project.urls]
-Homepage = "https://www.cocotb.org"
-"Bug Tracker" = "https://github.com/cocotb/cocotb/issues"
-"Source Code" = "https://github.com/cocotb/cocotb"
-Documentation = "https://docs.cocotb.org"
-
 [project.scripts]
 cocotb-config = "cocotb_tools.config:main"
 
+[project.urls]
+Homepage = "https://www.cocotb.org"
+Documentation = "https://docs.cocotb.org"
+Repository = "https://github.com/cocotb/cocotb"
+Issues = "https://github.com/cocotb/cocotb/issues"
+
 [tool.scikit-build]
-# Specify the CMake source directory
 cmake.source-dir = "."
-# Set minimum CMake version
 cmake.version = ">=3.15"
-# Build directory
 build-dir = "build/{wheel_tag}"
-# CMake args can be passed here if needed
 cmake.args = []
-# Verbose output during build
 build.verbose = false
-# Ensure all packages are discovered and included
 wheel.packages = ["src/cocotb", "src/cocotb_tools", "src/pygpi"]
-
-[tool.scikit-build.cmake.define]
-# Define any CMake variables here if needed
-
-
 
 [tool.towncrier]
     package = "cocotb"
@@ -107,7 +97,7 @@ extend-exclude = [
     "_vendor",
     ".nox/",
 ]
-target-version = "py37"
+target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -124,6 +114,7 @@ extend-select = [
     "LOG",      # flake8-logging
     "G",        # flake8-logging-format
     "ISC",      # implicit string concat
+    "TC",       # flake8-typechecking
     "SIM103",   # return the condition directly
     "SIM300",   # yoda conditions
     "RUF100",   # unused noqa
@@ -137,7 +128,6 @@ extend-select = [
     "PYI030",   # unnecessary literal union
 ]
 ignore = [
-
     "E741",    # ambiguous variable name (preference)
     "E501",    # line too long (preference)
     "PLR0912", # Too many branches (>12) (preference)
@@ -147,6 +137,11 @@ ignore = [
     "PLW0603", # Using the global statement (preference)
     "PLR0911", # Too many return statements (preference)
     "PLW1641", # __eq__ without __hash__ (mypy compatibility)
+    # The following 3 are ignored because sphinx doesn't set TYPE_CHECKING,
+    # so it would fail to resolve any names imported in those blocks
+    "TC001",   # typing-only first party import
+    "TC002",   # typing-only third party import
+    "TC003",   # typing-only standard library import
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -165,28 +160,36 @@ known-first-party = [
 known-third-party = [
     "pytest",
 ]
+required-imports = ["from __future__ import annotations"]
 
 [tool.cibuildwheel]
 # Build for supported platforms only.
-# Even though we only support 64 bit operating systems, we still support 32 bit
-# userspace applications (Python and simulators) on Windows and Linux.
 #
-# - CPython on Linux i686 and x86_64 with glibc
-# - CPython on Windows i686 and x86_64
-# - CPython on macOS x86_64
-build = "cp*-manylinux_x86_64 cp*-manylinux_i686 cp*-win_amd64 cp*-win32 cp*-macosx_x86_64"
+# - CPython on Linux x86_64 with glibc
+# - CPython on Windows x86_64
+# - CPython on macOS x86_64 and arm64
+build = "cp*-manylinux_x86_64 cp*-win_amd64 cp*-macosx_x86_64 cp*-macosx_arm64"
 
-# By default, build on manylinux2014 for compatibility with CentOS/RHEL 7+ (once
-# the user updates Python) and Ubuntu 20.04+ (with system Python).
+# Build with optimizations and debugging
+# -O2   Enables reasonable optimizations. -O3 is unnecessary with the virtual-call-heavy code in the GPI and may bloat binary size.
+# -g    Generate standard debugging info.
+# -flto Enable LTO which can reduce binary size and improve inlining.
+environment = {CFLAGS = "-O2 -g -flto", CPPFLAGS = "-O2 -g -flto", LDFLAGS = "-O2 -g -flto"}
+
+# By default, build on manylinux2014 for compatibility with CentOS/RHEL 8+
+# and Ubuntu 20.04+ (with system Python).
 manylinux-x86_64-image = "manylinux2014"
-manylinux-i686-image = "manylinux2014"
 
-[[tool.cibuildwheel.overrides]]
-# Build CPython 3.6 wheels on manylinux1 to support Ubuntu 18.04, CentOS/RHEL 7
-# and CentOS/RHEL 8 with their default Python 3.6/pip 9 installation.
-select = "cp36-*"
-manylinux-x86_64-image = "manylinux1"
-manylinux-i686-image = "manylinux1"
+# Build with optimizations and debugging (Windows)
+# /O2   Enables reasonable optimizations.
+# /Z7   Enables debugging and places info in the binary (/Zi puts debug info in a different file).
+# /Zo   Improves debugging when optimizations are also enabled.
+# /LTCG Enables LTO which can reduce binary size and improve inlining.
+[tool.cibuildwheel.windows]
+environment = {CL = "/O2 /Z7 /Zo /LTCG"}
+
+[tool.cibuildwheel.macos]
+repair-wheel-command = "delocate-wheel --no-sanitize-rpaths --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
 
 [tool.pytest.ini_options]
 # Note: Do *not* add files within the cocotb/ tree here. Add them to the
@@ -217,13 +220,11 @@ omit = [
     "*/_vendor/*",
 ]
 exclude_lines = [
-    "pragma: no cover",
-    # for excluding typing stubs
-    "\\.\\.\\.",
-    # for excluding abstractmethods
-    "raise\\s+NotImplementedError",
-    # excluding type checking blocks
-    "if (typing\\.)?TYPE_CHECKING:"
+    # copy-pasted from coveragepy source
+    # TODO when we can move to a newer version of coverage
+    "#\\s*(pragma|PRAGMA)[:\\s]?\\s*(no|NO)\\s*(cover|COVER)",
+    "^\\s*(((async )?def .*?)?\\)(\\s*->.*?)?:\\s*)?\\.\\.\\.\\s*(#|$)",
+    "if (typing\\.)?TYPE_CHECKING:",
 ]
 
 [tool.codespell]
@@ -242,8 +243,10 @@ ignore-words-list = [
     "synopsys",
 ]
 
+skip = ["*.svg"]
+
 [tool.mypy]
-packages = ["cocotb", "pygpi"]
+packages = ["cocotb", "pygpi", "cocotb_tools.pytest"]
 modules = ["noxfile"]
 disallow_untyped_defs = true
 disallow_any_unimported = true
@@ -255,3 +258,77 @@ warn_unused_ignores = true
 implicit_reexport = false
 show_error_codes = true
 pretty = true
+
+# TODO add lower bounds and justifications
+[dependency-groups]
+dev = [
+    # required for development
+    "nox",
+    "nox-uv",
+    "prek",
+    # allows linting the project manually
+    "clang-format",
+    "mypy>=1.18,!=1.20.0",  # 1.18 needed for descriptor typing
+    "ruff",
+    # allows running tests and doing coverage reporting manually if desired
+    {include-group = "dev_test"},
+    {include-group = "coverage_report"},
+]
+docs = [
+    "Sphinx ~= 8.2.0",
+    "breathe",
+    "sphinx-book-theme == 1.1.3",  # pin this to exact version to guard against any CSS changes
+    "sphinx-design >= 0.6.1",
+    "sphinxcontrib-svg2pdfconverter[CairoSVG]",
+    "sphinxcontrib-domaintools @ git+https://github.com/ktbarrett/domaintools.git",
+    "sphinxcontrib-makedomain",
+    "sphinxcontrib-spelling >= 5.3.0",
+    "pyenchant",
+    "sphinx-issues",
+    "sphinx-argparse-cli",
+    "towncrier",
+    "IPython",
+    "enum-tools[sphinx]",
+    "sphinx-codeautolink",
+    "sphinx-argparse",
+    "sphinx-autofixture",
+    "pytest",
+]
+docs_preview = [
+    {include-group = "docs"},
+    "sphinx-autobuild",
+]
+release_build_wheel = [
+    "cibuildwheel==3.2.1",
+]
+release_build_sdist = [
+    "build",
+]
+test_common = [
+    "pytest>=8.4"  # need RaisesExc and RaisesGroup
+]
+dev_test = [
+    {include-group = "test_common"},
+    "coverage[toml]>=7.2",
+    "pytest-cov",
+]
+coverage_report = [
+    "coverage[toml]>=7.2",
+    "gcovr==8.4",
+]
+release_test = [
+    {include-group = "test_common"},
+
+    # We have to disable the use of the PyPi index when installing cocotb to
+    # guarantee that the wheels in dist are being used. But without an index
+    # pip cannot find the dependencies, which need to be installed from PyPi.
+    # Work around that by explicitly installing the dependencies first from
+    # PyPi, and then installing cocotb itself from the local dist directory.
+    "exceptiongroup; python_version<'3.11'",
+    "find_libpython",
+]
+
+[tool.uv.dependency-groups]
+# We need Python 3.11 to run Sphinx 8.2 and cibuildwheel 3.2
+docs = {requires-python = ">=3.11"}
+release_build_wheel = {requires-python = ">=3.11"}

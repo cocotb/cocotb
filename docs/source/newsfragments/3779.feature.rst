@@ -1,1 +1,0 @@
-Introduced :attr:`cocotb.is_simulation` which is ``True`` only when the cocotb library was loaded in a simulation.

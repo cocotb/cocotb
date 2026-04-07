@@ -1,0 +1,1 @@
+Added support for constructing :class:`.LogicArray` from a negative integer. This assumes two's complement representation.

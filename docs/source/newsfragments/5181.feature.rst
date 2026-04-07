@@ -1,0 +1,1 @@
+Add support for ``pre_cmd`` argument to :meth:`.Runner.test` for Aldec Riviera-Pro.

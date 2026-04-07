@@ -1,45 +1,29 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import glob
+import os
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, List, Tuple, cast
+from typing import cast
 
 import nox
+import nox_uv
+
+nox.options.default_venv_backend = "uv"
 
 # Sessions run by default if nox is called without further arguments.
 nox.options.sessions = ["dev_test"]
-
-test_deps = ["pytest>=6"]
-coverage_deps = ["coverage[toml]>=5.0", "pytest-cov"]
-# gcovr 5.1 has an issue parsing some gcov files, so pin to 5.0. See
-# https://github.com/gcovr/gcovr/issues/596
-# When using gcovr 5.0, deprecated jinja2.Markup was removed in 3.1, so an
-# Exception is raised during html report generation.
-# See https://github.com/gcovr/gcovr/pull/576
-# gcovr 5.2 would solve these issues, but has dropped Python 3.6 support.
-# TODO: Switch to the latest gcovr version once we drop Python 3.6 support.
-coverage_report_deps = ["coverage[toml]>=5.0", "jinja2<3.1", "gcovr==5.0"]
-
-dev_deps = [
-    "mypy",
-    "pre-commit",
-    "nox",
-    "ruff",
-    "clang-format",
-]
-
-# Version of the cibuildwheel package used to build wheels.
-cibuildwheel_version = "2.20.0"
 
 #
 # Helpers for use within this file.
 #
 
 
-def simulator_support_matrix() -> List[Tuple[str, str, str]]:
+def simulator_support_matrix() -> list[tuple[str, str, str]]:
     """
     Get a list of supported simulator/toplevel-language/GPI-interface tuples.
     """
@@ -65,32 +49,54 @@ def simulator_support_matrix() -> List[Tuple[str, str, str]]:
     return standard + special
 
 
-def env_vars_for_test(
+def env_vars_for_sim_test(
     sim: str, toplevel_lang: str, gpi_interface: str
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Prepare the environment variables controlling the test run."""
-    e = {"SIM": sim, "TOPLEVEL_LANG": toplevel_lang, "HDL_TOPLEVEL_LANG": toplevel_lang}
+    env = {
+        "SIM": sim,
+        "TOPLEVEL_LANG": toplevel_lang,
+    }
 
     assert not (toplevel_lang == "verilog" and gpi_interface != "vpi")
     if toplevel_lang == "vhdl":
-        e["VHDL_GPI_INTERFACE"] = gpi_interface
+        env["VHDL_GPI_INTERFACE"] = gpi_interface
 
-    return e
+    return env
 
 
-def stringify_dict(d: Dict[str, str]) -> str:
+def configure_test_env(session: nox.Session) -> None:
+    """Set environment variables for any kind of test run."""
+
+    # Do not fail on DeprecationWarning caused by virtualenv, which might come from
+    # the site module.
+    session.env["PYTHONWARNINGS"] = "error,ignore::DeprecationWarning:site"
+
+    # Test with debug enabled, but log level still set low. That way we can test the code
+    # without slowing everything down by emitting roughly 1 million logs.
+    session.env["COCOTB_SCHEDULER_DEBUG"] = "1"
+    session.env["GPI_DEBUG"] = "1"
+    session.env["PYGPI_DEBUG"] = "1"
+
+
+def stringify_dict(d: dict[str, str]) -> str:
     return ", ".join(f"{k}={v}" for k, v in d.items())
 
 
-def configure_env_for_dev_test(session: nox.Session) -> None:
-    """Set environment variables for a development test.
+#
+# Development pipeline
+#
+# - Build cocotb with aggressive error checking and coverage flags.
+# - Run doctests in the source tree with pytest.
+# - Run simulator-agnostic tests with pytest.
+# - Run simulator-specific tests and examples with pytest.
+# - Run 'make test' to test Makefile-based tests.
+# - Combine coverage from all test runs into a .coverage file.
+# - Produce coverage reports from the combined .coverage file.
+#
 
-    - Enable coverage collection.
-    """
-    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
 
-
-def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
+def build_cocotb_for_dev_test(session: nox.Session) -> None:
     """Build local cocotb for a development test.
 
     - Build with more aggressive error checking.
@@ -111,49 +117,6 @@ def build_cocotb_for_dev_test(session: nox.Session, *, editable: bool) -> None:
     env["CXXFLAGS"] = flags
     env["LDFLAGS"] = "--coverage"
 
-    if editable:
-        session.run("pip", "install", "-v", "-e", ".", env=env)
-    else:
-        session.run("pip", "install", "-v", ".", env=env)
-
-
-#
-# Development pipeline
-#
-# - Use nox to build an sdist; no separate build step is required.
-# - Run tests against the installed sdist.
-# - Collect coverage.
-#
-
-
-@nox.session
-def dev_build(session: nox.Session) -> None:
-    session.warn("No building is necessary for development sessions.")
-
-
-@nox.session
-def dev_test(session: nox.Session) -> None:
-    """Run all development tests as configured through environment variables."""
-
-    dev_test_sim(session, sim=None, toplevel_lang=None, gpi_interface=None)
-    dev_test_nosim(session)
-    dev_coverage_combine(session)
-
-
-@nox.session
-@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
-def dev_test_sim(
-    session: nox.Session,
-    sim: str,
-    toplevel_lang: str,
-    gpi_interface: str,
-) -> None:
-    """Test a development version of cocotb against a simulator."""
-
-    configure_env_for_dev_test(session)
-
-    session.run("pip", "install", *test_deps, *coverage_deps)
-
     # Editable installs break C/C++ coverage collection; don't use them.
     # C/C++ coverage collection requires that the object files produced by the
     # compiler are not moved around, otherwise the gcno and gcda files produced
@@ -162,9 +125,40 @@ def dev_test_sim(
     # editable builds are done in a directory in /tmp, which is removed after
     # the build completes, taking all gcno files with them, as well as the path
     # to place the gcda files.
-    build_cocotb_for_dev_test(session, editable=False)
+    session.install("-v", ".", env=env)
 
-    env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
+
+@nox_uv.session(
+    uv_groups=["dev_test"],
+    uv_no_install_project=True,
+    uv_sync_locked=False,
+)
+@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
+def dev_test(
+    session: nox.Session,
+    sim: str,
+    toplevel_lang: str,
+    gpi_interface: str,
+) -> None:
+    """Run all development tests and merge coverage."""
+    build_cocotb_for_dev_test(session)
+    configure_test_env(session)
+    # Collect coverage of cocotb
+    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
+    dev_test_nosim(session)
+    dev_test_sim(session, sim, toplevel_lang, gpi_interface)
+    dev_coverage_combine(session)
+
+
+def dev_test_sim(
+    session: nox.Session,
+    sim: str,
+    toplevel_lang: str,
+    gpi_interface: str,
+) -> None:
+    """Test a development version of cocotb against a simulator."""
+
+    env = env_vars_for_sim_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
 
     # Remove a potentially existing coverage file from a previous run for the
@@ -175,21 +169,24 @@ def dev_test_sim(
     with suppress(FileNotFoundError):
         coverage_file.unlink()
 
-    session.log(f"Running 'make test' against a simulator {config_str}")
-    session.run("make", "-k", "test", external=True, env=env)
+    if "COCOTB_CI_SKIP_MAKE" not in os.environ:
+        session.log(f"Running 'make test' against a simulator {config_str}")
+        session.run("make", "-k", "test", external=True, env=env)
 
     # Run pytest for files which can only be tested in the source tree, not in
     # the installed binary (otherwise we get an "import file mismatch" error
     # from pytest).
-    # TODO move this to dev_test_nosim once we can import cocotb files without
-    # building the simulator module.
     session.log("Running simulator-agnostic tests in the source tree with pytest")
 
     cocotb_pkg_dir = Path(
         cast(
-            str,
+            "str",
             session.run(
-                "python", "-c", "import cocotb; print(cocotb.__file__)", silent=True
+                "python",
+                "-c",
+                "import cocotb; print(cocotb.__file__)",
+                env={"PYTHONWARNINGS": "ignore"},
+                silent=True,
             ),
         ).strip()
     ).parent
@@ -239,6 +236,21 @@ def dev_test_sim(
         env=env,
     )
 
+    # We need to run it separately to avoid loading pytest cocotb plugin for other tests
+    session.log(f"Running tests for pytest plugin against a simulator {config_str}")
+    session.run(
+        "pytest",
+        "-v",
+        "tests/pytest_plugin",
+        "--cocotb-simulator",
+        sim,
+        "--cocotb-gpi-interfaces",
+        gpi_interface,
+        "--cocotb-toplevel-lang",
+        toplevel_lang,
+        env=env,
+    )
+
     session.log(f"All tests and examples passed with configuration {config_str}!")
 
     # Combine coverage produced during the test runs, and place it in a file
@@ -255,14 +267,8 @@ def dev_test_sim(
     session.log(f"Stored Python coverage for this test run in {coverage_file}.")
 
 
-@nox.session
 def dev_test_nosim(session: nox.Session) -> None:
     """Run the simulator-agnostic tests against a cocotb development version."""
-
-    configure_env_for_dev_test(session)
-
-    session.run("pip", "install", *test_deps, *coverage_deps)
-    build_cocotb_for_dev_test(session, editable=False)
 
     # Remove a potentially existing coverage file from a previous run for the
     # same test configuration. Use a filename *not* starting with `.coverage.`,
@@ -293,10 +299,8 @@ def dev_test_nosim(session: nox.Session) -> None:
     session.log(f"Stored Python coverage for this test run in {coverage_file}.")
 
 
-@nox.session
 def dev_coverage_combine(session: nox.Session) -> None:
     """Combine coverage from previous dev_* runs into a .coverage file."""
-    session.run("pip", "install", *coverage_report_deps)
 
     coverage_files = glob.glob("**/.cov.test.*", recursive=True)
     session.run("coverage", "combine", *coverage_files)
@@ -304,13 +308,18 @@ def dev_coverage_combine(session: nox.Session) -> None:
 
     session.log("Wrote combined coverage database for all tests to '.coverage'.")
 
-    session.notify("dev_coverage_report")
 
-
-@nox.session
+@nox_uv.session(
+    uv_groups=["coverage_report"],
+    uv_no_install_project=True,
+    uv_sync_locked=False,
+)
 def dev_coverage_report(session: nox.Session) -> None:
     """Report coverage results."""
-    session.run("pip", "install", *coverage_report_deps)
+
+    # combine coverage files from previous dev_test runs, if not already done
+    if not Path(".coverage").is_file():
+        dev_coverage_combine(session)
 
     # Produce Cobertura XML coverage reports.
     session.log("Producing Python and C/C++ coverage in Cobertura XML format")
@@ -319,13 +328,21 @@ def dev_coverage_report(session: nox.Session) -> None:
     session.run("coverage", "xml", "-o", str(coverage_python_xml))
     assert coverage_python_xml.is_file()
 
+    if session.posargs:
+        gcov_executable_args = [
+            "--gcov-executable",
+            session.posargs[0],
+        ]
+    else:
+        gcov_executable_args = []
     coverage_cpp_xml = Path(".cpp_coverage.xml")
     session.run(
         "gcovr",
-        "--xml",
+        "--cobertura",
         "--output",
         str(coverage_cpp_xml),
         ".",
+        *gcov_executable_args,
     )
     assert coverage_cpp_xml.is_file()
 
@@ -338,7 +355,12 @@ def dev_coverage_report(session: nox.Session) -> None:
     session.run("coverage", "report")
 
     session.log("Library coverage")
-    session.run("gcovr", "--print-summary", "--txt")
+    session.run(
+        "gcovr",
+        "--print-summary",
+        "--txt",
+        *gcov_executable_args,
+    )
 
 
 #
@@ -356,53 +378,41 @@ def dev_coverage_report(session: nox.Session) -> None:
 dist_dir = "dist"
 
 
-@nox.session
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=[],
+    uv_sync_locked=False,
+)
 def release_clean(session: nox.Session) -> None:
     """Remove all build artifacts from the dist directory."""
     shutil.rmtree(dist_dir, ignore_errors=True)
 
 
-@nox.session
-def release_build(session: nox.Session) -> None:
-    """Build a release (sdist and bdist)."""
-    session.notify("release_build_bdist")
-    session.notify("release_build_sdist")
-
-
-@nox.session
-def release_build_bdist(session: nox.Session) -> None:
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=["release_build_wheel"],
+    uv_sync_locked=False,
+)
+def release_build_wheel(session: nox.Session) -> None:
     """Build a binary distribution (wheels) on the current operating system."""
 
-    # Pin a version to ensure reproducible builds.
-    session.run("pip", "install", f"cibuildwheel=={cibuildwheel_version}")
-
-    flags = " ".join(
-        [
-            "-O2",  # O3 is unnecessary with the virtual-call-heavy code in the GPI and may bloat binary size
-            "-g",  # Include debug information so users can debug
-        ],
-    )
-
-    env = session.env.copy()
-    env["CFLAGS"] = flags
-    env["CXXFLAGS"] = flags
-
-    session.log("Building binary distribution (wheels)")
+    session.log("Building binary distributions (wheels)")
     session.run(
         "cibuildwheel",
         "--output-dir",
         dist_dir,
-        env=env,
     )
 
     session.log(f"Binary distribution in release mode built into {dist_dir!r}")
 
 
-@nox.session
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=["release_build_sdist"],
+    uv_sync_locked=False,
+)
 def release_build_sdist(session: nox.Session) -> None:
     """Build the source distribution."""
-
-    session.run("pip", "install", "build")
 
     session.log("Building source distribution (sdist)")
     session.run("python", "-m", "build", "--sdist", "--outdir", dist_dir, ".")
@@ -410,18 +420,27 @@ def release_build_sdist(session: nox.Session) -> None:
     session.log(f"Source distribution in release mode built into {dist_dir!r}")
 
 
-@nox.session
-def release_test_sdist(session: nox.Session) -> None:
-    """Build and install the sdist."""
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=[],
+    uv_sync_locked=False,
+)
+def release_build(session: nox.Session) -> None:
+    """Build all distributions for release."""
+    session.notify("release_build_wheel")
+    session.notify("release_build_sdist")
+
+
+def release_install_from_sdist(session: nox.Session) -> None:
+    """Install cocotb from sdist."""
 
     # Find the sdist to install.
     sdists = list(Path(dist_dir).glob("cocotb-*.tar.gz"))
-    if len(sdists) == 0:
+    if not sdists:
         session.error(
-            f"No *.tar.gz sdist file found in {dist_dir!r} "
-            f"Run the 'release_build' session first."
+            f"No potential sdist found in the {dist_dir!r} directory. Run the 'release_build_sdist' session first!"
         )
-    if len(sdists) > 1:
+    elif len(sdists) > 1:
         session.error(
             f"More than one potential sdist found in the {dist_dir!r} "
             f"directory. Run the 'release_clean' session first!"
@@ -430,37 +449,47 @@ def release_test_sdist(session: nox.Session) -> None:
     assert sdist_path.is_file()
 
     session.log("Installing cocotb from sdist, which includes the build step")
-    session.run(
-        "pip",
-        "install",
-        str(sdist_path),
-    )
+    session.install(str(sdist_path))
+
+
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=["release_test"],
+    uv_sync_locked=False,
+)
+@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
+@nox.parametrize("source", ["wheel", "sdist"])
+def release_test(
+    session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str, source: str
+) -> None:
+    """Run all tests against a cocotb release build."""
+    if source == "sdist":
+        release_install_from_sdist(session)
+    else:
+        release_install_from_wheel(session)
 
     session.log("Running cocotb-config as basic installation smoke test")
     session.run("cocotb-config", "--version")
+    configure_test_env(session)
+    release_test_nosim(session)
+    release_test_sim(session, sim, toplevel_lang, gpi_interface)
 
 
-def release_install(session: nox.Session) -> None:
-    """Helper: Install cocotb from wheels and also install test dependencies."""
+def release_install_from_wheel(session: nox.Session) -> None:
+    """Install cocotb from wheels."""
 
-    # We have to disable the use of the PyPi index when installing cocotb to
-    # guarantee that the wheels in dist are being used. But without an index
-    # pip cannot find the dependencies, which need to be installed from PyPi.
-    # Work around that by explicitly installing the dependencies first from
-    # PyPi, and then installing cocotb itself from the local dist directory.
-
-    session.log("Installing cocotb dependencies from PyPi")
-    session.run("pip", "install", "find_libpython")
-
+    wheels = list(Path(dist_dir).glob("cocotb-*.whl"))
+    if not wheels:
+        session.error(
+            f"No potential wheel found in the {dist_dir!r} directory. Run the 'release_build_wheel' session first!"
+        )
     session.log(f"Installing cocotb from wheels in {dist_dir!r}")
-    session.run(
-        "pip",
-        "install",
+    session.install(
         "--force-reinstall",
         "--only-binary",
         "cocotb",
         "--no-index",
-        "--no-dependencies",
+        "--no-deps",
         "--find-links",
         dist_dir,
         "cocotb",
@@ -469,24 +498,14 @@ def release_install(session: nox.Session) -> None:
     session.log("Running cocotb-config as basic installation smoke test")
     session.run("cocotb-config", "--version")
 
-    session.log("Installing test dependencies")
-    session.run("pip", "install", *test_deps)
 
-
-@nox.session
-@nox.parametrize("sim,toplevel_lang,gpi_interface", simulator_support_matrix())
 def release_test_sim(
     session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str
 ) -> None:
     """Test a release version of cocotb against a simulator."""
 
-    release_install(session)
-
-    env = env_vars_for_test(sim, toplevel_lang, gpi_interface)
+    env = env_vars_for_sim_test(sim, toplevel_lang, gpi_interface)
     config_str = stringify_dict(env)
-
-    session.log(f"Running tests against a simulator: {config_str}")
-    session.run("make", "-k", "test", external=True, env=env)
 
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
@@ -500,11 +519,8 @@ def release_test_sim(
     session.log(f"All tests passed with configuration {config_str}!")
 
 
-@nox.session
 def release_test_nosim(session: nox.Session) -> None:
     """Run the simulator-agnostic tests against a cocotb release."""
-
-    release_install(session)
 
     session.log("Running simulator-agnostic tests")
     session.run(
@@ -517,15 +533,17 @@ def release_test_nosim(session: nox.Session) -> None:
     session.log("All tests passed!")
 
 
-def create_env_for_docs_build(session: nox.Session) -> None:
-    session.run("pip", "install", "-r", "docs/requirements.txt")
+#
+# Documentation sessions.
+#
 
 
-@nox.session
+@nox_uv.session(
+    uv_groups=["docs"],
+    uv_sync_locked=False,
+)
 def docs(session: nox.Session) -> None:
     """invoke sphinx-build to build the HTML docs"""
-    create_env_for_docs_build(session)
-    session.run("pip", "install", ".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -540,13 +558,12 @@ def docs(session: nox.Session) -> None:
     session.log(f"Documentation is available at {index}")
 
 
-@nox.session
+@nox_uv.session(
+    uv_groups=["docs_preview"],
+    uv_sync_locked=False,
+)
 def docs_preview(session: nox.Session) -> None:
     """Build a live preview of the documentation"""
-    create_env_for_docs_build(session)
-    # Editable install allows editing cocotb source and seeing it updated in the live preview
-    session.run("pip", "install", "-e", ".")
-    session.run("pip", "install", "sphinx-autobuild")
     outdir = session.cache_dir / "docs_out"
     # fmt: off
     session.run(
@@ -574,11 +591,12 @@ def docs_preview(session: nox.Session) -> None:
     # fmt: on
 
 
-@nox.session
+@nox_uv.session(
+    uv_groups=["docs"],
+    uv_sync_locked=False,
+)
 def docs_linkcheck(session: nox.Session) -> None:
     """invoke sphinx-build to linkcheck the docs"""
-    create_env_for_docs_build(session)
-    session.run("pip", "install", ".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -591,11 +609,12 @@ def docs_linkcheck(session: nox.Session) -> None:
     )
 
 
-@nox.session
+@nox_uv.session(
+    uv_groups=["docs"],
+    uv_sync_locked=False,
+)
 def docs_spelling(session: nox.Session) -> None:
     """invoke sphinx-build to spellcheck the docs"""
-    create_env_for_docs_build(session)
-    session.run("pip", "install", ".")
     outdir = session.cache_dir / "docs_out"
     session.run(
         "sphinx-build",
@@ -606,18 +625,3 @@ def docs_spelling(session: nox.Session) -> None:
         "spelling",
         *session.posargs,
     )
-
-
-@nox.session(reuse_venv=True)
-def dev(session: nox.Session) -> None:
-    """Build a development environment and optionally run a command given as extra args"""
-
-    configure_env_for_dev_test(session)
-    create_env_for_docs_build(session)
-
-    session.run(
-        "pip", "install", *test_deps, *dev_deps, *coverage_deps, *coverage_report_deps
-    )
-    build_cocotb_for_dev_test(session, editable=True)
-    if session.posargs:
-        session.run(*session.posargs, external=True)

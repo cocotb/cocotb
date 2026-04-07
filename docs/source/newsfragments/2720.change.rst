@@ -1,1 +1,0 @@
-Constant value objects are now returned as their corresponding :class:`simulator value object <cocotb.handle.ValueObjectBase>` subtype (e.g. integers in VHDL and Verilog are now :class:`~cocotb.handle.IntegerObject`\ s) instead of ``cocotb.handle.ConstantObject``.

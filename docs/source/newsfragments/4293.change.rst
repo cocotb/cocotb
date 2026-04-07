@@ -1,1 +1,0 @@
-Python interpreter embedding is now more robust when using Python 3.8+. Setting ``PYTHONHOME`` is no longer required, so simulator usage of Python scripts should no longer fail.

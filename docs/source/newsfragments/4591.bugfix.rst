@@ -1,1 +1,0 @@
-Fixed issue with ``$dumpfile`` and ``$dumpvars`` not working on Verilator without also turning on global tracing.

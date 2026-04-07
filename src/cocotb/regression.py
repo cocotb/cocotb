@@ -6,70 +6,130 @@
 
 """All things relating to regression capabilities."""
 
-import functools
+from __future__ import annotations
+
 import hashlib
 import inspect
 import logging
 import os
 import random
 import re
+import sys
 import time
 import warnings
-from enum import auto
+from enum import Enum, auto
 from importlib import import_module
-from typing import (
-    Any,
-    Callable,
-    Coroutine,
-    Dict,
-    List,
-    Union,
-)
+from typing import Any, cast
+
+import pytest
 
 import cocotb
-import cocotb._gpi_triggers
-import cocotb.handle
-from cocotb import _ANSI, simulator
-from cocotb._base_triggers import Trigger
-from cocotb._decorators import Parameterized, Test
-from cocotb._extended_awaitables import SimTimeoutError, with_timeout
-from cocotb._gpi_triggers import GPITrigger, Timer
-from cocotb._outcomes import Error, Outcome
-from cocotb._test import RunningTest
+import cocotb._event_loop
+import cocotb._shutdown as shutdown
+import cocotb.types._resolve
+from cocotb import logging as cocotb_logging
+from cocotb import simulator
+from cocotb._decorators import Test, TestGenerator
+from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
-from cocotb._test_functions import Failed
-from cocotb._utils import (
-    DocEnum,
-    remove_traceback_frames,
-    want_color_output,
-)
-from cocotb._xunit_reporter import XUnitReporter
-from cocotb.task import Task
-from cocotb.utils import get_sim_time
+from cocotb._test_manager import TestManager, TestSuccess
+from cocotb._utils import DocEnum, safe_divide
+from cocotb._xunit_reporter import XUnitReporter, bin_xml_escape
+from cocotb.logging import ANSI
+from cocotb.simtime import get_sim_time
+from cocotb_tools import _env
 
 __all__ = (
-    "Parameterized",
     "RegressionManager",
     "RegressionMode",
     "SimFailure",
     "Test",
     "TestFactory",
+    "TestGenerator",
 )
 
 # Set __module__ on re-exports
-Parameterized.__module__ = __name__
+TestGenerator.__module__ = __name__
 Test.__module__ = __name__
 TestFactory.__module__ = __name__
 
 
+_TestFailures: tuple[type[BaseException], ...] = (
+    AssertionError,
+    pytest.raises.Exception,  # type: ignore[attr-defined]
+)
+
+if hasattr(pytest, "RaisesGroup") and hasattr(pytest, "RaisesExc"):
+
+    def handle_pytest_exception_matchers(
+        exc: BaseException,
+        expected_error_set: set[
+            type[BaseException] | pytest.RaisesExc | pytest.RaisesGroup
+        ],
+    ) -> tuple[set[pytest.RaisesExc | pytest.RaisesGroup], bool]:
+        """Filter out :class:`pytest.RaisesExc` and :class:`pytest.RaisesGroup` exceptions and do checking on them.
+
+        Args:
+            exc: The exception result of the test.
+            expected_error_set: The set of expected exceptions and :class:`!pytest.RaisesExc` and :class:`!pytest.RaisesGroup` objects.
+
+        Returns:
+            A tuple of the filtered out :class:`!pytest.RaisesExc` and :class:`!pytest.RaisesGroup` objects
+            (so that the caller may remove them from the exception set)
+            and a boolean whether there was a match.
+        """
+        exception_matcher_excs = cast(
+            "set[pytest.RaisesExc | pytest.RaisesGroup]",
+            {
+                exc
+                for exc in expected_error_set
+                if isinstance(exc, (pytest.RaisesExc, pytest.RaisesGroup))
+            },
+        )
+
+        for exception_matcher_exc in exception_matcher_excs:
+            if exception_matcher_exc.matches(exc):
+                # We got an exception that matches an exception matcher, so we consider the test passed.
+                return exception_matcher_excs, True
+
+        return exception_matcher_excs, False
+
+else:
+
+    def handle_pytest_exception_matchers(
+        exc: BaseException,
+        expected_error_set: set[
+            type[BaseException] | pytest.RaisesExc | pytest.RaisesGroup
+        ],
+    ) -> tuple[set[pytest.RaisesExc | pytest.RaisesGroup], bool]:
+        return set(), False
+
+
 class SimFailure(BaseException):
-    """A Test failure due to simulator failure."""
+    """A Test failure due to simulator failure.
+
+    .. caution::
+        Not to be raised or caught within a test.
+        Only used for marking expected failure with ``expect_error`` in :func:`cocotb.test`.
+    """
+
+
+class RegressionTerminated(BaseException):
+    """Indicates the regression was terminated early.
+
+    The regression can be terminated early by setting :envvar:`COCOTB_MAX_FAILURES`.
+
+
+    .. caution::
+        Not intended to be raised or caught by user code.
+        Used internally by the :class:`RegressionManager`.
+    """
 
 
 _logger = logging.getLogger(__name__)
 
 
-def _format_doc(docstring: Union[str, None]) -> str:
+def _format_doc(docstring: str | None) -> str:
     if docstring is None:
         return ""
     else:
@@ -91,6 +151,31 @@ class RegressionMode(DocEnum):
     )
 
 
+class _TestOutcome(Enum):
+    PASS = auto()
+    FAIL = auto()
+    SKIP = auto()
+    XFAIL = auto()
+
+
+class _TestResults:
+    def __init__(
+        self,
+        test_fullname: str,
+        outcome: _TestOutcome,
+        wall_time_s: float,
+        sim_time_ns: float,
+    ) -> None:
+        self.test_fullname = test_fullname
+        self.outcome = outcome
+        self.wall_time_s = wall_time_s
+        self.sim_time_ns = sim_time_ns
+
+    @property
+    def ratio(self) -> float:
+        return safe_divide(self.sim_time_ns, self.wall_time_s)
+
+
 class RegressionManager:
     """Object which manages tests.
 
@@ -109,14 +194,20 @@ class RegressionManager:
     :attr:`skipped`, and :attr:`failures` hold placeholder values.
     """
 
+    COLOR_TEST = ANSI.BLUE_FG
+    COLOR_PASSED = ANSI.GREEN_FG
+    COLOR_SKIPPED = ANSI.YELLOW_FG
+    COLOR_FAILED = ANSI.RED_FG
+    COLOR_XFAILED = ANSI.YELLOW_FG
+
     _timer1 = Timer(1)
 
     def __init__(self) -> None:
         self._test: Test
-        self._running_test: RunningTest
+        self._running_test: TestManager
         self.log = _logger
         self._regression_start_time: float
-        self._test_results: List[Dict[str, Any]] = []
+        self._test_results: list[_TestResults] = []
         self.total_tests = 0
         """Total number of tests that will be run or skipped."""
         self.count = 0
@@ -128,11 +219,18 @@ class RegressionManager:
         self.failures = 0
         """The current number of failed tests."""
         self._tearing_down = False
-        self._test_queue: List[Test] = []
-        self._filters: List[re.Pattern[str]] = []
+        self._test_queue: list[Test] = []
+        self._filters: list[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
-        self._included: List[bool]
-        self._sim_failure: Union[Error[None], None] = None
+        self._included: list[bool]
+        self._regression_terminated: BaseException | None = None
+        self._regression_seed = cocotb.RANDOM_SEED
+        self._random_test_order = _env.as_bool(
+            "COCOTB_RANDOM_TEST_ORDER", default=False
+        )
+        self._random_state: Any
+        self._max_failures = _env.as_int("COCOTB_MAX_FAILURES", default=0)
+        self._random_x_resolver_state: Any
 
         # Setup XUnit
         ###################
@@ -161,7 +259,7 @@ class RegressionManager:
                 if isinstance(obj, Test):
                     found_test = True
                     self.register_test(obj)
-                elif isinstance(obj, Parameterized):
+                elif isinstance(obj, TestGenerator):
                     found_test = True
                     generated_tests: bool = False
                     for test in obj.generate_tests():
@@ -169,7 +267,7 @@ class RegressionManager:
                         self.register_test(test)
                     if not generated_tests:
                         warnings.warn(
-                            f"Parametrize object generated no tests: {module_name}.{obj_name}",
+                            f"TestGenerator generated no tests: {module_name}.{obj_name}",
                             stacklevel=2,
                         )
 
@@ -227,38 +325,30 @@ class RegressionManager:
 
         Must be called before all modules containing tests are imported.
         """
-        try:
-            import pytest  # noqa: PLC0415
-        except ImportError:
-            _logger.info(
-                "pytest not found, install it to enable better AssertionError messages"
-            )
+        # Install the assertion rewriting hook, which must be done before we
+        # import the test modules.
+        from _pytest.assertion import install_importhook  # noqa: PLC0415
+        from _pytest.config import Config  # noqa: PLC0415
+
+        python_files = os.getenv("COCOTB_REWRITE_ASSERTION_FILES", "*.py").strip()
+        if not python_files:
+            # Even running the hook causes exceptions in some cases, so if the user
+            # selects nothing, don't install the hook at all.
             return
-        try:
-            # Install the assertion rewriting hook, which must be done before we
-            # import the test modules.
-            from _pytest.assertion import install_importhook  # noqa: PLC0415
-            from _pytest.config import Config  # noqa: PLC0415
 
-            python_files = os.getenv("COCOTB_REWRITE_ASSERTION_FILES", "*.py").strip()
-            if not python_files:
-                # Even running the hook causes exceptions in some cases, so if the user
-                # selects nothing, don't install the hook at all.
-                return
-
-            pytest_conf = Config.fromdictargs(
-                {}, ["--capture=no", "-o", f"python_files={python_files}"]
-            )
-            install_importhook(pytest_conf)
-        except Exception:
-            _logger.exception(
-                "Configuring the assertion rewrite hook using pytest %s failed. "
-                "Please file a bug report!",
-                pytest.__version__,
-            )
+        pytest_conf = Config.fromdictargs(
+            {}, ["--capture=no", "-o", f"python_files={python_files}"]
+        )
+        install_importhook(pytest_conf)
 
     def start_regression(self) -> None:
         """Start the regression."""
+
+        self.log.info("Running tests")
+
+        # if needed, randomize tests before sorting into stages
+        if self._random_test_order:
+            random.shuffle(self._test_queue)
 
         # sort tests into stages
         self._test_queue.sort(key=lambda test: test.stage)
@@ -282,9 +372,6 @@ class RegressionManager:
                 ", ".join(f.pattern for f in self._filters),
             )
 
-        # start write scheduler
-        cocotb.handle._start_write_scheduler()
-
         # start test loop
         self._regression_start_time = time.time()
         self._first_test = True
@@ -296,7 +383,6 @@ class RegressionManager:
         Used by :meth:`start_regression` and :meth:`_test_complete` to continue to the main test running loop,
         and by :meth:`_fail_regression` to shutdown the regression when a simulation failure occurs.
         """
-
         while self._test_queue:
             self._test = self._test_queue.pop(0)
             included = self._included.pop(0)
@@ -308,13 +394,13 @@ class RegressionManager:
 
             # if the test is skipped, record and continue
             if self._test.skip and self._mode != RegressionMode.TESTCASE:
-                self._record_test_skipped()
+                self._record_test_skipped(wall_time_s=0, sim_time_ns=0, msg=None)
                 continue
 
             # if the test should be run, but the simulator has failed, record and continue
-            if self._sim_failure is not None:
+            if self._regression_terminated is not None:
                 self._score_test(
-                    self._sim_failure,
+                    self._regression_terminated,
                     0,
                     0,
                 )
@@ -333,43 +419,34 @@ class RegressionManager:
                 self._first_test = False
                 return self._schedule_next_test()
             else:
-                return self._timer1._prime(self._schedule_next_test)
+                self._timer1._register(self._schedule_next_test)
+                return
 
         return self._tear_down()
 
-    def _init_test(self) -> RunningTest:
-        # wrap test function in timeout
-        func: Callable[..., Coroutine[Trigger, None, None]]
-        timeout = self._test.timeout_time
-        if timeout is not None:
-            f = self._test.func
+    def _init_test(self) -> TestManager:
+        coro = self._test.func(cocotb.top, *self._test.args, **self._test.kwargs)
+        return TestManager(
+            coro,
+            test_complete_cb=self._test_complete,
+            name=self._test.name,
+            timeout=self._test.timeout,
+        )
 
-            @functools.wraps(f)
-            async def func(*args: object, **kwargs: object) -> None:
-                running_co = Task(f(*args, **kwargs))
-
-                try:
-                    await with_timeout(running_co, timeout, self._test.timeout_unit)
-                except SimTimeoutError:
-                    running_co.cancel()
-                    raise
-        else:
-            func = self._test.func
-
-        main_task = Task(func(cocotb.top), name=f"Test {self._test.name}")
-        return RunningTest(self._test_complete, main_task)
-
-    def _schedule_next_test(self, trigger: Union[GPITrigger, None] = None) -> None:
-        if trigger is not None:
-            # TODO move to Trigger object
-            cocotb._gpi_triggers._current_gpi_trigger = trigger
-            trigger._cleanup()
-
+    def _schedule_next_test(self) -> None:
         # seed random number generator based on test module, name, and COCOTB_RANDOM_SEED
         hasher = hashlib.sha1()
         hasher.update(self._test.fullname.encode())
-        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
-        random.seed(seed)
+        test_seed = self._regression_seed + int(hasher.hexdigest(), 16)
+
+        # seed random number generators with test seed
+        self._random_state = random.getstate()
+        random.seed(test_seed)
+        self._random_x_resolver_state = (
+            cocotb.types._resolve._randomResolveRng.getstate()
+        )
+        cocotb.types._resolve._randomResolveRng.seed(test_seed)
+        cocotb.RANDOM_SEED = test_seed
 
         self._start_sim_time = get_sim_time("ns")
         self._start_time = time.time()
@@ -384,22 +461,14 @@ class RegressionManager:
         else:
             return
 
-        assert not self._test_queue
-
-        # stop the write scheduler
-        cocotb.handle._stop_write_scheduler()
-
         # Write out final log messages
         self._log_test_summary()
 
         # Generate output reports
         self.xunit.write()
 
-        # TODO refactor initialization and finalization into their own module
-        # to prevent circular imports requiring local imports
-        from cocotb._init import _shutdown_testbench  # noqa: PLC0415
-
-        _shutdown_testbench()
+        # We shut down here since the shutdown callback isn't called if stop_simulator is called.
+        shutdown._shutdown()
 
         # Setup simulator finalization
         simulator.stop_simulator()
@@ -411,9 +480,21 @@ class RegressionManager:
         wall_time = time.time() - self._start_time
         sim_time_ns = get_sim_time("ns") - self._start_sim_time
 
+        # restore random number generators state
+        cocotb.RANDOM_SEED = self._regression_seed
+        random.setstate(self._random_state)
+        cocotb.types._resolve._randomResolveRng.setstate(self._random_x_resolver_state)
+
+        exc: BaseException | None
+        if self._regression_terminated is not None:
+            # When the simulation is failing, we override the typical test results.
+            exc = self._regression_terminated
+        else:
+            exc = self._running_test.exception()
+
         # Judge and record pass/fail.
         self._score_test(
-            self._running_test.result(),
+            exc,
             wall_time,
             sim_time_ns,
         )
@@ -423,93 +504,125 @@ class RegressionManager:
 
     def _score_test(
         self,
-        outcome: Outcome[Any],
+        exc: BaseException | None,
         wall_time_s: float,
         sim_time_ns: float,
     ) -> None:
         test = self._test
 
-        # score test
-        passed: bool
-        msg: Union[str, None]
-        exc: Union[BaseException, None]
-        try:
-            outcome.get()
-        except BaseException as e:
-            passed, msg = False, None
-            exc = remove_traceback_frames(e, ["_score_test", "get"])
-        else:
-            passed, msg, exc = True, None, None
-
-        if passed:
+        if exc is not None:
+            # These special exceptions take precedence over expect_error and expect_fail.
+            if isinstance(exc, pytest.skip.Exception):
+                # We got a skip exception, so we consider the test skipped.
+                return self._record_test_skipped(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
+                    msg=exc.msg,
+                )
+            elif isinstance(exc, pytest.xfail.Exception):
+                # We got an xfail exception, so we consider the test xfailed.
+                return self._record_test_xfail(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
+                    result=None,
+                    msg=exc.msg,
+                )
+            elif isinstance(exc, TestSuccess):
+                return self._record_test_passed(
+                    wall_time_s=wall_time_s,
+                    sim_time_ns=sim_time_ns,
+                )
             if test.expect_error:
-                self._record_test_failed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=exc,
-                    msg="passed but we expected an error",
-                )
-                passed = False
+                expected_error_set = set(test.expect_error)
 
+                # Filter out RaisesExc or RaisesGroup, which need to be handled differently.
+                exception_matcher_excs, matched = handle_pytest_exception_matchers(
+                    exc, expected_error_set
+                )
+                if matched:
+                    # We got an RaisesExc or RaisesGroup that matches the expected exception.
+                    return self._record_test_xfail(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="errored as expected",
+                    )
+
+                # Use isinstance with the remaining expected exceptions, which should all be exception types.
+                expected_excs_set = cast(
+                    "set[type[BaseException]]",
+                    expected_error_set - exception_matcher_excs,
+                )
+
+                if isinstance(exc, tuple(expected_excs_set)):
+                    # Non-exception group error with expected type.
+                    return self._record_test_xfail(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="errored as expected",
+                    )
+                elif isinstance(exc, _TestFailures):
+                    # We got a failure exception but expected an error.
+                    return self._record_test_failed(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="failed but we expected an error",
+                    )
+                else:
+                    # Non-exception group error with unexpected type.
+                    return self._record_test_failed(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="errored with unexpected type",
+                    )
             elif test.expect_fail:
-                self._record_test_failed(
+                if isinstance(exc, _TestFailures):
+                    # We expected a failure and got one.
+                    return self._record_test_xfail(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="failed as expected",
+                    )
+                else:
+                    # We expected a failure but got an unexpected exception type.
+                    return self._record_test_failed(
+                        wall_time_s=wall_time_s,
+                        sim_time_ns=sim_time_ns,
+                        result=exc,
+                        msg="errored but we expected a failure",
+                    )
+            else:
+                # We are not expecting an error or failure, but got an exception instead.
+                return self._record_test_failed(
                     wall_time_s=wall_time_s,
                     sim_time_ns=sim_time_ns,
                     result=exc,
-                    msg="passed but we expected a failure",
+                    msg=None,
                 )
-                passed = False
-
-            else:
-                self._record_test_passed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=None,
-                    msg=msg,
-                )
-
-        elif test.expect_fail:
-            if isinstance(exc, (AssertionError, Failed)):
-                self._record_test_passed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=None,
-                    msg="failed as expected",
-                )
-
-            else:
-                self._record_test_failed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=exc,
-                    msg="expected failure, but errored with unexpected type",
-                )
-                passed = False
-
         elif test.expect_error:
-            if isinstance(exc, test.expect_error):
-                self._record_test_passed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=None,
-                    msg="errored as expected",
-                )
-
-            else:
-                self._record_test_failed(
-                    wall_time_s=wall_time_s,
-                    sim_time_ns=sim_time_ns,
-                    result=exc,
-                    msg="errored with unexpected type",
-                )
-                passed = False
-
-        else:
-            self._record_test_failed(
+            # We expected an error but the test passed.
+            return self._record_test_failed(
                 wall_time_s=wall_time_s,
                 sim_time_ns=sim_time_ns,
-                result=exc,
-                msg=msg,
+                result=None,
+                msg="passed but we expected an error",
+            )
+        elif test.expect_fail:
+            # We expected a failure but the test passed.
+            return self._record_test_failed(
+                wall_time_s=wall_time_s,
+                sim_time_ns=sim_time_ns,
+                result=None,
+                msg="passed but we expected a failure",
+            )
+        else:
+            # We expected a pass and got one.
+            return self._record_test_passed(
+                wall_time_s=wall_time_s, sim_time_ns=sim_time_ns
             )
 
     def _get_lineno(self, test: Test) -> int:
@@ -520,8 +633,8 @@ class RegressionManager:
 
     def _log_test_start(self) -> None:
         """Called by :meth:`_execute` to log that a test is starting."""
-        hilight_start = _ANSI.COLOR_TEST if want_color_output() else ""
-        hilight_end = _ANSI.COLOR_DEFAULT if want_color_output() else ""
+        hilight_start = "" if cocotb_logging.strip_ansi else self.COLOR_TEST
+        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         self.log.info(
             "%srunning%s %s (%d/%d)%s",
             hilight_start,
@@ -550,20 +663,27 @@ class RegressionManager:
 
         # do not log anything, nor save details for the summary
 
-    def _record_test_skipped(self) -> None:
+    def _record_test_skipped(
+        self,
+        wall_time_s: float,
+        sim_time_ns: float,
+        msg: str | None,
+    ) -> None:
         """Called by :meth:`_execute` when a test is skipped."""
 
         # log test results
-        hilight_start = _ANSI.COLOR_SKIPPED if want_color_output() else ""
-        hilight_end = _ANSI.COLOR_DEFAULT if want_color_output() else ""
+        hilight_start = "" if cocotb_logging.strip_ansi else self.COLOR_SKIPPED
+        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
+        if msg is not None:
+            msg = f": {msg}"
+        else:
+            msg = f" ({self.count}/{self.total_tests}){_format_doc(self._test.doc)}"
         self.log.info(
-            "%sskipping%s %s (%d/%d)%s",
+            "%sskipping%s %s%s",
             hilight_start,
             hilight_end,
             self._test.fullname,
-            self.count,
-            self.total_tests,
-            _format_doc(self._test.doc),
+            msg,
         )
 
         # write out xunit results
@@ -581,12 +701,12 @@ class RegressionManager:
 
         # save details for summary
         self._test_results.append(
-            {
-                "test": self._test.fullname,
-                "pass": None,
-                "sim": 0,
-                "real": 0,
-            }
+            _TestResults(
+                test_fullname=self._test.fullname,
+                outcome=_TestOutcome.SKIP,
+                sim_time_ns=sim_time_ns,
+                wall_time_s=wall_time_s,
+            )
         )
 
         # update running passed/failed/skipped counts
@@ -597,8 +717,8 @@ class RegressionManager:
         """Called by :meth:`_execute` when a test initialization fails."""
 
         # log test results
-        hilight_start = _ANSI.COLOR_FAILED if want_color_output() else ""
-        hilight_end = _ANSI.COLOR_DEFAULT if want_color_output() else ""
+        hilight_start = "" if cocotb_logging.strip_ansi else self.COLOR_FAILED
+        hilight_end = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         self.log.exception(
             "%sFailed to initialize%s %s! (%d/%d)%s",
             hilight_start,
@@ -624,28 +744,27 @@ class RegressionManager:
 
         # save details for summary
         self._test_results.append(
-            {
-                "test": self._test.fullname,
-                "pass": False,
-                "sim": 0,
-                "real": 0,
-                "ratio": self._safe_divide(0, 0),
-            }
+            _TestResults(
+                test_fullname=self._test.fullname,
+                outcome=_TestOutcome.FAIL,
+                sim_time_ns=0,
+                wall_time_s=0,
+            )
         )
 
         # update running passed/failed/skipped counts
         self.failures += 1
         self.count += 1
 
-    def _record_test_passed(
+    def _record_test_xfail(
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[Exception, None],
-        msg: Union[str, None],
+        result: BaseException | None,
+        msg: str | None,
     ) -> None:
-        start_hilight = _ANSI.COLOR_PASSED if want_color_output() else ""
-        stop_hilight = _ANSI.COLOR_DEFAULT if want_color_output() else ""
+        start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_PASSED
+        stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         if msg is None:
             rest = ""
         else:
@@ -661,10 +780,11 @@ class RegressionManager:
             stop_hilight,
             rest,
             result_was,
+            exc_info=result,
         )
 
         # write out xunit results
-        ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
+        ratio_time = safe_divide(sim_time_ns, wall_time_s)
         lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
@@ -682,24 +802,64 @@ class RegressionManager:
 
         # save details for summary
         self._test_results.append(
-            {
-                "test": self._test.fullname,
-                "pass": True,
-                "sim": sim_time_ns,
-                "real": wall_time_s,
-                "ratio": ratio_time,
-            }
+            _TestResults(
+                test_fullname=self._test.fullname,
+                outcome=_TestOutcome.PASS,
+                sim_time_ns=sim_time_ns,
+                wall_time_s=wall_time_s,
+            )
+        )
+
+    def _record_test_passed(
+        self,
+        wall_time_s: float,
+        sim_time_ns: float,
+    ) -> None:
+        start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_PASSED
+        stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
+        self.log.info(
+            "%s %spassed%s",
+            self._test.fullname,
+            start_hilight,
+            stop_hilight,
+        )
+
+        # write out xunit results
+        ratio_time = safe_divide(sim_time_ns, wall_time_s)
+        lineno = self._get_lineno(self._test)
+        self.xunit.add_testcase(
+            name=self._test.name,
+            classname=self._test.module,
+            file=inspect.getfile(self._test.func),
+            lineno=repr(lineno),
+            time=repr(wall_time_s),
+            sim_time_ns=repr(sim_time_ns),
+            ratio_time=repr(ratio_time),
+        )
+
+        # update running passed/failed/skipped counts
+        self.passed += 1
+        self.count += 1
+
+        # save details for summary
+        self._test_results.append(
+            _TestResults(
+                test_fullname=self._test.fullname,
+                outcome=_TestOutcome.PASS,
+                sim_time_ns=sim_time_ns,
+                wall_time_s=wall_time_s,
+            )
         )
 
     def _record_test_failed(
         self,
         wall_time_s: float,
         sim_time_ns: float,
-        result: Union[BaseException, None],
-        msg: Union[str, None],
+        result: BaseException | None,
+        msg: str | None,
     ) -> None:
-        start_hilight = _ANSI.COLOR_FAILED if want_color_output() else ""
-        stop_hilight = _ANSI.COLOR_DEFAULT if want_color_output() else ""
+        start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_FAILED
+        stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         if msg is None:
             rest = ""
         else:
@@ -711,10 +871,11 @@ class RegressionManager:
             start_hilight,
             stop_hilight,
             rest,
+            exc_info=result,
         )
 
         # write out xunit results
-        ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
+        ratio_time = safe_divide(sim_time_ns, wall_time_s)
         lineno = self._get_lineno(self._test)
         self.xunit.add_testcase(
             name=self._test.name,
@@ -725,7 +886,9 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
-        self.xunit.add_failure(error_type=type(result).__name__, error_msg=str(result))
+        self.xunit.add_failure(
+            error_type=type(result).__name__, error_msg=bin_xml_escape(result)
+        )
 
         # update running passed/failed/skipped counts
         self.failures += 1
@@ -733,20 +896,29 @@ class RegressionManager:
 
         # save details for summary
         self._test_results.append(
-            {
-                "test": self._test.fullname,
-                "pass": False,
-                "sim": sim_time_ns,
-                "real": wall_time_s,
-                "ratio": ratio_time,
-            }
+            _TestResults(
+                test_fullname=self._test.fullname,
+                outcome=_TestOutcome.FAIL,
+                sim_time_ns=sim_time_ns,
+                wall_time_s=wall_time_s,
+            )
         )
+        if (
+            self._regression_terminated is None
+            and self._max_failures > 0
+            and self.failures >= self._max_failures
+        ):
+            self._regression_terminated = RegressionTerminated(
+                f"Regression stopped after {self.failures} failures "
+                f"(limit={self._max_failures})"
+            )
+            self.log.warning(self._regression_terminated)
 
     def _log_test_summary(self) -> None:
         """Called by :meth:`_tear_down` to log the test summary."""
         real_time = time.time() - self._regression_start_time
         sim_time_ns = get_sim_time("ns")
-        ratio_time = self._safe_divide(sim_time_ns, real_time)
+        ratio_time = safe_divide(sim_time_ns, real_time)
 
         if len(self._test_results) == 0:
             return
@@ -761,7 +933,7 @@ class RegressionManager:
         TEST_FIELD_LEN = max(
             len(TEST_FIELD),
             len(TOTAL_NAME),
-            len(max([x["test"] for x in self._test_results], key=len)),
+            len(max([x.test_fullname for x in self._test_results], key=len)),
         )
         RESULT_FIELD_LEN = len(RESULT_FIELD)
         SIM_FIELD_LEN = len(SIM_FIELD)
@@ -805,34 +977,39 @@ class RegressionManager:
         summary += LINE_SEP
 
         test_line = "** {a:<{a_len}}  {start}{b:^{b_len}}{end}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}}  **\n"
+        hilite: str
+        lolite: str
         for result in self._test_results:
-            hilite = ""
-            lolite = ""
-
-            if result["pass"] is None:
+            if result.outcome == _TestOutcome.SKIP:
                 ratio = "-.--"
                 pass_fail_str = "SKIP"
-                if want_color_output():
-                    hilite = _ANSI.COLOR_SKIPPED
-                    lolite = _ANSI.COLOR_DEFAULT
-            elif result["pass"]:
-                ratio = format(result["ratio"], "0.2f")
+                hilite = self.COLOR_SKIPPED
+                lolite = ANSI.DEFAULT
+            elif result.outcome == _TestOutcome.PASS:
+                ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "PASS"
-                if want_color_output():
-                    hilite = _ANSI.COLOR_PASSED
-                    lolite = _ANSI.COLOR_DEFAULT
-            else:
-                ratio = format(result["ratio"], "0.2f")
+                hilite = self.COLOR_PASSED
+                lolite = ANSI.DEFAULT
+            elif result.outcome == _TestOutcome.FAIL:
+                ratio = format(result.ratio, "0.2f")
                 pass_fail_str = "FAIL"
-                if want_color_output():
-                    hilite = _ANSI.COLOR_FAILED
-                    lolite = _ANSI.COLOR_DEFAULT
+                hilite = self.COLOR_FAILED
+                lolite = ANSI.DEFAULT
+            elif result.outcome == _TestOutcome.XFAIL:
+                ratio = format(result.ratio, "0.2f")
+                pass_fail_str = "XFAIL"
+                hilite = self.COLOR_XFAILED
+                lolite = ANSI.DEFAULT
+
+            if cocotb_logging.strip_ansi:
+                hilite = ""
+                lolite = ""
 
             test_dict = {
-                "a": result["test"],
+                "a": result.test_fullname,
                 "b": pass_fail_str,
-                "c": result["sim"],
-                "d": result["real"],
+                "c": result.sim_time_ns,
+                "d": result.wall_time_s,
                 "e": ratio,
                 "a_len": TEST_FIELD_LEN,
                 "b_len": RESULT_FIELD_LEN,
@@ -866,18 +1043,89 @@ class RegressionManager:
 
         self.log.info(summary)
 
-    def _fail_simulation(self, msg: str) -> None:
-        self._sim_failure = Error(SimFailure(msg))
-        self._running_test.abort(self._sim_failure)
-        cocotb._scheduler_inst._event_loop()
+    def _on_sim_end(self) -> None:
+        """Called when the simulator shuts down."""
 
-    @staticmethod
-    def _safe_divide(a: float, b: float) -> float:
-        """Used when computing time ratios to ensure no exception is raised if either time is 0."""
-        try:
-            return a / b
-        except ZeroDivisionError:
-            if a == 0:
-                return float("nan")
-            else:
-                return float("inf")
+        # We are already shutting down, this is expected.
+        if self._tearing_down:
+            return
+
+        msg = (
+            "cocotb expected it would shut down the simulation, but the simulation ended prematurely. "
+            "This could be due to an assertion failure or a call to an exit routine in the HDL, "
+            "or due to the simulator running out of events to process (is your clock running?)."
+        )
+
+        # We assume if we get here, the simulation ended unexpectedly due to an assertion failure,
+        # or due to an end of events from the simulator.
+        self._regression_terminated = SimFailure(msg)
+        self._running_test.cancel(msg)
+        cocotb._event_loop._inst.run()
+
+    def list_tests(self) -> None:
+        """List the tests that would be run, without running them."""
+        self.log.info(
+            "Listing tests that were discovered, in the order they would be run."
+        )
+        for test in self._test_queue:
+            print(test.fullname)
+        self.log.info("All tests listed. Exiting.")
+
+
+_manager_inst: RegressionManager
+"""The global regression manager instance."""
+
+
+def _setup_regression_manager() -> None:
+    """Setup the global regression manager instance."""
+    global _manager_inst
+    _manager_inst = RegressionManager()
+
+    # discover tests
+    modules: list[str] = _env.as_list("COCOTB_TEST_MODULES")
+    if not modules:
+        raise RuntimeError(
+            "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
+        )
+    _manager_inst.setup_pytest_assertion_rewriting()
+    _manager_inst.discover_tests(*modules)
+
+    # filter tests
+    testcases: list[str] = _env.as_list("COCOTB_TESTCASE")
+    test_filter: str = _env.as_str("COCOTB_TEST_FILTER")
+    if testcases and test_filter:
+        raise RuntimeError("Specify only one of COCOTB_TESTCASE or COCOTB_TEST_FILTER")
+    elif testcases:
+        warnings.warn(
+            "COCOTB_TESTCASE is deprecated in favor of COCOTB_TEST_FILTER",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        filters: list[str] = [f"{testcase}$" for testcase in testcases]
+        _manager_inst.add_filters(*filters)
+        _manager_inst.set_mode(RegressionMode.TESTCASE)
+    elif test_filter:
+        _manager_inst.add_filters(test_filter)
+        _manager_inst.set_mode(RegressionMode.TESTCASE)
+
+
+def _run_regression() -> None:
+    """Setup and run a regression."""
+
+    # sys.path normally includes "" (the current directory), but does not appear to when Python is embedded.
+    # Add it back because users expect to be able to import files in their test directory.
+    sys.path.insert(0, "")
+
+    # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
+    # If the user doesn't want to see these, they can always change the global
+    # warning settings in their test module.
+    if not sys.warnoptions:
+        warnings.simplefilter("default")
+
+    _setup_regression_manager()
+
+    if _env.as_bool("COCOTB_LIST_TESTS", False):
+        _manager_inst.list_tests()
+    else:
+        _manager_inst.start_regression()
+        shutdown.register(_manager_inst._on_sim_end)

@@ -1,1 +1,0 @@
-Added :attr:`~cocotb.handle.HierarchyArrayObject.range`, :attr:`~cocotb.handle.HierarchyArrayObject.left`, :attr:`~cocotb.handle.HierarchyArrayObject.direction`, :attr:`~cocotb.handle.HierarchyArrayObject.right`, and :func:`len` support to :class:`~cocotb.handle.HierarchyArrayObject`.

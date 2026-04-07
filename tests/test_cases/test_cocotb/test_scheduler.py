@@ -9,19 +9,24 @@ Test for scheduler and coroutine behavior
 * kill
 """
 
+from __future__ import annotations
+
 import contextlib
 import logging
 import os
+import random
 import re
 from asyncio import CancelledError, InvalidStateError
-from typing import Any, Awaitable, Coroutine
+from collections.abc import Awaitable, Coroutine, Generator
+from typing import Any
 
 import pytest
 from common import MyException, assert_takes
 
 import cocotb
+import cocotb.regression
 from cocotb.clock import Clock
-from cocotb.task import Task
+from cocotb.task import Task, current_task
 from cocotb.triggers import (
     Combine,
     Event,
@@ -30,6 +35,7 @@ from cocotb.triggers import (
     RisingEdge,
     Timer,
     Trigger,
+    gather,
 )
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -165,7 +171,7 @@ async def test_trigger_with_failing_prime(dut):
         def __init__(self):
             super().__init__()
 
-        def _prime(self, callback):
+        def _prime(self):
             raise RuntimeError("oops")
 
     await Timer(1, "ns")
@@ -205,9 +211,7 @@ async def test_stack_overflow_pending_coros(dut):
     async def simple_coroutine():
         await Timer(10, "step")
 
-    coros = [cocotb.start_soon(simple_coroutine()) for _ in range(1024)]
-
-    await Combine(*coros)
+    await gather(*(cocotb.start_soon(simple_coroutine()) for _ in range(1024)))
 
 
 @cocotb.test()
@@ -261,12 +265,12 @@ async def test_nulltrigger_reschedule(dut):
             await NullTrigger()
 
     # Test should start in event loop
-    await Combine(*(cocotb.start_soon(reschedule(i)) for i in range(4)))
+    await gather(*(cocotb.start_soon(reschedule(i)) for i in range(4)))
 
     await Timer(1, "ns")
 
     # Event loop when simulator returns
-    await Combine(*(cocotb.start_soon(reschedule(i)) for i in range(4)))
+    await gather(*(cocotb.start_soon(reschedule(i)) for i in range(4)))
 
 
 @cocotb.test()
@@ -353,7 +357,8 @@ async def test_task_repr(_) -> None:
         log.info(repr(coro_task))
         assert re.match(r"<Task \d+ running coro=coroutine_outer\(\)>", repr(coro_task))
 
-        await Combine(*(cocotb.start_soon(coroutine_wait()) for _ in range(2)))
+        with pytest.warns(DeprecationWarning):
+            await Combine(*(cocotb.start_soon(coroutine_wait()) for _ in range(2)))
 
         return "Combine done"
 
@@ -399,13 +404,14 @@ async def test_task_repr(_) -> None:
 
     log.info(repr(coro_task))
     assert re.match(
-        r"<Task \d+ finished coro=coroutine_outer\(\) outcome=Value\('Combine done'\)",
+        r"<Task \d+ finished coro=coroutine_outer\(\) outcome='Combine done'",
         repr(coro_task),
     )
 
     async def coroutine_first():
         task = Task(coroutine_wait())
-        await First(task, Timer(2, unit="ns"))
+        with pytest.warns(DeprecationWarning):
+            await First(task, Timer(2, unit="ns"))
         task.cancel()
 
     coro_task = cocotb.start_soon(coroutine_first())
@@ -505,7 +511,7 @@ async def test_test_repr(_):
     """Test RunningTest.__repr__"""
     log = logging.getLogger("cocotb.test")
 
-    current_test = cocotb._regression_manager._running_test._main_task
+    current_test = cocotb._test_manager._current_test._main_task
     log.info(repr(current_test))
     assert re.match(
         r"<Test test_test_repr running coro=test_test_repr\(\)>", repr(current_test)
@@ -523,7 +529,7 @@ class TestClassRepr(Coroutine):
     async def check_repr(self, dut):
         log = logging.getLogger("cocotb.test")
 
-        current_test = cocotb._regression_manager._running_test._main_task
+        current_test = cocotb._test_manager._current_test._main_task
         log.info(repr(current_test))
         assert re.match(
             r"<Test TestClassRepr running coro=TestClassRepr\(\)>", repr(current_test)
@@ -558,34 +564,6 @@ async def test_start_soon_async(_):
     assert a == 0
     await NullTrigger()
     assert a == 1
-
-
-@cocotb.test()
-async def test_start_soon_scheduling(dut):
-    """Test order of scheduling when using start_soon."""
-    coro_scheduled = False
-
-    def react_wrapper(trigger):
-        """Function to prime trigger with."""
-        log = logging.getLogger("cocotb.test")
-        log.debug("react_wrapper start")
-        assert coro_scheduled is False
-        cocotb._scheduler_inst._sim_react(trigger)
-        assert coro_scheduled is True
-        log.debug("react_wrapper end")
-
-    async def coro():
-        nonlocal coro_scheduled
-        coro_scheduled = True
-
-    t = Timer(1, "step")
-    # pre-prime with wrapper function instead of letting scheduler prime it normally
-    t._prime(react_wrapper)
-    await t
-    # react_wrapper is now on the stack
-    cocotb.start_soon(coro())  # coro() should run before returning to the simulator
-    await Timer(1, "step")  # await a GPITrigger to ensure control returns to simulator
-    assert coro_scheduled is True
 
 
 @cocotb.test()
@@ -676,41 +654,6 @@ async def test_start(_) -> None:
     await NullTrigger()
     assert task6.done()
     assert await task6 == 1
-
-
-@cocotb.test
-async def test_start_scheduling(_) -> None:
-    """Test that start resumes calling task before control is yielded to simulator."""
-    sim_resumed = False
-    coro_started = False
-
-    def react_wrapper(trigger):
-        """Function to prime trigger with."""
-        nonlocal sim_resumed
-        log = logging.getLogger("cocotb.test")
-        log.debug("react_wrapper start")
-        sim_resumed = False
-        cocotb._scheduler_inst._sim_react(trigger)
-        sim_resumed = True
-        log.debug("react_wrapper end")
-
-    async def coro():
-        nonlocal coro_started
-        coro_started = True
-
-    t = Timer(1, "step")
-    # pre-prime with wrapper function instead of letting scheduler prime it normally
-    t._prime(react_wrapper)
-    await t
-    # react_wrapper is now on the stack
-    assert sim_resumed is False
-    cocotb.start_soon(coro())
-    assert coro_started is False
-    await NullTrigger()
-    assert sim_resumed is False
-    assert coro_started is True
-    await Timer(1, "step")  # await a GPITrigger to ensure control returns to simulator
-    assert sim_resumed is True
 
 
 @cocotb.test()
@@ -1051,3 +994,161 @@ async def test_task_name(_: object) -> None:
         t = await cocotb.start(coro(), name="baz")
     assert t.get_name() == "baz"
     t.cancel()
+
+
+@cocotb.test
+async def test_start_again_finished_task(_: object) -> None:
+    async def coro() -> None:
+        await Timer(1, "ns")
+
+    a = cocotb.start_soon(coro())
+    await a
+
+    with pytest.raises(RuntimeError):
+        cocotb.start_soon(a)
+
+
+@cocotb.test
+async def test_start_again_cancelled_task(_: object) -> None:
+    async def coro() -> None:
+        await Timer(1, "ns")
+
+    a = cocotb.start_soon(coro())
+    await NullTrigger()
+    a.cancel()
+
+    with pytest.raises(CancelledError):
+        await a
+
+    with pytest.raises(RuntimeError):
+        cocotb.start_soon(a)
+
+
+carryover_task: Task
+
+
+@cocotb.test
+async def test_create_carryover_task(_: object) -> None:
+    async def coro() -> None:
+        await Timer(1, "ns")
+
+    global carryover_task
+    carryover_task = cocotb.create_task(coro())
+
+
+@cocotb.test
+async def test_start_carryover_task(_: object) -> None:
+    with pytest.raises(RuntimeError):
+        cocotb.start_soon(carryover_task)
+
+
+@cocotb.test
+async def test_task_local_variables(_: object) -> None:
+    """Test that task-local variables are not shared between tasks."""
+
+    def get_rng() -> random.Random:
+        try:
+            return current_task().locals.rng
+        except AttributeError:
+            rng = random.Random()
+            current_task().locals.rng = rng
+            return rng
+
+    async def coro() -> None:
+        exp = get_rng()
+        await Timer(1, "ns")
+        assert get_rng() is exp
+
+    task = cocotb.start_soon(coro())
+    await task
+
+
+@cocotb.test(expect_error=RuntimeError)
+async def test_Task_ignored_CancelledError_return(_: object) -> None:
+    async def bad() -> None:
+        try:
+            await Timer(10, "ns")
+        except CancelledError:
+            return
+
+    task = cocotb.start_soon(bad())
+    await Timer(1)
+    task.cancel()
+
+
+@cocotb.test(expect_error=RuntimeError)
+async def test_Task_ignored_CancelledError_await(_: object) -> None:
+    async def bad() -> None:
+        try:
+            await Timer(10, "ns")
+        except CancelledError:
+            await Timer(1)
+
+    task = cocotb.start_soon(bad())
+    await Timer(1)
+    task.cancel()
+
+
+@cocotb.test
+async def test_Task_cancel_running(_: object) -> None:
+    async def example() -> None:
+        task = current_task()
+        with pytest.raises(RuntimeError):
+            task.cancel()
+        assert not task.done()
+        await Timer(1)
+        # things still work after the failed kill
+        assert not task.done()
+
+    task = cocotb.start_soon(example())
+    await task
+    assert task.done()
+
+
+@cocotb.test
+async def test_Task_yield_bad_value(_: object) -> None:
+    class NotATrigger:
+        def __await__(self) -> Generator[int, None, None]:
+            yield 1
+
+    with pytest.raises(TypeError):
+        await NotATrigger()
+
+    await Timer(1)
+    # things still work after the bad yield
+
+
+@cocotb.test
+async def test_write_in_Task_occurs_on_same_cycle(dut) -> None:
+    """Test that writing to a signal in a Task writes on the same cycle."""
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
+
+    async def writer():
+        dut.stream_in_valid.value = 1
+        await Timer(1, "step")
+
+    dut.stream_in_valid.value = 0
+    await RisingEdge(dut.clk)
+    cocotb.start_soon(writer())
+    assert dut.stream_in_valid.value == 0
+    await RisingEdge(dut.clk)
+    assert dut.stream_in_valid.value == 1
+
+
+async def wait_edge(dut: Any) -> None:
+    # this trigger never fires
+    await First(RisingEdge(dut.stream_out_ready))
+
+
+@cocotb.test
+async def test_957_1(dut: Any) -> None:
+    cocotb.start_soon(wait_edge(dut))
+    await Timer(10, "ns")
+
+
+@cocotb.test
+async def test_957_2(dut: Any) -> None:
+    # This test *MUST* be after test_957_1 to test that the previous test's
+    # pending coroutine doesn't interfere with this test.
+    cocotb.start_soon(wait_edge(dut))
+    await Timer(10, "ns")

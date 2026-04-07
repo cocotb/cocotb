@@ -1,1 +1,0 @@
-:class:`~cocotb.types.Array` now supports equality with :class:`list` and :class:`tuple`.

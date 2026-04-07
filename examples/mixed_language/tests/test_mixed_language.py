@@ -1,6 +1,8 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
@@ -11,15 +13,17 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 from cocotb_tools.runner import get_runner
+from cocotb_tools.sim_versions import RivieraVersion
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
-# Riviera fails to find dut.i_swapper_sv (gh-2921)
+# Riviera < 2024.10 fails to find dut.i_swapper_sv (gh-2921)
 @cocotb.test(
     expect_error=AttributeError
     if cocotb.simulator.is_running()
-    and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
+    and cocotb.SIM_NAME.lower().startswith("riviera")
+    and RivieraVersion(cocotb.SIM_VERSION) < "2024.10"
     and LANGUAGE == "vhdl"
     else ()
 )
@@ -28,7 +32,7 @@ async def mixed_language_accessing_test(dut):
     await Timer(100, unit="ns")
 
     verilog = dut.i_swapper_sv
-    dut._log.info(f"Got: {verilog._name!r}")
+    cocotb.log.info(f"Got: {verilog._name!r}")
 
     # discover all attributes of the SV component
     # This is a workaround since SV modules are not discovered automatically
@@ -36,7 +40,7 @@ async def mixed_language_accessing_test(dut):
     verilog._discover_all()
 
     vhdl = dut.i_swapper_vhdl
-    dut._log.info(f"Got: {vhdl._name!r}")
+    cocotb.log.info(f"Got: {vhdl._name!r}")
 
     verilog.reset_n.value = 1
     await Timer(100, unit="ns")
@@ -51,11 +55,12 @@ async def mixed_language_accessing_test(dut):
     vhdl.flush_pipe.value
 
 
-# Riviera fails to find dut.i_swapper_sv (gh-2921)
+# Riviera < 2024.10 fails to find dut.i_swapper_sv (gh-2921)
 @cocotb.test(
     expect_error=AttributeError
     if cocotb.simulator.is_running()
-    and cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))
+    and cocotb.SIM_NAME.lower().startswith("riviera")
+    and RivieraVersion(cocotb.SIM_VERSION) < "2024.10"
     and LANGUAGE == "vhdl"
     else ()
 )
@@ -64,10 +69,10 @@ async def mixed_language_functional_test(dut):
     await Timer(100, unit="ns")
 
     verilog = dut.i_swapper_sv
-    dut._log.info(f"Got: {verilog._name!r}")
+    cocotb.log.info(f"Got: {verilog._name!r}")
 
     vhdl = dut.i_swapper_vhdl
-    dut._log.info(f"Got: {vhdl._name!r}")
+    cocotb.log.info(f"Got: {vhdl._name!r}")
 
     # setup default values
     dut.reset_n.value = 0
@@ -128,7 +133,7 @@ def test_mixed_language_runner():
 
     This file can be run directly or via pytest discovery.
     """
-    hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
+    hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
 
     proj_path = Path(__file__).resolve().parent.parent
 

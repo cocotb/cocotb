@@ -75,6 +75,10 @@ html {
     --pst-color-link-hover: var(--color-cocotb-blue-darker) !important;
 }
 
+body {
+    line-height: 1.5;
+}
+
 h1 {
     color: var(--color-cocotb-blue) !important;
     line-height: 60px !important;
@@ -139,8 +143,10 @@ blockquote {
 
 div.admonition {
     border-radius: 0 !important;
+    border-color: var(--color-cocotb-blue) !important;
     box-shadow: none !important;
     padding-bottom: 0 !important;
+    margin: 1rem auto !important;
 }
 
 div.deprecated,
@@ -151,6 +157,7 @@ div.versionremoved {
     /* font-size: 0.75rem !important; */ /* TODO: decide on this */
     border-radius: 0 !important;
     box-shadow: none !important;
+    margin: 1.0rem auto;
 }
 
 .admonition.warning,
@@ -187,7 +194,6 @@ div.versionremoved {
     break-inside: avoid;
     border-left: 0.2rem solid;
     border-color: var(--pst-color-info);
-    border-radius: $admonition-border-radius;
     background-color: var(--pst-color-on-background);
     /* @include box-shadow; */
     position: relative;
@@ -242,6 +248,81 @@ strong.command {
 
 .pre {
     color: var(--color-cocotb-blue) !important;
+    font-size: 16px;
+}
+
+code.xref {
+  background-color: transparent;
+  font-weight: normal;
+}
+
+h1:has(code.xref) code.xref, h2:has(code.xref) code.xref, h3:has(code.xref) code.xref, h4:has(code.xref) code.xref, h5:has(code.xref) code.xref, h6:has(code.xref) code.xref {
+  font-weight: bold !important;
+}
+
+/* horizontal rule above */
+dl.py.class dt.sig.sig-object,
+dl.py.exception dt.sig.sig-object,
+dl.py.type dt.sig.sig-object,
+dl.py.data dt.sig.sig-object,
+dl.py.decorator dt.sig.sig-object,
+dl.py.function dt.sig.sig-object {
+  padding-top: 1.0rem !important;
+  border-top: 1.5px solid var(--color-cocotb-blue);
+  margin-top: 1.0rem !important;
+  font-size: 1.1rem !important;
+  font-weight: bold !important;
+}
+
+/* remove horizontal rule when this is the first element belonging to this group of classes */
+dl.py.class:first-of-type dt.sig.sig-object,
+dl.py.exception:first-of-type dt.sig.sig-object,
+dl.py.type:first-of-type dt.sig.sig-object,
+dl.py.data:first-of-type dt.sig.sig-object,
+dl.py.decorator:first-of-type dt.sig.sig-object,
+dl.py.function:first-of-type dt.sig.sig-object {
+  border-top: none;
+}
+
+dl.py.attribute dt.sig.sig-object,
+dl.py.classmethod dt.sig.sig-object,
+dl.py.decoratormethod dt.sig.sig-object,
+dl.py.staticmethod dt.sig.sig-object,
+dl.py.method dt.sig.sig-object,
+dl.py.property dt.sig.sig-object {
+  border-top: none;
+  margin-top: 0 !important;
+  font-size: 1.0rem !important;
+  /* font-weight: normal !important; */
+}
+
+dl.py.attribute dt.sig.sig-object .sig-name,
+dl.py.classmethod dt.sig.sig-object .sig-name,
+dl.py.decoratormethod dt.sig.sig-object .sig-name,
+dl.py.staticmethod dt.sig.sig-object .sig-name,
+dl.py.method dt.sig.sig-object .sig-name,
+dl.py.property dt.sig.sig-object .sig-name {
+  font-size: 1.0rem !important;
+  /* font-weight: normal !important; */
+}
+
+/* remove top margin if preceded by a heading, admonition or version modified */
+h1 + dl.py,
+h2 + dl.py,
+h3 + dl.py,
+h4 + dl.py,
+h5 + dl.py,
+h6 + dl.py,
+.admonition + dl.py,
+.versionadded + dl.py,
+.versionchanged + dl.py,
+.versionremoved + dl.py,
+.deprecated + dl.py {
+  margin-top: 0 !important;
+}
+
+dl[class]:not(.option-list, .field-list, .footnote, .glossary, .simple) {
+  margin-bottom: 0.5rem !important;
 }
 
 /* apidoc "[source]" link */
@@ -330,9 +411,19 @@ dl > dd > dl:not(.field-list.simple) {
 }
 
 /* fix for extra linebreak in apidoc (https://github.com/pydata/pydata-sphinx-theme/issues/2098) */
-dl.field-list.simple > dd > p,
-dl.field-list.simple > dd > ul.simple > li > p {
-    display: inline !important;
+simple li p:first-child, .simple dd p:first-child {
+    display: inline;
+}
+.simple li p:first-child + p, .simple dd p:first-child + p {
+    display: inline;
+}
+.simple li p + p + p, .simple dd p + p + p {
+    display: block;
+}
+
+/* add space between consecutive paragraphs */
+p + p {
+    margin-top: 0.5rem !important;
 }
 
 /* reduce distance after paragraphs a bit */
@@ -358,7 +449,6 @@ dl.py.exception,
 dl.py.function,
 dl.py.method,
 dl.py.property,
-dl.py.property,
 dl.py.staticmethod,
 dl.py.type {
     margin-bottom: 1rem;
@@ -377,7 +467,7 @@ dl.cpp.type,
 dl.cpp.union,
 dl.cpp.var,
 dl.cpp.macro {
-    margin-bottom: 1rem;
+    margin-bottom: 1rem !important;
 }
 
 dl.cpp.enumerator {
@@ -413,4 +503,124 @@ on e.g. .. code-block:: in the "Upgrading to cocotb 2.0" section
 .new.highlight-python {
     border-left: 0.2rem solid;
     border-color: var(--color-cocotb-green);
+}
+
+/* A manually inserted horizontal rule */
+hr.docutils {
+    border: 0;
+    border-top: 1.5px solid var(--color-cocotb-blue);
+    margin: 1.5rem 0;
+    opacity: 1.0;
+}
+
+/* Add badges for links that point to docs of specific cocotb versions */
+a[href*="docs.cocotb.org"]::after {
+    background-color: white;
+    color: var(--color-cocotb-blue);
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: bold;
+    padding: 0px 3px;
+    margin-left: 0.1rem;
+    vertical-align: super;
+    display: inline-block;
+    text-decoration: none;
+}
+
+a[href*="docs.cocotb.org"][href*="v2.0"]::after {
+    content: "v2.0";
+}
+a[href*="docs.cocotb.org"][href*="v1.9"]::after {
+    content: "v1.9";
+}
+a[href*="docs.cocotb.org"][href*="v1.8"]::after {
+    content: "v1.8";
+}
+a[href*="docs.cocotb.org"][href*="v1.7"]::after {
+    content: "v1.7";
+}
+a[href*="docs.cocotb.org"][href*="v1.6"]::after {
+    content: "v1.6";
+}
+a[href*="docs.cocotb.org"][href*="v1.5"]::after {
+    content: "v1.5";
+}
+a[href*="docs.cocotb.org"][href*="v1.4"]::after {
+    content: "v1.4";
+}
+a[href*="docs.cocotb.org"][href*="v1.3"]::after {
+    content: "v1.3";
+}
+a[href*="docs.cocotb.org"][href*="v1.2"]::after {
+    content: "v1.2";
+}
+a[href*="docs.cocotb.org"][href*="v1.1"]::after {
+    content: "v1.1";
+}
+
+
+/*
+Sticky headings for Release Notes only (where we know the heading text spans only one line).
+The "release-notes" class on "body" is dynamically set in cocotb.js
+*/
+body.release-notes h1,
+body.release-notes h2,
+body.release-notes h3 {
+  position: sticky;
+  /* top: 48px; */
+  height: 48px;
+  display: flex;
+  align-items: center;
+  background-color: var(--pst-color-background);
+}
+
+body.release-notes h1 {
+  top: calc(1 * 48px);
+  z-index: 990;
+}
+
+body.release-notes h2 {
+  top: calc(2 * 48px);
+  z-index: 980;
+}
+
+body.release-notes h3 {
+  top: calc(3 * 48px);
+  z-index: 970;
+}
+
+
+code.literal {
+  border: none;
+  background-color: unset;
+  padding: 0;
+}
+
+
+/* add text "envvar" before environment variable definitions */
+dl.std.envvar > dt::before {
+    content: "envvar ";
+    color: var(--color-cocotb-blue);
+    font-style: italic;
+}
+
+dl.std.envvar > dt {
+    margin-top: 1.5rem;
+}
+
+/* Make sure typewriter text has the same font size as the surrounding headings */
+h1 .pre,
+h2 .pre,
+h3 .pre,
+h4 .pre,
+h5 .pre,
+h6 .pre,
+h1 code,
+h2 code,
+h3 code,
+h4 code,
+h5 code,
+h6 code {
+    font-size: inherit;
 }

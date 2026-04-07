@@ -1,1 +1,0 @@
-:func:`cocotb.start` is deprecated in favor of :func:`cocotb.start_soon`. Follow the call to :func:`cocotb.start_soon` with an :class:`await NullTrigger() <cocotb.triggers.NullTrigger>` if you need the scheduled Task to run before continuing the current Task.

@@ -1,1 +1,0 @@
-``bool`` casts of :class:`cocotb.handle.SimHandleBase` subclasses will now fail, to prevent silent failures caused by the change in behavior to ``bool(handle)``. Instead use ``None`` to represent a lack of handle and ``handle is not None`` instead of the bool cast.

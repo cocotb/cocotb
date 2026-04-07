@@ -1,0 +1,233 @@
+// Copyright cocotb contributors
+// Licensed under the Revised BSD License, see LICENSE for details.
+// SPDX-License-Identifier: BSD-3-Clause
+
+#include <Python.h>  // all things Python
+#include <gpi.h>     // all things GPI logging
+
+#include <cstdarg>  // va_list, va_copy, va_end
+#include <cstdio>   // fprintf, vsnprintf
+#include <map>      // std::map
+#include <string>   // std::string
+#include <vector>   // std::vector
+
+#include "../utils.hpp"  // DEFER
+#include "./pygpi_priv.hpp"
+
+static int pygpi_log_level = GPI_NOTSET;
+
+static PyObject *m_log_func = nullptr;
+static std::map<std::string, PyObject *> m_logger_map;
+static PyObject *m_get_logger = nullptr;
+
+static gpi_log_handler_ftype fallback_log_handler = nullptr;
+static void *fallback_log_userdata = nullptr;
+
+static void fallback_handler(const char *name, enum gpi_log_level level,
+                             const char *pathname, const char *funcname,
+                             long lineno, const char *msg, ...) {
+    // The standard provides no way to create an empty va_list, so we have to
+    // make these empty args list to make the compiler happy.
+    va_list args1, args2;
+    va_start(args1, msg);
+    va_copy(args2, args1);
+    DEFER(va_end(args2));
+    DEFER(va_end(args1));
+    // Note: don't call the LOG_ERROR macro because that might recurse
+    fallback_log_handler(fallback_log_userdata, name, level, pathname, funcname,
+                         lineno, msg, args1);
+    fallback_log_handler(fallback_log_userdata, "gpi", GPI_ERROR, __FILE__,
+                         __func__, __LINE__,
+                         "Error calling Python logging function from C++ "
+                         "while logging the above",
+                         args2);
+}
+
+static void pygpi_log_handler(void *, const char *name,
+                              enum gpi_log_level level, const char *pathname,
+                              const char *funcname, long lineno,
+                              const char *msg, va_list argp) {
+    // Always pass through messages when NOTSET to let Python make the decision.
+    // Otherwise, skip logs using the local log level for better performance.
+    if (pygpi_log_level != GPI_NOTSET && level < pygpi_log_level) {
+        return;
+    }
+
+    // If we haven't configured yet, use the fallback log handler
+    if (!m_log_func) {
+        return fallback_log_handler(fallback_log_userdata, name, level,
+                                    pathname, funcname, lineno, msg, argp);
+    }
+
+    va_list argp_copy;
+    va_copy(argp_copy, argp);
+    DEFER(va_end(argp_copy));
+
+    // before the log buffer to ensure it isn't clobbered.
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    DEFER(PyGILState_Release(gstate));
+
+    static std::vector<char> log_buff(512);
+
+    log_buff.clear();
+    int n = vsnprintf(log_buff.data(), log_buff.capacity(), msg, argp);
+    if (n < 0) {
+        // On Windows with the Visual C Runtime prior to 2015 the above call to
+        // vsnprintf will return -1 if the buffer would overflow, rather than
+        // the number of bytes that would be written as required by the C99
+        // standard.
+        // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/vsnprintf-vsnprintf-vsnprintf-l-vsnwprintf-vsnwprintf-l
+        // So we try the call again with the buffer NULL and the size 0, which
+        // should return the number of bytes that would be written.
+        va_list argp_copy_again;
+        va_copy(argp_copy_again, argp_copy);
+        DEFER(va_end(argp_copy_again));
+        n = vsnprintf(NULL, 0, msg, argp_copy_again);
+        if (n < 0) {
+            // Here we know the error is for real, so we complain and move on.
+            // LCOV_EXCL_START
+            fprintf(stderr,
+                    "Log message construction failed: (error code) %d\n", n);
+            return;
+            // LCOV_EXCL_STOP
+        }
+    }
+    if ((unsigned)n >= log_buff.capacity()) {
+        log_buff.reserve((unsigned)n + 1);
+        n = vsnprintf(log_buff.data(), (unsigned)n + 1, msg, argp_copy);
+        if (n < 0) {
+            // LCOV_EXCL_START
+            fprintf(stderr,
+                    "Log message construction failed: (error code) %d\n", n);
+            return;
+            // LCOV_EXCL_STOP
+        }
+    }
+
+    PyObject *level_arg = PyLong_FromLong(level);  // New reference
+    if (level_arg == NULL) {
+        // LCOV_EXCL_START
+        PyErr_Print();
+        return fallback_handler(name, level, pathname, funcname, lineno,
+                                log_buff.data());
+        // LCOV_EXCL_STOP
+    }
+    DEFER(Py_DECREF(level_arg));
+
+    PyObject *logger;
+    const auto lookup = m_logger_map.find(name);
+    if (lookup == m_logger_map.end()) {
+        logger = PyObject_CallFunction(m_get_logger, "s", name);  // incs a ref
+        // LCOV_EXCL_START
+        if (!logger) {
+            PyErr_Print();
+            return fallback_handler(name, level, pathname, funcname, lineno,
+                                    log_buff.data());
+        }
+        // LCOV_EXCL_STOP
+        m_logger_map[name] = logger;  // steal that ref
+    } else {
+        logger = lookup->second;
+    }
+
+    PyObject *filename_arg = PyUnicode_FromString(pathname);  // New reference
+    if (filename_arg == NULL) {
+        // LCOV_EXCL_START
+        PyErr_Print();
+        return fallback_handler(name, level, pathname, funcname, lineno,
+                                log_buff.data());
+        // LCOV_EXCL_STOP
+    }
+    DEFER(Py_DECREF(filename_arg));
+
+    PyObject *lineno_arg = PyLong_FromLong(lineno);  // New reference
+    if (lineno_arg == NULL) {
+        // LCOV_EXCL_START
+        PyErr_Print();
+        return fallback_handler(name, level, pathname, funcname, lineno,
+                                log_buff.data());
+        // LCOV_EXCL_STOP
+    }
+    DEFER(Py_DECREF(lineno_arg));
+
+    PyObject *msg_arg = PyUnicode_FromString(log_buff.data());  // New reference
+    if (msg_arg == NULL) {
+        // LCOV_EXCL_START
+        PyErr_Print();
+        return fallback_handler(name, level, pathname, funcname, lineno,
+                                log_buff.data());
+        // LCOV_EXCL_STOP
+    }
+    DEFER(Py_DECREF(msg_arg));
+
+    PyObject *function_arg = PyUnicode_FromString(funcname);  // New reference
+    if (function_arg == NULL) {
+        // LCOV_EXCL_START
+        PyErr_Print();
+        return fallback_handler(name, level, pathname, funcname, lineno,
+                                log_buff.data());
+        // LCOV_EXCL_STOP
+    }
+    DEFER(Py_DECREF(function_arg))
+
+    // Log function args are logger_name, level, filename, lineno, msg, function
+    PyObject *handler_ret = PyObject_CallFunctionObjArgs(
+        m_log_func, logger, level_arg, filename_arg, lineno_arg, msg_arg,
+        function_arg, NULL);
+    if (handler_ret == NULL) {
+        // LCOV_EXCL_START
+        PyErr_Print();
+        return fallback_handler(name, level, pathname, funcname, lineno,
+                                log_buff.data());
+        // LCOV_EXCL_STOP
+    }
+    Py_DECREF(handler_ret);
+}
+
+void pygpi_log(enum gpi_log_level level, const char *pathname,
+               const char *funcname, long lineno, const char *fmt, ...) {
+    va_list argp;
+    va_start(argp, fmt);
+    DEFER(va_end(argp));
+    pygpi_log_handler(nullptr, "pygpi", level, pathname, funcname, lineno, fmt,
+                      argp);
+}
+
+void pygpi_logging_set_level(enum gpi_log_level level) {
+    pygpi_log_level = level;
+    gpi_native_logger_set_level(level);
+}
+
+void pygpi_logging_initialize() {
+    // Default to using the fallback handler until configured
+    gpi_get_log_handler(&fallback_log_handler, &fallback_log_userdata);
+    gpi_set_log_handler(pygpi_log_handler, nullptr);
+}
+
+void pygpi_logging_configure(PyObject *log_func, PyObject *get_logger) {
+    Py_INCREF(log_func);
+    Py_INCREF(get_logger);
+    m_log_func = log_func;
+    m_get_logger = get_logger;
+}
+
+void pygpi_logging_finalize() {
+    gpi_set_log_handler(fallback_log_handler, fallback_log_userdata);
+    Py_XDECREF(m_log_func);
+    Py_XDECREF(m_get_logger);
+    m_log_func = nullptr;
+    m_get_logger = nullptr;
+    for (auto &elem : m_logger_map) {
+        Py_DECREF(elem.second);
+    }
+    m_logger_map.clear();
+}
+
+PyObject *pEventFn = NULL;
+
+// Disabled by default
+int pygpi_debug_enabled = 0;
+int python_context_tracing_enabled = 0;
+
+// Tracks if we are in the context of Python or Simulator
+int is_python_context = 0;

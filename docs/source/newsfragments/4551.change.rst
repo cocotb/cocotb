@@ -1,1 +1,0 @@
-:class:`int(Logic) <cocotb.types.Logic>` casts now treat ``H`` as ``1`` and ``L`` as ``0`` instead of raising :exc:`ValueError`.

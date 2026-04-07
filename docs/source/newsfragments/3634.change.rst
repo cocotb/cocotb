@@ -1,1 +1,0 @@
-Getting a value with :attr:`.LogicArrayObject.value` now returns a :class:`~cocotb.types.LogicArray` instead of a ``cocotb.binary.BinaryValue``.

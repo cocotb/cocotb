@@ -6,12 +6,15 @@
 Simple script to combine JUnit test results into a single XML file.
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Pattern
+from re import Pattern
 from xml.etree import ElementTree as ET
 
 
@@ -23,6 +26,13 @@ def _find_all(name: Pattern, path: Path) -> Iterable[Path]:
             yield from _find_all(name, obj)
 
 
+def _existing_path(path_str: str) -> Path:
+    path = Path(path_str)
+    if not path.exists():
+        raise argparse.ArgumentTypeError(f"Path '{path_str}' does not exist.")
+    return path
+
+
 def _get_parser() -> argparse.ArgumentParser:
     """Return the cmdline parser"""
     parser = argparse.ArgumentParser(
@@ -31,7 +41,7 @@ def _get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "directories",
         nargs="*",
-        type=lambda args: [Path(arg) for arg in args],
+        type=_existing_path,
         default=[Path()],
         help="Directories to search for input files.",
     )

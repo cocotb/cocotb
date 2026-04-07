@@ -7,8 +7,6 @@ if(WIN32)
     set(ENV{CXXFLAGS} "")
     set(ENV{LDFLAGS} "")
 
-    # Force MSVC-compatible flags from the start using cache variables
-    # This will override any environment variables
     set(CMAKE_CXX_FLAGS "/W3" CACHE STRING "CXX compiler flags" FORCE)
     set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Zi /Ob0 /Od /RTC1" CACHE STRING "CXX debug flags" FORCE)
     set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG" CACHE STRING "CXX release flags" FORCE)
@@ -18,35 +16,28 @@ endif()
 
 project(cocotb LANGUAGES CXX)
 
-# MSVC flag validation
 if(MSVC)
     message(STATUS "MSVC detected - using forced MSVC-compatible flags")
     message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 endif()
 
-# Set C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find Python
-find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module Development.Embed)
 
-# Platform-specific settings
 if(WIN32)
     set(LIB_EXT "dll")
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 else()
     set(LIB_EXT "so")
-    # Force .so extension on macOS to match old build system behavior
     if(APPLE)
         set(CMAKE_SHARED_LIBRARY_SUFFIX ".so")
     endif()
 endif()
 
-# Compiler-specific settings
 if(MSVC)
     set(EXTRA_CXX_FLAGS "/permissive-" "/W4")
-    # Disable automatic manifest generation
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /MANIFEST:NO")
 else()
@@ -63,44 +54,36 @@ else()
         list(APPEND EXTRA_CXX_FLAGS "-flto")
     endif()
 
-    # Windows-specific GCC/MinGW settings
     if(WIN32)
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--exclude-all-symbols")
     else()
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto")
 
-        # Linux-specific: avoid libstdc++ runtime dependency
         if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libstdc++")
         endif()
     endif()
 endif()
 
-# Common definitions
 set(EXTRA_DEFINES "__STDC_FORMAT_MACROS")
 
-# Get Python library for linking
-find_package(Python REQUIRED COMPONENTS Interpreter Development.Embed)
-# absolute path to the DLL / .so that will be loaded at run time
-get_target_property(PYTHON_LIB Python::Python IMPORTED_LOCATION)
-if(NOT APPLE)
-    get_filename_component(PYTHON_LIB "${PYTHON_LIB}" NAME)
-endif()
-message(STATUS "PYTHON_LIB: ${PYTHON_LIB}")
-
-# Include directories
 set(INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/src/cocotb/share/include
     ${CMAKE_SOURCE_DIR}/src/cocotb
     ${Python_INCLUDE_DIRS}
 )
 
-# Share library directory
 set(SHARE_LIB_DIR ${CMAKE_SOURCE_DIR}/src/cocotb/share/lib)
 
-# Windows-specific functions for manifests and resource files
+# Match cocotb_build_libs.py: dl on linux, darwin, cygwin, msys
+set(GPI_EXTRA_LIBS "")
+if(UNIX OR CYGWIN)
+    list(APPEND GPI_EXTRA_LIBS dl)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "MSYS")
+    list(APPEND GPI_EXTRA_LIBS dl)
+endif()
+
 if(WIN32)
-    # Function to create side-by-side assembly manifest
     function(create_sxs_assembly_manifest NAME FILENAME LIBRARIES DEPENDENCY_ONLY MANIFEST_VAR)
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
             set(ARCHITECTURE "amd64")
@@ -134,11 +117,9 @@ if(WIN32)
         set(${MANIFEST_VAR} "${MANIFEST_BODY}" PARENT_SCOPE)
     endfunction()
 
-    # Function to create resource files
     function(create_rc_file RC_FILENAME NAME FILENAME LIBRARIES RUNTIME_LIBRARIES)
         create_sxs_assembly_manifest(${NAME} ${FILENAME} "${LIBRARIES}" FALSE MANIFEST)
 
-        # Escape quotes and format for RC file
         string(REPLACE "\"" "\"\"" MANIFEST "${MANIFEST}")
         string(REPLACE "\n" "\\r\\n\"\n\"" MANIFEST "${MANIFEST}")
         set(MANIFEST "\"${MANIFEST}\"")
@@ -167,14 +148,12 @@ if(WIN32)
     endfunction()
 endif()
 
-# Function to add a cocotb library
 function(add_cocotb_library TARGET_NAME)
     set(options "")
     set(oneValueArgs "OUTPUT_NAME")
     set(multiValueArgs "SOURCES" "LIBRARIES" "DEFINES" "RC_LIBRARIES" "RC_RUNTIME_LIBRARIES")
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    # Handle Windows resource files
     set(ALL_SOURCES ${ARG_SOURCES})
     if(WIN32)
         set(RC_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.rc")
@@ -183,14 +162,12 @@ function(add_cocotb_library TARGET_NAME)
             set(LIB_NAME ${TARGET_NAME})
         endif()
 
-        # Strip lib prefix for MSVC
         if(MSVC AND LIB_NAME MATCHES "^lib(.+)")
             string(REGEX REPLACE "^lib" "" LIB_NAME ${LIB_NAME})
         endif()
 
         set(RC_LIBS ${ARG_RC_LIBRARIES})
         if(MSVC)
-            # Strip lib prefix from RC libraries for MSVC
             set(RC_LIBS_PROCESSED "")
             foreach(LIB ${RC_LIBS})
                 if(LIB MATCHES "^lib(.+)")
@@ -217,40 +194,33 @@ function(add_cocotb_library TARGET_NAME)
         list(APPEND ALL_SOURCES ${RC_FILENAME})
     endif()
 
-    # Create the library
     add_library(${TARGET_NAME} SHARED ${ALL_SOURCES})
 
-    # Set output name
     if(ARG_OUTPUT_NAME)
         set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${ARG_OUTPUT_NAME})
     endif()
 
-    # Set include directories
     target_include_directories(${TARGET_NAME} PRIVATE ${INCLUDE_DIRS})
 
-    # Set compile definitions
     target_compile_definitions(${TARGET_NAME} PRIVATE ${ARG_DEFINES} ${EXTRA_DEFINES})
 
-    # Set compile options
     target_compile_options(${TARGET_NAME} PRIVATE ${EXTRA_CXX_FLAGS})
 
-    # Link libraries
     if(ARG_LIBRARIES)
         target_link_libraries(${TARGET_NAME} PRIVATE ${ARG_LIBRARIES})
     endif()
 
-    # Windows-specific settings
     if(WIN32)
         target_compile_definitions(${TARGET_NAME} PRIVATE WIN32)
-        # Add DEF directory to library search path for simulator libraries
-        if(TARGET_NAME MATCHES "cocotb.*_(icarus|modelsim|aldec|ghdl)")
+        if(${TARGET_NAME} MATCHES "^cocotbvpi_(icarus|modelsim|aldec|ghdl)$"
+                OR ${TARGET_NAME} MATCHES "^cocotbvhpi_(modelsim|aldec|nvc)$"
+                OR ${TARGET_NAME} STREQUAL "cocotbfli_modelsim")
             target_link_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src/cocotb/share/def)
         endif()
     endif()
 
-    # Set RPATH for non-Windows platforms
     if(NOT WIN32)
-        if(TARGET_NAME STREQUAL "simulator")
+        if(${TARGET_NAME} STREQUAL "simulator")
             if(APPLE)
                 set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "@loader_path/libs")
             else()
@@ -262,7 +232,6 @@ function(add_cocotb_library TARGET_NAME)
                     INSTALL_RPATH "@loader_path"
                     INSTALL_NAME_DIR "@rpath"
                 )
-                # Set install name for libraries (not simulator)
                 set_target_properties(${TARGET_NAME} PROPERTIES
                     LINK_FLAGS "-Wl,-install_name,@rpath/lib${TARGET_NAME}.so"
                 )
@@ -272,99 +241,48 @@ function(add_cocotb_library TARGET_NAME)
         endif()
     endif()
 
-    # Set output directory
     set_target_properties(${TARGET_NAME} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb/libs
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb/libs
     )
 endfunction()
 
-# Build libraries in dependency order
-
-# 1. gpilog
-add_cocotb_library(gpilog
-    SOURCES ${SHARE_LIB_DIR}/gpi_log/gpi_logging.cpp
-    DEFINES GPILOG_EXPORTS
-    RC_LIBRARIES ""
-)
-
-# 2. pygpilog
-add_cocotb_library(pygpilog
-    SOURCES ${SHARE_LIB_DIR}/py_gpi_log/py_gpi_logging.cpp
-    DEFINES PYGPILOG_EXPORTS
-    LIBRARIES gpilog ${Python_LIBRARIES}
-    RC_LIBRARIES "gpilog"
-)
-if(WIN32)
-    target_link_directories(pygpilog PRIVATE ${Python_LIBRARY_DIRS})
-endif()
-
-# 3. cocotbutils
-set(COCOTBUTILS_LIBS gpilog)
-if(UNIX AND NOT APPLE)
-    list(APPEND COCOTBUTILS_LIBS dl)
-endif()
-
-add_cocotb_library(cocotbutils
-    SOURCES ${SHARE_LIB_DIR}/utils/cocotb_utils.cpp
-    DEFINES COCOTBUTILS_EXPORTS
-    LIBRARIES ${COCOTBUTILS_LIBS}
-    RC_LIBRARIES "gpilog"
-)
-
-# 4. embed
-if(MSVC)
-    set(EMBED_IMPL_LIB_NAME "cocotb.${LIB_EXT}")
-else()
-    set(EMBED_IMPL_LIB_NAME "libcocotb.${LIB_EXT}")
-endif()
-
-add_cocotb_library(embed
-    SOURCES ${SHARE_LIB_DIR}/embed/embed.cpp
-    DEFINES COCOTB_EMBED_EXPORTS "PYTHON_LIB=${PYTHON_LIB}" "EMBED_IMPL_LIB=${EMBED_IMPL_LIB_NAME}"
-    LIBRARIES gpilog cocotbutils
-    RC_LIBRARIES "gpilog;cocotbutils"
-    RC_RUNTIME_LIBRARIES "cocotb"
-)
-
-# 5. gpi
+# --- libgpi (cocotb_build_libs _get_common_lib_ext) ---
 add_cocotb_library(gpi
     SOURCES
         ${SHARE_LIB_DIR}/gpi/GpiCbHdl.cpp
         ${SHARE_LIB_DIR}/gpi/GpiCommon.cpp
-    DEFINES GPI_EXPORTS "LIB_EXT=${LIB_EXT}" SINGLETON_HANDLES
-    LIBRARIES cocotbutils gpilog embed
-    RC_LIBRARIES "cocotbutils;gpilog;embed"
+        ${SHARE_LIB_DIR}/gpi/dynload.cpp
+        ${SHARE_LIB_DIR}/gpi/logging.cpp
+    DEFINES GPI_EXPORTS
+    LIBRARIES ${GPI_EXTRA_LIBS}
+    RC_LIBRARIES ""
 )
 
-# 6. cocotb
-add_cocotb_library(cocotb
-    SOURCES ${SHARE_LIB_DIR}/embed/gpi_embed.cpp
-    LIBRARIES gpilog cocotbutils pygpilog gpi ${Python_LIBRARIES}
-    RC_LIBRARIES "gpilog;cocotbutils;pygpilog;gpi"
-)
-if(WIN32)
-    target_link_directories(cocotb PRIVATE ${Python_LIBRARY_DIRS})
-endif()
-
-# Set simulator Python extension suffix first
+# --- PyGPI Python extension (output name: simulator) ---
 if(WIN32)
     set(PYTHON_EXT_SUFFIX ".${Python_SOABI}.pyd")
 else()
     set(PYTHON_EXT_SUFFIX ".${Python_SOABI}${CMAKE_SHARED_LIBRARY_SUFFIX}")
 endif()
 
-# 7. simulator (Python extension)
 add_cocotb_library(simulator
-    SOURCES ${SHARE_LIB_DIR}/simulator/simulatormodule.cpp
-    LIBRARIES cocotbutils gpilog gpi pygpilog ${Python_LIBRARIES}
-    RC_LIBRARIES "cocotbutils;gpilog;gpi;pygpilog"
+    SOURCES
+        ${SHARE_LIB_DIR}/pygpi/bind.cpp
+        ${SHARE_LIB_DIR}/pygpi/embed.cpp
+        ${SHARE_LIB_DIR}/pygpi/logging.cpp
+    DEFINES PYGPI_EXPORTS
+    LIBRARIES gpi ${Python_LIBRARIES}
+    RC_LIBRARIES "gpi"
 )
 if(WIN32)
     target_link_directories(simulator PRIVATE ${Python_LIBRARY_DIRS})
 endif()
+if(APPLE AND Python_LIBRARY)
+    get_filename_component(PYTHON_MACOS_LIBDIR "${Python_LIBRARY}" DIRECTORY)
+    target_link_directories(simulator PRIVATE "${PYTHON_MACOS_LIBDIR}")
+endif()
 
-# Set simulator to be a Python extension module
 set_target_properties(simulator PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
@@ -372,7 +290,6 @@ set_target_properties(simulator PROPERTIES
     SUFFIX ${PYTHON_EXT_SUFFIX}
 )
 
-# Function to add VPI libraries
 function(add_vpi_library SIM_NAME SIM_DEFINE)
     set(options "")
     set(oneValueArgs "")
@@ -384,38 +301,33 @@ function(add_vpi_library SIM_NAME SIM_DEFINE)
 
     add_cocotb_library(${TARGET_NAME}
         SOURCES
-            ${SHARE_LIB_DIR}/vpi/VpiImpl.cpp
-            ${SHARE_LIB_DIR}/vpi/VpiCbHdl.cpp
-            ${SHARE_LIB_DIR}/vpi/VpiObj.cpp
-            ${SHARE_LIB_DIR}/vpi/VpiIterator.cpp
-            ${SHARE_LIB_DIR}/vpi/VpiSignal.cpp
+            ${SHARE_LIB_DIR}/gpi/vpi/VpiImpl.cpp
+            ${SHARE_LIB_DIR}/gpi/vpi/VpiCbHdl.cpp
+            ${SHARE_LIB_DIR}/gpi/vpi/VpiObj.cpp
+            ${SHARE_LIB_DIR}/gpi/vpi/VpiIterator.cpp
+            ${SHARE_LIB_DIR}/gpi/vpi/VpiSignal.cpp
         DEFINES COCOTBVPI_EXPORTS ${SIM_DEFINE}
-        LIBRARIES gpi gpilog ${ARG_EXTRA_LIBS}
-        RC_LIBRARIES "gpi;gpilog"
+        LIBRARIES gpi ${ARG_EXTRA_LIBS}
+        RC_LIBRARIES "gpi"
     )
 
     if(ARG_EXTRA_LIB_DIRS)
         target_link_directories(${TARGET_NAME} PRIVATE ${ARG_EXTRA_LIB_DIRS})
     endif()
 
-    # On non-Windows platforms, VPI symbols are provided by the simulator at runtime
-    # We need to allow undefined symbols at link time
     if(NOT WIN32)
         if(APPLE)
             target_link_options(${TARGET_NAME} PRIVATE -undefined dynamic_lookup)
         else()
-            # Linux: Allow undefined symbols for VPI functions
             target_link_options(${TARGET_NAME} PRIVATE -Wl,--allow-shlib-undefined)
         endif()
     endif()
 
-    # Special handling for Icarus Verilog extension
     if(SIM_LOWER STREQUAL "icarus")
         set_target_properties(${TARGET_NAME} PROPERTIES SUFFIX ".vpl")
     endif()
 endfunction()
 
-# Function to add VHPI libraries
 function(add_vhpi_library SIM_NAME SIM_DEFINE)
     set(options "")
     set(oneValueArgs "")
@@ -427,36 +339,34 @@ function(add_vhpi_library SIM_NAME SIM_DEFINE)
 
     add_cocotb_library(${TARGET_NAME}
         SOURCES
-            ${SHARE_LIB_DIR}/vhpi/VhpiImpl.cpp
-            ${SHARE_LIB_DIR}/vhpi/VhpiCbHdl.cpp
+            ${SHARE_LIB_DIR}/gpi/vhpi/VhpiImpl.cpp
+            ${SHARE_LIB_DIR}/gpi/vhpi/VhpiCbHdl.cpp
+            ${SHARE_LIB_DIR}/gpi/vhpi/VhpiObj.cpp
+            ${SHARE_LIB_DIR}/gpi/vhpi/VhpiIterator.cpp
+            ${SHARE_LIB_DIR}/gpi/vhpi/VhpiSignal.cpp
         DEFINES COCOTBVHPI_EXPORTS ${SIM_DEFINE}
-        LIBRARIES gpi gpilog ${ARG_EXTRA_LIBS}
-        RC_LIBRARIES "gpi;gpilog"
+        LIBRARIES gpi ${ARG_EXTRA_LIBS}
+        RC_LIBRARIES "gpi"
     )
 
     if(ARG_EXTRA_LIB_DIRS)
         target_link_directories(${TARGET_NAME} PRIVATE ${ARG_EXTRA_LIB_DIRS})
     endif()
 
-    # On non-Windows platforms, VHPI symbols are provided by the simulator at runtime
-    # We need to allow undefined symbols at link time
     if(NOT WIN32)
         if(APPLE)
             target_link_options(${TARGET_NAME} PRIVATE -undefined dynamic_lookup)
         else()
-            # Linux: Allow undefined symbols for VHPI functions
             target_link_options(${TARGET_NAME} PRIVATE -Wl,--allow-shlib-undefined)
         endif()
     endif()
 endfunction()
 
-# Windows-specific: Generate import libraries first
 if(WIN32)
-    # Generate import libraries from DEF files
     set(DEF_DIR ${CMAKE_SOURCE_DIR}/src/cocotb/share/def)
 
     if(MSVC)
-        foreach(SIM icarus modelsim aldec ghdl)
+        foreach(SIM icarus modelsim aldec ghdl nvcvhpi)
             add_custom_command(
                 OUTPUT ${DEF_DIR}/${SIM}.lib
                 COMMAND lib /def:${DEF_DIR}/${SIM}.def /out:${DEF_DIR}/${SIM}.lib /machine:$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,X64,X86>
@@ -466,7 +376,7 @@ if(WIN32)
             add_custom_target(${SIM}_import_lib ALL DEPENDS ${DEF_DIR}/${SIM}.lib)
         endforeach()
     else()
-        foreach(SIM icarus modelsim aldec ghdl)
+        foreach(SIM icarus modelsim aldec ghdl nvcvhpi)
             add_custom_command(
                 OUTPUT ${DEF_DIR}/lib${SIM}.a
                 COMMAND dlltool -d ${DEF_DIR}/${SIM}.def -l ${DEF_DIR}/lib${SIM}.a
@@ -477,9 +387,6 @@ if(WIN32)
         endforeach()
     endif()
 
-    # Create application configuration file for SxS assembly loading
-    # This tells Windows to look for DLL dependencies in the libs subdirectory
-    # Based on the pattern used in the old build system
     set(APPCONFIG_CONTENT "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
 <configuration>
     <windows>
@@ -491,14 +398,10 @@ if(WIN32)
 
     file(WRITE ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config "${APPCONFIG_CONTENT}")
 
-    # Also create for the Python extension with .pyd suffix
     get_filename_component(SIMULATOR_NAME ${CMAKE_BINARY_DIR}/cocotb/simulator.cp311-win_amd64.pyd NAME_WLE)
     file(WRITE ${CMAKE_BINARY_DIR}/cocotb/${SIMULATOR_NAME}.pyd.2.config "${APPCONFIG_CONTENT}")
 endif()
 
-# Build simulator-specific libraries
-
-# Icarus Verilog
 set(ICARUS_EXTRA_LIBS "")
 if(WIN32)
     set(ICARUS_EXTRA_LIBS icarus)
@@ -508,7 +411,6 @@ if(WIN32)
     add_dependencies(cocotbvpi_icarus icarus_import_lib)
 endif()
 
-# Modelsim/Questa
 set(MODELSIM_EXTRA_LIBS "")
 if(WIN32)
     set(MODELSIM_EXTRA_LIBS modelsim)
@@ -521,29 +423,25 @@ if(WIN32)
     add_dependencies(cocotbvhpi_modelsim modelsim_import_lib)
 endif()
 
-# FLI for Modelsim
 add_cocotb_library(cocotbfli_modelsim
     SOURCES
-        ${SHARE_LIB_DIR}/fli/FliImpl.cpp
-        ${SHARE_LIB_DIR}/fli/FliCbHdl.cpp
-        ${SHARE_LIB_DIR}/fli/FliObjHdl.cpp
+        ${SHARE_LIB_DIR}/gpi/fli/FliImpl.cpp
+        ${SHARE_LIB_DIR}/gpi/fli/FliCbHdl.cpp
+        ${SHARE_LIB_DIR}/gpi/fli/FliObjHdl.cpp
     DEFINES COCOTBFLI_EXPORTS
-    LIBRARIES gpi gpilog ${MODELSIM_EXTRA_LIBS}
-    RC_LIBRARIES "gpi;gpilog"
+    LIBRARIES gpi ${MODELSIM_EXTRA_LIBS}
+    RC_LIBRARIES "gpi"
 )
 if(WIN32)
     add_dependencies(cocotbfli_modelsim modelsim_import_lib)
 else()
-    # On non-Windows platforms, FLI symbols are provided by the simulator at runtime
     if(APPLE)
         target_link_options(cocotbfli_modelsim PRIVATE -undefined dynamic_lookup)
     else()
-        # Linux: Allow undefined symbols for FLI functions
         target_link_options(cocotbfli_modelsim PRIVATE -Wl,--allow-shlib-undefined)
     endif()
 endif()
 
-# GHDL
 set(GHDL_EXTRA_LIBS "")
 if(WIN32)
     set(GHDL_EXTRA_LIBS ghdl)
@@ -553,26 +451,17 @@ if(WIN32)
     add_dependencies(cocotbvpi_ghdl ghdl_import_lib)
 endif()
 
-# POSIX-only simulators
-if(UNIX)
-    # IUS/Xcelium
+if(UNIX AND NOT WIN32)
     add_vpi_library(IUS IUS)
     add_vhpi_library(IUS IUS)
 
-    # VCS
     add_vpi_library(VCS VCS)
 
-    # Verilator
     add_vpi_library(VERILATOR VERILATOR)
 
-    # NVC
-    add_vhpi_library(NVC NVC)
-
-    # DSim
     add_vpi_library(DSim DSim)
 endif()
 
-# Aldec Riviera Pro
 set(ALDEC_EXTRA_LIBS "")
 if(WIN32)
     set(ALDEC_EXTRA_LIBS aldec)
@@ -584,10 +473,17 @@ if(WIN32)
     add_dependencies(cocotbvhpi_aldec aldec_import_lib)
 endif()
 
+set(NVC_EXTRA_LIBS "")
+if(WIN32)
+    set(NVC_EXTRA_LIBS nvcvhpi)
+endif()
+add_vhpi_library(NVC NVC EXTRA_LIBS ${NVC_EXTRA_LIBS})
+if(WIN32)
+    add_dependencies(cocotbvhpi_nvc nvcvhpi_import_lib)
+endif()
 
 set(COCOTB_VERSION "${SKBUILD_PROJECT_VERSION_FULL}")
 
-# If this is a dev version, try to append git hash like setup.py does
 if(COCOTB_VERSION MATCHES "dev")
     find_package(Git QUIET)
     if(Git_FOUND)
@@ -610,7 +506,6 @@ if(COCOTB_VERSION MATCHES "dev")
     endif()
 endif()
 
-# Generate the _version.py file
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cocotb/_version.py
 "# Package version
 # Generated by setup -- do not modify directly
@@ -618,35 +513,30 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cocotb/_version.py
 __version__ = \"${COCOTB_VERSION}\"
 ")
 
-# Install rules
 if(SKBUILD)
-    # Install the _version.py file generated by CMake
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cocotb/_version.py DESTINATION cocotb)
 
-    install(TARGETS gpilog pygpilog cocotbutils embed gpi cocotb
-            DESTINATION cocotb/libs)
+    install(TARGETS gpi DESTINATION cocotb/libs)
 
-    # Install simulator-specific libraries
-    set(SIM_TARGETS
+    install(TARGETS
         cocotbvpi_icarus cocotbvpi_modelsim cocotbvhpi_modelsim
-        cocotbfli_modelsim cocotbvpi_ghdl cocotbvpi_aldec cocotbvhpi_aldec)
+        cocotbfli_modelsim cocotbvpi_ghdl cocotbvpi_aldec cocotbvhpi_aldec
+        cocotbvhpi_nvc
+        DESTINATION cocotb/libs)
 
-    if(UNIX)
-        list(APPEND SIM_TARGETS
+    if(UNIX AND NOT WIN32)
+        install(TARGETS
             cocotbvpi_ius cocotbvhpi_ius cocotbvpi_vcs
-            cocotbvpi_verilator cocotbvhpi_nvc cocotbvpi_dsim)
+            cocotbvpi_verilator cocotbvpi_dsim
+            DESTINATION cocotb/libs)
     endif()
 
-    install(TARGETS ${SIM_TARGETS} DESTINATION cocotb/libs OPTIONAL)
-
-    # Install simulator extension separately
     install(TARGETS simulator
             RUNTIME DESTINATION cocotb
             LIBRARY DESTINATION cocotb)
 
     if(WIN32)
         install(FILES ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config DESTINATION cocotb)
-        # Install the .pyd-specific config file as well
         file(GLOB PYD_CONFIG_FILES ${CMAKE_BINARY_DIR}/cocotb/*.pyd.2.config)
         if(PYD_CONFIG_FILES)
             install(FILES ${PYD_CONFIG_FILES} DESTINATION cocotb)

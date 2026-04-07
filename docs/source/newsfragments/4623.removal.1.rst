@@ -1,1 +1,0 @@
-:class:`.Range`, :class:`.Logic`, :class:`.LogicArray`, and :class:`.Array` are now only available from the :mod:`cocotb.types` module. Their implementation modules are now private.

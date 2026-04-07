@@ -1,1 +1,0 @@
-Added :meth:`.HierarchyObject._keys`, :meth:`.HierarchyObject._values`, and :meth:`.HierarchyObject._items` to help users dynamically interact with hierarchical elements of the :term:`DUT`.

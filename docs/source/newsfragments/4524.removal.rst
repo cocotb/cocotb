@@ -1,1 +1,0 @@
-Removed the undocumented ``__name__`` and ``__qualname__`` attributes from :class:`.Task`.

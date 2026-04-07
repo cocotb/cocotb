@@ -1,18 +1,19 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 import warnings
-from typing import Any
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> object:
     if name == "TestSuccess":
         warnings.warn(
-            "`raise TestSuccess` is deprecated. Use `cocotb.pass_test()` instead.",
+            "`raise TestSuccess` is deprecated. Use `cocotb.end_test` or `pytest.skip` instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        from cocotb._test_functions import TestSuccess  # noqa: PLC0415
+        from cocotb._test_manager import TestSuccess  # noqa: PLC0415
 
         return TestSuccess
 

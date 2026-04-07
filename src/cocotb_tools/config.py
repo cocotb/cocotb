@@ -17,6 +17,8 @@ Global variables:
     libs_dir: str, path where the cocotb interface libraries are located
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import sys
@@ -28,8 +30,8 @@ import find_libpython
 import cocotb_tools
 
 base_tools_dir = Path(cocotb_tools.__file__).parent.resolve()
-base_cocotb_dir = base_tools_dir.parent.joinpath("cocotb").resolve()
-if not base_cocotb_dir.exists():
+base_cocotb_dir = (base_tools_dir.parent / "cocotb").resolve()
+if not (base_cocotb_dir.exists() and (base_cocotb_dir / "libs").exists()):
     import cocotb
 
     base_cocotb_dir = Path(cocotb.__file__).parent.resolve()
@@ -47,48 +49,70 @@ def _get_version() -> str:
 
 def _help_vars_text() -> str:
     if "dev" in _get_version():
-        doclink = "https://docs.cocotb.org/en/development/building.html"
+        doclink = "https://docs.cocotb.org/en/development/library_reference.html"
     else:
-        doclink = f"https://docs.cocotb.org/en/v{_get_version()}/building.html"
+        doclink = f"https://docs.cocotb.org/en/v{_get_version()}/library_reference.html"
 
-    # NOTE: make sure to keep "helpmsg" aligned with ../../docs/source/building.rst
+    # NOTE: make sure to keep "helpmsg" aligned with docs/source/library_reference.rst
     helpmsg = textwrap.dedent(
         """\
         The following variables are environment variables:
 
-        Cocotb
+        cocotb
         ------
-        COCOTB_TOPLEVEL           Instance in the hierarchy to use as the DUT
-        COCOTB_RANDOM_SEED        Random seed, to recreate a previous test stimulus
-        COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
-        COCOTB_REDUCED_LOG_FMT    Display log lines shorter
-        COCOTB_ATTACH             Pause time value in seconds before the simulator start
-        COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
-        COCOTB_LOG_LEVEL          Default logging level (default INFO)
-        COCOTB_RESOLVE_X          How to resolve X, Z, U, W, - on integer conversion
-        LIBPYTHON_LOC             Absolute path to libpython
+        COCOTB_TOPLEVEL          Instance in the hierarchy to use as the DUT
+        COCOTB_RANDOM_SEED       Random seed, to recreate a previous test stimulus
+        COCOTB_ANSI_OUTPUT       Force cocotb to print or not print in color
+        COCOTB_REDUCED_LOG_FMT   Display log lines shorter
+        COCOTB_LOG_PREFIX        Set custom log prefix (f-string format)
+        COCOTB_ATTACH            Pause time value in seconds before the simulator start
+        COCOTB_ENABLE_PROFILING  Performance analysis of the Python portion of cocotb
+        COCOTB_LOG_LEVEL         Default logging level (default INFO)
+        COCOTB_RESOLVE_X         How to resolve X, Z, U, W, - on integer conversion
 
         Regression Manager
         ------------------
-        COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
-        COCOTB_TEST_MODULES       Module(s) to search for test functions (comma-separated)
-        COCOTB_TESTCASE           Test function(s) to run (comma-separated list)
-        COCOTB_RESULTS_FILE       File name for xUnit XML tests results
-        COCOTB_USER_COVERAGE      Collect Python user coverage (HDL for some simulators)
-        COCOTB_COVERAGE_RCFILE    Configuration for user code coverage
-
-        GPI
-        ---
-        GPI_EXTRA                       Extra libraries to load at runtime (comma-separated)
+        COCOTB_PDB_ON_EXCEPTION  Drop into the Python debugger (pdb) on exception
+        COCOTB_TEST_MODULES      Module(s) to search for test functions (comma-separated)
+        COCOTB_TESTCASE          Test function(s) to run (Deprecated: Use COCOTB_TEST_FILTER)
+        COCOTB_TEST_FILTER       Regex used to match test function names
+        COCOTB_RESULTS_FILE      File name for xUnit XML tests results (default results.xml)
+        COCOTB_USER_COVERAGE     Collect Python user coverage (HDL for some simulators)
+        COVERAGE_RCFILE          Configuration for user code coverage
+        COCOTB_REWRITE_ASSERTION_FILES
+                                 Files to apply pytest assertion rewrites to (default *.py)
+        COCOTB_MAX_FAILURES      Maximum number of test failures before aborting the regression
+        COCOTB_LIST_TESTS        Prints all tests in the order they would be executed and exits
+        COCOTB_RANDOM_TEST_ORDER Enables randomizing the order of tests within each stage
 
         Scheduler
         ---------
-        COCOTB_SCHEDULER_DEBUG         Enable additional output of coroutine scheduler
-        COCOTB_TRUST_INERTIAL_WRITES   Trust inertial writes rather than mock them using scheduler
+        COCOTB_SCHEDULER_DEBUG   Enable additional output of coroutine scheduler
+        COCOTB_TRUST_INERTIAL_WRITES
+                                 Trust inertial writes rather than mock them using scheduler
+
+        GPI
+        ---
+        GPI_USERS         List of user libraries to load after GPI is initialized
+        GPI_EXTRA         Extra libraries to load as part of GPI initialization
+        GPI_LOG_LEVEL     Default logging level for "gpi" loggers (default INFO)
+        GPI_DEBUG         Enable GPI debug features, including TRACE log output
+
+        PYGPI
+        -----
+        PYGPI_USERS       List of Python callables to start test environment
+        PYGPI_PYTHON_BIN  Python binary. Usually set automatically by test runner
+        PYGPI_DEBUG       Enable PyGPI debug features, including TRACE log output
 
         For details, see {}"""
     ).format(doclink)
     return helpmsg
+
+
+def pygpi_entry_point() -> str:
+    import cocotb.simulator  # noqa: PLC0415
+
+    return f"{Path(cocotb.simulator.__file__).resolve()},initialize"
 
 
 def lib_name(interface: str, simulator: str) -> str:
@@ -106,6 +130,7 @@ def lib_name(interface: str, simulator: str) -> str:
     simulator_name = simulator.lower()
     supported_sims = [
         "icarus",
+        "verilator",
         "questa",
         "modelsim",
         "ius",
@@ -140,7 +165,7 @@ def lib_name(interface: str, simulator: str) -> str:
         lib_ext = ".so"
 
     # check if compiled with msvc
-    if (libs_dir / "cocotb.dll").is_file():
+    if (libs_dir / "gpi.dll").is_file():
         lib_prefix = ""
     else:
         lib_prefix = "lib"
@@ -177,7 +202,7 @@ def _get_parser() -> argparse.ArgumentParser:
     group.add_argument(
         "--help-vars",
         action="store_true",
-        help="Print help about supported Makefile variables",
+        help="Print help about supported environment variables",
     )
     group.add_argument(
         "--libpython",
@@ -206,6 +231,11 @@ def _get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print the version of cocotb",
     )
+    group.add_argument(
+        "--pygpi-entry-point",
+        action="store_true",
+        help="Print the PYGPI entry point for use in GPI_USERS",
+    )
 
     return parser
 
@@ -233,6 +263,8 @@ def main() -> None:
         print(lib_name(*args.lib_name))
     elif args.lib_name_path:
         print(lib_name_path(*args.lib_name_path).as_posix())
+    elif args.pygpi_entry_point:
+        print(pygpi_entry_point())
     elif args.version:
         print(_get_version())
 

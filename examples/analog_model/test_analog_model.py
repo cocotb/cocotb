@@ -1,5 +1,6 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
+from __future__ import annotations
 
 from afe import AFE
 
@@ -51,7 +52,7 @@ async def test_analog_model(digital) -> None:
         # get the converted digital value
         afe_out = await afe_out_queue.get()
 
-        digital._log.info(f"AFE converted input value {in_V}V to {int(afe_out)}")
+        cocotb.log.info(f"AFE converted input value {in_V}V to {int(afe_out)}")
 
         # hand digital value over as "meas_val" to digital part (HDL)
         # "meas_val_valid" pulses for one clock cycle

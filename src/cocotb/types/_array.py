@@ -1,15 +1,21 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Iterable, Iterator, List, TypeVar, Union, cast, overload
+from __future__ import annotations
 
-from cocotb.types._abstract_array import AbstractArray
+import copy
+import warnings
+from collections.abc import Iterable, Iterator
+from typing import Any, TypeVar, cast, overload
+
+from cocotb.types._abstract_array import AbstractMutableArray
+from cocotb.types._indexing import IndexingChangedWarning
 from cocotb.types._range import Range
 
 T = TypeVar("T")
 
 
-class Array(AbstractArray[T]):
+class Array(AbstractMutableArray[T]):
     r"""Fixed-size, arbitrarily-indexed, homogeneous collection type.
 
     Arrays are similar to, but different from Python :class:`list`\ s.
@@ -131,9 +137,10 @@ class Array(AbstractArray[T]):
         TypeError: When invalid argument types are used.
     """
 
-    def __init__(
-        self, value: Iterable[T], range: Union[Range, int, None] = None
-    ) -> None:
+    __slots__ = ("_value", "_range", "_warn_indexing")
+
+    def __init__(self, value: Iterable[T], range: Range | int | None = None) -> None:
+        self._warn_indexing = False
         self._value = list(value)
         if range is None:
             self._range = Range(0, "to", len(self._value) - 1)
@@ -153,8 +160,11 @@ class Array(AbstractArray[T]):
                 )
 
     @classmethod
-    def _from_handle(cls, value: List[T], range: Range) -> "Array[T]":
+    def _from_handle(
+        cls, value: list[T], range: Range, warn_indexing: bool
+    ) -> Array[T]:
         self = cls.__new__(cls)
+        self._warn_indexing = warn_indexing
         self._value = value
         self._range = range
         return self
@@ -198,13 +208,27 @@ class Array(AbstractArray[T]):
     def __getitem__(self, item: int) -> T: ...
 
     @overload
-    def __getitem__(self, item: slice) -> "Array[T]": ...
+    def __getitem__(self, item: slice) -> Array[T]: ...
 
-    def __getitem__(self, item: Union[int, slice]) -> Union[T, "Array[T]"]:
+    def __getitem__(self, item: int | slice) -> T | Array[T]:
         if isinstance(item, int):
+            if self._warn_indexing:
+                warnings.warn(
+                    f"Update index {item} to {self.range[item]}",
+                    IndexingChangedWarning,
+                    stacklevel=2,
+                )
             idx = self._translate_index(item)
             return self._value[idx]
         elif isinstance(item, slice):
+            if self._warn_indexing:
+                start = item.start if item.start is not None else 0
+                stop = item.stop if item.stop is not None else len(self) - 1
+                warnings.warn(
+                    f"Update slice {start}:{stop} to {self.range[start]}:{self.range[stop]}",
+                    IndexingChangedWarning,
+                    stacklevel=2,
+                )
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
             if item.step is not None:
@@ -226,12 +250,10 @@ class Array(AbstractArray[T]):
     @overload
     def __setitem__(self, item: slice, value: Iterable[T]) -> None: ...
 
-    def __setitem__(
-        self, item: Union[int, slice], value: Union[T, Iterable[T]]
-    ) -> None:
+    def __setitem__(self, item: int | slice, value: T | Iterable[T]) -> None:
         if isinstance(item, int):
             idx = self._translate_index(item)
-            self._value[idx] = cast(T, value)
+            self._value[idx] = cast("T", value)
         elif isinstance(item, slice):
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
@@ -243,7 +265,7 @@ class Array(AbstractArray[T]):
                 raise IndexError(
                     f"slice [{start}:{stop}] direction does not match array direction [{self.left}:{self.right}]"
                 )
-            value = list(cast(Iterable[T], value))
+            value = list(cast("Iterable[T]", value))
             if len(value) != (stop_i - start_i + 1):
                 raise ValueError(
                     f"value of length {len(value)!r} will not fit in slice [{start}:{stop}]"
@@ -262,3 +284,13 @@ class Array(AbstractArray[T]):
             return self._range.index(item)
         except ValueError:
             raise IndexError(f"index {item} out of range") from None
+
+    def __copy__(self) -> Array:
+        return Array(self._value, self._range)
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> Array:
+        res = Array.__new__(Array)
+        res._value = copy.deepcopy(self._value, memo=memo)
+        res._range = copy.deepcopy(self._range, memo=memo)
+        res._warn_indexing = self._warn_indexing
+        return res

@@ -4,6 +4,7 @@ Glossary
 ========
 
 .. glossary::
+   :sorted:
 
    BFM
       Bus Functional Model
@@ -85,7 +86,7 @@ Glossary
       :term:`Depositing <deposit>` a value on a signal or variable immediately.
 
    driving
-      Continuously :term:`depositing <deposit>` a value to a signal. cocotb cannot drive signals.
+      Continuously :term:`depositing <deposit>` a value to a signal. cocotb cannot drive signals, only deposit or force values.
 
    deposit
       Setting the value of a signal or variable once. May be :term:`inertial <inertial deposit>` or :term:`no-delay <no-delay deposit>`.

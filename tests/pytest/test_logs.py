@@ -1,6 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import os
 import sys
@@ -28,7 +29,7 @@ sys.path.insert(0, str(Path(tests_dir) / "pytest"))
 test_module = Path(__file__).stem
 sim = os.getenv(
     "SIM",
-    "icarus" if os.getenv("HDL_TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
+    "icarus" if os.getenv("TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
 )
 
 
@@ -48,7 +49,6 @@ def run_simulation(sim, log_dir):
         hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
         build_args=compile_args,
-        defines={"NODUMPFILE": 1},
         log_file=log_dir / "build.log",
     )
 
@@ -65,8 +65,8 @@ def run_simulation(sim, log_dir):
 
 @pytest.mark.simulator_required
 def test_wave_dump():
-    temp_dir = TemporaryDirectory()
-    log_dir = Path(temp_dir.name)
-    run_simulation(sim=sim, log_dir=log_dir)
-    assert (log_dir / "build.log").exists()
-    assert (log_dir / "test.log").exists()
+    with TemporaryDirectory() as temp_dir:
+        log_dir = Path(temp_dir)
+        run_simulation(sim=sim, log_dir=log_dir)
+        assert (log_dir / "build.log").exists()
+        assert (log_dir / "test.log").exists()

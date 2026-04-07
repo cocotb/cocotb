@@ -1,1 +1,0 @@
-:attr:`LogicArray.integer <cocotb.types.LogicArray.integer>` has been deprecated. Use :meth:`LogicArray.to_unsigned() <cocotb.types.LogicArray.to_unsigned>` instead.

@@ -1,6 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import cocotb
 
@@ -12,4 +13,4 @@ async def y_test(dut):
 
 @cocotb.test()
 async def y_test_with_additional(_):
-    assert False, "TESTCASE shouldn't match this test"
+    assert False, "COCOTB_TESTCASE shouldn't match this test"

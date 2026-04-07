@@ -3,8 +3,9 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "gpi.h"
-#include "gpi_priv.h"
+#include <gpi.h>
+
+#include "./gpi_priv.hpp"
 
 const char *GpiObjHdl::get_name_str() { return m_name.c_str(); }
 
@@ -34,6 +35,7 @@ const char *GpiObjHdl::get_type_str() {
         CASE_OPTION(GPI_PACKAGE);
         CASE_OPTION(GPI_LOGIC);
         CASE_OPTION(GPI_LOGIC_ARRAY);
+        CASE_OPTION(GPI_PACKED_OBJECT);
         default:
             ret = "unknown";
     }

@@ -1,1 +1,0 @@
-Removed ``cocotb.triggers.PythonTrigger``. Use ``not isinstance(trigger, cocotb.triggers.GPITrigger)`` instead.

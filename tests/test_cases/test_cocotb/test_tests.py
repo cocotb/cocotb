@@ -9,6 +9,8 @@ Tests of cocotb.test functionality
 * timeout
 """
 
+from __future__ import annotations
+
 from collections.abc import Coroutine
 
 import pytest
@@ -199,15 +201,44 @@ async def test_test_without_parenthesis_ran(dut):
 
 
 @cocotb.test
-async def test_pass_test_in_task(_) -> None:
-    async def raise_test_success():
-        await Timer(1, unit="ns")
-        cocotb.pass_test("Finished test early")
+async def test_bad_xfail(dut: object) -> None:
+    with pytest.raises(TypeError):
 
-    cocotb.start_soon(raise_test_success())
-    await Timer(10, unit="ns")
+        @cocotb.xfail(
+            raises="not an exception"  # type: ignore
+        )
+        async def dummy(_: object) -> None:
+            pass
+
+    with pytest.raises(TypeError):
+
+        @cocotb.xfail(
+            raises=[ValueError, "not an exception"]  # type: ignore
+        )
+        async def dummy(_: object) -> None:
+            pass
+
+    with pytest.raises(TypeError):
+
+        @cocotb.xfail(
+            raises=object()  # type: ignore
+        )
+        async def dummy(_: object) -> None:
+            pass
 
 
 @cocotb.test
-async def test_pass_test_in_test(_) -> None:
-    cocotb.pass_test("Finished test early")
+async def test_end_in_main_coro(dut: object) -> None:
+    cocotb.end_test("Finished test early")
+    assert False, "Test should have ended before this assertion"
+
+
+@cocotb.test
+async def test_end_in_task(dut: object) -> None:
+    async def end_test() -> None:
+        await Timer(1, unit="ns")
+        cocotb.end_test("Finished test early")
+
+    cocotb.start_soon(end_test())
+    await Timer(10, unit="ns")
+    assert False, "Test should have ended before this assertion"

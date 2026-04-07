@@ -30,6 +30,8 @@ The current test in the "ci-free"/"ci-licensed" group should be moved to "extend
 and the new version should be added to "ci-free"/"ci-licensed" and any changes in behavior recorded with expectations to make CI pass.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys
@@ -39,33 +41,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.16.0",
-        "os": "ubuntu-22.04",
-        "python-version": "3.6",
-        "group": "ci-free",
-        "setup_python": "pyenv",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.16.0",
-        "os": "ubuntu-22.04",
-        "python-version": "3.7",
-        "group": "ci-free",
-        "setup_python": "pyenv",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.16.0",
-        "os": "ubuntu-22.04",
-        "python-version": "3.8",
-        "group": "ci-free",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "nvc",
-        "sim-version": "r1.16.0",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci-free",
@@ -73,7 +49,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.16.0",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci-free",
@@ -81,7 +57,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.16.0",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.11",
         "group": "ci-free",
@@ -89,7 +65,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.16.0",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.12",
         "group": "ci-free",
@@ -97,25 +73,32 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.16.0",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.13",
         "group": "ci-free",
     },
-    # A single test for the upcoming Python version.
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.16.0",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
-        "python-version": "3.14-dev",
-        "group": "experimental",
+        "python-version": "3.14",
+        "group": "ci-free",
     },
+    # {
+    #     "lang": "vhdl",
+    #     "sim": "nvc",
+    #     "sim-version": "r1.17.1",
+    #     "os": "ubuntu-22.04",
+    #     "python-version": "3.15",
+    #     "group": "experimental",
+    # },
     # Test Icarus on Ubuntu
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v10_3",  # Minimum supported version
+        "sim-version": "v11_0",  # Minimum supported version
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "extended",
@@ -123,7 +106,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v12_0",  # The latest release version.
+        "sim-version": "v13_0",  # The latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci-free",
@@ -148,23 +131,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "ghdl",
-        "sim-version": "v3.0.0",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "ghdl",
-        "sim-version": "v4.1.0",
-        "os": "ubuntu-22.04",
-        "python-version": "3.9",
-        "group": "extended",
-    },
-    {
-        "lang": "vhdl",
-        "sim": "ghdl",
-        "sim-version": "v5.0.1",  # The latest release version.
+        "sim-version": "v5.1.1",  # The latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci-free",
@@ -177,7 +144,6 @@ ENVS = [
         "python-version": "3.9",
         "group": "experimental",
     },
-    # Test NVC on Ubuntu
     # Testing latest release is covered by the Python version tests
     {
         "lang": "vhdl",
@@ -191,7 +157,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.036",  # Latest release version.
+        "sim-version": "v5.046",  # Latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci-free",
@@ -204,58 +170,57 @@ ENVS = [
         "python-version": "3.10",
         "group": "experimental",
     },
-    {
-        "lang": "verilog",
-        "sim": "verilator",
-        "sim-version": "v5.036",  # Minimum supported version.
-        "os": "ubuntu-22.04",
-        "python-version": "3.10",
-        "group": "extended",
-    },
     # Test other OSes
-    # Icarus homebrew
+    # Icarus homebrew (ARM64)
     {
         "lang": "verilog",
         "sim": "icarus",
         "sim-version": "homebrew-stable",
-        "os": "macos-13",
+        "os": "macos-14",
         "python-version": "3.9",
         "group": "ci-free",
     },
-    # Icarus homebrew (HEAD/master)
+    # Icarus homebrew (ARM64) (HEAD/master)
     {
         "lang": "verilog",
         "sim": "icarus",
         "sim-version": "homebrew-HEAD",
-        "os": "macos-13",
+        "os": "macos-14",
         "python-version": "3.9",
         "group": "experimental",
     },
-    # Verilator macOS HEAD
+    # Verilator macOS (ARM64) HEAD
     {
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "master",
-        "os": "macos-13",
+        "os": "macos-14",
         "python-version": "3.9",
         "group": "experimental",
-        "may-fail": True,  # verilator/verilator#5404
     },
-    # Verilator macOS latest release
+    # Verilator macOS (ARM64) latest release
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.036",
-        "os": "macos-13",
+        "sim-version": "v5.046",
+        "os": "macos-14",
         "python-version": "3.9",
         "group": "ci-free",
-        "may-fail": True,  # verilator/verilator#5404
+    },
+    # Icarus homebrew (x86)
+    {
+        "lang": "verilog",
+        "sim": "icarus",
+        "sim-version": "homebrew-stable",
+        "os": "macos-15-intel",
+        "python-version": "3.9",
+        "group": "ci-free",
     },
     # Icarus windows from source
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v12_0",
+        "sim-version": "v13_0",
         "os": "windows-latest",
         "python-version": "3.11",
         "toolchain": "mingw",
@@ -266,11 +231,20 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "icarus",
-        "sim-version": "v12_0",
+        "sim-version": "v13_0",
         "os": "windows-latest",
         "python-version": "3.11",
         "toolchain": "msvc",
         "extra-name": "msvc",
+        "group": "ci-free",
+    },
+    # NVC on windows
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.19.2",
+        "os": "windows-latest",
+        "python-version": "3.11",
         "group": "ci-free",
     },
     # Other
@@ -278,7 +252,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.16.0",
+        "sim-version": "r1.19.2",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "cxx": "clang++",
@@ -290,7 +264,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "questa",
-        "sim-version": "siemens/questa/2024.2",
+        "sim-version": "siemens/questa/2025.2",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -299,7 +273,7 @@ ENVS = [
     {
         "lang": "vhdl and fli",
         "sim": "questa",
-        "sim-version": "siemens/questa/2024.2",
+        "sim-version": "siemens/questa/2025.2",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -308,7 +282,7 @@ ENVS = [
     {
         "lang": "vhdl and vhpi",
         "sim": "questa",
-        "sim-version": "siemens/questa/2024.2",
+        "sim-version": "siemens/questa/2025.2",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -318,7 +292,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "riviera",
-        "sim-version": "aldec/rivierapro/2024.04",
+        "sim-version": "aldec/rivierapro/2025.10",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -327,7 +301,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "riviera",
-        "sim-version": "aldec/rivierapro/2024.04",
+        "sim-version": "aldec/rivierapro/2025.10",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -337,7 +311,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "xcelium",
-        "sim-version": "cadence/xcelium/2403",
+        "sim-version": "cadence/xcelium/2509",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -346,7 +320,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "xcelium",
-        "sim-version": "cadence/xcelium/2403",
+        "sim-version": "cadence/xcelium/2509",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -356,7 +330,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "vcs",
-        "sim-version": "synopsys/vcs/W-2024.09",
+        "sim-version": "synopsys/vcs/X-2025.06",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -365,7 +339,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "vcs",
-        "sim-version": "synopsys/vcs/W-2024.09",
+        "sim-version": "synopsys/vcs/X-2025.06",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -373,9 +347,78 @@ ENVS = [
     },
 ]
 
+ghdl_versions = ("v3.0.0", "v4.1.0")
+for version in ghdl_versions:
+    ENVS += [
+        {
+            "lang": "vhdl",
+            "sim": "ghdl",
+            "sim-version": version,
+            "os": "ubuntu-22.04",
+            "python-version": "3.9",
+            "group": "extended",
+        },
+    ]
+
+icarus_versions = ("v12_0",)
+for version in icarus_versions:
+    ENVS += [
+        {
+            "lang": "verilog",
+            "sim": "icarus",
+            "sim-version": version,
+            "os": "ubuntu-22.04",
+            "python-version": "3.9",
+            "group": "extended",
+        },
+    ]
+
+verilator_versions = ("v5.036", "v5.038", "v5.040", "v5.042", "v5.044")
+for version in verilator_versions:
+    ENVS += [
+        {
+            "lang": "verilog",
+            "sim": "verilator",
+            "sim-version": version,
+            "os": "ubuntu-22.04",
+            "python-version": "3.9",
+            "group": "extended",
+        },
+    ]
+
+nvc_versions = (
+    "r1.11.0",
+    "r1.12.2",
+    "r1.13.3",
+    "r1.14.2",
+    "r1.15.2",
+    "r1.16.0",  # First version with --preserve-case
+    "r1.17.1",
+    "r1.18.2",
+)
+for version in nvc_versions:
+    ENVS += [
+        {
+            "lang": "vhdl",
+            "sim": "nvc",
+            "sim-version": version,
+            "os": "ubuntu-22.04",
+            "python-version": "3.9",
+            "group": "extended",
+        },
+    ]
+
 # Questa: test more versions as part of the extended tests.
 questa_versions_novhpi = ("2021.2", "2021.3", "2021.4", "2022.1", "2022.2")
-questa_versions_vhpi = ("2022.3", "2022.4", "2023.1", "2023.2", "2023.4", "2024.1")
+questa_versions_vhpi = (
+    "2022.3",
+    "2022.4",
+    "2023.1",
+    "2023.2",
+    "2023.4",
+    "2024.1",
+    "2024.2",
+)
 
 for version in questa_versions_novhpi + questa_versions_vhpi:
     ENVS += [
@@ -420,6 +463,9 @@ riviera_versions = (
     "2021.10",
     "2022.04",
     "2023.10",
+    "2024.04",
+    "2024.10",
+    "2025.04",
 )
 for version in riviera_versions:
     ENVS += [
@@ -444,7 +490,7 @@ for version in riviera_versions:
     ]
 
 # Xcelium: test more versions as part of the extended tests.
-xcelium_versions = ("2309",)
+xcelium_versions = ("2309", "2403", "2503")
 for version in xcelium_versions:
     ENVS += [
         {
@@ -465,6 +511,23 @@ for version in xcelium_versions:
             "python-version": "3.9",
             "group": "extended",
         },
+    ]
+
+# VCS: test more versions as part of the extended tests.
+vcs_versions = ("W-2024.09",)
+for version in vcs_versions:
+    ENVS += [
+        {
+            "lang": "verilog",
+            "sim": "vcs",
+            "sim-version": f"synopsys/vcs/{version}",
+            "os": "ubuntu-22.04",
+            "self-hosted": True,
+            "python-version": "3.9",
+            "group": "extended",
+        },
+        # Don't run extended tests for VCS/VHDL yet until we have a version that
+        # works.
     ]
 
 

@@ -1,1 +1,0 @@
-``Event.fired`` attribute was made private. Use :meth:`.Event.is_set`.

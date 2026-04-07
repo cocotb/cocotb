@@ -1,1 +1,0 @@
-Setting values too large for :class:`~cocotb.handle.IntegerObject`, :class:`~cocotb.handle.EnumObject`, and :class:`~cocotb.handle.LogicArrayObject` now raises :exc:`ValueError` instead of :exc:`OverflowError`.

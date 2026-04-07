@@ -1,1 +1,0 @@
-Constructing a :class:`~cocotb.types.LogicArray` from an :class:`int` now only accepts integer literals (unsigned). Use :meth:`.LogicArray.from_signed` to convert negative integers into :class:`~cocotb.types.LogicArray`\ s using two's complement representation.

@@ -6,32 +6,41 @@
 
 """A clock class."""
 
+from __future__ import annotations
+
 import logging
+import sys
 import warnings
 from decimal import Decimal
 from fractions import Fraction
+from functools import cached_property
 from logging import Logger
-from typing import Type, Union
+from typing import ClassVar, Literal
 
 import cocotb
-from cocotb._py_compat import (
-    Literal,
-    TypeAlias,
-    cached_property,
+from cocotb.handle import (
+    Deposit,
+    Force,
+    Immediate,
+    LogicObject,
+    _GPISetAction,
+    _trust_inertial,
 )
-from cocotb._typing import TimeUnit
-from cocotb.handle import LogicObject, _trust_inertial
+from cocotb.simtime import TimeUnit
 from cocotb.simulator import clock_create
 from cocotb.task import Task
 from cocotb.triggers import (
-    ClockCycles,
     Event,
     FallingEdge,
+    NullTrigger,
     RisingEdge,
     Timer,
     ValueChange,
 )
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
 
 __all__ = ("Clock",)
 
@@ -51,27 +60,41 @@ class Clock:
 
     Args:
         signal: The clock pin/signal to be driven.
-        period: The clock period.
+        period:
+            The clock period.
+            Must be a multiple of the time precision of the simulator.
 
-            .. note::
-                Must convert to an even number of timesteps.
-        unit: One of
-            ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
+        unit:
+            One of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
             When *unit* is ``'step'``,
             the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
 
             .. versionchanged:: 2.0
                 Renamed from ``units``.
 
-        impl: One of
-            ``'auto'``, ``'gpi'``, ``'py'``.
-            Specify whether the clock is implemented with a :class:`~cocotb.simulator.GpiClock` (faster), or with a Python coroutine.
+        impl:
+            One of ``'auto'``, ``'gpi'``, ``'py'``.
+            Specify whether the clock is implemented with a :class:`~cocotb.simulator.cpp_clock` (faster), or with a Python coroutine.
             When ``'auto'`` is used (default), the fastest implementation that supports your environment and use case is picked.
 
             .. versionadded:: 2.0
 
+        set_action:
+            One of :class:`.Immediate`, :class:`.Deposit`, or :class:`.Force`.
+            Specify the action to use when setting the clock signal value.
+            Defaults to the value of :attr:`default_set_action`.
+
+            .. versionadded:: 2.0
+
+        period_high:
+            The period of time when the clock is driven to ``1``.
+            Defaults to half of the *period*.
+            Must be a multiple of the time precision of the simulator and less than *period*.
+
+            .. versionadded:: 2.0
+
     When *impl* is ``'auto'``, if :envvar:`COCOTB_TRUST_INERTIAL_WRITES` is defined,
-    the :class:`~cocotb.simulator.GpiClock` implementation will be used.
+    the :class:`~cocotb.simulator.cpp_clock` implementation will be used.
     Otherwise, the Python coroutine implementation will be used.
     See the environment variable's documentation for more information on the consequences
     of using the simulator's inertial write mechanism.
@@ -113,10 +136,10 @@ class Clock:
         high_delay = low_delay = 10  # change the clock speed
         await Timer(1000, unit="ns")
 
-    .. versionchanged:: 1.5
+    .. versionadded:: 1.5
         Support ``'step'`` as the *unit* argument to mean "simulator time step".
 
-    .. versionchanged:: 2.0
+    .. versionremoved:: 2.0
         Passing ``None`` as the *unit* argument was removed, use ``'step'`` instead.
 
     .. versionchanged:: 2.0
@@ -126,17 +149,28 @@ class Clock:
 
     _impl: Impl
 
+    default_set_action: ClassVar[type[Immediate] | type[Deposit] | type[Force]] = (
+        Deposit
+    )
+    """The default action used to set the clock signal value.
+    One of :class:`.Immediate`, :class:`.Deposit`, or :class:`.Force`.
+
+    .. versionadded:: 2.0
+    """
+
     def __init__(
         self,
         signal: LogicObject,
-        period: Union[float, Fraction, Decimal],
+        period: float | Fraction | Decimal,
         unit: TimeUnit = "step",
-        impl: Union[Impl, None] = None,
+        impl: Impl | None = None,
         *,
         units: None = None,
+        set_action: type[Immediate] | type[Deposit] | type[Force] | None = None,
+        period_high: float | Fraction | Decimal | None = None,
     ) -> None:
         self._signal = signal
-        self._period = period
+
         if units is not None:
             warnings.warn(
                 "The 'units' argument has been renamed to 'unit'.",
@@ -145,6 +179,20 @@ class Clock:
             )
             unit = units
         self._unit: TimeUnit = unit
+
+        self._period = period
+        try:
+            self._period_steps = get_sim_steps(self._period, self._unit)
+        except ValueError as e:
+            raise ValueError(f"Bad `period`: {e}") from None
+
+        if set_action is None:
+            set_action = type(self).default_set_action
+        if set_action not in (Immediate, Deposit, Force):
+            raise TypeError(
+                "Invalid value for `set_action`. `set_action` must be one of Immediate, Deposit, or Force"
+            )
+        self._set_action = set_action
 
         if impl is None:
             self._impl = "gpi" if _trust_inertial else "py"
@@ -156,7 +204,24 @@ class Clock:
                 f"Invalid clock impl {impl!r}, must be one of: {valid_impls_str}"
             )
 
-        self._task: Union[Task[None], None] = None
+        self._period_high: float | Fraction | Decimal
+        if period_high is not None:
+            if period_high >= self._period:
+                raise ValueError("`period_high` must be strictly less than `period`.")
+            self._period_high = period_high
+            try:
+                self._period_high_steps = get_sim_steps(self._period_high, self._unit)
+            except ValueError as e:
+                raise ValueError(f"Bad `period_high`: {e}") from None
+        else:
+            if self._period_steps % 2 != 0:
+                raise ValueError(
+                    "Bad `period`: Must be divisible by 2 if `period_high` is not given."
+                )
+            self._period_high = period / 2
+            self._period_high_steps = self._period_steps // 2
+
+        self._task: Task[None] | None = None
 
     @property
     def signal(self) -> LogicObject:
@@ -164,13 +229,29 @@ class Clock:
         return self._signal
 
     @property
-    def period(self) -> Union[float, Fraction, Decimal]:
-        """The clock period (unit-less)."""
+    def period(self) -> float | Fraction | Decimal:
+        """The clock period.
+
+        The unit is :attr:`unit`.
+        """
         return self._period
 
     @property
+    def period_high(self) -> float | Fraction | Decimal:
+        """The period of time when the clock is driven to ``1``.
+
+        The unit is :attr:`unit`.
+
+        .. versionadded:: 2.0
+        """
+        return self._period_high
+
+    @property
     def unit(self) -> TimeUnit:
-        """The unit of the clock period."""
+        """The unit of the clock period.
+
+        .. versionadded:: 2.0
+        """
         return self._unit
 
     @property
@@ -179,8 +260,18 @@ class Clock:
 
         ``"gpi"`` if the clock is implemented in C in the GPI layer,
         or ``"py"`` if the clock is implemented in Python using cocotb Tasks.
+
+        .. versionadded:: 2.0
         """
         return self._impl
+
+    @property
+    def set_action(self) -> type[Immediate] | type[Deposit] | type[Force]:
+        """The value setting action used to set the clock signal value.
+
+        .. versionadded:: 2.0
+        """
+        return self._set_action
 
     def start(self, start_high: bool = True) -> Task[None]:
         r"""Start driving the clock signal.
@@ -200,7 +291,7 @@ class Clock:
         Returns:
             Object which can be passed to :func:`cocotb.start_soon` or ignored.
 
-        .. versionchanged:: 2.0
+        .. versionremoved:: 2.0
             Removed ``cycles`` arguments for toggling for a finite amount of cycles.
             Use :meth:`stop` to stop a clock from running.
 
@@ -212,12 +303,19 @@ class Clock:
         if self._task is not None:
             raise RuntimeError("Starting clock that has already been started.")
 
-        period = get_sim_steps(self._period, self._unit)
-        t_high = period // 2
-
         if self._impl == "gpi":
             clkobj = clock_create(self._signal._handle)
-            clkobj.start(period, t_high, start_high)
+            set_action = {
+                Deposit: _GPISetAction.DEPOSIT,
+                Immediate: _GPISetAction.NO_DELAY,
+                Force: _GPISetAction.FORCE,
+            }[self._set_action]
+            clkobj.start(
+                self._period_steps,
+                self._period_high_steps,
+                start_high,
+                set_action.value,
+            )
 
             async def drive() -> None:
                 # The clock is meant to toggle forever, so awaiting this should
@@ -231,15 +329,15 @@ class Clock:
         else:
 
             async def drive() -> None:
-                timer_high = Timer(t_high)
-                timer_low = Timer(period - t_high)
+                timer_high = Timer(self._period_high_steps)
+                timer_low = Timer(self._period_steps - self._period_high_steps)
                 if start_high:
-                    self._signal.set(1)
+                    self._signal.set(self._set_action(1))
                     await timer_high
                 while True:
-                    self._signal.set(0)
+                    self._signal.set(self._set_action(0))
                     await timer_low
-                    self._signal.set(1)
+                    self._signal.set(self._set_action(1))
                     await timer_high
 
         self._task = cocotb.start_soon(drive())
@@ -263,19 +361,50 @@ class Clock:
     async def cycles(
         self,
         num_cycles: int,
-        edge_type: Union[
-            Type[RisingEdge], Type[FallingEdge], Type[ValueChange]
-        ] = RisingEdge,
+        edge_type: type[RisingEdge]
+        | type[FallingEdge]
+        | type[ValueChange] = RisingEdge,
     ) -> None:
-        """Wait for a number of clock cycles."""
-        # TODO Improve implementation to use a Timer to skip most of the cycles
-        await ClockCycles(self._signal, num_cycles, edge_type)
+        """Wait for a number of clock cycles.
+
+        Args:
+            num_cycles: The number of clock cycles to wait.
+            edge_type:
+                The edge of the clock to wait on.
+                Must be one of :class:`.RisingEdge`, :class:`.FallingEdge`, or :class:`.ValueChange`.
+
+        Raises:
+            ValueError: if *num_cycles* is negative.
+        """
+        if num_cycles == 0:
+            await NullTrigger()
+            return
+        elif num_cycles < 0:
+            raise ValueError("`num_cycles` cannot be negative")
+
+        # Synchronize first.
+        await edge_type(self._signal)
+        num_cycles -= 1
+
+        # Use Timer as an optimization if we are waiting long enough.
+        if num_cycles >= 2:
+            # NOTE: num_cycles must end 1 higher than expected because all edge_types occur
+            # strictly after beginning of time steps, so the last edge_type will jump within
+            # the same time step.
+            if edge_type is ValueChange:
+                # Make cycles_skipped the nearest even number so division by 2 doesn't cause issues.
+                cycles_skipped = (num_cycles // 2) * 2
+                await Timer(self._period_steps * cycles_skipped / 2, "step")
+                num_cycles = num_cycles - cycles_skipped + 1
+            else:
+                await Timer(self._period_steps * num_cycles, "step")
+                num_cycles = 1
+
+        # Run N edge_type trigger.
+        for _ in range(num_cycles):
+            await edge_type(self._signal)
 
     def __repr__(self) -> str:
-        return self._repr
-
-    @cached_property
-    def _repr(self) -> str:
         freq_mhz = 1 / get_time_from_sim_steps(
             get_sim_steps(self._period, self._unit), "us"
         )

@@ -1,1 +1,0 @@
-Running Tasks are now :meth:`cancelled <cocotb.task.Task.cancel>` at the end of the Test, which throws :exc:`CancelledError` into the Task allowing them to do cleanup actions at test end.

@@ -1,1 +1,0 @@
-:envvar:`PYGPI_USERS` supports multiple user modules by comma-separating them.

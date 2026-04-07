@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-
+from __future__ import annotations
 
 import logging
 import os
@@ -22,7 +22,10 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 )
 async def test_packed_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
-    assert repr(dut.my_struct) == "LogicArrayObject(sample_module.my_struct)"
+    assert repr(dut.my_struct) in (
+        "LogicArrayObject(sample_module.my_struct)",
+        "PackedObject(sample_module.my_struct)",
+    )
 
     # Riviera-PRO initializes the struct with X, Verilator with 0, and others
     # with Z. Since we don't want to explicitly set dut.my_struct (write tests
@@ -41,7 +44,8 @@ is_riviera_2024_04 = (
 )
 
 
-# Riviera-PRO 2022.10+ ignores writes to the packed struct.
+# Riviera-PRO 2022.10 - 2023.10 ignores writes to the packed struct.
+# Riviera-PRO 2024.04 crashes.
 @cocotb.test(
     expect_error=(
         AttributeError if SIM_NAME.startswith(("icarus", "ghdl", "nvc")) else ()
@@ -49,6 +53,7 @@ is_riviera_2024_04 = (
     expect_fail=(
         SIM_NAME.startswith("riviera")
         and RivieraVersion(cocotb.SIM_VERSION) >= "2022.10"
+        and RivieraVersion(cocotb.SIM_VERSION) < "2024.10"
     ),
     skip=(SIM_NAME.startswith("riviera") and is_riviera_2024_04),
 )
