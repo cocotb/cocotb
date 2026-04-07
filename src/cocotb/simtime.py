@@ -16,7 +16,7 @@ from functools import cache
 from math import ceil, floor
 from typing import Literal, cast, overload
 
-from cocotb import simulator
+import cocotb.simulator
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
@@ -156,7 +156,7 @@ def get_sim_time(unit: TimeUnit = "step", *, units: None = None) -> float:
             stacklevel=2,
         )
         unit = units
-    timeh, timel = simulator.get_sim_time()
+    timeh, timel = cocotb.simulator.get_sim_time()
     steps = timeh << 32 | timel
     return _get_time_from_sim_steps(steps, unit) if unit != "step" else steps
 
@@ -260,4 +260,4 @@ i.e. ``-15`` is ``10**-15`` seconds or 1 femtosecond.
 
 def _init() -> None:
     global time_precision
-    time_precision = simulator.get_precision()
+    time_precision = cocotb.simulator.get_precision()
