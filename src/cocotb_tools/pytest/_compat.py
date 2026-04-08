@@ -7,7 +7,9 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
+from typing import Any
 
+import pytest
 from pytest import Class, Mark, Module, mark
 
 from cocotb._decorators import Test, TestGenerator
@@ -66,7 +68,9 @@ def _as_pytest_marks(
     obj: object,
     timeout: tuple[float, TimeUnit] | None,
     expect_fail: bool,
-    expect_error: Iterable[type[BaseException]],
+    expect_error: Iterable[
+        type[BaseException] | pytest.RaisesExc[BaseException] | pytest.RaisesGroup[Any]
+    ],
     skip: bool,
     stage: int,
     options: list[
@@ -100,7 +104,7 @@ def _as_pytest_marks(
     if expect_fail or expect_error:
         markers.append(
             mark.xfail(
-                raises=tuple(expect_error) if expect_error else None,
+                raises=tuple(expect_error) if expect_error else None,  # type: ignore[arg-type]
                 strict=True,
             ).mark
         )

@@ -582,7 +582,7 @@ class RegressionManager:
             )
 
         cache_key = fixturedef.cache_key(request)
-        fixturedef.cached_result = AsyncFixtureCachedResult((setup, cache_key, None))
+        fixturedef.cached_result = AsyncFixtureCachedResult((setup, cache_key, None))  # type: ignore[assignment]
 
         self._setups.append(setup)
 
