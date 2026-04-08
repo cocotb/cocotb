@@ -7,10 +7,8 @@ from __future__ import annotations
 import os
 from typing import Any
 
-import pytest
-
 import cocotb
-from cocotb.handle import LogicArrayObject, LogicObject, PackedObject
+from cocotb.handle import LogicArrayObject, LogicObject
 from cocotb.triggers import RisingEdge, Timer
 
 
@@ -31,16 +29,14 @@ SIM = cocotb.SIM_NAME.lower()
 )
 async def test_debug_array_verilog(dut: Any) -> None:
     inspect_signal(dut.test_a, "dut.test_a")
-    assert type(dut.test_a) is PackedObject
-
-    with pytest.raises(TypeError):
-        dut.test_a[0]
+    assert type(dut.test_a) is LogicArrayObject
 
 
 @cocotb.test
 @cocotb.skipif(TOPLEVEL_LANG != "vhdl", reason="This test is only applicable to VHDL")
 @cocotb.xfail(
     SIM.startswith("ghdl"),
+    raises=IndexError,
     reason="GHDL uses VPI, which does not support array indexing",
 )
 async def test_debug_array_vhdl(dut: Any) -> None:

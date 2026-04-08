@@ -15,17 +15,19 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
-@cocotb.test(
-    expect_error=(
-        AttributeError if SIM_NAME.startswith(("icarus", "ghdl", "nvc")) else ()
-    ),
+@cocotb.test
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="Icarus does not support structs (gh-2592)",
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="Verilator finds packed structs as HierarchyObjects (gh-5477)",
 )
 async def test_packed_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
-    assert repr(dut.my_struct) in (
-        "LogicArrayObject(sample_module.my_struct)",
-        "PackedObject(sample_module.my_struct)",
-    )
+    assert repr(dut.my_struct) == "PackedStructObject(sample_module.my_struct)"
 
     # Riviera-PRO initializes the struct with X, Verilator with 0, and others
     # with Z. Since we don't want to explicitly set dut.my_struct (write tests
@@ -44,18 +46,21 @@ is_riviera_2024_04 = (
 )
 
 
-# Riviera-PRO 2022.10 - 2023.10 ignores writes to the packed struct.
-# Riviera-PRO 2024.04 crashes.
-@cocotb.test(
-    expect_error=(
-        AttributeError if SIM_NAME.startswith(("icarus", "ghdl", "nvc")) else ()
-    ),
-    expect_fail=(
-        SIM_NAME.startswith("riviera")
-        and RivieraVersion(cocotb.SIM_VERSION) >= "2022.10"
-        and RivieraVersion(cocotb.SIM_VERSION) < "2024.10"
-    ),
-    skip=(SIM_NAME.startswith("riviera") and is_riviera_2024_04),
+@cocotb.test
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="Icarus does not support structs (gh-2592)",
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("riviera")
+    and RivieraVersion(cocotb.SIM_VERSION) >= "2022.10"
+    and RivieraVersion(cocotb.SIM_VERSION) < "2024.10",
+    reason="Riviera-PRO 2022.10 - 2023.10 ignores writes to the packed struct",
+)
+@cocotb.skipif(
+    SIM_NAME.startswith("riviera") and is_riviera_2024_04,
+    reason="Riviera-PRO 2024.04 crashes on this testcase",
 )
 async def test_packed_struct_setting(dut):
     """Test setting the value of an entire struct"""
@@ -67,17 +72,22 @@ async def test_packed_struct_setting(dut):
     assert str(dut.my_struct.value) == "000"
 
 
-# GHDL unable to access record signals (gh-2591)
-# Icarus doesn't support structs (gh-2592)
-# Verilator doesn't support structs (gh-1275)
-# Riviera-PRO does not discover inout_if correctly over VPI (gh-3587, gh-3933)
 @cocotb.test(
     expect_error=(
         AttributeError
-        if SIM_NAME.startswith(("icarus", "ghdl", "verilator"))
-        or (SIM_NAME.startswith("riviera") and LANGUAGE == "verilog")
+        if SIM_NAME.startswith(("icarus", "ghdl", "verilator")) or ()
         else ()
     )
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="Icarus does not support structs (gh-2592)",
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    raises=AttributeError,
+    reason="Verilator does not support structs (gh-5477)",
 )
 async def test_struct_format(dut):
     """

@@ -1,0 +1,1 @@
+Added :class:`~cocotb.handle.PackedStructObject` which supports getting and setting the entire objects value like a :class:`~cocotb.handle.LogicArrayObject`, but also supports accessing fields of the struct via attribute (``dut.struct.field``) and indexing (``dut.struct["field"]``) syntax.
