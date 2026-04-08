@@ -226,7 +226,7 @@ bool is_enum_char(vhpiHandleT hdl) {
 
     const char *type = vhpi_get_str(vhpiNameP, hdl);
 
-    if (0 == strncmp(type, "CHARACTER", sizeof("STD_ULOGIC") - 1)) {
+    if (0 == strncmp(type, "CHARACTER", sizeof("CHARACTER") - 1)) {
         return true;
     } else {
         return (vhpi_get(vhpiNumLiteralsP, hdl) == NUM_ENUMS_IN_CHAR_TYPE);

@@ -988,6 +988,15 @@ Debugging
     If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
     See also the :ref:`troubleshooting-attaching-debugger-python` subsection of :ref:`troubleshooting-attaching-debugger`.
 
+    .. note::
+        Prior to Python 3.14 running the ``(q)uit`` command in the debugger would not exit the simulator process,
+        but continue running the rest of the test suite. From Python 3.14 onwards, ``(q)uit`` will exit the simulator process immediately.
+        To mimic this behavior call :func:`os._exit` from the pdb command line.
+
+        .. code-block::
+
+            (Pdb) import os; os._exit(0)
+
 .. envvar:: COCOTB_ATTACH
 
     Type: :ref:`env-integer`
