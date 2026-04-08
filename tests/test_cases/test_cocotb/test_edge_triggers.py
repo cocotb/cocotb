@@ -480,7 +480,9 @@ async def issue_376_different_edges(dut):
 async def test_callback_registration_failure_raises_runtime_error(dut):
     """Regression test for gh-5439: callback registration failure
     should raise RuntimeError, not crash."""
-    trigger = dut.clk.rising_edge
+    # Create a fresh trigger (not the cached dut.clk.rising_edge) so that
+    # the corrupted state from the mock doesn't affect subsequent tests.
+    trigger = RisingEdge._make(dut.clk)
 
     with unittest.mock.patch.object(
         simulator,
