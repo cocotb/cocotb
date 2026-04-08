@@ -244,6 +244,7 @@ ignore-words-list = [
 skip = ["*.svg"]
 
 [tool.mypy]
+python_version = "3.11"
 packages = ["cocotb", "pygpi", "cocotb_tools.pytest"]
 modules = ["noxfile"]
 disallow_untyped_defs = true

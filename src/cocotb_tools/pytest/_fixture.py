@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from types import TracebackType
-from typing import Any, Union
+from typing import Any, Union, cast
 
 from cocotb._test_manager import TestManager
 
@@ -36,7 +36,7 @@ class AsyncFixtureCachedResult(
 
     def __getitem__(self, index: Any) -> Any:
         """Dynamically get result from asynchronous task."""
-        task = super().__getitem__(0)._main_task
+        task = cast("TestManager", super().__getitem__(0))._main_task
 
         if not task.done() or index == 1:
             return super().__getitem__(index)
