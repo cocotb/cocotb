@@ -29,6 +29,19 @@ Assuming an extension named ``EXTNAME`` (all lower-case),
 For example, a SPI bus extension might be packaged as ``cocotbext-spi``, and its functionality would live in the ``cocotbext.spi`` namespace.
 The module can then be installed with ``pip3 install cocotbext-spi``, and used with ``import cocotbext.spi``.
 
+Licensing
+=========
+
+cocotb is licensed under the `3-clause BSD license <https://spdx.org/licenses/BSD-3-Clause.html>`_.
+This license is a permissive open source license that allows redistribution of both source and binary forms, with or without modification, so long as the original copyright is included.
+This means any open source or closed source, commercial or non-commercial project can use cocotb.
+It is also compatible with a large number of other licenses.
+For all these reasons, we recommend that cocotb extensions be released under the 3-clause BSD license.
+
+That being said, you are free to license your cocotb extension under whatever license you prefer,
+so long as it is compatible with the cocotb license.
+
+
 Packaging extensions
 ====================
 
