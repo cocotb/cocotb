@@ -627,9 +627,12 @@ class RegressionManager:
 
     def _get_lineno(self, test: Test) -> int:
         try:
-            return inspect.getsourcelines(test.func)[1]
-        except OSError:
-            return 1
+            return test.func.__code__.co_firstlineno
+        except AttributeError:
+            try:
+                return inspect.getsourcelines(test.func)[1]
+            except OSError:
+                return 1
 
     def _log_test_start(self) -> None:
         """Called by :meth:`_execute` to log that a test is starting."""
