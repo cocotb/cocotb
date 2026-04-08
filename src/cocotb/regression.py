@@ -353,19 +353,20 @@ class RegressionManager:
         # sort tests into stages
         self._test_queue.sort(key=lambda test: test.stage)
 
-        # mark tests for running
+        # mark tests for running and count included tests
         if self._filters:
-            self._included = [False] * len(self._test_queue)
-            for i, test in enumerate(self._test_queue):
+            self.total_tests = 0
+            for test in self._test_queue:
+                test.included = False
                 for filter in self._filters:
                     if filter.search(test.fullname):
-                        self._included[i] = True
+                        test.included = True
+                        self.total_tests += 1
         else:
-            self._included = [True] * len(self._test_queue)
+            self.total_tests = sum(1 for test in self._test_queue if test.included)
 
         # compute counts
         self.count = 1
-        self.total_tests = sum(self._included)
         if self.total_tests == 0:
             self.log.warning(
                 "No tests left after filtering with: %s",
@@ -385,10 +386,9 @@ class RegressionManager:
         """
         while self._test_queue:
             self._test = self._test_queue.pop(0)
-            included = self._included.pop(0)
 
             # if the test is not included, record and continue
-            if not included:
+            if not self._test.included:
                 self._record_test_excluded()
                 continue
 
