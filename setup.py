@@ -50,7 +50,7 @@ if "dev" in __version__:
         rev = subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"], universal_newlines=True
         ).strip()
-        __version__ += f"+{rev}"
+        __version__ += f"+r{rev}"
     except Exception:
         pass
 
