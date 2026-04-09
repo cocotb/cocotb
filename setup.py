@@ -50,6 +50,8 @@ if "dev" in __version__:
         rev = subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"], universal_newlines=True
         ).strip()
+        # We add an 'r' to ensure this local version field is alphanumeric.
+        # Otherwise when a version is a number with leading 0s they will be stripped.
         __version__ += f"+r{rev}"
     except Exception:
         pass
