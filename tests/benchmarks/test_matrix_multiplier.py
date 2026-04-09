@@ -8,6 +8,10 @@ from pathlib import Path
 
 from cocotb_tools.runner import get_runner
 
+proj_path = (
+    Path(__file__).resolve().parent.parent.parent / "examples" / "matrix_multiplier"
+)
+
 
 def build_and_run_matrix_multiplier(benchmark, sim):
     hdl_toplevel_lang = "verilog"
@@ -17,10 +21,6 @@ def build_and_run_matrix_multiplier(benchmark, sim):
     if sim == "nvc":
         build_args = ["--std=08"]
         hdl_toplevel_lang = "vhdl"
-
-    proj_path = (
-        Path(__file__).resolve().parent.parent / "examples" / "matrix_multiplier"
-    )
 
     sys.path.append(str(proj_path / "tests"))
 
@@ -38,6 +38,7 @@ def build_and_run_matrix_multiplier(benchmark, sim):
         hdl_toplevel="matrix_multiplier",
         sources=sources,
         build_args=build_args,
+        build_dir="sim_build/matrix_multiplier",
     )
 
     @benchmark

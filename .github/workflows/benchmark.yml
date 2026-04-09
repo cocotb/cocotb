@@ -54,7 +54,7 @@ jobs:
       run: |
         pip install pytest pytest-benchmark
         pip install .
-        pytest -c /dev/null tests/benchmark.py --benchmark-json output.json
+        pytest -c /dev/null tests/benchmarks --benchmark-json output.json
 
     # Pushing the benchmark requires elevated permissions to the
     # cocotb/cocotb-benchmark-results repository, which we only grant for
