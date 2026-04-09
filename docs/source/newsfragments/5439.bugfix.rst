@@ -1,0 +1,1 @@
+Fixed use-after-free in ``VpiSignalObjHdl::register_value_change_callback`` error handling code which caused VCS to segfault.
