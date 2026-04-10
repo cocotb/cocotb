@@ -119,6 +119,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    upgrade-2.0
    update_indexing
    rotating_logger
+   profiling
 
 
 .. todo::
