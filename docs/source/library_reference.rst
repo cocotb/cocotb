@@ -168,6 +168,35 @@ Python Test Runner
 
     This is only used if :envvar:`GPI_USERS` is not already defined by the user.
 
+.. envvar:: SIM_CMD_PREFIX
+
+    Prefix for simulation command invocations.
+
+    This can be used to add environment variables or other commands before the invocations of simulation commands.
+    For example, ``export SIM_CMD_PREFIX='LD_PRELOAD="foo.so bar.so"'`` can be used to force a particular library to load.
+    Or, ``export SIM_CMD_PREFIX='gdb --args'`` to run the simulation with the GDB debugger.
+
+    .. versionadded:: 1.6
+
+    .. versionadded:: 2.1
+        Support for this variable was added to Python Runners.
+
+.. envvar:: SIM_CMD_SUFFIX
+
+    Suffix for simulation command invocations.
+    Typically used to redirect simulator ``stdout`` and ``stderr``:
+
+    .. code-block:: bash
+
+        # Prints simulator stdout and stderr to the terminal
+        # as well as capture it all in a log file "sim.log".
+        export SIM_CMD_SUFFIX="2>&1 | tee sim.log"
+
+    .. versionadded:: 2.0
+
+    .. versionadded:: 2.1
+        Support for this variable was added to Python Runners.
+
 
 .. _api-runner-sim:
 

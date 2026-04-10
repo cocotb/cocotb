@@ -26,6 +26,7 @@ from contextlib import suppress
 from itertools import chain
 from pathlib import Path
 from typing import (
+    Any,
     Generic,
     TextIO,
     TypeVar,
@@ -763,6 +764,20 @@ class Runner(ABC):
                 build_args_.append(_ValueAndOptionalTag(build_arg, None))
         self._build_args = build_args_
 
+    def _get_sim_cmd_prefix(self) -> list[str]:
+        sim_cmd_prefix_str = os.getenv("SIM_CMD_PREFIX")
+        if sim_cmd_prefix_str:
+            return sim_cmd_prefix_str.split()
+        else:
+            return []
+
+    def _get_sim_cmd_suffix(self) -> list[str]:
+        sim_cmd_suffix_str = os.getenv("SIM_CMD_SUFFIX")
+        if sim_cmd_suffix_str:
+            return sim_cmd_suffix_str.split()
+        else:
+            return []
+
 
 def outdated(output: Path, dependencies: Iterable[Path]) -> bool:
     """Return ``True`` if any source files in *dependencies* are newer than the *output* directory.
@@ -931,6 +946,7 @@ class Icarus(Runner):
 
         return [
             [
+                *self._get_sim_cmd_prefix(),
                 "vvp",
                 "-M",
                 str(cocotb_tools.config.libs_dir),
@@ -939,6 +955,7 @@ class Icarus(Runner):
                 *self.test_args,
                 str(self.sim_file),
                 *plusargs,
+                *self._get_sim_cmd_suffix(),
             ]
         ]
 
@@ -1069,7 +1086,8 @@ class Questa(Runner):
             ]
 
         cmds.append(
-            ["vsim"]
+            self._get_sim_cmd_prefix()
+            + ["vsim"]
             + verbosity_opts
             + ["-gui" if self.gui else "-c"]
             + ["-onfinish", "stop" if self.gui else "exit"]
@@ -1080,6 +1098,7 @@ class Questa(Runner):
             + [_as_tcl_value(v) for v in self.plusargs]
             + pre_cmd
             + ["-do", do_script]
+            + self._get_sim_cmd_suffix(),
         )
 
         gpi_extra_list = []
@@ -1210,7 +1229,8 @@ class Ghdl(Runner):
             ghdl_run_args.append(f"--time-resolution={ghdl_time_resolution}")
 
         cmds = [
-            ["ghdl", "-r"]
+            self._get_sim_cmd_prefix()
+            + ["ghdl", "-r"]
             + [f"--work={self.hdl_toplevel_library}"]
             + ghdl_run_args
             + [self.sim_hdl_toplevel]
@@ -1218,6 +1238,7 @@ class Ghdl(Runner):
             + self.plusargs
             + self._get_parameter_options(self.parameters)
             + ([f"--wave={self._waves_file()}"] if self.waves or self.gui else [])
+            + self._get_sim_cmd_suffix(),
         ]
 
         return cmds
@@ -1308,6 +1329,7 @@ class Nvc(Runner):
         work_library = str(get_abs_path(self.build_dir / self.hdl_toplevel_library))
         cmds = [
             [
+                *self._get_sim_cmd_prefix(),
                 "nvc",
                 f"--work={self.hdl_toplevel_library}:{work_library}",
                 "-L",
@@ -1322,6 +1344,7 @@ class Nvc(Runner):
             + ["--load=" + cocotb_tools.config.lib_name_path("vhpi", "nvc").as_posix()]
             + self.plusargs
             + ([f"--wave={self._waves_file()}"] if self.waves or self.gui else [])
+            + self._get_sim_cmd_suffix(),
         ]
 
         return cmds
@@ -1485,11 +1508,17 @@ class AldecBase(Runner):
         """Append simulator-specific run commands."""
         return do_script + "run -all \nexit"
 
-    def _simulator_command(
-        self, do_file: tempfile.NamedTemporaryFile
-    ) -> list[_Command]:
+    def _simulator_command(self, do_file: Any) -> list[_Command]:
         """Return the simulator invocation command."""
-        return [["vsimsa", "-do", do_file.name]]
+        return [
+            [
+                *self._get_sim_cmd_prefix(),
+                "vsimsa",
+                "-do",
+                do_file.name,
+                *self._get_sim_cmd_suffix(),
+            ]
+        ]
 
     def _append_pre_cmd(self, do_script: str) -> str:
         """Hook for subclasses to extend do_script with simulator-specific pre_cmd."""
@@ -1517,11 +1546,27 @@ class Riviera(AldecBase):
         else:
             return do_script + "run -all \nexit"
 
-    def _simulator_command(self, do_file) -> list[_Command]:
+    def _simulator_command(self, do_file: Any) -> list[_Command]:
         if getattr(self, "gui", False):
-            return [["riviera", "-do", do_file.name]]
+            return [
+                [
+                    *self._get_sim_cmd_prefix(),
+                    "riviera",
+                    "-do",
+                    do_file.name,
+                    *self._get_sim_cmd_suffix(),
+                ]
+            ]
         else:
-            return [["vsimsa", "-do", do_file.name]]
+            return [
+                [
+                    *self._get_sim_cmd_prefix(),
+                    "vsimsa",
+                    "-do",
+                    do_file.name,
+                    *self._get_sim_cmd_suffix(),
+                ]
+            ]
 
     def _append_pre_cmd(self, do_script: str) -> str:
         if self.pre_cmd is None:
@@ -1676,10 +1721,12 @@ class Verilator(Runner):
 
         out_file = self.build_dir / self.sim_hdl_toplevel
         return [
-            [str(out_file)]
+            self._get_sim_cmd_prefix()
+            + [str(out_file)]
             + (["--trace"] if self.waves or self.gui else [])
             + self.test_args
             + self.plusargs
+            + self._get_sim_cmd_suffix(),
         ]
 
 
@@ -1840,6 +1887,7 @@ class Xcelium(Runner):
         cmds = [["mkdir", "-p", tmpdir]]
         cmds += [
             [
+                *self._get_sim_cmd_prefix(),
                 "xrun",
                 "-logfile",
                 f"xrun_{self.current_test_name}.log",
@@ -1859,6 +1907,7 @@ class Xcelium(Runner):
                 *self.plusargs,
                 "-gui" if self.gui else "",
                 *input_tcl,
+                *self._get_sim_cmd_suffix(),
             ]
         ]
         self.env["GPI_EXTRA"] = (
@@ -1959,7 +2008,16 @@ class Vcs(Runner):
         else:
             verbosity_opts += ["-suppress=ASLR_DETECTED_INFO"]
 
-        cmds = [[str(self.sim_file), *verbosity_opts, *self.test_args, *self.plusargs]]
+        cmds = [
+            [
+                *self._get_sim_cmd_prefix(),
+                str(self.sim_file),
+                *verbosity_opts,
+                *self.test_args,
+                *self.plusargs,
+                *self._get_sim_cmd_suffix(),
+            ]
+        ]
 
         return cmds
 
@@ -2047,6 +2105,7 @@ class Dsim(Runner):
         if outdated(self.sim_file, (source.value for source in sources)) or self.always:
             cmds = [
                 [
+                    *self._get_sim_cmd_prefix(),
                     "dsim",
                     "-work",
                     str(self.build_dir),
@@ -2061,6 +2120,7 @@ class Dsim(Runner):
                 + self._get_parameter_options(self.parameters)
                 + [arg.value for arg in self._build_args]
                 + [str(source_file.value) for source_file in sources]
+                + self._get_sim_cmd_suffix(),
             ]
 
         else:
