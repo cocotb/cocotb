@@ -1066,11 +1066,10 @@ Debugging
     Default: :data:`False`
 
     Enable to collect Python coverage data for user code.
-    For some simulators, this will also report :term:`HDL` coverage.
-    If :envvar:`COVERAGE_RCFILE` is not set, branch coverage is collected
-    and files in the cocotb package directory are excluded.
+    If :envvar:`COVERAGE_RCFILE` is not set,
+    line and branch coverage is collected and files in the ``cocotb``, ``cocotb_tools``, and ``pygpi`` package directories are excluded.
 
-    This needs the :mod:`coverage` Python module to be installed.
+    This requires the :mod:`coverage` Python module to be installed.
 
     .. versionchanged:: 2.0
 
