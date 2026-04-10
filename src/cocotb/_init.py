@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import importlib.util
 import logging
 import os
 import random
@@ -99,6 +100,14 @@ def _process_packages() -> None:
     cocotb.packages = SimpleNamespace(**pkg_dict)
 
 
+def _get_package_path(pkg: str) -> Path:
+    """Get the filesystem path of a package."""
+    spec = importlib.util.find_spec(pkg)
+    if spec is None or spec.origin is None:
+        raise ImportError(f"Cannot find package {pkg!r}")
+    return Path(spec.origin).parent.absolute()
+
+
 def _start_user_coverage() -> None:
     enable_coverage: bool = False
 
@@ -123,14 +132,20 @@ def _start_user_coverage() -> None:
         else:
             config_filepath: str = _env.as_str("COVERAGE_RCFILE")
             if not config_filepath:
-                # Exclude cocotb itself from coverage collection.
+                # Exclude cocotb libraries from coverage collection.
                 log.info(
                     "Collecting coverage of user code. No coverage config file supplied via COVERAGE_RCFILE."
                 )
-                cocotb_package_dir = Path(__file__).parent.absolute()
+                cocotb_package_dir = _get_package_path("cocotb")
+                cocotb_tools_package_dir = _get_package_path("cocotb_tools")
+                pygpi_package_dir = _get_package_path("pygpi")
                 user_coverage = coverage.coverage(
                     branch=True,
-                    omit=[f"{cocotb_package_dir}/*"],
+                    omit=[
+                        f"{cocotb_package_dir}/*",
+                        f"{cocotb_tools_package_dir}/*",
+                        f"{pygpi_package_dir}/*",
+                    ],
                 )
             else:
                 log.info(
