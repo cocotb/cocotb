@@ -6,6 +6,10 @@ Glossary
 .. glossary::
    :sorted:
 
+   async generator
+      A function or object that supports both :keyword:`yield` and :keyword:`await` in asynchronous iteration.
+      See also the :term:`Python glossary <python:asynchronous generator>`.
+
    BFM
       Bus Functional Model
 
@@ -14,6 +18,10 @@ Glossary
       This is typically a regular function,
       but sometimes involves calls to threaded code which blocks execution for an indeterminate amount of time.
       See also the :term:`Python glossary <python:function>`.
+
+   concurrency
+      When multiple routines can start executing simultaneously without any having finished.
+      See :ref:`concurrency_theory` for a more detailed description.
 
    coroutine function
       The definition of a function that, when called, returns a coroutine object.

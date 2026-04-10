@@ -96,9 +96,8 @@ Then follow the :doc:`first_steps` tutorial to get a simple test running.
    install
    first_steps
    writing_testbenches
+   scheduler
    runner
-   coroutines
-   triggers
    pytest
 
 ..
@@ -180,7 +179,6 @@ Then follow the :doc:`first_steps` tutorial to get a simple test running.
 
 .. todo::
    - Move section "How does cocotb work?" from Introduction to here
-   - Add some info from :doc:`coroutines`
    - Add GPI section
 
 
