@@ -1,0 +1,1 @@
+Fixed a segmentation fault on Icarus Verilog when VPI callbacks fired after the Python interpreter was finalized during simulator shutdown.
