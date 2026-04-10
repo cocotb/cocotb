@@ -11,6 +11,9 @@
 
 // Main re-entry point for callbacks from simulator
 void handle_fli_callback(void *data) {
+    if (gpi_is_finalizing()) {
+        return;
+    }
     SIM_TO_GPI(FLI, "callback");
 
     // TODO Add why?

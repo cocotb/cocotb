@@ -38,6 +38,9 @@ static int32_t handle_vpi_callback_(VpiCbHdl *cb_hdl) {
 
 // Main re-entry point for callbacks from simulator
 int32_t handle_vpi_callback(p_cb_data cb_data) {
+    if (gpi_is_finalizing()) {
+        return 0;
+    }
     SIM_TO_GPI(VPI, VpiImpl::reason_to_string(cb_data->reason));
 
     int ret = 0;

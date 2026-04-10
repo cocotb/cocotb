@@ -33,11 +33,9 @@ struct PythonCallback {
         Py_XINCREF(kwargs);
     }
     ~PythonCallback() {
-        if (Py_IsInitialized()) {
-            Py_XDECREF(function);
-            Py_XDECREF(args);
-            Py_XDECREF(kwargs);
-        }
+        Py_XDECREF(function);
+        Py_XDECREF(args);
+        Py_XDECREF(kwargs);
     }
     intptr_t padding_;   // TODO exists to works around bug with FLI
     PyObject *function;  // Function to call when the callback fires
@@ -165,10 +163,6 @@ struct sim_time {
 int handle_gpi_callback(void *user_data) {
     PYGPI_LOG_TRACE("GPI => [ PYGPI (cocotb.simulator) ]");
     DEFER(PYGPI_LOG_TRACE("[ PYGPI (cocotb.simulator) ] => GPI"));
-    if (!Py_IsInitialized()) {
-        delete static_cast<PythonCallback *>(user_data);
-        return 0;
-    }
     c_to_python();
     DEFER(python_to_c());
 
