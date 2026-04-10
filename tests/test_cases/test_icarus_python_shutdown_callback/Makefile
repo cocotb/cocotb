@@ -17,6 +17,11 @@ clean::
 
 else
 
+# Original repro (cocotbext-jtag test003, CI) used no waveform dump; Icarus 13
+# + vvp -none is where the post-Py_Finalize VPI callback showed up most clearly.
+WAVES := 0
+export WAVES
+
 include ../../designs/sample_module/Makefile
 
 COCOTB_TEST_MODULES := test_icarus_python_shutdown_callback

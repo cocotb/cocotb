@@ -1,1 +1,0 @@
-Fixed a segmentation fault at the end of Icarus simulations when the simulator delivered VPI callbacks after the embedded interpreter was finalized (``Py_Finalize``). Added regression test ``test_icarus_python_shutdown_callback``.
