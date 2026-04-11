@@ -12,6 +12,10 @@
 // Main re-entry point for callbacks from simulator
 void handle_fli_callback(void *data) {
     SIM_TO_GPI(FLI, "callback");
+    if (gpi_is_finalizing()) {
+        LOG_ERROR("FLI: Callback fired during finalization.");
+        return;
+    }
 
     // TODO Add why?
     fflush(stderr);

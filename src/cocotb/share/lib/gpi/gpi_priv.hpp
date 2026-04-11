@@ -272,6 +272,7 @@ GPI_EXPORT void gpi_end_of_sim_time();
 
 GPI_EXPORT void gpi_entry_point();
 GPI_EXPORT void gpi_check_cleanup();
+GPI_EXPORT bool gpi_is_finalizing();
 GPI_EXPORT void gpi_init_logging_and_debug();
 
 void *utils_dyn_open(const char *lib_name);
