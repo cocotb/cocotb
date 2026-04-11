@@ -39,6 +39,10 @@ static int32_t handle_vpi_callback_(VpiCbHdl *cb_hdl) {
 // Main re-entry point for callbacks from simulator
 int32_t handle_vpi_callback(p_cb_data cb_data) {
     SIM_TO_GPI(VPI, VpiImpl::reason_to_string(cb_data->reason));
+    if (gpi_is_finalizing()) {
+        LOG_ERROR("VPI: Callback fired during finalization.");
+        return 0;
+    }
 
     int ret = 0;
 #ifdef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS

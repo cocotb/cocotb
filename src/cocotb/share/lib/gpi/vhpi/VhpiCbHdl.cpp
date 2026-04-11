@@ -13,6 +13,10 @@
 // Main entry point for callbacks from simulator
 void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
     SIM_TO_GPI(VHPI, VhpiImpl::reason_to_string(cb_data->reason));
+    if (gpi_is_finalizing()) {
+        LOG_ERROR("VHPI: Callback fired during finalization.");
+        return;
+    }
 
     VhpiCbHdl *cb_hdl = (VhpiCbHdl *)cb_data->user_data;
 
