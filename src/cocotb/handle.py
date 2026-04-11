@@ -759,6 +759,9 @@ class _OldImmediate(_Action[_ValueT]):
         return obj._set_value(self.value, _GPISetAction.OLD_IMMEDIATE)
 
 
+_apply_writes_cb: TriggerCallback | None = None
+
+
 _trust_inertial: bool = _env.as_bool("COCOTB_TRUST_INERTIAL_WRITES")
 if _trust_inertial:
 
@@ -781,8 +784,6 @@ else:
     _write_calls: dict[
         ValueObjectBase[Any, Any], tuple[Callable[[int, Any], None], _GPISetAction, Any]
     ] = {}
-
-    _apply_writes_cb: TriggerCallback | None = None
 
     def _apply_scheduled_writes() -> None:
         for func, action, value in _write_calls.values():
