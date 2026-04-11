@@ -84,6 +84,7 @@ VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {
 int VpiCbHdl::arm() {
     vpiHandle new_hdl = vpi_register_cb(&cb_data);
 
+    // LCOV_EXCL_START
     if (!new_hdl) {
         LOG_ERROR(
             "VPI: Unable to register a callback handle for VPI type %s(%d)",
@@ -91,6 +92,10 @@ int VpiCbHdl::arm() {
         check_vpi_error();
         return -1;
     }
+    // LCOV_EXCL_STOP
+
+    LOG_TRACE("VPI: Registered callback %p for reason %s", new_hdl,
+              VpiImpl::reason_to_string(cb_data.reason));
 
     m_obj_hdl = new_hdl;
 
