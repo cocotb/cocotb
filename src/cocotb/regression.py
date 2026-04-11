@@ -26,6 +26,7 @@ import pytest
 import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
+import cocotb.handle
 import cocotb.simulator
 import cocotb.types._resolve
 from cocotb import logging as cocotb_logging
@@ -460,6 +461,11 @@ class RegressionManager:
             self._tearing_down = True
         else:
             return
+
+        # Clean up the write_scheduler
+        if cocotb.handle._apply_writes_cb is not None:
+            cocotb.handle._apply_writes_cb.cancel()
+            cocotb.handle._apply_writes_cb = None
 
         # Write out final log messages
         self._log_test_summary()
