@@ -816,12 +816,14 @@ static PyObject *set_gpi_log_level(PyObject *, PyObject *args) {
 
 static PyObject *initialize_logger(PyObject *, PyObject *args) {
     PyObject *log_func;
-    PyObject *get_logger;
-    if (!PyArg_ParseTuple(args, "OO", &log_func, &get_logger)) {
+    PyObject *log_level_enabled_func;
+    PyObject *get_logger_func;
+    if (!PyArg_ParseTuple(args, "OOO", &log_func, &log_level_enabled_func,
+                          &get_logger_func)) {
         PyErr_Print();
         return NULL;
     }
-    pygpi_logging_configure(log_func, get_logger);
+    pygpi_logging_configure(log_func, log_level_enabled_func, get_logger_func);
     Py_RETURN_NONE;
 }
 

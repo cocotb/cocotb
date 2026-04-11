@@ -190,7 +190,9 @@ def _setup_gpi_logger() -> None:
     gpi_logger.setLevel = setLevel  # type: ignore[method-assign]
 
     # Initialize PyGPI logging
-    cocotb.simulator.initialize_logger(_log_from_c, logging.getLogger)
+    cocotb.simulator.initialize_logger(
+        _log_from_c, _log_level_enabled_func, logging.getLogger
+    )
 
 
 def _configure() -> None:
@@ -459,12 +461,14 @@ def _log_from_c(
     msg: str,
     function_name: str,
 ) -> None:
-    """
-    This is for use from the C world, and allows us to insert C stack
-    information.
-    """
+    """Logging function to be called from C code."""
     if logger.isEnabledFor(level):
         record = logger.makeRecord(
             logger.name, level, filename, lineno, msg, (), None, function_name
         )
         logger.handle(record)
+
+
+def _log_level_enabled_func(logger: logging.Logger, level: int) -> bool:
+    """Log level enabled function to be called from C code."""
+    return logger.isEnabledFor(level)
