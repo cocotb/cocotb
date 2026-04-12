@@ -11,11 +11,7 @@
 
 // Main re-entry point for callbacks from simulator
 void handle_fli_callback(void *data) {
-    SIM_TO_GPI(FLI, "callback");
-    if (gpi_is_finalizing()) {
-        LOG_ERROR("FLI: Callback fired during finalization.");
-        return;
-    }
+    SIM_TO_GPI(FLI, data, "callback");
 
     // TODO Add why?
     fflush(stderr);
@@ -39,7 +35,7 @@ void handle_fli_callback(void *data) {
         gpi_end_of_sim_time();
     }
 
-    GPI_TO_SIM(FLI);
+    GPI_TO_SIM(FLI, data);
 }
 
 int FliTimedCbHdl::arm() {
@@ -53,6 +49,7 @@ int FliTimedCbHdl::arm() {
                     (mtiUInt32T)(m_time));
     mti_ScheduleWakeup64(m_proc_hdl, m_time_union_ps);
 #endif
+    LOG_TRACE("FLI: Scheduled timed callback %p for time %lu", this, m_time);
     return 0;
 }
 
@@ -78,6 +75,8 @@ int FliTimedCbHdl::remove() {
 
 int FliSignalCbHdl::arm() {
     mti_Sensitize(m_proc_hdl, m_signal->get_handle<mtiSignalIdT>(), MTI_EVENT);
+    LOG_TRACE("FLI: Scheduled signal callback %p for signal %p", this,
+              m_signal);
     return 0;
 }
 
@@ -122,6 +121,7 @@ int FliSignalCbHdl::remove() {
 int FliSimPhaseCbHdl::arm() {
     mti_ScheduleWakeup(m_proc_hdl, 0);
     m_removed = false;
+    LOG_TRACE("FLI: Scheduled simulation phase callback %p", this);
     return 0;
 }
 
@@ -167,6 +167,7 @@ void FliNextPhaseCbHdl::release() {
 
 int FliStartupCbHdl::arm() {
     mti_AddLoadDoneCB(handle_fli_callback, (void *)this);
+    LOG_TRACE("FLI: Scheduled startup callback %p", this);
     return 0;
 }
 
@@ -184,6 +185,7 @@ int FliStartupCbHdl::remove() {
 
 int FliShutdownCbHdl::arm() {
     mti_AddQuitCB(handle_fli_callback, (void *)this);
+    LOG_TRACE("FLI: Scheduled shutdown callback %p", this);
     return 0;
 }
 
