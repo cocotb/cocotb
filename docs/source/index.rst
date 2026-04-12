@@ -145,6 +145,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
 
    troubleshooting
    timing_model
+   build_systems
 
 .. todo::
    - Move section "How does cocotb work?" from Introduction to here
