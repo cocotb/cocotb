@@ -282,13 +282,13 @@ void *utils_dyn_sym(void *handle, const char *sym_name);
 
 #define USER_CB_TO_GPI(impl) LOG_TRACE("User Callback => [ " xstr(impl) " ]")
 
-#define SIM_TO_GPI(impl, cb_reason) \
-    LOG_TRACE("Sim => [ " xstr(impl) " for %s ]", cb_reason)
+#define SIM_TO_GPI(impl, ptr, cb_reason) \
+    LOG_TRACE("Sim => [ " xstr(impl) " %p for %s ]", ptr, cb_reason)
 
-#define GPI_TO_SIM(impl)                        \
-    do {                                        \
-        gpi_check_cleanup();                    \
-        LOG_TRACE("[ " xstr(impl) " ] => Sim"); \
+#define GPI_TO_SIM(impl, ptr)                           \
+    do {                                                \
+        gpi_check_cleanup();                            \
+        LOG_TRACE("[ " xstr(impl) " %p ] => Sim", ptr); \
     } while (0)
 
 typedef void (*layer_entry_func)();

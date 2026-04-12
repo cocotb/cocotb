@@ -12,11 +12,8 @@
 
 // Main entry point for callbacks from simulator
 void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
-    SIM_TO_GPI(VHPI, VhpiImpl::reason_to_string(cb_data->reason));
-    if (gpi_is_finalizing()) {
-        LOG_ERROR("VHPI: Callback fired during finalization.");
-        return;
-    }
+    SIM_TO_GPI(VHPI, cb_data->user_data,
+               VhpiImpl::reason_to_string(cb_data->reason));
 
     VhpiCbHdl *cb_hdl = (VhpiCbHdl *)cb_data->user_data;
 
@@ -37,7 +34,7 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
         gpi_end_of_sim_time();
     }
 
-    GPI_TO_SIM(VHPI);
+    GPI_TO_SIM(VHPI, cb_data->user_data);
 }
 
 VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {
@@ -71,6 +68,8 @@ int VhpiCbHdl::remove() {
 
 int VhpiCbHdl::arm() {
     vhpiHandleT new_hdl = vhpi_register_cb(&cb_data, vhpiReturnCb);
+    LOG_TRACE("VHPI: Registered callback %p for reason %s", this,
+              VhpiImpl::reason_to_string(cb_data.reason));
 
     // LCOV_EXCL_START
     if (!new_hdl) {
