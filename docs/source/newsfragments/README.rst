@@ -48,7 +48,29 @@ Examples:
 
 .. parsed-literal::
 
-    Deprecated passing ``name`` to the :class:`.Event` constructor. If you need to associate a name with an :class:`!Event`, subclass :class:`!Event` and add a ``name`` attribute.
+    Deprecated passing ``name`` to the :class:`~cocotb.triggers.Event` constructor. If you need to associate a name with an :class:`!Event`, subclass :class:`!Event` and add a ``name`` attribute.
+
+Allowed Syntax
+--------------
+
+After we have a release, the release notes are updated so references to objects eternally point to the particular version of the object from that release using intersphinx.
+Because of that there are certain limitations on the syntax allowed in newsfragments.
+
+Do not use `.object` to refer to a non-qualified object, these only work on internal references and will not work in the release notes after the release.
+Use the full path to the object instead with the `~` prefix to shorten the display name.
+
+.. parsed-literal::
+
+    :class:`~cocotb.triggers.Event`
+
+That works for everything but ``attr``\ s and ``meth``\ s, where you typically want to refer to the type in addition to the method or attribute name.
+In those cases, use manual formatting.
+Methods should have ``()`` after the name, and attributes should not.
+
+.. parsed-literal::
+
+    :meth:`Runner.test() <cocotb.runner.Runner.test>`
+    :attr:`Event.data <cocotb.triggers.Event.data>`
 
 
 Multiple Newsfragments per PR
