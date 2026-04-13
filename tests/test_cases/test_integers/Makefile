@@ -6,7 +6,7 @@ SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 
 TOPLEVEL=top
-COCOTB_TEST_MODULES=test_integers
+COCOTB_TEST_MODULES=integer_tests
 
 ifeq ($(TOPLEVEL_LANG),verilog)
 VERILOG_SOURCES = $(PWD)/integers.sv
