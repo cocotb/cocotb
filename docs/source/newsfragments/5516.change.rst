@@ -1,0 +1,1 @@
+Changed the extension on the Icarus GPI implementation library from ``.vpl`` to the normal extension for shared libraries on the platform (e.g. ``.so`` or ``.dll``).
