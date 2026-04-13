@@ -1141,16 +1141,15 @@ static void vhpi_main() {
               from_bootstrap ? "Bootstrap" : "Sim (vhpi_startup_routines)");
 }
 
-// This is run by GPI when requested for mixed-language simulations
-static void register_impl() {
+// pre-defined VHPI registration table
+extern "C" {
+COCOTBVHPI_EXPORT void GPI_REGISTER_IMPL() {
     LOG_TRACE("GPI Init => [ VHPI (register_impl) ]");
     auto vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
     LOG_TRACE("[ VHPI (register_impl) ] => GPI Init");
 }
 
-// pre-defined VHPI registration table
-extern "C" {
 COCOTBVHPI_EXPORT void (*vhpi_startup_routines[])() = {
     gpi_init_logging_and_debug, vhpi_main, nullptr};
 
@@ -1163,5 +1162,3 @@ COCOTBVHPI_EXPORT void vhpi_startup_routines_bootstrap() {
     LOG_TRACE("[ VHPI (vhpi_startup_routines_bootstrap) ] => Sim");
 }
 }
-
-GPI_ENTRY_POINT(cocotbvhpi, register_impl)

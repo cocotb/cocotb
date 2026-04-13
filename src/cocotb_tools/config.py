@@ -180,6 +180,11 @@ def lib_name_path(interface: str, simulator: str) -> Path:
     return libs_dir / lib_name(interface, simulator)
 
 
+def gpi_extra(interface: str, simulator: str) -> Path:
+    """Return the GPI_EXTRA value to load the GPI implementation for the given interface and simulator."""
+    return lib_name_path(interface, simulator)
+
+
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
@@ -227,6 +232,12 @@ def _get_parser() -> argparse.ArgumentParser:
         metavar=("INTERFACE", "SIMULATOR"),
     )
     group.add_argument(
+        "--gpi-extra",
+        help="Print the GPI_EXTRA value to load the GPI implementation for the given interface and simulator",
+        nargs=2,
+        metavar=("INTERFACE", "SIMULATOR"),
+    )
+    group.add_argument(
         "--version",
         action="store_true",
         help="Print the version of cocotb",
@@ -263,6 +274,9 @@ def main() -> None:
         print(lib_name(*args.lib_name))
     elif args.lib_name_path:
         print(lib_name_path(*args.lib_name_path).as_posix())
+    elif args.gpi_extra:
+        interface_name, simulator_name = args.gpi_extra
+        print(gpi_extra(interface_name, simulator_name).as_posix())
     elif args.pygpi_entry_point:
         print(pygpi_entry_point())
     elif args.version:

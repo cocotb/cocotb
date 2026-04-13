@@ -70,7 +70,7 @@ Aldec Riviera-PRO
       ``-loadvhpi $(cocotb-config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vpi riviera):cocotbvpi_entry_point``
+      ``$(cocotb-config --gpi-extra vpi riviera)``
       if there are also (System)Verilog modules in the design.
 
    .. tab-item:: Design with a (System)Verilog Toplevel
@@ -79,7 +79,7 @@ Aldec Riviera-PRO
       ``-pli $(cocotb-config --lib-name-path vpi riviera)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vhpi riviera):cocotbvhpi_entry_point``
+      ``$(cocotb-config --gpi-extra vhpi riviera)``
       if there are also VHDL modules in the design.
 
 .. _custom-flows-activehdl:
@@ -97,7 +97,7 @@ Aldec Active-HDL
       ``-loadvhpi $(cocotb-config --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vpi activehdl):cocotbvpi_entry_point``
+      ``$(cocotb-config --gpi-extra vpi activehdl)``
       if there are also (System)Verilog modules in the design.
 
    .. tab-item:: Design with a (System)Verilog Toplevel
@@ -106,7 +106,7 @@ Aldec Active-HDL
       ``-pli $(cocotb-config --lib-name-path vpi activehdl)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vhpi activehdl):cocotbvhpi_entry_point``
+      ``$(cocotb-config --gpi-extra vhpi activehdl)``
       if there are also VHDL modules in the design.
 
 .. _custom-flows-siemens:
@@ -133,7 +133,7 @@ Questa supports two different flows: the traditional flow using ``vsim``, which 
       ``-pli $(cocotb-config --lib-name-path vpi questa)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path fli questa):cocotbfli_entry_point``
+      ``$(cocotb-config --gpi-extra fli questa)``
       if there are also VHDL modules in the design.
 
 .. _custom-flows-cadence:
@@ -154,7 +154,7 @@ Cadence Incisive and Xcelium
   works but has the downside of initializing cocotb during elaboration, not only simulation.
 
 * If the design contains any VHDL modules, set the :envvar:`GPI_EXTRA` environment variable to
-  ``$(cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point``.
+  ``$(cocotb-config --gpi-extra vhpi xcelium)``.
   This is because directly loading the VHPI library causes an error in Xcelium,
   so always load the VPI library and supply VHPI via ``GPI_EXTRA``.
 
